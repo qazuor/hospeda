@@ -2,7 +2,9 @@
  * Tests for point-of-interest nearby schemas (HOS-145 T-001).
  *
  * Verifies:
- * - NearbyPoiQuerySchema applies defaults (radius=5, limit=12) when absent
+ * - NearbyPoiQuerySchema leaves `radius` undefined and defaults limit=8 when
+ *   absent (HOS-327 — `radius` is an optional CEILING now, and a default here
+ *   would cap the per-POI elastic radius on every request)
  * - NearbyPoiQuerySchema rejects out-of-bounds radius/limit values
  * - NearbyPoiQuerySchema coerces string query params to numbers
  * - NearbyPoiSchema requires a non-negative distanceKm
@@ -20,13 +22,17 @@ import { createValidPointOfInterest } from '../../fixtures/point-of-interest.fix
 // ---------------------------------------------------------------------------
 
 describe('NearbyPoiQuerySchema — safeParse', () => {
-    it('should apply default radius=5 and limit=12 when params are absent', () => {
+    it('should leave radius undefined and default limit=8 when params are absent', () => {
         const result = NearbyPoiQuerySchema.safeParse({});
 
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.radius).toBe(5);
-            expect(result.data.limit).toBe(12);
+            // HOS-327: `radius` MUST NOT acquire a default. It is a ceiling on
+            // the per-POI elastic radius, so any default silently caps every
+            // request and makes the relevance ranking inert (the pre-HOS-327
+            // `.default(5)` would have pinned it back to the old fixed 5km).
+            expect(result.data.radius).toBeUndefined();
+            expect(result.data.limit).toBe(8);
         }
     });
 

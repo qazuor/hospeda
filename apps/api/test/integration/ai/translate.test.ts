@@ -33,14 +33,27 @@ process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
  * Captures generateText invocations so the 200-path assertions can verify
  * the route called the engine with correct feature/locale.
  */
-const { generateTextCalls, nextGenerateTextResult, nextGenerateTextThrow } = vi.hoisted(() => ({
+const {
+    generateTextCalls,
+    nextGenerateTextResult,
+    nextGenerateTextThrow,
+    nextGenerateTextThrowForLocale
+} = vi.hoisted(() => ({
     generateTextCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
     /**
      * When set, the stubbed `generateText` throws it instead of returning.
-     * Drives the "every provider call failed" branch (HOS-328), which must be
-     * recorded as `status: 'error'` so it does not consume a quota unit.
+     * Drives the "every provider call failed" branch (HOS-865), which must
+     * answer the same 500 `TRANSLATION_FAILED` the route's own catch block
+     * already uses for a thrown exception.
      */
     nextGenerateTextThrow: { current: undefined as unknown },
+    /**
+     * When set, `generateText` throws only for calls targeting this locale —
+     * every other locale still succeeds. Drives the HOS-865 PARTIAL-failure
+     * branch, which `nextGenerateTextThrow` cannot reach because it fails
+     * every call unconditionally.
+     */
+    nextGenerateTextThrowForLocale: { current: undefined as string | undefined },
     nextGenerateTextResult: {
         current: {
             text: 'River Cabin',
@@ -131,6 +144,12 @@ vi.mock('@repo/ai-core', () => {
                 });
                 if (nextGenerateTextThrow.current !== undefined) {
                     throw nextGenerateTextThrow.current;
+                }
+                if (
+                    nextGenerateTextThrowForLocale.current !== undefined &&
+                    String(req.locale ?? '') === nextGenerateTextThrowForLocale.current
+                ) {
+                    throw new Error(`provider failed for locale ${String(req.locale)}`);
                 }
                 return nextGenerateTextResult.current;
             }),
@@ -360,6 +379,7 @@ function resetMockState() {
     // Happy-path default: the entity exists. The 404 test overrides to null.
     entityRowHolder.current = makeEntityRow();
     nextGenerateTextThrow.current = undefined;
+    nextGenerateTextThrowForLocale.current = undefined;
     nextPersistThrow.current = undefined;
     mockRecordAiUsage.mockClear();
 }
@@ -872,10 +892,80 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
                 })
             });
 
-            expect(res.status).toBe(200);
+            // HOS-865: this assertion used to read `expect(res.status).toBe(200)`
+            // — it FROZE the bug as expected behavior. The route answered a
+            // successful envelope (`success:true`, HTTP 200) even though every
+            // single provider call in the fan-out failed and nothing was
+            // translated. It now answers the same way the route's own `catch`
+            // block already does for a thrown exception: a total failure is a
+            // total failure regardless of which code path produced it.
+            expect(res.status).toBe(500);
+            const body = (await res.json()) as Record<string, unknown>;
+            expect(body.success).toBe(false);
+            const error = body.error as Record<string, unknown>;
+            expect(error?.code).toBe('TRANSLATION_FAILED');
+
             // The fan-out really did run — this is not the zero-call case.
             expect(generateTextCalls.length).toBeGreaterThan(0);
             expect(mockRecordAiUsage).not.toHaveBeenCalled();
+        });
+
+        it('returns 200 with per-item results and a zero failedCount when everything succeeds', async () => {
+            // HOS-865 no-regression check: the new `failedCount`/`succeededCount`
+            // envelope fields must not change the happy path's status or shape.
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'accommodation',
+                    entityId: '00000000-0000-4000-8000-000000000001'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const body = (await res.json()) as Record<string, unknown>;
+            expect(body.success).toBe(true);
+            const data = body.data as Record<string, unknown>;
+            expect(data.failedCount).toBe(0);
+            expect(data.succeededCount).toBeGreaterThan(0);
+            expect(data.succeededCount).toBe((data.translations as unknown[]).length);
+        });
+
+        it('returns 200 with a non-zero failedCount when only SOME provider calls fail (HOS-865)', async () => {
+            // Unlike `nextGenerateTextThrow`, which fails every call
+            // unconditionally, this fails only the calls targeting 'pt' — 'en'
+            // still succeeds. That is what makes this a PARTIAL failure rather
+            // than the total-failure case covered above.
+            nextGenerateTextThrowForLocale.current = 'pt';
+
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'accommodation',
+                    entityId: '00000000-0000-4000-8000-000000000001'
+                })
+            });
+
+            // Partial failure stays 200 — the client already reads the
+            // per-item `translations` array to render per-field status, so
+            // downgrading the status here would regress it for nothing.
+            expect(res.status).toBe(200);
+            const body = (await res.json()) as Record<string, unknown>;
+            expect(body.success).toBe(true);
+
+            const data = body.data as Record<string, unknown>;
+            const translations = data.translations as Array<{ success: boolean; locale: string }>;
+            const expectedFailed = translations.filter((item) => !item.success).length;
+            const expectedSucceeded = translations.filter((item) => item.success).length;
+
+            // Non-vacuous: this is the whole reason the fixture targets a
+            // single locale — both counts must be positive, or this could pass
+            // by both being zero.
+            expect(expectedFailed).toBeGreaterThan(0);
+            expect(expectedSucceeded).toBeGreaterThan(0);
+            expect(data.failedCount).toBe(expectedFailed);
+            expect(data.succeededCount).toBe(expectedSucceeded);
         });
 
         it('records nothing when the entity is already fully translated (no provider call)', async () => {

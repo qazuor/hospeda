@@ -260,6 +260,202 @@ function buildTranslationPrompt(
     return `${instruction}\n\n${fieldValue}`;
 }
 
+// ---------------------------------------------------------------------------
+// URL protection (HOS-1030)
+//
+// The translation model routinely "translates" the PATH segment of a URL,
+// because out of context a path like `/pagina` reads as an ordinary Spanish
+// word to translate — measured: `[link](https://ejemplo.test/pagina)` came
+// back with the visible link text untouched but the URL itself rewritten to
+// `https://ejemplo.test/page` in English. The direct cost is a 404: a host
+// publishes `misitio.com/reservas` and the English ficha links to
+// `misitio.com/bookings`, a path that does not exist on their server.
+//
+// Defense: before a field ever reaches the model, every URL in it — inside
+// a markdown link (`[text](url)`) or standalone in prose — is swapped for an
+// opaque placeholder token, so there is nothing in the destination for the
+// model to translate. The placeholder is swapped back for the real URL
+// after the response returns, verified against an EXACT count first — see
+// `translateField` below for what happens when that verification fails.
+// ---------------------------------------------------------------------------
+
+/**
+ * Wraps a URL index in a placeholder token that shields it from the
+ * translation model.
+ *
+ * The triple-curly-brace, `ALL_CAPS_WITH_UNDERSCORES` shape is deliberate:
+ * curly-brace interpolation (`{{var}}`) is the dominant "do not translate
+ * this" convention across mainstream localization pipelines (i18next,
+ * react-intl, ICU MessageFormat) — it is the token shape an LLM has seen
+ * treated as opaque most often in training, so it is the least likely to be
+ * quietly re-worded, re-cased, or have its punctuation "corrected". None of
+ * its characters (`{`, `}`, digits, `_`, uppercase letters) ever appear
+ * inside a real URL, so restoring it can never collide with URL content; and
+ * none of them are markdown-significant (`(`, `)`, `[`, `]`), so the token
+ * drops safely into the URL slot of a markdown link without disturbing the
+ * surrounding link syntax.
+ */
+function urlPlaceholder(index: number): string {
+    return `{{{HOSPEDA_URL_${index}}}}`;
+}
+
+/**
+ * Reads a URL starting at `text[start]`, honoring balanced parentheses and
+ * stopping at the first UNMATCHED `)`. This one rule handles two cases at
+ * once: a Wikipedia-style URL containing its own parens
+ * (`.../Foo_(bar)`) survives intact, while a markdown link's closing paren
+ * (`[text](url)`) still correctly ends the URL instead of being swallowed
+ * into it.
+ *
+ * Also stops at whitespace or `< > " '`, none of which are ever part of a
+ * real, unencoded URL.
+ *
+ * @returns The raw URL text and the index immediately after it — for a URL
+ *   that stopped on an unmatched `)`, `end` points AT that `)`.
+ */
+function readUrlBalanced(text: string, start: number): { value: string; end: number } {
+    let i = start;
+    let depth = 0;
+    while (i < text.length) {
+        const ch = text.charAt(i);
+        if (ch === '(') {
+            depth++;
+        } else if (ch === ')') {
+            if (depth === 0) break;
+            depth--;
+        } else if (/[\s<>"']/.test(ch)) {
+            break;
+        }
+        i++;
+    }
+    return { value: text.slice(start, i), end: i };
+}
+
+/**
+ * Replaces the URL inside every markdown link (`[text](url)`) with a
+ * placeholder, leaving the link text itself untouched so the model still
+ * translates it.
+ *
+ * Link text is assumed not to contain nested `[`/`]`, the same assumption
+ * `RICH_DESCRIPTION_PATTERNS`'s markdown-link pattern makes
+ * (`apps/api/src/lib/content-detection.ts`). A malformed/unterminated link
+ * (no matching `)`, or whitespace inside the URL) is left exactly as found —
+ * it falls through to {@link protectBareUrls}, which still protects the
+ * `http(s)://` inside it as a standalone URL.
+ */
+function protectMarkdownLinkUrls(text: string, urls: string[]): string {
+    const linkOpenRegex = /\[[^\]]*\]\(/g;
+    let result = '';
+    let cursor = 0;
+    let match = linkOpenRegex.exec(text);
+    while (match !== null) {
+        const urlStart = match.index + match[0].length;
+        const { value, end } = readUrlBalanced(text, urlStart);
+        const closesProperly = text.charAt(end) === ')';
+        if (value && closesProperly) {
+            result += text.slice(cursor, urlStart);
+            result += urlPlaceholder(urls.length);
+            urls.push(value);
+            cursor = end;
+            linkOpenRegex.lastIndex = end;
+        }
+        match = linkOpenRegex.exec(text);
+    }
+    result += text.slice(cursor);
+    return result;
+}
+
+/**
+ * Replaces every standalone (non-markdown-link) `http(s)://` URL in `text`
+ * with a placeholder. Run AFTER {@link protectMarkdownLinkUrls} so a
+ * markdown link's URL — already swapped for a placeholder — is never
+ * re-matched here.
+ *
+ * Trailing sentence punctuation (`. , ; : ! ?`) immediately after the URL is
+ * trimmed off and left in the surrounding prose, mirroring the exact
+ * trailing-punctuation problem `VIDEO_EMBED_PATTERNS` already solves for
+ * video URLs (`apps/api/src/lib/content-detection.ts`) — without this,
+ * `"https://x.com/pagina."` would pull the sentence's closing period into
+ * the protected span.
+ */
+function protectBareUrls(text: string, urls: string[]): string {
+    const urlStartRegex = /\bhttps?:\/\//g;
+    let result = '';
+    let cursor = 0;
+    let match = urlStartRegex.exec(text);
+    while (match !== null) {
+        const start = match.index;
+        if (start >= cursor) {
+            const { end } = readUrlBalanced(text, start);
+            let trimmedEnd = end;
+            while (trimmedEnd > start && /[.,;:!?]/.test(text.charAt(trimmedEnd - 1))) {
+                trimmedEnd--;
+            }
+            result += text.slice(cursor, start);
+            result += urlPlaceholder(urls.length);
+            urls.push(text.slice(start, trimmedEnd));
+            cursor = trimmedEnd;
+            urlStartRegex.lastIndex = trimmedEnd;
+        }
+        match = urlStartRegex.exec(text);
+    }
+    result += text.slice(cursor);
+    return result;
+}
+
+/**
+ * Replaces every URL in `text` — inside a markdown link or standalone —
+ * with an opaque placeholder, returning the placeholder-substituted text and
+ * the list of URLs it removed, indexed to match {@link urlPlaceholder}.
+ */
+function protectUrls(text: string): { protectedText: string; urls: string[] } {
+    const urls: string[] = [];
+    const withMarkdownProtected = protectMarkdownLinkUrls(text, urls);
+    const protectedText = protectBareUrls(withMarkdownProtected, urls);
+    return { protectedText, urls };
+}
+
+/**
+ * Restores every {@link urlPlaceholder} token in `text` back to its
+ * original URL.
+ *
+ * Verifies an EXACT match first: every index in `[0, urls.length)` must
+ * appear in `text` exactly once, with no extra, duplicate, or out-of-range
+ * placeholder, before anything is substituted. Restitution is all-or-
+ * nothing on purpose — {@link translateField} treats any mismatch as a hard
+ * failure rather than persisting a partially-restored (or, worse, a
+ * raw-placeholder-leaking) translation. See the HOS-1030 note above.
+ */
+function restoreUrls(text: string, urls: string[]): { restored: string; ok: boolean } {
+    const counts = new Array<number>(urls.length).fill(0);
+    let sawInvalid = false;
+    const placeholderRegex = /\{\{\{HOSPEDA_URL_(\d+)\}\}\}/g;
+    let match = placeholderRegex.exec(text);
+    while (match !== null) {
+        const raw = match[1];
+        const index = raw === undefined ? Number.NaN : Number(raw);
+        if (Number.isInteger(index) && index >= 0 && index < counts.length) {
+            counts[index] = (counts[index] ?? 0) + 1;
+        } else {
+            sawInvalid = true;
+        }
+        match = placeholderRegex.exec(text);
+    }
+    const ok = !sawInvalid && counts.every((count) => count === 1);
+    if (!ok) {
+        return { restored: text, ok: false };
+    }
+
+    let restored = text;
+    for (let index = 0; index < urls.length; index++) {
+        const url = urls[index];
+        if (url !== undefined) {
+            restored = restored.split(urlPlaceholder(index)).join(url);
+        }
+    }
+    return { restored, ok: true };
+}
+
 /**
  * Translates a single text field to a target locale using the AI engine.
  * Returns the translated text or the original on failure.
@@ -276,7 +472,10 @@ async function translateField(
     provider: string;
     model: string;
 }> {
-    const prompt = buildTranslationPrompt(fieldValue, sourceLocale, targetLocale, fieldType);
+    // HOS-1030: shield every URL in the source text before it ever reaches
+    // the model — see the "URL protection" section above.
+    const { protectedText, urls } = protectUrls(fieldValue);
+    const prompt = buildTranslationPrompt(protectedText, sourceLocale, targetLocale, fieldType);
 
     const result = await aiService.generateText({
         feature: FEATURE,
@@ -284,8 +483,22 @@ async function translateField(
         locale: targetLocale
     });
 
+    const { restored, ok } = restoreUrls(result.text, urls);
+    if (!ok) {
+        // A placeholder was dropped, duplicated, or corrupted in the model's
+        // response — restoring it would either leak a raw
+        // `{{{HOSPEDA_URL_n}}}` token onto the public site or silently swap
+        // in the wrong URL. Neither is acceptable, so this throws and lets
+        // `translateFieldWithRetry`'s catch block treat it as an ordinary
+        // translation failure: logged, and the source-locale value is kept
+        // untouched instead of persisting anything corrupted.
+        throw new Error(
+            `ai-translate: URL placeholder mismatch translating field "${fieldType}" to ${targetLocale} — expected ${urls.length} URL(s) to round-trip intact, refusing to persist a corrupted translation`
+        );
+    }
+
     return {
-        text: result.text,
+        text: restored,
         usage: result.usage,
         provider: result.provider,
         model: result.model

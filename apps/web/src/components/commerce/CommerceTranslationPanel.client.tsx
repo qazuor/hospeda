@@ -42,12 +42,30 @@ export interface CommerceI18nValues {
     readonly richDescriptionI18n: I18nLocaleValues;
 }
 
+/**
+ * Plain (non-i18n) column values, used ONLY as an ES-tab display fallback
+ * (HOS-902) — see `resolveDisplayValue`'s JSDoc. Never part of the panel's
+ * own state and never passed to `onChange`.
+ */
+export interface CommercePlainTextValues {
+    readonly name: string;
+    readonly summary: string;
+    readonly description: string;
+    readonly richDescription: string;
+}
+
 /** Props for CommerceTranslationPanel. */
 export interface CommerceTranslationPanelProps {
     /** Active UI locale — also the default active tab. */
     readonly locale: SupportedLocale;
     /** Initial i18n values sourced from the listing detail. */
     readonly initialValues: CommerceI18nValues;
+    /**
+     * The listing's plain `name`/`summary`/`description`/`richDescription`
+     * columns (HOS-902), used ONLY to show real content in the ES tab when
+     * the i18n twin is empty — see `resolveDisplayValue`.
+     */
+    readonly plainTextValues: CommercePlainTextValues;
     /**
      * Called with the full updated i18n state whenever any field changes.
      * The parent editor uses this to build the dirty PATCH payload.
@@ -91,35 +109,94 @@ function localeHasContent({
     return TRANSLATABLE_FIELDS.some((field) => Boolean(values[field][locale]));
 }
 
-/** Build a blank (empty-string) i18n locale value set. */
-function emptyLocaleValues(): I18nLocaleValues {
-    return { es: '', en: '', pt: '' };
-}
-
-/** Safely read an i18n record from raw data as an I18nLocaleValues. */
-function parseI18nField(raw: unknown): I18nLocaleValues {
-    if (raw === null || typeof raw !== 'object') {
-        return emptyLocaleValues();
-    }
-    const obj = raw as Record<string, unknown>;
-    return {
-        es: typeof obj.es === 'string' ? obj.es : '',
-        en: typeof obj.en === 'string' ? obj.en : '',
-        pt: typeof obj.pt === 'string' ? obj.pt : ''
-    };
-}
-
 /**
- * Extracts CommerceI18nValues from a raw listing detail record.
- * Returns empty strings for any missing locale or field.
+ * Safely read an i18n record from raw data as an I18nLocaleValues.
+ *
+ * Deliberately NO fallback to the plain column here (see HOS-902 history
+ * below) — this is the value that becomes `CommerceListingEditor`'s live form
+ * state AND its PATCH diff baseline, i.e. it is what gets SAVED. Returns
+ * empty strings for any missing locale or field, exactly what is actually
+ * stored.
+ *
+ * HOS-902 correction: an earlier version of this function baked an ES
+ * fallback to the plain `name`/`summary`/`description`/`richDescription`
+ * column directly into the returned value, reasoning that a field carrying
+ * only the fallback is identical between `current` and `baseline` and so
+ * never looks dirty on its own. That reasoning broke the moment a SIBLING
+ * locale of the SAME field changed: `gastronomyModel`/`experienceModel` do
+ * NOT declare `nameI18n`/`summaryI18n`/`descriptionI18n`/`richDescriptionI18n`
+ * in `mergeableJsonbColumns` (see `packages/db/src/models/gastronomy/
+ * gastronomy.model.ts` and `.../experience/experience.model.ts`, both line
+ * 68 — only `contactInfo` is there), so `BaseModelImpl.update()`
+ * (`packages/db/src/base/base.model.ts:387-393`) takes the PLAIN-REPLACEMENT
+ * path for these columns, not the `||`-merge path — the whole JSONB object is
+ * overwritten, not merged per key. Editing only `nameI18n.en` therefore sends
+ * the WHOLE `nameI18n` object, including an `es` that carried nothing but
+ * fallback DISPLAY text — permanently writing it into the i18n column, where
+ * `apps/web/src/lib/api/transforms.ts`'s public-ficha resolution PREFERS the
+ * i18n column over the plain one, so a later rename via the plain `name`
+ * field could never reach the public page again. The fallback now lives
+ * ONLY in `resolveDisplayValue`, at render time, never in this function.
  */
 export function parseCommerceI18nValues(raw: Record<string, unknown>): CommerceI18nValues {
-    return {
-        nameI18n: parseI18nField(raw.nameI18n),
-        summaryI18n: parseI18nField(raw.summaryI18n),
-        descriptionI18n: parseI18nField(raw.descriptionI18n),
-        richDescriptionI18n: parseI18nField(raw.richDescriptionI18n)
+    const parseField = (fieldRaw: unknown): I18nLocaleValues => {
+        const obj =
+            fieldRaw !== null && typeof fieldRaw === 'object'
+                ? (fieldRaw as Record<string, unknown>)
+                : {};
+        return {
+            es: typeof obj.es === 'string' ? obj.es : '',
+            en: typeof obj.en === 'string' ? obj.en : '',
+            pt: typeof obj.pt === 'string' ? obj.pt : ''
+        };
     };
+    return {
+        nameI18n: parseField(raw.nameI18n),
+        summaryI18n: parseField(raw.summaryI18n),
+        descriptionI18n: parseField(raw.descriptionI18n),
+        richDescriptionI18n: parseField(raw.richDescriptionI18n)
+    };
+}
+
+/** Maps each translatable i18n field to its plain-column counterpart. */
+const PLAIN_TEXT_KEY: Record<TranslatableField, keyof CommercePlainTextValues> = {
+    nameI18n: 'name',
+    summaryI18n: 'summary',
+    descriptionI18n: 'description',
+    richDescriptionI18n: 'richDescription'
+};
+
+/**
+ * Resolves what the ES tab shows for one field — DISPLAY ONLY (HOS-902).
+ *
+ * The stored value always wins when present. Only when it is empty AND the
+ * locale is `es` does this fall back to the plain column — `en`/`pt` have no
+ * plain equivalent and never fall back.
+ *
+ * This is called at render time, from the `value` prop of the textarea, and
+ * its result is NEVER written back into the panel's `values` state or passed
+ * to `onChange` on its own — only the owner typing into the field does that
+ * (`handleFieldChange`, driven by the real DOM `event.target.value`). See the
+ * HOS-902 note on `parseCommerceI18nValues` for why baking this into state
+ * instead was unsafe: with `nameI18n`/`summaryI18n`/`descriptionI18n`/
+ * `richDescriptionI18n` replaced wholesale (not merged) on save, ANY stored
+ * value — including a fabricated fallback — travels in full the moment a
+ * sibling locale of the SAME field changes.
+ */
+function resolveDisplayValue({
+    field,
+    locale,
+    values,
+    plainTextValues
+}: {
+    readonly field: TranslatableField;
+    readonly locale: SupportedLocale;
+    readonly values: CommerceI18nValues;
+    readonly plainTextValues: CommercePlainTextValues;
+}): string {
+    const stored = values[field][locale];
+    if (stored) return stored;
+    return locale === 'es' ? plainTextValues[PLAIN_TEXT_KEY[field]] : '';
 }
 
 // ---------------------------------------------------------------------------
@@ -135,11 +212,13 @@ export function parseCommerceI18nValues(raw: Record<string, unknown>): CommerceI
  *
  * @param locale - Active UI locale (sets the default active tab).
  * @param initialValues - Initial i18n values from the listing detail.
+ * @param plainTextValues - Plain-column values for the ES display fallback (HOS-902).
  * @param onChange - Callback receiving the full updated i18n state.
  */
 export function CommerceTranslationPanel({
     locale,
     initialValues,
+    plainTextValues,
     onChange
 }: CommerceTranslationPanelProps): JSX.Element {
     const { t } = createTranslations(locale);
@@ -255,7 +334,14 @@ export function CommerceTranslationPanel({
                                 id={fieldId}
                                 className={styles.textarea}
                                 rows={isRich ? 5 : 3}
-                                value={values[field][activeLocale]}
+                                // HOS-902: display-only fallback, never state — see
+                                // `resolveDisplayValue`'s JSDoc.
+                                value={resolveDisplayValue({
+                                    field,
+                                    locale: activeLocale,
+                                    values,
+                                    plainTextValues
+                                })}
                                 // The locale name MUST travel as an interpolation
                                 // param, not baked into the fallback: the key
                                 // EXISTS in the catalog ("Ingresá el texto en

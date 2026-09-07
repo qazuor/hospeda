@@ -638,6 +638,58 @@ describe('ContactHost', () => {
             fireEvent.change(emailInput, { target: { value: 'ana@test.com' } });
             expect(document.getElementById('guestEmail-error')).not.toBeInTheDocument();
         });
+
+        // HOS-816 regression (HOS-837). This form carries its banner in a state
+        // machine, so the reset used to happen implicitly at
+        // `setSubmitState({ phase: 'submitting' })` — AFTER the validation gate.
+        // A second submit that failed client-side validation therefore returned
+        // with the SERVER's previous rejection still on screen, next to the
+        // freshly marked field, describing something that had not just happened.
+        it('retires the previous attempt’s server banner when the next submit fails validation', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: false,
+                    status: 400,
+                    headers: { get: () => null },
+                    json: async () => ({ error: { code: 'VALIDATION_ERROR', message: 'bad' } })
+                })
+            );
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    locale={LOCALE}
+                />
+            );
+            const emailInput = screen.getByLabelText(/email/i, { exact: false });
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(emailInput, { target: { value: 'ana@test.com' } });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+            await waitFor(() => {
+                expect(screen.getByRole('alert').textContent).toBe('bad');
+            });
+
+            // Second attempt: rejected client-side, so it never reaches the API
+            // and nothing can overwrite the banner — only the reset can clear it.
+            fireEvent.change(emailInput, { target: { value: 'not-an-email' } });
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                expect(document.getElementById('guestEmail-error')).toBeInTheDocument();
+            });
+            expect(screen.queryAllByRole('alert').map((el) => el.textContent)).not.toContain('bad');
+        });
     });
 
     // -------------------------------------------------------------------------

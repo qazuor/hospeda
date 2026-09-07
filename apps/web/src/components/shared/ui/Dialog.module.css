@@ -40,13 +40,17 @@
 }
 
 /* The modal panel itself. Sized via the `data-size` attribute set by the
- * component (sm / md / lg / full). Cap height + scrollable body. */
+ * component (sm / md / lg / full). The height cap and the scroll fallback do
+ * NOT live here: the component composes the shared `.dialog-panel` class
+ * (components.css) onto this element, which is the single place in the app
+ * that decides how tall a dialog may grow. Only the `full` size below
+ * overrides it, and it does so from a higher-specificity selector rather than
+ * racing the shared class on source order. */
 .panel {
     position: relative;
     background-color: var(--core-card);
     color: var(--core-foreground);
     border-radius: var(--radius-card, 24px);
-    max-height: calc(100vh - 32px);
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -75,10 +79,12 @@
     max-width: 880px;
 }
 .panel[data-size="full"] {
+    /* Retunes the shared cap instead of re-declaring `max-height`, so the app
+       still has exactly one declaration of that property for dialogs. */
+    --dialog-max-height: 100dvh;
     max-width: 100vw;
-    max-height: 100vh;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     border-radius: 0;
 }
 
@@ -159,9 +165,9 @@
     transform: scale(1.05);
 }
 
+/* Flex sizing + scrolling come from the shared `.dialog-panel-scroll` class
+ * the component composes onto this element; only the padding is local. */
 .body {
-    flex: 1 1 auto;
-    overflow-y: auto;
     padding: var(--space-5, 20px);
 }
 

@@ -16,7 +16,11 @@
     border: none;
     margin: 0;
     max-width: none;
-    max-height: none;
+    /* No `max-height` here — the element composes the shared `.dialog-panel`
+       class. It used to say `max-height: none`, which on a short viewport (a
+       landscape phone, or the "customize" view with every cookie category
+       listed) let the banner grow upward past the top edge of the screen,
+       where its title was neither visible nor scrollable. */
     width: 100%;
     /* Custom positioning */
     position: fixed;

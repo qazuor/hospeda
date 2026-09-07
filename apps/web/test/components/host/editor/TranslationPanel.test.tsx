@@ -391,6 +391,51 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         expect(reloadSpy).not.toHaveBeenCalled();
     });
 
+    it('still shows the specific allFailed copy when the backend answers a total failure (HOS-865)', async () => {
+        // HOS-865: the backend used to answer a fabricated 200 for a total
+        // translation failure (every field x locale call failed), which this
+        // panel already handled correctly via `summarizeOutcomes` on the
+        // `ok: true` branch — see "does not claim success when every
+        // translation failed" above. The fix makes the backend answer
+        // truthfully (a non-2xx `TRANSLATION_FAILED`), which routes through
+        // THIS branch (`!result.ok`) instead — the one that, before this
+        // change, only ever showed the generic `errorGeneric` copy. Without
+        // the `error.code` special case below, fixing the backend's contract
+        // would have made the host's message WORSE (a generic "try again"
+        // instead of the specific, actionable "nothing was translated,
+        // check the fields" copy) even though the underlying situation
+        // (nothing translated) did not change at all.
+        mockPostProtected.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 500,
+                code: 'TRANSLATION_FAILED',
+                message: 'Translation failed. Spanish content was not modified.'
+            }
+        });
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                /No se pudo generar ninguna traducción/i
+            );
+        });
+        // Never the generic copy this same branch shows for every other
+        // failure — this is the whole point of the code-based special case.
+        expect(
+            screen.queryByText(/No se pudieron generar las traducciones/i)
+        ).not.toBeInTheDocument();
+        expect(reloadSpy).not.toHaveBeenCalled();
+        // A known total failure wrote nothing, so there is nothing a refresh
+        // could show — same as the pre-existing `ok: true` all-failed case
+        // above. Offering it here would be new, unwarranted UI.
+        expect(
+            screen.queryByRole('button', { name: /Actualizar la página/i })
+        ).not.toBeInTheDocument();
+    });
+
     it('never reloads on its own, even after a fully clean run', async () => {
         // This panel is a fieldset inside the editor's form, and apps/web has no
         // beforeunload guard, so an automatic reload silently threw away whatever

@@ -265,6 +265,49 @@ describe('EventCreateForm', () => {
         expect(window.location.href).toBe('');
     });
 
+    // HOS-816 regression (HOS-837): `handleApiError` only ever SETS the banner.
+    // Without a `setFormError(null)` opening the submit, the first attempt's
+    // API message outlived every later attempt — so a second submit that only
+    // failed CLIENT-side validation still showed the server's rejection, and a
+    // second submit that SUCCEEDED showed it alongside the redirect.
+    it('retires the previous attempt’s API banner when the next submit starts', async () => {
+        mockCreateEvent.mockResolvedValue({
+            ok: false,
+            error: { code: 'INTERNAL_ERROR', message: 'boom' }
+        });
+
+        render(
+            <EventCreateForm
+                locale="es"
+                organizers={ORGANIZERS}
+            />
+        );
+        fillValidEventFields();
+        fireEvent.change(screen.getByLabelText('Organiza'), {
+            target: { value: ORGANIZER_1_ID }
+        });
+        fireEvent.click(screen.getByTestId('event-create-submit'));
+
+        const banner = await screen.findByRole('alert');
+        const bannerText = banner.textContent ?? '';
+        expect(bannerText.length).toBeGreaterThan(0);
+
+        // Second attempt: fails client-side validation, so it never reaches the
+        // API and nothing can overwrite the banner — only the clear can remove it.
+        fireEvent.change(screen.getByLabelText('Descripción'), {
+            target: { value: 'Demasiado corto.' }
+        });
+        fireEvent.click(screen.getByTestId('event-create-submit'));
+
+        await waitFor(() => {
+            expect(screen.getByText(/50 y 2000 caracteres/i)).toBeInTheDocument();
+        });
+        expect(mockCreateEvent).toHaveBeenCalledTimes(1);
+        expect(screen.queryAllByRole('alert').map((el) => el.textContent)).not.toContain(
+            bannerText
+        );
+    });
+
     describe('organizer catalog states', () => {
         it('shows an explicit error (not a silently empty select) when the catalog fetch failed', () => {
             render(

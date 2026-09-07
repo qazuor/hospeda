@@ -35,6 +35,7 @@ import { protectedImportFromUrlStatusRoute } from './import-from-url-status';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { protectedPublishAccommodationRoute } from './publish';
+import { protectedGetAccommodationQrSheetRoute } from './qrSheet';
 import { removeFaqRoute } from './removeFaq';
 import { protectedRemoveMediaRoute } from './removeMedia';
 import { protectedRemoveOccupancyRoute } from './removeOccupancy';
@@ -76,6 +77,11 @@ app.route('/', protectedListOwnAccommodationsRoute);
 // POST /compare - Side-by-side comparison (SPEC-288 T-003)
 // CRITICAL: registered BEFORE GET /:id so "compare" is not captured as a UUID param.
 app.route('/', compareAccommodationsRoute);
+
+// GET /:id/qr-sheet - Printable QR sheet for the door (HOS-982). Two segments,
+// so it never collides with GET /:id; registered ahead of it for the same
+// defensive reason as the media routes below.
+app.route('/', protectedGetAccommodationQrSheetRoute);
 
 // GET /:id - Get own accommodation by ID (ownership check in handler)
 app.route('/', protectedGetOwnAccommodationByIdRoute);

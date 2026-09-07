@@ -178,7 +178,7 @@ export function DowngradePreviewPanel({
 
     return (
         <dialog
-            className={styles.root}
+            className={`${styles.root} dialog-panel`}
             open
             aria-modal="true"
             aria-labelledby="downgrade-preview-title"

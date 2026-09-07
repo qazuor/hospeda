@@ -235,6 +235,14 @@ protectedAiTranslateRoute.post('/', async (c) => {
             (translation) => translation.success
         );
 
+        // HOS-865: a request that made at least one provider call and got
+        // ZERO successes back is a failed request, not a successful one. The
+        // route used to answer 200 `success:true` here regardless — the
+        // per-item `success:false` flags were used only to gate billing
+        // (below), never to shape the envelope's own status. See the branch
+        // after `persistTranslations` for where this is actually enforced.
+        const allProviderCallsFailed = result.translations.length > 0 && !anyProviderCallSucceeded;
+
         if (anyProviderCallSucceeded) {
             // Hold the row until persistence confirms the request actually
             // delivered. The catch below downgrades it to 'error' if persistence
@@ -275,6 +283,53 @@ protectedAiTranslateRoute.post('/', async (c) => {
             });
         }
 
+        // HOS-865: total failure (at least one call was attempted, none
+        // delivered) is answered exactly like the exception path below — same
+        // status, same `error.code`, same message — instead of a fabricated
+        // 200. The two paths were already the same FAILURE, just reached
+        // through different code (a thrown exception vs. every per-item
+        // `success:false`); this makes them the same RESPONSE too, so a
+        // caller checking only the status/code — a monitor, a retry policy,
+        // an uptime check — can no longer read this as a success. No new
+        // `error.code` is introduced: reusing `TRANSLATION_FAILED` also fixes
+        // the route being inconsistent with itself, which is the actual
+        // defect (see the `catch` block's comment for why 500 over 422 — this
+        // is a downstream provider failure, not a malformed request).
+        //
+        // `TranslationPanel.client.tsx` on the web side special-cases this
+        // exact code in its non-ok branch so the host still sees
+        // `translation.allFailed` instead of the generic network-error
+        // copy — see HOS-865's test coverage there.
+        if (allProviderCallsFailed) {
+            apiLogger.warn(
+                { userId: actor.id, entityType, entityId, sourceLocale },
+                'ai-translate: refused — every provider call failed'
+            );
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'TRANSLATION_FAILED',
+                        message: 'Translation failed. Spanish content was not modified.'
+                    }
+                },
+                500
+            );
+        }
+
+        // HOS-865: a PARTIAL failure (some items succeeded, some did not)
+        // still answers 200 — the client already reads the per-item
+        // `translations` array to render per-field status, so changing the
+        // status here would be a pure regression for it. `failedCount` /
+        // `succeededCount` exist for a caller that does NOT want to walk the
+        // array — a monitor or an alert — so partial failure is visible from
+        // the envelope alone. Always present (0 on full success) so a
+        // consumer never has to branch on whether the fields exist.
+        const failedCount = result.translations.filter(
+            (translation) => !translation.success
+        ).length;
+        const succeededCount = result.translations.length - failedCount;
+
         return c.json({
             success: true,
             data: {
@@ -282,7 +337,9 @@ protectedAiTranslateRoute.post('/', async (c) => {
                 translations: result.translations,
                 totalTokens: result.totalTokens,
                 provider: result.provider,
-                model: result.model
+                model: result.model,
+                failedCount,
+                succeededCount
             }
         });
     } catch (error) {

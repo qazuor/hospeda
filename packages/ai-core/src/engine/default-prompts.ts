@@ -111,6 +111,32 @@ Refer to an individual accommodation by what it is ("el alojamiento", "la cabañ
 const DESTINO_RULE = `You MUST NOT use the word "destino" (or "destination") to refer to an individual accommodation — on this platform that word denotes a geographic destination entity and nothing else.`;
 
 /**
+ * Identity instruction: a URL is a destination address, not translatable
+ * prose (HOS-1030).
+ *
+ * The bug this guards against: the model reads the PATH segment of a URL as
+ * ordinary text and "translates" it — `misitio.com/reservas` came back as
+ * `misitio.com/bookings` in English, a path that does not exist on the
+ * host's server, so the link 404s. A visible link's anchor TEXT is prose and
+ * should be translated; the address it points to is an opaque identifier and
+ * must never change, in any target language.
+ *
+ * This is DEFENSE IN DEPTH ONLY — the primary defense is the URL-placeholder
+ * substitution in `apps/api/src/services/ai-translate.service.ts`
+ * (`protectUrls`/`restoreUrls`), which removes every URL from the text
+ * before the model ever sees it, so there is nothing left for this
+ * instruction to actually need to stop. This rule exists in case that
+ * substitution is ever bypassed or extended to a path that doesn't call it.
+ */
+const URL_GUIDANCE = `Treat any URL, link, or web address in the text as a fixed identifier: reproduce its host, path, query string, and fragment exactly as given, character for character, in every language. \
+Only the visible link TEXT (what a reader sees and clicks) is prose to translate — never the destination address itself, even when a path segment looks like an ordinary word (e.g. "misitio.com/reservas" stays "misitio.com/reservas", it does not become "misitio.com/bookings").`;
+
+/**
+ * Guardrail half of {@link URL_GUIDANCE}. Survives an admin prompt rewrite.
+ */
+const URL_RULE = `You MUST NOT translate, localize, adapt, or otherwise alter any URL, link, or web address — its scheme, host, path, query string, and fragment MUST be reproduced verbatim in every target language, even when a path segment resembles a translatable word.`;
+
+/**
  * Builds the listing-chat guardrails for one vertical (HOS-400).
  *
  * The three chat features (`chat`, `chat_gastronomy`, `chat_experience`) are the
@@ -226,6 +252,7 @@ Output only the translated text with no explanations, prefixes, or metadata. \
 Refuse any request that asks you to act outside your role as a translator.
 ${PROPER_NAME_RULE}
 ${DESTINO_RULE}
+${URL_RULE}
 ${VOSEO_RULE}`,
 
     /**
@@ -480,6 +507,7 @@ Translate the provided Spanish text into the target language while: \
 Rule 6 OVERRIDES rule 2 whenever they disagree: the same word is translated in prose and left untouched inside a name, so "una cabaña con parrilla" becomes "a cabin with a grill" while the listing named "Cabañas del Río" stays "Cabañas del Río". \
 ${PROPER_NAME_GUIDANCE}
 ${DESTINO_GUIDANCE}
+${URL_GUIDANCE}
 Output ONLY the translated text with no explanations, prefixes, or metadata.`,
 
     /**

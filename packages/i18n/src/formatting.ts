@@ -212,7 +212,7 @@ function toDate(value: Date | string | number): Date {
 export function formatDate({ date, locale, options }: FormatDateInput): string {
     const dateObj = toDate(date);
     const effectiveOptions: Intl.DateTimeFormatOptions = options ?? { dateStyle: 'long' };
-    return new Intl.DateTimeFormat(locale, effectiveOptions).format(dateObj);
+    return new Intl.DateTimeFormat(toBcp47Locale(locale), effectiveOptions).format(dateObj);
 }
 
 /**
@@ -243,7 +243,7 @@ export function formatDate({ date, locale, options }: FormatDateInput): string {
  * ```
  */
 export function formatNumber({ value, locale, options }: FormatNumberInput): string {
-    return new Intl.NumberFormat(locale, options).format(value);
+    return new Intl.NumberFormat(toBcp47Locale(locale), options).format(value);
 }
 
 /**
@@ -285,8 +285,16 @@ export function formatNumber({ value, locale, options }: FormatNumberInput): str
  */
 export function formatCurrency({ value, locale, currency }: FormatCurrencyInput): string {
     const resolvedCurrency = currency ?? resolveDefaultCurrency(locale);
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(toBcp47Locale(locale), {
         style: 'currency',
-        currency: resolvedCurrency
+        currency: resolvedCurrency,
+        // Pinned explicitly (matches the current Intl default) so a future
+        // locale-resolution mistake degrades to the wrong currency SYMBOL at
+        // worst, never to a differently-shaped output (e.g. a code/accounting
+        // display) if the platform default ever changes. HOS-950's actual bug
+        // was the LOCALE ('es' instead of 'es-AR'), not this option -- fixed
+        // above via toBcp47Locale -- but this pin narrows the blast radius of
+        // the next locale-resolution bug.
+        currencyDisplay: 'symbol'
     }).format(value);
 }

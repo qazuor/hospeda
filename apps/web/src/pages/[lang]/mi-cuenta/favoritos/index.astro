@@ -37,6 +37,15 @@ const apiUrl = getApiUrl();
 
 let collectionUsage: BookmarkCollectionUsage | null = null;
 
+// True when the usage fetch below answered 403 `ENTITLEMENT_REQUIRED` — the
+// actor's plan doesn't include collections at all. Kept separate from
+// `collectionUsage === null` (which also covers "no cookie" / network error /
+// any other failure) so the CTA can tell "we don't know" apart from "you
+// don't have this feature" and disable itself with the right message
+// (HOS-899) instead of leaving `isAtLimit` false, which left the button
+// wrongly enabled for a gated actor.
+let collectionsAccessDenied = false;
+
 try {
 	const cookieHeader = Astro.request.headers.get('cookie');
 
@@ -57,6 +66,22 @@ try {
 				data?: { usage?: BookmarkCollectionUsage };
 			};
 			collectionUsage = body.data?.usage ?? null;
+		} else if (response.status === 403) {
+			try {
+				const errorBody = (await response.json()) as {
+					error?: { code?: string | null };
+				};
+				if (errorBody.error?.code === 'ENTITLEMENT_REQUIRED') {
+					collectionsAccessDenied = true;
+				} else {
+					webLogger.warn(
+						'[favoritos] collections usage fetch returned status',
+						response.status
+					);
+				}
+			} catch {
+				webLogger.warn('[favoritos] collections usage fetch returned status', response.status);
+			}
 		} else {
 			webLogger.warn('[favoritos] collections usage fetch returned status', response.status);
 		}
@@ -67,6 +92,11 @@ try {
 
 const isAtLimit =
 	collectionUsage !== null && collectionUsage.current >= collectionUsage.max;
+
+// Note: `isAtLimit` intentionally does NOT fold `collectionsAccessDenied` in —
+// they're distinct facts (see the comment on `collectionsAccessDenied` above)
+// and are passed to `CreateCollectionCTA` as separate props so it can render
+// the right message for each.
 
 const usageLabel =
 	collectionUsage !== null
@@ -129,6 +159,7 @@ const usageRatio =
 				locale={locale}
 				isAtLimit={isAtLimit}
 				maxCollections={collectionUsage?.max ?? 0}
+				accessDenied={collectionsAccessDenied}
 			/>
 		</div>
 

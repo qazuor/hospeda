@@ -369,7 +369,7 @@ function CancelConfirmModal({
             onClick={handleBackdropClick}
         >
             <dialog
-                className={styles.modal}
+                className={`${styles.modal} dialog-panel`}
                 open
                 aria-labelledby="cancel-modal-title"
             >
@@ -558,7 +558,7 @@ function PauseConfirmModal({
             onClick={handleBackdropClick}
         >
             <dialog
-                className={styles.modal}
+                className={`${styles.modal} dialog-panel`}
                 open
                 aria-labelledby="pause-modal-title"
             >

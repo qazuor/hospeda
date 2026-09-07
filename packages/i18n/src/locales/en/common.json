@@ -221,5 +221,10 @@
     "back": "Back",
     "close": "Close",
     "deleting": "Deleting...",
-    "anonymous": "User"
+    "anonymous": "User",
+    "qrSheet": {
+        "headline": "Scan the code",
+        "invite": "Point your phone camera at the code to see the full listing: photos, contact details and directions.",
+        "brandTagline": "Places to stay, eat and explore across the Litoral"
+    }
 }

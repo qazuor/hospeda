@@ -7,12 +7,18 @@
  * 2. Renders all four translatable field textareas for the active locale.
  * 3. Switching tabs shows fields for the new locale.
  * 4. Editing a field calls onChange with the updated values.
- * 5. parseCommerceI18nValues safely parses raw data (happy path + missing fields).
+ * 5. parseCommerceI18nValues safely parses raw data (happy path + missing
+ *    fields) and is deliberately fallback-free (HOS-902 — see its JSDoc for
+ *    why baking a display fallback into this function corrupted saves).
+ * 6. The panel shows the plain-column fallback in the ES tab ONLY as a
+ *    DISPLAY value, for `es` only, and never fabricates a value for
+ *    `onChange` on its own (HOS-902).
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
     type CommerceI18nValues,
+    type CommercePlainTextValues,
     CommerceTranslationPanel,
     parseCommerceI18nValues
 } from '../../../src/components/commerce/CommerceTranslationPanel.client';
@@ -63,11 +69,23 @@ const FILLED_I18N: CommerceI18nValues = {
     richDescriptionI18n: { es: 'Rich ES', en: 'Rich EN', pt: 'Rich PT' }
 };
 
-function renderPanel(initialValues: CommerceI18nValues = EMPTY_I18N, onChange = vi.fn()) {
+const EMPTY_PLAIN_TEXT: CommercePlainTextValues = {
+    name: '',
+    summary: '',
+    description: '',
+    richDescription: ''
+};
+
+function renderPanel(
+    initialValues: CommerceI18nValues = EMPTY_I18N,
+    onChange = vi.fn(),
+    plainTextValues: CommercePlainTextValues = EMPTY_PLAIN_TEXT
+) {
     return render(
         <CommerceTranslationPanel
             locale="es"
             initialValues={initialValues}
+            plainTextValues={plainTextValues}
             onChange={onChange}
         />
     );
@@ -161,6 +179,78 @@ describe('CommerceTranslationPanel', () => {
         expect(lastCall.nameI18n.es).toBe('nombre 2');
     });
 
+    describe('ES tab display-only fallback to the plain columns (HOS-902)', () => {
+        it('shows the plain name/summary/description/richDescription in the ES tab when i18n is empty', () => {
+            renderPanel(EMPTY_I18N, vi.fn(), {
+                name: 'Nombre plano',
+                summary: 'Resumen plano',
+                description: 'Descripción plana',
+                richDescription: 'Ampliada plana'
+            });
+
+            expect(screen.getByLabelText('Nombre (ES)')).toHaveValue('Nombre plano');
+            expect(screen.getByLabelText('Resumen (ES)')).toHaveValue('Resumen plano');
+            expect(screen.getByLabelText('Descripción (ES)')).toHaveValue('Descripción plana');
+            expect(screen.getByLabelText('Descripción ampliada (ES)')).toHaveValue(
+                'Ampliada plana'
+            );
+        });
+
+        it('never shows the plain-column fallback on the EN or PT tabs', () => {
+            renderPanel(EMPTY_I18N, vi.fn(), {
+                name: 'Nombre plano',
+                summary: '',
+                description: '',
+                richDescription: ''
+            });
+
+            fireEvent.click(screen.getByRole('tab', { name: /EN/i }));
+            expect(screen.getByLabelText('Nombre (EN)')).toHaveValue('');
+
+            fireEvent.click(screen.getByRole('tab', { name: /PT/i }));
+            expect(screen.getByLabelText('Nombre (PT)')).toHaveValue('');
+        });
+
+        it('prefers a genuinely stored i18n value over the plain fallback', () => {
+            const values: CommerceI18nValues = {
+                ...EMPTY_I18N,
+                nameI18n: { es: 'Nombre traducido', en: '', pt: '' }
+            };
+            renderPanel(values, vi.fn(), { ...EMPTY_PLAIN_TEXT, name: 'Nombre plano' });
+
+            expect(screen.getByLabelText('Nombre (ES)')).toHaveValue('Nombre traducido');
+        });
+
+        it('does NOT call onChange merely because the ES tab displays fallback text', () => {
+            // Rendering (and re-rendering on tab switches) must never itself
+            // fire onChange — only the owner actually typing does. This is
+            // the display-vs-write boundary HOS-902 depends on.
+            const handleChange = vi.fn();
+            renderPanel(EMPTY_I18N, handleChange, { ...EMPTY_PLAIN_TEXT, name: 'Nombre plano' });
+
+            fireEvent.click(screen.getByRole('tab', { name: /EN/i }));
+            fireEvent.click(screen.getByRole('tab', { name: /ES/i }));
+
+            expect(handleChange).not.toHaveBeenCalled();
+        });
+
+        it('saves exactly what the owner types, built on top of the visible fallback text', () => {
+            // The owner appends to the fallback text they see — a normal,
+            // intentional edit. What gets saved is the full field content as
+            // typed, same as any other controlled textarea.
+            const handleChange = vi.fn();
+            renderPanel(EMPTY_I18N, handleChange, { ...EMPTY_PLAIN_TEXT, name: 'La Parrilla' });
+
+            fireEvent.change(screen.getByLabelText('Nombre (ES)'), {
+                target: { value: 'La Parrilla (Traducido)' }
+            });
+
+            expect(handleChange).toHaveBeenCalledTimes(1);
+            const updated = handleChange.mock.calls[0][0] as CommerceI18nValues;
+            expect(updated.nameI18n.es).toBe('La Parrilla (Traducido)');
+        });
+    });
+
     describe('field labels carry the active locale (HOS-371)', () => {
         it('qualifies every field label so it cannot collide with the editor own fields', () => {
             renderPanel(EMPTY_I18N);
@@ -203,7 +293,7 @@ describe('parseCommerceI18nValues', () => {
         expect(result.richDescriptionI18n.pt).toBe('Rich');
     });
 
-    it('returns empty strings for missing fields', () => {
+    it('returns empty strings for missing fields (no i18n value and no plain fallback)', () => {
         const result = parseCommerceI18nValues({});
         expect(result.nameI18n.es).toBe('');
         expect(result.summaryI18n.en).toBe('');
@@ -224,5 +314,32 @@ describe('parseCommerceI18nValues', () => {
         expect(result.nameI18n.es).toBe('Sólo ES');
         expect(result.nameI18n.en).toBe('');
         expect(result.nameI18n.pt).toBe('');
+    });
+
+    describe('never falls back to the plain columns (HOS-902)', () => {
+        // The ES display fallback lives ONLY in `CommerceTranslationPanel`'s
+        // render path (`resolveDisplayValue`) — see the tests in the
+        // "ES tab display-only fallback" describe block above. This function
+        // is what seeds the live form state AND the PATCH diff baseline, so
+        // it must return exactly what is stored, nothing fabricated — a
+        // fallback baked in here previously corrupted the save the moment a
+        // sibling locale of the same field changed (see its JSDoc for the
+        // full incident).
+        it('ignores plain name/summary/description/richDescription entirely', () => {
+            const raw = {
+                name: 'Nombre plano',
+                summary: 'Resumen plano',
+                description: 'Descripción plana',
+                richDescription: 'Ampliada plana'
+                // nameI18n / summaryI18n / descriptionI18n / richDescriptionI18n
+                // deliberately absent, the exact shape of a listing saved
+                // before SPEC-253 added the i18n columns.
+            };
+            const result = parseCommerceI18nValues(raw);
+            expect(result.nameI18n.es).toBe('');
+            expect(result.summaryI18n.es).toBe('');
+            expect(result.descriptionI18n.es).toBe('');
+            expect(result.richDescriptionI18n.es).toBe('');
+        });
     });
 });
