@@ -1,11 +1,13 @@
 /**
  * @file whats-new.test.ts
  *
- * Tests for the curated What's New data file (SPEC-175 T-004).
+ * Tests for the curated What's New data file (SPEC-175 T-004, HOS-964).
  *
  * Validates that:
  * - The module imports without throwing (empty catalog is valid).
  * - An invalid fixture (missing required `es` title) fails WhatsNewCatalogSchema.parse.
+ * - HOS-964: the real, non-empty catalog is fully translated (es/en/pt) and its
+ *   audience targeting actually reaches (and only reaches) the intended roles.
  *
  * @see SPEC-175 §6.3, AC-16
  */
@@ -13,6 +15,7 @@ import { WhatsNewEntrySchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { whatsNewEntries } from '../../../src/data/whats-new/whats-new';
+import { filterEntriesByRole } from '../../../src/utils/whats-new/whats-new.helpers';
 
 const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 
@@ -133,6 +136,120 @@ describe('whats-new data file', () => {
 
             // Act & Assert
             expect(() => WhatsNewCatalogSchema.parse([entry])).not.toThrow();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-964 — the real catalog is non-empty, fully translated, and its
+    // audience targeting actually routes to the intended roles.
+    // -------------------------------------------------------------------------
+
+    describe('the real curated catalog (HOS-964)', () => {
+        it('is no longer empty', () => {
+            // The catalog was shipped empty (HOS-964's root cause): the whole
+            // What's New mechanism worked, but there was nothing to show.
+            expect(whatsNewEntries.length).toBeGreaterThan(0);
+        });
+
+        it('has between 3 and 5 entries as agreed for the initial HOS-964 batch', () => {
+            expect(whatsNewEntries.length).toBeGreaterThanOrEqual(3);
+            expect(whatsNewEntries.length).toBeLessThanOrEqual(5);
+        });
+
+        // ── The mandatory regression guard: every entry must carry all three
+        // locales for both title and body. A single-locale entry is exactly the
+        // HOS-908 defect (a Spanish-only entry silently reaching en/pt users as
+        // Spanish). This asserts against the DATA, not the source text, so it
+        // still fails no matter how an untranslated entry gets in.
+        it('has es, en AND pt for every entry title and body (no untranslated entries)', () => {
+            const missing: string[] = [];
+
+            for (const entry of whatsNewEntries) {
+                for (const field of ['title', 'body'] as const) {
+                    for (const locale of ['es', 'en', 'pt'] as const) {
+                        const value = entry[field][locale];
+                        if (!value || value.trim().length === 0) {
+                            missing.push(`entry '${entry.id}': ${field}.${locale} is missing`);
+                        }
+                    }
+                }
+            }
+
+            expect(missing, `Untranslated fields found:\n${missing.join('\n')}`).toHaveLength(0);
+        });
+
+        it('has a unique id per entry (no accidental duplicate/reused id)', () => {
+            const ids = whatsNewEntries.map((entry) => entry.id);
+            expect(new Set(ids).size).toBe(ids.length);
+        });
+
+        it('only targets audience roles that exist in WhatsNewAudienceRoleSchema', () => {
+            // Redundant with WhatsNewCatalogSchema.parse (which already ran at
+            // import time), but pins the intent explicitly against the real data.
+            const knownRoles = new Set([
+                'HOST',
+                'EDITOR',
+                'ADMIN',
+                'SUPER_ADMIN',
+                'CLIENT_MANAGER',
+                'GASTRONOMY_OWNER',
+                'EXPERIENCE_OWNER',
+                'SPONSOR',
+                'USER'
+            ]);
+
+            for (const entry of whatsNewEntries) {
+                for (const role of entry.roles ?? []) {
+                    expect(knownRoles.has(role)).toBe(true);
+                }
+            }
+        });
+
+        it('delivers the USER-targeted entry to a USER and not to a HOST', () => {
+            const userEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['USER'] });
+            const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
+
+            const aiChatEntry = whatsNewEntries.find(
+                (entry) => entry.id === '2026-09-03-ai-chat-gastronomy-experience'
+            );
+            expect(aiChatEntry).toBeDefined();
+
+            expect(userEntries.map((entry) => entry.id)).toContain(aiChatEntry?.id);
+            expect(hostEntries.map((entry) => entry.id)).not.toContain(aiChatEntry?.id);
+        });
+
+        it('delivers the GASTRONOMY_OWNER/EXPERIENCE_OWNER entry to both owners, not to a HOST', () => {
+            const gastronomyEntries = filterEntriesByRole({
+                entries: whatsNewEntries,
+                roles: ['GASTRONOMY_OWNER']
+            });
+            const experienceEntries = filterEntriesByRole({
+                entries: whatsNewEntries,
+                roles: ['EXPERIENCE_OWNER']
+            });
+            const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
+
+            const trialEntry = whatsNewEntries.find(
+                (entry) => entry.id === '2026-09-05-commerce-publish-free-trial'
+            );
+            expect(trialEntry).toBeDefined();
+
+            expect(gastronomyEntries.map((entry) => entry.id)).toContain(trialEntry?.id);
+            expect(experienceEntries.map((entry) => entry.id)).toContain(trialEntry?.id);
+            expect(hostEntries.map((entry) => entry.id)).not.toContain(trialEntry?.id);
+        });
+
+        it('delivers the HOST-targeted video entry to a HOST and not to a USER', () => {
+            const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
+            const userEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['USER'] });
+
+            const videoEntry = whatsNewEntries.find(
+                (entry) => entry.id === '2026-09-04-accommodation-videos'
+            );
+            expect(videoEntry).toBeDefined();
+
+            expect(hostEntries.map((entry) => entry.id)).toContain(videoEntry?.id);
+            expect(userEntries.map((entry) => entry.id)).not.toContain(videoEntry?.id);
         });
     });
 });

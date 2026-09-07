@@ -100,6 +100,69 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
  * // }
  * ```
  */
-export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse(
-    [] satisfies z.input<typeof WhatsNewCatalogSchema>
-);
+export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    {
+        id: '2026-09-05-commerce-publish-free-trial',
+        publishedAt: '2026-09-05T00:00:00Z',
+        highlight: true,
+        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Publicá tu comercio gratis con la prueba de 30 días',
+            en: 'Publish your business for free with the 30-day trial',
+            pt: 'Publique seu comércio de graça com o teste de 30 dias'
+        },
+        body: {
+            es: 'El botón de publicar ahora te avisa cuando podés publicar gratis gracias a tu prueba de 30 días, sin pedirte ningún dato de pago.',
+            en: 'The publish button now tells you when you can publish for free thanks to your 30-day trial, without asking for any payment details.',
+            pt: 'O botão de publicar agora avisa quando você pode publicar de graça graças ao teste de 30 dias, sem pedir nenhum dado de pagamento.'
+        }
+    },
+    {
+        id: '2026-09-04-accommodation-videos',
+        publishedAt: '2026-09-04T00:00:00Z',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Sumá un video a tu alojamiento',
+            en: 'Add a video to your listing',
+            pt: 'Adicione um vídeo à sua acomodação'
+        },
+        body: {
+            es: 'Ya podés agregar un video a la ficha de tu alojamiento para mostrarlo en movimiento. Aparece en su propia sección, justo después de la descripción.',
+            en: 'You can now add a video to your listing page to show it in motion. It appears in its own section, right after the description.',
+            pt: 'Agora você pode adicionar um vídeo à ficha da sua acomodação para mostrá-la em movimento. Ele aparece em uma seção própria, logo após a descrição.'
+        }
+    },
+    {
+        id: '2026-09-03-ai-chat-gastronomy-experience',
+        publishedAt: '2026-09-03T00:00:00Z',
+        highlight: true,
+        roles: ['USER'],
+        title: {
+            es: 'Chat con IA en restaurantes y experiencias',
+            en: 'AI chat on restaurants and experiences',
+            pt: 'Chat com IA em restaurantes e experiências'
+        },
+        body: {
+            es: 'Ahora podés chatear con un asistente de IA directamente desde la página de un restaurante o una experiencia para resolver tus dudas al instante.',
+            en: 'You can now chat with an AI assistant right from a restaurant or experience page to get your questions answered instantly.',
+            pt: 'Agora você pode conversar com um assistente de IA diretamente na página de um restaurante ou experiência para tirar suas dúvidas na hora.'
+        }
+    },
+    {
+        id: '2026-09-03-gastronomy-daily-menu',
+        publishedAt: '2026-09-03T00:00:00Z',
+        highlight: false,
+        roles: ['GASTRONOMY_OWNER'],
+        title: {
+            es: 'Publicá el menú del día en tu página',
+            en: "Publish today's specials on your page",
+            pt: 'Publique o cardápio do dia na sua página'
+        },
+        body: {
+            es: 'Ahora podés cargar el menú del día desde tu panel y se muestra automáticamente en tu página mientras esté vigente.',
+            en: "You can now add today's specials from your dashboard, and they'll show automatically on your page while they're valid.",
+            pt: 'Agora você pode cadastrar o cardápio do dia no seu painel, e ele aparece automaticamente na sua página enquanto estiver válido.'
+        }
+    }
+] satisfies z.input<typeof WhatsNewCatalogSchema>);
