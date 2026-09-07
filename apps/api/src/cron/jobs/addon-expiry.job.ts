@@ -21,6 +21,10 @@
  *   HOS-847 PR 7a: an orphan still inside the period it was CHARGED for is not
  *   revoked — its preapproval is closed and the row is flagged
  *   `cancel_at_period_end`, so the expiry pass above ends it on its own date.
+ *   HOS-847 PR 7b: rows already carrying that flag are excluded from the sweep
+ *   entirely (the expiry pass owns them), and an orphan whose plan an ADMIN
+ *   cancelled is revoked immediately regardless of its period — see the phase's
+ *   own comments for both.
  *
  * @module cron/jobs/addon-expiry
  */
@@ -30,17 +34,24 @@ import type { DrizzleClient } from '@repo/db';
 import {
     accommodations,
     and,
+    asc,
     billingAddonPurchases,
     billingNotificationLog,
+    billingSubscriptionEvents,
     billingSubscriptions,
     eq,
     featuredListingAddonGrants,
     getDb,
+    inArray,
     isNull,
     withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
-import { AddonCatalogService, syncFeaturedByEntitlementForAccommodation } from '@repo/service-core';
+import {
+    AddonCatalogService,
+    BILLING_EVENT_TYPES,
+    syncFeaturedByEntitlementForAccommodation
+} from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
 import * as Sentry from '@sentry/node';
 import { sql } from 'drizzle-orm';
@@ -848,6 +859,30 @@ export const addonExpiryJob: CronJobDefinition = {
                     // GAP-043-056: Soft processing-lock check — rows whose metadata contains
                     // processingLockTimestamp set within the last 5 minutes are skipped at
                     // iteration time (see below), avoiding races with concurrent webhook processing.
+                    //
+                    // HOS-847 PR 7b: an ALREADY-DEFERRED row
+                    // (`cancel_at_period_end = true`) is excluded outright, and
+                    // that one predicate closes three separate defects:
+                    //
+                    //  - it stops matching the WHERE every night until its period
+                    //    runs out, which under the LIMIT 100 could starve the
+                    //    orphans that DO need revoking, with no signal at all;
+                    //  - it stops re-issuing `closeAddonPreapproval` against a
+                    //    preapproval that was already hard-cancelled at deferral
+                    //    time. That close fails, the `!closed` branch below
+                    //    `continue`s ABOVE the deferral branch, so the row never
+                    //    reached the code written for it — and paid for one
+                    //    Sentry event per night on the way past. This is the same
+                    //    guard `addon-expiration.service.ts` already carries on
+                    //    `!purchase.cancelAtPeriodEnd`, applied one level earlier;
+                    //  - a deferred row has a home already: `findExpiredAddons`
+                    //    selects exactly the `cancel_at_period_end = true` +
+                    //    elapsed `current_period_end` pair, and the expiry pass
+                    //    above runs before this one.
+                    //
+                    // `ORDER BY purchased_at` makes the capped batch FIFO instead
+                    // of whatever order the planner happens to return, so a row
+                    // that misses one night is nearer the front of the next.
                     const orphanedPurchases = await db
                         .select({
                             id: billingAddonPurchases.id,
@@ -862,8 +897,7 @@ export const addonExpiryJob: CronJobDefinition = {
                             // below proves the PLAN is cancelled, which says
                             // nothing about what this add-on was charged for —
                             // a recurring add-on bills on a cycle of its own.
-                            currentPeriodEnd: billingAddonPurchases.currentPeriodEnd,
-                            cancelAtPeriodEnd: billingAddonPurchases.cancelAtPeriodEnd
+                            currentPeriodEnd: billingAddonPurchases.currentPeriodEnd
                         })
                         .from(billingAddonPurchases)
                         .innerJoin(
@@ -874,14 +908,80 @@ export const addonExpiryJob: CronJobDefinition = {
                             and(
                                 eq(billingAddonPurchases.status, 'active'),
                                 isNull(billingAddonPurchases.deletedAt),
+                                eq(billingAddonPurchases.cancelAtPeriodEnd, false),
                                 eq(billingSubscriptions.status, 'cancelled')
                             )
                         )
+                        .orderBy(asc(billingAddonPurchases.purchasedAt))
                         .limit(100);
 
                     logger.info('Found orphaned active add-ons linked to cancelled subscriptions', {
                         count: orphanedPurchases.length
                     });
+
+                    // ── HOS-847 PR 7b: which of these plans an ADMIN killed ───
+                    //
+                    // The sweep cannot ask WHY the plan was cancelled — it joins
+                    // on a status, and `cancelled` is the same word for a
+                    // customer who asked to stop and for an operator who pulled
+                    // a lever. With the owner's `unknown → honour-paid-period`
+                    // policy, deferring is right for every cause EXCEPT the
+                    // admin one, which has to bite immediately or it is not a
+                    // lever.
+                    //
+                    // `billing_subscriptions.cancel_at_period_end` is NOT the
+                    // signal: `finalize-cancelled-subs` leaves it `true` on
+                    // voluntary cancels, but the MercadoPago webhook path leaves
+                    // it `false` — so it separates voluntary from
+                    // {admin, unknown} and cannot pick out the admin case, which
+                    // is the only one that must not defer.
+                    //
+                    // The event log can. `routes/billing/admin/qzpay-admin-hooks.ts`
+                    // writes ADDON_REVOCATIONS_PENDING with
+                    // `triggerSource = 'admin-cancel-compensating'` in its BEFORE
+                    // hook — unconditionally, before the subscription is
+                    // cancelled and before the after-hook marks the purchases
+                    // `canceled`. That is precisely the window an orphan can
+                    // appear in (the after-hook's UPDATE failing after the cancel
+                    // committed), so the marker is present exactly when it is
+                    // needed. The eventType alone would not do: `addon.user-addons.ts`
+                    // writes the same type under `revoke-all-customer-partial-failure`.
+                    // The PAIR has one writer.
+                    //
+                    // One query for the whole batch, not one per row.
+                    const orphanSubscriptionIds = [
+                        ...new Set(
+                            orphanedPurchases
+                                .map((purchase) => purchase.subscriptionId)
+                                .filter((id): id is string => typeof id === 'string')
+                        )
+                    ];
+
+                    const adminCancelledSubscriptionIds = new Set<string>();
+                    if (orphanSubscriptionIds.length > 0) {
+                        const adminMarkers = await db
+                            .select({ subscriptionId: billingSubscriptionEvents.subscriptionId })
+                            .from(billingSubscriptionEvents)
+                            .where(
+                                and(
+                                    inArray(
+                                        billingSubscriptionEvents.subscriptionId,
+                                        orphanSubscriptionIds
+                                    ),
+                                    eq(
+                                        billingSubscriptionEvents.eventType,
+                                        BILLING_EVENT_TYPES.ADDON_REVOCATIONS_PENDING
+                                    ),
+                                    eq(
+                                        billingSubscriptionEvents.triggerSource,
+                                        'admin-cancel-compensating'
+                                    )
+                                )
+                            );
+                        for (const marker of adminMarkers) {
+                            adminCancelledSubscriptionIds.add(marker.subscriptionId);
+                        }
+                    }
 
                     // Collect customerIds that were successfully revoked to batch cache invalidation.
                     const invalidatedCustomerIds = new Set<string>();
@@ -1068,23 +1168,46 @@ export const addonExpiryJob: CronJobDefinition = {
                             // flag rather than merely skipping, because a row
                             // that is skipped without it is picked up by no
                             // sweep at all and grants forever.
+                            //
+                            // HOS-847 PR 7b: with ONE exception. An admin cancel
+                            // is a deliberate operational lever, and a lever that
+                            // a nightly cron quietly reverses is not a lever. The
+                            // admin path already revoked these grants in its
+                            // before-hook; a row reaching this sweep under an
+                            // admin marker is that path's after-hook having
+                            // failed to write the row terminal, not a customer
+                            // owed a period.
+                            //
+                            // `instanceof Date` rather than a bare truthiness
+                            // check plus `.getTime()`: the sibling decision in
+                            // `addon-lifecycle-cancellation.service.ts` already
+                            // reads the column that way, and a string coming back
+                            // from a driver that stopped parsing timestamps would
+                            // throw here and be swallowed by the catch below —
+                            // the same column deserves the same contract in both
+                            // places.
                             const paidPeriodEnd = purchase.currentPeriodEnd;
+                            const adminCancelled =
+                                typeof purchase.subscriptionId === 'string' &&
+                                adminCancelledSubscriptionIds.has(purchase.subscriptionId);
 
-                            if (paidPeriodEnd && paidPeriodEnd.getTime() > Date.now()) {
-                                if (!purchase.cancelAtPeriodEnd) {
-                                    await db
-                                        .update(billingAddonPurchases)
-                                        .set({
-                                            cancelAtPeriodEnd: true,
-                                            updatedAt: new Date()
-                                        })
-                                        .where(
-                                            and(
-                                                eq(billingAddonPurchases.id, purchase.id),
-                                                eq(billingAddonPurchases.status, 'active')
-                                            )
-                                        );
-                                }
+                            if (
+                                !adminCancelled &&
+                                paidPeriodEnd instanceof Date &&
+                                paidPeriodEnd.getTime() > Date.now()
+                            ) {
+                                await db
+                                    .update(billingAddonPurchases)
+                                    .set({
+                                        cancelAtPeriodEnd: true,
+                                        updatedAt: new Date()
+                                    })
+                                    .where(
+                                        and(
+                                            eq(billingAddonPurchases.id, purchase.id),
+                                            eq(billingAddonPurchases.status, 'active')
+                                        )
+                                    );
 
                                 revocationDeferred++;
 
@@ -1094,12 +1217,24 @@ export const addonExpiryJob: CronJobDefinition = {
                                         purchaseId: purchase.id,
                                         customerId: purchase.customerId,
                                         addonSlug: purchase.addonSlug,
-                                        accessUntil: paidPeriodEnd.toISOString(),
-                                        alreadyFlagged: purchase.cancelAtPeriodEnd
+                                        accessUntil: paidPeriodEnd.toISOString()
                                     }
                                 );
 
                                 continue;
+                            }
+
+                            if (adminCancelled && paidPeriodEnd instanceof Date) {
+                                logger.info(
+                                    'Orphaned add-on revoked despite an unelapsed paid period — its plan was cancelled by an admin',
+                                    {
+                                        purchaseId: purchase.id,
+                                        customerId: purchase.customerId,
+                                        addonSlug: purchase.addonSlug,
+                                        subscriptionId: purchase.subscriptionId,
+                                        wouldHaveKeptUntil: paidPeriodEnd.toISOString()
+                                    }
+                                );
                             }
 
                             // SPEC-192 T-015: resolve addon definition from DB-backed catalog.
