@@ -182,19 +182,33 @@ describe('ensureDefaultPromoCodes (SPEC-192 T-029)', () => {
     });
 
     describe('getDefaultPromoCodeConfigs', () => {
-        it('should return a non-empty readonly array', () => {
+        it('should return a readonly array', () => {
             const configs = getDefaultPromoCodeConfigs();
             expect(Array.isArray(configs)).toBe(true);
-            expect(configs.length).toBeGreaterThan(0);
         });
 
-        it('should include HOSPEDA_FREE with 100% percentage discount', () => {
+        it('HOS-1171: the list is EMPTY, and the suites above are vacuous because of it', () => {
+            // Every `describe` above loops over `getDefaultPromoCodeConfigs()`.
+            // With an empty list those loops run zero times and their
+            // `not.toHaveBeenCalled()` assertions pass for the wrong reason. They
+            // are kept — the day a default is added they come back to life and
+            // pin its idempotency — but this assertion is what makes the emptiness
+            // a deliberate state rather than a suite that quietly stopped testing.
+            expect(getDefaultPromoCodeConfigs()).toEqual([]);
+        });
+
+        it('HOS-1171: no longer includes HOSPEDA_FREE, or any 100% code', () => {
+            // The startup path was the THIRD place that created HOSPEDA_FREE,
+            // after the seed baseline and the seeded row — and the one that would
+            // have restored an active, uncapped comp code on every fresh database
+            // once the other two retired it. The value check is broader than the
+            // name check because a rename would reopen the hole.
             const configs = getDefaultPromoCodeConfigs();
-            const free = configs.find((c) => c.code === 'HOSPEDA_FREE');
-            expect(free).toBeDefined();
-            expect(free?.discountType).toBe('percentage');
-            expect(free?.discountValue).toBe(100);
-            expect(free?.isActive).toBe(true);
+
+            expect(configs.find((c) => c.code === 'HOSPEDA_FREE')).toBeUndefined();
+            expect(
+                configs.filter((c) => c.discountType === 'percentage' && c.discountValue === 100)
+            ).toEqual([]);
         });
 
         it('should return the same reference on repeated calls (stable config)', () => {
