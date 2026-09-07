@@ -691,6 +691,29 @@ export async function initiatePaidMonthlySubscription(
             // (see `paid-subscription-create.ts`), which uses it in place of
             // `customer.email`.
             payerEmail,
+            // HOS-1221 D4: what the buyer reads on MercadoPago's page. Without
+            // it the adapter builds the reason from `plan.name`, which in this
+            // project is the SLUG — the buyer saw "owner-basico - Mensual".
+            // Same resolver Path C already used for the plan's own reason.
+            planDisplayName: planDisplayNameFromPlan(plan),
+            // HOS-1221 D2: the discounted cycle-1 amount, in centavos.
+            //
+            // The discount used to ride inside the MercadoPago
+            // `preapproval_plan` — `resolveCheckoutMpPlanId` provisioned it at
+            // `discountCycle1AmountCentavos` and the preapproval inherited the
+            // amount. With the plan out of the request (see the branch note
+            // above) that inheritance is gone, so an ARS 9.000 checkout was
+            // charging ARS 18.000 while `pendingDiscount` went on promising the
+            // discount to the webhook.
+            //
+            // The GUARD is `> 0`, not truthiness on the value: this variable is
+            // a literal `0` when no promo applied, and `0` is a meaningful
+            // override further down the stack (qzpay reads it with
+            // `!== undefined`). So "is there a discount" is asked here, ONCE,
+            // and what travels is the amount.
+            ...(discountCycle1AmountCentavos > 0
+                ? { providerUnitAmountOverride: discountCycle1AmountCentavos }
+                : {}),
             // HOS-1012: no `freeTrialDays` and no `pendingTrialExtension`. The
             // preapproval this creates carries no trial of any kind, and a
             // `trial_extension` code is reported ignored above rather than
@@ -1013,6 +1036,11 @@ export async function initiateCommerceMonthlySubscription(
             // their metadata and the price is the obvious next place someone
             // mirrors it to.
             trialDays: 0,
+            // HOS-1221 D4: the buyer-visible name, not the slug — see the
+            // accommodation monthly branch.
+            planDisplayName: planDisplayNameFromPlan(plan),
+            // No `providerUnitAmountOverride`: commerce checkout resolves no
+            // promo code, so there is no cycle-1 discount to override with.
             // HOS-1012: no `freeTrialDays` — this preapproval carries no trial.
             // D3: HOS-695 — the listing's own vertical, never the retired
             // 'commerce' umbrella. `loadEntitlements()` filters strictly to
@@ -1294,6 +1322,10 @@ export async function initiatePartnerMonthlySubscription(
             // price rows carry no `trial_days` today (measured on staging: 5 of
             // 5 NULL); the zero is what stops an inherited one tomorrow.
             trialDays: 0,
+            // HOS-1221 D4: the buyer-visible name, not the slug — see the
+            // accommodation monthly branch. No promo code on this path, so no
+            // `providerUnitAmountOverride`.
+            planDisplayName: planDisplayNameFromPlan(plan),
             productDomain: ProductDomainEnum.PARTNER,
             domainMetadata: { partnerId },
             writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
@@ -1639,6 +1671,12 @@ export async function initiatePaidAnnualSubscription(
             // 5 NULL, since `ensurePrice` only ever attaches a trial to a
             // MONTHLY price); the zero is what stops an inherited one tomorrow.
             trialDays: 0,
+            // HOS-1221 D4: the buyer-visible name, not the slug — see the
+            // monthly branch. The adapter appends " - Anual" here.
+            planDisplayName: planDisplayNameFromPlan(plan),
+            // No `providerUnitAmountOverride`: annual rejects `discount` promo
+            // codes outright above (HOS-244 is monthly-only), so there is never
+            // a cycle-1 amount to override with on this path.
             // HOS-937 step 2: bind the preapproval to the resolved payer
             // email, same as the monthly own-preapproval branch.
             payerEmail,

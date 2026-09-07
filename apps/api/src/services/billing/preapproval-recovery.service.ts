@@ -54,6 +54,7 @@ import type {
     PendingCheckoutDiscount,
     PendingTrialExtension
 } from './pending-provider-subscription-create.js';
+import { planDisplayNameFromPlan } from './plan-change-reason.js';
 
 /**
  * Minimum spacing (ms) between two calls to MercadoPago's preapproval `GET`
@@ -385,6 +386,23 @@ export async function mintRetryPreapprovalAttempt({
         // the four checkouts had. A retry re-opens a PAID checkout; it never
         // re-opens a trial.
         trialDays: 0,
+        // HOS-1221 D4: the buyer-visible name, not `plan.name` (the slug) —
+        // this retry sends the payer to a fresh MercadoPago page, so it reads
+        // exactly like the original checkout.
+        planDisplayName: planDisplayNameFromPlan(plan),
+        // HOS-1221 D2: carry the discount ONTO the retry. The original attempt
+        // was born at the discounted amount because the checkout passed this
+        // override; the snapshot below is the same cycle-1 amount, resolved
+        // then and never redeemed (the preapproval never activated). Without
+        // this the customer retries a half-price checkout and is quoted full
+        // price — the discount would exist only in the metadata promise.
+        //
+        // `> 0` guards the LOOKUP, not the value: `finalAmountCentavos` is a
+        // real amount, and a zero-amount preapproval is rejected by MercadoPago
+        // anyway (checkout refuses a 100% discount upstream).
+        ...(pendingDiscount && pendingDiscount.finalAmountCentavos > 0
+            ? { providerUnitAmountOverride: pendingDiscount.finalAmountCentavos }
+            : {}),
         ...(pendingDiscount ? { pendingDiscount } : {}),
         ...(pendingTrialExtension ? { pendingTrialExtension } : {}),
         ...(db ? { db } : {})
