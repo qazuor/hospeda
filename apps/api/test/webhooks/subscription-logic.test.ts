@@ -473,7 +473,17 @@ function makeMpSubscription(
  * status that the outer SELECT returned (no concurrent write scenario). Pass
  * `txFreshRows` to override the tx-internal SELECT result for stale-read tests.
  */
-function makeDbMock(selectRows: unknown[], insertShouldFail = false, txFreshRows?: unknown[]) {
+function makeDbMock(
+    selectRows: unknown[],
+    insertShouldFail = false,
+    txFreshRows?: unknown[],
+    /**
+     * HOS-847 PR 5: rows the add-on routing lookup answers with. Empty for every
+     * pre-existing fixture (they are all about PLAN subscriptions); non-empty
+     * only for the interception test.
+     */
+    addonPurchaseRows: unknown[] = []
+) {
     const txInsertValuesChain = {
         values: vi.fn().mockResolvedValue(undefined)
     };
@@ -532,7 +542,7 @@ function makeDbMock(selectRows: unknown[], insertShouldFail = false, txFreshRows
     const addonLookupChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([])
+        limit: vi.fn().mockResolvedValue(addonPurchaseRows)
     };
     const isAddonPurchaseProjection = (projection?: Record<string, unknown>) =>
         projection !== undefined && 'addonSlug' in projection;
@@ -716,6 +726,51 @@ describe('processSubscriptionUpdated', () => {
         // at all — is asserted directly instead, which is strictly stronger.
         expect(dbMock.subscriptionSelectChain.limit).not.toHaveBeenCalled();
         expect(dbMock.update).not.toHaveBeenCalled();
+        expect(dbMock.transaction).not.toHaveBeenCalled();
+    });
+
+    // HOS-847 PR 5: an add-on's own preapproval never reaches plan logic.
+    it('returns early without touching plan logic when the preapproval belongs to a recurring add-on', async () => {
+        // Arrange: MercadoPago reports the preapproval ACTIVE — the status that
+        // would otherwise drive a full plan activation — and the local
+        // `billing_subscriptions` row resolves too, because PR 4 writes one for
+        // every recurring add-on. The only thing that stops that activation from
+        // running against an add-on is the routing at step 1b.
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const dbMock = makeDbMock([makeLocalSubscription()], false, undefined, [
+            {
+                id: 'purchase-1',
+                customerId: 'cust-001',
+                subscriptionId: 'plan-sub-1',
+                addonSlug: 'extra-accommodations-5',
+                status: 'pending',
+                mpSubscriptionId: mpPreapprovalId,
+                billingInterval: 'monthly',
+                currentPeriodEnd: null,
+                metadata: {}
+            }
+        ]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-hos847-routing'
+        });
+
+        // Assert: reported as handled-with-no-status-change, and — the part that
+        // matters — the plan-subscription read never happened and no transaction
+        // was opened. Without the routing this fixture activates a subscription,
+        // writes an audit row and dispatches notifications.
+        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(dbMock.subscriptionSelectChain.limit).not.toHaveBeenCalled();
         expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
