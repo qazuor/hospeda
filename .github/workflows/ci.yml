@@ -278,6 +278,12 @@ jobs:
       # asking for one; the guard below is what enforces that.
       - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
         run: bash scripts/check-no-trial-to-mercadopago.sh
+      # Its own step for the same reason as every guard in this job. The sibling
+      # of G-1: that one bans a trial in the preapproval payload, this one bans
+      # the `preapproval_plan_id` that made MercadoPago answer "card_token_id is
+      # required" and turned every own-preapproval checkout into a 500.
+      - name: Check no plan id reaches an own-preapproval create (HOS-1221 G-2)
+        run: bash scripts/check-no-plan-id-to-own-preapproval.sh
       - name: Check no binary vertical ternary remains (HOS-1079)
         run: bash scripts/check-no-binary-vertical-ternary.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`
