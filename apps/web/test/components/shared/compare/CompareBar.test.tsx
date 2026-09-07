@@ -303,6 +303,29 @@ describe('CompareBar — thumbnail preset (HOS-881)', () => {
         const src = screen.getAllByRole('img')[0]?.getAttribute('src') ?? '';
         expect(src).toBe('https://img/a.jpg');
     });
+
+    it("leaves an Astro '/_image/' endpoint URL unchanged instead of corrupting it (HOS-881 B-1)", () => {
+        // A THIRD `thumbnailUrl` producer beyond `DetailCompareButton` (og
+        // preset) and the listing cards (card preset):
+        // `AccommodationsListingMap.client.tsx` proxies a Cloudinary photo
+        // through Astro's own `/_image/?href=<encoded-url>&...` endpoint
+        // before `MapCardsSidebar.client.tsx` hands it to `CompareButton`.
+        // This is not a Cloudinary URL at all, but its query string still
+        // contains the literal, percent-encoded text `res.cloudinary.com` —
+        // enough to fool a plain `.includes()` check. Regression measured
+        // before the fix: `/_imagew_200,h_200,c_thumb,g_auto,q_auto,f_auto,
+        // dpr_auto//?href=...` — a 404'ing thumbnail in the compare bar for
+        // every Cloudinary photo added from the map sidebar.
+        const mapProducedUrl =
+            '/_image/?href=https%3A%2F%2Fres.cloudinary.com%2Fhospeda%2Fimage%2Fupload%2Fv1%2Fhotel.jpg&w=300&f=webp';
+        setItems([{ id: 'a', name: 'Cabaña A', thumbnailUrl: mapProducedUrl }]);
+
+        render(<CompareBar locale="es" />);
+
+        const src = screen.getAllByRole('img')[0]?.getAttribute('src') ?? '';
+        expect(src).toBe(mapProducedUrl);
+        expect(src).not.toContain('/_imagew_200');
+    });
 });
 
 describe('CompareBar — mobile z-index (HOS-85 post-review fix)', () => {
