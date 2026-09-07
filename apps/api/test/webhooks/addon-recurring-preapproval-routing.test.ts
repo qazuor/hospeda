@@ -18,10 +18,11 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockFindPurchase, mockActivate, mockRetrieve } = vi.hoisted(() => ({
+const { mockFindPurchase, mockActivate, mockRetrieve, mockRevokeTerminal } = vi.hoisted(() => ({
     mockFindPurchase: vi.fn(),
     mockActivate: vi.fn(),
-    mockRetrieve: vi.fn()
+    mockRetrieve: vi.fn(),
+    mockRevokeTerminal: vi.fn()
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -38,6 +39,15 @@ vi.mock('../../src/services/addon-recurring-activation.service', () => ({
 
 vi.mock('../../src/services/addon-recurring-renewal.service', () => ({
     settleRecurringAddonCharge: vi.fn()
+}));
+
+// HOS-847 PR 6: the terminal branch. `isTerminalProviderStatus` is deliberately
+// NOT mocked — it is the predicate that decides which statuses reach the
+// revocation, so mocking it would let this suite agree with itself about a
+// mapping the production code no longer holds.
+vi.mock('../../src/services/addon-recurring-revoke.service', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../src/services/addon-recurring-revoke.service')>()),
+    revokeRecurringAddonForProviderTerminal: mockRevokeTerminal
 }));
 
 import { routeAddonPreapprovalEvent } from '../../src/routes/webhooks/mercadopago/addon-recurring-handler';
@@ -107,8 +117,6 @@ describe('routeAddonPreapprovalEvent', () => {
 
     it.each([
         ['paused'],
-        ['canceled'],
-        ['finished'],
         ['past_due'],
         ['pending']
     ])('claims the event but grants nothing when the provider reports %s', async (status) => {
@@ -120,11 +128,52 @@ describe('routeAddonPreapprovalEvent', () => {
         const outcome = await route();
 
         // Assert: claimed, so the plan handler can never see it, and NOT
-        // acted on, because revoking an add-on belongs to PR 6/7 — a
-        // half-done revocation here would mark the purchase dead while the
-        // QZPay entitlement it granted stayed alive.
+        // acted on. `paused` is the interesting one: MercadoPago's pause is
+        // reversible in one tap, so revoking on it would take a feature away
+        // from someone who is still a paying customer. Ageing a long-paused
+        // add-on out is PR 7's reconciler.
         expect(outcome).toEqual({ handled: true, purchaseId: 'purchase-1' });
         expect(mockActivate).not.toHaveBeenCalled();
+        expect(mockRevokeTerminal).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['canceled'],
+        ['finished']
+    ])('revokes the add-on when the provider reports %s (HOS-847 PR 6)', async (status) => {
+        // Arrange
+        mockFindPurchase.mockResolvedValue(purchaseRow);
+        mockRetrieve.mockResolvedValue({ id: PREAPPROVAL_ID, status });
+
+        // Act
+        const outcome = await route();
+
+        // Assert: MercadoPago will never charge this preapproval again, so
+        // the benefit goes with it. Still claimed, and still never activated.
+        expect(outcome).toEqual({ handled: true, purchaseId: 'purchase-1' });
+        expect(mockActivate).not.toHaveBeenCalled();
+        expect(mockRevokeTerminal).toHaveBeenCalledWith({
+            billing,
+            purchase: purchaseRow,
+            providerStatus: status,
+            triggerSource: 'webhook'
+        });
+    });
+
+    it('still claims the event when the revocation itself fails', async () => {
+        // Arrange
+        mockFindPurchase.mockResolvedValue(purchaseRow);
+        mockRetrieve.mockResolvedValue({ id: PREAPPROVAL_ID, status: 'canceled' });
+        mockRevokeTerminal.mockRejectedValue(new Error('qzpay 503'));
+
+        // Act
+        const outcome = await route();
+
+        // Assert: the failure is logged and captured, and the event is consumed
+        // anyway. Falling through to the plan handler because OUR revocation
+        // failed would run a customer's whole subscription lifecycle against one
+        // add-on.
+        expect(outcome).toEqual({ handled: true, purchaseId: 'purchase-1' });
     });
 
     it('still claims the event when MercadoPago cannot be reached', async () => {
