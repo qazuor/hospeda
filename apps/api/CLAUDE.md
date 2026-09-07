@@ -657,6 +657,108 @@ POST /api/v1/protected/billing/addons/{id}/cancel
 Never `DELETE` with a body expecting it to be parsed — the body is silently
 discarded.
 
+## SUPER_ADMIN bypasses `role_permission` entirely
+
+`src/middlewares/actor.ts:273` gives any actor wearing the SUPER_ADMIN hat
+`permissions: Object.values(PermissionEnum)` — **every value in the enum, without
+reading the database**. `role_permission` does not participate in that decision.
+
+Two things state the opposite and both are wrong:
+
+- **A stale comment.** `packages/service-core/src/services/user/user.permissions.ts:12`
+  says *"SUPER_ADMIN always passes because they have all permissions assigned"*. It
+  is out of date. The comment that actually documents the bypass lives in the seed
+  (`packages/seed/src/required/rolePermissions.seed.ts`, ~line 322).
+- **Counting the table manufactures a finding.** Production holds 328
+  `role_permission` rows for SUPER_ADMIN against 693 enum values. That reads as
+  "365 permissions are missing, the super admin cannot do everything" and is false —
+  the column never applies. The table has no `deleted_at`, so the 328 is real; the
+  mistake is assuming that number governs anything.
+
+Corollaries verified in the same code:
+
+- Roles are **additive** since HOS-296 (`user_role`, PK `(userId, role)`). Adding
+  SUPER_ADMIN to an account that already has `HOST, USER` removes nothing.
+- **No `user_permission` deny stops a super admin**: the short-circuit returns
+  before the branch that applies `(⋃ perms ∪ grants) \ denies`.
+- **There is no role cache.** `actor.ts:218` documents that a 60s cache was tried
+  and removed, so a grant takes effect on the next request with no re-login.
+- The audit row (`user_role_audit`) is written by `grantRole` in the same
+  transaction — **there is no trigger**. A hand-written `INSERT` into `user_role`
+  works just as well and leaves a super admin in production with no record of who
+  granted it.
+
+## Testing gotchas — three ways a green test here proves nothing
+
+This app has three distinct traps that make a passing test vacuous. All three were
+measured, not inferred.
+
+### 1. `test/setup.ts` mocks `@repo/db` wholesale
+
+`test/setup.ts` carries a **global** `vi.mock('@repo/db')` that replaces the module
+with `createDbMock()`. Its tables are plain string maps — `accommodations` is
+`{ id: 'id', ownerId: 'owner_id', deletedAt: 'deleted_at', ... }` and does not even
+have `slug`, `visibility` or `lifecycleState`.
+
+So **any test that inspects a Drizzle condition is describing the stub, not the
+code**. It goes green and asserts nothing. Measured in HOS-585: a guard over
+`isEntityPubliclyVisible` (6 near-identical lookups) stayed green after deleting
+`lifecycleState` and `visibility` from the accommodation lookup.
+
+When the realistic defect is "one of N near-identical blocks lost a line", the
+idiom here is a **static guard over the source**, not a runtime assertion. Slice one
+block per key (from ``SOURCE.indexOf(`\n    ${key}: async`)`` to the next) and assert
+each condition inside *that* slice — asserting over the whole file passes as long as
+*some* block still has it, which is exactly the bug. Add a test proving the slicing
+actually cuts (`expect(block).not.toContain('otherTable.slug')`).
+
+If you do write a local `vi.mock`, put the holder in `vi.hoisted()`: the factory is
+hoisted above the module body, so a `let` declared above it does not exist yet when
+the factory closes over it. The capture never happens, and it reads exactly like
+"the query does not request columns".
+
+### 2. Route-handler tests in `test/routes/*` often never reach the handler
+
+Several hide it behind a conditional assertion:
+
+```ts
+if (res.status === 201) { /* real asserts */ }
+else { expect(res.status).not.toBe(404); }  // ← the branch that always runs
+```
+
+Measured in `accommodation-protected-add-media.test.ts` (HOS-791): adding
+`expect(res.status).toBe(201)` returned **400 `MISSING_REQUIRED_HEADER`** —
+`validation-config.ts` requires `user-agent` by default and no test in the file
+sends it. With the header set it became **500 `INTERNAL_ERROR`**: the middleware
+chain does not complete under test either. No mock was ever reached
+(`mockFindByAccommodation.mock.calls` → `[]`, `addMedia` → 0 calls).
+
+Before writing a behavioural test there, check whether the neighbours use the
+conditional form — if they do, the handler is not reachable. Prove it by asserting
+`mock.calls` on something the handler invokes, not the status code.
+
+### 3. `CI=true` is safe for unit tests here, and only here
+
+`test/setup.ts:68` explicitly `delete`s the `CI` variable from the process, because
+several guards read `env.CI !== 'true'` to refuse mock actors on a real pipeline.
+That `delete` neutralises it for the default config — measured, 331 tests green with
+no spurious 401.
+
+But the app has **three** vitest configs and the protection is one line in one setup
+file:
+
+| Config | `setupFiles` | deletes `CI`? |
+| --- | --- | --- |
+| `vitest.config.ts` (default/unit) | `./test/setup.ts` | **yes** |
+| `vitest.config.e2e.ts` | `./test/e2e/setup/env-setup.ts` + `test-database.ts` | **no** |
+| `vitest.config.integration.ts` | the same two | **no** |
+
+With `vitest.config.e2e.ts` and `CI=true`, **every request returns 401 GUEST** — the
+`HOSPEDA_ALLOW_MOCK_ACTOR` path stops honouring the `x-mock-actor-*` headers.
+Without it, the same 17 tests pass. So: `CI=true` for unit runs, never for e2e or
+integration. If you see mass 401s, check which config you are running before
+anything else.
+
 ## Common Gotchas
 
 - `createAdminListRoute` auto-merges `PaginationQuerySchema` and uses `page`+`pageSize` (NOT `limit`)
