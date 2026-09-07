@@ -18,48 +18,58 @@
  * The code is NOT auto-applied on load. It pre-fills the field and waits for a
  * click: applying on navigation would spend a code on a page load nobody chose,
  * and there is no state to reconcile if it turns out to be a discount.
+ *
+ * ## This component resolves NOTHING about the visitor
+ *
+ * It used to read `Astro.request.headers.get('cookie')` and call
+ * `userApi.getSubscription()` itself, which
+ * `test/pages/cacheable-pages-are-session-blind.guard.test.ts` refuses — and it
+ * is right to. A personalized component poisons every page that renders it, and
+ * the page-level half of that guard cannot see it, because it does not resolve
+ * the component tree. Today this only mounts under `/mi-cuenta/` (protected,
+ * never cacheable), so nothing was broken; the day someone mounts it on a
+ * cacheable page, the cookie read would travel with it and no guard would say
+ * so.
+ *
+ * So the two pages resolve the session and hand the result down as props. That
+ * is the pattern the guard names as the good one, and it is why `subscriptionId`
+ * is a prop rather than something computed below.
  */
 
 import { TrialExtensionForm } from '@/components/account/TrialExtensionForm.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
-import { userApi } from '@/lib/api/endpoints-protected';
 import { buildUrl } from '@/lib/urls';
 
 interface Props {
 	readonly locale: SupportedLocale;
 	readonly userId: string;
 	readonly roles: readonly string[] | null;
+	/**
+	 * The caller's accommodation subscription, resolved by the PAGE (see the
+	 * note above on why not here).
+	 *
+	 * It is what makes a DISCOUNT redeemable on this surface: `/apply` routes a
+	 * discount through the fail-closed T-007 seam only when the caller names a
+	 * subscription, and that seam is what actually lowers the price they pay.
+	 * Without an id the form stops and tells them to keep the code for checkout,
+	 * rather than spending it on nothing.
+	 *
+	 * `undefined` is a normal value, not an error: the page degrades to it on
+	 * any failure, because this surface's primary job is trial-extension codes,
+	 * which the endpoint resolves from the session on its own.
+	 */
+	readonly subscriptionId?: string;
 	/** Code carried by the link, from the path segment or `?codigo=`. */
 	readonly initialCode?: string;
 }
 
-const { locale, userId, roles, initialCode } = Astro.props;
+const { locale, userId, roles, subscriptionId, initialCode } = Astro.props;
 
 const { t } = createTranslations(locale);
 const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles }) });
 const subscriptionHref = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
-
-/**
- * The accommodation subscription this code should act on, resolved server-side.
- *
- * It is what makes a DISCOUNT redeemable here: `/apply` routes a discount
- * through the fail-closed T-007 seam only when the caller names a
- * subscription, and that seam is what actually lowers the price the customer
- * pays. Without an id the form stops and tells them to keep the code for
- * checkout, rather than spending it on nothing.
- *
- * Degrades to `undefined` on ANY failure: this page's primary job is
- * trial-extension codes, which the endpoint resolves from the session on its
- * own, so a 500 here must not take the page down with it.
- */
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const subscriptionResult = await userApi.getSubscription({ cookieHeader });
-const subscriptionId =
-	subscriptionResult.ok && subscriptionResult.data.subscription
-		? subscriptionResult.data.subscription.id
-		: undefined;
 ---
 
 <TrialExtensionForm

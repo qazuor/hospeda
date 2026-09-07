@@ -21,6 +21,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import RedeemCodeSection from '@/components/account/RedeemCodeSection.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { userApi } from '@/lib/api/endpoints-protected';
 import { buildUrl } from '@/lib/urls';
 import { normalizePromoCodeParam } from '@/lib/billing/promo-code-param';
 
@@ -42,6 +43,29 @@ const description = t('account.pages.redeem.description');
 // 404-ing: the field is still usable, which is a better landing than an error
 // page for someone who mistyped a link.
 const initialCode = normalizePromoCodeParam(Astro.params.code ?? null);
+
+/**
+ * The accommodation subscription a discount code should act on.
+ *
+ * Resolved HERE, in the page, rather than inside `RedeemCodeSection` — a
+ * component that resolves the visitor poisons every page that renders it, and
+ * the page half of `cacheable-pages-are-session-blind.guard.test.ts` cannot see
+ * that, because it does not walk the component tree. This page is under
+ * `[lang]/mi-cuenta/`, which that guard exempts by prefix: personalization
+ * belongs here and is accounted for.
+ *
+ * Degrades to `undefined` on ANY failure. The primary job of this surface is
+ * trial-extension codes, which the endpoint resolves from the session on its
+ * own, so a failure to read the subscription must not take the page down with
+ * it — it only means a discount code will be refused with "keep it for
+ * checkout" instead of being applied.
+ */
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const subscriptionResult = await userApi.getSubscription({ cookieHeader });
+const subscriptionId =
+	subscriptionResult.ok && subscriptionResult.data.subscription
+		? subscriptionResult.data.subscription.id
+		: undefined;
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="suscripcion">
@@ -50,6 +74,7 @@ const initialCode = normalizePromoCodeParam(Astro.params.code ?? null);
 		locale={locale}
 		userId={user.id}
 		roles={user.roles}
+		subscriptionId={subscriptionId}
 		initialCode={initialCode}
 	/>
 </AccountLayout>
