@@ -2,8 +2,14 @@
  * AI settings storage helpers (SPEC-173 T-010).
  *
  * Reads and writes the `ai_settings` table (the `'global'` row).
- * Validates the stored JSONB blob through `AiSettingsValueSchema` on every
- * read so the rest of ai-core always receives a typed, trusted value.
+ *
+ * The two directions validate against DIFFERENT schemas, on purpose (HOS-1220):
+ * writes go through `AiSettingsValueSchema`, whose `features` map is a FULL
+ * record over `AiFeatureSchema`, so a save always configures every feature;
+ * reads go through `AiSettingsValueResponseSchema`, whose `features` is
+ * PARTIAL, so a feature nobody has configured yet does not invalidate the whole
+ * document and take the others down with it. See {@link readAiSettings} for why
+ * that is safe.
  *
  * The upsert pattern mirrors `platform_settings` exactly: conflict on the
  * primary-key `key` column → replace `value`, `updatedAt`, and `updatedBy`.
@@ -26,9 +32,14 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * Thrown when the JSONB blob stored in `ai_settings` does not conform to
- * `AiSettingsValueSchema`.  This indicates a storage corruption or a schema
- * migration mismatch and must never be swallowed silently.
+ * Thrown when the JSONB blob stored in `ai_settings` is malformed.
+ *
+ * Reads validate against `AiSettingsValueResponseSchema`, so a MISSING feature
+ * key no longer produces this error (HOS-1220) — that case is a configuration
+ * gap, reported by `findUnconfiguredFeatures`, not a corrupt document. What
+ * still throws here is real corruption: a bad providers map, an unknown
+ * top-level key, or a feature entry that is present but invalid. Writes
+ * validate against the stricter `AiSettingsValueSchema`.
  */
 export class AiSettingsParseError extends Error {
     /**
