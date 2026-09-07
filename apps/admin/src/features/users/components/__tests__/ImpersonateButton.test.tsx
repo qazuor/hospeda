@@ -13,8 +13,8 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { ImpersonateButton } from '../ImpersonateButton';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ImpersonateButton, performImpersonation } from '../ImpersonateButton';
 
 // The permission gate is tested separately; render children unconditionally so
 // these assertions are about the button itself.
@@ -23,9 +23,15 @@ vi.mock('@/components/auth/PermissionGate', () => ({
 }));
 
 // `vi.hoisted` because the factory below is lifted above every import.
-const { mockImpersonateUser } = vi.hoisted(() => ({ mockImpersonateUser: vi.fn() }));
+const { mockImpersonateUser, mockAddToast } = vi.hoisted(() => ({
+    mockImpersonateUser: vi.fn(),
+    mockAddToast: vi.fn()
+}));
 vi.mock('@/lib/auth-client', () => ({
     authClient: { admin: { impersonateUser: mockImpersonateUser } }
+}));
+vi.mock('@/hooks/use-toast', () => ({
+    useToast: () => ({ addToast: mockAddToast })
 }));
 
 const USER_ID = '22222222-2222-4222-8222-222222222222';
@@ -74,5 +80,79 @@ describe('ImpersonateButton — disabled pending HOS-354', () => {
         fireEvent.click(screen.getByRole('button'));
 
         expect(mockImpersonateUser).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * performImpersonation — the extracted async action (HOS-1198).
+ *
+ * The button that triggers this stays disabled pending HOS-354, so the
+ * confirm-dialog/toast path can't be exercised through a rendered click.
+ * This function was pulled out specifically so the error handling that used
+ * to live behind `alert()` — both the "confirmed impersonation, API said no"
+ * branch and the "unexpected throw" branch — has real coverage instead of
+ * being untestable dead code until HOS-354 ships.
+ */
+describe('performImpersonation', () => {
+    const t = (key: string) => key;
+
+    beforeEach(() => {
+        mockImpersonateUser.mockReset();
+        mockAddToast.mockReset();
+        sessionStorage.setItem('hospeda_user_session', 'stale-session');
+        sessionStorage.setItem('hospeda_session_timestamp', '123');
+    });
+
+    it('clears the cached session and navigates on success, without toasting', async () => {
+        mockImpersonateUser.mockResolvedValue({ error: null });
+        const originalLocation = window.location;
+        // jsdom's `window.location` setter throws "Not implemented: navigation"
+        // on a bare assignment, so redefine the property for the duration of
+        // this test — the standard workaround for asserting a redirect target.
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { ...originalLocation, href: '' }
+        });
+
+        const result = await performImpersonation({ userId: USER_ID, addToast: mockAddToast, t });
+
+        expect(result).toEqual({ success: true });
+        expect(mockAddToast).not.toHaveBeenCalled();
+        expect(sessionStorage.getItem('hospeda_user_session')).toBeNull();
+        expect(sessionStorage.getItem('hospeda_session_timestamp')).toBeNull();
+        expect(window.location.href).toBe('/dashboard');
+
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: originalLocation
+        });
+    });
+
+    it('toasts an error and does NOT navigate when the API returns result.error', async () => {
+        mockImpersonateUser.mockResolvedValue({ error: { message: 'Forbidden' } });
+
+        const result = await performImpersonation({ userId: USER_ID, addToast: mockAddToast, t });
+
+        expect(result).toEqual({ success: false });
+        expect(mockAddToast).toHaveBeenCalledExactlyOnceWith({
+            message: 'admin-common.impersonation.error',
+            variant: 'error'
+        });
+        // The stale session must NOT be cleared on failure — a failed
+        // impersonation attempt should not log the admin out of their own session.
+        expect(sessionStorage.getItem('hospeda_user_session')).toBe('stale-session');
+    });
+
+    it('toasts an error and does NOT navigate when the call throws', async () => {
+        mockImpersonateUser.mockRejectedValue(new Error('network down'));
+
+        const result = await performImpersonation({ userId: USER_ID, addToast: mockAddToast, t });
+
+        expect(result).toEqual({ success: false });
+        expect(mockAddToast).toHaveBeenCalledExactlyOnceWith({
+            message: 'admin-common.impersonation.error',
+            variant: 'error'
+        });
+        expect(sessionStorage.getItem('hospeda_user_session')).toBe('stale-session');
     });
 });
