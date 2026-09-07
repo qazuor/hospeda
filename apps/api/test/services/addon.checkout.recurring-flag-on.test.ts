@@ -21,7 +21,7 @@
  * @module test/services/addon.checkout.recurring-flag-on
  */
 
-import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { type QZPayBilling, QZPayProviderSyncError } from '@qazuor/qzpay-core';
 import { ProductDomainEnum } from '@repo/schemas';
 import type { PurchaseAddonInput } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -548,6 +548,32 @@ describe('createAddonCheckout — recurring path (HOSPEDA_BILLING_RECURRING_ADDO
         expect(result.error?.code).toBe('ADDON_PROVIDER_ERROR');
         expect(mockCreateOwnPreapprovalSubscription).not.toHaveBeenCalled();
         expect(mockPurchaseInsertValues).not.toHaveBeenCalled();
+    });
+
+    it('lets a real MercadoPago failure reach the Sentry capture, not just a log line', async () => {
+        // The one-time path re-throws `QZPayProviderSyncError` so
+        // `createAddonCheckout`'s catch maps it (502/503/504) AND calls
+        // `captureBillingError`. Converting it to a typed `ServiceResult` here
+        // would keep every recurring-path MercadoPago outage out of Sentry —
+        // an asymmetry with no reason behind it.
+        const providerError = new QZPayProviderSyncError(
+            'MercadoPago rejected the preapproval',
+            'mercadopago',
+            'create_subscription'
+        );
+        mockCreateOwnPreapprovalSubscription.mockRejectedValue(providerError);
+
+        await expect(createAddonCheckout(billing, INPUT)).rejects.toThrow();
+        expect(mockPurchaseInsertValues).not.toHaveBeenCalled();
+    });
+
+    it('does the same for a provider failure while provisioning the MP plan', async () => {
+        mockResolveCheckoutMpAddonPlanId.mockRejectedValue(
+            new QZPayProviderSyncError('MercadoPago is down', 'mercadopago', 'create_plan')
+        );
+
+        await expect(createAddonCheckout(billing, INPUT)).rejects.toThrow();
+        expect(mockCreateOwnPreapprovalSubscription).not.toHaveBeenCalled();
     });
 
     it('cancels the preapproval when the pending purchase row cannot be written', async () => {
