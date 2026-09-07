@@ -84,6 +84,68 @@ function resolveSiteOrigin({
     }
 }
 
+/**
+ * Decides whether an already-allowlisted `callbackUrl` may also be SENT TO THE
+ * API, as opposed to merely being redirected to by this browser.
+ *
+ * The two questions have different answers, which is the whole reason this
+ * predicate exists next to {@link validateCallbackUrl} instead of inside it
+ * (HOS-1207):
+ *
+ * - **Redirecting the browser** to any Hospeda-owned subdomain is safe, and
+ *   `validateCallbackUrl` accepts every one of them on purpose — its rule 2 is
+ *   explicitly not gated by environment.
+ * - **Handing a URL to Better Auth** is not a redirect but an origin check
+ *   against `trustedOrigins`, which the API builds from `HOSPEDA_SITE_URL` +
+ *   `HOSPEDA_ADMIN_URL` + `HOSPEDA_EXTRA_TRUSTED_ORIGINS`
+ *   (`parseTrustedOriginsFromConfig`). A Hospeda subdomain that is not one of
+ *   those is rejected — and Better Auth rejects the ENTIRE sign-up request
+ *   with a 403, so the account is never created. Same failure as the scheme
+ *   mismatch this file's other fix is about, reached from a crafted link.
+ *
+ * So the answer is narrowed to the two origins the web app can name with
+ * certainty, because they are the same configured values the API reads.
+ * `HOSPEDA_EXTRA_TRUSTED_ORIGINS` is deliberately NOT modelled here: the web
+ * app never sees it, and being narrower than the API only costs a caller its
+ * requested destination (it falls back to `returnPath`) — the person still
+ * registers. Being wider would cost them the account.
+ *
+ * @param params.candidate - A URL that already passed `validateCallbackUrl`.
+ * @param params.siteOrigin - The configured site origin.
+ * @param params.adminUrl - The configured admin base URL, if any.
+ * @returns True when the API's Better Auth will accept this origin.
+ */
+function isApiTrustedCallbackUrl({
+    candidate,
+    siteOrigin,
+    adminUrl
+}: {
+    readonly candidate: string;
+    readonly siteOrigin: string;
+    readonly adminUrl: string | undefined;
+}): boolean {
+    let candidateOrigin: string;
+    try {
+        candidateOrigin = new URL(candidate).origin;
+    } catch {
+        return false;
+    }
+
+    if (candidateOrigin === siteOrigin) {
+        return true;
+    }
+
+    if (!adminUrl) {
+        return false;
+    }
+
+    try {
+        return candidateOrigin === new URL(adminUrl).origin;
+    } catch {
+        return false;
+    }
+}
+
 /** Result of {@link resolveAuthTabsRedirectConfig}. */
 export interface AuthTabsRedirectConfigResult {
     /** Safe same-app relative path (already through the open-redirect guard). */
@@ -149,6 +211,18 @@ export function resolveAuthTabsRedirectConfig({
     // site origin.
     const authenticatedTargetHref = validatedCallbackUrl ?? new URL(returnPath, siteOrigin).href;
 
+    // The one value in this result that leaves the browser and is CHECKED by
+    // another service, so it answers a stricter question than the redirects
+    // above — see `isApiTrustedCallbackUrl` (HOS-1207). A callbackUrl this app
+    // would happily redirect to but Better Auth would refuse degrades to the
+    // same-site returnPath: the person loses the destination they asked for,
+    // instead of losing the account.
+    const verificationCallbackUrl =
+        validatedCallbackUrl &&
+        isApiTrustedCallbackUrl({ candidate: validatedCallbackUrl, siteOrigin, adminUrl })
+            ? validatedCallbackUrl
+            : new URL(returnPath, siteOrigin).href;
+
     const signInConfig: AuthTabsSignInConfig = {
         redirectTo: authenticatedTargetHref,
         externalRedirect: Boolean(validatedCallbackUrl)
@@ -164,8 +238,9 @@ export function resolveAuthTabsRedirectConfig({
         // purpose: Better Auth resolves a relative callback against the API
         // origin, which serves no pages. The API forwards this verbatim after
         // Better Auth has validated it against `trustedOrigins` — which is
-        // why it must be built on `siteOrigin`, see above (HOS-1207).
-        verificationCallbackUrl: authenticatedTargetHref,
+        // why it is the one value narrowed to an origin that check accepts,
+        // rather than `authenticatedTargetHref` (HOS-1207).
+        verificationCallbackUrl,
         // OAuth registration DOES authenticate immediately, so — as of
         // HOS-959 — it shares the exact same destination as sign-in,
         // callbackUrl included.

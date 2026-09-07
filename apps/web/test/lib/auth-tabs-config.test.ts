@@ -478,4 +478,109 @@ describe('resolveAuthTabsRedirectConfig', () => {
             );
         });
     });
+
+    // HOS-1207, second route to the same 403. `validateCallbackUrl` accepts
+    // EVERY hospeda.com.ar subdomain on purpose (its rule 2 is explicitly not
+    // gated by environment), but the API builds `trustedOrigins` from
+    // HOSPEDA_SITE_URL + HOSPEDA_ADMIN_URL + HOSPEDA_EXTRA_TRUSTED_ORIGINS —
+    // and the extras var is empty in both staging and production. So a
+    // subdomain outside that pair passes this app's allowlist and is then
+    // refused by Better Auth, which kills the whole sign-up. Only the value
+    // that LEAVES the browser is narrowed; the browser redirect is untouched.
+    describe('HOS-1207: a callbackUrl this app trusts but the API does not', () => {
+        const OTHER_SUBDOMAIN = 'https://otro.hospeda.com.ar/panel';
+
+        function resultForCallbackUrl(callbackUrl: string) {
+            return resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor(`/es/auth/signup/?callbackUrl=${encodeURIComponent(callbackUrl)}`),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+        }
+
+        it('keeps it out of the verification callback, falling back to the safe returnPath', () => {
+            // Act
+            const result = resultForCallbackUrl(OTHER_SUBDOMAIN);
+
+            // Assert: sending this would 403 the sign-up and create no account.
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/'
+            );
+        });
+
+        it('still redirects the BROWSER there, because that was never the unsafe part', () => {
+            // The narrowing must not silently revoke SPEC-182's cross-subdomain
+            // redirect: a browser redirect to a Hospeda-owned host is fine.
+            // Act
+            const result = resultForCallbackUrl(OTHER_SUBDOMAIN);
+
+            // Assert
+            expect(result.validatedCallbackUrl).toBe(OTHER_SUBDOMAIN);
+            expect(result.signInConfig.redirectTo).toBe(OTHER_SUBDOMAIN);
+            expect(result.signInConfig.externalRedirect).toBe(true);
+            expect(result.signUpConfig.oauthRedirectTo).toBe(OTHER_SUBDOMAIN);
+        });
+
+        it('still carries the admin panel, which IS a configured trusted origin', () => {
+            // The designed SPEC-182 flow (admin guard bounces to web signin)
+            // must keep working end to end — this is the regression the
+            // narrowing could plausibly cause.
+            // Act
+            const result = resultForCallbackUrl(`${ADMIN_URL}/dashboard`);
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(`${ADMIN_URL}/dashboard`);
+        });
+
+        it('still carries a callbackUrl pointing at the site itself', () => {
+            // Act
+            const result = resultForCallbackUrl(`${SITE_URL}/es/mi-cuenta/favoritos/`);
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/favoritos/'
+            );
+        });
+
+        it('drops it when no admin origin is configured at all', () => {
+            // Arrange / Act: adminUrl undefined — the admin URL must not be
+            // matched by accident through some other branch.
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor(
+                    `/es/auth/signup/?callbackUrl=${encodeURIComponent(`${ADMIN_URL}/dashboard`)}`
+                ),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: undefined,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/'
+            );
+        });
+
+        it('keeps the requested returnUrl as the fallback destination, not the bare dashboard', () => {
+            // Losing the cross-origin destination must not also lose the
+            // same-site one the caller asked for.
+            // Arrange / Act
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor(
+                    `/es/auth/signup/?returnUrl=/es/publicar/experiencias/&callbackUrl=${encodeURIComponent(OTHER_SUBDOMAIN)}`
+                ),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            // Assert
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/publicar/experiencias/'
+            );
+        });
+    });
 });
