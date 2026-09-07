@@ -1488,7 +1488,7 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
  * complex-* tier is DEFERRED (the vertical may still be built, so its shape is
  * worth keeping); `tourist-plus` was CANCELLED as a product by HOS-301 D1. See
  * the note where its definition used to live, and
- * `0100-hos-1224-retire-tourist-plus-and-neutralize-price-trial-days` for the
+ * `0101-hos-1224-retire-tourist-plus-and-null-price-trial-days` for the
  * data-migration that retires the already-seeded rows.
  */
 export const ALL_PLANS: PlanDefinition[] = [
