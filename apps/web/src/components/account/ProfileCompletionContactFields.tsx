@@ -2,8 +2,10 @@
  * @file ProfileCompletionContactFields.tsx
  * @description Pure presentational subcomponent for the ProfileCompletion island.
  *
- * Renders the contact fields: phone (country code + number) and locale
- * preference. Newsletter opt-in and terms acceptance were moved to
+ * Renders the contact fields: phone (country code + number), locale
+ * preference, and theme preference (HOS-313 — optional, not applied live;
+ * only takes effect once the parent island's submit succeeds). Newsletter
+ * opt-in and terms acceptance were moved to
  * {@link ./ProfileCompletionConsentFields} so the consent block sits at
  * the END of the form (SPEC-113 polish).
  *
@@ -16,7 +18,7 @@
 import { FieldError } from '@/components/ui/FieldError';
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
-import { COUNTRY_CODES } from './ProfileCompletion.helpers';
+import { COUNTRY_CODES, type SupportedTheme } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,6 +31,8 @@ export interface ProfileCompletionContactFieldsProps {
     readonly phoneNumber: string;
     /** Currently selected locale preference. */
     readonly selectedLocale: SupportedLocale;
+    /** Currently selected theme preference. */
+    readonly selectedTheme: SupportedTheme;
     /** Field-level errors from the parent. */
     readonly errors: FieldErrors;
     /** Whether the form is currently submitting (disables all inputs). */
@@ -41,6 +45,13 @@ export interface ProfileCompletionContactFieldsProps {
     readonly onPhoneNumberChange: (value: string) => void;
     /** Handler for locale selection change. */
     readonly onLocaleChange: (value: SupportedLocale) => void;
+    /**
+     * Handler for theme selection change. Only updates local form state — the
+     * theme is NOT applied live (HOS-313): changing it here must not
+     * re-render the page mid-fill. The parent applies it after a successful
+     * submit.
+     */
+    readonly onThemeChange: (value: SupportedTheme) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -48,8 +59,8 @@ export interface ProfileCompletionContactFieldsProps {
 /**
  * Contact fields subcomponent.
  *
- * Renders phone (country code + number) and locale preference as
- * controlled inputs. Error messages are rendered as passed-in strings
+ * Renders phone (country code + number), locale preference, and theme
+ * preference as controlled inputs. Error messages are rendered as passed-in strings
  * (the parent maps i18n keys to translated messages before passing them
  * down via `errors`).
  *
@@ -59,12 +70,14 @@ export function ProfileCompletionContactFields({
     phoneCode,
     phoneNumber,
     selectedLocale,
+    selectedTheme,
     errors,
     submitting,
     t,
     onPhoneCodeChange,
     onPhoneNumberChange,
-    onLocaleChange
+    onLocaleChange,
+    onThemeChange
 }: ProfileCompletionContactFieldsProps) {
     return (
         <>
@@ -159,6 +172,39 @@ export function ProfileCompletionContactFields({
                         {t('account.profileCompletion.fields.localePt', 'Português')}
                     </option>
                 </select>
+            </div>
+
+            {/* ── Preferred theme ───────────────────────────────────── */}
+            <div className={styles.field}>
+                <label
+                    htmlFor="pc-theme"
+                    className={styles.label}
+                >
+                    {t('account.profileCompletion.fields.theme', 'Tema preferido')}
+                </label>
+                <select
+                    id="pc-theme"
+                    className={styles.select}
+                    value={selectedTheme}
+                    onChange={(e) => onThemeChange(e.target.value as SupportedTheme)}
+                    disabled={submitting}
+                >
+                    <option value="system">
+                        {t('account.profileCompletion.fields.themeSystem', 'Sistema')}
+                    </option>
+                    <option value="light">
+                        {t('account.profileCompletion.fields.themeLight', 'Claro')}
+                    </option>
+                    <option value="dark">
+                        {t('account.profileCompletion.fields.themeDark', 'Oscuro')}
+                    </option>
+                </select>
+                <p className={styles.hint}>
+                    {t(
+                        'account.profileCompletion.fields.themeHint',
+                        'Opcional. Se aplica al guardar el perfil.'
+                    )}
+                </p>
             </div>
         </>
     );

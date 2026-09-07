@@ -5,7 +5,7 @@
  *
  * Authenticated users submit this after their first sign-in to persist
  * baseline profile data (displayName, optional firstName, optional phone,
- * optional locale, optional newsletter opt-in) and flip the
+ * optional locale, optional theme, optional newsletter opt-in) and flip the
  * `profile_completed` flag to TRUE.
  *
  * The response includes `requiresSetPassword` so the web frontend knows
@@ -45,6 +45,7 @@ export interface CompleteProfileUserService {
             imageUrl?: string;
             phone?: string;
             locale?: 'es' | 'en' | 'pt';
+            theme?: 'system' | 'light' | 'dark';
             newsletterOptIn?: boolean;
             bio?: string;
             website?: string;
@@ -129,6 +130,7 @@ export const completeProfileHandler = async (
         imageUrl: body.imageUrl,
         phone: body.phone,
         locale: body.locale,
+        theme: body.theme,
         newsletterOptIn: body.newsletterOptIn,
         bio: body.bio,
         website: body.website,
