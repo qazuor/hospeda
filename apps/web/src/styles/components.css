@@ -821,6 +821,14 @@
     overscroll-behavior: contain;
 }
 
+/* REQUIRES A FLEX (or grid) PARENT. `.dialog-panel` deliberately does not
+   declare `display`, so a `<dialog>` stays `block` unless its own module says
+   otherwise — and `flex: 1 1 auto` on a child of a block parent does nothing
+   at all. The region then does not scroll, the whole panel scrolls instead,
+   and the header this arrangement exists to pin scrolls away with it. Nothing
+   about that shows up in a diff, a type or a test, so the parent's
+   `display: flex; flex-direction: column` is enforced by
+   `pnpm check:dialog-panel` instead. */
 .dialog-panel-scroll {
     flex: 1 1 auto;
     /* Without this a flex child refuses to shrink below its content height:
