@@ -21,6 +21,7 @@ import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import type { RevocationResult } from './addon-lifecycle.service';
 import { revokeAddonForSubscriptionCancellation } from './addon-lifecycle.service';
+import { closeAddonPreapproval } from './addon-preapproval-cancel.js';
 
 // ─── Catalog service (DB-backed addon reads — SPEC-192 T-014) ─────────────────
 // Instantiated once at module level; stateless, no DB connection held.
@@ -74,6 +75,12 @@ export interface HandleCancellationAddonsInput {
  *    overwhelming QZPay and to ensure partial progress is preserved atomically
  *    per purchase.
  * 3. For each purchase:
+ *    - **HOS-847 PR 6**: hard-cancels the add-on's OWN MercadoPago preapproval
+ *      (`mp_subscription_id`) before anything local is written, and treats a
+ *      refusal as a failed revocation. A recurring add-on's preapproval is
+ *      invisible to every plan-side sweep, so a `canceled` row over a live one
+ *      keeps charging a customer whose plan is already gone (the HOS-751 shape).
+ *      A no-op for one-time add-ons, whose `mp_subscription_id` is null.
  *    - Resolves the addon definition via `AddonCatalogService.getBySlug` (DB-backed,
  *      SPEC-192 T-014). NOT_FOUND → `undefined`, handled gracefully by
  *      `revokeAddonForSubscriptionCancellation` as the "unknown/retired" addon path.
@@ -117,13 +124,64 @@ export async function handleSubscriptionCancellationAddons(
     const { subscriptionId, customerId, billing, db } = input;
     const startMs = Date.now();
 
+    // ── 1. Load Drizzle schema helpers via dynamic import (matches addon.checkout.ts pattern) ──
+    const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
+    const { eq, and, isNull, isNotNull } = await import('drizzle-orm');
+
     // ── 0. Feature flag guard ─────────────────────────────────────────────────
+    // HOS-847 PR 6: the flag gates the ENTITLEMENT half of this handler, never
+    // the provider half. `HOSPEDA_ADDON_LIFECYCLE_ENABLED` off already leaves an
+    // entitlement dangling after a plan cancellation — bad, and the status quo.
+    // Leaving a recurring add-on's MercadoPago preapproval authorized would also
+    // keep CHARGING a customer whose plan is cancelled, and a preapproval
+    // outlives whatever flag created it. So the closes run either way; only the
+    // revocation loop is skipped.
     const addonLifecycleEnabled = env.HOSPEDA_ADDON_LIFECYCLE_ENABLED;
     if (!addonLifecycleEnabled) {
         apiLogger.info(
             { subscriptionId, customerId },
-            'Addon lifecycle processing disabled via HOSPEDA_ADDON_LIFECYCLE_ENABLED'
+            'Addon lifecycle processing disabled via HOSPEDA_ADDON_LIFECYCLE_ENABLED — closing add-on preapprovals anyway'
         );
+
+        const liveRecurring = await db
+            .select({
+                id: billingAddonPurchases.id,
+                addonSlug: billingAddonPurchases.addonSlug,
+                mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
+            })
+            .from(billingAddonPurchases)
+            .where(
+                and(
+                    eq(billingAddonPurchases.subscriptionId, subscriptionId),
+                    eq(billingAddonPurchases.status, 'active'),
+                    isNull(billingAddonPurchases.deletedAt),
+                    isNotNull(billingAddonPurchases.mpSubscriptionId)
+                )
+            );
+
+        const unclosed: string[] = [];
+        for (const purchase of liveRecurring) {
+            const close = await closeAddonPreapproval({
+                purchase,
+                source: 'plan-cancellation',
+                billing
+            });
+            if (!close.closed) {
+                unclosed.push(purchase.id);
+            }
+        }
+
+        if (unclosed.length > 0) {
+            // Throwing here is what makes MercadoPago redeliver the webhook. A
+            // preapproval that is still charging a cancelled customer is worth
+            // a retry loop; silence is not.
+            throw new Error(
+                `Add-on preapproval close failed for subscription ${subscriptionId}: ` +
+                    `${unclosed.length} of ${liveRecurring.length} preapprovals are still open. ` +
+                    `Purchase IDs: ${unclosed.join(', ')}`
+            );
+        }
+
         return {
             subscriptionId,
             customerId,
@@ -133,10 +191,6 @@ export async function handleSubscriptionCancellationAddons(
             elapsedMs: Date.now() - startMs
         };
     }
-
-    // ── 1. Load Drizzle schema helpers via dynamic import (matches addon.checkout.ts pattern) ──
-    const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-    const { eq, and, isNull } = await import('drizzle-orm');
 
     // ── 2. Query active, non-deleted addon purchases for this subscription ────
     const activePurchases = await db
@@ -186,6 +240,28 @@ export async function handleSubscriptionCancellationAddons(
         const addonDef = catalogResult.success ? catalogResult.data : undefined;
 
         try {
+            // ── 4a HOS-847 PR 6: close the add-on's own preapproval FIRST ────
+            // Before any local write, and fail closed. `throw` here lands in the
+            // same catch as a failed revocation, so the row stays `active`, the
+            // purchase joins `failed`, and step 8 rethrows → HTTP 500 → MP
+            // redelivers. The existing retry machinery is exactly the right
+            // machinery for "the provider is still charging this".
+            const providerClose = await closeAddonPreapproval({
+                purchase: {
+                    id: purchaseId,
+                    addonSlug,
+                    mpSubscriptionId: purchase.mpSubscriptionId
+                },
+                source: 'plan-cancellation',
+                billing
+            });
+
+            if (!providerClose.closed) {
+                throw new Error(
+                    `MercadoPago preapproval for add-on purchase ${purchaseId} could not be cancelled: ${providerClose.reason}`
+                );
+            }
+
             // Delegate actual QZPay revocation to the single-purchase helper
             const revocationResult = await revokeAddonForSubscriptionCancellation({
                 customerId,

@@ -44,6 +44,7 @@ import { getActorFromContext } from '../../../middlewares/actor';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
+import { closeAddonPreapproval } from '../../../services/addon-preapproval-cancel';
 import { applyDowngradeRestrictionsOrWarn } from '../../../services/plan-downgrade-remediation.service';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
@@ -87,6 +88,13 @@ interface ActiveAddonPurchase {
     readonly id: string;
     readonly addonSlug: string;
     readonly customerId: string;
+    /**
+     * The add-on's OWN MercadoPago preapproval (HOS-847 PR 6), `null` for every
+     * one-time add-on. Read in the BEFORE hook because that is where a refusal
+     * can still abort the cancel with a 422; by the after-hook the subscription
+     * is already cancelled in QZPay and nothing can be rolled back.
+     */
+    readonly mpSubscriptionId: string | null;
 }
 
 interface AddonRevocationSummary {
@@ -178,7 +186,8 @@ const onBeforeSubscriptionCancel: NonNullable<
         .select({
             id: billingAddonPurchases.id,
             addonSlug: billingAddonPurchases.addonSlug,
-            customerId: billingAddonPurchases.customerId
+            customerId: billingAddonPurchases.customerId,
+            mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
         })
         .from(billingAddonPurchases)
         .where(
@@ -208,6 +217,32 @@ const onBeforeSubscriptionCancel: NonNullable<
             const catalogResult = await catalogService.getBySlug(purchase.addonSlug);
             const addonDef = catalogResult.success ? catalogResult.data : undefined;
             try {
+                // HOS-847 PR 6: stop MercadoPago charging this add-on before
+                // anything else. This hook runs BEFORE the subscription cancel
+                // commits, so a refusal here still aborts the whole operation
+                // with a 422 — the strongest fail-closed position available on
+                // the admin path, and the reason the close lives in the before
+                // hook rather than beside the `status: 'canceled'` write in the
+                // after hook, which can no longer refuse anything.
+                const providerClose = await closeAddonPreapproval({
+                    purchase: {
+                        id: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        mpSubscriptionId: purchase.mpSubscriptionId
+                    },
+                    source: 'admin-subscription-cancel',
+                    billing
+                });
+
+                if (!providerClose.closed) {
+                    return {
+                        purchaseId: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        outcome: 'failed',
+                        error: `MercadoPago preapproval could not be cancelled: ${providerClose.reason}`
+                    };
+                }
+
                 await revokeAddonForSubscriptionCancellation({
                     customerId,
                     purchase: { id: purchase.id, addonSlug: purchase.addonSlug },

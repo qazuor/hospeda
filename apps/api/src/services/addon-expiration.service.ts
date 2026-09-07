@@ -26,6 +26,7 @@ import { apiLogger } from '../utils/logger.js';
 import { AddonEntitlementService } from './addon-entitlement.service.js';
 import { processExpiredAddonsBatch } from './addon-expiration.batch.js';
 import { findExpiredAddons, findExpiringAddons } from './addon-expiration.queries.js';
+import { closeAddonPreapproval } from './addon-preapproval-cancel.js';
 
 // ─── Re-export types for backward compatibility ───────────────────────────────
 
@@ -67,9 +68,17 @@ export interface ExpireAddonResult {
  */
 export class AddonExpirationService {
     private readonly entitlementService: AddonEntitlementService;
+    /**
+     * Kept as a field (HOS-847 PR 6) so {@link AddonExpirationService.expireAddon}
+     * can close a recurring add-on's MercadoPago preapproval before writing the
+     * row terminal. `null` when billing is not configured for the environment,
+     * which the close helper handles as "MercadoPago was not reached".
+     */
+    private readonly billing: QZPayBilling | null;
 
     constructor(billing: QZPayBilling | null = null) {
         this.entitlementService = new AddonEntitlementService(billing);
+        this.billing = billing;
     }
 
     /**
@@ -169,6 +178,32 @@ export class AddonExpirationService {
                     error: {
                         code: 'INVALID_STATUS',
                         message: `Cannot expire add-on with status '${purchase.status}'`
+                    }
+                };
+            }
+
+            // HOS-847 PR 6: `expired` is as terminal as `canceled`, and a
+            // recurring add-on that reaches this point still has a live
+            // preapproval — an add-on whose period lapsed without a charge is
+            // precisely the case where MercadoPago may charge next. Close the
+            // provider first and fail closed: the row stays `active` and the
+            // next cron tick re-selects it. No-op for one-time add-ons.
+            const providerClose = await closeAddonPreapproval({
+                purchase: {
+                    id: purchase.id,
+                    addonSlug: purchase.addonSlug,
+                    mpSubscriptionId: purchase.mpSubscriptionId
+                },
+                source: 'expiry',
+                billing: this.billing
+            });
+
+            if (!providerClose.closed) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'SERVICE_UNAVAILABLE',
+                        message: `Cannot expire add-on '${purchase.addonSlug}': its MercadoPago preapproval could not be cancelled (${providerClose.reason})`
                     }
                 };
             }

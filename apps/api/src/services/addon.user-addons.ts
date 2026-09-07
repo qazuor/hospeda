@@ -31,6 +31,7 @@ import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { recalculateAddonLimitsForCustomer } from './addon-limit-recalculation.service';
+import { closeAddonPreapproval } from './addon-preapproval-cancel';
 import { resolveRecipientLocale } from './notification-recipient-locale';
 
 // Re-export types from service-core for backward compatibility
@@ -109,7 +110,11 @@ export async function cancelUserAddon(
                 id: billingAddonPurchases.id,
                 addonSlug: billingAddonPurchases.addonSlug,
                 status: billingAddonPurchases.status,
-                customerId: billingAddonPurchases.customerId
+                customerId: billingAddonPurchases.customerId,
+                // HOS-847 PR 6: the add-on's OWN MercadoPago preapproval. Read
+                // here so the provider can be closed before anything local is
+                // written — see the `closeAddonPreapproval` call below.
+                mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
             })
             .from(billingAddonPurchases)
             .where(
@@ -148,6 +153,39 @@ export async function cancelUserAddon(
         }
 
         const addonSlug = purchase.addonSlug;
+
+        // ── HOS-847 PR 6: close MercadoPago FIRST, and fail closed ────────────
+        // Everything below this point writes a terminal local state. A recurring
+        // add-on's preapproval is reachable ONLY from this row's
+        // `mp_subscription_id`, so a `canceled` row over a live preapproval is
+        // unrecoverable: no sweep selects it (they all filter on `active`) and
+        // no plan-side cron can see it (it is not in `billing_subscriptions`).
+        // That is HOS-751, one table over. A no-op for one-time add-ons, whose
+        // `mp_subscription_id` is null.
+        const providerClose = await closeAddonPreapproval({
+            purchase: {
+                id: purchase.id,
+                addonSlug,
+                mpSubscriptionId: purchase.mpSubscriptionId
+            },
+            source: 'user-cancel',
+            billing
+        });
+
+        if (!providerClose.closed) {
+            // Deliberately NOT a partial success: the row stays `active`, which
+            // keeps it inside every retry and reconciliation sweep. 503 tells
+            // the caller to try again rather than suggesting it worked.
+            return {
+                success: false,
+                error: {
+                    code: 'SERVICE_UNAVAILABLE',
+                    message:
+                        'Could not cancel the add-on subscription with the payment provider. Nothing was changed — please try again in a few minutes.'
+                }
+            };
+        }
+
         // Resolve addon definition from the DB-backed catalog service (SPEC-192 T-011 cutover).
         const addonCatalogResult = await catalogService.getBySlug(addonSlug);
         const addonDef = addonCatalogResult.success ? addonCatalogResult.data : null;
@@ -464,6 +502,21 @@ export async function checkAddonActive(
  *
  * Adds Sentry reporting and structured logging as infra concerns.
  *
+ * ## HOS-847 PR 6 — the provider close happens BEFORE the transaction
+ *
+ * A recurring add-on's MercadoPago preapproval has to be hard-cancelled before
+ * its row goes terminal, but that is an HTTP call and this function's whole body
+ * runs under `SELECT ... FOR UPDATE`. Holding row locks across third-party
+ * latency is exactly what ADR-019 forbids, so the closes run first, outside the
+ * lock, and the transaction only cancels rows whose provider side is already
+ * closed (or that never had a preapproval).
+ *
+ * The pre-read and the locked read can disagree — a purchase activated in
+ * between appears only in the second. That row is SKIPPED and reported as a
+ * failure rather than cancelled, because the alternative is the forbidden state:
+ * a terminal row over a preapproval nobody closed. Skipping leaves it `active`,
+ * which is where every retry and sweep can still find it.
+ *
  * @param input - Customer ID whose addons should be revoked
  * @returns Count of successfully revoked purchases and IDs of any failures
  */
@@ -474,12 +527,51 @@ export async function revokeAllAddonsForCustomer(
 
     const failedIds: string[] = [];
 
+    // ── Phase 0 (pre-lock): close every live add-on preapproval ───────────────
+    const db = getDb();
+    const recurringPurchases = await db
+        .select({
+            id: billingAddonPurchases.id,
+            addonSlug: billingAddonPurchases.addonSlug,
+            mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
+        })
+        .from(billingAddonPurchases)
+        .where(
+            and(
+                eq(billingAddonPurchases.customerId, customerId),
+                eq(billingAddonPurchases.status, 'active'),
+                isNull(billingAddonPurchases.deletedAt)
+            )
+        );
+
+    /** Purchase ids whose preapproval MercadoPago confirmed is cancelled. */
+    const providerClosedIds = new Set<string>();
+
+    for (const purchase of recurringPurchases) {
+        if (!purchase.mpSubscriptionId) {
+            continue;
+        }
+
+        const close = await closeAddonPreapproval({
+            purchase,
+            source: 'bulk-customer-revoke'
+        });
+
+        if (close.closed) {
+            providerClosedIds.add(purchase.id);
+        }
+    }
+
     const revokedCount = await withTransaction(async (tx) => {
         // SELECT FOR UPDATE: lock matching rows for the duration of this
         // transaction so no concurrent process can modify them between the
         // read and the subsequent UPDATE statements.
-        const lockedRows = await tx.execute<{ id: string; addonSlug: string }>(
-            sql`SELECT id, addon_slug AS "addonSlug"
+        const lockedRows = await tx.execute<{
+            id: string;
+            addonSlug: string;
+            mpSubscriptionId: string | null;
+        }>(
+            sql`SELECT id, addon_slug AS "addonSlug", mp_subscription_id AS "mpSubscriptionId"
                 FROM ${billingAddonPurchases}
                 WHERE ${and(
                     eq(billingAddonPurchases.customerId, customerId),
@@ -499,6 +591,25 @@ export async function revokeAllAddonsForCustomer(
         let count = 0;
 
         for (const purchase of activePurchases) {
+            // HOS-847 PR 6: a purchase with a preapproval we did not manage to
+            // close must not be written terminal. `mp_subscription_id` null is
+            // every one-time add-on — nothing to close, always allowed.
+            if (purchase.mpSubscriptionId && !providerClosedIds.has(purchase.id)) {
+                apiLogger.error(
+                    {
+                        customerId,
+                        purchaseId: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        mpSubscriptionId: purchase.mpSubscriptionId
+                    },
+                    'HOS-847: skipping bulk revocation of an add-on whose MercadoPago preapproval was not closed — the row stays active so a retry can still see it',
+                    { capture: true }
+                );
+
+                failedIds.push(purchase.id);
+                continue;
+            }
+
             try {
                 await cancelAddonPurchaseRecord({ purchaseId: purchase.id, ctx: { tx } });
                 count++;
@@ -543,8 +654,6 @@ export async function revokeAllAddonsForCustomer(
     // T-046 / T-047: when at least one revocation failed (partial failure), record
     // the incomplete state for reconciliation.
     if (failedIds.length > 0) {
-        const db = getDb();
-
         try {
             // Find the customer's most recent active/trialing subscription so we can
             // anchor the compensating event to a subscription row. If no subscription

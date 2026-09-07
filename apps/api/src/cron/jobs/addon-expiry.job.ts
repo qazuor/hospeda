@@ -46,6 +46,7 @@ import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { AddonEntitlementService } from '../../services/addon-entitlement.service.js';
 import { AddonExpirationService } from '../../services/addon-expiration.service.js';
 import { revokeAddonForSubscriptionCancellation } from '../../services/addon-lifecycle.service.js';
+import { closeAddonPreapproval } from '../../services/addon-preapproval-cancel.js';
 import { resolveRecipientLocale } from '../../services/notification-recipient-locale.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -845,7 +846,10 @@ export const addonExpiryJob: CronJobDefinition = {
                             customerId: billingAddonPurchases.customerId,
                             addonSlug: billingAddonPurchases.addonSlug,
                             subscriptionId: billingAddonPurchases.subscriptionId,
-                            metadata: billingAddonPurchases.metadata
+                            metadata: billingAddonPurchases.metadata,
+                            // HOS-847 PR 6: the add-on's OWN preapproval, closed
+                            // before this sweep writes the row terminal.
+                            mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
                         })
                         .from(billingAddonPurchases)
                         .innerJoin(
@@ -995,6 +999,38 @@ export const addonExpiryJob: CronJobDefinition = {
                                         }
                                     );
                                 }
+                            }
+
+                            // HOS-847 PR 6: a recurring add-on left orphaned under
+                            // a cancelled subscription still has its OWN live
+                            // preapproval. Close it before this sweep writes the
+                            // row terminal — after that write the row leaves the
+                            // `status = 'active'` filter this very query uses, so
+                            // this sweep would shut its own gate behind it (the
+                            // structural reason HOS-751 was unrecoverable).
+                            const providerClose = await closeAddonPreapproval({
+                                purchase: {
+                                    id: purchase.id,
+                                    addonSlug: purchase.addonSlug,
+                                    mpSubscriptionId: purchase.mpSubscriptionId
+                                },
+                                source: 'orphan-retry'
+                            });
+
+                            if (!providerClose.closed) {
+                                // Left `active` on purpose: the next tick re-selects
+                                // it, and the retry-count/backoff bookkeeping below
+                                // is driven by the throw path, which this is not.
+                                logger.warn(
+                                    'Skipping orphaned add-on: its MercadoPago preapproval could not be cancelled',
+                                    {
+                                        purchaseId: purchase.id,
+                                        customerId: purchase.customerId,
+                                        addonSlug: purchase.addonSlug,
+                                        reason: providerClose.reason
+                                    }
+                                );
+                                continue;
                             }
 
                             // SPEC-192 T-015: resolve addon definition from DB-backed catalog.
