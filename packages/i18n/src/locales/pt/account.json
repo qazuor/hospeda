@@ -31,13 +31,29 @@
         "step": "Passo {{current}} de {{total}}",
         "restart": "Ver tour",
         "running": "Tour em andamento...",
+        "greetingTourist": {
+            "title": "Bem-vindo à Hospeda",
+            "body": "Este é o painel da sua conta. Aqui você encontra rapidamente seus favoritos, alertas de preço e consultas com anfitriões."
+        },
+        "favorites": {
+            "title": "Seus favoritos",
+            "body": "Salve as acomodações que você gosta para encontrá-las facilmente depois."
+        },
+        "alerts": {
+            "title": "Alertas de preço",
+            "body": "Ative alertas para saber quando o preço de uma acomodação que te interessa baixar."
+        },
+        "reviews": {
+            "title": "Suas avaliações",
+            "body": "Revise as avaliações que você deixou sobre suas estadias."
+        },
+        "inbox": {
+            "title": "Suas consultas",
+            "body": "Acompanhe as conversas que você tem com os anfitriões."
+        },
         "greetingHost": {
             "title": "Bem-vindo ao seu painel de hospedagem",
             "body": "Daqui você pode gerenciar sua conta, seus imóveis e a atividade da sua acomodação."
-        },
-        "greetingCommerce": {
-            "title": "Bem-vindo ao seu painel comercial",
-            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu negócio."
         },
         "properties": {
             "title": "Seus imóveis",
@@ -62,6 +78,48 @@
         "commerce": {
             "title": "Seu negócio",
             "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
+        },
+        "greetingGastronomy": {
+            "title": "Bem-vindo ao seu painel de gastronomia",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento gastronômico."
+        },
+        "commerceGastronomy": {
+            "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento gastronômico."
+        },
+        "commerceListings": {
+            "title": "Seus negócios",
+            "body": "Revise o status de cada um dos seus negócios e edite-os."
+        },
+        "gastronomyQr": {
+            "title": "QR do seu cardápio",
+            "body": "Gere o código QR do seu cardápio e veja quantas vezes seus clientes o escanearam."
+        },
+        "commerceViews": {
+            "title": "Visitas à sua ficha",
+            "body": "Acompanhe quantas pessoas visualizaram a ficha pública do seu negócio."
+        },
+        "greetingExperience": {
+            "title": "Bem-vindo ao seu painel de experiências",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público da sua experiência."
+        },
+        "commerceExperience": {
+            "body": "Edite a descrição, os horários e os dados visíveis da sua experiência."
+        },
+        "greetingEditor": {
+            "title": "Bem-vindo ao seu painel de editor",
+            "body": "Daqui você pode publicar e gerenciar suas publicações e eventos na Hospeda."
+        },
+        "myPosts": {
+            "title": "Suas publicações",
+            "body": "Crie, edite e revise o status das suas publicações."
+        },
+        "myEvents": {
+            "title": "Seus eventos",
+            "body": "Crie, edite e revise o status dos seus eventos."
+        },
+        "greetingSponsor": {
+            "title": "Bem-vindo à Hospeda",
+            "body": "Você é parceiro patrocinador da Hospeda. Sua equipe de contato na Hospeda gerencia seus patrocínios; escreva para nós se precisar alterar algo."
         }
     },
     "navigation": "Navegação da conta",

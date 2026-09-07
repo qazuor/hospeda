@@ -31,13 +31,29 @@
         "step": "Step {{current}} of {{total}}",
         "restart": "View tour",
         "running": "Tour in progress...",
+        "greetingTourist": {
+            "title": "Welcome to Hospeda",
+            "body": "This is your account dashboard. Here's a quick look at your favorites, price alerts, and inquiries with hosts."
+        },
+        "favorites": {
+            "title": "Your favorites",
+            "body": "Save the accommodations you like so you can find them easily later."
+        },
+        "alerts": {
+            "title": "Price alerts",
+            "body": "Turn on alerts to know when the price drops on an accommodation you're interested in."
+        },
+        "reviews": {
+            "title": "Your reviews",
+            "body": "Review the ratings you left about your stays."
+        },
+        "inbox": {
+            "title": "Your inquiries",
+            "body": "Follow up on your conversations with hosts."
+        },
         "greetingHost": {
             "title": "Welcome to your hosting dashboard",
             "body": "From here you can manage your account, your properties and your accommodation activity."
-        },
-        "greetingCommerce": {
-            "title": "Welcome to your commerce dashboard",
-            "body": "From here you can manage your account and the public content of your business."
         },
         "properties": {
             "title": "Your properties",
@@ -62,6 +78,48 @@
         "commerce": {
             "title": "Your business",
             "body": "Edit the public content, opening hours and visible details of your business."
+        },
+        "greetingGastronomy": {
+            "title": "Welcome to your restaurant dashboard",
+            "body": "From here you can manage your account and the public content of your restaurant."
+        },
+        "commerceGastronomy": {
+            "body": "Edit the menu, opening hours and visible details of your restaurant."
+        },
+        "commerceListings": {
+            "title": "Your businesses",
+            "body": "Review the status of each of your businesses and edit them."
+        },
+        "gastronomyQr": {
+            "title": "Your menu QR code",
+            "body": "Generate your menu's QR code and check how many times your customers scanned it."
+        },
+        "commerceViews": {
+            "title": "Views on your listing",
+            "body": "Track how many people viewed your business's public listing."
+        },
+        "greetingExperience": {
+            "title": "Welcome to your experience dashboard",
+            "body": "From here you can manage your account and the public content of your experience."
+        },
+        "commerceExperience": {
+            "body": "Edit the description, schedule and visible details of your experience."
+        },
+        "greetingEditor": {
+            "title": "Welcome to your editor dashboard",
+            "body": "From here you can publish and manage your posts and events on Hospeda."
+        },
+        "myPosts": {
+            "title": "Your posts",
+            "body": "Create, edit and review the status of your posts."
+        },
+        "myEvents": {
+            "title": "Your events",
+            "body": "Create, edit and review the status of your events."
+        },
+        "greetingSponsor": {
+            "title": "Welcome to Hospeda",
+            "body": "You're a sponsor partner of Hospeda. Your Hospeda contact team manages your sponsorships; reach out if you need to change anything."
         }
     },
     "navigation": "Account navigation",
