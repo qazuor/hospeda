@@ -157,6 +157,59 @@ Nothing in `b36a4c52d` addresses this, and nothing there should — it is not a
 read-side defect. It is an authoring-time defect, and the promotion gate is the
 only place that can catch it (AC-9).
 
+### F-3c · The unresolved marker is already hidden for free — but the schema rejects it outright
+
+D-1's marker raises one question: what happens if `on-promotion` escapes to
+production unresolved? Measured, both halves:
+
+**The read path handles it for free.** `new Date('on-promotion').getTime()` is
+`NaN`, and **every** comparison against `NaN` is `false`:
+
+```
+NaN <= now  →  false     NaN > now  →  false
+```
+
+So `filterEntriesByPublishedAt`'s `publishedAt <= nowMs` excludes the marker
+without a line of new code, and `computeSeen`'s `publishedAt <= baselineAt` never
+auto-marks it seen. An unresolved marker is simply **invisible**. That is exactly
+the recoverable failure we want.
+
+**The schema does the opposite, and does it by accident.** `publishedAt` is
+`z.string().datetime()` (`whats-new.schema.ts:101`), which rejects `on-promotion`.
+The catalog runs `WhatsNewCatalogSchema.parse(...)` at module import, and the file's
+own JSDoc states the consequence deliberately: *"A malformed entry … will throw
+immediately and prevent the API process from serving traffic"* — SPEC-175's AC-16,
+not this spec's.
+
+**So today, writing a marker takes down the API at boot.** The brutal fail-safe is
+not a path we could choose — it is the current default, arrived at by accident, and
+it would be discovered in production. The safe path is not free; it costs one
+deliberate schema widening (§7.1). Once widened, the filter's `NaN` behaviour
+delivers the rest at no cost.
+
+**Decision: the schema ACCEPTS the marker; the filter hides it.** An entry nobody
+sees is a recoverable content defect. A dead API is not. This matters precisely
+because OQ-5 establishes the gate can never be a *required* check on this repo's
+plan — so "the gate did not run" is a reachable state, and it must degrade to a
+missing entry, never to an outage.
+
+### F-3d · The `NaN` safety is real but fragile — it inverts under an innocuous refactor
+
+The marker is hidden because the filter is written as `publishedAt <= now`. Rewrite
+it in the form that is *logically identical for every real date*:
+
+```ts
+entries.filter((entry) => !(new Date(entry.publishedAt).getTime() > nowMs))
+```
+
+`NaN > nowMs` is `false`, so `!false` is `true`, and **the unresolved marker becomes
+visible to every user** — at the top of the list, unseen, and firing the modal if
+`highlight` is set. The safety is a property of the comparison's *direction*, not of
+the logic, and no type or test currently pins it.
+
+This gets an explicit regression test (AC-15), because it is the kind of change a
+reviewer would wave through as a no-op.
+
 ### F-4 · The "never reuse a retired id" rule has no enforcement anywhere
 
 Both `whats-new.ts:19` and `whats-new.schema.ts:96` state that a retired id must
@@ -201,17 +254,25 @@ becomes true for the public, and — the owner's stated reason — *"los sign-of
 veces no se hacen porque el agente se los saltea"*. One writes, the other catches
 what the first missed. Neither replaces the other.
 
-**Dating (derived decision — see OQ-2):** the entry is committed at sign-off time
-but carries a `publishedAt` set to the **expected promotion date**, staying
-invisible until then via HOS-1216's `filterEntriesByPublishedAt` (F-3, shipped in
-`b36a4c52d`). This reconciles writing early (while the context is fresh and the
-verifier is looking at the thing) with publishing late (when the public actually
-has it).
+**Dating (owner decision, 2026-09-07 — OQ-2, resolved): the writer does not set the
+date. The promotion sets it.**
 
-The *capability* this relies on is settled: future dating is legal and hidden until
-its date. What remains unconfirmed is the **choice to use it this way** — the owner
-approved the sign-off mechanism, but never literally confirmed "commit at sign-off,
-date it to the expected promotion". That, and only that, is OQ-2.
+The sign-off commits the entry with an **unresolved `publishedAt`** — the literal
+marker `on-promotion`. The promotion gate replaces it with the real date on the day
+the change actually reaches production.
+
+Two candidate rules were considered and both rejected:
+
+- **Date it to the expected promotion** — forces the writer to guess, and on the day
+  someone guesses wrong the symptom is invisible (F-3b).
+- **Date it to the day it is written** — every entry is then born already in the past
+  relative to its own promotion, turning AC-9 from a safety net into the primary
+  mechanism.
+
+The chosen rule has nothing to guess and no date that can slip into the past. It
+puts the one hard question — *when did this actually go live* — at the only moment
+that knows the answer. Future dating stays legal and hidden until its date (F-3);
+this design simply no longer asks a human to pick that date.
 
 ### D-2 · The audit checks that a PR was EVALUATED, not that it has an entry
 
@@ -308,8 +369,8 @@ announce.
    raw material, and it is already phrased in user terms), then edited and approved
    by the operator. Body is Markdown. Never accepted verbatim from a PR title.
 4. **Highlight?** — `true` auto-opens the modal once. Default `false`.
-5. **Expected promotion date** — defaults to the next business day; the operator
-   may override.
+
+There is deliberately **no date question**. The writer never picks one (D-1).
 
 **How the entry is composed.**
 
@@ -317,9 +378,9 @@ announce.
   records **when the change was made**, deliberately distinct from `publishedAt`,
   which is the convention HOS-964 established and its comment tells us not to
   "fix". Checked against the retired-id ledger (F-4, AC-11).
-- `publishedAt` — the expected promotion date at `12:00Z`. When several entries are
-  written for the same date, hours are spread descending so the declared
-  newest-first ordering is preserved, exactly as HOS-964 did.
+- `publishedAt` — the literal marker `'on-promotion'`. Never a date, never guessed.
+  The gate resolves it (§6.2). Until it does, the entry is invisible: `NaN <= now`
+  is `false` (F-3c).
 - `title` / `body` — `es` from step 3; `en`/`pt` per §6.3.
 - `roles` — from step 2, omitted for a universal broadcast.
 - `image` — out of scope for the automated path; an image-bearing entry is added by
@@ -398,6 +459,30 @@ is why `labeled`/`unlabeled` are in the trigger list (they fire for the promotio
 PR itself) and `workflow_dispatch` is present (for everything else). This is the
 same class of gotcha `sync-main-to-staging.yml` documents about `SYNC_PAT` and is
 noted in the workflow's header comment.
+
+**Resolving the markers (the gate's second job).** Auditing decides whether the
+promotion may proceed. Resolving dates happens *because* it proceeds, so it is a
+distinct step with distinct timing:
+
+1. **Before the merge**, the gate reports how many entries carry `on-promotion` and
+   fails on nothing — an unresolved marker is the expected state at this point, not
+   a defect.
+2. **After the promotion PR merges**, a `push`-triggered job on `main` rewrites
+   every `'on-promotion'` in `whats-new.ts` to the merge timestamp, opens a PR to
+   `staging` with the resolved dates, and stops. It never pushes to a protected
+   branch directly.
+
+Writing the date **after** the merge rather than before is what makes the rule
+honest: a promotion that is opened and then abandoned leaves markers behind, which
+are invisible, rather than dates for a release that never happened.
+
+Multiple entries resolved in one promotion share the merge timestamp with hours
+spread descending, preserving the declared newest-first ordering exactly as HOS-964
+did.
+
+The back-merge PR reuses `sync-main-to-staging.yml`'s pattern and inherits its
+documented caveat: a PR opened by the default `GITHUB_TOKEN` starts without CI
+checks unless `SYNC_PAT` is configured.
 
 **Local mirror.** `hops whats-new` under `scripts/client-tools/src/commands/`,
 alongside the existing `ci`, `merge` and `verify`:
@@ -484,8 +569,23 @@ availability bug.
 - **Add** the optional `translations` field of §6.3. Optional, so every existing
   entry (including HOS-964's four, which were human-written in all three languages)
   stays valid with no migration.
-- **No other change.** `id`, `publishedAt`, `roles`, `highlight`, `title`, `body`,
-  `image` keep their current shape and semantics.
+
+- **Widen `publishedAt` to admit the unresolved marker.** This is required, not
+  cosmetic: `z.string().datetime()` rejects `on-promotion`, and the catalog parses
+  at module import, so without this change the first entry written by the flow
+  prevents the API from serving traffic (F-3c).
+
+  ```ts
+  publishedAt: z.union([z.string().datetime(), z.literal('on-promotion')]);
+  ```
+
+  The JSDoc must say why the union exists, that `on-promotion` is an
+  **unresolved** value the promotion replaces, and that it renders the entry
+  invisible rather than malformed. Without that note the next reader deletes the
+  union as a typo-tolerance hole.
+
+- **No other change.** `id`, `roles`, `highlight`, `title`, `body`, `image` keep
+  their current shape and semantics.
 
 ### 7.2 Catalog file (`apps/api/src/data/whats-new/whats-new.ts`)
 
@@ -509,6 +609,7 @@ The two are mutually exclusive; carrying both is reported as a conflict and bloc
 | `.github/workflows/whats-new-gate.yml` | The promotion audit (§6.2) |
 | `scripts/check-whats-new-catalog.sh` | Guard: id uniqueness, retired-id collisions, ordering (F-6: must also be added as a step in `ci.yml`'s `guards` job) |
 | `scripts/client-tools/src/commands/whats-new/` | `hops whats-new audit [--fix]` |
+| `.github/workflows/whats-new-resolve-dates.yml` | `push`-on-`main` job that resolves `on-promotion` markers and back-merges (§6.2, AC-14) |
 
 ### 7.5 Modified files
 
@@ -539,8 +640,9 @@ from Linear alone exactly as the rest of the format allows:
 
 - **AC-3** — *Given* the operator answers "novelty" and approves a drafted `es`
   title and body, *when* the flow finishes, *then* a new entry exists at the top of
-  `whatsNewEntries` with `publishedAt` set to the expected promotion date, every
+  `whatsNewEntries` with `publishedAt` set to the literal `'on-promotion'`, every
   bound PR carries `whats-new-done`, and the sign-off comment records the entry id.
+  The operator is never asked for a date.
 
 - **AC-4** — *Given* a sign-off with `Resultado: FALLO`, `PARCIAL` or `PENDIENTE`,
   *when* it completes, *then* no novelty question is asked and no label is applied.
@@ -560,19 +662,24 @@ from Linear alone exactly as the rest of the format allows:
   resolves to no pull request, *when* the gate runs, *then* it fails and reports
   that commit by SHA as a direct push.
 
-- **AC-9** — *Given* an entry in `staging` but not in `main` whose `publishedAt` is
-  already in the past, *when* the gate runs, *then* it fails and asks for the entry
-  to be re-dated — because promoting it would auto-mark it seen for every account
-  whose baseline post-dates it (F-2).
+- **AC-9 — SURVIVES, NARROWED to hand-written entries.** *Given* an entry in
+  `staging` but not in `main` that carries a **real date** (not the marker) already
+  in the past, *when* the gate runs, *then* it fails and asks for it to be re-dated
+  or converted to `'on-promotion'`.
 
-  **This is the criterion most at risk of being assumed away, so it is stated
-  twice.** HOS-1216 does not cover it and cannot: `filterEntriesByPublishedAt`
-  hides the future, while this is a past-dated entry, which the filter passes
-  through untouched on its way to `computeSeen` (F-3b). An entry that misses its
-  promotion is not late — it is **destroyed for every new account**, silently, with
-  the API green and the entry present in the response. The gate is the only
-  observer of the gap between the date on the entry and the day it actually
-  reaches production.
+  **Why it is narrowed and not retired.** D-1 makes the failure impossible *for
+  entries written through the flow* — a marker cannot be stale. But hand-written
+  entries remain in scope and always will: image-bearing entries are added by hand
+  (§6.1), HOS-964's four were written by hand, and nothing forbids editing the file
+  directly. Retiring AC-9 would leave exactly the path that is not automated
+  unguarded, which is backwards.
+
+  **Why it still matters.** F-3b is unchanged: `filterEntriesByPublishedAt` hides
+  the future and passes a past date straight through to `computeSeen`, which
+  auto-marks it seen for every account whose baseline post-dates it. Such an entry
+  is not late — it is **destroyed for every new account**, silently, with the API
+  green and the entry present in the response. What changed is *who prevents it*:
+  by construction for the automated path, by this gate for the manual one.
 
 - **AC-10** — *Given* an entry whose `publishedAt` is on or before the promotion
   date and whose `translations.pt` is `'machine'`, *when* the gate runs, *then* it
@@ -591,6 +698,25 @@ from Linear alone exactly as the rest of the format allows:
 - **AC-13** — *Given* the gate cannot determine the range or reach the GitHub API,
   *when* it runs, *then* it exits `3` (not `1`) and says it could not determine the
   answer, so an outage is never reported as an unevaluated PR.
+
+- **AC-14** — *Given* a promotion PR containing entries with `publishedAt:
+  'on-promotion'`, *when* it merges to `main`, *then* every such marker is rewritten
+  to the merge timestamp (hours spread descending to preserve declared order) and a
+  back-merge PR to `staging` carries the resolved dates. *Given* the promotion PR is
+  closed without merging, *then* no marker is resolved.
+
+- **AC-15** — *Given* an entry with `publishedAt: 'on-promotion'`, *when*
+  `filterEntriesByPublishedAt` runs, *then* the entry is **excluded**. This is a
+  regression test against F-3d: rewriting the predicate as `!(publishedAt > now)` —
+  logically identical for every real date — makes the marker **visible**, because
+  `NaN > now` is also `false`. The test must fail under that rewrite.
+
+- **AC-16** — *Given* a catalog containing an entry with `publishedAt:
+  'on-promotion'`, *when* the API boots and runs `WhatsNewCatalogSchema.parse(...)`,
+  *then* it parses successfully and the process serves traffic. An unresolved marker
+  is an invisible entry, never an outage (F-3c). *Given* a `publishedAt` that is
+  neither a valid ISO datetime nor the marker, parsing still throws — the union
+  widens the schema by exactly one value and tolerates no other malformed date.
 
 ## 9. Risks
 
@@ -614,9 +740,21 @@ from Linear alone exactly as the rest of the format allows:
   re-checked. Accepted: labels are advisory records of a human decision, and the
   gate re-runs on every promotion regardless.
 
-- **R-5 — Entries pile up dated to a promotion that slips.** Caught by AC-9, but
-  the remedy (re-dating) is manual and lands on `staging` mid-promotion. Noted as a
-  real cost, not designed away.
+- **R-5 — RETIRED.** Was "entries pile up dated to a promotion that slips". D-1
+  removes the class: a marker has no date to go stale, and a promotion that slips
+  simply resolves it later. Kept as a numbered stub so the risk numbers stay stable.
+
+- **R-6 — The marker escapes to production unresolved.** Happens whenever the
+  resolution job does not run, which OQ-5 says cannot be prevented by a required
+  check. Degrades to an **invisible entry**, never an outage, by F-3c — provided the
+  schema widening in §7.1 lands with the marker and not after it. Shipping the
+  marker before the widening is the one sequencing mistake that takes the API down
+  (§12).
+
+- **R-7 — Someone "simplifies" the filter predicate.** F-3d: rewriting
+  `publishedAt <= now` as `!(publishedAt > now)` is a no-op for every real date and
+  makes unresolved markers visible to everyone. Mitigated by AC-15, which is
+  specifically written to fail under that rewrite.
 
 ## 10. Out of scope
 
@@ -638,16 +776,14 @@ Beyond the non-goals in §5:
   `.refine()`, and `b36a4c52d` shipped it. See F-3. Kept as a numbered stub so the
   remaining question numbers stay stable.
 
-- **OQ-2 — Is the derived dating rule what the owner meant? (THE open question.)**
-  With OQ-1 closed, this is the only unconfirmed part of the design. The
-  *capability* is settled — future dating is legal and stays invisible until its
-  date. What is **not** confirmed is the decision to use it this way: "commit the
-  entry at sign-off, with `publishedAt` set to the expected promotion date". The
-  owner approved the sign-off mechanism and nothing more; this rule is derived from
-  it. If it is rejected, the alternative is to date the entry to the day it is
-  written and accept that it goes live on the next promotion whenever that is —
-  which re-opens F-2's baseline hazard and is exactly what AC-9 then has to catch
-  on every entry rather than on the occasional slipped one.
+- **OQ-2 — RESOLVED (2026-09-07).** Was: "is the derived dating rule what the owner
+  meant?" Answered with a third option neither this spec nor the question had
+  considered: **the writer does not set the date at all — the promotion sets it**,
+  via an `on-promotion` marker resolved at merge. Both previously-stated candidates
+  were rejected by name: dating to the expected promotion forces a guess whose
+  failure is invisible, and dating to the writing day makes every entry born stale.
+  See D-1, §6.2 and F-3c. Kept as a numbered stub so later question numbers stay
+  stable.
 
 - **OQ-3 — Who can meaningfully review Portuguese?** §6.3 answers the *mechanism*
   honestly (`declared` is a recorded, valid answer) but not the *staffing*. If
@@ -674,9 +810,16 @@ Beyond the non-goals in §5:
   reach `staging` before the first entry is written with a future `publishedAt`, or
   that entry is visible the moment it merges. Nothing else here waits on it.
 
-- **Order.** (1) labels + `RETIRED_WHATS_NEW_IDS` + `check-whats-new-catalog.sh`;
-  (2) `hops whats-new audit`; (3) the workflow, reusing the same computation;
-  (4) the skill phase; (5) the `translations` field and AC-10.
+- **Order — the first step is not negotiable.** (1) **the `publishedAt` union in
+  the schema (§7.1) + AC-15/AC-16**; (2) labels + `RETIRED_WHATS_NEW_IDS` +
+  `check-whats-new-catalog.sh`; (3) `hops whats-new audit`; (4) the audit workflow;
+  (5) the date-resolution workflow (AC-14); (6) the skill phase — the first thing
+  that can write a marker, and it must come after (1) and (5); (7) the
+  `translations` field and AC-10.
+
+  **Writing a marker before the schema accepts it takes the API down at boot**
+  (F-3c). That is the single sequencing error in this spec with a production
+  consequence.
 
 - **AC-9 is not covered by HOS-1216 and must not be dropped as redundant.** The
   shipped filter hides the future; AC-9 is about the past (F-3b). The two look like
