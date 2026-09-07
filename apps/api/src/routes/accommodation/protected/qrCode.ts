@@ -8,9 +8,10 @@
  * ## Why this exists next to `qr-sheet`
  *
  * `qr-sheet` returns `application/pdf`, and a dashboard cannot show a PDF: the
- * web app's CSP sends `object-src 'none'` and a `frame-src` carrying neither
- * `'self'` nor `blob:` (`apps/web/src/lib/middleware-helpers.ts`), so an
- * embedded file renders nothing and reports nothing. Drawing the symbol in the
+ * web app's CSP sends `object-src 'none'`, and no branch of its `frame-src`
+ * carries `blob:` (`apps/web/src/lib/middleware-helpers.ts` — dev does add
+ * `'self'`, which does not authorise a blob URL), so an embedded file renders
+ * nothing and reports nothing. Drawing the symbol in the
  * browser instead would mean a second QR generator, which
  * `scripts/check-qrcode-engine-isolation.sh` exists to forbid. What the CSP DOES
  * allow is `img-src … data:`, which is how `ProviderQrPanel` and
@@ -20,22 +21,30 @@
  * A button that downloads a PDF blind tells the owner nothing about what they
  * got. Seeing the code first is the point of the endpoint.
  *
- * ## THE SAME code as the sheet, never a second one
+ * ## THE SAME code as the sheet, never a second one — row AND symbol
  *
  * `qr_codes` is keyed on `(entity_type, entity_id, purpose)` and
  * `getOrCreateForEntity` is idempotent on that triple, so this route passing the
- * SAME three values as `qrSheet.ts` is what guarantees the image on screen and
- * the symbol on the printed page are the same code. A second code would put one
- * QR on the door and a different one on the counter and split the listing's scan
- * counts between them — which is why `test/routes/listing-qr-code.test.ts`
- * executes both routes and compares the two mint calls argument for argument,
- * and why `test/utils/entity-qr-purpose.guard.test.ts` accounts for this call
- * site by name.
+ * SAME three values as `qrSheet.ts` is what guarantees both surfaces resolve one
+ * ROW. A second row would put one QR on the door and a different one on the
+ * counter and split the listing's scan counts between them — which is why
+ * `test/routes/listing-qr-code.test.ts` executes both routes and compares the
+ * two mint calls argument for argument, and why
+ * `test/utils/entity-qr-purpose.guard.test.ts` accounts for this call site by
+ * name.
+ *
+ * Same row is NOT same picture, and this route shipped a review believing it
+ * was: `renderQrSvg`'s default error correction is M and the sheet prints at Q,
+ * so one URL was drawn as two different symbols (29 modules against 33) under
+ * three docblocks claiming one artifact. It matters because showing a code
+ * invites photographing it, and a screenshot printed for the counter would carry
+ * the damage tolerance the sheet deliberately refused. {@link renderListingQrSvg}
+ * reads the sheet's own constant, so the two cannot drift again.
  *
  * The two creation-only fields the triple does NOT cover — `targetUrl` and
- * `label` — come from `services/listing-qr-sheet/listing-qr-code.ts`, shared
- * with the sheet. This route now mints FIRST in practice (the panel renders
- * before anyone downloads), so those are the values that stick.
+ * `label` — come from the same shared module. This route now mints FIRST in
+ * practice (the panel renders before anyone downloads), so those are the values
+ * that stick.
  *
  * ## Same authorisation as the sheet, and the same 404
  *
@@ -75,7 +84,8 @@ import type { Context } from 'hono';
 import type { z } from 'zod';
 import {
     buildListingQrCodeLabel,
-    buildListingQrTargetUrl
+    buildListingQrTargetUrl,
+    renderListingQrSvg
 } from '../../../services/listing-qr-sheet/listing-qr-code';
 import { getActorFromContext } from '../../../utils/actor';
 import { resolveEntityQrScanUrl } from '../../../utils/entity-qr';
@@ -85,7 +95,6 @@ import {
     ListingQrCodeResponseSchema
 } from '../../../utils/listing-qr-code-route';
 import { apiLogger } from '../../../utils/logger';
-import { renderQrSvg } from '../../../utils/qr-render';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -151,7 +160,7 @@ export async function handleGetAccommodationQrCode(
         siteUrl: env.HOSPEDA_SITE_URL
     });
 
-    return { svg: await renderQrSvg({ data: url }), url, slug: entity.slug };
+    return { svg: await renderListingQrSvg({ url }), url, slug: entity.slug };
 }
 
 /**
@@ -164,7 +173,7 @@ export const protectedGetAccommodationQrCodeRoute = createProtectedRoute({
     path: '/{id}/qr',
     summary: 'Get the listing QR of an accommodation as an image',
     description:
-        'Returns the SVG of the accommodation’s listing QR and the URL that symbol encodes (`{site}/qr/{qrSlug}/`). It is the SAME code the printable sheet carries — created on the first call and reused afterwards — so the image an owner sees in the dashboard is the one that ends up on the door. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
+        'Returns the SVG of the accommodation’s listing QR and the URL that symbol encodes (`{site}/qr/{qrSlug}/`). It is the SAME code the printable sheet carries — the same `qr_codes` row, created on the first call and reused afterwards, drawn at the same error-correction level the sheet prints at — so the image an owner sees in the dashboard is, module for module, the one that ends up on the door. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
     tags: ['Accommodations'],
     requestParams: {
         id: AccommodationIdSchema

@@ -1,5 +1,5 @@
 /**
- * The values that CREATE a listing's `LISTING` code, in one place (HOS-982).
+ * Everything the two listing-QR surfaces must agree on (HOS-982).
  *
  * ---
  * WHY THIS MODULE EXISTS
@@ -8,13 +8,34 @@
  * `qrCode.ts` returns the symbol as SVG so the owner can SEE it in the dashboard
  * before downloading anything. Both call `resolveEntityQrScanUrl` with the same
  * `(entityType, entityId, purpose)` — which is the lookup key of `qr_codes`, so
- * the second caller is guaranteed to get the row the first one created and the
- * printed sheet is guaranteed to carry the symbol the panel showed.
+ * the second caller is guaranteed to get the ROW the first one created.
  *
- * What is NOT guaranteed by that key is `targetUrl` and `label`, and this module
- * is about exactly those two. `getOrCreateForEntity` returns an existing row
- * untouched, so both fields are **creation-only**: whichever route runs FIRST
- * decides them, forever, and nothing anywhere fails if the two routes disagree.
+ * The row is not the whole of it, and assuming it was is the defect this module
+ * grew to fix. Three things fall outside that key and every one of them can
+ * differ between the two surfaces with nothing failing anywhere.
+ *
+ * ## 1. The SYMBOL — same row, different picture
+ *
+ * `renderQrSvg`'s default error correction is M (~15% recoverable); the sheet
+ * renders at Q (~25%) because a code taped to a door gets rained on and has a
+ * corner covered, and the argument is written out in `qr-sheet-render.ts`. A
+ * route that called `renderQrSvg({ data: url })` and a sheet that called
+ * `renderQrMatrix({ data: url, errorCorrectionLevel: QR_ERROR_CORRECTION })`
+ * therefore drew DIFFERENT symbols of the same URL — measured, 29 modules at
+ * version 3 against 33 at version 4 — while every docblock claimed they were the
+ * same artifact.
+ *
+ * That is not cosmetic, because showing a code invites photographing it: an
+ * owner who screenshots the panel and prints it for the counter walks away with
+ * the tolerance the sheet deliberately refused. {@link renderListingQrSvg} is
+ * the fix — it reads the SHEET's constant rather than redeclaring a level, so
+ * the two cannot drift apart again.
+ *
+ * ## 2 and 3. `targetUrl` and `label` — creation-only
+ *
+ * `getOrCreateForEntity` returns an existing row untouched, so both fields are
+ * decided by whichever route runs FIRST, forever, and nothing anywhere fails if
+ * the two routes disagree.
  *
  * That is not a hypothetical ordering. Before HOS-982 PR 2 the sheet was the
  * only caller and therefore always the minter; now the panel renders on the
@@ -34,15 +55,50 @@
  * blinded that guard would trade a small duplication for the defect the guard
  * was written for.
  *
+ * ## What neither surface can currently see: a RETIRED code
+ *
+ * `QrCodeService._findLiveCodeForEntity` filters on `deletedAt` alone, while the
+ * public redirect (`resolveBySlug`) also refuses a row with `isActive: false`.
+ * So an operator who retires a code without deleting it leaves both surfaces
+ * happily resolving it: the sheet prints it and the panel displays it under a
+ * line naming where it leads, and every scan 404s. Not fixed here — the
+ * predicate belongs to the QR engine (HOS-981) and reaches all four live
+ * purposes, not just this one — but recorded, because the panel's URL line reads
+ * like a health check and is not one.
+ *
  * @module services/listing-qr-sheet/listing-qr-code
  */
 
 import { buildEntityQrLabel } from '../../utils/entity-qr.js';
+import { renderQrSvg } from '../../utils/qr-render.js';
 import {
     buildListingPublicUrl,
     type ListingQrSheetVertical,
     MINTED_TARGET_LOCALE
 } from './qr-sheet-content.js';
+// The SHEET's level, imported rather than repeated. A second declaration would
+// agree on the day it was written and nothing would ever say when it stopped.
+import { QR_ERROR_CORRECTION } from './qr-sheet-render.js';
+
+/**
+ * Renders a listing's code as SVG, at the level the printed sheet uses.
+ *
+ * The ONLY way the image routes should draw the symbol. Calling `renderQrSvg`
+ * directly is what produced two different pictures of one code: its default is
+ * M and the sheet is Q (see the module docblock, and `qr-sheet-render.ts` for
+ * why Q).
+ *
+ * @param input - Input parameters.
+ * @param input.url - What the symbol encodes: the platform's own
+ *   `{site}/qr/{qrSlug}/` redirect, never the final destination (HOS-981).
+ * @returns The SVG markup, byte-identical for a given URL.
+ */
+export function renderListingQrSvg(input: { readonly url: string }): Promise<string> {
+    return renderQrSvg({
+        data: input.url,
+        options: { errorCorrectionLevel: QR_ERROR_CORRECTION }
+    });
+}
 
 /**
  * The operator-facing description of each vertical's listing code.

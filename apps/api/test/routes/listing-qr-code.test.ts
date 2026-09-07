@@ -39,7 +39,7 @@ vi.mock(
     async (importOriginal) => await importOriginal<Record<string, unknown>>()
 );
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, QrCodeErrorCorrectionLevelEnum, RoleEnum } from '@repo/schemas';
 import {
     AccommodationService,
     ExperienceService,
@@ -47,6 +47,7 @@ import {
     QrCodeService
 } from '@repo/service-core';
 import { Hono } from 'hono';
+import { QR_ERROR_CORRECTION } from '../../src/services/listing-qr-sheet/qr-sheet-render';
 import type { AppBindings } from '../../src/types';
 import { renderQrSvg } from '../../src/utils/qr-render';
 
@@ -197,8 +198,39 @@ describe.each(CASES)('GET /protected/$label/:id/qr (HOS-982)', ({
         // `renderQrSvg` is deterministic for a given data+options pair, so this
         // is what rules out the case the eye cannot check: a well-formed symbol
         // that encodes something ELSE than the `url` beside it.
-        expect(body.data.svg).toBe(await renderQrSvg({ data: body.data.url }));
+        //
+        // The LEVEL is spelled here as a literal `Q`, not read from
+        // `QR_ERROR_CORRECTION`. Reading the constant would make this test
+        // auto-consistent with whatever the route does — change the constant,
+        // both sides move, green — which is exactly how the M-vs-Q divergence
+        // survived a review. The literal is the agreed level, and the assertion
+        // below pins the sheet to the same one, so a change to either has to be
+        // a deliberate edit of this file.
+        expect(body.data.svg).toBe(
+            await renderQrSvg({
+                data: body.data.url,
+                options: { errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.Q }
+            })
+        );
         expect(body.data.svg.startsWith('<svg')).toBe(true);
+    });
+
+    it('draws the symbol at the level the SHEET prints, not the engine default', async () => {
+        stubListing();
+        const res = await buildApp(await importRoute()).request(`/${LISTING_ID}/qr`);
+        const body = (await res.json()) as { data: { svg: string; url: string } };
+
+        // What the sheet actually renders with. Asserted rather than reused, so
+        // that lowering the printed sheet's tolerance turns THIS test red too —
+        // the two surfaces are one artifact or they are not.
+        expect(QR_ERROR_CORRECTION).toBe(QrCodeErrorCorrectionLevelEnum.Q);
+
+        // And the assertion above is not vacuous: the engine's own default is M,
+        // and M really does draw a different picture of the same URL (measured:
+        // 29 modules at version 3 against 33 at version 4). Without this line, a
+        // route that silently fell back to the default would still be "equal to a
+        // render of its own URL".
+        expect(body.data.svg).not.toBe(await renderQrSvg({ data: body.data.url }));
     });
 
     it('mints the SAME code the printable sheet mints', async () => {

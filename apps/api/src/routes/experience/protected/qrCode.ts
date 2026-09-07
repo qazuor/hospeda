@@ -43,7 +43,8 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import {
     buildListingQrCodeLabel,
-    buildListingQrTargetUrl
+    buildListingQrTargetUrl,
+    renderListingQrSvg
 } from '../../../services/listing-qr-sheet/listing-qr-code';
 import { getActorFromContext } from '../../../utils/actor';
 import { resolveEntityQrScanUrl } from '../../../utils/entity-qr';
@@ -53,7 +54,6 @@ import {
     ListingQrCodeResponseSchema
 } from '../../../utils/listing-qr-code-route';
 import { apiLogger } from '../../../utils/logger';
-import { renderQrSvg } from '../../../utils/qr-render';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
@@ -118,7 +118,7 @@ export async function handleGetExperienceQrCode(
         siteUrl: env.HOSPEDA_SITE_URL
     });
 
-    return { svg: await renderQrSvg({ data: url }), url, slug: entity.slug };
+    return { svg: await renderListingQrSvg({ url }), url, slug: entity.slug };
 }
 
 /**
@@ -131,7 +131,7 @@ export const protectedGetExperienceQrCodeRoute = createProtectedRoute({
     path: '/{id}/qr',
     summary: 'Get the listing QR of an experience as an image',
     description:
-        'Returns the SVG of the experience’s listing QR and the URL that symbol encodes (`{site}/qr/{qrSlug}/`). It is the SAME code the printable sheet carries — created on the first call and reused afterwards — so the image an owner sees in the dashboard is the one that ends up on the door. Distinct from the experience’s brochure and certificate codes. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
+        'Returns the SVG of the experience’s listing QR and the URL that symbol encodes (`{site}/qr/{qrSlug}/`). It is the SAME code the printable sheet carries — the same `qr_codes` row, created on the first call and reused afterwards, drawn at the same error-correction level the sheet prints at — so the image an owner sees in the dashboard is, module for module, the one that ends up on the door. Distinct from the experience’s brochure and certificate codes. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
     tags: ['Experience'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
