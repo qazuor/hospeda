@@ -36,6 +36,8 @@ import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
+import { createRecurringAddonCheckout } from './addon.checkout.recurring';
+import { shouldUseRecurringAddonCheckout } from './addon.checkout.recurring-resolve';
 import { resolveAddonCheckoutDescription, resolveAddonCheckoutName } from './addon-checkout-locale';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { recordOrphanPayment } from './billing/orphan-payment-queue.service';
@@ -509,6 +511,50 @@ export async function createAddonCheckout(
             }
         }
 
+        // ── HOS-847 PR 4: recurring add-on checkout, behind a dark flag ──────
+        //
+        // Decided here — after every validation the two paths share, before any
+        // path-specific work — so the flag can only ever change WHICH checkout
+        // is created, never whether the purchase was allowed in the first place.
+        // Off (the production default, and the only value any environment has
+        // today) this is `false` and everything below is the one-time
+        // `Preference` path byte for byte.
+        // Asynchronous because the third condition is a POSITIVE read of the
+        // catalog row's real `billing_interval` — `billingType` is derived by
+        // exclusion in `addon-catalog.mapper.ts`, so a NULL, an empty string or
+        // an operator's typo all present as `'recurring'`. With the flag off the
+        // function returns on its first line and issues no query.
+        const useRecurringCheckout = await shouldUseRecurringAddonCheckout({
+            recurringAddonsEnabled: env.HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED === true,
+            addon
+        });
+
+        // A promo code cannot be honoured on the recurring path, and refusing is
+        // the only honest answer available.
+        //
+        // The discount would have to live somewhere, and both places are closed:
+        // the add-on's MercadoPago `preapproval_plan` is keyed
+        // `(addon_id, billing_interval)` with NO discount dimension, so a
+        // per-buyer amount makes every checkout look like a price drift and
+        // re-provisions the plan (archiving the one a concurrent buyer is
+        // authorizing against — see `ResolveOrProvisionMpAddonPlanInput
+        // .amountCentavos`); and mutating the preapproval's own
+        // `transaction_amount` afterwards is the multi-cycle-discount machinery
+        // SPEC-262 built for plans, which is new scope and an owner decision.
+        //
+        // The alternative — accepting the code and silently charging the full
+        // price anyway — is not a smaller version of that work. It is a customer
+        // authorizing a recurring charge for an amount they were never shown.
+        if (useRecurringCheckout && input.promoCode) {
+            return {
+                success: false,
+                error: {
+                    code: 'RECURRING_ADDON_PROMO_UNSUPPORTED',
+                    message: 'Promo codes cannot be applied to a recurring add-on subscription'
+                }
+            };
+        }
+
         // Validate and apply promo code if provided
         let finalPrice = addon.priceArs;
         let promoCodeId: string | undefined;
@@ -580,6 +626,46 @@ export async function createAddonCheckout(
                 ? customer.metadata.name.trim() || undefined
                 : undefined;
 
+        // HOS-224 fallbacks, hoisted out of the `checkout.create` call below so
+        // the recurring branch resolves the SAME return URL rather than a second
+        // copy that could drift. Values are unchanged.
+        const successUrl =
+            input.successUrl ?? `${webUrl}/es/mi-cuenta/addons/?status=success&addon=${addon.slug}`;
+        const cancelUrl =
+            input.cancelUrl ?? `${webUrl}/es/mi-cuenta/addons/?status=failure&addon=${addon.slug}`;
+        const notificationUrl = `${apiUrl}/api/v1/webhooks/mercadopago`;
+
+        // HOS-847 PR 4: the recurring path diverges here and returns its own
+        // result. Everything above (catalog, ownership, subscription, domain,
+        // plan-category and promo validation) is shared; everything below is the
+        // one-time `Preference` checkout and is not reached when the flag is on
+        // for a `recurring` add-on.
+        //
+        // No polling job is scheduled for this path. `scheduleAddonCheckoutPolling`
+        // exists because a MercadoPago Preference emits no Webhooks v2 delivery
+        // at all (HOS-710), so polling is the ONLY confirmation channel for a
+        // one-time add-on. A preapproval does deliver v2 events, and PR 5 is the
+        // handler that consumes them.
+        if (useRecurringCheckout) {
+            return await createRecurringAddonCheckout({
+                billing,
+                addon,
+                customerId: input.customerId,
+                // Last tier of the payer-email precedence; the cached
+                // `mp_payer_email` that outranks it is read inside.
+                customerEmail: customer.email,
+                userId: input.userId,
+                planSubscription: {
+                    id: activeSubscription.id,
+                    planId: activeSubscription.planId
+                },
+                orderId,
+                successUrl,
+                notificationUrl,
+                accommodationId: input.accommodationId
+            });
+        }
+
         const result = await billing.checkout.create({
             mode: 'payment',
             lineItems: [
@@ -621,16 +707,12 @@ export async function createAddonCheckout(
             // fallback keeps a valid (locale-prefixed, trailing-slashed) page for
             // any caller that omits them — never the old locale-less
             // `${webUrl}/mi-cuenta/addons?...` that Astro rewrote to a 404.
-            successUrl:
-                input.successUrl ??
-                `${webUrl}/es/mi-cuenta/addons/?status=success&addon=${addon.slug}`,
-            cancelUrl:
-                input.cancelUrl ??
-                `${webUrl}/es/mi-cuenta/addons/?status=failure&addon=${addon.slug}`,
+            successUrl,
+            cancelUrl,
             customerId: input.customerId,
             customerEmail: customer.email,
             ...(customerName === undefined ? {} : { customerName }),
-            notificationUrl: `${apiUrl}/api/v1/webhooks/mercadopago`,
+            notificationUrl,
             idempotencyKey: checkoutUuid,
             ...(env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
                 ? { statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR }

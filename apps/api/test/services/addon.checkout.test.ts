@@ -1030,6 +1030,52 @@ describe('confirmAddonPurchase', () => {
     });
 
     // =========================================================================
+    // HOS-847 §2.5: pin what the ONE-TIME confirmation path writes for a
+    // `recurring` add-on. Nothing in the suite asserted this before, so the
+    // second half of the bug — a recurring purchase is not only never
+    // re-charged, it also never EXPIRES — was undocumented and could have been
+    // half-"fixed" without anyone noticing.
+    // =========================================================================
+
+    describe('recurring add-ons confirm with expires_at = null (HOS-847 §2.5)', () => {
+        it('writes a NULL expires_at for a recurring add-on, which is what hides it from findExpiredAddons', async () => {
+            // Act — `extra-photos-20` is the suite's recurring fixture.
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            const inserted = mockDbInsertValues.mock.calls[0]?.[0] as Record<string, unknown>;
+            // `findExpiredAddons` / `findExpiringAddons`
+            // (`addon-expiration.queries.ts`) both filter on
+            // `isNotNull(expires_at)`, so a row written like this is
+            // CATEGORICALLY invisible to the expiry cron — it neither renews
+            // nor lapses. That is today's behaviour, recorded here on purpose;
+            // the recurring path replaces it with `current_period_end`, whose
+            // value comes from the confirmed charge (PR 5).
+            expect(inserted.expiresAt).toBeNull();
+            expect(inserted.status).toBe('active');
+        });
+
+        it('writes a real expires_at for a one-time add-on with a durationDays window', async () => {
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'visibility-boost-7d'
+            });
+
+            expect(result.success).toBe(true);
+            const inserted = mockDbInsertValues.mock.calls[0]?.[0] as Record<string, unknown>;
+            // The contrast is the point: the same code path produces a real
+            // date here, so the `null` above is a property of `billingType`,
+            // not of the insert.
+            expect(inserted.expiresAt).toBeInstanceOf(Date);
+        });
+    });
+
+    // =========================================================================
     // SPEC-309 T-007: featured_listing_addon_grants link-row write on confirm.
     // requiresAccommodationTarget is set on the shared 'visibility-boost-7d'
     // catalog mock above.
