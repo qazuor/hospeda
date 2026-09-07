@@ -91,34 +91,76 @@ function localeHasContent({
     return TRANSLATABLE_FIELDS.some((field) => Boolean(values[field][locale]));
 }
 
-/** Build a blank (empty-string) i18n locale value set. */
-function emptyLocaleValues(): I18nLocaleValues {
-    return { es: '', en: '', pt: '' };
-}
-
-/** Safely read an i18n record from raw data as an I18nLocaleValues. */
-function parseI18nField(raw: unknown): I18nLocaleValues {
-    if (raw === null || typeof raw !== 'object') {
-        return emptyLocaleValues();
-    }
-    const obj = raw as Record<string, unknown>;
+/**
+ * Safely read an i18n record from raw data as an I18nLocaleValues.
+ *
+ * `es` falls back to the flat plain-text column (`plainFallback`) when the
+ * i18n value is empty (HOS-902). ES is the platform's source-of-truth locale
+ * and predates the i18n columns, so a listing written before SPEC-253 has
+ * real Spanish content sitting in the plain column with an empty (or absent)
+ * `nameI18n`/`summaryI18n`/`descriptionI18n`/`richDescriptionI18n` twin —
+ * without this fallback the ES tab showed the "Ingresá el texto..."
+ * placeholder over content that was already published and live, and an owner
+ * who "filled it in" was retyping what already existed (HOS-902). `en`/`pt`
+ * have no plain equivalent, so they get NO fallback — an empty en/pt is a
+ * genuinely untranslated field, not a display bug.
+ */
+function parseI18nField({
+    raw,
+    plainFallback
+}: {
+    readonly raw: unknown;
+    readonly plainFallback: string;
+}): I18nLocaleValues {
+    const obj = raw !== null && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+    const es = typeof obj.es === 'string' ? obj.es : '';
     return {
-        es: typeof obj.es === 'string' ? obj.es : '',
+        es: es || plainFallback,
         en: typeof obj.en === 'string' ? obj.en : '',
         pt: typeof obj.pt === 'string' ? obj.pt : ''
     };
 }
 
+/** Read a nullable plain-text column from raw data as a fallback source. */
+function plainField(raw: Record<string, unknown>, key: string): string {
+    const value = raw[key];
+    return typeof value === 'string' ? value : '';
+}
+
 /**
  * Extracts CommerceI18nValues from a raw listing detail record.
- * Returns empty strings for any missing locale or field.
+ *
+ * Returns empty strings for any missing locale or field, EXCEPT `es`, which
+ * falls back to the corresponding flat column (`name`/`summary`/
+ * `description`/`richDescription`) when the i18n value is empty — see
+ * `parseI18nField`.
+ *
+ * Baking the fallback into the returned value is safe even though this same
+ * function seeds BOTH `CommerceListingEditor`'s live form state AND its PATCH
+ * diff baseline (both call sites parse the same raw record the same way): a
+ * field that only carries a fallback value is, by construction, IDENTICAL in
+ * both, so `buildPatchPayload`'s per-field diff (HOS-902) never treats it as
+ * dirty. Showing the fallback can never leak into a save unless the owner
+ * actually edits that specific field — see
+ * `CommerceListingEditor.payload.test.tsx`'s HOS-902 case for the regression
+ * this protects against: editing ONE i18n field must not re-send an untouched
+ * one just because it displays fallback text.
  */
 export function parseCommerceI18nValues(raw: Record<string, unknown>): CommerceI18nValues {
     return {
-        nameI18n: parseI18nField(raw.nameI18n),
-        summaryI18n: parseI18nField(raw.summaryI18n),
-        descriptionI18n: parseI18nField(raw.descriptionI18n),
-        richDescriptionI18n: parseI18nField(raw.richDescriptionI18n)
+        nameI18n: parseI18nField({ raw: raw.nameI18n, plainFallback: plainField(raw, 'name') }),
+        summaryI18n: parseI18nField({
+            raw: raw.summaryI18n,
+            plainFallback: plainField(raw, 'summary')
+        }),
+        descriptionI18n: parseI18nField({
+            raw: raw.descriptionI18n,
+            plainFallback: plainField(raw, 'description')
+        }),
+        richDescriptionI18n: parseI18nField({
+            raw: raw.richDescriptionI18n,
+            plainFallback: plainField(raw, 'richDescription')
+        })
     };
 }
 

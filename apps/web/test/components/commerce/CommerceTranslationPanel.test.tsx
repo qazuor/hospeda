@@ -8,6 +8,8 @@
  * 3. Switching tabs shows fields for the new locale.
  * 4. Editing a field calls onChange with the updated values.
  * 5. parseCommerceI18nValues safely parses raw data (happy path + missing fields).
+ * 6. parseCommerceI18nValues falls back to the plain column for `es` only,
+ *    never for en/pt, and never over an explicit i18n value (HOS-902).
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -203,7 +205,7 @@ describe('parseCommerceI18nValues', () => {
         expect(result.richDescriptionI18n.pt).toBe('Rich');
     });
 
-    it('returns empty strings for missing fields', () => {
+    it('returns empty strings for missing fields (no i18n value and no plain fallback)', () => {
         const result = parseCommerceI18nValues({});
         expect(result.nameI18n.es).toBe('');
         expect(result.summaryI18n.en).toBe('');
@@ -224,5 +226,45 @@ describe('parseCommerceI18nValues', () => {
         expect(result.nameI18n.es).toBe('Sólo ES');
         expect(result.nameI18n.en).toBe('');
         expect(result.nameI18n.pt).toBe('');
+    });
+
+    describe('ES fallback to the plain columns (HOS-902)', () => {
+        it('shows the plain name/summary/description/richDescription when i18n is empty', () => {
+            const raw = {
+                name: 'Nombre plano',
+                summary: 'Resumen plano',
+                description: 'Descripción plana',
+                richDescription: 'Ampliada plana'
+                // nameI18n / summaryI18n / descriptionI18n / richDescriptionI18n
+                // deliberately absent, the exact shape of a listing saved
+                // before SPEC-253 added the i18n columns.
+            };
+            const result = parseCommerceI18nValues(raw);
+            expect(result.nameI18n.es).toBe('Nombre plano');
+            expect(result.summaryI18n.es).toBe('Resumen plano');
+            expect(result.descriptionI18n.es).toBe('Descripción plana');
+            expect(result.richDescriptionI18n.es).toBe('Ampliada plana');
+        });
+
+        it('does not fabricate text when both the i18n value and the plain column are empty', () => {
+            const raw = { name: '', nameI18n: { es: '' } };
+            const result = parseCommerceI18nValues(raw);
+            expect(result.nameI18n.es).toBe('');
+        });
+
+        it('never falls back for en/pt, even when the plain column is loaded', () => {
+            const raw = { name: 'Nombre plano', summary: 'Resumen plano' };
+            const result = parseCommerceI18nValues(raw);
+            expect(result.nameI18n.en).toBe('');
+            expect(result.nameI18n.pt).toBe('');
+            expect(result.summaryI18n.en).toBe('');
+            expect(result.summaryI18n.pt).toBe('');
+        });
+
+        it('prefers an explicit i18n value over the plain fallback when both exist', () => {
+            const raw = { name: 'Nombre plano', nameI18n: { es: 'Nombre traducido' } };
+            const result = parseCommerceI18nValues(raw);
+            expect(result.nameI18n.es).toBe('Nombre traducido');
+        });
     });
 });
