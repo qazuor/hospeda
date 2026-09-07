@@ -234,6 +234,10 @@
         "errorNotFound": "Não conseguimos gerar a folha. Confira se a sua página continua publicada.",
         "errorRateLimited": "Você pediu a folha várias vezes seguidas. Espere um minuto e tente de novo.",
         "errorSignedOut": "Sua sessão expirou. Entre de novo para baixar a folha.",
-        "error": "Não conseguimos gerar a folha. Tente de novo em um instante."
+        "error": "Não conseguimos gerar a folha. Tente de novo em um instante.",
+        "codeAlt": "Código QR da sua página",
+        "codeLoading": "Carregando o código…",
+        "codeError": "Não conseguimos mostrar o código aqui, mas você pode baixar a folha assim mesmo.",
+        "encodes": "O código leva a: {{url}}"
     }
 }

@@ -1,7 +1,7 @@
 /**
  * @file ListingQrSheet.client.tsx
- * @description The owner-facing download of a listing's printable QR sheet
- * (HOS-982 PR 2), for the three verticals that print one.
+ * @description The owner's listing QR: the code on screen, and the printable
+ * sheet behind it (HOS-982 PR 2), for the three verticals that print one.
  *
  * ## Why one island for three verticals
  *
@@ -34,29 +34,39 @@
  * the button. The 404 branch below is the RACE — published in this tab,
  * unpublished in another — and says so.
  *
- * ## There is no in-page preview of the code, and that is not an oversight
+ * ## Why the code arrives as SVG from its own endpoint
  *
- * The route returns `application/pdf`, and neither way of showing that in the page
- * is available: `object-src 'none'` plus a `frame-src` that carries no `blob:`
- * (see `lib/middleware-helpers.ts`) rules out embedding the file, and drawing the
- * symbol client-side would mean a second QR generator, which
- * `scripts/check-qrcode-engine-isolation.sh` exists to forbid. Showing the code
- * before the download needs an endpoint that returns its SVG — the shape
- * `gastronomy/protected/menuQr.ts` already has for the MENU purpose — and that is
- * an owner decision, not this file's.
+ * A button that downloads a PDF blind tells nobody what they got, so the panel
+ * shows the symbol first (owner decision). It cannot show it out of the PDF: the
+ * app's own CSP sends `object-src 'none'` and a `frame-src` carrying neither
+ * `'self'` nor `blob:` (`lib/middleware-helpers.ts`), so an embedded file renders
+ * nothing and reports nothing. Nor can it draw one: that would be a second QR
+ * generator, which `scripts/check-qrcode-engine-isolation.sh` exists to forbid.
+ *
+ * What the CSP DOES allow is `img-src … data:`, so `GET …/{id}/qr` returns the
+ * markup and it is inlined as a `data:image/svg+xml` image — the same shape
+ * `ProviderQrPanel` and `GastronomyMenuQrWidget` already use, and rendered through
+ * `<img>` rather than injected into the DOM because a browser disables scripting
+ * inside an SVG loaded as an image.
+ *
+ * The image is not a preview of the sheet; it is THE code the sheet prints. Both
+ * endpoints resolve the same `qr_codes` row — same entity, same `LISTING`
+ * purpose — so what the owner checks on screen is what ends up on the door.
  */
 
 import type { JSX } from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildSvgDataUrl } from '@/lib/qr/qr-png';
 import styles from './ListingQrSheet.module.css';
 
 /**
- * API path segment per vertical — mirrors the three protected route mounts
- * (`accommodation`, `gastronomy` and `experience`'s `protected/qrSheet.ts`).
+ * API path segment per vertical — mirrors the protected route mounts of both
+ * `protected/qrCode.ts` (the image) and `protected/qrSheet.ts` (the PDF).
  *
  * A map rather than a ternary: `check-no-binary-vertical-ternary.sh` exists
  * because eleven sites decided a vertical with `x === 'gastronomy' ? A : B` and
@@ -103,6 +113,19 @@ type SheetState =
     | { readonly status: 'error'; readonly reason: SheetErrorReason };
 
 /**
+ * The symbol itself, fetched once when the panel mounts.
+ *
+ * Its `error` state is deliberately quiet and NEVER blocks the button: the image
+ * is what makes the download understandable, not what makes it work. A panel
+ * that hid the download because a picture failed would have turned an
+ * enhancement into a dependency.
+ */
+type CodeState =
+    | { readonly status: 'loading' }
+    | { readonly status: 'ready'; readonly svg: string; readonly url: string }
+    | { readonly status: 'error' };
+
+/**
  * Maps a refused response onto the sentence the owner reads.
  *
  * The three named statuses are the ones the route can actually produce for a
@@ -146,7 +169,7 @@ export function resolveQrSheetFilename(input: {
 }
 
 /**
- * ListingQrSheet — downloads one listing's printable QR sheet.
+ * ListingQrSheet — shows one listing's QR and downloads its printable sheet.
  *
  * @param props - {@link ListingQrSheetProps}.
  * @returns The panel element.
@@ -171,6 +194,7 @@ export function ListingQrSheet({
 }: ListingQrSheetProps): JSX.Element {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<SheetState>({ status: 'idle' });
+    const [code, setCode] = useState<CodeState>({ status: 'loading' });
     const helpId = useId();
     /**
      * The panel itself, used only to find the button again for focus.
@@ -217,6 +241,59 @@ export function ListingQrSheet({
         }
         previousStatus.current = state.status;
     }, [state.status]);
+
+    /**
+     * Fetches the symbol so the owner sees WHAT they are about to print.
+     *
+     * Only for a published listing: the route answers 404 for anything else, and
+     * asking anyway would spend a request to learn what the caller already knows.
+     *
+     * No `X-Client-Locale` here, unlike the download below. That header decides
+     * what language the SHEET is printed in; this response carries no copy at all,
+     * so sending it would imply a choice this endpoint does not make. The
+     * destination the code is minted with is pinned to the market locale
+     * server-side and follows nobody's browser.
+     *
+     * A failure sets `error` and stops. There is no retry and no message beyond a
+     * quiet line, because the button beside it still works.
+     */
+    useEffect(() => {
+        if (!isPublished) {
+            return;
+        }
+
+        let cancelled = false;
+        setCode({ status: 'loading' });
+
+        (async () => {
+            try {
+                const endpoint = `${getApiUrl()}/api/v1/protected/${API_SEGMENT_BY_VERTICAL[vertical]}/${listingId}/qr`;
+                const response = await fetch(endpoint, { credentials: 'include' });
+                if (!response.ok) {
+                    if (!cancelled) setCode({ status: 'error' });
+                    return;
+                }
+                const body = (await response.json()) as {
+                    data?: { svg?: string; url?: string };
+                };
+                const svg = body.data?.svg;
+                const url = body.data?.url;
+                if (cancelled) {
+                    return;
+                }
+                // Both or neither: rendering an image with no URL beside it, or a
+                // URL with no image, would each be a half-answer presented as a
+                // whole one.
+                setCode(svg && url ? { status: 'ready', svg, url } : { status: 'error' });
+            } catch {
+                if (!cancelled) setCode({ status: 'error' });
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isPublished, listingId, vertical]);
 
     const handleDownload = useCallback(async (): Promise<void> => {
         if (state.status === 'working') {
@@ -288,6 +365,57 @@ export function ListingQrSheet({
             className={styles.panel}
             data-testid="listing-qr-sheet"
         >
+            {code.status === 'loading' && (
+                <div
+                    className={styles.codeFrame}
+                    data-testid="listing-qr-sheet-code-loading"
+                >
+                    <Spinner
+                        label={t('common.qrSheet.codeLoading', 'Cargando el código…')}
+                        size="md"
+                    />
+                </div>
+            )}
+
+            {code.status === 'ready' && (
+                <div className={styles.codeFrame}>
+                    {/*
+                     * Rendered through `<img src="data:…">` rather than injected as
+                     * markup: both look identical and only one of them cannot
+                     * execute script, because a browser disables scripting inside
+                     * an SVG loaded as an image. Same choice as `ProviderQrPanel`,
+                     * and the CSP already allows `data:` under `img-src`.
+                     */}
+                    <img
+                        alt={t('common.qrSheet.codeAlt', 'Código QR de tu ficha')}
+                        className={styles.codeImage}
+                        data-testid="listing-qr-sheet-code"
+                        src={buildSvgDataUrl(code.svg)}
+                    />
+                    <p className={styles.codeUrl}>
+                        {t('common.qrSheet.encodes', 'El código lleva a: {{url}}', {
+                            url: code.url
+                        })}
+                    </p>
+                </div>
+            )}
+
+            {code.status === 'error' && (
+                <p
+                    className={styles.hint}
+                    data-testid="listing-qr-sheet-code-error"
+                >
+                    {/*
+                     * Not `role="alert"`, and not a blocker: the download beside it
+                     * still works, so this is a note rather than a failure.
+                     */}
+                    {t(
+                        'common.qrSheet.codeError',
+                        'No pudimos mostrar el código acá, pero podés descargar la hoja igual.'
+                    )}
+                </p>
+            )}
+
             <p
                 className={styles.hint}
                 id={helpId}

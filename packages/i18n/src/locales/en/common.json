@@ -234,6 +234,10 @@
         "errorNotFound": "We couldn't generate the sheet. Check that your listing is still published.",
         "errorRateLimited": "You asked for the sheet several times in a row. Wait a minute and try again.",
         "errorSignedOut": "Your session expired. Sign in again to download the sheet.",
-        "error": "We couldn't generate the sheet. Please try again in a moment."
+        "error": "We couldn't generate the sheet. Please try again in a moment.",
+        "codeAlt": "QR code of your listing",
+        "codeLoading": "Loading the code…",
+        "codeError": "We couldn't show the code here, but you can still download the sheet.",
+        "encodes": "The code leads to: {{url}}"
     }
 }

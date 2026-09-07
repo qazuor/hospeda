@@ -24,6 +24,44 @@
 }
 
 /*
+ * The symbol, and the URL under it. A white plate regardless of theme: a QR is
+ * read by a camera measuring contrast, and the rendered SVG paints dark modules
+ * on a light ground — dropping it onto a dark card would leave the quiet zone
+ * inverted and the code harder to scan on screen.
+ */
+.codeFrame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    align-self: stretch;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    background-color: #ffffff;
+    /* Holds the row's height steady between the spinner and the image, so the
+       card does not jump when the code arrives. */
+    min-height: 172px;
+    justify-content: center;
+}
+
+.codeImage {
+    display: block;
+    width: 140px;
+    height: 140px;
+}
+
+.codeUrl {
+    margin: 0;
+    font-size: var(--text-caption, 0.75rem);
+    line-height: 1.3;
+    color: #4b4b4b;
+    text-align: center;
+    /* The scan URL is one unbroken token; without this it overflows the plate. */
+    overflow-wrap: anywhere;
+}
+
+/*
  * `LoadingButton` owns only the busy-state layout (its own module says so) and
  * leaves the theming to the caller — so the visual button lives here. Matches
  * the compact secondary action both host cards already use around it.

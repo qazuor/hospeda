@@ -234,6 +234,10 @@
         "errorNotFound": "No pudimos generar la hoja. Revisá que tu ficha siga publicada.",
         "errorRateLimited": "Pediste la hoja varias veces seguidas. Esperá un minuto y probá de nuevo.",
         "errorSignedOut": "Se cerró tu sesión. Volvé a entrar para descargar la hoja.",
-        "error": "No pudimos generar la hoja. Probá de nuevo en un momento."
+        "error": "No pudimos generar la hoja. Probá de nuevo en un momento.",
+        "codeAlt": "Código QR de tu ficha",
+        "codeLoading": "Cargando el código…",
+        "codeError": "No pudimos mostrar el código acá, pero podés descargar la hoja igual.",
+        "encodes": "El código lleva a: {{url}}"
     }
 }
