@@ -25,7 +25,11 @@
     width: 100%;
     max-width: 600px;
     min-height: 200px;
-    overflow: hidden;
+    /* No `max-height` / `overflow` here: the element composes the shared
+       `.dialog-panel` class, which caps it at the viewport and scrolls it.
+       It used to declare `overflow: hidden` with no cap at all, which is how
+       a plan list long enough to outgrow the window ended up clipped with no
+       way to reach the confirm button. */
 }
 
 /* ── Loading overlay ───────────────────────────────────────────────────────── */

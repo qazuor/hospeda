@@ -109,7 +109,7 @@ export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDra
 
             <dialog
                 ref={panelRef}
-                className={`${styles.drawer}${isOpen ? ` ${styles.drawerOpen}` : ''}`}
+                className={`dialog-viewport ${styles.drawer}${isOpen ? ` ${styles.drawerOpen}` : ''}`}
                 aria-label={ariaLabel}
                 open={isOpen}
             >

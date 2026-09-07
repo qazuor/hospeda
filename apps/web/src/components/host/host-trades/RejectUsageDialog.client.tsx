@@ -87,7 +87,7 @@ export function RejectUsageDialog({
     return (
         <dialog
             aria-labelledby={`${noteFieldId}-title`}
-            className={styles.dialog}
+            className={`${styles.dialog} dialog-panel`}
             onCancel={onCancel}
             onClose={onCancel}
             ref={dialogRef}

@@ -96,8 +96,9 @@
 /* ── Dialog ────────────────────────────────────────────────────────────── */
 
 .dialog {
+    /* Height cap + scroll come from the shared `.dialog-panel` class the
+       component composes onto this element (see styles/components.css). */
     width: min(600px, calc(100vw - 32px));
-    max-height: 90vh;
     /* Restore native <dialog> centering — a global reset zeroes margins,
        which would otherwise pin the dialog to the top-left corner. */
     margin: auto;
@@ -109,7 +110,6 @@
     box-shadow:
         0 10px 30px -5px rgba(0, 0, 0, 0.18),
         0 4px 12px -2px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
 }
 
 .dialog::backdrop {
@@ -137,8 +137,6 @@
     flex-direction: column;
     gap: var(--space-4, 16px);
     padding: var(--space-5, 20px);
-    max-height: 90vh;
-    overflow-y: auto;
 }
 
 /* ── Dialog header ─────────────────────────────────────────────────────── */

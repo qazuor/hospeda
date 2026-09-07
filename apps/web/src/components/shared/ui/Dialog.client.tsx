@@ -188,7 +188,7 @@ export function Dialog({
         >
             <div
                 ref={panelRef}
-                className={cn(styles.panel, className)}
+                className={cn(styles.panel, 'dialog-panel', className)}
                 data-size={size}
                 data-variant={variant}
                 role="dialog"
@@ -273,7 +273,16 @@ interface DialogBodyProps {
  * panel max-height, the body is the scroll container.
  */
 export function DialogBody({ children, bare = false, className }: DialogBodyProps): JSX.Element {
-    return <div className={cn(bare ? styles.bodyBare : styles.body, className)}>{children}</div>;
+    return (
+        <div
+            className={cn(
+                bare ? styles.bodyBare : cn(styles.body, 'dialog-panel-scroll'),
+                className
+            )}
+        >
+            {children}
+        </div>
+    );
 }
 
 interface DialogFooterProps {

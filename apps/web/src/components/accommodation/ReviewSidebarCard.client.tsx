@@ -326,7 +326,7 @@ export function ReviewSidebarCard({
 
             <dialog
                 ref={dialogRef}
-                className={styles.dialog}
+                className={`${styles.dialog} dialog-panel`}
                 aria-labelledby="review-dialog-title"
                 onClose={() => setOpen(false)}
                 onClick={(event) => {

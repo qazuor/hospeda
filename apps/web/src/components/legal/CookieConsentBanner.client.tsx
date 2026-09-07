@@ -184,7 +184,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
                 aria-labelledby={titleId}
                 open
                 tabIndex={-1}
-                className={styles.banner}
+                className={`${styles.banner} dialog-panel`}
             >
                 <div className={styles.inner}>
                     {view === 'main' ? (

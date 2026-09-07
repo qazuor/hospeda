@@ -323,7 +323,7 @@ export function ReviewFormDialog({
     return (
         <dialog
             aria-labelledby={titleId}
-            className={styles.dialog}
+            className={`${styles.dialog} dialog-panel`}
             onCancel={onClose}
             onClose={onClose}
             ref={dialogRef}
