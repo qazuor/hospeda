@@ -28,6 +28,17 @@ const PAGES = resolve(__dirname, '../../../src/pages/[lang]');
 
 const read = (relative: string): string => readFileSync(resolve(PAGES, relative), 'utf8');
 
+/**
+ * Drop block comments — both `/* … *\/` docblocks and Astro's `{/* … *\/}`
+ * template comments.
+ *
+ * For the assertions whose subject is what the page RENDERS. A source-reading
+ * test cannot otherwise distinguish a rendered literal from a comment quoting
+ * one, and a docblock that explains a decision by naming the string it removed
+ * is exactly the documentation worth keeping (HOS-1212).
+ */
+const withoutBlockComments = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, '');
+
 const indexSrc = read('suscriptores/planes/index.astro');
 const hostSrc = read('suscriptores/planes/anfitriones/index.astro');
 const touristSrc = read('suscriptores/planes/turistas/index.astro');
@@ -262,7 +273,21 @@ describe('plan index — prices come from the API (AC-8)', () => {
     it('writes no currency amount into the page', () => {
         // Any `$1.234` / `$ 1234` literal would be a price the operator cannot
         // change from admin.
-        expect(indexSrc).not.toMatch(/\$\s?\d/);
+        //
+        // Matched against the source with its BLOCK COMMENTS REMOVED (HOS-1212).
+        // The claim is about what the page renders, and reading the raw file
+        // cannot tell a hardcoded amount from prose about one: the docblock now
+        // has to name the figure this page used to advertise ("Desde $ 15.000
+        // /mes") in order to explain why aliados no longer carries a price line
+        // at all. Banning the string outright would price the explanation out of
+        // the file that most needs it, and would still catch nothing a reviewer
+        // would not — a comment renders nothing.
+        expect(withoutBlockComments(indexSrc)).not.toMatch(/\$\s?\d/);
+
+        // The weakening must not have blinded it: a real literal in the template
+        // still has to be seen, and only the comment around one is dropped.
+        expect(withoutBlockComments('{/* $ 15.000 */}\n<p>$ 15.000</p>')).toMatch(/\$\s?\d/);
+        expect(withoutBlockComments('/* $ 15.000 */\n<p>ok</p>')).not.toMatch(/\$\s?\d/);
     });
 
     it('drops only the price line when a price is missing, never the CTA', () => {

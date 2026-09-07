@@ -4,9 +4,9 @@
  * INDEX introduced by HOS-942 (H1 of the HOS-941 epic).
  *
  * The index shows one card per audience Hospeda sells to — host, tourist,
- * gastronomy, experience, partner — each with a "from $X" figure and, where the
- * audience has one, its free-trial length. This module owns three things the
- * `.astro` page deliberately does not:
+ * gastronomy, experience, partner — each with a "from $X" figure where that
+ * audience publishes one, and, where it has one, its free-trial length. This
+ * module owns three things the `.astro` page deliberately does not:
  *
  * 1. **The destination of each card.** They live here rather than inline in the
  *    template so the routes can be asserted in a unit test instead of by
@@ -49,6 +49,12 @@
  * plans simply do not offer one. Partner is that case — all three tiers sit at
  * `trialDays: 0` — and its card carries no trial line at all. `null` covers both
  * situations because they must render identically.
+ *
+ * The PRICE has a second non-degraded reason too, added by HOS-1212: an audience
+ * that publishes no amount anywhere (`isPriceOnRequestAudience`). Partner is
+ * that case as well, and unlike the trial its catalogue loads perfectly — the
+ * figure is withheld by owner decision, not missing. See
+ * `./price-on-request-audiences.ts` and {@link resolveAudienceStartingPrices}.
  */
 
 import { PARTNER_TIER_PLAN_SLUG } from '@repo/billing';
@@ -58,6 +64,7 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
 import type { FetchPlansResult, PublicPlanData } from './fetch-plans';
 import { fetchPublicPlans, filterPlansByCategory } from './fetch-plans';
 import { computeMinimumTrialDays } from './generic-trial-days';
+import { isPriceOnRequestAudience } from './price-on-request-audiences';
 
 /** The five audiences the plan index offers, in display order. */
 export type AudienceCardId = 'host' | 'tourist' | 'gastronomy' | 'experience' | 'partner';
@@ -344,8 +351,26 @@ export function selectAudiencePlans(
  * Split from {@link fetchAudienceOffers} so the mapping — including every
  * degraded path — is exercisable without a network.
  *
+ * ## A price-on-request audience resolves to `null` even when its plans loaded
+ *
+ * This is the HOS-1212 fix and it is not a degraded path: partner's catalogue
+ * loads fine, `partner-silver` really does sit at ARS 15.000, and the card must
+ * still print no figure — because both pages behind that card withhold it by
+ * owner decision. The index rendering "Desde $ 15.000 /mes" while
+ * `/planes/aliados/` and `/planes/aliados/precios/` said "Consultar" is exactly
+ * what HOS-985's AC-43 forbids.
+ *
+ * The suppression is applied HERE and not in the page's `priceLabelFor`, so the
+ * value the index maps over is already the truth. A page filtering a real price
+ * out at render time would leave `startingPrices.partner` holding an amount that
+ * the next consumer of this function would publish.
+ *
+ * It coincides with the "could not be resolved" `null` on purpose: both mean the
+ * card shows no price line, and the card must not be able to tell them apart.
+ *
  * @param results - The four resolved fetches, see {@link AudiencePlanResults}.
- * @returns Starting price per audience, `null` where it could not be resolved.
+ * @returns Starting price per audience, `null` where it could not be resolved or
+ *   where the audience publishes no amount at all.
  */
 export function resolveAudienceStartingPrices(
     results: AudiencePlanResults
@@ -353,7 +378,12 @@ export function resolveAudienceStartingPrices(
     const byAudience = selectAudiencePlans(results);
 
     return Object.fromEntries(
-        AUDIENCE_CARD_ORDER.map((id) => [id, resolveStartingPrice({ plans: byAudience[id] })])
+        AUDIENCE_CARD_ORDER.map((id) => [
+            id,
+            isPriceOnRequestAudience({ audience: PRICING_AUDIENCE_BY_CARD_ID[id] })
+                ? null
+                : resolveStartingPrice({ plans: byAudience[id] })
+        ])
     ) as AudienceStartingPrices;
 }
 
