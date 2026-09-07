@@ -41,6 +41,7 @@ import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrlWithParams } from '@/lib/urls';
@@ -549,22 +550,26 @@ export function NewsletterForm({
     /**
      * Inline unsubscribe from the already-active banner.
      *
-     * Uses `window.confirm` for the "are you sure?" prompt — keeps the
-     * footer-island bundle small and matches the simpler patterns elsewhere
-     * in the app (e.g. CollectionDetailActions). On confirmation, DELETE
+     * Asks with the product-styled `showConfirmationDialog()` (HOS-957). It
+     * used to raise `window.confirm()` to keep the footer-island bundle small,
+     * but that dialog shows the site's domain, cannot be styled, and labels its
+     * own buttons in the BROWSER's language — and this form is in the footer of
+     * every page of the site, in all three locales. On confirmation, DELETE
      * /api/v1/protected/newsletter/unsubscribe; on success, the form snaps
      * back to `idle-auth` so the visitor can re-subscribe without a reload.
      */
     const handleInlineUnsubscribe = async (): Promise<void> => {
         if (formState !== 'already-active') return;
-        if (typeof window === 'undefined') return;
 
-        const confirmed = window.confirm(
-            t(
+        const confirmed = await showConfirmationDialog({
+            title: t('footer.newsletter.unsubscribeConfirmTitle', 'Desuscribirte del newsletter'),
+            message: t(
                 'footer.newsletter.unsubscribeConfirm',
                 '¿Confirmás que querés desuscribirte del newsletter?'
-            )
-        );
+            ),
+            confirmLabel: t('footer.newsletter.unsubscribeConfirmButton', 'Desuscribirme'),
+            cancelLabel: t('common.cancel', 'Cancelar')
+        });
         if (!confirmed) return;
 
         setFormState('unsubscribing');

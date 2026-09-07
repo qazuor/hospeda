@@ -318,6 +318,7 @@ export function BasicInfoSection({
                 >
                     <RichTextEditor
                         id={DESCRIPTION_ID}
+                        locale={locale}
                         value={data.description}
                         onChange={(value) => onFieldChange('description', value)}
                         placeholder={t(

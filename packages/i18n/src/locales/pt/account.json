@@ -509,6 +509,8 @@
             "removing": "Removendo...",
             "removeError": "Erro ao remover favorito da coleção",
             "removeConfirm": "Remover este favorito da coleção? Continuará salvo nos seus favoritos.",
+            "removeConfirmTitle": "Remover da coleção",
+            "removeConfirmButton": "Remover",
             "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
             "errorTitle": "Não conseguimos carregar a coleção",
             "backToList": "Voltar para meus favoritos",
@@ -527,6 +529,8 @@
             "deleting": "Excluindo…",
             "deleteSuccess": "Coleção excluída com sucesso",
             "deleteError": "Não foi possível excluir a coleção. Tente novamente.",
+            "deleteDialogTitle": "Excluir coleção",
+            "deleteConfirmButton": "Excluir coleção",
             "fields": {
                 "colorNone": "Sin color",
                 "iconNone": "Sin ícono",

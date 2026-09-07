@@ -23,8 +23,11 @@ import {
 } from '@repo/icons';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Markdown } from 'tiptap-markdown';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations, DEFAULT_LOCALE } from '@/lib/i18n';
+import { LinkUrlDialog } from './LinkUrlDialog.client';
 import styles from './RichTextEditor.module.css';
 
 /**
@@ -98,6 +101,16 @@ export interface RichTextEditorProps {
      * has no id at all and focus silently does nothing.
      */
     readonly id?: string;
+    /**
+     * Active locale, used by the link dialog (HOS-957).
+     *
+     * Optional, defaulting to `DEFAULT_LOCALE`, because this editor is mounted
+     * from four different sections and the toolbar's other labels are still
+     * hard-coded Spanish (out of scope here — HOS-957 is about the native
+     * dialogs). Every current call site passes it; a future one that forgets
+     * gets Spanish copy in the dialog rather than a crash.
+     */
+    readonly locale?: SupportedLocale;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +139,8 @@ export function RichTextEditor({
     hasError = false,
     errorMessage,
     ariaLabel,
-    id
+    id,
+    locale = DEFAULT_LOCALE
 }: RichTextEditorProps) {
     /**
      * Latest controlled `value`, read inside `onUpdate` (HOS-371).
@@ -216,7 +230,10 @@ export function RichTextEditor({
         <div
             className={`${styles.wrapper} ${hasError ? styles.wrapperError : ''} ${disabled ? styles.disabled : ''}`}
         >
-            <Toolbar editor={editor} />
+            <Toolbar
+                editor={editor}
+                locale={locale}
+            />
             {/*
              * HOS-828: this wrapper exists ONLY to be the containing block for
              * the absolutely-positioned placeholder overlay below. Without it
@@ -251,81 +268,122 @@ export function RichTextEditor({
 
 interface ToolbarProps {
     readonly editor: NonNullable<ReturnType<typeof useEditor>>;
+    readonly locale: SupportedLocale;
 }
 
-function Toolbar({ editor }: ToolbarProps) {
+function Toolbar({ editor, locale }: ToolbarProps) {
+    const { t } = createTranslations(locale);
+    const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+    const [linkInitialUrl, setLinkInitialUrl] = useState('');
+
     const promptForLink = useCallback(() => {
-        const previous = (editor.getAttributes('link').href as string | undefined) ?? '';
-        const url = window.prompt('URL del enlace', previous);
-        if (url === null) return; // cancelled
-        if (url === '') {
-            editor.chain().focus().extendMarkRange('link').unsetLink().run();
-            return;
-        }
-        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+        setLinkInitialUrl((editor.getAttributes('link').href as string | undefined) ?? '');
+        setIsLinkDialogOpen(true);
     }, [editor]);
 
+    const closeLinkDialog = useCallback(() => {
+        // The `null` arm of the old `window.prompt`: leave the link untouched.
+        setIsLinkDialogOpen(false);
+    }, []);
+
+    const applyLink = useCallback(
+        (url: string) => {
+            setIsLinkDialogOpen(false);
+            // The empty arm of the old `window.prompt`: an empty value REMOVES
+            // the link. It is the only way to unlink a selection.
+            if (url === '') {
+                editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                return;
+            }
+            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+        },
+        [editor]
+    );
+
     return (
-        <div
-            role="toolbar"
-            aria-label="Formato"
-            className={styles.toolbar}
-        >
-            <ToolbarButton
-                label="Negrita"
-                icon={BoldIcon}
-                isActive={editor.isActive('bold')}
-                onClick={() => editor.chain().focus().toggleBold().run()}
+        <>
+            <div
+                role="toolbar"
+                aria-label="Formato"
+                className={styles.toolbar}
+            >
+                <ToolbarButton
+                    label="Negrita"
+                    icon={BoldIcon}
+                    isActive={editor.isActive('bold')}
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                />
+                <ToolbarButton
+                    label="Cursiva"
+                    icon={ItalicIcon}
+                    isActive={editor.isActive('italic')}
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                />
+                <ToolbarButton
+                    label="Subrayado"
+                    icon={UnderlineIcon}
+                    isActive={editor.isActive('underline')}
+                    onClick={() => editor.chain().focus().toggleUnderline().run()}
+                />
+                <ToolbarTextButton
+                    label="Encabezado 2"
+                    text="H2"
+                    isActive={editor.isActive('heading', { level: 2 })}
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                />
+                <ToolbarTextButton
+                    label="Encabezado 3"
+                    text="H3"
+                    isActive={editor.isActive('heading', { level: 3 })}
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                />
+                <ToolbarButton
+                    label="Lista"
+                    icon={ListIcon}
+                    isActive={editor.isActive('bulletList')}
+                    onClick={() => editor.chain().focus().toggleBulletList().run()}
+                />
+                <ToolbarButton
+                    label="Lista numerada"
+                    icon={ListOrderedIcon}
+                    isActive={editor.isActive('orderedList')}
+                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                />
+                <ToolbarButton
+                    label="Cita"
+                    icon={QuotesIcon}
+                    isActive={editor.isActive('blockquote')}
+                    onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                />
+                <ToolbarButton
+                    label="Enlace"
+                    icon={LinkIcon}
+                    isActive={editor.isActive('link')}
+                    onClick={promptForLink}
+                />
+            </div>
+            {/*
+             * Outside the `role="toolbar"` element: the dialog is not a toolbar
+             * item. It portals to <body> either way, but the React tree is what
+             * a reader and the a11y tooling both go by.
+             */}
+            <LinkUrlDialog
+                isOpen={isLinkDialogOpen}
+                initialUrl={linkInitialUrl}
+                title={t('common.richText.linkDialog.title', 'Enlace')}
+                label={t('common.richText.linkDialog.label', 'URL del enlace')}
+                hint={t(
+                    'common.richText.linkDialog.hint',
+                    'Dejá el campo vacío para quitar el enlace.'
+                )}
+                placeholder={t('common.richText.linkDialog.placeholder', 'https://ejemplo.com')}
+                submitLabel={t('common.richText.linkDialog.submit', 'Aplicar')}
+                cancelLabel={t('common.cancel', 'Cancelar')}
+                closeLabel={t('common.close', 'Cerrar')}
+                onSubmit={applyLink}
+                onCancel={closeLinkDialog}
             />
-            <ToolbarButton
-                label="Cursiva"
-                icon={ItalicIcon}
-                isActive={editor.isActive('italic')}
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-            />
-            <ToolbarButton
-                label="Subrayado"
-                icon={UnderlineIcon}
-                isActive={editor.isActive('underline')}
-                onClick={() => editor.chain().focus().toggleUnderline().run()}
-            />
-            <ToolbarTextButton
-                label="Encabezado 2"
-                text="H2"
-                isActive={editor.isActive('heading', { level: 2 })}
-                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            />
-            <ToolbarTextButton
-                label="Encabezado 3"
-                text="H3"
-                isActive={editor.isActive('heading', { level: 3 })}
-                onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            />
-            <ToolbarButton
-                label="Lista"
-                icon={ListIcon}
-                isActive={editor.isActive('bulletList')}
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
-            />
-            <ToolbarButton
-                label="Lista numerada"
-                icon={ListOrderedIcon}
-                isActive={editor.isActive('orderedList')}
-                onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            />
-            <ToolbarButton
-                label="Cita"
-                icon={QuotesIcon}
-                isActive={editor.isActive('blockquote')}
-                onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            />
-            <ToolbarButton
-                label="Enlace"
-                icon={LinkIcon}
-                isActive={editor.isActive('link')}
-                onClick={promptForLink}
-            />
-        </div>
+        </>
     );
 }
 

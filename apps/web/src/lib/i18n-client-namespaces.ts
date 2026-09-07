@@ -195,6 +195,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.qrSheet',
     'common.removing',
     'common.retry',
+    // HOS-957 — the rich-text toolbar's link dialog, which replaced
+    // `window.prompt('URL del enlace', …)`. Named by `LinkUrlDialog.client.tsx`
+    // through `RichTextEditor.client.tsx`, so it is reachable from all four
+    // editors that mount it (accommodation, commerce, event, post).
+    'common.richText',
     'common.saving',
     'common.untitled',
     // HOS-734 — `CommerceViewsWidget.client.tsx` names `common.window.7d` /

@@ -5,8 +5,10 @@
  *
  * - Edit: opens the CreateEditCollectionModal in EDIT mode pre-filled with the
  *   collection data. On save, reloads the page so the header reflects any changes.
- * - Delete: shows a window.confirm() dialog (MVP). On confirm, calls the delete
- *   API and redirects to the favorites page. On error, shows an error toast.
+ * - Delete: asks with the product-styled `showConfirmationDialog()` (HOS-957 —
+ *   it used to raise `window.confirm()`, which shows the site's domain and
+ *   cannot be styled or translated). On confirm, calls the delete API and
+ *   redirects to the favorites page. On error, shows an error toast.
  *
  * Hydration: caller must use `client:load`.
  */
@@ -14,6 +16,7 @@
 import { useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
@@ -71,12 +74,20 @@ export function CollectionDetailActions({
     // ── Delete handler ────────────────────────────────────────────────────
 
     async function handleDelete(): Promise<void> {
-        const confirmMessage = t(
-            'account.favorites.collections.delete_confirm',
-            '¿Estás seguro de que querés borrar esta colección?'
-        );
+        const confirmed = await showConfirmationDialog({
+            title: t('account.favorites.collections.deleteDialogTitle', 'Borrar colección'),
+            message: t(
+                'account.favorites.collections.delete_confirm',
+                '¿Estás seguro de que querés borrar esta colección?'
+            ),
+            confirmLabel: t(
+                'account.favorites.collections.deleteConfirmButton',
+                'Borrar colección'
+            ),
+            cancelLabel: t('common.cancel', 'Cancelar')
+        });
 
-        if (!window.confirm(confirmMessage)) {
+        if (!confirmed) {
             return;
         }
 

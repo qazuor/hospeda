@@ -146,6 +146,15 @@
     "pagination": "Paginação",
     "noImage": "Sem imagem",
     "removing": "Removendo...",
+    "richText": {
+        "linkDialog": {
+            "title": "Link",
+            "label": "URL do link",
+            "hint": "Deixe o campo vazio para remover o link.",
+            "placeholder": "https://exemplo.com",
+            "submit": "Aplicar"
+        }
+    },
     "retry": "Tentar novamente",
     "saving": "Salvando...",
     "untitled": "Sem título",
