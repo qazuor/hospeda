@@ -77,8 +77,17 @@ const ADDON_ORPHAN_QUEUE_FLOW = 'addon-purchase' as const;
 export interface RecordAddonPaymentInput {
     readonly billing: QZPayBilling;
     readonly customerId: string;
-    /** Local `billing_subscriptions` row this charge is attributed to. */
-    readonly subscriptionId: string;
+    /**
+     * Local `billing_subscriptions` row this charge is attributed to.
+     *
+     * `undefined` when there is none. `billing_payments.subscription_id` is a
+     * nullable FK onto `billing_subscriptions.id`, so the ONLY two legal values
+     * are a real subscription id or nothing: substituting some other table's id
+     * (an add-on purchase id, say) makes every insert fail with SQLSTATE 23503,
+     * which this module swallows into the orphan queue — a silent, permanent
+     * ledger outage for that flow.
+     */
+    readonly subscriptionId?: string | undefined;
     /** The `billing_addon_purchases` row the charge paid for. */
     readonly purchaseId: string;
     readonly addonSlug: string;
@@ -103,15 +112,47 @@ export interface RecordAddonPaymentInput {
 }
 
 /**
+ * Payment statuses that are the LAST word MercadoPago will have on a charge.
+ *
+ * `pending` and `processing` are excluded because they are explicitly not
+ * final: an issuer review (`in_process`) or a mediation resolves later into one
+ * of these. Everything here is a disposition the provider does not walk back —
+ * a `refunded` charge that is somehow charged again arrives as a new payment
+ * id, not as an amendment of this one.
+ */
+const TERMINAL_PAYMENT_STATUSES: ReadonlySet<QZPayPaymentStatus> = new Set<QZPayPaymentStatus>([
+    'succeeded',
+    'failed',
+    'canceled',
+    'refunded'
+]);
+
+/**
  * What the ledger write did.
  *
  * `inserted: false` covers BOTH "a row for this MercadoPago payment id already
  * existed" (an idempotent redelivery) and "the write failed and was queued as
- * an orphan payment". Callers that use this to decide whether to advance a
- * billing period want the same answer — *do not advance* — in both cases.
+ * an orphan payment".
+ *
+ * `statusAdvanced` is the third case, and it exists because the first two
+ * collapse a distinction that costs a customer a whole billing period. A charge
+ * that MercadoPago first reports as `in_process` (issuer review) and later as
+ * `approved` is ONE payment id: the `in_process` delivery consumes `inserted`,
+ * and the `approved` delivery that follows finds the row and reports
+ * `inserted: false`. A caller gating "advance the period" on `inserted` alone
+ * therefore never advances it — for money that actually arrived — and leaves
+ * the ledger row reading `processing` forever. When the stored row is
+ * non-terminal and the incoming status is terminal, this module UPDATES the row
+ * and says so here.
  */
 export interface RecordAddonPaymentOutcome {
     readonly inserted: boolean;
+    /**
+     * An existing ledger row was moved from a non-terminal status
+     * (`pending`/`processing`) to the terminal status this delivery carries.
+     * Never `true` at the same time as `inserted`.
+     */
+    readonly statusAdvanced: boolean;
 }
 
 /**
@@ -159,23 +200,58 @@ export async function recordAddonPayment(
     } = params;
 
     try {
-        const { getDb, billingPayments } = await import('@repo/db');
+        const { getDb, billingPayments, eq } = await import('@repo/db');
         const { sql: paymentSql } = await import('drizzle-orm');
 
         const existing = await getDb()
-            .select({ id: billingPayments.id })
+            .select({ id: billingPayments.id, status: billingPayments.status })
             .from(billingPayments)
             .where(
                 paymentSql`${billingPayments.providerPaymentIds}->>${ADDON_PAYMENT_PROVIDER_KEY} = ${providerPaymentId}`
             )
             .limit(1);
 
-        if (existing.length > 0) {
+        const existingRow = existing[0];
+
+        if (existingRow) {
+            const storedStatus = existingRow.status as QZPayPaymentStatus;
+            const storedIsTerminal = TERMINAL_PAYMENT_STATUSES.has(storedStatus);
+            const incomingIsTerminal = TERMINAL_PAYMENT_STATUSES.has(status);
+
+            if (!storedIsTerminal && incomingIsTerminal && storedStatus !== status) {
+                // The SAME MercadoPago payment resolving: `in_process` →
+                // `approved` (or `rejected`). Not a redelivery to ignore — it is
+                // the disposition, arriving second. Leaving the row at
+                // `processing` strands real money in a non-terminal state and,
+                // worse, denies the caller the `inserted` it gates the billing
+                // period on.
+                await getDb()
+                    .update(billingPayments)
+                    .set({ status, updatedAt: new Date() })
+                    .where(eq(billingPayments.id, existingRow.id));
+
+                apiLogger.info(
+                    {
+                        customerId,
+                        addonSlug,
+                        purchaseId,
+                        providerPaymentId,
+                        billingPaymentId: existingRow.id,
+                        previousStatus: storedStatus,
+                        status,
+                        flow
+                    },
+                    'Add-on payment already in billing_payments — status advanced to its terminal disposition'
+                );
+
+                return { inserted: false, statusAdvanced: true };
+            }
+
             apiLogger.debug(
-                { customerId, addonSlug, purchaseId, providerPaymentId },
+                { customerId, addonSlug, purchaseId, providerPaymentId, storedStatus, status },
                 'Add-on payment already recorded in billing_payments — skipping record'
             );
-            return { inserted: false };
+            return { inserted: false, statusAdvanced: false };
         }
 
         const recorded = await billing.payments.record({
@@ -209,7 +285,7 @@ export async function recordAddonPayment(
             'Add-on payment recorded in billing_payments'
         );
 
-        return { inserted: true };
+        return { inserted: true, statusAdvanced: false };
     } catch (recordError) {
         // HOS-1001: this branch used to say, in its own log message, "money
         // collected without a ledger entry; reconcile manually" — and there was
@@ -256,6 +332,6 @@ export async function recordAddonPayment(
             'error'
         );
 
-        return { inserted: false };
+        return { inserted: false, statusAdvanced: false };
     }
 }

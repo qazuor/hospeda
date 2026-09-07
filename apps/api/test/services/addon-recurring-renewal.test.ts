@@ -33,7 +33,7 @@ const {
     mockActivate: vi.fn(),
     mockPaymentsRecord: vi.fn(),
     /** Rows the `billing_payments` dedupe lookup answers with. */
-    mockDedupeRows: { rows: [] as Array<{ id: string }> },
+    mockDedupeRows: { rows: [] as Array<{ id: string; status: string }> },
     /** Rows the `billing_addon_purchases` re-read answers with. */
     mockPurchaseRows: { rows: [] as Array<Record<string, unknown>> },
     /** Captures every `update(...).set(payload)` payload, in order. */
@@ -93,7 +93,12 @@ vi.mock('@repo/db', () => {
                 })
             }))
         })),
-        billingPayments: { id: 'id', providerPaymentIds: 'provider_payment_ids' },
+        billingPayments: {
+            id: 'id',
+            status: 'status',
+            updatedAt: 'updated_at',
+            providerPaymentIds: 'provider_payment_ids'
+        },
         and: vi.fn((...args: unknown[]) => ({ and: args })),
         eq: vi.fn((a: unknown, b: unknown) => ({ eq: [a, b] })),
         isNull: vi.fn((a: unknown) => ({ isNull: a }))
@@ -114,6 +119,7 @@ function makePurchase(overrides: Record<string, unknown> = {}) {
         mpSubscriptionId: PREAPPROVAL_ID,
         billingInterval: 'monthly',
         currentPeriodEnd: new Date('2026-06-10T12:00:00.000Z'),
+        purchasedAt: new Date('2026-05-10T12:00:00.000Z'),
         metadata: {},
         ...overrides
     } as never;
@@ -185,6 +191,58 @@ describe('settleRecurringAddonCharge — the ledger', () => {
         });
     });
 
+    it('attributes the charge to NOTHING rather than to the purchase id when there is no plan subscription', async () => {
+        // Arrange: `billing_payments.subscription_id` is a nullable FK onto
+        // `billing_subscriptions.id`. A `billing_addon_purchases` id is not in
+        // that table, so passing it raises SQLSTATE 23503 on EVERY charge — and
+        // this module swallows the failure into the orphan queue and reports
+        // `inserted: false`, so the period would never advance and the caller
+        // would never see an error.
+        const purchase = makePurchase({ subscriptionId: null });
+
+        // Act
+        const outcome = await settleRecurringAddonCharge({
+            billing,
+            purchase,
+            details: makeDetails(),
+            status: 'succeeded',
+            settledAt: new Date('2026-06-10T12:00:00.000Z'),
+            triggerSource: 'test'
+        });
+
+        // Assert
+        expect(mockPaymentsRecord).toHaveBeenCalledTimes(1);
+        expect(mockPaymentsRecord.mock.calls[0]?.[0]?.subscriptionId).toBeUndefined();
+        expect(outcome.ledgerInserted).toBe(true);
+    });
+
+    it('books the money even when the activation throws', async () => {
+        // Arrange: `activateRecurringAddonPurchase` is NOT total — its catalog
+        // and base-plan reads precede its own try block. With the ledger write
+        // ordered after it, a throw here left MercadoPago's money with no
+        // billing_payments row, no orphan-queue row (the queue lives inside
+        // recordAddonPayment, which never ran) and a consumed webhook event.
+        const purchase = makePurchase({ status: 'pending', currentPeriodEnd: null });
+        mockActivate.mockRejectedValue(new Error('catalog service unavailable'));
+
+        // Act
+        const outcome = await settleRecurringAddonCharge({
+            billing,
+            purchase,
+            details: makeDetails(),
+            status: 'succeeded',
+            settledAt: new Date('2026-06-10T12:00:00.000Z'),
+            triggerSource: 'test'
+        });
+
+        // Assert: the charge is on the ledger, the caller is told nothing was
+        // activated, and nothing threw out of this function.
+        expect(mockPaymentsRecord).toHaveBeenCalledTimes(1);
+        expect(outcome.ledgerInserted).toBe(true);
+        expect(outcome.activated).toBe(false);
+        expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+    });
+
     it('records a REJECTED charge with its real status and advances nothing', async () => {
         // Arrange: MercadoPago tried and failed. The ledger records what the
         // provider did, not what we hoped for.
@@ -212,8 +270,11 @@ describe('settleRecurringAddonCharge — idempotency under a MercadoPago redeliv
         // Arrange: the ledger already holds a row for this MercadoPago payment
         // id — the state a redelivery finds. The purchase is deliberately given
         // a period end already in the PAST, so the window check alone would say
-        // "advance"; only the ledger's dedupe stops it.
-        mockDedupeRows.rows = [{ id: 'billing-payment-1' }];
+        // "advance"; only the ledger's dedupe stops it. The stored row is
+        // already `succeeded`, which is what a plain redelivery finds — an
+        // in_process row completing into approved is a different case, covered
+        // below.
+        mockDedupeRows.rows = [{ id: 'billing-payment-1', status: 'succeeded' }];
         const purchase = makePurchase({
             currentPeriodEnd: new Date('2026-05-10T12:00:00.000Z')
         });
@@ -283,6 +344,103 @@ describe('settleRecurringAddonCharge — idempotency under a MercadoPago redeliv
         });
 
         // Assert: the money is on record, the customer got no second month.
+        expect(mockPaymentsRecord).toHaveBeenCalledTimes(1);
+        expect(outcome.ledgerInserted).toBe(true);
+        expect(outcome.periodAdvanced).toBe(false);
+        expect(capturedPeriodWrite()).toBeUndefined();
+    });
+});
+
+describe('settleRecurringAddonCharge — one payment id resolving in two deliveries', () => {
+    it('advances the period when a stored in_process row is completed by the approved delivery', async () => {
+        // Arrange: MercadoPago sent this charge first as `in_process` (issuer
+        // review) and now as `approved`. It is ONE payment id, so the dedupe
+        // finds the row the first delivery inserted. Gating on `inserted` alone
+        // means the period NEVER advances for money that did arrive, and the
+        // ledger row stays `processing` forever.
+        mockDedupeRows.rows = [{ id: 'billing-payment-1', status: 'processing' }];
+        const purchase = makePurchase({
+            currentPeriodEnd: new Date('2026-05-10T12:00:00.000Z')
+        });
+
+        // Act
+        const outcome = await settleRecurringAddonCharge({
+            billing,
+            purchase,
+            details: makeDetails(),
+            status: 'succeeded',
+            settledAt: new Date('2026-06-10T12:00:00.000Z'),
+            triggerSource: 'test'
+        });
+
+        // Assert: no second insert, the stored row is moved to its terminal
+        // status, and the period advances off the back of it.
+        expect(mockPaymentsRecord).not.toHaveBeenCalled();
+        expect(outcome.ledgerInserted).toBe(false);
+        expect(outcome.periodAdvanced).toBe(true);
+        expect(
+            mockUpdateSet.mock.calls
+                .map((call) => call[0] as Record<string, unknown>)
+                .some((payload) => payload.status === 'succeeded')
+        ).toBe(true);
+        expect(capturedPeriodWrite()).toMatchObject({
+            currentPeriodStart: new Date('2026-05-10T12:00:00.000Z')
+        });
+    });
+
+    it('leaves an ALREADY terminal row alone and advances nothing', async () => {
+        // Arrange: the control. A plain redelivery of an approved charge finds a
+        // row that is already `succeeded` — nothing to advance, nothing to
+        // rewrite. Without this, the test above would pass against code that
+        // advanced on every redelivery.
+        mockDedupeRows.rows = [{ id: 'billing-payment-1', status: 'succeeded' }];
+        const purchase = makePurchase({
+            currentPeriodEnd: new Date('2026-05-10T12:00:00.000Z')
+        });
+
+        // Act
+        const outcome = await settleRecurringAddonCharge({
+            billing,
+            purchase,
+            details: makeDetails(),
+            status: 'succeeded',
+            settledAt: new Date('2026-06-10T12:00:00.000Z'),
+            triggerSource: 'test'
+        });
+
+        // Assert
+        expect(outcome.periodAdvanced).toBe(false);
+        expect(capturedPeriodWrite()).toBeUndefined();
+    });
+});
+
+describe('settleRecurringAddonCharge — a purchase that is no longer live', () => {
+    it.each([
+        ['canceled'],
+        ['expired']
+    ])('records the money for a %s purchase but writes NO period', async (status) => {
+        // Arrange: `supersedePendingPurchase` marks a superseded purchase
+        // `canceled` after cancelling its preapproval; a late first charge
+        // against that preapproval still arrives. A period written onto a
+        // dead row looks exactly like a healthy subscription to PR 7's
+        // reconciler — the one thing that would otherwise catch it.
+        const purchase = makePurchase({
+            status,
+            currentPeriodEnd: new Date('2026-05-10T12:00:00.000Z')
+        });
+
+        // Act
+        const outcome = await settleRecurringAddonCharge({
+            billing,
+            purchase,
+            details: makeDetails(),
+            status: 'succeeded',
+            settledAt: new Date('2026-06-10T12:00:00.000Z'),
+            triggerSource: 'test'
+        });
+
+        // Assert: the money exists and a refund needs its ledger row, so it
+        // is recorded; nothing else happens.
         expect(mockPaymentsRecord).toHaveBeenCalledTimes(1);
         expect(outcome.ledgerInserted).toBe(true);
         expect(outcome.periodAdvanced).toBe(false);

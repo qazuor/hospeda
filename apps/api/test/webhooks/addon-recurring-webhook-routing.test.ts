@@ -40,7 +40,7 @@ const addonPurchaseRows: { rows: Array<Record<string, unknown>> } = { rows: [] }
 /** `billing_subscriptions` rows for the PLAN lookup. */
 const planSubRows: { rows: Array<Record<string, unknown>> } = { rows: [] };
 /** `billing_payments` dedupe rows. */
-const dedupeRows: { rows: Array<{ id: string }> } = { rows: [] };
+const dedupeRows: { rows: Array<{ id: string; status: string }> } = { rows: [] };
 
 const { mockTx, mockUpdateSet } = vi.hoisted(() => ({
     mockTx: {
@@ -152,7 +152,13 @@ vi.mock('@repo/db', () => {
                 })
             }))
         })),
-        billingPayments: { id: 'id', providerPaymentIds: 'provider_payment_ids', deletedAt: 'd' },
+        billingPayments: {
+            id: 'id',
+            status: 'status',
+            updatedAt: 'updated_at',
+            providerPaymentIds: 'provider_payment_ids',
+            deletedAt: 'd'
+        },
         billingSubscriptions: {
             id: 'id',
             customerId: 'customer_id',
@@ -245,6 +251,7 @@ function addonPurchaseRow(overrides: Record<string, unknown> = {}) {
         mpSubscriptionId: PREAPPROVAL_ID,
         billingInterval: 'monthly',
         currentPeriodEnd: new Date('2026-06-10T12:00:00.000Z'),
+        purchasedAt: new Date('2026-05-10T12:00:00.000Z'),
         metadata: {},
         ...overrides
     };
@@ -331,7 +338,9 @@ describe('an add-on preapproval charge is intercepted before the plan handler', 
     it('a redelivery of the same MercadoPago payment books nothing and moves no period', async () => {
         // Arrange: the ledger already holds this payment id, and the period is
         // past — so only the dedupe can stop a second advance.
-        dedupeRows.rows = [{ id: 'billing-payment-1' }];
+        // The stored status matters: a row still `processing` would be the SAME
+        // payment resolving, which legitimately does advance the period.
+        dedupeRows.rows = [{ id: 'billing-payment-1', status: 'succeeded' }];
         addonPurchaseRows.rows = [
             addonPurchaseRow({ currentPeriodEnd: new Date(Date.now() - 60_000) })
         ];

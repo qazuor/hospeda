@@ -49,11 +49,27 @@ import {
     computeNextAddonPeriod,
     findRecurringAddonPurchaseByPreapprovalId,
     normalizeAddonBillingInterval,
-    type RecurringAddonPurchaseRow
+    type RecurringAddonPurchaseRow,
+    resolveAddonPeriodAnchorDay
 } from './addon-recurring-period.js';
 
 /** Fallback currency, matching the plan-side handler. */
 const FALLBACK_CURRENCY = 'ARS';
+
+/**
+ * The only purchase status whose billing period a charge may move.
+ *
+ * `findRecurringAddonPurchaseByPreapprovalId` is deliberately UNFILTERED by
+ * status — routing a `'canceled'` purchase's charge to the plan handler is the
+ * worst available outcome (HOS-751) — so every write downstream of it has to
+ * re-check the status for itself. Without this, a charge against a purchase
+ * that `supersedePendingPurchase` marked `'canceled'` (a buyer who reopened
+ * checkout after the 3-hour window, whose first preapproval then charged late)
+ * books the money AND writes a fresh period onto a dead row, which reads as a
+ * perfectly healthy subscription to PR 7's reconciler — the one thing that
+ * would otherwise have caught it.
+ */
+const ADVANCEABLE_PURCHASE_STATUS = 'active' as const;
 
 /** Input for {@link settleRecurringAddonCharge}. */
 export interface SettleRecurringAddonChargeInput {
@@ -110,7 +126,10 @@ async function advancePeriodForConfirmedCharge(params: {
     const next = computeNextAddonPeriod({
         currentPeriodEnd: purchase.currentPeriodEnd,
         settledAt,
-        billingInterval: normalizeAddonBillingInterval(purchase.billingInterval)
+        billingInterval: normalizeAddonBillingInterval(purchase.billingInterval),
+        // The buyer's ORIGINAL day-of-month, so a February clamp does not become
+        // the permanent billing day.
+        anchorDay: resolveAddonPeriodAnchorDay(purchase.purchasedAt)
     });
 
     if (next === null) {
@@ -140,6 +159,11 @@ async function advancePeriodForConfirmedCharge(params: {
             .where(
                 and(
                     eq(billingAddonPurchases.id, purchase.id),
+                    // Belt to the caller's braces: the status was checked before
+                    // this function was called, but the predicate lives in the
+                    // WHERE too so a row cancelled between the read and this
+                    // write cannot receive a period either.
+                    eq(billingAddonPurchases.status, ADVANCEABLE_PURCHASE_STATUS),
                     isNull(billingAddonPurchases.deletedAt)
                 )
             );
@@ -174,23 +198,33 @@ async function advancePeriodForConfirmedCharge(params: {
 /**
  * Settle one MercadoPago charge taken against a recurring add-on's preapproval.
  *
- * Sequence:
- *  1. A SUCCEEDED charge against a still-`'pending'` purchase activates it (the
- *     lost-`preapproval.updated` path). The row is then re-read, because the
- *     activation just wrote the very `current_period_end` step 3 reasons about.
- *  2. The charge is booked in `billing_payments` with
- *     `metadata.flow = 'addon-recurring'` and its real disposition — a rejected
+ * Sequence — and the ORDER is the whole point of the first step:
+ *  1. **The charge is booked in `billing_payments` FIRST**, with
+ *     `metadata.flow = 'addon-recurring'` and its real disposition. A rejected
  *     charge is recorded too, exactly as the plan-side handler records one,
  *     because the ledger is a record of what the provider did, not of what we
- *     wanted.
- *  3. Only a SUCCEEDED charge that inserted a NEW ledger row may move the
- *     period.
+ *     wanted. It runs before the activation because the activation CAN throw
+ *     (see {@link activateRecurringAddonPurchase}), and every caller above this
+ *     one consumes the event: an activation failure ahead of the ledger write
+ *     left MercadoPago's money with no `billing_payments` row, no orphan-queue
+ *     row (the queue lives INSIDE `recordAddonPayment`, which never ran) and no
+ *     redelivery — the exact state HOS-714/HOS-1001 built the orphan queue to
+ *     make impossible.
+ *  2. A SUCCEEDED charge against a still-`'pending'` purchase activates it (the
+ *     lost-`preapproval.updated` path), inside a guard. The row is then re-read,
+ *     because the activation just wrote the very `current_period_end` step 3
+ *     reasons about.
+ *  3. Only a SUCCEEDED charge that produced a fresh terminal ledger row — an
+ *     INSERT, or an existing non-terminal row advanced to its final status —
+ *     may move the period, and only on an `'active'` purchase.
  *
  * **Never inserts a second purchase row.** A renewal is the same purchase, one
  * period later; `idx_addon_purchases_active_unique` would reject a second
  * active row anyway, and silently, since this runs inside a webhook.
  *
- * Does not throw. The caller must ack the webhook.
+ * Does not throw: every step is either non-throwing by construction
+ * (`recordAddonPayment`, `advancePeriodForConfirmedCharge`) or guarded here.
+ * The caller must ack the webhook.
  *
  * @param input - See {@link SettleRecurringAddonChargeInput}.
  * @returns What happened, for the caller's log line.
@@ -206,18 +240,68 @@ export async function settleRecurringAddonCharge(
         return { activated: false, ledgerInserted: false, periodAdvanced: false };
     }
 
+    const currency = details.currencyId || FALLBACK_CURRENCY;
+    const amountInCents = Math.round(details.transactionAmount * 100);
+
+    const ledger = await recordAddonPayment({
+        billing,
+        customerId: purchase.customerId,
+        // The customer's PLAN subscription, which is what
+        // `billing_addon_purchases.subscription_id` holds and what the refund
+        // and reconciliation paths expect on a `billing_payments` row.
+        //
+        // `undefined` when the purchase has none — NEVER the purchase id.
+        // `billing_payments.subscription_id` carries a foreign key to
+        // `billing_subscriptions.id`, and a `billing_addon_purchases` id is not
+        // in that table: the insert would fail with SQLSTATE 23503 on EVERY
+        // charge, be swallowed into the orphan queue, and report
+        // `inserted: false` — so the period would never advance and the caller
+        // would never see the error. The column is nullable and
+        // `applyRefundLifecycle` already guards for a payment with no
+        // subscription.
+        subscriptionId: purchase.subscriptionId ?? undefined,
+        purchaseId: purchase.id,
+        addonSlug: purchase.addonSlug,
+        providerPaymentId: details.paymentId,
+        amountInCents,
+        currency,
+        flow: ADDON_RECURRING_PAYMENT_FLOW,
+        status
+    });
+
     let activated = false;
     if (status === 'succeeded' && purchase.status === 'pending') {
-        const activation = await activateRecurringAddonPurchase({
-            billing,
-            purchase,
-            activatedAt: settledAt,
-            providerPaymentId: details.paymentId,
-            triggerSource
-        });
-        activated = activation.activated;
+        try {
+            const activation = await activateRecurringAddonPurchase({
+                billing,
+                purchase,
+                activatedAt: settledAt,
+                providerPaymentId: details.paymentId,
+                triggerSource
+            });
+            activated = activation.activated;
+        } catch (activationError) {
+            // The money is already on the ledger (step 1), so this is a granted
+            // benefit missing — recoverable by the next charge event or by
+            // PR 7's reconciler — rather than a payment that vanished.
+            apiLogger.error(
+                {
+                    purchaseId: purchase.id,
+                    customerId: purchase.customerId,
+                    addonSlug: purchase.addonSlug,
+                    mpPaymentId: details.paymentId,
+                    triggerSource,
+                    error:
+                        activationError instanceof Error
+                            ? activationError.message
+                            : String(activationError)
+                },
+                'HOS-847: a recurring add-on charge was booked but its activation threw — the customer paid and holds no entitlement until this is reconciled',
+                { capture: true }
+            );
+        }
 
-        if (activation.activated) {
+        if (activated) {
             // Re-read: the activation wrote `current_period_start/end`, and the
             // in-memory row still carries the pre-activation nulls. Advancing
             // off a stale null would hand this charge a second period.
@@ -230,33 +314,42 @@ export async function settleRecurringAddonCharge(
         }
     }
 
-    const currency = details.currencyId || FALLBACK_CURRENCY;
-    const amountInCents = Math.round(details.transactionAmount * 100);
-
-    const ledger = await recordAddonPayment({
-        billing,
-        customerId: purchase.customerId,
-        // The customer's PLAN subscription, which is what
-        // `billing_addon_purchases.subscription_id` holds and what the refund
-        // and reconciliation paths expect on a `billing_payments` row. Falls
-        // back to the purchase id only so the ledger row is never orphaned.
-        subscriptionId: purchase.subscriptionId ?? purchase.id,
-        purchaseId: purchase.id,
-        addonSlug: purchase.addonSlug,
-        providerPaymentId: details.paymentId,
-        amountInCents,
-        currency,
-        flow: ADDON_RECURRING_PAYMENT_FLOW,
-        status
-    });
+    // A fresh ledger row, or an existing one that just reached its terminal
+    // disposition. The second half is what keeps an `in_process` → `approved`
+    // pair — ONE MercadoPago payment id, two deliveries — from consuming the
+    // insert on the first and then being refused the period on the second.
+    const ledgerIsFreshlyTerminal = ledger.inserted || ledger.statusAdvanced;
 
     let periodAdvanced = false;
-    if (status === 'succeeded' && ledger.inserted) {
-        periodAdvanced = await advancePeriodForConfirmedCharge({
-            purchase,
-            settledAt,
-            triggerSource
-        });
+    if (status === 'succeeded' && ledgerIsFreshlyTerminal) {
+        if (purchase.status === ADVANCEABLE_PURCHASE_STATUS) {
+            periodAdvanced = await advancePeriodForConfirmedCharge({
+                purchase,
+                settledAt,
+                triggerSource
+            });
+        } else {
+            // MercadoPago charged a preapproval whose purchase is no longer
+            // live. The money is recorded (it exists, and a refund needs the
+            // ledger row); nothing is granted and no period is written, because
+            // a fresh period on a dead row is indistinguishable from a healthy
+            // subscription to every sweep that reads these rows.
+            apiLogger.error(
+                {
+                    purchaseId: purchase.id,
+                    customerId: purchase.customerId,
+                    addonSlug: purchase.addonSlug,
+                    purchaseStatus: purchase.status,
+                    mpSubscriptionId: purchase.mpSubscriptionId,
+                    mpPaymentId: details.paymentId,
+                    amountInCents,
+                    currency,
+                    triggerSource
+                },
+                'HOS-847: MercadoPago charged a recurring add-on preapproval whose purchase is not active — money recorded, nothing granted, period NOT advanced; the preapproval must be cancelled and the charge refunded',
+                { capture: true }
+            );
+        }
     } else if (status !== 'succeeded') {
         // NOT handed to dunning on purpose. HOS-847 plan OQ-3: an add-on is not
         // the customer's subscription, and seven days of "your subscription is
