@@ -1132,6 +1132,35 @@ its owner; `publishApi.deleteDraft` owns that branch so the island does not.
 - **Uniform radius**: Cards and images use `var(--radius-card)`. Do NOT use `--radius-organic*` (deprecated)
 - **Auth in islands**: Pass `Astro.locals.user` as props. Islands cannot read server locals
 - **Image optimization**: `<Image>` from `astro:assets` for local images; `<img loading="lazy">` for remote
+- **Tests here are NEVER typechecked** — see below before trusting a green suite
+
+## `test/**` is outside the typecheck (measured 2026-09-02)
+
+The `include` of `apps/web/tsconfig.json` is:
+
+```
+['.astro/types.d.ts', 'src/**/*.ts', 'src/**/*.tsx', 'src/**/*.astro', 'integrations/**/*.ts']
+```
+
+**`test/**` is not in it.** Vitest does not typecheck either. So a fixture in this
+app can carry extra fields, missing fields, or fields of the wrong type and
+**nothing sees it** — not `pnpm typecheck`, not CI, not the pre-commit hook.
+
+How it surfaced: narrowing `DirectoryReviewReply` from 7 fields to 5 (HOS-1067)
+left two fixtures still constructing `reviewId` and `moderationState`. All 25 tests
+stayed green. Pointing a temporary tsconfig at one of those files makes `tsc` emit
+`TS2322: Object literal may only specify known properties, and 'reviewId' does not
+exist in type 'DirectoryReviewReply'`.
+
+This is a whole class of false green: when you change an interface or a payload
+type consumed by `apps/web`, the typecheck confirms `src` is fine and says
+**nothing** about the tests. A stale fixture keeps running and keeps passing while
+asserting a shape the app no longer produces.
+
+**How to apply**: when narrowing or changing a type consumed here, grep its fixtures
+by hand for the fields you removed instead of trusting the typecheck. This does not
+apply the same way in `apps/api`, whose tsconfig does reach its tests — compare
+before assuming.
 
 ## Accepted production-build warnings (`pnpm build`)
 
