@@ -105,18 +105,57 @@ Two consequences for this spec:
    a `publishedAt` that has slipped into the past while waiting for a promotion is
    a defect, and the promotion gate has to catch it (AC-9).
 
-### F-3 · Nothing enforces the `publishedAt` semantics yet, and HOS-1216 has not chosen
+### F-3 · HOS-1216 is decided and implemented: a future-dated entry is HIDDEN, not rejected
 
-**The dependency in §12 is weaker than it looks.** HOS-1216 is `In Progress` but
-its branch `fix/hos-1216-novedad-fechada-al-futuro` has **zero commits ahead of
-`origin/staging`**, and the issue explicitly offers two mutually exclusive
-readings:
+HOS-1216 offered two mutually exclusive readings — hide the entry until its date,
+or reject future dates with a `.refine()` at validation time. **The owner chose to
+hide (2026-09-07), explicitly discarding the `.refine()`, for the reason this spec
+depends on:** rejecting future dates would kill the write-early/publish-late
+mechanism. Scheduling ahead of the release day is a deliberate capability already
+in use, documented at `whats-new.ts:103-117`.
 
-- **hide until its date** — `publishedAt` becomes a scheduled publication date;
-- **reject at validation** — a `.refine()` forbidding future dates, failing in CI.
+Implemented in commit `b36a4c52d` (`fix(api): hide what's-new entries scheduled for
+the future`), which adds to `apps/api/src/utils/whats-new/whats-new.helpers.ts`:
 
-The second option **makes this spec's write-early/publish-late mechanism
-impossible**. This is a coupled decision, not a settled dependency. See OQ-1.
+```ts
+export function filterEntriesByPublishedAt({
+    entries,
+    now = new Date().toISOString()
+}: FilterEntriesByPublishedAtInput): WhatsNewEntry[] {
+    const nowMs = new Date(now).getTime();
+    return entries.filter((entry) => new Date(entry.publishedAt).getTime() <= nowMs);
+}
+```
+
+RO-RO, `now` injectable, inclusive edge (an entry dated exactly `now` is already
+visible). Applied at `getWhatsNew.ts:152` **before** `filterEntriesByRole` and
+before the response `.map()`, so a not-yet-published entry never reaches `items`,
+never counts toward `unseenCount`, and never trips the `highlight` auto-modal.
+
+**No `.refine()` was added to the schema.** Future dating stays legal; only
+visibility changed. D-1's dating rule therefore rests on shipped behaviour, not on
+a pending decision.
+
+### F-3b · The new filter gates the FUTURE and does nothing about the PAST
+
+This is what keeps AC-9 alive. HOS-1216 sharpens it rather than covering it.
+
+`filterEntriesByPublishedAt` keeps every entry with `publishedAt <= now`, so an
+entry whose date has **slipped into the past** while waiting for a promotion sails
+straight through it. It then meets `computeSeen`, which marks an entry seen when
+`publishedAt <= baselineAt` — and for an account whose first-ever read happens
+after that date, `baselineAt = now`.
+
+The two comparisons use the same operator in the same direction against two
+different reference points, which for a brand-new account are **the same instant**.
+That makes them exactly complementary: an entry has either not published yet
+(filtered out) or published at or before that user's baseline (auto-seen). A
+brand-new account cannot see any entry it did not arrive in time for, and **no code
+anywhere compares `publishedAt` against the promotion**.
+
+Nothing in `b36a4c52d` addresses this, and nothing there should — it is not a
+read-side defect. It is an authoring-time defect, and the promotion gate is the
+only place that can catch it (AC-9).
 
 ### F-4 · The "never reuse a retired id" rule has no enforcement anywhere
 
@@ -164,10 +203,15 @@ what the first missed. Neither replaces the other.
 
 **Dating (derived decision — see OQ-2):** the entry is committed at sign-off time
 but carries a `publishedAt` set to the **expected promotion date**, staying
-invisible until then via HOS-1216. This reconciles writing early (while the context
-is fresh and the verifier is looking at the thing) with publishing late (when the
-public actually has it). The owner approved the sign-off mechanism; this dating
-rule is derived from it and **has not been confirmed literally**.
+invisible until then via HOS-1216's `filterEntriesByPublishedAt` (F-3, shipped in
+`b36a4c52d`). This reconciles writing early (while the context is fresh and the
+verifier is looking at the thing) with publishing late (when the public actually
+has it).
+
+The *capability* this relies on is settled: future dating is legal and hidden until
+its date. What remains unconfirmed is the **choice to use it this way** — the owner
+approved the sign-off mechanism, but never literally confirmed "commit at sign-off,
+date it to the expected promotion". That, and only that, is OQ-2.
 
 ### D-2 · The audit checks that a PR was EVALUATED, not that it has an entry
 
@@ -521,6 +565,15 @@ from Linear alone exactly as the rest of the format allows:
   to be re-dated — because promoting it would auto-mark it seen for every account
   whose baseline post-dates it (F-2).
 
+  **This is the criterion most at risk of being assumed away, so it is stated
+  twice.** HOS-1216 does not cover it and cannot: `filterEntriesByPublishedAt`
+  hides the future, while this is a past-dated entry, which the filter passes
+  through untouched on its way to `computeSeen` (F-3b). An entry that misses its
+  promotion is not late — it is **destroyed for every new account**, silently, with
+  the API green and the entry present in the response. The gate is the only
+  observer of the gap between the date on the entry and the day it actually
+  reaches production.
+
 - **AC-10** — *Given* an entry whose `publishedAt` is on or before the promotion
   date and whose `translations.pt` is `'machine'`, *when* the gate runs, *then* it
   fails naming that entry id and that language. *Given* the same entry with `pt`
@@ -541,9 +594,10 @@ from Linear alone exactly as the rest of the format allows:
 
 ## 9. Risks
 
-- **R-1 — HOS-1216 chooses "reject future dates".** That removes deferred
-  publication and, with it, D-1's dating rule. **This is the one risk that changes
-  the design rather than degrading it** (F-3, OQ-1).
+- **R-1 — RETIRED.** This was "HOS-1216 chooses to reject future dates", the one
+  risk that would have changed the design rather than degrading it. It is closed:
+  the owner chose to hide, and `b36a4c52d` shipped it (F-3). Kept as a numbered
+  stub so the other risk numbers stay stable.
 
 - **R-2 — The gate gets trained away.** Mitigated by D-2 (it blocks on missing
   decisions, not missing entries), by the bot exemption, and by G-5 (a one-command
@@ -579,18 +633,21 @@ Beyond the non-goals in §5:
 
 ## 11. Open questions
 
-- **OQ-1 — Does HOS-1216 hide future-dated entries, or reject them?** F-3 shows it
-  has not chosen and that its branch is empty. If it rejects them, D-1's dating rule
-  is impossible and the fallback is to write the entry at sign-off dated to *today*
-  and accept that it appears on staging immediately and on prod at promotion —
-  losing the ability to schedule, and re-opening F-2's baseline hazard for anyone
-  whose first visit falls between the two. **This must be settled before
-  implementation starts, in HOS-1216, not here.**
+- **OQ-1 — RESOLVED (2026-09-07).** Was: "does HOS-1216 hide future-dated entries
+  or reject them?" The owner chose to **hide**, explicitly discarding the
+  `.refine()`, and `b36a4c52d` shipped it. See F-3. Kept as a numbered stub so the
+  remaining question numbers stay stable.
 
-- **OQ-2 — Is the derived dating rule what the owner meant?** The owner approved
-  the sign-off mechanism. "Commit at sign-off, `publishedAt` at the expected
-  promotion date" is derived from it and was never confirmed literally. It is
-  flagged here as D-1 requires.
+- **OQ-2 — Is the derived dating rule what the owner meant? (THE open question.)**
+  With OQ-1 closed, this is the only unconfirmed part of the design. The
+  *capability* is settled — future dating is legal and stays invisible until its
+  date. What is **not** confirmed is the decision to use it this way: "commit the
+  entry at sign-off, with `publishedAt` set to the expected promotion date". The
+  owner approved the sign-off mechanism and nothing more; this rule is derived from
+  it. If it is rejected, the alternative is to date the entry to the day it is
+  written and accept that it goes live on the next promotion whenever that is —
+  which re-opens F-2's baseline hazard and is exactly what AC-9 then has to catch
+  on every entry rather than on the occasional slipped one.
 
 - **OQ-3 — Who can meaningfully review Portuguese?** §6.3 answers the *mechanism*
   honestly (`declared` is a recorded, valid answer) but not the *staffing*. If
@@ -611,14 +668,19 @@ Beyond the non-goals in §5:
 
 ## 12. Implementation notes
 
-- **Dependency: HOS-1216.** Its `publishedAt <= now` filter is what makes a
-  future-dated entry invisible. Implementation of D-1's dating rule must not start
-  before OQ-1 is resolved. Everything else in this spec — the labels, the gate, the
-  enumeration, the guard, the ledger — is independent of it and can proceed.
+- **Dependency: HOS-1216 — SATISFIED, not pending.** `filterEntriesByPublishedAt`
+  (commit `b36a4c52d`) is what makes a future-dated entry invisible until its date,
+  and it is implemented. The only remaining constraint is ordering: that commit must
+  reach `staging` before the first entry is written with a future `publishedAt`, or
+  that entry is visible the moment it merges. Nothing else here waits on it.
 
 - **Order.** (1) labels + `RETIRED_WHATS_NEW_IDS` + `check-whats-new-catalog.sh`;
   (2) `hops whats-new audit`; (3) the workflow, reusing the same computation;
-  (4) the skill phase; (5) the `translations` field and AC-10, once OQ-1 is settled.
+  (4) the skill phase; (5) the `translations` field and AC-10.
+
+- **AC-9 is not covered by HOS-1216 and must not be dropped as redundant.** The
+  shipped filter hides the future; AC-9 is about the past (F-3b). The two look like
+  the same comparison and are not.
 
 - **Cutoff.** Record the workflow's first commit SHA on `staging` in the workflow
   itself. Every PR merged before it is exempt (§6.2). Without it the first
@@ -643,5 +705,6 @@ Canonical tracking:
 HOS-1214
 
 Related: HOS-964 (parent — built the feature and loaded the first four entries),
-HOS-1216 (dependency — `publishedAt` read semantics), HOS-908 (the missing-translation
-failure mode D-4 exists to avoid).
+HOS-1216 (dependency, **satisfied** — future-dated entries are hidden until their
+date, commit `b36a4c52d`), HOS-908 (the missing-translation failure mode D-4 exists
+to avoid).
