@@ -123,7 +123,18 @@ const { mockUserFindById } = vi.hoisted(() => ({
     mockUserFindById: vi.fn()
 }));
 
-vi.mock('@repo/db', () => ({
+// HOS-702 / HOS-847 PR 7b: a PARTIAL mock (spread of the real module), not a
+// whole-module literal.
+//
+// This used to be a literal naming five drizzle operators and five tables. Every
+// other export of `@repo/db` was therefore `undefined`, and the job's retry
+// phase runs inside a try/catch — so adding an `asc()` or an `inArray()` to the
+// query did not fail with "not a function", it silently returned zero orphans
+// and the phase reported success. Spreading the real module means a new operator
+// or table works by default, and only the three things that must be stubbed
+// (the client, the transaction wrapper, the user model) are replaced.
+vi.mock('@repo/db', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/db')>()),
     UserModel: vi.fn().mockImplementation(function () {
         return {
             findById: mockUserFindById
@@ -168,7 +179,14 @@ vi.mock('@repo/db', () => ({
         needsEntitlementSync: 'needs_entitlement_sync',
         deletedAt: 'deleted_at',
         canceledAt: 'canceled_at',
-        updatedAt: 'updated_at'
+        updatedAt: 'updated_at',
+        // HOS-847: the recurring columns the orphan sweep now selects and
+        // filters on. Named (rather than left `undefined`) so a test can assert
+        // WHICH column a WHERE clause was built from.
+        purchasedAt: 'purchased_at',
+        mpSubscriptionId: 'mp_subscription_id',
+        currentPeriodEnd: 'current_period_end',
+        cancelAtPeriodEnd: 'cancel_at_period_end'
     },
     billingSubscriptions: {
         id: 'id',
@@ -176,6 +194,17 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         deletedAt: 'deleted_at',
         updatedAt: 'updated_at'
+    },
+    // HOS-847 PR 7b: NOT covered by the spread above. `@repo/db`'s barrel
+    // re-exports the schema tables through `./schemas/index.ts`, which
+    // `test/setup.ts` mocks GLOBALLY down to two tables — so the real
+    // `billingSubscriptionEvents` never reaches this factory and has to be
+    // named explicitly, like every other table here.
+    billingSubscriptionEvents: {
+        id: 'id',
+        subscriptionId: 'subscription_id',
+        eventType: 'event_type',
+        triggerSource: 'trigger_source'
     },
     // SPEC-309 T-016 (T-026 regression tests): consumed by the addon-expiry
     // job's own grant-link/owner lookups AND by the real (unmocked)
@@ -366,11 +395,15 @@ describe('Add-on Expiry Cron Job', () => {
         mockDbLimit.mockResolvedValue([]);
         mockDbWhere.mockReturnValue({ limit: mockDbLimit });
         // mockDbFrom supports both the simple chain (.where) and the JOIN chain (.innerJoin).
-        // Phase 4 (revocation retry) uses .innerJoin().where().limit(100) — the where inside
-        // innerJoin must return { limit } so that .limit(100) does not throw.
+        // Phase 4 (revocation retry) uses
+        // .innerJoin().where().orderBy().limit(100) — the where inside innerJoin
+        // must return { orderBy } and that must return { limit }, or .limit(100)
+        // throws. HOS-847 PR 7b added the orderBy (FIFO within the capped batch).
         // By default the innerJoin chain returns no orphaned purchases (empty array).
         mockDbInnerJoin.mockReturnValue({
-            where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            where: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            })
         });
         // SPEC-309 T-016 (T-026): mockDbFrom is now table-aware. The T-016
         // grant-link lookup (`.from(featuredListingAddonGrants).where(...)`,
@@ -1403,11 +1436,17 @@ describe('Add-on Expiry Cron Job', () => {
         /**
          * Builds a mock `getDb()` return value that handles:
          * - `.select().from().where().limit()` used by `wasNotificationSent`
-         * - `.select().from().innerJoin().where()` used by the retry phase query
+         * - `.select().from().innerJoin().where().orderBy().limit()` used by the
+         *   retry phase query
+         * - `.select().from().where()` used by the HOS-847 PR 7b admin-cancel
+         *   marker lookup, which the job iterates DIRECTLY (no `.limit()`)
          * - `.update().set().where()` used by the retry phase updates
          *
          * @param orphanedPurchases - rows returned by the JOIN query
          * @param updateResult - value resolved by update().set().where()
+         * @param adminCancelledSubscriptionIds - subscription ids the admin cancel
+         *   hook left an `admin-cancel-compensating` marker on. Defaults to none,
+         *   which is what every pre-PR-7b fixture means.
          */
         function buildMockDb(
             orphanedPurchases: Array<{
@@ -1416,36 +1455,54 @@ describe('Add-on Expiry Cron Job', () => {
                 addonSlug: string;
                 metadata: Record<string, unknown> | null;
             }>,
-            updateResult: unknown[] = []
+            updateResult: unknown[] = [],
+            adminCancelledSubscriptionIds: readonly string[] = []
         ) {
             // SELECT used by wasNotificationSent (simple chain, no innerJoin)
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
             const _notifFrom = vi.fn().mockReturnValue({ where: notifWhere });
 
             // SELECT used by the retry phase (JOIN chain).
-            // Phase 4 calls .innerJoin().where().limit(100) so where must return { limit }.
+            // Phase 4 calls .innerJoin().where().orderBy().limit(100), so `where`
+            // must return { orderBy } and `orderBy` must return { limit }.
             const retryWhere = vi.fn().mockReturnValue({
-                limit: vi.fn().mockResolvedValue(orphanedPurchases)
+                orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue(orphanedPurchases)
+                })
             });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi
                 .fn()
                 .mockReturnValue({ innerJoin: retryInnerJoin, where: notifWhere });
 
+            // SELECT used by the PR 7b admin-cancel marker lookup — a bare
+            // `.from(billingSubscriptionEvents).where(...)` the job iterates
+            // directly, so this resolves to an array rather than to a builder.
+            const adminMarkerWhere = vi
+                .fn()
+                .mockResolvedValue(
+                    adminCancelledSubscriptionIds.map((subscriptionId) => ({ subscriptionId }))
+                );
+            const adminMarkerFrom = vi.fn().mockReturnValue({ where: adminMarkerWhere });
+
             // UPDATE chain
             const updateWhere = vi.fn().mockResolvedValue(updateResult);
             const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
             const update = vi.fn().mockReturnValue({ set: updateSet });
 
-            // select() must differentiate between the two usage patterns.
-            // wasNotificationSent passes `{ id: billingNotificationLog.id }` as fields.
-            // The retry phase passes a multi-field object including addonSlug.
-            // We distinguish by checking if the first call argument contains 'addonSlug'.
+            // select() must differentiate between the three usage patterns by the
+            // FIELD SET it was handed. wasNotificationSent passes
+            // `{ id: billingNotificationLog.id }`; the retry phase passes a
+            // multi-field object including addonSlug; the PR 7b marker lookup
+            // passes exactly `{ subscriptionId }`.
             const select = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
-                const isRetryQuery = fields && 'addonSlug' in fields;
-                return {
-                    from: isRetryQuery ? retryFrom : vi.fn().mockReturnValue({ where: notifWhere })
-                };
+                if (fields && 'addonSlug' in fields) {
+                    return { from: retryFrom };
+                }
+                if (fields && 'subscriptionId' in fields) {
+                    return { from: adminMarkerFrom };
+                }
+                return { from: vi.fn().mockReturnValue({ where: notifWhere }) };
             });
 
             const dbInstance = {
@@ -1583,7 +1640,11 @@ describe('Add-on Expiry Cron Job', () => {
                 metadata: null,
                 mpSubscriptionId: 'preapproval-orphan-over',
                 currentPeriodEnd: new Date(Date.now() - 24 * 60 * 60 * 1000),
-                cancelAtPeriodEnd: true
+                // HOS-847 PR 7b: `false`, because a row carrying `true` is no
+                // longer returned by this sweep's query at all — the expiry pass
+                // owns those. A fixture that claimed otherwise would describe a
+                // state the code can never see.
+                cancelAtPeriodEnd: false
             };
 
             const { db } = buildMockDb([purchase]);
@@ -1611,6 +1672,141 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.details?.revocationDeferred).toBe(0);
             expect(result.details?.revocationRetried).toBe(1);
             expect(revokeAddonForSubscriptionCancellation).toHaveBeenCalledTimes(1);
+        });
+
+        it('HOS-847 PR 7b: an orphan whose plan an ADMIN cancelled is revoked inside its paid period', async () => {
+            // An admin cancel is a deliberate operational lever, and the admin
+            // path already revoked these grants in its before-hook. A row
+            // reaching this sweep under an admin marker is that path's
+            // after-hook having failed to write the row terminal — not a
+            // customer owed a period. Deferring it here would silently reverse
+            // the lever, AND (since PR 7b) hand the entitlement back on the
+            // request path.
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+
+            const purchase = {
+                id: 'purchase-orphan-admin-killed',
+                customerId: 'cust-orphan-admin',
+                addonSlug: 'extra-accommodations-20',
+                subscriptionId: 'sub-admin-killed',
+                metadata: null,
+                mpSubscriptionId: 'preapproval-orphan-admin',
+                // Fifteen days of paid period left — every other cause defers.
+                currentPeriodEnd: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+                cancelAtPeriodEnd: false
+            };
+
+            const { db, spies } = buildMockDb([purchase], [], ['sub-admin-killed']);
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
+            vi.mocked(closeAddonPreapproval).mockResolvedValue({
+                closed: true,
+                kind: 'cancelled'
+            });
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
+                purchaseId: purchase.id,
+                addonSlug: purchase.addonSlug,
+                addonType: 'limit',
+                outcome: 'success'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationDeferred).toBe(0);
+            expect(result.details?.revocationRetried).toBe(1);
+            expect(revokeAddonForSubscriptionCancellation).toHaveBeenCalledTimes(1);
+
+            const writes = spies.updateSet.mock.calls.map(
+                ([payload]) => payload as Record<string, unknown>
+            );
+            expect(writes).toContainEqual(expect.objectContaining({ status: 'canceled' }));
+            expect(writes).not.toContainEqual(expect.objectContaining({ cancelAtPeriodEnd: true }));
+        });
+
+        it('HOS-847 PR 7b CONTROL: the SAME orphan with no admin marker is deferred', async () => {
+            // Same fixture, one difference: no `admin-cancel-compensating` event
+            // on its subscription. Without this pair, a sweep that revoked every
+            // orphan unconditionally would satisfy the test above.
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+
+            const purchase = {
+                id: 'purchase-orphan-admin-killed',
+                customerId: 'cust-orphan-admin',
+                addonSlug: 'extra-accommodations-20',
+                subscriptionId: 'sub-admin-killed',
+                metadata: null,
+                mpSubscriptionId: 'preapproval-orphan-admin',
+                currentPeriodEnd: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+                cancelAtPeriodEnd: false
+            };
+
+            const { db, spies } = buildMockDb([purchase]);
+            const { getDb, withTransaction } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
+            vi.mocked(closeAddonPreapproval).mockResolvedValue({
+                closed: true,
+                kind: 'cancelled'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationDeferred).toBe(1);
+            expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+
+            const writes = spies.updateSet.mock.calls.map(
+                ([payload]) => payload as Record<string, unknown>
+            );
+            expect(writes).toContainEqual(expect.objectContaining({ cancelAtPeriodEnd: true }));
+        });
+
+        it('HOS-847 PR 7b: the batch EXCLUDES rows already flagged cancel_at_period_end', async () => {
+            // The predicate is what stops a deferred row from coming back every
+            // night: re-closing a preapproval that is already cancelled (which
+            // fails, `continue`s ABOVE the deferral branch, and pays one Sentry
+            // event per night), and — under the LIMIT 100 — crowding out the
+            // orphans that DO need revoking. Asserted on the emitted condition
+            // rather than on an outcome, because the outcome it prevents takes a
+            // hundred rows to reproduce.
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+
+            const { db, spies } = buildMockDb([]);
+            const { getDb, withTransaction, eq: eqOp } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+            vi.mocked(withTransaction).mockImplementation(async (callback) =>
+                callback(db as never)
+            );
+
+            // Act
+            await addonExpiryJob.handler(ctx);
+
+            // Assert: the orphan WHERE was built with an equality on
+            // `cancel_at_period_end` against `false`.
+            expect(spies.retryWhere).toHaveBeenCalled();
+            expect(vi.mocked(eqOp)).toHaveBeenCalledWith('cancel_at_period_end', false);
         });
 
         it('should revoke an orphaned active addon and set status to canceled', async () => {
@@ -1715,9 +1911,13 @@ describe('Add-on Expiry Cron Job', () => {
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
             // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
-            const retryWhere = vi
-                .fn()
-                .mockReturnValue({ limit: vi.fn().mockResolvedValue([purchase]) });
+            // HOS-847 PR 7b: the retry query is now
+            // .innerJoin().where().orderBy().limit(100).
+            const retryWhere = vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue([purchase])
+                })
+            });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1792,9 +1992,13 @@ describe('Add-on Expiry Cron Job', () => {
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
             // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
-            const retryWhere = vi
-                .fn()
-                .mockReturnValue({ limit: vi.fn().mockResolvedValue([purchase]) });
+            // HOS-847 PR 7b: the retry query is now
+            // .innerJoin().where().orderBy().limit(100).
+            const retryWhere = vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue([purchase])
+                })
+            });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1871,9 +2075,13 @@ describe('Add-on Expiry Cron Job', () => {
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
             // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
-            const retryWhere = vi
-                .fn()
-                .mockReturnValue({ limit: vi.fn().mockResolvedValue(purchases) });
+            // HOS-847 PR 7b: the retry query is now
+            // .innerJoin().where().orderBy().limit(100).
+            const retryWhere = vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue(purchases)
+                })
+            });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1990,9 +2198,13 @@ describe('Add-on Expiry Cron Job', () => {
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
             // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
-            const retryWhere = vi
-                .fn()
-                .mockReturnValue({ limit: vi.fn().mockResolvedValue([orphanPurchase]) });
+            // HOS-847 PR 7b: the retry query is now
+            // .innerJoin().where().orderBy().limit(100).
+            const retryWhere = vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue([orphanPurchase])
+                })
+            });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -2055,9 +2267,13 @@ describe('Add-on Expiry Cron Job', () => {
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
             // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
-            const retryWhere = vi
-                .fn()
-                .mockReturnValue({ limit: vi.fn().mockResolvedValue([purchase]) });
+            // HOS-847 PR 7b: the retry query is now
+            // .innerJoin().where().orderBy().limit(100).
+            const retryWhere = vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockReturnValue({
+                    limit: vi.fn().mockResolvedValue([purchase])
+                })
+            });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
