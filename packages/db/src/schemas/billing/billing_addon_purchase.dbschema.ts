@@ -146,9 +146,20 @@ export const billingAddonPurchases = pgTable(
          * Recurring-cancellation intent: when `true`, the purchase should stop
          * renewing at `current_period_end` instead of being revoked immediately.
          * Defaults to `false` so existing (one-time) rows keep today's
-         * immediate-revoke behavior untouched. Not yet read or written by any
-         * caller — the cancellation flow that honors it lands in a later PR of
-         * this chain.
+         * immediate-revoke behavior untouched.
+         *
+         * Written by `softCancelRecurringAddon` (HOS-847 PR 6) and by the
+         * orphan sweep in `addon-expiry.job.ts` (PR 7a). Read in three places,
+         * and each reads it for a different purpose:
+         *
+         *  - `findExpiredAddons` pairs it with an ELAPSED `current_period_end`
+         *    to end the benefit — the only thing standing between a
+         *    soft-cancelled row and a free benefit forever;
+         *  - `loadDeferredAddonGrants` (PR 7b) pairs it with an UNELAPSED one to
+         *    keep granting what the customer already paid for, after the plan
+         *    resolvers have given up on them;
+         *  - the orphan sweep EXCLUDES `true` rows from its batch, because both
+         *    of the above already own them.
          */
         cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
         /**
