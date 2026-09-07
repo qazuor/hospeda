@@ -521,10 +521,20 @@ export const ApiEnvBaseSchema = z.object({
      * of `billingType: 'recurring'` on the add-on. Set to the literal string
      * `'true'` ONLY once the full chain is merged (checkout, webhook
      * activation/renewal, hard-cancel on cancellation, and the reconciler
-     * cron) — turning this on before the webhook handler exists leaves a
-     * customer who authorized a charge with a purchase stuck `pending`
-     * forever. Do NOT flip this on staging/prod until the staging + prod
-     * smoke checklists (SPEC-143) have both signed off.
+     * cron).
+     *
+     * Turning it on before PR 5's webhook handler exists is WORSE than a
+     * purchase stuck `pending`, which is what this comment used to claim. The
+     * add-on's own `billing_subscriptions` row carries a real
+     * `mp_subscription_id`, and `subscription-logic.ts` resolves an incoming
+     * `preapproval.updated` against that column with no product-domain filter —
+     * so the generic plan handler MATCHES the add-on's row and runs the full
+     * plan activation over something that is not a plan (status transition,
+     * period arithmetic, notifications, promo redemption). The buyer is charged
+     * either way; what they do not get is the add-on.
+     *
+     * Do NOT flip this on staging/prod until the staging + prod smoke
+     * checklists (SPEC-143) have both signed off.
      */
     HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED: z
         .string()

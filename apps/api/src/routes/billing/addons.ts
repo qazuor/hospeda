@@ -229,16 +229,55 @@ export const purchaseAddonRoute = createProtectedRoute({
                 ADDON_NOT_AVAILABLE_FOR_PLAN: 422,
                 ADDON_NOT_AVAILABLE_FOR_DOMAIN: 422,
                 ADDON_DOMAIN_UNKNOWN: 422,
+                // HOS-847 PR 4: a recurring add-on is charged through its own
+                // MercadoPago preapproval, whose plan carries no discount
+                // dimension — so a promo code is REFUSED rather than accepted
+                // and silently ignored (which would authorize a recurring
+                // charge at an amount the buyer was never shown). Same 422
+                // family as the three above: well-formed, allowed to exist,
+                // just not processable in this combination.
+                RECURRING_ADDON_PROMO_UNSUPPORTED: 422,
+                // HOS-847 PR 4: the same 422 family, for the two ways a
+                // recurring sale can be impossible for reasons that are neither
+                // transient nor our runtime failing. Both used to answer
+                // `CHECKOUT_ERROR` → 500 `INTERNAL_ERROR`, which paged on-call
+                // for a data condition and hid the cause from the operator —
+                // exactly what rule R1 of `docs/error-contract.md` forbids: a
+                // 4xx is never `INTERNAL_ERROR`.
+                //
+                //  - NOT_SELLABLE: the catalog row carries no primary key, so
+                //    no `billing_mp_addon_plans` entry can be keyed for it.
+                //  - PLAN_UNRESOLVED: the customer's own subscription does not
+                //    resolve to a plan + price, which is what qzpay requires to
+                //    open a preapproval at all.
+                RECURRING_ADDON_NOT_SELLABLE: 422,
+                RECURRING_ADDON_PLAN_UNRESOLVED: 422,
+                // The resolved MercadoPago payer email cannot be used (it
+                // contains a `+`, which MP rejects outright). A caller-side
+                // input problem they can act on, mapped 400 exactly as
+                // `PAYER_EMAIL_UNSUPPORTED_CHARACTER` is on the plan checkout.
+                ADDON_PAYER_EMAIL_UNSUPPORTED: 400,
+                // A previous checkout for the same add-on is still in flight and
+                // could not be settled. Transient and retryable — and the
+                // alternative to answering it is opening a SECOND chargeable
+                // preapproval on top of the first.
+                ADDON_CHECKOUT_IN_FLIGHT: 409,
                 CUSTOMER_NOT_FOUND: 404,
                 INVALID_PROMO_CODE: 422,
                 ADDON_ALREADY_ACTIVE: 409,
                 PAYMENT_NOT_CONFIGURED: 503,
+                // HOS-847 PR 4: MercadoPago (or its plan registry) refused the
+                // recurring set-up. An upstream failure, not ours and not the
+                // caller's — 502, matching how `mapSubscriptionCheckoutErrorToHttp`
+                // maps `MP_PLAN_PROVISIONING_FAILED` for the plan checkout, and
+                // retryable.
+                ADDON_PROVIDER_ERROR: 502,
                 CHECKOUT_ERROR: 500,
                 SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 503, {
+            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 502 | 503, {
                 message: result.error?.message ?? 'Unknown error',
                 // HOS-602: the status-derived `error.code` the client receives
                 // for a 422 collapses NO_SUBSCRIPTION / NO_ACTIVE_SUBSCRIPTION /

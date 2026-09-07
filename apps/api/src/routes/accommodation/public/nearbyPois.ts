@@ -1,6 +1,8 @@
 /**
- * Public nearby-points-of-interest endpoint (HOS-145 T-005).
- * Returns points of interest near an accommodation, ordered nearest-first,
+ * Public nearby-points-of-interest endpoint (HOS-145 T-005, reranked by
+ * HOS-327). Returns points of interest near an accommodation ordered by
+ * RELEVANCE (editorial weight decayed by distance — see
+ * `point-of-interest.nearby-relevance.ts`), not nearest-first,
  * each annotated with `distanceKm`. The accommodation's real coordinates are
  * read server-side by `AccommodationService.getNearbyPois` and are NEVER
  * included in the response (AC-4 privacy contract).
@@ -31,7 +33,7 @@ export const publicGetAccommodationNearbyPoisRoute = createPublicRoute({
     path: '/{slug}/nearby-pois',
     summary: 'Get points of interest near an accommodation',
     description:
-        "Returns points of interest near the accommodation's real coordinates, ordered nearest-first, each annotated with distanceKm. Never exposes the accommodation's own coordinates.",
+        "Returns the most relevant points of interest around the accommodation's real coordinates, each annotated with distanceKm. Every POI is eligible within a radius derived from its own editorial weight and results are ordered by relevance, not by raw proximity. The optional `radius` is a ceiling on that per-POI radius, never the search radius itself. Never exposes the accommodation's own coordinates.",
     tags: ['Accommodations'],
     requestParams: {
         slug: z.string().min(1).max(255)
@@ -48,7 +50,9 @@ export const publicGetAccommodationNearbyPoisRoute = createPublicRoute({
     ) => {
         // TYPE-WORKAROUND: the route factory types `query` as Record<string, unknown>;
         // NearbyPoiQuerySchema already validated and coerced radius/limit to numbers upstream.
-        const { radius, limit } = query as unknown as { radius: number; limit: number };
+        // HOS-327: `radius` has no default any more — `undefined` means "no
+        // extra ceiling", which is exactly what the elastic path expects.
+        const { radius, limit } = query as unknown as { radius?: number; limit: number };
 
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         // `getNearbyPois` routes the actor into `_canView`, so for a hidden listing the

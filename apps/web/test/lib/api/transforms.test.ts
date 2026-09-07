@@ -199,8 +199,30 @@ describe('toDestinationCardProps', () => {
         const result = toDestinationCardProps({ item: {} });
         expect(result.id).toBe('');
         expect(result.slug).toBe('');
-        expect(result.name).toBeTruthy(); // Falls back to 'Sin nombre' or similar
+        expect(result.name).toBe('Sin nombre');
         expect(result.accommodationsCount).toBe(0);
+    });
+
+    // HOS-802 review F4: pin the exact literal (not just truthiness) and cover
+    // the case the migration to `resolveI18nTextWithLegacyFallback` newly
+    // reaches — before this fix, an empty `nameI18n` object with NO legacy
+    // `name` resolved to `''` (the object was truthy, so the outer `?? 'Sin
+    // nombre'` never fired). Now the helper's own result is empty first, so
+    // the literal fallback fires as intended.
+    it('falls back to the literal "Sin nombre" when nameI18n is present but every key is empty and there is no legacy name', () => {
+        const item = { slug: 'sin-nombre', nameI18n: { es: '', en: '', pt: '' } };
+        const result = toDestinationCardProps({ item });
+        expect(result.name).toBe('Sin nombre');
+    });
+
+    it('prefers the legacy name over the literal "Sin nombre" when nameI18n is empty but name is present', () => {
+        const item = {
+            slug: 'colon',
+            name: 'Colón',
+            nameI18n: { es: '', en: '', pt: '' }
+        };
+        const result = toDestinationCardProps({ item });
+        expect(result.name).toBe('Colón');
     });
 
     it('featuredImage should carry caption from API media', () => {
@@ -697,6 +719,32 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.reviewsCount).toBe(23);
         });
 
+        // HOS-802: `nameI18n`/`summaryI18n`/`descriptionI18n` can be present but
+        // populated with every key empty (e.g. an interrupted ai-translate.service.ts
+        // run). Being truthy, the object used to defeat the `?? item.name` fallback
+        // in the caller and resolveI18nText's own es→en→pt walk found nothing either,
+        // so the field rendered as an empty string — an empty <title> on the
+        // accommodation detail page. resolveI18nTextWithLegacyFallback closes that
+        // gap by falling back to the legacy plain field when the i18n object
+        // resolves empty.
+        it('falls back to the legacy name/summary/description when the i18n object has every key empty', () => {
+            const item = {
+                ...makeFullItem(),
+                name: 'Casa del Sol',
+                summary: 'Legacy summary text',
+                description: 'Legacy description text',
+                nameI18n: { es: '', en: '', pt: '' },
+                summaryI18n: { es: '', en: '', pt: '' },
+                descriptionI18n: { es: '', en: '', pt: '' }
+            };
+
+            const result = toAccommodationDetailPageProps({ item, locale: 'es' });
+
+            expect(result.name).toBe('Casa del Sol');
+            expect(result.summary).toBe('Legacy summary text');
+            expect(result.description).toBe('Legacy description text');
+        });
+
         it('should map media images, and exclude a legacy bare-string video (no moderationState)', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
             expect(result.media.images).toEqual(['/img/a.jpg', '/img/b.jpg']);
@@ -1056,6 +1104,29 @@ describe('toAccommodationDetailPageProps', () => {
             });
             expect(result.price?.price).toBeNull();
             expect(result.price?.currency).toBe('ARS');
+        });
+    });
+
+    // --- Featured image preset (HOS-881) ---
+
+    describe('featuredImage preset (HOS-881)', () => {
+        it("applies the 'og' preset (1200x630), not the extractor's 'card' default (400x300)", () => {
+            const result = toAccommodationDetailPageProps({
+                item: {
+                    ...makeFullItem(),
+                    media: {
+                        ...(makeFullItem().media as Record<string, unknown>),
+                        featuredImage: {
+                            url: 'https://res.cloudinary.com/demo/image/upload/v1/hotel.jpg'
+                        }
+                    }
+                }
+            });
+
+            // Anchored on the concrete transform tokens — a lax `toContain`
+            // would also pass for the 'card' preset this replaces.
+            expect(result.featuredImage).toContain('w_1200,h_630');
+            expect(result.featuredImage).not.toContain('w_400,h_300');
         });
     });
 });
@@ -1785,6 +1856,39 @@ describe('SPEC-212 locale-aware transform resolution', () => {
                 locale: 'en'
             });
             expect(result.name).toBe('Solo español');
+        });
+
+        // HOS-802 review F1: this was the blocker the initial migration missed —
+        // `toEventDetailProps` feeds the event detail page's <title> (via
+        // `eventos/[slug].astro`'s `pickLocalizedSeo({ fallback: name, ... })`)
+        // and its ShareButtons title directly. An empty `nameI18n`/`summaryI18n`
+        // object (reachable in production — ai-translate.service.ts declares
+        // `event: ['name','summary','description']` in the same partial-run-prone
+        // map as `accommodation`) used to defeat the `?? item.name` fallback the
+        // same way it did on the accommodation detail page, before this fix.
+        it('falls back to the legacy name/summary when the i18n object has every key empty', () => {
+            const result = toEventDetailProps({
+                item: {
+                    name: 'Carnaval de Colón',
+                    summary: 'La fiesta más grande del litoral',
+                    nameI18n: { es: '', en: '', pt: '' },
+                    summaryI18n: { es: '', en: '', pt: '' }
+                },
+                locale: 'es'
+            });
+            expect(result.name).toBe('Carnaval de Colón');
+            expect(result.summary).toBe('La fiesta más grande del litoral');
+        });
+
+        // `?? item.title` is a rung unique to this transform (no other call
+        // site in the codebase carries it) — legacy event rows that only ever
+        // had a `title` field, never a `name` one, still resolve.
+        it('falls back to the legacy title when both nameI18n and name are absent', () => {
+            const result = toEventDetailProps({
+                item: { title: 'Legacy Title Only' },
+                locale: 'es'
+            });
+            expect(result.name).toBe('Legacy Title Only');
         });
     });
 });

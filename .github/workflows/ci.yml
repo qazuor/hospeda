@@ -307,6 +307,15 @@ jobs:
       - name: Check every contact_info column declares mergeableJsonbColumns
         run: pnpm check:mergeable-contact-info
       # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes it run in this job (see the note above). This one
+      # watches the banner that told a user their save had failed after it
+      # actually succeeded (HOS-816). Two anchors: the 11 forms on the shared
+      # `useZodForm` hook, whose `handleApiError` only ever SETS the banner, and
+      # the 46 hand-rolled ones, matched by the SHAPE of an inline
+      # `role="alert"` banner rather than by any variable name.
+      - name: Check every form-level error banner can be retired (HOS-837)
+        run: pnpm check:form-error-cleared
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes a guard run in this job (see the note above). This one
       # fails on a <dialog> in apps/web that carries no height cap — the state
       # six of them were in, which looks fine with a test account and puts the

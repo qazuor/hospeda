@@ -92,6 +92,7 @@ export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './platformSettings/index.js';
 export * from './poi-category/point-of-interest-category.service';
+export * from './point-of-interest/point-of-interest.nearby-relevance';
 export * from './point-of-interest/point-of-interest.service';
 export * from './post/post.media';
 export * from './post/post.media-read';

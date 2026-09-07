@@ -76,6 +76,35 @@ export interface CreatePaidSubscriptionInput {
      * what stops it being added back.
      */
     /**
+     * LOCAL trial length written onto the `billing_subscriptions` row, in days.
+     *
+     * Not a trial for MercadoPago and not reachable by one. Two distinct fields
+     * exist and only the other one is a provider trial:
+     *
+     *  - `freeTrialDays` — REMOVED above (HOS-1012). It is what the MercadoPago
+     *    adapter reads to build `auto_recurring.free_trial`, and it is banned by
+     *    guard G-1.
+     *  - `trialDays` — read by qzpay-core only to populate the storage adapter's
+     *    create input (`billing.ts`: `if (input.trialDays !== undefined)
+     *    createInput.trialDays = input.trialDays;`), from which
+     *    `@qazuor/qzpay-drizzle` derives `trial_start` / `trial_end` on OUR row.
+     *    It never appears in a preapproval payload on either adapter branch.
+     *
+     * Passing it EXPLICITLY is the point. When it is `undefined`, qzpay-core
+     * falls through to `else if (price?.trialDays != null) createInput.trialDays
+     * = price.trialDays` — i.e. it inherits `billing_prices.trial_days` from
+     * whichever price the caller resolved. That default is right for a plan
+     * checkout (the price IS the plan's) and wrong for any caller that borrows
+     * someone else's price purely to satisfy qzpay's plan+price requirement:
+     * HOS-847's recurring add-on borrows the owner's monthly plan price, which
+     * data-migration `0055-owner-trial-30-days` set to 30, and would otherwise
+     * be born claiming a 30-day trial MercadoPago never granted it — the
+     * mirror image of HOS-522, told to ourselves instead of by the provider.
+     *
+     * Omit it to keep the inherited behavior (all four plan checkouts do).
+     */
+    readonly trialDays?: number;
+    /**
      * MercadoPago `preapproval_plan` id to subscribe against (HOS-191). When set,
      * qzpay builds a plan-based preapproval (`preapproval_plan_id`, no inline
      * `auto_recurring`) — amount, cadence and trial are inherited from the plan.
@@ -156,7 +185,8 @@ export async function createPaidSubscription(
         providerPriceId,
         billingInterval = 'monthly',
         metadata,
-        payerEmail
+        payerEmail,
+        trialDays
     } = input;
 
     // The preapproval create is wrapped in the E2E test-control seam so the
@@ -186,6 +216,13 @@ export async function createPaidSubscription(
             // HOS-191: when set, qzpay subscribes against this MP preapproval_plan
             // (plan-based flow) instead of building an inline preapproval.
             ...(providerPriceId === undefined ? {} : { providerPriceId }),
+            // HOS-847: the LOCAL trial length, forwarded only when the caller
+            // states one. Omitted, qzpay-core inherits the resolved price's
+            // `trialDays` — see the `trialDays` JSDoc on
+            // {@link CreatePaidSubscriptionInput} for why a borrowed price makes
+            // that inheritance a lie. This is NOT `freeTrialDays` and never
+            // reaches MercadoPago.
+            ...(trialDays === undefined ? {} : { trialDays }),
             ...(metadata === undefined ? {} : { metadata }),
             // HOS-937 step 2: the resolved MercadoPago payer email (see
             // `payerEmail` JSDoc on {@link CreatePaidSubscriptionInput}).

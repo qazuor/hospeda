@@ -81,6 +81,30 @@ describe('alojamientos/[slug].astro — typed JSON-LD (SPEC-157 REQ-7)', () => {
         expect(lodgingComponentSrc).toMatch(/readonly telephone\?: string;/);
         expect(lodgingComponentSrc).toMatch(/structuredData\.telephone = telephone;/);
     });
+
+    // -----------------------------------------------------------------------
+    // HOS-878 — priceRange
+    //
+    // Same wiring-only caveat as the NAP pair above: these prove the page
+    // derives a priceRange and hands it down, and that the component writes
+    // it conditionally. The derivation's actual values (including the
+    // null/zero/missing-currency cases) are unit-tested for real in
+    // test/lib/seo/lodging-jsonld.test.ts.
+    // -----------------------------------------------------------------------
+
+    it('derives priceRange through buildLodgingPriceRange and passes it down', () => {
+        expect(alojamientoSrc).toMatch(
+            /const lodgingPriceRange = buildLodgingPriceRange\(\{\s*price:/
+        );
+        expect(alojamientoSrc).toMatch(/priceRange=\{lodgingPriceRange\}/);
+    });
+
+    it('LodgingBusinessJsonLd writes priceRange into the structured data only when present', () => {
+        expect(lodgingComponentSrc).toMatch(/readonly priceRange\?: string;/);
+        expect(lodgingComponentSrc).toMatch(
+            /if \(priceRange\) \{\s*structuredData\.priceRange = priceRange;/
+        );
+    });
 });
 
 // ---------------------------------------------------------------------------

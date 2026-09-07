@@ -140,6 +140,7 @@ import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
+import { NEARBY_POI_DEFAULT_LIMIT } from '../point-of-interest/point-of-interest.nearby-relevance';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
 import {
@@ -172,10 +173,7 @@ import {
     checkCanVerify,
     checkCanView
 } from './accommodation.permissions';
-import {
-    DEFAULT_POI_PROXIMITY_RADIUS_KM,
-    resolvePoiToCoordinates
-} from './accommodation.poi-proximity.helper';
+import { resolvePoiToCoordinates } from './accommodation.poi-proximity.helper';
 import {
     applyAccommodationLocationPrivacy,
     applyAccommodationLocationPrivacyList,
@@ -195,13 +193,6 @@ import type {
 
 /** Entity-specific filter fields for accommodation admin search. */
 type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
-
-/**
- * Default number of points of interest returned by
- * {@link AccommodationService.getNearbyPois} when the caller does not supply
- * an explicit `limit` (HOS-145 T-004).
- */
-const NEARBY_POI_DEFAULT_LIMIT = 12;
 
 /**
  * Input schema for {@link AccommodationService.getNearbyPois} (HOS-145 T-004).
@@ -3048,16 +3039,30 @@ export class AccommodationService extends BaseCrudService<
      * an error result so it surfaces as a 5xx instead of masquerading as "no
      * POIs nearby" (judgment-day round 2 #4).
      *
+     * ## Selection (HOS-327)
+     *
+     * POIs are selected by RELEVANCE, not by proximity alone: every POI is
+     * eligible only within a radius derived from its own editorial weight,
+     * and the survivors are ordered by a gravity-style score. See
+     * `point-of-interest.nearby-relevance.ts` and
+     * {@link PointOfInterestService.getNearbyRanked}.
+     *
+     * `radiusKm` therefore changed MEANING (not validity): it is now a
+     * CEILING on each POI's elastic radius, never the radius itself. Passing
+     * `radiusKm: 3` still narrows the section to POIs within 3km; omitting it
+     * no longer means "5km", it means "let each POI's weight decide", bounded
+     * by {@link NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM}.
+     *
      * @param params - `slug` (required), plus optional `radiusKm`/`limit`
-     *   overrides. Defaults: `radiusKm` = {@link DEFAULT_POI_PROXIMITY_RADIUS_KM}
-     *   (5km), `limit` = {@link NEARBY_POI_DEFAULT_LIMIT} (12).
+     *   overrides. Defaults: `radiusKm` = no extra ceiling (each POI's own
+     *   elastic radius applies), `limit` = {@link NEARBY_POI_DEFAULT_LIMIT} (8).
      * @param actor - The actor performing the search (forwarded to both the
-     *   visibility gate and `PointOfInterestService.getNearby` for its own
-     *   permission checks).
+     *   visibility gate and `PointOfInterestService.getNearbyRanked` for its
+     *   own permission checks).
      * @param ctx - Optional service context for transaction propagation.
-     * @returns The nearby points of interest, nearest-first. Never includes
-     *   the accommodation's own coordinates (real or approximate) or any
-     *   other accommodation field.
+     * @returns The nearby points of interest, most relevant first. Never
+     *   includes the accommodation's own coordinates (real or approximate) or
+     *   any other accommodation field.
      */
     public async getNearbyPois(
         params: { slug: string; radiusKm?: number; limit?: number },
@@ -3123,15 +3128,17 @@ export class AccommodationService extends BaseCrudService<
                     return [];
                 }
 
-                const radiusKm = validatedParams.radiusKm ?? DEFAULT_POI_PROXIMITY_RADIUS_KM;
                 const limit = validatedParams.limit ?? NEARBY_POI_DEFAULT_LIMIT;
 
-                const result = await this.pointOfInterestService.getNearby(
+                const result = await this.pointOfInterestService.getNearbyRanked(
                     {
                         lat: approximateLocation.lat,
                         long: approximateLocation.lng,
-                        radiusKm,
-                        limit
+                        limit,
+                        // HOS-327: `radiusKm` is a CEILING now, not the search
+                        // radius. Omitted means "let each POI's own elastic
+                        // radius decide"; supplied, it can only narrow.
+                        radiusCapKm: validatedParams.radiusKm
                     },
                     validatedActor,
                     execCtx

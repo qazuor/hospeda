@@ -386,8 +386,13 @@ export const accommodationsApi = {
      * Always resolves `{ items: [] }` for an unknown slug or an
      * accommodation without coordinates — never a 404.
      *
-     * @param params - Accommodation slug, optional radius (km) and limit
-     * @returns Nearby points of interest, nearest-first, each with `distanceKm`
+     * @param params - Accommodation slug, plus an optional `radius` and
+     *   `limit`. HOS-327: `radius` is a CEILING on each POI's own elastic
+     *   radius, not the search radius — omit it to let each POI's editorial
+     *   weight decide how far it reaches.
+     * @returns Nearby points of interest ordered by RELEVANCE (editorial
+     *   weight decayed by distance, HOS-327), each with `distanceKm`. Consume
+     *   the order as given; re-sorting by distance discards the ranking.
      *
      * @example
      * ```ts

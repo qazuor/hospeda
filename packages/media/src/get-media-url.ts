@@ -398,6 +398,21 @@ export function getMediaUrl(url: string | null | undefined, options?: GetMediaUr
     // intent explicitly via indexOf + slice so reviewers don't assume the
     // behavior depends on replacing the path verbatim.
     const uploadIdx = url.indexOf('/upload/');
+    // The `res.cloudinary.com` substring check above (line ~339) is a plain
+    // `.includes()`, not a parsed-hostname check — it also matches a
+    // percent-encoded Cloudinary URL embedded in another URL's query string
+    // (e.g. Astro's `/_image/?href=<encoded-cloudinary-url>` endpoint, where
+    // `%2F` hides the slashes but the literal `res.cloudinary.com` text
+    // survives encoding). Such a URL has no literal `/upload/` segment, so
+    // `uploadIdx` is `-1` here; without this guard the slice/splice below
+    // still runs with a bogus index and corrupts the URL (HOS-881 incident:
+    // it produced `/_imagew_200,.../?href=...`, dropping the leading slash
+    // Cloudinary needs and destroying the `href` query param). Bail out
+    // unchanged instead — the same pass-through semantics as every other
+    // "this isn't a real Cloudinary upload URL" branch above.
+    if (uploadIdx === -1) {
+        return url;
+    }
     const uploadEnd = uploadIdx + '/upload/'.length;
     return `${url.slice(0, uploadEnd)}${transforms}/${url.slice(uploadEnd)}`;
 }

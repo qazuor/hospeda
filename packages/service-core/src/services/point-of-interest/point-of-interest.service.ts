@@ -58,6 +58,11 @@ import {
     type ServiceOutput
 } from '../../types';
 import {
+    NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM,
+    NEARBY_POI_CANDIDATE_LIMIT,
+    rankNearbyPois
+} from './point-of-interest.nearby-relevance';
+import {
     normalizeCreateInput,
     normalizeListInput,
     normalizeUpdateInput,
@@ -122,6 +127,22 @@ const GetNearbyPoisInputSchema = z.object({
     long: z.number(),
     radiusKm: z.number().positive().max(20),
     limit: z.number().int().positive().max(50)
+});
+
+/**
+ * Input schema for {@link PointOfInterestService.getNearbyRanked} (HOS-327).
+ * Same service-level RO-RO convention as {@link GetNearbyPoisInputSchema}.
+ *
+ * `radiusCapKm` is OPTIONAL and is a ceiling, not a radius: the effective
+ * radius is per-POI and derived from its editorial weight. Its 20km upper
+ * bound mirrors the public `NearbyPoiQuerySchema` so a caller cannot use this
+ * method to reach further than the HTTP surface allows.
+ */
+const GetNearbyRankedPoisInputSchema = z.object({
+    lat: z.number(),
+    long: z.number(),
+    limit: z.number().int().positive().max(50),
+    radiusCapKm: z.number().positive().max(20).optional()
 });
 
 /**
@@ -938,6 +959,86 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                 await this._canList(actor);
                 const rows = await this.model.findWithinRadius(validatedParams, resolvedCtx.tx);
                 return rows.map((row) => NearbyPoiSchema.parse(row));
+            }
+        });
+    }
+
+    /**
+     * Finds the most RELEVANT points of interest around a geographic point
+     * (HOS-327) — the ranked sibling of {@link getNearby}.
+     *
+     * The two answer different questions and both are legitimate.
+     * {@link getNearby} answers "which POIs are inside this circle, nearest
+     * first?", which is what a picker or a map viewport wants.
+     * `getNearbyRanked` answers "which POIs is this traveller most likely to
+     * care about?", which is what the public accommodation detail page wants:
+     * each POI is eligible only within a radius derived from its OWN editorial
+     * weight, and the survivors are ordered by a gravity-style score rather
+     * than by raw proximity. See
+     * `point-of-interest.nearby-relevance.ts` for the formula, its production
+     * calibration, and why the policy is applied here rather than in SQL.
+     *
+     * The geo query itself is unchanged: this reuses
+     * {@link PointOfInterestModel.findWithinRadius} with the widest radius any
+     * POI could earn ({@link NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM}, further
+     * narrowed by an explicit `radiusCapKm`), so the candidate set is a strict
+     * superset of the eligible set and no relevant POI can be lost before the
+     * ranking runs.
+     *
+     * Permission: public catalog read, identical to {@link getNearby}.
+     *
+     * @param params - Receive-object.
+     * @param params.lat - Search-center latitude in degrees.
+     * @param params.long - Search-center longitude in degrees.
+     * @param params.limit - Maximum number of POIs to return.
+     * @param params.radiusCapKm - Optional CEILING on every POI's elastic
+     *   radius. It can only narrow the result: a POI whose own elastic radius
+     *   is smaller stays bound by its own. Omitted means "no extra ceiling".
+     * @param actor - The actor performing the action.
+     * @param ctx - Optional service context carrying transaction and hookState.
+     * @returns Public-shaped POIs, most relevant first. Empty array when none
+     *   qualifies.
+     */
+    public async getNearbyRanked(
+        params: { lat: number; long: number; limit: number; radiusCapKm?: number },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<NearbyPoi[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getNearbyRanked',
+            input: { ...params, actor },
+            schema: GetNearbyRankedPoisInputSchema,
+            ctx,
+            execute: async (validatedParams, actor, resolvedCtx) => {
+                await this._canList(actor);
+
+                const radiusCapKm = validatedParams.radiusCapKm;
+                const candidateRadiusKm = Math.min(
+                    radiusCapKm ?? NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM,
+                    NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM
+                );
+
+                const rows = await this.model.findWithinRadius(
+                    {
+                        lat: validatedParams.lat,
+                        long: validatedParams.long,
+                        radiusKm: candidateRadiusKm,
+                        limit: NEARBY_POI_CANDIDATE_LIMIT
+                    },
+                    resolvedCtx.tx
+                );
+
+                // Rank the RAW rows (they already carry `displayWeight`,
+                // `isFeatured` and `distanceKm`) and only then project the
+                // survivors through the public schema — parsing rows the
+                // policy is about to discard would be pure waste.
+                const ranked = rankNearbyPois({
+                    pois: rows,
+                    limit: validatedParams.limit,
+                    radiusCapKm
+                });
+
+                return ranked.map((row) => NearbyPoiSchema.parse(row));
             }
         });
     }

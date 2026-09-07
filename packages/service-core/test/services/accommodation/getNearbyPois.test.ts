@@ -39,12 +39,12 @@ import { asMock } from '../../utils/test-utils';
 const mockLogger = createLoggerMock();
 const TEST_SALT = 'test-location-salt-fixed-for-deterministic-tests-32+chars';
 
-/** Builds a minimal PointOfInterestService test double with a mocked getNearby. */
-function createPoiServiceMock(getNearby: ReturnType<typeof vi.fn>): PointOfInterestService {
-    return { getNearby } as unknown as PointOfInterestService;
+/** Builds a minimal PointOfInterestService test double with a mocked getNearbyRanked. */
+function createPoiServiceMock(getNearbyRanked: ReturnType<typeof vi.fn>): PointOfInterestService {
+    return { getNearbyRanked } as unknown as PointOfInterestService;
 }
 
-/** A sample NearbyPoi row, as returned by `PointOfInterestService.getNearby`. */
+/** A sample NearbyPoi row, as returned by `PointOfInterestService.getNearbyRanked`. */
 const buildNearbyPoi = (overrides: Partial<NearbyPoi> = {}): NearbyPoi =>
     ({
         id: getMockId('pointOfInterest', 'poi-1'),
@@ -107,7 +107,7 @@ describe('AccommodationService.getNearbyPois', () => {
         vi.restoreAllMocks();
     });
 
-    function buildService(getNearby: ReturnType<typeof vi.fn>): AccommodationService {
+    function buildService(getNearbyRanked: ReturnType<typeof vi.fn>): AccommodationService {
         return new AccommodationService(
             { logger: mockLogger },
             model as unknown as AccommodationModel,
@@ -119,11 +119,11 @@ describe('AccommodationService.getNearbyPois', () => {
             undefined,
             undefined,
             makeMediaModelStub() as unknown as AccommodationMediaModel,
-            createPoiServiceMock(getNearby)
+            createPoiServiceMock(getNearbyRanked)
         );
     }
 
-    it('delegates to getNearby centered on the OBFUSCATED approximateLocation (lng -> long remap), with default radius/limit', async () => {
+    it('delegates to getNearbyRanked centered on the OBFUSCATED approximateLocation (lng -> long remap), with no radius ceiling and the default limit', async () => {
         const accommodation = buildAccommodationWithCoords('hotel-with-coords');
         const expectedApprox = projectAccommodationApproximateLocation(accommodation, {
             salt: TEST_SALT
@@ -131,8 +131,8 @@ describe('AccommodationService.getNearbyPois', () => {
         expect(expectedApprox).toBeDefined();
 
         const pois = [buildNearbyPoi()];
-        const getNearby = vi.fn().mockResolvedValue({ data: pois });
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn().mockResolvedValue({ data: pois });
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         const result = await service.getNearbyPois({ slug: 'hotel-with-coords' }, actor);
@@ -142,12 +142,15 @@ describe('AccommodationService.getNearbyPois', () => {
             { slug: 'hotel-with-coords' },
             undefined
         );
-        expect(getNearby).toHaveBeenCalledWith(
+        // HOS-327: there is no default radius any more — `radiusCapKm` stays
+        // undefined so each POI's own elastic radius decides — and the default
+        // limit dropped from 12 to 8.
+        expect(getNearbyRanked).toHaveBeenCalledWith(
             {
                 lat: expectedApprox?.lat,
                 long: expectedApprox?.lng,
-                radiusKm: 5,
-                limit: 12
+                limit: 8,
+                radiusCapKm: undefined
             },
             actor,
             expect.anything()
@@ -155,93 +158,93 @@ describe('AccommodationService.getNearbyPois', () => {
         expect(result.data).toEqual(pois);
     });
 
-    it('returns an empty array (AC-1/#1) and never calls getNearby when the accommodation is PRIVATE and the actor has no view-private permission', async () => {
+    it('returns an empty array (AC-1/#1) and never calls getNearbyRanked when the accommodation is PRIVATE and the actor has no view-private permission', async () => {
         const accommodation = buildAccommodationWithCoords('draft-hotel');
         accommodation.visibility = VisibilityEnum.PRIVATE;
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         const result = await service.getNearbyPois({ slug: 'draft-hotel' }, actor);
 
         expect(result.error).toBeUndefined();
         expect(result.data).toEqual([]);
-        expect(getNearby).not.toHaveBeenCalled();
+        expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
-    it('returns an empty array (AC-8) and never calls getNearby when the accommodation is DRAFT (non-ACTIVE lifecycleState)', async () => {
+    it('returns an empty array (AC-8) and never calls getNearbyRanked when the accommodation is DRAFT (non-ACTIVE lifecycleState)', async () => {
         const accommodation = buildAccommodationWithCoords('draft-lifecycle-hotel');
         accommodation.lifecycleState = LifecycleStatusEnum.DRAFT;
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         const result = await service.getNearbyPois({ slug: 'draft-lifecycle-hotel' }, actor);
 
         expect(result.error).toBeUndefined();
         expect(result.data).toEqual([]);
-        expect(getNearby).not.toHaveBeenCalled();
+        expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
-    it('returns an empty array and never calls getNearby when the accommodation is soft-deleted (GONE)', async () => {
+    it('returns an empty array and never calls getNearbyRanked when the accommodation is soft-deleted (GONE)', async () => {
         const accommodation = buildAccommodationWithCoords('gone-hotel');
         accommodation.visibility = VisibilityEnum.PUBLIC;
         accommodation.deletedAt = new Date();
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         const result = await service.getNearbyPois({ slug: 'gone-hotel' }, actor);
 
         expect(result.error).toBeUndefined();
         expect(result.data).toEqual([]);
-        expect(getNearby).not.toHaveBeenCalled();
+        expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
-    it('returns an empty array and never calls getNearby when the accommodation does not exist (NOT_FOUND)', async () => {
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+    it('returns an empty array and never calls getNearbyRanked when the accommodation does not exist (NOT_FOUND)', async () => {
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(null);
 
         const result = await service.getNearbyPois({ slug: 'does-not-exist' }, actor);
 
         expect(result.error).toBeUndefined();
         expect(result.data).toEqual([]);
-        expect(getNearby).not.toHaveBeenCalled();
+        expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
-    it('returns an empty array (and never calls getNearby) when the visible accommodation has no coordinates yet', async () => {
+    it('returns an empty array (and never calls getNearbyRanked) when the visible accommodation has no coordinates yet', async () => {
         const accommodation = new AccommodationFactoryBuilder()
             .with({ slug: 'hotel-no-coords' })
             .build();
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         const result = await service.getNearbyPois({ slug: 'hotel-no-coords' }, actor);
 
         expect(result.error).toBeUndefined();
         expect(result.data).toEqual([]);
-        expect(getNearby).not.toHaveBeenCalled();
+        expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
-    it('honors explicit radiusKm/limit overrides instead of the defaults', async () => {
+    it('forwards an explicit radiusKm as the ranked radius CEILING, and an explicit limit', async () => {
         const accommodation = buildAccommodationWithCoords('hotel-with-coords');
         const expectedApprox = projectAccommodationApproximateLocation(accommodation, {
             salt: TEST_SALT
         }).approximateLocation;
-        const getNearby = vi.fn().mockResolvedValue({ data: [] });
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn().mockResolvedValue({ data: [] });
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         await service.getNearbyPois({ slug: 'hotel-with-coords', radiusKm: 15, limit: 5 }, actor);
 
-        expect(getNearby).toHaveBeenCalledWith(
+        expect(getNearbyRanked).toHaveBeenCalledWith(
             {
                 lat: expectedApprox?.lat,
                 long: expectedApprox?.lng,
-                radiusKm: 15,
-                limit: 5
+                limit: 5,
+                radiusCapKm: 15
             },
             actor,
             expect.anything()
@@ -262,8 +265,8 @@ describe('AccommodationService.getNearbyPois', () => {
             buildNearbyPoi(),
             buildNearbyPoi({ id: getMockId('pointOfInterest', 'poi-2') })
         ];
-        const getNearby = vi.fn().mockResolvedValue({ data: pois });
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn().mockResolvedValue({ data: pois });
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         const result = await service.getNearbyPois({ slug: 'hotel-with-coords' }, actor);
@@ -278,12 +281,12 @@ describe('AccommodationService.getNearbyPois', () => {
         expect(serialized).not.toContain('ownerId');
     });
 
-    it('propagates an error returned by PointOfInterestService.getNearby', async () => {
+    it('propagates an error returned by PointOfInterestService.getNearbyRanked', async () => {
         const accommodation = buildAccommodationWithCoords('hotel-with-coords');
-        const getNearby = vi.fn().mockResolvedValue({
+        const getNearbyRanked = vi.fn().mockResolvedValue({
             error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'boom' }
         });
-        const service = buildService(getNearby);
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
         const result = await service.getNearbyPois({ slug: 'hotel-with-coords' }, actor);
@@ -293,21 +296,21 @@ describe('AccommodationService.getNearbyPois', () => {
     });
 
     it('propagates a genuine backend failure from the model read as an error result, NOT swallowed to []', async () => {
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockRejectedValue(new Error('connection to database lost'));
 
         const result = await service.getNearbyPois({ slug: 'hotel-with-coords' }, actor);
 
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-        expect(getNearby).not.toHaveBeenCalled();
+        expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
     it('propagates a non-visibility ServiceError from the gate as an error result, NOT swallowed to []', async () => {
         const accommodation = buildAccommodationWithCoords('hotel-with-coords');
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
         vi.spyOn(permissionHelpers, 'checkCanView').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.SERVICE_UNAVAILABLE, 'relation lookup failed');
@@ -317,12 +320,12 @@ describe('AccommodationService.getNearbyPois', () => {
 
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.SERVICE_UNAVAILABLE);
-        expect(getNearby).not.toHaveBeenCalled();
+        expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
     it('returns VALIDATION_ERROR for an empty slug', async () => {
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
 
         const result = await service.getNearbyPois({ slug: '' }, actor);
 
@@ -332,8 +335,8 @@ describe('AccommodationService.getNearbyPois', () => {
     });
 
     it('rejects a radiusKm above the 20km upper bound (defense-in-depth, HOS-145 judgment-day)', async () => {
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
 
         const result = await service.getNearbyPois(
             { slug: 'hotel-with-coords', radiusKm: 21 },
@@ -346,8 +349,8 @@ describe('AccommodationService.getNearbyPois', () => {
     });
 
     it('rejects a limit above the 50 upper bound (defense-in-depth, HOS-145 judgment-day)', async () => {
-        const getNearby = vi.fn();
-        const service = buildService(getNearby);
+        const getNearbyRanked = vi.fn();
+        const service = buildService(getNearbyRanked);
 
         const result = await service.getNearbyPois({ slug: 'hotel-with-coords', limit: 51 }, actor);
 

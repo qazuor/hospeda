@@ -14,6 +14,8 @@
  *   Spanish site.
  * - HOS-585 (P-4): `telephone` was never emitted, so the NAP triplet Bing
  *   builds its local pack from was missing a leg.
+ * - HOS-878: `priceRange` was never emitted, despite the price living in the
+ *   same scope as the other derivations.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -21,6 +23,7 @@ import { translateAmenityName } from '../../../src/lib/catalog-names';
 import {
     buildLodgingAmenityNames,
     buildLodgingGeo,
+    buildLodgingPriceRange,
     buildLodgingTelephone
 } from '../../../src/lib/seo/lodging-jsonld';
 
@@ -216,5 +219,84 @@ describe('buildLodgingTelephone', () => {
         expect(buildLodgingTelephone({ contactInfo: { phone: '  +54 343 1234567  ' } })).toBe(
             '+54 343 1234567'
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// buildLodgingPriceRange (HOS-878)
+// ---------------------------------------------------------------------------
+
+describe('buildLodgingPriceRange — HOS-878', () => {
+    it('formats a valid price as "<currency> <amount>"', () => {
+        expect(buildLodgingPriceRange({ price: { price: 15000, currency: 'ARS' } })).toBe(
+            'ARS 15000'
+        );
+    });
+
+    it('falls back to ARS when currency is absent, mirroring PricingSidebar', () => {
+        expect(buildLodgingPriceRange({ price: { price: 8000, currency: null } })).toBe('ARS 8000');
+    });
+
+    it('omits the field when price is null', () => {
+        expect(buildLodgingPriceRange({ price: { price: null, currency: 'ARS' } })).toBeUndefined();
+    });
+
+    it('omits the field when price is zero — never publishes "ARS 0"', () => {
+        expect(buildLodgingPriceRange({ price: { price: 0, currency: 'ARS' } })).toBeUndefined();
+    });
+
+    it('omits the field when price is negative', () => {
+        expect(buildLodgingPriceRange({ price: { price: -100, currency: 'ARS' } })).toBeUndefined();
+    });
+
+    it('omits the field when there is no price block at all', () => {
+        expect(buildLodgingPriceRange({ price: null })).toBeUndefined();
+        expect(buildLodgingPriceRange({ price: undefined })).toBeUndefined();
+    });
+
+    // -----------------------------------------------------------------------
+    // End-to-end against the emitted structured data.
+    //
+    // LodgingBusinessJsonLd.astro cannot be rendered under Vitest, so this
+    // replicates its exact assignment (`if (priceRange) { structuredData.
+    // priceRange = priceRange; }`) to prove the KEY itself is absent, not just
+    // that the derived value is `undefined`. `expect.objectContaining` would
+    // be blind to a missing key here, so presence/absence is asserted with
+    // `toHaveProperty`/`not.toHaveProperty` instead.
+    // -----------------------------------------------------------------------
+    function buildStructuredData(priceRange: string | undefined): Record<string, unknown> {
+        const structuredData: Record<string, unknown> = { '@type': 'LodgingBusiness' };
+        if (priceRange) {
+            structuredData.priceRange = priceRange;
+        }
+        return structuredData;
+    }
+
+    it('a valid price ends up as a present priceRange key with the expected format', () => {
+        const structuredData = buildStructuredData(
+            buildLodgingPriceRange({ price: { price: 15000, currency: 'ARS' } })
+        );
+        expect(structuredData).toHaveProperty('priceRange', 'ARS 15000');
+    });
+
+    it('price: null never reaches the JSON-LD as a priceRange key', () => {
+        const structuredData = buildStructuredData(
+            buildLodgingPriceRange({ price: { price: null, currency: 'ARS' } })
+        );
+        expect(structuredData).not.toHaveProperty('priceRange');
+    });
+
+    it('price.price: 0 never reaches the JSON-LD as a priceRange key', () => {
+        const structuredData = buildStructuredData(
+            buildLodgingPriceRange({ price: { price: 0, currency: 'ARS' } })
+        );
+        expect(structuredData).not.toHaveProperty('priceRange');
+    });
+
+    it('absent currency still yields a present priceRange key, defaulted to ARS', () => {
+        const structuredData = buildStructuredData(
+            buildLodgingPriceRange({ price: { price: 8000, currency: null } })
+        );
+        expect(structuredData).toHaveProperty('priceRange', 'ARS 8000');
     });
 });

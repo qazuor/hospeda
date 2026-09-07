@@ -282,6 +282,30 @@ describe('transformAccommodationEdit', () => {
             expect(result.seoTitleDefault).toBe('');
             expect(result.seoDescriptionDefault).toBe('');
         });
+
+        // HOS-802 review F2: this default is documented (five lines above the
+        // call site) as computed "with the public page's own rule so the
+        // editor cannot preview one thing and publish another" (HOS-792). The
+        // public rule is `toAccommodationDetailPageProps`'s `name`/`summary`,
+        // which HOS-802 migrated to `resolveI18nTextWithLegacyFallback`. Before
+        // this fix, an i18n object present with every key empty broke that
+        // invariant: the public page fell back to the raw `name`/`summary` and
+        // published it, while this preview stayed on the old resolver and
+        // reported `''` — the editor would show "no default to publish" for a
+        // listing that in fact had one.
+        it('should fall back to the raw column when the i18n object is present but every key is empty, matching the public page', () => {
+            const result = transformAccommodationEdit({
+                item: {
+                    name: 'Casa del Sol',
+                    summary: 'Resumen crudo',
+                    nameI18n: { es: '', en: '', pt: '' },
+                    summaryI18n: { es: '', en: '', pt: '' }
+                }
+            });
+
+            expect(result.seoTitleDefault).toBe('Casa del Sol');
+            expect(result.seoDescriptionDefault).toBe('Resumen crudo');
+        });
     });
 });
 

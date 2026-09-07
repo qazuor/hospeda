@@ -45,7 +45,11 @@ import {
     type MediaAttribution,
     toRenderableImageUrl
 } from '../media';
-import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
+import {
+    type I18nTextLike,
+    resolveI18nText,
+    resolveI18nTextWithLegacyFallback
+} from '../resolve-i18n-text';
 import { resolveSafeExternalUrl } from '../safe-external-url';
 import { SEO_SOURCE_LOCALE } from '../seo';
 
@@ -329,11 +333,16 @@ export function toAccommodationCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         type: String(item.type || item.accommodationType || ''),
         featuredImage,
         photoCount,
@@ -421,7 +430,11 @@ export function toAccommodationDetailedProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale
+        }),
         type: String(item.type || item.accommodationType || ''),
         images,
         location: {
@@ -490,14 +503,17 @@ export function toDestinationCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name ?? 'Sin nombre',
+        name:
+            resolveI18nTextWithLegacyFallback({
+                i18n: item.nameI18n as I18nTextLike | string | undefined,
+                legacy: item.name,
+                locale
+            }) || 'Sin nombre',
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
             locale
-        ),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
-            locale
-        ),
+        }),
         featuredImage,
         accommodationsCount: Number(item.accommodationsCount || 0),
         isFeatured: Boolean(item.isFeatured),
@@ -674,11 +690,16 @@ export function toEventCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         category: String(item.category || ''),
         date: {
@@ -771,11 +792,16 @@ export function toArticleCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        title: resolveI18nText((item.titleI18n as I18nTextLike | string) ?? item.title, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.content,
+        title: resolveI18nTextWithLegacyFallback({
+            i18n: item.titleI18n as I18nTextLike | string | undefined,
+            legacy: item.title,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.content,
+            locale
+        }),
         featuredImage,
         category: String(item.category || ''),
         publishedAt: String(item.publishedAt || item.createdAt || ''),
@@ -916,22 +942,52 @@ export function toAccommodationDetailPageProps({
     // H-125: the rich shape carries the cover photo's author-written alt text.
     // The URL-only wrapper drops it, which is why every cover fell back to the
     // listing name.
+    // HOS-881: this URL feeds the JSON-LD `image` field directly
+    // (`LodgingBusinessJsonLd` on the detail page) AND, indirectly, the
+    // `og:image` meta tag. The indirect path matters for tracing this: the
+    // detail page passes it as `ogImage` to `SEOHead.astro`, which folds it
+    // into a `/api/og/?...&image=<this-url>&...` endpoint URL (NOT a
+    // `<meta>` pointing straight at Cloudinary — see `buildOgImagePath` in
+    // `apps/web/src/lib/og-template.ts`), and that endpoint's Satori template
+    // renders the photo full-bleed at a hard 1200x630 with `object-fit:
+    // cover` (`og-template.ts` around the `img(image, {width:1200,
+    // height:630, objectFit:'cover'})` node). A 400x300 (`card`) source fed
+    // into that meant a 3x upscale on every share preview — hence `og`, not
+    // `card`.
+    //
+    // Three OTHER call sites read this same field and strip the transform
+    // baked in here before re-applying their own preset, so raising it does
+    // not regress their byte size: `ImageGallery.client.tsx`'s featured
+    // cell, `CompareBar.client.tsx`'s thumbnail (both via
+    // `stripCloudinaryTransform` + `getMediaUrl`), and
+    // `alojamientos/[slug]/fotos.astro`'s featured cell + video-poster
+    // fallback (HOS-881 M-1 — this one did NOT strip until this same
+    // change; a stale claim of "the other consumers are safe" is exactly
+    // what let it go unnoticed, so if a future edit adds a fourth
+    // consumer, verify it strips too instead of trusting this comment).
     const featuredImage = extractFeaturedImage(item, {
-        fallback: '/assets/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg',
+        preset: 'og'
     });
 
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
-        description: resolveI18nText(
-            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary,
             locale
-        ),
+        }),
+        description: resolveI18nTextWithLegacyFallback({
+            i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+            legacy: item.description,
+            locale
+        }),
         richDescription:
             item.richDescriptionI18n != null || item.richDescription != null
                 ? resolveI18nText(
@@ -1560,10 +1616,14 @@ export function toEventDetailProps({
     });
 
     // Build gallery with alt text. Use name as fallback alt.
-    const eventName = resolveI18nText(
-        (item.nameI18n as I18nTextLike | string) ?? item.name ?? item.title,
+    // HOS-802: `?? item.title` is deliberately kept here — some legacy event
+    // rows only ever had a `title` field, never a `name` one, and this
+    // detail transform is the sole call site that carries that extra rung.
+    const eventName = resolveI18nTextWithLegacyFallback({
+        i18n: item.nameI18n as I18nTextLike | string | undefined,
+        legacy: item.name ?? item.title,
         locale
-    );
+    });
     const mediaObj = item.media as
         | {
               gallery?: ReadonlyArray<{
@@ -1743,14 +1803,16 @@ export function toEventDetailProps({
         id,
         slug: String(item.slug || ''),
         name: eventName,
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
             locale
-        ),
-        description: resolveI18nText(
-            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+        }),
+        description: resolveI18nTextWithLegacyFallback({
+            i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+            legacy: item.description,
             locale
-        ),
+        }),
         contentHtml: item.contentHtml ? String(item.contentHtml) : undefined,
         category: String(item.category || ''),
         isFeatured: Boolean(item.isFeatured),
@@ -1920,14 +1982,16 @@ export function transformAccommodationEdit({
         // does. And the locale is pinned to `SEO_SOURCE_LOCALE`, not the UI
         // locale — the override only applies on `es`, so that is the page whose
         // fallback is being previewed even when the host edits in English.
-        seoTitleDefault: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name,
-            SEO_SOURCE_LOCALE
-        ).trim(),
-        seoDescriptionDefault: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
-            SEO_SOURCE_LOCALE
-        ).trim(),
+        seoTitleDefault: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale: SEO_SOURCE_LOCALE
+        }).trim(),
+        seoDescriptionDefault: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary,
+            locale: SEO_SOURCE_LOCALE
+        }).trim(),
         videos,
         basePrice:
             priceObj?.price == null
@@ -2654,14 +2718,20 @@ export function toGastronomyCardProps({
         // Some gastronomy rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
         // while `name` holds the real value; without this guard the card and
         // detail headings render empty (a11y empty-heading violation, SPEC-308).
-        name:
-            resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale) ||
-            String(item.name ?? ''),
-        type: String(item.type || ''),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        // HOS-802: this used to be an inline `||` guard duplicated at every
+        // other i18n call site — now centralized in
+        // `resolveI18nTextWithLegacyFallback`.
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        type: String(item.type || ''),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
@@ -3044,12 +3114,17 @@ export function toExperienceCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        type: String(item.type || ''),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        type: String(item.type || ''),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
@@ -3231,15 +3306,20 @@ export function toPartnerDetailProps({
 }): PartnerDetailData {
     return {
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale
+        }),
         type: String(item.type || ''),
         description:
             item.description == null
                 ? null
-                : resolveI18nText(
-                      (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+                : resolveI18nTextWithLegacyFallback({
+                      i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+                      legacy: item.description,
                       locale
-                  ),
+                  }),
         logoUrl: item.logoUrl == null ? null : String(item.logoUrl),
         websiteUrl: item.websiteUrl == null ? null : String(item.websiteUrl),
         contactInfo:
