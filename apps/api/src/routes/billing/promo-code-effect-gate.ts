@@ -1,5 +1,5 @@
 /**
- * Self-service effect gate for `POST /api/v1/protected/billing/promo-codes/apply`
+ * Comp gate for `POST /api/v1/protected/billing/promo-codes/apply`
  * (HOS-1195 / HOS-1171).
  *
  * ## The hole this closes
@@ -10,42 +10,53 @@
  * which runs `UPDATE billing_subscriptions SET status = 'comp'`. The B1
  * ownership guard does not stop it: that one exists for the CROSS-customer
  * attack ("flip the VICTIM's subscription to comp") and passes by construction
- * when the subscription is the caller's own. In production `HOSPEDA_FREE` is
+ * when the subscription is the caller's own. In production `HOSPEDA_FREE` was
  * active with `effect_kind = comp` and no `max_uses`, and `getPromoCodeByCode`
  * resolves on `eq(code, …)` alone, so `livemode` never scoped it either.
  * Anyone who learned the string got a permanently free subscription.
  *
- * ## The two rules
+ * ## This gate is the SECOND layer, not the fix
  *
- * 1. **`comp` is refused for EVERY caller, admins included.** The one
- *    legitimate way to grant it is the audited path
- *    (`services/subscription-comp-create.service.ts`), which inserts the row
- *    directly with no MercadoPago preapproval. A second, unaudited door for
- *    admins would only mean the grant sometimes happens where nobody looks.
- * 2. **A non-admin caller may redeem `trial_extension` and nothing else.** A
- *    `discount` is refused WITHOUT being redeemed (owner decision, HOS-1171):
- *    it stays usable at checkout, where a discount belongs. An untyped effect
- *    lands in the same bucket — a legacy row whose `value_kind` was never
- *    backfilled is a discount `parseEffectFromRow` could not type, and guessing
- *    in the permissive direction is the exact shape of failure this exists to
- *    stop.
+ * The fix is that a complimentary subscription is no longer something a promo
+ * code can grant AT ALL (owner decision, HOS-1171). `comp` is an admin action
+ * on a subscription, exactly like courtesy:
+ * `POST /api/v1/admin/billing/subscriptions/grant-comp`
+ * (`routes/billing/admin/subscription-comp.ts`, `BILLING_MANAGE`) is the only
+ * thing in the codebase that creates one. The two doors a code used to open —
+ * this route and the self-serve checkout
+ * (`services/subscription-checkout-promo.service.ts`) — both refuse it, and
+ * `HOSPEDA_FREE`, the only comp code that ever existed, is retired from the
+ * seed baseline and deactivated in every seeded environment by
+ * `packages/seed/src/data-migrations/0099-hos-1171-retire-hospeda-free`.
  *
- * Admin callers keep the route's full behaviour (the SPEC-262 T-007 discount
- * seam and `service.apply`), which is what it was built for and what its ops
- * tooling still targets.
+ * The two layers are independent on purpose. A gate has to be REMEMBERED by
+ * whoever adds the next door; the absence of a redeemable comp code does not.
+ * This one stays because it is cheap and because a comp row can still be
+ * created by hand in a database.
+ *
+ * ## What is deliberately NOT gated
+ *
+ * **`discount` and `trial_extension`.** Both are ordinary self-service
+ * redemptions and this route is where a signed-in customer makes them: a
+ * trialing customer extends their trial, and an already-subscribed one applies
+ * a discount to the subscription they are paying for (the SPEC-262 T-007 seam,
+ * reached when the caller names a `subscriptionId`). An earlier draft of this
+ * gate restricted `discount` to admins; that was wrong, and it broke the case
+ * the owner actually wants.
  *
  * ## Two smaller decisions worth not re-deriving
  *
  * **Fail-closed on the peek.** A code we could not READ is never handed to a
- * redemption path that would read it again inside its own transaction.
- * `NOT_FOUND` keeps answering 404, exactly as `service.apply` did.
+ * redemption path that would read it again inside its own transaction — we
+ * cannot tell whether it was a comp. `NOT_FOUND` keeps answering 404, exactly
+ * as `service.apply` did.
  *
  * **403 for `comp`, not the error contract's usual 404.** The rule that a 403
  * must not confirm an id exists is about resources whose ids are guessable and
  * private. It buys nothing here: `POST /validate` — unchanged, and the
  * pre-flight the web form runs — hands back `effectPreview.effectKind` for any
- * code the caller can name. A 404 would only make the honest holder of a comp
- * code read "that code does not exist".
+ * code the caller can name. A 404 would only make the honest holder of a
+ * legacy comp code read "that code does not exist".
  *
  * @module routes/billing/promo-code-effect-gate
  */
@@ -55,9 +66,6 @@ import { HTTPException } from 'hono/http-exception';
 
 /** Reason forwarded on the `comp` refusal, whitelisted in `utils/entitlement-cause.ts`. */
 export const COMP_NOT_SELF_SERVICE_REASON = 'PROMO_CODE_COMP_NOT_SELF_SERVICE' as const;
-
-/** Reason forwarded on the discount / untyped refusal. */
-export const DISCOUNT_AT_CHECKOUT_REASON = 'PROMO_CODE_DISCOUNT_AT_CHECKOUT' as const;
 
 /**
  * The shape of `PromoCodeService.getByCode`'s result that this gate reads.
@@ -72,56 +80,44 @@ export interface PromoCodePeek {
 }
 
 /**
- * Refuses a promo code whose effect must not be redeemed through the
- * self-service apply route. Returns normally when the request may proceed.
+ * Refuses a `comp` promo code before the apply route redeems anything.
+ * Returns normally for every other effect kind.
  *
- * Every refusal happens BEFORE any redemption, so a refused code is not spent:
+ * The refusal happens BEFORE any redemption, so a refused code is not spent:
  * `used_count` is untouched and no usage row is written.
+ *
+ * Applies to EVERY caller, admins included — a comp subscription is granted
+ * through the admin route, never by redeeming a code.
  *
  * @param input.peekResult - What `PromoCodeService.getByCode` answered for the
  *   submitted code, read BEFORE any mutation.
- * @param input.actorHasAdmin - Whether the caller holds `ACCESS_API_ADMIN`.
- * @throws HTTPException 403 when the code carries a `comp` effect (any caller).
- * @throws HTTPException 422 when a non-admin submits a discount or an untyped
- *   effect.
- * @throws HTTPException 404/500 when a non-admin's code could not be read.
+ * @throws HTTPException 403 when the code carries a `comp` effect.
+ * @throws HTTPException 404/500 when the code could not be read at all.
  *
  * @example
  * ```ts
  * const peekResult = await service.getByCode(code);
- * assertPromoEffectIsSelfServiceRedeemable({ peekResult, actorHasAdmin });
- * // …only reachable for a trial_extension (or for an admin)
+ * assertPromoCodeIsNotComp({ peekResult });
+ * // …only reachable for a discount, a trial_extension, or an untyped legacy code
  * ```
  */
-export function assertPromoEffectIsSelfServiceRedeemable(input: {
-    readonly peekResult: PromoCodePeek;
-    readonly actorHasAdmin: boolean;
-}): void {
-    const { peekResult, actorHasAdmin } = input;
-    const effectKind = peekResult.success ? peekResult.data?.effect?.kind : undefined;
-
-    if (effectKind === PromoEffectKindEnum.COMP) {
-        throw new HTTPException(403, {
-            message:
-                'Complimentary codes cannot be redeemed here. Contact support if you were promised one.',
-            cause: { code: COMP_NOT_SELF_SERVICE_REASON }
-        });
-    }
-
-    if (actorHasAdmin) return;
+export function assertPromoCodeIsNotComp(input: { readonly peekResult: PromoCodePeek }): void {
+    const { peekResult } = input;
 
     if (!peekResult.success) {
+        // Fail closed: an unreadable code might be a comp, and the paths below
+        // would read it again inside their own transaction.
         const status = peekResult.error?.code === ServiceErrorCode.NOT_FOUND ? 404 : 500;
         throw new HTTPException(status as 404 | 500, {
             message: peekResult.error?.message ?? 'Promo code not found'
         });
     }
 
-    if (effectKind !== PromoEffectKindEnum.TRIAL_EXTENSION) {
-        throw new HTTPException(422, {
+    if (peekResult.data?.effect?.kind === PromoEffectKindEnum.COMP) {
+        throw new HTTPException(403, {
             message:
-                'This is a discount code. It has not been used — apply it when you subscribe to a plan.',
-            cause: { code: DISCOUNT_AT_CHECKOUT_REASON }
+                'Complimentary subscriptions are granted by an operator, not by redeeming a code.',
+            cause: { code: COMP_NOT_SELF_SERVICE_REASON }
         });
     }
 }

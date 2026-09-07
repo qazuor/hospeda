@@ -9,7 +9,8 @@
  *   - `{ kind: 'discount' }` — `discount` effect → discounted line-item amount
  *     (annual one-time) or live-preapproval mutation (monthly), plus the
  *     cycle-counter seed inputs.
- *   - `{ kind: 'comp' }`     — `comp` effect → create a `status='comp'` sub, no MP.
+ *   - `{ kind: 'comp' }`     — RETIRED (HOS-1171). A `comp` code is refused here
+ *     and answers `invalid`; a complimentary subscription is an admin action.
  *
  * SPEC-262 C1+H1 fix: validation now routes through the FULL `validatePromoCode`
  * service, which checks active + expiresAt + maxUses + maxPerCustomer + validPlans
@@ -64,6 +65,20 @@ export type CheckoutPromoPlan =
           /** The typed discount effect (carries valueKind/value/durationCycles). */
           readonly effect: Extract<PromoEffect, { kind: 'discount' }>;
       }
+    /**
+     * NO LONGER PRODUCED (HOS-1171). `resolveCheckoutPromoPlan` refuses a `comp`
+     * code with `{ kind: 'invalid' }` — a complimentary subscription is an admin
+     * action, granted by `POST /admin/billing/subscriptions/grant-comp`.
+     *
+     * The variant and the two branches that consume it
+     * (`subscription-checkout.service.ts`) are kept rather than deleted because
+     * removing them also removes `'comp'` from `CheckoutAppliedEffect`, which is
+     * part of the `/start-paid` response contract read by
+     * `PlanPurchaseButton.client.tsx` and the checkout success page. That is a
+     * separate, cross-package change. Nothing constructs this variant today, and
+     * the refusal that guarantees it lives in ONE place — the `COMP` branch of
+     * `classifyValidatedCode` below.
+     */
     | {
           readonly kind: 'comp';
           readonly promoCodeId: string;
@@ -173,8 +188,40 @@ async function classifyValidatedCode(promoCode: string): Promise<CheckoutPromoPl
         }
 
         if (effect?.kind === PromoEffectKindEnum.COMP) {
-            // SPEC-262 T-012 P2: comp is ALLOWED at self-serve checkout now.
-            return { kind: 'comp', promoCodeId: dbCode.id, code: dbCode.code };
+            // HOS-1171: this DELIBERATELY undoes the SPEC-262 T-012 P2 decision
+            // that used to sit here ("comp is ALLOWED at self-serve checkout
+            // now"). It is an owner decision, not an oversight.
+            //
+            // This was the load-bearing door, not `/apply`. A comp code applied
+            // through `/apply` needs an existing subscription to flip, and
+            // whoever wants free access has none — so they come here, where this
+            // branch reached `createCompSubscription()`: `status='comp'`,
+            // `mp_subscription_id = NULL`, a period end 100 years out, no
+            // permission check and no `livemode` filter anywhere on the path
+            // (`start-paid.ts` is a `createCRUDRoute` with no
+            // `requiredPermissions`). `HOSPEDA_FREE` was active and uncapped in
+            // production. One request, and you were never billed again.
+            //
+            // A complimentary subscription is an ADMIN ACTION on a subscription
+            // now — `POST /api/v1/admin/billing/subscriptions/grant-comp`
+            // (`routes/billing/admin/subscription-comp.ts`, `BILLING_MANAGE`) —
+            // exactly like courtesy. Neither is reachable by redeeming a code,
+            // and `HOSPEDA_FREE` itself is retired from the seed baseline and
+            // deactivated in seeded environments (seed data-migration 0099).
+            //
+            // `invalid` rather than a thrown error keeps this module free of any
+            // import on the checkout service's error class (see the type's
+            // docstring); the caller maps it to
+            // `SubscriptionCheckoutError('INVALID_PROMO_CODE')`. Nothing is
+            // redeemed on this path, so the code is not spent either.
+            apiLogger.warn(
+                { code: dbCode.code, promoCodeId: dbCode.id },
+                'Comp promo code refused at self-serve checkout (HOS-1171): comp is an admin action'
+            );
+            return {
+                kind: 'invalid',
+                message: `Promo code '${promoCode}' is not valid`
+            };
         }
 
         if (effect?.kind === PromoEffectKindEnum.DISCOUNT) {

@@ -62,23 +62,23 @@ const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
     // where both answer 422.
     'ADDON_NOT_AVAILABLE_FOR_DOMAIN',
     'ADDON_DOMAIN_UNKNOWN',
-    // promo-code apply route (HOS-1171 / HOS-1195) — the three refusals the
+    // promo-code apply route (HOS-1171 / HOS-1195) — the two refusals the
     // self-service redeem surface has to tell apart. Whitelisted for the same
     // reason as the add-on pair above: their statuses (403 and 422) both derive
-    // a single generic `error.code`, so without a forwarded reason a host who
-    // typed a perfectly good discount code is told "the data you sent is
-    // invalid".
+    // a single generic `error.code`, so without a forwarded reason a customer
+    // whose code was perfectly good is told "the data you sent is invalid".
     //
-    //   PROMO_CODE_COMP_NOT_SELF_SERVICE — a complimentary code. Never
-    //     redeemable from a user-facing surface; an operator grants it.
-    //   PROMO_CODE_DISCOUNT_AT_CHECKOUT — a discount code. The remedy is
-    //     "keep it, use it when you buy the plan" — and the code is NOT spent,
-    //     which is the whole point of refusing instead of redeeming.
-    //   NO_ACTIVE_TRIAL — a trial-extension code with no trial to extend.
-    //     Distinct from the two above: the code IS the right kind and IS still
-    //     valid, the account state is what does not fit.
+    //   PROMO_CODE_COMP_NOT_SELF_SERVICE — a `comp` code. Not redeemable from
+    //     any user-facing surface: a complimentary subscription is an operator's
+    //     grant (`POST /admin/billing/subscriptions/grant-comp`). The code is
+    //     NOT spent by the refusal.
+    //   NO_ACTIVE_TRIAL — a trial-extension code with no trial to extend. The
+    //     code IS the right kind and IS still valid; the account state is what
+    //     does not fit, and the code stays usable once a trial exists.
+    //
+    // `discount` is deliberately absent: it is redeemable from the web by a
+    // subscribed customer, so there is no refusal to name.
     'PROMO_CODE_COMP_NOT_SELF_SERVICE',
-    'PROMO_CODE_DISCOUNT_AT_CHECKOUT',
     'NO_ACTIVE_TRIAL'
 ]);
 

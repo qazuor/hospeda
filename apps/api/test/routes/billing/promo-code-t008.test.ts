@@ -559,12 +559,6 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     // ── AC-4.3: discount → backward-compat shape ─────────────────────────────
 
-    // NOTE (HOS-1171): the actor here is an ADMIN. AC-4.3 is about the RESPONSE
-    // SHAPE of the discount branch, and that branch is now reachable only by a
-    // caller holding ACCESS_API_ADMIN — a self-service host is refused unspent
-    // (422) by the effect gate, which its own test above covers. Running this
-    // with a host actor would assert the shape of a response the route no
-    // longer produces for them.
     it('AC-4.3 discount effect → backward-compat response (discountAmount, finalAmount, amount)', async () => {
         // Arrange
         mockApply.mockResolvedValue({
@@ -583,7 +577,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         // Act
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            headers: makeHeaders(makeAdminActor()),
+            headers: makeHeaders(makeHostActor()),
             body: JSON.stringify({
                 code: 'SAVE30',
                 customerId: OWN_CUSTOMER_ID,
@@ -705,10 +699,43 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         expect(mockApply).not.toHaveBeenCalled();
     });
 
-    // ── HOS-1171: discount is refused UNSPENT for a self-service caller ───────
+    // ── HOS-1171: discount IS redeemable from the web, by any authenticated
+    // caller. An earlier draft of this gate refused it for non-admins; the owner
+    // reversed that — an already-subscribed customer applying a discount to the
+    // subscription they pay for is the point of the T-007 seam.
 
-    it('HOS-1171 discount effect + host → 422, code NOT redeemed, distinct reason', async () => {
-        // Arrange — the default stub is a percentage discount.
+    it('HOS-1171 discount effect + host + subscriptionId → the T-007 seam runs', async () => {
+        // Arrange — this is the path the redeem page takes for a subscribed
+        // customer: the page resolves their subscription id server-side so the
+        // seam can really lower the price.
+        mockQZPayBillingCell.value = {};
+        mockApplySeam.mockResolvedValue({
+            success: true,
+            data: { discountedAmountCentavos: 7000 }
+        });
+
+        // Act
+        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
+            method: 'POST',
+            headers: makeHeaders(makeHostActor()),
+            body: JSON.stringify({
+                code: 'SAVE30',
+                customerId: OWN_CUSTOMER_ID,
+                subscriptionId: randomUUID(),
+                amount: 10000
+            })
+        });
+
+        // Assert
+        expect([200, 201]).toContain(res.status);
+        expect(mockApplySeam).toHaveBeenCalledOnce();
+        const body = (await res.json()) as { data?: { effectKind: string; finalAmount: number } };
+        expect(body.data?.effectKind).toBe('discount');
+        expect(body.data?.finalAmount).toBe(7000);
+    });
+
+    it('HOS-1171 discount effect + host, no subscriptionId → service.apply path', async () => {
+        // Arrange
         mockApply.mockResolvedValue({
             success: true,
             data: {
@@ -733,51 +760,31 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
             })
         });
 
-        // Assert
-        expect(res.status).toBe(422);
-        const body = (await res.json()) as { error?: { reason?: string } };
-        // Distinguishable from the comp refusal — they have different remedies.
-        expect(body.error?.reason).toBe('PROMO_CODE_DISCOUNT_AT_CHECKOUT');
-        // The whole point of refusing rather than applying: the code survives.
-        expect(mockApply).not.toHaveBeenCalled();
+        // Assert — a plain host reaches the redemption. No admin permission is
+        // involved anywhere on this path.
+        expect([200, 201]).toContain(res.status);
+        expect(mockApply).toHaveBeenCalledOnce();
     });
 
-    it('HOS-1171 discount effect + host + subscriptionId → 422 before the T-007 seam', async () => {
-        // Arrange — this is the path the account redeem form actually takes
-        // (the dashboard passes the trialing subscription's id). Without the
-        // gate sitting BEFORE the seam branch, a discount typed there would be
-        // burnt on the caller's own live preapproval.
-        mockQZPayBillingCell.value = {};
-        mockApplySeam.mockResolvedValue({
-            success: true,
-            data: { discountedAmountCentavos: 7000 }
-        });
-
-        // Act
-        const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
-            method: 'POST',
-            headers: makeHeaders(makeHostActor()),
-            body: JSON.stringify({
-                code: 'SAVE30',
-                customerId: OWN_CUSTOMER_ID,
-                subscriptionId: randomUUID(),
-                amount: 10000
-            })
-        });
-
-        // Assert
-        expect(res.status).toBe(422);
-        expect(mockApplySeam).not.toHaveBeenCalled();
-        expect(mockApply).not.toHaveBeenCalled();
-    });
-
-    it('HOS-1171 legacy code with no typed effect + host → 422 (gate fails closed)', async () => {
+    it('HOS-1171 legacy code with no typed effect + host → still redeemable', async () => {
         // Arrange — `parseEffectFromRow` returns undefined for a discount row
-        // whose `value_kind` was never backfilled. Treating "unclassifiable" as
-        // permissive is the exact shape of failure the gate exists to prevent.
+        // whose `value_kind` was never backfilled. It is a discount, and the gate
+        // only refuses `comp`, so it goes through like any other.
         mockGetByCode.mockResolvedValue({
             success: true,
             data: makePromoCodeStub({ effect: undefined })
+        });
+        mockApply.mockResolvedValue({
+            success: true,
+            data: {
+                effectKind: 'discount',
+                code: 'LEGACY10',
+                type: 'percentage',
+                value: 10,
+                originalAmount: 10000,
+                discountAmount: 1000,
+                finalAmount: 9000
+            }
         });
 
         // Act
@@ -792,11 +799,11 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         });
 
         // Assert
-        expect(res.status).toBe(422);
-        expect(mockApply).not.toHaveBeenCalled();
+        expect([200, 201]).toContain(res.status);
+        expect(mockApply).toHaveBeenCalledOnce();
     });
 
-    it('HOS-1171 unreadable peek + host → no redemption (fail-closed, 500)', async () => {
+    it('HOS-1171 unreadable peek → no redemption (fail-closed, 500)', async () => {
         // Arrange — a transient read failure must not fall through into a path
         // that would read the code again inside its own transaction.
         mockGetByCode.mockResolvedValue({
@@ -820,7 +827,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         expect(mockApply).not.toHaveBeenCalled();
     });
 
-    it('HOS-1171 unknown code + host → 404 (unchanged status, now decided at the peek)', async () => {
+    it('HOS-1171 unknown code → 404 (unchanged status, now decided at the peek)', async () => {
         // Arrange
         mockGetByCode.mockResolvedValue({
             success: false,
@@ -1095,10 +1102,8 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         //
         // HOS-1195: this used to stub a `comp` effect, which now answers 403 for
         // every caller including this admin. An untyped legacy effect keeps the
-        // test doing what its own comment says (skip the seam, reach
-        // service.apply) — and it is only the ADMIN who still gets there:
-        // `effect: undefined` is refused 422 for a self-service caller, covered
-        // by its own test above.
+        // test doing what its own comment says — skip the seam, reach
+        // service.apply — without tripping the comp gate.
         mockGetByCode.mockResolvedValue({
             success: true,
             data: makePromoCodeStub({ effect: undefined })
@@ -1136,9 +1141,6 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     // ── SF3: max-uses error → 409 (not 500) ──────────────────────────────────
 
-    // Admin actor (HOS-1171): this pins the `service.apply` statusMap, and that
-    // path is admin-only now. The self-service equivalent is the trial-extension
-    // seam's own PROMO_CODE_MAX_USES → 409 entry.
     it('SF3: code at max uses via /apply → 409 Conflict', async () => {
         // Arrange — service.apply returns PROMO_CODE_MAX_USES error
         mockApply.mockResolvedValue({
@@ -1152,7 +1154,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         // Act
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            headers: makeHeaders(makeAdminActor()),
+            headers: makeHeaders(makeHostActor()),
             body: JSON.stringify({
                 code: 'EXHAUSTED',
                 customerId: OWN_CUSTOMER_ID,
@@ -1166,10 +1168,6 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
     // ── HOS-996: discount-to-zero on the seam → 422 with OUR message ──────────
 
-    // Admin actor (HOS-1171): the T-007 discount seam is admin-only now — a
-    // self-service caller is refused 422 BEFORE the seam, which is what keeps a
-    // discount typed on the redeem page from being burnt on the caller's own
-    // live preapproval. That refusal has its own test above.
     it('HOS-996: seam rejects a 100% discount → 422 with our message, not MercadoPago’s', async () => {
         // Arrange — the peek must see a `discount` effect so the request is routed
         // through the seam rather than the plain service.apply path.
@@ -1192,7 +1190,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
         // Act
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            headers: makeHeaders(makeAdminActor()),
+            headers: makeHeaders(makeHostActor()),
             body: JSON.stringify({
                 code: 'TODOGRATIS100',
                 customerId: OWN_CUSTOMER_ID,
@@ -1243,8 +1241,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
 
         const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
             method: 'POST',
-            // Admin actor (HOS-1171) — same reason as the companion test above.
-            headers: makeHeaders(makeAdminActor()),
+            headers: makeHeaders(makeHostActor()),
             body: JSON.stringify({
                 code: 'SAVE30',
                 customerId: OWN_CUSTOMER_ID,
