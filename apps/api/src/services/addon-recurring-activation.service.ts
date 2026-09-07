@@ -39,6 +39,7 @@ import {
     normalizeAddonBillingInterval,
     type RecurringAddonPurchaseRow
 } from './addon-recurring-period.js';
+import { isUniqueConstraintViolation } from './billing/unique-violation.js';
 
 /*
  * The catalog, entitlement and plan services are reached through `await
@@ -59,9 +60,6 @@ const PENDING_STATUS = 'pending' as const;
 
 /** Status activation moves it to. */
 const ACTIVE_STATUS = 'active' as const;
-
-/** Postgres unique-violation SQLSTATE. */
-const UNIQUE_VIOLATION = '23505';
 
 /** Input for {@link activateRecurringAddonPurchase}. */
 export interface ActivateRecurringAddonPurchaseInput {
@@ -124,11 +122,23 @@ async function resolvePlanIdOfSubscription(subscriptionId: string | null): Promi
 /**
  * Mirror the activation onto the add-on's OWN `billing_subscriptions` row.
  *
- * That row is created `incomplete` by qzpay's `mode: 'paid'` insert and nothing
- * else will ever move it: PR 2 excluded `product_domain = 'addon'` rows from
- * every sweep, precisely so a plan-shaped cron could not act on one. Left
+ * That row is created `incomplete` by qzpay's `mode: 'paid'` insert. Left
  * behind, it reads as an abandoned checkout while MercadoPago charges the card
  * every month — the HOS-751 shape PR 6 will query for, and PR 7 will reconcile.
+ *
+ * ## This is the first `product_domain = 'addon'` row to become LIVE, and the
+ * exclusions are per-reader, not global
+ *
+ * PR 2 gave every plan-shaped CRON an add-on exclusion, and this UPDATE is what
+ * makes those exclusions load-bearing rather than theoretical. It is emphatically
+ * NOT true that "every sweep" excludes these rows: `TrialService` reaches
+ * subscriptions through `billing.subscriptions.getByCustomerId()` — which does
+ * not even populate `productDomain` (HOS-1104, see
+ * `hydrateSubscriptionProductDomains`) — and had to be given the filter
+ * separately (`getTrialStatus`, `reactivateSubscription`,
+ * `reconcileDuplicateSubscriptions`). Anything else that resolves "the
+ * customer's subscription" from a status alone needs the same treatment before
+ * an `active` add-on row can outrank a real plan row.
  *
  * The `product_domain` predicate is load-bearing, not decoration: it makes it
  * structurally impossible for this UPDATE to touch a plan subscription even if
@@ -175,7 +185,8 @@ async function syncAddonSubscriptionRowToActive(params: {
                 mpSubscriptionId,
                 error: error instanceof Error ? error.message : String(error)
             },
-            "HOS-847: could not mirror an add-on activation onto its own billing_subscriptions row — the add-on is granted, but its subscription row still reads as an unfinished checkout (PR 7's reconciler must correct this)"
+            "HOS-847: could not mirror an add-on activation onto its own billing_subscriptions row — the add-on is granted, but its subscription row still reads as an unfinished checkout (PR 7's reconciler must correct this)",
+            { capture: true }
         );
     }
 }
@@ -226,18 +237,34 @@ async function linkFeaturedGrantBestEffort(params: {
  *     one-time path's soft-skip.
  *  2. The conditional UPDATE. Everything after this point runs at most once per
  *     purchase, because only the caller that won this UPDATE gets here.
- *  3. Cache clear BEFORE the grant, then the grant. The customer is already
- *     paying; a stale 5-minute entitlement cache would answer 402 to someone
- *     who just paid (INV-1).
+ *  3. Cache clear, then the featured-listing LINK, then the grant. The customer
+ *     is already paying, so a stale 5-minute entitlement cache would answer 402
+ *     to someone who just paid (INV-1); and the link has to precede the grant
+ *     because `applyAddonEntitlements` READS
+ *     `featured_listing_addon_grants` — the one-time path in
+ *     `addon.checkout.ts` orders it the same way, for the same reason (HOS-675).
  *  4. Failures after the UPDATE flag `needs_entitlement_sync` rather than
  *     rolling anything back — the money is collected and the row is committed,
  *     so the sweep that already exists for exactly this (`addon-expiry` phase
  *     7) is the recovery path.
  *
- * Never throws. Every caller is a webhook whose event must still be acked.
+ * ## It CAN throw, and callers must guard
+ *
+ * Everything after the conditional UPDATE is guarded; everything BEFORE it is
+ * not, on purpose. The catalog lookup, the base-plan read
+ * (`resolvePlanIdOfSubscription`, a bare `getDb().select(...)`),
+ * `resolvePlanByIdOrSlug` and `clearEntitlementCache` all propagate. That is
+ * correct — a transient database failure before anything has been claimed
+ * should be retried, not swallowed into a permanent "not activated" — but it
+ * means a caller CANNOT treat this as total. Both call sites
+ * (`routeAddonPreapprovalEvent` and `settleRecurringAddonCharge`) wrap it, and
+ * the renewal path additionally books the money BEFORE calling it, so a throw
+ * here can never take a settled charge down with it.
  *
  * @param input - See {@link ActivateRecurringAddonPurchaseInput}.
  * @returns Whether this call activated the purchase.
+ * @throws When the catalog, plan or cache reads that precede the claiming
+ *   UPDATE fail. Never after it.
  */
 export async function activateRecurringAddonPurchase(
     input: ActivateRecurringAddonPurchaseInput
@@ -253,7 +280,8 @@ export async function activateRecurringAddonPurchase(
     if (!addonResult.success) {
         apiLogger.error(
             { purchaseId: purchase.id, addonSlug: purchase.addonSlug, triggerSource },
-            'HOS-847: a recurring add-on preapproval was authorized for a slug the catalog does not know — the purchase stays pending and nothing is granted'
+            'HOS-847: a recurring add-on preapproval was authorized for a slug the catalog does not know — the purchase stays pending and nothing is granted',
+            { capture: true }
         );
         return { activated: false, reason: 'addon-not-in-catalog' };
     }
@@ -304,11 +332,14 @@ export async function activateRecurringAddonPurchase(
             )
             .returning({ id: billingAddonPurchases.id });
     } catch (error) {
-        if (
-            error instanceof Error &&
-            'code' in error &&
-            (error as { code?: string }).code === UNIQUE_VIOLATION
-        ) {
+        // `isUniqueConstraintViolation`, never `error.code`. Drizzle wraps EVERY
+        // query failure in a `DrizzleQueryError` that carries `query`, `params`
+        // and `cause` and has NO `code` of its own, so a predicate reading
+        // `error.code` on what this `catch` actually receives is always false —
+        // the branch below would never run and a lost race would surface as an
+        // unhandled 500 inside a webhook. That shape is verified against a real
+        // PostgreSQL unique violation; see the helper's module JSDoc.
+        if (isUniqueConstraintViolation({ error })) {
             // `idx_addon_purchases_active_unique`: this customer already has an
             // ACTIVE purchase of this add-on. Two live preapprovals for one
             // add-on is a HOS-751-class state — the second one charges with
@@ -321,7 +352,8 @@ export async function activateRecurringAddonPurchase(
                     mpSubscriptionId: purchase.mpSubscriptionId,
                     triggerSource
                 },
-                'HOS-847: a recurring add-on preapproval was authorized while another purchase of the same add-on is already active — this preapproval will charge with nothing granted and must be cancelled manually'
+                'HOS-847: a recurring add-on preapproval was authorized while another purchase of the same add-on is already active — this preapproval will charge with nothing granted and must be cancelled manually',
+                { capture: true }
             );
             return { activated: false, reason: 'duplicate-active-purchase' };
         }
@@ -335,6 +367,27 @@ export async function activateRecurringAddonPurchase(
     // The customer just gained a paid benefit; do not make them wait out the
     // 5-minute entitlement cache to use what they are being charged for.
     clearEntitlementCache(purchase.customerId);
+
+    // BEFORE the grant, matching the one-time path (`addon.checkout.ts` links at
+    // ~1192 and grants at ~1288) and for the same reason: `applyAddonEntitlements`
+    // READS `featured_listing_addon_grants` by `purchaseId` to decide whether to
+    // flip `accommodations.featuredByEntitlement`. Granting first means that read
+    // finds nothing, and nothing fails — which is precisely HOS-675, where the
+    // table sat empty for months while every log line said success. Dormant today
+    // (both `requiresAccommodationTarget` add-ons are one-time), so the ORDER is
+    // the whole of what is being fixed here.
+    if (addon.requiresAccommodationTarget) {
+        const accommodationId = purchase.metadata?.accommodationId;
+        if (typeof accommodationId === 'string' && accommodationId.length > 0) {
+            await linkFeaturedGrantBestEffort({ purchaseId: purchase.id, accommodationId });
+        } else {
+            apiLogger.error(
+                { purchaseId: purchase.id, addonSlug: purchase.addonSlug, triggerSource },
+                'HOS-847: target-required recurring add-on activated with no accommodationId in its purchase metadata; featured_listing_addon_grants row NOT written',
+                { capture: true }
+            );
+        }
+    }
 
     const { AddonEntitlementService } = await import('./addon-entitlement.service.js');
     const entitlementService = new AddonEntitlementService(billing);
@@ -368,19 +421,12 @@ export async function activateRecurringAddonPurchase(
                     purchaseId: purchase.id,
                     error: flagError instanceof Error ? flagError.message : String(flagError)
                 },
-                'HOS-847: failed to set needsEntitlementSync after a failed recurring add-on grant; manual reconciliation required'
-            );
-        }
-    }
-
-    if (addon.requiresAccommodationTarget) {
-        const accommodationId = purchase.metadata?.accommodationId;
-        if (typeof accommodationId === 'string' && accommodationId.length > 0) {
-            await linkFeaturedGrantBestEffort({ purchaseId: purchase.id, accommodationId });
-        } else {
-            apiLogger.error(
-                { purchaseId: purchase.id, addonSlug: purchase.addonSlug, triggerSource },
-                'HOS-847: target-required recurring add-on activated with no accommodationId in its purchase metadata; featured_listing_addon_grants row NOT written'
+                'HOS-847: failed to set needsEntitlementSync after a failed recurring add-on grant; manual reconciliation required',
+                // The worst of the four. The purchase is `active`, the money is
+                // collected, the grant failed, and the flag that would have put
+                // it in front of `addon-expiry` phase 7 was not written either:
+                // nothing else will ever notice this row.
+                { capture: true }
             );
         }
     }

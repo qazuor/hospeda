@@ -21,7 +21,8 @@ const {
     mockClearEntitlementCache,
     mockUpdateSet,
     mockUpdateReturning,
-    mockPlanSubRows
+    mockPlanSubRows,
+    mockInsertValues
 } = vi.hoisted(() => ({
     mockGetBySlug: vi.fn(),
     mockPlanGetById: vi.fn(),
@@ -29,6 +30,8 @@ const {
     mockApplyAddonEntitlements: vi.fn(),
     mockClearEntitlementCache: vi.fn(),
     mockUpdateSet: vi.fn(),
+    /** Every `insert(...).values(payload)` — today only the featured-grant link. */
+    mockInsertValues: vi.fn(),
     /** Rows the conditional activating UPDATE's `.returning()` answers with. */
     mockUpdateReturning: { rows: [] as Array<{ id: string }>, error: null as Error | null },
     mockPlanSubRows: { rows: [] as Array<{ planId: string | null }> }
@@ -103,7 +106,12 @@ vi.mock('@repo/db', () => {
                     return { where: vi.fn(() => whereResult) };
                 })
             })),
-            insert: vi.fn(() => ({ values: vi.fn(() => Promise.resolve(undefined)) }))
+            insert: vi.fn(() => ({
+                values: vi.fn((payload: unknown) => {
+                    mockInsertValues(payload);
+                    return Promise.resolve(undefined);
+                })
+            }))
         })),
         billingSubscriptions: {
             id: 'id',
@@ -135,12 +143,30 @@ function purchase(overrides: Partial<RecurringAddonPurchaseRow> = {}): Recurring
         mpSubscriptionId: 'preapproval-1',
         billingInterval: 'monthly',
         currentPeriodEnd: null,
+        purchasedAt: new Date('2026-05-10T11:00:00.000Z'),
         metadata: {},
         ...overrides
     };
 }
 
 const billing = {} as never;
+
+/**
+ * Wraps a pg driver error the way Drizzle wraps it before a `catch` block ever
+ * sees it: an outer error carrying `query`, `params` and `cause`, and NO `code`
+ * of its own.
+ *
+ * See `apps/api/src/services/billing/unique-violation.ts` for the verified
+ * shape this reproduces.
+ */
+function drizzleWrapped(cause: Error): Error {
+    return Object.assign(new Error('Failed query: update "billing_addon_purchases" ...'), {
+        name: 'DrizzleQueryError',
+        query: 'update "billing_addon_purchases" set ...',
+        params: [],
+        cause
+    });
+}
 
 /** The activating UPDATE's payload — the one carrying `status`. */
 function activatingWrite(): Record<string, unknown> | undefined {
@@ -267,10 +293,23 @@ describe('activateRecurringAddonPurchase', () => {
     });
 
     it('reports a duplicate active purchase instead of crashing the webhook', async () => {
-        // Arrange: `idx_addon_purchases_active_unique` rejected the row —
-        // this customer already has this add-on active under another purchase.
-        const violation = Object.assign(new Error('duplicate key'), { code: '23505' });
-        mockUpdateReturning.error = violation;
+        // Arrange: `idx_addon_purchases_active_unique` rejected the row — this
+        // customer already has this add-on active under another purchase.
+        //
+        // The error is built in the WRAPPED shape Drizzle actually throws, not
+        // the flat `Error & { code }` a hand-written fixture reaches for first.
+        // Drizzle wraps every query failure in a `DrizzleQueryError` that has
+        // `query`, `params` and `cause` and NO `code` of its own; the SQLSTATE
+        // lives one level down on the pg driver's `DatabaseError`. A flat
+        // fixture passes against a predicate that reads `error.code` — which is
+        // dead in production — so it certifies exactly the bug it is supposed
+        // to catch.
+        mockUpdateReturning.error = drizzleWrapped(
+            Object.assign(new Error('duplicate key value violates unique constraint'), {
+                code: '23505',
+                constraint: 'idx_addon_purchases_active_unique'
+            })
+        );
 
         // Act
         const outcome = await activateRecurringAddonPurchase({
@@ -282,6 +321,33 @@ describe('activateRecurringAddonPurchase', () => {
 
         // Assert
         expect(outcome).toEqual({ activated: false, reason: 'duplicate-active-purchase' });
+        expect(mockApplyAddonEntitlements).not.toHaveBeenCalled();
+    });
+
+    it('re-throws a database failure that is NOT a unique violation', async () => {
+        // Arrange: the control for the test above. Without it, a predicate that
+        // returned `true` for every error would pass just as happily — and would
+        // silently swallow a connection failure as "duplicate purchase".
+        mockUpdateReturning.error = drizzleWrapped(
+            Object.assign(new Error('connection terminated unexpectedly'), { code: '57P01' })
+        );
+
+        // Act
+        const thrown = await activateRecurringAddonPurchase({
+            billing,
+            purchase: purchase(),
+            activatedAt: ACTIVATED_AT,
+            triggerSource: 'test'
+        }).then(
+            (outcome) => outcome,
+            (error: unknown) => error
+        );
+
+        // Assert: the wrapper propagates untouched, still carrying the real
+        // SQLSTATE on its cause. Asserted on the CAUSE, because a Drizzle
+        // wrapper's own message names the query, never the failure.
+        expect(thrown).toBeInstanceOf(Error);
+        expect((thrown as Error & { cause?: { code?: string } }).cause?.code).toBe('57P01');
         expect(mockApplyAddonEntitlements).not.toHaveBeenCalled();
     });
 
@@ -325,6 +391,49 @@ describe('activateRecurringAddonPurchase', () => {
         // Assert
         expect(outcome).toEqual({ activated: false, reason: 'addon-not-in-catalog' });
         expect(mockUpdateSet).not.toHaveBeenCalled();
+    });
+
+    it('writes the featured-listing link BEFORE granting the entitlements', async () => {
+        // Arrange: a target-required add-on with its accommodation in metadata.
+        // `applyAddonEntitlements` READS `featured_listing_addon_grants` by
+        // purchaseId to decide whether to flip `featuredByEntitlement`, so a
+        // grant that runs first reads an empty table and silently flips nothing
+        // — HOS-675 is that incident, months long, with no failure anywhere.
+        mockGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'addon-uuid-2',
+                slug: 'visibility-boost-30d',
+                name: 'Visibility boost',
+                billingType: 'recurring',
+                affectsLimitKey: null,
+                limitIncrease: null,
+                grantsEntitlement: 'FEATURED_LISTING',
+                durationDays: null,
+                requiresAccommodationTarget: true
+            }
+        });
+
+        // Act
+        await activateRecurringAddonPurchase({
+            billing,
+            purchase: purchase({
+                addonSlug: 'visibility-boost-30d',
+                metadata: { accommodationId: 'acc-1' }
+            }),
+            activatedAt: ACTIVATED_AT,
+            triggerSource: 'test'
+        });
+
+        // Assert: both ran, and the link ran first.
+        expect(mockInsertValues).toHaveBeenCalledWith({
+            purchaseId: 'purchase-1',
+            accommodationId: 'acc-1'
+        });
+        expect(mockApplyAddonEntitlements).toHaveBeenCalledTimes(1);
+        const linkOrder = mockInsertValues.mock.invocationCallOrder[0] as number;
+        const grantOrder = mockApplyAddonEntitlements.mock.invocationCallOrder[0] as number;
+        expect(linkOrder).toBeLessThan(grantOrder);
     });
 
     it('opens a twelve-month window for an annual add-on', async () => {
