@@ -278,6 +278,14 @@ jobs:
       # asking for one; the guard below is what enforces that.
       - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
         run: bash scripts/check-no-trial-to-mercadopago.sh
+      # The other half of G-1, and its own step for the same reason as every
+      # guard here. G-1 stops a trial reaching MercadoPago; this stops one
+      # reaching OUR subscription row through the back door: qzpay-core inherits
+      # `billing_prices.trial_days` whenever a caller omits `trialDays`, which is
+      # how a PAID subscription was born marked `trialing` for 30 days with the
+      # customer already charged (HOS-1221 bug D3).
+      - name: Check billing_prices.trial_days is never written a value (HOS-1224 G-2)
+        run: pnpm check:no-price-trial-days
       - name: Check no binary vertical ternary remains (HOS-1079)
         run: bash scripts/check-no-binary-vertical-ternary.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`

@@ -479,8 +479,6 @@ interface EnsurePriceInput {
     readonly planId: string;
     readonly unitAmount: number;
     readonly billingInterval: 'month' | 'year';
-    readonly trialDays: number;
-    readonly hasTrial: boolean;
     readonly livemode: boolean;
 }
 
@@ -490,9 +488,18 @@ interface EnsurePriceInput {
  * already matches; never updates an existing row (price changes go
  * through a separate flow, not the seed).
  *
- * `trialDays` is forwarded only when the plan declares a trial and the
- * interval is monthly. Annual plans don't carry a trial in Hospeda's
- * model (annual = one-time upfront charge, no MP preapproval).
+ * **Never writes `trialDays`** (HOS-1224). It used to mirror the plan's
+ * `trialDays` onto the monthly row. Nothing reads that column to decide the
+ * product — the real trial is `billing_plans.metadata.trialDays` on the
+ * dedicated `*-trial` plans, which carry no price row at all — but
+ * `@qazuor/qzpay-core` INHERITS `price.trialDays` whenever a caller of
+ * `subscriptions.create` omits `trialDays`, and `@qazuor/qzpay-drizzle` turns
+ * that inherited number into `trial_start`/`trial_end` on the new subscription.
+ * That is HOS-1221's bug D3: a PAID subscription born marked `trialing` for 30
+ * days with the customer already charged. A column nobody reads and that can
+ * poison a paid subscription should hold no value, so the mirror is gone from
+ * the baseline and `0100-hos-1224-*` nulls the rows already written.
+ * `scripts/check-no-price-trial-days.sh` keeps it from coming back.
  *
  * `db` is injectable for tests; production callers omit it.
  */
@@ -517,9 +524,6 @@ async function ensurePrice(
         return 'skipped';
     }
 
-    const shouldAttachTrial =
-        input.hasTrial && input.billingInterval === 'month' && input.trialDays > 0;
-
     await db.insert(billingPrices).values({
         planId: input.planId,
         currency: SEED_CURRENCY,
@@ -527,8 +531,7 @@ async function ensurePrice(
         billingInterval: input.billingInterval,
         intervalCount: 1,
         active: true,
-        livemode: input.livemode,
-        ...(shouldAttachTrial ? { trialDays: input.trialDays } : {})
+        livemode: input.livemode
     });
 
     return 'created';
@@ -597,8 +600,6 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                     planId: planResult.planId,
                     unitAmount: plan.monthlyPriceArs,
                     billingInterval: 'month',
-                    trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
                     livemode: isProduction
                 });
                 if (monthlyResult === 'created') {
@@ -613,8 +614,6 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                         planId: planResult.planId,
                         unitAmount: plan.annualPriceArs,
                         billingInterval: 'year',
-                        trialDays: plan.trialDays,
-                        hasTrial: plan.hasTrial,
                         livemode: isProduction
                     });
                     if (annualResult === 'created') {
