@@ -17,7 +17,10 @@
  * - Chunked parallel expiry processing (EXPIRY_CHUNK_SIZE items/chunk, bounded
  *   concurrency via Promise.allSettled) to stay within the 2-minute cron timeout
  *   for large batches (SPEC-194 T-015)
- * - Revocation retry phase for orphaned active add-ons linked to cancelled subscriptions
+ * - Revocation retry phase for orphaned active add-ons linked to cancelled subscriptions.
+ *   HOS-847 PR 7a: an orphan still inside the period it was CHARGED for is not
+ *   revoked — its preapproval is closed and the row is flagged
+ *   `cancel_at_period_end`, so the expiry pass above ends it on its own date.
  *
  * @module cron/jobs/addon-expiry
  */
@@ -826,6 +829,11 @@ export const addonExpiryJob: CronJobDefinition = {
                 // These are purchases that survived a failed webhook processing and must be cleaned up.
                 let revocationRetried = 0;
                 let revocationErrors = 0;
+                /**
+                 * Orphans left GRANTED on purpose because the customer had
+                 * already paid for the period they are in (HOS-847 PR 7a).
+                 */
+                let revocationDeferred = 0;
 
                 logger.info('Starting revocation retry phase for orphaned active add-ons');
 
@@ -849,7 +857,13 @@ export const addonExpiryJob: CronJobDefinition = {
                             metadata: billingAddonPurchases.metadata,
                             // HOS-847 PR 6: the add-on's OWN preapproval, closed
                             // before this sweep writes the row terminal.
-                            mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
+                            mpSubscriptionId: billingAddonPurchases.mpSubscriptionId,
+                            // HOS-847 PR 7a: the add-on's OWN period. The join
+                            // below proves the PLAN is cancelled, which says
+                            // nothing about what this add-on was charged for —
+                            // a recurring add-on bills on a cycle of its own.
+                            currentPeriodEnd: billingAddonPurchases.currentPeriodEnd,
+                            cancelAtPeriodEnd: billingAddonPurchases.cancelAtPeriodEnd
                         })
                         .from(billingAddonPurchases)
                         .innerJoin(
@@ -1030,6 +1044,61 @@ export const addonExpiryJob: CronJobDefinition = {
                                         reason: providerClose.reason
                                     }
                                 );
+                                continue;
+                            }
+
+                            // ── HOS-847 PR 7a: do not revoke a period already charged ──
+                            //
+                            // This sweep used to revoke on one fact alone —
+                            // "the PLAN is cancelled" — which is not the fact
+                            // that decides anything here. A recurring add-on has
+                            // a preapproval and a cycle of its own, so a plan
+                            // that ended on the 10th says nothing about an
+                            // add-on charged on the 25th. Left as it was, this
+                            // phase would undo the deferral the webhook and the
+                            // finalize cron deliberately made, the very same
+                            // night: those leave the row `active` on purpose,
+                            // and `active` under a cancelled plan is exactly
+                            // what this query selects.
+                            //
+                            // The preapproval is already closed above, so
+                            // nothing will be charged again. What is left is to
+                            // mark the row so `findExpiredAddons` finishes the
+                            // job when the paid period runs out — SETTING the
+                            // flag rather than merely skipping, because a row
+                            // that is skipped without it is picked up by no
+                            // sweep at all and grants forever.
+                            const paidPeriodEnd = purchase.currentPeriodEnd;
+
+                            if (paidPeriodEnd && paidPeriodEnd.getTime() > Date.now()) {
+                                if (!purchase.cancelAtPeriodEnd) {
+                                    await db
+                                        .update(billingAddonPurchases)
+                                        .set({
+                                            cancelAtPeriodEnd: true,
+                                            updatedAt: new Date()
+                                        })
+                                        .where(
+                                            and(
+                                                eq(billingAddonPurchases.id, purchase.id),
+                                                eq(billingAddonPurchases.status, 'active')
+                                            )
+                                        );
+                                }
+
+                                revocationDeferred++;
+
+                                logger.info(
+                                    'Orphaned add-on kept until its own paid period ends — MercadoPago closed, expiry cron will finish it',
+                                    {
+                                        purchaseId: purchase.id,
+                                        customerId: purchase.customerId,
+                                        addonSlug: purchase.addonSlug,
+                                        accessUntil: paidPeriodEnd.toISOString(),
+                                        alreadyFlagged: purchase.cancelAtPeriodEnd
+                                    }
+                                );
+
                                 continue;
                             }
 
@@ -1217,6 +1286,7 @@ export const addonExpiryJob: CronJobDefinition = {
                     logger.info('Revocation retry phase completed', {
                         revocationRetried,
                         revocationErrors,
+                        revocationDeferred,
                         cacheInvalidations: invalidatedCustomerIds.size
                     });
                 } catch (revocationPhaseError) {
@@ -1658,6 +1728,7 @@ export const addonExpiryJob: CronJobDefinition = {
                     warningsSent,
                     revocationRetried,
                     revocationErrors,
+                    revocationDeferred,
                     splitStateReconciled,
                     splitStateErrors,
                     entitlementReconciled,
@@ -1679,6 +1750,7 @@ export const addonExpiryJob: CronJobDefinition = {
                         warningsSent,
                         revocationRetried,
                         revocationErrors,
+                        revocationDeferred,
                         splitStateReconciled,
                         splitStateErrors,
                         entitlementReconciled,
