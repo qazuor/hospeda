@@ -529,6 +529,7 @@
             "deleting": "Borrando…",
             "deleteSuccess": "Colección borrada correctamente",
             "deleteError": "No se pudo borrar la colección. Intentá de nuevo.",
+            "createSuccess": "Colección \"{{name}}\" creada",
             "deleteDialogTitle": "Borrar colección",
             "deleteConfirmButton": "Borrar colección",
             "fields": {

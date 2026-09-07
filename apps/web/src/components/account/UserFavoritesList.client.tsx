@@ -42,6 +42,7 @@ import { addToast } from '@/store/toast-store';
 import type { BookmarkItem, BookmarksApiResponse, DeleteApiResponse } from './BookmarkGrid';
 import { BookmarkGrid, EmptyFavorites } from './BookmarkGrid';
 import { CollectionCard } from './CollectionCard';
+import { COLLECTION_CREATED_EVENT } from './collection-created-event';
 import type { CollectionOption } from './MoveToCollectionModal.client';
 import { MoveToCollectionModal } from './MoveToCollectionModal.client';
 import styles from './UserFavoritesList.module.css';
@@ -552,6 +553,17 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
             // Non-critical: refetch is a best-effort sync after a move
         }
     }, [base]);
+
+    // Broadcast by CreateCollectionCTA and MoveToCollectionModal after a
+    // successful collection create (HOS-999) — refresh "Mis colecciones" the
+    // same way a move does, without a full page reload.
+    useEffect(() => {
+        const onCollectionCreated = () => {
+            void refetchCollections();
+        };
+        window.addEventListener(COLLECTION_CREATED_EVENT, onCollectionCreated);
+        return () => window.removeEventListener(COLLECTION_CREATED_EVENT, onCollectionCreated);
+    }, [refetchCollections]);
 
     /**
      * Called after a successful move. Updates local state, refreshes the

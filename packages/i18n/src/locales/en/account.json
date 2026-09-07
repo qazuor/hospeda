@@ -529,6 +529,7 @@
             "deleting": "Deleting…",
             "deleteSuccess": "Collection deleted successfully",
             "deleteError": "Could not delete the collection. Please try again.",
+            "createSuccess": "Collection \"{{name}}\" created",
             "deleteDialogTitle": "Delete collection",
             "deleteConfirmButton": "Delete collection",
             "fields": {
