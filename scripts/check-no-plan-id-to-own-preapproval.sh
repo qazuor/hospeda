@@ -104,6 +104,33 @@
 #   both directions.
 #
 # -----------------------------------------------------------------------------
+# THE SIBLING DEFECT THIS GUARD DOES NOT COVER, AND WHY
+# -----------------------------------------------------------------------------
+#   HOS-1221 D3 is the same shape as RULE A — an implicit inheritance nobody can
+#   see in a diff — but for `trialDays`. Omitted, qzpay-core falls back to the
+#   resolved price's own value (30 on every owner-*/tourist-* monthly row) and
+#   the row is born claiming a month of free days on a card MercadoPago charges
+#   on day 1.
+#
+#   It is NOT guarded here, deliberately. This guard can only assert the
+#   PRESENCE of a bad field; D3 is an ABSENCE, and asserting "every create call
+#   states trialDays" from bash means extracting call blocks and anchoring on the
+#   callee's name — the exact fragility the section above rejects, at FILE
+#   granularity, so a fifth branch copy-pasted into an already-compliant file
+#   would pass.
+#
+#   The compiler does it properly instead: `trialDays` is REQUIRED on
+#   `CreateOwnPreapprovalSubscriptionInput` (it stays optional one layer down, on
+#   `CreatePaidSubscriptionInput`). Every call site is checked, including files
+#   this scan's derivation would never reach; a rename cannot blind it; the error
+#   lands on the offending call, not the file. `pnpm typecheck` runs in the same
+#   CI job set as this script. When it landed, the only thing in the whole repo
+#   that stopped compiling was the deliberate negative control in
+#   `addon.checkout.recurring-borrowed-trial.test.ts` — which now carries the one
+#   documented cast in the repo, because a control has to be able to write the
+#   shape the type forbids.
+#
+# -----------------------------------------------------------------------------
 # TESTABILITY / POSITIVE CONTROL
 # -----------------------------------------------------------------------------
 #   `SCAN_FILES_OVERRIDE` (newline-separated paths) replaces the derived TS file
