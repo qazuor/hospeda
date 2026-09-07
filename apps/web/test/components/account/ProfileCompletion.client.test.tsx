@@ -45,6 +45,7 @@ vi.mock('@repo/schemas', () => {
                 .regex(/^\+[1-9]\d{1,14}(?:\s\d{1,15})*$/)
                 .optional(),
             locale: z.enum(SUPPORTED_LOCALES).optional(),
+            theme: z.enum(['system', 'light', 'dark']).optional(),
             newsletterOptIn: z.boolean().optional(),
             bio: z.string().min(10).max(300).optional(),
             website: z.string().url().optional(),
@@ -236,9 +237,12 @@ describe('ProfileCompletion (HOS-190 slice 3 — useZodForm migration)', () => {
                 'firstName',
                 'lastName',
                 'locale',
+                'theme',
                 'newsletterOptIn'
             ].sort()
         );
+        // Defaults to 'system' when the user never touches the theme select.
+        expect(body.theme).toBe('system');
 
         await waitFor(() => {
             expect(hrefAssignSpy).toHaveBeenCalledWith('/es/mi-cuenta/');
@@ -324,5 +328,86 @@ describe('ProfileCompletion — HOS-838: the destination survives the gate', () 
             );
         });
         expect(hrefAssignSpy).not.toHaveBeenCalledWith('/es/mi-cuenta/');
+    });
+});
+
+/**
+ * HOS-313: theme selector must NOT apply live. Selecting a value only
+ * updates local form state; `document.documentElement`'s `data-theme` is
+ * touched ONLY after a successful save, never on `onChange` and never on a
+ * failed save.
+ */
+describe('ProfileCompletion — HOS-313: theme applies only after a successful save', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        document.documentElement.removeAttribute('data-theme');
+        try {
+            localStorage.removeItem('theme');
+        } catch {
+            // ignore — not relevant to these assertions
+        }
+    });
+
+    it('does not touch data-theme when the select changes (no live apply)', () => {
+        renderForm();
+
+        const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
+        fireEvent.change(themeSelect, { target: { value: 'dark' } });
+
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    });
+
+    it('applies the selected theme to data-theme only after a successful submit', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    data: { profileCompleted: true, requiresSetPassword: false }
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            )
+        );
+
+        renderForm();
+        fillRequiredFields();
+
+        const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
+        fireEvent.change(themeSelect, { target: { value: 'dark' } });
+
+        // Not applied yet — still local state.
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+
+        submit();
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+
+        // Applied only after the POST resolved successfully.
+        await waitFor(() => {
+            expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        });
+    });
+
+    it('does not apply the theme when the submit fails', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue(
+            new Response(JSON.stringify({ error: { message: 'boom' } }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            })
+        );
+
+        renderForm();
+        fillRequiredFields();
+
+        const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
+        fireEvent.change(themeSelect, { target: { value: 'dark' } });
+
+        submit();
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
     });
 });

@@ -213,24 +213,39 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
         })
     }
 
-    <CommerceViewsWidget
-        client:visible
-        locale={locale}
-        listings={listings.map((listing) => ({
-            id: listing.id,
-            vertical: listing.vertical,
-            name: listing.name
-        }))}
-    />
+    {/* HOS-788: welcome-tour anchor shared by the gastronomy and experience
+        welcome tours — both verticals get `VIEW_BASIC_STATS`. See
+        `src/config/tours.ts`. */}
+    <div data-tour="commerce-views">
+        <CommerceViewsWidget
+            client:visible
+            locale={locale}
+            listings={listings.map((listing) => ({
+                id: listing.id,
+                vertical: listing.vertical,
+                name: listing.name
+            }))}
+        />
+    </div>
 
-    <GastronomyMenuQrWidget
-        client:visible
-        locale={locale}
-        listings={listings
-            .filter((listing) => listing.vertical === 'gastronomy')
-            .map((listing) => ({ id: listing.id, name: listing.name }))}
-    />
+    {/* HOS-788: welcome-tour anchor for the gastronomy welcome tour only —
+        the menu QR/scan-analytics panel is gastronomy-exclusive. A
+        GASTRONOMY_OWNER always holds at least one gastronomy listing (the
+        role is granted alongside the listing's creation, never before), so
+        this is never empty for the audience that tour targets. */}
+    <div data-tour="gastronomy-qr">
+        <GastronomyMenuQrWidget
+            client:visible
+            locale={locale}
+            listings={listings
+                .filter((listing) => listing.vertical === 'gastronomy')
+                .map((listing) => ({ id: listing.id, name: listing.name }))}
+        />
+    </div>
 
+    {/* HOS-788: welcome-tour anchor for the listings list, shared by the
+        gastronomy and experience welcome tours. */}
+    <div data-tour="commerce-listings">
     <AccountSectionCard>
         {
             listings.length === 0 ? (
@@ -284,6 +299,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
             )
         }
     </AccountSectionCard>
+    </div>
 </AccountLayout>
 
 <style>

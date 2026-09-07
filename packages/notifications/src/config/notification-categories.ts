@@ -11,6 +11,9 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.PAYMENT_FAILURE]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PLAN_CHANGE_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.ADDON_RENEWAL_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
+    // HOS-847 PR 5: transactional and NOT opt-out-able. It is the only notice
+    // that a card will be charged again, and on what date.
+    [NotificationType.ADDON_SUBSCRIPTION_STARTED]: NotificationCategory.TRANSACTIONAL,
 
     // Reminders - Can be opted out
     [NotificationType.RENEWAL_REMINDER]: NotificationCategory.REMINDER,

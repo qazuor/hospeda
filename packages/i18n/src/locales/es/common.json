@@ -146,6 +146,15 @@
     "pagination": "Paginación",
     "noImage": "Sin imagen",
     "removing": "Eliminando...",
+    "richText": {
+        "linkDialog": {
+            "title": "Enlace",
+            "label": "URL del enlace",
+            "hint": "Dejá el campo vacío para quitar el enlace.",
+            "placeholder": "https://ejemplo.com",
+            "submit": "Aplicar"
+        }
+    },
     "retry": "Reintentar",
     "saving": "Guardando...",
     "untitled": "Sin título",
@@ -225,6 +234,19 @@
     "qrSheet": {
         "headline": "Escaneá el código",
         "invite": "Apuntá la cámara de tu teléfono al código para ver la ficha completa: fotos, contacto y cómo llegar.",
-        "brandTagline": "Alojamientos, gastronomía y experiencias del Litoral"
+        "brandTagline": "Alojamientos, gastronomía y experiencias del Litoral",
+        "help": "Una hoja A4 con el código de tu ficha, para imprimir y pegar en la puerta o dejar en el mostrador.",
+        "download": "Descargar la hoja QR (PDF)",
+        "working": "Generando la hoja…",
+        "ready": "Listo, descargamos tu hoja QR.",
+        "unpublished": "Vas a poder descargar la hoja QR cuando tu ficha esté publicada.",
+        "errorNotFound": "No pudimos generar la hoja. Revisá que tu ficha siga publicada.",
+        "errorRateLimited": "Pediste la hoja varias veces seguidas. Esperá un minuto y probá de nuevo.",
+        "errorSignedOut": "Se cerró tu sesión. Volvé a entrar para descargar la hoja.",
+        "error": "No pudimos generar la hoja. Probá de nuevo en un momento.",
+        "codeAlt": "Código QR de tu ficha",
+        "codeLoading": "Cargando el código…",
+        "codeError": "No pudimos mostrar el código acá, pero podés descargar la hoja igual.",
+        "encodes": "El código lleva a: {{url}}"
     }
 }

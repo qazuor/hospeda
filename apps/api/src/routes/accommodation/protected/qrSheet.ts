@@ -84,10 +84,11 @@ import { AccommodationService, entityNotFoundError } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { buildListingQrCodeLabel } from '../../../services/listing-qr-sheet/listing-qr-code';
 import { buildListingQrSheetContent } from '../../../services/listing-qr-sheet/qr-sheet-content';
 import { buildListingQrSheetResponse } from '../../../services/listing-qr-sheet/qr-sheet-response';
 import { getActorFromContext } from '../../../utils/actor';
-import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
+import { resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -161,8 +162,12 @@ export async function handleGetAccommodationQrSheet(
         entityId: entity.id,
         purpose: QrCodePurposeEnum.LISTING,
         targetUrl: content.url,
-        label: buildEntityQrLabel({
-            description: 'Accommodation listing QR',
+        // Shared with `qrCode.ts`, which now mints FIRST in practice (the
+        // dashboard panel renders before anybody downloads) — `label` is a
+        // creation-only field, so two spellings would mean this one is never
+        // the one written. See `services/listing-qr-sheet/listing-qr-code.ts`.
+        label: buildListingQrCodeLabel({
+            vertical: 'accommodation',
             name: entity.name,
             slug: entity.slug
         }),

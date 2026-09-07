@@ -33,6 +33,7 @@ import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
 import { protectedListMyExperienceRoute } from './listMine';
 import { protectedPatchExperienceRoute } from './patch';
+import { protectedGetExperienceQrCodeRoute } from './qrCode';
 import { protectedGetExperienceQrSheetRoute } from './qrSheet';
 import { protectedRemoveExperienceFaqRoute } from './removeFaq';
 import { protectedRemoveExperienceMediaRoute } from './removeMedia';
@@ -70,6 +71,7 @@ app.route('/', protectedGetExperienceBrochureRoute);
 // distinct code for the same experience: `purpose: LISTING`, alongside the
 // brochure's and the certificate's. NO entitlement gate (owner decision).
 app.route('/', protectedGetExperienceQrSheetRoute);
+app.route('/', protectedGetExperienceQrCodeRoute);
 
 // POST/GET /{id}/certificates and GET /{id}/certificates/{certificateId}/pdf —
 // The certificate a provider issues to whoever did the experience (HOS-1057).

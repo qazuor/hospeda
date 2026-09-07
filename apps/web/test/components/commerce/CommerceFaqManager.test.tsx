@@ -107,8 +107,6 @@ describe('CommerceFaqManager', () => {
         mockPatch.mockReset();
         mockDelete.mockReset();
         mockPut.mockReset();
-        // Default window.confirm to true for delete tests
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
     });
 
     it('renders FAQ questions from initialFaqs', () => {
@@ -282,6 +280,16 @@ describe('CommerceFaqManager', () => {
         const deleteButtons = screen.getAllByRole('button', { name: 'Eliminar' });
         fireEvent.click(deleteButtons[0]);
 
+        // HOS-957: the row's Delete opens the shared ConfirmDeleteDialog — it no
+        // longer raises `window.confirm()`, so nothing is requested until the
+        // dialog's own CTA is pressed. The question appears twice from here:
+        // once in the row, once echoed in the dialog body.
+        expect(mockDelete).not.toHaveBeenCalled();
+        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        expect(screen.getAllByText('¿Cuándo abren?')).toHaveLength(2);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Eliminar pregunta' }));
+
         await waitFor(() => {
             expect(mockDelete).toHaveBeenCalledWith({
                 path: '/api/v1/protected/gastronomies/listing-1/faqs/faq-1'
@@ -293,12 +301,15 @@ describe('CommerceFaqManager', () => {
         });
     });
 
-    it('does NOT call DELETE when confirm returns false', async () => {
-        vi.spyOn(window, 'confirm').mockReturnValue(false);
+    it('does NOT call DELETE when the delete dialog is cancelled', () => {
         renderManager([FAQ_1]);
-        const deleteBtn = screen.getByRole('button', { name: 'Eliminar' });
-        fireEvent.click(deleteBtn);
+        fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
         expect(mockDelete).not.toHaveBeenCalled();
+        expect(screen.queryByText('¿Eliminás esta pregunta?')).not.toBeInTheDocument();
     });
 
     it('calls PUT /reorder when the down arrow is clicked', async () => {

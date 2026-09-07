@@ -206,10 +206,19 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     // local to verify it against. `subscriptionProductDomain` stamps
     // `billing_subscriptions.product_domain` so `subscriptionMatchesDomain`
     // resolves each user's cap from the right vertical plan.
+    // HOS-964 follow-up (2026-09-07 smoke finding): `extraRoles` grants the
+    // per-vertical role (GASTRONOMY_OWNER / EXPERIENCE_OWNER) alongside the
+    // legacy `role: COMMERCE_OWNER` above, matching what production's
+    // `createForOwner` (base-commerce-listing.service.ts) actually grants in
+    // the same transaction as the listing (HOS-1077). Without this, these
+    // fixtures only ever held the retiring COMMERCE_OWNER, and any audience
+    // targeting gated on the vertical role (e.g. a What's New entry, or the
+    // web welcome-tour split from HOS-788) silently never reached them.
     {
         email: 'commerce-gastronomy@local.test',
         displayName: 'Comercio Gastronomía',
         role: RoleEnum.COMMERCE_OWNER,
+        extraRoles: [RoleEnum.GASTRONOMY_OWNER],
         planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
         subscriptionProductDomain: ProductDomainEnum.GASTRONOMY
     },
@@ -217,6 +226,7 @@ export const TEST_USERS: readonly TestUserSpec[] = [
         email: 'commerce-experience@local.test',
         displayName: 'Comercio Experiencia',
         role: RoleEnum.COMMERCE_OWNER,
+        extraRoles: [RoleEnum.EXPERIENCE_OWNER],
         planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.experience,
         subscriptionProductDomain: ProductDomainEnum.EXPERIENCE
     },
@@ -227,6 +237,7 @@ export const TEST_USERS: readonly TestUserSpec[] = [
         email: 'commerce-gastronomy-at-cap@local.test',
         displayName: 'Comercio Gastronomía Al Tope',
         role: RoleEnum.COMMERCE_OWNER,
+        extraRoles: [RoleEnum.GASTRONOMY_OWNER],
         planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
         subscriptionProductDomain: ProductDomainEnum.GASTRONOMY,
         ownsGastronomyAtCap: true

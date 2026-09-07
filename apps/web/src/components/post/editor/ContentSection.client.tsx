@@ -80,6 +80,7 @@ export function ContentSection({
                  */}
                 <RichTextEditor
                     id={CONTENT_ID}
+                    locale={locale}
                     ariaLabel={label}
                     value={value}
                     onChange={onChange}

@@ -37,6 +37,7 @@
 
 import { EyeOffIcon, SparkleIcon } from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
+import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
 import { apiClient } from '@/lib/api/client';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -233,6 +234,7 @@ export function CommerceFaqManager({
     const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
+    const [faqPendingDelete, setFaqPendingDelete] = useState<CommerceFaq | null>(null);
     const [addErrors, setAddErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
     const [editErrors, setEditErrors] = useState<FaqFieldErrors>(NO_FIELD_ERRORS);
 
@@ -349,36 +351,39 @@ export function CommerceFaqManager({
     // Delete
     // ---------------------------------------------------------------------------
 
-    const handleDelete = useCallback(
-        async (faqId: string) => {
-            if (
-                !window.confirm(
-                    t('commerce.owner.editor.faqManager.deleteConfirm', '¿Eliminás esta pregunta?')
+    const closeDeleteDialog = useCallback(() => {
+        // Ignore close requests while the DELETE request is in flight — the
+        // dialog is the surface reporting its own outcome.
+        if (busyId !== null && busyId === faqPendingDelete?.id) {
+            return;
+        }
+        setFaqPendingDelete(null);
+    }, [busyId, faqPendingDelete]);
+
+    const handleDelete = useCallback(async () => {
+        if (!faqPendingDelete) {
+            return;
+        }
+        setBusyId(faqPendingDelete.id);
+        setActionError(null);
+
+        const result = await apiClient.delete<{ success: boolean }>({
+            path: `${basePath}/${faqPendingDelete.id}`
+        });
+
+        setBusyId(null);
+        if (result.ok) {
+            setFaqs((prev) => prev.filter((f) => f.id !== faqPendingDelete.id));
+            setFaqPendingDelete(null);
+        } else {
+            setActionError(
+                t(
+                    'commerce.owner.editor.faqManager.deleteError',
+                    'No se pudo eliminar la pregunta.'
                 )
-            ) {
-                return;
-            }
-            setBusyId(faqId);
-            setActionError(null);
-
-            const result = await apiClient.delete<{ success: boolean }>({
-                path: `${basePath}/${faqId}`
-            });
-
-            setBusyId(null);
-            if (result.ok) {
-                setFaqs((prev) => prev.filter((f) => f.id !== faqId));
-            } else {
-                setActionError(
-                    t(
-                        'commerce.owner.editor.faqManager.deleteError',
-                        'No se pudo eliminar la pregunta.'
-                    )
-                );
-            }
-        },
-        [basePath, t]
-    );
+            );
+        }
+    }, [basePath, faqPendingDelete, t]);
 
     // ---------------------------------------------------------------------------
     // Reorder
@@ -708,7 +713,7 @@ export function CommerceFaqManager({
                                             type="button"
                                             className={styles.deleteBtn}
                                             disabled={isBusy}
-                                            onClick={() => handleDelete(faq.id)}
+                                            onClick={() => setFaqPendingDelete(faq)}
                                         >
                                             {t(
                                                 'commerce.owner.editor.faqManager.deleteButton',
@@ -847,6 +852,32 @@ export function CommerceFaqManager({
                     {t('commerce.owner.editor.faqManager.addButton', 'Agregar pregunta')}
                 </button>
             )}
+
+            {/*
+             * HOS-957: the shared, product-styled dialog — this delete used to
+             * ask through `window.confirm()`. `FaqSection.client.tsx` (the
+             * accommodation twin of this manager) already asks this way, and
+             * the two are deliberately kept identical.
+             */}
+            <ConfirmDeleteDialog
+                isOpen={faqPendingDelete !== null}
+                title={t('commerce.owner.editor.faqManager.deleteDialogTitle', 'Eliminar pregunta')}
+                message={t(
+                    'commerce.owner.editor.faqManager.deleteConfirm',
+                    '¿Eliminás esta pregunta?'
+                )}
+                detail={faqPendingDelete?.question}
+                confirmLabel={t(
+                    'commerce.owner.editor.faqManager.deleteConfirmButton',
+                    'Eliminar pregunta'
+                )}
+                busyLabel={t('commerce.owner.editor.faqManager.deleting', 'Eliminando...')}
+                cancelLabel={t('commerce.owner.editor.faqManager.cancelButton', 'Cancelar')}
+                closeLabel={t('common.close', 'Cerrar')}
+                isBusy={busyId !== null && busyId === faqPendingDelete?.id}
+                onConfirm={() => void handleDelete()}
+                onCancel={closeDeleteDialog}
+            />
         </section>
     );
 }

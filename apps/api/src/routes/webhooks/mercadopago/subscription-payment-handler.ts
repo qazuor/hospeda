@@ -43,7 +43,7 @@
  * @module routes/webhooks/mercadopago/subscription-payment-handler
  */
 
-import type { QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
+import type { QZPayCurrency } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import {
     and,
@@ -80,6 +80,16 @@ import {
     fetchAuthorizedPaymentDetails,
     type MPAuthorizedPaymentDetails
 } from '../../../utils/mp-authorized-payment.js';
+// HOS-847 PR 5: the status mapper moved to its own leaf module so the add-on
+// renewal handler — which is routed AHEAD of this file and so cannot import
+// from it — shares one mapping. It could not live in `mp-authorized-payment.ts`
+// either: this file's own test replaces that module wholesale with `vi.mock`.
+import { mapMpStatusToQZPayStatus } from '../../../utils/mp-payment-status.js';
+// HOS-847 PR 5: an add-on's OWN preapproval charge must be settled by the
+// add-on handler and never by this one. See `routeAddonAuthorizedPayment`'s
+// JSDoc and the call site below for why the interception is here and not in
+// the router's handler map.
+import { routeAddonAuthorizedPayment } from './addon-recurring-handler.js';
 import { cleanupRequestProviderEventId } from './event-handler.js';
 import {
     getWebhookDependencies,
@@ -120,34 +130,6 @@ function extractAuthorizedPaymentId(event: { data: unknown }): string | null {
     }
     const candidate = (data as Record<string, unknown>).id;
     return typeof candidate === 'string' && candidate.length > 0 ? candidate : null;
-}
-
-/**
- * Map a MercadoPago authorized-payment status to a `QZPayPaymentStatus`.
- *
- * Prefers the inner `payment.status` (reflects the actual gateway
- * disposition) and falls back to the outer authorization-lifecycle
- * `status` when the inner block is absent.
- */
-function mapMpStatusToQZPayStatus(details: MPAuthorizedPaymentDetails): QZPayPaymentStatus {
-    const source = details.paymentStatus ?? details.status;
-    switch (source) {
-        case 'approved':
-        case 'processed':
-            return 'succeeded';
-        case 'rejected':
-            return 'failed';
-        case 'cancelled':
-        case 'canceled':
-            return 'canceled';
-        case 'refunded':
-            return 'refunded';
-        case 'in_process':
-        case 'in_mediation':
-            return 'processing';
-        default:
-            return 'pending';
-    }
 }
 
 /**
@@ -844,6 +826,35 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
     }
 
     try {
+        // HOS-847 PR 5: is this preapproval an ADD-ON's rather than a plan's?
+        //
+        // This runs BEFORE `findLocalSubscriptionByPreapprovalId` below, and
+        // that order is the whole defence. PR 4 gives every recurring add-on
+        // its own preapproval AND its own `billing_subscriptions` row; that
+        // lookup carries no product-domain filter, so it would resolve the
+        // add-on's row and this handler would then book an add-on's charge as a
+        // plan renewal, run the plan-price divergence detector against it, and
+        // try to convert a trial on it. Deliberately not behind the feature
+        // flag — see `addon-recurring-handler.ts`'s module JSDoc.
+        //
+        // Placed INSIDE this try on purpose. The routing lookup is a database
+        // read, and a read that fails leaves us unable to tell an add-on charge
+        // from a plan charge. Guessing "plan" there is the very bug this
+        // routing exists to prevent, so the failure propagates into the catch
+        // below, which marks the event failed for the dead-letter retry — fail
+        // closed, retry later, never guess.
+        const addonRouting = await routeAddonAuthorizedPayment({
+            details,
+            billing,
+            triggerSource: 'subscription-authorized-payment-webhook'
+        });
+
+        if (addonRouting.handled) {
+            await safeMarkProcessed(event.id);
+            cleanupRequestProviderEventId(requestId);
+            return undefined;
+        }
+
         // HOS-276: resolve the local subscription. A real MercadoPago charge
         // has already settled by this point (`details.paymentId` is set), so
         // an unresolved subscription is handled specially below (thrown as a

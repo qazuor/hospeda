@@ -354,3 +354,102 @@ describe.each(
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// The three listing-QR images — GET /protected/<vertical>/:id/qr
+// ---------------------------------------------------------------------------
+
+/**
+ * HOS-982 PR 2. Same three verticals, same refusal contract, one route further
+ * along: `/qr` returns the code as SVG so the owner can see it before printing
+ * the sheet. It is probed here rather than trusted by symmetry with `/qr-sheet`
+ * for two reasons.
+ *
+ * The first is the same class-identity trap the sheets carry: `ServiceError`
+ * from `@repo/service-core/types`, `entityNotFoundError` from the ROOT, and a
+ * silent 500 on every "not yours" if those two module instances ever diverge.
+ *
+ * The second is specific to this route and worse than a leak. A refusal that
+ * still MINTED would create a live `qr_codes` row against a stranger's listing —
+ * discoverable by anyone holding a valid-looking id, and permanent. The 404 body
+ * is what this file compares; that nothing is written is asserted in
+ * `listing-qr-code.test.ts`, which can see the service call.
+ */
+const QR_CODE_CASES = [
+    {
+        label: 'accommodations',
+        service: AccommodationService,
+        importRoute: async () => {
+            const mod = await import('../../src/routes/accommodation/protected/qrCode.js');
+            return mod.protectedGetAccommodationQrCodeRoute;
+        }
+    },
+    {
+        label: 'experiences',
+        service: ExperienceService,
+        importRoute: async () => {
+            const mod = await import('../../src/routes/experience/protected/qrCode.js');
+            return mod.protectedGetExperienceQrCodeRoute;
+        }
+    },
+    {
+        label: 'gastronomy',
+        service: GastronomyService,
+        importRoute: async () => {
+            const mod = await import('../../src/routes/gastronomy/protected/qrCode.js');
+            return mod.protectedGetGastronomyQrCodeRoute;
+        }
+    }
+] as const;
+
+describe.each(QR_CODE_CASES)('GET /protected/$label/:id/qr — foreign listing vs invented id', ({
+    service,
+    importRoute
+}) => {
+    beforeEach(() => {
+        const missingRowMessage = `${service.ENTITY_NAME} not found`;
+
+        vi.spyOn(service.prototype, 'getById').mockImplementation(async (_actor, id) => {
+            if (id === FOREIGN_ID) {
+                // A PUBLISHED listing owned by somebody else — the hardest case
+                // for this route, because the publication check that follows
+                // would answer the same 404 for free on a draft and hide a
+                // broken ownership check.
+                return {
+                    data: {
+                        id: FOREIGN_ID,
+                        ownerId: OTHER_OWNER_ID,
+                        slug: 'de-otro',
+                        name: 'De otro',
+                        lifecycleState: 'ACTIVE',
+                        visibility: 'PUBLIC'
+                    } as never
+                };
+            }
+            return {
+                error: { code: ServiceErrorCode.NOT_FOUND, message: missingRowMessage }
+            };
+        });
+    });
+
+    it('answers identically to both', async () => {
+        const app = buildApp(await importRoute());
+
+        const foreign = await probe(app, FOREIGN_ID, '/qr');
+        const invented = await probe(app, INVENTED_ID, '/qr');
+
+        expectIndistinguishable(foreign, invented);
+    });
+
+    it('answers no symbol to either', async () => {
+        // A refusal that still returned the SVG would hand a stranger the code
+        // for somebody else's door — the exact artefact this route exists to
+        // put on a wall.
+        const app = buildApp(await importRoute());
+
+        for (const id of [FOREIGN_ID, INVENTED_ID]) {
+            const res = await app.request(`/${id}/qr`);
+            expect(await res.text()).not.toContain('<svg');
+        }
+    });
+});

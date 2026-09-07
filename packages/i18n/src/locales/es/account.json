@@ -31,13 +31,29 @@
         "step": "Paso {{current}} de {{total}}",
         "restart": "Ver tour",
         "running": "Tour en curso...",
+        "greetingTourist": {
+            "title": "Bienvenido a Hospeda",
+            "body": "Este es tu panel de cuenta. Te mostramos rapido donde encontrar tus favoritos, tus alertas de precio y tus consultas con anfitriones."
+        },
+        "favorites": {
+            "title": "Tus favoritos",
+            "body": "Guarda los alojamientos que te interesan para encontrarlos facil mas adelante."
+        },
+        "alerts": {
+            "title": "Alertas de precio",
+            "body": "Activa alertas para enterarte cuando baje el precio de un alojamiento que te interesa."
+        },
+        "reviews": {
+            "title": "Tus reseñas",
+            "body": "Revisa las reseñas que dejaste sobre tus estadias."
+        },
+        "inbox": {
+            "title": "Tus consultas",
+            "body": "Segui las conversaciones que tenes con los anfitriones."
+        },
         "greetingHost": {
             "title": "Bienvenido a tu panel de hospedaje",
             "body": "Desde aca podes gestionar tu cuenta, tus propiedades y la actividad de tu alojamiento."
-        },
-        "greetingCommerce": {
-            "title": "Bienvenido a tu panel comercial",
-            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu comercio."
         },
         "properties": {
             "title": "Tus propiedades",
@@ -62,6 +78,48 @@
         "commerce": {
             "title": "Tu comercio",
             "body": "Edita el contenido, horarios y datos visibles de tu comercio."
+        },
+        "greetingGastronomy": {
+            "title": "Bienvenido a tu panel de gastronomia",
+            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local gastronomico."
+        },
+        "commerceGastronomy": {
+            "body": "Edita el menu, los horarios y los datos visibles de tu local gastronomico."
+        },
+        "commerceListings": {
+            "title": "Tus comercios",
+            "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."
+        },
+        "gastronomyQr": {
+            "title": "QR de tu menu",
+            "body": "Genera el codigo QR de tu menu y consulta cuantas veces lo escanearon tus clientes."
+        },
+        "commerceViews": {
+            "title": "Visitas a tu ficha",
+            "body": "Segui cuantas personas vieron la ficha publica de tu comercio."
+        },
+        "greetingExperience": {
+            "title": "Bienvenido a tu panel de experiencias",
+            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu experiencia."
+        },
+        "commerceExperience": {
+            "body": "Edita la descripcion, los horarios y los datos visibles de tu experiencia."
+        },
+        "greetingEditor": {
+            "title": "Bienvenido a tu panel de editor",
+            "body": "Desde aca podes publicar y gestionar tus publicaciones y eventos en Hospeda."
+        },
+        "myPosts": {
+            "title": "Tus publicaciones",
+            "body": "Crea, edita y revisa el estado de tus publicaciones."
+        },
+        "myEvents": {
+            "title": "Tus eventos",
+            "body": "Crea, edita y revisa el estado de tus eventos."
+        },
+        "greetingSponsor": {
+            "title": "Bienvenido a Hospeda",
+            "body": "Sos aliado sponsor de Hospeda. Tu equipo de contacto en Hospeda gestiona tus patrocinios; escribinos si necesitas modificar algo."
         }
     },
     "navigation": "Navegación de cuenta",
@@ -451,6 +509,8 @@
             "removing": "Quitando...",
             "removeError": "Error al quitar el favorito de la colección",
             "removeConfirm": "¿Quitar este favorito de la colección? Seguirá guardado en tus favoritos.",
+            "removeConfirmTitle": "Quitar de la colección",
+            "removeConfirmButton": "Quitar",
             "fetchError": "Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.",
             "errorTitle": "No pudimos cargar la colección",
             "backToList": "Volver a mis favoritos",
@@ -470,6 +530,8 @@
             "deleteSuccess": "Colección borrada correctamente",
             "deleteError": "No se pudo borrar la colección. Intentá de nuevo.",
             "createSuccess": "Colección \"{{name}}\" creada",
+            "deleteDialogTitle": "Borrar colección",
+            "deleteConfirmButton": "Borrar colección",
             "fields": {
                 "colorNone": "Sin color",
                 "iconNone": "Sin ícono",
@@ -929,6 +991,11 @@
             "localeEs": "Español",
             "localeEn": "English",
             "localePt": "Português",
+            "theme": "Tema preferido",
+            "themeSystem": "Sistema",
+            "themeLight": "Claro",
+            "themeDark": "Oscuro",
+            "themeHint": "Opcional. Se aplica al guardar el perfil.",
             "newsletter": "Quiero recibir novedades y promociones por email",
             "terms": "Acepto los",
             "termsLink": "términos y condiciones",

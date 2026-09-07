@@ -25,6 +25,12 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.ADDON_EXPIRATION_WARNING]: 'Tu add-on {addonName} expira pronto',
     [NotificationType.ADDON_EXPIRED]: 'Tu add-on {addonName} ha expirado',
     [NotificationType.ADDON_RENEWAL_CONFIRMATION]: 'Add-on renovado - {addonName}',
+    // HOS-847 PR 5: the FIRST charge of a recurring add-on. It names the
+    // subscription, not a purchase — the inbox line is the first place a
+    // subscriber can be told the difference, and the body is where the cadence
+    // and the next charge date live. 'Complemento', not 'add-on', for the same
+    // reason as ADDON_PURCHASE above (HOS-830).
+    [NotificationType.ADDON_SUBSCRIPTION_STARTED]: 'Suscripción activa: complemento {addonName}',
     [NotificationType.TRIAL_ENDING_REMINDER]: 'Tu período de prueba termina pronto',
 
     // HOS-1012 — nine subjects, deliberately different from each other. The

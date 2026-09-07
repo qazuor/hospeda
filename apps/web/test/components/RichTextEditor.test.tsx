@@ -12,7 +12,12 @@ import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 // Mocks
 // ---------------------------------------------------------------------------
 
+// A WHOLE-module mock: anything the component imports from here and this
+// factory omits arrives as `undefined`, which is a crash at module scope rather
+// than a failed assertion. `DEFAULT_LOCALE` joined the imports with HOS-957's
+// link dialog, and its absence took all six tests down at once.
 vi.mock('@/lib/i18n', () => ({
+    DEFAULT_LOCALE: 'es',
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         tPlural: vi.fn()

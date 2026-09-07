@@ -122,9 +122,9 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
 | `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
 | `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
-| `commerce-gastronomy@local.test` | COMMERCE_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694 |
-| `commerce-experience@local.test` | COMMERCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694 |
-| `commerce-gastronomy-at-cap@local.test` | COMMERCE_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30 |
+| `commerce-gastronomy@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
+| `commerce-experience@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
+| `commerce-gastronomy-at-cap@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30; vertical role added HOS-964 |
 | `host-commerce@local.test` | HOST | `owner-basico` | **Dual role**: also holds COMMERCE_OWNER directly (no backing listing). HOS-694 AC-3/AC-12 |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
@@ -166,7 +166,32 @@ fixtures close that gap:
   and `COMMERCE_OWNER` is granted as an `extraRole`, with **no backing
   listing** — role possession alone is what the web nav gate
   (`ROLES_WITH_COMMERCE_NAV`) and the header's three-option publish control
-  read, so a listing isn't needed to exercise AC-3 / AC-12 locally.
+  read, so a listing isn't needed to exercise AC-3 / AC-12 locally. Unlike the
+  three fixtures above, this one deliberately does NOT also hold a vertical
+  role — it has no backing listing of either vertical, so there is nothing
+  real for `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` to represent here.
+
+**HOS-964 follow-up (2026-09-07 smoke finding)**: the three commerce-owner
+fixtures WITH a real vertical (`commerce-gastronomy`, `commerce-experience`,
+`commerce-gastronomy-at-cap`) now also hold the matching vertical role
+(`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`) via `extraRoles`, granted alongside
+the legacy `COMMERCE_OWNER` in [`testUsers.seed.ts`](src/test-users/testUsers.seed.ts)
+— and the three `gastro-owner-*@local.test` fixtures in
+[`example/gastronomies.seed.ts`](src/example/gastronomies.seed.ts) now get
+`GASTRONOMY_OWNER` the same way. This matches what production's
+`createForOwner` (`packages/service-core/src/services/commerce/base-commerce-listing.service.ts`)
+actually grants — BOTH the legacy and the vertical role, in the SAME
+transaction as the listing (HOS-1077) — which these fixtures had drifted from:
+they only ever held the retiring `COMMERCE_OWNER`, so any audience targeting
+gated on the vertical role (the What's New audience enum, the HOS-788 web
+welcome-tour split) silently never reached a single seeded commerce owner.
+Known residual gap, NOT fixed here (reported, not actioned, per the "report
+don't act on cleanup" convention): `example/experiences.seed.ts` reuses
+`gastro-owner-julieta@local.test` as the owner of its experience fixtures via
+a raw SQL insert that never calls `grantRole` at all, so Julieta owns
+experience listings locally without ever holding `EXPERIENCE_OWNER` — a
+second, independent drift from what `createForOwner` would have granted her
+in production, in a file this follow-up did not touch.
 
 `TestUserSpec.extraRoles` (a new, optional field) is what makes the dual-role
 fixture possible without splitting `TEST_USERS` into a second array —

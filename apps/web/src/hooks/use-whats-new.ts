@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { readClientLocaleFromPath } from '@/lib/api/client';
 import { getApiUrl } from '@/lib/env';
 
 export interface WhatsNewItem {
@@ -94,7 +95,18 @@ export function useWhatsNew(): UseWhatsNewReturn {
 
         async function fetchWhatsNew(): Promise<void> {
             try {
-                const res = await fetch(`${getApiUrl()}/api/v1/protected/whats-new`, {
+                // HOS-964 follow-up (2026-09-07): tell the API which language
+                // this page is actually rendering — the server cannot infer it
+                // (a web account has no `languageAdmin`), so without this the
+                // response always fell back to Spanish regardless of the
+                // `/en/` or `/pt/` URL prefix the visitor is on.
+                const clientLocale = readClientLocaleFromPath();
+                const url = new URL(`${getApiUrl()}/api/v1/protected/whats-new`);
+                if (clientLocale) {
+                    url.searchParams.set('locale', clientLocale);
+                }
+
+                const res = await fetch(url, {
                     credentials: 'include'
                 });
 

@@ -485,6 +485,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Seeds/corrects `promoEffectRemainingCycles`, a pricing counter — not an entitlement-bearing field (plan/status unchanged).'
     },
     {
+        file: 'services/addon-recurring-activation.service.ts',
+        requiresCacheClear: true,
+        reason: "HOS-847 PR 5. Two separate things happen here and only one of them is the write this scan found. The write itself is the add-on's OWN subscription row moving `pending_provider` -> `active`, and its WHERE pins `productDomain = 'addon'`, a domain `loadEntitlements` never reads — on its own it would not need a clear. But the same function is what grants the purchased add-on's limits and entitlements, and THAT is entitlement-bearing for the customer, so the clear is required and present. Recorded as true rather than false-with-a-caveat because the file must keep calling clearEntitlementCache: a future edit that drops it would break the grant, not the mirror."
+    },
+    {
         file: 'services/refund-lifecycle.service.ts',
         requiresCacheClear: true,
         reason: 'Full refund downgrade/cancel — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'

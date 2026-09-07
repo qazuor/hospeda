@@ -11,6 +11,7 @@ import {
     AddonExpired,
     AddonPurchaseConfirmation,
     AddonRenewalConfirmation,
+    AddonSubscriptionStarted,
     AdminLeadReceived,
     AdminPaymentFailure,
     AdminSystemEvent,
@@ -66,6 +67,7 @@ import type {
     AddonCancellationPayload,
     AddonEventPayload,
     AddonPurchaseConfirmationPayload,
+    AddonSubscriptionStartedPayload,
     AdminLeadReceivedPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
@@ -392,6 +394,28 @@ export class NotificationService {
                     orderId: p.orderId,
                     amount: p.amount,
                     currency: p.currency,
+                    baseUrl: this.deps.siteUrl,
+                    addonSlug: p.addonSlug,
+                    locale: p.locale
+                });
+            }
+
+            // HOS-847 PR 5: a RECURRING add-on's first charge. Its own template
+            // because the one above says a purchase "has been processed", which
+            // is the opposite of what a subscriber needs to read. The cadence,
+            // the next charge date and how to cancel are REQUIRED on this
+            // payload rather than optional, so the template cannot render the
+            // one-time message by omission.
+            case 'addon_subscription_started': {
+                const p = payload as AddonSubscriptionStartedPayload;
+                return AddonSubscriptionStarted({
+                    customerName: recipientName,
+                    addonName: p.addonName,
+                    addonDescription: p.addonDescription,
+                    amount: p.amount,
+                    currency: p.currency,
+                    billingInterval: p.billingInterval,
+                    nextChargeAt: p.nextChargeAt,
                     baseUrl: this.deps.siteUrl,
                     addonSlug: p.addonSlug,
                     locale: p.locale

@@ -8,12 +8,11 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
-import { asCentavos, isEntitlementGrantingStatus, toMajor } from '@repo/billing';
+import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { AccommodationModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
-import type { BillingPlanResponse } from '@repo/schemas';
 import type {
     ConfirmPurchaseInput,
     PurchaseAddonInput,
@@ -24,7 +23,6 @@ import {
     AddonCatalogService,
     hydrateSubscriptionProductDomains,
     isAddonSubscription,
-    PlanService,
     subscriptionMatchesDomain
 } from '@repo/service-core';
 import {
@@ -40,7 +38,16 @@ import { createRecurringAddonCheckout } from './addon.checkout.recurring';
 import { shouldUseRecurringAddonCheckout } from './addon.checkout.recurring-resolve';
 import { resolveAddonCheckoutDescription, resolveAddonCheckoutName } from './addon-checkout-locale';
 import type { AddonEntitlementService } from './addon-entitlement.service';
-import { recordOrphanPayment } from './billing/orphan-payment-queue.service';
+// HOS-847 PR 5: both the ledger write and the plan/adjustment computation moved
+// out so the recurring ACTIVATION path reuses them verbatim. A recurring
+// purchase activated with an empty `limit_adjustments` array contributes zero
+// to `addon-plan-change.service.ts`'s combined-limit sum, which is why the
+// computation had to become shared rather than be re-derived over there.
+import { recordAddonPayment } from './addon-payment-ledger';
+import {
+    computeAddonPurchaseAdjustments,
+    resolvePlanByIdOrSlug
+} from './addon-purchase-adjustments';
 import { resolveRecipientLocale } from './notification-recipient-locale';
 import { PromoCodeService } from './promo-code.service';
 
@@ -210,13 +217,6 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
     }
 }
 
-// ─── Plan service (DB-backed plan reads — SPEC-127 T-002) ─────────────────────
-// Instantiated once at module level; stateless, no DB connection held.
-//
-// Post-SPEC-168, `planId` may be a `billing_plans` UUID (new rows) or a
-// legacy slug (older rows/seeds). Use `resolvePlanByIdOrSlug` for dual-resolve.
-const planService = new PlanService();
-
 // ─── Addon catalog service (DB-backed addon reads — SPEC-127 T-003) ───────────
 // Replaces `getAddonBySlug` from `@repo/billing` (config catalog).
 // Instantiated once at module level; stateless, no DB connection held.
@@ -225,28 +225,6 @@ const addonCatalogService = new AddonCatalogService();
 // ─── Accommodation model (ownership lookup for target-required addons — SPEC-309 T-006) ───
 // Instantiated once at module level; stateless, no DB connection held.
 const accommodationModel = new AccommodationModel();
-
-/**
- * Resolves a billing plan from the DB using dual-resolve:
- * 1. Try `getById(planId)` — succeeds for UUID planIds.
- * 2. On NOT_FOUND, fall back to `getBySlug(planId)` — handles slug planIds.
- *
- * Returns `null` if neither lookup succeeds.
- *
- * @param planId - UUID or slug of the billing plan
- * @returns Resolved plan or `null` when not found
- */
-async function resolvePlanByIdOrSlug(planId: string): Promise<BillingPlanResponse | null> {
-    const byId = await planService.getById(planId);
-    if (byId.success) {
-        return byId.data;
-    }
-    const bySlug = await planService.getBySlug(planId);
-    if (bySlug.success) {
-        return bySlug.data;
-    }
-    return null;
-}
 
 /**
  * Create a qzpay-managed checkout session for an add-on purchase.
@@ -939,165 +917,6 @@ async function markFeaturedGrantLinkMissing(params: {
 }
 
 /**
- * Provider key under which MercadoPago payment ids live inside the
- * `billing_payments.provider_payment_ids` jsonb map.
- *
- * Exported so the dedupe query, the sibling subscription flows and the
- * regression test all name the same key instead of re-typing the string.
- */
-export const ADDON_PAYMENT_PROVIDER_KEY = 'mercadopago' as const;
-
-/**
- * Value written to `billing_payments.metadata.flow` for an add-on charge, so
- * the ledger can tell an add-on purchase apart from a subscription charge
- * (`annual-upfront`, `plan-upgrade-delta`, recurring) with one query.
- */
-export const ADDON_PAYMENT_FLOW = 'addon-purchase' as const;
-
-/**
- * Write the `billing_payments` row for a confirmed add-on charge (HOS-595).
- *
- * The add-on path used to be the only money-collecting flow in the codebase
- * with no ledger entry at all: `billing_addon_purchases` recorded WHAT was
- * bought, and nothing recorded THAT it was paid. A charge with no
- * `provider_payment_ids` cannot be reconciled against the provider's
- * settlement, cannot be refunded through `refund-lifecycle.service.ts` (which
- * looks the payment up by its provider id), and is invisible to every revenue
- * report that reads this table.
- *
- * This is deliberately NOT a second implementation: it calls the same
- * `billing.payments.record()` facade the subscription flows call
- * (`payment-logic.ts` annual + plan-upgrade delta,
- * `subscription-payment-handler.ts` recurring, `webhook-retry.job.ts`
- * dead-letter), and reuses their dedupe shape — a lookup on
- * `provider_payment_ids->>'mercadopago'` — so a provider redelivery of the same
- * charge does not double-insert.
- *
- * Best-effort by design: it runs after the purchase row is already committed
- * and after the money was collected, so a failure here must never turn a
- * successful confirmation into a failed one (HOS-714 — a payment that cannot be
- * applied is recorded and alerted, never discarded). A failure is logged at
- * `error` and reported to Sentry.
- *
- * @param params - Billing facade plus the charge to book
- */
-async function recordAddonPayment(params: {
-    readonly billing: QZPayBilling;
-    readonly customerId: string;
-    readonly subscriptionId: string;
-    readonly purchaseId: string;
-    readonly addonSlug: string;
-    readonly providerPaymentId: string;
-    readonly amountInCents: number;
-    readonly currency: string;
-}): Promise<void> {
-    const {
-        billing,
-        customerId,
-        subscriptionId,
-        purchaseId,
-        addonSlug,
-        providerPaymentId,
-        amountInCents,
-        currency
-    } = params;
-
-    try {
-        const { getDb, billingPayments } = await import('@repo/db');
-        const { sql: paymentSql } = await import('drizzle-orm');
-
-        const existing = await getDb()
-            .select({ id: billingPayments.id })
-            .from(billingPayments)
-            .where(
-                paymentSql`${billingPayments.providerPaymentIds}->>${ADDON_PAYMENT_PROVIDER_KEY} = ${providerPaymentId}`
-            )
-            .limit(1);
-
-        if (existing.length > 0) {
-            apiLogger.debug(
-                { customerId, addonSlug, purchaseId, providerPaymentId },
-                'Add-on payment already recorded in billing_payments — skipping record'
-            );
-            return;
-        }
-
-        const recorded = await billing.payments.record({
-            id: randomUUID(),
-            customerId,
-            subscriptionId,
-            amount: amountInCents,
-            currency: currency as QZPayCurrency,
-            status: 'succeeded' as QZPayPaymentStatus,
-            provider: ADDON_PAYMENT_PROVIDER_KEY,
-            providerPaymentId,
-            metadata: {
-                flow: ADDON_PAYMENT_FLOW,
-                addonSlug,
-                purchaseId
-            }
-        });
-
-        apiLogger.info(
-            {
-                customerId,
-                addonSlug,
-                purchaseId,
-                providerPaymentId,
-                billingPaymentId: recorded.id,
-                amountInCents,
-                currency
-            },
-            'Add-on payment recorded in billing_payments'
-        );
-    } catch (recordError) {
-        // HOS-1001: this branch used to say, in its own log message, "money
-        // collected without a ledger entry; reconcile manually" — and there was
-        // nothing in the codebase that would ever tell anyone to, nor anywhere
-        // for them to look. The queue is that place.
-        //
-        // Enqueued BEFORE the Sentry call on purpose: the row is the durable
-        // record an operator acts on, the Sentry event is the notification. If
-        // only one of the two survives it must be the one you can work from.
-        //
-        // `recordOrphanPayment` never throws, so a confirmed purchase is still
-        // never turned into a failed one by bookkeeping.
-        await recordOrphanPayment({
-            providerPaymentId,
-            flow: 'addon-purchase',
-            reason: 'ledger-write-failed',
-            // HOS-720: the queue takes MAJOR units and converts once. This flow
-            // holds CENTAVOS, so the crossing is spelled out rather than
-            // implied — `toMajor`/`toCentavos` round-trip to the same integer
-            // centavo by construction (see their JSDoc), and a bare
-            // `amountInCents` here would book a charge 100× too large.
-            amountMajor: toMajor(asCentavos(amountInCents)),
-            currency,
-            subscriptionId,
-            customerId,
-            source: 'addon-checkout',
-            metadata: {
-                addonSlug,
-                purchaseId,
-                amountInCents,
-                ledgerWriteError:
-                    recordError instanceof Error ? recordError.message : String(recordError)
-            }
-        });
-
-        captureBillingError(
-            recordError instanceof Error ? recordError : new Error(String(recordError)),
-            {
-                addonIds: [addonSlug],
-                transactionId: purchaseId,
-                operation: 'addon_payment_record'
-            },
-            'error'
-        );
-    }
-}
-
-/**
  * Confirm an add-on purchase after payment webhook.
  *
  * Inserts a record into `billing_addon_purchases`, computes limit and
@@ -1168,38 +987,14 @@ export async function confirmAddonPurchase(
         // When the plan cannot be resolved, limit baseline defaults to 0 (soft-skip).
         const canonicalPlan = await resolvePlanByIdOrSlug(activeSubscription.planId);
 
-        // Compute limit adjustments
-        const limitAdjustments: Array<{
-            limitKey: string;
-            increase: number;
-            previousValue: number;
-            newValue: number;
-        }> = [];
-
-        if (addon.affectsLimitKey && addon.limitIncrease) {
-            const previousValue = canonicalPlan?.limits[addon.affectsLimitKey] ?? 0;
-            const newValue = previousValue + addon.limitIncrease;
-
-            limitAdjustments.push({
-                limitKey: addon.affectsLimitKey,
-                increase: addon.limitIncrease,
-                previousValue,
-                newValue
-            });
-        }
-
-        // Compute entitlement adjustments
-        const entitlementAdjustments: Array<{
-            entitlementKey: string;
-            granted: boolean;
-        }> = [];
-
-        if (addon.grantsEntitlement) {
-            entitlementAdjustments.push({
-                entitlementKey: addon.grantsEntitlement,
-                granted: true
-            });
-        }
+        // HOS-847 PR 5: computed by the shared seam, so the recurring
+        // activation path writes the identical arrays. See
+        // `addon-purchase-adjustments.ts` for why an empty array here is not a
+        // cosmetic difference.
+        const { limitAdjustments, entitlementAdjustments } = computeAddonPurchaseAdjustments({
+            addon,
+            plan: canonicalPlan
+        });
 
         const now = new Date();
         const expiresAt =

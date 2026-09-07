@@ -22,15 +22,58 @@ export type WhatsNewEntryI18n = z.infer<typeof WhatsNewEntryI18nSchema>;
 /**
  * Audience roles for What's New entry targeting.
  *
- * This is the set of admin-facing roles that can receive a curated entry.
- * Absent/empty means ALL roles see the entry (universal broadcast).
+ * This is the set of roles a curated entry can be pointed at — both the
+ * admin-panel staff roles AND the web-app account roles, since
+ * `GET /api/v1/protected/whats-new` (and the modal/panel/badge it feeds) is
+ * shared by both `apps/admin` and `apps/web` (see `apps/web/src/hooks/use-whats-new.ts`
+ * and `apps/admin/src/hooks/use-whats-new.ts`). Absent/empty means ALL roles
+ * see the entry (universal broadcast).
  *
  * **Important**: this is audience targeting for content routing only — it is
  * NOT an authorization gate. The endpoint only requires an authenticated
  * session; `PermissionEnum` governs access. The `roles` field merely filters
  * which entries a given user sees in the response.
+ *
+ * ## Coverage vs. `RoleEnum` (HOS-964)
+ *
+ * This is a deliberate subset of the full `RoleEnum`
+ * (`packages/schemas/src/enums/role.enum.ts`), not a re-export of it. Every
+ * role is accounted for below, either included or excluded with a reason —
+ * this list is the answer, not a TODO:
+ *
+ * - **Included** — every role that identifies a real person who can hold an
+ *   authenticated session and might reasonably be the intended reader of a
+ *   curated announcement: `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `HOST`,
+ *   `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER`.
+ * - **`COMMERCE_OWNER` excluded** — RETIRING (HOS-1077 release 2). It is being
+ *   replaced by the per-vertical `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`
+ *   (already included above), so a NEW targeting option should never be added
+ *   for a role that new accounts stop receiving.
+ * - **`GUEST` excluded** — this is the not-logged-in placeholder role used by
+ *   the public website. A guest never reaches `/api/v1/protected/whats-new`
+ *   (it requires an authenticated session), so a guest-targeted entry could
+ *   never be delivered to anyone.
+ * - **`SYSTEM` excluded** — a reserved non-loginable account used as
+ *   `assignedById` for automated tag assignments (seeds, cron jobs, webhooks).
+ *   It cannot authenticate, so it can never be the actor behind a GET request.
+ * - **`CLIENT_MANAGER` excluded** — owner decision (2026-09-07), NOT a
+ *   technical exclusion like the three above. It is a staff role that COULD
+ *   reasonably receive targeted announcements (it can authenticate and hold a
+ *   session like any other included role here), but the owner wants this enum
+ *   to grow only with what was explicitly requested, not with every role that
+ *   could plausibly fit. Do not "fix" this by re-adding it as an oversight —
+ *   it was considered and deliberately left out.
  */
-export const WhatsNewAudienceRoleSchema = z.enum(['HOST', 'EDITOR', 'ADMIN', 'SUPER_ADMIN']);
+export const WhatsNewAudienceRoleSchema = z.enum([
+    'HOST',
+    'EDITOR',
+    'ADMIN',
+    'SUPER_ADMIN',
+    'GASTRONOMY_OWNER',
+    'EXPERIENCE_OWNER',
+    'SPONSOR',
+    'USER'
+]);
 
 /** Inferred type for {@link WhatsNewAudienceRoleSchema}. */
 export type WhatsNewAudienceRole = z.infer<typeof WhatsNewAudienceRoleSchema>;

@@ -218,7 +218,8 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.favorites',
                 href: 'mi-cuenta/favoritos',
                 icon: FavoriteIcon,
-                surfaces: CURATED_SURFACES
+                surfaces: CURATED_SURFACES,
+                tourTarget: 'favorites'
             },
             {
                 id: 'searchHistory',
@@ -232,7 +233,8 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.alerts',
                 href: 'mi-cuenta/alertas',
                 icon: AlertsIcon,
-                surfaces: FULL_SURFACES
+                surfaces: FULL_SURFACES,
+                tourTarget: 'alerts'
             },
             {
                 id: 'exclusiveDeals',
@@ -253,14 +255,16 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.reviews',
                 href: 'mi-cuenta/resenas',
                 icon: StarIcon,
-                surfaces: FULL_SURFACES
+                surfaces: FULL_SURFACES,
+                tourTarget: 'reviews'
             },
             {
                 id: 'inbox',
                 i18nKey: 'conversations.inbox.guestInboxTitle',
                 href: 'mi-cuenta/consultas',
                 icon: ChatIcon,
-                surfaces: FULL_SURFACES
+                surfaces: FULL_SURFACES,
+                tourTarget: 'inbox'
             }
         ]
     },
@@ -358,7 +362,8 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 href: 'mi-cuenta/publicaciones',
                 icon: PostIcon,
                 requiredPermission: PermissionEnum.POST_CREATE,
-                surfaces: FULL_SURFACES
+                surfaces: FULL_SURFACES,
+                tourTarget: 'my-posts'
             },
             {
                 id: 'myEvents',
@@ -366,7 +371,8 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 href: 'mi-cuenta/eventos',
                 icon: EventIcon,
                 requiredPermission: PermissionEnum.EVENT_CREATE,
-                surfaces: FULL_SURFACES
+                surfaces: FULL_SURFACES,
+                tourTarget: 'my-events'
             }
         ]
     }
