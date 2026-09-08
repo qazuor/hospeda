@@ -1340,63 +1340,14 @@ function resolvePaymentCustomerId(metadata: Record<string, unknown> | undefined)
 }
 
 /**
- * Shape of a bare UUID, used to decide whether an `external_reference` is worth
- * a database lookup at all.
- *
- * `external_reference` is overloaded on this payload: an add-on payment carries
- * a slug-bearing reference (see `extractAddonFromReference`), and only a
- * subscription charge carries a bare id. Handing a non-UUID to a `uuid` column
- * comparison makes Postgres raise `invalid input syntax`, so the shape is
- * checked here rather than discovered as an exception.
- */
-const BARE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Resolve the billing customer behind a subscription charge whose payment
- * metadata is empty, using MercadoPago's `external_reference`.
- *
- * A recurring subscription charge arrives with `metadata: {}` — measured on
- * payment `177923168044`, 2026-09-08 — so {@link resolvePaymentCustomerId}
- * answers `null` for exactly the payments this matters for. The same payment
- * does carry `external_reference` set to the LOCAL subscription id (the same
- * `54793281-…` the preapproval webhook logs), which is the link used here.
- *
- * @param externalReference - MP `external_reference` from the payment payload.
- * @returns The owning customer id, or `null` when the reference is absent, not
- *   a bare UUID, matches no live subscription, or the lookup itself fails.
- */
-async function resolveCustomerIdFromSubscriptionReference(
-    externalReference: string | undefined
-): Promise<string | null> {
-    if (!externalReference || !BARE_UUID.test(externalReference)) {
-        return null;
-    }
-
-    try {
-        const db = getDb();
-        const rows = await db
-            .select({ customerId: billingSubscriptions.customerId })
-            .from(billingSubscriptions)
-            .where(
-                and(
-                    eq(billingSubscriptions.id, externalReference),
-                    isNull(billingSubscriptions.deletedAt)
-                )
-            )
-            .limit(1);
-
-        return rows[0]?.customerId ?? null;
-    } catch (error) {
-        apiLogger.warn(
-            { externalReference, error: error instanceof Error ? error.message : String(error) },
-            'HOS-1234: failed to resolve customer from external_reference (best-effort, the payer email is simply not recorded)'
-        );
-        return null;
-    }
-}
-
-/**
  * Record the email that actually paid onto `billing_customers.mp_payer_email`.
+ *
+ * Covers the payments that arrive here carrying their customer in `metadata`:
+ * add-on purchases, plan upgrades, annual confirmations. A recurring
+ * subscription charge does NOT — it arrives with `metadata: {}` (measured on
+ * payment `177923168044`) — and is handled by the sibling recording in
+ * `subscription-payment-handler.ts`, which resolves the customer from
+ * `billing_subscriptions.mp_subscription_id` instead of from the payload.
  *
  * Two guards, and each one is the whole point of a separate half of HOS-1234:
  *
@@ -1418,27 +1369,19 @@ async function resolveCustomerIdFromSubscriptionReference(
 async function recordConfirmedPayerEmail(input: {
     readonly payerEmail: string | null | undefined;
     readonly metadataCustomerId: string | null;
-    readonly externalReference: string | undefined;
     readonly settled: boolean;
     readonly source: string;
 }): Promise<void> {
-    const { payerEmail, metadataCustomerId, externalReference, settled, source } = input;
+    const { payerEmail, metadataCustomerId, settled, source } = input;
 
-    if (!settled || !payerEmail) {
+    if (!settled || !payerEmail || !metadataCustomerId) {
         return;
     }
 
-    const customerId =
-        metadataCustomerId ?? (await resolveCustomerIdFromSubscriptionReference(externalReference));
-
-    if (!customerId) {
-        return;
-    }
-
-    await persistMpPayerEmailBestEffort({ customerId, payerEmail });
+    await persistMpPayerEmailBestEffort({ customerId: metadataCustomerId, payerEmail });
 
     apiLogger.info(
-        { customerId, source },
+        { customerId: metadataCustomerId, source },
         'HOS-1234: recorded the confirmed MercadoPago payer email for this customer'
     );
 }
@@ -1626,14 +1569,12 @@ export async function processPaymentUpdated({
     // recorded. Gated on `settled` deliberately: an attempted-but-failed charge
     // proves nothing about the address, and writing it would defeat the whole
     // point of the column (see `recordConfirmedPayerEmail`).
-    // `data` is a bare `Record<string, unknown>` here, so both fields are
-    // narrowed at the call site — the same way `external_reference` is read
-    // everywhere else in this function.
+    // `data` is a bare `Record<string, unknown>` here, so the field is narrowed
+    // at the call site — the same way `external_reference` is read everywhere
+    // else in this function.
     await recordConfirmedPayerEmail({
         payerEmail: typeof data.payer_email === 'string' ? data.payer_email : null,
         metadataCustomerId: customerId,
-        externalReference:
-            typeof data.external_reference === 'string' ? data.external_reference : undefined,
         settled: settled !== null,
         source
     });

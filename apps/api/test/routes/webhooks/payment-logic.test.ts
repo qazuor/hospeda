@@ -592,39 +592,16 @@ describe('processPaymentUpdated', () => {
             expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
         });
 
-        it('falls back to external_reference when the payment metadata is empty', async () => {
-            // The real shape of a recurring subscription charge: measured on
-            // payment 177923168044 (2026-09-08), `metadata` came back `{}` while
-            // `external_reference` held the local subscription id. Without this
-            // fallback the feature would never fire for the very payments it
-            // exists to serve.
-            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
-            annualDbState.subRows = [
-                { id: 'sub-1', customerId: 'cust-from-reference', status: 'active' }
-            ];
-
-            await processPaymentUpdated({
-                data: {
-                    metadata: {},
-                    external_reference: '54793281-f280-4a24-b2e3-8a02b5f38102',
-                    payer_email: 'quien.pago@example.com'
-                },
-                billing: mockBilling,
-                source: 'webhook'
-            });
-
-            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
-                customerId: 'cust-from-reference',
-                payerEmail: 'quien.pago@example.com'
-            });
-        });
-
-        it('does NOT look up a non-UUID external_reference', async () => {
-            // `external_reference` is overloaded: an add-on payment carries a
-            // slug-bearing value, and handing that to a uuid column comparison
-            // makes Postgres raise `invalid input syntax`. The queued row would
-            // be returned by the mock if the lookup ran, so a persist here means
-            // the shape check is gone.
+        it('does NOT guess a customer when the payment metadata carries none', async () => {
+            // A recurring subscription charge arrives exactly like this --
+            // `metadata: {}`, measured on payment 177923168044 -- and it is
+            // deliberately NOT recorded here. `external_reference` is the only
+            // other identifier on the payload and it is overloaded three ways
+            // (anti-IDOR nonce, local subscription id, qzpay session id), two of
+            // them UUID-shaped; resolving a customer from it would be a guess.
+            // Subscription charges are recorded by `subscription-payment-handler`
+            // instead, which resolves the customer from
+            // `billing_subscriptions.mp_subscription_id`.
             vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
             annualDbState.subRows = [
                 { id: 'sub-1', customerId: 'must-not-be-used', status: 'active' }
@@ -633,7 +610,7 @@ describe('processPaymentUpdated', () => {
             await processPaymentUpdated({
                 data: {
                     metadata: {},
-                    external_reference: 'addon:visibility-boost-7d',
+                    external_reference: '54793281-f280-4a24-b2e3-8a02b5f38102',
                     payer_email: 'quien.pago@example.com'
                 },
                 billing: mockBilling,

@@ -202,21 +202,34 @@ export interface PersistMpPayerEmailInput {
 
 /**
  * Persist the email that MercadoPago just accepted onto
- * `billing_customers.mp_payer_email` — called ONLY on the
- * `pending_provider -> active/trialing` webhook transition (i.e. once the
- * preapproval reaches `authorized`), never at checkout creation time (spec
+ * `billing_customers.mp_payer_email` — never at checkout creation time (spec
  * §6.3: "An email that did not work is not stored").
+ *
+ * Called from a CLEARED PAYMENT, and only from there (HOS-1234). Two call
+ * sites, split by where the customer can be resolved from:
+ *
+ * - `subscription-payment-handler.ts` — a subscription charge. The customer
+ *   comes from `billing_subscriptions.mp_subscription_id`, and the address is
+ *   read off the payment.
+ * - `payment-logic.ts` — every other payment (add-on, upgrade, annual), whose
+ *   payload carries its customer in `metadata`.
+ *
+ * It used to be called from the `pending_provider -> active/trialing` webhook
+ * transition instead, off `mpSubscription.payerEmail`. That never wrote a
+ * single row: `GET /preapproval/{id}` returns `payer_email` PRESENT AND EMPTY
+ * even for an authorized preapproval created with a valid address (measured
+ * 2026-09-08 against the live sandbox), so the truthiness guard in front of it
+ * was false every time. A preapproval cannot answer this question; only a
+ * payment can.
  *
  * Writes EXCLUSIVELY the `mp_payer_email` column. `billing_customers.email`
  * (the real address Hospeda writes to — eight of our own sends read it) is
  * NEVER touched by this function, by construction: the UPDATE statement
  * names no other column (AC-9, HOS-581).
  *
- * Best-effort: failures are logged (with Sentry capture) and swallowed,
- * mirroring the sibling `applyPendingDiscountBestEffort` /
- * `applyPendingTrialExtensionBestEffort` pattern this webhook transition
- * already uses — a failure here must never break webhook processing or
- * the subscription activation it is reporting.
+ * Best-effort: failures are logged (with Sentry capture) and swallowed — a
+ * failure here must never break webhook processing or turn a settled charge
+ * into a failed event.
  *
  * @param input - See {@link PersistMpPayerEmailInput}.
  */

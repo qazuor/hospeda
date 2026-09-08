@@ -48,7 +48,6 @@ import {
     PENDING_TRIAL_EXTENSION_METADATA_KEY
 } from '../../../services/billing/own-preapproval-subscription-create.js';
 import { PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY } from '../../../services/billing/past-due-payment-method-replacement.service.js';
-import { persistMpPayerEmailBestEffort } from '../../../services/billing/payer-email.js';
 import type {
     PendingCheckoutDiscount,
     PendingTrialExtension
@@ -1318,27 +1317,22 @@ export async function processSubscriptionUpdated({
             });
         }
 
-        // HOS-937 step 2 (spec §6.3/AC-9): the preapproval just reached
-        // `authorized` — this IS the moment MercadoPago confirmed the payer
-        // email it was created with actually worked. Persist it onto
-        // `billing_customers.mp_payer_email` so the customer's NEXT checkout
-        // defaults to it instead of guessing again. `mpSubscription` is the
-        // SAME provider read from Step 2 above (`mpSubscription.payerEmail`
-        // is also how the OLD Path C fallback link at the top of this
-        // function correlates a checkout — see `payerEmail:
-        // mpSubscription.payerEmail ?? null` a few hundred lines up).
-        // `persistMpPayerEmailBestEffort` writes ONLY `mp_payer_email` — it
-        // never touches `billing_customers.email` (AC-9, HOS-581) — and is
-        // itself best-effort: a failure here must never break webhook
-        // processing or the activation it is reporting, same contract as
-        // `applyPendingDiscountBestEffort` / `applyPendingTrialExtensionBestEffort`
-        // above.
-        if (mpSubscription.payerEmail) {
-            await persistMpPayerEmailBestEffort({
-                customerId: localSubscription.customerId,
-                payerEmail: mpSubscription.payerEmail
-            });
-        }
+        // REMOVED, HOS-1234: the `mp_payer_email` persist used to live here,
+        // gated on `if (mpSubscription.payerEmail)`. It never wrote a single
+        // row in production — `billing_customers.mp_payer_email` was empty for
+        // all 37 staging customers — because a preapproval NEVER reports the
+        // address: `GET /preapproval/{id}` answers with `payer_email` PRESENT
+        // AND EMPTY even for an `authorized` preapproval whose checkout supplied
+        // a valid one (measured 2026-09-08 against the live sandbox; its
+        // `payer_id` came back populated). An empty string is falsy, so the
+        // guard was false every time and nothing was logged on either side.
+        //
+        // Do NOT reinstate it here off `mpSubscription`. A payment is the only
+        // MercadoPago object that states which email actually paid, so the
+        // recording now hangs off a CLEARED PAYMENT instead — see
+        // `recordPayerEmailFromSettledCharge` in `subscription-payment-handler.ts`
+        // for subscription charges, and `recordConfirmedPayerEmail` in
+        // `payment-logic.ts` for every other payment.
     }
 
     // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.

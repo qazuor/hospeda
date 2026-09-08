@@ -102,19 +102,34 @@ export type SyntheticMpPaymentPayload = {
     readonly status: string;
     /** Checkout metadata bag, forwarded verbatim to the dispatch extractors. */
     readonly metadata?: unknown;
-    /** MP `external_reference` (the qzpay checkout-session id). */
+    /**
+     * MP `external_reference`.
+     *
+     * OVERLOADED — it carries a different thing depending on which flow created
+     * the payment, so any reader must state which of the three it expects
+     * rather than assuming: an anti-IDOR nonce (`subscription-checkout.service.ts`,
+     * 32 hex with no dashes), a local `billing_subscriptions.id`
+     * (`own-preapproval-subscription-create.ts`, HOS-937), or a qzpay
+     * checkout-session id (the add-on branch of `subscription-poll.job.ts`).
+     * Two of the three are UUID-shaped, so shape alone does not disambiguate
+     * them.
+     */
     readonly external_reference?: string;
     /**
      * The email of the account that actually paid, as MercadoPago reports it on
      * the payment (HOS-1234). `null` when the provider gave none.
      *
-     * This is the ONLY place the confirmed payer email can enter the system. A
-     * preapproval does not carry it: `GET /preapproval/{id}` answers with
+     * A preapproval cannot supply this: `GET /preapproval/{id}` answers with
      * `payer_email` present and EMPTY even for an authorized preapproval whose
      * checkout supplied a valid address (measured 2026-09-08 against the live
-     * sandbox). So `billing_customers.mp_payer_email` — which is defined as "the
-     * last email MercadoPago actually accepted" — can only ever be written from
-     * a payment, and only after that payment cleared.
+     * sandbox). So `billing_customers.mp_payer_email` — defined as "the last
+     * email MercadoPago actually accepted" — can only ever be written from a
+     * payment, and only after that payment cleared.
+     *
+     * Populated by the producers that hold a `QZPayProviderPayment`
+     * (`payment-handler.ts`, `subscription-poll.job.ts`). Subscription charges
+     * do NOT travel this payload at all — they are recorded by
+     * `subscription-payment-handler.ts`, which reads the payment directly.
      *
      * Requires `@qazuor/qzpay-mercadopago` >= 2.11.0, which is where the adapter
      * started mapping `payer.email` at all; on 2.10.0 this is always `null` and
