@@ -58,14 +58,20 @@
  * price's own amount/cadence, which is the flow that returns an `init_point`
  * for the payer to authorize.
  *
- * The ONE caller that still sends `providerPriceId` is the recurring add-on
- * (`addon.checkout.recurring.ts`): it borrows the owner plan's price row purely
- * to satisfy qzpay's plan+price requirement, so the add-on's own MercadoPago
- * plan is what makes the preapproval charge the add-on's amount. Dropping it
- * there would charge the borrowed price. That path is therefore broken in the
- * same way and needs an amount override, not a deletion — see guard G-2
- * (`scripts/check-no-plan-id-to-own-preapproval.sh`), which allows exactly that
- * one file and fails on any other.
+ * NO caller sends `providerPriceId` any more. The last one was the recurring
+ * add-on (`addon.checkout.recurring.ts`), broken in exactly the same way and
+ * since ported: it borrows the owner plan's price row purely to satisfy qzpay's
+ * plan+price requirement, so simply DELETING its plan id would have charged the
+ * BORROWED price — a ARS 5.000/month add-on billed at the plan's ARS 18.000 and
+ * up, forever. It states `providerUnitAmountOverride = addon.priceArs` instead,
+ * plus `planDisplayName = addon.name` so the buyer authorizes the add-on rather
+ * than the borrowed plan, and passes the add-on's MercadoPago plan as
+ * {@link CreateOwnPreapprovalSubscriptionInput.mpPreapprovalPlanId}
+ * (bookkeeping) so its idempotency check keeps the price-drift key it compares.
+ *
+ * Guard G-2 (`scripts/check-no-plan-id-to-own-preapproval.sh`) therefore now
+ * allows the field in exactly ONE file — `paid-subscription-create.ts`, which
+ * DEFINES and forwards it — and fails on every other, this one included.
  *
  * @module services/billing/own-preapproval-subscription-create
  */
@@ -297,10 +303,16 @@ export async function createOwnPreapprovalSubscription(
     const mpSubscriptionId = result.subscription.providerSubscriptionIds?.mercadopago;
     const client = db ?? getDb();
 
-    // HOS-1221: the plan id recorded for bookkeeping. Stated explicitly by the
-    // four plan checkouts; falls back to `providerPriceId` for the add-on path,
-    // which genuinely subscribes against a MercadoPago plan.
-    const recoveryMpPlanId = mpPreapprovalPlanId ?? paidInput.providerPriceId;
+    // HOS-1221: the plan id recorded for bookkeeping, stated explicitly by every
+    // caller. This used to read `mpPreapprovalPlanId ?? paidInput.providerPriceId`
+    // — the fallback existed for the recurring add-on, the one path that still
+    // subscribed against a real MercadoPago plan. That path has since been
+    // ported to state the field directly (and to override the amount instead of
+    // sending the plan), so the fallback had no caller left. It is gone rather
+    // than kept "harmlessly": while it existed, reintroducing `providerPriceId`
+    // anywhere would have kept the metadata stamp looking correct, which is the
+    // signal that would otherwise have flagged the regression.
+    const recoveryMpPlanId = mpPreapprovalPlanId;
 
     // HOS-937 step 3: the recovery metadata below (`checkoutUrl`,
     // `mpPreapprovalPlanId`, `billingInterval`) used to be stamped ONLY on the
@@ -326,12 +338,10 @@ export async function createOwnPreapprovalSubscription(
         // flow's `mpPreapprovalPlanId` reuse condition enforced. Also carried
         // forward by `mintRetryPreapprovalAttempt` onto a retry attempt.
         //
-        // HOS-1221: the four plan checkouts now state it explicitly through
-        // `mpPreapprovalPlanId`, which reaches this stamp and nothing else.
-        // `providerPriceId` remains the source for the ONE caller that still
-        // subscribes against a real MercadoPago plan — the recurring add-on
-        // (`addon.checkout.recurring.ts`), which borrows another price row and
-        // would charge the WRONG AMOUNT without its own plan.
+        // HOS-1221: every checkout — the four plan flows and the recurring
+        // add-on alike — now states it explicitly through `mpPreapprovalPlanId`,
+        // which reaches this stamp and nothing else. Nothing derives it from
+        // `providerPriceId` any more, because nothing sends that field.
         ...(recoveryMpPlanId ? { mpPreapprovalPlanId: recoveryMpPlanId } : {})
     };
 

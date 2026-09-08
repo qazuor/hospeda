@@ -28,6 +28,18 @@
 #   §6.6-B reuse check and the retry recovery read it back as the priced-variant
 #   key) — it just must not travel in the body.
 #
+#   HOS-847 CLOSED THE LAST EXCEPTION. Until then this guard allowed a second
+#   file — the recurring add-on checkout — and said so in its own SUCCESS output,
+#   which meant a green run was announcing a known 400 rather than preventing it.
+#   The add-on could not simply drop the field: it BORROWS the owner plan's price
+#   row to satisfy qzpay's plan+price requirement, so removing the plan without
+#   replacing it would have billed a ARS 5.000/month add-on at the plan's
+#   ARS 18.000-and-up. It states `providerUnitAmountOverride = addon.priceArs`
+#   instead (plus `planDisplayName = addon.name`, so the buyer authorizes the
+#   add-on and not the borrowed plan), and passes the plan id as the bookkeeping
+#   `mpPreapprovalPlanId`. With that file removed from the inventory, RULE A now
+#   FORBIDS the defect on the add-on path instead of documenting it.
+#
 # -----------------------------------------------------------------------------
 # WHAT IT PROVES
 # -----------------------------------------------------------------------------
@@ -187,16 +199,12 @@ build_patterns() {
 # RULE A's inventory: the files ALLOWED to build a plan-based preapproval.
 # Each line is `path # reason`. Checked in BOTH directions.
 # -----------------------------------------------------------------------------
-ALLOWED_DIRECT_FILES="apps/api/src/services/billing/paid-subscription-create.ts
-apps/api/src/services/addon.checkout.recurring.ts"
+ALLOWED_DIRECT_FILES="apps/api/src/services/billing/paid-subscription-create.ts"
 
 allowed_reason() {
     case "$1" in
     apps/api/src/services/billing/paid-subscription-create.ts)
-        echo "the shared low-level create helper — it DEFINES and forwards the field; removing it here would take the add-on path with it"
-        ;;
-    apps/api/src/services/addon.checkout.recurring.ts)
-        echo "the recurring add-on BORROWS the owner plan's price row to satisfy qzpay's plan+price requirement, so its own MercadoPago plan is what makes the preapproval charge the add-on's amount. Dropping the plan there would charge the borrowed price — it needs an explicit amount override, not a deletion. NOTE: this path therefore hits the same 400 as HOS-1221 whenever HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED is on."
+        echo "the shared low-level create helper — it DEFINES the field and forwards it to qzpay. The ban is on CHECKOUTS populating it, not on the plumbing that would carry it, so this one entry is the only legitimate occurrence left in the repo."
         ;;
     *) echo "(no reason recorded)" ;;
     esac

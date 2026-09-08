@@ -21,8 +21,16 @@
  * `@qazuor/qzpay-mercadopago`'s `PreApprovalUpdateBody`, which has no item
  * field at all, in contrast with `Preference`). There is no way to attach a
  * charge to an existing preapproval, so a recurring add-on needs a preapproval
- * of its own — and, transitively, its own `preapproval_plan`, which PR 3's
- * {@link resolveCheckoutMpAddonPlanId} provisions and caches.
+ * of its own.
+ *
+ * It also has its own `preapproval_plan`, which PR 3's
+ * {@link resolveCheckoutMpAddonPlanId} provisions and caches — but since the
+ * HOS-1221 port that plan is **no longer what charges**. It is never sent to
+ * MercadoPago (doing so is the 400 that kept this whole branch at 500); it
+ * survives as the priced-variant key the idempotency check compares to detect a
+ * catalog price drift between two attempts. What charges is the inline
+ * `auto_recurring` the adapter builds, seeded with `providerUnitAmountOverride`
+ * at the add-on's own price — see the create call below.
  *
  * ## Why `billing.checkout.create({ mode: 'subscription' })` is NOT that path
  *
@@ -320,9 +328,46 @@ export async function createRecurringAddonCheckout(
             // field; `freeTrialDays` (the one guard G-1 bans) does not exist on
             // this path at all.
             trialDays: RECURRING_ADDON_LOCAL_TRIAL_DAYS,
-            // The add-on's OWN MercadoPago plan. This is what makes the
-            // preapproval charge the add-on's amount on the add-on's cadence.
-            providerPriceId: mpPreapprovalPlanId,
+            // HOS-1221 ported to the add-on path. What used to sit here was
+            // `providerPriceId: mpPreapprovalPlanId` — the add-on's own
+            // MercadoPago plan, handed to the provider. That builds MercadoPago's
+            // "subscription WITH an associated plan" request, which it rejects
+            // with HTTP 400 "Create subscription - card_token_id is required"
+            // because a self-serve checkout never tokenizes a card. Every one of
+            // these checkouts answered 500 with the flag on, exactly as the four
+            // plan checkouts did before HOS-1221.
+            //
+            // Deleting that line alone would have been the WRONG fix. Without a
+            // plan id the adapter builds the inline `auto_recurring` from the
+            // resolved price — and the resolved price here is BORROWED from the
+            // owner's plan (see {@link resolveSubscriptionPlanReference}), so the
+            // buyer of a ARS 5.000/month add-on would have been charged the
+            // owner plan's ARS 18.000-and-up monthly amount, forever. The amount
+            // has to be stated instead.
+            //
+            // `addon.priceArs` is the catalog LIST price in centavos — the same
+            // unit as `billing_prices.unit_amount`, which is what qzpay hands the
+            // adapter — and deliberately the list price, never `finalPrice`: this
+            // path refuses promo codes (`createAddonCheckout`) for the same
+            // reason `resolveCheckoutMpAddonPlanId` above takes the list price.
+            providerUnitAmountOverride: addon.priceArs,
+            // What the buyer READS on MercadoPago's authorization page. Without
+            // it the adapter builds the reason from the BORROWED plan's `name`,
+            // so someone buying "Extra Photos Pack" would have been asked to
+            // authorize "owner-premium - Mensual" — a different product at a
+            // different price. Only reachable now that the plan id is gone:
+            // `planDisplayName` has no effect on the plan-based flow, where
+            // MercadoPago renders the plan's own reason instead.
+            planDisplayName: addon.name,
+            // BOOKKEEPING ONLY — recorded on the row's metadata, never sent to
+            // MercadoPago. The add-on's MP plan is still provisioned and still
+            // identifies the priced variant: `decideRecurringAddonReuse`
+            // (`addon.checkout.recurring-idempotency.ts`) compares it against the
+            // current attempt's to refuse a checkout whose price has since
+            // drifted. It used to reach that stamp by riding on
+            // `providerPriceId`; HOS-1221 split the two apart precisely so
+            // recording a plan no longer means sending one.
+            mpPreapprovalPlanId,
             // HOS-847 PR 2: without this the row defaults to
             // `'accommodation'`, which `subscriptionMatchesDomain` fails OPEN
             // on — the add-on's preapproval would then be counted as the
