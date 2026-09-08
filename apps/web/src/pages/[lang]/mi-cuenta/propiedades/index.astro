@@ -34,6 +34,7 @@ import {
 import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
+import { publishApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
@@ -83,11 +84,28 @@ let fetchError = false;
 let usageData: { currentUsage: number; maxAllowed: number; threshold: string } | null = null;
 
 // ── HOS-217: does the owner have a REAL owner/complex plan? ──
-// Fail-open (`true`) on any fetch error — this only gates a proactive nag
-// banner, never actual publish capability (the `/publish` endpoint is the
-// enforcement point via `checkEligibility`), so a transient API failure
-// must not falsely nag a paying host.
+// Fail-open (`true`) on any fetch error, so a transient API failure never
+// falsely nags a paying host.
+//
+// HOS-1183: this value gates the "anfitrión en preparación" banner and NOTHING
+// else. It used to also decide whether each card offered Publish, and the
+// comment here asserted the opposite — "only gates a proactive nag banner,
+// never actual publish capability" — which stopped being true the moment H-99
+// wired it into the button. One value answering two questions is what let a
+// plan-shaped boolean decide publishability; the publish affordance now reads
+// the server's own verdict below.
 let hasOwnerPlan = true;
+
+// ── HOS-1183: what would the server do if this owner published? ──
+// Resolved ONCE for the whole grid: billing eligibility is a property of the
+// owner, so it cannot differ between two cards. Fail-open on any error for the
+// same reason as above — `/publish` is the real enforcement point, and hiding
+// the button on a blip strands a host who could publish.
+//
+// `startsTrial` fails the other way (silent). An unannounced trial costs a
+// surprise; an announced one that never starts is a broken promise.
+let canPublish = true;
+let publishStartsTrial = false;
 
 try {
     const apiUrl = getApiUrl();
@@ -99,13 +117,17 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodations + plan-aware usage badge context.
-        const [accomResponse, usageBadgeResult] = await Promise.all([
+        // Parallel fetch: accommodations + plan-aware usage badge context +
+        // the publish verdict. The third joins the existing Promise.all rather
+        // than awaiting after it — this is one extra billing read per page
+        // load, and serialising it would add its latency to every render.
+        const [accomResponse, usageBadgeResult, eligibilityResult] = await Promise.all([
             fetch(
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
-            fetchHostUsageBadge({ apiUrl, headers })
+            fetchHostUsageBadge({ apiUrl, headers }),
+            publishApi.accommodationEligibility({ cookieHeader })
         ]);
 
         if (accomResponse.ok) {
@@ -127,6 +149,18 @@ try {
             });
         }
         // Entitlements fetch failure is non-fatal — hasOwnerPlan stays true (fail-open)
+
+        if (eligibilityResult.ok) {
+            canPublish = eligibilityResult.data.canPublish;
+            publishStartsTrial = eligibilityResult.data.startsTrial;
+        } else {
+            // Both defaults already hold; logged so a systematic failure is
+            // visible rather than silently degrading every card to "publishable
+            // and no trial announced".
+            logger.warn('[propiedades] publish-eligibility fetch failed', {
+                error: eligibilityResult.error
+            });
+        }
     }
 } catch (err) {
     fetchError = true;
@@ -283,7 +317,7 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard property={property} locale={locale} hasActivePlan={hasOwnerPlan} trialDays={genericTrialDays} />
+                    <PropertyCard property={property} locale={locale} canPublish={canPublish} startsTrial={publishStartsTrial} trialDays={genericTrialDays} />
                 </div>
             ))}
         </div>

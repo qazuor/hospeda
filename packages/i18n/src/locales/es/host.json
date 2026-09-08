@@ -227,6 +227,8 @@
                 "deleteYes": "Sí, eliminar",
                 "publishConfirmTitle": "¿Publicar este alojamiento?",
                 "publishConfirmNote": "Va a aparecer en el sitio, visible para los turistas.",
+                "publishConfirmTrialNote_one": "Al publicar arranca tu prueba gratis de {{trialDays}} día. Sin tarjeta.",
+                "publishConfirmTrialNote_other": "Al publicar arranca tu prueba gratis de {{trialDays}} días. Sin tarjeta.",
                 "publishYes": "Sí, publicar",
                 "choosePlan": "Elegir plan de anfitrión"
             },
@@ -235,8 +237,7 @@
             "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
             "deleteError": "No se pudo eliminar. Intentá de nuevo.",
             "publishError": "No se pudo publicar. Intentá de nuevo.",
-            "publishSubscriptionRequiredMessage_one": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} día gratis.",
-            "publishSubscriptionRequiredMessage_other": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.",
+            "publishSubscriptionRequiredMessage": "Necesitás un plan activo para publicar.",
             "publishSubscriptionRequiredCta": "Ver planes",
             "priceOnRequest": "Precio a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
