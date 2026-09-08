@@ -40,6 +40,7 @@ import {
     AnthropicAdapter,
     checkCostCeiling,
     createAiService,
+    findUnconfiguredFeatures,
     OpenAiAdapter,
     resolveConfig,
     StubProvider
@@ -201,6 +202,31 @@ export async function createConfiguredAiService(): Promise<AiService> {
     // -----------------------------------------------------------------------
     const aiConfig = await resolveConfig();
     const moderationProviderId = aiConfig.moderation?.providerId;
+
+    // -----------------------------------------------------------------------
+    // 3b. Alert on an incomplete feature configuration (HOS-1220).
+    //
+    //     `readAiSettings` no longer rejects a blob that is missing a feature
+    //     key — failing the whole document over one unconfigured feature took
+    //     every AI feature down, including the visitor-facing chat, when
+    //     HOS-400 widened the enum. The per-feature fail-closed still stands:
+    //     `resolveFeatureConfig` refuses the specific feature that has no
+    //     entry.
+    //
+    //     Tolerating it silently is the other half of that bug, though. The
+    //     original outage produced exactly ONE log line in 24 hours — the one
+    //     the person reproducing it caused — so a whole deploy went by with
+    //     the AI layer dead and nothing saying so. This is the line that says
+    //     so, and it is deliberately `error`: an AI feature the platform
+    //     cannot route is a defect an operator has to fix, not a notice.
+    // -----------------------------------------------------------------------
+    const unconfiguredFeatures = findUnconfiguredFeatures({ settings: aiConfig });
+    if (unconfiguredFeatures.length > 0) {
+        apiLogger.error(
+            { unconfiguredFeatures },
+            'ai-service.factory: ai_settings does not configure every AI feature — those features will be refused until an admin configures them at /ai/settings'
+        );
+    }
 
     // -----------------------------------------------------------------------
     // 4. Assemble and return the configured service.
