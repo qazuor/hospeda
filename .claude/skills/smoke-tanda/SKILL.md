@@ -236,9 +236,11 @@ Everything below is derived. Nothing is asked.
   operator deliberately accepts the machine output on the record. Never write
   either on your own.
 - **`roles` (the audience)** — **INFERRED.** Read the issue's own subject, the
-  role whose journey the step exercised, and the `Observado` text. Omit the key
-  entirely for something every account can see; an empty array is not how you
-  say "everyone".
+  role whose journey the step exercised, and the `Observado` text. The values are
+  a closed set (`WhatsNewAudienceRoleSchema`): `HOST`, `EDITOR`, `ADMIN`,
+  `SUPER_ADMIN`, `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER` —
+  anything else fails validation at API boot. Omit the key entirely for something
+  every account can see; an empty array is not how you say "everyone".
 
   | What was observed | `roles` |
   |---|---|
