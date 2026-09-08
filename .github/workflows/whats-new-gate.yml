@@ -85,18 +85,46 @@ name: What's New promotion gate
 # `GITHUB_TOKEN` in the environment instead reproduces exactly this failure.
 #
 # =============================================================================
-# CUTOFF
+# CUTOFF — derived, not configured (D-6)
 # =============================================================================
-# Read from scripts/whats-new-gate-cutoff.txt by `hops whats-new audit`
-# itself — this workflow never hardcodes a SHA. That file is deliberately
-# UNSET as of this workflow's own first commit (the SHA to write is this PR's
-# own future merge commit, which cannot be known before it exists) — an owner
-# sets it once this PR merges to `staging`, per NG-4. Until then, no PR is
-# exempted by age, which the report says plainly.
+# `hops whats-new audit` derives it: the commit that added THIS FILE, via
+# `git log --diff-filter=A`. That is exactly the semantics wanted — "since the
+# rule exists" — with nothing to write down and nothing to forget. This
+# workflow never hardcodes a SHA and no longer needs anyone to paste one after
+# it merges. scripts/whats-new-gate-cutoff.txt survives as an OPTIONAL
+# override: a SHA on its first non-comment line wins.
+#
+# The derivation needs full history, which `fetch-depth: 0` below already
+# provides. If someone renames or moves this file, the derivation finds
+# nothing — and that is reported as exit 3 ("could not determine"), never as a
+# silent "no cutoff", which would put every PR ever merged back in scope.
 #
 # =============================================================================
-# THE CATALOG SCAN (on-promotion count + AC-10 translation review) — INLINE
+# THE REVIEW (D-3', 2026-09-08) — this workflow is where the owner reviews
 # =============================================================================
+# The sign-off no longer asks whether a change is a novelty: it WRITES the
+# entry, always, unpublished. The review happens here, on the promotion, over
+# all of them at once. So the listing below is not a nicety — it is the review
+# surface. It prints each pending entry IN FULL (id, audience, title, body) so
+# reviewing is reading this log, and names the one command that withdraws the
+# ones the owner does not want (`hops whats-new drop <id>...`).
+#
+# It is deliberately INFORMATIVE: it never fails the job on its own. An entry
+# nobody wants costs nothing until the promotion publishes it, so there is
+# nothing here to block on.
+#
+# =============================================================================
+# THE CATALOG SCAN (AC-10 translation review) — INLINE, and why it is not the
+# same reader as the review listing
+# =============================================================================
+# Two steps read the same file and that is deliberate, not drift: the shell
+# scan below answers a per-FIELD question (is this due entry's translation
+# still 'machine'?) that `grep` answers exactly, while the review listing runs
+# `hops whats-new pending`, which needs whole entries — including body.es,
+# free Spanish prose whose apostrophes and braces defeat a positional read.
+# They share an extraction TECHNIQUE, never a decision: nothing the listing
+# prints can fail the job, and nothing the scan checks is re-checked there.
+#
 # Reading `apps/api/src/data/whats-new/whats-new.ts` for its entries has no
 # existing shared implementation to invoke: it is plain TypeScript (not
 # JSON), and there is no `hops whats-new` sub-command for it — the "local
@@ -145,6 +173,17 @@ jobs:
         run: |
           set -euo pipefail
           rm -f /tmp/whats-new-gate-failures.log /tmp/whats-new-gate-unknown.log
+
+      # `hops` is set up unconditionally, not only for the promotion mode: the
+      # review listing below runs in BOTH modes, because a hotfix straight into
+      # `main` can carry an unpublished entry too, and the owner reviewing it
+      # there needs to see the same text.
+      - name: Set up bun (for hops whats-new)
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install client-tools dependencies
+        working-directory: scripts/client-tools
+        run: bun install --frozen-lockfile
 
       # ---------------------------------------------------------------------
       # Catalog scan — always runs, in both modes (a hotfix CAN touch
@@ -233,7 +272,7 @@ jobs:
           done <<<"${ENTRY_BLOCKS}"
 
           echo ""
-          echo "on-promotion entries (unresolved marker, not yet due, never blocks): ${ON_PROMOTION_COUNT}"
+          echo "on-promotion entries (unresolved marker, never blocks): ${ON_PROMOTION_COUNT} — listed in full by the next step."
           if [[ "${FAILURE_COUNT}" -eq 0 ]]; then
               echo "OK — no live entry has an overdue machine translation."
           else
@@ -241,18 +280,30 @@ jobs:
           fi
 
       # ---------------------------------------------------------------------
+      # THE REVIEW — every entry awaiting the owner, printed in full.
+      #
+      # Informative by design: `hops whats-new pending` answers 0 when it could
+      # read the catalog (whatever it found) and 3 when it could NOT, and only
+      # the 3 reaches the unknown log. Nothing here can block a promotion,
+      # because an unwanted entry costs nothing until this promotion publishes
+      # it — the owner withdraws it with `hops whats-new drop` and re-runs.
+      # ---------------------------------------------------------------------
+      - name: List the entries awaiting review (hops whats-new pending)
+        working-directory: scripts/client-tools
+        run: |
+          set -o pipefail
+          bun run bin/hops-whats-new pending 2>&1 | tee /tmp/whats-new-gate-pending.txt
+          rc="${PIPESTATUS[0]}"
+          if [[ "${rc}" -eq 3 ]]; then
+              cat /tmp/whats-new-gate-pending.txt >> /tmp/whats-new-gate-unknown.log
+          elif [[ "${rc}" -ne 0 ]]; then
+              echo "UNKNOWN: hops whats-new pending exited with an unexpected code ${rc}." | tee -a /tmp/whats-new-gate-unknown.log
+          fi
+
+      # ---------------------------------------------------------------------
       # Mode 1 — staging -> main promotion (or a manual workflow_dispatch):
       # audit the WHOLE range via the shared `hops whats-new audit` binary.
       # ---------------------------------------------------------------------
-      - name: Set up bun (for hops whats-new audit)
-        if: github.event_name == 'workflow_dispatch' || github.head_ref == 'staging'
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install client-tools dependencies
-        if: github.event_name == 'workflow_dispatch' || github.head_ref == 'staging'
-        working-directory: scripts/client-tools
-        run: bun install --frozen-lockfile
-
       - name: Audit the staging -> main range (hops whats-new audit)
         if: github.event_name == 'workflow_dispatch' || github.head_ref == 'staging'
         working-directory: scripts/client-tools
