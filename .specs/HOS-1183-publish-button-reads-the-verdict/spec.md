@@ -166,6 +166,65 @@ Route tests for the three verdicts plus 401 · a unit test per branch of the sha
 
 Two of these assert an ABSENCE (AC-12b, AC-17), which is the shape that passes for the wrong reason most easily — a typo in the selector reads as "not there". Each one needs a sibling that asserts the same string IS present in the state that should show it, or the pair proves nothing.
 
+## 9b. Amendments made during implementation
+
+Five things the spec did not say, each found by measuring rather than by
+re-reading it. Recorded here because a spec that no longer describes what
+shipped is worse than no spec.
+
+### A-1 · The staff billing bypass had to be mirrored (not in any AC)
+
+`publish()` resolves the owner's roles and skips the eligibility check entirely
+for ADMIN / SUPER_ADMIN / CLIENT_MANAGER. An endpoint that did not do the same
+would show a staff owner the plans link while the server published them on
+request — this spec's own bug, in a narrower audience. `getPublishEligibility`
+runs the same two steps in the same order, and reports the billing verdict
+**verbatim** rather than rewriting it to something flattering, so a staff
+account stays distinguishable from a paying one in any later diagnosis.
+
+### A-2 · The response carries three fields, not the two of AC-1
+
+`startsTrial` joined `{ eligibility, canPublish }`. Deriving the trial line from
+`eligibility === 'first_publish'` in the client would be a verdict comparison in
+exactly the place this spec is removing them from, and it is **wrong for staff**:
+they publish on any verdict and are never granted a trial, so the line would
+promise a clock that never starts.
+
+### A-3 · A second predicate, found by AC-4's guard
+
+The guard's first run flagged `startsLocalTrial = eligibility === 'first_publish'`
+inside `publish()`. It is a different rule about the same verdict and it runs the
+other way: `publishEligibilityStartsLocalTrial` is stated by **inclusion**,
+because publishing a verdict nobody has reasoned about is a listing going live,
+while granting one writes thirty free days to `billing_subscriptions`. Only the
+second is worth failing closed for.
+
+### A-4 · `publishSubscriptionRequiredMessage` was a live production lie
+
+AC-12b asked that no trial promise appear on `subscription_required`. It already
+did: the message read "Si es tu primera suscripción, empezás con {{trialDays}}
+días gratis" — shown to the one owner whose trial is provably spent, and whom no
+checkout will grant another. Corrected in es/en/pt, and the key lost its plural
+forms with the day count.
+
+### A-5 · The post-edit dialog is IN, scoped by the owner (2026-09-08)
+
+§4 listed it as out of scope. The owner asked for it in the same session that
+approved this work, with one constraint: **only the first save**.
+
+"First" is implemented as a TRANSITION — not publishable before the save,
+publishable after — which fires once by construction and needs no stored flag.
+It also cannot fire on a save that leaves work behind, which would offer a
+publish the server refuses (H-99, one screen over), nor for an owner billing
+would refuse, since the request was for a dialog that offers the publish CTA and
+there is none to offer.
+
+Only two of the editor's eleven routes can produce that save, and the set is
+DERIVED from `ACCOMMODATION_PUBLISH_REQUIREMENTS[].editorSectionId` rather than
+assumed. A static guard fails CI if a sixth requirement lands in a third
+section — the failure is otherwise invisible: the owner who completes their
+listing there is told nothing, with no error anywhere and every test green.
+
 ## 10. Sequencing
 
 The implementation branch is cut **after PR #3223 (HOS-1156) merges** — that PR touches two of the four files in the chain, and working both in parallel guarantees a conflict.
