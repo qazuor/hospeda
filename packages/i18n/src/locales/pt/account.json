@@ -1233,6 +1233,7 @@
             "one_time": "Pagamento único",
             "recurring": "Mensal"
         },
+        "recurringNotice": "É uma assinatura: renova sozinha e é cobrada todos os meses até você cancelá-la.",
         "duration_one": "{{count}} dia",
         "duration_other": "{{count}} dias",
         "priceLabel": "Preço",

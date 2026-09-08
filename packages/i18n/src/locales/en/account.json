@@ -1233,6 +1233,7 @@
             "one_time": "One-time",
             "recurring": "Monthly"
         },
+        "recurringNotice": "This is a subscription: it renews on its own and you are charged every month until you cancel it.",
         "duration_one": "{{count}} day",
         "duration_other": "{{count}} days",
         "priceLabel": "Price",
