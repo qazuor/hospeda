@@ -30,10 +30,13 @@
  *   never reaches `billing.subscriptions.create`. Passing the plan id to the
  *   provider instead (`providerPriceId`) builds MercadoPago's "subscription
  *   WITH an associated plan" request, which it rejects with "card_token_id is
- *   required" — every checkout behind the flag answered 500 for that. The one
- *   caller that still supplies `providerPriceId` is the recurring add-on, which
- *   borrows another price row and needs its own MP plan to charge the right
- *   amount; its stamp still works, which the sibling test below pins.
+ *   required" — every checkout behind the flag answered 500 for that. NO caller
+ *   supplies `providerPriceId` any more: HOS-847 closed the last one. The
+ *   recurring add-on borrows another plan's price row, and it now STATES
+ *   `providerUnitAmountOverride = addon.priceArs` instead of sending its own MP
+ *   plan id. What the sibling tests below pin is that the bookkeeping stamp is
+ *   written from `mpPreapprovalPlanId` ALONE — `providerPriceId` no longer
+ *   back-fills it — and that neither field reaches the provider create call.
  *
  * @module test/services/billing/own-preapproval-subscription-create
  */
