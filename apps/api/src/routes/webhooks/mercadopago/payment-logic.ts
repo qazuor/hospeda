@@ -41,6 +41,7 @@ import { AddonService } from '../../../services/addon.service';
 import { normalizeAddonCheckoutMetadata } from '../../../services/addon-checkout-metadata';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { recordOrphanPayment } from '../../../services/billing/orphan-payment-queue.service';
+import { persistMpPayerEmailBestEffort } from '../../../services/billing/payer-email';
 import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
 import { isAccommodationDomainSubscription } from '../../../services/billing/plan-domain-guard';
 import { restoreCommerceListingsForUpgrade } from '../../../services/commerce-downgrade-remediation.service';
@@ -1339,6 +1340,53 @@ function resolvePaymentCustomerId(metadata: Record<string, unknown> | undefined)
 }
 
 /**
+ * Record the email that actually paid onto `billing_customers.mp_payer_email`.
+ *
+ * Covers the payments that arrive here carrying their customer in `metadata`:
+ * add-on purchases, plan upgrades, annual confirmations. A recurring
+ * subscription charge does NOT — it arrives with `metadata: {}` (measured on
+ * payment `177923168044`) — and is handled by the sibling recording in
+ * `subscription-payment-handler.ts`, which resolves the customer from
+ * `billing_subscriptions.mp_subscription_id` instead of from the payload.
+ *
+ * Two guards, and each one is the whole point of a separate half of HOS-1234:
+ *
+ * - **`settled`** — only a payment MercadoPago cleared may write. The column is
+ *   defined as "the last email MercadoPago actually accepted", and the value is
+ *   later used to STOP asking the user which address to bill. Writing an
+ *   unconfirmed address would suppress that question on the next checkout while
+ *   pointing at an account that cannot pay, and the common failure is not even a
+ *   rejected charge — it is a user who abandons MercadoPago's page, which emits
+ *   no failure event at all and so could never be corrected.
+ * - **a non-empty `payerEmail`** — MercadoPago reports "no email" as `''` on a
+ *   preapproval, and an empty string is falsy enough to slip through an
+ *   inattentive guard yet still a `string`. The adapter already collapses it to
+ *   `null` (qzpay >= 2.11.0); this is the second line of that defense.
+ *
+ * Best-effort throughout, exactly like the persist it wraps: a payment must
+ * never fail to process because a bookkeeping column could not be updated.
+ */
+async function recordConfirmedPayerEmail(input: {
+    readonly payerEmail: string | null | undefined;
+    readonly metadataCustomerId: string | null;
+    readonly settled: boolean;
+    readonly source: string;
+}): Promise<void> {
+    const { payerEmail, metadataCustomerId, settled, source } = input;
+
+    if (!settled || !payerEmail || !metadataCustomerId) {
+        return;
+    }
+
+    await persistMpPayerEmailBestEffort({ customerId: metadataCustomerId, payerEmail });
+
+    apiLogger.info(
+        { customerId: metadataCustomerId, source },
+        'HOS-1234: recorded the confirmed MercadoPago payer email for this customer'
+    );
+}
+
+/**
  * The idempotency key identifying "the payment-success receipt for THIS
  * MercadoPago payment".
  *
@@ -1515,6 +1563,21 @@ export async function processPaymentUpdated({
         settled !== null && customerId !== null && providerPaymentId !== null
             ? await wasPaymentSuccessAlreadyDispatched({ customerId, providerPaymentId, source })
             : false;
+
+    // HOS-1234: a cleared payment is the ONLY moment MercadoPago tells us which
+    // email actually paid, so this is the only place the confirmed value can be
+    // recorded. Gated on `settled` deliberately: an attempted-but-failed charge
+    // proves nothing about the address, and writing it would defeat the whole
+    // point of the column (see `recordConfirmedPayerEmail`).
+    // `data` is a bare `Record<string, unknown>` here, so the field is narrowed
+    // at the call site — the same way `external_reference` is read everywhere
+    // else in this function.
+    await recordConfirmedPayerEmail({
+        payerEmail: typeof data.payer_email === 'string' ? data.payer_email : null,
+        metadataCustomerId: customerId,
+        settled: settled !== null,
+        source
+    });
 
     // Dispatch payment status notifications
     if (paymentInfo && customerId) {

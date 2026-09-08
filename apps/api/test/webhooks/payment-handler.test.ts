@@ -246,6 +246,101 @@ describe('handlePaymentUpdated', () => {
         expect(call.data.transaction_amount).not.toBe(AMOUNT_CENTAVOS);
     });
 
+    // HOS-1234. These assert the payload this handler BUILDS, not what a
+    // downstream test hands to `processPaymentUpdated` by hand. That distinction
+    // is the whole reason they exist: the first version of HOS-1234 was reviewed
+    // green because its tests injected a `data` object directly into the
+    // consumer, so nobody noticed the producer could not actually populate the
+    // field the consumer depended on.
+    describe('HOS-1234: the payload this producer actually builds', () => {
+        it('forwards the payer email the adapter mapped off the payment', async () => {
+            vi.mocked(getWebhookDependencies).mockReturnValue(
+                makeDependencies({
+                    retrieve: vi.fn().mockResolvedValue({
+                        id: '987',
+                        amount: 15_000,
+                        currency: 'ARS',
+                        status: 'approved',
+                        metadata: {},
+                        payerEmail: 'quien.pago@example.com'
+                    })
+                })
+            );
+            vi.mocked(processPaymentUpdated).mockResolvedValue({
+                success: true,
+                addonConfirmed: false
+            } as never);
+
+            await handlePaymentUpdated(makeMockContext() as never, makeEvent());
+
+            const call = vi.mocked(processPaymentUpdated).mock.calls[0]?.[0] as unknown as {
+                data: Record<string, unknown>;
+            };
+            expect(call.data.payer_email).toBe('quien.pago@example.com');
+        });
+
+        it('reports a payer email the adapter did not map as null, never undefined', async () => {
+            // qzpay < 2.11.0 does not map the field at all. The key must still be
+            // present and explicitly null so "the adapter gave nothing" is
+            // visible in a log rather than an absent property.
+            vi.mocked(getWebhookDependencies).mockReturnValue(
+                makeDependencies({
+                    retrieve: vi.fn().mockResolvedValue({
+                        id: '987',
+                        amount: 15_000,
+                        currency: 'ARS',
+                        status: 'approved',
+                        metadata: {}
+                    })
+                })
+            );
+            vi.mocked(processPaymentUpdated).mockResolvedValue({
+                success: true,
+                addonConfirmed: false
+            } as never);
+
+            await handlePaymentUpdated(makeMockContext() as never, makeEvent());
+
+            const call = vi.mocked(processPaymentUpdated).mock.calls[0]?.[0] as unknown as {
+                data: Record<string, unknown>;
+            };
+            expect(call.data.payer_email).toBeNull();
+        });
+
+        it('cannot supply external_reference, because the adapter shape has none', async () => {
+            // Freezes the constraint that broke the first attempt at HOS-1234.
+            // `QZPayProviderPayment` -- everything this handler has to build from
+            // -- declares no `externalReference`, so any consumer logic keyed on
+            // `data.external_reference` is unreachable from the live webhook.
+            // If a future qzpay release adds it and this handler starts
+            // forwarding it, this test SHOULD fail: that is the signal to revisit
+            // the customer-resolution path, not to delete the assertion.
+            vi.mocked(getWebhookDependencies).mockReturnValue(
+                makeDependencies({
+                    retrieve: vi.fn().mockResolvedValue({
+                        id: '987',
+                        amount: 15_000,
+                        currency: 'ARS',
+                        status: 'approved',
+                        metadata: {},
+                        payerEmail: 'quien.pago@example.com'
+                    })
+                })
+            );
+            vi.mocked(processPaymentUpdated).mockResolvedValue({
+                success: true,
+                addonConfirmed: false
+            } as never);
+
+            await handlePaymentUpdated(makeMockContext() as never, makeEvent());
+
+            const call = vi.mocked(processPaymentUpdated).mock.calls[0]?.[0] as unknown as {
+                data: Record<string, unknown>;
+            };
+            expect(call.data.external_reference).toBeUndefined();
+        });
+    });
+
     // -------------------------------------------------------------------------
     // RED tests: transient error swallow fix (T-007)
     // -------------------------------------------------------------------------

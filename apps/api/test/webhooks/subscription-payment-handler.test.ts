@@ -105,6 +105,27 @@ vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
 }));
 
+// HOS-1234: the payer-email recording. Both halves are stubbed so a test can
+// assert what was read and what was written without a live `billing_customers`.
+const { mockGetMpPayerEmail, mockPersistMpPayerEmail } = vi.hoisted(() => ({
+    mockGetMpPayerEmail: vi.fn().mockResolvedValue(null),
+    mockPersistMpPayerEmail: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../src/services/billing/payer-email', () => ({
+    getMpPayerEmail: (...args: unknown[]) => mockGetMpPayerEmail(...args),
+    persistMpPayerEmailBestEffort: (...args: unknown[]) => mockPersistMpPayerEmail(...args)
+}));
+
+/**
+ * Drain the microtask queue so a `void`-dispatched recording finishes.
+ *
+ * The handler fires the payer-email recording fire-and-forget (a settled charge
+ * must never wait on a bookkeeping column), so awaiting the handler alone does
+ * NOT await it.
+ */
+const flushFireAndForget = () => new Promise((resolve) => setImmediate(resolve));
+
 // `@repo/db` is mocked at the module level so the handler can call
 // `getDb()` and we can drive the row results per-test.
 const subLookupResult: {
@@ -850,6 +871,118 @@ describe('handleSubscriptionAuthorizedPayment', () => {
     // `trialing` with an elapsed trial_end — and the trial middleware answers
     // that state with HTTP 402 on every write, for up to 24h, right after they
     // paid.
+    // HOS-1234. This is the recording path for SUBSCRIPTION charges, and the
+    // trustworthy one: the customer comes from
+    // `billing_subscriptions.mp_subscription_id` rather than from anything on
+    // the payload. A preapproval can never answer "which email paid" -- it
+    // reports `payer_email` present and empty -- so the address is read off the
+    // settled payment.
+    describe('HOS-1234: recording the payer email of a settled charge', () => {
+        /** Billing mock whose adapter can actually answer a payment retrieve. */
+        function setupWithAdapter(retrieve: ReturnType<typeof vi.fn>) {
+            const record = vi.fn().mockResolvedValue(RECORD_OK);
+            vi.mocked(getWebhookDependencies).mockReturnValue({
+                billing: { payments: { record } },
+                paymentAdapter: { payments: { retrieve } }
+            } as never);
+            return { record };
+        }
+
+        beforeEach(() => {
+            mockGetMpPayerEmail.mockClear().mockResolvedValue(null);
+            mockPersistMpPayerEmail.mockClear();
+            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+            dedupeResult.rows = [];
+        });
+
+        it('reads the payment and records the email against the subscription customer', async () => {
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            const retrieve = vi
+                .fn()
+                .mockResolvedValue({ id: 'mp-pay-99', payerEmail: 'quien.pago@example.com' });
+            setupWithAdapter(retrieve);
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+            await flushFireAndForget();
+
+            expect(retrieve).toHaveBeenCalledWith('mp-pay-99');
+            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
+                customerId: 'cust-1',
+                payerEmail: 'quien.pago@example.com'
+            });
+        });
+
+        it('does NOT call MercadoPago again once the customer already has an email', async () => {
+            // The point of the feature: the address is asked for once and then
+            // reused, so steady-state renewals add no provider traffic at all.
+            mockGetMpPayerEmail.mockResolvedValue('ya.lo.sabemos@example.com');
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            const retrieve = vi.fn();
+            setupWithAdapter(retrieve);
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+            await flushFireAndForget();
+
+            expect(retrieve).not.toHaveBeenCalled();
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT record anything for a charge that did not clear', async () => {
+            // The load-bearing guard. A rejected charge says nothing about the
+            // address, and storing it would suppress the payer-email dialog on
+            // the next checkout while naming an account that cannot pay.
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+                fetchOk(makeDetails({ paymentStatus: 'rejected', status: 'recycling' }))
+            );
+            const retrieve = vi.fn();
+            setupWithAdapter(retrieve);
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+            await flushFireAndForget();
+
+            expect(retrieve).not.toHaveBeenCalled();
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT record an email the payment did not carry', async () => {
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupWithAdapter(vi.fn().mockResolvedValue({ id: 'mp-pay-99', payerEmail: null }));
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+            await flushFireAndForget();
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT record an empty string the adapter let through', async () => {
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupWithAdapter(vi.fn().mockResolvedValue({ id: 'mp-pay-99', payerEmail: '' }));
+
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+            await flushFireAndForget();
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('a failed provider read never turns a settled charge into a failed event', async () => {
+            // The charge is already on record by the time this runs. A
+            // bookkeeping column must never cost us the ACK and send MercadoPago
+            // into a retry loop over a payment we already booked.
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            const { record } = setupWithAdapter(vi.fn().mockRejectedValue(new Error('MP timeout')));
+
+            await expect(
+                handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+            ).resolves.toBeUndefined();
+            await flushFireAndForget();
+
+            expect(record).toHaveBeenCalledOnce();
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+            expect(markEventProcessedByProviderId).toHaveBeenCalledOnce();
+            expect(markEventFailedByProviderId).not.toHaveBeenCalled();
+        });
+    });
+
     describe('card-first trial conversion (HOS-171)', () => {
         /**
          * A local row mid-trial, whose day-N charge is what this event reports.

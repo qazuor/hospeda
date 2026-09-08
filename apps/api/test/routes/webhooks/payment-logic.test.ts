@@ -52,6 +52,19 @@ vi.mock('../../../src/routes/webhooks/mercadopago/notifications', () => ({
     sendPaymentFailureNotifications: vi.fn().mockResolvedValue(undefined)
 }));
 
+// HOS-1234. Spied rather than replaced wholesale: the module also exports
+// `resolvePayerEmail`, `getMpPayerEmail` and `clearMpPayerEmailBestEffort`, and
+// a whole-module factory would hand `undefined` to anything in the import graph
+// that reaches for one of those.
+const { mockPersistMpPayerEmail } = vi.hoisted(() => ({
+    mockPersistMpPayerEmail: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../../src/services/billing/payer-email', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    persistMpPayerEmailBestEffort: (...args: unknown[]) => mockPersistMpPayerEmail(...args)
+}));
+
 vi.mock('../../../src/routes/webhooks/mercadopago/utils', () => ({
     extractPaymentInfo: vi.fn().mockReturnValue(null),
     extractAddonMetadata: vi.fn().mockReturnValue(null),
@@ -492,6 +505,122 @@ describe('processPaymentUpdated', () => {
     });
 
     // ── PostHog subscription_payment_succeeded (this task) ─────────────────
+    // HOS-1234. `billing_customers.mp_payer_email` is defined as "the last email
+    // MercadoPago actually accepted", and its value is later used to STOP asking
+    // the user which address to bill. Every case here defends that definition:
+    // what may write it, and what must not.
+    describe('HOS-1234: recording the confirmed payer email', () => {
+        const clearedPayment = {
+            amount: asMajor(1000),
+            currency: 'ARS',
+            status: 'succeeded',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        };
+
+        beforeEach(() => {
+            mockPersistMpPayerEmail.mockClear();
+        });
+
+        it('records the payer email of a cleared payment against the metadata customer', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+
+            await processPaymentUpdated({
+                data: {
+                    metadata: { customerId: 'cust-1' },
+                    payer_email: 'quien.pago@example.com'
+                },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
+                customerId: 'cust-1',
+                payerEmail: 'quien.pago@example.com'
+            });
+        });
+
+        it('does NOT record it when the payment did not clear', async () => {
+            // The load-bearing guard. An address that failed to pay -- or, far
+            // more often, one whose payer walked away from MercadoPago's page
+            // without paying at all -- must never be stored: it would suppress
+            // the payer-email dialog on the next checkout while pointing at an
+            // account that cannot pay, and the abandonment case emits no failure
+            // event that could ever correct it.
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                ...clearedPayment,
+                status: 'failed'
+            });
+
+            await processPaymentUpdated({
+                data: {
+                    metadata: { customerId: 'cust-1' },
+                    payer_email: 'no.pudo.pagar@example.com'
+                },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT record anything when the provider reported no payer email', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' }, payer_email: null },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT record an empty string the adapter let through', async () => {
+            // Second line of defense behind qzpay's own `|| null`. MercadoPago
+            // spells "no email" as `''`, which is falsy enough to look handled
+            // and still a `string`, so it would type-check its way into the
+            // column.
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' }, payer_email: '' },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT guess a customer when the payment metadata carries none', async () => {
+            // A recurring subscription charge arrives exactly like this --
+            // `metadata: {}`, measured on payment 177923168044 -- and it is
+            // deliberately NOT recorded here. `external_reference` is the only
+            // other identifier on the payload and it is overloaded three ways
+            // (anti-IDOR nonce, local subscription id, qzpay session id), two of
+            // them UUID-shaped; resolving a customer from it would be a guess.
+            // Subscription charges are recorded by `subscription-payment-handler`
+            // instead, which resolves the customer from
+            // `billing_subscriptions.mp_subscription_id`.
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+            annualDbState.subRows = [
+                { id: 'sub-1', customerId: 'must-not-be-used', status: 'active' }
+            ];
+
+            await processPaymentUpdated({
+                data: {
+                    metadata: {},
+                    external_reference: '54793281-f280-4a24-b2e3-8a02b5f38102',
+                    payer_email: 'quien.pago@example.com'
+                },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+    });
+
     describe('PostHog subscription_payment_succeeded capture', () => {
         it('captures subscription_payment_succeeded on an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
