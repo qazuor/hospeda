@@ -64,9 +64,20 @@
 --   follow-up once this index is confirmed present in every environment.
 --
 -- Idempotency:
---   CREATE UNIQUE INDEX IF NOT EXISTS is idempotent. NOT created CONCURRENTLY —
---   the extras carril applies files in a single block (a transaction), and
---   CONCURRENTLY cannot run inside a transaction.
+--   CREATE UNIQUE INDEX IF NOT EXISTS is idempotent. NOT created CONCURRENTLY,
+--   and NOT because it could not be: the runner
+--   (packages/db/scripts/apply-postgres-extras.mjs) issues one `client.query()`
+--   per FILE, so a single-statement file like this one is not inside any
+--   explicit transaction block and CONCURRENTLY would be accepted. The reason
+--   is cost: `billing_addon_purchases` is small, so the ACCESS EXCLUSIVE lock
+--   this CREATE takes lasts milliseconds, while CONCURRENTLY doubles the table
+--   scans and can leave an INVALID index behind on failure — a worse thing to
+--   hand a human than a fast, atomic failure.
+--
+--   One caveat if this file ever grows a second statement: Postgres wraps a
+--   multi-statement simple query in an IMPLICIT transaction block, and
+--   CONCURRENTLY genuinely cannot run there. Then the "could not" would be
+--   true — it just is not true today.
 -- =============================================================================
 
 CREATE UNIQUE INDEX IF NOT EXISTS billing_addon_purchases_mp_id_uniq

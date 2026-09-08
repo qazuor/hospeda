@@ -93,7 +93,13 @@ describe('041 add-on purchases mp_subscription_id unique index', () => {
         expect(executableSql).toMatch(/WHERE\s+mp_subscription_id\s+IS\s+NOT\s+NULL/i);
     });
 
-    it('is not CONCURRENTLY — the extras carril applies files inside a transaction', () => {
+    it('is not CONCURRENTLY — a millisecond lock on a small table beats an INVALID index', () => {
+        // NOT because it would be illegal here: `apply-postgres-extras.mjs`
+        // issues one `client.query()` per FILE, so this single-statement file
+        // runs in no explicit transaction block and CONCURRENTLY would be
+        // accepted. It is simply not worth it on a small table — the plain
+        // CREATE holds its lock for milliseconds and fails atomically, where a
+        // failed CONCURRENTLY leaves an INVALID index behind.
         expect(executableSql).not.toMatch(/CONCURRENTLY/i);
     });
 
