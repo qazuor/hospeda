@@ -39,8 +39,12 @@
  */
 
 import { productDomainForPlanSlug } from '@repo/billing';
-import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
-import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
+import { ProductDomainEnum, type ProductDomainValue, ServiceErrorCode } from '@repo/schemas';
+import {
+    hydrateSubscriptionProductDomains,
+    ServiceError,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import { apiLogger } from '../../utils/logger';
 
 /**
@@ -175,4 +179,121 @@ export async function isAccommodationDomainSubscription(subscription: {
         );
     }
     return subscriptionMatchesDomain(resolved, 'accommodation');
+}
+
+/**
+ * Picks the ACCOMMODATION-domain subscription out of a customer's subscriptions
+ * (HOS-1213).
+ *
+ * ## Why picking the first one was wrong
+ *
+ * `POST /protected/billing/subscriptions/change-plan` took the first
+ * `active | trialing` subscription `getByCustomerId` returned, in whatever order
+ * the storage adapter produced. That was correct only while a customer could
+ * hold ONE subscription. Since the per-vertical split (HOS-688) one billing
+ * customer legitimately holds up to three at once — accommodation, gastronomy,
+ * experience — and this route governs the accommodation one alone: commerce
+ * tiers change through `POST /protected/commerce/{vertical}/change-plan`
+ * (HOS-1119), which dispatches on the vertical it is called for.
+ *
+ * So the unqualified `find` could mutate a subscription the caller never named,
+ * and did so silently: every guard downstream reasons about the subscription it
+ * was handed, so a plan change applied to the wrong vertical looks exactly like
+ * one applied to the right one.
+ *
+ * ## It fails OPEN toward accommodation, for the same reason its neighbour does
+ *
+ * Selection runs over hydrated rows, and `subscriptionMatchesDomain` reads a
+ * missing or `null` `productDomain` as accommodation because the column
+ * post-dates most rows (SPEC-239). A failed hydration degrades to the
+ * un-hydrated input rather than to a refusal, which lands on exactly the
+ * behaviour this call site had before — a host with one subscription keeps
+ * changing plans through a database blip. What it no longer does is reach for a
+ * commerce subscription when the accommodation one is absent: those rows carry
+ * a real domain string, so they are excluded on their own value, not on a
+ * default.
+ *
+ * @param subscriptions - Candidate subscriptions, already narrowed to the
+ *   statuses the caller considers changeable.
+ * @returns The first accommodation-domain subscription, or `undefined` when the
+ *   customer holds none — which the caller must answer the same way it answers
+ *   "no subscription at all", because for this route that is what it means.
+ */
+export async function selectAccommodationSubscription<
+    T extends { id: string; productDomain?: string | null }
+>(subscriptions: readonly T[]): Promise<T | undefined> {
+    if (subscriptions.length === 0) {
+        return undefined;
+    }
+
+    let resolved: readonly (T & { productDomain?: string | null })[] = subscriptions;
+    try {
+        resolved = await hydrateSubscriptionProductDomains(subscriptions);
+    } catch (error) {
+        apiLogger.warn(
+            {
+                subscriptionIds: subscriptions.map((sub) => sub.id),
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Product-domain hydration failed — selecting the accommodation subscription un-hydrated'
+        );
+    }
+
+    return resolved.find((sub) => subscriptionMatchesDomain(sub, 'accommodation'));
+}
+
+/**
+ * Asserts that a plan-change request does not name a plan from ANOTHER product
+ * domain (HOS-1213).
+ *
+ * ## What this does and does not defend
+ *
+ * It is NOT what closes HOS-1213, and reading it as such would leave the real
+ * hole open. That bug offered `tourist-free` and `tourist-vip` against a
+ * gastronomy subscription — and both of those are ACCOMMODATION-domain plans, so
+ * no assertion about the target could have refused them. What closes it is
+ * {@link selectAccommodationSubscription}: the route no longer reaches a
+ * commerce subscription at all, so a gastronomy owner asking for a tourist plan
+ * now gets "no active subscription found" instead of a scheduled downgrade of
+ * the subscription they pay for.
+ *
+ * This assertion covers the opposite direction, which was equally unguarded: an
+ * accommodation subscription being moved onto `gastronomy-pro` or a partner
+ * tier. Nothing compared the two domains, so any active plan in the catalogue
+ * was accepted, and the downgrade remediation would then reason about a host's
+ * accommodations from a commerce plan whose caps declare nothing about them —
+ * the same shape of failure HOS-1122 documents at the top of this module.
+ *
+ * ## Fails OPEN on an unknown slug, and that is not the fail-closed posture
+ * `isAccommodationPlanSlug` was written for
+ *
+ * That helper answers `false` for any slug outside the static catalogues, which
+ * is right where it is used: the remediation services resolve an unrecognised
+ * plan's caps as *unlimited*, so a slug they cannot place must be refused. Here
+ * the cost of refusing runs the other way. HOS-1062 made the catalogue open —
+ * one plan row per negotiated agreement, created in admin and present in no
+ * `ALL_PLANS` — so treating "not in the static catalogue" as "not accommodation"
+ * would reject every plan change onto a negotiated plan, which is a live
+ * feature, in order to guard against a plan whose domain we cannot even name.
+ *
+ * So the refusal is narrow and positive: only a slug that resolves to a domain,
+ * and to a domain other than accommodation, is rejected.
+ *
+ * @param planSlug - The target plan's catalogue slug (`billing_plans.name`).
+ * @throws {ServiceError} `VALIDATION_ERROR` when the slug resolves to a
+ *   non-accommodation domain. Not a 404: the plan exists, it just is not one an
+ *   accommodation subscription can move to.
+ */
+export function assertAccommodationPlanChangeTarget(planSlug: string): void {
+    const resolved = productDomainForPlanSlug(planSlug);
+    if (resolved === undefined || resolved === ProductDomainEnum.ACCOMMODATION) {
+        return;
+    }
+
+    throw new ServiceError(
+        ServiceErrorCode.VALIDATION_ERROR,
+        `Plan '${planSlug}' belongs to product domain '${resolved}' and cannot be applied to an accommodation subscription.`,
+        undefined,
+        'PLAN_DOMAIN_MISMATCH'
+    );
 }

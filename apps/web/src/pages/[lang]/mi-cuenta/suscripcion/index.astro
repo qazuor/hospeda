@@ -16,6 +16,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { userApi } from '@/lib/api/endpoints-protected';
 import {
 	resolveActiveSubscriptionDomain,
@@ -115,18 +116,49 @@ const islandUser = {
 };
 
 /**
- * Fetch plans server-side so the PlanChangeFlow island has the full plan
- * catalog without an extra client-side request. Degrades gracefully on error
- * (island falls back to the plain pricing-page link).
+ * Fetch plans server-side so the plan-change island has the full catalogue
+ * without an extra client-side request. Degrades gracefully on error (the
+ * island falls back to the plain pricing-page link).
  *
- * The plan category depends on the user's audience (BETA-173): a host sees
- * owner plans (Basic/Professional/Premium), a tourist sees tourist plans
- * (Plus/VIP) — matching the same host-tier split used for the "Ver
- * planes" CTA (BETA-165).
+ * ## The catalogue follows `productDomain`, not the caller's roles (HOS-1213)
+ *
+ * This page resolved `productDomain` fifty lines up and then fetched the plan
+ * catalogue with NO `?domain=` at all, so the endpoint served its
+ * `accommodation` default — for all three dashboards. The category was then
+ * picked by ROLE, and a commerce owner has no accommodation nav access, so it
+ * resolved to `'tourist'`: the "Cambiar plan" dialog of a $30.000 gastronomy
+ * subscription offered `tourist-free` ($0) and `tourist-vip` ($15.000), both
+ * labelled as upgrades. Choosing either scheduled a real downgrade of a paid
+ * commerce subscription onto a tourist plan.
+ *
+ * The role-based split is still right for the accommodation dashboard, and only
+ * there: a host sees owner plans, a tourist sees tourist plans (BETA-173,
+ * matching the "Ver planes" CTA of BETA-165). It has no meaning in a commerce
+ * vertical, whose tiers are all `category: 'owner'` and are separated from every
+ * other catalogue by their product domain instead.
  */
+const isCommerceDomain = productDomain !== 'accommodation';
 const planCategory = hasAccommodationsNavAccess({ roles: islandUser.roles }) ? 'owner' : 'tourist';
-const plansResult = await fetchPublicPlans();
-const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, planCategory) : [];
+const plansResult = await fetchPublicPlans(isCommerceDomain ? { domain: productDomain } : {});
+
+/** Accommodation tiers for `PlanChangeFlow` — empty on a commerce dashboard. */
+const availablePlans =
+	!isCommerceDomain && plansResult.ok
+		? filterPlansByCategory(plansResult.plans, planCategory)
+		: [];
+
+/**
+ * This vertical's tiers for `CommercePlanChange` — empty on the accommodation
+ * dashboard.
+ *
+ * Selected exactly the way `mi-cuenta/comercio/index.astro` selects them (the
+ * other surface that mounts this component), so the two cannot offer different
+ * catalogues for the same vertical.
+ */
+const commercePlans =
+	isCommerceDomain && plansResult.ok
+		? filterPlansByCategory(plansResult.plans, 'owner').map(toCommercePlanOption)
+		: [];
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
@@ -169,6 +201,7 @@ const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans,
 		locale={locale}
 		user={islandUser}
 		plans={availablePlans}
+		commercePlans={commercePlans}
 		productDomain={productDomain}
 		client:load
 	/>

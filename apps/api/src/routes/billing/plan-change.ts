@@ -36,6 +36,10 @@ import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import { applyImmediatePaidPlanSwap } from '../../services/billing/immediate-plan-swap.service';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason';
+import {
+    assertAccommodationPlanChangeTarget,
+    selectAccommodationSubscription
+} from '../../services/billing/plan-domain-guard';
 import { applyTrialingPlanUpgrade } from '../../services/billing/trialing-plan-upgrade.service';
 import {
     initiatePaidPlanUpgrade,
@@ -229,10 +233,18 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
     }
 
     try {
-        // 1. Get user's active subscription
+        // 1. Get the user's active ACCOMMODATION subscription.
+        //
+        // HOS-1213: the domain qualifier is not decoration. One billing customer
+        // legitimately holds up to three subscriptions since the per-vertical
+        // split (HOS-688), and this route governs the accommodation one alone —
+        // commerce tiers move through `POST /protected/commerce/{vertical}/change-plan`.
+        // The previous unqualified `find` took whichever row the storage adapter
+        // returned first, so a host who also owns a restaurant could have the
+        // wrong subscription mutated, indistinguishably from the right one.
         const subscriptions = await billing.subscriptions.getByCustomerId(billingCustomerId);
-        const activeSubscription = subscriptions.find(
-            (sub) => sub.status === 'active' || sub.status === 'trialing'
+        const activeSubscription = await selectAccommodationSubscription(
+            subscriptions.filter((sub) => sub.status === 'active' || sub.status === 'trialing')
         );
 
         if (!activeSubscription) {
@@ -277,6 +289,20 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                 'PLAN_DISABLED'
             );
         }
+
+        // HOS-1213 guard: refuse a target from another product domain — an
+        // accommodation subscription must not be moved onto a commerce tier or a
+        // partner tier. Checked before the upgrade/downgrade classification
+        // below, because a cross-domain target is not a question about price at
+        // all. `targetPlan.name` is the catalogue slug (the same read the
+        // downgrade preview does further down).
+        //
+        // The opposite direction — a COMMERCE subscription being handed an
+        // accommodation plan, which is what HOS-1213 actually reported — is
+        // closed by the domain-scoped subscription lookup in step 1, not here:
+        // `tourist-free` is itself an accommodation plan, so no assertion about
+        // the target could have caught it.
+        assertAccommodationPlanChangeTarget(targetPlan.name as string);
 
         // 3. Reject one_time billing interval (uses a separate payment flow)
         if (billingInterval === BillingIntervalEnum.ONE_TIME) {
