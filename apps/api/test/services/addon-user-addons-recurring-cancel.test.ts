@@ -81,8 +81,11 @@ vi.mock('../../src/services/notification-recipient-locale', () => ({
     resolveRecipientLocale: vi.fn().mockResolvedValue('es')
 }));
 
+// The member carries its REAL value. A stand-in string would make any
+// assertion on the emitted `payload.type` a comparison against this file's own
+// invention rather than against what the dispatcher receives.
 vi.mock('@repo/notifications', () => ({
-    NotificationType: { ADDON_CANCELLATION: 'ADDON_CANCELLATION' }
+    NotificationType: { ADDON_CANCELLATION: 'addon_cancellation' }
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -392,7 +395,9 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         const call = vi.mocked(sendNotification).mock.calls[0];
         expect(call, 'the immediate cancellation must still mail the customer').toBeDefined();
         const payload = (call as unknown as [Record<string, unknown>])[0];
-        expect(payload.type).toBe('ADDON_CANCELLATION');
+        // The value the real enum declares, not the mock's shorthand: the
+        // dispatcher routes on this exact string.
+        expect(payload.type).toBe('addon_cancellation');
         // `toHaveProperty` rather than a truthiness check: an `accessUntil` of
         // `undefined` would still be a field the dispatcher forwards, and this
         // must be the ABSENCE the template branches on.

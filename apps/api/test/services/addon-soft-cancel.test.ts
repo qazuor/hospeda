@@ -46,8 +46,11 @@ vi.mock('../../src/services/notification-recipient-locale', () => ({
     resolveRecipientLocale: vi.fn().mockResolvedValue('es')
 }));
 
+// The member carries its REAL value: the assertion below compares the emitted
+// `type` against it, and a stand-in string would make that comparison a check
+// of this file's own invention rather than of what the dispatcher receives.
 vi.mock('@repo/notifications', () => ({
-    NotificationType: { ADDON_CANCELLATION: 'ADDON_CANCELLATION' }
+    NotificationType: { ADDON_CANCELLATION: 'addon_cancellation' }
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -184,7 +187,7 @@ describe('softCancelRecurringAddon', () => {
 
         expect(mockSendNotification).toHaveBeenCalledWith(
             expect.objectContaining({
-                type: 'ADDON_CANCELLATION',
+                type: 'addon_cancellation',
                 recipientEmail: 'owner@example.com',
                 addonName: 'Alojamientos extra',
                 addonSlug: 'extra-accommodations-20'
