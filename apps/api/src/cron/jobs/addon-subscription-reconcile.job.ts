@@ -51,6 +51,16 @@
  * a permanently failing batch, or starvation behind `BATCH_SIZE`. That is
  * reported to Sentry, loudly, by a job that is not the one that failed.
  *
+ * ## One Sentry event per fact
+ *
+ * Every alarm here reports through an explicit `Sentry.captureException` and
+ * its `logger.error` carries NO `{ capture: true }`. The two are not additive:
+ * `cron/bootstrap.ts` forwards a capturing `logger.error` to Sentry as well, so
+ * doing both files two issues, with two fingerprints, for one occurrence. The
+ * explicit call is the survivor because it carries tags and extra AND because
+ * the admin manual-trigger context (`routes/cron-admin`) drops the options
+ * argument entirely — a `{ capture: true }` reports nothing on that path.
+ *
  * @module cron/jobs/addon-subscription-reconcile
  */
 
@@ -251,9 +261,15 @@ async function reapAbandonedPendingPurchase(params: {
                     customerId: candidate.customerId,
                     addonSlug: candidate.addonSlug,
                     mpSubscriptionId
-                },
-                { capture: true }
+                }
             );
+            // One event per fact: the `Sentry.captureException` below is the
+            // only reporter. `logger.error(..., { capture: true })` would ALSO
+            // reach Sentry through `cron/bootstrap.ts`'s capture forwarding,
+            // filing a second issue with a different fingerprint for the same
+            // occurrence — and the admin manual-trigger path
+            // (`routes/cron-admin`) drops the options argument, so the explicit
+            // call is the one that reports on BOTH paths. See the module note.
             Sentry.captureException(orphanError, {
                 tags: { cronJob: 'addon-subscription-reconcile', phase: 'reap' },
                 extra: {
@@ -312,8 +328,7 @@ async function reapAbandonedPendingPurchase(params: {
                     customerId: candidate.customerId,
                     mpSubscriptionId,
                     liveStatus: liveStatus ?? null
-                },
-                { capture: true }
+                }
             );
             Sentry.captureException(hardeningError, {
                 tags: { cronJob: 'addon-subscription-reconcile', phase: 'reap' },
@@ -379,8 +394,7 @@ async function reapAbandonedPendingPurchase(params: {
                 customerId: candidate.customerId,
                 addonSlug: candidate.addonSlug,
                 mpSubscriptionId: mpSubscriptionId ?? null
-            },
-            { capture: true }
+            }
         );
         Sentry.captureException(raceError, {
             tags: { cronJob: 'addon-subscription-reconcile', phase: 'reap' },
@@ -429,8 +443,7 @@ function reportStaleRevocations(params: {
         {
             count: staleRevocations.length,
             purchaseIds: staleRevocations.map((row) => row.id)
-        },
-        { capture: true }
+        }
     );
     Sentry.captureException(driftError, {
         tags: { cronJob: 'addon-subscription-reconcile', phase: 'stale-revocation-detection' },

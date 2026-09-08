@@ -11,8 +11,9 @@
  *   preapproval and a preapproval with no local subscription row all leave the
  *   row `'pending'`; a purchase that never got a preapproval is closed without
  *   touching the provider.
- * - `reportStaleRevocations`: silent on a clean sweep, Sentry + a capturing
- *   `logger.error` when `addon-expiry` has left soft-cancelled add-ons live.
+ * - `reportStaleRevocations`: silent on a clean sweep, ONE Sentry event plus a
+ *   non-capturing `logger.error` when `addon-expiry` has left soft-cancelled
+ *   add-ons live (see the job's "One Sentry event per fact").
  * - Handler orchestration: advisory-lock skip, dry-run (alarm still fires, no
  *   provider calls), billing-unavailable skip, and the counter split that keeps
  *   a permanently-stuck orphan out of `errors`.
@@ -298,13 +299,14 @@ describe('reapAbandonedPendingPurchase', () => {
 
         expect(outcome).toEqual({ reaped: false, reason: 'cancel-unverified' });
         expect(db.update).not.toHaveBeenCalled();
+        // Exactly one Sentry event for one fact: the explicit
+        // `captureException`. A `{ capture: true }` on the log line would file
+        // a SECOND issue for the same occurrence, since cron/bootstrap.ts
+        // forwards capturing errors to Sentry too.
         expect(mockSentryCapture).toHaveBeenCalledTimes(1);
-        // `{ capture: true }` is not implicit — without it the error never
-        // reaches Sentry through the logger.
         expect(logger.error).toHaveBeenCalledWith(
             expect.stringContaining('cancel not confirmed'),
-            expect.anything(),
-            { capture: true }
+            expect.anything()
         );
     });
 
@@ -351,6 +353,12 @@ describe('reapAbandonedPendingPurchase', () => {
         expect(mockAdapterRetrieve).not.toHaveBeenCalled();
         expect(db.update).not.toHaveBeenCalled();
         expect(mockSentryCapture).toHaveBeenCalledTimes(1);
+        // Reported once. The log line takes no `{ capture: true }`, which
+        // cron/bootstrap.ts would forward as a second Sentry issue.
+        expect(logger.error).toHaveBeenCalledWith(
+            expect.stringContaining('orphan preapproval'),
+            expect.objectContaining({ purchaseId: CANDIDATE.id })
+        );
     });
 
     it('closes a purchase that never got a preapproval without touching MercadoPago', async () => {
@@ -455,8 +463,7 @@ describe('reapAbandonedPendingPurchase', () => {
         expect(mockSentryCapture).toHaveBeenCalledTimes(1);
         expect(logger.error).toHaveBeenCalledWith(
             expect.stringContaining('activated mid-sweep'),
-            expect.objectContaining({ purchaseId: CANDIDATE.id }),
-            { capture: true }
+            expect.objectContaining({ purchaseId: CANDIDATE.id })
         );
     });
 });
@@ -487,9 +494,10 @@ describe('reportStaleRevocations', () => {
         });
 
         expect(mockSentryCapture).toHaveBeenCalledTimes(1);
-        expect(logger.error).toHaveBeenCalledWith(expect.any(String), expect.anything(), {
-            capture: true
-        });
+        // Logged AND captured, but captured ONCE: the log line deliberately
+        // omits `{ capture: true }`, which cron/bootstrap.ts would forward to
+        // Sentry as a second issue for the same drift.
+        expect(logger.error).toHaveBeenCalledWith(expect.any(String), expect.anything());
         const [[loggedMessage, loggedData]] = logger.error.mock.calls as unknown as [
             [string, { count: number; purchaseIds: string[] }]
         ];
