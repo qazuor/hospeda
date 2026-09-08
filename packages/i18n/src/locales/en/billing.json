@@ -494,10 +494,6 @@
             "name": "Free",
             "description": "Save favorites, read reviews, and plan your next trip at no cost."
         },
-        "tourist-plus": {
-            "name": "Plus",
-            "description": "Price alerts, exclusive deals, accommodation comparison, and search history."
-        },
         "tourist-vip": {
             "name": "VIP",
             "description": "VIP support, exclusive promotions, and direct WhatsApp contact with hosts."

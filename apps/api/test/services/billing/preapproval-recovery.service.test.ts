@@ -49,12 +49,15 @@ function makeAdapter(status: string) {
     };
 }
 
-function makeBilling(overrides: { planPrices?: unknown[] } = {}) {
+function makeBilling(
+    overrides: { planPrices?: unknown[]; planMetadata?: Record<string, unknown> } = {}
+) {
     return {
         plans: {
             get: vi.fn().mockResolvedValue({
                 id: PLAN_ID,
                 name: 'owner-basico',
+                ...(overrides.planMetadata ? { metadata: overrides.planMetadata } : {}),
                 prices: overrides.planPrices ?? [
                     {
                         id: 'price-monthly-1',
@@ -203,7 +206,7 @@ describe('confirmCancellationDeferred', () => {
 });
 
 describe('mintRetryPreapprovalAttempt', () => {
-    it('mints a fresh preapproval on the SAME MP plan/cadence recovered from the row metadata', async () => {
+    it('mints a fresh preapproval on the SAME cadence/price recovered from the row metadata, WITHOUT sending the MP plan id (HOS-1221)', async () => {
         const billing = makeBilling();
 
         const result = await mintRetryPreapprovalAttempt({
@@ -226,9 +229,15 @@ describe('mintRetryPreapprovalAttempt', () => {
             string,
             unknown
         >;
-        expect(createCall.providerPriceId).toBe(MP_PLAN_ID);
         expect(createCall.priceId).toBe('price-monthly-1');
         expect(createCall.billingInterval).toBe('monthly');
+        // HOS-1221: the retry used to subscribe against the recovered MP
+        // `preapproval_plan` via `providerPriceId`, which is the request
+        // MercadoPago rejects with "card_token_id is required" — the recovery
+        // reproduced the checkout's own 500. The plan id is bookkeeping now, so
+        // it must not appear in the body qzpay sends. Asserted as an absence:
+        // an `objectContaining` shape is blind to a field that should be gone.
+        expect(createCall).not.toHaveProperty('providerPriceId');
     });
 
     it('resolves the annual price when the row metadata says billingInterval=annual', async () => {
@@ -285,6 +294,66 @@ describe('mintRetryPreapprovalAttempt', () => {
         >;
         const metadata = createCall.metadata as Record<string, string>;
         expect(metadata.pendingDiscountJson).toBe(JSON.stringify(pendingDiscount));
+        // HOS-1221 D2: carrying the SNAPSHOT forward is not enough — the
+        // provider has to be told the discounted amount too, or the retry
+        // quotes full price while the metadata keeps promising the discount.
+        // That is the same split that made the original checkout charge
+        // ARS 18.000 on a half-price code.
+        expect(createCall.providerUnitAmountOverride).toBe(5000);
+    });
+
+    it('does NOT override the amount when the row carries no discount', async () => {
+        const billing = makeBilling();
+
+        await mintRetryPreapprovalAttempt({
+            billing: billing as never,
+            localSubscription: {
+                id: LOCAL_SUB_ID,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                productDomain: null,
+                metadata: { mpPreapprovalPlanId: MP_PLAN_ID, billingInterval: 'monthly' }
+            },
+            ...URLS
+        });
+
+        const createCall = billing.subscriptions.create.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        // Absent, not zero: an override of 0 is a real instruction to charge
+        // nothing, so a retry with no discount must not send one at all.
+        expect(createCall).not.toHaveProperty('providerUnitAmountOverride');
+    });
+
+    it('sends the buyer-visible plan name on the retry, not the slug (HOS-1221 D4)', async () => {
+        // Every seeded plan carries `metadata.displayName` (`billingPlans.seed.ts`
+        // writes it for all of them), which is what `planDisplayNameFromPlan`
+        // prefers. Its documented fallback is the slug, so a fixture WITHOUT
+        // the field could not tell "the override was wired" apart from "the
+        // override was never passed".
+        const billing = makeBilling({ planMetadata: { displayName: 'Anfitrión Básico' } });
+
+        await mintRetryPreapprovalAttempt({
+            billing: billing as never,
+            localSubscription: {
+                id: LOCAL_SUB_ID,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                productDomain: null,
+                metadata: { mpPreapprovalPlanId: MP_PLAN_ID, billingInterval: 'monthly' }
+            },
+            ...URLS
+        });
+
+        const createCall = billing.subscriptions.create.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(createCall.planDisplayName).toBe('Anfitrión Básico');
+        // `billing_plans.name` IS the slug here, and the adapter builds the
+        // buyer-visible `reason` from it unless this override arrives.
+        expect(createCall.planDisplayName).not.toBe('owner-basico');
     });
 
     it('throws when the row carries no mpPreapprovalPlanId (cannot mint like-for-like)', async () => {

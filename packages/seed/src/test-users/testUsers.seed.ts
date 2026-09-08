@@ -121,9 +121,20 @@ export interface TestUserSpec {
 }
 
 /**
- * The 18 test users created by this seed (14 pre-existing — 13 from SPEC-143
+ * The 17 test users created by this seed (13 pre-existing — 12 from SPEC-143
  * Block 1 plus `host-provider@local.test` added later by HOS-376 T-013 — plus
  * 4 commerce-owner fixtures added by HOS-694).
+ *
+ * `tourist-plus@local.test` was removed by HOS-1224 along with the plan it
+ * existed to exercise. It was not repointed: `tourist-vip` is the only
+ * surviving paid tourist tier and `tourist-vip@local.test` already covers it,
+ * so repointing would have produced a byte-identical duplicate under a
+ * misleading address. The coverage it carried — a tourist tier BETWEEN free
+ * and VIP — has no subject left in the product.
+ *
+ * Note the resolution below is fail-closed on purpose: a `planSlug` absent
+ * from `ALL_PLANS` throws rather than seeding a planless user, which is what
+ * makes a stale fixture surface at seed time instead of as a silent gap.
  *
  * NOTE: super-admin@local.test and admin@local.test are intentionally
  * excluded — the required seed already creates superadmin@hospeda.com.ar
@@ -136,12 +147,6 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     { email: 'sponsor@local.test', displayName: 'Sponsor Local', role: RoleEnum.SPONSOR },
     // Tourist tier (USER role)
     { email: 'tourist-free@local.test', displayName: 'Turista Free', role: RoleEnum.USER },
-    {
-        email: 'tourist-plus@local.test',
-        displayName: 'Turista Plus',
-        role: RoleEnum.USER,
-        planSlug: 'tourist-plus'
-    },
     {
         email: 'tourist-vip@local.test',
         displayName: 'Turista VIP',
@@ -662,7 +667,7 @@ async function syncTestUserRoles(params: {
 }
 
 /**
- * Seeds 18 test users for local entitlement testing (14 pre-existing + 4
+ * Seeds 17 test users for local entitlement testing (13 pre-existing + 4
  * commerce-owner fixtures from HOS-694 — see the `TEST_USERS` docstring for
  * the pre-existing count's own history).
  *

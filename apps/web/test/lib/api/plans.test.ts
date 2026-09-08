@@ -41,7 +41,7 @@ const EXPECTED_OWNER_PRICES_CENTS: Record<string, number> = {
 
 const EXPECTED_TOURIST_PRICES_CENTS: Record<string, number> = {
     'tourist-free': 0, // Gratis
-    'tourist-plus': 500_000, // AR$5.000
+    // 'tourist-plus' (AR$5.000) retired by HOS-1224 — cancelled as a product.
     'tourist-vip': 1_500_000 // AR$15.000
 };
 
@@ -73,10 +73,10 @@ describe('formatPriceArs', () => {
         expect(result).toMatch(/75[.,]?000/);
     });
 
-    it('should format tourist-plus (500_000 cents) as ~AR$5.000', () => {
-        const result = formatPriceArs(500_000, 'es-AR');
-        expect(result).toContain('5');
-        expect(result).toMatch(/5[.,]?000/);
+    it('should format tourist-vip (1_500_000 cents) as ~AR$15.000', () => {
+        const result = formatPriceArs(1_500_000, 'es-AR');
+        expect(result).toContain('15');
+        expect(result).toMatch(/15[.,]?000/);
     });
 
     it('should NOT include decimal fraction digits (legal requirement: whole pesos only)', () => {
@@ -227,22 +227,6 @@ describe('Tourist fallback plans integrity (vs billing config)', () => {
             limits: [{ key: 'max_favorites', value: 3, name: 'Favoritos', description: '' }]
         },
         {
-            slug: 'tourist-plus',
-            name: 'Plus',
-            description: 'Plus plan for frequent tourists.',
-            category: 'tourist',
-            monthlyPriceArs: 500_000,
-            annualPriceArs: 5_000_000,
-            monthlyPriceUsdRef: 5,
-            hasTrial: false,
-            trialDays: 0,
-            isDefault: false,
-            sortOrder: 2,
-            isActive: true,
-            entitlements: [],
-            limits: [{ key: 'max_favorites', value: 20, name: 'Favoritos', description: '' }]
-        },
-        {
             slug: 'tourist-vip',
             name: 'VIP',
             description: 'VIP plan for discerning tourists.',
@@ -260,8 +244,10 @@ describe('Tourist fallback plans integrity (vs billing config)', () => {
         }
     ];
 
-    it('should have 3 tourist plans', () => {
-        expect(TOURIST_FALLBACK_PLANS).toHaveLength(3);
+    // Recounted, not decremented by eye: HOS-1224 retired tourist-plus, leaving
+    // tourist-free and tourist-vip.
+    it('should have 2 tourist plans', () => {
+        expect(TOURIST_FALLBACK_PLANS).toHaveLength(2);
     });
 
     it('should have all plans with category=tourist', () => {
@@ -363,11 +349,6 @@ describe('Prohibited hardcoded prices from original implementation', () => {
     it('should NOT use the old hardcoded price 9990 (was owner-premium, now AR$75.000)', () => {
         expect(EXPECTED_OWNER_PRICES_CENTS['owner-premium']).not.toBe(9990);
         expect(EXPECTED_OWNER_PRICES_CENTS['owner-premium']).toBe(7_500_000);
-    });
-
-    it('should NOT use the old hardcoded price 1990 (was tourist-plus, now AR$5.000)', () => {
-        expect(EXPECTED_TOURIST_PRICES_CENTS['tourist-plus']).not.toBe(1990);
-        expect(EXPECTED_TOURIST_PRICES_CENTS['tourist-plus']).toBe(500_000);
     });
 
     it('should NOT use the old hardcoded price 3990 (was tourist-vip, now AR$15.000)', () => {

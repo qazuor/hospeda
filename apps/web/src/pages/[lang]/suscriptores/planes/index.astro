@@ -52,6 +52,15 @@
  * vanished, or one showing a stale hardcoded figure, would both be worse than a
  * card with no number on it.
  *
+ * `null` also arrives for an audience that publishes no amount at all, and that
+ * one is not a failure: aliados is quoted in a conversation, so its two pages
+ * print "Consultar" and this card prints nothing (HOS-1212). It used to print
+ * "Desde $ 15.000 /mes" — read correctly from `billing_plans`, and contradicted
+ * by both pages it linked to, which is AC-43 of HOS-985 failing outright. The
+ * rule lives in `lib/billing/price-on-request-audiences.ts`; this page only maps
+ * over what `fetchAudienceOffers` already resolved, and deliberately cannot tell
+ * a withheld price from an unavailable one.
+ *
  * The trial line obeys the same contract and for a sharper reason (R-2): the
  * number is resolved PER AUDIENCE from the same payload, never written into the
  * copy in any language. Host and tourist have carried different trial lengths in
@@ -178,7 +187,7 @@ const headingMain = headingWords.join(' ');
 		titleAccent={headingAccent}
 		subtitle={t(
 			'pricing.index.subtitle',
-			'Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá los precios.'
+			'Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá qué incluye cada una.'
 		)}
 	>
 		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
@@ -248,11 +257,12 @@ const headingMain = headingWords.join(' ');
 								)}
 
 								{/*
-									Its own guard, independent of the price's: partner has a
-									price and no trial, and a failed fetch takes both. Nesting
-									this inside the price block would tie the two together and
-									make a trial line impossible on any card whose price did
-									not resolve.
+									Its own guard, independent of the price's. The two are
+									absent for unrelated reasons — a domain's fetch can fail,
+									an audience can offer no trial, an audience can publish no
+									amount — and every combination has to render. Nesting this
+									inside the price block would make a trial line impossible
+									on any card whose price did not resolve.
 								*/}
 								{card.trialLabel && (
 									<p class="audiences__card-trial">{card.trialLabel}</p>
@@ -625,11 +635,13 @@ const headingMain = headingWords.join(' ');
 	   The rows are assigned explicitly (`grid-row: N`) instead of being filled
 	   in source order, because two of the seven blocks are OPTIONAL and the
 	   whole requirement turns on that: partner's plans are all `hasTrial: false`
-	   so partner renders no trial line, and a card whose catalogue fetch failed
-	   renders no price. Under auto-placement partner's CTA would slide up into
-	   the trial row and stop lining up with the other four. Named rows leave the
+	   so partner renders no trial line, partner also publishes no amount
+	   (HOS-1212) so it renders no price either, and a card whose catalogue fetch
+	   failed renders no price. Under auto-placement partner's CTA would slide up
+	   two rows and stop lining up with the other four. Named rows leave the
 	   missing block's track simply EMPTY in that one card, and everything after
-	   it stays on its line.
+	   it stays on its line — which is what lets partner skip BOTH optional rows
+	   and still land its CTA on the shared line.
 
 	   The tourist card's "Gratis" needs nothing special for the same reason: it
 	   is still a price, in the price row, just without the `/mes` beside it.

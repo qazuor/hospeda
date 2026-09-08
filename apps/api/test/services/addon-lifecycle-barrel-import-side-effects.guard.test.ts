@@ -27,9 +27,20 @@
  * the failure to the next constructor in the chain rather than removing the
  * class of defect. This guard removes the class.
  *
+ * ## Scope: the TRANSITIVE chain, not one level (HOS-847 PR 7b)
+ *
+ * The first version read only the barrel's own re-export list, which is not the
+ * set of modules an import of the barrel evaluates. A re-exported module's own
+ * `import` statements are evaluated too, and PR 7a put `addon-soft-cancel.ts`
+ * exactly there — reachable through
+ * `addon-lifecycle-cancellation.service.ts`, invisible to a depth-1 walk. So the
+ * graph is now followed transitively (imports AND re-exports), stopping at the
+ * `src/services` directory boundary; see {@link collectChain} for why the
+ * boundary is where it is.
+ *
  * ## What it checks, exactly
  *
- * For the barrel and each module it re-exports: no top-level `const`/`let`/`var`
+ * For every module in that chain: no top-level `const`/`let`/`var`
  * binding is initialised with `new X(...)`, where `X` is anything other than the
  * built-in containers listed in {@link INERT_CONSTRUCTORS}. Those are allowed
  * because constructing them cannot depend on a module mock — they are what
@@ -39,11 +50,11 @@
  * and is fine, because it runs when called rather than when imported. The lazy
  * `getX()` accessors this guard pushes you towards are exactly that.
  *
- * The re-export list is READ FROM THE BARREL, never hardcoded, so a fourth
- * re-export added later is covered without touching this file.
+ * The chain is DISCOVERED from the source, never hardcoded, so a module added to
+ * it later is covered without touching this file.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -85,27 +96,73 @@ const INERT_CONSTRUCTORS: ReadonlySet<string> = new Set([
 const TOP_LEVEL_NEW = /^(?:export\s+)?(?:const|let|var)\s+\w+(?::[^=]+)?\s*=\s*new\s+(\w+)\s*\(/gm;
 
 /**
- * Reads the modules a barrel re-exports from, resolved to absolute paths.
+ * Reads every relative specifier a module imports or re-exports from, resolved
+ * to absolute `.ts` paths.
  *
- * Only relative specifiers are followed: a re-export from a package is that
- * package's problem, not this chain's.
+ * Both directions matter and only one used to be read. A re-export evaluates the
+ * target, and so does a plain `import` — so a barrel that re-exports A, where A
+ * imports B, evaluates B on every import of the barrel just the same.
  *
- * @param barrelPath - Absolute path of the barrel file.
- * @returns Absolute paths of the sibling modules it re-exports from.
+ * Package specifiers are not followed: a construction inside a workspace package
+ * is that package's problem, not this chain's.
+ *
+ * @param modulePath - Absolute path of the module to read.
+ * @returns Absolute paths of the sibling modules it pulls in.
  */
-function readReExportedModules(barrelPath: string): readonly string[] {
-    const source = readFileSync(barrelPath, 'utf8');
-    const specifiers = [...source.matchAll(/^export\s+.*?\bfrom\s+'(\.[^']+)'/gm)].map(
-        (match) => match[1] as string
-    );
+function readRelativeDependencies(modulePath: string): readonly string[] {
+    const source = readFileSync(modulePath, 'utf8');
+    const specifiers = [
+        ...source.matchAll(/^(?:import|export)\s+[\s\S]*?\bfrom\s+'(\.[^']+)'/gm)
+    ].map((match) => match[1] as string);
 
     return [
         ...new Set(
             specifiers.map((specifier) =>
-                join(dirname(barrelPath), specifier.replace(/\.js$/, '.ts'))
+                join(dirname(modulePath), specifier.replace(/\.js$/, '.ts'))
             )
         )
     ];
+}
+
+/**
+ * Walks the barrel's relative dependency graph transitively, stopping at the
+ * `src/services` directory boundary.
+ *
+ * **Why the boundary, and why it is not an escape hatch.** The chain leaves
+ * `src/services` in exactly one place: `addon-lifecycle-cancellation.service.ts`
+ * imports `clearEntitlementCache` from `../middlewares/entitlement`, and that
+ * module constructs a `PlanService` in its body. That construction predates
+ * HOS-847 by a long way, every suite in this chain mocks the middleware whole,
+ * and un-picking it is a change to the entitlement middleware with its own
+ * blast radius — not something to smuggle in under an add-on guard. The
+ * boundary is a directory, not a list of forgiven files, so nothing can be
+ * quietly added to it.
+ *
+ * Cycles are expected (the modules re-export back through the barrel) and the
+ * visited set handles them.
+ *
+ * @param barrelPath - Absolute path of the barrel file.
+ * @returns The barrel plus every `src/services` module reachable from it.
+ */
+function collectChain(barrelPath: string): readonly string[] {
+    const visited = new Set<string>();
+    const queue = [barrelPath];
+
+    while (queue.length > 0) {
+        const current = queue.shift() as string;
+        if (visited.has(current) || !existsSync(current)) {
+            continue;
+        }
+        visited.add(current);
+
+        for (const dependency of readRelativeDependencies(current)) {
+            if (dependency.startsWith(`${SERVICES_DIR}/`) && !visited.has(dependency)) {
+                queue.push(dependency);
+            }
+        }
+    }
+
+    return [...visited];
 }
 
 /**
@@ -128,12 +185,19 @@ function findImportTimeConstructions(
 }
 
 describe('addon-lifecycle barrel — no construction at import time (HOS-847 PR 6)', () => {
-    const modules = [BARREL, ...readReExportedModules(BARREL)];
+    const modules = collectChain(BARREL);
 
-    it('reads the re-export list from the barrel rather than a hardcoded one', () => {
-        // Sanity check on the discovery itself: a guard whose input silently
-        // becomes empty passes forever while checking nothing.
+    it('walks the chain TRANSITIVELY, not one level (anti-vacuity)', () => {
+        // A guard whose input silently becomes empty passes forever while
+        // checking nothing, and one that stops at depth 1 checks a third of what
+        // it claims to. `addon-soft-cancel.ts` is the proof: HOS-847 PR 7a put
+        // it in the chain through `addon-lifecycle-cancellation.service.ts`, and
+        // the one-level version could not see it. Named rather than counted so
+        // a MOVED module reads as a deliberate change.
         expect(modules.length).toBeGreaterThan(1);
+        expect(modules).toContain(join(SERVICES_DIR, 'addon-lifecycle-cancellation.service.ts'));
+        expect(modules).toContain(join(SERVICES_DIR, 'addon-soft-cancel.ts'));
+        expect(modules).toContain(join(SERVICES_DIR, 'addon-preapproval-cancel.ts'));
     });
 
     it.each(modules)('%s constructs nothing at module level', (modulePath) => {

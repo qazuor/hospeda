@@ -164,7 +164,13 @@ vi.mock('@repo/ai-core', () => {
         // read the opt-in moderation provider; the stub reports none so the engine
         // skips moderation. Without it the 200-path throws "No resolveConfig
         // export is defined on the @repo/ai-core mock".
-        resolveConfig: vi.fn(async () => ({ moderation: undefined }))
+        resolveConfig: vi.fn(async () => ({ moderation: undefined })),
+        // Same reason as `resolveConfig` above: the factory calls this to alert
+        // when `ai_settings` does not configure every AI feature (HOS-1220). A
+        // whole-module mock leaves any export it omits as `undefined`, and
+        // calling it throws inside the handler — surfacing as a bare 500 rather
+        // than a missing-export message. Empty = nothing to alert about.
+        findUnconfiguredFeatures: vi.fn(() => [])
     };
 });
 

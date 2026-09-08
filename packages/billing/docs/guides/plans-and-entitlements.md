@@ -67,26 +67,29 @@ Complex plans include all applicable owner entitlements plus complex-specific fe
 
 ## Tourist Plans
 
-| Feature | Free | Plus | VIP |
-|---------|------|------|-----|
-| **Slug** | `tourist-free` | `tourist-plus` | `tourist-vip` |
-| **Monthly (ARS)** | $0 | $5,000 | $15,000 |
-| **Annual (ARS)** | - | $50,000 | $150,000 |
-| **USD Ref** | $0 | $5 | $15 |
-| Max favorites | 5 | 25 | Unlimited |
-| Save favorites | Yes | Yes | Yes |
-| Write reviews | Yes | Yes | Yes |
-| Read reviews | Yes | Yes | Yes |
-| Recommendations | - | Yes | Yes |
-| Price alerts | - | Yes | Yes |
-| Exclusive deals | - | Yes | Yes |
-| Compare accommodations | - | Yes | Yes |
-| Attach review photos | - | Yes | Yes |
-| Search history | - | Yes | Yes |
-| WhatsApp display | - | Yes | Yes |
-| WhatsApp direct | - | - | Yes |
-| VIP support | - | - | Yes |
-| VIP promotions | - | - | Yes |
+| Feature | Free | VIP |
+|---------|------|-----|
+| **Slug** | `tourist-free` | `tourist-vip` |
+| **Monthly (ARS)** | $0 | $15,000 |
+| **Annual (ARS)** | - | $150,000 |
+| **USD Ref** | $0 | $15 |
+| Max favorites | 5 | Unlimited |
+| Save favorites | Yes | Yes |
+| Write reviews | Yes | Yes |
+| Read reviews | Yes | Yes |
+| Recommendations | - | Yes |
+| Price alerts | - | Yes |
+| Exclusive deals | - | Yes |
+| Compare accommodations | - | Yes |
+| Attach review photos | - | Yes |
+| Search history | - | Yes |
+| WhatsApp display | - | Yes |
+| WhatsApp direct | - | Yes |
+| VIP support | - | Yes |
+| VIP promotions | - | Yes |
+
+> The `Plus` column was removed by HOS-1224: `tourist-plus` was cancelled as a
+> product (HOS-301 D1) and carried zero subscriptions in production.
 
 ## Entitlement System
 

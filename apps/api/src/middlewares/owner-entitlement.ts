@@ -52,6 +52,10 @@ import {
 import * as Sentry from '@sentry/node';
 import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
+import {
+    loadDeferredAddonGrants,
+    mergeDeferredAddonGrants
+} from '../services/deferred-addon-grants.service';
 import type { CachedOwnerSubscription } from '../services/entity-subscription-cache.service';
 import { readAccommodationSubscriptionCacheByOwnerIds } from '../services/entity-subscription-cache.service';
 import { PlanService } from '../services/plan.service';
@@ -236,7 +240,16 @@ async function loadCustomerEntitlements(customerId: string): Promise<Set<Entitle
             (sub) => isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
         if (!active) {
-            return entitlements;
+            // HOS-847 PR 7b: no live plan, but an add-on the cancellation flow
+            // deferred may still be inside the period it was charged for. This
+            // early return is one of the two cuts that made PR 7a's deferral
+            // deliver nothing — the customer-level merge lives past it.
+            const grants = await loadDeferredAddonGrants({ customerId });
+            return mergeDeferredAddonGrants({
+                grants,
+                entitlements,
+                limits: new Map<LimitKey, number>()
+            }).entitlements;
         }
         return await loadPlanEntitlements(active.planId);
     } catch (error) {
@@ -788,8 +801,19 @@ export async function resolveOwnerLimitsForOwnerId(
     // When the owner has no entitlement-granting accommodation subscription
     // (result.limits is empty and shouldCache is false from loadCustomerLimits),
     // fall back to owner-basico.
+    //
+    // HOS-847 PR 7b: plus the increase of any add-on still inside the period it
+    // was charged for. `loadCustomerLimits` returns before its own
+    // customer-level merge on this branch, so without this the owner-basico
+    // baseline was the whole answer and a deferred add-on raised nothing.
     if (result.limits.size === 0 && !result.shouldCache) {
-        return await buildOwnerBasicoFallbackLimits();
+        const fallbackLimits = await buildOwnerBasicoFallbackLimits();
+        const grants = await loadDeferredAddonGrants({ customerId });
+        return mergeDeferredAddonGrants({
+            grants,
+            entitlements: new Set<EntitlementKey>(),
+            limits: fallbackLimits
+        }).limits;
     }
 
     if (result.shouldCache) {

@@ -3649,7 +3649,8 @@ export const protectedAccommodationsApi = {
      * (viewer's) billing plan (HOS-19).
      *
      * - `number`: the WhatsApp number, present ONLY when the caller has
-     *   `CAN_CONTACT_WHATSAPP_DISPLAY` (tourist-plus+) AND the owner set one;
+     *   `CAN_CONTACT_WHATSAPP_DISPLAY` (owner-basico+ since HOS-1224 retired
+     *   tourist-plus) AND the owner set one;
      *   `null` otherwise (never leaked to unentitled callers).
      * - `direct`: `true` when the caller also has `CAN_CONTACT_WHATSAPP_DIRECT`
      *   (tourist-vip+) — authorizes rendering a one-click `wa.me` deep link.

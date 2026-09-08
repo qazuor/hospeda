@@ -20,7 +20,8 @@ export const OWNER_TRIAL_DAYS = 30;
 export const COMPLEX_TRIAL_DAYS = 14;
 
 /**
- * Trial period for self-service tourist plans (tourist-plus / tourist-vip).
+ * Trial period for self-service tourist plans (tourist-vip; tourist-plus was
+ * retired by HOS-1224).
  *
  * Owner decision (HOS-301 D1, 2026-08-11): the tourist tier gets a 30-day
  * card-first trial while the owner tier stays at 14.

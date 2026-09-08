@@ -278,6 +278,22 @@ jobs:
       # asking for one; the guard below is what enforces that.
       - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
         run: bash scripts/check-no-trial-to-mercadopago.sh
+      # Its own step for the same reason as every guard in this job. The sibling
+      # of G-1: that one bans a trial in the preapproval payload, this one bans
+      # the `preapproval_plan_id` that made MercadoPago answer "card_token_id is
+      # required" and turned every own-preapproval checkout into a 500.
+      - name: Check no plan id reaches an own-preapproval create (HOS-1221 G-2)
+        run: bash scripts/check-no-plan-id-to-own-preapproval.sh
+      # The third of this family, and its own step for the same reason. The two
+      # above police what LEAVES for MercadoPago; this one polices what arrives
+      # in OUR subscription row through the back door: qzpay-core inherits
+      # `billing_prices.trial_days` whenever a caller omits `trialDays`, which is
+      # how a PAID subscription was born marked `trialing` for 30 days with the
+      # customer already charged (HOS-1221 bug D3). HOS-1221 states `trialDays: 0`
+      # at the call sites; this stops the column that feeds them from holding a
+      # value at all, so a future call site that forgets inherits nothing.
+      - name: Check billing_prices.trial_days is never written a value (HOS-1224 G-2)
+        run: pnpm check:no-price-trial-days
       - name: Check no binary vertical ternary remains (HOS-1079)
         run: bash scripts/check-no-binary-vertical-ternary.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`

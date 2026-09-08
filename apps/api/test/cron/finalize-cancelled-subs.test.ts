@@ -481,11 +481,19 @@ describe('handler: happy path — due soft-cancelled sub', () => {
         // Status flip via drizzle update
         expect(mockDbUpdate).toHaveBeenCalled();
 
-        // Addon revocation
+        // Addon revocation.
+        //
+        // HOS-847 PR 7a: `cause` is listed on purpose. This cron only ever
+        // finalizes a soft-cancel the customer (or a plan retirement) asked
+        // for, so each add-on keeps the period it was already charged for —
+        // and `expect.objectContaining` is blind to a field it does not name,
+        // so omitting it would let a `'non-payment'` slipped in here take those
+        // periods back with every assertion in this file still green.
         expect(mockHandleSubscriptionCancellationAddons).toHaveBeenCalledWith(
             expect.objectContaining({
                 subscriptionId: SUB_ID_1,
-                customerId: CUSTOMER_ID_1
+                customerId: CUSTOMER_ID_1,
+                cause: 'voluntary'
             })
         );
 

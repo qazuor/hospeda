@@ -343,7 +343,7 @@ describe('ensurePrice', () => {
         expect(state.insertCalls).toHaveLength(0);
     });
 
-    it('inserts a monthly price with trialDays when the plan declares a trial', async () => {
+    it('inserts a monthly price and NEVER a trialDays, even for a trial plan', async () => {
         const state = freshState();
         state.selectQueue.push([]);
 
@@ -352,8 +352,6 @@ describe('ensurePrice', () => {
                 planId: 'plan-uuid',
                 unitAmount: 1_500_000,
                 billingInterval: 'month',
-                trialDays: 14,
-                hasTrial: true,
                 livemode: false
             },
             makeStubDb(state)
@@ -368,7 +366,12 @@ describe('ensurePrice', () => {
         expect(inserted?.intervalCount).toBe(1);
         expect(inserted?.active).toBe(true);
         expect(inserted?.livemode).toBe(false);
-        expect(inserted?.trialDays).toBe(14);
+        // HOS-1224: the monthly row used to mirror the plan's trialDays here.
+        // It never does now — qzpay-core inherits `price.trialDays` when a
+        // caller of `subscriptions.create` omits `trialDays`, which is how a
+        // PAID subscription was born marked `trialing` (HOS-1221 bug D3).
+        expect(inserted?.trialDays).toBeUndefined();
+        expect(Object.hasOwn(inserted ?? {}, 'trialDays')).toBe(false);
     });
 
     it('omits trialDays on annual prices (Hospeda model: trial belongs to monthly preapproval only)', async () => {
@@ -380,8 +383,6 @@ describe('ensurePrice', () => {
                 planId: 'plan-uuid',
                 unitAmount: 15_000_000,
                 billingInterval: 'year',
-                trialDays: 14,
-                hasTrial: true,
                 livemode: true
             },
             makeStubDb(state)
@@ -393,7 +394,7 @@ describe('ensurePrice', () => {
         expect(inserted?.trialDays).toBeUndefined();
     });
 
-    it('omits trialDays on monthly prices when hasTrial=false (e.g., free plans)', async () => {
+    it('omits trialDays on a free monthly price too (HOS-1224: on every price)', async () => {
         const state = freshState();
         state.selectQueue.push([]);
 
@@ -402,8 +403,6 @@ describe('ensurePrice', () => {
                 planId: 'plan-uuid',
                 unitAmount: 0,
                 billingInterval: 'month',
-                trialDays: 0,
-                hasTrial: false,
                 livemode: false
             },
             makeStubDb(state)

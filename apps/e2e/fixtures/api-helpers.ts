@@ -631,7 +631,7 @@ export async function createSubscription(options: {
  * lookup that ignores `livemode` can return the production-mode row, whose id the
  * QZPay Drizzle adapter then refuses to see.
  *
- * @param options.slug - Plan slug as seeded, e.g. `tourist-plus`.
+ * @param options.slug - Plan slug as seeded, e.g. `tourist-vip`.
  * @returns The plan id, or `null` when the plan is not seeded in this environment.
  */
 export async function resolvePlanIdBySlug(options: { readonly slug: string }): Promise<{

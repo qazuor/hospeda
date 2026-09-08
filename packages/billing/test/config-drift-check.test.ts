@@ -47,10 +47,12 @@ describe('Config Drift Check', () => {
             });
 
             expect(result.hasDrift).toBe(true);
-            // HOS-692 (spec §6.9): ALL_PLANS has 6 plans (complex-* removed) - 1 = 5 missing.
-            expect(result.errorCount).toBe(5);
+            // HOS-692 (spec §6.9) removed complex-*; HOS-1224 removed tourist-plus.
+            // ALL_PLANS therefore holds 5 plans, and the dbState above seeds 1 of
+            // them — 5 - 1 = 4 missing.
+            expect(result.errorCount).toBe(4);
             const planDrifts = result.items.filter((i) => i.entityType === 'plan');
-            expect(planDrifts).toHaveLength(5);
+            expect(planDrifts).toHaveLength(4);
             for (const drift of planDrifts) {
                 expect(drift.driftType).toBe('missing_in_db');
                 expect(drift.severity).toBe('error');
@@ -138,8 +140,9 @@ describe('Config Drift Check', () => {
             });
 
             expect(result.hasDrift).toBe(true);
-            // HOS-692 (spec §6.9): ALL_PLANS has 6 plans (complex-* removed) - 1 = 5 missing.
-            expect(result.errorCount).toBe(5);
+            // HOS-692 removed complex-*; HOS-1224 removed tourist-plus. ALL_PLANS
+            // holds 5, the dbState above seeds 1 of them — 5 - 1 = 4 missing.
+            expect(result.errorCount).toBe(4);
             expect(result.warningCount).toBe(1); // 1 orphaned plan
         });
     });

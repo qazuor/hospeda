@@ -1474,7 +1474,38 @@ export async function processSubscriptionUpdated({
                         subscriptionId: localSubscription.id,
                         customerId: localSubscription.customerId,
                         billing,
-                        db
+                        db,
+                        // HOS-847 PR 7a — `'unknown'` here is measured, not lazy.
+                        //
+                        // Several different endings reach this one branch as a
+                        // single `mappedStatus === CANCELLED`: the buyer
+                        // cancelled the preapproval on MercadoPago's own site,
+                        // and MercadoPago auto-cancelled it after its native
+                        // recycling exhausted its retries (non-payment). MP's
+                        // preapproval resource carries no reason field that
+                        // separates them, and the one local tell that would —
+                        // `previousStatus === PAST_DUE` — never fires because
+                        // **no writer in this repo puts `past_due` into
+                        // `billing_subscriptions.status`** (this repo's own
+                        // dunning status mutations are off:
+                        // `cron/jobs/dunning.job.ts`, HOS-191 F5).
+                        //
+                        // Do not read that as "the value does not exist":
+                        // `subscription-status-provider.ts` and
+                        // `subscription-status-normalize.ts` both MAP a provider
+                        // status onto `PAST_DUE`. Those are read directions. The
+                        // missing half is the write, and a tell nothing writes
+                        // is a tell nothing can read.
+                        //
+                        // So this call site genuinely cannot tell "they stopped
+                        // paying" from "they cancelled". `'unknown'` says exactly
+                        // that, and the owner answered it on 2026-09-07 in the
+                        // customer's favour:
+                        // `UNKNOWN_CANCELLATION_CAUSE_POLICY` in
+                        // `services/addon-lifecycle-cancellation.service.ts` now
+                        // reads `'honour-paid-period'`, so an add-on reaching
+                        // this path keeps the period it was already charged for.
+                        cause: 'unknown'
                     }),
                     cancellationTimeoutPromise
                 ]);

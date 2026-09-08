@@ -1,0 +1,486 @@
+/**
+ * `handleSubscriptionCancellationAddons` and WHY the plan was cancelled
+ * (HOS-847 PR 7a — owner decision, 2026-09-07).
+ *
+ * ## The bug these tests reproduce
+ *
+ * A recurring add-on has a MercadoPago preapproval of its own, with a cycle of
+ * its own, so the plan's period and the add-on's do not line up. Before this
+ * change the handler revoked every `status = 'active'` purchase the moment the
+ * PLAN was cancelled, without ever looking at the add-on's own
+ * `current_period_end`. A plan ending on the 10th over an add-on charged on the
+ * 25th took fifteen days the customer had already paid for.
+ *
+ * The rule is now: the add-on lives until ITS OWN `current_period_end`. Two
+ * causes still revoke on the spot — non-payment (nothing was collected) and a
+ * deliberate admin lever (an operational action has to bite immediately).
+ *
+ * ## The third case, answered by the owner rather than guessed
+ *
+ * The MercadoPago webhook cannot tell "they cancelled" from "they stopped
+ * paying" — see the comment at its call site. That is `'unknown'`, and its
+ * handling lives in ONE constant, `UNKNOWN_CANCELLATION_CAUSE_POLICY`. The owner
+ * set it to `'honour-paid-period'` on 2026-09-07. The tests below read the
+ * constant rather than restating its value, so the constant stays the single
+ * place the policy is written down — but one test pins the value itself, because
+ * a suite that only ever agrees with the constant would pass just as happily if
+ * somebody flipped it back.
+ *
+ * @module test/services/addon-lifecycle-cancellation.cause
+ */
+
+import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockCatalogGetBySlug, mockClose, mockRevoke, mockSoftCancel, mockLoggerError, envStub } =
+    vi.hoisted(() => ({
+        mockCatalogGetBySlug: vi.fn(),
+        mockClose: vi.fn(),
+        mockRevoke: vi.fn(),
+        mockSoftCancel: vi.fn(),
+        mockLoggerError: vi.fn(),
+        envStub: { HOSPEDA_ADDON_LIFECYCLE_ENABLED: true }
+    }));
+
+// HOS-702: PARTIAL mocks throughout. A whole-module literal leaves every export
+// it does not name as `undefined`, and the handler under test does most of its
+// work inside a try/catch — so a symbol added to one of these modules later
+// would not fail with "not a function", it would be swallowed and the assertion
+// below would keep passing over a code path that never ran. The three modules
+// mocked here are exactly the three the handler imports from, which is why they
+// are the three that can go dark this way.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
+    AddonCatalogService: vi.fn().mockImplementation(function () {
+        return { getBySlug: mockCatalogGetBySlug, list: vi.fn() };
+    }),
+    PlanService: vi.fn().mockImplementation(function () {
+        return { getById: vi.fn(), getBySlug: vi.fn() };
+    })
+}));
+
+vi.mock('@repo/db', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/db')>()),
+    withTransaction: vi.fn(
+        async (callback: (tx: unknown) => Promise<unknown>, existingTx?: unknown) =>
+            callback(existingTx)
+    ),
+    // NOT covered by the spread: `@repo/db`'s barrel re-exports the schema
+    // tables through `./schemas/index.ts`, which `test/setup.ts` mocks globally
+    // down to two tables. This one has to be named.
+    billingSubscriptionEvents: {
+        subscriptionId: 'subscription_id',
+        eventType: 'event_type',
+        triggerSource: 'trigger_source',
+        metadata: 'metadata'
+    }
+}));
+
+vi.mock('@repo/db/schemas/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/db/schemas/billing')>()),
+    billingAddonPurchases: {
+        id: 'id',
+        customerId: 'customer_id',
+        subscriptionId: 'subscription_id',
+        addonSlug: 'addon_slug',
+        status: 'status',
+        mpSubscriptionId: 'mp_subscription_id',
+        currentPeriodEnd: 'current_period_end',
+        cancelAtPeriodEnd: 'cancel_at_period_end',
+        canceledAt: 'canceled_at',
+        deletedAt: 'deleted_at',
+        metadata: 'metadata',
+        updatedAt: 'updated_at'
+    }
+}));
+
+vi.mock('../../src/middlewares/entitlement', () => ({ clearEntitlementCache: vi.fn() }));
+
+vi.mock('../../src/utils/logger', () => ({
+    apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: mockLoggerError }
+}));
+
+vi.mock('../../src/utils/env', () => ({ env: envStub }));
+
+vi.mock('../../src/services/addon-lifecycle.service', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../src/services/addon-lifecycle.service')>()),
+    revokeAddonForSubscriptionCancellation: mockRevoke
+}));
+
+vi.mock('../../src/services/addon-preapproval-cancel', () => ({
+    closeAddonPreapproval: mockClose
+}));
+
+// Partial, not a whole-module literal: a second export added to this module
+// later must not silently become `undefined` inside the handler's try/catch
+// (HOS-702).
+vi.mock('../../src/services/addon-soft-cancel', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../src/services/addon-soft-cancel')>()),
+    softCancelRecurringAddon: mockSoftCancel
+}));
+
+vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
+
+import {
+    causeHonoursPaidPeriod,
+    handleSubscriptionCancellationAddons,
+    UNKNOWN_CANCELLATION_CAUSE_POLICY
+} from '../../src/services/addon-lifecycle-cancellation.service.js';
+
+// ─── Fixtures ─────────────────────────────────────────────────────────────────
+
+const SUBSCRIPTION_ID = 'sub_plan_hos847_7a';
+const CUSTOMER_ID = 'cus_hos847_7a';
+const PREAPPROVAL_ID = 'preapproval-of-the-addon';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Fifteen days of a period the customer has already been charged for. */
+const paidPeriodStillRunning = () => new Date(Date.now() + 15 * DAY_MS);
+/** The same add-on, a day after its period ran out. */
+const paidPeriodElapsed = () => new Date(Date.now() - DAY_MS);
+
+/**
+ * Builds the purchase row the handler's `SELECT *` returns.
+ *
+ * @param currentPeriodEnd - The add-on's own period end (`null` for one-time).
+ * @returns A purchase row fixture.
+ */
+function recurringPurchase(currentPeriodEnd: Date | null) {
+    return {
+        id: 'purch_7a01-0002-0003-0004-000000000001',
+        addonSlug: 'extra-accommodations-20',
+        subscriptionId: SUBSCRIPTION_ID,
+        customerId: CUSTOMER_ID,
+        status: 'active' as const,
+        mpSubscriptionId: currentPeriodEnd ? PREAPPROVAL_ID : null,
+        currentPeriodEnd,
+        cancelAtPeriodEnd: false,
+        metadata: {},
+        deletedAt: null
+    };
+}
+
+/**
+ * Minimal Drizzle fluent-builder stub. `select().from().where()` resolves the
+ * rows; `update().set().where()` records the payload.
+ *
+ * @param rows - Rows the SELECT should return.
+ * @returns The stub plus handles on the recorded `set()` payloads.
+ */
+function createMockDb(rows: unknown[]) {
+    const updateWhere = vi.fn().mockResolvedValue(undefined);
+    const updateSet = vi.fn<(payload: Record<string, unknown>) => { where: typeof updateWhere }>(
+        () => ({ where: updateWhere })
+    );
+    const update = vi.fn(() => ({ set: updateSet }));
+    const selectWhere = vi.fn().mockResolvedValue(rows);
+    const select = vi.fn(() => ({ from: vi.fn(() => ({ where: selectWhere })) }));
+    const insertValues = vi.fn().mockResolvedValue(undefined);
+
+    return {
+        select,
+        update,
+        insert: vi.fn(() => ({ values: insertValues })),
+        _updateSet: updateSet,
+        _insertValues: insertValues
+    };
+}
+
+/** Every `set(...)` payload that made a purchase terminal. */
+function terminalWrites(db: ReturnType<typeof createMockDb>): unknown[] {
+    return db._updateSet.mock.calls
+        .map(([payload]) => payload as Record<string, unknown> | undefined)
+        .filter((payload) => payload?.status === 'canceled');
+}
+
+const billing = {} as QZPayBilling;
+
+describe('handleSubscriptionCancellationAddons — the cancellation cause (HOS-847 PR 7a)', () => {
+    beforeEach(() => {
+        envStub.HOSPEDA_ADDON_LIFECYCLE_ENABLED = true;
+        mockClose.mockResolvedValue({ closed: true, kind: 'cancelled' });
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: { slug: 'extra-accommodations-20', name: 'Extra accommodations', type: 'limit' }
+        });
+        mockRevoke.mockResolvedValue({
+            purchaseId: recurringPurchase(null).id,
+            addonSlug: 'extra-accommodations-20',
+            addonType: 'limit' as const,
+            outcome: 'success' as const
+        });
+        mockSoftCancel.mockResolvedValue({ success: true, data: undefined });
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('a voluntary cancellation does not take back a period already charged', () => {
+        it('keeps the add-on granted until its OWN current_period_end', async () => {
+            const accessUntil = paidPeriodStillRunning();
+            const db = createMockDb([recurringPurchase(accessUntil)]);
+
+            const result = await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            // The benefit survives: nothing revoked, no terminal row written.
+            expect(mockRevoke).not.toHaveBeenCalled();
+            expect(terminalWrites(db)).toEqual([]);
+
+            // And it is scheduled to end on the add-on's own date, not the plan's.
+            expect(mockSoftCancel).toHaveBeenCalledTimes(1);
+            expect(mockSoftCancel.mock.calls[0]?.[0]).toMatchObject({
+                purchaseId: recurringPurchase(null).id,
+                customerId: CUSTOMER_ID,
+                addonSlug: 'extra-accommodations-20',
+                addonName: 'Extra accommodations',
+                currentPeriodEnd: accessUntil
+            });
+
+            expect(result.deferred).toEqual([
+                {
+                    purchaseId: recurringPurchase(null).id,
+                    addonSlug: 'extra-accommodations-20',
+                    accessUntil
+                }
+            ]);
+            expect(result.succeeded).toEqual([]);
+            expect(result.failed).toEqual([]);
+        });
+
+        it('still closes the MercadoPago preapproval first — charging stops today', async () => {
+            const db = createMockDb([recurringPurchase(paidPeriodStillRunning())]);
+
+            await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            expect(mockClose).toHaveBeenCalledWith({
+                purchase: expect.objectContaining({ mpSubscriptionId: PREAPPROVAL_ID }),
+                source: 'plan-cancellation',
+                billing
+            });
+        });
+
+        it('CONTROL: the same add-on IS revoked once its own period has elapsed', async () => {
+            // Without this control, a handler that deferred everything
+            // unconditionally would satisfy the assertions above.
+            const db = createMockDb([recurringPurchase(paidPeriodElapsed())]);
+
+            const result = await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            expect(mockSoftCancel).not.toHaveBeenCalled();
+            expect(mockRevoke).toHaveBeenCalledTimes(1);
+            expect(terminalWrites(db)).toHaveLength(1);
+            expect(result.deferred).toEqual([]);
+            expect(result.succeeded).toHaveLength(1);
+        });
+
+        it('CONTROL: a one-time add-on (no period recorded) is revoked as before', async () => {
+            const db = createMockDb([recurringPurchase(null)]);
+
+            const result = await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            expect(mockSoftCancel).not.toHaveBeenCalled();
+            expect(mockRevoke).toHaveBeenCalledTimes(1);
+            expect(result.deferred).toEqual([]);
+        });
+
+        it('a refused soft-cancel is a FAILED purchase, so MercadoPago redelivers', async () => {
+            const db = createMockDb([recurringPurchase(paidPeriodStillRunning())]);
+            mockSoftCancel.mockResolvedValue({
+                success: false,
+                error: { code: 'INTERNAL_ERROR', message: 'update blew up' }
+            });
+
+            await expect(
+                handleSubscriptionCancellationAddons({
+                    subscriptionId: SUBSCRIPTION_ID,
+                    customerId: CUSTOMER_ID,
+                    billing,
+                    db: db as never,
+                    cause: 'voluntary'
+                })
+            ).rejects.toThrow(/could not be revoked/);
+
+            // Left `active`, never written terminal — the next redelivery retries it.
+            expect(terminalWrites(db)).toEqual([]);
+        });
+    });
+
+    describe('the anomaly: a recurring add-on with no period recorded', () => {
+        it('revokes it and REPORTS the anomaly to Sentry rather than guessing an end date', async () => {
+            // A row with a MercadoPago preapproval but no `current_period_end`
+            // is the same anomaly `cancelUserAddon` refuses outright on. Here
+            // refusing is not an option — the plan is already gone — so the
+            // branch revokes and reports. It had no coverage at all: the shared
+            // fixture ties `mpSubscriptionId` to a non-null period, so the
+            // combination that reaches it could not be built.
+            const anomalous = {
+                ...recurringPurchase(null),
+                // The pair the fixture cannot express: preapproval present,
+                // period absent.
+                mpSubscriptionId: PREAPPROVAL_ID
+            };
+            const db = createMockDb([anomalous]);
+
+            const result = await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            // Revoked, not deferred — there is no paid period to honour.
+            expect(mockSoftCancel).not.toHaveBeenCalled();
+            expect(mockRevoke).toHaveBeenCalledTimes(1);
+            expect(result.deferred).toEqual([]);
+
+            // And reported. `{ capture: true }` is not implicit: without that
+            // third argument the anomaly never reaches Sentry, and this branch
+            // exists for no other reason than to surface it.
+            expect(mockLoggerError).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    purchaseId: anomalous.id,
+                    mpSubscriptionId: PREAPPROVAL_ID,
+                    cause: 'voluntary'
+                }),
+                expect.stringContaining('no current_period_end'),
+                { capture: true }
+            );
+        });
+
+        it('CONTROL: a one-time add-on (no preapproval, no period) is NOT reported', async () => {
+            // Pairs with the test above. Every one-time add-on has a null
+            // period; reporting those would bury the real anomaly in noise, so
+            // the branch is gated on the preapproval being present.
+            const db = createMockDb([recurringPurchase(null)]);
+
+            await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'voluntary'
+            });
+
+            expect(mockRevoke).toHaveBeenCalledTimes(1);
+            expect(mockLoggerError).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('the two causes that revoke on the spot', () => {
+        it.each([
+            'non-payment',
+            'admin-action'
+        ] as const)('%s revokes even inside a period that was charged', async (cause) => {
+            const db = createMockDb([recurringPurchase(paidPeriodStillRunning())]);
+
+            const result = await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause
+            });
+
+            expect(mockSoftCancel).not.toHaveBeenCalled();
+            expect(mockRevoke).toHaveBeenCalledTimes(1);
+            expect(terminalWrites(db)).toHaveLength(1);
+            expect(result.deferred).toEqual([]);
+        });
+    });
+
+    describe('the cause the webhook cannot know — decided by the owner', () => {
+        it('resolves the doubt in the customer favour (owner decision, 2026-09-07)', () => {
+            // The behavioural test below reads the constant, which makes it
+            // survive a flip. This one does NOT: it is the pin. Flipping the
+            // policy back to 'revoke-now' has to fail something, or the owner's
+            // decision lives in a line anybody can quietly undo.
+            expect(UNKNOWN_CANCELLATION_CAUSE_POLICY).toBe('honour-paid-period');
+            expect(causeHonoursPaidPeriod('unknown')).toBe(true);
+        });
+
+        it('follows UNKNOWN_CANCELLATION_CAUSE_POLICY', async () => {
+            // This assertion is deliberately written against the CONSTANT, not
+            // against a hardcoded expectation: it describes the MECHANISM (the
+            // policy drives the branch), while the pin above describes the
+            // VALUE. Both are needed — the mechanism alone would pass under any
+            // value, the value alone would not prove the branch reads it.
+            const db = createMockDb([recurringPurchase(paidPeriodStillRunning())]);
+
+            const result = await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never,
+                cause: 'unknown'
+            });
+
+            if (UNKNOWN_CANCELLATION_CAUSE_POLICY === 'revoke-now') {
+                expect(mockRevoke).toHaveBeenCalledTimes(1);
+                expect(result.deferred).toEqual([]);
+            } else {
+                expect(mockSoftCancel).toHaveBeenCalledTimes(1);
+                expect(result.deferred).toHaveLength(1);
+            }
+        });
+
+        it('an omitted cause means `unknown` — which is now the permissive branch', async () => {
+            // Every pre-existing call site (all of them tests) omits the field,
+            // and since the owner's answer `unknown` HONOURS the period. That is
+            // precisely why the call-site guard
+            // (`addon-cancellation-cause-call-sites.guard.test.ts`) is not
+            // cosmetic: omission at a production call site now gives a period
+            // away rather than merely mislabelling one.
+            const db = createMockDb([recurringPurchase(paidPeriodStillRunning())]);
+
+            await handleSubscriptionCancellationAddons({
+                subscriptionId: SUBSCRIPTION_ID,
+                customerId: CUSTOMER_ID,
+                billing,
+                db: db as never
+            });
+
+            expect(mockSoftCancel).toHaveBeenCalledTimes(causeHonoursPaidPeriod('unknown') ? 1 : 0);
+        });
+    });
+
+    describe('causeHonoursPaidPeriod', () => {
+        it('honours the paid period for a voluntary cancellation only', () => {
+            expect(causeHonoursPaidPeriod('voluntary')).toBe(true);
+            expect(causeHonoursPaidPeriod('non-payment')).toBe(false);
+            expect(causeHonoursPaidPeriod('admin-action')).toBe(false);
+        });
+
+        it('derives the unknown case from the policy constant', () => {
+            expect(causeHonoursPaidPeriod('unknown')).toBe(
+                UNKNOWN_CANCELLATION_CAUSE_POLICY === 'honour-paid-period'
+            );
+        });
+    });
+});

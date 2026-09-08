@@ -1,14 +1,14 @@
 /**
  * E2E-03 (SPEC-098 T-059b) — Collections CRUD: create, edit, delete.
  *
- * Actors: Authenticated USER on the tourist-plus plan.
+ * Actors: Authenticated USER on the tourist-vip plan.
  *
  * Tags: @p0 @favorites @collections @crud @spec-098
  *
  * Preconditions:
  *   - Protected user-bookmark-collections endpoints mounted.
  *   - At least one ACTIVE/PUBLIC accommodation in seed (needed to create bookmarks).
- *   - Suite seed has the `tourist-plus` billing plan in `billing_plans`
+ *   - Suite seed has the `tourist-vip` billing plan in `billing_plans`
  *     (`name = slug`, `livemode = false`). Seeded by
  *     `packages/seed/src/required/billingPlans.seed.ts` (part of e2e:seed).
  *
@@ -16,7 +16,8 @@
  * (env-var cap only) to entitlement-gated (`CAN_USE_COLLECTIONS`, tourist-free
  * excluded). A plain fresh USER now resolves to tourist-free and gets 403
  * ENTITLEMENT_REQUIRED on every route below — actors here are upgraded to
- * tourist-plus (MAX_COLLECTIONS=10) so the CRUD flow itself can still be
+ * tourist-vip (MAX_COLLECTIONS=25; HOS-1224 retired tourist-plus, the tier
+ * this spec used to run against) so the CRUD flow itself can still be
  * exercised, mirroring the pattern in guest-05-accommodation-compare.spec.ts.
  *
  * What this validates (AC-03.1, AC-03.2, AC-04.2, AC-05.1):
@@ -86,10 +87,10 @@ interface BookmarkListResponse {
 
 test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-098', () => {
     let userId: string | null = null;
-    let plusPlanId: string | null = null;
+    let vipPlanId: string | null = null;
 
     test.beforeAll(async () => {
-        plusPlanId = await resolvePlanIdBySlug('tourist-plus');
+        vipPlanId = await resolvePlanIdBySlug('tourist-vip');
     });
 
     test.afterEach(async () => {
@@ -113,11 +114,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-03.2 — create collection: 201, appears in list', async ({ page }) => {
         // Arrange
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Act: create collection
@@ -160,11 +161,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-04.2 — edit collection name and color: 200, values updated', async ({ page }) => {
         // Arrange
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         const createRes = await page.request.post(
@@ -211,11 +212,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
             return;
         }
 
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Create a collection
@@ -280,11 +281,11 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-03.3 — duplicate collection name returns 409', async ({ page }) => {
         // Arrange
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         await page.request.post(`${API_URL}/api/v1/protected/user-bookmark-collections`, {

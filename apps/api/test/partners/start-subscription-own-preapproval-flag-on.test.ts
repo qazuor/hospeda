@@ -188,7 +188,7 @@ describe('initiatePartnerMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_EN
         expect(call).not.toHaveProperty('payerEmail');
     });
 
-    it('passes {partnerId} as domainMetadata, no externalReference, and the resolved MP plan id', async () => {
+    it('passes {partnerId} as domainMetadata, no externalReference, and RECORDS the resolved MP plan id without forwarding it to MercadoPago', async () => {
         const billing = createBillingMock();
 
         await initiatePartnerMonthlySubscription({ ...BASE_INPUT, billing });
@@ -199,10 +199,19 @@ describe('initiatePartnerMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_EN
             planId: PLAN_ID,
             priceId: PRICE_ID,
             billingInterval: 'monthly',
-            providerPriceId: 'mp_plan_test',
+            mpPreapprovalPlanId: 'mp_plan_test',
             domainMetadata: { partnerId: PARTNER_ID }
         });
+        // HOS-1221: `providerPriceId` is the field qzpay forwards to
+        // MercadoPago, and it turns `POST /preapproval` into the plan-based
+        // request MercadoPago rejects with "card_token_id is required" — this
+        // checkout answered 500 for exactly that. Asserted as an absence:
+        // `toMatchObject` cannot see a field that should not be there.
+        expect(call).not.toHaveProperty('providerPriceId');
         expect(call).not.toHaveProperty('externalReference');
+        // HOS-1221 D4: the buyer-visible name, not `plan.name` (the slug).
+        expect(call.planDisplayName).toBe('Partner Gold');
+        expect(call.planDisplayName).not.toBe('partner-listing');
     });
 
     it('writeDomainLinkRow inserts into partnerSubscriptions with the SAME transaction client', async () => {

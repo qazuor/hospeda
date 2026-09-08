@@ -26,8 +26,16 @@
  * a propósito").
  *
  * This is the same shape the free tourist tier already uses when it prints
- * "Gratis" where a number goes: `priceMode="consult"` replaces the amount and
+ * "Gratis" where a number goes: `priceMode: 'consult'` replaces the amount and
  * the annual toggle, and leaves every other part of the card alone.
+ *
+ * That mode is now DERIVED, from `resolvePricingPageContent` (HOS-1212). It used
+ * to be the literal `priceMode="consult"` written here, and a literal on this
+ * page is invisible to every other surface: the plan index at
+ * `/suscriptores/planes/` went on advertising "Desde $ 15.000 /mes" on its
+ * aliados card, correctly read from `billing_plans`, and sent people here to be
+ * told to ask. The decision now lives in
+ * `lib/billing/price-on-request-audiences.ts`, which the index reads too.
  *
  * ## Three things this page must not do
  *
@@ -109,7 +117,7 @@ applyCacheHeaders({
  * page for an offer nobody can take.
  */
 const plans = await fetchAudiencePlans({ audience: 'partner' });
-const { copyRoot, faqs, hasComparison } = resolvePricingPageContent({
+const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({
     audience: 'partner',
     plans,
     translators: { t, tPlural }
@@ -182,6 +190,6 @@ const headingMain = headingWords.join(' ');
         hasComparison={hasComparison}
         ctaMode="link"
         ctaHref={ctaHref}
-        priceMode="consult"
+        priceMode={priceMode}
     />
 </MarketingLayout>

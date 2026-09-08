@@ -494,10 +494,6 @@
             "name": "Grátis",
             "description": "Salve favoritos, leia avaliações e planeje sua próxima viagem sem custo."
         },
-        "tourist-plus": {
-            "name": "Plus",
-            "description": "Alertas de preço, ofertas exclusivas, comparador de hospedagens e histórico de buscas."
-        },
         "tourist-vip": {
             "name": "VIP",
             "description": "Suporte VIP, promoções exclusivas e contato direto por WhatsApp com as hospedagens."

@@ -1852,6 +1852,42 @@ describe('processSubscriptionUpdated', () => {
             expect(timeoutWarnings).toHaveLength(0);
         });
 
+        // HOS-847 PR 7b: the VALUE of `cause`, not just its presence.
+        it("passes cause: 'unknown' — this webhook cannot tell a cancel from a non-payment", async () => {
+            // The call-site guard only checks that a `cause:` field exists, so
+            // changing this literal to 'voluntary' or 'non-payment' left CI
+            // green while deciding whose money a paid period is. Since the owner
+            // set UNKNOWN_CANCELLATION_CAUSE_POLICY to 'honour-paid-period',
+            // 'non-payment' here would revoke a period the customer paid for and
+            // 'voluntary' would claim a fact MercadoPago never sent.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            mockCustomerGet.mockResolvedValue({
+                id: 'cust-001',
+                email: 'user@example.com',
+                metadata: { name: 'Test User', userId: 'user-001' }
+            });
+            mockHandleCancellationAddons.mockResolvedValue(undefined);
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos847-cause-value'
+            });
+
+            expect(mockHandleCancellationAddons).toHaveBeenCalledTimes(1);
+            expect(mockHandleCancellationAddons.mock.calls[0]?.[0]).toMatchObject({
+                cause: 'unknown'
+            });
+        });
+
         // TC-GAP-043-03-D: Non-timeout error from handleSubscriptionCancellationAddons still propagates
         it('should rethrow non-timeout errors from addon cancellation so MercadoPago retries', async () => {
             // Arrange

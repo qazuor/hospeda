@@ -1,12 +1,12 @@
 /**
  * GUEST-05 — Accommodation comparison: per-plan gate + full UI flow (SPEC-288).
  *
- * Actors: tourist USER on the free / Plus / VIP tiers.
+ * Actors: tourist USER on the free / VIP tiers.
  * Tags: @p1 @guest @billing
  *
  * Preconditions:
- *   - Suite seed has the tourist billing plans (`tourist-plus`, `tourist-vip`)
- *     in `billing_plans` with `name = slug` and livemode = false. Seeded by
+ *   - Suite seed has the `tourist-vip` billing plan in `billing_plans` with
+ *     `name = slug` and livemode = false. Seeded by
  *     `packages/seed/src/required/billingPlans.seed.ts` (part of e2e:seed).
  *   - Suite seed has at least 5 ACTIVE, publicly-visible accommodations so the
  *     VIP over-limit leg (5 ids) can be exercised.
@@ -14,11 +14,17 @@
  * Validates:
  *   - Gate (server re-validation on POST /protected/accommodations/compare):
  *       · free tier (no CAN_COMPARE_ACCOMMODATIONS) → 403 ENTITLEMENT_REQUIRED;
- *       · Plus (MAX_COMPARE_ITEMS=2) → 200 for 2 ids, 403 LIMIT_REACHED for 3;
- *       · VIP  (MAX_COMPARE_ITEMS=4) → 200 for 4 ids, 403 LIMIT_REACHED for 5.
- *   - UI flow (Plus user): select 2 accommodations from the listing via the
+ *       · VIP (MAX_COMPARE_ITEMS, read off the plan) → 200 up to the cap, 403
+ *         LIMIT_REACHED one item over it.
+ *   - UI flow (VIP user): select 2 accommodations from the listing via the
  *     CompareButton islands → the floating CompareBar appears → "Comparar ahora"
  *     opens the comparison page → the side-by-side matrix renders.
+ *
+ * HOS-1224 retired the `tourist-plus` plan this spec used to also gate on
+ * (a second paid tier at a lower MAX_COMPARE_ITEMS cap). tourist-vip is now
+ * the only paid tourist tier, so the gate contrast collapses to free vs. VIP
+ * and the UI flow — which only ever needed *a* paid actor, not specifically
+ * the Plus cap — now runs as a VIP user too.
  *
  * The comparison selection is client-only (compare-store + localStorage, D-3);
  * the same per-plan cap is re-validated server-side, which is what the gate
@@ -67,21 +73,16 @@ async function postCompare(options: {
 
 test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @billing', () => {
     const userIds: string[] = [];
-    let plusPlanId: string | null = null;
     let vipPlanId: string | null = null;
-    // Read the caps from the plan rather than hard-coding them: `max_compare_items`
-    // is commercial configuration that has already moved once (plus 2 -> 3,
-    // vip 4 -> 5) and left this spec asserting a rule the product no longer had.
-    let plusCap = 0;
+    // Read the cap from the plan rather than hard-coding it: `max_compare_items`
+    // is commercial configuration that has already moved once (vip 4 -> 5) and
+    // left this spec asserting a rule the product no longer had.
     let vipCap = 0;
     let accIds: string[] = [];
 
     test.beforeAll(async () => {
-        const plus = await resolvePlanIdBySlug({ slug: 'tourist-plus' });
         const vip = await resolvePlanIdBySlug({ slug: 'tourist-vip' });
-        plusPlanId = plus.planId;
         vipPlanId = vip.planId;
-        plusCap = plus.limits?.max_compare_items ?? 0;
         vipCap = vip.limits?.max_compare_items ?? 0;
         const accs = await execSQL<AccRow>(
             `SELECT id, slug FROM accommodations
@@ -120,35 +121,6 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
         expect(JSON.stringify(result.body)).toContain('ENTITLEMENT_REQUIRED');
     });
 
-    test('gate: Plus allows its cap, blocks one more with LIMIT_REACHED', async () => {
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        test.fixme(plusCap < 1, 'tourist-plus carries no max_compare_items limit');
-        test.fixme(
-            accIds.length < plusCap + 1,
-            `Seed needs ≥ ${plusCap + 1} ACTIVE accommodations`
-        );
-        if (!plusPlanId) return;
-
-        // ── Arrange: USER with an active tourist-plus subscription ──────────
-        const plus = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
-        userIds.push(plus.id);
-        await createSubscription({ userId: plus.id, planId: plusPlanId, status: 'active' });
-
-        // ── Act + Assert: exactly the cap passes ────────────────────────────
-        const ok = await postCompare({ cookie: plus.sessionCookie, ids: accIds.slice(0, plusCap) });
-        expect(ok.status, `comparing ${plusCap} items must be allowed on tourist-plus`).toBe(200);
-        const okData = (ok.body as { data?: { items?: unknown[] } }).data ?? ok.body;
-        expect((okData as { items: unknown[] }).items.length).toBe(plusCap);
-
-        // ── Act + Assert: one over the cap trips it ─────────────────────────
-        const blocked = await postCompare({
-            cookie: plus.sessionCookie,
-            ids: accIds.slice(0, plusCap + 1)
-        });
-        expect(blocked.status, `comparing ${plusCap + 1} items must trip the cap`).toBe(403);
-        expect(JSON.stringify(blocked.body)).toContain('LIMIT_REACHED');
-    });
-
     test('gate: VIP allows its cap, blocks one more with LIMIT_REACHED', async () => {
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         test.fixme(vipCap < 1, 'tourist-vip carries no max_compare_items limit');
@@ -178,17 +150,17 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
     test('UI flow: select from listing → floating bar → compare page → matrix', async ({
         page
     }) => {
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         test.fixme(accIds.length < 2, 'Seed needs ≥ 2 ACTIVE accommodations');
-        if (!plusPlanId) return;
+        if (!vipPlanId) return;
 
-        // ── Arrange: a Plus user, with its session attached to the browser ──
-        const plus = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
-        userIds.push(plus.id);
-        await createSubscription({ userId: plus.id, planId: plusPlanId, status: 'active' });
+        // ── Arrange: a VIP user, with its session attached to the browser ──
+        const vip = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
+        userIds.push(vip.id);
+        await createSubscription({ userId: vip.id, planId: vipPlanId, status: 'active' });
 
         await page.context().addCookies(
-            plus.sessionCookie.split('; ').map((c) => {
+            vip.sessionCookie.split('; ').map((c) => {
                 const [name, ...rest] = c.split('=');
                 return {
                     name: (name ?? '').trim(),

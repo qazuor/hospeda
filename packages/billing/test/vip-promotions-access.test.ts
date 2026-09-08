@@ -12,7 +12,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ENTITLEMENT_DEFINITIONS } from '../src/config/entitlements.config.js';
-import { TOURIST_PLUS_PLAN, TOURIST_VIP_PLAN } from '../src/config/plans.config.js';
+import { TOURIST_FREE_PLAN, TOURIST_VIP_PLAN } from '../src/config/plans.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
 
 describe('EntitlementKey.VIP_PROMOTIONS_ACCESS (HOS-21 T-003)', () => {
@@ -38,7 +38,10 @@ describe('EntitlementKey.VIP_PROMOTIONS_ACCESS (HOS-21 T-003)', () => {
         expect(TOURIST_VIP_PLAN.entitlements).toContain(EntitlementKey.VIP_PROMOTIONS_ACCESS);
     });
 
-    it('is NOT granted by the tourist-plus plan', () => {
-        expect(TOURIST_PLUS_PLAN.entitlements).not.toContain(EntitlementKey.VIP_PROMOTIONS_ACCESS);
+    // Was asserted against tourist-plus until HOS-1224 retired that plan;
+    // tourist-free is now the only other tourist tier, so it is what keeps the
+    // "VIP-exclusive" half of this key honest.
+    it('is NOT granted by the tourist-free plan', () => {
+        expect(TOURIST_FREE_PLAN.entitlements).not.toContain(EntitlementKey.VIP_PROMOTIONS_ACCESS);
     });
 });
