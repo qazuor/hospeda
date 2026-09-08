@@ -3,12 +3,16 @@
  * Plain CSS module per web conventions — no Tailwind.
  */
 
+/* No `max-width` here (HOS-1235). Both call sites render this inside a
+ * `<Dialog size="md">`, whose panel is 640px — a 480px cap left the whole
+ * block hugging the left edge with 160px of dead space on the right. The
+ * panel's `data-size` is what decides how wide the picker gets; a second cap
+ * here only means the two disagree. */
 .root {
     display: flex;
     flex-direction: column;
     gap: var(--space-4, 1rem);
     width: 100%;
-    max-width: 480px;
 }
 
 .title {
