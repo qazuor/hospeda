@@ -19,7 +19,7 @@
  */
 
 import type { PlanDefinition } from '@repo/billing';
-import type { AdminSubscriptionViewStatus } from '@repo/schemas';
+import { type AdminSubscriptionViewStatus, ProductDomainEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { getChangePlanOptions, getStatusLabel, getStatusVariant } from '../utils';
 
@@ -57,6 +57,9 @@ const fakePartnerGoldLikePlan: PlanDefinition = {
     name: 'Partner Gold',
     description: 'Partner tier plan (test fixture mirroring plans.config.ts)',
     category: 'owner',
+    // The real discriminator, and as of HOS-1233 the fixture can finally state
+    // it instead of only describing it in the comment above.
+    productDomain: ProductDomainEnum.PARTNER,
     monthlyPriceArs: 3000000,
     annualPriceArs: 30000000,
     monthlyPriceUsdRef: 30,
