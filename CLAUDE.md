@@ -466,6 +466,32 @@ from scratch, staging for the MercadoPago sandbox, prod for Cloudflare and real
 cron timing — each needs its own sign-off and the issue stays open until all are
 signed.
 
+### What's New: every promoted PR carries a novelty decision (HOS-1214)
+
+The What's New catalog is filled at the smoke sign-off and audited at the
+promotion. Two moments, two jobs: one writes, the other catches what the first
+missed.
+
+- **The write** — Phase 2b of the `smoke-tanda` skill. On `Resultado: PASO` only,
+  the flow asks whether the change is a novelty for an end user and does not
+  finish until answered. A *yes* produces a catalog entry in
+  `apps/api/src/data/whats-new/whats-new.ts` with `publishedAt: 'on-promotion'`
+  (the writer never picks a date) via a `[HOS-N] docs(whats-new):` PR to
+  `staging`; a *no* is an equally complete answer. Either way the decision is
+  recorded as a GitHub label on every PR bound to the issue, and as the
+  `Novedad:` line of the sign-off comment.
+- **The two labels** — `whats-new-none` (evaluated, not a novelty) and
+  `whats-new-done` (evaluated, produced or extended an entry). Exactly one per
+  PR, never a third.
+- **The gate** — a `staging` → `main` promotion PR fails if any PR in
+  `origin/main..origin/staging` carries neither label, if a first-parent commit
+  resolves to no PR at all (a direct push), or if a due entry still carries a
+  `'machine'` translation mark. **It blocks for lack of a decision, never for
+  lack of novelty**, and it blocks equally when it cannot determine the answer.
+  Bot-authored and pre-cutoff PRs are exempt and reported as such. Fix a red gate
+  with `hops whats-new audit --fix`, which asks the same question per PR and
+  labels it — no push required.
+
 ### Git Conventions
 
 - **Conventional Commits**: `type(scope): description`
