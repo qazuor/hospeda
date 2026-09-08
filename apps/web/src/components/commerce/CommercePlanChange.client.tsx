@@ -35,7 +35,12 @@
 import type { CommerceDowngradePreview, CommerceKeepSelections } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { Dialog } from '@/components/shared/ui/Dialog.client';
+import {
+    Dialog,
+    DialogBody,
+    DialogFooter,
+    DialogHeader
+} from '@/components/shared/ui/Dialog.client';
 import { storePendingCheckoutSubId } from '@/lib/billing/checkout-pending';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { changeCommercePlan, fetchCommerceDowngradePreview } from '@/lib/commerce/owner-listings';
@@ -280,6 +285,27 @@ export function CommercePlanChange({
     const targetPlanName =
         plans.find((plan) => plan.slug === pendingSlug)?.name ?? pendingSlug ?? '';
 
+    /**
+     * The error banner, built once and handed to whichever step is on screen
+     * (HOS-1235).
+     *
+     * It used to be a sibling of the three steps, rendered as a bare child of
+     * `<Dialog>`. Now that each step emits the dialog's structural slots, a
+     * bare child would land OUTSIDE every slot — where the panel's padding is
+     * switched off — and render flush against the corner, which is the exact
+     * defect this work removed. So it travels INTO the active step's body
+     * instead of sitting beside it.
+     */
+    const errorBanner =
+        errorMessage === null ? null : (
+            <p
+                className={styles.error}
+                role="alert"
+            >
+                {errorMessage}
+            </p>
+        );
+
     return (
         <div className={styles.summary}>
             <span className={styles.currentPlan}>
@@ -305,15 +331,6 @@ export function CommercePlanChange({
                 ariaLabel={t('commerce.owner.planPicker.title', 'Elegí tu plan')}
                 size="md"
             >
-                {errorMessage && (
-                    <p
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {errorMessage}
-                    </p>
-                )}
-
                 {step === 'picker' && (
                     <CommercePlanPicker
                         plans={changeOptions}
@@ -322,6 +339,7 @@ export function CommercePlanChange({
                         isPending={isSubmitting}
                         onConfirm={(planSlug) => void handlePick(planSlug)}
                         onCancel={closeFlow}
+                        error={errorBanner}
                     />
                 )}
 
@@ -338,31 +356,37 @@ export function CommercePlanChange({
                             setPreview(null);
                             setPendingSlug(null);
                         }}
+                        error={errorBanner}
                     />
                 )}
 
                 {step === 'scheduled' && scheduledFor !== null && (
-                    <div className={styles.scheduled}>
-                        <h2 className={styles.scheduledTitle}>
+                    <>
+                        <DialogHeader>
                             {t('commerce.owner.planChange.scheduled.title', 'Cambio programado')}
-                        </h2>
-                        <p className={styles.scheduledBody}>
-                            {t(
-                                'commerce.owner.planChange.scheduled.body',
-                                'Tu plan pasa a {plan} el {date}. Hasta entonces no cambia nada: seguís con {current} y todas tus fichas visibles.'
-                            )
-                                .replace('{plan}', targetPlanName)
-                                .replace('{date}', formatDate({ date: scheduledFor, locale }))
-                                .replace('{current}', currentPlanName)}
-                        </p>
-                        <button
-                            type="button"
-                            className={styles.scheduledClose}
-                            onClick={closeFlow}
-                        >
-                            {t('common.close', 'Cerrar')}
-                        </button>
-                    </div>
+                        </DialogHeader>
+                        <DialogBody className={styles.scheduled}>
+                            {errorBanner}
+                            <p className={styles.scheduledBody}>
+                                {t(
+                                    'commerce.owner.planChange.scheduled.body',
+                                    'Tu plan pasa a {plan} el {date}. Hasta entonces no cambia nada: seguís con {current} y todas tus fichas visibles.'
+                                )
+                                    .replace('{plan}', targetPlanName)
+                                    .replace('{date}', formatDate({ date: scheduledFor, locale }))
+                                    .replace('{current}', currentPlanName)}
+                            </p>
+                        </DialogBody>
+                        <DialogFooter>
+                            <button
+                                type="button"
+                                className={styles.scheduledClose}
+                                onClick={closeFlow}
+                            >
+                                {t('common.close', 'Cerrar')}
+                            </button>
+                        </DialogFooter>
+                    </>
                 )}
             </Dialog>
         </div>

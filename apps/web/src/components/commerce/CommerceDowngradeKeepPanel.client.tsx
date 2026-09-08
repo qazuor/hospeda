@@ -26,8 +26,9 @@
  */
 
 import type { CommerceDowngradePreview, CommerceKeepSelections } from '@repo/schemas';
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { useState } from 'react';
+import { DialogBody, DialogFooter, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CommerceDowngradeKeepPanel.module.css';
@@ -52,6 +53,15 @@ export interface CommerceDowngradeKeepPanelProps {
     readonly onBack: () => void;
     /** Disables interaction while the change-plan request is in flight. */
     readonly isPending: boolean;
+    /**
+     * Optional error banner, rendered at the top of the dialog body (HOS-1235).
+     *
+     * A prop rather than a sibling because this panel emits the dialog's
+     * structural slots itself: anything passed beside it as a bare child of
+     * `<Dialog>` lands OUTSIDE every slot, where the panel's padding is
+     * switched off, and renders flush against the corner.
+     */
+    readonly error?: ReactNode;
 }
 
 /**
@@ -67,7 +77,8 @@ export function CommerceDowngradeKeepPanel({
     locale,
     onConfirm,
     onBack,
-    isPending
+    isPending,
+    error
 }: CommerceDowngradeKeepPanelProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
 
@@ -101,100 +112,106 @@ export function CommerceDowngradeKeepPanel({
     }
 
     return (
-        <div className={styles.root}>
-            <h2 className={styles.title}>
+        <>
+            <DialogHeader>
                 {t(
                     'commerce.owner.planChange.keepPanel.title',
                     'Elegí qué fichas seguís mostrando'
                 )}
-            </h2>
+            </DialogHeader>
+            <DialogBody className={styles.root}>
+                {error}
 
-            <p className={styles.intro}>
-                {/*
-                 * Plural-resolved on `activeCount`, which is the count the noun
-                 * hangs off ("de tus {active} fichas"). `{cap}` is the target
-                 * plan's allowance and never governs it, so it stays a plain
-                 * substitution. A single active listing used to read "de tus 1
-                 * fichas" in all three locales.
-                 *
-                 * `tPlural` takes no inline fallback, and none is added: the
-                 * `_one`/`_other` pair exists in es/en/pt, and
-                 * `scripts/i18n-fallback-inventory.json` may only shrink.
-                 */}
-                {tPlural('commerce.owner.planChange.keepPanel.intro', preview.activeCount)
-                    .replace('{plan}', targetPlanName)
-                    .replace('{cap}', String(preview.cap))
-                    .replace('{active}', String(preview.activeCount))}
-            </p>
-
-            <p className={styles.when}>
-                {effectiveDateLabel === null
-                    ? t(
-                          'commerce.owner.planChange.keepPanel.whenNoDate',
-                          'El cambio se aplica al final del período que ya pagaste. Hasta entonces no cambia nada.'
-                      )
-                    : t(
-                          'commerce.owner.planChange.keepPanel.when',
-                          'El cambio se aplica el {date}. Hasta entonces seguís con tu plan actual y todas tus fichas visibles.'
-                      ).replace('{date}', effectiveDateLabel)}
-            </p>
-
-            {/* The one thing an owner cannot undo from this screen, said plainly. */}
-            <p className={styles.quotaNote}>
-                {t(
-                    'commerce.owner.planChange.keepPanel.quotaNote',
-                    'Una ficha oculta sigue ocupando lugar en tu cupo: no vas a poder crear otra en su lugar. Vuelve a verse si subís de plan.'
-                )}
-            </p>
-
-            {overCap && (
-                <p
-                    className={styles.overCap}
-                    role="alert"
-                >
-                    {t(
-                        'commerce.owner.planChange.keepPanel.overCap',
-                        'Elegiste {selected} y el plan permite {cap}. Desmarcá {extra}.'
-                    )
-                        .replace('{selected}', String(selectedCount))
+                <p className={styles.intro}>
+                    {/*
+                     * Plural-resolved on `activeCount`, which is the count the noun
+                     * hangs off ("de tus {active} fichas"). `{cap}` is the target
+                     * plan's allowance and never governs it, so it stays a plain
+                     * substitution. A single active listing used to read "de tus 1
+                     * fichas" in all three locales.
+                     *
+                     * `tPlural` takes no inline fallback, and none is added: the
+                     * `_one`/`_other` pair exists in es/en/pt, and
+                     * `scripts/i18n-fallback-inventory.json` may only shrink.
+                     */}
+                    {tPlural('commerce.owner.planChange.keepPanel.intro', preview.activeCount)
+                        .replace('{plan}', targetPlanName)
                         .replace('{cap}', String(preview.cap))
-                        .replace('{extra}', String(selectedCount - preview.cap))}
+                        .replace('{active}', String(preview.activeCount))}
                 </p>
-            )}
 
-            <ul
-                className={styles.list}
-                aria-label={t(
-                    'commerce.owner.planChange.keepPanel.listLabel',
-                    'Tus fichas de este rubro'
-                )}
-            >
-                {preview.items.map((item) => (
-                    <li
-                        key={item.id}
-                        className={styles.row}
+                <p className={styles.when}>
+                    {effectiveDateLabel === null
+                        ? t(
+                              'commerce.owner.planChange.keepPanel.whenNoDate',
+                              'El cambio se aplica al final del período que ya pagaste. Hasta entonces no cambia nada.'
+                          )
+                        : t(
+                              'commerce.owner.planChange.keepPanel.when',
+                              'El cambio se aplica el {date}. Hasta entonces seguís con tu plan actual y todas tus fichas visibles.'
+                          ).replace('{date}', effectiveDateLabel)}
+                </p>
+
+                {/* The one thing an owner cannot undo from this screen, said plainly. */}
+                <p className={styles.quotaNote}>
+                    {t(
+                        'commerce.owner.planChange.keepPanel.quotaNote',
+                        'Una ficha oculta sigue ocupando lugar en tu cupo: no vas a poder crear otra en su lugar. Vuelve a verse si subís de plan.'
+                    )}
+                </p>
+
+                {overCap && (
+                    <p
+                        className={styles.overCap}
+                        role="alert"
                     >
-                        <label className={styles.rowLabel}>
-                            <input
-                                type="checkbox"
-                                className={styles.checkbox}
-                                checked={selectedIds.has(item.id)}
-                                onChange={() => toggle(item.id)}
-                                disabled={isPending}
-                                aria-label={item.name}
-                            />
-                            <span className={styles.rowName}>{item.name}</span>
-                            {item.keepByDefault && (
-                                <span className={styles.badge}>
-                                    {t('commerce.owner.planChange.keepPanel.suggested', 'Sugerida')}
-                                </span>
-                            )}
-                        </label>
-                    </li>
-                ))}
-            </ul>
+                        {t(
+                            'commerce.owner.planChange.keepPanel.overCap',
+                            'Elegiste {selected} y el plan permite {cap}. Desmarcá {extra}.'
+                        )
+                            .replace('{selected}', String(selectedCount))
+                            .replace('{cap}', String(preview.cap))
+                            .replace('{extra}', String(selectedCount - preview.cap))}
+                    </p>
+                )}
 
-            <div className={styles.actions}>
+                <ul
+                    className={styles.list}
+                    aria-label={t(
+                        'commerce.owner.planChange.keepPanel.listLabel',
+                        'Tus fichas de este rubro'
+                    )}
+                >
+                    {preview.items.map((item) => (
+                        <li
+                            key={item.id}
+                            className={styles.row}
+                        >
+                            <label className={styles.rowLabel}>
+                                <input
+                                    type="checkbox"
+                                    className={styles.checkbox}
+                                    checked={selectedIds.has(item.id)}
+                                    onChange={() => toggle(item.id)}
+                                    disabled={isPending}
+                                    aria-label={item.name}
+                                />
+                                <span className={styles.rowName}>{item.name}</span>
+                                {item.keepByDefault && (
+                                    <span className={styles.badge}>
+                                        {t(
+                                            'commerce.owner.planChange.keepPanel.suggested',
+                                            'Sugerida'
+                                        )}
+                                    </span>
+                                )}
+                            </label>
+                        </li>
+                    ))}
+                </ul>
+            </DialogBody>
+
+            <DialogFooter>
                 <button
                     type="button"
                     className={styles.btnBack}
@@ -214,7 +231,7 @@ export function CommerceDowngradeKeepPanel({
                         ? t('common.loading', 'Cargando...')
                         : t('commerce.owner.planChange.keepPanel.confirm', 'Programar el cambio')}
                 </button>
-            </div>
-        </div>
+            </DialogFooter>
+        </>
     );
 }

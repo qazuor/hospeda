@@ -111,6 +111,31 @@ describe('PayerEmailConfirmDialog — emails containing "+" (HOS-1021)', () => {
         const input = screen.getByRole('textbox');
         await user.clear(input);
         await user.type(input, 'qazuor@gmail.com');
+
+        // Not redundant with the assertion below — it is a DIAGNOSTIC SPLIT.
+        //
+        // This test went red once on CI (shard 3/5, run 34258330762) with
+        // `onConfirm` at "Number of calls: 0", and stayed green through every
+        // attempt to reproduce it: 15 isolated runs, the whole billing
+        // directory, and the entire 2.445-test shard. Whatever it is, it is
+        // rare and load-dependent.
+        //
+        // The problem with that failure is WHERE it points. `onConfirm` is
+        // never called when `isValid` is false, and `isValid` reads the input
+        // — so a value that did not make it into the field is reported as a
+        // callback problem, and sends the next reader to `handleConfirm`,
+        // which is fine. Asserting the field first splits the two: red here
+        // means the typing did not land (a test-harness problem), red below
+        // means the component ignored a valid address (a real bug).
+        //
+        // Ruled out as the cause, so nobody re-treads it: `Dialog` steals
+        // focus to its panel via `requestAnimationFrame`, but firing that
+        // frame mid-typing by hand does NOT lose the value — `userEvent.type`
+        // re-focuses the input itself. Fake timers leaking from a neighbour
+        // are also out (both users of them restore in `afterEach`, and the
+        // pool is `forks` with isolation on).
+        expect(input).toHaveValue('qazuor@gmail.com');
+
         await user.click(screen.getByRole('button', { name: CONFIRM_LABEL }));
 
         expect(onConfirm).toHaveBeenCalledWith('qazuor@gmail.com');

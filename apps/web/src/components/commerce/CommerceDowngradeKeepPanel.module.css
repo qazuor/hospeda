@@ -10,12 +10,8 @@
     font-family: var(--font-sans);
 }
 
-.title {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: var(--core-foreground);
-}
+/* `.title` is gone (HOS-1235): the heading is `<DialogHeader>` now, which
+ * renders the `<h2>` and owns its typography. */
 
 .intro {
     margin: 0;
@@ -109,12 +105,8 @@
     letter-spacing: 0.03em;
 }
 
-.actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2, 0.5rem);
-    margin-top: var(--space-2, 0.5rem);
-}
+/* `.actions` is gone (HOS-1235): the buttons live in `<DialogFooter>`, which
+ * brings the same flex row and gap plus the panel-wide separator. */
 
 .btnBack,
 .btnConfirm {

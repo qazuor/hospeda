@@ -56,6 +56,32 @@
     flex-direction: column;
     box-shadow: 0 25px 50px oklch(0 0 0 / 0.25);
     animation: dialogPanelIn 0.18s ease-out;
+    /* Fallback padding, so a dialog CANNOT render flush against the panel
+     * edge (HOS-1235). It applies only to a panel that skips the structural
+     * slots below — content passed as bare children, which has nothing else
+     * putting padding on it.
+     *
+     * All fifteen consumers compose the slots today, so nothing currently
+     * takes this. That is the point, not an argument for deleting it: two of
+     * them did NOT, and shipped a title at 0px from the corner on a checkout
+     * screen. The slots are optional by design, so the next dialog written
+     * without them lands here instead of against the edge. */
+    padding: var(--space-5, 20px);
+}
+
+/* A panel using the structural slots does NOT take the fallback: each slot
+ * carries its own padding, and `.header`/`.footer` separators are meant to
+ * span the panel edge to edge. Padding here would inset those rules by 20px
+ * on both sides, on all fifteen consumers of this component.
+ *
+ * Deliberately NOT `:has(> .header)`: `MoveToCollectionModal` wraps its slots
+ * in a `<div data-testid>`, so the child combinator would miss it and
+ * double-pad that dialog. */
+.panel:has(.header),
+.panel:has(.body),
+.panel:has(.bodyBare),
+.panel:has(.footer) {
+    padding: 0;
 }
 
 @keyframes dialogPanelIn {
@@ -89,11 +115,16 @@
 }
 
 /* When `transparent` is set the panel surrenders its background / shadow /
- * radius — the consumer renders its own chrome (e.g. the image lightbox). */
+ * radius — the consumer renders its own chrome (e.g. the image lightbox).
+ * That includes the fallback padding: the lightbox wants every pixel, and
+ * padding around a transparent panel is invisible chrome that only shrinks
+ * the image. Matches `.panel:has(...)` on specificity and wins on source
+ * order, so it must stay below that rule. */
 .panel[data-variant="transparent"] {
     background-color: transparent;
     box-shadow: none;
     border-radius: 0;
+    padding: 0;
 }
 
 /* Header, body, footer are optional structural slots. */
