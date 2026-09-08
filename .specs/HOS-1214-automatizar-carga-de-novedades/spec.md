@@ -301,6 +301,43 @@ title: a PR title is written for a reviewer, not for a guest. And it does not
 propose without blocking: that is today's state with a reminder on top, and it
 re-empties. **Forgetting, not bad wording, is what emptied the catalog.**
 
+### D-5 · Exit `3` (could not determine) BLOCKS the GitHub check, it does not pass with a warning (owner decision, 2026-09-07)
+
+AC-13 already establishes that the gate must exit `3` — not `1` — when it
+cannot determine the answer (an outaged GitHub API, an unresolvable range).
+What the spec had not settled is what that `3` becomes as a GitHub check
+result on the promotion PR, and the owner decided it explicitly:
+
+> **Cuando el gate no puede determinar la respuesta (API caída, rango
+> irresoluble), BLOQUEA**, y el mensaje dice que no pudo determinar — nunca
+> que encontró PRs sin evaluar. Un check de GitHub es binario y no hay tercer
+> estado; se descartó dejarlo pasar con aviso porque un gate que se vuelve
+> invisible justo cuando no puede verificar es la forma exacta de fail-open
+> que este repo ya sufrió varias veces. Re-correr es un `workflow_dispatch`,
+> sin push. También se descartó emitir un check `neutral` por la Checks API:
+> sin branch protection (que este plan no tiene) un neutral no frena nada, así
+> que se comportaría como dejarlo pasar.
+
+Two alternatives were considered and rejected by name:
+
+- **Pass with a warning annotation.** A gate that goes invisible exactly when
+  it cannot verify is fail-open by a different name — the repeated failure
+  mode this repo's memory (`feedback_*` entries on fail-open guards) already
+  documents, not a new risk to accept here.
+- **A GitHub Checks API `neutral` conclusion.** `neutral` only stops a merge
+  under branch protection rules that require the check. This repo has none
+  (OQ-5, CLAUDE.md's Protected Branches section — agent-side convention only,
+  not GitHub-enforced), so a `neutral` here would have the exact same effect
+  as passing: it blocks nothing.
+
+So the implemented behavior — `whats-new-gate.yml`'s "Combine and report" step
+failing the job (`exit 1`) whenever the unknown log is non-empty, even with no
+known failure alongside it — is the decision, not a placeholder pending
+owner input. The remedy for a `3`/unknown state is `workflow_dispatch` (a
+re-run), never a push, since nothing about the code changed. This is settled;
+do not re-litigate it by reading the YAML's binary exit code as an
+implementation shortcut.
+
 ### D-4 · `es` by hand; `en`/`pt` machine-translated, marked unreviewed, with a circuit that actually closes
 
 The schema requires `es` and leaves `en`/`pt` optional with a silent fallback to
@@ -419,8 +456,8 @@ git log --first-parent --format=%H origin/main..origin/staging
 
 one commit per merged PR. Each is resolved to its PR through
 `GET /repos/{owner}/{repo}/commits/{sha}/pulls` — the authoritative association,
-not a parse of the merge message. Merge-subject parsing (`Merge pull request
-#NNNN`) is kept only as a cross-check, and a disagreement between the two is
+not a parse of the merge message. Merge-subject parsing (`Merge pull request #NNNN`)
+is kept only as a cross-check, and a disagreement between the two is
 reported rather than silently resolved.
 
 A first-parent commit that resolves to **no** PR is a direct push to `staging`,
