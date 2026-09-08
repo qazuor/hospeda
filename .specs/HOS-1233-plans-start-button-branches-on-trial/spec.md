@@ -160,13 +160,33 @@ Per the vertical of the page the button lives on:
 
 `/publicar/`, `/publicar/gastronomia/` and `/publicar/experiencias/` are step 1 for their verticals (`PUBLISH_PAGE_PATH_BY_VERTICAL`, `apps/web/src/lib/publish/publish-page-paths.ts`) — there is no separate multi-step wizard.
 
-### D-3 · The clock's only source is the local row
+### D-3 · Tourist gets a real domain, and the existing rows are corrected (owner, 2026-09-08)
+
+OQ-1 resolved to option 1: `TOURIST` joins `ProductDomainEnum`, the tourist plan rows stop claiming to be accommodation, and the existing rows measured in F-4b are migrated. The owner asked for the robust path — the one that leaves the other reads correct rather than reading around a misfiling.
+
+This is the largest piece of the spec and it reaches the entitlement engine. It carries the expand/contract rule of the structural carril: the enum value and the new classification ship first, the rows are backfilled, and nothing drops in the same release.
+
+### D-4 · An active subscription in ANY vertical disables the tourist purchase (owner, 2026-09-08)
+
+A visitor holding an **active** subscription in any current vertical — accommodation, gastronomy or experiences — cannot buy a tourist plan. The button is disabled and the card states they already hold the VIP benefits, as if subscribed.
+
+**This is not a courtesy, it is already true.** `plans.config.ts:578-592` records HOS-975 D-A (owner, 2026-09-01): every commerce tier spreads `TOURIST_VIP_ENTITLEMENTS` and `TOURIST_VIP_LIMITS` whole, the same two constants all six accommodation plans spread, "because a commerce owner is a tourist on this platform too". Verified in the config: the spread appears on all six accommodation tiers, on `tourist-vip` itself, and on the commerce tiers.
+
+So the tourist purchase for these people sells nothing they do not have. Offering it takes money for an empty delta.
+
+Three boundaries this decision needs, and only the first came from the owner:
+
+- **`trialing` is excluded, deliberately** (owner). Someone mid-trial holds the entitlements today but may not tomorrow; disabling their tourist purchase would leave them with no way to keep the benefits if they let the trial lapse.
+- **`comp` is treated as active** — assumption, flagged here rather than asked. A comp subscription is perpetual and grants entitlements (`isEntitlementGrantingStatus` accepts `active`, `trialing`, `comp`), so it sells the same empty delta. Reverse it if the intent was narrower.
+- **`past_due` is treated as active** during its dunning grace — same assumption, same reasoning: entitlements still resolve during the 7-day grace. Staging currently holds a `past_due` `tourist-vip` row (F-4b), so this state is not hypothetical.
+
+### D-5 · The clock's only source is the local row
 
 `trial_end` on `billing_subscriptions`. Since HOS-1012, MercadoPago is never asked about trials, and `scripts/check-no-trial-to-mercadopago.sh` fails CI if a checkout payload names one.
 
 ## 5. Scope
 
-**In**: the five `/planes/{audience}/precios/` pages; the vertical-aware trial read that F-3 shows is missing; the three branches on `PlanPurchaseButton` (anfitriones + turistas); the remaining-days banner on all five; the warn-and-confirm dialog.
+**In**: the five `/planes/{audience}/precios/` pages; the vertical-aware trial read that F-3 shows is missing; the three branches on `PlanPurchaseButton` (anfitriones + turistas); the remaining-days banner on all five; the warn-and-confirm dialog; `TOURIST` in `ProductDomainEnum` plus the reclassification of the existing rows (D-3); the already-VIP disabled state on the tourist cards (D-4).
 
 **Out**: converting any `ctaMode="link"` page into a checkout page (D-1); `/mi-cuenta/comercio`'s publish action, which HOS-1184 already resolved (F-2); merging the two verdict enums (F-5); the legacy `/suscriptores/planes/*` pages, which are pure 301s.
 
@@ -185,10 +205,18 @@ Per the vertical of the page the button lives on:
 - **AC-11** · A static guard covers the web side of F-6: no verdict literal is compared inline in `apps/web/src` outside the one module that maps a verdict to a branch. The guard fails on a second call site.
 - **AC-12** · The three `ctaMode="link"` pages still link to signup → create form. No checkout path is added to them.
 - **AC-13** · Nothing in this work sends a trial to MercadoPago; guard G-1 stays green.
+- **AC-14** · `ProductDomainEnum` carries `TOURIST`; tourist plan rows in every environment stop reporting `accommodation` (D-3, F-4b). A query equivalent to F-4b's returns `tourist` for `tourist-*` plans afterwards.
+- **AC-15** · `subscriptionMatchesDomain` keeps its asymmetry: `accommodation` still fails open for legacy rows, `tourist` fails closed like every other non-accommodation domain.
+- **AC-16** · A visitor with an `active` subscription in accommodation, gastronomy or experiences sees the tourist purchase button **disabled**, with copy stating the VIP benefits are already held (D-4).
+- **AC-17** · A visitor whose only subscription is `trialing` still sees the tourist button **enabled** (D-4). This is the one that will be "simplified" by a future reader; it is deliberate.
+- **AC-18** · AC-16's copy never appears for someone who does not actually hold the benefits. The condition reads a live subscription status, never a role and never the presence of a plan object.
+- **AC-19** · A guard asserts that the tourist-VIP inheritance still holds for all three verticals — the moment a vertical stops spreading `TOURIST_VIP_ENTITLEMENTS`, AC-16 starts lying, and nothing else would catch it.
 
 ## 7. Open questions
 
-### OQ-1 · Tourist is misfiled, not just unread — BLOCKING for the tourist page
+### OQ-1 · RESOLVED 2026-09-08 → D-3 (option 1). Kept for the reasoning
+
+Tourist is misfiled, not just unread
 
 F-4 and **F-4b**: there is no `tourist` in `ProductDomainEnum`, and the consequence in the live data is that tourist plans are classified as `accommodation` in prod and staging alike. So the tourist page is not missing a read — it is reading a row that claims to be something else. And it is the page where the worst outcome was measured (ARS 15.000 charged on the spot).
 
@@ -216,6 +244,9 @@ AC-6 pins it to one named constant either way. Whether it becomes plan- or verti
 - **R-2 · Failing open into a silent charge.** The dangerous direction here is the opposite of the usual one: a failed read that skips the warning charges real money without asking. AC-9 states the safe direction explicitly.
 - **R-3 · Leaking session state into a cached page.** F-8 / AC-10.
 - **R-4 · Scope drift on the three link pages.** D-1 keeps them banner-only; making them uniform "for consistency" would undo HOS-1156's funnel.
+- **R-5 · A new enum value trips frozen guards across packages.** D-3 adds `TOURIST`. The repo has counted/frozen guards that a new `ProductDomainEnum` member breaks in several packages at once; they are the mechanism working, not collateral. Budget for them rather than being surprised.
+- **R-6 · The reclassification is a data migration wearing a schema change.** D-3's rows exist in prod today (F-4b). Backfill in one release, drop nothing in the same one; a data-migration that needs a column the same release removes reads nothing, moves zero rows, and is ledgered as applied forever.
+- **R-7 · AC-16 disabling the button for someone who does NOT hold the benefits.** The failure is invisible in testing and costs a sale: the copy claims a benefit the visitor lacks. AC-18 pins the condition to a live subscription status; AC-19 guards the inheritance the claim rests on.
 
 ## 9. Test plan
 
