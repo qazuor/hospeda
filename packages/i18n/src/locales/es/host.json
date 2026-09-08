@@ -452,6 +452,13 @@
                 "network": "Error de conexión"
             },
             "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
+            "publishReady": {
+                "title": "Tu ficha ya está lista",
+                "body": "Completaste todo lo que hacía falta. Si la publicás ahora, va a aparecer en el sitio, visible para los turistas.",
+                "publishNow": "Publicar ahora",
+                "keepEditing": "Seguir editando",
+                "blockedTitle": "Necesitás un plan activo"
+            },
             "toast": {
                 "saveSuccess": "Cambios guardados",
                 "saveError": "No pudimos guardar los cambios. Intentá de nuevo.",

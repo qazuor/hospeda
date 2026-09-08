@@ -452,6 +452,13 @@
                 "network": "Network error"
             },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+            "publishReady": {
+                "title": "Your listing is ready",
+                "body": "You have completed everything that was missing. If you publish now, it will appear on the site, visible to travellers.",
+                "publishNow": "Publish now",
+                "keepEditing": "Keep editing",
+                "blockedTitle": "You need an active plan"
+            },
             "toast": {
                 "saveSuccess": "Changes saved",
                 "saveError": "We couldn't save your changes. Please try again.",
