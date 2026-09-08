@@ -62,6 +62,8 @@ import {
     PLANS_PAGE_PATH_BY_VERTICAL,
     PRICING_PAGE_PATH_BY_VERTICAL
 } from '@/lib/publish/publish-page-paths';
+import { publishApi } from '@/lib/api/endpoints-protected';
+import { shouldShowPublishTrialCallout } from '@/lib/host/publish-trial-callout';
 import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
 import { buildUrl } from '@/lib/urls';
 
@@ -99,14 +101,26 @@ type TrialStatusData = {
 // `create_direct` and a form that will refuse on submit. Telling the host up
 // front is the whole point of the banner.
 let trialStatus: TrialStatusData | null = null;
+
+// HOS-1183 F-6: whether publishing would actually grant this owner a trial.
+// `null` = unresolved (signed out, or the read failed) — see
+// `shouldShowPublishTrialCallout` for what that means.
+let trialEligibility: boolean | null = null;
+
 if (isAuthenticated && cookieHeader) {
     try {
-        const trialResponse = await fetch(`${getApiUrl()}/api/v1/protected/billing/trial/status`, {
-            headers: { cookie: cookieHeader }
-        });
+        const [trialResponse, eligibility] = await Promise.all([
+            fetch(`${getApiUrl()}/api/v1/protected/billing/trial/status`, {
+                headers: { cookie: cookieHeader }
+            }),
+            publishApi.accommodationEligibility({ cookieHeader })
+        ]);
         if (trialResponse.ok) {
             const trialJson = (await trialResponse.json()) as { data?: TrialStatusData };
             trialStatus = trialJson.data ?? null;
+        }
+        if (eligibility.ok) {
+            trialEligibility = eligibility.data.startsTrial;
         }
     } catch (error) {
         logger.warn('publicar/index: failed to fetch trial status', { error });
@@ -115,6 +129,10 @@ if (isAuthenticated && cookieHeader) {
 }
 
 const isTrialExpired = trialStatus?.isExpired === true;
+
+// HOS-1183 F-6. The decision lives in a pure helper, not here — see its
+// docblock for why `isExpired` alone was the wrong question.
+const showTrialCallout = shouldShowPublishTrialCallout({ isTrialExpired, trialEligibility });
 const expiredAtDisplay = trialStatus?.expiresAt ? trialStatus.expiresAt.substring(0, 10) : '';
 const expiredPlanSlug = trialStatus?.planSlug ?? '';
 
@@ -192,14 +210,14 @@ const benefits = [
                     </a>
                 </div>
             </div>
-        ) : (
+        ) : showTrialCallout ? (
             <div class="publicar-hero__trial-callout" role="note">
                 <span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
                 <p class="publicar-hero__trial-callout-text">
                     {tPlural('host.landing.trialCallout', genericTrialDays, { trialDays: genericTrialDays })}
                 </p>
             </div>
-        )}
+        ) : null}
     </PublishHero>
 
     <PublishFormSlot locale={locale} vertical={VERTICAL} resolution={slot}>
