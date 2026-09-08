@@ -394,5 +394,51 @@ describe('Subject Builder', () => {
                 expect(result).toContain('{accommodationName}');
             });
         });
+
+        // Add-on cancellation: two subjects, one per real-world state (HOS-847
+        // PR 7c). The body already said "seguís teniendo el beneficio hasta el
+        // 15 de abril" under a subject that said only "cancelado".
+        describe('ADDON_CANCELLATION subject', () => {
+            it('is byte-identical to the original wording when no access survives', () => {
+                // Arrange — non-payment and admin cancels end the benefit on the
+                // spot and supply no `accessUntil`. Their subject did not change,
+                // and this assertion is what says so: one shared pattern carrying
+                // an optional `{accessUntil}` would leave either the raw token or
+                // a dangling "hasta el " in every one of those inbox lines.
+                const data = { addonName: 'Fotos extra' };
+
+                // Act
+                const result = getSubject(NotificationType.ADDON_CANCELLATION, data);
+
+                // Assert
+                expect(result).toBe('Tu complemento Fotos extra ha sido cancelado');
+            });
+
+            it('says the benefit continues when the customer keeps a paid period', () => {
+                // Arrange
+                const data = { addonName: 'Fotos extra', accessUntil: '15 de abril de 2026' };
+
+                // Act
+                const result = getSubject(NotificationType.ADDON_CANCELLATION, data);
+
+                // Assert
+                expect(result).toBe(
+                    'Tu complemento Fotos extra queda cancelado — lo seguís usando hasta el 15 de abril de 2026'
+                );
+                expect(result).not.toContain('{');
+            });
+
+            it('keeps the original subject when the date could not be formatted', () => {
+                // Arrange — `formatDate` answers '' for an input it cannot read.
+                // Branching on it would publish "…hasta el " with nothing after.
+                const data = { addonName: 'Fotos extra', accessUntil: '' };
+
+                // Act
+                const result = getSubject(NotificationType.ADDON_CANCELLATION, data);
+
+                // Assert
+                expect(result).toBe('Tu complemento Fotos extra ha sido cancelado');
+            });
+        });
     });
 });

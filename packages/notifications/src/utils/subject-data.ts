@@ -117,6 +117,21 @@ function buildDerivedSubjectData(payload: NotificationPayload): Record<string, s
         derived.accessUntil = formatDate({ dateString: payload.accessUntil });
     }
 
+    // OPTIONAL here, unlike the two above: only a soft-cancelled recurring
+    // add-on carries it (HOS-847 PR 7c). A payload without the field sets no
+    // key, and `getSubject` then keeps the immediate-cancellation subject,
+    // whose wording mentions no date at all.
+    //
+    // When the field IS present this claims the key even if `formatDate` could
+    // not read it and answered ''. Leaving it unset there would hand the
+    // generic pass below a same-named payload field to copy verbatim, and
+    // "…hasta el 2026-04-15T23:59:59.000Z" is precisely the leak this derived
+    // pass exists to prevent. An empty value instead makes `getSubject` fall
+    // back to the dateless subject.
+    if (payload.type === 'addon_cancellation' && payload.accessUntil !== undefined) {
+        derived.accessUntil = formatDate({ dateString: payload.accessUntil });
+    }
+
     if (payload.type === 'plan_price_change_notice' && 'effectiveDate' in payload) {
         derived.effectiveDate = formatDate({ dateString: payload.effectiveDate });
     }
