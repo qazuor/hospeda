@@ -28,6 +28,7 @@ import { summaryTracker } from '../utils/summaryTracker.js';
 const SEED_CONTROLLED_FIELDS: ReadonlySet<string> = new Set<ModelCField>([
     'description',
     'active',
+    'productDomain',
     'entitlements',
     'limitsKeysPresent',
     'limitsValues',
@@ -99,6 +100,13 @@ interface DbRowSnapshot {
     readonly monthlyPriceArs: number | null;
     /** Typed column (HOS-39 T-003/T-005), promoted off metadata.annualPriceArs. */
     readonly annualPriceArs: number | null;
+    /**
+     * Typed column. NOT nullable in the DB, but read as nullable here for the
+     * same reason the others are: a snapshot is only ever as trustworthy as
+     * the row it came from, and a `null` must diverge rather than compare
+     * equal to a config value (HOS-1233).
+     */
+    readonly productDomain: string | null;
 }
 
 /**
@@ -149,6 +157,12 @@ function detectDivergences(
     }
     if (differs(dbRow.entitlements, plan.entitlements)) {
         push('entitlements', plan.entitlements, dbRow.entitlements);
+    }
+    // HOS-1233: a row whose domain does not match its config definition is
+    // exactly the tourist misclassification, and it must show up as a
+    // divergence rather than be left alone.
+    if (dbRow.productDomain !== plan.productDomain) {
+        push('productDomain', plan.productDomain, dbRow.productDomain);
     }
 
     // ── limits — two logical facets ─────────────────────────────────────────
@@ -262,6 +276,12 @@ function buildCapabilitySyncPayload(
     // PlanDialog.tsx already lets operators edit it, so the seed must not
     // sync it from config. No handling here; DB wins.
 
+    if (capabilityFields.has('productDomain')) {
+        // Straight from config — unlike `limits`, there is no per-key merge to
+        // do and nothing operator-owned to preserve.
+        payload.productDomain = plan.productDomain;
+    }
+
     if (capabilityFields.has('limitsKeysPresent')) {
         // Merge: start from DB values (preserving commercial values), then
         // add keys config has that DB lacks, and remove keys DB has that
@@ -365,7 +385,8 @@ async function ensurePlan(
             metadata: billingPlans.metadata,
             displayName: billingPlans.displayName,
             monthlyPriceArs: billingPlans.monthlyPriceArs,
-            annualPriceArs: billingPlans.annualPriceArs
+            annualPriceArs: billingPlans.annualPriceArs,
+            productDomain: billingPlans.productDomain
         })
         .from(billingPlans)
         .where(eq(billingPlans.name, plan.slug))
@@ -441,6 +462,12 @@ async function ensurePlan(
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            // HOS-1233 T-034: stamped from the plan's own definition, never
+            // from a slug list and never left to the column default. A plan
+            // added to `ALL_PLANS` cannot inherit somebody else's vertical,
+            // because `PlanDefinition.productDomain` is required — `tsc`
+            // refuses the definition before the seed ever runs.
+            productDomain: plan.productDomain,
             metadata: {
                 slug: plan.slug,
                 displayName: plan.name,
