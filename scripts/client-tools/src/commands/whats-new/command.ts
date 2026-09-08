@@ -1,10 +1,10 @@
 import type { ClientCommand } from '../../registry.ts';
-import { runWhatsNewAudit } from './audit.ts';
+import { runWhatsNew } from './dispatch.ts';
 
 /** `hops whats-new` */
 export const whatsNewCommand: ClientCommand = {
     name: 'whats-new',
-    summary: '¿Tiene cada PR de la promoción una decisión de novedad? (audit [--fix])',
+    summary: 'Novedades: auditar la promoción, ver lo pendiente, retirar (audit | pending | drop)',
     scope: 'local',
-    run: (argv) => runWhatsNewAudit({ argv })
+    run: (argv) => runWhatsNew({ argv })
 };

@@ -1,15 +1,14 @@
 import pc from 'picocolors';
-import { resolveRunContext } from '../../lib/context.ts';
-import { extractTarget } from '../../lib/target.ts';
-import { extractWorktreeFlag } from '../../lib/wt-flag.ts';
 import { computeAudit, exitCodeForOutcome } from './compute.ts';
 import { fixUnlabeledPrs } from './fix.ts';
 import { RANGE } from './range.ts';
 import { renderAuditReport } from './report.ts';
 
-/** The help page. */
-function renderHelp(): string {
+/** The help page for the whole `hops whats-new` command. */
+export function renderHelp(): string {
     return `
+${pc.bold('hops whats-new')} — la novedad se escribe sola; vos revisás y tachás.
+
 ${pc.bold('hops whats-new audit')} — ¿tiene cada PR de la promoción una decisión de novedad?
 
   ${pc.dim('Enumera los PRs mergeados en')} ${pc.bold(RANGE)} ${pc.dim('y falla si alguno')}
@@ -24,9 +23,16 @@ ${pc.bold('Uso')}
 
   hops whats-new audit
   hops whats-new audit --fix
+  hops whats-new pending
+  hops whats-new drop <id> [<id>...]
 
-  ${pc.bold('--fix')}    Recorre los PRs sin decisión, pregunta uno por uno, etiqueta.
-  ${pc.bold('--help')}   Esta página.
+  ${pc.bold('audit')}     Audita el rango de la promoción.
+  ${pc.bold('--fix')}     Recorre los PRs sin decisión, pregunta uno por uno, etiqueta.
+  ${pc.bold('pending')}   Muestra ENTERAS las entradas que esperan tu revisión
+            (las que todavía dicen publishedAt: 'on-promotion').
+  ${pc.bold('drop')}      Retira las entradas que nombres: branch, PR y etiquetas.
+            Sólo entradas nunca publicadas; no toca RETIRED_WHATS_NEW_IDS.
+  ${pc.bold('--help')}    Esta página.
 
 ${pc.bold('Qué exime')}
 
@@ -50,41 +56,24 @@ ${pc.bold('Códigos de salida')}
 /**
  * Runs `hops whats-new audit`.
  *
- * @param input.argv - Arguments after the command name (includes the `audit`
- *                      subcommand token itself, plus `--target`/`--wt`, which
- *                      are stripped here the same way every other command
- *                      strips them).
+ * @param input.argv     - Arguments after the `audit` subcommand token.
+ * @param input.repoRoot - Repository root.
+ * @param input.cwd      - Directory to run `git`/`gh` from (may be a worktree).
  * @returns The process exit code: `0` clean, `1` blocked, `3` could not
  *          determine (AC-13, via {@link exitCodeForOutcome}).
  */
 export async function runWhatsNewAudit({
-    argv
+    argv,
+    repoRoot,
+    cwd
 }: {
     readonly argv: readonly string[];
+    readonly repoRoot: string;
+    readonly cwd: string;
 }): Promise<number> {
-    const { target, rest: afterTarget } = extractTarget({ argv });
-    const { name: worktreeName, rest: afterWt } = extractWorktreeFlag({ argv: afterTarget });
+    const fix = argv.includes('--fix');
 
-    if (afterWt.includes('--help') || afterWt.includes('-h')) {
-        process.stdout.write(renderHelp());
-        return 0;
-    }
-
-    const [subcommand, ...subArgv] = afterWt;
-    if (subcommand !== 'audit') {
-        process.stderr.write(
-            `${pc.red('Subcomando desconocido:')} ${pc.bold(`hops whats-new ${subcommand ?? ''}`.trim())}\n` +
-                `${pc.dim('El único subcomando hoy es `audit`.')}\n\n`
-        );
-        process.stdout.write(renderHelp());
-        return 1;
-    }
-    const fix = subArgv.includes('--fix');
-
-    const context = await resolveRunContext({ cwd: process.cwd(), target, worktreeName });
-    const cwd = context.worktree?.path ?? context.repoRoot;
-
-    const outcome = await computeAudit({ repoRoot: context.repoRoot, cwd });
+    const outcome = await computeAudit({ repoRoot, cwd });
     if (!outcome.ok) {
         process.stderr.write(`${pc.yellow('NO SÉ')}  ${outcome.reason}\n`);
         return exitCodeForOutcome({ outcome });
@@ -119,7 +108,7 @@ export async function runWhatsNewAudit({
     // instead of re-reading GitHub is exactly the "the same system that did
     // the work reports success" trap. A stray `conflict` or a direct push
     // left over from before `--fix` ran must still show up in the exit code.
-    const rechecked = await computeAudit({ repoRoot: context.repoRoot, cwd });
+    const rechecked = await computeAudit({ repoRoot, cwd });
     if (!rechecked.ok) {
         process.stderr.write(`${pc.yellow('NO SÉ')}  ${rechecked.reason}\n`);
         return exitCodeForOutcome({ outcome: rechecked });

@@ -152,7 +152,8 @@ export const COMMANDS: readonly CommandEntry[] = [
     },
     {
         name: 'whats-new',
-        summary: '¿Tiene cada PR de la promoción una decisión de novedad? (audit [--fix])',
+        summary:
+            'Novedades: auditar la promoción, ver lo pendiente, retirar (audit | pending | drop)',
         load: async () => (await import('./commands/whats-new/command.ts')).whatsNewCommand
     }
 ];
