@@ -240,6 +240,7 @@
 | `POST /api/v1/protected/billing/subscriptions/link-preapproval` | `billing/link-preapproval.ts` | none | - | n/a | HOS-191 Path C: links a MercadoPago preapproval to its pending_provider local subscription after share-link checkout; auth + ownership (session customer) only, no entitlement gate |
 | `GET /api/v1/protected/billing/trial/status` | `billing/trial.ts` | none | - | n/a | Trial status self-read; always accessible |
 | `GET /api/v1/protected/billing/trial-eligibility` | `billing/trial-eligibility.ts` | none | - | n/a | HOS-226. Read-only trial-eligibility self-read (one trial per customer, any status/domain); auth-only, no entitlement/limit gate — mirrors trial/status and downgrade-preview. |
+| `GET /api/v1/protected/billing/payer-email-known` | `billing/payer-email-known.ts` | none | - | n/a | HOS-1234. Read-only self-read of whether `billing_customers.mp_payer_email` is set, returned as a boolean only (never the email); lets the pricing page skip the payer-email confirm dialog once a prior charge already confirmed one. Auth-only, no entitlement/limit gate — mirrors trial-eligibility and trial/status. |
 | `POST /api/v1/protected/billing/trial/start` | `billing/trial.ts` | none | - | n/a | Trial activation; no entitlement gate |
 | `POST /api/v1/protected/billing/trial/extend` | `billing/trial.ts` | none | - | n/a | Trial extension; no entitlement gate |
 | `POST /api/v1/protected/billing/trial/reactivate` | `billing/trial.ts` | none | - | n/a | Reactivation after trial-expiry; no entitlement gate |
