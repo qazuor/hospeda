@@ -3572,8 +3572,22 @@ describe('processSubscriptionUpdated', () => {
     // unit-tested in `payer-email.test.ts` — these tests only cover the
     // gating logic (when it is/isn't called).
     // ---------------------------------------------------------------------------
-    describe('mp_payer_email persistence (HOS-937 step 2)', () => {
-        it('persists the provider-confirmed payer email on PENDING_PROVIDER -> ACTIVE', async () => {
+    describe('mp_payer_email is NEVER written from a preapproval (HOS-937 → HOS-1234)', () => {
+        // HOS-1234 REVERSED THIS. These two used to assert that the persist
+        // fired on PENDING_PROVIDER -> ACTIVE and -> TRIALING. It never did in
+        // production: `mp_payer_email` was empty for all 37 staging customers
+        // while this code was deployed and running, because MercadoPago answers
+        // `GET /preapproval/{id}` with `payer_email` PRESENT AND EMPTY even for
+        // an authorized preapproval created with a valid address (measured
+        // 2026-09-08 against the live sandbox). The mock above supplied an email
+        // the real provider never sends, so the tests described a world that did
+        // not exist.
+        //
+        // A preapproval cannot answer "which email paid"; only a payment can.
+        // The assertion is therefore inverted: nothing here may write that
+        // column, on any transition, even when the provider read carries an
+        // address.
+        it('NEVER persists a payer email from a preapproval read, on any transition', async () => {
             mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
             mockRetrieve.mockResolvedValue(
                 makeMpSubscription('active', { payerEmail: 'authorized@example.com' })
@@ -3591,18 +3605,15 @@ describe('processSubscriptionUpdated', () => {
                 event: makeWebhookEvent() as never,
                 billing: mockBilling as never,
                 paymentAdapter: mockPaymentAdapter as never,
-                providerEventId: 'evt-hos937-payer-email-active'
+                providerEventId: 'evt-hos1234-no-persist-from-preapproval'
             });
 
+            // The activation itself is untouched — only the payer-email write is gone.
             expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
-            expect(mockPersistMpPayerEmail).toHaveBeenCalledTimes(1);
-            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
-                customerId: localSub.customerId,
-                payerEmail: 'authorized@example.com'
-            });
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
         });
 
-        it('persists on PENDING_PROVIDER -> TRIALING too (not just ACTIVE)', async () => {
+        it('NEVER persists on the TRIALING transition either', async () => {
             mockedExtract.mockReturnValue({ subscriptionId: 'preapproval-mp-001' });
             const trialEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             mockRetrieve.mockResolvedValue(
@@ -3622,15 +3633,11 @@ describe('processSubscriptionUpdated', () => {
                 event: makeWebhookEvent() as never,
                 billing: mockBilling as never,
                 paymentAdapter: mockPaymentAdapter as never,
-                providerEventId: 'evt-hos937-payer-email-trialing'
+                providerEventId: 'evt-hos1234-no-persist-trialing'
             });
 
             expect(result.newStatus).toBe(SubscriptionStatusEnum.TRIALING);
-            expect(mockPersistMpPayerEmail).toHaveBeenCalledTimes(1);
-            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
-                customerId: localSub.customerId,
-                payerEmail: 'trialer@example.com'
-            });
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
         });
 
         it('does NOT persist when the provider reports no payerEmail', async () => {
