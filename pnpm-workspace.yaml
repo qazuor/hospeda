@@ -195,11 +195,39 @@ overrides:
   # version. Raising the selector to the full advisory range is the fix.
   # Transitive only (xmlbuilder2, @tanstack/start-plugin-core, ~100 paths), so
   # an override is the only reachable route — Dependabot cannot patch these.
-  "js-yaml@<4.3.1": "^4.3.1"
+  #
+  # AMPLIADO otra vez el 2026-09-08 por GHSA-2883-xcg3-v3hh (high):
+  # `maxTotalMergeKeys` no acota el CPU cuando las fuentes del merge están
+  # vacías, y el rango vulnerable llega hasta <4.3.2. El piso anterior (4.3.1)
+  # volvió a ser exactamente la versión que el advisory nombra — tercera vez que
+  # este override se queda corto por la misma razón, así que vale escribirla:
+  # cuando el rango de un advisory se amplía, el piso que lo cerraba pasa a ser
+  # el techo de lo vulnerable. Además de xmlbuilder2, ahora también entra por
+  # apps/api > @better-auth/expo > expo > @expo/cli > @expo/xcpretty.
+  "js-yaml@<4.3.2": "^4.3.2"
   # The 5.x line is a separate advisory track from the 4.x pin above: 5.2.0 is
   # installed and is hit by both the flow-collection and the !!omap DoS. Already
   # above the !!omap fix, so this line needed no change.
   "js-yaml@>=5.0.0": ">=5.2.2"
+  # Lote de advisories del 2026-09-08 (~10 GHSAs high sobre las dos líneas vivas:
+  # GHSA-6mj3-qw4j-hgrw, -c7q8-3ch8-vqpv, -27p8-2357-5qqv, -8344-3jmq-59r6,
+  # -965w-775f-mr7g, -93r5-fhx6-vmg9, -3px3-54cx-rmw9, -vr34-hp96-76pp,
+  # -w2rr-34g9-rvrj, -4w3w-2rp5-g8jm). Amplificación de salida y mismatches de
+  # parseo en XML/HTML.
+  #
+  # Las DOS líneas se pinean por separado a propósito: `@expo/plist` declara
+  # `^0.8.8` y `@expo/config-plugins` la 0.9.x, así que un solo override con
+  # `>=0.9.12` cruzaría a un consumidor de la 0.8 por encima de un major.
+  #
+  # Transitivo puro y por un solo camino: apps/api > @better-auth/expo > expo >
+  # @expo/cli > (@expo/plist | @expo/config-plugins > xcode > simple-plist >
+  # plist). Ese sub-árbol es herramental de prebuild de iOS/Android — la API
+  # Hono no lo ejecuta nunca; lo que sí se usa de `@better-auth/expo` es el
+  # plugin `expo()` de apps/api/src/lib/auth.ts, que es server-side puro (un
+  # endpoint de deep-link y un hook sobre `origin`) y no toca XML. Por eso el
+  # riesgo de forzar estas versiones es bajo, pero el advisory se cierra igual.
+  "@xmldom/xmldom@<0.9.0": ">=0.8.15 <0.9.0"
+  "@xmldom/xmldom@>=0.9.0": ">=0.9.12"
   # 0.0.33 and 0.1.0 both reach the arbitrary-write and path-traversal
   # advisories. Only reachable through external-editor (CLI prompt tooling).
   tmp: ">=0.2.6"
