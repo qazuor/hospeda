@@ -185,6 +185,26 @@ async function setLimitKey(
  * today's seeded catalog was always the wrong way to obtain it.
  */
 async function insertTempPlan(tx: DrizzleClient, name: string, active: boolean): Promise<void> {
+    // Check-then-insert, NOT a bare insert. `billing_plans.name` carries no
+    // unique constraint, so a second row with the same name inserts happily and
+    // then every count this suite asserts comes back one too high — which reads
+    // as "the migration updated a row it should not have" rather than "the
+    // fixture duplicated one". Measured: the 35 integration suites SHARE one
+    // database, and since HOS-1224 stopped seeding `tourist-plus` several of
+    // them now materialise it themselves, so the row may already be there when
+    // this runs. Existence is the only safe assumption.
+    const existing = await tx
+        .select({ id: billingPlans.id })
+        .from(billingPlans)
+        .where(eq(billingPlans.name, name))
+        .limit(1);
+
+    const row = existing[0];
+    if (row) {
+        await tx.update(billingPlans).set({ active }).where(eq(billingPlans.id, row.id));
+        return;
+    }
+
     await tx.insert(billingPlans).values({
         name,
         displayName: name,
