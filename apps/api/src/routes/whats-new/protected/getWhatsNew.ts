@@ -10,6 +10,12 @@
  * - Lazy init: if `settings.onboarding.whatsNew` is absent, the server sets
  *   `baselineAt = now, seenIds = []` and persists via `initWhatsNewBaseline`.
  *   Failure is non-fatal — the handler continues with an empty fallback state.
+ * - Future filter (HOS-1216): an entry whose `publishedAt` is still in the
+ *   future (`publishedAt > now`) is excluded BEFORE role filtering and the
+ *   response map, so it never appears in `items`, never counts toward
+ *   `unseenCount`, and never trips the `highlight` auto-modal. An entry
+ *   dated exactly `now` is already visible. Scheduling ahead of the release
+ *   day stays a legal authoring pattern — see `filterEntriesByPublishedAt`.
  * - Role filter: only entries whose `roles` array includes the actor's role
  *   (or is absent/empty) are returned.
  * - Seen computation: an entry is seen if its id is in `seenIds` OR its
@@ -44,6 +50,7 @@ import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import {
     computeSeen,
+    filterEntriesByPublishedAt,
     filterEntriesByRole,
     resolveEntryLocale
 } from '../../../utils/whats-new/whats-new.helpers';
@@ -135,8 +142,17 @@ export const getWhatsNewHandler = async (
         (actorSettings.languageWeb as string | undefined) ??
         'es';
 
+    // Hide entries scheduled for the future (HOS-1216) BEFORE the role filter
+    // and the map below — doing it this early means a not-yet-published entry
+    // never reaches `items`, never counts toward `unseenCount`, and (when
+    // `highlight: true`) never trips the auto-modal downstream. Scheduling an
+    // entry ahead of its release day stays a supported authoring pattern
+    // (see `apps/api/src/data/whats-new/whats-new.ts`) — this only controls
+    // when it becomes visible, it does not reject future dates.
+    const published = filterEntriesByPublishedAt({ entries: whatsNewEntries });
+
     // Filter by audience role (D4 — content routing, not authorization).
-    const applicable = filterEntriesByRole({ entries: whatsNewEntries, roles: actor.roles });
+    const applicable = filterEntriesByRole({ entries: published, roles: actor.roles });
 
     // Map to response items with seen computation and locale resolution.
     const items: WhatsNewItem[] = applicable.map((entry) => ({

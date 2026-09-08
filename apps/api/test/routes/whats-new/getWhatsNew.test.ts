@@ -59,6 +59,17 @@ vi.mock('../../../src/data/whats-new/whats-new', () => ({
             // No 'en' key — used to test es fallback when languageAdmin = 'en'
             title: { es: 'Solo HOST' },
             body: { es: 'Cuerpo HOST' }
+        },
+        {
+            // HOS-1216: scheduled far in the future relative to any real
+            // clock this suite could run under. `highlight: true` and no
+            // `roles` (universal) so it would, absent the fix, appear for
+            // every actor, inflate unseenCount, and trip the auto-modal.
+            id: 'entry-future-highlight',
+            publishedAt: '2099-01-01T00:00:00Z',
+            highlight: true,
+            title: { es: 'Del futuro' },
+            body: { es: 'Todavía no debería verse' }
         }
     ]
 }));
@@ -500,6 +511,80 @@ describe('getWhatsNewHandler (SPEC-175 T-006)', () => {
             const dates = result.items.map((i) => new Date(i.publishedAt).getTime());
             const sorted = [...dates].sort((a, b) => b - a);
             expect(dates).toEqual(sorted);
+        });
+    });
+
+    describe('future publishedAt filtering (HOS-1216)', () => {
+        it('excludes an entry scheduled for the future from items', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            const ids = result.items.map((i) => i.id);
+            expect(ids).not.toContain('entry-future-highlight');
+        });
+
+        it('does not let the future entry inflate unseenCount', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            // unseenCount must equal a manual recount over the (already
+            // future-filtered) items — proves the future entry never
+            // participated in the count at all, not even as a false-seen.
+            const manualCount = result.items.filter((i) => !i.seen).length;
+            expect(result.unseenCount).toBe(manualCount);
+            expect(result.items.some((i) => i.id === 'entry-future-highlight')).toBe(false);
+        });
+
+        it('excludes the future highlighted entry so it cannot trip the auto-modal downstream', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            // apps/admin's hasUnseenHighlights (`item.highlight && !item.seen`)
+            // only ever reads `items` — an entry excluded here can never
+            // reach it, regardless of its `highlight` flag.
+            const futureEntry = result.items.find((i) => i.id === 'entry-future-highlight');
+            expect(futureEntry).toBeUndefined();
+        });
+
+        it('still returns a past entry unaffected by the future filter (no regression)', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            const ids = result.items.map((i) => i.id);
+            expect(ids).toContain('entry-before-baseline');
+            expect(ids).toContain('entry-all-roles');
         });
     });
 

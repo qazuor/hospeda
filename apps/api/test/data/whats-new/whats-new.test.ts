@@ -238,6 +238,33 @@ describe('whats-new data file', () => {
             expect(hostEntries.map((entry) => entry.id)).not.toContain(trialEntry?.id);
         });
 
+        // ── HOS-1216: nothing previously verified the shape of the real
+        // catalog beyond schema validation at import time. HOS-964 changed a
+        // real entry's `publishedAt` to `2026-01-01` and all 78 tests stayed
+        // green — none of them looked at the declared array's own ordering
+        // or cross-entry invariants. Note: `publishedAt` values parsing to
+        // valid dates is already guaranteed by `WhatsNewEntrySchema`'s
+        // `z.string().datetime()` at import time (a malformed date would have
+        // thrown before this test file ever ran) — this test pins that
+        // guarantee explicitly against the real data, not just the schema.
+        it('has a valid, parseable publishedAt for every entry', () => {
+            for (const entry of whatsNewEntries) {
+                expect(Number.isNaN(new Date(entry.publishedAt).getTime())).toBe(false);
+            }
+        });
+
+        // This is the actual gap: the file documents "newest-first, always
+        // insert at the top" as an authoring convention (see the module
+        // docblock) but nothing enforced it. An entry inserted out of order
+        // used to be invisible to every test in this suite.
+        it('is declared newest-first by publishedAt, per the file authoring convention', () => {
+            const declaredMs = whatsNewEntries.map((entry) =>
+                new Date(entry.publishedAt).getTime()
+            );
+            const sortedDescMs = [...declaredMs].sort((a, b) => b - a);
+            expect(declaredMs).toEqual(sortedDescMs);
+        });
+
         it('delivers the HOST-targeted video entry to a HOST and not to a USER', () => {
             const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
             const userEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['USER'] });

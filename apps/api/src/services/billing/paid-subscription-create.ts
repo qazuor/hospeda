@@ -112,6 +112,38 @@ export interface CreatePaidSubscriptionInput {
      * Omitted for the legacy inline-preapproval path.
      */
     readonly providerPriceId?: string;
+    /**
+     * Amount in CENTAVOS to charge instead of the resolved price's own
+     * `unitAmount` (HOS-1221 D2, `@qazuor/qzpay-core@5.2.0`). Same unit as
+     * `billing_prices.unit_amount` — an ARS 9.000 cycle is `900000`.
+     *
+     * This is what a signup discount rides on now. It used to ride inside the
+     * MercadoPago `preapproval_plan`: `resolveCheckoutMpPlanId` provisioned the
+     * plan at the discounted cycle-1 amount and the preapproval inherited it.
+     * HOS-1221 stopped sending the plan (MercadoPago rejects that request), so
+     * the amount reverted to the price row's full price while `pendingDiscount`
+     * went on being snapshotted — the customer was promised half off and
+     * charged in full.
+     *
+     * `0` is a VALID, distinct value, not "absent": qzpay checks it with
+     * `!== undefined`, so anything on this side that tests it for truthiness
+     * reintroduces the zero bug one layer up. Forwarded with the same
+     * `!== undefined` check below.
+     */
+    readonly providerUnitAmountOverride?: number;
+    /**
+     * Buyer-visible plan name for the MercadoPago `reason` (HOS-1221 D4,
+     * `@qazuor/qzpay-core@5.2.0`). The adapter still appends its own
+     * `" - Mensual"` / `" - Anual"` suffix; this replaces only the name part.
+     *
+     * Without it the adapter builds the reason from `plan.name`, which in this
+     * project IS the slug — the buyer read "owner-basico - Mensual" on
+     * MercadoPago's page. Callers pass `planDisplayNameFromPlan(plan)`
+     * (`plan-change-reason.ts`), the same resolver Path C already used for the
+     * `preapproval_plan`'s reason. An empty or whitespace-only string falls
+     * back to the previous behavior (the adapter trims it).
+     */
+    readonly planDisplayName?: string;
     /** Arbitrary metadata attached to the created subscription/preapproval. */
     readonly metadata?: Readonly<Record<string, string>>;
     /**
@@ -183,6 +215,8 @@ export async function createPaidSubscription(
         paymentMethodReturnUrl,
         notificationUrl,
         providerPriceId,
+        providerUnitAmountOverride,
+        planDisplayName,
         billingInterval = 'monthly',
         metadata,
         payerEmail,
@@ -216,6 +250,15 @@ export async function createPaidSubscription(
             // HOS-191: when set, qzpay subscribes against this MP preapproval_plan
             // (plan-based flow) instead of building an inline preapproval.
             ...(providerPriceId === undefined ? {} : { providerPriceId }),
+            // HOS-1221 D2: the discounted cycle-1 amount, in centavos. Checked
+            // with `!== undefined` and NOT for truthiness — `0` is a legitimate
+            // override and a truthy test would silently drop it, which is the
+            // same class of bug as the one this field exists to fix. qzpay
+            // applies the identical rule on its side.
+            ...(providerUnitAmountOverride === undefined ? {} : { providerUnitAmountOverride }),
+            // HOS-1221 D4: what the buyer reads on MercadoPago's page. Without
+            // it the reason is built from `plan.name`, which here is the slug.
+            ...(planDisplayName === undefined ? {} : { planDisplayName }),
             // HOS-847: the LOCAL trial length, forwarded only when the caller
             // states one. Omitted, qzpay-core inherits the resolved price's
             // `trialDays` — see the `trialDays` JSDoc on

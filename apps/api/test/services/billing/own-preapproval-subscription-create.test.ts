@@ -25,6 +25,15 @@
  *   onto `metadata` and `writeDomainLinkRow` is invoked inside the SAME local
  *   transaction, ONLY when the caller supplies a bridge-row writer
  *   (commerce/partner).
+ * - HOS-1221: `mpPreapprovalPlanId` is BOOKKEEPING — it lands on the row's
+ *   `metadata` (where §6.6-B's reuse check and the retry recovery read it) and
+ *   never reaches `billing.subscriptions.create`. Passing the plan id to the
+ *   provider instead (`providerPriceId`) builds MercadoPago's "subscription
+ *   WITH an associated plan" request, which it rejects with "card_token_id is
+ *   required" — every checkout behind the flag answered 500 for that. The one
+ *   caller that still supplies `providerPriceId` is the recurring add-on, which
+ *   borrows another price row and needs its own MP plan to charge the right
+ *   amount; its stamp still works, which the sibling test below pins.
  *
  * @module test/services/billing/own-preapproval-subscription-create
  */
@@ -117,6 +126,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -136,6 +148,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -178,6 +193,9 @@ describe('createOwnPreapprovalSubscription', () => {
             billingInterval: 'annual',
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -202,6 +220,9 @@ describe('createOwnPreapprovalSubscription', () => {
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl,
+                // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+                // the price row's own trialDays and mint a phantom local trial.
+                trialDays: 0,
                 db: db as any
             })
         ).rejects.toThrow('connection reset');
@@ -223,6 +244,9 @@ describe('createOwnPreapprovalSubscription', () => {
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl,
+                // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+                // the price row's own trialDays and mint a phantom local trial.
+                trialDays: 0,
                 db: db as any
             })
         ).rejects.toThrow('connection reset');
@@ -246,6 +270,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             pendingDiscount,
             db: db as any
         });
@@ -268,6 +295,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             pendingTrialExtension,
             db: db as any
         });
@@ -291,6 +321,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -309,6 +342,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             db: db as any
         });
 
@@ -332,6 +368,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             productDomain: 'gastronomy',
             db: db as any
         });
@@ -358,6 +397,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             productDomain: 'partner',
             domainMetadata: { partnerId: 'partner-123' },
             writeDomainLinkRow,
@@ -381,7 +423,50 @@ describe('createOwnPreapprovalSubscription', () => {
         });
     });
 
-    it('HOS-937 step 4: also stamps mpPreapprovalPlanId onto metadata when providerPriceId is supplied (§6.6-B reuse guard)', async () => {
+    it('HOS-1221: stamps mpPreapprovalPlanId onto metadata WITHOUT forwarding it to the provider create call', async () => {
+        const billing = createBillingMock();
+        const db = createDbMock();
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
+            mpPreapprovalPlanId: 'mp_plan_recorded_only',
+            db: db as any
+        });
+
+        // The bookkeeping key still lands on the row — `decideOwnPreapprovalReuse`
+        // (§6.6-B) and `mintRetryPreapprovalAttempt` both read it back.
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
+                mpPreapprovalPlanId: 'mp_plan_recorded_only'
+            }
+        });
+
+        // ...and does NOT reach MercadoPago. `providerPriceId` is the forwarded
+        // field; with it set the preapproval becomes the plan-based request
+        // MercadoPago answers with "card_token_id is required". Asserted as an
+        // absence on the captured body, since an `objectContaining` shape
+        // cannot see a field that should not be there.
+        const createCall = billing.subscriptions.create.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(createCall.mode).toBe('paid');
+        expect(createCall).not.toHaveProperty('providerPriceId');
+        expect(createCall).not.toHaveProperty('mpPreapprovalPlanId');
+    });
+
+    it('HOS-937 step 4: also stamps mpPreapprovalPlanId onto metadata when providerPriceId is supplied (§6.6-B reuse guard — the recurring add-on path, which genuinely subscribes against an MP plan)', async () => {
         const billing = createBillingMock();
         const db = createTxDbMock();
         const writeDomainLinkRow = vi.fn().mockResolvedValue(undefined);
@@ -393,6 +478,9 @@ describe('createOwnPreapprovalSubscription', () => {
             priceId: PRICE_ID,
             paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
             notificationUrl: URLS.notificationUrl,
+            // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+            // the price row's own trialDays and mint a phantom local trial.
+            trialDays: 0,
             providerPriceId: 'mp_plan_gastronomy',
             productDomain: 'gastronomy',
             domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: 'ent-1' },
@@ -426,6 +514,9 @@ describe('createOwnPreapprovalSubscription', () => {
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl,
+                // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
+                // the price row's own trialDays and mint a phantom local trial.
+                trialDays: 0,
                 productDomain: 'partner',
                 domainMetadata: { partnerId: 'partner-123' },
                 writeDomainLinkRow,

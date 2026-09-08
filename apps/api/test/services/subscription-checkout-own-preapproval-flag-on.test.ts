@@ -140,7 +140,7 @@ describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABL
         expect(createPendingProviderSubscription).not.toHaveBeenCalled();
     });
 
-    it('passes the resolved MP plan id as providerPriceId, plus the monthly plan/price/urls', async () => {
+    it('records the resolved MP plan id as mpPreapprovalPlanId, plus the monthly plan/price/urls', async () => {
         const billing = createBillingMock();
 
         await initiatePaidMonthlySubscription({
@@ -157,11 +157,41 @@ describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABL
                 planId: PLAN_ID,
                 priceId: MONTHLY_PRICE_ID,
                 billingInterval: 'monthly',
-                providerPriceId: 'mp_plan_test',
+                mpPreapprovalPlanId: 'mp_plan_test',
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl
             })
         );
+    });
+
+    /**
+     * HOS-1221. `providerPriceId` is the field qzpay forwards to MercadoPago;
+     * with it set, `POST /preapproval` becomes the "subscription WITH an
+     * associated plan" request, which MercadoPago answers with HTTP 400
+     * "Create subscription - card_token_id is required" because this self-serve
+     * checkout never tokenizes a card. Every checkout behind the flag answered
+     * 500 for that reason, and the test that used to live here asserted the
+     * broken shape.
+     *
+     * Asserted as an ABSENCE on the captured argument, never through
+     * `expect.objectContaining` — that matcher is blind to a field that should
+     * not be there and would keep passing with the bug reintroduced.
+     */
+    it('does NOT pass providerPriceId — that is what MercadoPago rejects (HOS-1221)', async () => {
+        const billing = createBillingMock();
+
+        await initiatePaidMonthlySubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            billing: billing as any,
+            urls: URLS,
+            db: DB_STUB as any
+        });
+
+        const arg = vi.mocked(createOwnPreapprovalSubscription).mock.calls[0]?.[0];
+        // Sanity: this really is the own-preapproval call, not an empty capture.
+        expect(arg?.planId).toBe(PLAN_ID);
+        expect(arg).not.toHaveProperty('providerPriceId');
     });
 
     it('maps the own-preapproval result into checkoutUrl + localSubscriptionId (from subscription.id, not a pre-generated id)', async () => {
