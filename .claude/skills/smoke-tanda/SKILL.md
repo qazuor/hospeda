@@ -165,6 +165,155 @@ items), link it to the tanda, and label it per CLAUDE.md's table.
 The `cita` is **what was actually observed**, in words — never "step 12 passed".
 An observation must be a terminal, settled state, not an intermediate render.
 
+## Phase 2b — The novelty question (What's New)
+
+A `PASO` is the one moment somebody has just looked at the change **as a user**.
+That is the only moment anyone is in a position to say whether it is worth
+announcing, which is why the question lives here.
+
+The What's New catalog was empty for a plain reason: no workflow asked for an
+entry. It holds four today only because one person wrote all four in one sitting
+after going looking for the gap (HOS-964, PR #3267) — nothing in the repo was
+going to ask for the fifth. The failure mode is **forgetting**, not bad copy.
+
+**When.** Immediately after the sign-off comment and the Phase 2 label/state
+writes for that step, and before the report. In `/smoke` this is between its
+step 6 and its step 7. In a tanda it runs **per step**, in the act — never
+batched into Phase 3.
+
+**It blocks.** The step is not finished, and neither the report nor Phase 3 runs,
+until the question has an answer. A design that proposes without blocking is the
+status quo plus a notification, and it re-empties. The answer is allowed to be
+**no**; it is not allowed to be absent.
+
+**Only on `Resultado: PASO`.** A `FALLO`, `PARCIAL` or `PENDIENTE` never triggers
+it: nothing was verified, so there is nothing to announce.
+
+**Only once per issue.** A second sign-off on the same issue (a second
+environment) reads the `Novedad:` line of the earlier sign-off and applies that
+already-recorded decision to any bound PR still unlabelled — `no` means
+`whats-new-none`, an entry id means `whats-new-done`. It does not re-ask. Only an
+issue whose sign-offs carry no `Novedad:` line at all gets the question.
+
+**The scope of the decision is the `PR(s):` field** of the sign-off comment just
+written — those PRs, and no others. If that field is empty, stop and ask the
+operator which PRs the issue shipped in. The labels *are* the record; a decision
+with nowhere to land is not recorded.
+
+### The four questions, one at a time
+
+1. **Is this a novelty for an end user?** — yes / no. A **no** ends the
+   questions: no entry is written, and the decision goes on the record as
+   `whats-new-none` under "Recording the decision". That is a **complete
+   answer**, not a dismissal — the promotion gate blocks on PRs nobody thought
+   about, never on PRs that turned out not to be news.
+2. **Audience** — one or more values of `WhatsNewAudienceRoleSchema` (`HOST`,
+   `EDITOR`, `ADMIN`, `SUPER_ADMIN`, `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`,
+   `SPONSOR`, `USER`), or "everyone", which writes **no** `roles` key at all.
+   **The operator picks it.** Never infer the audience from the paths the PR
+   touched: a file tree says who wrote the change, not who it is for.
+3. **Title and body, in `es`.** You draft both from the `Observado` field of the
+   sign-off — it is already a description of what a person saw, in user terms —
+   and the operator then edits and approves them. Body is Markdown. **Never take
+   a PR title verbatim**: a PR title is written for a reviewer, not for a guest.
+4. **Highlight?** — `true` auto-opens the modal once for anyone who has not seen
+   the entry. Default `false`.
+
+**There is no date question.** The writer never picks a date; the promotion sets
+it. Both alternatives were considered and rejected: dating to the expected
+promotion forces a guess whose failure is invisible (a date that lands in the
+past silently destroys the entry for every new account), and dating to the day
+it is written makes every entry born already in the past relative to its own
+promotion, turning a safety net into the primary mechanism. So do not ask for a
+date, and do not accept one if it is offered.
+
+### Composing the entry
+
+- **`id`** — `<YYYY-MM-DD>-<kebab-slug>`, where the date is the **merge date of
+  the earliest bound PR** (`gh pr view <n> --json mergedAt`). That date records
+  *when the change was made*, deliberately distinct from when it is published;
+  the catalog file says in as many words not to "fix" that mismatch. Check the
+  id against `RETIRED_WHATS_NEW_IDS` **and** against every live entry's `id` —
+  `scripts/check-whats-new-catalog.sh` fails on either. On a collision, change
+  the **slug**, never the date: the id is the per-user `seenIds` key, so a reused
+  id silently marks a brand-new entry as already seen.
+- **`publishedAt`** — the literal string `'on-promotion'`. Never a date. Until
+  the promotion resolves it, the entry is **invisible, not malformed**:
+  `new Date('on-promotion')` is `NaN`, every comparison against `NaN` is `false`,
+  so the visibility filter excludes it and nothing auto-marks it seen.
+- **`title` / `body`** — `es` from question 3. You produce `en` and `pt` by
+  translating that approved `es` yourself, at this same moment. No translation
+  API, no new credential.
+- **`translations`** — `{ en: 'machine', pt: 'machine' }`. This is **not** a
+  fifth question: `'machine'` means "nobody has decided yet", and the promotion
+  gate demands that decision exactly when the text becomes user-visible, from the
+  person already standing at that door. Write `'reviewed'` only if someone who
+  reads the language checked it right there, and `'declared'` only if the
+  operator deliberately accepts the machine output on the record. Never write
+  either on your own.
+- **`roles`** — from question 2; **omit the key entirely** for a universal
+  broadcast. An empty array is not the way to say "everyone".
+- **`highlight`** — from question 4.
+- **`image`** — out of scope for this flow. An image-bearing entry is added by
+  hand, against `APPROVED_IMAGE_ORIGINS` and the CSP `img-src` checklist.
+
+```ts
+{
+    id: '2026-09-05-commerce-publish-free-trial',
+    publishedAt: 'on-promotion',
+    highlight: false,
+    roles: ['GASTRONOMY_OWNER'],
+    title: { es: '…', en: '…', pt: '…' },
+    body: { es: '…', en: '…', pt: '…' },
+    translations: { en: 'machine', pt: 'machine' }
+}
+```
+
+### Where the entry lands
+
+Prepend it to `whatsNewEntries` in `apps/api/src/data/whats-new/whats-new.ts`
+(the array is declared newest-first; `check-whats-new-catalog.sh` skips
+marker-carrying entries when it verifies that order, so a marker on top is
+correct and must not be "fixed"), then follow the normal 6-step branch
+workflow: branch off a freshly-fetched `origin/staging`, commit the one file, PR
+into `staging` titled `[HOS-N] docs(whats-new): <the es title>`. Never push to
+`staging` directly.
+
+**No magic word in the body** (`Closes`/`Fixes`/`Resolves`/`Implements`) — this
+PR does not complete the issue, the smoke did. And because a bare `HOS-N` in a PR
+**title** is enough for Linear's merge automation to move the issue to Done on
+its own — it did exactly that to HOS-36 and HOS-54, with zero real work — check
+the issue's state after this PR merges whenever the sign-off left it **In
+Review** with environments outstanding, and put it back if the automation moved
+it.
+
+Label the new PR `whats-new-done` too. It will itself appear in a later promotion
+range, and an unlabelled PR there blocks the promotion.
+
+### Recording the decision
+
+In this order, because each step supplies what the next one writes:
+
+1. Open the What's New PR (skip on a *no* answer) — the entry `id` is only real
+   once it is committed.
+2. Apply the label to **every** PR in the `PR(s):` field — `whats-new-none` on a
+   *no*, `whats-new-done` on a *yes* — plus the What's New PR itself when there
+   is one: `GITHUB_TOKEN= gh pr edit <n> --add-label whats-new-none`. Exactly one
+   of the two per PR, never both and never a third.
+3. Update the sign-off comment you just wrote, adding its `Novedad:` line:
+   `no`, or the entry id. Edit that same comment by id; never post a second one.
+
+The comment is written first and amended here, rather than asking the question
+before writing it, for the same reason as I3: the observation must reach Linear
+in the act, not wait behind an unanswered question.
+
+**A failed write halts the flow.** If any label write or the comment update
+fails, stop and say exactly which of the three steps landed and which did not.
+**Never queue the labelling for later** — queued writes are the documented origin
+of 309 orphaned findings, and here the queue is invisible in a second way: an
+unlabelled PR is indistinguishable from one nobody ever evaluated, so the next
+promotion blocks on a decision that was in fact made.
+
 ## Phase 3 — Close the tanda
 
 1. No issue in the tanda may be left without a row. Verify against the contract.
@@ -183,6 +332,11 @@ An observation must be a terminal, settled state, not an intermediate render.
 - Never smoke a PR that is not deployed on the target environment (I0).
 - Never let staging evidence satisfy `status-needs-smoke-prod`.
 - Never remove a label without writing the comment that justifies it.
+- Never ask the novelty question on anything but a `PASO` (Phase 2b).
+- Never pick a `publishedAt` date for an entry — the promotion sets it.
+- Never write an entry's text from a PR title, and never infer its audience from
+  the paths a PR touched.
+- Never queue a novelty label for later, for the same reason as I3.
 
 ## Smoke debt
 
