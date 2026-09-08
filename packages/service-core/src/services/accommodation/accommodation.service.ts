@@ -190,6 +190,10 @@ import type {
     PublishTransactionContext,
     StartLocalTrialResult
 } from './accommodation.types';
+import {
+    publishEligibilityAllowsPublish,
+    publishEligibilityStartsLocalTrial
+} from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
 type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
@@ -1672,7 +1676,7 @@ export class AccommodationService extends BaseCrudService<
                         current.ownerId,
                         resolvedCtx
                     );
-                    if (eligibility === 'subscription_required') {
+                    if (!publishEligibilityAllowsPublish(eligibility)) {
                         return {
                             error: new ServiceError(
                                 ServiceErrorCode.FORBIDDEN,
@@ -1885,10 +1889,10 @@ export class AccommodationService extends BaseCrudService<
                     // starts when the listing goes live, not at signup) and the
                     // insert happens below, inside the same transaction as the
                     // lifecycle flip.
-                    if (eligibility === 'subscription_required') {
+                    if (!publishEligibilityAllowsPublish(eligibility)) {
                         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
                     }
-                    startsLocalTrial = eligibility === 'first_publish';
+                    startsLocalTrial = publishEligibilityStartsLocalTrial(eligibility);
                 }
 
                 // Publish-completeness guard (HOS-152, rewritten for H-101/H-94).
