@@ -269,6 +269,11 @@ function createBilling(): QZPayBilling {
                 {
                     id: HOST_PRICE_ID,
                     active: true,
+                    // `billing_prices.currency` is varchar(3) NOT NULL, and the
+                    // resolver now REQUIRES ARS on the borrowed row — the
+                    // adapter emits it as `currency_id` verbatim, with no
+                    // override. A fixture without it was not a plan price.
+                    currency: 'ARS',
                     billingInterval: 'month',
                     intervalCount: 1
                 }

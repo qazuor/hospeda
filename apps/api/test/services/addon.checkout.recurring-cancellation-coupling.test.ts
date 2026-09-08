@@ -234,6 +234,9 @@ function createBilling(): QZPayBilling {
                 {
                     id: 'price_monthly_owner',
                     active: true,
+                    // NOT NULL in `billing_prices`, and required by the
+                    // borrowed-price resolver since HOS-847.
+                    currency: 'ARS',
                     billingInterval: 'month',
                     intervalCount: 1
                 }
