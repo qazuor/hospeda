@@ -14,7 +14,6 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
-    AddonResponse,
     CheckoutRetryResponse,
     DestinationReviewListItem,
     DowngradePreview,
@@ -28,6 +27,7 @@ import type {
     OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
+    PurchasableAddonResponse,
     PurchaseAddonResponse,
     ReplacePaymentMethodResponse,
     StartPaidSubscriptionResponse,
@@ -1279,7 +1279,8 @@ export const billingApi = {
      * List available add-ons for purchase (HOS-224 self-service).
      *
      * `GET /protected/billing/addons` (`ListAddonsQuerySchema` /
-     * `z.array(AddonResponseSchema)` — see `apps/api/src/routes/billing/addons.ts`).
+     * `z.array(PurchasableAddonResponseSchema)` — see
+     * `apps/api/src/routes/billing/addons.ts`).
      * Distinct from {@link billingApi.getAddons}, which lists the user's own
      * *purchased* addons — this lists the *catalog* of purchasable ones.
      *
@@ -1296,7 +1297,7 @@ export const billingApi = {
         readonly active?: boolean;
         readonly targetCategory?: 'owner' | 'complex';
         readonly cookieHeader?: string;
-    }): Promise<ApiResult<readonly AddonResponse[]>> {
+    }): Promise<ApiResult<readonly PurchasableAddonResponse[]>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/addons`,
             params: {

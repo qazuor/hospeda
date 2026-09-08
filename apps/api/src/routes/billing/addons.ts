@@ -15,9 +15,9 @@
  */
 
 import {
-    AddonResponseSchema,
     CancelAddonSchema,
     ListAddonsQuerySchema,
+    PurchasableAddonResponseSchema,
     PurchaseAddonResponseSchema,
     PurchaseAddonSchema,
     UserAddonResponseSchema
@@ -30,6 +30,10 @@ import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import { AddonService } from '../../services/addon.service';
+import {
+    annotateRecurringCharging,
+    annotateRecurringChargingAll
+} from '../../services/addon-recurring-charging';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
@@ -52,7 +56,7 @@ export const listAddonsRoute = createProtectedRoute({
     description: 'Returns a list of available add-ons for purchase. Requires authentication.',
     tags: ['Billing - Add-ons'],
     requestQuery: ListAddonsQuerySchema.shape,
-    responseSchema: z.array(AddonResponseSchema),
+    responseSchema: z.array(PurchasableAddonResponseSchema),
     handler: async (_c, _params, _body, query) => {
         const billing = getQZPayBilling();
         const service = new AddonService(billing);
@@ -90,7 +94,11 @@ export const listAddonsRoute = createProtectedRoute({
             });
         }
 
-        return result.data;
+        // HOS-847: say how each row will actually be CHARGED, not just how the
+        // catalog labels it. The buyer-facing warning about a monthly charge
+        // hangs off this; deriving it client-side from `billingType` announced a
+        // subscription for a purchase the server would charge once.
+        return await annotateRecurringChargingAll(result.data);
     }
 });
 
@@ -108,7 +116,7 @@ export const getAddonRoute = createProtectedRoute({
     requestParams: {
         slug: z.string().min(1, 'Add-on slug is required')
     },
-    responseSchema: AddonResponseSchema,
+    responseSchema: PurchasableAddonResponseSchema,
     handler: async (_c, params) => {
         const billing = getQZPayBilling();
         const service = new AddonService(billing);
@@ -142,7 +150,10 @@ export const getAddonRoute = createProtectedRoute({
             });
         }
 
-        return result.data;
+        // Annotated for the same reason the listing is: this is the other route
+        // a buyer reads, and a shape that answered here and not there would be
+        // the drift the shared schema exists to prevent.
+        return await annotateRecurringCharging(result.data);
     }
 });
 

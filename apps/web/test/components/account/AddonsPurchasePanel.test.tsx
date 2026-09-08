@@ -97,7 +97,8 @@ const ACCOUNT_ADDON: AddonCardData = {
     targetCategories: ['owner'],
     isActive: true,
     sortOrder: 1,
-    requiresAccommodationTarget: false
+    requiresAccommodationTarget: false,
+    recurringChargingEnabled: false
 };
 
 const PER_ACCOMMODATION_ADDON: AddonCardData = {
@@ -113,14 +114,19 @@ const PER_ACCOMMODATION_ADDON: AddonCardData = {
     targetCategories: ['owner', 'complex'],
     isActive: true,
     sortOrder: 2,
-    requiresAccommodationTarget: true
+    requiresAccommodationTarget: true,
+    recurringChargingEnabled: false
 };
 
 /**
- * A `recurring` add-on (HOS-847). Mirrors the real `extra-accommodations-5`
- * catalog entry: monthly, account-scoped, and with `durationDays: null` —
- * a recurring add-on has no fixed window, which is precisely why the buyer
- * needs to be told it keeps charging.
+ * A `recurring` add-on the SERVER says will actually be charged monthly
+ * (HOS-847). Mirrors the real `extra-accommodations-5` catalog entry: monthly,
+ * account-scoped, and with `durationDays: null` — a recurring add-on has no
+ * fixed window, which is precisely why the buyer needs to be told it keeps
+ * charging.
+ *
+ * `recurringChargingEnabled` is the gate, NOT `billingType`. See
+ * {@link RECURRING_LABEL_ONLY_ADDON} for why the two are different facts.
  */
 const RECURRING_ADDON: AddonCardData = {
     slug: 'extra-accommodations-5',
@@ -135,7 +141,22 @@ const RECURRING_ADDON: AddonCardData = {
     targetCategories: ['owner'],
     isActive: true,
     sortOrder: 3,
-    requiresAccommodationTarget: false
+    requiresAccommodationTarget: false,
+    recurringChargingEnabled: true
+};
+
+/**
+ * The SAME add-on as the catalog labels it, with the recurring charging path
+ * OFF — which is how production ships.
+ *
+ * `billingType` still reads `'recurring'` (it is derived from the catalog row),
+ * but `shouldUseRecurringAddonCheckout` refuses, the purchase falls to the
+ * one-time branch, it is charged ONCE and the benefit never expires. A notice
+ * here would promise a subscription nobody sold.
+ */
+const RECURRING_LABEL_ONLY_ADDON: AddonCardData = {
+    ...RECURRING_ADDON,
+    recurringChargingEnabled: false
 };
 
 const ACCOMMODATIONS = [
@@ -471,9 +492,15 @@ describe('AddonsPurchasePanel', () => {
 });
 
 /**
- * HOS-847: a `recurring` add-on is charged again every month once the
- * recurring-checkout flag is on, so its card must say so BEFORE the buy
- * button. A `one_time` card's copy stays exactly as it was.
+ * HOS-847: an add-on the server says will be charged again every month must say
+ * so BEFORE the buy button. A `one_time` card's copy stays exactly as it was.
+ *
+ * The gate is `recurringChargingEnabled`, NOT `billingType`. Those are two
+ * different facts: the catalog label is a property of the row, while the charge
+ * depends on a flag this app cannot read — and with that flag off, which is how
+ * production ships, a `recurring`-labelled add-on is charged ONCE and its
+ * benefit never expires. The last case in this block is the one that separates
+ * them.
  *
  * The assertions key on RECURRING_NOTICE_TEXT — the value the i18n mock
  * resolves `account.addons.recurringNotice` to — and not on the component's
@@ -546,5 +573,28 @@ describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
         );
 
         expect(screen.getByText(RECURRING_NOTICE_TEXT)).toBeInTheDocument();
+    });
+
+    it('stays SILENT on a recurring-labelled addon the server will charge once', () => {
+        // The case the old `billingType === 'recurring'` gate got wrong, and the
+        // state every environment is in today: the label says recurring, the
+        // checkout does not. Announcing a subscription here is a promise the
+        // purchase does not keep — one charge, and a benefit with no expiry.
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[RECURRING_LABEL_ONLY_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={[]}
+            />
+        );
+
+        expect(screen.queryByText(RECURRING_NOTICE_TEXT)).not.toBeInTheDocument();
+        // The card itself still renders in full — this hides the NOTICE, not the
+        // add-on, and its billing-type pill is untouched.
+        expect(
+            screen.getByTestId(`addon-card-${RECURRING_LABEL_ONLY_ADDON.slug}`)
+        ).toBeInTheDocument();
+        expect(RECURRING_LABEL_ONLY_ADDON.billingType).toBe('recurring');
     });
 });

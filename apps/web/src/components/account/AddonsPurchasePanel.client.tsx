@@ -21,7 +21,7 @@
  */
 
 import { PackageIcon } from '@repo/icons';
-import type { AddonResponse } from '@repo/schemas';
+import type { PurchasableAddonResponse } from '@repo/schemas';
 import { useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
@@ -56,7 +56,7 @@ const SUBSCRIPTION_GATE_REASONS: ReadonlySet<string> = new Set([
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** A single purchasable add-on, as returned by `billingApi.listAvailableAddons`. */
-export type AddonCardData = AddonResponse;
+export type AddonCardData = PurchasableAddonResponse;
 
 /** A host's own accommodation, for the per-accommodation target selector. */
 export interface AddonTargetAccommodation {
@@ -306,17 +306,25 @@ export function AddonsPurchasePanel({
                 {/*
                  * HOS-847: a recurring add-on is charged again every month, so
                  * the buyer has to read that BEFORE the buy button, not after
-                 * the second charge lands. Matched POSITIVELY on 'recurring' —
-                 * the same direction `shouldUseRecurringAddonCheckout` uses, so
-                 * the notice appears exactly on the add-ons whose checkout can
-                 * take the preapproval path and never on the one-time ones,
-                 * whose copy is left untouched.
+                 * the second charge lands.
+                 *
+                 * Gated on the SERVER's answer, not on `billingType`. The
+                 * catalog label and the charge are different facts: the
+                 * recurring checkout is behind a flag this app cannot read, and
+                 * with it off — which is how production ships — a
+                 * `billingType: 'recurring'` add-on is charged ONCE and its
+                 * benefit never expires. Announcing a subscription there is a
+                 * promise the purchase does not keep. `recurringChargingEnabled`
+                 * is `shouldUseRecurringAddonCheckout`'s own verdict for this
+                 * row, all three conditions included, so the notice appears
+                 * exactly where the checkout takes the preapproval path and
+                 * disappears on its own the day the flag goes back off.
                  */}
-                {addon.billingType === 'recurring' && (
+                {addon.recurringChargingEnabled && (
                     <p className={styles.recurringNotice}>
                         {t(
                             'account.addons.recurringNotice',
-                            'Es una suscripción: se renueva sola y te la cobramos todos los meses hasta que la des de baja.'
+                            'Es una suscripción: se renueva sola y te la cobramos todos los meses mientras siga activa.'
                         )}
                     </p>
                 )}
