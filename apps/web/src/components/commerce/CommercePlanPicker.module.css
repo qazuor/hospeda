@@ -3,11 +3,17 @@
  * Plain CSS module per web conventions — no Tailwind.
  */
 
-/* No `max-width` here (HOS-1235). Both call sites render this inside a
- * `<Dialog size="md">`, whose panel is 640px — a 480px cap left the whole
- * block hugging the left edge with 160px of dead space on the right. The
- * panel's `data-size` is what decides how wide the picker gets; a second cap
- * here only means the two disagree. */
+/* Composed onto the shared `<DialogBody>`, which brings the padding and the
+ * scroll behaviour — this only stacks the body's own children (HOS-1235).
+ *
+ * No `max-width` here: both call sites render inside a `<Dialog size="md">`
+ * whose panel is 640px, and a 480px cap left the whole block hugging the left
+ * edge with 160px of dead space. The panel's `data-size` decides how wide the
+ * picker gets; a second cap here only means the two disagree.
+ *
+ * Do NOT add `overflow` or `max-height`: `DialogBody` also carries
+ * `dialog-panel-scroll`, which owns both, and `pnpm check:dialog-panel` fails
+ * on a module that competes with it. */
 .root {
     display: flex;
     flex-direction: column;
@@ -15,13 +21,9 @@
     width: 100%;
 }
 
-.title {
-    font-family: var(--font-heading);
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--core-foreground);
-    margin: 0;
-}
+/* `.title` is gone (HOS-1235): the heading is now `<DialogHeader>`, which
+ * renders the `<h2>` and owns its typography, so a local copy would be a
+ * second opinion about the same element. */
 
 .subtitle {
     font-family: var(--font-sans);
@@ -129,13 +131,9 @@
     font-weight: 700;
 }
 
-.footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2, 0.5rem);
-    padding-top: var(--space-2, 0.5rem);
-    border-top: 1px solid var(--border, oklch(0.8 0 0));
-}
+/* `.footer` is gone (HOS-1235): the buttons now live in `<DialogFooter>`,
+ * which brings the same flex row, gap, padding AND `border-top`. Keeping this
+ * rule would have drawn that separator TWICE, a few pixels apart. */
 
 .btnCancel {
     padding: var(--space-2, 0.5rem) var(--space-4, 1rem);

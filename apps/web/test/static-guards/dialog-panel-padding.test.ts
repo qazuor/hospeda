@@ -6,10 +6,16 @@
  *
  * WHY A GUARD. `Dialog.module.css` used to leave `.panel` with no padding at
  * all, on the assumption that content brings its own. Thirteen of the fifteen
- * consumers do, because they compose `DialogHeader`/`DialogBody`/`DialogFooter`,
- * which each carry padding. Two did not — both commerce plan pickers pass bare
- * children — and shipped a heading at 0px from the panel corner, on the screen
- * a customer sees while deciding to pay more.
+ * consumers did, because they compose `DialogHeader`/`DialogBody`/`DialogFooter`,
+ * which each carry padding. Two did not — both commerce plan pickers passed
+ * bare children — and shipped a heading at 0px from the panel corner, on the
+ * screen a customer reads while deciding to pay more. Those two have since
+ * been migrated onto the slots, so all fifteen compose them today.
+ *
+ * That migration is exactly why the fallback still has to be defended. With
+ * every consumer on the slots, nothing exercises it, and the next reader can
+ * delete it without a single test going red — which puts the sixteenth dialog
+ * back where the first two were.
  *
  * The fix has two halves that only work together, which is exactly why they
  * need policing as a pair:
@@ -20,7 +26,7 @@
  *      because those slots pad themselves AND their `border-top`/`border-bottom`
  *      separators are meant to span the panel edge to edge. Padding the panel
  *      too would inset every separator by 20px on both sides and double the
- *      gutters, on all thirteen.
+ *      gutters, on all fifteen.
  *
  * Delete half 1 and the original bug returns. Add a fifth slot to the component
  * without adding it to half 2 and that slot's dialog gets double padding.
@@ -123,7 +129,7 @@ describe('dialog panel padding (HOS-1235 static guard)', () => {
             'Could not find a ".panel:has(…) { … }" rule. Without it, every dialog composing ' +
                 'DialogHeader/DialogBody/DialogFooter takes the panel fallback ON TOP of the ' +
                 "slots' own padding — doubling the gutters and insetting the header/footer " +
-                'separators away from the panel edge on all thirteen of them.'
+                'separators away from the panel edge on all fifteen of them.'
         ).not.toBeNull();
 
         expect(

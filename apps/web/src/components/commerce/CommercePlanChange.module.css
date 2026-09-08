@@ -66,12 +66,8 @@
     text-align: center;
 }
 
-.scheduledTitle {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: var(--core-foreground);
-}
+/* `.scheduledTitle` is gone (HOS-1235): that heading is `<DialogHeader>` now,
+ * like the other two steps of this dialog. */
 
 .scheduledBody {
     margin: 0;

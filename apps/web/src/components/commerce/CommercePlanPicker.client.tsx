@@ -31,8 +31,9 @@
  * picker's own heading.
  */
 
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { useId, useState } from 'react';
+import { DialogBody, DialogFooter, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import {
     COMMERCE_ENTITLEMENT_FALLBACK_LABEL,
     COMMERCE_ENTITLEMENT_I18N_SUFFIX
@@ -66,6 +67,16 @@ export interface CommercePlanPickerProps {
      * which only it can know.
      */
     readonly planNotes?: Readonly<Record<string, string>>;
+    /**
+     * Optional error banner, rendered at the top of the dialog body (HOS-1235).
+     *
+     * It arrives as a prop rather than being rendered beside this component
+     * because the picker now emits the dialog's structural slots itself: a
+     * sibling passed as a bare child of `<Dialog>` would land OUTSIDE every
+     * slot, where the panel's padding is switched off — flush against the
+     * corner, which is the exact defect this work removed.
+     */
+    readonly error?: ReactNode;
 }
 
 /**
@@ -101,7 +112,8 @@ export function CommercePlanPicker({
     onConfirm,
     onCancel,
     isPending = false,
-    planNotes
+    planNotes,
+    error
 }: CommercePlanPickerProps): JSX.Element {
     const { t } = createTranslations(locale);
     const groupName = useId();
@@ -121,78 +133,82 @@ export function CommercePlanPicker({
     }
 
     return (
-        <div className={styles.root}>
-            <h2
-                id={titleId}
-                className={styles.title}
-            >
+        <>
+            <DialogHeader titleId={titleId}>
                 {t('commerce.owner.planPicker.title', 'Elegí tu plan')}
-            </h2>
-            <p className={styles.subtitle}>
-                {t(
-                    'commerce.owner.planPicker.subtitle',
-                    'Podés cambiar de plan más adelante desde tu cuenta.'
-                )}
-            </p>
+            </DialogHeader>
+            <DialogBody className={styles.root}>
+                {error}
+                <p className={styles.subtitle}>
+                    {t(
+                        'commerce.owner.planPicker.subtitle',
+                        'Podés cambiar de plan más adelante desde tu cuenta.'
+                    )}
+                </p>
 
-            <div
-                role="radiogroup"
-                aria-labelledby={titleId}
-                className={styles.list}
-            >
-                {tierDiffs.map(({ plan, addedEntitlements }) => {
-                    const inputId = `${groupName}-${plan.slug}`;
-                    const isSelected = selectedSlug === plan.slug;
-                    return (
-                        <label
-                            key={plan.slug}
-                            htmlFor={inputId}
-                            className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
-                        >
-                            <input
-                                type="radio"
-                                id={inputId}
-                                name={groupName}
-                                value={plan.slug}
-                                checked={isSelected}
-                                onChange={() => setSelectedSlug(plan.slug)}
-                                disabled={isPending}
-                                className={styles.radio}
-                            />
-                            <span className={styles.cardBody}>
-                                <span className={styles.cardHeader}>
-                                    <span className={styles.planName}>{plan.name}</span>
-                                    <span className={styles.planPrice}>
-                                        {formatArsPrice(plan.monthlyPriceArs, intlLocale)}
-                                        <span className={styles.planPriceUnit}>
-                                            {t('pricing.period.month', '/mes')}
+                <div
+                    role="radiogroup"
+                    aria-labelledby={titleId}
+                    className={styles.list}
+                >
+                    {tierDiffs.map(({ plan, addedEntitlements }) => {
+                        const inputId = `${groupName}-${plan.slug}`;
+                        const isSelected = selectedSlug === plan.slug;
+                        return (
+                            <label
+                                key={plan.slug}
+                                htmlFor={inputId}
+                                className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
+                            >
+                                <input
+                                    type="radio"
+                                    id={inputId}
+                                    name={groupName}
+                                    value={plan.slug}
+                                    checked={isSelected}
+                                    onChange={() => setSelectedSlug(plan.slug)}
+                                    disabled={isPending}
+                                    className={styles.radio}
+                                />
+                                <span className={styles.cardBody}>
+                                    <span className={styles.cardHeader}>
+                                        <span className={styles.planName}>{plan.name}</span>
+                                        <span className={styles.planPrice}>
+                                            {formatArsPrice(plan.monthlyPriceArs, intlLocale)}
+                                            <span className={styles.planPriceUnit}>
+                                                {t('pricing.period.month', '/mes')}
+                                            </span>
                                         </span>
                                     </span>
+                                    {addedEntitlements.length > 0 && (
+                                        <ul className={styles.addedList}>
+                                            {addedEntitlements.map((key) => (
+                                                <li key={key}>
+                                                    {t(
+                                                        `commerce.owner.entitlements.${
+                                                            COMMERCE_ENTITLEMENT_I18N_SUFFIX[key] ??
+                                                            key
+                                                        }`,
+                                                        COMMERCE_ENTITLEMENT_FALLBACK_LABEL[key] ??
+                                                            key
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                    {planNotes?.[plan.slug] !== undefined && (
+                                        <span className={styles.planNote}>
+                                            {planNotes[plan.slug]}
+                                        </span>
+                                    )}
                                 </span>
-                                {addedEntitlements.length > 0 && (
-                                    <ul className={styles.addedList}>
-                                        {addedEntitlements.map((key) => (
-                                            <li key={key}>
-                                                {t(
-                                                    `commerce.owner.entitlements.${
-                                                        COMMERCE_ENTITLEMENT_I18N_SUFFIX[key] ?? key
-                                                    }`,
-                                                    COMMERCE_ENTITLEMENT_FALLBACK_LABEL[key] ?? key
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                                {planNotes?.[plan.slug] !== undefined && (
-                                    <span className={styles.planNote}>{planNotes[plan.slug]}</span>
-                                )}
-                            </span>
-                        </label>
-                    );
-                })}
-            </div>
+                            </label>
+                        );
+                    })}
+                </div>
+            </DialogBody>
 
-            <div className={styles.footer}>
+            <DialogFooter>
                 <button
                     type="button"
                     className={styles.btnCancel}
@@ -210,7 +226,7 @@ export function CommercePlanPicker({
                 >
                     {t('commerce.owner.planPicker.confirm', 'Continuar')}
                 </button>
-            </div>
-        </div>
+            </DialogFooter>
+        </>
     );
 }
