@@ -22,6 +22,7 @@
  */
 
 import { type QZPayBilling, QZPayProviderSyncError } from '@qazuor/qzpay-core';
+import { trans } from '@repo/i18n';
 import { ProductDomainEnum } from '@repo/schemas';
 import type { PurchaseAddonInput } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -235,6 +236,31 @@ const INPUT: PurchaseAddonInput = {
 };
 
 /**
+ * The buyer-facing add-on names, read from the REAL `@repo/i18n` table rather
+ * than restated as literals here.
+ *
+ * `addon-checkout-locale.ts` is NOT mocked in this file, so what the assertions
+ * below observe is the same lookup production performs. Sourcing the expected
+ * values from `trans` keeps a renamed translation from turning into a red test
+ * over a copy edit — and the sentinel underneath keeps that from making the
+ * assertions vacuous, which is the real risk: the ENGLISH catalogue name is
+ * byte-identical to `AddonDefinition.name`, so an `en` assertion alone would
+ * pass just as well with the fix reverted.
+ */
+const ES_ADDON_NAME = trans.es[`account.addons.catalog.${RECURRING_ADDON.slug}.name`] as string;
+const PT_ADDON_NAME = trans.pt[`account.addons.catalog.${RECURRING_ADDON.slug}.name`] as string;
+const EN_ADDON_NAME = trans.en[`account.addons.catalog.${RECURRING_ADDON.slug}.name`] as string;
+
+// The sentinel. If a future copy edit made the Spanish or Portuguese name equal
+// the English config literal, every assertion below would still be green while
+// proving nothing — so say so here instead of discovering it later.
+if (ES_ADDON_NAME === RECURRING_ADDON.name || PT_ADDON_NAME === RECURRING_ADDON.name) {
+    throw new Error(
+        'The es/pt add-on names now equal the raw config name, so these assertions can no longer tell a localized reason from the English literal. Pick a different add-on slug for this fixture.'
+    );
+}
+
+/**
  * What the fake `select()` answers with. Mutated per test; every field maps to
  * one of the three reads the recurring path performs.
  */
@@ -269,6 +295,11 @@ function createBilling(): QZPayBilling {
                 {
                     id: HOST_PRICE_ID,
                     active: true,
+                    // `billing_prices.currency` is varchar(3) NOT NULL, and the
+                    // resolver now REQUIRES ARS on the borrowed row — the
+                    // adapter emits it as `currency_id` verbatim, with no
+                    // override. A fixture without it was not a plan price.
+                    currency: 'ARS',
                     billingInterval: 'month',
                     intervalCount: 1
                 }
@@ -403,12 +434,43 @@ describe('createAddonCheckout — recurring path (HOSPEDA_BILLING_RECURRING_ADDO
         );
     });
 
-    it("subscribes against the add-on's plan and tags the row product_domain='addon'", async () => {
+    it("charges the add-on's price and tags the row product_domain='addon'", async () => {
         await createAddonCheckout(billing, INPUT);
 
         const created = readPreapprovalInput();
-        // Without this the preapproval would charge the HOST PLAN's amount.
-        expect(created.providerPriceId).toBe(MP_ADDON_PLAN_ID);
+
+        // The HOS-1221 port, wiring half. This used to assert
+        // `providerPriceId === MP_ADDON_PLAN_ID`, commented "without this the
+        // preapproval would charge the HOST PLAN's amount" — a green test
+        // FREEZING the defect. Sending the plan id builds MercadoPago's
+        // "subscription WITH an associated plan" request, which it rejects with
+        // HTTP 400 "Create subscription - card_token_id is required", so all
+        // five checkouts here answered 500 with the flag on.
+        expect(created.providerPriceId).toBeUndefined();
+
+        // The comment was right about the consequence, though: deleting that
+        // field ALONE would charge the borrowed host plan's price, because with
+        // no plan id the adapter builds its inline auto_recurring out of the
+        // borrowed row. So the amount is stated — the catalog LIST price in
+        // centavos, the same value handed to the MP plan resolver above. What it
+        // does at the provider boundary is asserted in
+        // `addon.checkout.recurring-borrowed-price.test.ts`.
+        expect(created.providerUnitAmountOverride).toBe(ADDON_LIST_PRICE_CENTAVOS);
+
+        // What the buyer READS on MercadoPago's page. Without it the reason is
+        // built from the borrowed plan's name, so someone buying an add-on would
+        // be asked to authorize the host plan by name. With no `locale` on the
+        // input it defaults to `'es'` — the same default the return URLs take —
+        // so this is the SPANISH catalogue name, NOT the English config literal.
+        // Dedicated per-locale coverage lives below.
+        expect(created.planDisplayName).toBe(ES_ADDON_NAME);
+        expect(created.planDisplayName).not.toBe(RECURRING_ADDON.name);
+
+        // The add-on's MP plan is still resolved and still RECORDED — as
+        // bookkeeping, which the idempotency check compares to detect a catalog
+        // price drift. It just no longer travels to MercadoPago.
+        expect(created.mpPreapprovalPlanId).toBe(MP_ADDON_PLAN_ID);
+
         // Without this the row defaults to 'accommodation', which
         // `subscriptionMatchesDomain` fails OPEN on — the add-on's preapproval
         // would be counted as the owner's own subscription.
@@ -427,6 +489,58 @@ describe('createAddonCheckout — recurring path (HOSPEDA_BILLING_RECURRING_ADDO
         expect(metadata.addonId).toBe(ADDON_UUID);
         expect(metadata.userId).toBe(USER_ID);
         expect(metadata.type).toBe('addon_purchase');
+    });
+
+    it("names the add-on in the BUYER's language on the authorization page", async () => {
+        // HOS-847 follow-up. `planDisplayName` becomes the preapproval's
+        // `reason` — the one string a buyer reads before agreeing to a recurring
+        // debit — and it used to be `AddonDefinition.name`, an English config
+        // literal the product never renders anywhere else. A buyer who clicked
+        // "Pack de fotos extra (+20 fotos)" was asked to authorize "Extra Photos
+        // Pack (+20 photos)": the right product under a name they never saw.
+        await createAddonCheckout(billing, { ...INPUT, locale: 'pt' });
+
+        expect(readPreapprovalInput().planDisplayName).toBe(PT_ADDON_NAME);
+    });
+
+    it('resolves that name per locale, not once per process', async () => {
+        await createAddonCheckout(billing, { ...INPUT, locale: 'es' });
+        expect(readPreapprovalInput().planDisplayName).toBe(ES_ADDON_NAME);
+
+        vi.clearAllMocks();
+        // `clearAllMocks` wipes the beforeEach defaults on the two mocks this
+        // assertion depends on, so restate them rather than pass by leakage.
+        mockCreateOwnPreapprovalSubscription.mockResolvedValue({
+            subscription: {
+                id: ADDON_SUBSCRIPTION_ID,
+                providerSubscriptionIds: { mercadopago: MP_PREAPPROVAL_ID }
+            },
+            checkoutUrl: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_id=x'
+        });
+        mockPurchaseInsertReturning.mockResolvedValue([{ id: 'purchase_recurring_002' }]);
+
+        await createAddonCheckout(billing, { ...INPUT, locale: 'en' });
+
+        // English happens to equal the raw config literal, so this assertion is
+        // about the LOOKUP landing on the English row, not about the string
+        // differing — the es/pt cases carry that weight.
+        expect(readPreapprovalInput().planDisplayName).toBe(EN_ADDON_NAME);
+    });
+
+    it('leaves the SELLER-side MercadoPago plan label unlocalized', async () => {
+        // The `preapproval_plan` is one shared registry row per
+        // `(addon_id, billing_interval)`, provisioned once for buyers in every
+        // language, and no buyer reads it — since the plan id stopped being sent,
+        // MercadoPago renders the preapproval's own reason instead. Localizing it
+        // would freeze whichever locale provisioned first.
+        await createAddonCheckout(billing, { ...INPUT, locale: 'pt' });
+
+        const planInput = mockResolveCheckoutMpAddonPlanId.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(planInput.addonName).toBe(RECURRING_ADDON.name);
+        expect(planInput.addonName).not.toBe(PT_ADDON_NAME);
     });
 
     it("states a ZERO local trial rather than inheriting the borrowed price's", async () => {

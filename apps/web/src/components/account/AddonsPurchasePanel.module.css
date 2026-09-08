@@ -118,6 +118,20 @@
     color: var(--core-muted-foreground);
 }
 
+/*
+ * Recurring-charge notice (HOS-847). Sits between the price row and the buy
+ * button so it is read before the purchase, not after it. Deliberately plain
+ * text rather than a pill like `.billingType`: this is a sentence the buyer
+ * has to actually read, and a pill invites being skimmed as a tag.
+ */
+.recurringNotice {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--core-muted-foreground);
+}
+
 /* ── Accommodation select ─────────────────────────────────────────────── */
 
 .selectLabel {

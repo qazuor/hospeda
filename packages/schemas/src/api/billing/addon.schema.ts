@@ -134,6 +134,42 @@ export const AddonResponseSchema = z.object({
     productDomain: ProductDomainEnumSchema.nullable().default(null)
 });
 
+// ─── Purchasable Addon Response (buyer-facing catalog) ──────────────────────
+
+/**
+ * The buyer-facing add-on catalog shape — {@link AddonResponseSchema} plus the
+ * one fact only the server can answer about how this add-on will actually be
+ * charged (HOS-847).
+ *
+ * A separate schema rather than a field on the public one, because the answer
+ * is only computed on the two protected routes a BUYER reads
+ * (`GET /protected/billing/addons` and `/{slug}`). The admin DTO extends
+ * `AddonResponseSchema` too, and a field it never computes would be a claim
+ * nobody made, answered `false` for every row.
+ */
+export const PurchasableAddonResponseSchema = AddonResponseSchema.extend({
+    /**
+     * Whether buying this add-on TODAY opens a recurring charge.
+     *
+     * Not the raw feature flag — the flag is one of three conditions the server
+     * gate applies, and the other two are per-add-on (its `billingType`, and
+     * the real `billing_addons.billing_interval` behind it, which is read
+     * POSITIVELY because `billingType` is derived by exclusion). This is that
+     * gate's own answer for this row, so a consumer can say "you will be
+     * charged every month" exactly where the checkout would in fact charge
+     * every month, and stay silent everywhere else.
+     *
+     * `false` means the purchase falls to the one-time path: charged once, and
+     * the benefit does not expire. `.default(false)` makes an uncomputed value
+     * fail CLOSED — which is also the production behaviour today, with the
+     * recurring charging path off.
+     */
+    recurringChargingEnabled: z.boolean().default(false)
+});
+
+/** TypeScript type inferred from {@link PurchasableAddonResponseSchema} */
+export type PurchasableAddonResponse = z.infer<typeof PurchasableAddonResponseSchema>;
+
 // ─── User Addon Response ────────────────────────────────────────────────────
 
 /** User's active add-on response schema */

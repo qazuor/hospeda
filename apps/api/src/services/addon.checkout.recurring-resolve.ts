@@ -50,6 +50,30 @@ export const RECURRING_ADDON_BILLING_INTERVAL: AddonBillingIntervalLabel = 'mont
 const RECURRING_ADDON_DB_INTERVAL = 'month';
 
 /**
+ * Currency the borrowed plan price must be denominated in.
+ *
+ * A literal rather than a field read off the add-on, and that is a decision,
+ * not a shortcut. `billing_addons` does carry its own NOT NULL `currency`
+ * column, but `AddonDefinition` does not expose it, and putting it there means
+ * a required field on the static `addons.config.ts` catalogue, the row mapper,
+ * the wire schema and the admin surfaces — a currency dimension the product
+ * does not have, advertised in the one place a reader would take it as
+ * meaning a non-ARS add-on is sellable.
+ *
+ * It is not: the amount this checkout sends is `addon.priceArs`, ARS centavos
+ * by its own name, with `annualPriceArs` beside it. The sibling call in
+ * `addon.checkout.recurring.ts` already hard-codes `currency: 'ARS'` when it
+ * provisions the add-on's MercadoPago plan for the very same purchase, so this
+ * agrees with the flow rather than adding a second opinion to it.
+ *
+ * What the match buys is the CONVERSE — a borrowed plan price that is NOT ARS
+ * is refused instead of silently pairing our ARS amount with the provider's
+ * `currency_id`. Compared exactly: a lowercase or otherwise-normalized spelling
+ * is not a match, because that string reaches MercadoPago verbatim too.
+ */
+const RECURRING_ADDON_PROVIDER_CURRENCY = 'ARS';
+
+/**
  * LOCAL trial length written onto a recurring add-on's own subscription row.
  *
  * ZERO, stated explicitly, and it must stay a module constant rather than an
@@ -256,25 +280,45 @@ async function addonRowDeclaresRecurringInterval(input: {
  * (`GET /api/v1/public/plans`, `ALL_PLANS`, the grant-matrix snapshots), and a
  * synthetic add-on plan would surface in all three.
  *
- * Borrowing is safe because the plan contributes NOTHING to what is charged.
- * With `providerPriceId` set — which this flow always sets, to the add-on's own
- * `preapproval_plan` — the MercadoPago adapter emits
- * `{ payer_email, external_reference, reason, back_url, notification_url,
- * preapproval_plan_id }` and returns early, never reading the price's amount,
- * currency or interval. The amount comes from the add-on's MP plan and only
- * from there.
+ * ## The borrowed price is NOT inert — the HOS-1221 port made three of its
+ * fields load-bearing
  *
- * It is NOT, however, inert on the local row: qzpay-core inherits the borrowed
- * price's `trialDays` unless told otherwise, which is why the caller passes
+ * This used to say the plan "contributes NOTHING to what is charged", and while
+ * the add-on's own plan id was being sent that was true: the MercadoPago adapter
+ * emitted `{ payer_email, external_reference, reason, back_url,
+ * notification_url, preapproval_plan_id }` and returned early, never reading the
+ * price's amount, currency or interval at all.
+ *
+ * The port removed that plan id — MercadoPago rejects the plan-based request
+ * with HTTP 400 `"Create subscription - card_token_id is required"`, which is
+ * why every checkout on this path answered 500 — so the adapter now takes its
+ * OTHER branch and builds an inline `auto_recurring` out of this very price row:
+ *
+ *  - **amount** — OVERRIDDEN by the caller (`providerUnitAmountOverride =
+ *    addon.priceArs`). That override is the point of the port: uncorrected, a
+ *    ARS 5.000/month add-on would be charged at the borrowed owner plan's
+ *    ARS 18.000-and-up monthly amount, every month, forever.
+ *  - **currency** — `price.currency`, verbatim, with no override available.
+ *    Every plan price and every add-on is ARS today, and the price selection
+ *    below REQUIRES it rather than trusting it: an amount we state in ARS
+ *    centavos under a `currency_id` the row happened to carry is the same
+ *    silent mispricing as the cadence, at a much worse exchange rate.
+ *  - **cadence** — `price.billingInterval` × `price.intervalCount`, verbatim,
+ *    through the adapter's `toMercadoPagoInterval`, and with no override
+ *    available either. This is what the price selection below now has to be
+ *    strict about; see the comment on it.
+ *
+ * And the price is still not inert on the LOCAL row: qzpay-core inherits its
+ * `trialDays` unless told otherwise, which is why the caller passes
  * {@link RECURRING_ADDON_LOCAL_TRIAL_DAYS} explicitly. Read that constant's
  * JSDoc before assuming anything else about this price is free.
  *
- * The one thing the borrowed plan DOES reach at the provider is the
- * preapproval's `reason`, which the adapter builds as
- * `` `${plan.name} - Mensual` ``. For a plan-based preapproval MercadoPago is
- * expected to display the plan's own reason (the add-on's, built by
- * `buildAddonPlanReason`), but that is expectation, not measurement — it is on
- * the PR 8 staging smoke to confirm what the buyer actually reads.
+ * The borrowed plan's `name` also reaches the preapproval's `reason`, which the
+ * adapter builds as `` `${plan.name} - Mensual` ``. The caller overrides it with
+ * `planDisplayName = addon.name`, so the buyer authorizes the add-on they chose
+ * instead of the plan whose price row it happened to borrow. (That override is
+ * reachable only now: `planDisplayName` has no effect on the plan-based flow,
+ * where MercadoPago renders the plan's own reason.)
  *
  * ## Why `PlanService`, and not `billing.plans.listAll()`
  *
@@ -309,17 +353,54 @@ export async function resolveSubscriptionPlanReference(input: {
 
     const prices = await input.billing.plans.getPrices(plan.id);
 
-    // Prefer the plain monthly price for the same reason `findMonthlyPrice`
-    // exists in the subscription checkout: the multi-month variants share the
-    // `'month'` interval with a different `intervalCount` and belong to
-    // plan-change flows. Falls back to any active price and then to the first
-    // one, because qzpay itself falls back to `prices[0]` when the id misses.
-    const price =
-        prices.find((p) => p.active && p.billingInterval === 'month' && p.intervalCount === 1) ??
-        prices.find((p) => p.active) ??
-        prices[0];
+    // The plain monthly row, or nothing — NOT a preference with fallbacks any
+    // more.
+    //
+    // The old selection fell back to `prices.find((p) => p.active)` and then to
+    // `prices[0]`, mirroring qzpay's own `prices[0]` fallback. That was harmless
+    // while the add-on's plan id was being sent, because then the adapter never
+    // read this row's cadence at all. Since the HOS-1221 port it does: the
+    // preapproval's `auto_recurring.frequency` / `frequency_type` come from
+    // `price.billingInterval` × `price.intervalCount`, verbatim, and there is no
+    // cadence override to correct them with (the amount has one; the cadence
+    // does not).
+    //
+    // So a fallback that landed on an ANNUAL row — every owner plan has one, and
+    // `prices[0]` has no defined order — would create a preapproval charging the
+    // add-on's MONTHLY amount once every twelve months. That is the same class of
+    // silent mispricing the amount override exists to prevent, in the other
+    // dimension, and it would be invisible to everything except a real charge a
+    // year later.
+    //
+    // Refusing is the safe direction and costs nothing real: the caller turns a
+    // `null` into a typed `RECURRING_ADDON_PLAN_UNRESOLVED` refusal, and every
+    // seeded plan carries the monthly row this looks for. `intervalCount === 1`
+    // stays part of the match for the reason `findMonthlyPrice` has it in the
+    // subscription checkout — the multi-month variants share the `'month'`
+    // interval and belong to plan-change flows.
+    //
+    // `currency` is matched for the SAME reason, and it was the asymmetry left
+    // behind: the adapter reads it as verbatim as the cadence
+    // (`currency_id: providerInput.price.currency`) and there is no currency
+    // override either. The amount that goes with it is stated by us —
+    // `providerUnitAmountOverride = addon.priceArs`, an ARS-centavos figure by
+    // construction — so a borrowed row in any other currency would emit
+    // `transaction_amount: 5000` under a `currency_id` that means something
+    // else entirely. That is not a smaller mistake than the annual cadence; it
+    // is five thousand dollars.
+    const price = prices.find(
+        (p) =>
+            p.active &&
+            p.billingInterval === 'month' &&
+            p.intervalCount === 1 &&
+            p.currency === RECURRING_ADDON_PROVIDER_CURRENCY
+    );
 
     if (!price) {
+        apiLogger.error(
+            { planId: plan.id, priceCount: prices.length },
+            'HOS-847: recurring add-on checkout refused — the borrowed plan has no active plain-monthly ARS price, and the preapproval cadence and currency are read from it verbatim'
+        );
         return null;
     }
 
