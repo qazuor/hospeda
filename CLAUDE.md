@@ -200,15 +200,52 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 
 Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for EVERY subscription — monthly and annual alike since HOS-171 (see below). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
 
-#### Card-first trials, one charging mechanism (HOS-171)
+**`billing_customers.mp_payer_email` holds a CONFIRMED email, never a declared
+one** — its docblock says "the last email MercadoPago actually accepted". Two
+measured facts about where that value can come from (2026-09-08, staging, real MP
+sandbox API):
 
-Every subscription is a MercadoPago **preapproval**, trial or not:
+- **A preapproval NEVER yields it.** `GET /preapproval/{id}` returns the
+  `payer_email` key with an **empty string**, not a missing field — on an
+  `authorized` preapproval whose checkout supplied a perfectly good address.
+  `payer_id` IS populated. So `if (preapproval.payer_email)` is falsy and both
+  qzpay's adapter (`result.payerEmail = preapproval.payer_email`) and the webhook's
+  own `if (mpSubscription.payerEmail)` skip silently, with no log on either side.
+  That pair of guards is why the column sat empty across all 37 staging customers
+  while the persist code was deployed and running (HOS-1234).
+- **A payment DOES yield it.** `GET /v1/payments/{id}` returns
+  `payer.email` populated, with the same `payer.id` as the preapproval. But
+  `@qazuor/qzpay-mercadopago` (2.10.0) does **not** map it: `payerEmail` is written
+  only on the WRITE paths and on the preapproval read, never in `payments.retrieve`.
+  `QZPayProviderPayment.payerEmail` is therefore always `undefined` — which also
+  means `payment-reconcile.service.ts` has been recording `mpPayerEmail: undefined`
+  into its HOS-765 backfill audit metadata since day one.
 
-- **The trial is MercadoPago's**, not ours: a preapproval carrying
-  `auto_recurring.free_trial`, so the card is collected on day 1 and MP defers the
-  first charge to day N. There is no no-card trial and no `TrialService.startTrial`
-  path from checkout. `freeTrialDays` is decided ONCE, at checkout, by
-  `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
+Do not "fix" an empty payer email by persisting whatever the user typed on the
+pre-redirect dialog: an address that never completed a checkout would then be
+stored, suppress the dialog on the next attempt, and leave the account unable to
+pay with no way to correct itself.
+
+#### The trial is Hospeda's; MercadoPago only charges (HOS-171 → HOS-1012)
+
+**Checkout is the PAID path and nothing else.** The trial is Hospeda's own,
+granted locally at the first publish; MercadoPago is never asked for a free day.
+So a subscription's preapproval is created when the user actually goes to pay,
+and the first charge lands within minutes of it — measured 2026-09-08 on staging:
+checkout at 15:42:34, payment `177923168044` approved at 15:44:37. There is no
+window in which a subscription exists at MercadoPago but has not been charged
+yet, which is why anything that depends on a confirmed payment (see
+`mp_payer_email` below) is available almost immediately rather than N days later.
+
+- **Card-first is RETIRED — do not restore it, and do not read the HOS-171
+  design as current.** The original design put the trial on MercadoPago: a
+  preapproval carrying `auto_recurring.free_trial`, card collected on day 1, first
+  charge deferred to day N, with `freeTrialDays` resolved once at checkout by
+  `resolveCheckoutFreeTrialDays`. HOS-1012 deleted that path —
+  `subscription-checkout.service.ts` no longer imports `resolveCheckoutFreeTrialDays`
+  or `resolvePlanTrialConfig` at all, and `scripts/check-no-trial-to-mercadopago.sh`
+  (guard G-1) fails CI if a checkout payload names a free trial again. The next
+  bullet is why.
 - **Nothing is asked of MercadoPago about trials anymore (HOS-1012).** MercadoPago
   grants a preapproval's free trial once per `(payer, preapproval_plan)`, so
   `auto_recurring.free_trial` and `first_invoice_offset` describe the PLAN'S terms
