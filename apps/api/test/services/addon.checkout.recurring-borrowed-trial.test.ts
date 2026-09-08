@@ -230,7 +230,15 @@ function addonPreapprovalInput(billing: QZPayBilling) {
         billingInterval: 'monthly' as const,
         paymentMethodReturnUrl: 'https://hospeda.test/es/mi-cuenta/addons/',
         notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago',
-        providerPriceId: MP_ADDON_PLAN_ID,
+        // The add-on's own price, STATED — never the borrowed row's. Since the
+        // HOS-1221 port the add-on's MercadoPago plan is bookkeeping only:
+        // sending it as `providerPriceId` is the request MercadoPago rejects,
+        // and guard G-2 now forbids it on this path. The amount/reason half of
+        // that port is pinned by `addon.checkout.recurring-borrowed-price.test.ts`;
+        // none of it changes the trial arithmetic this file is about.
+        providerUnitAmountOverride: 500_000,
+        planDisplayName: 'Extra Photos Pack (+20 photos)',
+        mpPreapprovalPlanId: MP_ADDON_PLAN_ID,
         productDomain: 'addon',
         metadata: { type: 'addon_purchase', addonSlug: 'extra-photos-20' },
         db: createDbStub()

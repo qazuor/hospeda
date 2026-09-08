@@ -403,12 +403,39 @@ describe('createAddonCheckout — recurring path (HOSPEDA_BILLING_RECURRING_ADDO
         );
     });
 
-    it("subscribes against the add-on's plan and tags the row product_domain='addon'", async () => {
+    it("charges the add-on's price and tags the row product_domain='addon'", async () => {
         await createAddonCheckout(billing, INPUT);
 
         const created = readPreapprovalInput();
-        // Without this the preapproval would charge the HOST PLAN's amount.
-        expect(created.providerPriceId).toBe(MP_ADDON_PLAN_ID);
+
+        // The HOS-1221 port, wiring half. This used to assert
+        // `providerPriceId === MP_ADDON_PLAN_ID`, commented "without this the
+        // preapproval would charge the HOST PLAN's amount" — a green test
+        // FREEZING the defect. Sending the plan id builds MercadoPago's
+        // "subscription WITH an associated plan" request, which it rejects with
+        // HTTP 400 "Create subscription - card_token_id is required", so all
+        // five checkouts here answered 500 with the flag on.
+        expect(created.providerPriceId).toBeUndefined();
+
+        // The comment was right about the consequence, though: deleting that
+        // field ALONE would charge the borrowed host plan's price, because with
+        // no plan id the adapter builds its inline auto_recurring out of the
+        // borrowed row. So the amount is stated — the catalog LIST price in
+        // centavos, the same value handed to the MP plan resolver above. What it
+        // does at the provider boundary is asserted in
+        // `addon.checkout.recurring-borrowed-price.test.ts`.
+        expect(created.providerUnitAmountOverride).toBe(ADDON_LIST_PRICE_CENTAVOS);
+
+        // What the buyer READS on MercadoPago's page. Without it the reason is
+        // built from the borrowed plan's name, so someone buying an add-on would
+        // be asked to authorize the host plan by name.
+        expect(created.planDisplayName).toBe(RECURRING_ADDON.name);
+
+        // The add-on's MP plan is still resolved and still RECORDED — as
+        // bookkeeping, which the idempotency check compares to detect a catalog
+        // price drift. It just no longer travels to MercadoPago.
+        expect(created.mpPreapprovalPlanId).toBe(MP_ADDON_PLAN_ID);
+
         // Without this the row defaults to 'accommodation', which
         // `subscriptionMatchesDomain` fails OPEN on — the add-on's preapproval
         // would be counted as the owner's own subscription.

@@ -466,7 +466,17 @@ describe('createOwnPreapprovalSubscription', () => {
         expect(createCall).not.toHaveProperty('mpPreapprovalPlanId');
     });
 
-    it('HOS-937 step 4: also stamps mpPreapprovalPlanId onto metadata when providerPriceId is supplied (§6.6-B reuse guard — the recurring add-on path, which genuinely subscribes against an MP plan)', async () => {
+    it('HOS-847: mpPreapprovalPlanId is the ONLY source of the metadata stamp — providerPriceId no longer back-fills it', async () => {
+        // This test used to assert the opposite: that a `providerPriceId` fell
+        // through to the `mpPreapprovalPlanId` metadata stamp. That fallback
+        // existed for exactly one caller, the recurring add-on, which was the
+        // last path still subscribing against a real MercadoPago plan — and it
+        // was doing so as part of the HOS-1221 defect (MercadoPago 400s that
+        // request). With the add-on ported to state its amount instead, the
+        // fallback had no caller left, and it was removed rather than kept:
+        // while it existed, reintroducing `providerPriceId` anywhere would have
+        // kept this stamp looking correct, hiding the very regression the stamp
+        // would otherwise have made visible.
         const billing = createBillingMock();
         const db = createTxDbMock();
         const writeDomainLinkRow = vi.fn().mockResolvedValue(undefined);
@@ -481,6 +491,45 @@ describe('createOwnPreapprovalSubscription', () => {
             // HOS-1221 D3: required on this input — omitting it makes qzpay inherit
             // the price row's own trialDays and mint a phantom local trial.
             trialDays: 0,
+            // Supplied deliberately, and it must NOT reach the stamp.
+            providerPriceId: 'mp_plan_gastronomy',
+            mpPreapprovalPlanId: 'mp_plan_gastronomy_bookkeeping',
+            productDomain: 'gastronomy',
+            domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: 'ent-1' },
+            writeDomainLinkRow,
+            db: db as any
+        });
+
+        expect(db.__setMock).toHaveBeenCalledWith({
+            status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            productDomain: 'gastronomy',
+            metadata: {
+                checkoutUrl: 'https://mp.test/checkout/abc',
+                billingInterval: 'monthly',
+                // The bookkeeping field, NOT the forwarded one.
+                mpPreapprovalPlanId: 'mp_plan_gastronomy_bookkeeping',
+                commerceEntityType: 'gastronomy',
+                commerceEntityId: 'ent-1'
+            }
+        });
+    });
+
+    it('HOS-847: a providerPriceId with no mpPreapprovalPlanId stamps NOTHING', async () => {
+        // The other half of the removal, and the one an `objectContaining`
+        // could not see: with the fallback gone, a caller that supplies only the
+        // forwarded field leaves the stamp ABSENT rather than back-filled.
+        const billing = createBillingMock();
+        const db = createTxDbMock();
+        const writeDomainLinkRow = vi.fn().mockResolvedValue(undefined);
+
+        await createOwnPreapprovalSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            trialDays: 0,
             providerPriceId: 'mp_plan_gastronomy',
             productDomain: 'gastronomy',
             domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: 'ent-1' },
@@ -494,7 +543,6 @@ describe('createOwnPreapprovalSubscription', () => {
             metadata: {
                 checkoutUrl: 'https://mp.test/checkout/abc',
                 billingInterval: 'monthly',
-                mpPreapprovalPlanId: 'mp_plan_gastronomy',
                 commerceEntityType: 'gastronomy',
                 commerceEntityId: 'ent-1'
             }
