@@ -23,8 +23,10 @@ This spec adds the missing step in two places with two different jobs:
 
 - **The smoke sign-off WRITES.** It is the moment someone has already looked at
   the change with a user's eyes. It already writes a `<!-- smoke-signoff v1 -->`
-  comment on the Linear issue; it now also asks whether the change is a novelty
-  and, when it is, drafts the entry.
+  comment on the Linear issue; it now also writes the catalog entry, from that
+  comment's own `Observado` field, **without asking anything** (D-3′, owner
+  decision 2026-09-08). Every entry is born unpublished, so the owner's whole
+  job is to review them at the promotion and delete what he does not want.
 - **The staging → main promotion AUDITS.** It enumerates the PRs in the range and
   refuses to promote while any of them has never been evaluated. Sign-offs get
   skipped; the promotion is the last door everything passes through.
@@ -63,8 +65,13 @@ writes the entry unattended from a PR title produces copy written for a reviewer
 and shown to a guest — a catalog full of entries nobody wants to read is worse than
 an empty one, because it teaches users to dismiss the badge.
 
-So the mechanism must **propose and block until answered**, and the answer must be
-allowed to be "no".
+The first version of this spec concluded from that pair that the mechanism must
+**propose and block until answered**. The owner replaced that on 2026-09-08 with
+a third option neither horn of the dilemma had: **write always, publish never** —
+the entry is written unattended *from the observation the smoke just produced*
+(not from a PR title), and it stays invisible until a human lets it through. That
+keeps both halves of the constraint — nothing is forgotten, and nothing
+reviewer-shaped reaches a guest — while removing the four questions. See D-3′.
 
 ## 3. Findings from the current code
 
@@ -293,13 +300,172 @@ fails if any of them carries neither label.
 
 **It fails for lack of decision, never for lack of novelty.**
 
-### D-3 · It proposes, and it blocks until answered
+### D-3 — REPLACED (2026-09-08) by D-3′
 
-The flow asks *"is this a novelty for a user? if so, write it"* and does not close
-until it has a yes or a no. It does **not** write the entry unattended from the PR
-title: a PR title is written for a reviewer, not for a guest. And it does not
-propose without blocking: that is today's state with a reminder on top, and it
-re-empties. **Forgetting, not bad wording, is what emptied the catalog.**
+Was: *"It proposes, and it blocks until answered."* The flow asked *"is this a
+novelty for a user? if so, write it"* and did not close until it had a yes or a
+no — four blocking questions per `PASO`. Kept here, not deleted, because its
+reasoning is what D-3′ has to answer: it refused to write unattended because
+writing unattended meant **writing from the PR title** and **publishing**, and
+it refused to propose without blocking because a proposal with no forcing
+function is the status quo with a reminder on top.
+
+Replaced by the owner, 2026-09-08:
+
+> *"me gustaría que se haga siempre escritura automática y luego revisión mía
+> manual. No quiero tener que escribirlo yo o taggear yo o lo que sea, yo solo
+> quiero revisar y borrar lo que no quiero."*
+
+### D-3′ · The sign-off WRITES, always; the owner reviews at the promotion
+
+The sign-off asks nothing and blocks on nothing. It writes the entry from the
+`Observado` field of the sign-off it just wrote — an observation already phrased
+in user terms, never the PR title — infers the audience, applies
+`whats-new-done` to the bound PRs, and moves on. The review happens **at the
+promotion, over every pending entry at once**.
+
+**Why this is safe, and why the same idea was rejected before.** Every entry is
+born with `publishedAt: 'on-promotion'`, i.e. **invisible until the promotion
+resolves it** (F-3c). So the cost of one unwanted entry is exactly zero until
+the owner lets it through, and the only irreversible act — publishing — still
+happens behind a human. That inverts the burden the old design carried: writing
+becomes cheap and reversible, and the owner's whole job becomes crossing out.
+D-3 rejected "write always" when the alternative on the table was *write from
+the PR title and publish*; neither half of that is true here.
+
+Three things D-3 got right and this keeps verbatim:
+
+- It runs **only on `Resultado: PASO`**. A `FALLO` verified nothing, so there is
+  nothing to announce.
+- The text is **never** taken from a PR title or a diff (NG-2 survives intact:
+  what is now unattended is the *writing from an observation*, not the
+  generation from metadata).
+- A failed write **halts** (I3). Nothing is queued.
+
+One thing it deliberately reverses: **the audience is now inferred** (from the
+issue's subject, the role whose journey the step exercised, and the observation
+itself — never from the paths the PR touched). D-3 forbade inference because the
+flow was already stopping to ask, which made asking free and a guess pure
+downside. With nothing stopping, the guess is reviewed before anyone sees it.
+The residual risk is stated rather than argued away: **an entry aimed at the
+wrong audience that nobody reviews goes out aimed at the wrong audience** —
+which is why the gate's listing prints every pending entry's audience (AC-19).
+
+`highlight` is likewise no longer asked and is always `false`: a flow that
+writes on every `PASO` must not also auto-open a modal on every `PASO`.
+
+### D-6 · The cutoff is DERIVED from the workflow's own first commit (owner decision, 2026-09-08)
+
+The cutoff is the commit that added `.github/workflows/whats-new-gate.yml`,
+found with:
+
+```
+git log --diff-filter=A --format=%H <ref> -- .github/workflows/whats-new-gate.yml
+```
+
+Zero configuration, impossible to forget, and exactly the semantics wanted:
+*since the rule exists*. It replaces the previous design, in which an owner
+pasted the SHA into `scripts/whats-new-gate-cutoff.txt` after the gate's own PR
+merged — a step taken once, ever, whose omission is invisible.
+
+It works because `audit-core.ts:109` compares by **timestamp**
+(`commit.timestamp <= cutoffTimestamp`), not by ancestry, so a commit reachable
+from any branch serves. The derivation walks `HEAD` first (so it describes the
+checkout actually being audited, including CI's merge commit) and
+`origin/staging` second (so an operator on an older branch still derives the
+same commit).
+
+`scripts/whats-new-gate-cutoff.txt` survives as an **optional override**: a SHA
+on its first non-comment line wins and the derivation does not run.
+
+**The rename risk is covered explicitly.** If the workflow is renamed or moved,
+the derivation finds nothing — and that is NOT a silent fallback to "no cutoff",
+which would put every PR ever merged back in scope and read as a broken tool.
+`resolveCutoff` returns an explicit `underivable` state, `computeAudit` turns it
+into exit `3` ("could not determine", D-5 → the check blocks), and the message
+names the path it looked for and both remedies (AC-18).
+
+### D-7 · Withdrawing an entry is a command, not a manual PR (owner decision, 2026-09-08)
+
+D-3′ makes the owner's gesture "delete the ones I do not want". Two things make
+that gesture expensive if left manual, and both come from rules this repo
+already has:
+
+1. `staging` is protected and the gate itself blocks a commit with no PR, so a
+   deletion **must** arrive through a pull request — which is exactly the manual
+   work D-3′ exists to remove.
+2. That PR then enters the range the gate audits, where it would be asked to
+   declare whether *deleting novelties* is a novelty. Circular, and it reads as
+   the tool tripping over itself.
+
+So `hops whats-new drop <id> [<id>...]` does all of it: cuts the branch from a
+freshly-fetched `origin/staging`, removes the entries, opens the PR, and applies
+`whats-new-none` to the PRs those entries were written for. The owner names ids
+and merges.
+
+**The drop PR's exemption is a label, not a special case.** It is created
+already carrying `whats-new-none`, which is a real, correct decision rather than
+a hole in the gate: *a PR that only withdraws What's New entries cannot itself
+be a novelty for a user*. That sentence is written in the code, in the PR body,
+and here — precisely so the next reader does not delete it for looking like a
+bypass.
+
+**A withdrawn id does NOT go into `RETIRED_WHATS_NEW_IDS`.** That ledger exists
+for one reason: an id that was once served may sit in somebody's `seenIds`, so
+reusing it silently marks a new entry as already seen (F-4). An entry that never
+left the marker was returned to nobody, so no `seenIds` can reference it and its
+id stays available. Reserving it anyway would grow an append-only ledger with
+ids that never existed, for no protection. This is a decision, not an omission:
+`drop` therefore **refuses** an entry with a real `publishedAt`, because
+retiring a published entry is the other gesture and it goes through the ledger
+by hand.
+
+**How the PRs behind a withdrawn entry are known.** Each entry carries a
+`// origin: #NNNN, #NNNN` comment written by the sign-off, naming the PRs it was
+written for. That comment is the link, it lives beside the thing it describes,
+and it is removed with it. The two alternatives were weaker: the Linear
+`Novedad:` line needs a Linear token in a context that has none and is one text
+search away from a wrong answer, and reconstructing the mapping from git history
+alone requires walking every revision of the catalog and still cannot say which
+PRs a hand-written entry belonged to. An entry with no `origin` comment is
+reported as such rather than guessed at.
+
+### D-5 · Exit `3` (could not determine) BLOCKS the GitHub check, it does not pass with a warning (owner decision, 2026-09-07)
+
+AC-13 already establishes that the gate must exit `3` — not `1` — when it
+cannot determine the answer (an outaged GitHub API, an unresolvable range).
+What the spec had not settled is what that `3` becomes as a GitHub check
+result on the promotion PR, and the owner decided it explicitly:
+
+> **Cuando el gate no puede determinar la respuesta (API caída, rango
+> irresoluble), BLOQUEA**, y el mensaje dice que no pudo determinar — nunca
+> que encontró PRs sin evaluar. Un check de GitHub es binario y no hay tercer
+> estado; se descartó dejarlo pasar con aviso porque un gate que se vuelve
+> invisible justo cuando no puede verificar es la forma exacta de fail-open
+> que este repo ya sufrió varias veces. Re-correr es un `workflow_dispatch`,
+> sin push. También se descartó emitir un check `neutral` por la Checks API:
+> sin branch protection (que este plan no tiene) un neutral no frena nada, así
+> que se comportaría como dejarlo pasar.
+
+Two alternatives were considered and rejected by name:
+
+- **Pass with a warning annotation.** A gate that goes invisible exactly when
+  it cannot verify is fail-open by a different name — the repeated failure
+  mode this repo's memory (`feedback_*` entries on fail-open guards) already
+  documents, not a new risk to accept here.
+- **A GitHub Checks API `neutral` conclusion.** `neutral` only stops a merge
+  under branch protection rules that require the check. This repo has none
+  (OQ-5, CLAUDE.md's Protected Branches section — agent-side convention only,
+  not GitHub-enforced), so a `neutral` here would have the exact same effect
+  as passing: it blocks nothing.
+
+So the implemented behavior — `whats-new-gate.yml`'s "Combine and report" step
+failing the job (`exit 1`) whenever the unknown log is non-empty, even with no
+known failure alongside it — is the decision, not a placeholder pending
+owner input. The remedy for a `3`/unknown state is `workflow_dispatch` (a
+re-run), never a push, since nothing about the code changed. This is settled;
+do not re-litigate it by reading the YAML's binary exit code as an
+implementation shortcut.
 
 ### D-4 · `es` by hand; `en`/`pt` machine-translated, marked unreviewed, with a circuit that actually closes
 
@@ -318,8 +484,10 @@ one — and reuses the gate that already blocks rather than inventing a second.
 
 - **G-1** — Every merged PR that reaches production carries a recorded
   novelty decision.
-- **G-2** — Writing an entry happens at the moment of verification, with the
-  operator in the loop, and cannot be silently skipped.
+- **G-2** — Writing an entry happens at the moment of verification, from what was
+  observed there, and cannot be silently skipped. Amended 2026-09-08 (D-3′): the
+  operator is no longer *in the loop* at that moment — the loop closes at the
+  promotion, where every entry is reviewed at once and unwanted ones are deleted.
 - **G-3** — An entry is invisible to users until the day its change is actually in
   production.
 - **G-4** — No `en`/`pt` text reaches a user still marked as unreviewed.
@@ -329,8 +497,10 @@ one — and reuses the gate that already blocks rather than inventing a second.
 
 - **NG-1** — Deciding *whether a given change is a novelty*. That is human
   judgment; the system only enforces that the judgment was made and recorded.
-- **NG-2** — Generating entry copy unattended from PR titles, commit messages, or
-  diffs (D-3).
+- **NG-2** — Generating entry copy from PR titles, commit messages, or diffs.
+  Unchanged by D-3′: what became unattended is writing **from an observation a
+  person just made**, not generation from repository metadata, which stays out
+  of scope.
 - **NG-3** — Moving the catalog to the database, a seed, or an admin editor. It
   stays a committed TS file validated at boot.
 - **NG-4** — Backfilling novelty labels onto PRs merged before this ships (see
@@ -351,24 +521,23 @@ one — and reuses the gate that already blocks rather than inventing a second.
 **When.** After the sign-off comment is written and labels/state are applied (the
 current step 6), and before the report. It runs **only** on `Resultado: PASO`, and
 **only once per issue** — a second sign-off on the same issue (a second
-environment) skips the question if every PR bound to it is already labelled.
+environment) writes no second entry; it reads the earlier `Novedad:` line and
+applies that decision to any bound PR still unlabelled.
 
 A `FALLO`, `PARCIAL` or `PENDIENTE` never triggers it: nothing was verified to
 announce.
 
-**What is asked** — one question at a time, per the repo's interaction convention:
+**Nothing is asked** (D-3′). The flow writes, labels, amends the sign-off comment
+and moves on. Every field is derived:
 
-1. **Is this a novelty for an end user?** — yes / no. On *no*, the flow applies
-   `whats-new-none` to every PR listed in the sign-off comment's `PR(s):` field and
-   stops. That is a complete, recorded answer.
-2. **Audience** — one or more values of `WhatsNewAudienceRoleSchema`, or "everyone"
-   (which writes no `roles` key). The operator picks; the flow never infers it from
-   the touched paths.
-3. **Title and body, in `es`** — drafted by the agent from what the operator
-   actually observed in the smoke (the `Observado` field of the sign-off is the
-   raw material, and it is already phrased in user terms), then edited and approved
-   by the operator. Body is Markdown. Never accepted verbatim from a PR title.
-4. **Highlight?** — `true` auto-opens the modal once. Default `false`.
+- **`title` / `body` (`es`)** — written from the `Observado` field of the sign-off
+  just written, which is already a description of what a person saw in user
+  terms. Never a PR title, never a diff (NG-2).
+- **`roles`** — inferred from the issue's subject, the role whose journey the
+  step exercised, and the observation itself; the key is omitted entirely for a
+  universal broadcast. Never inferred from the paths the PR touched.
+- **`highlight`** — always `false`.
+- **`en` / `pt`** — translated on the spot, marked `'machine'` (§6.3).
 
 There is deliberately **no date question**. The writer never picks one (D-1).
 
@@ -382,7 +551,11 @@ There is deliberately **no date question**. The writer never picks one (D-1).
   The gate resolves it (§6.2). Until it does, the entry is invisible: `NaN <= now`
   is `false` (F-3c).
 - `title` / `body` — `es` from step 3; `en`/`pt` per §6.3.
-- `roles` — from step 2, omitted for a universal broadcast.
+- `roles` — inferred, omitted for a universal broadcast.
+- `// origin: #NNNN, #NNNN` — a comment on the line above the entry naming every
+  PR in the sign-off's `PR(s):` field. It is the only link from an entry back to
+  the PRs whose decision it records, and what `hops whats-new drop` reads to
+  correct them (D-7).
 - `image` — out of scope for the automated path; an image-bearing entry is added by
   hand following the existing `APPROVED_IMAGE_ORIGINS` checklist.
 
@@ -390,6 +563,15 @@ There is deliberately **no date question**. The writer never picks one (D-1).
 `apps/api/src/data/whats-new/whats-new.ts` and committed on a branch off `staging`
 with a `[HOS-N] docs(whats-new):` PR, following the normal 6-step branch workflow.
 The PR is labelled `whats-new-done`, as are all PRs bound to the issue.
+
+**Editing the file by hand keeps working, and nothing overwrites it.** The
+date-resolution workflow replaces the literal `publishedAt: 'on-promotion'` and
+nothing else. Writing a real date by hand takes that entry out of the marker's
+protection and puts it under AC-9; changing an `id` is harmless while the entry
+is unpublished (nobody can have it in `seenIds`) and a collision is still caught
+by `check-whats-new-catalog.sh`; deleting an entry by hand works but leaves its
+PRs claiming a `whats-new-done` entry that no longer exists, which is why `drop`
+is the supported gesture.
 
 **Failure handling.** Mirrors I3 of the skill: if the label write fails, the flow
 **stops and says so**. It never queues the labelling for later — queued writes are
@@ -419,8 +601,8 @@ git log --first-parent --format=%H origin/main..origin/staging
 
 one commit per merged PR. Each is resolved to its PR through
 `GET /repos/{owner}/{repo}/commits/{sha}/pulls` — the authoritative association,
-not a parse of the merge message. Merge-subject parsing (`Merge pull request
-#NNNN`) is kept only as a cross-check, and a disagreement between the two is
+not a parse of the merge message. Merge-subject parsing (`Merge pull request #NNNN`)
+is kept only as a cross-check, and a disagreement between the two is
 reported rather than silently resolved.
 
 A first-parent commit that resolves to **no** PR is a direct push to `staging`,
@@ -434,9 +616,20 @@ bot exemption, and keys on the **PR author**, never `github.actor`, for the reas
 that workflow documents: a human who touches a bot's PR must not become
 responsible for a decision the bot cannot make.
 
-**Cutoff.** Any PR whose merge commit predates the workflow's first commit on
-`staging` is exempt and reported under a `pre-cutoff` count. Without this the first
-promotion after this ships would name several hundred unlabelled PRs (NG-4).
+**Cutoff (D-6).** Any PR whose merge commit predates the commit that ADDED
+`.github/workflows/whats-new-gate.yml` is exempt and reported under a
+`pre-cutoff` count. That commit is derived with `git log --diff-filter=A`, never
+configured; `scripts/whats-new-gate-cutoff.txt` is an optional override. Without
+the cutoff the first promotion after this ships would name several hundred
+unlabelled PRs (NG-4). A derivation that finds nothing is exit `3`, never a
+silent "no cutoff" (AC-18).
+
+**The review (D-3′).** In the same run, the gate prints every entry carrying
+`publishedAt: 'on-promotion'` **in full** — id, audience, title, body, and the
+PRs it was written for — via `hops whats-new pending`. This is the surface on
+which the owner reviews, so it must not require opening a file. It is
+informative: it never fails the job on its own, because an unwanted entry costs
+nothing until this very promotion publishes it (AC-19).
 
 **The failure message names the PRs.** It never says "something is missing":
 
@@ -491,9 +684,17 @@ alongside the existing `ci`, `merge` and `verify`:
   `origin/main..origin/staging`. Exit `0` clean, `1` blocked, `3` could not
   determine (matching the `hops ci` / `hops merge` convention that `3` means "I do
   not know", which is not a failure).
-- `hops whats-new audit --fix` — walks the unlabelled PRs and asks D-3's question
-  for each, then applies the label. This is G-5: the CI red always has a
-  one-command remedy that does not require pushing anything.
+- `hops whats-new audit --fix` — walks the unlabelled PRs and asks, for each,
+  whether it was a novelty, then applies the label. This is the ONE place the
+  question still gets asked, and only for PRs that never reached a sign-off at
+  all (R-3). This is G-5: the CI red always has a one-command remedy that does
+  not require pushing anything.
+- `hops whats-new pending` — prints every unpublished entry in full. Run by the
+  gate; also the local way to see what is queued.
+- `hops whats-new drop <id> [<id>...]` — withdraws entries the owner does not
+  want: branch, catalog edit, PR (already labelled `whats-new-none`), and
+  `whats-new-none` onto the PRs those entries were written for (D-7). Refuses an
+  already-published entry.
 
 ### 6.3 Translation, and the circuit that closes it
 
@@ -608,7 +809,7 @@ The two are mutually exclusive; carrying both is reported as a conflict and bloc
 |---|---|
 | `.github/workflows/whats-new-gate.yml` | The promotion audit (§6.2) |
 | `scripts/check-whats-new-catalog.sh` | Guard: id uniqueness, retired-id collisions, ordering (F-6: must also be added as a step in `ci.yml`'s `guards` job) |
-| `scripts/client-tools/src/commands/whats-new/` | `hops whats-new audit [--fix]` |
+| `scripts/client-tools/src/commands/whats-new/` | `hops whats-new audit [--fix] \| pending \| drop` |
 | `.github/workflows/whats-new-resolve-dates.yml` | `push`-on-`main` job that resolves `on-promotion` markers and back-merges (§6.2, AC-14) |
 
 ### 7.5 Modified files
@@ -617,35 +818,46 @@ The two are mutually exclusive; carrying both is reported as a conflict and bloc
 |---|---|
 | `.claude/skills/smoke-tanda/SKILL.md` | The novelty phase (§6.1) |
 | `.claude/skills/smoke-tanda/references/formatos.md` | A `Novedad:` line in the sign-off comment format |
-| `CLAUDE.md` | The gate, the two labels, and the promotion's new requirement |
+| `CLAUDE.md` | The gate, the two labels, the promotion's new requirement, and what hand-editing the catalog does |
+| `apps/api/src/data/whats-new/whats-new.ts` | Authoring notes: the `// origin:` convention and the hand-edit rules |
 
-The sign-off comment gains one line, so a later sweep can reconstruct the decision
-from Linear alone exactly as the rest of the format allows:
+The sign-off comment gains one line, so a later sweep can reconstruct every
+entry's origin from Linear alone exactly as the rest of the format allows:
 
 ```markdown
-- **Novedad**: no | 2026-09-10-daily-menu-window   (id, or `no`)
+- **Novedad**: 2026-09-10-daily-menu-window   (the entry id)
 ```
+
+On a `PASO` this is always an id (D-3′). A literal `no` is only readable on
+sign-offs written before 2026-09-08, when the phase still asked the question.
 
 ## 8. Acceptance criteria
 
-- **AC-1** — *Given* a `/smoke` sign-off with `Resultado: PASO` on an issue whose
-  bound PRs carry no novelty label, *when* the sign-off comment has been written,
-  *then* the flow asks whether the change is a novelty and does not report
-  completion until answered.
+- **AC-1 — REWRITTEN (2026-09-08, D-3′).** Was: "the flow asks whether the change
+  is a novelty and does not report completion until answered." Now: *Given* a
+  `/smoke` sign-off with `Resultado: PASO` on an issue with no `Novedad:` line,
+  *when* the sign-off comment has been written, *then* the flow writes a catalog
+  entry **without asking anything** — no question, no blocking prompt — and
+  reports completion only once the entry, the labels and the amended comment
+  have all landed.
 
-- **AC-2** — *Given* the operator answers "not a novelty", *when* the flow
-  finishes, *then* every PR listed in the sign-off's `PR(s):` field carries
-  `whats-new-none`, no entry is written, and the sign-off comment records
-  `Novedad: no`.
+- **AC-2 — REPLACED (2026-09-08, D-3′).** Was: "the operator answers *not a
+  novelty* ⇒ every bound PR carries `whats-new-none` and no entry is written."
+  There is no such answer at sign-off time any more. `whats-new-none` now
+  reaches a PR by exactly two paths, and both are covered elsewhere: the owner
+  withdrawing an entry at review (AC-20) and `hops whats-new audit --fix` for a
+  PR that never reached a sign-off (AC-12). Kept as a numbered stub so the
+  criterion numbers stay stable.
 
-- **AC-3** — *Given* the operator answers "novelty" and approves a drafted `es`
-  title and body, *when* the flow finishes, *then* a new entry exists at the top of
-  `whatsNewEntries` with `publishedAt` set to the literal `'on-promotion'`, every
-  bound PR carries `whats-new-done`, and the sign-off comment records the entry id.
-  The operator is never asked for a date.
+- **AC-3** — *Given* a `PASO` sign-off, *when* the flow finishes, *then* a new
+  entry exists at the top of `whatsNewEntries` with `publishedAt` set to the
+  literal `'on-promotion'`, its `es` text written from the sign-off's `Observado`
+  field, a `// origin:` comment naming every bound PR, `highlight: false`, every
+  bound PR carrying `whats-new-done`, and the sign-off comment recording the
+  entry id. Nobody is asked for a date, an audience, or permission.
 
 - **AC-4** — *Given* a sign-off with `Resultado: FALLO`, `PARCIAL` or `PENDIENTE`,
-  *when* it completes, *then* no novelty question is asked and no label is applied.
+  *when* it completes, *then* no entry is written and no label is applied.
 
 - **AC-5** — *Given* a `staging` → `main` PR whose range contains a PR carrying
   neither novelty label, *when* the gate runs, *then* it fails and its message
@@ -718,6 +930,37 @@ from Linear alone exactly as the rest of the format allows:
   neither a valid ISO datetime nor the marker, parsing still throws — the union
   widens the schema by exactly one value and tolerates no other malformed date.
 
+- **AC-17** — *Given* no SHA pinned in `scripts/whats-new-gate-cutoff.txt`, *when*
+  the audit runs, *then* the cutoff applied is the commit that added
+  `.github/workflows/whats-new-gate.yml`, and the report states it by SHA and by
+  source. *Given* a SHA pinned in that file, *then* it wins and the derivation
+  does not run at all.
+
+- **AC-18** — *Given* the gate workflow's path yields no adding commit on any
+  derivation ref (someone renamed or moved it) and no override is pinned, *when*
+  the audit runs, *then* it exits `3` naming that path and both remedies — never
+  `0` with no PR exempted by age. A mutation that makes the derivation return
+  empty in silence must turn a test red.
+
+- **AC-19** — *Given* a catalog containing entries with `publishedAt:
+  'on-promotion'`, *when* the gate runs, *then* its log prints each of them in
+  full — id, audience, title, body, originating PRs — plus the `hops whats-new
+  drop` command with those ids already filled in, and the job's pass/fail is
+  unaffected by their presence. *Given* a catalog whose `whatsNewEntries`
+  declaration cannot be found, *then* that is reported as "could not determine",
+  never as "nothing pending".
+
+- **AC-20** — *Given* `hops whats-new drop <id>` on an entry whose `publishedAt`
+  is the marker, *when* it runs, *then* the entry and its `// origin:` comment are
+  removed, a PR into `staging` is opened already carrying `whats-new-none`, and
+  every PR named by that comment is moved from `whats-new-done` to
+  `whats-new-none` in one edit. *Given* an id that does not exist, or one whose
+  entry has a real `publishedAt`, *then* nothing is removed at all and the reason
+  names the id — a published entry is retired through `RETIRED_WHATS_NEW_IDS`, by
+  hand, not here. *Given* a dropped entry with no `// origin:` comment, *then* it
+  is reported as having no known originating PRs rather than silently relabelling
+  nothing.
+
 ## 9. Risks
 
 - **R-1 — RETIRED.** This was "HOS-1216 chooses to reject future dates", the one
@@ -739,6 +982,21 @@ from Linear alone exactly as the rest of the format allows:
 - **R-4 — Label drift.** A label removed by hand after the gate passed is not
   re-checked. Accepted: labels are advisory records of a human decision, and the
   gate re-runs on every promotion regardless.
+
+- **R-8 — The review is skipped and every entry ships (new, D-3′).** The old
+  design's failure mode was an empty catalog; this one's is a full catalog of
+  entries nobody read. Nothing blocks on the review, by design, because blocking
+  on it would recreate the four questions in a different place. What holds it up
+  instead is that the review is *cheap*: the gate prints the entries in full on
+  the promotion PR and `drop` removes them in one command. Watch the first three
+  promotions — if entries are being published unread, the honest fix is a
+  reviewer, not a prompt.
+
+- **R-9 — A wrong audience ships unnoticed (new, D-3′).** Inference gets the
+  audience wrong sometimes, and an entry aimed at `HOST` that should have said
+  `GASTRONOMY_OWNER` reaches the wrong people or nobody. Mitigated only by AC-19
+  printing the audience of every pending entry. Stated rather than argued away:
+  this is the concrete cost of removing the audience question.
 
 - **R-5 — RETIRED.** Was "entries pile up dated to a promotion that slips". D-1
   removes the class: a marker has no date to go stale, and a promotion that slips
@@ -825,9 +1083,11 @@ Beyond the non-goals in §5:
   shipped filter hides the future; AC-9 is about the past (F-3b). The two look like
   the same comparison and are not.
 
-- **Cutoff.** Record the workflow's first commit SHA on `staging` in the workflow
-  itself. Every PR merged before it is exempt (§6.2). Without it the first
-  promotion names hundreds of PRs and the gate is disabled the same day.
+- **Cutoff — nothing to record (D-6).** The cutoff derives itself from the commit
+  that added the gate workflow. Do NOT paste a SHA anywhere; the override file
+  exists only for a deliberate one-off. If the workflow is ever renamed, expect
+  exit `3` until either the path is restored or the override is pinned — that is
+  the designed behaviour, not a regression.
 
 - **Guard wiring.** F-6: adding `check-whats-new-catalog.sh` to `pnpm check:guards`
   does **not** make it run in CI. It needs its own step in `ci.yml`'s `guards` job.

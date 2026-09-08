@@ -1,0 +1,25 @@
+# OPTIONAL override for the What's New promotion gate's cutoff commit
+# (HOS-1214 §6.2, D-6).
+#
+# The cutoff is normally DERIVED, not configured: it is the commit that added
+# .github/workflows/whats-new-gate.yml, found with
+#
+#     git log --diff-filter=A --format=%H <ref> -- .github/workflows/whats-new-gate.yml
+#
+# That is exactly the semantics the gate wants — "since the rule exists" — with
+# nothing to write down and nothing to forget. The previous design asked an
+# owner to paste a SHA here after the gate's own PR merged, which is a step that
+# only ever gets taken once and is invisible when it is skipped.
+#
+# THIS FILE IS THE ESCAPE HATCH, not the source of truth. Put a bare SHA on the
+# first non-comment line to pin a different cutoff (for a one-off backfill, or
+# while the workflow is being moved); the derivation then does not run at all.
+# Leave it empty — its committed state — to let the derivation answer.
+#
+# If the derivation finds nothing (someone renamed or moved the workflow), the
+# audit does NOT silently fall back to "no cutoff": it exits 3, says it could
+# not determine the answer, and names the path it looked for. See `resolveCutoff`
+# in scripts/client-tools/src/commands/whats-new/cutoff.ts.
+#
+# Format: the first non-comment, non-blank line is the SHA. Every line starting
+# with `#` is a comment and is ignored.

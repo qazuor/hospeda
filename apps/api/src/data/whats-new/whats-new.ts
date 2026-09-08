@@ -18,6 +18,21 @@
  *   See SPEC-175 §9 (TBD-2, resolved) and T-016/T-018 for the original ops task.
  * - **ids**: ids are stable — never reuse a retired id. User settings may still
  *   reference it; a collision would silently mark a new entry as already seen.
+ * - **`// origin:` comment**: an entry written by the smoke sign-off (HOS-1214
+ *   §6.1) carries a `// origin: #NNNN, #NNNN` comment on the line(s) above it,
+ *   naming the PRs it was written for. That comment is the ONLY link from an
+ *   entry back to the PRs whose novelty decision it records, and it is what
+ *   `hops whats-new drop` reads to flip those PRs to `whats-new-none` when the
+ *   entry is withdrawn. Removing the comment does not break anything visible —
+ *   it just makes the withdrawal unable to say which PRs to correct. Keep it
+ *   attached to its entry.
+ * - **Editing this file by hand is fine, and nothing overwrites you.** The
+ *   date-resolution workflow only ever replaces the literal string
+ *   `publishedAt: 'on-promotion'`; every other byte is copied through. Two
+ *   consequences worth knowing: writing a REAL date by hand takes that entry
+ *   out of the marker's protection and puts it under AC-9 (a past date is
+ *   silently destroyed for every new account), and changing an `id` is harmless
+ *   while the entry is unpublished — the guard still catches a collision.
  * - **Validation**: `WhatsNewCatalogSchema.parse(...)` runs at module import time.
  *   A malformed entry (e.g. missing required `es` title) will throw immediately
  *   and prevent the API process from serving traffic (AC-16, intended).
@@ -68,6 +83,27 @@ import { z } from 'zod';
 export const APPROVED_IMAGE_ORIGINS: ReadonlySet<string> = new Set<string>([
     'https://res.cloudinary.com'
 ]);
+
+/**
+ * Ids of What's New entries that have been retired — removed from
+ * {@link whatsNewEntries} under the ~6-month archival policy (HOS-1214 F-4).
+ *
+ * **This ledger is APPEND-ONLY.** Once an id is added here, it must never be
+ * reused for a new entry. `seenIds`, stored per-user in the settings JSONB
+ * column, is keyed by entry id: reusing a retired id would silently mark a
+ * brand-new entry as "already seen" for anyone who had previously dismissed
+ * the old one carrying that id. That failure is invisible — the affected
+ * user simply never sees the new notification, and nothing in the API
+ * response or logs suggests why.
+ *
+ * `scripts/check-whats-new-catalog.sh` fails the build (and CI, via its step
+ * in `ci.yml`'s `guards` job) when a live entry's `id` also appears here.
+ *
+ * Starts empty. When an entry is archived: move its `id` string into this
+ * set, then delete the entry object from {@link whatsNewEntries}. Never
+ * remove an id that is already here.
+ */
+export const RETIRED_WHATS_NEW_IDS: ReadonlySet<string> = new Set<string>([]);
 
 /**
  * Array schema for the curated catalog. Minimum 0 entries (empty is valid).

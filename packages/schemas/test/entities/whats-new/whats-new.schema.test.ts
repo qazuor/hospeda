@@ -367,4 +367,144 @@ describe('WhatsNewEntrySchema', () => {
             expect(result.success).toBe(false);
         });
     });
+
+    // -------------------------------------------------------------------------
+    // publishedAt: 'on-promotion' marker (HOS-1214 AC-16)
+    // -------------------------------------------------------------------------
+    describe('when publishedAt is the unresolved on-promotion marker (HOS-1214 AC-16)', () => {
+        it('should accept the literal marker `on-promotion`', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, publishedAt: 'on-promotion' };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.publishedAt).toBe('on-promotion');
+            }
+        });
+
+        it('should still accept a valid ISO datetime string alongside the widened union', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, publishedAt: '2026-09-07T12:00:00Z' };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should still reject a publishedAt that is neither a valid ISO datetime nor the marker', () => {
+            // Arrange — the union widens by exactly one literal, nothing else
+            const input = { ...VALID_ENTRY, publishedAt: 'not-a-date' };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should still reject a plain (non-datetime) date string', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, publishedAt: '2026-05-29' };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject a near-miss of the marker (case/typo sensitive, not fuzzy)', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, publishedAt: 'On-Promotion' };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // translations (HOS-1214 D-4, §6.3)
+    // -------------------------------------------------------------------------
+    describe('translations field (HOS-1214)', () => {
+        it('should parse an entry with no translations field (optional)', () => {
+            // Arrange / Act
+            const result = WhatsNewEntrySchema.safeParse(VALID_ENTRY);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.translations).toBeUndefined();
+            }
+        });
+
+        it('should accept translations with both en and pt marked machine', () => {
+            // Arrange
+            const input = {
+                ...VALID_ENTRY,
+                translations: { en: 'machine', pt: 'machine' }
+            };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept translations with a mix of reviewed and declared', () => {
+            // Arrange
+            const input = {
+                ...VALID_ENTRY,
+                translations: { en: 'reviewed', pt: 'declared' }
+            };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept translations with only one language present', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, translations: { pt: 'machine' } };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an empty translations object', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, translations: {} };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject an unknown review-state value', () => {
+            // Arrange
+            const input = { ...VALID_ENTRY, translations: { en: 'auto-translated' } };
+
+            // Act
+            const result = WhatsNewEntrySchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
 });
