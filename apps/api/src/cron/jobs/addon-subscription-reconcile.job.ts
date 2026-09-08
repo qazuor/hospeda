@@ -161,7 +161,11 @@ export type ReapOutcome =
     | { readonly reaped: true }
     | {
           readonly reaped: false;
-          readonly reason: 'cancel-unverified' | 'orphan-preapproval' | 'already-closed';
+          readonly reason:
+              | 'cancel-unverified'
+              | 'orphan-preapproval'
+              | 'already-closed'
+              | 'closed-after-provider-cancel';
       };
 
 type CronTransactionResult =
@@ -197,6 +201,12 @@ async function reapAbandonedPendingPurchase(params: {
 }): Promise<ReapOutcome> {
     const { candidate, billing, paymentAdapter, db, logger } = params;
     const mpSubscriptionId = candidate.mpSubscriptionId?.trim();
+    /**
+     * Set only once MercadoPago has CONFIRMED the preapproval is terminal, i.e.
+     * once this run has actually killed the buyer's authorization. It changes
+     * what a failed local close means — see the `!closed` branch below.
+     */
+    let providerCancelConfirmed = false;
 
     if (mpSubscriptionId) {
         // The add-on's own `billing_subscriptions` row is reachable only through
@@ -317,6 +327,8 @@ async function reapAbandonedPendingPurchase(params: {
             });
             return { reaped: false, reason: 'cancel-unverified' };
         }
+
+        providerCancelConfirmed = true;
     }
 
     // Either there was never a preapproval (nothing live at MercadoPago, but the
@@ -340,7 +352,46 @@ async function reapAbandonedPendingPurchase(params: {
         .returning({ id: billingAddonPurchases.id });
 
     if (!closed) {
-        return { reaped: false, reason: 'already-closed' };
+        if (!providerCancelConfirmed) {
+            // Nothing was cancelled at the provider, so the row left `'pending'`
+            // between phase 1 and here on its own: `supersedePendingPurchase`
+            // ran for a buyer who came back. Benign, and the whole reason the
+            // WHERE re-asserts `'pending'`.
+            return { reaped: false, reason: 'already-closed' };
+        }
+
+        // This run KILLED the preapproval and then found the row no longer
+        // `'pending'` — the buyer authorized in MercadoPago between phase 1's
+        // SELECT and the cancel above, and the activation webhook (whose only
+        // idempotency is that same `status = 'pending'` WHERE) won the race.
+        // The purchase is now `'active'` over a DEAD preapproval: it will never
+        // be charged, and no sweep reaches it — `findExpiredAddons` needs
+        // either an `expires_at` (null on recurring add-ons) or
+        // `cancel_at_period_end` (false here). A free benefit, forever, unless
+        // a human is told.
+        const raceError = new Error(
+            `addon-subscription-reconcile: purchase ${candidate.id} left 'pending' AFTER its preapproval ${mpSubscriptionId} was cancelled — the buyer authorized mid-sweep and now holds a live add-on over a dead preapproval`
+        );
+        logger.error(
+            'addon-subscription-reconcile: cancelled the preapproval of a purchase that was activated mid-sweep — needs manual reconciliation',
+            {
+                purchaseId: candidate.id,
+                customerId: candidate.customerId,
+                addonSlug: candidate.addonSlug,
+                mpSubscriptionId: mpSubscriptionId ?? null
+            },
+            { capture: true }
+        );
+        Sentry.captureException(raceError, {
+            tags: { cronJob: 'addon-subscription-reconcile', phase: 'reap' },
+            extra: {
+                purchaseId: candidate.id,
+                customerId: candidate.customerId,
+                addonSlug: candidate.addonSlug,
+                mpSubscriptionId: mpSubscriptionId ?? null
+            }
+        });
+        return { reaped: false, reason: 'closed-after-provider-cancel' };
     }
 
     logger.info('addon-subscription-reconcile: closed an abandoned recurring add-on checkout', {
@@ -584,6 +635,7 @@ export const addonSubscriptionReconcileJob: CronJobDefinition = {
             let cancelUnverified = 0;
             let orphanPreapproval = 0;
             let alreadyClosed = 0;
+            let closedAfterProviderCancel = 0;
 
             for (const candidate of cronResult.candidates) {
                 const outcome = await reapAbandonedPendingPurchase({
@@ -599,6 +651,8 @@ export const addonSubscriptionReconcileJob: CronJobDefinition = {
                     cancelUnverified++;
                 } else if (outcome.reason === 'orphan-preapproval') {
                     orphanPreapproval++;
+                } else if (outcome.reason === 'closed-after-provider-cancel') {
+                    closedAfterProviderCancel++;
                 } else {
                     alreadyClosed++;
                 }
@@ -611,6 +665,7 @@ export const addonSubscriptionReconcileJob: CronJobDefinition = {
                 cancelUnverified,
                 orphanPreapproval,
                 alreadyClosed,
+                closedAfterProviderCancel,
                 staleRevocationsDetected,
                 durationMs,
                 dryRun
@@ -627,6 +682,10 @@ export const addonSubscriptionReconcileJob: CronJobDefinition = {
                         ? ` (${orphanPreapproval} left pending — orphan preapproval, needs manual reconciliation)`
                         : ''
                 }${
+                    closedAfterProviderCancel > 0
+                        ? ` (${closedAfterProviderCancel} activated mid-sweep over a now-dead preapproval, needs manual reconciliation)`
+                        : ''
+                }${
                     staleRevocationsDetected > 0
                         ? ` (${staleRevocationsDetected} soft-cancelled add-on(s) overdue for revocation by addon-expiry)`
                         : ''
@@ -638,7 +697,8 @@ export const addonSubscriptionReconcileJob: CronJobDefinition = {
                 // pin the count non-zero forever and drown the transient signal
                 // — the same split `abandoned-pending-subs` makes for
                 // `reconcile_assisted`. It gets its own counter and its own
-                // Sentry issue instead.
+                // Sentry issue instead, as does `closed-after-provider-cancel`:
+                // neither is retried by the next run, so neither is transient.
                 errors: cancelUnverified,
                 durationMs,
                 details: {
@@ -647,6 +707,7 @@ export const addonSubscriptionReconcileJob: CronJobDefinition = {
                     cancelUnverified,
                     orphanPreapproval,
                     alreadyClosed,
+                    closedAfterProviderCancel,
                     staleRevocationsDetected
                 }
             };

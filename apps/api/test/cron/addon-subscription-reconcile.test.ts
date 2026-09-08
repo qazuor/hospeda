@@ -431,6 +431,33 @@ describe('reapAbandonedPendingPurchase', () => {
         });
 
         expect(outcome).toEqual({ reaped: false, reason: 'already-closed' });
+        // Nothing was cancelled at MercadoPago, so nothing was lost: no alarm.
+        expect(mockSentryCapture).not.toHaveBeenCalled();
+    });
+
+    it('pages a human when the row stopped being pending AFTER the preapproval was killed', async () => {
+        // The buyer authorized between phase 1's SELECT and this cancel, so the
+        // purchase is now `'active'` over a dead preapproval — never charged,
+        // and reachable by no sweep (`findExpiredAddons` needs an `expires_at`
+        // or `cancel_at_period_end`, and a recurring add-on has neither). A
+        // silent `already-closed` here is a benefit given away for free.
+        const db = makeDbMock({
+            ownSubscriptionRows: [{ id: 'addon-sub-1' }],
+            returningRows: []
+        });
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+        const logger = makeLogger();
+
+        const outcome = await callReap({ db, logger });
+
+        expect(outcome).toEqual({ reaped: false, reason: 'closed-after-provider-cancel' });
+        expect(mockBillingSubscriptionsCancel).toHaveBeenCalledWith('addon-sub-1');
+        expect(mockSentryCapture).toHaveBeenCalledTimes(1);
+        expect(logger.error).toHaveBeenCalledWith(
+            expect.stringContaining('activated mid-sweep'),
+            expect.objectContaining({ purchaseId: CANDIDATE.id }),
+            { capture: true }
+        );
     });
 });
 
@@ -671,6 +698,23 @@ describe('addon-subscription-reconcile handler', () => {
         expect(result.errors).toBe(1);
         expect(result.details?.cancelUnverified).toBe(1);
         expect(result.message).toContain('Closed 1 abandoned add-on checkout');
+    });
+
+    it('counts a mid-sweep activation separately from a benign already-closed row', async () => {
+        primeTransaction({ acquired: true, candidates: [CANDIDATE] });
+        const db = makeDbMock({ ownSubscriptionRows: [{ id: 'addon-sub-1' }], returningRows: [] });
+        mockGetDb.mockReturnValue(db.db);
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+        const ctx = makeCronCtx();
+
+        const result = await addonSubscriptionReconcileJob.handler(ctx as never);
+
+        expect(result.details?.closedAfterProviderCancel).toBe(1);
+        expect(result.details?.alreadyClosed).toBe(0);
+        // Not transient: the next run does not re-select the row, so folding it
+        // into `errors` would be a one-shot red that no retry can clear.
+        expect(result.errors).toBe(0);
+        expect(result.message).toContain('manual reconciliation');
     });
 
     it('keeps a permanently-stuck orphan out of `errors` so a real failure stays visible', async () => {
