@@ -59,6 +59,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Expire addons whose subscription term has ended.'
     },
     {
+        name: 'addon-subscription-reconcile',
+        displayName: 'Reconciliación de add-ons recurrentes',
+        category: 'billing',
+        schedule: '45 */6 * * *',
+        description:
+            "Closes abandoned 'pending' recurring add-on checkouts (cancelling and VERIFYING their MercadoPago preapproval first — nothing else sweeps them: every add-on cron filters status='active' and every subscription sweep excludes the add-on domain), and reports soft-cancelled add-ons that addon-expiry left active past the period they paid for (HOS-847 PR 7c)."
+    },
+    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',

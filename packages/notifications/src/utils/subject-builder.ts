@@ -71,6 +71,9 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
         'Límite reducido en tu plan {planName} - Revisá tu contenido',
     [NotificationType.PAYMENT_RETRY_WARNING]:
         'Problema con tu pago - Intento {failureCount} de {maxRetries}',
+    // The IMMEDIATE cancellation: the benefit is already gone. A soft-cancel
+    // that leaves the customer a paid period gets its own line — see
+    // CONDITIONAL_SUBJECT_PATTERNS below.
     [NotificationType.ADDON_CANCELLATION]: 'Tu complemento {addonName} ha sido cancelado',
 
     // Newsletter (SPEC-101)
@@ -153,6 +156,45 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 };
 
 /**
+ * An alternative subject, used when one variable resolved and skipped when it
+ * did not.
+ */
+interface ConditionalSubjectPattern {
+    /** The subject-data key whose presence selects {@link pattern}. */
+    readonly onKey: string;
+    /** Used INSTEAD of the type's entry in `SUBJECT_PATTERNS`. */
+    readonly pattern: string;
+}
+
+/**
+ * Subjects that come in two shapes, chosen by whether a variable resolved.
+ *
+ * Two whole patterns, never one pattern with an optional placeholder in it. A
+ * `{accessUntil}` left unresolved does not vanish: `replacePlaceholders`
+ * preserves it by design, so the immediate-cancellation half of this type would
+ * publish its own template syntax to an inbox (H-64 / H-75), and blanking it
+ * instead would leave "…hasta el " hanging in the subject line. Both failures
+ * happen where nobody can intercept them — an inbox list.
+ *
+ * HOS-847 PR 7c: an add-on cancellation reaches the customer in two very
+ * different states. Non-payment and an admin cancel end the benefit on the
+ * spot; `softCancelRecurringAddon` leaves it running until the end of the
+ * period already paid for, and only that path supplies `accessUntil`. Saying
+ * only "ha sido cancelado" above a body that reads "seguís teniendo el
+ * beneficio hasta el 15 de abril" is the contradiction this split removes.
+ *
+ * The absent-variable branch keeps the ORIGINAL wording, byte for byte: the
+ * immediate cancellation's subject did not change and a test pins that.
+ */
+const CONDITIONAL_SUBJECT_PATTERNS: Partial<Record<NotificationType, ConditionalSubjectPattern>> = {
+    [NotificationType.ADDON_CANCELLATION]: {
+        onKey: 'accessUntil',
+        pattern:
+            'Tu complemento {addonName} queda cancelado — lo seguís usando hasta el {accessUntil}'
+    }
+};
+
+/**
  * Generic fallback subject for unknown notification types
  */
 const FALLBACK_SUBJECT = 'Notificación de Hospeda';
@@ -188,10 +230,19 @@ export function getSubjectPlaceholders(params: { readonly type: NotificationType
     }
 
     const found = new Set<string>();
-    for (const match of pattern.matchAll(PLACEHOLDER_PATTERN)) {
-        const key = match[1];
-        if (key !== undefined) {
-            found.add(key);
+    // The UNION of both shapes for a conditional subject. A variable that only
+    // the alternative pattern uses still has to be resolvable, and this is the
+    // list the coverage guard and `buildSubjectData` read.
+    const patterns = [pattern, CONDITIONAL_SUBJECT_PATTERNS[params.type]?.pattern].filter(
+        (candidate): candidate is string => candidate !== undefined
+    );
+
+    for (const candidate of patterns) {
+        for (const match of candidate.matchAll(PLACEHOLDER_PATTERN)) {
+            const key = match[1];
+            if (key !== undefined) {
+                found.add(key);
+            }
         }
     }
 
@@ -293,5 +344,15 @@ export function getSubject(type: NotificationType, data: Record<string, string>)
         return FALLBACK_SUBJECT;
     }
 
-    return replacePlaceholders(pattern, data);
+    // A conditional subject switches shape only on a value that actually
+    // resolved. An empty string is not a date — `formatDate` returns one for an
+    // input it cannot read — and picking the alternative on it would publish
+    // "…hasta el " with nothing after it.
+    const conditional = CONDITIONAL_SUBJECT_PATTERNS[type];
+    const chosen =
+        conditional && typeof data[conditional.onKey] === 'string' && data[conditional.onKey] !== ''
+            ? conditional.pattern
+            : pattern;
+
+    return replacePlaceholders(chosen, data);
 }

@@ -16,6 +16,7 @@
 // Import job definitions
 export { abandonedPendingSubsJob } from './abandoned-pending-subs.job.js';
 export { addonExpiryJob } from './addon-expiry.job.js';
+export { addonSubscriptionReconcileJob } from './addon-subscription-reconcile.job.js';
 export { alertsDigestJob } from './alerts-digest.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
 export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js';

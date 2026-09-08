@@ -46,8 +46,11 @@ vi.mock('../../src/services/notification-recipient-locale', () => ({
     resolveRecipientLocale: vi.fn().mockResolvedValue('es')
 }));
 
+// The member carries its REAL value: the assertion below compares the emitted
+// `type` against it, and a stand-in string would make that comparison a check
+// of this file's own invention rather than of what the dispatcher receives.
 vi.mock('@repo/notifications', () => ({
-    NotificationType: { ADDON_CANCELLATION: 'ADDON_CANCELLATION' }
+    NotificationType: { ADDON_CANCELLATION: 'addon_cancellation' }
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -184,12 +187,26 @@ describe('softCancelRecurringAddon', () => {
 
         expect(mockSendNotification).toHaveBeenCalledWith(
             expect.objectContaining({
-                type: 'ADDON_CANCELLATION',
+                type: 'addon_cancellation',
                 recipientEmail: 'owner@example.com',
                 addonName: 'Alojamientos extra',
                 addonSlug: 'extra-accommodations-20'
             })
         );
+    });
+
+    it('tells the customer the exact date the benefit runs to (HOS-847 PR 7c)', async () => {
+        await softCancelRecurringAddon({ ...baseInput, db: createDb() });
+
+        // Read the argument instead of `expect.objectContaining`: that matcher
+        // is blind to a MISSING field, which is the only defect worth catching
+        // here — the whole point is that the deferred send carries the date the
+        // immediate send must not.
+        const [payload] = mockSendNotification.mock.calls[0] as [Record<string, unknown>];
+        expect(payload.accessUntil).toBe(PERIOD_END.toISOString());
+        // And it is not the same instant as "cancelled now", or the email would
+        // be promising access up to the moment it was sent.
+        expect(payload.accessUntil).not.toBe(payload.canceledAt);
     });
 
     it('still succeeds when the notification lookup blows up', async () => {

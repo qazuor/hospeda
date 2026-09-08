@@ -81,8 +81,11 @@ vi.mock('../../src/services/notification-recipient-locale', () => ({
     resolveRecipientLocale: vi.fn().mockResolvedValue('es')
 }));
 
+// The member carries its REAL value. A stand-in string would make any
+// assertion on the emitted `payload.type` a comparison against this file's own
+// invention rather than against what the dispatcher receives.
 vi.mock('@repo/notifications', () => ({
-    NotificationType: { ADDON_CANCELLATION: 'ADDON_CANCELLATION' }
+    NotificationType: { ADDON_CANCELLATION: 'addon_cancellation' }
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -367,6 +370,38 @@ describe('cancelUserAddon — MercadoPago closes first, or nothing happens', () 
         // add-on never has one, and must not be dragged into the recurring
         // refusal that requires it.
         expect(mockSoftCancel).not.toHaveBeenCalled();
+    });
+
+    it('CONTROL: the immediate cancellation email promises NO access (HOS-847 PR 7c)', async () => {
+        // The counterpart of the soft-cancel assertion in
+        // `addon-soft-cancel.test.ts`. This path has already removed the
+        // entitlements by the time it mails, so an `accessUntil` here would
+        // promise a benefit the customer no longer has — which is the entire
+        // reason the payload field is OPTIONAL rather than required.
+        seedPurchase(null, null);
+        mockCloseAddonPreapproval.mockResolvedValue({ closed: true, kind: 'no-preapproval' });
+        // The shared `billing` stub resolves a null customer (every other test
+        // here is about the DB writes, not the email); a real customer is what
+        // gets the notification block past its own guard.
+        vi.mocked(billing.customers.get).mockResolvedValue({
+            id: 'cus_x',
+            email: 'owner@example.com',
+            metadata: { name: 'Marcos' }
+        } as never);
+
+        await cancelUserAddon(billing, entitlementService, CANCEL_INPUT);
+
+        const { sendNotification } = await import('../../src/utils/notification-helper');
+        const call = vi.mocked(sendNotification).mock.calls[0];
+        expect(call, 'the immediate cancellation must still mail the customer').toBeDefined();
+        const payload = (call as unknown as [Record<string, unknown>])[0];
+        // The value the real enum declares, not the mock's shorthand: the
+        // dispatcher routes on this exact string.
+        expect(payload.type).toBe('addon_cancellation');
+        // `toHaveProperty` rather than a truthiness check: an `accessUntil` of
+        // `undefined` would still be a field the dispatcher forwards, and this
+        // must be the ABSENCE the template branches on.
+        expect(payload).not.toHaveProperty('accessUntil');
     });
 });
 

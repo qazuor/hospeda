@@ -59,8 +59,17 @@ import {
  * 30-minute window this checkout ADVERTISES — the advertised value describes
  * when the buyer should expect the link to feel stale, this one describes when
  * we stop believing the preapproval behind it is still theirs to finish.
+ *
+ * EXPORTED for `cron/jobs/addon-subscription-reconcile.job.ts` (HOS-847 PR 7c),
+ * which reaps the `'pending'` rows this module can only close when the SAME
+ * buyer comes back. The reaper MUST use this window and not the 30-minute one
+ * the checkout advertises: reaping earlier would cancel a preapproval that
+ * {@link decideRecurringAddonReuse} would still legitimately hand back, so the
+ * buyer returning at minute 45 would find their authorization dead. One
+ * constant, so the reaper and the reuse decision can never disagree about
+ * whether a checkout is still the buyer's to finish.
  */
-const RECURRING_ADDON_REUSE_WINDOW_MS = 3 * 60 * 60 * 1000;
+export const RECURRING_ADDON_REUSE_WINDOW_MS = 3 * 60 * 60 * 1000;
 
 /** An in-flight checkout that may be handed back verbatim. */
 export interface ReusableRecurringAddonCheckout {

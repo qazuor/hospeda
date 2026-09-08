@@ -801,7 +801,11 @@ export class NotificationService {
                     canceledAt: p.canceledAt,
                     baseUrl: this.deps.siteUrl,
                     addonSlug: p.addonSlug,
-                    locale: p.locale
+                    locale: p.locale,
+                    // Undefined for every immediate cancellation, which is what
+                    // keeps the template from promising access the customer no
+                    // longer has (HOS-847 PR 7c).
+                    accessUntil: p.accessUntil
                 });
             }
 

@@ -210,18 +210,25 @@ export async function softCancelRecurringAddon(
 /**
  * Fire-and-forget cancellation email.
  *
- * Reuses `ADDON_CANCELLATION` unchanged: `canceledAt` is documented as "when the
- * add-on was cancelled", which is now — the cancellation WAS accepted now, and
- * only its effect is deferred. Telling the customer the exact access-until date
- * needs a new payload field plus a template change (the plan side has one:
- * `SUBSCRIPTION_SOFT_CANCELLED.accessUntil`), which is deliberately out of this
- * PR's scope: shipping a payload field without the matching template renders
- * nothing and looks done.
+ * Uses `ADDON_CANCELLATION` with BOTH dates. `canceledAt` is "when the add-on
+ * was cancelled", which is now — the cancellation WAS accepted now, and only
+ * its effect is deferred. `accessUntil` is when the effect lands, and it is the
+ * only reason this path differs from an immediate cancellation in the
+ * customer's inbox.
+ *
+ * HOS-847 PR 7c added the field AND the template branch that renders it, in one
+ * change on purpose: the earlier note here recorded why shipping the payload
+ * field alone was refused — it renders nothing and looks done.
+ *
+ * This is the ONLY sender that supplies the field. The immediate path in
+ * `addon.user-addons.ts` deliberately omits it, because it has already removed
+ * the entitlements by the time it mails, so a promise of continued access there
+ * would be false.
  *
  * @param input - The same input {@link softCancelRecurringAddon} received.
  */
 async function notifySoftCancellation(input: SoftCancelRecurringAddonInput): Promise<void> {
-    const { customerId, addonSlug, addonName, billing } = input;
+    const { customerId, addonSlug, addonName, billing, currentPeriodEnd } = input;
     const userId = input.userId ?? null;
 
     try {
@@ -245,7 +252,11 @@ async function notifySoftCancellation(input: SoftCancelRecurringAddonInput): Pro
             addonName,
             canceledAt: new Date().toISOString(),
             addonSlug,
-            locale: recipientLocale
+            locale: recipientLocale,
+            // Non-nullable on the input by construction — a caller that cannot
+            // supply it must refuse the cancellation rather than guess — so the
+            // email can state the date instead of hedging.
+            accessUntil: currentPeriodEnd.toISOString()
         }).catch((notifErr) => {
             apiLogger.debug(
                 {

@@ -7,6 +7,7 @@
 import {
     abandonedPendingSubsJob,
     addonExpiryJob,
+    addonSubscriptionReconcileJob,
     alertsDigestJob,
     appLogPurgeJob,
     applyScheduledPlanChangesJob,
@@ -61,6 +62,11 @@ export const cronJobs: CronJobDefinition[] = [
     webhookRetryJob,
     notificationScheduleJob,
     addonExpiryJob,
+    // Registered next to addon-expiry, not later: it is the only thing that
+    // notices when addon-expiry stops ending soft-cancelled add-ons, and the
+    // only thing that reaps the 'pending' rows addon-expiry never looks at
+    // (HOS-847 PR 7c).
+    addonSubscriptionReconcileJob,
     courtesyExpiryJob,
     alertsDigestJob,
     exchangeRateFetchJob,
