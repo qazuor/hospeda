@@ -281,6 +281,7 @@
         "zodError.billing.linkPreapproval.preapprovalId.invalidType",
         "zodError.billing.linkPreapproval.preapprovalId.max",
         "zodError.billing.linkPreapproval.preapprovalId.min",
+        "zodError.billing.payerEmail.known.response.hasKnownPayerEmail.invalidType",
         "zodError.billing.plan.category.invalid",
         "zodError.billing.plan.create.annualPriceArs.int",
         "zodError.billing.plan.create.annualPriceArs.invalidType",
@@ -1927,7 +1928,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1926,
+    "total": 1927,
     "byNamespace": {
         "accommodation": 71,
         "accommodationAmenity": 4,
@@ -1943,7 +1944,7 @@
         "allianceLead": 24,
         "amenity": 46,
         "attraction": 26,
-        "billing": 241,
+        "billing": 242,
         "commerce": 14,
         "common": 249,
         "contact": 7,
