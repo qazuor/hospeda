@@ -882,6 +882,23 @@ export interface AddonCancellationPayload extends BaseNotificationPayload {
     readonly addonSlug?: string;
     /** Recipient's preferred locale for the CTA link (HOS-722). Falls back to `'es'`. */
     readonly locale?: AddonLinkLocale;
+    /**
+     * ISO 8601 date-time until which the benefit SURVIVES the cancellation —
+     * the end of the period the customer already paid for (HOS-847 PR 7c).
+     *
+     * OPTIONAL, unlike its counterparts on
+     * {@link SubscriptionCancelConfirmedPayload} and
+     * {@link SubscriptionAccessEndingSoonPayload} where it is required, and the
+     * difference is deliberate. A plan soft-cancel always leaves the subscriber
+     * a paid period to run out; an add-on cancellation does not. Non-payment
+     * and an admin cancel end the benefit on the spot, and the immediate path
+     * in `addon.user-addons.ts` removes the entitlements BEFORE it mails
+     * anything. Those sends must promise nothing, so they omit the field and
+     * the template says nothing about access. Only `softCancelRecurringAddon`,
+     * which leaves the row `active` precisely so the benefit continues,
+     * supplies it.
+     */
+    readonly accessUntil?: string;
 }
 
 /** Admin notifications */

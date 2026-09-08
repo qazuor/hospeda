@@ -23,12 +23,25 @@ export interface AddonCancellationProps {
     addonSlug?: string;
     /** Recipient's preferred locale for the CTA link. Falls back to `'es'` (HOS-722). */
     locale?: AddonLinkLocale;
+    /**
+     * ISO 8601 date-time until which the benefit survives the cancellation
+     * (HOS-847 PR 7c). Optional, and its ABSENCE is meaningful: an add-on
+     * cancelled for non-payment or by an admin ends immediately, so the email
+     * must promise nothing. See {@link AddonCancellationPayload.accessUntil}.
+     */
+    accessUntil?: string;
 }
 
 /**
  * Addon cancellation confirmation email template.
  * Sent to the user after one of their active add-ons is successfully cancelled.
  * Includes a link to reactivate from the account panel in case of error.
+ *
+ * Branches on `accessUntil` (HOS-847 PR 7c): WITH it, the email promises the
+ * benefit runs until that date — the recurring soft-cancel, where the customer
+ * already paid for the rest of the period. WITHOUT it, the wording is exactly
+ * what it always was, because an immediate cancellation (non-payment, admin)
+ * has already taken the benefit away and any promise here would be a lie.
  *
  * @param props - Addon cancellation data
  */
@@ -38,14 +51,20 @@ export function AddonCancellation({
     canceledAt,
     baseUrl,
     addonSlug,
-    locale
+    locale,
+    accessUntil
 }: AddonCancellationProps) {
     const formattedCanceledAt = formatDate({ dateString: canceledAt });
+    const formattedAccessUntil = accessUntil ? formatDate({ dateString: accessUntil }) : undefined;
     const manageUrl = buildAddonManagementUrl({ baseUrl, locale, addonSlug });
 
     return (
         <EmailLayout
-            previewText={`Tu complemento ${addonName} ha sido cancelado`}
+            previewText={
+                formattedAccessUntil
+                    ? `Tu complemento ${addonName} fue cancelado y sigue activo hasta el ${formattedAccessUntil}`
+                    : `Tu complemento ${addonName} ha sido cancelado`
+            }
             showUnsubscribe={false}
         >
             <Heading>Complemento cancelado</Heading>
@@ -57,6 +76,13 @@ export function AddonCancellation({
                 exitosamente.
             </Text>
 
+            {formattedAccessUntil ? (
+                <Text style={styles.accessBanner}>
+                    Seguís teniendo el beneficio hasta el <strong>{formattedAccessUntil}</strong>,
+                    el final del período que ya pagaste. No se te va a cobrar de nuevo.
+                </Text>
+            ) : null}
+
             <Section style={styles.infoBox}>
                 <InfoRow
                     label="Complemento"
@@ -66,6 +92,12 @@ export function AddonCancellation({
                     label="Cancelado el"
                     value={formattedCanceledAt}
                 />
+                {formattedAccessUntil ? (
+                    <InfoRow
+                        label="Activo hasta"
+                        value={formattedAccessUntil}
+                    />
+                ) : null}
             </Section>
 
             <Text style={styles.paragraph}>
@@ -95,6 +127,15 @@ const styles = {
         color: '#475569',
         fontSize: '16px',
         lineHeight: '24px',
+        margin: '0 0 16px'
+    },
+    // Mirrors `SubscriptionCancelConfirmed`'s banner: the same promise, made
+    // the same way, so the two cancellation emails do not disagree visually.
+    accessBanner: {
+        color: '#0f766e',
+        fontSize: '16px',
+        lineHeight: '24px',
+        fontWeight: '600',
         margin: '0 0 16px'
     },
     infoBox: {

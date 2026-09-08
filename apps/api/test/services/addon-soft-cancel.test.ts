@@ -192,6 +192,20 @@ describe('softCancelRecurringAddon', () => {
         );
     });
 
+    it('tells the customer the exact date the benefit runs to (HOS-847 PR 7c)', async () => {
+        await softCancelRecurringAddon({ ...baseInput, db: createDb() });
+
+        // Read the argument instead of `expect.objectContaining`: that matcher
+        // is blind to a MISSING field, which is the only defect worth catching
+        // here — the whole point is that the deferred send carries the date the
+        // immediate send must not.
+        const [payload] = mockSendNotification.mock.calls[0] as [Record<string, unknown>];
+        expect(payload.accessUntil).toBe(PERIOD_END.toISOString());
+        // And it is not the same instant as "cancelled now", or the email would
+        // be promising access up to the moment it was sent.
+        expect(payload.accessUntil).not.toBe(payload.canceledAt);
+    });
+
     it('still succeeds when the notification lookup blows up', async () => {
         // Fire-and-forget: the cancellation is already persisted and the
         // customer's charging has already stopped. An email failure must not
