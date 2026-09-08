@@ -18,6 +18,21 @@
  *   See SPEC-175 §9 (TBD-2, resolved) and T-016/T-018 for the original ops task.
  * - **ids**: ids are stable — never reuse a retired id. User settings may still
  *   reference it; a collision would silently mark a new entry as already seen.
+ * - **`// origin:` comment**: an entry written by the smoke sign-off (HOS-1214
+ *   §6.1) carries a `// origin: #NNNN, #NNNN` comment on the line(s) above it,
+ *   naming the PRs it was written for. That comment is the ONLY link from an
+ *   entry back to the PRs whose novelty decision it records, and it is what
+ *   `hops whats-new drop` reads to flip those PRs to `whats-new-none` when the
+ *   entry is withdrawn. Removing the comment does not break anything visible —
+ *   it just makes the withdrawal unable to say which PRs to correct. Keep it
+ *   attached to its entry.
+ * - **Editing this file by hand is fine, and nothing overwrites you.** The
+ *   date-resolution workflow only ever replaces the literal string
+ *   `publishedAt: 'on-promotion'`; every other byte is copied through. Two
+ *   consequences worth knowing: writing a REAL date by hand takes that entry
+ *   out of the marker's protection and puts it under AC-9 (a past date is
+ *   silently destroyed for every new account), and changing an `id` is harmless
+ *   while the entry is unpublished — the guard still catches a collision.
  * - **Validation**: `WhatsNewCatalogSchema.parse(...)` runs at module import time.
  *   A malformed entry (e.g. missing required `es` title) will throw immediately
  *   and prevent the API process from serving traffic (AC-16, intended).
