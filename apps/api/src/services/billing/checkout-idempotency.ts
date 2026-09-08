@@ -365,6 +365,15 @@ function decideOwnPreapprovalReuse(input: {
         row.status !== SubscriptionStatusEnum.PENDING_PROVIDER ||
         !row.mpSubscriptionId ||
         !checkoutUrl ||
+        // HOS-1221: BOTH sides must be present, not merely equal. The stored
+        // side is `metadata.mpPreapprovalPlanId` and the context side is what
+        // the current attempt just resolved; if a future change ever stopped
+        // producing one of them, a bare `!==` would compare `undefined` against
+        // `undefined`, MATCH, and hand back an in-flight checkout priced at the
+        // old amount. The drift guard has to fail closed, so an absent key is a
+        // refusal, never a match.
+        !mpPreapprovalPlanId ||
+        !context.mpPreapprovalPlanId ||
         mpPreapprovalPlanId !== context.mpPreapprovalPlanId ||
         ageMs >= OWN_PREAPPROVAL_REUSE_WINDOW_MS
     ) {

@@ -200,7 +200,7 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
         expect(call.productDomain).not.toBe('commerce');
     });
 
-    it('passes the entity pointer as domainMetadata, no externalReference, and the resolved MP plan id', async () => {
+    it('passes the entity pointer as domainMetadata, no externalReference, and RECORDS the resolved MP plan id without forwarding it to MercadoPago', async () => {
         const billing = createBillingMock();
 
         await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
@@ -211,10 +211,21 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
             planId: PLAN_ID,
             priceId: PRICE_ID,
             billingInterval: 'monthly',
-            providerPriceId: 'mp_plan_test',
+            mpPreapprovalPlanId: 'mp_plan_test',
             domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: ENTITY_ID }
         });
+        // HOS-1221: `providerPriceId` is the field qzpay forwards to
+        // MercadoPago, and it turns `POST /preapproval` into the plan-based
+        // request MercadoPago rejects with "card_token_id is required" — this
+        // checkout answered 500 for exactly that. Asserted as an absence:
+        // `toMatchObject` cannot see a field that should not be there.
+        expect(call).not.toHaveProperty('providerPriceId');
         expect(call).not.toHaveProperty('externalReference');
+        // HOS-1221 D4: what the buyer reads on MercadoPago's page. Without it
+        // the adapter builds the reason from `plan.name`, which here is the
+        // slug — the buyer saw "gastronomy-basico - Mensual".
+        expect(call.planDisplayName).toBe('Comercios');
+        expect(call.planDisplayName).not.toBe('gastronomy-basico');
     });
 
     it('writeDomainLinkRow inserts into entitySubscriptions with the SAME transaction client', async () => {
