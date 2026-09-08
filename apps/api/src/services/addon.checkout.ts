@@ -640,6 +640,11 @@ export async function createAddonCheckout(
                 orderId,
                 successUrl,
                 notificationUrl,
+                // HOS-606's rule applied to the field this path authorizes on:
+                // the preapproval's `reason` is what the buyer reads before
+                // agreeing to a recurring debit, so it is resolved by slug in
+                // the buyer's language exactly as the one-time line item below.
+                locale: input.locale,
                 accommodationId: input.accommodationId
             });
         }

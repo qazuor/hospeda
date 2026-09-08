@@ -72,6 +72,7 @@ import {
     cancelPreapprovalBestEffort,
     insertPendingRecurringPurchase
 } from './addon.checkout.recurring-write.js';
+import { type AddonCheckoutLocale, resolveAddonCheckoutName } from './addon-checkout-locale.js';
 import { resolveCheckoutMpAddonPlanId } from './billing/mp-addon-plan-provisioning.service.js';
 import { createOwnPreapprovalSubscription } from './billing/own-preapproval-subscription-create.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
@@ -112,6 +113,22 @@ export interface CreateRecurringAddonCheckoutInput {
     readonly successUrl: string;
     /** Webhook destination for this preapproval. */
     readonly notificationUrl: string;
+    /**
+     * Buyer's locale, forwarded from `PurchaseAddonInput.locale`.
+     *
+     * The preapproval's `reason` is the ONE string the buyer reads before
+     * authorizing a recurring debit, and `AddonDefinition.name` is an English
+     * config literal by convention (`packages/billing/CLAUDE.md`) — the web app
+     * never renders it, it resolves `account.addons.catalog.<slug>.name`
+     * instead. Sending the raw literal is the HOS-606 defect, re-entering
+     * through a different field: a buyer who clicked "Pack de fotos extra"
+     * would be asked to authorize "Extra Photos Pack (+20 photos)".
+     *
+     * Optional, and `undefined` falls back to `'es'` inside
+     * `resolveAddonCheckoutName` — the same default the `successUrl` /
+     * `cancelUrl` prefixes take.
+     */
+    readonly locale?: AddonCheckoutLocale | undefined;
     /** Target accommodation, for a `requiresAccommodationTarget` add-on. */
     readonly accommodationId?: string | undefined;
 }
@@ -195,6 +212,17 @@ export async function createRecurringAddonCheckout(
     try {
         mpPreapprovalPlanId = await resolveCheckoutMpAddonPlanId({
             addonId: addon.id,
+            // The RAW config name, deliberately NOT the buyer's localized one
+            // (unlike `planDisplayName` below, which is the string the buyer
+            // actually reads). This feeds the `preapproval_plan`'s own reason,
+            // and that plan is a SHARED, seller-side registry row: one per
+            // `(addon_id, billing_interval)` for every buyer in every language.
+            // A localized label there would freeze whichever locale happened to
+            // provision it first. Nothing compares it — the registry key is
+            // `(addon_id, billing_interval)` and drift is decided on
+            // `amountArs` + `status` alone — so this is a labelling choice, not
+            // a constraint, and no buyer sees it: since the plan id stopped
+            // being sent, MercadoPago renders the preapproval's own reason.
             addonName: addon.name,
             // The LIST price, in centavos, and never `finalPrice`. The registry
             // key `(addon_id, billing_interval)` carries no discount dimension,
@@ -358,7 +386,21 @@ export async function createRecurringAddonCheckout(
             // different price. Only reachable now that the plan id is gone:
             // `planDisplayName` has no effect on the plan-based flow, where
             // MercadoPago renders the plan's own reason instead.
-            planDisplayName: addon.name,
+            //
+            // Resolved through the SAME i18n lookup the one-time path uses for
+            // its line-item title (HOS-606), not `addon.name`: that field is an
+            // English config literal the product never renders, so the buyer who
+            // clicked "Pack de fotos extra (+20 fotos)" was being asked to
+            // authorize a recurring debit for "Extra Photos Pack (+20 photos)".
+            // Naming the same product in the same language is the whole point of
+            // overriding this field. The 60-character MercadoPago budget every
+            // locale's translation stays inside is pinned by
+            // `test/services/addon-checkout-locale.test.ts`.
+            planDisplayName: resolveAddonCheckoutName({
+                locale: input.locale,
+                slug: addon.slug,
+                fallback: addon.name
+            }),
             // BOOKKEEPING ONLY — recorded on the row's metadata, never sent to
             // MercadoPago. The add-on's MP plan is still provisioned and still
             // identifies the priced variant: `decideRecurringAddonReuse`
