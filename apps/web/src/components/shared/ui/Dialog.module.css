@@ -59,15 +59,17 @@
     /* Fallback padding, so a dialog CANNOT render flush against the panel
      * edge (HOS-1235). It applies only to a panel that skips the structural
      * slots below — content passed as bare children, which has nothing else
-     * putting padding on it. The two commerce plan pickers did exactly that
-     * and shipped a title at 0px from the corner. */
+     * putting padding on it. Two of the fifteen consumers did exactly that
+     * (both commerce plan pickers) and shipped a title at 0px from the
+     * corner. */
     padding: var(--space-5, 20px);
 }
 
 /* A panel using the structural slots does NOT take the fallback: each slot
  * carries its own padding, and `.header`/`.footer` separators are meant to
  * span the panel edge to edge. Padding here would inset those rules by 20px
- * on both sides, on all eleven dialogs built this way.
+ * on both sides, on all thirteen dialogs built this way (of fifteen consumers
+ * of this component).
  *
  * Deliberately NOT `:has(> .header)`: `MoveToCollectionModal` wraps its slots
  * in a `<div data-testid>`, so the child combinator would miss it and

@@ -5,11 +5,11 @@
  * that opts out of it.
  *
  * WHY A GUARD. `Dialog.module.css` used to leave `.panel` with no padding at
- * all, on the assumption that content brings its own. Eleven dialogs did,
- * because they compose `DialogHeader`/`DialogBody`/`DialogFooter`, which each
- * carry padding. Two did not — both commerce plan pickers pass bare children —
- * and shipped a heading at 0px from the panel corner, on the screen a customer
- * sees while deciding to pay more.
+ * all, on the assumption that content brings its own. Thirteen of the fifteen
+ * consumers do, because they compose `DialogHeader`/`DialogBody`/`DialogFooter`,
+ * which each carry padding. Two did not — both commerce plan pickers pass bare
+ * children — and shipped a heading at 0px from the panel corner, on the screen
+ * a customer sees while deciding to pay more.
  *
  * The fix has two halves that only work together, which is exactly why they
  * need policing as a pair:
@@ -20,9 +20,9 @@
  *      because those slots pad themselves AND their `border-top`/`border-bottom`
  *      separators are meant to span the panel edge to edge. Padding the panel
  *      too would inset every separator by 20px on both sides and double the
- *      gutters, on all eleven.
+ *      gutters, on all thirteen.
  *
- * Delete half 1 and the original bug returns. Add a twelfth slot to the TSX
+ * Delete half 1 and the original bug returns. Add a fifth slot to the component
  * without adding it to half 2 and that slot's dialog gets double padding.
  * Neither shows up in a typecheck, a lint, or any rendering test in this repo.
  *
@@ -123,7 +123,7 @@ describe('dialog panel padding (HOS-1235 static guard)', () => {
             'Could not find a ".panel:has(…) { … }" rule. Without it, every dialog composing ' +
                 'DialogHeader/DialogBody/DialogFooter takes the panel fallback ON TOP of the ' +
                 "slots' own padding — doubling the gutters and insetting the header/footer " +
-                'separators away from the panel edge on all eleven of them.'
+                'separators away from the panel edge on all thirteen of them.'
         ).not.toBeNull();
 
         expect(
@@ -136,8 +136,16 @@ describe('dialog panel padding (HOS-1235 static guard)', () => {
     it('every structural slot is listed in the :has() opt-out', () => {
         const selector = HAS_OPTOUT_RULE.exec(css)?.[1] ?? '';
 
+        // Read the slots out of the `:has(…)` ARGUMENTS rather than requiring
+        // one standalone `.panel:has(.slot)` clause each. Collapsing the four
+        // clauses into `.panel:has(.header, .body, …)` is equivalent CSS, and a
+        // guard that reddened on that refactor would be training people to
+        // distrust it. The negative lookahead keeps `.body` from matching
+        // inside `.bodyBare`.
+        const listed = [...selector.matchAll(/:has\(([^)]*)\)/g)].map((m) => m[1]).join(',');
+
         const unlisted = SLOT_CLASSES.filter(
-            (slot) => !new RegExp(`\\.panel:has\\(\\s*\\.${slot}\\s*\\)`).test(selector)
+            (slot) => !new RegExp(`\\.${slot}(?![\\w-])`).test(listed)
         );
 
         expect(
