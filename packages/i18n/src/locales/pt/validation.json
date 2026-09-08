@@ -1322,6 +1322,15 @@
                 "max": "El trigger source no puede superar los {{max}} caracteres"
             }
         },
+        "payerEmail": {
+            "known": {
+                "response": {
+                    "hasKnownPayerEmail": {
+                        "invalidType": "El indicador de email de pago conocido debe ser un booleano"
+                    }
+                }
+            }
+        },
         "trial": {
             "eligibility": {
                 "planSlug": {
