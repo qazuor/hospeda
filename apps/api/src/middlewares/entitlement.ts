@@ -618,7 +618,7 @@ async function loadEntitlements(
         // this HOST on a specific plan via SPEC-262), not an incidental leftover
         // tourist sub dragged in by host-onboarding. Exempt it from the discard
         // so the comped plan's real entitlements resolve (e.g. a HOST comped on
-        // tourist-plus keeps SAVE_FAVORITES/WRITE_REVIEWS and does NOT gain
+        // the paid tourist tier keeps SAVE_FAVORITES/WRITE_REVIEWS and does NOT gain
         // owner-basico's free PUBLISH_ACCOMMODATIONS + VIP tier). Without this
         // exemption the discard fires (tourist category) and substitutes the
         // owner-basico draft defaults — the exact over/under-entitlement bug.

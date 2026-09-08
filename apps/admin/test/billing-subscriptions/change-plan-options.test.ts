@@ -13,12 +13,46 @@
  * @module test/billing-subscriptions/change-plan-options.test
  */
 
-import { ALL_PLANS } from '@repo/billing';
+import { ALL_PLANS, type PlanDefinition } from '@repo/billing';
 import { describe, expect, it } from 'vitest';
 import { getChangePlanOptions, getPlanBySlug } from '@/features/billing-subscriptions/utils';
 
-const INACTIVE_PLANS = ALL_PLANS.filter((plan) => !plan.isActive);
-const ACTIVE_PLANS = ALL_PLANS.filter((plan) => plan.isActive);
+/**
+ * A retired plan, supplied by this test rather than read out of `ALL_PLANS`.
+ *
+ * These assertions used to derive their retired plan from the catalog, which
+ * worked as long as the catalog happened to contain one. It no longer does:
+ * HOS-692 removed the `complex-*` tiers and HOS-1224 removed `tourist-plus`,
+ * the last `isActive: false` entry, so `ALL_PLANS` is now all-active.
+ *
+ * The weak fix would be to relax the "guards the guard" assertion below. That
+ * is exactly backwards — over an all-active catalog every assertion here passes
+ * no matter what the filter does, which is the vacuous green HOS-331 was about.
+ * So the retired plan is constructed here and injected, and the assertions keep
+ * their teeth regardless of what the real catalog holds.
+ */
+const RETIRED_TOURIST_PLAN: PlanDefinition = {
+    slug: 'test-retired-tourist',
+    name: 'Retired',
+    description: 'Test-only retired plan — never part of ALL_PLANS.',
+    category: 'tourist',
+    monthlyPriceArs: 500000,
+    annualPriceArs: 5000000,
+    monthlyPriceUsdRef: 5,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 99,
+    isActive: false,
+    entitlements: [],
+    limits: []
+};
+
+/** The real catalog plus one retired plan, so `isActive` has something to filter. */
+const CATALOG: readonly PlanDefinition[] = [...ALL_PLANS, RETIRED_TOURIST_PLAN];
+
+const INACTIVE_PLANS = CATALOG.filter((plan) => !plan.isActive);
+const ACTIVE_PLANS = CATALOG.filter((plan) => plan.isActive);
 
 describe('getChangePlanOptions — retired plans (HOS-331)', () => {
     it('has both an active and an inactive plan in the catalog to discriminate on', () => {
@@ -30,10 +64,11 @@ describe('getChangePlanOptions — retired plans (HOS-331)', () => {
 
     it('never offers an inactive plan as a change destination', () => {
         const inactiveSlugs = new Set(INACTIVE_PLANS.map((plan) => plan.slug));
-        for (const plan of ALL_PLANS) {
+        for (const plan of CATALOG) {
             const options = getChangePlanOptions({
                 currentPlan: plan,
-                currentSlug: plan.slug
+                currentSlug: plan.slug,
+                plans: CATALOG
             });
             const offendingSlugs = options
                 .map((option) => option.slug)
@@ -47,17 +82,32 @@ describe('getChangePlanOptions — retired plans (HOS-331)', () => {
         // three destinations, all of them switched off.
         const retired = INACTIVE_PLANS[0];
         if (!retired) throw new Error('expected at least one inactive plan');
-        const siblingsActive = ALL_PLANS.filter(
+        const siblingsActive = CATALOG.filter(
             (plan) =>
                 plan.category === retired.category && plan.slug !== retired.slug && plan.isActive
         );
         const options = getChangePlanOptions({
             currentPlan: retired,
-            currentSlug: retired.slug
+            currentSlug: retired.slug,
+            plans: CATALOG
         });
         expect(options.map((option) => option.slug)).toEqual(
             siblingsActive.map((plan) => plan.slug)
         );
+    });
+
+    it('the real ALL_PLANS catalog is filtered by the same rule', () => {
+        // The injected catalog above proves the FILTER works. This proves the
+        // production default is still wired to it: every option the real
+        // catalog yields is active and is not the plan being changed from.
+        for (const plan of ALL_PLANS) {
+            const options = getChangePlanOptions({ currentPlan: plan, currentSlug: plan.slug });
+            for (const option of options) {
+                expect(option.isActive).toBe(true);
+                expect(option.slug).not.toBe(plan.slug);
+                expect(option.category).toBe(plan.category);
+            }
+        }
     });
 });
 

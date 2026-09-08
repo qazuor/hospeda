@@ -105,17 +105,18 @@ expand/contract rule the structural carril already follows) and declare
 
 ## Test Users for Billing (SPEC-143 Block 1)
 
-A separate `--test-users` seed group creates 18 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
+A separate `--test-users` seed group creates 17 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
 
 The group is **intentionally not part of `--required` or `--example`** — that way `pnpm db:seed` (production-shaped: `--reset --required --example`) never creates these accounts. Only the local-dev shortcut `pnpm db:fresh-dev` chains `pnpm db:seed:test-users` after the main seed completes.
+
+> **That separation is a convention, not a guard, and it has already been crossed.** `runTestUserSeeds` documents that these fixtures "must NEVER run against staging or production databases" and enforces nothing: staging carried 22 `@local.test` accounts on 2026-09-07, created 2026-08-24 02:59-03:00 alongside a full re-seed, all sharing the hard-coded `Password123!`. Production carried zero. Measured during HOS-1224; an environment guard on this command is proposed there and NOT implemented, because refusing a seed by environment is an ops decision with real blast radius (it would also block a deliberate staging fixture refresh).
 
 | Email | Role | Plan | Limits highlight |
 |-------|------|------|------------------|
 | `editor@local.test` | EDITOR | — | content moderator |
 | `sponsor@local.test` | SPONSOR | — | sponsorship flows |
 | `tourist-free@local.test` | USER | (free tier) | default entitlements |
-| `tourist-plus@local.test` | USER | `tourist-plus` | mid tourist tier |
-| `tourist-vip@local.test` | USER | `tourist-vip` | top tourist tier |
+| `tourist-vip@local.test` | USER | `tourist-vip` | the only paid tourist tier (HOS-1224 retired `tourist-plus@local.test` with its plan) |
 | `host-basico@local.test` | HOST | `owner-basico` | MAX_ACCOMMODATIONS=1, MAX_PHOTOS=15 |
 | `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=30 |
 | `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=50, MAX_ACTIVE_PROMOTIONS=unlimited |

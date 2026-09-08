@@ -914,7 +914,7 @@ describe('plan.crud', () => {
             expect(mockInsertPlanAuditLog).toHaveBeenCalledOnce();
         });
 
-        it('should include trial days in monthly price when hasTrial=true', async () => {
+        it('never mirrors trial days onto the monthly price, even with hasTrial=true', async () => {
             // Arrange
             const planRow = makePlanRow();
             let insertValuesCalledWith: unknown[] = [];
@@ -943,11 +943,22 @@ describe('plan.crud', () => {
             const inputWithTrial = { ...baseInput, hasTrial: true, trialDays: 14 };
             await createPlan(inputWithTrial, {}, ctx);
 
-            // Assert — second insert (monthly price) should include trialDays
+            // Assert — the plan row keeps the operator's trial (that is the field
+            // the product reads); the monthly PRICE row must not mirror it.
+            // HOS-1224: qzpay-core inherits `price.trialDays` whenever a caller of
+            // `subscriptions.create` omits `trialDays`, and qzpay-drizzle turns
+            // that into trial_start/trial_end — a PAID subscription born marked
+            // `trialing` for 30 days with the customer charged (HOS-1221 bug D3).
+            const planInsert = insertValuesCalledWith[0] as Record<string, unknown> | undefined;
+            const planMetadata = planInsert?.metadata as Record<string, unknown> | undefined;
+            expect(planMetadata?.trialDays).toBe(14);
+
             const monthlyPriceInsert = insertValuesCalledWith[1] as
                 | Record<string, unknown>
                 | undefined;
-            expect(monthlyPriceInsert?.trialDays).toBe(14);
+            expect(monthlyPriceInsert?.billingInterval).toBe('month');
+            expect(monthlyPriceInsert?.trialDays).toBeUndefined();
+            expect(Object.hasOwn(monthlyPriceInsert ?? {}, 'trialDays')).toBe(false);
         });
 
         it('should return INTERNAL_ERROR when withTransaction throws', async () => {

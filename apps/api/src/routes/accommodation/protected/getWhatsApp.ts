@@ -3,7 +3,8 @@
  *
  * Returns the accommodation's WhatsApp contact number, gated by the CALLER's
  * (viewer's) billing plan (HOS-19):
- * - `CAN_CONTACT_WHATSAPP_DISPLAY` (tourist-plus+ / owner-basico+) → the number.
+ * - `CAN_CONTACT_WHATSAPP_DISPLAY` (owner-basico+; HOS-1224 retired the
+ *   tourist-plus tier that used to be its entry point) → the number.
  * - `CAN_CONTACT_WHATSAPP_DIRECT` (tourist-vip+ / owner-pro+) → `direct: true`,
  *   which authorizes the web to render a one-click `wa.me` deep link.
  *

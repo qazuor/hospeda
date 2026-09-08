@@ -6,10 +6,18 @@
  * public `search()`/`list.ts` path used by `PromotionBanner`, which stays
  * ungated and untouched.
  *
- * Gated by `gateExclusiveDeals()` (EXCLUSIVE_DEALS entitlement — granted to
- * both tourist-plus and tourist-vip). A caller who additionally carries
- * VIP_PROMOTIONS_ACCESS (tourist-vip only) sees 'plus' + 'vip' rows; everyone
+ * Gated by `gateExclusiveDeals()` (EXCLUSIVE_DEALS entitlement). A caller who
+ * additionally carries VIP_PROMOTIONS_ACCESS sees 'plus' + 'vip' rows; everyone
  * else sees 'plus' only (HOS-21 D1, additive VIP tier).
+ *
+ * HOS-1224 note: both entitlements are now carried by the SAME single tier.
+ * `tourist-plus` — which held EXCLUSIVE_DEALS without VIP_PROMOTIONS_ACCESS and
+ * was therefore the only actor that could observe the 'plus'-only branch — was
+ * retired as a product, so `tourist-vip` is the sole paid tourist tier and no
+ * accommodation plan lands in that branch either. The two-audience split stays
+ * because it is a property of the DEAL (`TouristAudienceEnum`), not of a plan,
+ * but the 'plus'-only path is currently unreachable for a tourist. Reported as
+ * a HOS-1224 follow-up rather than removed here.
  *
  * Mounted at `/exclusive-deals`, a distinct path from `/` (list) and `/{id}`
  * (get/update/patch/delete) — per the Destination Hierarchy Routes precedent

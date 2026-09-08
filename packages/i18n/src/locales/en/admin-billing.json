@@ -197,7 +197,6 @@
             "complex-pro": "Professional plan for complexes with consolidated analytics.",
             "complex-premium": "Premium plan for large complexes with all features.",
             "tourist-free": "Free plan for tourists. Basic features included.",
-            "tourist-plus": "Plus plan for frequent tourists. Comparison, search history, and price alerts.",
             "tourist-vip": "VIP plan for discerning tourists. All premium features included."
         },
         "statusActive": "Active",

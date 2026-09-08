@@ -41,7 +41,7 @@ import { hasEntitlement } from './entitlement';
  * a confusing LIMIT_REACHED at 0/0).
  *
  * Plans that include `SAVE_FAVORITES` (per `plans.config.ts`):
- *   - tourist-free, tourist-plus, tourist-vip
+ *   - tourist-free, tourist-vip (tourist-plus retired by HOS-1224)
  *   - all owner/complex plans (inherit the tourist-VIP entitlement set, SPEC-216)
  *   - (Pure HOST / CLIENT_MANAGER roles with no active billing plan still 403 here
  *     because staff-bypass is handled separately via the unlimited set — see below)
@@ -470,7 +470,8 @@ export function gateRecommendations(): AppMiddleware {
  * Gate exclusive deals feature
  *
  * Checks if user has the EXCLUSIVE_DEALS entitlement, granted to both
- * tourist-plus and tourist-vip (additive tier — see HOS-21 D1). Callers who
+ * every paid tourist tier (additive tier — see HOS-21 D1; HOS-1224 left
+ * tourist-vip as the only one). Callers who
  * additionally carry VIP_PROMOTIONS_ACCESS (tourist-vip only) see vip-tier
  * deals too; this gate only enforces the baseline entitlement, the tier
  * scoping itself is resolved in the route handler.

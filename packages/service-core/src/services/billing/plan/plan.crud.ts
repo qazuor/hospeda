@@ -488,7 +488,18 @@ export async function createPlan(
                 throw new Error('Plan insert returned no row');
             }
 
-            // Monthly price — always created
+            // Monthly price — always created.
+            //
+            // HOS-1224: `input.trialDays` is NOT mirrored onto the price row any
+            // more. It still lands on `billing_plans.metadata.trialDays` above,
+            // which is the field the product actually reads. The price-row copy
+            // was write-only for us but not for qzpay: `@qazuor/qzpay-core`
+            // inherits `price.trialDays` whenever a caller of
+            // `subscriptions.create` omits `trialDays`, and qzpay-drizzle turns
+            // that into `trial_start`/`trial_end` on the new row — so an
+            // operator creating a plan here could hand a future paid checkout a
+            // trial nobody asked for (HOS-1221 bug D3). Guarded by
+            // `scripts/check-no-price-trial-days.sh`.
             await db.insert(billingPrices).values({
                 planId: inserted.id,
                 currency: 'ARS',
@@ -496,8 +507,7 @@ export async function createPlan(
                 billingInterval: 'month',
                 intervalCount: 1,
                 active: true,
-                livemode,
-                ...(input.hasTrial && input.trialDays > 0 ? { trialDays: input.trialDays } : {})
+                livemode
             });
 
             // Annual price — only when declared

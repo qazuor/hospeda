@@ -138,11 +138,25 @@ export function getChangePlanOptions(input: {
     readonly currentPlan: PlanDefinition | undefined;
     readonly currentSlug: string;
     readonly currentProductDomain?: string | null;
+    /**
+     * The catalog to choose destinations from. Defaults to `ALL_PLANS`;
+     * production callers omit it.
+     *
+     * Injectable because the `isActive` half of this filter can only be tested
+     * against a catalog that HAS a retired plan, and `ALL_PLANS` no longer does:
+     * HOS-692 removed the `complex-*` tiers and HOS-1224 removed `tourist-plus`,
+     * which was the last `isActive: false` entry. Over an all-active catalog
+     * every retired-plan assertion passes no matter what this filter does — a
+     * vacuous green, and precisely the bug HOS-331 was about. So the test
+     * supplies its own retired plan; the filter is not weakened to suit the
+     * catalog it happens to have today.
+     */
+    readonly plans?: readonly PlanDefinition[];
 }): PlanDefinition[] {
-    const { currentPlan, currentSlug, currentProductDomain } = input;
+    const { currentPlan, currentSlug, currentProductDomain, plans = ALL_PLANS } = input;
     if (!currentPlan) return [];
     if (currentProductDomain && currentProductDomain !== 'accommodation') return [];
-    return ALL_PLANS.filter(
+    return plans.filter(
         (plan) =>
             plan.category === currentPlan.category && plan.slug !== currentSlug && plan.isActive
     );
