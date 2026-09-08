@@ -104,6 +104,23 @@ export type SyntheticMpPaymentPayload = {
     readonly metadata?: unknown;
     /** MP `external_reference` (the qzpay checkout-session id). */
     readonly external_reference?: string;
+    /**
+     * The email of the account that actually paid, as MercadoPago reports it on
+     * the payment (HOS-1234). `null` when the provider gave none.
+     *
+     * This is the ONLY place the confirmed payer email can enter the system. A
+     * preapproval does not carry it: `GET /preapproval/{id}` answers with
+     * `payer_email` present and EMPTY even for an authorized preapproval whose
+     * checkout supplied a valid address (measured 2026-09-08 against the live
+     * sandbox). So `billing_customers.mp_payer_email` — which is defined as "the
+     * last email MercadoPago actually accepted" — can only ever be written from
+     * a payment, and only after that payment cleared.
+     *
+     * Requires `@qazuor/qzpay-mercadopago` >= 2.11.0, which is where the adapter
+     * started mapping `payer.email` at all; on 2.10.0 this is always `null` and
+     * the column simply stays unwritten, exactly as it did before.
+     */
+    readonly payer_email?: string | null;
 };
 
 /**

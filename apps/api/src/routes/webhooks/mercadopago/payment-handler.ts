@@ -188,7 +188,14 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
                 : {}),
             currency_id: providerPayment.currency,
             status: providerPayment.status,
-            metadata: providerPayment.metadata
+            metadata: providerPayment.metadata,
+            // HOS-1234: forwarded so `processPaymentUpdated` can record which
+            // email actually paid. It rides on the SAME `payments.retrieve`
+            // response fetched above — no extra provider call — and is the only
+            // object MercadoPago populates it on (the preapproval returns it
+            // empty). `?? null` keeps "the adapter gave nothing" and "the payer
+            // has no email" as one value; qzpay < 2.11.0 never sets the field.
+            payer_email: providerPayment.payerEmail ?? null
         };
 
         await processPaymentUpdated({
