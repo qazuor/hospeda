@@ -35,6 +35,7 @@ import { protectedImportFromUrlStatusRoute } from './import-from-url-status';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { protectedPublishAccommodationRoute } from './publish';
+import { protectedGetPublishEligibilityRoute } from './publishEligibility';
 import { protectedGetAccommodationQrCodeRoute } from './qrCode';
 import { protectedGetAccommodationQrSheetRoute } from './qrSheet';
 import { removeFaqRoute } from './removeFaq';
@@ -78,6 +79,13 @@ app.route('/', protectedListOwnAccommodationsRoute);
 // POST /compare - Side-by-side comparison (SPEC-288 T-003)
 // CRITICAL: registered BEFORE GET /:id so "compare" is not captured as a UUID param.
 app.route('/', compareAccommodationsRoute);
+
+// GET /publish-eligibility - What POST /:id/publish would decide for this owner (HOS-1183)
+// CRITICAL: same single-segment collision as /compare above — registered BEFORE
+// GET /:id so "publish-eligibility" is not captured as a UUID param. Owner-level
+// on purpose: billing eligibility cannot differ between two listings of the same
+// owner, so the properties page resolves it once for the whole portfolio.
+app.route('/', protectedGetPublishEligibilityRoute);
 
 // GET /:id/qr-sheet - Printable QR sheet for the door (HOS-982). Two segments,
 // so it never collides with GET /:id; registered ahead of it for the same

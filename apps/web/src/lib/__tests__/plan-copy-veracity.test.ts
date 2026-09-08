@@ -609,11 +609,17 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
         // returning host, who is then charged on day 1.
         // "primera propiedad" / "first property" are deliberately NOT accepted.
         // They describe WHEN someone thought the trial started, not WHO is
-        // eligible for it — and they are false twice over: publishing an
-        // accommodation starts nothing (`accommodation.service.ts` rejects
-        // `first_publish` with `subscription_required`), the trial starts at
-        // checkout. Accepting them let this guard green-light exactly the copy
-        // it exists to catch.
+        // eligible for it — and eligibility is the thing this assertion is
+        // about. Accepting them let this guard green-light exactly the copy it
+        // exists to catch.
+        //
+        // The second half of that reason has expired and is kept out on
+        // purpose: it used to add "and publishing an accommodation starts
+        // nothing — `accommodation.service.ts` rejects `first_publish`", which
+        // was true under HOS-171 and false since HOS-1012, where publishing
+        // inserts a local trial row in the same transaction as the lifecycle
+        // flip. The rejection above survives on the first reason alone, which
+        // never depended on when the clock starts.
         // Hints from every language, for the same reason `matchedPhrase` scans
         // all three: a locale directory does not guarantee locale content.
         const allHints = LOCALES.flatMap((locale) => FIRST_SUBSCRIPTION_HINTS[locale]);

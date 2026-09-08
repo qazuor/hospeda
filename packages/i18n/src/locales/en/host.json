@@ -227,6 +227,8 @@
                 "deleteYes": "Yes, delete",
                 "publishConfirmTitle": "Publish this accommodation?",
                 "publishConfirmNote": "It will appear on the site, visible to travellers.",
+                "publishConfirmTrialNote_one": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
+                "publishConfirmTrialNote_other": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
                 "publishYes": "Yes, publish",
                 "choosePlan": "Choose a host plan"
             },
@@ -235,8 +237,7 @@
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
-            "publishSubscriptionRequiredMessage_one": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free day.",
-            "publishSubscriptionRequiredMessage_other": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
+            "publishSubscriptionRequiredMessage": "You need an active plan to publish.",
             "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request",
             "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
@@ -451,6 +452,13 @@
                 "network": "Network error"
             },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+            "publishReady": {
+                "title": "Your listing is ready",
+                "body": "You have completed everything that was missing. If you publish now, it will appear on the site, visible to travellers.",
+                "publishNow": "Publish now",
+                "keepEditing": "Keep editing",
+                "blockedTitle": "You need an active plan"
+            },
             "toast": {
                 "saveSuccess": "Changes saved",
                 "saveError": "We couldn't save your changes. Please try again.",

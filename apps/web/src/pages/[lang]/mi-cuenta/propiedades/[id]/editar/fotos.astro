@@ -15,6 +15,7 @@
 import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 import { VideoSection } from '@/components/host/editor/VideoSection.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
@@ -30,6 +31,20 @@ if (resolution.redirect) return resolution.redirect;
 
 const { data, locale, accommodationId, sectionId } = resolution;
 const { t } = createTranslations(locale);
+
+// HOS-1183: the main photo is a blocking publish requirement, and uploading it
+// is usually the last thing a host does. `PhotoSection` owns that half of
+// readiness; these are the four it does not, so the post-save prompt can tell
+// whether this upload was the one that finished the job.
+const trialDays = await resolveGenericOwnerTrialDays();
+const publishContext = {
+	capacity: data.accommodation.maxGuests,
+	minNights: data.accommodation.minNights,
+	bedrooms: data.accommodation.bedrooms,
+	bathrooms: data.accommodation.bathrooms,
+	isDraft: data.accommodation.lifecycleState === 'DRAFT',
+	trialDays,
+};
 ---
 
 <EditorSectionLayout
@@ -46,6 +61,7 @@ const { t } = createTranslations(locale);
 		accommodationId={accommodationId}
 		initialFeaturedImage={data.featuredImage}
 		initialGallery={data.gallery}
+		publishContext={publishContext}
 		client:load
 	/>
 	<VideoSection

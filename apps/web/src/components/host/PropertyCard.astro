@@ -37,19 +37,36 @@ export interface Props {
     /** Current locale for i18n and URL building. */
     readonly locale: SupportedLocale;
     /**
-     * Whether the owner holds a live host plan. Forwarded to `PublishButton`,
-     * which offers the plan instead of publishing when it is false (H-99).
+     * Whether the server would accept a publish for this owner right now.
+     * Forwarded to `PublishButton`, which offers the plan instead of publishing
+     * when it is false (H-99).
      *
-     * Defaults to `true` so a caller that has not resolved the plan keeps the
-     * previous behaviour: the page that renders this grid already fails OPEN on
-     * a failed entitlements fetch, deliberately, so a transient API blip never
-     * hides Publish from a paying host. The `/publish` endpoint stays the real
-     * enforcement point either way.
+     * Read from `GET /protected/accommodations/publish-eligibility`, once per
+     * page rather than once per card — billing eligibility is a property of the
+     * owner, so it cannot differ between two cards in this grid.
+     *
+     * It replaced `hasActivePlan` (HOS-1183), which asked the narrower question
+     * "is a plan loaded" and therefore hid Publish from every owner still
+     * holding an intact free trial — owners the server publishes.
+     *
+     * Defaults to `true` so a caller that has not resolved the verdict keeps
+     * failing OPEN: a transient API blip must never hide Publish from a paying
+     * host, and the `/publish` endpoint stays the real enforcement point.
      */
-    readonly hasActivePlan?: boolean;
+    readonly canPublish?: boolean;
     /**
-     * Generic owner trial length in days (H-98), shown in the "necesitás un
-     * plan activo" message when trying to publish without a subscription.
+     * Whether publishing would start the owner's free trial, from the same
+     * read. Forwarded to `PublishButton`, which announces it on the confirm
+     * step.
+     *
+     * Defaults to `false`: silence is the safe default here, in the opposite
+     * direction from `canPublish`. An unannounced trial costs the owner a
+     * surprise; an announced one that never starts is a promise broken.
+     */
+    readonly startsTrial?: boolean;
+    /**
+     * Generic owner trial length in days (H-98), shown on the publish confirm
+     * step when publishing would start the owner's trial.
      * Resolved by the caller from the live billing plans — the minimum
      * `trialDays` among active owner plans with `hasTrial`, via
      * `resolveGenericOwnerTrialDays` — and passed down, so this card never
@@ -64,7 +81,13 @@ export interface Props {
     readonly trialDays?: number;
 }
 
-const { property, locale, hasActivePlan = true, trialDays = OWNER_TRIAL_DAYS } = Astro.props;
+const {
+    property,
+    locale,
+    canPublish = true,
+    startsTrial = false,
+    trialDays = OWNER_TRIAL_DAYS
+} = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
 /**
@@ -274,14 +297,16 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                     label={t('host.properties.card.actions.publish', 'Publicar')}
                     confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '¿Publicar este alojamiento?')}
                     confirmNote={t('host.properties.card.actions.publishConfirmNote', 'Va a aparecer en el sitio, visible para los turistas.')}
+                    confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', trialDays, { trialDays })}
                     confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
                     confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
                     errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
-                    subscriptionRequiredMessage={tPlural('host.properties.card.publishSubscriptionRequiredMessage', trialDays, { trialDays })}
+                    subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar.')}
                     subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
                     missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', 'Para publicar falta completar: {{fields}}.')}
                     missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
-                    hasActivePlan={hasActivePlan}
+                    canPublish={canPublish}
+                    startsTrial={startsTrial}
                     choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
                 />
             )}

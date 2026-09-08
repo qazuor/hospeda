@@ -13,6 +13,19 @@
  * - **H-99** — Publish was offered to an owner with no subscription with the
  *   same prominence as Edit and Delete, and its confirmation promised the
  *   listing would "aparecer en el sitio, visible para los turistas".
+ *
+ * ## The H-99 suite was rewritten, not deleted (HOS-1183)
+ *
+ * Its three tests asserted `hasActivePlan: false` hides the button, and they
+ * were correct under the premise of their time: HOS-171 had moved the trial
+ * onto the MercadoPago preapproval the checkout creates, so "no plan" and
+ * "cannot publish" were the same sentence.
+ *
+ * HOS-1012 reverted that premise — the trial is a local row again, granted at
+ * publish — and the sentences came apart. The prop is now the server's own
+ * verdict, and the tests below assert the SAME protection against the state
+ * that still deserves it: never offer publishing that cannot succeed. What
+ * changed is which owner that is.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -41,30 +54,36 @@ function props(overrides: Record<string, unknown> = {}) {
         subscriptionRequiredCta: 'Ver planes',
         missingRequirementsMessage: 'Para publicar falta completar: {{fields}}.',
         missingRequirementsCta: 'Completar en el editor',
-        hasActivePlan: true,
+        canPublish: true,
+        startsTrial: false,
+        confirmTrialNote: 'Al publicar arranca tu prueba gratis de 30 días. Sin tarjeta.',
         choosePlanLabel: 'Elegir plan de anfitrión',
         ...overrides
     };
 }
 
+/** The trial line, asserted both present and absent — see TRIAL_NOTE's uses. */
+const TRIAL_NOTE = 'Al publicar arranca tu prueba gratis de 30 días. Sin tarjeta.';
+
 beforeEach(() => {
     vi.clearAllMocks();
 });
 
-describe('PublishButton — no plan, no publish offer (H-99)', () => {
-    it('offers the plan instead of the publish button', () => {
+describe('PublishButton — never offer what the server would refuse (H-99, narrowed by HOS-1183)', () => {
+    it('offers the plan instead of the publish button when the server would refuse', () => {
         // Arrange / Act
-        render(<PublishButton {...props({ hasActivePlan: false })} />);
+        render(<PublishButton {...props({ canPublish: false })} />);
 
-        // Assert — the page above this grid already says a plan is needed; the
-        // button used to ignore that and offer publishing anyway.
+        // Assert — the protection H-99 introduced, unchanged. What narrowed is
+        // its trigger: it now fires on the server's verdict, not on "no plan
+        // loaded".
         expect(screen.getByText('Elegir plan de anfitrión')).toBeInTheDocument();
         expect(screen.queryByText('Publicar')).not.toBeInTheDocument();
     });
 
     it('never promises the listing will go live when it cannot', async () => {
         // Arrange
-        render(<PublishButton {...props({ hasActivePlan: false })} />);
+        render(<PublishButton {...props({ canPublish: false })} />);
 
         // Assert — the confirmation copy is unreachable, so the promise is
         // never made. Reaching it required a click that no longer exists.
@@ -72,12 +91,71 @@ describe('PublishButton — no plan, no publish offer (H-99)', () => {
         await waitFor(() => expect(publishMock).not.toHaveBeenCalled());
     });
 
-    it('still offers publishing to an owner who has a plan', () => {
+    it('offers publishing to an owner who has a plan', () => {
         // Arrange / Act
         render(<PublishButton {...props()} />);
 
         // Assert
         expect(screen.getByText('Publicar')).toBeInTheDocument();
+    });
+
+    it('offers publishing to an owner with NO plan but an intact trial — the HOS-1183 bug', () => {
+        // Arrange / Act — `first_publish`: no subscription loaded, so the old
+        // `hasActivePlan` boolean was false and this owner got a plans link.
+        // The server publishes them and starts their trial.
+        render(<PublishButton {...props({ canPublish: true, startsTrial: true })} />);
+
+        // Assert
+        expect(screen.getByText('Publicar')).toBeInTheDocument();
+        expect(screen.queryByText('Elegir plan de anfitrión')).not.toBeInTheDocument();
+    });
+});
+
+describe('PublishButton — the trial is announced where it is real (HOS-1183 D-2)', () => {
+    /** Opens the confirm step. */
+    async function openConfirm() {
+        const user = userEvent.setup();
+        await user.click(screen.getByText('Publicar'));
+    }
+
+    it('announces the trial on the confirm step when publishing starts one', async () => {
+        // Arrange — the presence half of the pair. Publishing starts a 30-day
+        // clock by the owner's own action; not saying so is what later produces
+        // "my trial was consumed without warning".
+        render(<PublishButton {...props({ canPublish: true, startsTrial: true })} />);
+
+        // Act
+        await openConfirm();
+
+        // Assert
+        expect(screen.getByText(TRIAL_NOTE)).toBeInTheDocument();
+    });
+
+    it('says nothing about a trial to an owner who is already paying', async () => {
+        // Arrange — `has_active_sub`. The absence half; its sibling above
+        // asserts the identical string IS rendered, so a typo in the selector
+        // cannot make both pass.
+        render(<PublishButton {...props({ canPublish: true, startsTrial: false })} />);
+
+        // Act
+        await openConfirm();
+
+        // Assert — and the rest of the confirm copy is what it always was.
+        expect(screen.queryByText(TRIAL_NOTE)).not.toBeInTheDocument();
+        expect(screen.getByText('¿Publicar este alojamiento?')).toBeInTheDocument();
+        expect(screen.getByText('Va a aparecer en el sitio.')).toBeInTheDocument();
+    });
+
+    it('never promises free days to an owner whose trial is spent', () => {
+        // Arrange / Act — `subscription_required`. The one state where a
+        // free-run promise is a lie: the trial is gone, and a checkout will not
+        // grant another one either.
+        render(<PublishButton {...props({ canPublish: false, startsTrial: false })} />);
+
+        // Assert
+        expect(screen.queryByText(TRIAL_NOTE)).not.toBeInTheDocument();
+        expect(document.body.textContent).not.toContain('gratis');
+        expect(document.body.textContent).not.toContain('Sin tarjeta');
     });
 });
 

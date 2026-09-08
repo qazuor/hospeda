@@ -48,6 +48,7 @@
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, getMediaUrl } from '@repo/media';
+import { useEffect, useRef } from 'react';
 import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -55,9 +56,11 @@ import { createTranslations } from '@/lib/i18n';
 import { PhotoGalleryItem } from './PhotoGalleryItem.client';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
+import { PublishReadyDialog } from './PublishReadyDialog.client';
 import { MAX_PHOTOS_LIMIT_KEY, resolveEffectiveGalleryCap } from './photo-section-helpers';
 import { usePhotoAltWarningGuard } from './use-photo-alt-warning-guard';
 import { usePhotoSection } from './use-photo-section';
+import { usePublishReadyPrompt } from './use-publish-ready-prompt';
 
 // Re-export upload helper so existing callers of PhotoSection.client can still import it
 export { uploadEntityImage } from '@/lib/media/upload-entity';
@@ -88,6 +91,25 @@ export interface PhotoSectionProps {
      * Shown until `listMedia` resolves. Lack DB ids — cannot trigger API ops.
      */
     readonly initialGallery?: readonly MediaImage[];
+    /**
+     * The half of publish readiness this section does NOT own, so the post-save
+     * publish prompt can fire when the main photo was the last thing missing
+     * (HOS-1183).
+     *
+     * Optional: without it the prompt is simply never evaluated here, which is
+     * the correct degradation for any consumer that is not the accommodation
+     * editor's photo page.
+     */
+    readonly publishContext?: {
+        readonly capacity: number | null;
+        readonly minNights: number | null;
+        readonly bedrooms: number | null;
+        readonly bathrooms: number | null;
+        /** Only a draft has anything to offer; a live listing is already live. */
+        readonly isDraft: boolean;
+        /** Trial length in days, for the prompt's copy. */
+        readonly trialDays: number;
+    };
 }
 
 /**
@@ -107,7 +129,8 @@ export function PhotoSection({
     locale,
     accommodationId,
     initialFeaturedImage = null,
-    initialGallery = []
+    initialGallery = [],
+    publishContext
 }: PhotoSectionProps) {
     const { t, tPlural } = createTranslations(locale);
 
@@ -163,6 +186,47 @@ export function PhotoSection({
     // separate, narrower guard than `useUnsavedChangesGuard`'s usual "unsaved
     // changes" wiring.
     usePhotoAltWarningGuard({ locale, accommodationId, featuredItem, galleryItems });
+
+    // HOS-1183: the main photo is a blocking publish requirement, and this is
+    // the realistic last one — hosts fill text first and upload photos last. So
+    // this section is one of the two that can make a listing publishable.
+    //
+    // It watches the RESULT rather than hooking each mutation. Four different
+    // paths set the cover (upload into the slot, drop a file on it, promote a
+    // gallery photo, and the hydrating refresh), and wiring the prompt into
+    // each is four places for one of them to be forgotten.
+    const publishPrompt = usePublishReadyPrompt();
+    const previousFeaturedRef = useRef<AccommodationMediaItem | null>(featuredItem);
+    const hasHydratedRef = useRef(false);
+
+    useEffect(() => {
+        // `opsReady` is the hook's hydration flag. Before it flips, a null →
+        // non-null change is the API answering, not the host uploading — firing
+        // there would open the dialog on page load for a listing that already
+        // had its cover.
+        if (!opsReady) {
+            return;
+        }
+        if (!hasHydratedRef.current) {
+            hasHydratedRef.current = true;
+            previousFeaturedRef.current = featuredItem;
+            return;
+        }
+
+        const hadFeatured = previousFeaturedRef.current !== null;
+        previousFeaturedRef.current = featuredItem;
+
+        if (!publishContext || hadFeatured || featuredItem === null) {
+            return;
+        }
+
+        const { capacity, minNights, bedrooms, bathrooms, isDraft } = publishContext;
+        void publishPrompt.evaluate({
+            before: { capacity, minNights, bedrooms, bathrooms, hasMainImage: false },
+            after: { capacity, minNights, bedrooms, bathrooms, hasMainImage: true },
+            isDraft
+        });
+    }, [featuredItem, opsReady, publishContext, publishPrompt]);
 
     const remainingGallerySlots = isGalleryCapResolved
         ? Math.max(galleryCap - galleryItems.length, 0)
@@ -396,6 +460,15 @@ export function PhotoSection({
                     onChange={handleGallerySelect}
                 />
             </div>
+
+            <PublishReadyDialog
+                isOpen={publishPrompt.isOpen}
+                onClose={publishPrompt.close}
+                locale={locale}
+                accommodationId={accommodationId}
+                startsTrial={publishPrompt.startsTrial}
+                trialDays={publishContext?.trialDays ?? 0}
+            />
         </div>
     );
 }

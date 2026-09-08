@@ -27,6 +27,7 @@ import type {
     OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
+    PublishEligibilityResponse,
     PurchasableAddonResponse,
     PurchaseAddonResponse,
     ReplacePaymentMethodResponse,
@@ -4030,6 +4031,52 @@ export const publishApi = {
             return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
         }
         return apiClient.delete({ path: `${PROTECTED}/commerce/listings/${vertical}/${id}` });
+    },
+
+    /**
+     * Reads what publishing an accommodation would do for the current actor
+     * (HOS-1183).
+     *
+     * ## This is not {@link publishApi.precheck}, and the two never merge
+     *
+     * `precheck` answers "can you CREATE another listing" — caps and drafts,
+     * asked before a create form renders. This answers "can you put an existing
+     * one LIVE". Different gate, different moment in the lifecycle, different
+     * consumer page. They sit together here because they are both publishing
+     * reads, not because either can stand in for the other.
+     *
+     * ## Read `canPublish`, never re-derive it
+     *
+     * The whole point of the endpoint is that ONE side owns the rule. A caller
+     * that computes `eligibility !== 'subscription_required'` itself is the
+     * second statement of it, and the next verdict added would make the two
+     * disagree — which is the bug this endpoint was built to close. Use
+     * `eligibility` and `startsTrial` for COPY, `canPublish` for the affordance.
+     *
+     * Accommodation-only for now: commerce listings go live through a checkout
+     * and resolve their own verdict (HOS-1184), so a `vertical` parameter here
+     * would promise a generality the endpoint does not have.
+     *
+     * @param params.cookieHeader - Optional SSR cookie header (browser callers
+     *   omit it; `credentials: 'include'` covers them).
+     * @returns The billing verdict, whether publishing is allowed right now,
+     *   and whether it would start a free trial.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.accommodationEligibility({ cookieHeader });
+     * const canPublish = result.ok ? result.data.canPublish : true; // fail-open
+     * ```
+     */
+    accommodationEligibility({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    } = {}): Promise<ApiResult<PublishEligibilityResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/publish-eligibility`,
+            cookieHeader
+        });
     }
 };
 

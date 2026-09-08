@@ -2,6 +2,22 @@ import type { Accommodation } from '@repo/schemas';
 import type { ServiceContext } from '../../types';
 
 /**
+ * Every value {@link PublishEligibility} can take, in declaration order.
+ *
+ * The union is derived FROM this tuple rather than written beside it so the
+ * type and the runtime list cannot drift: adding a fourth verdict is one edit,
+ * and {@link publishEligibilityAllowsPublish} recognises it on the same commit
+ * that introduces it. A hand-maintained second list would reintroduce, in the
+ * predicate, exactly the two-sided-rule-updated-on-one-side failure this whole
+ * change exists to remove (HOS-1183 R-2).
+ */
+export const PUBLISH_ELIGIBILITY_VALUES = [
+    'first_publish',
+    'has_active_sub',
+    'subscription_required'
+] as const;
+
+/**
  * The actor's current publish eligibility, computed by querying the
  * billing layer for active or historical subscriptions.
  *
@@ -31,7 +47,136 @@ import type { ServiceContext } from '../../types';
  * The two remaining states are distinguishable to the front-end on purpose: one
  * offers a trial, the other asks for a renewal.
  */
-export type PublishEligibility = 'first_publish' | 'has_active_sub' | 'subscription_required';
+export type PublishEligibility = (typeof PUBLISH_ELIGIBILITY_VALUES)[number];
+
+/**
+ * The one verdict that DENIES publishing. Everything else proceeds.
+ *
+ * Named as a constant so the rule has a single spelling: a bare
+ * `=== 'subscription_required'` scattered across call sites is what let the two
+ * sides of this rule drift apart in the first place.
+ */
+const PUBLISH_DENIED_ELIGIBILITY: PublishEligibility = 'subscription_required';
+
+/**
+ * Does this verdict allow the listing to go live?
+ *
+ * The single place the publish/deny rule is stated. `publish()`, `update()`'s
+ * ACTIVE-transition guard and the `GET /publish-eligibility` route all call it,
+ * so the button the owner sees and the answer the server gives cannot disagree
+ * (HOS-1183 AC-4).
+ *
+ * ## Why the rule is stated by EXCLUSION
+ *
+ * `publish()` does not grant publishing to a listed set of verdicts — it
+ * *rejects* one:
+ *
+ * ```ts
+ * if (eligibility === 'subscription_required') throw FORBIDDEN;
+ * ```
+ *
+ * Mirroring that as an inclusion (`=== 'first_publish' || === 'has_active_sub'`)
+ * would agree with the server today and diverge the moment a fourth verdict is
+ * added: the server would publish it, this predicate would deny it, and the
+ * button would vanish for an owner the server was about to let through — the
+ * HOS-1183 bug, rebuilt from the other side. Exclusion makes a new verdict
+ * permissive by default on BOTH sides, which is the side the server is already
+ * on.
+ *
+ * ## Why an unrecognised value is still denied
+ *
+ * Exclusion is about verdicts the resolver can actually return, not about
+ * arbitrary strings. A value outside {@link PUBLISH_ELIGIBILITY_VALUES} is not a
+ * fourth verdict — it is a parse failure wearing one's clothes (a typo'd
+ * literal, a mangled payload), and treating garbage as permission to publish
+ * would grant free days on noise. So unknown input returns `false`.
+ *
+ * That is deliberately NOT the same thing as the web's fail-open on a failed
+ * fetch (AC-10): there, no verdict was obtained at all and the button stays
+ * visible so a transient billing hiccup cannot strand a paying host. Here, a
+ * verdict *was* produced and is not a verdict. The two live in different layers
+ * precisely so neither has to compromise.
+ *
+ * @param eligibility - The verdict returned by `checkEligibility`.
+ * @returns `true` when the listing may be published.
+ */
+export function publishEligibilityAllowsPublish(eligibility: PublishEligibility): boolean {
+    if (!PUBLISH_ELIGIBILITY_VALUES.includes(eligibility)) {
+        return false;
+    }
+    return eligibility !== PUBLISH_DENIED_ELIGIBILITY;
+}
+
+/**
+ * The one verdict that GRANTS a trial. Everything else publishes without one.
+ */
+const PUBLISH_TRIAL_GRANTING_ELIGIBILITY: PublishEligibility = 'first_publish';
+
+/**
+ * Does publishing under this verdict start a Hospeda-owned local trial?
+ *
+ * A second question about the same verdict, and deliberately NOT the negation of
+ * {@link publishEligibilityAllowsPublish}: `has_active_sub` publishes and starts
+ * nothing, because the owner is already paying.
+ *
+ * ## It is stated by INCLUSION, and that asymmetry is the point
+ *
+ * Publishing fails OPEN on a verdict this file has not been taught about,
+ * because that mirrors what `publish()` does and keeps the button honest. Trial
+ * granting fails CLOSED, because it writes a `billing_subscriptions` row that
+ * hands out thirty free days: a verdict nobody has reasoned about must not be
+ * able to mint one by default. A future `grace_period` should publish
+ * immediately and grant nothing until someone decides otherwise.
+ *
+ * The same asymmetric read appears in `subscriptionMatchesDomain` for the same
+ * reason — the permissive default belongs to the side that was already
+ * permissive, never to the side that spends money.
+ *
+ * @param eligibility - The verdict returned by `checkEligibility`.
+ * @returns `true` when publishing must insert a local trial subscription.
+ */
+export function publishEligibilityStartsLocalTrial(eligibility: PublishEligibility): boolean {
+    return eligibility === PUBLISH_TRIAL_GRANTING_ELIGIBILITY;
+}
+
+/**
+ * What `AccommodationService.getPublishEligibility` answers: the billing
+ * verdict for an owner, plus whether publishing would actually be allowed.
+ *
+ * ## Why both fields, when one is a function of the other
+ *
+ * For nearly every owner `canPublish` IS
+ * {@link publishEligibilityAllowsPublish} of `eligibility`, and carrying both
+ * looks redundant. It is not, for two independent reasons:
+ *
+ * - **They answer different questions.** `eligibility` is what BILLING says;
+ *   `canPublish` is what the SERVER will do. Platform staff diverge: they
+ *   bypass the billing gate entirely, so they publish while their honest
+ *   billing verdict stays `subscription_required`.
+ * - **Collapsing them is the bug.** Sending only `canPublish` would leave the
+ *   UI unable to tell a trial-eligible owner from a paying one, and it would
+ *   lose the trial announcement. Sending only `eligibility` would push the
+ *   publish rule back into the client — which is HOS-1183 verbatim.
+ */
+export interface PublishEligibilityVerdict {
+    /**
+     * The verdict `checkEligibility` returned, verbatim. Never re-derived, and
+     * never overwritten for staff: it stays the honest billing answer.
+     */
+    readonly eligibility: PublishEligibility;
+    /**
+     * Whether `publish()` would let this owner put a listing live right now,
+     * INCLUDING the staff billing bypass that runs before the verdict is even
+     * consulted. This is the field a publish affordance gates on.
+     */
+    readonly canPublish: boolean;
+    /**
+     * Whether publishing would start a Hospeda-owned trial and its clock.
+     * Drives the one extra line the confirm dialog shows, and is false for
+     * staff — they bypass billing, so no trial is ever inserted for them.
+     */
+    readonly startsTrial: boolean;
+}
 
 /**
  * A {@link ServiceContext} whose transaction client is guaranteed present.

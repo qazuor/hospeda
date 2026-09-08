@@ -17,8 +17,17 @@ export type {
     AccommodationPublishDeps,
     HostOnboardingResult,
     PublishEligibility,
+    PublishEligibilityVerdict,
     PublishTransactionContext,
     StartLocalTrialResult
+} from './accommodation/accommodation.types';
+// HOS-1183: the publish/deny rule, stated once. The API's
+// `GET /publish-eligibility` route needs the same predicate `publish()` uses,
+// so it is a value export rather than joining the type-only block above.
+export {
+    PUBLISH_ELIGIBILITY_VALUES,
+    publishEligibilityAllowsPublish,
+    publishEligibilityStartsLocalTrial
 } from './accommodation/accommodation.types';
 export * from './accommodation/featured-entitlement.resolver';
 export * from './accommodation-external-reputation/index.js';

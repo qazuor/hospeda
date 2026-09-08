@@ -227,6 +227,8 @@
                 "deleteYes": "Sim, excluir",
                 "publishConfirmTitle": "Publicar esta acomodação?",
                 "publishConfirmNote": "Vai aparecer no site, visível para os turistas.",
+                "publishConfirmTrialNote_one": "Ao publicar começa sua avaliação gratuita de {{trialDays}} dia. Sem cartão.",
+                "publishConfirmTrialNote_other": "Ao publicar começa sua avaliação gratuita de {{trialDays}} dias. Sem cartão.",
                 "publishYes": "Sim, publicar",
                 "choosePlan": "Escolher plano de anfitrião"
             },
@@ -235,8 +237,7 @@
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
             "publishError": "Não foi possível publicar. Tente novamente.",
-            "publishSubscriptionRequiredMessage_one": "Você precisa de um plano ativo para publicar. Se for sua primeira assinatura, começa com {{trialDays}} dia grátis.",
-            "publishSubscriptionRequiredMessage_other": "Você precisa de um plano ativo para publicar. Se for sua primeira assinatura, começa com {{trialDays}} dias grátis.",
+            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar.",
             "publishSubscriptionRequiredCta": "Ver planos",
             "priceOnRequest": "Preço a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
@@ -451,6 +452,13 @@
                 "network": "Erro de conexão"
             },
             "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+            "publishReady": {
+                "title": "Sua ficha já está pronta",
+                "body": "Você completou tudo o que faltava. Se publicar agora, vai aparecer no site, visível para os turistas.",
+                "publishNow": "Publicar agora",
+                "keepEditing": "Continuar editando",
+                "blockedTitle": "Você precisa de um plano ativo"
+            },
             "toast": {
                 "saveSuccess": "Alterações salvas",
                 "saveError": "Não pudemos salvar suas alterações. Tente novamente.",
