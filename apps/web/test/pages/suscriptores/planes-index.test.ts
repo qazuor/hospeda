@@ -28,6 +28,17 @@ const PAGES = resolve(__dirname, '../../../src/pages/[lang]');
 
 const read = (relative: string): string => readFileSync(resolve(PAGES, relative), 'utf8');
 
+/**
+ * Drop block comments — both `/* … *\/` docblocks and Astro's `{/* … *\/}`
+ * template comments.
+ *
+ * For the assertions whose subject is what the page RENDERS. A source-reading
+ * test cannot otherwise distinguish a rendered literal from a comment quoting
+ * one, and a docblock that explains a decision by naming the string it removed
+ * is exactly the documentation worth keeping (HOS-1212).
+ */
+const withoutBlockComments = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, '');
+
 const indexSrc = read('suscriptores/planes/index.astro');
 const hostSrc = read('suscriptores/planes/anfitriones/index.astro');
 const touristSrc = read('suscriptores/planes/turistas/index.astro');
@@ -262,7 +273,21 @@ describe('plan index — prices come from the API (AC-8)', () => {
     it('writes no currency amount into the page', () => {
         // Any `$1.234` / `$ 1234` literal would be a price the operator cannot
         // change from admin.
-        expect(indexSrc).not.toMatch(/\$\s?\d/);
+        //
+        // Matched against the source with its BLOCK COMMENTS REMOVED (HOS-1212).
+        // The claim is about what the page renders, and reading the raw file
+        // cannot tell a hardcoded amount from prose about one: the docblock now
+        // has to name the figure this page used to advertise ("Desde $ 15.000
+        // /mes") in order to explain why aliados no longer carries a price line
+        // at all. Banning the string outright would price the explanation out of
+        // the file that most needs it, and would still catch nothing a reviewer
+        // would not — a comment renders nothing.
+        expect(withoutBlockComments(indexSrc)).not.toMatch(/\$\s?\d/);
+
+        // The weakening must not have blinded it: a real literal in the template
+        // still has to be seen, and only the comment around one is dropped.
+        expect(withoutBlockComments('{/* $ 15.000 */}\n<p>$ 15.000</p>')).toMatch(/\$\s?\d/);
+        expect(withoutBlockComments('/* $ 15.000 */\n<p>ok</p>')).not.toMatch(/\$\s?\d/);
     });
 
     it('drops only the price line when a price is missing, never the CTA', () => {
@@ -347,9 +372,11 @@ describe('plan index — the trial line is read, never written (R-2)', () => {
     });
 
     it('guards the trial line independently of the price line', () => {
-        // Partner has a price and no trial. Nesting the trial inside the price
-        // conditional would couple them; asserted by nesting DEPTH, since the
-        // two blocks are siblings at the same indent under the card.
+        // Gastronomy has a price and no trial; partner has NEITHER since
+        // HOS-1212, and host has both. Nesting the trial inside the price
+        // conditional would couple two lines that vary independently across the
+        // five cards; asserted by nesting DEPTH, since the two blocks are
+        // siblings at the same indent under the card.
         const lines = indexSrc.split('\n');
         const indentOf = (marker: string): number => {
             const line = lines.find((candidate) => candidate.includes(marker));
@@ -602,12 +629,15 @@ describe('plan index — prices and trial lines land on the same line (adjustmen
 
     it('names a row for every block, which is what survives the two odd cards', () => {
         // The whole requirement turns on this. Two of the seven blocks are
-        // OPTIONAL: every partner tier is `hasTrial: false` so partner renders
-        // NO trial line, and a card whose catalogue fetch failed renders no
-        // price. Under source-order auto-placement partner's CTA would slide up
-        // into the trial row and stop lining up with the other four. Named rows
-        // leave the missing block's track empty in that one card, and
-        // everything after it stays on its line.
+        // OPTIONAL, and partner is now missing BOTH: every partner tier is
+        // `hasTrial: false` so it renders no trial line, and it publishes no
+        // amount either (HOS-1212) so it renders no price. A card whose
+        // catalogue fetch failed also renders no price. Under source-order
+        // auto-placement partner's CTA would slide up TWO rows — not one — and
+        // stop lining up with the other four. Named rows leave each missing
+        // block's track empty in that one card, and everything after it stays on
+        // its line, which is what lets a card skip both and still land its CTA
+        // on the shared line.
         //
         // The tourist card's "Gratis" needs nothing special for the same
         // reason: it is still a price, in the price row, without a `/mes`.

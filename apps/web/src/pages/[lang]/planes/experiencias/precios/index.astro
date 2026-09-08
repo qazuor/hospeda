@@ -54,7 +54,7 @@ applyCacheHeaders({
 });
 
 const plans = await fetchAudiencePlans({ audience: 'experience' });
-const { copyRoot, faqs, hasComparison } = resolvePricingPageContent({
+const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({
     audience: 'experience',
     plans,
     translators: { t, tPlural }
@@ -135,5 +135,6 @@ const headingMain = headingWords.join(' ');
         hasComparison={hasComparison}
         ctaMode="link"
         ctaHref={ctaHref}
+        priceMode={priceMode}
     />
 </MarketingLayout>
