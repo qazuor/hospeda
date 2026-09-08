@@ -432,6 +432,14 @@ export function createDbMock() {
         asc: vi.fn((a: string) => ({ type: 'asc', column: a })),
         count: vi.fn(),
         gte: vi.fn((a: string, b: unknown) => ({ type: 'gte', left: a, right: b })),
+        // HOS-847 PR 7b: `loadDeferredAddonGrants` selects rows whose paid
+        // period has NOT elapsed with `gt(currentPeriodEnd, now)`. A missing
+        // export here would not fail loudly — the helper runs inside a
+        // try/catch, so `gt is not a function` would be swallowed into its
+        // degraded path and every deferred add-on would silently grant nothing
+        // (the HOS-702 shape).
+        gt: vi.fn((a: string, b: unknown) => ({ type: 'gt', left: a, right: b })),
+        lt: vi.fn((a: string, b: unknown) => ({ type: 'lt', left: a, right: b })),
         lte: vi.fn((a: string, b: unknown) => ({ type: 'lte', left: a, right: b })),
         isNull: vi.fn((a: string) => ({ type: 'isNull', column: a })),
         isNotNull: vi.fn((a: string) => ({ type: 'isNotNull', column: a })),

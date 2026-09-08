@@ -88,8 +88,25 @@ export interface SoftCancelRecurringAddonInput {
  * this file: there is no terminal status here to pair with a provider close, and
  * the close already happened in the caller.
  *
- * **Idempotent.** A second call finds no `active` row to update, logs it, and
- * still answers success — the customer asked for a cancellation and has one.
+ * **Idempotent in EFFECT, not in the row filter.** The UPDATE deliberately keeps
+ * `status = 'active'`, so a second call matches the same row again and writes the
+ * same `cancel_at_period_end = true` — it does not "find no `active` row", which
+ * is what this doc used to claim and what the `status` filter would do if this
+ * function wrote a terminal status like every other cancellation path. What makes
+ * the repeat harmless is that the write is idempotent, and what makes it QUIET is
+ * the `rowCount` gate below: the cancellation email is dispatched only for an
+ * UPDATE that actually moved a row.
+ *
+ * That gate is a floor, not a guarantee. The caller inside
+ * `finalize-cancelled-subs.ts` runs this with `db = tx`, and a LATER add-on
+ * failing in the same transaction rolls the flag back while leaving the email
+ * sent and the MercadoPago preapproval closed. The next run then finds the row
+ * `active` and unflagged, updates it again, and mails again. Fixing that means
+ * deferring notifications until after the transaction commits, which is a change
+ * to `handleSubscriptionCancellationAddons`'s contract (it would have to return
+ * the pending sends) and is deliberately out of this PR's scope. What the gate
+ * removes is the unconditional duplicate — the one that fired even when nothing
+ * had changed.
  *
  * @param input - Purchase, customer, the period end, and the billing/db handles.
  * @returns Success once the flag is persisted; an error only if the UPDATE failed.
@@ -109,6 +126,13 @@ export async function softCancelRecurringAddon(
 
     const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
     const { and, eq, isNull } = await import('drizzle-orm');
+
+    /**
+     * Whether the UPDATE actually changed a row. Gates the cancellation email:
+     * a repeat call re-writes the same flag onto the same still-`active` row and
+     * must not mail the customer a second time.
+     */
+    let movedARow = false;
 
     try {
         const updateResult = await db
@@ -138,6 +162,7 @@ export async function softCancelRecurringAddon(
                 'Add-on soft-cancel affected 0 rows — it was likely cancelled concurrently; treating as already cancelled'
             );
         } else {
+            movedARow = true;
             apiLogger.info(
                 {
                     customerId,
@@ -170,7 +195,14 @@ export async function softCancelRecurringAddon(
         };
     }
 
-    await notifySoftCancellation(input);
+    // Only for an UPDATE that moved a row. A repeat call — a MercadoPago
+    // redelivery, a cron retry after a partial failure, the orphan sweep meeting
+    // a row the webhook already flagged — writes the same flag onto the same
+    // `active` row and must not mail the customer again. Nothing else here reads
+    // `rowCount`, so this is the whole of the de-duplication.
+    if (movedARow) {
+        await notifySoftCancellation(input);
+    }
 
     return { success: true, data: undefined };
 }

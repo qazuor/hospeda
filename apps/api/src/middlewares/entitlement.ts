@@ -40,6 +40,10 @@ import {
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { captureBillingError } from '../lib/sentry';
+import {
+    loadDeferredAddonGrants,
+    mergeDeferredAddonGrants
+} from '../services/deferred-addon-grants.service';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
@@ -344,6 +348,52 @@ async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
 }
 
 /**
+ * Fold any still-running DEFERRED add-on onto a no-live-subscription fallback
+ * (HOS-847 PR 7b).
+ *
+ * Both fallback branches of {@link loadEntitlements} return BEFORE the
+ * customer-level merge below, so an add-on the cancellation flow deliberately
+ * kept alive — `status = 'active'`, `cancel_at_period_end = true`, its QZPay
+ * grant untouched — reached the request as nothing at all. This is the merge for
+ * exactly those rows, and only those: see
+ * `services/deferred-addon-grants.service.ts` for why it is not the generic
+ * customer-level merge.
+ *
+ * Returns a NEW result. `buildHostDraftDefaultsResult` hands back a memoized
+ * object shared by every HOST request in the TTL window; folding one customer's
+ * add-on into it in place would grant it to all of them.
+ *
+ * @param customerId - QZPay customer id whose deferred add-ons to fold in.
+ * @param base - The fallback entitlements/limits already resolved.
+ * @returns The same result with the deferred grants added, uncacheable if the
+ *   lookup degraded.
+ */
+async function withDeferredAddonGrants(
+    customerId: string,
+    base: LoadEntitlementsResult
+): Promise<LoadEntitlementsResult> {
+    const grants = await loadDeferredAddonGrants({ customerId });
+
+    if (grants.degraded) {
+        // Never cache an under-grant: the next request must retry rather than
+        // deny a paid-for feature for the whole TTL.
+        return { ...base, shouldCache: false };
+    }
+
+    if (grants.entitlements.size === 0 && grants.limitIncrements.size === 0) {
+        return base;
+    }
+
+    const { entitlements, limits } = mergeDeferredAddonGrants({
+        grants,
+        entitlements: base.entitlements,
+        limits: base.limits
+    });
+
+    return { ...base, entitlements, limits };
+}
+
+/**
  * Resolves a composed trial plan's grants from its SOURCE plans, live
  * (HOS-1012 D-5, spec §6.8).
  *
@@ -519,10 +569,14 @@ async function loadEntitlements(
             // owner-basico defaults so they can access host features during the
             // draft phase (SPEC-143 Block 1). All other roles receive tourist-free
             // defaults (SPEC-143 T-143-58).
-            if (isHost) {
-                return await buildHostDraftDefaultsResult();
-            }
-            return buildDefaultEntitlementsResult();
+            //
+            // HOS-847 PR 7b: plus whatever a deferred add-on is still paid up
+            // for. The customer-level merge further down never runs on this
+            // branch, which is what made PR 7a's deferral deliver nothing.
+            return await withDeferredAddonGrants(
+                customerId,
+                isHost ? await buildHostDraftDefaultsResult() : buildDefaultEntitlementsResult()
+            );
         }
 
         // HOS-1104: `getByCustomerId()` never populates `productDomain` (it is a
@@ -585,10 +639,14 @@ async function loadEntitlements(
             // Only cancelled / past_due / paused subscriptions — fall back to
             // role-appropriate defaults. Same rationale as the no-subscriptions
             // branch above (SPEC-143 Block 1 / T-143-58).
-            if (isHost) {
-                return await buildHostDraftDefaultsResult();
-            }
-            return buildDefaultEntitlementsResult();
+            //
+            // HOS-847 PR 7b: this is THE branch a host lands on the day after
+            // their plan is cancelled, and the one where a deferred add-on has
+            // to keep paying out until its own period ends.
+            return await withDeferredAddonGrants(
+                customerId,
+                isHost ? await buildHostDraftDefaultsResult() : buildDefaultEntitlementsResult()
+            );
         }
 
         // ── SPEC-148 T-002: Cron-lag grace detection ──────────────────────────

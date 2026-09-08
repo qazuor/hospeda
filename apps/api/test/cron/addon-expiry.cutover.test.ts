@@ -61,7 +61,14 @@ vi.mock('@repo/billing', async (importOriginal) => ({
 }));
 
 // withTransaction mock: runs callback with a minimal fake tx
-vi.mock('@repo/db', () => ({
+// HOS-702 / HOS-847 PR 7b: a PARTIAL mock (spread of the real module), not a
+// whole-module literal. The literal this replaces named four drizzle operators,
+// so everything else — `asc`, `inArray`, `billingSubscriptionEvents` — resolved
+// to `undefined`. The job's retry phase runs inside a try/catch, so calling one
+// of those did not surface as "not a function": the phase silently found zero
+// orphans and reported success.
+vi.mock('@repo/db', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/db')>()),
     // HOS-722: resolveRecipientLocale() (addon-expiry.job.ts) instantiates
     // UserModel at module scope and calls findById() when a notification is
     // about to be sent. This file's default lookupCustomerDetails resolves
@@ -108,6 +115,17 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         deletedAt: 'dat',
         updatedAt: 'uat'
+    },
+    // HOS-847 PR 7b: NOT covered by the spread above. `@repo/db`'s barrel
+    // re-exports the schema tables through `./schemas/index.ts`, which
+    // `test/setup.ts` mocks GLOBALLY down to two tables — so the real
+    // `billingSubscriptionEvents` never reaches this factory and has to be
+    // named explicitly, like the other tables below.
+    billingSubscriptionEvents: {
+        id: 'id',
+        subscriptionId: 'subscription_id',
+        eventType: 'event_type',
+        triggerSource: 'trigger_source'
     },
     withTransaction: vi.fn()
 }));
@@ -196,19 +214,30 @@ import { revokeAddonForSubscriptionCancellation } from '../../src/services/addon
 function buildFakeTx() {
     const tx = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
+        // HOS-847 PR 7b: the retry query gained an `.orderBy()` between
+        // `.where()` and `.limit()`. The admin-cancel marker lookup is never
+        // reached from this stub — it only runs when the sweep found at least
+        // one orphan carrying a subscription id, and this fixture returns none.
         select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
                 where: vi.fn().mockReturnValue({
                     limit: vi.fn().mockResolvedValue([]),
+                    orderBy: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue([])
+                    }),
                     innerJoin: vi.fn().mockReturnValue({
                         where: vi.fn().mockReturnValue({
-                            limit: vi.fn().mockResolvedValue([])
+                            orderBy: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockResolvedValue([])
+                            })
                         })
                     })
                 }),
                 innerJoin: vi.fn().mockReturnValue({
                     where: vi.fn().mockReturnValue({
-                        limit: vi.fn().mockResolvedValue([])
+                        orderBy: vi.fn().mockReturnValue({
+                            limit: vi.fn().mockResolvedValue([])
+                        })
                     })
                 })
             })
@@ -415,32 +444,47 @@ describe('addon-expiry.job.ts cutover parity (SPEC-192 T-015)', () => {
                 } as never;
             });
 
-            // The orphaned purchases query is: select({...}).from(bap).innerJoin(bs, eq()).where().limit(100)
-            // Chain: select → from → innerJoin → where → limit(100) → orphanedRows
+            // The orphaned purchases query is:
+            //   select({...}).from(bap).innerJoin(bs, eq()).where().orderBy().limit(100)
+            // (HOS-847 PR 7b added the orderBy — FIFO within the capped batch.)
             // All other select chains return empty arrays.
             // We track select call index to distinguish the orphaned query from others.
             let selectCallIdx = 0;
             const fakeTxOrphaned = {
                 execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
-                select: vi.fn().mockImplementation(() => {
+                select: vi.fn().mockImplementation((fields?: Record<string, unknown>) => {
                     const idx = selectCallIdx++;
+                    // HOS-847 PR 7b: the admin-cancel marker lookup selects
+                    // exactly `{ subscriptionId }` and iterates the `.where()`
+                    // result directly, so it needs a chain that resolves to an
+                    // ARRAY rather than to a builder. No marker here — this
+                    // orphan's plan was not cancelled by an admin.
+                    if (fields && 'subscriptionId' in fields && !('addonSlug' in fields)) {
+                        return {
+                            from: vi.fn().mockReturnValue({
+                                where: vi.fn().mockResolvedValue([])
+                            })
+                        };
+                    }
                     // The orphaned purchases query is call index 0 (first select after lock acquire).
                     // All other selects (notification idempotency, subscription reconciliation, etc.)
                     // return empty — we only care about the retry phase being reached.
                     const innerJoinChain = {
                         where: vi.fn().mockReturnValue({
-                            limit:
-                                idx === 0
-                                    ? vi.fn().mockResolvedValue([
-                                          {
-                                              id: 'p-orphan',
-                                              customerId: 'cust-orphan',
-                                              addonSlug: 'extra-accommodations-5',
-                                              subscriptionId: 'sub-cancelled',
-                                              metadata: { revocationRetryCount: 0 }
-                                          }
-                                      ])
-                                    : vi.fn().mockResolvedValue([])
+                            orderBy: vi.fn().mockReturnValue({
+                                limit:
+                                    idx === 0
+                                        ? vi.fn().mockResolvedValue([
+                                              {
+                                                  id: 'p-orphan',
+                                                  customerId: 'cust-orphan',
+                                                  addonSlug: 'extra-accommodations-5',
+                                                  subscriptionId: 'sub-cancelled',
+                                                  metadata: { revocationRetryCount: 0 }
+                                              }
+                                          ])
+                                        : vi.fn().mockResolvedValue([])
+                            })
                         })
                     };
                     return {
