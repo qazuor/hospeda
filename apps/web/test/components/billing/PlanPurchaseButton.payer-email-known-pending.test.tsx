@@ -1,21 +1,19 @@
 /**
- * @file PlanPurchaseButton.payer-email-known-lookup-throws.test.tsx
- * @description HOS-1234: a network failure on the payer-email-known lookup
- * must fail OPEN — the confirm dialog stays in place, never skipped.
+ * @file PlanPurchaseButton.payer-email-known-pending.test.tsx
+ * @description HOS-1234: clicking BEFORE the payer-email-known lookup has
+ * resolved must still show the confirm dialog.
  *
- * What this actually exercises, which is NOT what the filename suggests: a
- * rejected `fetch` never reaches `fetchPayerEmailKnown`'s `.catch`. `apiClient`
- * wraps every request in its own try/catch and hands back `{ ok: false }`
- * instead (see `lib/api/client.ts`), so the path under test is the `result.ok`
- * ternary — reached here through a REJECTION rather than through a non-OK
- * status like its sibling file. The `.catch` is unreachable defense in depth
- * and no test covers it; that is documented at the source, not papered over.
+ * This covers the initial state, which no other file in this family reaches:
+ * they all wait for the lookup to settle first, so `useState(false)` could be
+ * flipped to `useState(true)` and every one of them would stay green (measured).
+ * The initial value IS the fail-open guarantee — a visitor who clicks the
+ * instant the island hydrates decides nothing else.
  *
  * Kept in its own file — see the module-singleton caching note in
  * `PlanPurchaseButton.payer-email-known-true.test.tsx`.
  */
 
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanPurchaseButton } from '../../../src/components/billing/PlanPurchaseButton.client';
@@ -56,7 +54,6 @@ type MockUseSession = ReturnType<typeof vi.fn>;
 // ---------------------------------------------------------------------------
 
 const SESSION_EMAIL = 'juan@example.com';
-const CHECKOUT_URL = 'https://mp.com/checkout/payer-email-known-throws';
 
 const defaultProps = {
     planSlug: 'plan_starter',
@@ -75,28 +72,15 @@ function mockAuthenticated() {
     });
 }
 
-function buildFetchMock() {
+/**
+ * Fetch mock whose payer-email-known response NEVER settles, freezing the
+ * island in the state it hydrates with.
+ */
+function buildNeverResolvingFetchMock() {
     return vi.fn().mockImplementation((url: string) => {
         if (url.includes('/billing/payer-email-known')) {
-            return Promise.reject(new Error('network down'));
-        }
-        if (url.includes('/billing/subscriptions/start-paid')) {
-            return Promise.resolve({
-                ok: true,
-                status: 200,
-                json: () =>
-                    Promise.resolve({
-                        data: {
-                            checkoutUrl: CHECKOUT_URL,
-                            orderId: 'order-1',
-                            amount: 120000,
-                            currency: 'ARS',
-                            expiresAt: null,
-                            appliedEffect: null,
-                            promoCodeIgnored: false,
-                            localSubscriptionId: 'sub-1'
-                        }
-                    })
+            return new Promise(() => {
+                // deliberately never resolves
             });
         }
         return Promise.resolve({
@@ -128,37 +112,19 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('PlanPurchaseButton — payer-email-known lookup throws (HOS-1234)', () => {
-    it('fails open — the dialog still appears', async () => {
+describe('PlanPurchaseButton — payer-email-known still pending (HOS-1234)', () => {
+    it('shows the dialog when the lookup has not answered yet', async () => {
         mockAuthenticated();
-        const fetchMock = buildFetchMock();
-        vi.stubGlobal('fetch', fetchMock);
+        vi.stubGlobal('fetch', buildNeverResolvingFetchMock());
         const user = userEvent.setup();
         render(<PlanPurchaseButton {...defaultProps} />);
 
-        await waitFor(() => {
-            expect(
-                fetchMock.mock.calls.some((call) =>
-                    String(call[0]).includes('/billing/payer-email-known')
-                )
-            ).toBe(true);
-        });
-
-        // Settle the lookup's rejection and the state update it triggers. The
-        // `waitFor` above only proves the request WENT OUT — the `.catch` has
-        // not run yet at that point, so clicking here would exercise the
-        // initial state and the assertion below would hold no matter what the
-        // catch resolves to. Measured: without this, mutating
-        // `.catch(() => false)` to `.catch(() => true)` left every test green.
-        await act(async () => {
-            await Promise.resolve();
-            await Promise.resolve();
-        });
-
+        // No waiting: click into the hydration state on purpose.
         await user.click(getMainButton());
 
         const dialog = await screen.findByRole('dialog');
         expect(dialog).toBeInTheDocument();
+        // And nothing was sent to MercadoPago behind the dialog's back.
         expect(window.location.href).toBe('');
     });
 });
