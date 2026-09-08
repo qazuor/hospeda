@@ -21,7 +21,7 @@
  * stdout, since the artifact under test is bash rather than a TS module.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,16 +60,50 @@ function fixture(name: string, contents: string): string {
 }
 
 /**
- * The two files the guard's inventory allows to send a plan id. Duplicated here
- * on purpose: the guard checks its inventory in BOTH directions, so every scan
- * that is supposed to end green has to include them or it fails as "stale".
- * Duplicating the list means changing the inventory breaks this file too, which
- * is the review prompt we want.
+ * The files the guard's inventory allows to send a plan id, READ OUT OF THE
+ * SCRIPT rather than restated here.
+ *
+ * It used to be a hand-kept copy, on the argument that duplicating the list
+ * made changing the inventory break this file too. It did not: the copy was
+ * only ever ADDED to the scan, and the guard judges a file by what it contains,
+ * so a stale extra entry that no longer matches `providerPriceId` simply
+ * contributes nothing. When HOS-847 removed `addon.checkout.recurring.ts` from
+ * the real inventory, this file kept listing it and stayed green — a duplicate
+ * that detects an ADDITION and is blind to a REMOVAL, which is the direction
+ * that matters, since a removal is what turns these green scans into "stale
+ * inventory" failures.
+ *
+ * Derived, the coupling is real in both directions: remove an entry from the
+ * script and every scan below picks it up on the next run.
  */
-const ALLOWED_FILES = [
-    'apps/api/src/services/billing/paid-subscription-create.ts',
-    'apps/api/src/services/addon.checkout.recurring.ts'
-];
+function readAllowedDirectFiles(): readonly string[] {
+    const source = readFileSync(SCRIPT_PATH, 'utf8');
+    const match = source.match(/^ALLOWED_DIRECT_FILES="([^"]*)"/m);
+
+    if (!match) {
+        throw new Error(
+            'Could not read ALLOWED_DIRECT_FILES out of check-no-plan-id-to-own-preapproval.sh — ' +
+                'the constant was renamed or reshaped. Fix this derivation; do not restore a hand-kept copy.'
+        );
+    }
+
+    const files = match[1]
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+    if (files.length === 0) {
+        // An empty inventory would silently turn every "expected green" scan
+        // below into a scan of the fixture alone. Refuse rather than infer.
+        throw new Error(
+            'ALLOWED_DIRECT_FILES is empty — the guard has no inventory to control for.'
+        );
+    }
+
+    return files;
+}
+
+const ALLOWED_FILES = readAllowedDirectFiles();
 
 const BASELINE_MIGRATION = 'packages/db/src/migrations/0000_baseline.sql';
 
@@ -291,5 +325,29 @@ describe('check-no-plan-id-to-own-preapproval.sh — it cannot pass vacuously', 
 
         expect(result.exitCode).toBe(1);
         expect(result.stdout).toContain("guard's inventory is stale");
+    });
+
+    it('controls for the REAL inventory, not a copy that can go stale beside it', () => {
+        // The control this file provides is only as good as the list it scans
+        // alongside each fixture. A hand-kept copy could name a file the script
+        // no longer allows and nothing would notice, because an extra path that
+        // matches nothing contributes no hits. So assert the derived list is
+        // exactly what the script itself declares — file by file, in the guard's
+        // own success output.
+        const result = runGuard({
+            SCAN_FILES_OVERRIDE: [
+                ...ALLOWED_FILES,
+                fixture('clean4.ts', 'export const ok = true;')
+            ].join('\n'),
+            SQL_FILES_OVERRIDE: BASELINE_MIGRATION
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(ALLOWED_FILES.length).toBeGreaterThan(0);
+        const declared = result.stdout
+            .split('\n')
+            .filter((line) => line.trimStart().startsWith('- '))
+            .map((line) => line.trim().slice(2));
+        expect(declared).toEqual([...ALLOWED_FILES].sort());
     });
 });
