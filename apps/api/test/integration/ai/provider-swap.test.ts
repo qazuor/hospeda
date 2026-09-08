@@ -205,7 +205,7 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
             await seedSettingsWithFallback(TEST_ACTOR_ID, []);
 
             const configA = await resolveConfig();
-            expect(configA.features.chat.fallbackChain).toEqual([]);
+            expect(configA.features.chat?.fallbackChain).toEqual([]);
 
             // Build a service instance and make a successful call (call A).
             // The service is built with `createAiService` + custom getProvider
@@ -250,7 +250,7 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
             const configB = await resolveConfig();
 
             // The fallbackChain changed — the resolver picked up the new DB row.
-            expect(configB.features.chat.fallbackChain).toEqual(newFallbackChain);
+            expect(configB.features.chat?.fallbackChain).toEqual(newFallbackChain);
 
             // ---- Call B on a new service instance (same process, no restart) ----
             // In production, `createConfiguredAiService()` is called per-request.
@@ -319,7 +319,7 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
 
             // Confirm the config in memory now reflects the swap.
             const liveConfig = await resolveConfig();
-            expect(liveConfig.features.chat.fallbackChain).toEqual(['stub']);
+            expect(liveConfig.features.chat?.fallbackChain).toEqual(['stub']);
         });
     });
 
@@ -333,7 +333,7 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
             await seedSettingsWithFallback(TEST_ACTOR_ID, []);
 
             const before = await resolveConfig();
-            expect(before.features.chat.fallbackChain).toEqual([]);
+            expect(before.features.chat?.fallbackChain).toEqual([]);
 
             // Write via saveConfig (invalidates cache as a side-effect).
             const updatedFeatureConfig = makeStubFeatureConfig(['stub']);
@@ -355,7 +355,7 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
 
             // Next resolveConfig() hits the DB (cache was cleared by saveConfig).
             const after = await resolveConfig();
-            expect(after.features.chat.fallbackChain).toEqual(['stub']);
+            expect(after.features.chat?.fallbackChain).toEqual(['stub']);
 
             // Distinct blob reference confirms a fresh read occurred.
             expect(before).not.toBe(after);

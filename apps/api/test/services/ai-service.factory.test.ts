@@ -52,8 +52,13 @@ const {
     mockStubProviderConstructor,
     MockAiProviderUnconfiguredError,
     mockApiLogger,
+    mockFindUnconfiguredFeatures,
     capturedCreateAiServiceInput
 } = vi.hoisted(() => {
+    // HOS-1220: the factory alerts when ai_settings does not configure every
+    // AI feature. Default to "everything configured" so existing tests are
+    // unaffected; the alert test overrides it.
+    const mockFindUnconfiguredFeatures = vi.fn().mockReturnValue([]);
     // Capture the input passed to createAiService so tests can inspect each field
     // with typed dot-notation access.
     const capturedCreateAiServiceInput: { current: CapturedAiServiceInput | null } = {
@@ -125,6 +130,7 @@ const {
         mockStubProviderConstructor,
         MockAiProviderUnconfiguredError,
         mockApiLogger,
+        mockFindUnconfiguredFeatures,
         capturedCreateAiServiceInput
     };
 });
@@ -158,7 +164,10 @@ vi.mock('@repo/ai-core', () => {
         AiFeatureNotConfiguredError,
         // resolveConfig: returns minimal config with no moderation field by default
         // (opt-in disabled). Tests that need a moderation provider must override this.
-        resolveConfig: vi.fn().mockResolvedValue({ providers: {}, features: {} })
+        resolveConfig: vi.fn().mockResolvedValue({ providers: {}, features: {} }),
+        // HOS-1220: detection helper the factory calls to alert on an
+        // incomplete feature configuration.
+        findUnconfiguredFeatures: mockFindUnconfiguredFeatures
     };
 });
 
@@ -535,5 +544,53 @@ describe('plaintext key safety', () => {
             const serialised = JSON.stringify(callArgs);
             expect(serialised).not.toContain(plaintextKey);
         }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 11. Incomplete AI feature configuration is alerted, not swallowed (HOS-1220)
+// ---------------------------------------------------------------------------
+
+describe('incomplete ai_settings feature configuration (HOS-1220)', () => {
+    beforeEach(() => {
+        mockFindUnconfiguredFeatures.mockReturnValue([]);
+    });
+
+    it('should log an ERROR naming the features nobody configured', async () => {
+        // Arrange — the exact shape of the outage: the two features HOS-400
+        // added, absent from a blob that configures the other seven.
+        mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy', 'chat_experience']);
+
+        // Act
+        await createConfiguredAiService();
+
+        // Assert — `error`, not `warn`: an AI feature the platform cannot route
+        // is a defect an operator has to fix.
+        const errorCalls = mockApiLogger.error.mock.calls;
+        expect(errorCalls.length).toBeGreaterThan(0);
+
+        const serialised = JSON.stringify(errorCalls);
+        expect(serialised).toContain('chat_gastronomy');
+        expect(serialised).toContain('chat_experience');
+    });
+
+    it('should NOT throw — an unconfigured feature must not break service construction', async () => {
+        // Arrange — failing here would recreate the very outage this fixes.
+        mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy']);
+
+        // Act + Assert
+        await expect(createConfiguredAiService()).resolves.toBeDefined();
+    });
+
+    it('should stay silent when every feature is configured', async () => {
+        // Arrange
+        mockFindUnconfiguredFeatures.mockReturnValue([]);
+
+        // Act
+        await createConfiguredAiService();
+
+        // Assert — no false alarm on a correctly configured platform.
+        const serialised = JSON.stringify(mockApiLogger.error.mock.calls);
+        expect(serialised).not.toContain('does not configure every AI feature');
     });
 });

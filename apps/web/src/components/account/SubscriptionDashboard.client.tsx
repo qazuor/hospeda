@@ -22,12 +22,15 @@ import { billingApi, userApi } from '@/lib/api/endpoints-protected';
 import type { ProductDomainScope } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import type { CommercePlanOption } from '@/lib/commerce/plan-options';
 import { getAdminUrl } from '@/lib/env';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
+import { CommercePlanChange } from '../commerce/CommercePlanChange.client';
 import { PlanChangeFlow } from './PlanChangeFlow.client';
 import { PlanUsageSection } from './PlanUsageSection.client';
 import styles from './SubscriptionDashboard.module.css';
@@ -84,6 +87,17 @@ export interface SubscriptionDashboardProps {
      */
     readonly plans?: readonly PublicPlanData[];
     /**
+     * This vertical's tiers, when `productDomain` is a commerce one (HOS-1213).
+     *
+     * A commerce subscription changes tiers through `CommercePlanChange` and its
+     * own `POST /protected/commerce/{vertical}/change-plan`, never through
+     * `PlanChangeFlow` — so its catalogue arrives as a separate prop rather than
+     * being squeezed into `plans`. Passing the two through one field is what
+     * produced the bug: with a single list, a commerce dashboard rendered the
+     * accommodation flow over whatever plans happened to be in it.
+     */
+    readonly commercePlans?: readonly CommercePlanOption[];
+    /**
      * Which of the caller's subscriptions to load (HOS-259). A dual-role
      * owner (accommodation host AND commerce-listing owner) can have TWO
      * subscriptions under the same billing customer; this scopes both the
@@ -91,6 +105,18 @@ export interface SubscriptionDashboardProps {
      * `'accommodation'` server-side when omitted (see `userApi.getSubscription`).
      */
     readonly productDomain?: ProductDomainScope;
+}
+
+/**
+ * Whether this dashboard is showing a COMMERCE vertical's subscription.
+ *
+ * Narrows `ProductDomainScope` to the two verticals `CommercePlanChange`
+ * accepts. Written as an inclusion list so a domain added later (`partner`, say)
+ * is excluded until somebody decides what its plan change looks like, rather
+ * than being handed to a component built for gastronomy and experience.
+ */
+function isCommerceVertical(domain: ProductDomainScope | undefined): domain is CommerceVertical {
+    return domain === 'gastronomy' || domain === 'experience';
 }
 
 // ---------------------------------------------------------------------------
@@ -621,9 +647,17 @@ export function SubscriptionDashboard({
     locale,
     user,
     plans,
+    commercePlans,
     productDomain
 }: SubscriptionDashboardProps) {
     const { t } = createTranslations(locale);
+
+    /**
+     * HOS-1213: a commerce vertical's subscription never uses the accommodation
+     * plan-change flow. Resolved once here so the CTA and the modal below cannot
+     * disagree about which flow this dashboard offers.
+     */
+    const commerceVertical = isCommerceVertical(productDomain) ? productDomain : null;
 
     // ── State ──────────────────────────────────────────────────────────────
 
@@ -1146,40 +1180,58 @@ export function SubscriptionDashboard({
                     </div>
                 )}
 
-                {plans && plans.length > 0 ? (
-                    <button
-                        type="button"
-                        className={styles.btnSecondary}
-                        disabled={!canChangePlan}
-                        onClick={() => {
-                            if (!canChangePlan) return;
-                            setShowPlanChangeFlow(true);
-                        }}
-                        aria-label={t(
-                            'account.pages.subscription.changePlanAriaLabel',
-                            'Cambiar plan de suscripción'
-                        )}
-                    >
-                        <ArrowRightIcon
-                            size={16}
-                            weight="regular"
-                            aria-hidden="true"
-                        />
-                        {t('account.pages.subscription.changePlanButton', 'Cambiar plan')}
-                    </button>
-                ) : (
-                    <a
-                        href={plansHref}
-                        className={styles.upgradeLink}
-                    >
-                        <ArrowRightIcon
-                            size={16}
-                            weight="regular"
-                            aria-hidden="true"
-                        />
-                        {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
-                    </a>
-                )}
+                {/* HOS-1213: a commerce vertical brings its OWN CTA + flow.
+                    `CommercePlanChange` renders the button itself and returns
+                    null when the vertical has no other tier to move to, which is
+                    why this branch is not gated on a plan count the way the
+                    accommodation one is. `canChangePlan` still gates it: that
+                    predicate mirrors the backend's own `active | trialing` find,
+                    and the commerce route answers the same way. */}
+                {commerceVertical === null ? (
+                    plans && plans.length > 0 ? (
+                        <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            disabled={!canChangePlan}
+                            onClick={() => {
+                                if (!canChangePlan) return;
+                                setShowPlanChangeFlow(true);
+                            }}
+                            aria-label={t(
+                                'account.pages.subscription.changePlanAriaLabel',
+                                'Cambiar plan de suscripción'
+                            )}
+                        >
+                            <ArrowRightIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {t('account.pages.subscription.changePlanButton', 'Cambiar plan')}
+                        </button>
+                    ) : (
+                        <a
+                            href={plansHref}
+                            className={styles.upgradeLink}
+                        >
+                            <ArrowRightIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
+                        </a>
+                    )
+                ) : canChangePlan && subscription ? (
+                    <CommercePlanChange
+                        vertical={commerceVertical}
+                        currentPlanSlug={subscription.planSlug}
+                        currentPlanName={subscription.planName}
+                        plans={commercePlans ?? []}
+                        currentPeriodEnd={subscription.currentPeriodEnd}
+                        locale={locale}
+                    />
+                ) : null}
             </section>
 
             {/* ── Features card — rendered only when plan features are available ── */}
@@ -1426,25 +1478,34 @@ export function SubscriptionDashboard({
                 />
             )}
 
-            {/* ── Plan-change flow modal (SPEC-203 T-005/T-007/T-008/T-009) ── */}
-            {showPlanChangeFlow && plans && plans.length > 0 && subscription && (
-                <PlanChangeFlow
-                    plans={plans}
-                    currentPlanSlug={subscription.planSlug}
-                    locale={locale}
-                    onChanged={() => {
-                        // Silent refresh (no loading spinner) so the flow's result
-                        // step stays mounted. fetchData() would set isLoading=true,
-                        // unmount the dashboard, and reset PlanChangeFlow's internal
-                        // step back to 'picker' — making a just-confirmed change look
-                        // like nothing happened. Mirrors the cancel-modal path.
-                        void refreshSilently();
-                    }}
-                    onDismiss={() => {
-                        setShowPlanChangeFlow(false);
-                    }}
-                />
-            )}
+            {/* ── Plan-change flow modal (SPEC-203 T-005/T-007/T-008/T-009) ──
+               `commerceVertical === null` is defence in depth (HOS-1213): the CTA
+               that sets `showPlanChangeFlow` is not rendered on a commerce
+               dashboard, so this can only fire if a future edit reintroduces one.
+               It is cheap, and what it prevents is a commerce subscription being
+               offered accommodation plans — the exact bug this closes. */}
+            {showPlanChangeFlow &&
+                commerceVertical === null &&
+                plans &&
+                plans.length > 0 &&
+                subscription && (
+                    <PlanChangeFlow
+                        plans={plans}
+                        currentPlanSlug={subscription.planSlug}
+                        locale={locale}
+                        onChanged={() => {
+                            // Silent refresh (no loading spinner) so the flow's result
+                            // step stays mounted. fetchData() would set isLoading=true,
+                            // unmount the dashboard, and reset PlanChangeFlow's internal
+                            // step back to 'picker' — making a just-confirmed change look
+                            // like nothing happened. Mirrors the cancel-modal path.
+                            void refreshSilently();
+                        }}
+                        onDismiss={() => {
+                            setShowPlanChangeFlow(false);
+                        }}
+                    />
+                )}
         </div>
     );
 }

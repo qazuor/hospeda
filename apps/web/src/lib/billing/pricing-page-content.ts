@@ -40,6 +40,11 @@
 
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { computeMinimumTrialDays } from '@/lib/billing/generic-trial-days';
+import type { PricingPriceMode } from '@/lib/billing/price-on-request-audiences';
+import {
+    isPriceOnRequestAudience,
+    resolvePriceMode
+} from '@/lib/billing/price-on-request-audiences';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { PluralTranslationFn, TranslationFn } from '@/lib/i18n';
 
@@ -84,6 +89,15 @@ export interface PricingPageContent {
     readonly faqs: readonly BillingFaqItem[];
     /** Whether this audience's comparison table exists at all. */
     readonly hasComparison: boolean;
+    /**
+     * What the cards render where the amount goes.
+     *
+     * Resolved here rather than written at the page (HOS-1212): aliados used to
+     * pass the literal `priceMode="consult"`, which left the decision invisible
+     * to the plan index — and the index went on advertising the ARS 15.000 this
+     * page withholds. Derived, the two cannot disagree.
+     */
+    readonly priceMode: PricingPriceMode;
 }
 
 /**
@@ -142,10 +156,13 @@ const SHARED_BILLING_FAQ_KEYS: readonly (readonly [string, string])[] = [
  * once, which is why it is resolved here rather than left as a key for the
  * template:
  *
- * - Aliados replaces it entirely. Asking "can I try it before paying" of an
- *   audience with no published price answers a question nobody asked; the
- *   honest first question there is why there is no price, and the answer is the
- *   owner's own (HOS-941 D-13).
+ * - A price-on-request audience replaces it entirely. Asking "can I try it
+ *   before paying" of an audience with no published price answers a question
+ *   nobody asked; the honest first question there is why there is no price, and
+ *   the answer is the owner's own (HOS-941 D-13). The condition reads
+ *   `isPriceOnRequestAudience` and no longer `audience === 'partner'`: that
+ *   comparison was one of the three independent spellings of this same decision
+ *   that let the plan index keep advertising a figure (HOS-1212).
  * - Everyone else interpolates `trialDays` — or, when it is `null`, states
  *   plainly that these plans have no trial. A missing trial gets its own
  *   sentence rather than the clause being spliced out, because the number sits
@@ -167,19 +184,18 @@ function buildBillingFaq({
 }): readonly BillingFaqItem[] {
     const { t, tPlural } = translators;
 
-    const first: BillingFaqItem =
-        audience === 'partner'
-            ? {
-                  q: t('pricing.billingFaq.partnerPriceQ'),
-                  a: t('pricing.billingFaq.partnerPriceA')
-              }
-            : {
-                  q: t('pricing.billingFaq.trialQ'),
-                  a:
-                      trialDays === null
-                          ? t('pricing.billingFaq.trialANone')
-                          : tPlural('pricing.billingFaq.trialA', trialDays)
-              };
+    const first: BillingFaqItem = isPriceOnRequestAudience({ audience })
+        ? {
+              q: t('pricing.billingFaq.partnerPriceQ'),
+              a: t('pricing.billingFaq.partnerPriceA')
+          }
+        : {
+              q: t('pricing.billingFaq.trialQ'),
+              a:
+                  trialDays === null
+                      ? t('pricing.billingFaq.trialANone')
+                      : tPlural('pricing.billingFaq.trialA', trialDays)
+          };
 
     return [first, ...SHARED_BILLING_FAQ_KEYS.map(([qKey, aKey]) => ({ q: t(qKey), a: t(aKey) }))];
 }
@@ -198,7 +214,8 @@ function buildBillingFaq({
  *   `fetchAudiencePlans`. May be empty — a failed fetch and an audience with no
  *   sellable plan reach this function identically, and must leave it identically.
  * @param params.translators - The page's `t` / `tPlural`.
- * @returns The page's copy root, trial length, billing FAQ and comparison flag.
+ * @returns The page's copy root, trial length, billing FAQ, comparison flag and
+ *   price mode.
  */
 export function resolvePricingPageContent({
     audience,
@@ -215,7 +232,8 @@ export function resolvePricingPageContent({
         copyRoot: COPY_ROOT_BY_AUDIENCE[audience],
         trialDays,
         faqs: buildBillingFaq({ audience, trialDays, translators }),
-        hasComparison: AUDIENCES_WITH_COMPARISON.has(audience) && plans.length > 0
+        hasComparison: AUDIENCES_WITH_COMPARISON.has(audience) && plans.length > 0,
+        priceMode: resolvePriceMode({ audience })
     };
 }
 

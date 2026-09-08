@@ -25,6 +25,11 @@ export const PLAYGROUND_SUPPORTED_FEATURES: readonly AiFeatureId[] = ['chat', 's
  */
 export const PLAYGROUND_UNSUPPORTED_REASON: Readonly<Partial<Record<AiFeatureId, string>>> = {
     text_improve: 'requiere tipo de campo',
+    // HOS-400 split the chat per vertical. The Playground's entity picker is an
+    // accommodation combobox, so it cannot reference a gastronomy or experience
+    // listing to chat about — the capability is the same, the fixture is not.
+    chat_gastronomy: 'requiere una ficha de gastronomía',
+    chat_experience: 'requiere una ficha de experiencia',
     support: 'sin endpoint',
     translate: 'usá su propia página',
     accommodation_import: 'usá importar por URL',

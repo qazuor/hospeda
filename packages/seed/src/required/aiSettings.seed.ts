@@ -29,7 +29,12 @@
  * @module seed/required/aiSettings
  */
 
-import { DEFAULT_COST_CEILINGS, readAiSettings, writeAiSettings } from '@repo/ai-core';
+import {
+    DEFAULT_COST_CEILINGS,
+    findUnconfiguredFeatures,
+    readAiSettings,
+    writeAiSettings
+} from '@repo/ai-core';
 import { SYSTEM_USER_ID } from '@repo/db';
 import type { AiSettingsValue } from '@repo/schemas';
 import { logger } from '../utils/logger.js';
@@ -68,8 +73,29 @@ export async function seedAiSettings(): Promise<void> {
         return;
     }
 
+    // Reads are fail-open per feature since HOS-1220, so `existing` may now be a
+    // blob that does not configure every `AiFeature`. Writes are NOT fail-open:
+    // `writeAiSettings` validates against the full-record schema and would throw,
+    // aborting the whole seed run over a config gap this seed has no business
+    // filling — inventing a provider and model for a feature is an operator
+    // decision, the same reason the `existing === null` branch above skips.
+    //
+    // So skip, loudly. The ceilings stay enforced meanwhile: the runtime fallback
+    // in `checkCostCeiling` applies `DEFAULT_COST_CEILINGS` whenever the blob has
+    // no `costCeilings`, which is exactly the state being left in place.
+    const unconfiguredFeatures = findUnconfiguredFeatures({ settings: existing });
+    if (unconfiguredFeatures.length > 0) {
+        logger.info(
+            `  → AI settings: blob does not configure ${unconfiguredFeatures.join(', ')} — costCeilings active via runtime fallback, seed skipped`
+        );
+        return;
+    }
+
+    // The guard above proved every `AiFeature` key is present, which is the only
+    // difference between the read-side blob and the write-side one. The write
+    // re-validates against the full schema regardless.
     const merged: AiSettingsValue = {
-        ...existing,
+        ...(existing as AiSettingsValue),
         costCeilings: DEFAULT_COST_CEILINGS
     };
 
