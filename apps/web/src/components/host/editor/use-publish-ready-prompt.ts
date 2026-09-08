@@ -28,7 +28,7 @@
  */
 
 import type { AccommodationPublishReadinessInput } from '@repo/schemas';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { publishApi } from '@/lib/api/endpoints-protected';
 import { shouldPromptPublishReady } from '@/lib/editor/publish-ready-prompt';
 import { webLogger as logger } from '@/lib/logger';
@@ -103,5 +103,12 @@ export function usePublishReadyPrompt(): PublishReadyPrompt {
         []
     );
 
-    return { isOpen, startsTrial, close, evaluate };
+    // Memoised because `PhotoSection` puts this handle in a `useEffect`
+    // dependency array. A fresh object every render would re-run that effect on
+    // every render — harmless, since its refs short-circuit, but it makes "when
+    // does this fire" impossible to answer by reading it.
+    return useMemo(
+        () => ({ isOpen, startsTrial, close, evaluate }),
+        [isOpen, startsTrial, close, evaluate]
+    );
 }
