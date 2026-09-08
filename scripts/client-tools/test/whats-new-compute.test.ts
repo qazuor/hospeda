@@ -25,10 +25,23 @@ function makeDeps(overrides: Partial<ComputeDeps> = {}): ComputeDeps {
         resolveSlug: async () => 'qazuor/hospeda2',
         resolvePr: async () => ({ ok: true, prs: [PR] }),
         readTimestamp: async () => 500,
-        readCutoff: () => null,
+        resolveCutoff: async () => ({ kind: 'derived', sha: 'c'.repeat(40) }),
         ...overrides
     };
 }
+
+/** The clean-result shape the exit-code tests assert against. */
+const EMPTY_RESULT = {
+    evaluated: [],
+    unlabeled: [],
+    conflicting: [],
+    botExempt: [],
+    preCutoff: [],
+    unresolvedCommits: [],
+    mismatches: [],
+    cutoffConfigured: true,
+    cutoff: { source: 'derived' as const, sha: 'c'.repeat(40) }
+};
 
 describe('computeAudit', () => {
     it('should classify a clean range end to end', async () => {
@@ -84,23 +97,53 @@ describe('computeAudit', () => {
         if (!outcome.ok) expect(outcome.reason).toContain('owner/repo');
     });
 
-    it('should return NOT-OK when a configured cutoff SHA does not resolve to a commit', async () => {
-        const outcome = await computeAudit({
-            repoRoot: '/repo',
-            cwd: '/repo',
-            deps: makeDeps({ readCutoff: () => 'deadbeef', readTimestamp: async () => null })
-        });
-
-        expect(outcome.ok).toBe(false);
-        if (!outcome.ok) expect(outcome.reason).toContain('deadbeef');
-    });
-
-    it('should pass the resolved cutoff timestamp through to classification', async () => {
+    it('should return NOT-OK when a pinned cutoff SHA does not resolve to a commit', async () => {
         const outcome = await computeAudit({
             repoRoot: '/repo',
             cwd: '/repo',
             deps: makeDeps({
-                readCutoff: () => 'deadbeef',
+                resolveCutoff: async () => ({ kind: 'override', sha: 'deadbeef' }),
+                readTimestamp: async () => null
+            })
+        });
+
+        expect(outcome.ok).toBe(false);
+        if (!outcome.ok) {
+            expect(outcome.reason).toContain('deadbeef');
+            expect(outcome.reason).toContain('whats-new-gate-cutoff.txt');
+        }
+    });
+
+    // --- AC-18: an underivable cutoff is "I do not know", never "no cutoff" ---
+    it('should return NOT-OK (exit 3) when the cutoff cannot be derived at all', async () => {
+        const outcome = await computeAudit({
+            repoRoot: '/repo',
+            cwd: '/repo',
+            deps: makeDeps({
+                resolveCutoff: async () => ({
+                    kind: 'underivable',
+                    reason: 'ningún commit agrega .github/workflows/whats-new-gate.yml'
+                }),
+                resolvePr: async () => ({ ok: true, prs: [{ ...PR, labels: [] }] })
+            })
+        });
+
+        // The fail-open this guards: continuing with `cutoffTimestamp = null`
+        // would produce a perfectly well-formed result in which NO PR is
+        // pre-cutoff, and the operator would read a list of hundreds of
+        // "unevaluated" PRs as a real finding.
+        expect(outcome.ok).toBe(false);
+        if (!outcome.ok) expect(outcome.reason).toContain('whats-new-gate.yml');
+        expect(exitCodeForOutcome({ outcome })).toBe(3);
+        expect(exitCodeForOutcome({ outcome })).not.toBe(1);
+    });
+
+    it('should pass the resolved cutoff timestamp and its provenance through to classification', async () => {
+        const outcome = await computeAudit({
+            repoRoot: '/repo',
+            cwd: '/repo',
+            deps: makeDeps({
+                resolveCutoff: async () => ({ kind: 'derived', sha: 'deadbeef' }),
                 readTimestamp: async () => 1000, // equals the commit's own timestamp
                 resolvePr: async () => ({ ok: true, prs: [{ ...PR, labels: [] }] })
             })
@@ -110,7 +153,19 @@ describe('computeAudit', () => {
         if (outcome.ok) {
             expect(outcome.result.preCutoff).toHaveLength(1);
             expect(outcome.result.cutoffConfigured).toBe(true);
+            expect(outcome.result.cutoff).toEqual({ source: 'derived', sha: 'deadbeef' });
         }
+    });
+
+    it('should resolve the cutoff even when the range is empty, so its provenance is always reported', async () => {
+        const outcome = await computeAudit({
+            repoRoot: '/repo',
+            cwd: '/repo',
+            deps: makeDeps({ enumerate: async () => [] })
+        });
+
+        expect(outcome.ok).toBe(true);
+        if (outcome.ok) expect(outcome.result.cutoff?.source).toBe('derived');
     });
 
     it('should stop at the first commit that fails to resolve, never partially reporting', async () => {
@@ -144,16 +199,7 @@ describe('exitCodeForOutcome', () => {
     it('should map a clean OK outcome to exit 0', () => {
         const outcome = {
             ok: true as const,
-            result: {
-                evaluated: [],
-                unlabeled: [],
-                conflicting: [],
-                botExempt: [],
-                preCutoff: [],
-                unresolvedCommits: [],
-                mismatches: [],
-                cutoffConfigured: true
-            }
+            result: EMPTY_RESULT
         };
 
         expect(exitCodeForOutcome({ outcome })).toBe(0);
@@ -163,20 +209,14 @@ describe('exitCodeForOutcome', () => {
         const outcome = {
             ok: true as const,
             result: {
-                evaluated: [],
+                ...EMPTY_RESULT,
                 unlabeled: [
                     {
                         sha: 'a'.repeat(40),
                         pr: PR,
                         outcome: { kind: 'unlabeled' as const }
                     }
-                ],
-                conflicting: [],
-                botExempt: [],
-                preCutoff: [],
-                unresolvedCommits: [],
-                mismatches: [],
-                cutoffConfigured: true
+                ]
             }
         };
 
@@ -189,16 +229,7 @@ describe('exitCodeForOutcome', () => {
         const okClean = exitCodeForOutcome({
             outcome: {
                 ok: true as const,
-                result: {
-                    evaluated: [],
-                    unlabeled: [],
-                    conflicting: [],
-                    botExempt: [],
-                    preCutoff: [],
-                    unresolvedCommits: [],
-                    mismatches: [],
-                    cutoffConfigured: true
-                }
+                result: EMPTY_RESULT
             }
         });
 

@@ -40,6 +40,17 @@ export interface SubjectMismatch {
     readonly subjectNumber: number;
 }
 
+/** Where the cutoff the audit applied came from (HOS-1214 D-6). */
+export interface CutoffProvenance {
+    /**
+     * `derived` — the commit that added the gate workflow (the normal case).
+     * `override` — a SHA pinned in `scripts/whats-new-gate-cutoff.txt`.
+     */
+    readonly source: 'derived' | 'override';
+    /** The SHA that was applied. */
+    readonly sha: string;
+}
+
 /** The audit's full, classified result. */
 export interface AuditResult {
     /** PRs carrying exactly one decision label. */
@@ -56,8 +67,16 @@ export interface AuditResult {
     readonly unresolvedCommits: readonly UnresolvedCommit[];
     /** API/subject disagreements, reported but never resolved automatically. */
     readonly mismatches: readonly SubjectMismatch[];
-    /** Whether a cutoff SHA was configured at all (see `cutoff.ts`). */
+    /** Whether a cutoff SHA was resolved at all (see `cutoff.ts`). */
     readonly cutoffConfigured: boolean;
+    /**
+     * Where that cutoff came from, or `null` when none was resolved.
+     *
+     * Reported rather than assumed: "derived from commit X" and "pinned by
+     * hand to commit X" answer the same question but have different remedies
+     * when the number of exempt PRs looks wrong.
+     */
+    readonly cutoff: CutoffProvenance | null;
 }
 
 /**
@@ -75,16 +94,19 @@ export interface AuditResult {
  *
  * @param input.resolutions      - Every commit in the range, with its
  *                                  API-resolved PRs.
- * @param input.cutoffTimestamp  - Unix seconds for the configured cutoff, or
- *                                  `null` when none is configured.
+ * @param input.cutoffTimestamp  - Unix seconds for the resolved cutoff, or
+ *                                  `null` when none was resolved.
+ * @param input.cutoff           - Where that cutoff came from, for the report.
  * @returns The {@link AuditResult}.
  */
 export function buildAuditResult({
     resolutions,
-    cutoffTimestamp
+    cutoffTimestamp,
+    cutoff = null
 }: {
     readonly resolutions: readonly CommitResolution[];
     readonly cutoffTimestamp: number | null;
+    readonly cutoff?: CutoffProvenance | null;
 }): AuditResult {
     const evaluated: AuditedPr[] = [];
     const unlabeled: AuditedPr[] = [];
@@ -125,7 +147,8 @@ export function buildAuditResult({
         preCutoff,
         unresolvedCommits,
         mismatches,
-        cutoffConfigured: cutoffTimestamp !== null
+        cutoffConfigured: cutoffTimestamp !== null,
+        cutoff
     };
 }
 

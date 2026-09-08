@@ -31,9 +31,12 @@ ${pc.bold('Uso')}
 ${pc.bold('Qué exime')}
 
   ${pc.dim('· Autor dependabot[bot] / github-actions[bot] — nunca puede decidir.')}
-  ${pc.dim('· Merge commit anterior al cutoff configurado en')}
-  ${pc.dim('  scripts/whats-new-gate-cutoff.txt (fuente única, compartida con el')}
-  ${pc.dim('  workflow de CI que audita la promoción).')}
+  ${pc.dim('· Merge commit anterior al cutoff, que se DERIVA: es el commit que')}
+  ${pc.dim('  agregó .github/workflows/whats-new-gate.yml («desde que la regla')}
+  ${pc.dim('  existe»). Sin configuración. scripts/whats-new-gate-cutoff.txt es')}
+  ${pc.dim('  un override opcional: si trae un SHA, gana.')}
+  ${pc.dim('  Si la derivación no encuentra nada (¿se renombró el workflow?), no')}
+  ${pc.dim('  hay fallback silencioso: sale 3 y lo dice.')}
 
 ${pc.bold('Códigos de salida')}
 

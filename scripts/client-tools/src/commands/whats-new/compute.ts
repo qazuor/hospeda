@@ -4,7 +4,7 @@ import {
     type CommitResolution,
     exitCodeForAudit
 } from './audit-core.ts';
-import { readCutoffSha } from './cutoff.ts';
+import { type CutoffResolution, resolveCutoff } from './cutoff.ts';
 import {
     enumerateFirstParentCommits,
     type PrResolution,
@@ -24,15 +24,16 @@ export type ComputeOutcome =
  *
  * Defaults to the real implementations in `range.ts` and `cutoff.ts`. Tests
  * override individual entries to simulate exactly one failure at a time —
- * most importantly a GitHub API outage (AC-13) — without spawning a real
- * `git`/`gh` process or depending on network access.
+ * most importantly a GitHub API outage (AC-13) and an underivable cutoff
+ * (AC-18) — without spawning a real `git`/`gh` process or depending on
+ * network access.
  */
 export interface ComputeDeps {
     readonly enumerate: typeof enumerateFirstParentCommits;
     readonly resolveSlug: typeof resolveRepoSlug;
     readonly resolvePr: typeof resolvePrsForCommit;
     readonly readTimestamp: typeof readCommitTimestamp;
-    readonly readCutoff: typeof readCutoffSha;
+    readonly resolveCutoff: typeof resolveCutoff;
 }
 
 /** The real dependencies, used outside tests. */
@@ -41,7 +42,7 @@ export const REAL_DEPS: ComputeDeps = {
     resolveSlug: resolveRepoSlug,
     resolvePr: resolvePrsForCommit,
     readTimestamp: readCommitTimestamp,
-    readCutoff: readCutoffSha
+    resolveCutoff
 };
 
 /**
@@ -54,8 +55,8 @@ export const REAL_DEPS: ComputeDeps = {
  * label PRs) is not the remedy for an outage (wait and retry), and a false `1`
  * sends someone to fix PRs that were already fine.
  *
- * @param input.repoRoot - Repository root (where {@link readCutoffSha} reads
- *                          the single source of truth from).
+ * @param input.repoRoot - Repository root (where the optional cutoff override
+ *                          file is read from).
  * @param input.cwd      - Directory to run `git`/`gh` from (may be a worktree).
  * @param input.deps     - Injectable seam, defaulting to {@link REAL_DEPS}.
  * @returns The {@link ComputeOutcome}.
@@ -87,19 +88,26 @@ export async function computeAudit({
         };
     }
 
-    const cutoffSha = deps.readCutoff({ repoRoot });
-    let cutoffTimestamp: number | null = null;
-    if (cutoffSha !== null) {
-        const timestamp = await deps.readTimestamp({ sha: cutoffSha, cwd });
-        if (timestamp === null) {
-            return {
-                ok: false,
-                reason:
-                    `El cutoff configurado (${cutoffSha}) no resuelve a un commit. ` +
-                    'Revisá scripts/whats-new-gate-cutoff.txt.'
-            };
-        }
-        cutoffTimestamp = timestamp;
+    // The cutoff is DERIVED, not configured (D-6). A derivation that comes back
+    // empty is an explicit `underivable`, which becomes exit 3 here rather than
+    // a silent "no cutoff" — see `resolveCutoff`'s docblock for why that
+    // silence would be the dangerous answer.
+    const cutoff: CutoffResolution = await deps.resolveCutoff({ repoRoot, cwd });
+    if (cutoff.kind === 'underivable') {
+        return { ok: false, reason: cutoff.reason };
+    }
+
+    const cutoffTimestamp = await deps.readTimestamp({ sha: cutoff.sha, cwd });
+    if (cutoffTimestamp === null) {
+        return {
+            ok: false,
+            reason:
+                `El cutoff ${cutoff.kind === 'override' ? 'fijado' : 'derivado'} (${cutoff.sha}) ` +
+                'no resuelve a un commit. ' +
+                (cutoff.kind === 'override'
+                    ? 'Revisá scripts/whats-new-gate-cutoff.txt.'
+                    : '¿El checkout tiene historia completa (fetch-depth: 0)?')
+        };
     }
 
     const resolutions: CommitResolution[] = [];
@@ -114,7 +122,14 @@ export async function computeAudit({
         resolutions.push({ commit, prs: resolved.prs });
     }
 
-    return { ok: true, result: buildAuditResult({ resolutions, cutoffTimestamp }) };
+    return {
+        ok: true,
+        result: buildAuditResult({
+            resolutions,
+            cutoffTimestamp,
+            cutoff: { source: cutoff.kind, sha: cutoff.sha }
+        })
+    };
 }
 
 /** First line of a (possibly multi-line) error message, for a one-line report. */

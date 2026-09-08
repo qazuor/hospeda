@@ -12,6 +12,7 @@ function makeResult(overrides: Partial<AuditResult> = {}): AuditResult {
         unresolvedCommits: [],
         mismatches: [],
         cutoffConfigured: true,
+        cutoff: { source: 'derived', sha: 'c'.repeat(40) },
         ...overrides
     };
 }
@@ -24,16 +25,30 @@ describe('renderAuditReport', () => {
         expect(report).not.toContain('#');
     });
 
-    it('should warn explicitly when the cutoff is not configured', () => {
-        const report = renderAuditReport({ result: makeResult({ cutoffConfigured: false }) });
+    it('should say the cutoff was DERIVED, and from what, on a clean report', () => {
+        const report = renderAuditReport({ result: makeResult() });
 
-        expect(report).toContain('Cutoff not configured');
+        expect(report).toContain('Cutoff: ccccccccc');
+        expect(report).toContain('derived');
+        expect(report).toContain('.github/workflows/whats-new-gate.yml');
     });
 
-    it('should NOT warn about the cutoff when it is configured', () => {
-        const report = renderAuditReport({ result: makeResult({ cutoffConfigured: true }) });
+    it('should say the cutoff was PINNED by hand when an override is in play', () => {
+        const report = renderAuditReport({
+            result: makeResult({ cutoff: { source: 'override', sha: 'd'.repeat(40) } })
+        });
 
-        expect(report).not.toContain('Cutoff not configured');
+        expect(report).toContain('scripts/whats-new-gate-cutoff.txt');
+        expect(report).toContain('override');
+        expect(report).not.toContain('derived');
+    });
+
+    it('should say plainly when no cutoff was applied at all', () => {
+        const report = renderAuditReport({
+            result: makeResult({ cutoffConfigured: false, cutoff: null })
+        });
+
+        expect(report).toContain('no PR was exempted by age');
     });
 
     it('should name unlabeled PRs by number and title, never say "something is missing"', () => {
