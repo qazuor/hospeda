@@ -498,7 +498,7 @@ interface EnsurePriceInput {
  * That is HOS-1221's bug D3: a PAID subscription born marked `trialing` for 30
  * days with the customer already charged. A column nobody reads and that can
  * poison a paid subscription should hold no value, so the mirror is gone from
- * the baseline and `0101-hos-1224-*` nulls the rows already written.
+ * the baseline and `0102-hos-1224-*` nulls the rows already written.
  * `scripts/check-no-price-trial-days.sh` keeps it from coming back.
  *
  * `db` is injectable for tests; production callers omit it.

@@ -15,7 +15,7 @@
  */
 
 import { readAiSettings, resolveConfig, saveConfig } from '@repo/ai-core';
-import type { AiSettingsResponse, AiSettingsValue } from '@repo/schemas';
+import type { AiSettingsResponse, AiSettingsValueResponse } from '@repo/schemas';
 import {
     AiSettingsResponseSchema,
     AiSettingsValueSchema,
@@ -59,7 +59,12 @@ const getSettingsRoute = createAdminRoute({
     responseSchema: AiSettingsResponseSchema,
     handler: async (): Promise<AiSettingsResponse> => {
         // Resolve the config blob (cache-aware).
-        const value: AiSettingsValue = await resolveConfig();
+        // Typed with the READ-side blob (partial `features`), matching this
+        // route's own `AiSettingsResponseSchema`. The PUT below still takes the
+        // full `AiSettingsValueSchema`, so the write contract is unchanged —
+        // only reads tolerate a feature the operator has not configured yet
+        // (HOS-1220).
+        const value: AiSettingsValueResponse = await resolveConfig();
 
         // Attempt to read the raw row for accurate metadata (updatedAt / updatedBy).
         const updatedAt = EPOCH_ISO;

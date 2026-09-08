@@ -239,6 +239,90 @@ describe('readAiSettings', () => {
         });
     });
 
+    describe('when the stored blob is missing feature keys (HOS-1220)', () => {
+        /**
+         * The blob every live environment actually held: the seven features
+         * that predate HOS-400, without the two per-vertical chats it added.
+         */
+        const buildRowMissingCommerceChats = () => {
+            const features = { ...VALID_SETTINGS_BLOB.features } as Record<string, unknown>;
+            delete features.chat_gastronomy;
+            delete features.chat_experience;
+            return {
+                ...VALID_SETTINGS_ROW,
+                value: { ...VALID_SETTINGS_BLOB, features }
+            };
+        };
+
+        it('should NOT throw — an unconfigured feature must not take the others down', async () => {
+            // Arrange
+            mockGetDb.mockReturnValue({
+                select: buildSelectChain([buildRowMissingCommerceChats()])
+            });
+
+            // Act
+            const result = await readAiSettings();
+
+            // Assert
+            expect(result).not.toBeNull();
+        });
+
+        it('should still return the features that ARE configured', async () => {
+            // Arrange
+            mockGetDb.mockReturnValue({
+                select: buildSelectChain([buildRowMissingCommerceChats()])
+            });
+
+            // Act
+            const result = await readAiSettings();
+
+            // Assert
+            expect(result?.features.text_improve?.enabled).toBe(true);
+            expect(result?.features.chat?.primaryProvider).toBe('anthropic');
+        });
+
+        it('should report the missing features as absent, not as an empty config', async () => {
+            // Arrange
+            mockGetDb.mockReturnValue({
+                select: buildSelectChain([buildRowMissingCommerceChats()])
+            });
+
+            // Act
+            const result = await readAiSettings();
+
+            // Assert
+            expect(result?.features.chat_gastronomy).toBeUndefined();
+            expect(result?.features.chat_experience).toBeUndefined();
+        });
+
+        it('should STILL throw when the blob is malformed for any other reason', async () => {
+            // Arrange — relaxing `features` must not relax anything else.
+            const row = {
+                ...VALID_SETTINGS_ROW,
+                value: { ...VALID_SETTINGS_BLOB, providers: 'not-an-object' }
+            };
+            mockGetDb.mockReturnValue({ select: buildSelectChain([row]) });
+
+            // Act + Assert
+            await expect(readAiSettings()).rejects.toThrow(AiSettingsParseError);
+        });
+
+        it('should STILL throw when a feature that IS present is malformed', async () => {
+            // Arrange — a present-but-invalid entry is a real corruption, not a
+            // gap, and must not be waved through by the partial record.
+            const features = { ...VALID_SETTINGS_BLOB.features } as Record<string, unknown>;
+            features.chat = { enabled: 'yes-please' };
+            const row = {
+                ...VALID_SETTINGS_ROW,
+                value: { ...VALID_SETTINGS_BLOB, features }
+            };
+            mockGetDb.mockReturnValue({ select: buildSelectChain([row]) });
+
+            // Act + Assert
+            await expect(readAiSettings()).rejects.toThrow(AiSettingsParseError);
+        });
+    });
+
     describe('when a transaction client is provided', () => {
         it('should use the tx client instead of getDb()', async () => {
             // Arrange

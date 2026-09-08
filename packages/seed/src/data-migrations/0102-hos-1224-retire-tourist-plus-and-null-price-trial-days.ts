@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0101-hos-1224-retire-tourist-plus-and-null-price-trial-days
+ * Data migration: 0102-hos-1224-retire-tourist-plus-and-null-price-trial-days
  *
  * Two deltas that share one cause — a value living in the database that the
  * baseline no longer produces, and that nothing wants.
@@ -108,7 +108,7 @@ import {
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0101-hos-1224-retire-tourist-plus-and-null-price-trial-days',
+    name: '0102-hos-1224-retire-tourist-plus-and-null-price-trial-days',
     group: 'required',
     // Soft-deletes subscription rows and irreversibly overwrites a column across
     // the whole price table. `0066`, which also soft-deleted plan rows, is

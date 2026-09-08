@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Unit tests for `0101-hos-1224-retire-tourist-plus-and-null-price-trial-days`,
+ * Unit tests for `0102-hos-1224-retire-tourist-plus-and-null-price-trial-days`,
  * using a mocked query chain — no real database connection. Same style as
  * `0066-hos-692-domain-rewrite-and-plan-cleanup.test.ts`.
  *
@@ -22,10 +22,10 @@
  * that a provider-backed subscription is counted and NOT updated; and that a
  * fully-converged database reports a clean no-op.
  *
- * @module test/data-migrations/0101-hos-1224-retire-tourist-plus-and-null-price-trial-days
+ * @module test/data-migrations/0102-hos-1224-retire-tourist-plus-and-null-price-trial-days
  */
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0101-hos-1224-retire-tourist-plus-and-null-price-trial-days.js';
+import * as migration from '../../src/data-migrations/0102-hos-1224-retire-tourist-plus-and-null-price-trial-days.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 type TableKind = 'plans' | 'prices' | 'subscriptions';
@@ -147,7 +147,7 @@ function buildFakeDb(config: FakeDbConfig): FakeDbProbe {
 
 const ctxOf = (probe: FakeDbProbe) => ({ db: probe.db }) as unknown as SeedMigrationCtx;
 
-describe('0101-hos-1224-retire-tourist-plus-and-null-price-trial-days', () => {
+describe('0102-hos-1224-retire-tourist-plus-and-null-price-trial-days', () => {
     describe('meta', () => {
         it('is declared destructive — it soft-deletes rows', () => {
             expect(migration.meta.destructive).toBe(true);

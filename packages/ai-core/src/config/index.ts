@@ -49,3 +49,9 @@ export {
     type ResolveSystemPromptResult,
     resolveSystemPrompt
 } from './prompt-resolver.js';
+
+// ---------------------------------------------------------------------------
+// Feature-coverage detection (HOS-1220)
+// ---------------------------------------------------------------------------
+
+export { findUnconfiguredFeatures } from './feature-coverage.js';

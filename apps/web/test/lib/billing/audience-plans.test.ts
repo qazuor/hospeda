@@ -281,15 +281,38 @@ describe('resolveStartingPrice', () => {
 });
 
 describe('resolveAudienceStartingPrices', () => {
-    it('resolves a price for all five audiences when every domain loads', () => {
+    it('resolves a price for the four priced audiences when every domain loads', () => {
         const prices = resolveAudienceStartingPrices(ALL_OK);
 
         expect(prices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
         expect(prices.tourist).toEqual({ kind: 'free' });
         expect(prices.gastronomy).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
         expect(prices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
-        // partner-listing (ARS 5.000) is active but unsellable — silver wins.
-        expect(prices.partner).toEqual({ kind: 'from', monthlyPriceArs: 1_500_000 });
+    });
+
+    it('withholds the partner price even though its catalogue resolved (HOS-1212)', () => {
+        // THE regression test. Partner is not a degraded audience here: its
+        // fetch succeeded and `resolveStartingPrice` over the same list returns
+        // ARS 15.000 — the exact figure the index used to advertise while both
+        // pages behind the card said "Consultar" (HOS-985 AC-43).
+        const partnerPlans = selectAudiencePlans(ALL_OK).partner;
+        expect(resolveStartingPrice({ plans: partnerPlans })).toEqual({
+            kind: 'from',
+            monthlyPriceArs: 1_500_000
+        });
+
+        expect(resolveAudienceStartingPrices(ALL_OK).partner).toBeNull();
+    });
+
+    it('suppresses the price for partner and for nobody else', () => {
+        // Named literally rather than re-derived through
+        // `isPriceOnRequestAudience`: a test that asks the implementation which
+        // audiences are withheld agrees with it by construction, and would keep
+        // passing if the set grew to swallow gastronomy. This one fails in BOTH
+        // directions — a gate that stops applying, and a gate that over-applies.
+        const prices = resolveAudienceStartingPrices(ALL_OK);
+
+        expect(AUDIENCE_CARD_ORDER.filter((id) => prices[id] === null)).toEqual(['partner']);
     });
 
     it('reads the sellable partner slugs from the canonical tier map', () => {
@@ -318,7 +341,8 @@ describe('resolveAudienceStartingPrices', () => {
         expect(prices.host).not.toBeNull();
         expect(prices.tourist).not.toBeNull();
         expect(prices.experience).not.toBeNull();
-        expect(prices.partner).not.toBeNull();
+        // Partner is deliberately absent from this list: it is `null` whatever
+        // happens to the other domains, so it can prove nothing about isolation.
     });
 
     it('still answers for all five audiences when EVERY domain fails', () => {
@@ -595,9 +619,15 @@ describe('fetchAudienceOffers', () => {
         // Host: priced AND trialled, both off the accommodation response.
         expect(startingPrices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
         expect(trialDays.host).toBe(OWNER_TRIAL);
-        // Partner: priced, NOT trialled. The two lines are independent, which is
-        // the whole reason the card guards them separately.
-        expect(startingPrices.partner).not.toBeNull();
+        // Gastronomy: priced, NOT trialled. The two lines are independent, which
+        // is the whole reason the card guards them separately — and this is now
+        // the audience that demonstrates it, since partner carries neither
+        // (HOS-1212) and so cannot show the two resolving apart.
+        expect(startingPrices.gastronomy).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
+        expect(trialDays.gastronomy).toBe(GASTRONOMY_TRIAL);
+        // Partner: its catalogue arrived in the SAME round of fetches and both
+        // readings still come back empty.
+        expect(startingPrices.partner).toBeNull();
         expect(trialDays.partner).toBeNull();
     });
 
