@@ -71,6 +71,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         billingSubscriptions: {
             id: 'SUB_ID',
             mpSubscriptionId: 'SUB_MP_SUBSCRIPTION_ID',
+            productDomain: 'SUB_PRODUCT_DOMAIN',
             deletedAt: 'SUB_DELETED_AT'
         },
         billingAddonPurchases: {
@@ -152,7 +153,16 @@ function makeDbMock(params: {
     const set = vi.fn().mockReturnValue({ where: updateWhere });
     const update = vi.fn().mockReturnValue({ set });
 
-    return { db: { select, update }, select, update, set, updateWhere, returning, limit };
+    return {
+        db: { select, update },
+        select,
+        selectWhere,
+        update,
+        set,
+        updateWhere,
+        returning,
+        limit
+    };
 }
 
 const CANDIDATE = {
@@ -358,6 +368,41 @@ describe('reapAbandonedPendingPurchase', () => {
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockAdapterRetrieve).not.toHaveBeenCalled();
         expect(db.update).toHaveBeenCalledTimes(1);
+    });
+
+    it("resolves the preapproval only among the add-on's OWN subscriptions", async () => {
+        const db = makeDbMock({
+            ownSubscriptionRows: [{ id: 'addon-sub-1' }],
+            returningRows: [{ id: CANDIDATE.id }]
+        });
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+
+        await callReap({ db, logger: makeLogger() });
+
+        const terms = andTerms(db.selectWhere.mock.calls[0]?.[0]);
+        expect(terms).toContainEqual({
+            _eq: ['SUB_MP_SUBSCRIPTION_ID', CANDIDATE.mpSubscriptionId]
+        });
+        // Without the domain filter, a purchase row whose `mp_subscription_id`
+        // was (by bug or manual repair) set to the customer's PLAN preapproval
+        // resolves to the plan subscription — and this cron cancels the
+        // subscription the customer is paying for.
+        expect(terms).toContainEqual({ _eq: ['SUB_PRODUCT_DOMAIN', 'addon'] });
+        expect(terms).toContainEqual({ _isNull: 'SUB_DELETED_AT' });
+    });
+
+    it('refuses to cancel a preapproval that belongs to a non-add-on subscription', async () => {
+        // The lookup filters by domain, so a plan subscription is simply not
+        // found: the row lands in `orphan-preapproval` — Sentry, zero writes,
+        // and nothing cancelled at MercadoPago.
+        const db = makeDbMock({ ownSubscriptionRows: [], returningRows: [{ id: CANDIDATE.id }] });
+        const logger = makeLogger();
+
+        const outcome = await callReap({ db, logger });
+
+        expect(outcome).toEqual({ reaped: false, reason: 'orphan-preapproval' });
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
+        expect(db.update).not.toHaveBeenCalled();
     });
 
     it('closes by id AND re-asserts pending, so a returning buyer is never overwritten', async () => {

@@ -68,6 +68,7 @@ import {
     sql,
     withTransaction
 } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -202,12 +203,23 @@ async function reapAbandonedPendingPurchase(params: {
         // `mp_subscription_id`: `billing_addon_purchases.subscription_id` holds
         // the customer's PLAN subscription (four readers depend on that meaning
         // — see `insertPendingRecurringPurchase`).
+        //
+        // The `product_domain = 'addon'` filter is what makes the sentence
+        // above true instead of merely intended. A purchase row that carries
+        // the customer's PLAN preapproval in `mp_subscription_id` — a bug, or a
+        // manual repair that copied the neighbouring `subscription_id` — would
+        // otherwise resolve to the plan subscription the customer is paying
+        // for, and this cron would cancel it. Matching the domain exactly is
+        // fail-CLOSED (`subscriptionMatchesDomain`'s rule for every domain but
+        // accommodation): anything else falls into `orphan-preapproval`, which
+        // pages a human and writes nothing.
         const [ownSubscription] = await db
             .select({ id: billingSubscriptions.id })
             .from(billingSubscriptions)
             .where(
                 and(
                     eq(billingSubscriptions.mpSubscriptionId, mpSubscriptionId),
+                    eq(billingSubscriptions.productDomain, ProductDomainEnum.ADDON),
                     isNull(billingSubscriptions.deletedAt)
                 )
             )
