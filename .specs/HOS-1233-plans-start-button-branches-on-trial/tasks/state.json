@@ -13,13 +13,26 @@
             "blockedBy": [],
             "blocks": ["T-002", "T-003", "T-004"],
             "subtasks": [
-                { "title": "Add the member and its value", "completed": false },
-                { "title": "Update the enum docblock", "completed": false },
-                { "title": "Extend the enum unit test", "completed": false }
+                {
+                    "title": "Add the member and its value",
+                    "completed": false
+                },
+                {
+                    "title": "Update the enum docblock",
+                    "completed": false
+                },
+                {
+                    "title": "Extend the enum unit test",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "billing", "enum"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -35,13 +48,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-005"],
             "subtasks": [
-                { "title": "Enumerate every guard the new value breaks", "completed": false },
-                { "title": "Recount each one against the real set", "completed": false },
-                { "title": "Confirm each guard failed before and passes after", "completed": false }
+                {
+                    "title": "Enumerate every guard the new value breaks",
+                    "completed": false
+                },
+                {
+                    "title": "Recount each one against the real set",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm each guard failed before and passes after",
+                    "completed": false
+                }
             ],
             "tags": ["guards", "billing", "schemas"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -61,12 +87,22 @@
                     "title": "Confirm tourist is excluded by the existing predicate shape",
                     "completed": false
                 },
-                { "title": "Unit test: tourist excluded", "completed": false },
-                { "title": "Unit test: accommodation fail-open unchanged", "completed": false }
+                {
+                    "title": "Unit test: tourist excluded",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: accommodation fail-open unchanged",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "billing", "domain"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -76,19 +112,32 @@
         {
             "id": "T-004",
             "title": "Classify the tourist plans as productDomain tourist in config",
-            "description": "In `packages/billing/src/config/plans.config.ts`, give `tourist-free` and `tourist-vip` an explicit tourist product domain so a fresh DB is seeded correct. Note the Model C split: product_domain classification is capability layer, so the seed propagates it — confirm against `MODEL_C_FIELD_SPLIT` and add the field there if it is not yet classified (the seed's fail-fast guard throws at startup otherwise). Tests: assert both tourist plans report tourist and that no accommodation/commerce plan changed domain.",
+            "description": "SUPERSEDED by T-034, which does this properly (derived per plan rather than by slug list) and covers the write path as well as the config. Kept as a pointer so the id in the spec's history still resolves. Do not implement separately.",
             "status": "pending",
-            "complexity": 2,
+            "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-005", "T-023"],
             "subtasks": [
-                { "title": "Set the domain on both tourist plans", "completed": false },
-                { "title": "Check MODEL_C_FIELD_SPLIT classification", "completed": false },
-                { "title": "Unit test the catalogue's domains", "completed": false }
+                {
+                    "title": "Set the domain on both tourist plans",
+                    "completed": false
+                },
+                {
+                    "title": "Check MODEL_C_FIELD_SPLIT classification",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test the catalogue's domains",
+                    "completed": false
+                }
             ],
             "tags": ["billing", "config", "seed"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -98,20 +147,36 @@
         {
             "id": "T-005",
             "title": "Data-migration: reclassify existing tourist billing_plans rows",
-            "description": "F-4b measured `tourist-vip` carrying product_domain='accommodation' in staging AND prod. Add a numbered seed data-migration (`pnpm db:seed:make`) that sets the tourist domain on tourist plan rows. R-6: this is the expand half — it must NOT be shipped in the same release as any removal it depends on. Declare `meta.requiresColumns` so the runner aborts loudly if the column is missing. Seed dual-write rule applies: T-004 edits the baseline, this edits the live envs; both are mandatory. Tests: the migration's own idempotency test (running twice changes nothing the second time).",
+            "description": "SUPERSEDED by T-038, which merges both migrations under one expand/contract story with the ordering constraint (R-8) attached. Kept as a pointer. Do not implement separately.",
             "status": "pending",
-            "complexity": 3,
+            "complexity": 1,
             "blockedBy": ["T-002", "T-004"],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Generate the numbered migration", "completed": false },
-                { "title": "Scope it to tourist plans only", "completed": false },
-                { "title": "Declare meta.requiresColumns", "completed": false },
-                { "title": "Idempotency test", "completed": false }
+                {
+                    "title": "Generate the numbered migration",
+                    "completed": false
+                },
+                {
+                    "title": "Scope it to tourist plans only",
+                    "completed": false
+                },
+                {
+                    "title": "Declare meta.requiresColumns",
+                    "completed": false
+                },
+                {
+                    "title": "Idempotency test",
+                    "completed": false
+                }
             ],
             "tags": ["db", "migration", "billing", "seed"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -121,19 +186,32 @@
         {
             "id": "T-006",
             "title": "Data-migration: reclassify existing tourist billing_subscriptions rows",
-            "description": "The subscription rows carry the same wrong domain as their plan (F-4b: staging has one `active` and one `past_due`, prod one `abandoned`). Reclassify by joining to the plan rather than by hardcoding ids. Must run AFTER T-005 so the plan rows are already correct. Do not touch rows of any other domain. Tests: idempotency, plus an assertion that a non-tourist subscription is left untouched.",
+            "description": "SUPERSEDED by T-038, which merges both migrations under one expand/contract story with the ordering constraint (R-8) attached. Kept as a pointer. Do not implement separately.",
             "status": "pending",
-            "complexity": 3,
+            "complexity": 1,
             "blockedBy": ["T-005"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Generate the numbered migration", "completed": false },
-                { "title": "Join to the plan, never hardcode ids", "completed": false },
-                { "title": "Idempotency + non-tourist-untouched tests", "completed": false }
+                {
+                    "title": "Generate the numbered migration",
+                    "completed": false
+                },
+                {
+                    "title": "Join to the plan, never hardcode ids",
+                    "completed": false
+                },
+                {
+                    "title": "Idempotency + non-tourist-untouched tests",
+                    "completed": false
+                }
             ],
             "tags": ["db", "migration", "billing", "seed"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -153,11 +231,18 @@
                     "title": "Write the guard with positive + negative assertions",
                     "completed": false
                 },
-                { "title": "Mutation-verify it", "completed": false }
+                {
+                    "title": "Mutation-verify it",
+                    "completed": false
+                }
             ],
             "tags": ["guards", "billing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -173,13 +258,26 @@
             "blockedBy": [],
             "blocks": ["T-009", "T-011"],
             "subtasks": [
-                { "title": "Define the schema and its type", "completed": false },
-                { "title": "Distinguish absent from zero from unresolved", "completed": false },
-                { "title": "Schema unit tests", "completed": false }
+                {
+                    "title": "Define the schema and its type",
+                    "completed": false
+                },
+                {
+                    "title": "Distinguish absent from zero from unresolved",
+                    "completed": false
+                },
+                {
+                    "title": "Schema unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "billing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -195,13 +293,26 @@
             "blockedBy": ["T-003", "T-008"],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Resolve by (customer, productDomain)", "completed": false },
-                { "title": "Reuse isEntitlementGrantingStatus", "completed": false },
-                { "title": "Unit test the multi-domain case explicitly", "completed": false }
+                {
+                    "title": "Resolve by (customer, productDomain)",
+                    "completed": false
+                },
+                {
+                    "title": "Reuse isEntitlementGrantingStatus",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test the multi-domain case explicitly",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "billing", "trial"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -217,13 +328,26 @@
             "blockedBy": ["T-009"],
             "blocks": ["T-011", "T-028"],
             "subtasks": [
-                { "title": "Add the route via the factory", "completed": false },
-                { "title": "Honour the error-contract order", "completed": false },
-                { "title": "Route tests that provably reach the handler", "completed": false }
+                {
+                    "title": "Add the route via the factory",
+                    "completed": false
+                },
+                {
+                    "title": "Honour the error-contract order",
+                    "completed": false
+                },
+                {
+                    "title": "Route tests that provably reach the handler",
+                    "completed": false
+                }
             ],
             "tags": ["api", "billing", "route"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -239,13 +363,26 @@
             "blockedBy": ["T-008", "T-010"],
             "blocks": ["T-017", "T-020"],
             "subtasks": [
-                { "title": "Add the endpoint wrapper", "completed": false },
-                { "title": "Set the safe failure fallback", "completed": false },
-                { "title": "Unit tests for both paths", "completed": false }
+                {
+                    "title": "Add the endpoint wrapper",
+                    "completed": false
+                },
+                {
+                    "title": "Set the safe failure fallback",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests for both paths",
+                    "completed": false
+                }
             ],
             "tags": ["web", "api-client"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -261,12 +398,22 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Pin the per-account behaviour with a named test", "completed": false },
-                { "title": "State the reason in the test name", "completed": false }
+                {
+                    "title": "Pin the per-account behaviour with a named test",
+                    "completed": false
+                },
+                {
+                    "title": "State the reason in the test name",
+                    "completed": false
+                }
             ],
             "tags": ["api", "billing", "regression"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -281,10 +428,19 @@
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-014"],
-            "subtasks": [{ "title": "Declare the constant with its docblock", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Declare the constant with its docblock",
+                    "completed": false
+                }
+            ],
             "tags": ["web", "billing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -300,14 +456,30 @@
             "blockedBy": ["T-013"],
             "blocks": ["T-017", "T-022"],
             "subtasks": [
-                { "title": "Write the pure function", "completed": false },
-                { "title": "Unresolved maps to warn, not charge", "completed": false },
-                { "title": "Test both sides of the boundary", "completed": false },
-                { "title": "Mutation-verify the branch tests", "completed": false }
+                {
+                    "title": "Write the pure function",
+                    "completed": false
+                },
+                {
+                    "title": "Unresolved maps to warn, not charge",
+                    "completed": false
+                },
+                {
+                    "title": "Test both sides of the boundary",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation-verify the branch tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "billing", "pure-logic"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -323,13 +495,26 @@
             "blockedBy": [],
             "blocks": ["T-018", "T-024"],
             "subtasks": [
-                { "title": "Write the predicate", "completed": false },
-                { "title": "Cover trialing / comp / past_due explicitly", "completed": false },
-                { "title": "Mutation-verify", "completed": false }
+                {
+                    "title": "Write the predicate",
+                    "completed": false
+                },
+                {
+                    "title": "Cover trialing / comp / past_due explicitly",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation-verify",
+                    "completed": false
+                }
             ],
             "tags": ["web", "billing", "pure-logic"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -345,13 +530,26 @@
             "blockedBy": [],
             "blocks": ["T-017", "T-019"],
             "subtasks": [
-                { "title": "Build on the shared Dialog", "completed": false },
-                { "title": "Compose dialog-panel, declare no caps", "completed": false },
-                { "title": "Test the day count and the cancel path", "completed": false }
+                {
+                    "title": "Build on the shared Dialog",
+                    "completed": false
+                },
+                {
+                    "title": "Compose dialog-panel, declare no caps",
+                    "completed": false
+                },
+                {
+                    "title": "Test the day count and the cancel path",
+                    "completed": false
+                }
             ],
             "tags": ["web", "ui", "dialog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -367,13 +565,26 @@
             "blockedBy": ["T-011", "T-014", "T-016"],
             "blocks": ["T-024"],
             "subtasks": [
-                { "title": "Consume the decision in handleClick", "completed": false },
-                { "title": "Keep the existing guards ahead of it", "completed": false },
-                { "title": "Resolve the create-form path from the shared map", "completed": false }
+                {
+                    "title": "Consume the decision in handleClick",
+                    "completed": false
+                },
+                {
+                    "title": "Keep the existing guards ahead of it",
+                    "completed": false
+                },
+                {
+                    "title": "Resolve the create-form path from the shared map",
+                    "completed": false
+                }
             ],
             "tags": ["web", "billing", "island"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -389,7 +600,10 @@
             "blockedBy": ["T-015"],
             "blocks": ["T-019", "T-024"],
             "subtasks": [
-                { "title": "Render the disabled state from the predicate", "completed": false },
+                {
+                    "title": "Render the disabled state from the predicate",
+                    "completed": false
+                },
                 {
                     "title": "Accessible explanation without a prohibited aria-label",
                     "completed": false
@@ -397,7 +611,11 @@
             ],
             "tags": ["web", "billing", "a11y"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -413,13 +631,26 @@
             "blockedBy": ["T-016", "T-018"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Add keys in es/en/pt", "completed": false },
-                { "title": "Plural forms for the day count", "completed": false },
-                { "title": "No path can render zero days", "completed": false }
+                {
+                    "title": "Add keys in es/en/pt",
+                    "completed": false
+                },
+                {
+                    "title": "Plural forms for the day count",
+                    "completed": false
+                },
+                {
+                    "title": "No path can render zero days",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "web"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -435,12 +666,22 @@
             "blockedBy": ["T-011"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Build it as a client island", "completed": false },
-                { "title": "Render nothing when no trial runs", "completed": false }
+                {
+                    "title": "Build it as a client island",
+                    "completed": false
+                },
+                {
+                    "title": "Render nothing when no trial runs",
+                    "completed": false
+                }
             ],
             "tags": ["web", "ui", "island"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -456,13 +697,26 @@
             "blockedBy": ["T-019", "T-020"],
             "blocks": ["T-025", "T-026"],
             "subtasks": [
-                { "title": "Mount on the five pages with the right vertical", "completed": false },
-                { "title": "Add no checkout path to the three link pages", "completed": false },
-                { "title": "Run the no-session cache guard", "completed": false }
+                {
+                    "title": "Mount on the five pages with the right vertical",
+                    "completed": false
+                },
+                {
+                    "title": "Add no checkout path to the three link pages",
+                    "completed": false
+                },
+                {
+                    "title": "Run the no-session cache guard",
+                    "completed": false
+                }
             ],
             "tags": ["web", "pages"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -478,13 +732,26 @@
             "blockedBy": ["T-014"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Write the guard over apps/web/src", "completed": false },
-                { "title": "Anchor the regexes against rename/reformat", "completed": false },
-                { "title": "Mutation-verify with a second call site", "completed": false }
+                {
+                    "title": "Write the guard over apps/web/src",
+                    "completed": false
+                },
+                {
+                    "title": "Anchor the regexes against rename/reformat",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation-verify with a second call site",
+                    "completed": false
+                }
             ],
             "tags": ["guards", "web"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -500,13 +767,26 @@
             "blockedBy": ["T-004"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Assert the entitlements spread on every tier", "completed": false },
-                { "title": "Assert the limits spread too", "completed": false },
-                { "title": "Mutation-verify by removing one spread", "completed": false }
+                {
+                    "title": "Assert the entitlements spread on every tier",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the limits spread too",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation-verify by removing one spread",
+                    "completed": false
+                }
             ],
             "tags": ["guards", "billing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -522,13 +802,26 @@
             "blockedBy": ["T-015", "T-017", "T-018"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Three branch tests", "completed": false },
-                { "title": "Disabled and still-enabled states", "completed": false },
-                { "title": "Assert on mocks, not only on output", "completed": false }
+                {
+                    "title": "Three branch tests",
+                    "completed": false
+                },
+                {
+                    "title": "Disabled and still-enabled states",
+                    "completed": false
+                },
+                {
+                    "title": "Assert on mocks, not only on output",
+                    "completed": false
+                }
             ],
             "tags": ["web", "tests"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -544,13 +837,26 @@
             "blockedBy": ["T-021"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Present/absent pair per state", "completed": false },
-                { "title": "Assert no zero is ever rendered", "completed": false },
-                { "title": "Mutation-verify", "completed": false }
+                {
+                    "title": "Present/absent pair per state",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no zero is ever rendered",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation-verify",
+                    "completed": false
+                }
             ],
             "tags": ["web", "tests"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -566,12 +872,22 @@
             "blockedBy": ["T-021"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Assert the resolved href per page", "completed": false },
-                { "title": "Assert no checkout path was added", "completed": false }
+                {
+                    "title": "Assert the resolved href per page",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no checkout path was added",
+                    "completed": false
+                }
             ],
             "tags": ["web", "tests"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -584,16 +900,40 @@
             "description": "The spec's test plan says most assertions here are about an ABSENCE (no dialog, no banner, no checkout, no charge), which is the shape that passes for the wrong reason most easily. Systematically break each new behaviour one at a time and confirm the corresponding test fails. Commit the fix FIRST, then mutate, then revert — reverting an uncommitted mutation with `git checkout --` eats the fix, and a clean tree is the symptom, not the proof. Run one mutation at a time in this worktree.",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-022", "T-023", "T-024", "T-025", "T-026"],
-            "blocks": ["T-028", "T-029"],
+            "blockedBy": [
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-037",
+                "T-038",
+                "T-039",
+                "T-040",
+                "T-041"
+            ],
+            "blocks": ["T-028", "T-029", "T-042"],
             "subtasks": [
-                { "title": "Commit before mutating", "completed": false },
-                { "title": "One mutation at a time", "completed": false },
-                { "title": "Record which test caught each", "completed": false }
+                {
+                    "title": "Commit before mutating",
+                    "completed": false
+                },
+                {
+                    "title": "One mutation at a time",
+                    "completed": false
+                },
+                {
+                    "title": "Record which test caught each",
+                    "completed": false
+                }
             ],
             "tags": ["tests", "verification"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -608,10 +948,19 @@
             "complexity": 1,
             "blockedBy": ["T-010", "T-027"],
             "blocks": [],
-            "subtasks": [{ "title": "Add the matrix row with a reason", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Add the matrix row with a reason",
+                    "completed": false
+                }
+            ],
             "tags": ["docs", "api"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
                 "started": null,
@@ -627,23 +976,499 @@
             "blockedBy": ["T-027"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update the ProductDomainEnum description", "completed": false },
-                { "title": "Record F-4b's history", "completed": false },
-                { "title": "Record D-4 and its boundaries", "completed": false }
+                {
+                    "title": "Update the ProductDomainEnum description",
+                    "completed": false
+                },
+                {
+                    "title": "Record F-4b's history",
+                    "completed": false
+                },
+                {
+                    "title": "Record D-4 and its boundaries",
+                    "completed": false
+                }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-09-08T20:15:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "qzpay-core: accept a product domain on subscription creation",
+            "description": "D-7.1 / AC-15e. In /home/qazuor/projects/PACKAGES/qzpay, qzpay-core's subscriptions.create() takes no product domain, which is WHY createPaidSubscription has no parameter to forward (F-4c). Add it to the creation interface and thread it to the drizzle adapter's insert. Keep it REQUIRED rather than optional: an optional field reproduces the omit-is-silent failure this whole spec exists to remove. Tests: in the qzpay repo — the value reaches the inserted row, and omitting it is a type error.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-032", "T-033"],
+            "subtasks": [
+                {
+                    "title": "Add the field to the creation input",
+                    "completed": false
+                },
+                {
+                    "title": "Thread it to the drizzle insert",
+                    "completed": false
+                },
+                {
+                    "title": "Make it required, not optional",
+                    "completed": false
+                },
+                {
+                    "title": "Tests in the qzpay repo",
+                    "completed": false
+                }
+            ],
+            "tags": ["qzpay", "billing", "cross-package"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "qzpay: stop naming Hospeda in the schema docblocks",
+            "description": "D-7.3. The productDomain docblock calls its default 'the (Hospeda) primary product line' — a consuming app named inside a generic payments library. Reword both columns' docs to describe the field neutrally. Cosmetic on its own, but it is the cheapest marker of the leak and HOS-1254 uses these docblocks as its starting inventory. Do NOT expand into the wider audit here; that is HOS-1254's job.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Reword the two docblocks",
+                    "completed": false
+                },
+                {
+                    "title": "Leave the wider audit to HOS-1254",
+                    "completed": false
+                }
+            ],
+            "tags": ["qzpay", "docs"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "createPaidSubscription forwards the domain, resolved from the plan",
+            "description": "AC-15e. paid-subscription-create.ts:207-274 is the single write behind EVERY paid checkout (accommodation AND tourist), both reactivation flows (trial.service.ts:1181,1235,1435,1492) and the past-due card replacement. Add productDomain to CreatePaidSubscriptionInput and forward it. It MUST be resolved from the plan being purchased — a hardcoded ACCOMMODATION would satisfy the accommodation tests and silently keep miscl assifying tourist, which is the exact bug. Tests: T-034 covers it; assert the tourist and accommodation checkouts SEPARATELY.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-034", "T-036"],
+            "subtasks": [
+                {
+                    "title": "Add the field to the input",
+                    "completed": false
+                },
+                {
+                    "title": "Resolve it from the plan, never hardcode",
+                    "completed": false
+                },
+                {
+                    "title": "Update every call site",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "billing", "write-site"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "createPlan and CreatePlanInput carry the domain",
+            "description": "AC-15f. plan.crud.ts:424-489 inserts an admin-created plan without ever naming the column. Add the field to CreatePlanInput and write it. An admin plan with no domain is REJECTED at the schema boundary, not defaulted — the rejection is the feature. Tests: creating a plan without a domain fails validation; with one, the row carries it.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-034", "T-036"],
+            "subtasks": [
+                {
+                    "title": "Add the field to CreatePlanInput",
+                    "completed": false
+                },
+                {
+                    "title": "Write it in the insert",
+                    "completed": false
+                },
+                {
+                    "title": "Reject rather than default",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "billing", "write-site"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "The seed stamps each plan's domain, derived not listed",
+            "description": "AC-15g. billingPlans.seed.ts:423-459 inserts every plan in ALL_PLANS with no domain — the likely origin of the production rows, since TOURIST_FREE_PLAN and TOURIST_VIP_PLAN sit in that array beside the three accommodation plans. Derive the domain from the plan definition itself, NOT from a slug list: a slug list is a second place to forget, and the next plan added to ALL_PLANS would inherit somebody else's vertical. Follow commercePlan.seed.ts's idempotent re-stamp pattern. Tests: every plan in the catalogue reports the expected domain, tourist included.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-032", "T-033"],
+            "blocks": ["T-035", "T-037"],
+            "subtasks": [
+                {
+                    "title": "Derive per plan, not from a list",
+                    "completed": false
+                },
+                {
+                    "title": "Re-stamp idempotently",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the whole catalogue",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "billing", "write-site"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Guard: a subscription or plan write that omits the domain fails CI",
+            "description": "AC-15d / D-6.3, and the piece that makes this permanent. NO guard exists today: check-product-domain-vocabulary.sh and check-product-domain-raw-sql.sh police only the retired 'commerce' literal and have no opinion on a missing domain. Build it from scratch. Two requirements from the repo's own guard lessons: anchor the patterns so a rename or a Biome reformat cannot silently disable it, and make it fail on the SECOND omitting call site rather than only a known list of three — a guard that hardcodes today's write sites is blind to the fourth somebody adds next month. Tests: mutation-verify by adding an omitting write and confirming CI fails.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-034"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "Write the guard over the write sites",
+                    "completed": false
+                },
+                {
+                    "title": "Anchor against rename and reformat",
+                    "completed": false
+                },
+                {
+                    "title": "Fail on an unknown new site, not a fixed list",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation-verify",
+                    "completed": false
+                }
+            ],
+            "tags": ["guards", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Drop .default('accommodation') from both qzpay columns",
+            "description": "D-7.2 / AC-15h. Remove the default from billing_subscriptions.product_domain and billing_plans.product_domain in @qazuor/qzpay-drizzle. Both stay .notNull(), so an omitted write becomes a NOT NULL violation — loud and immediate, which is the whole point. Measured: zero NULL rows in prod (8 subs, 15 plans) and staging (48, 18), so nothing needs backfilling first. Ships with the package migration AND a Hospeda-side migration dropping the default on the live databases. R-8: this MUST land after T-032/T-033/T-034 or every paid checkout breaks at its first insert.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-032", "T-033", "T-035"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                {
+                    "title": "Remove the default in the package schema",
+                    "completed": false
+                },
+                {
+                    "title": "Package migration",
+                    "completed": false
+                },
+                {
+                    "title": "Hospeda migration for the live DBs",
+                    "completed": false
+                },
+                {
+                    "title": "Verify the columns stay notNull",
+                    "completed": false
+                }
+            ],
+            "tags": ["qzpay", "db", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Prove the ordering, and that an omitted write now RAISES",
+            "description": "AC-15i / AC-15h. Two assertions the ordinary tests do not make. First: an insert without the column must now FAIL — assert the raise, not a success, because 'the insert worked' is exactly what the default already gave us. Second: the sequence itself is the deliverable, so run the write-site tests against a schema with the default already gone and confirm they pass BEFORE the migration that removes it ships. An out-of-order deploy is this spec's largest risk (R-8).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-034", "T-036"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Test that an omitting insert raises",
+                    "completed": false
+                },
+                {
+                    "title": "Run write-site tests against a default-less schema",
+                    "completed": false
+                },
+                {
+                    "title": "Record the ordering evidence",
+                    "completed": false
+                }
+            ],
+            "tags": ["tests", "db", "billing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Backfill: reclassify the tourist rows in both tables",
+            "description": "R-11 / AC-14. Numbered seed data-migration reclassifying the misfiled rows measured in F-4b — the plan rows first, then the subscriptions joined to their plan (never hardcoded ids). Runs against PRODUCTION rows with real money attached, so: idempotent, meta.requiresColumns declared, and expand/contract respected — this is the expand half and nothing is dropped in its release. Tests: idempotency (a second run changes nothing) AND a negative (a non-tourist row is untouched) — both, because a migration that reclassifies everything is idempotent too.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-036"],
+            "blocks": ["T-027", "T-039", "T-040", "T-041"],
+            "subtasks": [
+                {
+                    "title": "Plans migration",
+                    "completed": false
+                },
+                {
+                    "title": "Subscriptions migration joined to the plan",
+                    "completed": false
+                },
+                {
+                    "title": "meta.requiresColumns",
+                    "completed": false
+                },
+                {
+                    "title": "Idempotency + non-tourist-untouched",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration", "seed", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Make the admin plan-change gate domain-aware",
+            "description": "D-8 / AC-15j. admin/billing-subscriptions/utils.ts:158 gates on productDomain !== 'accommodation' → return []. A tourist subscription passes that gate TODAY because of the bug, then correctly narrows to the tourist plans. Once reclassified it fails the gate and the admin UI offers ZERO destination plans for any tourist subscription — silent, in a surface nobody would re-test. This was found by grepping for string comparisons against 'accommodation', not from any file list. Tests: a tourist subscription is offered its tourist destination plans; the test fails the moment somebody re-hardcodes the gate.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-038"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Replace the hardcoded gate",
+                    "completed": false
+                },
+                {
+                    "title": "Test the tourist case explicitly",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "billing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Trace PRODUCT_DOMAIN_BY_LIMIT_KEY and pin the answer",
+            "description": "D-8 / AC-15k. commerce-limits.config.ts:130-175 maps MAX_FAVORITES, MAX_ACTIVE_ALERTS, MAX_COMPARE_ITEMS, MAX_SEARCH_HISTORY_ENTRIES and MAX_COLLECTIONS — every one part of TOURIST_VIP_LIMITS — to ACCOMMODATION. Whether that table is ever consulted to resolve a PURE tourist's own limits, or only ever feeds the host-side addon recalculator, was NOT resolved by the audit. Trace it before shipping the reclassification. If a pure tourist resolves limits through it, their values break once the rows say tourist. Do not assume either way. Tests: whatever the trace concludes, pin it — a tourist with no accommodation subscription still gets their VIP limits.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-038"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Trace the real callers",
+                    "completed": false
+                },
+                {
+                    "title": "Record the verdict in the spec",
+                    "completed": false
+                },
+                {
+                    "title": "Pin it with a test",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Regression tests for the five reads the reclassification FIXES",
+            "description": "AC-15c. One test per FIXED row of the spec's section 4b: hasActiveAccommodationSub (a tourist can become a host), publish-eligibility via hasAnyPriorSubscription (a tourist-turned-host gets first_publish, not subscription_required), owner-entitlement.ts, the entity-subscription cache reconcile cron, and resolveUserPlanSummary. Each must FAIL before the reclassification and pass after. Do NOT build the fixtures with the corrected domain — at least one must reproduce the misfiled shape explicitly, or the test passes before the fix too and proves nothing.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-038"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "A test per FIXED read",
+                    "completed": false
+                },
+                {
+                    "title": "At least one fixture reproduces the misfiled shape",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm each fails before the fix",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "tests", "billing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Document the domain contract and its history",
+            "description": "Root CLAUDE.md still says ProductDomainEnum 'holds exactly four values'. Update it for TOURIST, record that every write must name its domain and that a guard enforces it, and write down WHY the tourist plans were filed as accommodation — the next reader should not have to rediscover it from the database. Link HOS-1254 for the qzpay side.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update the enum description",
+                    "completed": false
+                },
+                {
+                    "title": "Record the write-names-its-domain rule",
+                    "completed": false
+                },
+                {
+                    "title": "Record F-4b's history and link HOS-1254",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-09-08T21:10:00.000Z",
                 "started": null,
                 "completed": null
             }
         }
     ],
     "summary": {
-        "total": 29,
-        "pending": 29,
+        "total": 42,
+        "pending": 42,
         "inProgress": 0,
         "completed": 0,
         "blocked": 0,

@@ -142,7 +142,7 @@ Two things follow:
 1. **The column is already `.notNull()`.** Only the `.default()` has to go for an omitted write to fail loudly instead of silently guessing. Measured across both environments, there are **zero NULL rows** to migrate: prod holds 8 subscriptions and 15 plans, staging 48 and 18, none null.
 2. **Removing it is a package contract change.** The docblock states the default exists so "consumers that don't need multi-domain scoping can ignore it and always get the same value back". Any other consumer relying on that breaks. The owner decided (2026-09-08) to fix it at the root anyway, on both sides.
 
-The wider question — what ELSE of Hospeda's vocabulary leaked into qzpay — is tracked separately, since it is a package-level audit rather than part of this spec.
+The wider question — what ELSE of Hospeda's vocabulary leaked into qzpay — is tracked on **HOS-1254**, since it is a package-level audit rather than part of this spec. That audit already found something worse than this default: `billing_plans.monthly_price_ars` / `annual_price_ars` (`plans.schema.ts:28-29`) put the Argentine currency in the COLUMN NAME of a generic payments library, `NOT NULL`, alongside the correct currency-agnostic mechanism the same package already has in `billing_prices.currency` — and `plan.mapper.ts:52` silently defaults the value to `0`, which is the same omit-is-silent pattern as this one, except what it invents is a price of zero.
 
 ### F-5 · The two verdict enums are deliberately separate and must stay that way
 
