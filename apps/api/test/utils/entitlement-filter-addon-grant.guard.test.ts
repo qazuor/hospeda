@@ -1,6 +1,21 @@
 /**
- * Static guard: no add-on may grant an entitlement that `entitlement-filter.ts`
- * reads, while the owner-entitlement cache is blind to add-ons (HOS-847 PR 7c).
+ * Static guard: no add-on IN THE STATIC CATALOGUE
+ * (`packages/billing/src/config/addons.config.ts`) may grant an entitlement that
+ * `entitlement-filter.ts` reads, while the owner-entitlement cache is blind to
+ * add-ons (HOS-847 PR 7c).
+ *
+ * ## What this guard does NOT cover
+ *
+ * The catalogue the RUNTIME reads is DB-backed: `AddonCatalogService` maps
+ * `billing_addons.entitlements` into `grantsEntitlement`
+ * (`packages/service-core/src/services/billing/addon/addon-catalog.mapper.ts`),
+ * and `POST`/`PATCH /api/v1/admin/addons` write that column with no allow-list
+ * (`apps/api/src/routes/billing/admin/addons.ts`). A row created or edited
+ * through that path can grant an entitlement the filter reads without this
+ * file — a static scan of a TypeScript config — ever seeing it. Closing that
+ * half means validating `grantsEntitlement` inside `AddonCatalogService`; it is
+ * deliberately out of scope here, so read a green run as "the shipped config is
+ * clean", never as "no add-on anywhere can grant this".
  *
  * ## The blind path this guard watches over
  *
@@ -20,7 +35,7 @@
  * ## Why a guard instead of closing the path
  *
  * Measured: today the filter reads exactly four entitlements and NO add-on in
- * the catalogue grants any of them. Closing the hole meant walking add-on grants
+ * the static catalogue grants any of them. Closing the hole meant walking add-on grants
  * on every cache hit — up to 2x100 extra queries per list response — to change
  * literally no response. The owner's decision was to keep the cheap path and
  * make the day it stops being safe fail loudly instead of silently.
@@ -38,11 +53,12 @@
  * - the entitlements the filter reads come from scanning its source for
  *   `EntitlementKey.<NAME>`, so a fifth key added to that file joins the set
  *   without anyone updating this test;
- * - the add-ons come from every `AddonDefinition` REACHABLE from the catalogue
- *   module — not just `ALL_ADDONS` — because this repo already keeps deliberate
- *   exclusions from an `ALL_*` aggregate (the commerce plans are kept out of
- *   `ALL_PLANS` on purpose), and an add-on parked outside the array is exactly
- *   the one nobody would think to check.
+ * - the add-ons come from every `AddonDefinition` REACHABLE from the static
+ *   catalogue module — not just `ALL_ADDONS` — because this repo already keeps
+ *   deliberate exclusions from an `ALL_*` aggregate (the commerce plans are kept
+ *   out of `ALL_PLANS` on purpose), and an add-on parked outside the array is
+ *   exactly the one nobody would think to check. Reachable from that module is
+ *   the whole reach: a `billing_addons` row has no TypeScript export to find.
  *
  * The derivation has one escape it cannot see: a read written as
  * `ownerEntitlements.includes(someVariable)`. The floor assertion below turns
@@ -167,7 +183,7 @@ describe('entitlement-filter × add-on catalogue (HOS-847 PR 7c)', () => {
 
     it.each(
         CATALOGUE_ADDONS.map((addon) => [addon.slug, addon] as const)
-    )('add-on %s grants nothing the owner-entitlement cache would hide', (_slug: string, addon: CatalogueAddon) => {
+    )('static add-on %s grants nothing the owner-entitlement cache would hide', (_slug: string, addon: CatalogueAddon) => {
         if (addon.grantsEntitlement === null || addon.grantsEntitlement === undefined) {
             // Limit-only add-ons cannot trip this: limits are resolved on a
             // different path entirely.
@@ -176,7 +192,7 @@ describe('entitlement-filter × add-on catalogue (HOS-847 PR 7c)', () => {
 
         expect(
             FILTER_ENTITLEMENTS.has(addon.grantsEntitlement),
-            `Add-on "${addon.slug}" grants ${addon.grantsEntitlement}, which entitlement-filter.ts READS.\n\nThat combination is not safe today. ${BLIND_PATH} answers a cache HIT from the owner's PLAN alone — an empty set on a non-granting status, plan entitlements otherwise — and never consults add-on grants. So an owner who PAID for this add-on would have the feature stripped from their public listing on every request the cache answers: intermittent, production-only, and only for paying customers.\n\nThe fix is NOT to delete this expectation or to move the add-on. Either teach resolveOwnerEntitlementSet to fold in add-on grants on the cache-hit path, or give this entitlement a live resolution in the filter. The premise that made skipping add-on grants free — that no add-on grants anything the filter reads — has just stopped holding, and this guard exists to say so on the day it does.`
+            `Static-catalogue add-on "${addon.slug}" grants ${addon.grantsEntitlement}, which entitlement-filter.ts READS.\n\nThat combination is not safe today. ${BLIND_PATH} answers a cache HIT from the owner's PLAN alone — an empty set on a non-granting status, plan entitlements otherwise — and never consults add-on grants. So an owner who PAID for this add-on would have the feature stripped from their public listing on every request the cache answers: intermittent, production-only, and only for paying customers.\n\nThe fix is NOT to delete this expectation or to move the add-on. Either teach resolveOwnerEntitlementSet to fold in add-on grants on the cache-hit path, or give this entitlement a live resolution in the filter. The premise that made skipping add-on grants free — that no add-on in the SHIPPED CONFIG grants anything the filter reads — has just stopped holding, and this guard exists to say so on the day it does.\n\nScope: this guard reads the static catalogue only. A \`billing_addons\` row written through POST/PATCH /api/v1/admin/addons carries the same risk and is NOT checked here.`
         ).toBe(false);
     });
 });
