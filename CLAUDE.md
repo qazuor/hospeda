@@ -473,13 +473,28 @@ promotion. Two moments, two jobs: one writes, the other catches what the first
 missed.
 
 - **The write** — Phase 2b of the `smoke-tanda` skill. On `Resultado: PASO` only,
-  the flow asks whether the change is a novelty for an end user and does not
-  finish until answered. A *yes* produces a catalog entry in
+  the flow **writes the entry without asking anything** (owner decision,
+  2026-09-08): it drafts the `es` text from the sign-off's own `Observado` field,
+  infers the audience, and commits it to
   `apps/api/src/data/whats-new/whats-new.ts` with `publishedAt: 'on-promotion'`
   (the writer never picks a date) via a `[HOS-N] docs(whats-new):` PR to
-  `staging`; a *no* is an equally complete answer. Either way the decision is
-  recorded as a GitHub label on every PR bound to the issue, and as the
-  `Novedad:` line of the sign-off comment.
+  `staging`, labelling every bound PR `whats-new-done` and recording the id on
+  the sign-off's `Novedad:` line. Writing unattended is safe **because the marker
+  keeps the entry invisible until the promotion resolves it** — an unwanted entry
+  costs nothing until it is let through.
+- **The review** — at the promotion, over every pending entry at once. The gate
+  prints each one in full (id, audience, title, body) on the promotion PR, and
+  `hops whats-new drop <id>...` withdraws the ones the owner does not want: it
+  opens the PR itself and flips those entries' originating PRs to
+  `whats-new-none`. Naming ids and merging is the whole gesture.
+- **Editing the catalog by hand is fine, and nothing overwrites you.** The
+  date-resolution workflow only ever replaces the literal
+  `publishedAt: 'on-promotion'`; every other byte is copied through. Writing a
+  real date by hand takes that entry out of the marker's protection (a past date
+  is silently destroyed for every new account); changing an `id` is harmless
+  while the entry is unpublished, and a collision is still caught by the guard;
+  deleting an entry by hand works but leaves its PRs claiming an entry that no
+  longer exists — which is why `drop` exists.
 - **The two labels** — `whats-new-none` (evaluated, not a novelty) and
   `whats-new-done` (evaluated, produced or extended an entry). Exactly one per
   PR, never a third.
@@ -488,9 +503,10 @@ missed.
   resolves to no PR at all (a direct push), or if a due entry still carries a
   `'machine'` translation mark. **It blocks for lack of a decision, never for
   lack of novelty**, and it blocks equally when it cannot determine the answer.
-  Bot-authored and pre-cutoff PRs are exempt and reported as such. Fix a red gate
-  with `hops whats-new audit --fix`, which asks the same question per PR and
-  labels it — no push required.
+  Bot-authored and pre-cutoff PRs are exempt and reported as such — the cutoff is
+  **derived**, not configured: the commit that added the gate workflow itself.
+  Fix a red gate with `hops whats-new audit --fix`, which asks per PR and labels
+  it — no push required.
 
 ### Git Conventions
 
