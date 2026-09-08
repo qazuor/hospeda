@@ -46,8 +46,14 @@ const {
 
 // ─── DB mock ──────────────────────────────────────────────────────────────────
 // The global `test/setup.ts` mock of `@repo/db` does not carry schema tables, so
-// the two this job touches are named explicitly; `and`/`eq`/`isNull`/`lt` come
-// through from the original module.
+// the two this job touches are named explicitly.
+//
+// `and`/`eq`/`isNull`/`lt` are ALSO stood in for. Real Drizzle returns opaque
+// `SQL` objects whose only readable form is a rendered query, so a test that
+// captured them could assert nothing about WHICH rows this cron touches — and
+// the two population predicates are the entire point of the job. These
+// stand-ins keep the call tree readable, exactly as
+// `finalize-cancelled-subs.test.ts` does for the same reason.
 
 const mockTx = {
     execute: vi.fn(),
@@ -58,6 +64,10 @@ vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
+        and: (...parts: unknown[]) => ({ _and: parts }),
+        eq: (column: unknown, value: unknown) => ({ _eq: [column, value] }),
+        lt: (column: unknown, value: unknown) => ({ _lt: [column, value] }),
+        isNull: (column: unknown) => ({ _isNull: column }),
         billingSubscriptions: {
             id: 'SUB_ID',
             mpSubscriptionId: 'SUB_MP_SUBSCRIPTION_ID',
@@ -171,6 +181,7 @@ function callReap(overrides: {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    capturedPhaseOneWheres.length = 0;
     // `clearAllMocks` clears recorded calls but NOT a `mockReturnValueOnce`
     // queue, so an unconsumed one-shot from a previous test would silently
     // answer the next test's first query. Reset the queued mocks outright.
@@ -349,6 +360,21 @@ describe('reapAbandonedPendingPurchase', () => {
         expect(db.update).toHaveBeenCalledTimes(1);
     });
 
+    it('closes by id AND re-asserts pending, so a returning buyer is never overwritten', async () => {
+        const db = makeDbMock({ ownSubscriptionRows: [], returningRows: [{ id: CANDIDATE.id }] });
+        const logger = makeLogger();
+
+        await callReap({ candidate: { ...CANDIDATE, mpSubscriptionId: null }, db, logger });
+
+        const terms = andTerms(db.updateWhere.mock.calls[0]?.[0]);
+        expect(terms).toContainEqual({ _eq: ['AP_ID', CANDIDATE.id] });
+        // The status re-assertion is the ONLY thing making this write
+        // idempotent against `supersedePendingPurchase`: without it the cron
+        // would cancel a purchase the buyer just activated.
+        expect(terms).toContainEqual({ _eq: ['AP_STATUS', _internals.PENDING_STATUS] });
+        expect(terms).toContainEqual({ _isNull: 'AP_DELETED_AT' });
+    });
+
     it('reports already-closed when a returning buyer superseded the row mid-sweep', async () => {
         const db = makeDbMock({ ownSubscriptionRows: [], returningRows: [] });
         const logger = makeLogger();
@@ -403,6 +429,14 @@ describe('reportStaleRevocations', () => {
 
 // ─── Handler orchestration ────────────────────────────────────────────────────
 
+/**
+ * Every predicate phase 1 handed to `where()`, in call order: index 0 is the
+ * reap population, index 1 the stale-revocation population. Captured rather
+ * than discarded — a `where()` that drops its argument would let both
+ * predicates be rewritten without a single test turning red.
+ */
+const capturedPhaseOneWheres: unknown[] = [];
+
 /** Wires `mockTx` so phase 1 returns the two given populations. */
 function primeTransaction(params: {
     readonly acquired: boolean;
@@ -412,12 +446,115 @@ function primeTransaction(params: {
     mockTx.execute.mockResolvedValue({ rows: [{ acquired: params.acquired }] });
     mockTx.select
         .mockReturnValueOnce({
-            from: () => ({ where: () => Promise.resolve(params.candidates ?? []) })
+            from: () => ({
+                where: (predicate: unknown) => {
+                    capturedPhaseOneWheres.push(predicate);
+                    return Promise.resolve(params.candidates ?? []);
+                }
+            })
         })
         .mockReturnValueOnce({
-            from: () => ({ where: () => Promise.resolve(params.staleRevocations ?? []) })
+            from: () => ({
+                where: (predicate: unknown) => {
+                    capturedPhaseOneWheres.push(predicate);
+                    return Promise.resolve(params.staleRevocations ?? []);
+                }
+            })
         });
 }
+
+/** The `and(...)` members of a captured predicate. */
+function andTerms(predicate: unknown): unknown[] {
+    const composite = predicate as { _and?: unknown[] };
+    expect(
+        Array.isArray(composite?._and),
+        'the query lost its compound WHERE — a bare predicate here means a filter was dropped'
+    ).toBe(true);
+    return composite._and as unknown[];
+}
+
+/** The single `_lt` bound in a captured predicate, as a millisecond timestamp. */
+function ltBoundMs(predicate: unknown, column: string): number {
+    const term = andTerms(predicate).find(
+        (candidate): candidate is { _lt: [string, Date] } =>
+            typeof candidate === 'object' &&
+            candidate !== null &&
+            '_lt' in candidate &&
+            (candidate as { _lt: [string, Date] })._lt[0] === column
+    );
+    expect(term, `no lt() bound on ${column}`).toBeDefined();
+    return (term as { _lt: [string, Date] })._lt[1].getTime();
+}
+
+// ─── Phase-1 predicates: WHICH rows this cron touches ─────────────────────────
+// These two WHERE clauses are the job's blast radius. Left unasserted, widening
+// either one is invisible: swapping `pending` for `active` in the reap query
+// turns this cron into a sweep that cancels the preapproval of every customer
+// currently PAYING for a recurring add-on, every six hours.
+
+describe('addon-subscription-reconcile phase-1 predicates', () => {
+    it('reaps only PENDING purchases — never an active one somebody is paying for', async () => {
+        primeTransaction({ acquired: true });
+
+        await addonSubscriptionReconcileJob.handler(makeCronCtx() as never);
+
+        const terms = andTerms(capturedPhaseOneWheres[0]);
+        expect(terms).toContainEqual({ _eq: ['AP_STATUS', _internals.PENDING_STATUS] });
+        expect(terms).not.toContainEqual({ _eq: ['AP_STATUS', _internals.ACTIVE_STATUS] });
+    });
+
+    it('reaps only purchases older than the reuse window, never one mid-authorization', async () => {
+        primeTransaction({ acquired: true });
+
+        const before = Date.now();
+        await addonSubscriptionReconcileJob.handler(makeCronCtx() as never);
+        const after = Date.now();
+
+        // The cutoff is `now - TTL` and must be in the PAST: a flipped sign
+        // would select every purchase created in the last three hours, i.e.
+        // exactly the buyer typing their 3DS code right now.
+        const cutoff = ltBoundMs(capturedPhaseOneWheres[0], 'AP_CREATED_AT');
+        expect(cutoff).toBeGreaterThanOrEqual(before - _internals.ABANDONED_PENDING_TTL_MS);
+        expect(cutoff).toBeLessThanOrEqual(after - _internals.ABANDONED_PENDING_TTL_MS);
+        expect(cutoff).toBeLessThan(before);
+    });
+
+    it('excludes soft-deleted purchases from the reap', async () => {
+        primeTransaction({ acquired: true });
+
+        await addonSubscriptionReconcileJob.handler(makeCronCtx() as never);
+
+        expect(andTerms(capturedPhaseOneWheres[0])).toContainEqual({ _isNull: 'AP_DELETED_AT' });
+    });
+
+    it('alarms only on ACTIVE rows that were soft-cancelled', async () => {
+        primeTransaction({ acquired: true });
+
+        await addonSubscriptionReconcileJob.handler(makeCronCtx() as never);
+
+        const terms = andTerms(capturedPhaseOneWheres[1]);
+        expect(terms).toContainEqual({ _eq: ['AP_STATUS', _internals.ACTIVE_STATUS] });
+        // Without `cancel_at_period_end = true` the alarm would fire on every
+        // healthy add-on whose period simply rolled over, drowning the signal
+        // it exists to raise.
+        expect(terms).toContainEqual({ _eq: ['AP_CANCEL_AT_PERIOD_END', true] });
+        expect(terms).not.toContainEqual({ _eq: ['AP_CANCEL_AT_PERIOD_END', false] });
+        expect(terms).toContainEqual({ _isNull: 'AP_DELETED_AT' });
+    });
+
+    it('gives addon-expiry the full grace before the stale alarm considers a row overdue', async () => {
+        primeTransaction({ acquired: true });
+
+        const before = Date.now();
+        await addonSubscriptionReconcileJob.handler(makeCronCtx() as never);
+        const after = Date.now();
+
+        const cutoff = ltBoundMs(capturedPhaseOneWheres[1], 'AP_CURRENT_PERIOD_END');
+        expect(cutoff).toBeGreaterThanOrEqual(before - _internals.STALE_REVOCATION_GRACE_MS);
+        expect(cutoff).toBeLessThanOrEqual(after - _internals.STALE_REVOCATION_GRACE_MS);
+        expect(cutoff).toBeLessThan(before);
+    });
+});
 
 describe('addon-subscription-reconcile handler', () => {
     it('skips without querying when another replica holds the advisory lock', async () => {
