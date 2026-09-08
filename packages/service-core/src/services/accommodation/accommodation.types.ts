@@ -140,6 +140,45 @@ export function publishEligibilityStartsLocalTrial(eligibility: PublishEligibili
 }
 
 /**
+ * What `AccommodationService.getPublishEligibility` answers: the billing
+ * verdict for an owner, plus whether publishing would actually be allowed.
+ *
+ * ## Why both fields, when one is a function of the other
+ *
+ * For nearly every owner `canPublish` IS
+ * {@link publishEligibilityAllowsPublish} of `eligibility`, and carrying both
+ * looks redundant. It is not, for two independent reasons:
+ *
+ * - **They answer different questions.** `eligibility` is what BILLING says;
+ *   `canPublish` is what the SERVER will do. Platform staff diverge: they
+ *   bypass the billing gate entirely, so they publish while their honest
+ *   billing verdict stays `subscription_required`.
+ * - **Collapsing them is the bug.** Sending only `canPublish` would leave the
+ *   UI unable to tell a trial-eligible owner from a paying one, and it would
+ *   lose the trial announcement. Sending only `eligibility` would push the
+ *   publish rule back into the client — which is HOS-1183 verbatim.
+ */
+export interface PublishEligibilityVerdict {
+    /**
+     * The verdict `checkEligibility` returned, verbatim. Never re-derived, and
+     * never overwritten for staff: it stays the honest billing answer.
+     */
+    readonly eligibility: PublishEligibility;
+    /**
+     * Whether `publish()` would let this owner put a listing live right now,
+     * INCLUDING the staff billing bypass that runs before the verdict is even
+     * consulted. This is the field a publish affordance gates on.
+     */
+    readonly canPublish: boolean;
+    /**
+     * Whether publishing would start a Hospeda-owned trial and its clock.
+     * Drives the one extra line the confirm dialog shows, and is false for
+     * staff — they bypass billing, so no trial is ever inserted for them.
+     */
+    readonly startsTrial: boolean;
+}
+
+/**
  * A {@link ServiceContext} whose transaction client is guaranteed present.
  *
  * `ServiceContext.tx` is optional because most call sites may or may not run

@@ -17,6 +17,7 @@ export type {
     AccommodationPublishDeps,
     HostOnboardingResult,
     PublishEligibility,
+    PublishEligibilityVerdict,
     PublishTransactionContext,
     StartLocalTrialResult
 } from './accommodation/accommodation.types';

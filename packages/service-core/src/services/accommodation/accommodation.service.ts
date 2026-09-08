@@ -187,6 +187,7 @@ import type {
     AccommodationHookState,
     AccommodationPublishDeps,
     HostOnboardingResult,
+    PublishEligibilityVerdict,
     PublishTransactionContext,
     StartLocalTrialResult
 } from './accommodation.types';
@@ -1746,6 +1747,84 @@ export class AccommodationService extends BaseCrudService<
         }
 
         return super.update(actor, id, normalizedData, resolvedCtx);
+    }
+
+    /**
+     * Answers, without writing anything, what {@link AccommodationService.publish}
+     * would decide for this owner right now (HOS-1183 D-1).
+     *
+     * ## Why this exists at all
+     *
+     * Until now the verdict was unreadable. `checkEligibility` is a closure
+     * inside the deps object `publish()` holds, so the only way to learn the
+     * answer was to POST `/publish` and take the 403 — which is why the card's
+     * button gated on a plan-shaped boolean instead, and hid itself from exactly
+     * the owner holding an intact trial.
+     *
+     * ## It reproduces publish()'s decision, it does not restate it
+     *
+     * Both steps are the same ones `publish()` runs, in the same order:
+     *
+     *  1. Platform staff (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) bypass billing, so
+     *     they publish regardless of the verdict — and start no trial, because
+     *     no trial is ever inserted for them.
+     *  2. Everyone else is decided by
+     *     {@link publishEligibilityAllowsPublish} over the verdict
+     *     `checkEligibility` returned.
+     *
+     * Step 1 is why `canPublish` is not simply the predicate applied to
+     * `eligibility`: staff publish on an `subscription_required` verdict. The
+     * verdict is still reported verbatim rather than rewritten to something
+     * flattering, so a caller that wants "what does billing think" gets the
+     * truth and a caller that wants "will this work" gets `canPublish`.
+     *
+     * Owner-level by construction: it answers for the ACTOR's portfolio, not for
+     * one listing, so a page rendering N cards resolves billing once rather than
+     * N times. Per-listing completeness (photos, bathrooms, …) is a separate
+     * gate that `publish()` enforces afterwards and this method deliberately
+     * does not predict.
+     *
+     * @param actor - The owner asking about their own publish eligibility.
+     * @param ctx - Optional service context, threaded to the billing read.
+     * @returns The billing verdict plus whether publishing is allowed and would
+     *   start a trial, or a `ServiceError` with `CONFIGURATION_ERROR` when the
+     *   service was built without billing dependencies.
+     */
+    public async getPublishEligibility(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PublishEligibilityVerdict>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPublishEligibility',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_, validatedActor, execCtx) => {
+                if (!this._publishDeps) {
+                    throw new ServiceError(
+                        ServiceErrorCode.CONFIGURATION_ERROR,
+                        'Publish eligibility requires billing dependencies; AccommodationService was instantiated without publishDeps'
+                    );
+                }
+
+                const eligibility = await this._publishDeps.checkEligibility(
+                    validatedActor.id,
+                    execCtx
+                );
+                // Mirrors publish()'s fast path: when the actor IS the owner,
+                // the hats come straight off the actor rather than a second
+                // read of user_role.
+                const isBillingExempt = AccommodationService.holdsBillingExemptRole(
+                    validatedActor.roles
+                );
+
+                return {
+                    eligibility,
+                    canPublish: isBillingExempt || publishEligibilityAllowsPublish(eligibility),
+                    startsTrial: !isBillingExempt && publishEligibilityStartsLocalTrial(eligibility)
+                };
+            }
+        });
     }
 
     /**
