@@ -45,6 +45,28 @@
  * never persists `providerInitPoint` to storage, it only exists on the
  * in-memory response of the `create()` call.
  *
+ * ## HOS-1221: the preapproval this creates carries NO `preapproval_plan_id`
+ *
+ * The four plan checkouts pass {@link CreateOwnPreapprovalSubscriptionInput
+ * .mpPreapprovalPlanId} (bookkeeping, recorded on `metadata`) and NOT
+ * `providerPriceId` (forwarded to the provider). Passing the plan id to the
+ * provider builds MercadoPago's "subscription WITH an associated plan" request,
+ * which it rejects with HTTP 400 `"Create subscription - card_token_id is
+ * required"` — a self-serve checkout never tokenizes a card, so every checkout
+ * behind the flag answered 500. Without the plan id qzpay builds the "no
+ * associated plan" preapproval instead: inline `auto_recurring` at the resolved
+ * price's own amount/cadence, which is the flow that returns an `init_point`
+ * for the payer to authorize.
+ *
+ * The ONE caller that still sends `providerPriceId` is the recurring add-on
+ * (`addon.checkout.recurring.ts`): it borrows the owner plan's price row purely
+ * to satisfy qzpay's plan+price requirement, so the add-on's own MercadoPago
+ * plan is what makes the preapproval charge the add-on's amount. Dropping it
+ * there would charge the borrowed price. That path is therefore broken in the
+ * same way and needs an amount override, not a deletion — see guard G-2
+ * (`scripts/check-no-plan-id-to-own-preapproval.sh`), which allows exactly that
+ * one file and fails on any other.
+ *
  * @module services/billing/own-preapproval-subscription-create
  */
 
@@ -83,6 +105,30 @@ export const PENDING_TRIAL_EXTENSION_METADATA_KEY = 'pendingTrialExtensionJson';
  * client override for tests and the two deferred-redemption promo snapshots.
  */
 export interface CreateOwnPreapprovalSubscriptionInput extends CreatePaidSubscriptionInput {
+    /**
+     * REQUIRED here, unlike on {@link CreatePaidSubscriptionInput} where it is
+     * optional (HOS-1221 D3). This is the LOCAL trial window in days — nothing
+     * about it is ever sent to MercadoPago.
+     *
+     * Omitting it does not mean "no trial": qzpay-core falls back to the
+     * resolved PRICE's own `trialDays` (`billing.ts`: `if (input.trialDays !==
+     * undefined) ... else if (price?.trialDays != null)`), and the storage
+     * adapter then writes `trial_start = now`, `trial_end = now + N`. Every
+     * `owner-*` and `tourist-*` monthly price row carries 30 (measured on
+     * staging, 5 of 5), so a checkout that omitted this was born claiming a
+     * month of free days while MercadoPago charged the card on day 1 — and the
+     * webhook's `deriveTrialingStatus` then reported that paying customer as
+     * `trialing` until the trial "elapsed" thirty days later.
+     *
+     * Requiring it is the guard, and deliberately instead of a static one: the
+     * compiler checks EVERY call site, including files a scan's scope
+     * derivation would miss, it cannot be defeated by a rename, and it fails at
+     * the call rather than at file granularity. A new checkout branch that
+     * forgets the field does not compile. Pass `0` for a paid checkout — the
+     * four plan checkouts and the retry recovery all do — or the borrowed-price
+     * override the recurring add-on needs.
+     */
+    readonly trialDays: number;
     /** Drizzle client override for tests. Defaults to {@link getDb}. */
     readonly db?: DrizzleClient;
     /**
@@ -111,6 +157,32 @@ export interface CreateOwnPreapprovalSubscriptionInput extends CreatePaidSubscri
      * (`ProductDomainEnum`), partner passes `'partner'`.
      */
     readonly productDomain?: string;
+    /**
+     * BOOKKEEPING ONLY (HOS-1221): the MercadoPago `preapproval_plan` id this
+     * checkout resolved, recorded on the row's `metadata` and **never** sent to
+     * MercadoPago.
+     *
+     * It exists because two readers need to know which plan variant a checkout
+     * was priced against — `decideOwnPreapprovalReuse` (`checkout-idempotency.ts`
+     * §6.6-B) refuses a stale in-flight checkout whose plan drifted, and
+     * `mintRetryPreapprovalAttempt` (`preapproval-recovery.service.ts`) records
+     * the same key on the fresh attempt. Both used to read the value off
+     * {@link CreatePaidSubscriptionInput.providerPriceId}, which is the field
+     * qzpay forwards to the provider.
+     *
+     * That coupling is what HOS-1221 broke apart. A `POST /preapproval` carrying
+     * `preapproval_plan_id` is MercadoPago's "subscription WITH an associated
+     * plan" flow, and MercadoPago answers it with HTTP 400
+     * `"Create subscription - card_token_id is required"` unless a card was
+     * already tokenized — which this self-serve checkout never does. Every
+     * checkout under `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` answered 500 for
+     * exactly that reason. The plan id still identifies the priced variant; it
+     * just must not travel in the request body.
+     *
+     * `scripts/check-no-plan-id-to-own-preapproval.sh` (guard G-2) fails CI if a
+     * checkout puts a plan id back into `providerPriceId`.
+     */
+    readonly mpPreapprovalPlanId?: string;
     /**
      * Domain coordinates merged onto the row's `metadata` — mirrors
      * {@link CreatePendingProviderSubscriptionInput.domainMetadata}
@@ -193,6 +265,10 @@ export async function createOwnPreapprovalSubscription(
         pendingTrialExtension,
         metadata,
         productDomain,
+        // HOS-1221: destructured OUT of `paidInput` on purpose. This value is
+        // recorded on the row and never handed to `createPaidSubscription`,
+        // which is what forwards fields to the provider.
+        mpPreapprovalPlanId,
         domainMetadata,
         writeDomainLinkRow,
         ...paidInput
@@ -221,6 +297,11 @@ export async function createOwnPreapprovalSubscription(
     const mpSubscriptionId = result.subscription.providerSubscriptionIds?.mercadopago;
     const client = db ?? getDb();
 
+    // HOS-1221: the plan id recorded for bookkeeping. Stated explicitly by the
+    // four plan checkouts; falls back to `providerPriceId` for the add-on path,
+    // which genuinely subscribes against a MercadoPago plan.
+    const recoveryMpPlanId = mpPreapprovalPlanId ?? paidInput.providerPriceId;
+
     // HOS-937 step 3: the recovery metadata below (`checkoutUrl`,
     // `mpPreapprovalPlanId`, `billingInterval`) used to be stamped ONLY on the
     // commerce/partner (`writeDomainLinkRow`) branch — accommodation
@@ -241,11 +322,17 @@ export async function createOwnPreapprovalSubscription(
         billingInterval: paidInput.billingInterval ?? 'monthly',
         // Persisted so the §6.6-B reuse check can refuse a stale hit when the
         // resolved MP plan drifted between two checkout attempts (price
-        // change, trial-day variant change) — same price-drift guard the OLD
-        // flow's `mpPreapprovalPlanId` reuse condition enforced. Also read by
-        // `mintRetryPreapprovalAttempt` to subscribe the fresh attempt against
-        // the SAME MP `preapproval_plan` (same amount/cadence/trial terms).
-        ...(paidInput.providerPriceId ? { mpPreapprovalPlanId: paidInput.providerPriceId } : {})
+        // change, discount variant change) — same price-drift guard the OLD
+        // flow's `mpPreapprovalPlanId` reuse condition enforced. Also carried
+        // forward by `mintRetryPreapprovalAttempt` onto a retry attempt.
+        //
+        // HOS-1221: the four plan checkouts now state it explicitly through
+        // `mpPreapprovalPlanId`, which reaches this stamp and nothing else.
+        // `providerPriceId` remains the source for the ONE caller that still
+        // subscribes against a real MercadoPago plan — the recurring add-on
+        // (`addon.checkout.recurring.ts`), which borrows another price row and
+        // would charge the WRONG AMOUNT without its own plan.
+        ...(recoveryMpPlanId ? { mpPreapprovalPlanId: recoveryMpPlanId } : {})
     };
 
     try {

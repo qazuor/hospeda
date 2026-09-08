@@ -184,6 +184,96 @@ describe('createPaidSubscription', () => {
         expect(call).not.toHaveProperty('metadata');
     });
 
+    // ── HOS-1221 D2: the amount override ─────────────────────────────────────
+    // `providerUnitAmountOverride` is what carries a signup discount now that
+    // the discount can no longer be baked into a MercadoPago plan. qzpay and
+    // the MercadoPago adapter both read it with `!== undefined` because `0` is
+    // a legitimate override, so this helper has to forward it by the same rule.
+
+    it('forwards providerUnitAmountOverride and planDisplayName when supplied', async () => {
+        const billing = createBillingMock();
+
+        await createPaidSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            providerUnitAmountOverride: 900_000,
+            planDisplayName: 'Anfitrión Básico'
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.providerUnitAmountOverride).toBe(900_000);
+        expect(call.planDisplayName).toBe('Anfitrión Básico');
+    });
+
+    it('omits both when they are not supplied', async () => {
+        const billing = createBillingMock();
+
+        await createPaidSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        // Absent, not `undefined`-valued: qzpay distinguishes the two.
+        expect(call).not.toHaveProperty('providerUnitAmountOverride');
+        expect(call).not.toHaveProperty('planDisplayName');
+    });
+
+    /**
+     * The case a truthiness check gets wrong, and the reason the forwarding is
+     * written `=== undefined ? {} : {...}`.
+     *
+     * `0` means "charge nothing this cycle", which is a real instruction — not
+     * "no override". A `providerUnitAmountOverride ? ... : ...` here drops it
+     * and the buyer is charged the full price row instead, silently. That is
+     * the same class of bug as the plan-id one this issue is about: a value
+     * that looks absent because of how it was tested.
+     */
+    it('forwards an override of 0 — it is an amount, not an absence', async () => {
+        const billing = createBillingMock();
+
+        await createPaidSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            providerUnitAmountOverride: 0
+        });
+
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call).toHaveProperty('providerUnitAmountOverride');
+        expect(call.providerUnitAmountOverride).toBe(0);
+    });
+
+    it('forwards an empty planDisplayName rather than second-guessing it', async () => {
+        const billing = createBillingMock();
+
+        await createPaidSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl,
+            planDisplayName: '   '
+        });
+
+        // The adapter already trims and falls back on a blank value. Deciding
+        // that here too would put the same rule in two places, free to drift.
+        const call = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.planDisplayName).toBe('   ');
+    });
+
     // ── HOS-151 Bug C: reject an id-less MP preapproval ───────────────────────
     // MP can return a 2xx preapproval with no provider subscription id. Before
     // the fix this persisted a live `incomplete` row with `mp_subscription_id =
