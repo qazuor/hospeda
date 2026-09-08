@@ -25,15 +25,20 @@ Machine-greppable header so a later sweep can find every sign-off, and
 - **Entornos pendientes**: ninguno   (or `prod — concerns_distintos: MP real`)
 - **Labels retirados**: status-needs-smoke-staging
 - **Observado**: <what was actually seen, in words. Never "step 12 passed".>
-- **Novedad**: no | <entry-id>   (only on PASO)
+- **Novedad**: <entry-id>   (only on PASO)
 - **Hallazgo**: HOS-NNN   (only on FALLO)
 ```
 
-`Novedad` records the What's New decision taken in Phase 2b: `no` (evaluated, not
-a novelty for an end user) or the id of the catalog entry it produced. It is
-written by amending this same comment once the labels are applied, so a later
-sweep can reconstruct every novelty decision from Linear alone, and so a second
-sign-off on the same issue knows not to ask again.
+`Novedad` carries the id of the What's New entry Phase 2b wrote for this issue.
+It is written by amending this same comment once the labels are applied, so a
+later sweep can reconstruct every entry's origin from Linear alone, and so a
+second sign-off on the same issue knows not to write a second entry.
+
+On a `PASO` the value is always an id: Phase 2b writes an entry and does not
+ask whether to. `no` remains readable on sign-offs written before 2026-09-08,
+when the flow asked the question — it means "evaluated, not a novelty", and a
+second sign-off on such an issue applies `whats-new-none` rather than writing an
+entry after the fact.
 
 `Grado: declarado-de-memoria` means the owner asserts the smoke was run but no
 archived evidence exists. It removes the label like any other sign-off, and the
