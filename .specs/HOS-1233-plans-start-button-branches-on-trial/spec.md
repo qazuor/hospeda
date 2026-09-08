@@ -83,6 +83,29 @@ Every per-vertical trial mechanism is keyed by that enum: `resolveTrialEligibili
 
 This is not a detail to route around while implementing. It is the reason tourist needs a decision before it can get the same three branches as the rest — see **OQ-1**.
 
+### F-4b · Tourist plans are already CLASSIFIED as accommodation, in both live databases
+
+F-4 says tourist has no domain. The consequence is not that its rows carry nothing — it is that they carry the wrong thing. Measured 2026-09-08 against both environments:
+
+| env | plan | `billing_plans.product_domain` | `billing_subscriptions.product_domain` | status | n |
+| -- | -- | -- | -- | -- | -- |
+| staging | `tourist-vip` | `accommodation` | `accommodation` | `active` | 1 |
+| staging | `tourist-vip` | `accommodation` | `accommodation` | `past_due` | 1 |
+| prod | `tourist-vip` | `accommodation` | `accommodation` | `abandoned` | 1 |
+
+The commerce verticals are classified correctly in the same query (`gastronomy-basico → gastronomy`, `experience-basico → experience`). **Tourist is the only misclassified one**, and it is misclassified at the PLAN row, not merely inherited by a subscription from the column default.
+
+The cause is F-4 plus a fail-open: with no `tourist` member to assign, the plan falls to the column's `'accommodation'` default, and `subscriptionMatchesDomain` treats `null` / `undefined` / `'accommodation'` alike as accommodation — deliberately, for legacy rows.
+
+So **for the entitlement engine, a tourist on an active VIP plan is indistinguishable from an accommodation subscriber**. `isAccommodationSubscription` returns `true` for that row.
+
+Inferred from the code and NOT measured end to end — worth confirming before acting on it:
+
+- `start-paid.ts:196-205` blocks checkout when the customer already has an active accommodation subscription, so a tourist VIP would likely be refused `ALREADY_SUBSCRIBED` on trying to become a host.
+- `publish-eligibility` would answer `has_active_sub`, letting them publish an accommodation with no host plan, and never starting their accommodation trial.
+
+This reframes OQ-1: tourist is not merely *unread*, it is *misfiled*, and that predates this spec.
+
 ### F-5 · The two verdict enums are deliberately separate and must stay that way
 
 `commerce-trial-verdict.schema.ts:18-25` and `publish-eligibility.schema.ts:18-26` each carry the same instruction from the other side: `PublishEligibilityKindSchema` (`first_publish` / `has_active_sub` / `subscription_required`) and `CommerceTrialVerdictKindSchema` (`trial_available` / `has_active_sub` / `payment_required`) spell their states differently **on purpose**, because publishing a commerce listing opens a MercadoPago checkout where publishing an accommodation starts a local trial.
@@ -165,17 +188,19 @@ Per the vertical of the page the button lives on:
 
 ## 7. Open questions
 
-### OQ-1 · How does tourist get a verdict? — BLOCKING for the tourist page
+### OQ-1 · Tourist is misfiled, not just unread — BLOCKING for the tourist page
 
-F-4: there is no `tourist` in `ProductDomainEnum`, so there is no per-vertical trial state to read, and the tourist page is where the worst measured outcome happened (ARS 15.000 charged on the spot).
+F-4 and **F-4b**: there is no `tourist` in `ProductDomainEnum`, and the consequence in the live data is that tourist plans are classified as `accommodation` in prod and staging alike. So the tourist page is not missing a read — it is reading a row that claims to be something else. And it is the page where the worst outcome was measured (ARS 15.000 charged on the spot).
 
-Three ways out, none of them free:
+The options changed shape once F-4b was measured:
 
-1. **Add `TOURIST` to `ProductDomainEnum`.** Consistent with the rest. But that enum drives the entitlement engine, and `subscriptionMatchesDomain` reads asymmetrically by design — `accommodation` fails open, everything else fails closed. A new member has to be threaded through that, plus the frozen guards a new enum value trips.
-2. **Give tourist the warning branch only**, keyed off the account-level `trial/status` rather than a vertical. Cheap and it closes the silent-charge hole. It inherits F-3's known flaw: a live commerce subscription can mask an elapsed tourist trial.
-3. **Split tourist into its own issue** and ship the other four here.
+1. **Add `TOURIST` to `ProductDomainEnum` and reclassify the existing rows.** No longer "consistency for its own sake" — it corrects a live misclassification. Cost: the enum drives the entitlement engine, `subscriptionMatchesDomain` reads asymmetrically by design (accommodation fails open, everything else fails closed), a new enum value trips several frozen-count guards, and the existing rows need a data migration under the expand/contract rule. Biggest change, and the only one that makes the other reads correct.
+2. **Warning branch only, off the account-level `trial/status`.** Closes the silent-charge hole cheaply and touches no enum. But F-4b means the row it reads is filed as accommodation, so this papers over the misclassification instead of surfacing it — and it inherits F-3's masking flaw on top.
+3. **Split tourist into its own issue.** Ship the other four pages here. Given F-4b, the tourist work is now plausibly bigger than the rest of this spec combined, and it has a blast radius (the entitlement engine) that the other four do not.
 
 Not deciding this by implementation. It needs the owner.
+
+Whichever is chosen, **F-4b is a finding that outlives this spec** and should be tracked on its own regardless — the inferred consequences (a tourist VIP blocked from becoming a host; a tourist VIP able to publish an accommodation with no host plan) are not caused by this work and are not fixed by leaving tourist out of it.
 
 ### OQ-2 · Banner in an island, or the plans pages leave the edge cache?
 
