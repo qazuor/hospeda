@@ -82,8 +82,15 @@ export interface SubscriptionDiscountState {
  * - `undefined` (column not yet in SELECT) → include
  * - `null` (legacy row, column exists but value is NULL) → include
  * - `'accommodation'` (explicit default) → include
- * - `'commerce'` / `'partner'` → **exclude**
+ * - `'commerce'` / `'partner'` / `'tourist'` → **exclude**
  * - anything else (future domains) → exclude (fail-closed)
+ *
+ * `'tourist'` needed no code change to be excluded — the fail-open above is
+ * reached only when the CALLER asks for accommodation, so any explicit
+ * non-accommodation value already fails closed. What it did need was the enum
+ * member itself: until HOS-1233 there was none, so the tourist plans fell to
+ * the column's `'accommodation'` default and landed on the include side of this
+ * very rule, in staging and production alike.
  *
  * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
  * @returns `true` when the subscription should be visible to the accommodation engine.

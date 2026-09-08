@@ -316,6 +316,45 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
         });
     });
 
+    describe('HOS-1233 — tourist fails CLOSED, and the accommodation fail-open is untouched', () => {
+        it('keeps a tourist row OUT of the accommodation domain', () => {
+            // The whole point of the enum member. Before HOS-1233 there was no
+            // `tourist` value to assign, so the tourist plans carried the
+            // column's `'accommodation'` default and this returned TRUE —
+            // measured on the live `tourist-vip` plan row in staging and
+            // production alike, which made a paying tourist indistinguishable
+            // from an accommodation subscriber to the entitlement engine.
+            expect(isAccommodationSubscription({ productDomain: 'tourist' })).toBe(false);
+        });
+
+        it('matches a tourist row only against its own domain', () => {
+            const touristRow = { productDomain: 'tourist' };
+            expect(subscriptionMatchesDomain(touristRow, 'tourist')).toBe(true);
+            for (const other of ['accommodation', 'gastronomy', 'experience', 'partner'] as const) {
+                expect(subscriptionMatchesDomain(touristRow, other)).toBe(false);
+            }
+        });
+
+        it('does NOT let a legacy row satisfy the tourist domain (fail-closed)', () => {
+            // The mirror of the accommodation fail-open: a row with no domain is
+            // accommodation by default, never tourist. Getting this backwards
+            // would hand every legacy subscriber a tourist verdict.
+            for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
+                expect(subscriptionMatchesDomain(legacy, 'tourist')).toBe(false);
+            }
+        });
+
+        it('leaves the accommodation fail-open exactly as it was', () => {
+            // Guards the direction that matters if somebody "tidies" the
+            // predicate while adding a domain: a legacy row must STILL count as
+            // accommodation, or every pre-column host loses their entitlements.
+            for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
+                expect(isAccommodationSubscription(legacy)).toBe(true);
+            }
+            expect(isAccommodationSubscription(null)).toBe(true);
+        });
+    });
+
     describe('the live verticals', () => {
         it.each([
             'gastronomy',
@@ -558,7 +597,9 @@ describe('isAddonSubscription (HOS-847)', () => {
     });
 
     it('does not treat any other domain as an addon', () => {
-        for (const domain of ['accommodation', 'gastronomy', 'experience', 'partner']) {
+        // Every non-addon member, recounted against ProductDomainEnum rather
+        // than appended to — `tourist` joined in HOS-1233.
+        for (const domain of ['accommodation', 'gastronomy', 'experience', 'partner', 'tourist']) {
             expect(isAddonSubscription({ productDomain: domain })).toBe(false);
         }
     });

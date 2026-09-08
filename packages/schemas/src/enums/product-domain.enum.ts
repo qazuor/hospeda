@@ -5,6 +5,16 @@
  * - gastronomy: Gastronomy listings, independently subscribable and capped.
  * - experience: Experience listings, independently subscribable and capped.
  * - partner: Partner directory subscriptions.
+ * - tourist: Consumer-side plans (`tourist-free`, `tourist-vip`) — a vertical
+ *   with its own catalogue and entitlements but no listings of its own. Added
+ *   by HOS-1233 to correct a live misfiling: with no member to assign, the
+ *   tourist plans fell to the column's `'accommodation'` default, and
+ *   `subscriptionMatchesDomain` counts that value as accommodation (it fails
+ *   OPEN there, for legacy rows). Measured 2026-09-08, `tourist-vip` carried
+ *   `product_domain = 'accommodation'` on the PLAN row in staging AND
+ *   production, which made a paying tourist indistinguishable from an
+ *   accommodation subscriber to the entitlement engine. Fails CLOSED like every
+ *   other non-accommodation domain.
  * - addon: A recurring add-on's own MercadoPago preapproval (HOS-847). A
  *   MercadoPago preapproval carries exactly one `auto_recurring.transaction_amount`
  *   and no line items, so a recurring add-on gets its OWN `billing_subscriptions`
@@ -47,6 +57,7 @@ export enum ProductDomainEnum {
     GASTRONOMY = 'gastronomy',
     EXPERIENCE = 'experience',
     PARTNER = 'partner',
+    TOURIST = 'tourist',
     ADDON = 'addon'
 }
 
@@ -80,5 +91,15 @@ export const BUSINESS_VERTICAL_PRODUCT_DOMAINS = [
     ProductDomainEnum.ACCOMMODATION,
     ProductDomainEnum.GASTRONOMY,
     ProductDomainEnum.EXPERIENCE,
-    ProductDomainEnum.PARTNER
+    ProductDomainEnum.PARTNER,
+    // TOURIST belongs here despite owning no listings (HOS-1233). The test this
+    // list actually serves is "is this a distinct vertical the customer holds a
+    // subscription in", and a paying `tourist-vip` is exactly that — it is only
+    // ADDON, a billing mechanism rather than a product, that the list excludes.
+    // Leaving it out would be a regression rather than a no-op: before HOS-1233
+    // the tourist plans were filed as `accommodation`, so `resolveUserPlanSummary`
+    // did count them; reclassifying them without adding the member here would
+    // make the "mi plan" widget stop seeing a live subscription and show "no
+    // plan" to somebody who is paying.
+    ProductDomainEnum.TOURIST
 ] as const;
