@@ -33,8 +33,13 @@ const subtitle = t(
     'Sumate como agencia o aliado comercial y trabajemos juntos para conectar viajeros con el Litoral.'
 );
 
+// `item1` is gone, not renamed: it promised "access to a network of verified
+// stays and businesses" and there is nothing that implements it — the approved
+// commercial presentation says outright that no partner directory exists
+// (HOS-941 D-13). The remaining keys keep their numbers; nobody reads a key
+// name, and renumbering three locale files buys nothing but the chance to
+// mispair a sentence with its icon.
 const benefits = [
-    t('alliance-leads.partner.benefits.item1', ''),
     t('alliance-leads.partner.benefits.item2', ''),
     t('alliance-leads.partner.benefits.item3', ''),
     t('alliance-leads.partner.benefits.item4', '')

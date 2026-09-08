@@ -20,10 +20,21 @@
  * has: the host bullets come from the owner plans' entitlements (publishing,
  * WhatsApp contact, review replies, stats, promotions), the two commerce ones
  * restate the benefit blocks the vertical's own landing already publishes, and
- * the partner ones restate `alliance-leads.partner.benefits.*`. No bullet
- * mentions a trial length or a payment method — those are the pricing pages'
- * job, and a number written here would go stale the moment an operator edits the
- * catalogue.
+ * the partner ones are worded after `alliance-leads.partner.benefits.*`. No
+ * bullet mentions a trial length or a payment method — those are the pricing
+ * pages' job, and a number written here would go stale the moment an operator
+ * edits the catalogue.
+ *
+ * **"Restate" meant worded-after, and it read as read-from.** Every bullet on
+ * this surface, partner included, resolves from
+ * `pricing.index.cards.<id>.highlights.item{1..3}` — see `audienceHighlightKeys`
+ * below, which BUILDS those keys in a loop. `alliance-leads` is a different
+ * namespace in a different file, and the overlap is duplicated COPY, not a
+ * shared source. HOS-1228 is what this cost: retiring a false partner promise
+ * ("access to a network of verified stays and businesses", HOS-941 D-13) meant
+ * editing BOTH copies, and a reader who trusted this paragraph would have
+ * deleted the `alliance-leads` key, watched `/sumate/partner/` lose the line,
+ * and left the index card — the surface that prompted the change — untouched.
  *
  * The partner bullets deliberately never name a TIER. The tier is what decides
  * whether a partner gets its own page (HOS-294), but it is never rendered

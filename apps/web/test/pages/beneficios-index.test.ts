@@ -96,7 +96,10 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
         'commerce.landing.gastronomy.benefits.item2.desc',
         'commerce.landing.gastronomy.benefits.item3.title',
         'commerce.landing.gastronomy.benefits.item3.desc',
-        'alliance-leads.partner.benefits.item1',
+        // `item1` retired by HOS-1228 (HOS-941 D-13): it promised access to a
+        // network of verified stays and businesses, which nothing implements.
+        // The survivors keep their original numbers — they pair with
+        // `benefits.partner.N.title` by array position, not by suffix.
         'alliance-leads.partner.benefits.item2',
         'alliance-leads.partner.benefits.item3',
         'alliance-leads.partner.benefits.item4'
@@ -125,6 +128,41 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
         expect(src).not.toContain('Aparecé donde miles de viajeros');
         expect(src).not.toContain('Acceso a una red de alojamientos');
     });
+
+    it.each(LOCALES)('does not promise a verified partner network in %s (HOS-1228)', (locale) => {
+        // The claim HOS-941 D-13 retired, checked in the LOCALE FILES rather
+        // than in this page's source — it lived in three keys across two
+        // namespaces, and the surviving danger is a translator or a future
+        // author putting one of them back.
+        //
+        // Substrings, not whole sentences: the point is the CLAIM, and the
+        // wording varied between the two copies that carried it ("Acceso a una
+        // red…" vs "Acceso a la red…"). An exact-sentence assertion would pass
+        // on the third rewording of the same promise.
+        const needles: Readonly<Record<string, readonly string[]>> = {
+            es: ['red de alojamientos y comercios verificados', 'Red verificada'],
+            en: ['network of verified', 'Verified network'],
+            pt: ['rede de hospedagens e comércios verificados', 'Rede verificada']
+        };
+
+        const haystack = [
+            JSON.stringify(readLocale(locale, 'alliance-leads')),
+            JSON.stringify(readLocale(locale, 'benefits')),
+            JSON.stringify(readLocale(locale, 'pricing'))
+        ].join('\n');
+
+        for (const needle of needles[locale] ?? []) {
+            expect(haystack, `${locale}: "${needle}" is back`).not.toContain(needle);
+        }
+    });
+
+    it('is checking locales that actually exist', () => {
+        // Guards the guard: a `readLocale` that silently returned `{}` would
+        // make every assertion above vacuously true.
+        expect(JSON.stringify(readLocale('es', 'pricing'))).toContain(
+            'Condiciones comerciales a medida'
+        );
+    });
 });
 
 describe('beneficios/index.astro — section chrome lives in benefits.*', () => {
@@ -136,7 +174,8 @@ describe('beneficios/index.astro — section chrome lives in benefits.*', () => 
         'benefits.partner.tagline',
         'benefits.partner.title',
         'benefits.partner.cta',
-        'benefits.partner.1.title',
+        // `1.title` ("Red verificada") retired with its sentence — same claim,
+        // said short. See the note in REUSED_KEYS above.
         'benefits.partner.2.title',
         'benefits.partner.3.title',
         'benefits.partner.4.title'
