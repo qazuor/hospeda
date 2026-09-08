@@ -180,6 +180,42 @@ Three boundaries this decision needs, and only the first came from the owner:
 - **`comp` is treated as active** — assumption, flagged here rather than asked. A comp subscription is perpetual and grants entitlements (`isEntitlementGrantingStatus` accepts `active`, `trialing`, `comp`), so it sells the same empty delta. Reverse it if the intent was narrower.
 - **`past_due` is treated as active** during its dunning grace — same assumption, same reasoning: entitlements still resolve during the 7-day grace. Staging currently holds a `past_due` `tourist-vip` row (F-4b), so this state is not hypothetical.
 
+### D-6 · The misclassification is fixed everywhere it bites, not only where this issue trips over it (owner, 2026-09-08)
+
+D-3 said tourist gets a domain. The owner then scoped what "gets a domain" has to
+mean: **every site, read and write**, not the subset HOS-1233 happens to need.
+
+The reason is in F-4b's shape. The wrong value did not arrive by one bad write —
+it arrived because nothing ever assigned a value, so the column default answered
+for a whole vertical, in two databases, for as long as the plans have existed.
+Fixing only the reads this spec consumes would leave the same hole open for the
+next plan somebody adds, and leave every other consumer still reading
+`accommodation` for a tourist.
+
+So the work is three things, and the third is the one that makes it permanent:
+
+1. **Every WRITE that creates a subscription or a plan row assigns a domain
+   explicitly.** A write that omits it is the bug, regardless of whether today's
+   default happens to be right for that caller.
+2. **Every READ that branches on the domain is audited against the new value**,
+   and each is classified as fixed-by-this, broken-by-this, or indifferent.
+   A read that works today *because* tourists are miscounted as accommodation is
+   a behaviour change, not a bug fix, and has to be named as one.
+3. **A guard makes the omission impossible to repeat.** The default is the
+   failure mode: it is silent, it is plausible, and it produced a wrong answer in
+   production without a single line of code being wrong. Nothing in the type
+   system defends this enum (its own docblock says so), so the defence has to be
+   a guard — a new plan or subscription write that does not name its domain fails
+   CI rather than inheriting `accommodation`.
+
+Two consequences worth stating before the work starts. Reclassifying is **not a
+no-op on live behaviour**: any gate that a tourist passes today by being mistaken
+for an accommodation subscriber will start refusing them, and any surface that
+shows them their plan because it counted them as accommodation will stop unless
+it is updated too — `BUSINESS_VERTICAL_PRODUCT_DOMAINS` was the first such case
+found, and it will not be the last. And the audit itself is the deliverable: an
+inventory of read sites with a verdict each, not a diff.
+
 ### D-5 · The clock's only source is the local row
 
 `trial_end` on `billing_subscriptions`. Since HOS-1012, MercadoPago is never asked about trials, and `scripts/check-no-trial-to-mercadopago.sh` fails CI if a checkout payload names one.
@@ -207,6 +243,9 @@ Three boundaries this decision needs, and only the first came from the owner:
 - **AC-13** · Nothing in this work sends a trial to MercadoPago; guard G-1 stays green.
 - **AC-14** · `ProductDomainEnum` carries `TOURIST`; tourist plan rows in every environment stop reporting `accommodation` (D-3, F-4b). A query equivalent to F-4b's returns `tourist` for `tourist-*` plans afterwards.
 - **AC-15** · `subscriptionMatchesDomain` keeps its asymmetry: `accommodation` still fails open for legacy rows, `tourist` fails closed like every other non-accommodation domain.
+- **AC-15b** · **Every write** that creates a `billing_subscriptions` or `billing_plans` row assigns `product_domain` explicitly. None inherits the column default (D-6.1).
+- **AC-15c** · **Every read** that branches on `product_domain` is inventoried with a verdict — fixed / behaviour-changed / indifferent — and each behaviour-changed site is either updated or documented as a deliberate change (D-6.2). The inventory ships with the spec; a read left unclassified is an incomplete AC.
+- **AC-15d** · A guard fails CI when a subscription or plan write omits the domain (D-6.3). Mutation-verified by adding such a write and confirming it fails. This is the criterion that keeps F-4b from recurring: the value was never wrong in code, it was simply never stated.
 - **AC-16** · A visitor with an `active` subscription in accommodation, gastronomy or experiences sees the tourist purchase button **disabled**, with copy stating the VIP benefits are already held (D-4).
 - **AC-17** · A visitor whose only subscription is `trialing` still sees the tourist button **enabled** (D-4). This is the one that will be "simplified" by a future reader; it is deliberate.
 - **AC-18** · AC-16's copy never appears for someone who does not actually hold the benefits. The condition reads a live subscription status, never a role and never the presence of a plan object.
