@@ -242,6 +242,8 @@
                 "name": "Name",
                 "namePlaceholder": "Basic Owner",
                 "category": "Category",
+                "productDomain": "Product domain",
+                "productDomainHint": "Which vertical counts a subscription to this plan. Cannot be changed after creation.",
                 "description": "Description",
                 "descriptionPlaceholder": "Describe the plan...",
                 "monthlyArs": "Monthly (ARS)",
@@ -1336,6 +1338,7 @@
             "gastronomy": "Gastronomy",
             "experience": "Experience",
             "partner": "Partner",
+            "tourist": "Tourist",
             "addon": "Add-on",
             "unknown": "Other"
         },

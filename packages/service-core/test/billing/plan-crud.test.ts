@@ -107,6 +107,7 @@ vi.mock('../../src/services/billing/plan/plan.audit.js', () => ({
 // ─── Imports (after mocks) ─────────────────────────────────────────────────
 
 import { MODEL_C_FIELD_SPLIT } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import {
     createPlan,
     getPlanById,
@@ -731,6 +732,7 @@ describe('plan.crud', () => {
             name: 'Básico',
             description: 'Plan básico',
             category: 'owner' as const,
+            productDomain: ProductDomainEnum.ACCOMMODATION,
             monthlyPriceArs: 500000,
             annualPriceArs: null,
             monthlyPriceUsdRef: 5,
@@ -815,6 +817,62 @@ describe('plan.crud', () => {
                     annualPriceArs: baseInput.annualPriceArs
                 })
             );
+        });
+
+        it("HOS-1233 T-033: writes the caller's productDomain, not the column default", async () => {
+            // Arrange — a TOURIST plan, deliberately. The column defaults to
+            // `accommodation`, so an insert that omitted the field would still
+            // produce a perfectly valid row; asserting the VALUE is the only
+            // thing that separates "wrote it" from "let the default answer".
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            let insertedDb: ReturnType<typeof buildMockDb> | undefined;
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                return fn(insertedDb);
+            });
+
+            // Act
+            await createPlan({
+                ...baseInput,
+                slug: 'tourist-vip',
+                category: 'tourist',
+                productDomain: ProductDomainEnum.TOURIST
+            });
+
+            // Assert
+            const insertChain = insertedDb?.insert.mock.results[0]?.value;
+            const insertedValues = insertChain?.values.mock.calls[0]?.[0] as {
+                productDomain?: unknown;
+            };
+            expect(insertedValues.productDomain).toBe(ProductDomainEnum.TOURIST);
+        });
+
+        it('HOS-1233 T-033: an accommodation plan still writes its own domain', async () => {
+            // The sibling of the test above, and not redundant with it: a
+            // hardcoded `TOURIST` would satisfy that one alone. Two domains in
+            // the same suite is what a hardcode cannot satisfy.
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            let insertedDb: ReturnType<typeof buildMockDb> | undefined;
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                return fn(insertedDb);
+            });
+
+            // Act
+            await createPlan(baseInput);
+
+            // Assert
+            const insertChain = insertedDb?.insert.mock.results[0]?.value;
+            const insertedValues = insertChain?.values.mock.calls[0]?.[0] as {
+                productDomain?: unknown;
+            };
+            expect(insertedValues.productDomain).toBe(ProductDomainEnum.ACCOMMODATION);
         });
 
         it('HOS-692 AC-29: does NOT write monthlyPriceArs into the metadata mirror', async () => {

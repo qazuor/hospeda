@@ -480,7 +480,14 @@ export async function createPlan(
                     // migrating reads to the typed columns is a separate follow-up).
                     displayName: input.name,
                     monthlyPriceArs: input.monthlyPriceArs,
-                    annualPriceArs: input.annualPriceArs
+                    annualPriceArs: input.annualPriceArs,
+                    // HOS-1233 T-033: written from the caller, never left to
+                    // the column default. The column is NOT NULL with a
+                    // default, so an insert that omits it does not create a
+                    // plan with no domain — it creates one filed under the
+                    // default's vertical, which is how the tourist plans came
+                    // to claim `accommodation` in prod and staging alike.
+                    productDomain: input.productDomain
                 })
                 .returning();
 

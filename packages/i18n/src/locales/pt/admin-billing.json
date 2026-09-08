@@ -242,6 +242,8 @@
                 "name": "Nome",
                 "namePlaceholder": "Básico Proprietário",
                 "category": "Categoria",
+                "productDomain": "Domínio de produto",
+                "productDomainHint": "Qual vertical conta esta assinatura. Não pode ser alterado após a criação.",
                 "description": "Descrição",
                 "descriptionPlaceholder": "Descreva o plano...",
                 "monthlyArs": "Mensal (ARS)",
@@ -1336,6 +1338,7 @@
             "gastronomy": "Gastronomia",
             "experience": "Experiência",
             "partner": "Parceiro",
+            "tourist": "Turista",
             "addon": "Complemento",
             "unknown": "Outro"
         },

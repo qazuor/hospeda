@@ -9,6 +9,11 @@
 import { type EntitlementKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
 import { type ApiErrorShape, formatDate, type TranslationKey, toBcp47Locale } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
+import {
+    BUSINESS_VERTICAL_PRODUCT_DOMAINS,
+    ProductDomainEnum,
+    type ProductDomainValue
+} from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -68,6 +73,11 @@ export function PlanDialog({
             name: plan?.name || '',
             description: plan?.description || '',
             category: (plan?.category || 'owner') as 'owner' | 'complex' | 'tourist',
+            // No fallback from `plan`: the plan DTO does not carry the domain,
+            // and the field is disabled in edit mode anyway (the update payload
+            // strips it). ACCOMMODATION is the create-mode starting value, not
+            // an inference about the plan being edited.
+            productDomain: ProductDomainEnum.ACCOMMODATION as ProductDomainValue,
             monthlyPriceArs: plan?.monthlyPriceArs ? plan.monthlyPriceArs / 100 : 0,
             annualPriceArs: plan?.annualPriceArs ? plan.annualPriceArs / 100 : 0,
             monthlyPriceUsdRef: plan?.monthlyPriceUsdRef ?? 0,
@@ -88,6 +98,7 @@ export function PlanDialog({
                     name: value.name,
                     description: value.description,
                     category: value.category,
+                    productDomain: value.productDomain,
                     monthlyPriceArs: Math.round(value.monthlyPriceArs * 100),
                     annualPriceArs: value.annualPriceArs
                         ? Math.round(value.annualPriceArs * 100)
@@ -292,6 +303,57 @@ export function PlanDialog({
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
+                                    </div>
+                                )}
+                            </form.Field>
+
+                            <form.Field name="productDomain">
+                                {(field) => (
+                                    <div>
+                                        <Label htmlFor="plan-product-domain">
+                                            {t('admin-billing.plans.dialog.fields.productDomain')}{' '}
+                                            <span className="text-destructive">*</span>
+                                        </Label>
+                                        <Select
+                                            value={field.state.value}
+                                            onValueChange={(value) =>
+                                                field.handleChange(value as ProductDomainValue)
+                                            }
+                                            // Write-once, exactly like `slug` and
+                                            // `category`: the domain decides which
+                                            // entitlement engine counts every
+                                            // subscription already sold on this plan,
+                                            // so it is not an operator toggle.
+                                            disabled={!!plan}
+                                        >
+                                            <SelectTrigger id="plan-product-domain">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {/*
+                                                 * Iterated, never restated as a literal
+                                                 * list: a new vertical must appear here
+                                                 * on its own. ADDON is excluded by
+                                                 * construction — it tags an add-on's own
+                                                 * preapproval, never a plan.
+                                                 */}
+                                                {BUSINESS_VERTICAL_PRODUCT_DOMAINS.map((domain) => (
+                                                    <SelectItem
+                                                        key={domain}
+                                                        value={domain}
+                                                    >
+                                                        {t(
+                                                            `admin-billing.subscriptions.productDomainLabels.${domain}`
+                                                        )}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="mt-1 text-muted-foreground text-xs">
+                                            {t(
+                                                'admin-billing.plans.dialog.fields.productDomainHint'
+                                            )}
+                                        </p>
                                     </div>
                                 )}
                             </form.Field>

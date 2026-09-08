@@ -1,5 +1,9 @@
 import type { EntitlementKey, LimitKey, PlanDefinition } from '@repo/billing';
-import type { BillingPlanPublicListing, PlanPriceChangeEffect } from '@repo/schemas';
+import type {
+    BillingPlanPublicListing,
+    PlanPriceChangeEffect,
+    ProductDomainValue
+} from '@repo/schemas';
 
 /**
  * Parsed plan record shape used by DataTable cells and column definitions.
@@ -82,6 +86,13 @@ export interface CreatePlanPayload {
     readonly name: string;
     readonly description: string;
     readonly category: 'owner' | 'complex' | 'tourist';
+    /**
+     * Product domain the plan belongs to (HOS-1233). Required on create and
+     * WRITE-ONCE, like `slug`: it is a capability-layer field owned by config,
+     * so {@link UpdatePlanPayload} omits it and the update request must not
+     * carry it.
+     */
+    readonly productDomain: ProductDomainValue;
     readonly monthlyPriceArs: number;
     readonly annualPriceArs: number | null;
     readonly monthlyPriceUsdRef: number;
@@ -100,7 +111,8 @@ export interface CreatePlanPayload {
  * All fields from CreatePlanPayload except `slug` are optional; `id` is the UUID
  * mutation identifier. Matches UpdateBillingPlanSchema contract.
  */
-export interface UpdatePlanPayload extends Partial<Omit<CreatePlanPayload, 'slug'>> {
+export interface UpdatePlanPayload
+    extends Partial<Omit<CreatePlanPayload, 'slug' | 'productDomain'>> {
     readonly id: string;
 }
 

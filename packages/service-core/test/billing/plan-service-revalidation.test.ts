@@ -50,7 +50,7 @@ vi.mock('../../src/services/billing/plan/plan.crud.js', () => ({
 // Imports (after vi.mock calls so hoisting works correctly)
 // ---------------------------------------------------------------------------
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { ProductDomainEnum, ServiceErrorCode } from '@repo/schemas';
 import * as crudModule from '../../src/services/billing/plan/plan.crud.js';
 import { PlanService } from '../../src/services/billing/plan/plan.service.js';
 
@@ -123,6 +123,7 @@ describe('PlanService — pricing cache-tag revalidation (SPEC-168 T-017)', () =
                     name: 'Básico',
                     description: 'Plan básico',
                     category: 'owner',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
                     monthlyPriceArs: 1_000_000,
                     annualPriceArs: null,
                     monthlyPriceUsdRef: 10,
@@ -170,6 +171,7 @@ describe('PlanService — pricing cache-tag revalidation (SPEC-168 T-017)', () =
                     name: 'New',
                     description: 'desc',
                     category: 'owner',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
                     monthlyPriceArs: 500_000,
                     annualPriceArs: null,
                     monthlyPriceUsdRef: 5,
@@ -201,6 +203,7 @@ describe('PlanService — pricing cache-tag revalidation (SPEC-168 T-017)', () =
                     name: 'Dupe',
                     description: 'desc',
                     category: 'owner',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
                     monthlyPriceArs: 500_000,
                     annualPriceArs: null,
                     monthlyPriceUsdRef: 5,
@@ -421,6 +424,7 @@ describe('PlanService — pricing cache-tag revalidation (SPEC-168 T-017)', () =
                     name: 'Test',
                     description: 'desc',
                     category: 'owner',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
                     monthlyPriceArs: 0,
                     annualPriceArs: null,
                     monthlyPriceUsdRef: 0,

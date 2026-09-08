@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { queryBooleanParam } from '../../common/query-helpers.js';
+import { ProductDomainEnumSchema } from '../../enums/product-domain.schema.js';
 
 /**
  * Plan category schema.
@@ -194,6 +195,26 @@ export const CreateBillingPlanSchema = z
             .max(1000, { message: 'zodError.billing.plan.create.description.max' }),
         /** Target user category */
         category: BillingPlanCategoryEnumSchema,
+        /**
+         * Product domain the plan belongs to — which vertical's entitlement
+         * engine counts a subscription to it.
+         *
+         * REQUIRED, and this is the one field on this schema where an
+         * omission is worse than a rejection. `billing_plans.product_domain`
+         * is `NOT NULL` with a default, so a create request that leaves this
+         * out does not produce a plan with "no domain": it produces one
+         * silently filed under whichever vertical the column defaults to. An
+         * admin creating a tourist plan would get an accommodation plan, and
+         * nothing anywhere would say so (HOS-1233 F-4b — exactly how the
+         * tourist plans came to claim `accommodation` in two live databases).
+         *
+         * Deliberately NOT derivable from {@link category}: the two answer
+         * different questions. `category` is who the plan is sold to
+         * (`owner` / `complex` / `tourist`), the domain is which entitlement
+         * engine owns it — and the commerce verticals share one category
+         * while holding three different domains.
+         */
+        productDomain: ProductDomainEnumSchema,
         /** Monthly price in ARS cents (0 for free plans) */
         monthlyPriceArs: z
             .number({ message: 'zodError.billing.plan.create.monthlyPriceArs.invalidType' })

@@ -134,8 +134,11 @@ function BillingPlansPage() {
     const handleSubmit = async (payload: CreatePlanPayload): Promise<PlanSubmitResult> => {
         if (editingPlan) {
             // Update: use id (UUID) as the mutation identifier per D1.
-            // slug is stripped from the payload (immutable after creation).
-            const { slug: _slug, ...updateFields } = payload;
+            // slug is stripped from the payload (immutable after creation), and
+            // so is productDomain (HOS-1233): the domain is a capability-layer
+            // field that config owns, not an operator decision, and
+            // `UpdateBillingPlanSchema` is `.strict()` — sending it would 400.
+            const { slug: _slug, productDomain: _productDomain, ...updateFields } = payload;
             const result = await updateMutation.mutateAsync({
                 id: editingPlan.id,
                 ...updateFields
