@@ -303,6 +303,24 @@ export function AddonsPurchasePanel({
                     )}
                 </div>
 
+                {/*
+                 * HOS-847: a recurring add-on is charged again every month, so
+                 * the buyer has to read that BEFORE the buy button, not after
+                 * the second charge lands. Matched POSITIVELY on 'recurring' —
+                 * the same direction `shouldUseRecurringAddonCheckout` uses, so
+                 * the notice appears exactly on the add-ons whose checkout can
+                 * take the preapproval path and never on the one-time ones,
+                 * whose copy is left untouched.
+                 */}
+                {addon.billingType === 'recurring' && (
+                    <p className={styles.recurringNotice}>
+                        {t(
+                            'account.addons.recurringNotice',
+                            'Es una suscripción: se renueva sola y te la cobramos todos los meses hasta que la des de baja.'
+                        )}
+                    </p>
+                )}
+
                 {needsSelect && !isOwned && !hasNoAccommodations && (
                     <label className={styles.selectLabel}>
                         {t('account.addons.accommodationSelect.label', 'Alojamiento')}

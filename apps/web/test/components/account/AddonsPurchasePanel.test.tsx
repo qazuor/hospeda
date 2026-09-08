@@ -32,7 +32,17 @@ vi.mock('../../../src/components/account/AddonsPurchasePanel.module.css', () => 
 // `account.addons.catalog.<slug>.*` (BETA-198). The mock resolves those keys so
 // tests can assert the panel renders the i18n value instead of the raw
 // definition string; all other keys fall back to the provided fallback.
+/**
+ * Sentinel value the mock resolves `account.addons.recurringNotice` to
+ * (HOS-847). Deliberately NOT the component's inline Spanish fallback: an
+ * assertion on the fallback passes even when the component asks for a key that
+ * does not exist, which is exactly the bug that ships untranslated copy to
+ * `en` and `pt`.
+ */
+const RECURRING_NOTICE_TEXT = 'Aviso de renovacion (localizado)';
+
 const CATALOG_TRANSLATIONS: Record<string, string> = {
+    'account.addons.recurringNotice': RECURRING_NOTICE_TEXT,
     'account.addons.catalog.extra-photos-20.name': 'Pack de fotos extra (localizado)',
     'account.addons.catalog.extra-photos-20.description': 'Descripción localizada de fotos.',
     'account.addons.catalog.visibility-boost-7d.name': 'Impulso de visibilidad (localizado)',
@@ -104,6 +114,28 @@ const PER_ACCOMMODATION_ADDON: AddonCardData = {
     isActive: true,
     sortOrder: 2,
     requiresAccommodationTarget: true
+};
+
+/**
+ * A `recurring` add-on (HOS-847). Mirrors the real `extra-accommodations-5`
+ * catalog entry: monthly, account-scoped, and with `durationDays: null` —
+ * a recurring add-on has no fixed window, which is precisely why the buyer
+ * needs to be told it keeps charging.
+ */
+const RECURRING_ADDON: AddonCardData = {
+    slug: 'extra-accommodations-5',
+    name: 'Extra Accommodations Pack (+5)',
+    description: 'Add 5 more accommodations to your plan.',
+    billingType: 'recurring',
+    priceArs: 1300000,
+    durationDays: null,
+    affectsLimitKey: 'maxAccommodations',
+    limitIncrease: 5,
+    grantsEntitlement: null,
+    targetCategories: ['owner'],
+    isActive: true,
+    sortOrder: 3,
+    requiresAccommodationTarget: false
 };
 
 const ACCOMMODATIONS = [
@@ -435,5 +467,84 @@ describe('AddonsPurchasePanel', () => {
         );
 
         expect(screen.getByText('7 días')).toBeInTheDocument();
+    });
+});
+
+/**
+ * HOS-847: a `recurring` add-on is charged again every month once the
+ * recurring-checkout flag is on, so its card must say so BEFORE the buy
+ * button. A `one_time` card's copy stays exactly as it was.
+ *
+ * The assertions key on RECURRING_NOTICE_TEXT — the value the i18n mock
+ * resolves `account.addons.recurringNotice` to — and not on the component's
+ * inline Spanish fallback. That is deliberate: the mock returns the fallback
+ * for any key it does not know, so asserting the fallback would still pass if
+ * the component asked for the wrong key, and the string would then ship
+ * untranslated in `en` and `pt`.
+ */
+describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
+    it('warns that a recurring addon renews and is charged again', () => {
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[RECURRING_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={[]}
+            />
+        );
+
+        expect(screen.getByText(RECURRING_NOTICE_TEXT)).toBeInTheDocument();
+    });
+
+    it('leaves a one-time addon card without the recurring notice', () => {
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[PER_ACCOMMODATION_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={ACCOMMODATIONS}
+            />
+        );
+
+        expect(screen.queryByText(RECURRING_NOTICE_TEXT)).not.toBeInTheDocument();
+        // The one-time copy is untouched: price pill, "Pago único" and the
+        // duration badge all still render.
+        expect(screen.getByText('Pago único')).toBeInTheDocument();
+        expect(screen.getByText('7 días')).toBeInTheDocument();
+    });
+
+    it('shows the notice on the recurring card only when both types are listed', () => {
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[RECURRING_ADDON, PER_ACCOMMODATION_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={ACCOMMODATIONS}
+            />
+        );
+
+        // Exactly one notice on the page, and it lives inside the recurring
+        // add-on's own card — not merely somewhere in the document.
+        const notices = screen.getAllByText(RECURRING_NOTICE_TEXT);
+        expect(notices).toHaveLength(1);
+        expect(screen.getByTestId(`addon-card-${RECURRING_ADDON.slug}`)).toContainElement(
+            notices[0] as HTMLElement
+        );
+    });
+
+    it('still warns when the recurring addon is already owned', () => {
+        // An owned card has no buy button, but the buyer is still being
+        // charged monthly — hiding the notice there would remove the only
+        // place the ongoing charge is stated.
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[RECURRING_ADDON]}
+                ownedAddonSlugs={[RECURRING_ADDON.slug]}
+                accommodations={[]}
+            />
+        );
+
+        expect(screen.getByText(RECURRING_NOTICE_TEXT)).toBeInTheDocument();
     });
 });
