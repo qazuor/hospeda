@@ -529,7 +529,20 @@ Verdict for each of the 12 previously unlisted sites in that third group:
 
 ### Guards
 
-`check-product-domain-vocabulary.sh` and `check-product-domain-raw-sql.sh` police **only** the retired `'commerce'` literal. Neither has any opinion on a write that omits the domain. **The AC-15d guard does not exist and must be built from scratch** — it is what makes D-6.3 real rather than aspirational.
+`check-product-domain-vocabulary.sh` and `check-product-domain-raw-sql.sh` police **only** the retired `'commerce'` literal. Neither has any opinion on a write that omits the domain.
+
+~~**The AC-15d guard does not exist and must be built from scratch**~~ — **stale, corrected 2026-09-09.** It was built by T-035 and lives at `scripts/check-product-domain-on-writes.ts`, wired into `pnpm check:guards` **and** into CI as its own step (`.github/workflows/ci.yml:277`, which is what actually makes a guard run — being listed in `check:guards` is not). Anyone reading this line would have rebuilt a guard the repo already has; that is the seventh hand-audited claim in this spec to come apart on contact.
+
+**Verified 2026-09-09, by mutation rather than by reading** — the guard holds every claim its own header makes:
+
+| Mutation applied | Result |
+| -- | -- |
+| One create drops `productDomain` | `OMITS`, exit 1 |
+| TWO creates drop it, in different packages | **both** reported — the AC-15d requirement that it not stop at the first |
+| `...(cond ? { productDomain } : {})` | `OMITS`, exit 1 — a conditional spread does not count |
+| `productDomain` moved inside `metadata: { }` | `OMITS`, exit 1 — a nested key is a JSON blob entry, not the column |
+
+**The self-retiring exemption has retired.** The guard derives its `blocked-by-package` allowance by reading whether the INSTALLED `@qazuor/qzpay-core` declares `productDomain` in its own `.d.ts`. Called directly, `qzpayCoreOffersProductDomain()` now returns `true` (the wave published: qzpay PR #85 → release #86 → `qzpay-core@6.0.0`), and a clean run prints **zero** BLOCKED lines over 14 create sites. So an omitting `subscriptions.create(...)` is a hard failure today, not a documented exemption — and R-8's Hospeda-side precondition is met by measurement, not by assumption.
 
 ## 5. Scope
 
