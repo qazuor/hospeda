@@ -68,11 +68,25 @@ describe('HOS-1233 T-021 / AC-7 — every pricing page mounts the remaining-days
         const source = readSrc(SHARED_SECTIONS);
         expect(source).toContain('<TrialRemainingDaysBanner');
         // An island, not frontmatter (F-8 / AC-10): a server-rendered day count
-        // would personalise an edge-cached page.
+        // would personalise an edge-cached page. Deliberately agnostic about
+        // WHICH `client:` directive — that is a hydration-priority call, free
+        // to change, and this assertion is about the island/frontmatter split.
         expect(source).toMatch(/<TrialRemainingDaysBanner[^>]*client:/);
         // The page's audience is forwarded, so each page reads its OWN
         // vertical's clock rather than a default.
         expect(source).toMatch(/<TrialRemainingDaysBanner[^>]*audience=\{audience\}/);
+    });
+
+    it('the banner is not mounted for an audience with no trial scope', () => {
+        // aliados has no clock to read (`?productDomain=partner` is a 400), so
+        // mounting it there ships and hydrates an island whose every branch
+        // returns null.
+        const source = readSrc(SHARED_SECTIONS);
+        // Gated on the canonical resolver, never on a second
+        // `audience === 'partner'` test — the day aliados stops being the only
+        // scopeless audience, both halves have to move together.
+        expect(source).toContain('resolveTrialScopeForAudience({ audience }) !== null');
+        expect(source).toMatch(/hasTrialScope[\s\S]{0,40}<TrialRemainingDaysBanner/);
     });
 
     it('the banner reaches the pages only through that one mount', () => {
