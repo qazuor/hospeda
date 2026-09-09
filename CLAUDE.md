@@ -427,6 +427,72 @@ accommodation entitlement engine:
 - `billing_subscriptions.status = 'comp'` (`SubscriptionStatusEnum.COMP`) — a permanently-complimentary subscription. Created by `apps/api/src/services/subscription-comp-create.service.ts` as a direct DB insert with NO MercadoPago preapproval (`mp_subscription_id = NULL`). The dunning cron excludes it; `loadEntitlements` treats it as active. Not a 100% discount computation — an explicit status that cannot revert to full price.
 - The CHECK constraints enforcing per-`effect_kind` shape invariants (cross-column logic Drizzle cannot express) still live in the extras carril, applied by `pnpm db:apply-extras` (`packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql`). The MP preapproval mutation mechanism (lowering then restoring `transaction_amount`) was verified viable in the spike doc at `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` (Outcome A — GO).
 
+#### The plans page reads the trial before it charges (HOS-1233)
+
+`/{lang}/planes/<vertical>/precios/` used to charge without looking. Measured on
+staging: a host three days into a 30-day trial pressed "Empezar" and was charged
+ARS 18.000 on the spot, losing the remaining 27 days with nothing asked; a
+tourist was charged ARS 15.000 the same way. Two pages reached payment
+(`anfitriones`, `turistas`); the other three already send the visitor to a create
+form and are **banner-only** — turning them into checkout pages would undo
+HOS-1156.
+
+Four things a future reader would otherwise re-derive wrongly:
+
+- **The decision lives in ONE module and a static guard keeps it there.**
+  `apps/web/src/lib/billing/trial-start-branch.ts` maps a trial reading to
+  `trial_create_form` / `trial_warn_then_checkout` / `trial_checkout`.
+  `apps/web/test/lib/billing/trial-start-branch-canonical.guard.test.ts` is the
+  web twin of the API's canonical-predicate guard and fails CI on a second call
+  site comparing those literals — so consumers **dispatch through an exhaustive
+  `Record<TrialStartBranch, () => void>`**, never a `switch` or `===`. The
+  `trial_` prefix is load-bearing: bare `'checkout'` is already `ctaMode`'s value
+  on every pricing grid, and a guard anchored on it would cry wolf until somebody
+  switched it off. Renaming a branch means editing the guard's `BRANCH_LITERAL`
+  in the same commit.
+- **Two fail-safe directions, deliberately OPPOSITE.** The trial branch fails
+  toward WARNING (an unresolved read must never become a silent charge — R-2);
+  the already-VIP predicate
+  (`apps/web/src/lib/billing/tourist-vip-already-held.ts`) fails toward the
+  button staying ENABLED (wrongly claiming somebody holds a benefit is invisible
+  in testing and costs a sale — R-7), which is why it uses an ALLOWLIST of
+  holding statuses and never a denylist. They point opposite ways because the
+  money moves opposite ways. Do not "make them consistent".
+- **The web's subscription status does NOT use the domain enum's spelling.** The
+  API maps `trialing → 'trial'`
+  (`apps/api/src/routes/user/protected/subscription.ts:53`), and there is no
+  `'comp'` on the wire at all — a complimentary subscription arrives as
+  `status: 'active'` with `isComplimentary: true`. A web predicate written as
+  `status === 'trialing'` **never matches and never fails**; it reads as "not on
+  trial" and falls through.
+- **The clock is HOS-1282's endpoint, consumed and never rebuilt.**
+  `GET /protected/billing/trial/status?productDomain=` (wrapper:
+  `billingApi.getTrialStatus`). It hydrates before it narrows, so it cannot be
+  masked by a live subscription in another vertical. `partner` and `addon` are
+  rejected by `ProductDomainScopeEnumSchema` because neither owns a trial site,
+  so `/planes/aliados/precios/` reads no clock and shows no banner — correct, not
+  a gap. The spec's own F-3 ("nothing answers days-left-in-this-vertical") is
+  **stale**; believing it produces a duplicate resolver, which is its R-1.
+
+The banner is a **client island**, and the guard that enforces that is
+`apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts` — which
+scans `src/pages` in full against a prefix allowlist. It is **not**
+`cacheable-routes-parse-no-session.guard.test.ts`, whose hand-written list of
+eight route families omits `planes` entirely; the spec's AC-10 named that one and
+was therefore satisfiable by construction (witness case on HOS-1311).
+
+AC-16's claim — "you already hold the VIP benefits" — rests on every
+accommodation and commerce tier spreading `TOURIST_VIP_ENTITLEMENTS` and
+`TOURIST_VIP_LIMITS` whole (HOS-975 D-A). That invariant is already guarded, in
+two places, so do not write a third: `packages/billing/test/owner-inherits-tourist.test.ts`
+(the six accommodation tiers) and `packages/billing/test/commerce-vertical-plans.test.ts`
+(all six commerce tiers, plus the limit VALUES — the entitlement engine reads an
+absent key as UNLIMITED, so keys alone would not prove it). The six commerce
+tiers receive that spread from **one** factory, `commerceVerticalTier()` in
+`packages/billing/src/config/plans.config.ts` — a single point of failure worth
+knowing before editing it. Partner plans spread neither, which is why `partner`
+is absent from `TOURIST_VIP_BLOCKING_DOMAINS`.
+
 #### Featured-listing entitlement (SPEC-292 → SPEC-309)
 
 `accommodations.featuredByEntitlement` (renamed from `featuredByPlan` — SPEC-309 OQ-1) is a denormalized
