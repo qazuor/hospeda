@@ -214,9 +214,9 @@ nothing else in the system needs to change.
 ## Cleanup between smoke runs
 
 When iterating on the billing layer it's common to want a clean slate.
-Use the dedicated `hops` SQL block from
-`docs/billing/test-data-reset.md` (or its inline equivalent in the
-smoke checklist) which:
+**`docs/billing/test-data-reset.md` does not exist** — it is not in this repo
+and this pointer has never resolved (HOS-1302). Use the inline equivalent in
+the smoke checklist instead. Whichever block you use, it should:
 
 1. `TRUNCATE` all transactional billing tables (`billing_customers`,
    `billing_subscriptions`, `billing_payments`, etc.) — preserves

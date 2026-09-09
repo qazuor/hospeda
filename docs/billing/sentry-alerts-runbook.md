@@ -137,9 +137,18 @@ event_type:cron_failure
 
 **Threshold**: any 1 event in 5 minutes.
 
-**Notification target**: `#hospeda-ops` Slack. PagerDuty only if the failing job is in the "Critical" tier of `billing-runbooks.md` §3 (trial-expiry, addon-expiry, apply-scheduled-plan-changes, exchange-rate-fetch, abandoned-pending-subs, webhook-retry). Non-critical (trial-pre-end-notif) → Slack only.
+**Notification target**: `#hospeda-ops` Slack. PagerDuty only if the failing job is in the "Critical" tier of `billing-runbooks.md` §3 (**`trial-reconcile`**, `addon-expiry`, `apply-scheduled-plan-changes`, `exchange-rate-fetch`, `abandoned-pending-subs`, `webhook-retry`).
 
-> Practical implementation: the simplest setup is one alert that sends to Slack always, and a second filtered alert that pages on the critical subset by chaining `job_name:trial-expiry OR job_name:addon-expiry OR …` in a separate rule. Or set up two rules and dedupe at the Slack side via the channel routing.
+> **Two corrections, either of which silently breaks the alert rule (HOS-1302).**
+> The tier list used to name `trial-expiry`. That is the FILE name; the job
+> registers as `trial-reconcile` (renamed by HOS-171 —
+> `apps/api/src/cron/schedules.manifest.ts:295`). A `job_name:trial-expiry`
+> filter matches nothing and pages nobody, which is indistinguishable from a
+> healthy job. And `trial-pre-end-notif` was **deleted** by HOS-121 — the
+> manifest says so explicitly at line 302 — so the "non-critical" example it
+> used to give no longer exists.
+>
+> Practical implementation: the simplest setup is one alert that sends to Slack always, and a second filtered alert that pages on the critical subset by chaining `job_name:trial-reconcile OR job_name:addon-expiry OR …` in a separate rule. Or set up two rules and dedupe at the Slack side via the channel routing. Take job names from `schedules.manifest.ts`, never from a filename.
 
 **Sentry UI setup**:
 

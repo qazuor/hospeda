@@ -558,11 +558,16 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 Every protected route runs middleware in this order:
 
 ```
-auth → actor → billing → billingCustomer → trial → [options.middlewares]
+auth → actor → billing → billingCustomer → entitlement → trial → [options.middlewares]
 ```
 
 `options.middlewares` is where entitlement and limit gates live. Gate the
 route there — never inside the handler body.
+
+The `entitlement` step is `entitlementMiddleware()`
+(`src/utils/create-app.ts:176`), the LOADER that populates `userEntitlements` /
+`userLimits` on the context. It is NOT the gate, and it runs before `trial`.
+This diagram used to omit it entirely.
 
 ### Ordering invariants
 

@@ -130,8 +130,16 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
 The middleware chain order on every protected route is:
 
 ```
-auth → actor → billing → billingCustomer → trial → [options.middlewares]
+auth → actor → billing → billingCustomer → entitlement → trial → [options.middlewares]
 ```
+
+The `entitlement` step (`entitlementMiddleware()`, registered at
+`apps/api/src/utils/create-app.ts:176`) is easy to miss and used to be absent
+from this diagram: it is the LOADER that populates `userEntitlements` /
+`userLimits` on the context, and it runs BEFORE `trial`. It is not the gate.
+The gate is `requireEntitlement(key)`, which lives in `[options.middlewares]`
+and therefore still runs after `trial` — which is why the first invariant below
+holds despite the loader's position.
 
 Key ordering invariants:
 
