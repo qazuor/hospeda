@@ -28,6 +28,8 @@ import type { CronJobContext } from '../../src/cron/types';
 // ---------------------------------------------------------------------------
 
 const {
+    mockGetActiveFeaturedGrantEntityIds,
+    mockSyncFeaturedByEntitlementForCommerceListing,
     mockResolveOwnerPlanGrantsFeatured,
     mockGetOwnerAccommodationIdsWithActiveFeaturedAddon,
     mockSyncFeaturedByEntitlementForOwner,
@@ -42,7 +44,12 @@ const {
         .fn()
         .mockResolvedValue({ updated: 1, rows: [] }),
     mockSelectDistinct: vi.fn(),
-    mockSelectRows: vi.fn()
+    mockSelectRows: vi.fn(),
+    // HOS-1286 step 3 — the two commerce verticals.
+    mockGetActiveFeaturedGrantEntityIds: vi.fn().mockResolvedValue([]),
+    mockSyncFeaturedByEntitlementForCommerceListing: vi
+        .fn()
+        .mockResolvedValue({ updated: 1, rows: [] })
 }));
 
 // ---------------------------------------------------------------------------
@@ -53,6 +60,17 @@ vi.mock('@repo/db', () => ({
     accommodations: {
         id: 'id',
         ownerId: 'owner_id',
+        deletedAt: 'deleted_at',
+        featuredByEntitlement: 'featured_by_entitlement'
+    },
+    // HOS-1286: the commerce sweep reads these two the same way.
+    gastronomies: {
+        id: 'id',
+        deletedAt: 'deleted_at',
+        featuredByEntitlement: 'featured_by_entitlement'
+    },
+    experiences: {
+        id: 'id',
         deletedAt: 'deleted_at',
         featuredByEntitlement: 'featured_by_entitlement'
     },
@@ -73,7 +91,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         getOwnerAccommodationIdsWithActiveFeaturedAddon:
             mockGetOwnerAccommodationIdsWithActiveFeaturedAddon,
         syncFeaturedByEntitlementForOwner: mockSyncFeaturedByEntitlementForOwner,
-        syncFeaturedByEntitlementForAccommodation: mockSyncFeaturedByEntitlementForAccommodation
+        syncFeaturedByEntitlementForAccommodation: mockSyncFeaturedByEntitlementForAccommodation,
+        getActiveFeaturedGrantEntityIds: mockGetActiveFeaturedGrantEntityIds,
+        syncFeaturedByEntitlementForCommerceListing: mockSyncFeaturedByEntitlementForCommerceListing
     };
 });
 
@@ -112,7 +132,9 @@ function buildCtx(overrides: Partial<CronJobContext> = {}): CronJobContext {
  */
 function setupDbMocks(
     ownerIds: string[],
-    rowsByOwner: Record<string, Array<{ id: string; featuredByEntitlement: boolean }>>
+    rowsByOwner: Record<string, Array<{ id: string; featuredByEntitlement: boolean }>>,
+    /** Listing ids already flagged per vertical, gastronomy first. */
+    commerceFlaggedByVertical: string[][] = [[], []]
 ): void {
     const distinctChain = {
         from: vi.fn().mockReturnThis(),
@@ -126,6 +148,17 @@ function setupDbMocks(
         mockSelectRows.mockReturnValueOnce({
             from: vi.fn().mockReturnThis(),
             where: vi.fn().mockResolvedValue(rows)
+        });
+    }
+    // HOS-1286 step 3 issues one `select()` per commerce vertical (the listings
+    // currently flagged). Priming them is not optional bookkeeping: without it
+    // the sweep throws, the job counts two errors, and — since no assertion in
+    // this file looked at `errors` before — every test stayed green over a
+    // completely broken step.
+    for (const flagged of commerceFlaggedByVertical) {
+        mockSelectRows.mockReturnValueOnce({
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockResolvedValue(flagged.map((id) => ({ id })))
         });
     }
 }
@@ -392,6 +425,117 @@ describe('featured-by-entitlement-reconcile cron job', () => {
                 totalOwners: 2,
                 correctedPlanOwners: 1
             });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1286 step 3 — the two commerce verticals
+    // -----------------------------------------------------------------------
+
+    describe('commerce sweep (HOS-1286)', () => {
+        it('records ZERO errors on a clean run', () => {
+            // The assertion this whole describe rests on, and the one the file
+            // lacked: `errors` is where a thrown commerce sweep goes, and a
+            // suite that never reads it reports success over a step that ran
+            // not at all.
+            return (async () => {
+                setupDbMocks([], {});
+
+                const result = await featuredByEntitlementReconcileJob.handler(buildCtx());
+
+                expect(result.success).toBe(true);
+                expect(result.errors).toBe(0);
+            })();
+        });
+
+        it('FLAGS a listing that holds a live grant but is not flagged', async () => {
+            // The purchase hook did not fire. The customer paid and nothing
+            // happened — the direction that costs the platform its credibility.
+            // Flagged set is EMPTY for both verticals; the grant exists.
+            setupDbMocks([], {}, [[], []]);
+            mockGetActiveFeaturedGrantEntityIds.mockImplementation(
+                async ({ entityType }: { entityType: string }) =>
+                    entityType === 'gastronomy' ? ['gastro-paid'] : []
+            );
+
+            const result = await featuredByEntitlementReconcileJob.handler(buildCtx());
+
+            expect(result.errors).toBe(0);
+            expect(mockSyncFeaturedByEntitlementForCommerceListing).toHaveBeenCalledWith({
+                entityType: 'gastronomy',
+                entityId: 'gastro-paid',
+                active: true
+            });
+        });
+
+        it('CLEARS a listing flagged with no live grant', async () => {
+            // The boost expired and the clear was missed. This is the direction
+            // that gives product away, and it is the half a one-way reconciler
+            // would silently drop.
+            setupDbMocks([], {}, [[], ['exp-stale']]);
+            mockGetActiveFeaturedGrantEntityIds.mockResolvedValue([]);
+
+            const result = await featuredByEntitlementReconcileJob.handler(buildCtx());
+
+            expect(result.errors).toBe(0);
+            expect(mockSyncFeaturedByEntitlementForCommerceListing).toHaveBeenCalledWith({
+                entityType: 'experience',
+                entityId: 'exp-stale',
+                active: false
+            });
+        });
+
+        it('writes NOTHING when the flags already agree with the grants', async () => {
+            setupDbMocks([], {}, [['gastro-ok'], []]);
+            mockGetActiveFeaturedGrantEntityIds.mockImplementation(
+                async ({ entityType }: { entityType: string }) =>
+                    entityType === 'gastronomy' ? ['gastro-ok'] : []
+            );
+
+            const result = await featuredByEntitlementReconcileJob.handler(buildCtx());
+
+            expect(result.errors).toBe(0);
+            expect(mockSyncFeaturedByEntitlementForCommerceListing).not.toHaveBeenCalled();
+            expect(result.details).toMatchObject({ correctedCommerceListings: 0 });
+        });
+
+        it("never hands one vertical the other vertical's grants", async () => {
+            // The over-wide failure: a sweep that read every grant regardless of
+            // entity_type would see `exp-1` while sweeping gastronomy, decide
+            // the gastronomy flags disagree, and clear a paid experience.
+            setupDbMocks([], {}, [[], ['exp-1']]);
+            mockGetActiveFeaturedGrantEntityIds.mockImplementation(
+                async ({ entityType }: { entityType: string }) =>
+                    entityType === 'experience' ? ['exp-1'] : []
+            );
+
+            const result = await featuredByEntitlementReconcileJob.handler(buildCtx());
+
+            expect(result.errors).toBe(0);
+            // `exp-1` is flagged AND granted within its own vertical: nothing to do.
+            expect(mockSyncFeaturedByEntitlementForCommerceListing).not.toHaveBeenCalled();
+            expect(mockGetActiveFeaturedGrantEntityIds).toHaveBeenCalledWith({
+                entityType: 'gastronomy'
+            });
+            expect(mockGetActiveFeaturedGrantEntityIds).toHaveBeenCalledWith({
+                entityType: 'experience'
+            });
+        });
+
+        it('does not write in dry-run, but still counts what it would correct', async () => {
+            // Flagged set is EMPTY for both verticals; the grant exists.
+            setupDbMocks([], {}, [[], []]);
+            mockGetActiveFeaturedGrantEntityIds.mockImplementation(
+                async ({ entityType }: { entityType: string }) =>
+                    entityType === 'gastronomy' ? ['gastro-paid'] : []
+            );
+
+            const result = await featuredByEntitlementReconcileJob.handler(
+                buildCtx({ dryRun: true })
+            );
+
+            expect(mockSyncFeaturedByEntitlementForCommerceListing).not.toHaveBeenCalled();
+            expect(result.details).toMatchObject({ correctedCommerceListings: 1 });
         });
     });
 });
