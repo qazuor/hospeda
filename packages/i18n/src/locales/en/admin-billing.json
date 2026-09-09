@@ -1150,7 +1150,7 @@
             "comp": "Complimentary",
             "abandoned": "Abandoned",
             "pendingProvider": "Awaiting provider",
-            "courtesy": "Gifted periods"
+            "courtesy": "Cycles gifted"
         },
         "promoEffect": {
             "title": "Active promotion",
@@ -1347,7 +1347,7 @@
             "title": "Gift billing cycles",
             "description": "Gift free cycles to",
             "cyclesLabel": "How many cycles do you want to gift?",
-            "startsAtNotice": "The gift starts when the period they already paid for ends, not today. Nothing changes for the subscriber until then.",
+            "startsAtNotice": "The subscription is marked as gifted right away, and automatic billing stops immediately. The subscriber loses nothing: they keep everything until the period they already paid for ends, and that's when the gifted cycles start counting.",
             "leadTimeWarning": "If the next charge is under 3 days away the grant is refused: pausing that close may not stop it, and they would be charged for exactly the cycle being gifted.",
             "confirmButton": "Gift",
             "backButton": "Back"

@@ -1150,7 +1150,7 @@
             "comp": "Cortesia",
             "abandoned": "Abandonada",
             "pendingProvider": "Aguardando provedor",
-            "courtesy": "Períodos de brinde"
+            "courtesy": "Períodos presenteados"
         },
         "promoEffect": {
             "title": "Promoção ativa",
@@ -1347,7 +1347,7 @@
             "title": "Presentear períodos",
             "description": "Presentear períodos sem cobrança a",
             "cyclesLabel": "Quantos períodos você quer presentear?",
-            "startsAtNotice": "O presente começa quando termina o período já pago, não hoje. Até lá nada muda para o assinante.",
+            "startsAtNotice": "A assinatura já fica marcada como presenteada a partir de agora, e a cobrança automática é interrompida de imediato. O assinante não perde nada: mantém tudo até terminar o período já pago, e é aí que começam a contar os períodos presenteados.",
             "leadTimeWarning": "Se faltarem menos de 3 dias para a próxima cobrança, o presente é recusado: pausar tão perto pode não impedi-la, e ele seria cobrado justamente pelo período presenteado.",
             "confirmButton": "Presentear",
             "backButton": "Voltar"
