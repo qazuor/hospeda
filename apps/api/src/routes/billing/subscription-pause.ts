@@ -59,7 +59,7 @@ import {
 import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../middlewares/actor';
-import { getQZPayBilling } from '../../middlewares/billing';
+import { getBillingPaymentAdapter, getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { recordPauseProviderRefusal } from '../../services/billing/pause-refusal-audit';
 import { isAccommodationDomainSubscription } from '../../services/billing/plan-domain-guard';
@@ -238,6 +238,10 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
                 'so pausing it would suspend your listings without stopping any billing'
         });
     }
+    // Narrowed by the guard above — captured once so the HOS-1240 verification
+    // read below (and the error path around it) doesn't repeat the optional
+    // chain.
+    const mercadopagoPreapprovalId = target.providerSubscriptionIds.mercadopago;
 
     // 1. Billing dimension: qzpay pauses the MP preapproval and flips the local
     //    status (no charges during the pause).
@@ -277,6 +281,90 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
                 'PAUSE_PROVIDER_REFUSED: MercadoPago refused to pause this subscription. ' +
                 'Nothing was changed; your listings are still online and billing continues.'
         });
+    }
+
+    // 1b. HOS-1240: verify the pause actually landed at MercadoPago.
+    //
+    //     qzpay-core's `subscriptions.pause()` treats any NON-THROWING provider
+    //     call as a success and unconditionally writes `status: 'paused'` to the
+    //     local row (see `@qazuor/qzpay-core` dist `subscriptions.pause`, which
+    //     only guards on a thrown error — never on what the provider actually
+    //     did). But MercadoPago's `PUT /preapproval/{id}` can answer 200 without
+    //     applying the requested change: the exact same silent-no-op shape
+    //     already measured for other preapproval fields (dates, `free_trial` —
+    //     see `project_mp_preapproval_mutability_limits` in engram). Measured in
+    //     staging (HOS-1240): a self-pause returned 200 and the panel showed
+    //     PAUSED, yet the very next `subscription_preapproval.updated` webhook
+    //     (which reads the LIVE preapproval, not our optimistic local write)
+    //     reported `authorized` and legitimately reactivated the row 8 seconds
+    //     later — nothing upstream of this route can tell that transition apart
+    //     from a genuine user-initiated resume, so the webhook is not the bug.
+    //
+    //     The fix is a same-request verification read: re-fetch the live
+    //     preapproval right after `pause()` returns and treat "still not
+    //     paused" as a provider refusal qzpay-core failed to notice — undo the
+    //     misleading local write and fail loud, exactly like the catch block
+    //     above does for a refusal that DOES throw. This closes the same gap
+    //     `courtesy-grant.service.ts` flags as an open risk in its own comments
+    //     (HOS-180 R-9: "whether MercadoPago accepts [pausing a twelve-month
+    //     preapproval] has never been verified... if it refuses, [...] nothing
+    //     else in the system knows") — that service has the identical blind
+    //     spot today and is not touched by this fix (out of scope for HOS-1240).
+    //
+    //     A verification call that itself fails (network hiccup, timeout) is
+    //     NOT treated as a refusal — that would turn a transient blip on a
+    //     brand-new safety net into an outage for legitimate pauses. The
+    //     failure mode this guards against is a confirmed WRONG status, not an
+    //     inability to ask.
+    const paymentAdapter = getBillingPaymentAdapter();
+    if (paymentAdapter) {
+        const livePreapproval = await paymentAdapter.subscriptions
+            .retrieve(mercadopagoPreapprovalId)
+            .catch((error: unknown) => {
+                apiLogger.warn(
+                    {
+                        subscriptionId: target.id,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    'Host self-pause: could not verify the live preapproval status after pausing — trusting the write'
+                );
+                return null;
+            });
+
+        if (livePreapproval !== null && livePreapproval.status !== 'paused') {
+            // Roll back the misleading local write qzpay-core already
+            // committed. Pure local — `subscriptions.update` never calls the
+            // provider (see qzpay-core dist `subscriptions.update`), so this
+            // cannot re-trigger a second MercadoPago call.
+            await billing.subscriptions.update(target.id, { status: target.status });
+
+            await recordPauseProviderRefusal({
+                subscriptionId: target.id,
+                triggerSource: 'host-pause',
+                billingInterval:
+                    typeof target.metadata?.billingInterval === 'string'
+                        ? target.metadata.billingInterval
+                        : null,
+                error: new Error(
+                    `MercadoPago accepted the pause request but the preapproval is still ` +
+                        `'${livePreapproval.status}' (expected 'paused')`
+                )
+            });
+            apiLogger.error(
+                {
+                    subscriptionId: target.id,
+                    customerId: billingCustomerId,
+                    userId: actor.id,
+                    livePreapprovalStatus: livePreapproval.status
+                },
+                'Host self-pause: MercadoPago silently did not pause the preapproval — rolled back the local write'
+            );
+            throw new HTTPException(502, {
+                message:
+                    'PAUSE_PROVIDER_REFUSED: MercadoPago did not actually pause this subscription. ' +
+                    'Nothing was changed; your listings are still online and billing continues.'
+            });
+        }
     }
 
     // HOS-1280: the write above is durable (qzpay already committed the pause

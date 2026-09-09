@@ -19,6 +19,11 @@
  * - HOS-1278: the route resolves the subscription by the id the caller sent —
  *   never by scanning `getByCustomerId()` — and gates the accommodation
  *   service-suspension effect on the target's product domain.
+ * - HOS-1240: MercadoPago can accept the pause PUT (200, no throw) and still
+ *   not actually pause the preapproval. A same-request verification read must
+ *   catch that, roll back the misleading local `paused` write, and fail loud
+ *   — otherwise a later webhook silently reactivates the subscription and
+ *   nobody is told.
  *
  * @module test/routes/subscription-pause
  */
@@ -31,7 +36,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('../../src/middlewares/billing', () => ({
-    getQZPayBilling: vi.fn()
+    getQZPayBilling: vi.fn(),
+    // HOS-1240: the route re-fetches the LIVE preapproval right after pausing
+    // to catch MercadoPago silently no-op'ing the status change. Defaulted in
+    // `beforeEach` below to confirm 'paused' — i.e. the ordinary case where
+    // the pause genuinely landed — so every pre-existing happy-path test in
+    // this file exercises the verification read too, not just the new ones.
+    getBillingPaymentAdapter: vi.fn()
 }));
 
 vi.mock('../../src/middlewares/actor', () => ({
@@ -141,7 +152,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 
 import { BILLING_EVENT_TYPES } from '@repo/service-core';
-import { getQZPayBilling } from '../../src/middlewares/billing';
+import { getBillingPaymentAdapter, getQZPayBilling } from '../../src/middlewares/billing';
 import {
     handleSelfServePause,
     handleSelfServeResume
@@ -213,7 +224,12 @@ function makeBillingMock(subs: SubFixture[] = []) {
             pause: vi.fn().mockResolvedValue({ id: subs[0]?.id ?? 'sub-1', status: 'paused' }),
             resume: vi
                 .fn()
-                .mockImplementation((id: string) => Promise.resolve({ id, status: 'active' }))
+                .mockImplementation((id: string) => Promise.resolve({ id, status: 'active' })),
+            // HOS-1240: the rollback path calls this directly (pure local —
+            // never a second MercadoPago call) to undo the misleading
+            // 'paused' write when the verification read shows MP never
+            // actually paused the preapproval.
+            update: vi.fn().mockResolvedValue(undefined)
         }
     };
 }
@@ -224,6 +240,20 @@ function mockBilling(billing: ReturnType<typeof makeBillingMock> | null) {
     );
 }
 
+/**
+ * Builds the raw MercadoPago payment-adapter mock the HOS-1240 verification
+ * read calls directly (`getBillingPaymentAdapter().subscriptions.retrieve`).
+ * Defaults to reporting the preapproval as genuinely `paused` — the ordinary
+ * case where MercadoPago's PUT actually took effect.
+ */
+function makePaymentAdapterMock(liveStatus = 'paused') {
+    return {
+        subscriptions: {
+            retrieve: vi.fn().mockResolvedValue({ status: liveStatus })
+        }
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -232,6 +262,12 @@ describe('handleSelfServePause', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(true);
+        // HOS-1240: default to "MercadoPago genuinely paused it" so every
+        // pre-existing test below (which never mentions this mock) keeps
+        // exercising the verification read on the ordinary, successful path.
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('paused') as never
+        );
     });
 
     // -----------------------------------------------------------------------
@@ -618,6 +654,175 @@ describe('handleSelfServePause', () => {
             triggerSource: 'host-pause',
             billingInterval: 'annual'
         });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1240: MercadoPago can accept the pause PUT (200, no throw) and
+    // still not actually pause the preapproval — the exact silent-no-op shape
+    // already measured for other preapproval fields (dates, `free_trial`).
+    // qzpay-core's `pause()` only guards on a THROWN error, so it happily
+    // writes `status: 'paused'` locally regardless. Left uncaught, a later
+    // `subscription_preapproval.updated` webhook reads the still-`authorized`
+    // preapproval and legitimately reactivates the row — reverting the pause
+    // behind the user's back with no one told. The fix is this same-request
+    // verification read: re-fetch the live preapproval right after `pause()`
+    // resolves and treat "still not paused" as a refusal qzpay-core missed.
+    // -----------------------------------------------------------------------
+
+    it('HOS-1240: rolls back the local write and fails loud when MercadoPago silently does not pause a MONTHLY preapproval', async () => {
+        const sub = {
+            id: 'sub-monthly-silent-refusal',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        // qzpay-core's pause() resolves normally — MercadoPago's PUT returned
+        // 200, so nothing throws. This is precisely the silent-refusal shape.
+        mockBilling(billing);
+        // But the live preapproval never actually transitioned.
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('active') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-monthly-silent-refusal' } });
+
+        try {
+            await handleSelfServePause(ctx as never);
+            expect.unreachable('a silently-refused pause must not resolve successfully');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
+            const httpErr = err as HTTPException;
+            expect(httpErr.status).toBe(502);
+            expect(httpErr.message).toContain('PAUSE_PROVIDER_REFUSED');
+        }
+
+        // The misleading local write qzpay-core already committed is undone.
+        expect(billing.subscriptions.update).toHaveBeenCalledWith('sub-monthly-silent-refusal', {
+            status: 'active'
+        });
+
+        // Fail-closed exactly like a THROWN refusal: no suspension, no audit
+        // row for a pause that never really happened, no downstream bridges.
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
+        expect(reconcileSubscriptionLinkedEntities).not.toHaveBeenCalled();
+        expect(reconcilePartnerForSubscription).not.toHaveBeenCalled();
+
+        // Observable, same seat a thrown refusal uses.
+        expect(recordPauseProviderRefusal).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(recordPauseProviderRefusal).mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: 'sub-monthly-silent-refusal',
+            triggerSource: 'host-pause',
+            billingInterval: 'monthly'
+        });
+    });
+
+    it('HOS-1240: rolls back the local write and fails loud when MercadoPago silently does not pause an ANNUAL preapproval', async () => {
+        // HOS-995's own smoke measured this exact bug on an ANNUAL
+        // subscription — the fix must cover both cadences, not just monthly.
+        const annualSub = {
+            id: 'sub-annual-silent-refusal',
+            status: 'active',
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual-silent' }
+        };
+        const billing = makeBillingMock([annualSub]);
+        mockBilling(billing);
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('active') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-annual-silent-refusal' } });
+
+        try {
+            await handleSelfServePause(ctx as never);
+            expect.unreachable('a silently-refused pause must not resolve successfully');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
+            expect((err as HTTPException).status).toBe(502);
+            expect((err as HTTPException).message).toContain('PAUSE_PROVIDER_REFUSED');
+        }
+
+        expect(billing.subscriptions.update).toHaveBeenCalledWith('sub-annual-silent-refusal', {
+            status: 'active'
+        });
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
+        expect(vi.mocked(recordPauseProviderRefusal).mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: 'sub-annual-silent-refusal',
+            triggerSource: 'host-pause',
+            billingInterval: 'annual'
+        });
+    });
+
+    it('HOS-1240: rolls back to TRIALING (not hardcoded to active) when a silently-refused pause targeted a trialing subscription', async () => {
+        const trialSub = {
+            id: 'sub-trial-silent-refusal',
+            status: 'trialing',
+            metadata: {},
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-trial-silent' }
+        };
+        const billing = makeBillingMock([trialSub]);
+        mockBilling(billing);
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('active') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-trial-silent-refusal' } });
+
+        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+
+        // The rollback must restore whatever the subscription's status
+        // actually was — 'trialing' here — not a status literal.
+        expect(billing.subscriptions.update).toHaveBeenCalledWith('sub-trial-silent-refusal', {
+            status: 'trialing'
+        });
+    });
+
+    it('HOS-1240: does NOT call billing.subscriptions.update when the verification read confirms the pause landed', async () => {
+        const sub = {
+            id: 'sub-monthly-confirmed',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        // beforeEach already defaults the payment adapter to 'paused', but
+        // this is asserted explicitly here so the happy path stays pinned.
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('paused') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-monthly-confirmed' } });
+
+        const result = await handleSelfServePause(ctx as never);
+
+        expect(result.success).toBe(true);
+        expect(billing.subscriptions.update).not.toHaveBeenCalled();
+        expect(recordPauseProviderRefusal).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1240: does not treat an unreachable verification read as a refusal (trusts the write instead of blocking a legitimate pause)', async () => {
+        const sub = {
+            id: 'sub-monthly-verify-unreachable',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue({
+            subscriptions: {
+                retrieve: vi.fn().mockRejectedValue(new Error('ETIMEDOUT'))
+            }
+        } as never);
+        const ctx = createMockContext({
+            body: { subscriptionId: 'sub-monthly-verify-unreachable' }
+        });
+
+        const result = await handleSelfServePause(ctx as never);
+
+        expect(result.success).toBe(true);
+        expect(billing.subscriptions.update).not.toHaveBeenCalled();
+        expect(recordPauseProviderRefusal).not.toHaveBeenCalled();
     });
 
     // -----------------------------------------------------------------------
