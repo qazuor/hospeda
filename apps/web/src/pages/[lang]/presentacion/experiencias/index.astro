@@ -30,10 +30,13 @@
  *  5. THAT YOU CAN MOVE DOWN A PLAN — the tier table's closing line. The plan-change route
  *     answers 422 on a downgrade today (HOS-1122); the change is about to land.
  *  6. ANNUAL PRICING ("pagás diez meses y tenés doce") — the paragraph above the tier table and its
- *     "Por año" row. Commerce is MONTHLY ONLY today: `commerceVerticalTier()` hardcodes
- *     `annualPriceArs: null` (plans.config.ts:692) and the checkout entry point is literally named
- *     `initiateCommerceMonthlySubscription`. HOS-1187; the owner set accommodation's ten-for-twelve
- *     discount, which yields $150.000 / $350.000 / $500.000. Do NOT delete that row over the null.
+ *     "Por año" row. **MOSTLY SHIPPED by HOS-1285.** $150.000 / $350.000 / $500.000 are the
+ *     catalogue's own figures now (`commerceVerticalTier` takes `annualPriceArs` per tier instead of
+ *     sealing `null` for all six), the seed writes the `'year'` `billing_prices` row, and the
+ *     checkout — renamed `initiateCommerceSubscription`, because the old name said otherwise —
+ *     accepts `billingInterval: 'annual'` and resolves that row. What is NOT shipped is the
+ *     owner-facing PICKER: `CommercePlanPicker.client.tsx` still emits a slug and nothing else, so
+ *     nothing in the web app sends the field yet. True about the price, still ahead about the gesture.
  *
  * TWO PIECES OF COPY ARE FROZEN BY TESTS. Both were rewritten away once already, on 2026-09-05.
  *  - THE CONTACT PARAGRAPHS, in "Acá no se vende el cupo": "El WhatsApp <strong>no</strong> se
