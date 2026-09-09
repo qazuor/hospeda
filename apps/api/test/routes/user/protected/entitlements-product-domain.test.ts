@@ -132,3 +132,73 @@ describe('GET /me/entitlements — productDomain hydration (HOS-934)', () => {
         expect(result.plan?.status).toBe('active');
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-1233 — the tourist reclassification (F-4g #1)
+//
+// Until this spec, tourist plans were filed as `accommodation`, so a
+// `tourist-vip` row matched `isAccommodationSubscription` BY ACCIDENT and this
+// endpoint answered correctly for the wrong reason. Reclassified, the `find`
+// returns nothing and the response carries `plan: null` — to a customer who is
+// paying. The comment above the `find` already stated the intent the code then
+// violated: "a plain tourist actor's real tourist plan must keep surfacing
+// unchanged".
+//
+// The pair below is deliberate: the misfiled shape (`accommodation`) must keep
+// resolving, the corrected shape (`tourist`) must start resolving, and a
+// `partner` row must STILL resolve to null — widening to tourist is not
+// licence to widen to every domain.
+// ---------------------------------------------------------------------------
+
+describe('GET /me/entitlements — tourist reclassification (HOS-1233 F-4g)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(isOwnerCategorySubscription).mockResolvedValue(true);
+    });
+
+    it('surfaces the plan of a reclassified tourist subscription', async () => {
+        mockGetActor.mockReturnValue({ id: 'user-tourist', roles: [RoleEnum.USER] });
+        const sub = buildSubscription({
+            id: 'sub-tourist',
+            status: 'active',
+            planId: 'plan-tourist-vip'
+        });
+        setupBillingMock(sub);
+        mockStoredProductDomain('sub-tourist', 'tourist');
+
+        const result = await entitlementsHandler(makeCtx());
+
+        expect(result.plan).not.toBeNull();
+        expect(result.plan?.status).toBe('active');
+    });
+
+    it('still surfaces the same plan while it is filed as accommodation (the pre-reclassification shape)', async () => {
+        mockGetActor.mockReturnValue({ id: 'user-tourist-legacy', roles: [RoleEnum.USER] });
+        const sub = buildSubscription({
+            id: 'sub-tourist-legacy',
+            status: 'active',
+            planId: 'plan-tourist-vip'
+        });
+        setupBillingMock(sub);
+        mockStoredProductDomain('sub-tourist-legacy', 'accommodation');
+
+        const result = await entitlementsHandler(makeCtx());
+
+        expect(result.plan).not.toBeNull();
+    });
+
+    it('does NOT surface a partner subscription — accepting tourist must not accept every domain', async () => {
+        mockGetActor.mockReturnValue({ id: 'user-partner', roles: [RoleEnum.USER] });
+        const sub = buildSubscription({
+            id: 'sub-partner',
+            status: 'active',
+            planId: 'plan-partner-gold'
+        });
+        setupBillingMock(sub);
+        mockStoredProductDomain('sub-partner', 'partner');
+
+        const result = await entitlementsHandler(makeCtx());
+
+        expect(result.plan).toBeNull();
+    });
+});

@@ -147,11 +147,20 @@ export async function unpublishListingsForExpiredTrial(input: {
         .limit(1);
 
     if (!isAccommodationSubscription(subscriptionRow)) {
-        // Commerce verticals do not have listings of their own to unpublish:
-        // visibility is DERIVED. `reconcileCommerceListingVisibility` gates on
-        // `isEntitlementGrantingStatus`, so once the status is `expired` the
-        // listing resolves to PRIVATE/INACTIVE on its own — through the single
-        // authorised bridge, never a second write path to the same state.
+        // Nothing reaching this branch owns listings THIS function can unpublish,
+        // for two different reasons (HOS-1233 widened it from one):
+        //
+        // - Commerce verticals do have listings, but their visibility is
+        //   DERIVED. `reconcileCommerceListingVisibility` gates on
+        //   `isEntitlementGrantingStatus`, so once the status is `expired` the
+        //   listing resolves to PRIVATE/INACTIVE on its own — through the single
+        //   authorised bridge, never a second write path to the same state.
+        // - A TOURIST subscription owns no listings at all. Since the tourist
+        //   tiers were reclassified out of `accommodation` (F-4b) they land here
+        //   rather than in the accommodation branch, where they would have
+        //   walked a portfolio that is always empty. Either way this is a no-op
+        //   for them; the bridge call below is harmless and keeps the branch
+        //   free of a domain-by-domain special case.
         //
         // The status is passed explicitly because this runs BEFORE the row is
         // flipped (D-3's ordering, preserved). The bridge is non-throwing by

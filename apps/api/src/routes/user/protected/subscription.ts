@@ -181,6 +181,19 @@ export const userSubscriptionRoute = createProtectedRoute({
         const { productDomain } = (query || {}) as { productDomain?: ProductDomainScope };
         const resolvedProductDomain: ProductDomainScope =
             productDomain ?? ProductDomainEnum.ACCOMMODATION;
+        // HOS-1233 (F-4g #3): whether the caller NAMED a domain or fell to the
+        // default. The two are not the same question, and before this spec they
+        // could not be told apart because the default was applied at the read.
+        //
+        // A caller that names a domain means it: `?productDomain=gastronomy`
+        // must never pick up an accommodation or tourist row (HOS-259/HOS-685).
+        // A caller that names none is asking "my subscription" — and the
+        // reclassification of the tourist tiers into their own domain (F-4b)
+        // turned that question into `null` for every paying tourist, because
+        // the default is `accommodation` and `tourist` is not even in
+        // `SUBSCRIPTION_SCOPE_DOMAINS` for them to ask for: `?productDomain=tourist`
+        // is a 400, not an unused escape hatch. No client can work around this.
+        const domainWasRequested = productDomain !== undefined;
 
         // Check if billing is enabled
         const billingEnabled = ctx.get('billingEnabled');
@@ -276,13 +289,31 @@ export const userSubscriptionRoute = createProtectedRoute({
         // binary branch that would answer `accommodation` for a vertical it does
         // not recognise — the failure mode that hands a host's plan to a
         // commerce-scoped caller.
-        const activeSubscription = subscriptions.find(
-            (sub) =>
-                (isEntitlementGrantingStatus(sub.status) ||
-                    sub.status === 'past_due' ||
-                    sub.status === 'paused') &&
-                subscriptionMatchesDomain(sub, resolvedProductDomain)
-        );
+        // HOS-1233: an UNQUALIFIED caller falls back to the tourist domain when
+        // the customer holds no accommodation subscription. Ordered, never an
+        // "either" match: a host auto-promoted by host-onboarding can hold both
+        // (see the HOS-217 discard in `loadEntitlements`), and matching either
+        // would let the storage adapter's ordering hand that host their tourist
+        // tier instead of the owner plan they manage here — HOS-259's bug under
+        // a new domain. Ordered, the fallback can only ever turn a `null` into
+        // an answer: wherever an accommodation subscription exists, the response
+        // is byte-identical to what this route returned before.
+        //
+        // It does NOT fall back to gastronomy/experience. Those have their own
+        // scoped callers and their own management surfaces; a commerce row
+        // surfacing on the accommodation account page is the failure HOS-259 and
+        // HOS-685 were written to stop.
+        const isManageableStatus = (status: string) =>
+            isEntitlementGrantingStatus(status) || status === 'past_due' || status === 'paused';
+
+        const matchInDomain = (domain: ProductDomainScope) =>
+            subscriptions.find(
+                (sub) => isManageableStatus(sub.status) && subscriptionMatchesDomain(sub, domain)
+            );
+
+        const activeSubscription =
+            matchInDomain(resolvedProductDomain) ??
+            (domainWasRequested ? undefined : matchInDomain(ProductDomainEnum.TOURIST));
 
         if (!activeSubscription) {
             apiLogger.debug(
