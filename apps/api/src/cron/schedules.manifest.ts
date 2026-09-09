@@ -362,6 +362,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Expire active/trialing subscriptions that have no MercadoPago preapproval and whose period elapsed (H-21). Without a preapproval they are invisible to subscription-poll and to dunning, so nothing else ever moves them out of active.'
     },
     {
+        name: 'partner-payment-review',
+        displayName: 'Aliados sin pago registrado',
+        category: 'billing',
+        schedule: '30 4 * * *',
+        description:
+            'Ask an admin whether a partner activated outside MercadoPago, whose confirmed period lapsed, should be taken down (HOS-1299). Flags and emails only — it never changes the partner status, lifecycle or visibility, because cutting off somebody who did pay is the expensive mistake.'
+    },
+    {
         name: 'partner-unpaid-reaper',
         displayName: 'Aliados sin pagar',
         category: 'billing',

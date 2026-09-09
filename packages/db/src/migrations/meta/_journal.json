@@ -855,6 +855,13 @@
       "when": 1788936693385,
       "tag": "0121_smart_mulholland_black",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1788970615353,
+      "tag": "0122_curly_starbolt",
+      "breakpoints": true
     }
   ]
 }

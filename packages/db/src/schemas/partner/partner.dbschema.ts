@@ -5,6 +5,7 @@ import { billingPlans, billingSubscriptions } from '../../billing/index.ts';
 import {
     LifecycleStatusPgEnum,
     PartnerContentReviewStatePgEnum,
+    PartnerPaymentReviewStatePgEnum,
     PartnerSubscriptionStatusPgEnum,
     PartnerTierPgEnum,
     PartnerTypePgEnum
@@ -173,6 +174,41 @@ export const partners = pgTable(
         revokedById: uuid('revoked_by_id').references(() => users.id, { onDelete: 'set null' }),
         /** Why it was revoked. Required at the endpoint, so never empty when set. */
         revokeReason: text('revoke_reason'),
+        /**
+         * Whether an admin has been asked to confirm this partner's payment
+         * (HOS-1299), or NULL when nothing is pending.
+         *
+         * Its own column, and its own pg type, rather than a fifth value of
+         * {@link subscriptionStatus}. That column is what `getPublicBySlug`,
+         * `findByFilters`, `countActivePartners` and the web's
+         * `evaluatePartnerIndexability` all read, so moving it off `active`
+         * answers the question by performing the takedown: 404, `noindex`, out
+         * of the sitemap and off the carousel, all before a human sees the
+         * alert. The owner's decision (2026-09-09) is the opposite — the
+         * expensive mistake is cutting off somebody who did pay, so the system
+         * asks and waits.
+         *
+         * Nothing reads this to decide visibility, billing or listing. It
+         * drives one admin queue and one email. Same shape and same reasoning
+         * as {@link contentReviewState}, which is also NULL for most rows.
+         */
+        paymentReviewState: PartnerPaymentReviewStatePgEnum('payment_review_state'),
+        /**
+         * The date through which an admin has confirmed this partner is paid up
+         * (HOS-1299), or NULL when nobody ever has.
+         *
+         * Deliberately NOT {@link endsAt}. That column is read by
+         * `partner-expiry`, which ARCHIVES the row unattended the moment it
+         * passes — so writing a confirmed period there would rebuild the silent
+         * automatic takedown through the back door, which is precisely what the
+         * owner ruled out. `endsAt` stays what it is today: a field an admin
+         * types by hand, and the only thing that arms that cron.
+         *
+         * NULL falls back to {@link startsAt} for the review clock, which is
+         * the honest reading — the alliance has been running, unconfirmed,
+         * since the day it began.
+         */
+        paymentConfirmedThrough: timestamp('payment_confirmed_through', { withTimezone: true }),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -195,6 +231,13 @@ export const partners = pgTable(
         // exactly one value out of a column that is null for most rows.
         partners_contentReviewState_idx: index('partners_contentReviewState_idx').on(
             table.contentReviewState
+        ),
+        // Drives the OTHER admin queue ("whose payment am I being asked about"),
+        // and the review cron's own "already flagged, skip it" read. Same shape
+        // as the content one above: one value out of a column that is null for
+        // most rows.
+        partners_paymentReviewState_idx: index('partners_paymentReviewState_idx').on(
+            table.paymentReviewState
         ),
         partners_deletedAt_idx: index('partners_deletedAt_idx').on(table.deletedAt),
         // Composite index for findActivePartners (filters by both subscriptionStatus and lifecycleState)

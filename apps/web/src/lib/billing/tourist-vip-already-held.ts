@@ -52,6 +52,11 @@ export type TouristVipBlockingDomain = (typeof TOURIST_VIP_BLOCKING_DOMAINS)[num
  * written against the domain spellings would compare `'trialing'`, never
  * match, and read as "not on trial" while failing silently.
  *
+ * A status in this list is necessary but NOT sufficient: a soft-cancelled
+ * subscription reports `active` on the wire until its period ends and is
+ * excluded by {@link holdsTouristVipBenefits} on the `cancelAtPeriodEnd` flag,
+ * for AC-17's own reason. See that function.
+ *
  * Per-status reasoning, and D-4 only decided the first three:
  *
  * - `active` — the plain case, and the one that also covers `comp` (owner:
@@ -72,6 +77,10 @@ export type TouristVipBlockingDomain = (typeof TOURIST_VIP_BLOCKING_DOMAINS)[num
  *   disabling their tourist purchase would leave them no way to keep the
  *   benefits if they let the trial lapse.
  * - `cancelled`, `expired`, `pending`, `paused` — no live entitlements.
+ *
+ * A fourth boundary is flagged in the same style as `past_due` and `courtesy`,
+ * but it is not a status at all — see `cancelAtPeriodEnd` on
+ * {@link SubscriptionStatusReading}.
  */
 export const VIP_BENEFIT_HOLDING_STATUSES: ReadonlyArray<string> = [
     'active',
@@ -80,17 +89,42 @@ export const VIP_BENEFIT_HOLDING_STATUSES: ReadonlyArray<string> = [
 ];
 
 /**
- * The single field this predicate is allowed to read.
+ * The two fields this predicate is allowed to read.
  *
- * AC-18 pins the condition to a live subscription status — never a role, and
- * never the mere presence of a plan object. Modelling the input as exactly one
- * status field is what makes that structural rather than a promise: there is
- * no role here to accidentally read, and a caller cannot pass "a subscription
- * exists" as the argument.
+ * AC-18 pins the condition to a LIVE subscription — never a role, and never the
+ * mere presence of a plan object. Modelling the input as exactly these fields
+ * is what makes that structural rather than a promise: there is no role here to
+ * accidentally read, and a caller cannot pass "a subscription exists" as the
+ * argument.
+ *
+ * It was one field until a soft-cancelled subscriber was measured hitting the
+ * disabled state. Widening it is a real interface change and was preferred to
+ * fixing the reader, because this module is the documented home of the rule and
+ * a reader-side fix would be invisible to every unit test of the predicate.
  */
 export interface SubscriptionStatusReading {
     /** The wire status, as the protected subscription endpoint spells it. */
     readonly status: string;
+    /**
+     * Whether this subscription is already scheduled to end (a soft cancel).
+     *
+     * **The fourth flagged boundary, alongside D-4's three** (`trial` excluded,
+     * `comp` arriving as active, `past_due` counted as active) — and the only
+     * one that is not a status. A soft-cancelled subscription reports
+     * `status: 'active'` on the wire right up to `currentPeriodEnd`, so reading
+     * the status alone told a subscriber with a known end date "ya tenés estos
+     * beneficios" and disabled their tourist purchase. That is verbatim the
+     * position AC-17 keeps a `trialing` visitor ENABLED for — "holds the
+     * entitlements today but may not tomorrow; disabling would leave them no
+     * way to keep the benefits" — and R-7's harm, a claim that becomes false on
+     * a date already scheduled.
+     *
+     * The wire field is required (`z.boolean()` on the protected subscription
+     * endpoint), so an ABSENT value can only come from a hand-built reading —
+     * and {@link holdsTouristVipBenefits} resolves that to "does not hold",
+     * which is this module's fail-safe direction rather than a special case.
+     */
+    readonly cancelAtPeriodEnd: boolean;
 }
 
 /**
@@ -108,7 +142,7 @@ export interface SubscriptionStatusReading {
  *   record is treated exactly like `null` — an unread domain must never be
  *   assumed to hold benefits.
  * @returns `true` only when at least one blocking vertical carries a status in
- *   {@link VIP_BENEFIT_HOLDING_STATUSES}.
+ *   {@link VIP_BENEFIT_HOLDING_STATUSES} AND is not already scheduled to end.
  */
 export function holdsTouristVipBenefits({
     subscriptionsByDomain
@@ -123,6 +157,14 @@ export function holdsTouristVipBenefits({
         // Absent, unread, or no subscription: never a reason to claim the
         // benefit is held. This is the R-7 direction.
         if (reading === null || reading === undefined) {
+            return false;
+        }
+
+        // Already scheduled to end: holds them today, will not tomorrow.
+        // `!== false` and not a plain truthiness check, so an ABSENT flag
+        // resolves the same way an absent reading does — to "does not hold",
+        // the R-7 direction — instead of silently claiming a benefit.
+        if (reading.cancelAtPeriodEnd !== false) {
             return false;
         }
 

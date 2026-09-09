@@ -93,6 +93,10 @@ export * from './media';
 export * from './moderation';
 export * from './newsletter';
 export * from './owner-promotion';
+// Listed as a FILE, like every other partner module here: this barrel does not
+// re-export the `./partner` folder index, so an export added there alone never
+// reaches the package root (HOS-1299).
+export * from './partner/partner.payment-review';
 export * from './partner/partner.service';
 export * from './partner/partner-mention.service';
 // Partner in-platform statistics (HOS-1063)

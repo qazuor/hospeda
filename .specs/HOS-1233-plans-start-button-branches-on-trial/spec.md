@@ -66,6 +66,31 @@ Whatever this spec adds to the commerce plans pages must not contradict that sur
 
 ### F-3 · Nothing today answers "how many days are left, in THIS vertical"
 
+> **STALE as of 2026-09-09 — do not plan from this finding.** It was true when
+> written. **HOS-1282 has since shipped exactly this read**:
+> `GET /protected/billing/trial/status` takes an optional `?productDomain=`
+> (`accommodation | gastronomy | experience | tourist`; `partner` and `addon`
+> are excluded because neither owns a trial site, so `?productDomain=partner` is
+> a 400), and the web wrapper `billingApi.getTrialStatus({ productDomain })`
+> exists at `apps/web/src/lib/api/endpoints-protected.ts:1413`.
+>
+> Verified in three layers rather than taken from its docblock: the narrowing
+> runs `hydrateSubscriptionProductDomains` (`apps/api/src/services/trial.service.ts:374`)
+> **before** `subscriptionMatchesDomain` (`:385`), so it does not hit the HOS-934
+> silent failure where an unhydrated row reads `undefined` and every
+> non-accommodation domain fails closed. It therefore composes with T-003's
+> fail-closed `tourist`.
+>
+> Consequence: **the masking flaw this finding complains about below is fixed**
+> when the parameter is passed — the method's own docblock promises an answer
+> that "cannot be masked by an unrelated live subscription in a different
+> vertical". **T-008…T-011 are dropped** (owner, 2026-09-09) and the existing
+> endpoint is consumed. Building a second one would have violated this spec's
+> own AC-1 ("does not re-derive any verdict that already has a resolver") and
+> R-1. **AC-2 still holds**: this spec adds no filter — another spec did, it is
+> optional, and the domain-blind default the `trialMiddleware` paywall depends
+> on is byte-identical. T-012's regression test pins that.
+
 Two reads exist and neither is the one this spec needs:
 
 - **`GET /protected/billing/trial/status`** (`apps/api/src/routes/billing/trial.ts:49-62,100-133`) returns `{ isOnTrial, isExpired, startedAt, expiresAt, daysRemaining, planSlug, intendedInterval }`. It has the clock — and it is **per ACCOUNT, never per vertical, deliberately**. `TrialService.getTrialStatus` (`apps/api/src/services/trial.service.ts:258-330`) documents why: it backs `trialMiddleware`, mounted globally, which answers every non-GET with HTTP 402 when `isExpired`. Filtering it by `productDomain` would break that global gate. The known consequence is recorded in the code (HOS-337): a live commerce subscription can mask an elapsed accommodation trial.
@@ -348,7 +373,27 @@ It does call `getTrialEligibility` — but only to strike through the "N días g
 
 ### F-8 · The banner has a caching consequence, and it is not a detail
 
-The plans pages are edge-cached and must not parse the session — `cacheable-routes-parse-no-session.guard.test.ts` fails the build if they do, because a personalised response in a shared cache serves one visitor's state to the next. A server-rendered "te quedan N días" is exactly such a response.
+The plans pages are edge-cached and must not parse the session, because a personalised response in a shared cache serves one visitor's state to the next. A server-rendered "te quedan N días" is exactly such a response.
+
+> **CORRECTION (2026-09-09, measured).** This finding originally named
+> `cacheable-routes-parse-no-session.guard.test.ts` as the build failure. **That
+> guard does not cover these pages.** Its universe is a hand-written list of
+> eight route families — `alojamientos`, `destinos`, `eventos`, `publicaciones`,
+> `gastronomia`, `experiencias`, `publicar-restaurante`, `publicar-experiencia` —
+> and `planes` is not among them; its own docblock says a path not listed is
+> invisible to it. HOS-1032 moved pricing to `/planes/<vertical>/precios/` and
+> that PR had no reason to know a hand-written list in another area's test
+> existed.
+>
+> The guard that DOES cover them is
+> **`apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts`**,
+> which scans `src/pages` in full against an allowlist of seven prefixes, none
+> of which is `planes`. So the protection is real — it was just being credited
+> to the wrong file, and AC-10 inherited the error (see its own correction).
+>
+> No live bug: the five pricing pages were measured at **zero** server-side
+> session reads (`Astro.locals.user`, `parseSessionUser`, `cookieHeader`). Filed
+> as a witness case on HOS-1311, whose subject is exactly this failure mode.
 
 So the banner is client-resolved (an island) or those pages leave the cache. That is an architecture decision, not an implementation choice — **OQ-2**.
 
@@ -563,7 +608,7 @@ Verdict for each of the 12 previously unlisted sites in that third group:
 - **AC-7** · All five pages render a banner stating the trial is running and how many days remain, resolved for that page's vertical.
 - **AC-8** · A visitor with no trial running sees no banner and no day count — never "0 días".
 - **AC-9** · A failed or unresolved read never renders a trial promise and never silently skips the warning dialog: it degrades toward charging-with-warning, never toward a silent charge (F-9).
-- **AC-10** · The plans pages still do not parse the session server-side; `cacheable-routes-parse-no-session.guard.test.ts` stays green (F-8, subject to OQ-2).
+- **AC-10** · The plans pages still do not parse the session server-side; **`cacheable-pages-are-session-blind.guard.test.ts`** stays green (F-8, subject to OQ-2). *(Corrected 2026-09-09: this criterion originally named `cacheable-routes-parse-no-session.guard.test.ts`, which does not cover `planes` at all — so as written it passed by construction and would have stayed green even with the banner server-rendered off the session, which is the exact failure it exists to prevent. A criterion that cannot fail is not a criterion. See F-8's correction.)*
 - **AC-11** · A static guard covers the web side of F-6: no verdict literal is compared inline in `apps/web/src` outside the one module that maps a verdict to a branch. The guard fails on a second call site.
 - **AC-12** · The three `ctaMode="link"` pages still link to signup → create form. No checkout path is added to them.
 - **AC-13** · Nothing in this work sends a trial to MercadoPago; guard G-1 stays green.
@@ -602,7 +647,15 @@ Not deciding this by implementation. It needs the owner.
 
 Whichever is chosen, **F-4b is a finding that outlives this spec** and should be tracked on its own regardless — the inferred consequences (a tourist VIP blocked from becoming a host; a tourist VIP able to publish an accommodation with no host plan) are not caused by this work and are not fixed by leaving tourist out of it.
 
-### OQ-2 · Banner in an island, or the plans pages leave the edge cache?
+### OQ-2 · RESOLVED 2026-09-09 by the code, not by a choice → the island
+
+The repo settles this. `cacheable-pages-are-session-blind.guard.test.ts` scans
+every `.astro` under `src/pages` against an allowlist of seven prefixes, and
+`[lang]/planes/` is not one of them — so a server-rendered banner reading the
+session fails CI. The five pages were measured at **zero** server-side session
+reads today, and the banner is therefore an island. Nobody had to weigh the
+trade-off: the alternative does not build. Kept below for the reasoning, and
+because the F-8 correction changes which guard enforces it.
 
 F-8. An island keeps the cache and costs a client fetch plus a flash of no-banner. Leaving the cache is simpler to render and costs the cache on a conversion-critical page. Recommendation: the island, because the cache on these pages was a deliberate build (`CACHE_TAG_PRICING`) and a personalised pricing page is the exact failure the no-session guard exists to prevent.
 

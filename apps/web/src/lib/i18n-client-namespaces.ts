@@ -309,7 +309,15 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'pricing.free',
     'pricing.monthlyOnly',
     'pricing.period',
+    // HOS-1233. The three the plans-page trial branch names from islands: the
+    // warn-and-confirm dialog, the remaining-days banner, and the already-VIP
+    // disabled state. All three sit on the last click before payment, so a
+    // missing prefix here does not degrade — it renders the raw key text at
+    // exactly the moment the visitor is deciding whether to be charged.
+    'pricing.touristVipHeld',
+    'pricing.trialBanner',
     'pricing.trialNotEligible',
+    'pricing.trialWarning',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',

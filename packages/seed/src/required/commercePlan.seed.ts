@@ -7,32 +7,40 @@ import { summaryTracker } from '../utils/summaryTracker.js';
 import { ensurePlan } from './billingPlans.seed.js';
 
 /**
- * Ensures the monthly `billing_prices` row for one commerce-domain plan.
+ * Ensures ONE `billing_prices` row for a commerce-domain plan, at the given
+ * cadence.
  *
- * The price row is skipped when `monthlyPriceArs <= 0`. The disabled tiers of
- * each vertical have not been priced yet, and seeding a zero-amount price
- * would be worse than seeding none: it reads as a free plan rather than as an
- * unpriced one.
+ * The row is skipped when `unitAmount <= 0`. A tier that has not been priced at
+ * this cadence gets no row rather than a zero-amount one: a zero reads as a FREE
+ * plan downstream (`initiateCommerceSubscription` answers `PLAN_NOT_PURCHASABLE`
+ * on a zero amount and `NO_MONTHLY_PRICE` / `NO_ANNUAL_PRICE` on a missing row),
+ * and "unpriced" and "free" must not resolve to the same row.
  *
  * Idempotent: never overwrites a price an operator has since changed —
- * `monthlyPriceArs` is a `'commercial'` field, so the database wins.
+ * `monthlyPriceArs` / `annualPriceArs` are `'commercial'` fields, so the
+ * database wins.
  *
  * @param input.db - Drizzle client.
  * @param input.planId - The `billing_plans.id` to attach the price to.
- * @param input.plan - The plan definition (for `monthlyPriceArs`).
+ * @param input.unitAmount - Amount in centavos, or `null` for a cadence this
+ *   plan does not sell.
+ * @param input.billingInterval - qzpay's cadence column value (`'month'` /
+ *   `'year'`), always at `intervalCount: 1` — the only two the seed and the
+ *   `findMonthlyPrice` / `findAnnualPrice` lookups can express.
  * @param input.isProduction - Drives the `livemode` flag.
  * @returns What was created or skipped.
  */
 async function ensureCommercePriceRow(input: {
     db: DrizzleClient;
     planId: string;
-    plan: PlanDefinition;
+    unitAmount: number | null;
+    billingInterval: 'month' | 'year';
     isProduction: boolean;
 }): Promise<'created' | 'skipped' | 'none'> {
-    const { db, planId, plan, isProduction } = input;
+    const { db, planId, unitAmount, billingInterval, isProduction } = input;
 
-    if (plan.monthlyPriceArs <= 0) {
-        // Unpriced tier — see the docblock.
+    if (unitAmount === null || unitAmount <= 0) {
+        // Unpriced at this cadence — see the docblock.
         return 'none';
     }
 
@@ -43,7 +51,7 @@ async function ensureCommercePriceRow(input: {
             and(
                 eq(billingPrices.planId, planId),
                 eq(billingPrices.currency, 'ARS'),
-                eq(billingPrices.billingInterval, 'month'),
+                eq(billingPrices.billingInterval, billingInterval),
                 eq(billingPrices.intervalCount, 1)
             )
         )
@@ -56,14 +64,54 @@ async function ensureCommercePriceRow(input: {
     await db.insert(billingPrices).values({
         planId,
         currency: 'ARS',
-        unitAmount: plan.monthlyPriceArs,
-        billingInterval: 'month',
+        unitAmount,
+        billingInterval,
         intervalCount: 1,
         active: true,
         livemode: isProduction
     });
 
     return 'created';
+}
+
+/**
+ * Ensures BOTH cadences' `billing_prices` rows for one commerce plan (HOS-1285).
+ *
+ * The annual row is what makes the annual cadence buyable at all: checkout
+ * resolves the PRICE row, not the plan column, so a tier carrying
+ * `annualPriceArs` with no `'year'` row hard-throws `NO_ANNUAL_PRICE` — the same
+ * shape `experience-pro` hit on the monthly side when HOS-975 activated it.
+ *
+ * @param input.db - Drizzle client.
+ * @param input.planId - The `billing_plans.id` to attach the prices to.
+ * @param input.plan - The plan definition (for both price fields).
+ * @param input.isProduction - Drives the `livemode` flag.
+ * @returns A human-readable summary of what happened, for the seed log.
+ */
+async function ensureCommercePriceRows(input: {
+    db: DrizzleClient;
+    planId: string;
+    plan: PlanDefinition;
+    isProduction: boolean;
+}): Promise<string> {
+    const { db, planId, plan, isProduction } = input;
+
+    const monthly = await ensureCommercePriceRow({
+        db,
+        planId,
+        unitAmount: plan.monthlyPriceArs,
+        billingInterval: 'month',
+        isProduction
+    });
+    const annual = await ensureCommercePriceRow({
+        db,
+        planId,
+        unitAmount: plan.annualPriceArs,
+        billingInterval: 'year',
+        isProduction
+    });
+
+    return `monthly ${monthly}, annual ${annual}`;
 }
 
 /**
@@ -150,7 +198,7 @@ export async function seedCommercePlan(
         for (const { plans } of catalogues) {
             for (const plan of plans) {
                 const planResult = await ensurePlan(plan, isProduction, db);
-                const priceStatus = await ensureCommercePriceRow({
+                const priceStatus = await ensureCommercePriceRows({
                     db,
                     planId: planResult.planId,
                     plan,
@@ -160,7 +208,7 @@ export async function seedCommercePlan(
                 if (planResult.status === 'created') {
                     created++;
                     logger.success({
-                        msg: `${STATUS_ICONS.Success}  Created plan "${plan.name}" (${plan.slug}) with product_domain='${plan.productDomain}' (price: ${priceStatus})`
+                        msg: `${STATUS_ICONS.Success}  Created plan "${plan.name}" (${plan.slug}) with product_domain='${plan.productDomain}' (prices: ${priceStatus})`
                     });
                 } else if (planResult.status === 'synced') {
                     synced++;
@@ -168,7 +216,7 @@ export async function seedCommercePlan(
                 } else {
                     skipped++;
                     logger.info(
-                        `${STATUS_ICONS.Skip}  Plan "${plan.name}" (${plan.slug}) already exists, no drift (price: ${priceStatus})`
+                        `${STATUS_ICONS.Skip}  Plan "${plan.name}" (${plan.slug}) already exists, no drift (prices: ${priceStatus})`
                     );
                 }
             }

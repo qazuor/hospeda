@@ -5,6 +5,7 @@ import { UserIdSchema } from '../../common/id.schema.js';
 import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { PartnerContentReviewStateEnumSchema } from '../../enums/partner-content-review-state.schema.js';
+import { PartnerPaymentReviewStateEnumSchema } from '../../enums/partner-payment-review-state.schema.js';
 import { PartnerSubscriptionStatusEnumSchema } from '../../enums/partner-subscription-status.schema.js';
 import { PartnerTierEnumSchema } from '../../enums/partner-tier.schema.js';
 import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
@@ -137,6 +138,33 @@ export const partnerSchema = z.object({
     revokedById: UserIdSchema.nullish(),
     /** Why it was revoked. Required at the endpoint, so never empty when set. */
     revokeReason: z.string().max(1000).nullish(),
+    /**
+     * Whether an admin has been asked to confirm this partner's payment
+     * (HOS-1299), or null when nothing is pending.
+     *
+     * Its own column rather than a fifth
+     * {@link partnerSchema.shape.subscriptionStatus} — see
+     * {@link PartnerPaymentReviewStateEnum} for why that would have turned the
+     * QUESTION into the takedown it exists to ask about.
+     *
+     * Nothing reads this to decide visibility, billing or listing. It drives an
+     * admin queue and one email; the decision stays with the human.
+     */
+    paymentReviewState: PartnerPaymentReviewStateEnumSchema.nullish(),
+    /**
+     * The date through which an admin has confirmed the partner is paid up
+     * (HOS-1299), or null when nobody ever has.
+     *
+     * Deliberately NOT {@link partnerSchema.shape.endsAt}, which is read by the
+     * `partner-expiry` cron and ARCHIVES the partner unattended the moment it
+     * passes. Writing the confirmed period into that column would rebuild the
+     * silent automatic takedown the owner ruled out, by the back door.
+     *
+     * Null falls back to {@link partnerSchema.shape.startsAt} for the review
+     * clock, which is the honest reading: the alliance has been running,
+     * unconfirmed, since the day it began.
+     */
+    paymentConfirmedThrough: z.coerce.date().nullish(),
     ...BaseAuditFields
 });
 
@@ -204,4 +232,24 @@ export const PARTNER_REVOKE_MANAGED_FIELDS = {
  */
 export const PARTNER_REAPER_MANAGED_FIELDS = {
     unpaidNoticeSentAt: true
+} as const;
+
+/**
+ * The payment-review columns, as an `.omit()` mask (HOS-1299).
+ *
+ * Its own mask for the same reason the three above are separate: this one
+ * answers "has a human confirmed that this partner actually paid?", which is
+ * neither a content verdict nor a takedown nor a cron's memory of an email.
+ *
+ * Omitted from the write schemas because the review endpoint is their only
+ * writer. An admin who could PATCH `paymentConfirmedThrough` would silence the
+ * question without ever answering it — and an admin who could clear
+ * `paymentReviewState` inside an unrelated rename would dismiss the alert with
+ * nothing recording that a decision was made. The whole feature is the
+ * confirmation gesture; a field that rides along inside another edit is not
+ * one.
+ */
+export const PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS = {
+    paymentReviewState: true,
+    paymentConfirmedThrough: true
 } as const;

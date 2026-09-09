@@ -25,7 +25,7 @@
  * Only `billing_plans.metadata` — the carrier the checkout actually reads.
  * `resolvePlanTrialConfig()` (`trial.types.ts`) reads `hasTrial` / `trialDays`
  * off the plan's metadata, and that feeds `resolveCheckoutFreeTrialDays()`,
- * which `initiateCommerceMonthlySubscription` (`subscription-checkout.service.ts`)
+ * which `initiateCommerceSubscription` (`subscription-checkout.service.ts`)
  * now calls instead of hardcoding `trialDays: 0` — the same canonical resolver
  * the accommodation checkout paths use.
  *

@@ -311,6 +311,13 @@ overrides:
   linkify-it: ">=5.0.2 <6"
   sharp: ">=0.35.3 <0.36"
   fast-xml-parser: ">=5.10.1 <6"
+  # GHSA-7w5x-hrqm-74c2 (high): Denial of Service via malformed TOML documents,
+  # covers <=1.7.0. Transitive only, via astro (astro>smol-toml,
+  # @astrojs/node>astro>smol-toml, @sentry/astro>astro>smol-toml) — bumping
+  # astro does not close it: astro@7.3.2 still declares smol-toml ^1.6.0. The
+  # lockfile already resolves 1.7.1 for @astrojs/internal-helpers, so this is
+  # a pure resolution fix, same as the other transitive-only entries above.
+  smol-toml: ">=1.7.1 <2"
 
 auditConfig:
   ignoreGhsas:

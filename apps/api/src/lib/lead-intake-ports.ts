@@ -48,6 +48,7 @@ import { eq } from 'drizzle-orm';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { trySendNotification } from '../utils/notification-helper';
+import { resolveOpsRecipients } from '../utils/ops-recipients';
 
 /**
  * Which acquisition funnel a lead came through.
@@ -104,22 +105,6 @@ const ADMIN_QUEUE_PATHS: Record<LeadFunnel, string> = {
 const FUNNEL_LABELS: Record<LeadFunnel, string> = {
     alliance: 'Aliados'
 };
-
-/**
- * Resolves the operations mailboxes that receive lead alerts.
- *
- * Reuses `HOSPEDA_ADMIN_NOTIFICATION_EMAILS`, the address list every other ops
- * alert already uses (payment disputes, webhook failures, AI cost thresholds).
- * Introducing a second list for leads would create a second thing to keep set.
- *
- * @returns The trimmed, non-empty addresses. Empty when the var is unset.
- */
-function resolveOpsRecipients(): readonly string[] {
-    return (env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS ?? '')
-        .split(',')
-        .map((address) => address.trim())
-        .filter((address) => address.length > 0);
-}
 
 /**
  * Formats a timestamp for the alert body.
