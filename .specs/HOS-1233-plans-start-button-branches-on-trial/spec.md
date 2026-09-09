@@ -144,6 +144,50 @@ Two things follow:
 
 The wider question — what ELSE of Hospeda's vocabulary leaked into qzpay — is tracked on **HOS-1254**, since it is a package-level audit rather than part of this spec. That audit already found something worse than this default: `billing_plans.monthly_price_ars` / `annual_price_ars` (`plans.schema.ts:28-29`) put the Argentine currency in the COLUMN NAME of a generic payments library, `NOT NULL`, alongside the correct currency-agnostic mechanism the same package already has in `billing_prices.currency` — and `plan.mapper.ts:52` silently defaults the value to `0`, which is the same omit-is-silent pattern as this one, except what it invents is a price of zero.
 
+### F-4e · Four more writes were reading as compliant, and the guard is what found them
+
+Measured 2026-09-08 by T-035's guard on its first run, against this worktree.
+
+§4b's Writes table above originally answered **"Yes"** for the comp grant and the
+share-link checkout, and "Yes, all explicit" for the seeds. That reading was
+generous in a way worth naming, because the same generosity is what let the
+original bug live: all four sites INSERT the row and then set `product_domain`
+in a **separate statement** — a follow-up `UPDATE` in the two services, a raw-SQL
+`UPDATE` in the gastronomy seed, and a conditional spread
+(`...(productDomain ? { productDomain } : {})`) in the test-user seed.
+
+The rows do end up right. They are still not compliant with AC-15b, on two
+counts, and the second is not cosmetic:
+
+1. Every one of them **is born on the column default**. "Inherits the default and
+   is corrected 5 ms later" is the behaviour AC-15b prohibits, not a variant of
+   satisfying it.
+2. **None of them survives T-036.** With no default, the INSERT is what the
+   database rejects — before its correction has a chance to run. Read literally,
+   §4b's original table said this spec's largest risk (R-8) was already mitigated
+   at these sites. It was not.
+
+The test-user seed was the worst of the four, and it is the one with a live
+consequence today rather than a hypothetical one. Its parameter was optional, and
+its own docblock gave the reason: *"Omitted for accommodation/tourist/complex
+plans, where the column's `'accommodation'` default is already correct."* Since
+D-3, that sentence is false for tourist — so every tourist test user was seeded
+reproducing, on every developer's machine, the exact misfiling F-4b measured in
+prod and staging. Local was not a clean environment to test the fix in; it had the
+bug too. It now derives the domain from the plan's own row, so a vertical added
+later cannot be missed by omission.
+
+The methodological point, since AC-15c's inventory is a deliverable: **a
+hand-audited table is a claim, and this is the second one in this spec to be
+wrong** (F-4b's first draft was the first). The guard found in one run what
+reading found incorrectly — which is the argument for D-6.3 stated as evidence
+rather than as principle.
+
+`createOwnPreapprovalSubscription` shares the shape and is deliberately NOT
+counted here: the row it stamps is created by `createPaidSubscription`, so it is
+covered once T-032 lands and its own UPDATE becomes redundant rather than
+load-bearing.
+
 ### F-5 · The two verdict enums are deliberately separate and must stay that way
 
 `commerce-trial-verdict.schema.ts:18-25` and `publish-eligibility.schema.ts:18-26` each carry the same instruction from the other side: `PublishEligibilityKindSchema` (`first_publish` / `has_active_sub` / `subscription_required`) and `CommerceTrialVerdictKindSchema` (`trial_available` / `has_active_sub` / `payment_required`) spell their states differently **on purpose**, because publishing a commerce listing opens a MercadoPago checkout where publishing an accommodation starts a local trial.
@@ -290,12 +334,14 @@ Audited 2026-09-08 against this worktree. This table IS the acceptance criterion
 | `billing/paid-subscription-create.ts:207-274` | **Every paid checkout** (accommodation AND tourist), both reactivations, past-due card replacement | **NO** — no parameter exists |
 | `billing/plan/plan.crud.ts:424-489` (`createPlan`) | Any admin-created plan | **NO** — no field on `CreatePlanInput` |
 | `seed/required/billingPlans.seed.ts:423-459` | Every plan in `ALL_PLANS`, tourist included | **NO** — the likely origin of the production rows |
-| `subscription-trial-create.service.ts:174-200` | Local first-publish trial | Yes, validated against the plan's own domain |
-| `subscription-comp-create.service.ts:136-172` | Comp grant | Yes, hardcoded `ACCOMMODATION` (comp is accommodation-only by design) |
-| `billing/pending-provider-subscription-create.ts:260-339` | Share-link checkout | Yes, `ACCOMMODATION` only when the caller omits it |
-| `billing/own-preapproval-subscription-create.ts` | Commerce/partner own-preapproval | Yes, forwarded |
+| `subscription-trial-create.service.ts:174-200` | Local first-publish trial | Yes, in the insert, validated against the plan's own domain |
+| `subscription-comp-create.service.ts:136-172` | Comp grant | **NO — corrected by T-035**, see F-4e |
+| `billing/pending-provider-subscription-create.ts:260-339` | Share-link checkout | **NO — corrected by T-035**, see F-4e |
+| `seed/example/gastronomies.seed.ts:293` | The gastronomy fixture's subscription | **NO — corrected by T-035**, see F-4e (was missing from this table entirely) |
+| `seed/test-users/testUsers.seed.ts:429` | Every test user's subscription | **NO — corrected by T-035**, see F-4e |
+| `billing/own-preapproval-subscription-create.ts` | Commerce/partner own-preapproval | Yes, forwarded — but as a follow-up UPDATE, see F-4e |
 | `subscription-checkout.service.ts:876+,1219+` | Gastronomy / experience / partner checkout | Yes — **by accident**, see F-4c |
-| `commercePlan/partnerPlan/testDailyPlan/trialPlans/testUsers` seeds | Their verticals' rows | Yes, all explicit |
+| `commercePlan/partnerPlan/testDailyPlan/trialPlans` seeds | Their verticals' rows | Yes, all explicit, all in the insert |
 
 ### Reads
 

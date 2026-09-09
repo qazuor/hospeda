@@ -1,6 +1,16 @@
 # HOS-1233: The plans page reads the trial before it charges
 
-## Progress: 0/42 tasks (0%)
+## Progress: 7/42 tasks (17%)
+
+> T-030 and T-031 are done on the **qzpay** side and merged nowhere yet: they live
+> in PR #85, unpublished. Everything downstream of the package (T-032, and T-036
+> after it) stays blocked until the whole wave publishes — the five siblings pin
+> core at an exact version, so bumping one alone puts two cores in the lockfile.
+>
+> T-035's guard reports `createPaidSubscription` as BLOCKED rather than failing,
+> and derives that state from the installed package's own `.d.ts`. The day the
+> wave publishes, that line turns into a CI failure with no edit to the guard —
+> which is the reminder that T-032 is outstanding.
 
 **Average complexity:** 2.2 / 3 (max) — every task is ≤ 3  
 **Levels:** 10 topological levels, no cycles, all references resolve in both directions  
@@ -23,7 +33,7 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) — Add TOURIST to ProductDomainEnum
+- [x] **T-001** (complexity: 2) — Add TOURIST to ProductDomainEnum
   - Add `TOURIST = 'tourist'` to `packages/schemas/src/enums/product-domain.enum.ts`.
   - Blocked by: none · Blocks: T-002, T-003, T-004
 
@@ -31,11 +41,11 @@
   - R-5.
   - Blocked by: T-001 · Blocks: T-005
 
-- [ ] **T-030** (complexity: 3) — qzpay-core: accept a product domain on subscription creation
+- [x] **T-030** (complexity: 3) — qzpay-core: accept a product domain on subscription creation
   - D-7.1 / AC-15e.
   - Blocked by: none · Blocks: T-032, T-033
 
-- [ ] **T-031** (complexity: 1) — qzpay: stop naming Hospeda in the schema docblocks
+- [x] **T-031** (complexity: 1) — qzpay: stop naming Hospeda in the schema docblocks
   - D-7.3.
   - Blocked by: none · Blocks: none
 
@@ -97,15 +107,15 @@
   - AC-15e.
   - Blocked by: T-030 · Blocks: T-034, T-036
 
-- [ ] **T-033** (complexity: 2) — createPlan and CreatePlanInput carry the domain
+- [x] **T-033** (complexity: 2) — createPlan and CreatePlanInput carry the domain
   - AC-15f.
   - Blocked by: T-030 · Blocks: T-034, T-036
 
-- [ ] **T-034** (complexity: 3) — The seed stamps each plan's domain, derived not listed
+- [x] **T-034** (complexity: 3) — The seed stamps each plan's domain, derived not listed
   - AC-15g.
   - Blocked by: T-032, T-033 · Blocks: T-035, T-037
 
-- [ ] **T-035** (complexity: 3) — Guard: a subscription or plan write that omits the domain fails CI
+- [x] **T-035** (complexity: 3) — Guard: a subscription or plan write that omits the domain fails CI
   - AC-15d / D-6.3, and the piece that makes this permanent.
   - Blocked by: T-034 · Blocks: T-036
 
@@ -113,7 +123,7 @@
   - D-7.2 / AC-15h.
   - Blocked by: T-032, T-033, T-035 · Blocks: T-037, T-038
 
-- [ ] **T-038** (complexity: 3) — Backfill: reclassify the tourist rows in both tables
+- [x] **T-038** (complexity: 3) — Backfill: reclassify the tourist rows in both tables
   - R-11 / AC-14.
   - Blocked by: T-036 · Blocks: T-027, T-039, T-040, T-041
 
