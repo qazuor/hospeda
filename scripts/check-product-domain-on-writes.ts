@@ -418,6 +418,19 @@ function scanDrizzleInserts(rel: string, source: string): Finding[] {
         const pattern = new RegExp(`\\.insert\\(\\s*${table}\\s*\\)`, 'g');
         for (const match of source.matchAll(pattern)) {
             const at = match.index;
+
+            // Skip prose. `scanQzpayCreates` has always done this; this scan
+            // never did, and a docblock that QUOTES the call it documents —
+            // `tx.insert(billingSubscriptions).values(...)` — matched, then read
+            // the literal `...` as its payload and reported UNVERIFIABLE.
+            //
+            // A guard that fails on a COMMENT is worse than one that misses a
+            // call: the failure names a line nobody can fix by writing better
+            // code, and the only way out is to reword the documentation.
+            const lineStart = source.lastIndexOf('\n', at) + 1;
+            const linePrefix = source.slice(lineStart, at).trimStart();
+            if (linePrefix.startsWith('*') || linePrefix.startsWith('//')) continue;
+
             const valuesAt = source.indexOf('.values(', at);
             if (valuesAt < 0) {
                 findings.push({
