@@ -196,4 +196,44 @@ describe('getChangePlanOptions — a tourist subscription keeps its destinations
 
         expect(options).toEqual([]);
     });
+
+    /**
+     * The assertion above passes over `ALL_PLANS` whether or not the row/catalog
+     * disagreement is checked at all — deleting that check still yields `[]`,
+     * because today's catalog holds no plan matching the drifted domain AND the
+     * tourist category. That mutation SURVIVED the first version of this suite.
+     *
+     * It is not a redundant check: without it, the row's domain is what drives
+     * the destination filter, so a drifted row re-opens the HOS-331 trap from
+     * the other side — it asks the catalog for that domain's plans and offers
+     * them. Proving that needs a catalog where such a plan exists, which is
+     * exactly what the injectable `plans` parameter is for.
+     */
+    it('does not let a drifted row choose the destination domain', () => {
+        const touristLike: PlanDefinition = {
+            ...fakePartnerGoldLikePlan,
+            slug: 'tourist-vip',
+            category: 'tourist',
+            productDomain: ProductDomainEnum.TOURIST
+        };
+        // A partner plan filed under the tourist category — the same
+        // category-is-not-the-discriminator shape `partner-gold` has.
+        const partnerUnderTouristCategory: PlanDefinition = {
+            ...fakePartnerGoldLikePlan,
+            slug: 'partner-gold',
+            category: 'tourist',
+            productDomain: ProductDomainEnum.PARTNER
+        };
+
+        const options = getChangePlanOptions({
+            currentPlan: touristLike,
+            currentSlug: 'tourist-vip',
+            // The row drifted to partner; the plan it is on says tourist.
+            currentProductDomain: ProductDomainEnum.PARTNER,
+            plans: [touristLike, partnerUnderTouristCategory]
+        });
+
+        expect(options).toEqual([]);
+        expect(options.some((plan) => plan.slug === 'partner-gold')).toBe(false);
+    });
 });
