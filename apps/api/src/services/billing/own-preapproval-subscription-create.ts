@@ -178,12 +178,16 @@ export interface CreateOwnPreapprovalSubscriptionInput extends CreatePaidSubscri
      * SAME plan-domain read, for defense-in-depth and consistency with the
      * other three), commerce (`'gastronomy'`/`'experience'`), partner
      * (`'partner'`) — so the follow-up UPDATE below double-states the same
-     * value the INSERT already wrote. The one caller that still omits it is
-     * `preapproval-recovery.service.ts`'s retry mint, which re-subscribes
-     * against the SAME plan as the row it is retrying and relies on
-     * `createPaidSubscription`'s own resolution alone; it is deliberately
-     * scoped to `RETRY_SUPPORTED_PRODUCT_DOMAINS` (accommodation only) so
-     * that reliance is safe.
+     * value the INSERT already wrote.
+     *
+     * The one caller that still omits it is `preapproval-recovery.service.ts`'s
+     * retry mint, and only on its `'no-bridge'` path (accommodation, tourist):
+     * it re-subscribes against the SAME plan as the row it is retrying, so
+     * `createPaidSubscription`'s own resolution already lands that row's value.
+     * HOS-1287 widened that retry to gastronomy/experience/partner, and those
+     * branches DO state it — alongside `domainMetadata` and
+     * {@link writeDomainLinkRow}, which is the whole reason the retry used to
+     * refuse them.
      */
     readonly productDomain?: string;
     /**

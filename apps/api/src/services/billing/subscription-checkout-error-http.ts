@@ -59,6 +59,12 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
         // price is $0). Well-formed but unprocessable -> 422, same family as
         // the reactivation codes it mirrors.
         case 'PLAN_NOT_PURCHASABLE':
+        // HOS-1287: the past-due row's product domain cannot be carried onto a
+        // fresh preapproval. The row exists and belongs to the caller (the
+        // route already answered 404 otherwise), so this is a well-formed
+        // request against an unprocessable state — 422, never a 500, and never
+        // a silent success.
+        case 'DOMAIN_NOT_REPLACEABLE':
             return new HTTPException(422, { message: err.message });
         // HOS-114 T-015b: `reactivateSubscription` rejects the request
         // because the customer already has a live (active/trialing)

@@ -110,6 +110,10 @@ function baseRow(overrides: Record<string, unknown> = {}) {
         planId: 'plan-001',
         status: SubscriptionStatusEnum.PAST_DUE,
         billingInterval: 'month',
+        // HOS-1287: the route is the PRODUCER of these two — the service can
+        // only carry a vertical forward if the row read here selects it.
+        productDomain: null,
+        metadata: null,
         ...overrides
     };
 }
@@ -189,9 +193,66 @@ describe('handleReplacePaymentMethod', () => {
         expect(mockReplacePastDuePaymentMethod).toHaveBeenCalledWith(
             expect.objectContaining({
                 customerId: OWNER_CUSTOMER_ID,
-                pastDueSubscription: { id: LOCAL_SUB_ID, planId: 'plan-001' }
+                pastDueSubscription: {
+                    id: LOCAL_SUB_ID,
+                    planId: 'plan-001',
+                    productDomain: null,
+                    metadata: null
+                }
             })
         );
+    });
+
+    it('HOS-1287: forwards the past-due row’s productDomain and metadata, so a commerce replacement can carry its listing pointer', async () => {
+        // The PRODUCER half. A service test that hands the coordinates in by
+        // hand proves the consumer works; this proves the route actually reads
+        // them off the row and passes them on. Without the two extra columns in
+        // the SELECT, the service would receive `undefined` for both, resolve
+        // the domain as accommodation (it fails OPEN) and mint a replacement
+        // with no pointer — silently, exactly as before HOS-1287.
+        mockRow(
+            baseRow({
+                productDomain: 'gastronomy',
+                metadata: {
+                    commerceEntityType: 'gastronomy',
+                    commerceEntityId: 'entity-gastro-001'
+                }
+            })
+        );
+        mockReplacePastDuePaymentMethod.mockResolvedValue({
+            localSubscriptionId: 'sub-new-001',
+            checkoutUrl: 'https://mercadopago.example/checkout/sub-new-001',
+            reused: false
+        });
+        const ctx = createMockContext();
+
+        await handleReplacePaymentMethod(ctx as never, { localId: LOCAL_SUB_ID });
+
+        const forwarded = mockReplacePastDuePaymentMethod.mock.calls[0]?.[0] as {
+            pastDueSubscription: { productDomain?: unknown; metadata?: unknown };
+        };
+        // Field by field: `objectContaining` is blind to an absent field, which
+        // is precisely the failure mode under test.
+        expect(forwarded.pastDueSubscription.productDomain).toBe('gastronomy');
+        expect(forwarded.pastDueSubscription.metadata).toEqual({
+            commerceEntityType: 'gastronomy',
+            commerceEntityId: 'entity-gastro-001'
+        });
+    });
+
+    it('HOS-1287: maps DOMAIN_NOT_REPLACEABLE to 422, not 500', async () => {
+        mockRow(baseRow({ productDomain: 'addon' }));
+        mockReplacePastDuePaymentMethod.mockRejectedValue(
+            new SubscriptionCheckoutError('DOMAIN_NOT_REPLACEABLE', 'addon is not replaceable')
+        );
+        const ctx = createMockContext();
+
+        const error = await handleReplacePaymentMethod(ctx as never, {
+            localId: LOCAL_SUB_ID
+        }).catch((e) => e);
+
+        expect(error).toBeInstanceOf(HTTPException);
+        expect((error as HTTPException).status).toBe(422);
     });
 
     it('maps a SubscriptionCheckoutError from the service to its HTTP status', async () => {

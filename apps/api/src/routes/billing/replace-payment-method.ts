@@ -76,7 +76,14 @@ export const handleReplacePaymentMethod = async (
             customerId: billingSubscriptions.customerId,
             planId: billingSubscriptions.planId,
             status: billingSubscriptions.status,
-            billingInterval: billingSubscriptions.billingInterval
+            billingInterval: billingSubscriptions.billingInterval,
+            // HOS-1287: the vertical being replaced, and where its listing is.
+            // Read straight off the row through Drizzle — never through QZPay's
+            // `getByCustomerId`, whose mapper drops `productDomain` entirely
+            // (HOS-934), which would make every commerce row read as
+            // accommodation and lose its pointer without erroring.
+            productDomain: billingSubscriptions.productDomain,
+            metadata: billingSubscriptions.metadata
         })
         .from(billingSubscriptions)
         .where(eq(billingSubscriptions.id, params.localId))
@@ -111,7 +118,12 @@ export const handleReplacePaymentMethod = async (
         const result = await replacePastDuePaymentMethod({
             billing,
             customerId: billingCustomerId,
-            pastDueSubscription: { id: row.id, planId: row.planId },
+            pastDueSubscription: {
+                id: row.id,
+                planId: row.planId,
+                productDomain: row.productDomain ?? null,
+                metadata: row.metadata
+            },
             paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
             notificationUrl: buildNotificationUrl()
         });

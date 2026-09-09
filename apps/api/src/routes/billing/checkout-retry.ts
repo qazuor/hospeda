@@ -209,9 +209,14 @@ export const handleCheckoutRetry = async (
         return { recovery: 'confirming', checkoutUrl: null };
     }
 
-    // outcome.kind === 'unsupported' — a real data gap (unsupported product
-    // domain, missing plan/price, missing mpPreapprovalPlanId). Well-formed
-    // request, unprocessable server-side state → 422.
+    // outcome.kind === 'unsupported' — a real data gap. Since HOS-1287 that no
+    // longer means "commerce/partner", which now retry like accommodation: it
+    // means a product domain no mint can faithfully reproduce (`addon`, whose
+    // price is an override on a BORROWED plan row; the retired pre-HOS-685
+    // umbrella value; anything unrecognized), a listing-owning row whose entity
+    // pointer was never stamped or disagrees with its own domain column, or a
+    // missing plan/price/`mpPreapprovalPlanId`. Well-formed request,
+    // unprocessable server-side state → 422.
     throw new HTTPException(422, {
         message: 'Could not generate a new checkout attempt for this subscription'
     });
