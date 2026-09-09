@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0104-hos-1286-commerce-visibility-boost-addons
+ * Data migration: 0105-hos-1286-commerce-visibility-boost-addons
  *
  * Inserts the four HOS-1286 commerce visibility boosts
  * (`visibility-boost-gastronomy-7d` / `-30d`,
@@ -48,7 +48,7 @@ import { billingAddons, eq } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0104-hos-1286-commerce-visibility-boost-addons',
+    name: '0105-hos-1286-commerce-visibility-boost-addons',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
