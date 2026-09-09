@@ -566,14 +566,34 @@ export async function createAddonCheckout(
             }
         }
 
-        // SPEC-109 fix #5/#6: use a UUID as the idempotency key. A retry from
-        // the same logical checkout reuses the same UUID, so the provider
-        // returns the existing session instead of creating a duplicate. The
-        // `addon_<slug>_` prefix on orderId is kept for human traceability in
-        // the provider dashboard. There is NO access-token guard here: qzpay
-        // owns MP credentials (configured at billing adapter init) and throws
-        // internally when the adapter is misconfigured — matching the pattern
-        // used in the annual subscription flow in subscription-checkout.service.ts.
+        // SPEC-109 fix #5/#6: use a UUID as the idempotency key sent to the
+        // provider. The `addon_<slug>_` prefix on orderId is kept for human
+        // traceability in the provider dashboard. There is NO access-token
+        // guard here: qzpay owns MP credentials (configured at billing adapter
+        // init) and throws internally when the adapter is misconfigured —
+        // matching the pattern used in the annual subscription flow in
+        // subscription-checkout.service.ts.
+        //
+        // HOS-1272 CORRECTION: the line below this comment used to be preceded
+        // by the claim "a retry from the same logical checkout reuses the same
+        // UUID" — that is FALSE. `randomUUID()` is called fresh on every
+        // invocation of this function, with no lookup of any prior attempt, so
+        // two clicks (or the client's own retry) produce two DIFFERENT UUIDs,
+        // two DIFFERENT `idempotencyKey`s, and two independently payable
+        // MercadoPago Preferences for the same one-time add-on purchase. This
+        // is the SAME class of bug HOS-1272 fixed for accommodation checkout,
+        // just on the one-time (non-recurring) add-on path — NOT fixed here.
+        // The recurring add-on path (`createRecurringAddonCheckout`, a few
+        // lines below) IS protected, via
+        // `resolveRecurringAddonCheckoutIdempotency`
+        // (`addon.checkout.recurring-idempotency.ts`), which reads an existing
+        // `billing_addon_purchases` row before minting. This one-time path has
+        // no equivalent local row to check before the Preference is created —
+        // closing this gap needs a new persisted pre-checkout intent (or a
+        // query against the polling-job storage `billing.getStorage()
+        // .subscriptionPollingJobs` already writes to, if it can be queried by
+        // customer+addon), which is a real design decision and out of scope
+        // for this comment fix. Tracked as a follow-up rather than built here.
         const checkoutUuid = randomUUID();
         const orderId = `addon_${addon.slug}_${checkoutUuid}`;
         const webUrl = env.HOSPEDA_SITE_URL;
