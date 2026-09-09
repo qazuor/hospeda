@@ -250,6 +250,53 @@ merely inconsistent. Its consumers (`applyDowngradeRestrictions`,
 tourist has none of. Correcting it is a separate change with its own blast
 radius.
 
+### F-4g · Three more user-facing reads break, and the audit's own "~15 call sites" is what hid them
+
+Found 2026-09-09 by enumerating every call site instead of reading the table.
+**§4b listed 7 of the 19 reads that change.** The remaining twelve are
+classified in §4b now; three of them BREAK, and all three are surfaces a paying
+tourist touches:
+
+1. **`routes/user/protected/entitlements.ts:139`** — the endpoint that tells the
+   client *which plan am I on*. Its `find` uses `isAccommodationSubscription`,
+   so a reclassified tourist yields no `activeSub` and the response carries
+   `plan: null`. The line above it already states the intent the code now
+   violates: *"a plain tourist actor's real tourist plan must keep surfacing
+   unchanged"*.
+2. **`billing/plan-domain-guard.ts:242`**, via
+   `routes/billing/plan-change.ts:246` — `selectAccommodationSubscription`
+   returns `undefined` and the route throws **HTTP 404 `No active subscription
+   found`**. A tourist VIP cannot change their plan. This is the user-side twin
+   of the admin gate D-8 named; only the admin half was fixed (T-039).
+3. **`routes/user/protected/subscription.ts:284`** — the domain comes from a
+   query param that **defaults to `ACCOMMODATION`**, so a tourist reading their
+   own subscription finds nothing unless the caller passes
+   `?productDomain=tourist`. No caller does: the value did not exist until this
+   spec.
+
+All three are the same one-line shape as F-4f (accept accommodation OR tourist),
+except #3, which additionally needs a decision about what the default should be
+for a caller that names no domain.
+
+Two smaller items from the same sweep, recorded so they are not rediscovered:
+
+- **`billing/apply-price-increase.service.ts:345`** changes behaviour and fails
+  safe: an admin price increase aimed at a tourist plan now matches zero rows
+  and reports `matched: 0`. Whether tourist plans should be repriceable through
+  that tool is a product question, not a bug this spec introduced.
+- **`billing/trial-local-expiry.service.ts:149`**'s `else` branch is a no-op for
+  a tourist either way, but its comment explains itself as *"commerce verticals
+  do not have listings of their own"* — a reason that no longer covers every
+  case reaching it.
+
+**This is the fourth hand-audited claim in this spec to be wrong** (F-4b's first
+draft, F-4e, F-4f, and now the read table's own scope). The pattern has held
+every time: a table written by reading answers *what does this say*, and the
+question is always *what does this do to a row shaped like X*. What finally
+worked here was not reading more carefully — it was enumerating the call sites
+mechanically and classifying by SHAPE, which turned 38 sites into one group of
+19 and two groups that provably cannot move.
+
 ### F-5 · The two verdict enums are deliberately separate and must stay that way
 
 `commerce-trial-verdict.schema.ts:18-25` and `publish-eligibility.schema.ts:18-26` each carry the same instruction from the other side: `PublishEligibilityKindSchema` (`first_publish` / `has_active_sub` / `subscription_required`) and `CommerceTrialVerdictKindSchema` (`trial_available` / `has_active_sub` / `payment_required`) spell their states differently **on purpose**, because publishing a commerce listing opens a MercadoPago checkout where publishing an accommodation starts a local trial.
@@ -421,6 +468,36 @@ Audited 2026-09-08 against this worktree. This table IS the acceptance criterion
 | dunning / poll / finalize / abandoned crons | Exclude `addon` only | Indifferent |
 | `admin/SubscriptionFilters.tsx:22` | Derives from `Object.values` | Auto-correct, no change |
 | `subscriptionMatchesDomain` + ~15 call sites | Canonical comparator | Done — tourist fails closed, accommodation fail-open intact |
+
+### Reads, completed (2026-09-09) — the row above said "~15 call sites" and meant it literally
+
+The line above is the one that hid the rest of this audit. There are **38** call
+sites across 27 files, and the table above classified **7** of the 19 that
+actually change. Enumerating them by mechanism is what made the remainder
+tractable — only ONE of the three shapes moves when a tourist row is
+reclassified:
+
+| Shape | Sites | Effect of the flip |
+| -- | -- | -- |
+| `isAddonSubscription(sub)` — exclude add-on rows | 7 | **None.** A tourist row is not an add-on before or after |
+| `subscriptionMatchesDomain(sub, <commerce vertical>)` | 12 | **None.** A tourist row matched neither `accommodation`-as-asked nor the vertical asked for |
+| `isAccommodationSubscription(sub)` / `…(sub, 'accommodation')` | **19** | **This is the whole surface.** A tourist row passed before and fails after |
+
+Verdict for each of the 12 previously unlisted sites in that third group:
+
+| Site | Verdict |
+| -- | -- |
+| `routes/user/protected/entitlements.ts:139` | **BREAKS** → F-4g. Returns `plan: null` to a paying tourist |
+| `billing/plan-domain-guard.ts:242` → `routes/billing/plan-change.ts:246` | **BREAKS** → F-4g. HTTP 404 `No active subscription found`; a tourist cannot change plan |
+| `routes/user/protected/subscription.ts:284` | **BREAKS** → F-4g. Domain defaults to `ACCOMMODATION`, so a tourist sees no subscription |
+| `billing/apply-price-increase.service.ts:345` | **BEHAVIOUR CHANGED, fails safe.** A price increase on a tourist plan matches zero rows and reports `matched: 0` |
+| `addon-entitlement.service.ts:153,458,725` | Indifferent → correct. No add-on targets a tourist cap, so a pure tourist never held one; a dual-holder's add-on now lands on the right row |
+| `billing/addon/addon-user-addons.ts:189` | Indifferent → correct. Same reasoning |
+| `entity-subscription-cache.service.ts:172` | **FIXED** — same family as the reconcile cron already listed above |
+| `accommodation/featured-entitlement.resolver.ts:121` | Indifferent → correct. Same answer by both paths; now for the right reason |
+| `billing/trial-local-expiry.service.ts:149` | Indifferent. Both branches are a no-op for a tourist — but the `else` branch's comment now describes a case it no longer covers (see F-4g) |
+| `billing/plan-domain-guard.ts:181` (+ `trialing-plan-upgrade.service.ts:337`, `webhooks/.../payment-logic.ts:819`) | Indifferent → correct. A tourist upgrade now takes the commerce branch, which is a documented no-op for anything with no listings |
+| `seed/data-migrations/0092-…-backfill-accommodation-subscription-cache.ts:161` | Not applicable — historical, already ledgered, never re-runs |
 
 ### Guards
 
