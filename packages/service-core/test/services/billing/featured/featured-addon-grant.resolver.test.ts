@@ -44,8 +44,10 @@ vi.mock('@repo/db', () => ({
 }));
 
 import { and, eq, inArray } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import {
     FEATURABLE_ENTITY_TYPES,
+    type FeaturableEntityType,
     getActiveFeaturedGrantEntityIds,
     getEntityIdsWithActiveFeaturedAddon,
     getFeaturedAddonGrantTarget,
@@ -131,14 +133,18 @@ describe('resolveFeaturableEntityType', () => {
 
 describe('resolveEntityHasActiveFeaturedAddon', () => {
     it.each([
-        'accommodation',
-        'gastronomy',
-        'experience'
-    ] as const)('scopes the read to BOTH entity_type and entity_id for %s', async (entityType) => {
+        ProductDomainEnum.ACCOMMODATION,
+        ProductDomainEnum.GASTRONOMY,
+        ProductDomainEnum.EXPERIENCE
+    ])('scopes the read to BOTH entity_type and entity_id for %s', async (entityType) => {
         mockSelect.mockReturnValueOnce(makeChain([{ id: 'grant-1' }]));
 
         const held = await resolveEntityHasActiveFeaturedAddon({
-            entityType,
+            // `it.each` widens an enum-member tuple back to the enum, so the
+            // narrow union has to be restated here. The VALUES are still the
+            // three real members — this is a typing artefact of the table, not a
+            // loosening of what is under test.
+            entityType: entityType as FeaturableEntityType,
             entityId: 'listing-1'
         });
 
@@ -161,7 +167,7 @@ describe('resolveEntityHasActiveFeaturedAddon', () => {
         mockSelect.mockReturnValueOnce(makeChain([]));
 
         await resolveEntityHasActiveFeaturedAddon({
-            entityType: 'gastronomy',
+            entityType: ProductDomainEnum.GASTRONOMY,
             entityId: 'shared-uuid'
         });
 
@@ -174,7 +180,7 @@ describe('resolveEntityHasActiveFeaturedAddon', () => {
 
         await expect(
             resolveEntityHasActiveFeaturedAddon({
-                entityType: 'experience',
+                entityType: ProductDomainEnum.EXPERIENCE,
                 entityId: 'exp-1'
             })
         ).resolves.toBe(false);
@@ -187,14 +193,14 @@ describe('resolveEntityHasActiveFeaturedAddon', () => {
 
 describe('getEntityIdsWithActiveFeaturedAddon', () => {
     it.each([
-        'accommodation',
-        'gastronomy',
-        'experience'
-    ] as const)('narrows the candidate set within %s only', async (entityType) => {
+        ProductDomainEnum.ACCOMMODATION,
+        ProductDomainEnum.GASTRONOMY,
+        ProductDomainEnum.EXPERIENCE
+    ])('narrows the candidate set within %s only', async (entityType) => {
         mockSelect.mockReturnValueOnce(makeChain([{ entityId: 'a' }, { entityId: 'c' }]));
 
         const result = await getEntityIdsWithActiveFeaturedAddon({
-            entityType,
+            entityType: entityType as FeaturableEntityType,
             entityIds: ['a', 'b', 'c']
         });
 
@@ -208,7 +214,7 @@ describe('getEntityIdsWithActiveFeaturedAddon', () => {
         // match, so the early return is load-bearing rather than an
         // optimisation.
         const result = await getEntityIdsWithActiveFeaturedAddon({
-            entityType: 'gastronomy',
+            entityType: ProductDomainEnum.GASTRONOMY,
             entityIds: []
         });
 
@@ -223,14 +229,16 @@ describe('getEntityIdsWithActiveFeaturedAddon', () => {
 
 describe('getActiveFeaturedGrantEntityIds', () => {
     it.each([
-        'gastronomy',
-        'experience'
-    ] as const)('sweeps only the %s vertical', async (entityType) => {
+        ProductDomainEnum.GASTRONOMY,
+        ProductDomainEnum.EXPERIENCE
+    ])('sweeps only the %s vertical', async (entityType) => {
         mockSelectDistinct.mockReturnValueOnce(
             makeChain([{ entityId: 'l-1' }, { entityId: 'l-2' }])
         );
 
-        const result = await getActiveFeaturedGrantEntityIds({ entityType });
+        const result = await getActiveFeaturedGrantEntityIds({
+            entityType: entityType as FeaturableEntityType
+        });
 
         expect(result).toEqual(['l-1', 'l-2']);
         // The reconcile cron uses this as the COMPLETE expected set for a
