@@ -432,8 +432,9 @@ export const userApi = {
      * const result = await userApi.getSubscription();
      * if (result.ok && result.data.subscription) { ... }
      *
-     * // Scope to the commerce subscription instead:
-     * const commerce = await userApi.getSubscription({ productDomain: 'commerce' });
+     * // Scope to one commerce vertical instead — 'commerce' itself is a
+     * // RETIRED ProductDomainEnum value (HOS-695) and must never be passed:
+     * const gastronomy = await userApi.getSubscription({ productDomain: 'gastronomy' });
      * ```
      */
     getSubscription(params?: {

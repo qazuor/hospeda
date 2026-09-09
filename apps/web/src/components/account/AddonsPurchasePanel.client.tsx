@@ -53,6 +53,37 @@ const SUBSCRIPTION_GATE_REASONS: ReadonlySet<string> = new Set([
     'NO_ACTIVE_SUBSCRIPTION'
 ]);
 
+/**
+ * Resolves the subscription-gate CTA's audience for ONE add-on card, from
+ * that add-on's own `productDomain` (HOS-1293).
+ *
+ * Addon purchases are NOT a host-only surface — `targetCategories` is always
+ * `owner`/`complex` because `PlanCategory` has no commerce member (see
+ * `AddonDefinition.productDomain`'s doc in `@repo/billing`), but
+ * `extra-gastronomies-1` / `extra-experiences-1` are real, purchasable,
+ * gastronomy/experience-domain add-ons. Before this fix every card's gate CTA
+ * was hardcoded to the host plans page, so a gastronomy-only or
+ * experience-only owner who hit the "necesitás una suscripción activa" banner
+ * on one of their OWN add-ons was sent to buy an accommodation plan instead.
+ *
+ * Anything other than `'gastronomy'`/`'experience'` (accommodation, `null`,
+ * or a future domain this panel does not yet know) degrades to `'host'` —
+ * every add-on in the catalogue today carries `productDomain: 'accommodation'`
+ * except the two commerce pairs, so this is not a guess so much as the
+ * existing default kept for everything that isn't explicitly commerce.
+ *
+ * @param productDomain - The add-on's own `productDomain`, from the catalogue.
+ * @returns The audience {@link resolveSubscriptionPlansPathForAudience} expects.
+ */
+function resolveAddonUpgradeAudience(
+    productDomain: AddonCardData['productDomain']
+): 'host' | 'gastronomy' | 'experience' {
+    if (productDomain === 'gastronomy' || productDomain === 'experience') {
+        return productDomain;
+    }
+    return 'host';
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** A single purchasable add-on, as returned by `billingApi.listAvailableAddons`. */
@@ -131,14 +162,6 @@ export function AddonsPurchasePanel({
     const accountLevelAddons = unfocusedAddons.filter(
         (addon) => !addon.requiresAccommodationTarget
     );
-
-    // Addon purchases are a host-only surface (targetCategories are always
-    // `owner`/`complex`), so the upgrade CTA always points at the host plans,
-    // never the tourist ones.
-    const upgradePlansHref = buildUrl({
-        locale,
-        path: resolveSubscriptionPlansPathForAudience({ audience: 'host' })
-    });
 
     function handleAccommodationChange(slug: string, accommodationId: string): void {
         setSelectedAccommodationBySlug((prev) => ({ ...prev, [slug]: accommodationId }));
@@ -251,6 +274,14 @@ export function AddonsPurchasePanel({
         const needsSelect = addon.requiresAccommodationTarget;
         const hasNoAccommodations = needsSelect && accommodations.length === 0;
         const selectedId = selectedAccommodationBySlug[addon.slug] ?? '';
+        // HOS-1293: per-card, not page-level — a gastronomy add-on's gate
+        // points at the gastronomy plans, never at the host's.
+        const upgradePlansHref = buildUrl({
+            locale,
+            path: resolveSubscriptionPlansPathForAudience({
+                audience: resolveAddonUpgradeAudience(addon.productDomain)
+            })
+        });
         const canPurchase =
             !isOwned &&
             !isPurchasing &&
