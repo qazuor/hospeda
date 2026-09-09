@@ -45,6 +45,19 @@ vi.mock('../../src/services/billing/pause-refusal-audit', () => ({
     recordPauseProviderRefusal: vi.fn().mockResolvedValue(true)
 }));
 
+// HOS-1280: the bridge (and partner reconciler) that this fix wires into both
+// handlers. Mocked as spies — the reconciler's own behavior (flip a linked
+// gastronomy/experience listing's visibility) is already covered by
+// commerce-reconcile.test.ts; what regressed here was that these handlers
+// never called it at all.
+vi.mock('../../src/services/subscription-linked-entities.service', () => ({
+    reconcileSubscriptionLinkedEntities: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../src/services/partner-reconcile.service', () => ({
+    reconcilePartnerForSubscription: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
         info: vi.fn(),
@@ -119,6 +132,8 @@ import {
     handleSelfServeResume
 } from '../../src/routes/billing/subscription-pause';
 import { recordPauseProviderRefusal } from '../../src/services/billing/pause-refusal-audit';
+import { reconcilePartnerForSubscription } from '../../src/services/partner-reconcile.service';
+import { reconcileSubscriptionLinkedEntities } from '../../src/services/subscription-linked-entities.service';
 import { setOwnerServiceSuspension } from '../../src/services/subscription-pause.service';
 
 // ---------------------------------------------------------------------------
@@ -213,6 +228,64 @@ describe('handleSelfServePause', () => {
             eventType: BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_PAUSED,
             triggerSource: 'host-pause'
         });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1280 regression: the pause must call the shared bridge, or a
+    // commerce (gastronomy/experience) listing paused this way stays PUBLIC
+    // forever — unlike accommodation, there is no backstop cron for it.
+    // -----------------------------------------------------------------------
+
+    it('HOS-1280: calls reconcileSubscriptionLinkedEntities and reconcilePartnerForSubscription with the paused status, after the write commits', async () => {
+        const sub = {
+            id: 'sub-monthly-1',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        const ctx = createMockContext();
+
+        await handleSelfServePause(ctx as never);
+
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: 'sub-monthly-1',
+            subscriptionStatus: 'paused',
+            source: 'host-pause'
+        });
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledTimes(1);
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+            subscriptionId: 'sub-monthly-1',
+            subscriptionStatus: 'paused',
+            source: 'host-pause'
+        });
+
+        // Ordering: the bridge must run only AFTER qzpay's write actually
+        // committed (billing.subscriptions.pause resolved), never before.
+        const pauseOrder = billing.subscriptions.pause.mock.invocationCallOrder[0] as number;
+        const bridgeOrder = vi.mocked(reconcileSubscriptionLinkedEntities).mock
+            .invocationCallOrder[0] as number;
+        expect(pauseOrder).toBeLessThan(bridgeOrder);
+    });
+
+    it('HOS-1280: does NOT call the bridge when the pause is refused before anything commits', async () => {
+        const annualSub = {
+            id: 'sub-annual-refused-2',
+            status: 'active',
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual' }
+        };
+        const billing = makeBillingMock([annualSub]);
+        billing.subscriptions.pause.mockRejectedValue(new Error('MP: cannot pause preapproval'));
+        mockBilling(billing);
+        const ctx = createMockContext();
+
+        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+
+        expect(reconcileSubscriptionLinkedEntities).not.toHaveBeenCalled();
+        expect(reconcilePartnerForSubscription).not.toHaveBeenCalled();
     });
 
     it('pauses a monthly trialing subscription successfully', async () => {
@@ -579,6 +652,43 @@ describe('handleSelfServeResume', () => {
             eventType: BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_RESUMED,
             triggerSource: 'host-resume'
         });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1280 regression: resume must call the bridge too, so a commerce
+    // listing paused earlier comes back PUBLIC.
+    // -----------------------------------------------------------------------
+
+    it('HOS-1280: calls reconcileSubscriptionLinkedEntities and reconcilePartnerForSubscription with the active status, after resume commits', async () => {
+        const sub = {
+            id: 'sub-paused-1',
+            status: 'paused',
+            metadata: {},
+            cancelAtPeriodEnd: false
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        const ctx = createMockContext();
+
+        await handleSelfServeResume(ctx as never);
+
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: 'sub-paused-1',
+            subscriptionStatus: 'active',
+            source: 'host-resume'
+        });
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledTimes(1);
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+            subscriptionId: 'sub-paused-1',
+            subscriptionStatus: 'active',
+            source: 'host-resume'
+        });
+
+        const resumeOrder = billing.subscriptions.resume.mock.invocationCallOrder[0] as number;
+        const bridgeOrder = vi.mocked(reconcileSubscriptionLinkedEntities).mock
+            .invocationCallOrder[0] as number;
+        expect(resumeOrder).toBeLessThan(bridgeOrder);
     });
 
     // ── THE regression guard: a soft-cancelled paused sub must NOT be resumable ──

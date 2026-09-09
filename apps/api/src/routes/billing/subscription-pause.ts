@@ -34,6 +34,8 @@ import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { recordPauseProviderRefusal } from '../../services/billing/pause-refusal-audit';
+import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service';
+import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service';
 import { setOwnerServiceSuspension } from '../../services/subscription-pause.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
@@ -177,6 +179,30 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
         });
     }
 
+    // HOS-1280: the write above is durable (qzpay already committed the pause
+    // at MercadoPago and locally) so this is the right point for the bridge —
+    // before it, there is nothing to reconcile; after it, the entity caches and
+    // commerce listing visibility would silently drift from the real status.
+    // Without this, a paused commerce (gastronomy/experience) subscription's
+    // listing stayed PUBLIC with billing stopped, and unlike accommodation
+    // there is no 6-hourly cron to self-heal it.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: target.id,
+        subscriptionStatus: SubscriptionStatusEnum.PAUSED,
+        source: 'host-pause'
+    });
+    // This route is not host-exclusive despite its "host self-pause" framing —
+    // `resolveBillingContext` only requires a `billingCustomerId` in context,
+    // so any billing customer (including a partner) can reach it and pause
+    // whatever subscription `getByCustomerId` returns for them (see HOS-1278
+    // on that resolution having no product-domain predicate). No-op for a
+    // non-partner subscription.
+    await reconcilePartnerForSubscription({
+        subscriptionId: target.id,
+        subscriptionStatus: SubscriptionStatusEnum.PAUSED,
+        source: 'host-pause'
+    });
+
     // 2. Service dimension: a self-pause is always full, so suspend the owner's
     //    listings. actor.id is the owner user id (billing_customers.external_id).
     const db = getDb();
@@ -246,6 +272,19 @@ export const handleSelfServeResume = async (c: Parameters<SimpleRouteInterface['
 
     // 1. Billing dimension: qzpay resumes the MP preapproval and flips status.
     const resumed = await billing.subscriptions.resume(target.id);
+
+    // HOS-1280: same bridge call as pause above, same reasoning — the resume
+    // already committed, so this is where the listing goes back PUBLIC.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: target.id,
+        subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+        source: 'host-resume'
+    });
+    await reconcilePartnerForSubscription({
+        subscriptionId: target.id,
+        subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+        source: 'host-resume'
+    });
 
     // 2. Service dimension: clear the suspension (idempotent — safe even if the
     //    pause was somehow not service-suspending).

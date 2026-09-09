@@ -9,18 +9,31 @@
  *
  * The owner's decision for HOS-1084 was explicit: **one table for the three
  * verticals, one reconciler**. This is that reconciler. Every site that moves a
- * subscription's status calls it and nothing else:
+ * subscription's status is meant to call it and nothing else.
  *
- *   - the MercadoPago webhook (`subscription-logic.ts`),
- *   - the `dunning` cron (both the enters-dunning and the recovers branches),
- *   - `finalize-cancelled-subs`,
- *   - `abandoned-pending-subs`,
- *   - `preapproval-less-expiry`,
- *   - the commerce attach path (`commerce-subscription-attach.service.ts`).
+ * HOS-1280: an earlier version of this docblock enumerated "six call sites"
+ * by name. That list rotted the moment a seventh one was added and nobody
+ * came back to update the comment — by the time HOS-1280 measured it there
+ * were 9 production call sites across 8 files, and 3 more state-changing
+ * sites (admin hard-cancel, both pause/resume surfaces, and the comp-grant
+ * supersede loop) had never called it at all. A hardcoded list in a comment
+ * is exactly the kind of "evidence" `~/.claude/CLAUDE.md`'s guidance warns
+ * against trusting: it describes an intent, not a fact anyone re-verifies.
  *
- * Having a single entry point is what makes "did every site get wired?" a
- * question with one answer instead of six. A vertical added later hangs off
- * this function and inherits all six sites for free.
+ * Do NOT re-add an enumerated list here. To find the CURRENT call sites,
+ * grep the codebase:
+ *
+ *   rg 'reconcileSubscriptionLinkedEntities\(' apps/api/src
+ *
+ * and cross-check against
+ * `test/services/subscription-linked-entities-bridge.guard.test.ts` (HOS-1280),
+ * which pins the exact call-expression count per file and fails if a new file
+ * starts calling this reconciler without updating the table, or if a pinned
+ * file's count drops. That guard does NOT yet audit every possible
+ * `billing_subscriptions.status` write site the way
+ * `inv1-cache-invalidation.guard.test.ts` does for `clearEntitlementCache` —
+ * see the guard's own header for why that fuller audit is left as a named
+ * follow-up rather than a rushed one.
  *
  * Both halves are non-throwing by their own contract, and they are deliberately
  * INDEPENDENT: a commerce reconcile that fails must not skip the accommodation
