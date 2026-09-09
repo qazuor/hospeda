@@ -99,19 +99,49 @@ vi.mock('@repo/db', () => {
             // Every plan fixture here is accommodation.
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
-                    where: vi.fn(() => ({
-                        limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
-                    }))
+                    where: vi.fn(() => {
+                        const limit = vi.fn(() =>
+                            Promise.resolve([
+                                { productDomain: 'accommodation', createdAt: new Date() }
+                            ])
+                        );
+                        return { limit, orderBy: vi.fn(() => ({ limit })) };
+                    })
                 }))
             }))
         })),
-        billingSubscriptions: { __table: 'billing_subscriptions' },
+        billingSubscriptions: {
+            __table: 'billing_subscriptions',
+            id: '__id',
+            customerId: '__customer_id',
+            status: '__status',
+            productDomain: '__product_domain',
+            createdAt: '__created_at'
+        },
         // HOS-1271: `resolvePlanProductDomain` (`paid-subscription-create.ts`)
         // builds its query as `.where(eq(billingPlans.id, planId))` — both
         // symbols must exist on this wholesale mock (no `...actual` spread)
         // for that expression to evaluate at all, even though the `select`
         // stub above ignores the actual predicate.
         billingPlans: { id: '__billing_plans_id', productDomain: '__product_domain' },
+        // HOS-1272: see the identical addition in `test/routes/start-paid.test.ts`
+        // — `loadAccommodationBridge`/`loadCorrelationRow`
+        // (checkout-idempotency.ts) need `and`/`desc`/`billingPendingCheckouts`
+        // to exist on this wholesale mock for their query expressions to
+        // evaluate, even though the fake `where`/`select` never inspects them.
+        and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
+        desc: vi.fn((col: unknown) => ({ op: 'desc', col })),
+        billingPendingCheckouts: {
+            localSubscriptionId: '__local_subscription_id',
+            customerId: '__customer_id',
+            planId: '__plan_id',
+            mpPreapprovalPlanId: '__mp_preapproval_plan_id',
+            nonce: '__nonce',
+            status: '__status',
+            expiresAt: '__expires_at',
+            pendingDiscount: '__pending_discount',
+            pendingTrialExtension: '__pending_trial_extension'
+        },
         eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
     };

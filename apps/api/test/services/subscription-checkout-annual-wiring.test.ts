@@ -36,6 +36,22 @@ vi.mock('@repo/db', async () => {
     const actual = await vi.importActual<typeof import('@repo/db')>('@repo/db');
     return {
         ...actual,
+        // HOS-1272: see the identical fallback in
+        // `subscription-checkout.service.test.ts` — `@repo/db`'s root barrel
+        // resolves to the package's built dist, and `billingPendingCheckouts`
+        // (now read by `resolveReusableAccommodationCheckout`) is absent from
+        // a dist that has not been rebuilt since this table's schema landed.
+        billingPendingCheckouts: actual.billingPendingCheckouts ?? {
+            localSubscriptionId: 'local_subscription_id',
+            customerId: 'customer_id',
+            planId: 'plan_id',
+            mpPreapprovalPlanId: 'mp_preapproval_plan_id',
+            nonce: 'nonce',
+            status: 'status',
+            expiresAt: 'expires_at',
+            pendingDiscount: 'pending_discount',
+            pendingTrialExtension: 'pending_trial_extension'
+        },
         getDb: vi.fn(() => ({ execute: vi.fn().mockResolvedValue({ rows: [] }) }))
     };
 });

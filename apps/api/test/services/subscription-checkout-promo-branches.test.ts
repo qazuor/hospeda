@@ -124,7 +124,9 @@ const dbInsertValuesMock = vi.fn();
 // `resolvePlanProductDomain` (`.select().from().where().limit()`), distinct
 // from the raw `.execute()`/`.insert()` this suite already stubs. Every
 // fixture plan in this file is accommodation.
-const dbSelectLimitMock = vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]));
+const dbSelectLimitMock = vi.fn(() =>
+    Promise.resolve([{ productDomain: 'accommodation', createdAt: new Date() }])
+);
 // HOS-110: importActual (not a full replace) for the same reason as the
 // @repo/service-core mock above — the real @repo/service-core module graph
 // needs real @repo/db exports too.
@@ -136,10 +138,20 @@ vi.mock('@repo/db', async () => {
             execute: dbExecuteMock,
             insert: vi.fn(() => ({ values: dbInsertValuesMock })),
             select: vi.fn(() => ({
-                from: vi.fn(() => ({ where: vi.fn(() => ({ limit: dbSelectLimitMock })) }))
+                from: vi.fn(() => ({
+                    where: vi.fn(() => ({
+                        limit: dbSelectLimitMock,
+                        orderBy: vi.fn(() => ({ limit: dbSelectLimitMock }))
+                    }))
+                }))
             }))
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
+        // HOS-1272: `loadCorrelationRow` (checkout-idempotency.ts) reads this
+        // from @repo/db's root barrel, which resolves to the package's built
+        // dist — not spread here via `...actual` because this file overrides
+        // the whole module rather than merging into `actual`.
+        billingPendingCheckouts: { __table: 'billing_pending_checkouts' },
         entitySubscriptions: { __table: 'entity_subscriptions' },
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
         withTransaction: vi.fn()

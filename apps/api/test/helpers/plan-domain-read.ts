@@ -56,8 +56,23 @@ import { vi } from 'vitest';
 export function mockPlanDomainRead(
     domain: ProductDomainValue = ProductDomainEnum.ACCOMMODATION
 ): ReturnType<typeof vi.fn> {
+    // HOS-1272: `.orderBy(...).limit(...)` chained onto the SAME `limit` the
+    // direct `.limit(...)` call uses — `loadAccommodationBridge`
+    // (`checkout-idempotency.ts`) is the one query in the accommodation
+    // checkout path that orders before limiting, and this generic stub
+    // answers every `select().from().where()` call regardless of table, so it
+    // must expose both shapes or that query throws `orderBy is not a
+    // function`. The row it hands back (`{ productDomain: domain, createdAt }`,
+    // missing every other column the bridge/own-preapproval queries project)
+    // safely fails the reuse decision's identity checks on `customerId` — this
+    // helper was never meant to arm reuse, only the plan-domain lookup.
+    // `createdAt` MUST be a real `Date`: `decideOwnPreapprovalReuse` computes
+    // `row.createdAt.getTime()` unconditionally, BEFORE its own identity
+    // guards run, so an `undefined` here throws instead of cleanly refusing.
+    const limit = vi.fn(() => Promise.resolve([{ productDomain: domain, createdAt: new Date() }]));
     const where = vi.fn(() => ({
-        limit: vi.fn(() => Promise.resolve([{ productDomain: domain }]))
+        limit,
+        orderBy: vi.fn(() => ({ limit }))
     }));
 
     // MERGED onto whatever the client already exposes, never substituted for it.
@@ -90,11 +105,15 @@ export function mockPlanDomainReadMissing(): void {
         unknown
     >;
 
+    // HOS-1272: same `.orderBy(...).limit(...)` shape as `mockPlanDomainRead`
+    // above, for the identical reason — this stub answers every table's
+    // select, including `loadAccommodationBridge`'s ordered query.
+    const limit = vi.fn(() => Promise.resolve([]));
     vi.mocked(getDb).mockReturnValue({
         ...existing,
         select: vi.fn(() => ({
             from: vi.fn(() => ({
-                where: vi.fn(() => ({ limit: vi.fn(() => Promise.resolve([])) }))
+                where: vi.fn(() => ({ limit, orderBy: vi.fn(() => ({ limit })) }))
             }))
         }))
     } as never);

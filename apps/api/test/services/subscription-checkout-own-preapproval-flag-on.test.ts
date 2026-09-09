@@ -124,9 +124,12 @@ const DB_STUB = {
     execute: vi.fn().mockResolvedValue({ rows: [] }),
     select: vi.fn(() => ({
         from: vi.fn(() => ({
-            where: vi.fn(() => ({
-                limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
-            }))
+            where: vi.fn(() => {
+                const limit = vi.fn(() =>
+                    Promise.resolve([{ productDomain: 'accommodation', createdAt: new Date() }])
+                );
+                return { limit, orderBy: vi.fn(() => ({ limit })) };
+            })
         }))
     }))
 };

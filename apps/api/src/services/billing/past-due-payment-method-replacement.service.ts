@@ -83,6 +83,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { and, billingSubscriptions, type DrizzleClient, eq, getDb, gte, sql } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
+import { OWN_PREAPPROVAL_REUSE_WINDOW_MS } from './checkout-idempotency.js';
 import { createPaidSubscription } from './paid-subscription-create.js';
 import { resolveReactivationPlan } from './reactivation-plan-guard.js';
 
@@ -97,14 +98,20 @@ export const PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY =
     'pastDuePaymentMethodReplacement' as const;
 
 /**
- * Reuse window for an in-flight replacement attempt. Mirrors
- * `OWN_PREAPPROVAL_REUSE_WINDOW_MS` (`checkout-idempotency.ts`) verbatim —
- * same rationale (a slow card-first checkout: 3DS/OTP, a bank app
- * hand-off, walking away and coming back) — duplicated rather than imported
- * because that constant lives in a module scoped to the commerce/partner
- * bridge-table flows this replacement has no bridge table for.
+ * Reuse window for an in-flight replacement attempt. Same value as
+ * `OWN_PREAPPROVAL_REUSE_WINDOW_MS` (`checkout-idempotency.ts`) and same
+ * rationale (a slow card-first checkout: 3DS/OTP, a bank app hand-off,
+ * walking away and coming back).
+ *
+ * HOS-1272: now IMPORTED rather than re-declared — this constant used to
+ * duplicate `3 * 60 * 60 * 1000` independently (reasoning: that module is
+ * "scoped to the commerce/partner bridge-table flows this replacement has no
+ * bridge table for"), but the NUMBER has no such scoping, only the reuse
+ * FUNCTIONS do — this was one of several places the same window ended up
+ * declared separately. Kept as its own exported name (this module already
+ * has its own callers), only its source changed.
  */
-const REPLACEMENT_REUSE_WINDOW_MS = 3 * 60 * 60 * 1000;
+const REPLACEMENT_REUSE_WINDOW_MS = OWN_PREAPPROVAL_REUSE_WINDOW_MS;
 
 /**
  * The past-due subscription row this module needs, already validated by the

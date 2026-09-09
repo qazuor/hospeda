@@ -70,7 +70,9 @@ const dbInsertValuesMock = vi.fn();
 // (`.select().from().where().limit()`), distinct from the raw `.execute()`
 // payer-email read and the `.insert()` this suite already stubs. The fixture
 // plan below is accommodation, so this answers ACCOMMODATION unconditionally.
-const dbSelectLimitMock = vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]));
+const dbSelectLimitMock = vi.fn(() =>
+    Promise.resolve([{ productDomain: 'accommodation', createdAt: new Date() }])
+);
 vi.mock('@repo/db', async () => {
     const actual = await vi.importActual('@repo/db');
     return {
@@ -79,10 +81,20 @@ vi.mock('@repo/db', async () => {
             execute: dbExecuteMock,
             insert: vi.fn(() => ({ values: dbInsertValuesMock })),
             select: vi.fn(() => ({
-                from: vi.fn(() => ({ where: vi.fn(() => ({ limit: dbSelectLimitMock })) }))
+                from: vi.fn(() => ({
+                    where: vi.fn(() => ({
+                        limit: dbSelectLimitMock,
+                        orderBy: vi.fn(() => ({ limit: dbSelectLimitMock }))
+                    }))
+                }))
             }))
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
+        // HOS-1272: `loadCorrelationRow` (checkout-idempotency.ts) reads this
+        // from @repo/db's root barrel, which resolves to the package's built
+        // dist — not spread here via `...actual` because this file overrides
+        // the whole module rather than merging into `actual`.
+        billingPendingCheckouts: { __table: 'billing_pending_checkouts' },
         entitySubscriptions: { __table: 'entity_subscriptions' },
         billingPlans: { __table: 'billing_plans' },
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),

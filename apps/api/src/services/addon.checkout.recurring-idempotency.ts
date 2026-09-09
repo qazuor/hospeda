@@ -48,6 +48,7 @@ import {
     RECURRING_ADDON_CANCELED_STATUS,
     RECURRING_ADDON_PENDING_STATUS
 } from './addon.checkout.recurring-resolve.js';
+import { OWN_PREAPPROVAL_REUSE_WINDOW_MS } from './billing/checkout-idempotency.js';
 
 /**
  * How long an in-flight recurring add-on checkout may be handed back.
@@ -68,8 +69,15 @@ import {
  * buyer returning at minute 45 would find their authorization dead. One
  * constant, so the reaper and the reuse decision can never disagree about
  * whether a checkout is still the buyer's to finish.
+ *
+ * HOS-1272: the VALUE now comes from `checkout-idempotency.ts`'s
+ * {@link OWN_PREAPPROVAL_REUSE_WINDOW_MS} — this used to re-declare
+ * `3 * 60 * 60 * 1000` independently, which was flagged as one of several
+ * reimplementations of the same window under a different name. This module's
+ * own export name is kept (its own callers depend on it), only its source
+ * changed.
  */
-export const RECURRING_ADDON_REUSE_WINDOW_MS = 3 * 60 * 60 * 1000;
+export const RECURRING_ADDON_REUSE_WINDOW_MS = OWN_PREAPPROVAL_REUSE_WINDOW_MS;
 
 /** An in-flight checkout that may be handed back verbatim. */
 export interface ReusableRecurringAddonCheckout {
