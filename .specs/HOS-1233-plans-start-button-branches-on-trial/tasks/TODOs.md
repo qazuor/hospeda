@@ -1,6 +1,6 @@
 # HOS-1233: The plans page reads the trial before it charges
 
-## Progress: 9/42 tasks (21%)
+## Progress: 10/42 tasks (24%)
 
 > T-030 and T-031 are done on the **qzpay** side and merged nowhere yet: they live
 > in PR #85, unpublished. Everything downstream of the package (T-032, and T-036
@@ -191,7 +191,7 @@
   - AC-15i / AC-15h.
   - Blocked by: T-034, T-036 · Blocks: T-027
 
-- [ ] **T-041** (complexity: 3) — Regression tests for the five reads the reclassification FIXES
+- [x] **T-041** (complexity: 3) — Regression tests for the five reads the reclassification FIXES
   - AC-15c.
   - Blocked by: T-038 · Blocks: T-027
 
