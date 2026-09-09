@@ -21,10 +21,12 @@
  *     the first charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave commerce the trial,
  *     HOS-1012 removed it when it rebuilt the local trial for accommodation only. Tracked as HOS-1184.
  *  2. ANNUAL PRICING — the paragraph above the tier table ("pagás diez meses y tenés doce") and the table's "Por año"
- *     row ($300.000 / $650.000 / $800.000). Commerce plans are MONTHLY ONLY: `commerceVerticalTier()` hardcodes
- *     `annualPriceArs: null` (`plans.config.ts:692`) and the checkout is literally
- *     `initiateCommerceMonthlySubscription`. HOS-1187; the owner set the same ten-for-twelve discount accommodation
- *     uses, which is where those figures come from. Do NOT delete that row because the code says null.
+ *     row ($300.000 / $650.000 / $800.000). **MOSTLY SHIPPED by HOS-1285.** The six figures are now the catalogue's own
+ *     (`commerceVerticalTier` takes `annualPriceArs` per tier instead of sealing `null` for all six), the seed writes
+ *     the `'year'` `billing_prices` row, and the checkout — renamed `initiateCommerceSubscription` because the old name
+ *     said otherwise — accepts `billingInterval: 'annual'` and resolves that row. What is NOT shipped is the owner-facing
+ *     PICKER: `CommercePlanPicker.client.tsx` still emits a slug and nothing else, so nothing in the web app sends the
+ *     field yet. So this row is true about the price and still ahead of the code about the gesture.
  *  3. THE PHOTO LADDER 15 / 30 / 50 — the tier table's "Fotos por local" row. Today all three tiers get a flat 30. HOS-1108; the
  *     owner fixed those three numbers in a comment on it on 2026-09-05. Note 50 also implies raising the per-entity ceiling.
  *  4. ALL OF THE CONTACT — the whole "Cómo te van a contactar" section, the "Teléfono, WhatsApp, email, redes" bullet in "Qué

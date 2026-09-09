@@ -193,7 +193,7 @@ vi.mock('@repo/db', async () => {
 });
 
 import {
-    initiateCommerceMonthlySubscription,
+    initiateCommerceSubscription,
     initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription,
     initiatePartnerMonthlySubscription
@@ -462,7 +462,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
         it('commerce monthly resolves trialDays=0 and passes no banned field', async () => {
             const billing = makeBilling();
 
-            await initiateCommerceMonthlySubscription({
+            await initiateCommerceSubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
                 entityType: 'gastronomy',
@@ -546,7 +546,7 @@ describe('HOS-1012 T-021: no checkout sends a trial to MercadoPago', () => {
         it('commerce monthly builds a preapproval body with no trial field anywhere', async () => {
             const billing = makeBilling();
 
-            await initiateCommerceMonthlySubscription({
+            await initiateCommerceSubscription({
                 customerId: CUSTOMER_ID,
                 planSlug: 'owner-premium',
                 entityType: 'experience',
