@@ -55,9 +55,12 @@ import {
     commerceVerticalToProductDomain,
     parseCommerceVertical
 } from '@repo/billing';
-import { type DrizzleClient, entitySubscriptions, partnerSubscriptions } from '@repo/db';
+import { and, type DrizzleClient, entitySubscriptions, eq, partnerSubscriptions } from '@repo/db';
 import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
-import { parseSubscriptionDomainMetadata } from './subscription-domain-metadata.js';
+import {
+    isPublishingSubscriptionStatus,
+    parseSubscriptionDomainMetadata
+} from './subscription-domain-metadata.js';
 
 /**
  * What a fresh preapproval has to reproduce to stand in for the row it
@@ -227,14 +230,29 @@ export function domainMetadataForCarryForward(
 
 /**
  * Upsert the bridge row for a freshly-minted `pending_provider` attempt,
- * re-pointing it at that attempt.
+ * re-pointing it at that attempt — but ONLY when the row is free or already
+ * points at a dead subscription.
  *
- * Only for a flow whose SOURCE row never entitled anything — the checkout retry,
- * where the cancelled attempt was never authorized, so the listing was never
- * public under it and re-pointing takes nothing away. This is the same upsert
- * `subscription-checkout.service.ts` performs when a buyer clicks checkout a
- * second time, and it runs inside the caller's transaction for the same reason:
- * a `pending_provider` row must never exist without its bridge row.
+ * The SOURCE row (the `cancelled` attempt this mint replaces) never entitled
+ * anything, so re-pointing takes nothing away FROM IT — but that says nothing
+ * about who currently OCCUPIES the bridge row: a buyer can retry an old
+ * `cancelled` checkout email long after a LATER checkout attempt for the same
+ * listing went on to activate, in which case the bridge row's `subscriptionId`
+ * already points at that live, paying subscription. Re-pointing it here would
+ * be indistinguishable from `commerce-reconcile.service.ts`'s
+ * `recoverCommerceLinkFromSubscriptionMetadata` stealing the row from an
+ * incumbent — which is exactly why that function (and its partner twin,
+ * `partner-reconcile.service.ts`'s `recoverPartnerLinkFromSubscriptionMetadata`)
+ * read the incumbent's status before ever touching the row. This helper does
+ * the same read-before-write, with the same predicate
+ * ({@link isPublishingSubscriptionStatus}): a `pending_provider` retry attempt
+ * must never overwrite a bridge row a publishing subscription already holds.
+ *
+ * This is otherwise the same upsert `subscription-checkout.service.ts`
+ * performs when a buyer clicks checkout a second time, and it runs inside the
+ * caller's transaction for the same reason: a `pending_provider` row must
+ * never exist without its bridge row, and the incumbent read below must see
+ * the same snapshot the upsert commits against.
  *
  * The status is always `pending_provider` and is not a parameter: this helper
  * only ever runs from a mint, and a bridge row pointed at a preapproval nobody
@@ -243,6 +261,10 @@ export function domainMetadataForCarryForward(
  * @param input.tx - The transaction client handed to `writeDomainLinkRow`.
  * @param input.localSubscriptionId - The freshly-created subscription row's id.
  * @param input.carryForward - The resolved carry-forward.
+ * @throws {SubscriptionDomainCarryForwardError} When the bridge row is
+ *   currently occupied by a subscription whose status is publishing
+ *   (`isPublishingSubscriptionStatus`) — re-pointing it would unpublish a
+ *   listing that is actively being paid for.
  */
 export async function writeCarryForwardBridgeRow(input: {
     readonly tx: DrizzleClient;
@@ -253,6 +275,30 @@ export async function writeCarryForwardBridgeRow(input: {
     const status = SubscriptionStatusEnum.PENDING_PROVIDER;
 
     if (carryForward.kind === 'commerce') {
+        const [incumbent] = await tx
+            .select({
+                subscriptionId: entitySubscriptions.subscriptionId,
+                status: entitySubscriptions.status
+            })
+            .from(entitySubscriptions)
+            .where(
+                and(
+                    eq(entitySubscriptions.entityType, carryForward.vertical),
+                    eq(entitySubscriptions.entityId, carryForward.entityId)
+                )
+            )
+            .limit(1);
+
+        if (
+            incumbent &&
+            incumbent.subscriptionId !== subscriptionId &&
+            isPublishingSubscriptionStatus(incumbent.status)
+        ) {
+            throw new SubscriptionDomainCarryForwardError(
+                `carry-forward: entity_subscriptions row for entityType='${carryForward.vertical}' entityId='${carryForward.entityId}' is held by publishing subscription '${incumbent.subscriptionId}' (status='${incumbent.status}') — refusing to re-point it at retry attempt '${subscriptionId}'`
+            );
+        }
+
         await tx
             .insert(entitySubscriptions)
             .values({
@@ -278,6 +324,25 @@ export async function writeCarryForwardBridgeRow(input: {
     }
 
     if (carryForward.kind === 'partner') {
+        const [incumbent] = await tx
+            .select({
+                subscriptionId: partnerSubscriptions.subscriptionId,
+                status: partnerSubscriptions.status
+            })
+            .from(partnerSubscriptions)
+            .where(eq(partnerSubscriptions.partnerId, carryForward.partnerId))
+            .limit(1);
+
+        if (
+            incumbent &&
+            incumbent.subscriptionId !== subscriptionId &&
+            isPublishingSubscriptionStatus(incumbent.status)
+        ) {
+            throw new SubscriptionDomainCarryForwardError(
+                `carry-forward: partner_subscriptions row for partnerId='${carryForward.partnerId}' is held by publishing subscription '${incumbent.subscriptionId}' (status='${incumbent.status}') — refusing to re-point it at retry attempt '${subscriptionId}'`
+            );
+        }
+
         await tx
             .insert(partnerSubscriptions)
             .values({
