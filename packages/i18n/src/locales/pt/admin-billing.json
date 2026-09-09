@@ -1236,7 +1236,8 @@
             "cancelSubscriptionButton": "Cancelar assinatura",
             "pauseButton": "Pausar",
             "resumeButton": "Retomar",
-            "grantCourtesyButton": "Presentear períodos"
+            "grantCourtesyButton": "Presentear períodos",
+            "grantCompButton": "Conceder cortesia"
         },
         "paymentHistory": {
             "title": "Histórico de pagamentos",
@@ -1327,7 +1328,9 @@
             "pauseError": "Erro ao pausar assinatura:",
             "resumeError": "Erro ao retomar assinatura:",
             "courtesyGranted": "Períodos presenteados",
-            "courtesyError": "Não foi possível presentear:"
+            "courtesyError": "Não foi possível presentear:",
+            "compGranted": "Cortesia concedida:",
+            "compError": "Não foi possível conceder a cortesia:"
         },
         "unknownUser": "Usuário não identificado",
         "unknownPlan": "Plano não identificado",
@@ -1351,6 +1354,19 @@
             "leadTimeWarning": "Se faltarem menos de 3 dias para a próxima cobrança, o presente é recusado: pausar tão perto pode não impedi-la, e ele seria cobrado justamente pelo período presenteado.",
             "confirmButton": "Presentear",
             "backButton": "Voltar"
+        },
+        "compDialog": {
+            "title": "Conceder cortesia permanente",
+            "description": "Escolha um plano de qualquer vertical para",
+            "planLabel": "Plano a conceder",
+            "selectPlan": "Selecionar um plano…",
+            "noPlans": "Não há planos ativos disponíveis.",
+            "perMonth": "/mês",
+            "intervalLabel": "Intervalo (apenas para auditoria — a cortesia nunca é cobrada)",
+            "intervalMonthly": "Mensal",
+            "intervalAnnual": "Anual",
+            "permanentWarning": "Esta cortesia é permanente e não tem pré-aprovação do MercadoPago: nunca é cobrada, e não volta ao preço integral sozinha. Não pode ser \"desfeita\" com uma troca de plano — apenas cancelando a assinatura resultante.",
+            "confirmButton": "Conceder cortesia"
         }
     },
     "exchangeRates": {
