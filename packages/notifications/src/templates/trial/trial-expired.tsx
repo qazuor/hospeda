@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -25,9 +26,11 @@ export function TrialExpired({
     recipientName,
     planName,
     trialEndDate,
-    upgradeUrl
+    upgradeUrl,
+    productDomain
 }: TrialSeriesEmailProps) {
     const formattedEndDate = formatDate({ dateString: trialEndDate });
+    const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
         <EmailLayout
@@ -40,16 +43,15 @@ export function TrialExpired({
 
             <Text style={styles.paragraph}>
                 Hoy {formattedEndDate} terminó tu prueba gratis del plan <strong>{planName}</strong>{' '}
-                y, como te avisamos, tu alojamiento dejó de aparecer en Hospeda. Te escribimos para
-                que sepas exactamente qué pasó y no te enteres cuando alguien no te encuentre.
+                y, como te avisamos, {copy.possessive} dejó de aparecer en Hospeda. Te escribimos
+                para que sepas exactamente qué pasó y no te enteres cuando alguien no te encuentre.
             </Text>
 
             <Section style={styles.alertBox}>
                 <Text style={styles.paragraph}>
-                    <strong>No se borró nada.</strong> Tu ficha completa —fotos, descripción,
-                    servicios, ubicación y datos de contacto— quedó guardada en tu cuenta, tal como
-                    la dejaste. Lo único que cambió es que ya no se muestra en el sitio ni en las
-                    búsquedas.
+                    <strong>No se borró nada.</strong> Tu ficha completa —{copy.expiredSavedLine}—
+                    quedó guardada en tu cuenta, tal como la dejaste. Lo único que cambió es que ya
+                    no se muestra en el sitio ni en las búsquedas.
                 </Text>
             </Section>
 

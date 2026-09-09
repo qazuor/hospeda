@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
@@ -22,9 +23,11 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
 export function TrialWinBack10Days({
     recipientName,
     trialEndDate,
-    upgradeUrl
+    upgradeUrl,
+    productDomain
 }: TrialSeriesEmailProps) {
     const formattedEndDate = formatDate({ dateString: trialEndDate });
+    const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
         <EmailLayout
@@ -46,7 +49,7 @@ export function TrialWinBack10Days({
                     value="Guardadas, en el mismo orden"
                 />
                 <InfoRow
-                    label="Descripción y servicios"
+                    label={`Descripción y ${copy.detailsLabel}`}
                     value="Tal como los escribiste"
                 />
                 <InfoRow

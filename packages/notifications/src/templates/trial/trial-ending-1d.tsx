@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -20,9 +21,11 @@ export function TrialEnding1Day({
     recipientName,
     planName,
     trialEndDate,
-    upgradeUrl
+    upgradeUrl,
+    productDomain
 }: TrialSeriesEmailProps) {
     const formattedEndDate = formatDate({ dateString: trialEndDate });
+    const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
         <EmailLayout
@@ -36,8 +39,8 @@ export function TrialEnding1Day({
             <Section style={styles.alertBox}>
                 <Text style={styles.paragraph}>
                     Mañana <strong>{formattedEndDate}</strong> termina tu prueba gratis del plan{' '}
-                    <strong>{planName}</strong>. Si no elegís un plan antes, tu alojamiento deja de
-                    aparecer en las búsquedas de Hospeda.
+                    <strong>{planName}</strong>. Si no elegís un plan antes, {copy.possessive} deja
+                    de aparecer en las búsquedas de Hospeda.
                 </Text>
             </Section>
 

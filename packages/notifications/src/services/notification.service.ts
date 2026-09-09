@@ -461,7 +461,8 @@ export class NotificationService {
                     baseUrl: this.deps.siteUrl,
                     amount: p.amount,
                     currency: p.currency,
-                    renewalDate: p.renewalDate || ''
+                    renewalDate: p.renewalDate || '',
+                    productDomain: p.productDomain
                 });
             }
 
@@ -543,7 +544,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -553,7 +555,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -563,7 +566,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -573,7 +577,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -583,7 +588,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -593,7 +599,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -603,7 +610,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -613,7 +621,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -623,7 +632,8 @@ export class NotificationService {
                     recipientName,
                     planName: p.planName,
                     trialEndDate: p.trialEndDate,
-                    upgradeUrl: p.upgradeUrl
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 

@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -19,7 +20,14 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
  *
  * @param props - Trial series email data
  */
-export function TrialWinBack1Day({ recipientName, planName, upgradeUrl }: TrialSeriesEmailProps) {
+export function TrialWinBack1Day({
+    recipientName,
+    planName,
+    upgradeUrl,
+    productDomain
+}: TrialSeriesEmailProps) {
+    const copy = resolveTrialSeriesCopy(productDomain);
+
     return (
         <EmailLayout
             previewText="Tu ficha quedó lista; falta un paso para volver a verla online"
@@ -30,7 +38,7 @@ export function TrialWinBack1Day({ recipientName, planName, upgradeUrl }: TrialS
             <Text style={styles.greeting}>Hola {recipientName},</Text>
 
             <Text style={styles.paragraph}>
-                Ayer tu alojamiento dejó de verse en Hospeda. Nada más que eso cambió: la
+                Ayer {copy.possessive} dejó de verse en Hospeda. Nada más que eso cambió: la
                 publicación está entera, terminada, con todo lo que cargaste, esperando en tu
                 cuenta.
             </Text>
