@@ -91,7 +91,12 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // HOS-1286: server-managed billing flag. Written ONLY by the
+    // featured-by-entitlement sync primitives — never from a request body, not
+    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
+    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
+    featuredByEntitlement: true
 }).extend({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
@@ -339,6 +344,11 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     lifecycleState: true,
     visibility: true,
     isFeatured: true,
+    // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
+    // primitives, never through create/update — the same treatment
+    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
+    // which admin still controls manually.
+    featuredByEntitlement: true,
     moderationState: true,
     hasActiveSubscription: true,
     // Server-computed aggregates — nonsensical on create.
@@ -451,6 +461,16 @@ export const ExperienceUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
+                // Server-managed (HOS-1286): written ONLY by the
+                // featured-by-entitlement sync primitives, the addon checkout
+                // confirmation and the reconcile cron — never through the generic
+                // PATCH path. Omitted here because these schemas are built with
+                // `.omit(...)`, so a field is accepted unless it is named: leaving
+                // it in would let an owner send `featuredByEntitlement: true` in
+                // their own update and feature their listing without buying the
+                // add-on, which is the exact product HOS-1286 exists to sell.
+                // `isFeatured`, the admin-curated flag beside it, stays writable.
+                featuredByEntitlement: true,
                 // Server-managed: ownership change requires a dedicated admin action.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.

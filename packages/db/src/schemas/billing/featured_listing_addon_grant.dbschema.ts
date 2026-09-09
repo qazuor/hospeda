@@ -1,21 +1,58 @@
 import { relations } from 'drizzle-orm';
-import { index, pgTable, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { accommodations } from '../accommodation/accommodation.dbschema.ts';
+import { index, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { billingAddonPurchases } from './billing_addon_purchase.dbschema.ts';
 
 /**
- * Featured listing addon grant link table (SPEC-309 T-002, OQ-3).
+ * Featured listing addon grant link table (SPEC-309 T-002, OQ-3; made
+ * polymorphic over the three verticals by HOS-1286).
  *
- * Ties one `visibility-boost` addon purchase to exactly one accommodation, since
- * `billing_addon_purchases` has no accommodation reference and a
+ * Ties one `visibility-boost` addon purchase to exactly one LISTING, since
+ * `billing_addon_purchases` has no listing reference and a
  * unique-active-per-(customerId, addonSlug) constraint (an owner can only ever
- * have ONE active purchase per addon slug regardless of accommodation count).
- * Mirrors the `entity_subscriptions` link-table pattern.
+ * have ONE active purchase per addon slug regardless of listing count).
  *
  * No denormalized `status`/`expiresAt` columns here — the featured-entitlement
- * resolver (T-004) JOINs to `billing_addon_purchases` for
+ * resolver JOINs to `billing_addon_purchases` for
  * `status = 'active' AND (expires_at IS NULL OR expires_at > now())` so purchase
  * lifecycle state has exactly one source of truth.
+ *
+ * ---
+ * ## HOS-1286 — why `(entity_type, entity_id)` and not `accommodation_id`
+ *
+ * The owner decided (2026-09-08) that featuring-by-entitlement works for all
+ * three verticals. The single blocker was this table's foreign key: it pointed
+ * at `accommodations.id` alone, so an addon purchase could not name a
+ * gastronomy or experience listing at all.
+ *
+ * The shape is copied from `entity_subscriptions` — `entity_type varchar` +
+ * `entity_id uuid` with NO foreign key — which is the polymorphic reference this
+ * repo already validated across the same three verticals (HOS-1084). It is
+ * COPIED and deliberately NOT pointed at: a row in `entity_subscriptions` may
+ * legitimately be ABSENT (its own docblock: "a missing row is never a
+ * correctness bug", the public read falls back to live billing), and its
+ * accommodation rows are rebuilt WHOLE by the
+ * `entity-subscription-cache-reconcile` cron. Hanging a PAID grant off a row
+ * that is allowed to vanish or be recreated would lose bought featuring in
+ * silence.
+ *
+ * ### What the dropped FK used to buy, and what replaces it
+ *
+ * The FK gave two things for free, and both have to be paid for elsewhere now:
+ *
+ * 1. **Referential integrity across verticals.** Nothing at the database level
+ *    stops a row claiming `entity_type = 'gastronomy'` while its `entity_id` is
+ *    really an accommodation's. Every read of this table therefore MUST filter
+ *    on `entity_type` as well as `entity_id` — never on the id alone. That is
+ *    not a style preference: it is the invariant the FK used to enforce, moved
+ *    into the query layer, and it is what the cross-vertical tests in
+ *    `featured-addon-grant.resolver.test.ts` exist to hold.
+ * 2. **`ON DELETE CASCADE` pruning.** A hard-deleted listing no longer takes its
+ *    grants with it. Orphan rows are harmless rather than wrong: every consumer
+ *    joins from the grant to the listing table, so an orphan matches nothing and
+ *    grants no featuring. `entity_subscriptions` accepts the identical trade.
+ *
+ * The `purchase_id` FK is untouched — that one is not polymorphic and still
+ * cascades.
  */
 export const featuredListingAddonGrants = pgTable(
     'featured_listing_addon_grants',
@@ -24,21 +61,69 @@ export const featuredListingAddonGrants = pgTable(
         purchaseId: uuid('purchase_id')
             .notNull()
             .references(() => billingAddonPurchases.id, { onDelete: 'cascade' }),
-        accommodationId: uuid('accommodation_id')
-            .notNull()
-            .references(() => accommodations.id, { onDelete: 'cascade' }),
+        /**
+         * Which vertical's table {@link featuredListingAddonGrants.entityId}
+         * points into: `'accommodation'` | `'gastronomy'` | `'experience'`.
+         *
+         * Stored as varchar so a fourth vertical needs no enum migration — the
+         * same reasoning `entity_subscriptions.entity_type` gives.
+         *
+         * **No default, on purpose.** HOS-692 dropped the analogous
+         * `.default('commerce')` from `entity_subscriptions.product_domain`
+         * because a default that can silently disagree with its own row is worse
+         * than a required field every write site must state. The same applies
+         * here with sharper teeth: a defaulted `'accommodation'` on a gastronomy
+         * grant would feature the wrong listing, and the FK that used to make
+         * that impossible is gone.
+         */
+        entityType: varchar('entity_type', { length: 50 }).notNull(),
+        /**
+         * UUID of the granted listing — `accommodations.id`, `gastronomies.id`
+         * or `experiences.id`, per `entityType`. No FK: see the module docblock.
+         */
+        entityId: uuid('entity_id').notNull(),
+        /**
+         * @deprecated Superseded by {@link featuredListingAddonGrants.entityId}.
+         *   Read by nothing; kept alive for exactly one release.
+         *
+         * ## Why this column is still here (HOS-601's rule, docs/guides/migrations.md)
+         *
+         * A column can only be DROPPED in the release AFTER the one that stops
+         * using it. Between a `DROP COLUMN` applying and the new container going
+         * live, the OLD container is still serving — and Drizzle projects an
+         * explicit column list, never `SELECT *`, so every read it issues names
+         * a column that no longer exists. That is not theoretical: migration
+         * 0090 dropped `accommodations.schedule` in the same release that
+         * stopped reading it, and the public page served 404 for 8m10s while the
+         * two containers swapped.
+         *
+         * This branch's own code no longer reads or writes it — that is what
+         * makes THIS the release that "stops using it". `0123` widened the table
+         * and copied every value into `entity_id`; the drop belongs to the next
+         * release, once this one is actually deployed. The guide is explicit
+         * that Release N must leave the TS schema alone so `db:generate` emits
+         * no `DROP COLUMN`, which is why the property stays declared here rather
+         * than being deleted with a stale snapshot behind it.
+         *
+         * Nullable since `0123`, so nothing has to write it.
+         */
+        accommodationId: uuid('accommodation_id'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },
     (table) => ({
-        // One purchase links to exactly one accommodation.
+        // One purchase links to exactly one listing.
         featuredListingAddonGrants_purchaseId_uniq: uniqueIndex(
             'featuredListingAddonGrants_purchaseId_uniq'
         ).on(table.purchaseId),
-        // Resolver lookup path (T-004): find active grants by accommodation.
-        featuredListingAddonGrants_accommodationId_idx: index(
-            'featuredListingAddonGrants_accommodationId_idx'
-        ).on(table.accommodationId)
+        // Resolver lookup path: find active grants by listing. Composite over
+        // BOTH columns, mirroring `entity_subs_entity_uniq`, because a lookup on
+        // `entity_id` alone is exactly the cross-vertical read the dropped FK
+        // used to make impossible.
+        featuredListingAddonGrants_entity_idx: index('featuredListingAddonGrants_entity_idx').on(
+            table.entityType,
+            table.entityId
+        )
     })
 );
 
@@ -48,11 +133,10 @@ export const featuredListingAddonGrantsRelations = relations(
         purchase: one(billingAddonPurchases, {
             fields: [featuredListingAddonGrants.purchaseId],
             references: [billingAddonPurchases.id]
-        }),
-        accommodation: one(accommodations, {
-            fields: [featuredListingAddonGrants.accommodationId],
-            references: [accommodations.id]
         })
+        // No `accommodation` relation: the target table is chosen at runtime by
+        // `entityType`, which Drizzle's `relations()` cannot express. Consumers
+        // join explicitly against the table their `entityType` names.
     })
 );
 

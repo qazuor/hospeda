@@ -11,6 +11,7 @@ import { ExperiencePublicSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -52,7 +53,9 @@ export const publicGetExperiencesByDestinationRoute = createPublicListRoute({
 
         return {
             // HOS-1049: withheld on lists, same reason as `list.ts`.
-            items: withholdExperienceDirectionsFromList(result.data?.items || []),
+            items: withPublicIsFeaturedList(
+                withholdExperienceDirectionsFromList(result.data?.items || [])
+            ),
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },

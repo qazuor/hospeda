@@ -377,6 +377,19 @@ export const ExperienceSchema = z.object({
     /** Whether this experience listing is featured on the platform. */
     isFeatured: z.boolean().default(false),
 
+    /**
+     * Billing-derived featuring (HOS-1286): true while a
+     * `visibility-boost-experience-*` addon purchase grants an active
+     * FEATURED_LISTING entitlement for THIS listing.
+     *
+     * Deliberately independent of {@link isFeatured}, the admin-curated flag.
+     * PUBLIC responses serialize their disjunction as `isFeatured`
+     * (`resolvePublicIsFeatured`) and never expose this column on its own —
+     * exactly as `AccommodationPublicSchema` omits its twin. Admin and the
+     * owner's own editor keep seeing the two sources separately.
+     */
+    featuredByEntitlement: z.boolean().default(false),
+
     // Base field groups — spread in the same order as GastronomySchema
     ...BaseLifecycleFields,
     ...BaseModerationFields,

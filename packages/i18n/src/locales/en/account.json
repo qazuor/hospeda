@@ -1241,10 +1241,22 @@
         "buyingButton": "Processing...",
         "owned": "Active",
         "accommodationSelect": {
-            "label": "Accommodation",
-            "placeholder": "Choose an accommodation",
+            "label": {
+                "accommodation": "Accommodation",
+                "gastronomy": "Restaurant",
+                "experience": "Experience"
+            },
+            "placeholder": {
+                "accommodation": "Choose an accommodation",
+                "gastronomy": "Choose a restaurant",
+                "experience": "Choose an experience"
+            },
             "required": "Choose an accommodation to continue",
-            "empty": "You need an accommodation first"
+            "empty": {
+                "accommodation": "You need an accommodation first",
+                "gastronomy": "You need a published restaurant first",
+                "experience": "You need a published experience first"
+            }
         },
         "gate": {
             "title": "You need an active subscription",
@@ -1267,6 +1279,22 @@
             "visibility-boost-30d": {
                 "name": "Visibility Boost (30 days)",
                 "description": "Your accommodation appears featured in search results for 30 days."
+            },
+            "visibility-boost-gastronomy-7d": {
+                "name": "Visibility Boost — Restaurant (7 days)",
+                "description": "Your restaurant appears featured in search results for 7 days."
+            },
+            "visibility-boost-gastronomy-30d": {
+                "name": "Visibility Boost — Restaurant (30 days)",
+                "description": "Your restaurant appears featured in search results for 30 days."
+            },
+            "visibility-boost-experience-7d": {
+                "name": "Visibility Boost — Experience (7 days)",
+                "description": "Your experience appears featured in search results for 7 days."
+            },
+            "visibility-boost-experience-30d": {
+                "name": "Visibility Boost — Experience (30 days)",
+                "description": "Your experience appears featured in search results for 30 days."
             },
             "extra-photos-20": {
                 "name": "Extra Photos Pack (+20 photos)",

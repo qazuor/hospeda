@@ -14,6 +14,7 @@ import {
     httpToDomainExperienceSearch
 } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
+import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -61,7 +62,9 @@ export const publicListExperiencesRoute = createPublicListRoute({
         // extra round trips), and `meetingPointDirections` is named on
         // `ExperiencePublicSchema` — so it is withheld here unconditionally,
         // through the same gate the detail routes use.
-        const items = withholdExperienceDirectionsFromList(result.data?.items || []);
+        const items = withPublicIsFeaturedList(
+            withholdExperienceDirectionsFromList(result.data?.items || [])
+        );
 
         return {
             items,

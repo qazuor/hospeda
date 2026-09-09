@@ -11,7 +11,6 @@ import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { AccommodationModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type {
     ConfirmPurchaseInput,
@@ -23,6 +22,7 @@ import {
     AddonCatalogService,
     hydrateSubscriptionProductDomains,
     isAddonSubscription,
+    resolveFeaturableEntityType,
     subscriptionMatchesDomain
 } from '@repo/service-core';
 import {
@@ -48,6 +48,7 @@ import {
     computeAddonPurchaseAdjustments,
     resolvePlanByIdOrSlug
 } from './addon-purchase-adjustments';
+import { resolveAddonTargetId, resolveAddonTargetListing } from './addon-target-listing';
 import { resolveRecipientLocale } from './notification-recipient-locale';
 import { PromoCodeService } from './promo-code.service';
 
@@ -222,10 +223,6 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
 // Instantiated once at module level; stateless, no DB connection held.
 const addonCatalogService = new AddonCatalogService();
 
-// ─── Accommodation model (ownership lookup for target-required addons — SPEC-309 T-006) ───
-// Instantiated once at module level; stateless, no DB connection held.
-const accommodationModel = new AccommodationModel();
-
 /**
  * Create a qzpay-managed checkout session for an add-on purchase.
  *
@@ -279,43 +276,22 @@ export async function createAddonCheckout(
 
         const addon = addonResult.data;
 
-        // SPEC-309 OQ-3: target-required addons (visibility-boost-7d/-30d) apply
-        // their effect to a single accommodation, not owner-wide. Capture and
-        // validate the target before creating the checkout session so an invalid
-        // target never reaches MercadoPago.
+        // SPEC-309 OQ-3, generalised by HOS-1286: target-required addons (the six
+        // `visibility-boost-*` entries) apply their effect to a single LISTING,
+        // not owner-wide. Capture and validate the target before creating the
+        // checkout session so an invalid target never reaches MercadoPago.
+        //
+        // Which TABLE the id is looked up in comes from the addon's own
+        // `productDomain`, never from the request — see `addon-target-listing.ts`.
         if (addon.requiresAccommodationTarget) {
-            if (!input.accommodationId) {
-                return {
-                    success: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message: `accommodationId is required to purchase '${addon.slug}'`
-                    }
-                };
-            }
+            const targetResult = await resolveAddonTargetListing({
+                addon: { slug: addon.slug, productDomain: addon.productDomain },
+                entityId: resolveAddonTargetId(input),
+                userId: input.userId
+            });
 
-            const targetAccommodation = await accommodationModel.findById(input.accommodationId);
-
-            // findById does not filter soft-deleted rows (see base.model.ts), so a
-            // deleted accommodation must be treated the same as a missing one.
-            if (!targetAccommodation || targetAccommodation.deletedAt) {
-                return {
-                    success: false,
-                    error: {
-                        code: 'NOT_FOUND',
-                        message: `Accommodation '${input.accommodationId}' not found`
-                    }
-                };
-            }
-
-            if (targetAccommodation.ownerId !== input.userId) {
-                return {
-                    success: false,
-                    error: {
-                        code: 'FORBIDDEN',
-                        message: 'You do not own this accommodation'
-                    }
-                };
+            if (!targetResult.ok) {
+                return { success: false, error: targetResult.error };
             }
         }
 
@@ -665,7 +641,9 @@ export async function createAddonCheckout(
                 // agreeing to a recurring debit, so it is resolved by slug in
                 // the buyer's language exactly as the one-time line item below.
                 locale: input.locale,
-                accommodationId: input.accommodationId
+                // HOS-1286: the id of the target LISTING, whatever vertical it is.
+                // The wire key keeps its accommodation-era name — see below.
+                accommodationId: resolveAddonTargetId(input)
             });
         }
 
@@ -751,10 +729,19 @@ export async function createAddonCheckout(
                 promo_code_id: promoCodeId || null,
                 discount_amount: discountAmount,
                 original_price: addon.priceArs,
-                // SPEC-309 T-006/T-007: carries the validated target accommodation
+                // SPEC-309 T-006/T-007: carries the validated target listing
                 // across the async payment confirmation, same pattern as promo_code.
-                accommodation_id: input.accommodationId || null,
-                accommodationId: input.accommodationId || null
+                //
+                // HOS-1286: the KEY NAME is deliberately unchanged while the value
+                // may now be a gastronomy or experience id. Two reasons. A payer who
+                // completes a checkout created before this deploy comes back with only
+                // this key, so renaming it would drop their target — HOS-675's exact
+                // failure, which stayed invisible for months. And the vertical never
+                // needed to travel: `confirmAddonPurchase` re-derives it from the
+                // add-on's own `productDomain`, which cannot disagree with the add-on
+                // the way a second wire field could.
+                accommodation_id: resolveAddonTargetId(input) || null,
+                accommodationId: resolveAddonTargetId(input) || null
             }
         });
 
@@ -797,7 +784,9 @@ export async function createAddonCheckout(
             userId: input.userId,
             // HOS-675: only meaningful for target-required addons; every other
             // addon leaves it undefined and the key is omitted from job metadata.
-            accommodationId: input.accommodationId,
+            // HOS-1286: carries any vertical's listing id; see the preference
+            // metadata above for why the key name did not change with it.
+            accommodationId: resolveAddonTargetId(input),
             // HOS-721: undefined for an undiscounted purchase, in which case
             // every promo key is omitted from the job metadata.
             promoCodeId,
@@ -1216,24 +1205,39 @@ export async function confirmAddonPurchase(
         // truth for the customer's limit/entitlement adjustments.
         if (addon.requiresAccommodationTarget) {
             const confirmedAccommodationId =
-                typeof input.metadata?.accommodationId === 'string'
-                    ? input.metadata.accommodationId
-                    : undefined;
+                typeof input.metadata?.entityId === 'string'
+                    ? input.metadata.entityId
+                    : typeof input.metadata?.accommodationId === 'string'
+                      ? input.metadata.accommodationId
+                      : undefined;
 
-            if (confirmedAccommodationId) {
+            // HOS-1286: which TABLE that id belongs to is re-derived from the
+            // add-on's own declared domain, never read off the wire. The metadata
+            // could carry a stale or forged type; the add-on cannot disagree with
+            // itself. `undefined` here means the add-on names no vertical that owns
+            // listings, in which case no grant is written — the fail-closed half of
+            // `resolveFeaturableEntityType`.
+            const confirmedEntityType = resolveFeaturableEntityType({
+                productDomain: addon.productDomain
+            });
+
+            if (confirmedAccommodationId && confirmedEntityType) {
                 try {
                     const { getDb } = await import('@repo/db');
                     const { featuredListingAddonGrants } = await import('@repo/db/schemas/billing');
-                    await getDb()
-                        .insert(featuredListingAddonGrants)
-                        .values({ purchaseId, accommodationId: confirmedAccommodationId });
+                    await getDb().insert(featuredListingAddonGrants).values({
+                        purchaseId,
+                        entityType: confirmedEntityType,
+                        entityId: confirmedAccommodationId
+                    });
                 } catch (grantLinkError) {
                     apiLogger.error(
                         {
                             customerId: input.customerId,
                             addonSlug: input.addonSlug,
                             purchaseId,
-                            accommodationId: confirmedAccommodationId,
+                            entityType: confirmedEntityType,
+                            entityId: confirmedAccommodationId,
                             error:
                                 grantLinkError instanceof Error
                                     ? grantLinkError.message
@@ -1289,7 +1293,7 @@ export async function confirmAddonPurchase(
                         purchaseId,
                         metadataKeys: input.metadata ? Object.keys(input.metadata) : []
                     },
-                    'Target-required addon confirmed without an accommodationId in metadata; featured_listing_addon_grants row NOT written and purchase flagged featuredGrantLinkMissing'
+                    'Target-required addon confirmed without a resolvable target (no listing id in metadata, or the add-on declares no vertical that owns listings); featured_listing_addon_grants row NOT written and purchase flagged featuredGrantLinkMissing'
                 );
                 captureBillingError(
                     new Error('Missing accommodationId at addon purchase confirmation'),

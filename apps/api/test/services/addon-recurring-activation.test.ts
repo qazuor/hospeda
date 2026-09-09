@@ -82,7 +82,18 @@ vi.mock('@repo/service-core', () => ({
     }),
     PlanService: vi.fn(function () {
         return { getById: mockPlanGetById, getBySlug: mockPlanGetBySlug };
-    })
+    }),
+    // HOS-1286: the activation path derives the grant's vertical from the
+    // add-on's own `productDomain`. Stubbed with the real function's contract —
+    // one of the three featurable verticals passes through, anything else
+    // (including `undefined`) fails closed — because this suite replaces the
+    // module wholesale rather than spreading `importOriginal`.
+    resolveFeaturableEntityType: ({ productDomain }: { productDomain: string | undefined }) =>
+        productDomain === 'accommodation' ||
+        productDomain === 'gastronomy' ||
+        productDomain === 'experience'
+            ? productDomain
+            : undefined
 }));
 
 vi.mock('@repo/schemas', () => ({
@@ -442,7 +453,11 @@ describe('activateRecurringAddonPurchase', () => {
                 limitIncrease: null,
                 grantsEntitlement: 'FEATURED_LISTING',
                 durationDays: null,
-                requiresAccommodationTarget: true
+                requiresAccommodationTarget: true,
+                // HOS-1286: the vertical the grant is stamped with comes from
+                // HERE, not from the metadata — the add-on cannot disagree with
+                // itself, a forged metadata field could.
+                productDomain: 'accommodation'
             }
         });
 
@@ -460,7 +475,8 @@ describe('activateRecurringAddonPurchase', () => {
         // Assert: both ran, and the link ran first.
         expect(mockInsertValues).toHaveBeenCalledWith({
             purchaseId: 'purchase-1',
-            accommodationId: 'acc-1'
+            entityType: 'accommodation',
+            entityId: 'acc-1'
         });
         expect(mockApplyAddonEntitlements).toHaveBeenCalledTimes(1);
         const linkOrder = mockInsertValues.mock.invocationCallOrder[0] as number;

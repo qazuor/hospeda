@@ -1241,10 +1241,22 @@
         "buyingButton": "Processando...",
         "owned": "Ativo",
         "accommodationSelect": {
-            "label": "Hospedagem",
-            "placeholder": "Escolha uma hospedagem",
+            "label": {
+                "accommodation": "Hospedagem",
+                "gastronomy": "Restaurante",
+                "experience": "Experiência"
+            },
+            "placeholder": {
+                "accommodation": "Escolha uma hospedagem",
+                "gastronomy": "Escolha um restaurante",
+                "experience": "Escolha uma experiência"
+            },
             "required": "Escolha uma hospedagem para continuar",
-            "empty": "Você precisa de uma hospedagem primeiro"
+            "empty": {
+                "accommodation": "Você precisa de uma hospedagem primeiro",
+                "gastronomy": "Você precisa de um restaurante publicado primeiro",
+                "experience": "Você precisa de uma experiência publicada primeiro"
+            }
         },
         "gate": {
             "title": "Você precisa de uma assinatura ativa",
@@ -1267,6 +1279,22 @@
             "visibility-boost-30d": {
                 "name": "Impulso de visibilidade (30 dias)",
                 "description": "Sua hospedagem aparece em destaque nos resultados de busca por 30 dias."
+            },
+            "visibility-boost-gastronomy-7d": {
+                "name": "Impulso de visibilidade — Restaurante (7 dias)",
+                "description": "Seu restaurante aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-gastronomy-30d": {
+                "name": "Impulso de visibilidade — Restaurante (30 dias)",
+                "description": "Seu restaurante aparece em destaque nos resultados de busca por 30 dias."
+            },
+            "visibility-boost-experience-7d": {
+                "name": "Impulso de visibilidade — Experiência (7 dias)",
+                "description": "Sua experiência aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-experience-30d": {
+                "name": "Impulso de visibilidade — Experiência (30 dias)",
+                "description": "Sua experiência aparece em destaque nos resultados de busca por 30 dias."
             },
             "extra-photos-20": {
                 "name": "Pacote de fotos extra (+20 fotos)",

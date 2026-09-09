@@ -1,5 +1,6 @@
 export * from './addon/index.js';
 export * from './constants.js';
+export * from './featured/index.js';
 export * from './notification/index.js';
 export * from './plan/index.js';
 export * from './promo-code/index.js';

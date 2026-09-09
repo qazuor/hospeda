@@ -143,6 +143,47 @@ export const gastronomies = pgTable(
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         isFeatured: boolean('is_featured').notNull().default(false),
+        /**
+         * Denormalized billing-state flag (HOS-1286) — mirror of
+         * `accommodations.featured_by_entitlement`. True while a
+         * `visibility-boost-gastronomy-*` addon purchase grants an active
+         * FEATURED_LISTING entitlement for THIS listing. Written only by the
+         * billing sync primitives, never by admin curation, and deliberately
+         * independent of {@link isFeatured}: the effective public value is the
+         * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
+         * routes only (`resolvePublicIsFeatured`).
+         *
+         * **Only one source feeds it, unlike accommodation.** No commerce plan
+         * grants FEATURED_LISTING (`commerce-entitlements.config.ts` grants
+         * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
+         * column has exactly one writer — the addon — where accommodation has
+         * two (plan owner-wide + addon per-listing). A future commerce plan that
+         * grants featuring must add the plan-driven half; it does not exist yet
+         * and is not stubbed here.
+         *
+         * ---
+         * ## Why a denormalized column rather than deriving on read
+         *
+         * Deriving would join `featured_listing_addon_grants` →
+         * `billing_addon_purchases` on every public read. The honest argument
+         * FOR deriving is not performance: **a derived value cannot desync**,
+         * while this column needs sync primitives and a reconcile cron — more
+         * code, and more surface where the stored state can lie.
+         *
+         * It still loses, for a reason specific to this epic: `accommodations`
+         * already denormalizes. Deriving here would leave TWO different
+         * mechanisms answering one question, which is the asymmetry HOS-1257
+         * exists to close — fixing one by creating another. And the cost of
+         * being wrong is not symmetric: the column is a pattern this repo has
+         * already validated, indexes, sync primitives and backstop cron
+         * included, whereas the join would put a new query on a hot public path
+         * with no precedent to consult when it misbehaves.
+         *
+         * If this is ever unified for real, the question is not "should commerce
+         * derive?" but "should BOTH derive?" — recorded here so whoever asks it
+         * knows the alternative was considered and why it lost.
+         */
+        featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         // Denormalized aggregate stats (updated by trigger / service)
         reviewsCount: integer('reviews_count').notNull().default(0),
         /** Average rating across all review criteria (0.00–5.00). mode:'number' for JS coercion. */
@@ -165,6 +206,13 @@ export const gastronomies = pgTable(
         ),
         gastronomies_visibility_idx: index('gastronomies_visibility_idx').on(table.visibility),
         gastronomies_isFeatured_idx: index('gastronomies_isFeatured_idx').on(table.isFeatured),
+        // HOS-1286: parallel index for featuredByEntitlement, mirroring the
+        // accommodations pair. A BitmapOr of (isFeatured_idx,
+        // featuredByEntitlement_idx) serves "isFeatured OR featuredByEntitlement"
+        // without an expression index over the disjunction.
+        gastronomies_featuredByEntitlement_idx: index('gastronomies_featuredByEntitlement_idx').on(
+            table.featuredByEntitlement
+        ),
         gastronomies_type_idx: index('gastronomies_type_idx').on(table.type),
         gastronomies_ownerId_idx: index('gastronomies_ownerId_idx').on(table.ownerId),
         gastronomies_deletedAt_idx: index('gastronomies_deletedAt_idx').on(table.deletedAt),

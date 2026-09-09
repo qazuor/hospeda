@@ -98,6 +98,9 @@ const ACCOUNT_ADDON: AddonCardData = {
     isActive: true,
     sortOrder: 1,
     requiresAccommodationTarget: false,
+    // HOS-1286: the real API always declares this, and the panel now reads it
+    // to pick which vertical's listings the target selector offers.
+    productDomain: 'accommodation',
     recurringChargingEnabled: false
 };
 
@@ -115,6 +118,9 @@ const PER_ACCOMMODATION_ADDON: AddonCardData = {
     isActive: true,
     sortOrder: 2,
     requiresAccommodationTarget: true,
+    // HOS-1286: the real API always declares this, and the panel now reads it
+    // to pick which vertical's listings the target selector offers.
+    productDomain: 'accommodation',
     recurringChargingEnabled: false
 };
 
@@ -156,6 +162,9 @@ const RECURRING_ADDON: AddonCardData = {
  */
 const RECURRING_LABEL_ONLY_ADDON: AddonCardData = {
     ...RECURRING_ADDON,
+    // HOS-1286: the real API always declares this, and the panel now reads it
+    // to pick which vertical's listings the target selector offers.
+    productDomain: 'accommodation',
     recurringChargingEnabled: false
 };
 
@@ -183,7 +192,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -198,7 +207,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON, PER_ACCOMMODATION_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={ACCOMMODATIONS}
+                targetListingsByDomain={{ accommodation: ACCOMMODATIONS }}
             />
         );
 
@@ -216,7 +225,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON]}
                 ownedAddonSlugs={[ACCOUNT_ADDON.slug]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -233,7 +242,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[PER_ACCOMMODATION_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={ACCOMMODATIONS}
+                targetListingsByDomain={{ accommodation: ACCOMMODATIONS }}
             />
         );
 
@@ -254,7 +263,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[PER_ACCOMMODATION_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -267,7 +276,7 @@ describe('AddonsPurchasePanel', () => {
         ).toBeDisabled();
     });
 
-    it('purchases with the selected accommodationId and redirects to the checkout URL', async () => {
+    it('purchases with the selected listing as entityId and redirects to the checkout URL', async () => {
         mockPurchaseAddon.mockResolvedValue({
             ok: true,
             data: { checkoutUrl: 'https://mp.example/checkout/xyz' }
@@ -278,7 +287,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[PER_ACCOMMODATION_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={ACCOMMODATIONS}
+                targetListingsByDomain={{ accommodation: ACCOMMODATIONS }}
             />
         );
 
@@ -291,7 +300,8 @@ describe('AddonsPurchasePanel', () => {
         await waitFor(() => {
             expect(mockPurchaseAddon).toHaveBeenCalledWith({
                 slug: 'visibility-boost-7d',
-                body: { accommodationId: 'acc-2' },
+                // HOS-1286: the canonical field name for any vertical's listing.
+                body: { entityId: 'acc-2' },
                 idempotencyKey: 'fixed-uuid'
             });
         });
@@ -311,7 +321,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -340,7 +350,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -372,7 +382,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -408,7 +418,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -441,7 +451,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -466,7 +476,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[ACCOUNT_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -483,7 +493,7 @@ describe('AddonsPurchasePanel', () => {
                 locale="es"
                 addons={[PER_ACCOMMODATION_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={ACCOMMODATIONS}
+                targetListingsByDomain={{ accommodation: ACCOMMODATIONS }}
             />
         );
 
@@ -516,7 +526,7 @@ describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
                 locale="es"
                 addons={[RECURRING_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -529,7 +539,7 @@ describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
                 locale="es"
                 addons={[PER_ACCOMMODATION_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={ACCOMMODATIONS}
+                targetListingsByDomain={{ accommodation: ACCOMMODATIONS }}
             />
         );
 
@@ -546,7 +556,7 @@ describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
                 locale="es"
                 addons={[RECURRING_ADDON, PER_ACCOMMODATION_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={ACCOMMODATIONS}
+                targetListingsByDomain={{ accommodation: ACCOMMODATIONS }}
             />
         );
 
@@ -568,7 +578,7 @@ describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
                 locale="es"
                 addons={[RECURRING_ADDON]}
                 ownedAddonSlugs={[RECURRING_ADDON.slug]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 
@@ -585,7 +595,7 @@ describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
                 locale="es"
                 addons={[RECURRING_LABEL_ONLY_ADDON]}
                 ownedAddonSlugs={[]}
-                accommodations={[]}
+                targetListingsByDomain={{ accommodation: [] }}
             />
         );
 

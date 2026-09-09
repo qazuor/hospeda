@@ -44,6 +44,8 @@ const MOCK_GASTRONOMY = {
     reviewsCount: 0,
     isPriceOnRequest: false,
     isFeatured: false,
+    // HOS-1286: the protected tier serializes both featuring sources separately.
+    featuredByEntitlement: false,
     moderationState: 'APPROVED',
     media: null,
     seo: null,
