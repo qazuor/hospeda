@@ -450,11 +450,6 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Stamps promo/discount bookkeeping columns and CAS-links a preapproval while the row is still pending (not yet active/entitled). The subscription webhook handler that activates the row (subscription-logic.ts) already calls clearEntitlementCache.'
     },
     {
-        file: 'services/billing/past-due-payment-method-replacement.service.ts',
-        requiresCacheClear: false,
-        reason: "HOS-348 Part B. Its only direct write is a metadata (checkoutUrl) stamp on the FRESH row it just minted via createPaidSubscription, while that row is still pending_provider/incomplete — never plan, never status, and the row grants nothing yet. The idempotency-reuse path (an existing in-flight attempt found) writes nothing at all. The entitlement-bearing transitions this flow actually depends on — the new row's PENDING_PROVIDER -> ACTIVE activation and the OLD past-due row's cancel — both happen later, entirely inside routes/webhooks/mercadopago/subscription-logic.ts (already inventoried above, requiresCacheClear:true, already calls clearEntitlementCache for that same customerId). Mirrors own-preapproval-subscription-create.ts's identical reasoning one entry above."
-    },
-    {
         file: 'services/billing/pending-provider-subscription-create.ts',
         requiresCacheClear: false,
         reason: "Creates the row in PENDING_PROVIDER status (mirrors the comp-create insert shape) before any MP authorization, and stamps its product_domain ('accommodation' by default, 'commerce'/'partner' for the non-accommodation checkouts that route through it since all four flows moved to Path C). No entitlement is granted until the webhook activates it, and loadEntitlements() filters strictly to product_domain='accommodation' (SPEC-239) anyway."
@@ -462,7 +457,7 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
     {
         file: 'services/billing/own-preapproval-subscription-create.ts',
         requiresCacheClear: false,
-        reason: "HOS-937 step 1. Creates the row through qzpay's mode:'paid' create (which lands it in `incomplete`) and then normalizes the status to PENDING_PROVIDER with a direct UPDATE, because `pending_provider` is a Hospeda-only value outside qzpay's enum. Same reasoning as the pending-provider-subscription-create.ts entry it replaces: neither `incomplete` nor `pending_provider` grants an entitlement, so there is nothing cached to invalidate. The row only becomes entitlement-bearing when the webhook activates it, and subscription-logic.ts already calls clearEntitlementCache there. It also stamps the pending promo snapshot onto the row metadata, which is bookkeeping, not an entitlement-bearing field."
+        reason: "HOS-937 step 1. Creates the row through qzpay's mode:'paid' create (which lands it in `incomplete`) and then normalizes the status to PENDING_PROVIDER with a direct UPDATE, because `pending_provider` is a Hospeda-only value outside qzpay's enum. Same reasoning as the pending-provider-subscription-create.ts entry it replaces: neither `incomplete` nor `pending_provider` grants an entitlement, so there is nothing cached to invalidate. The row only becomes entitlement-bearing when the webhook activates it, and subscription-logic.ts already calls clearEntitlementCache there. It also stamps the pending promo snapshot onto the row metadata, which is bookkeeping, not an entitlement-bearing field. HOS-1315: also covers past-due-payment-method-replacement.service.ts, which used to have its OWN entry here for a direct metadata-only UPDATE (identical reasoning) — that file now mints entirely through this wrapper instead of writing billingSubscriptions itself, so its entry was removed rather than updated; the write, and this same justification, moved here."
     },
     {
         file: 'services/billing/preapproval-recovery.service.ts',
