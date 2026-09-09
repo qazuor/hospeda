@@ -252,9 +252,19 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
                 // HOS-1314: the admin grant-comp plan selector groups plans by
                 // vertical, so the field travels on the admin-only DTO (never
                 // on `mapDbToPlan`'s base shape, shared with the public
-                // endpoint). NULL reads as accommodation — the same asymmetry
-                // `createCompSubscription` and `subscriptionMatchesDomain`
-                // apply, for the same reason: the column post-dates most rows.
+                // endpoint).
+                //
+                // The `??` fallback is NOT the same asymmetry
+                // `createCompSubscription`/`subscriptionMatchesDomain` apply to
+                // `billing_subscriptions.product_domain` — that column really
+                // can hold NULL on a legacy row. `billing_plans.product_domain`
+                // cannot: it is `varchar(32) DEFAULT 'accommodation' NOT NULL`
+                // (`packages/db/src/migrations/0044_adorable_longshot.sql:16`),
+                // so every row, old or new, already has a value and this branch
+                // is unreachable against any real DB row today. Kept only as a
+                // defensive fallback for a hand-built row (e.g. a test fixture)
+                // that omits the field — do not read it as "some plans have no
+                // domain yet".
                 // The column is an untyped varchar (like `category` above), so
                 // the cast mirrors `mapDbToPlan`'s own `category` mapping.
                 productDomain: (row.productDomain ??
