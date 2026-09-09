@@ -5,12 +5,14 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { useToast } from '@/components/ui/ToastProvider';
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import {
+    usePartnerPaymentReviewMutation,
     usePartnerQuery,
     useRegisterPartnerManualPaymentMutation,
     useSendPartnerPaymentLinkMutation
 } from '@/features/partners/hooks/usePartnerQuery';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { formatCalendarShortDate, formatShortDate } from '@/lib/format-helpers';
+import { PaymentReviewCard } from './-components/PaymentReviewCard';
 import { SendPaymentLinkCard } from './-components/SendPaymentLinkCard';
 
 /** Spanish labels for {@link PartnerContentReviewStateEnum}, plus "never submitted". */
@@ -34,6 +36,7 @@ function PartnerViewPage() {
     const query = usePartnerQuery(id);
     const sendLinkMutation = useSendPartnerPaymentLinkMutation(id);
     const manualPaymentMutation = useRegisterPartnerManualPaymentMutation(id);
+    const paymentReviewMutation = usePartnerPaymentReviewMutation(id);
     const [manualNote, setManualNote] = useState('');
     const { addToast } = useToast();
 
@@ -119,6 +122,14 @@ function PartnerViewPage() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
+                    {/* First in the grid and full width: it is the only card
+                        here that is waiting on the operator. */}
+                    <PaymentReviewCard
+                        partner={partner}
+                        mutation={paymentReviewMutation}
+                        addToast={addToast}
+                    />
+
                     <SendPaymentLinkCard
                         partner={partner}
                         mutation={sendLinkMutation}
