@@ -15,13 +15,26 @@
  *   invariant that the old preapproval is untouched until the webhook
  *   confirms the new one (verified in RED with the bug reintroduced below).
  * - An in-flight attempt within the reuse window is returned instead of
- *   minting a second preapproval (idempotency layer 2).
- * - A stale (expired) or foreign-customer in-flight row is NOT reused.
+ *   minting a second preapproval (idempotency layer 2), GIVEN a row already
+ *   shaped the way `findReusableReplacementAttempt`'s SQL `WHERE` expects —
+ *   the freshness/customer conditions themselves live in that `WHERE` clause
+ *   and are not re-verified here (HOS-1315: this file's fake `db.select`
+ *   stubs ignore the actual query condition object and simply return
+ *   whatever rows the test hands it, so a "stale row is excluded" / "foreign
+ *   customer's row is excluded" behavioral test is not meaningfully
+ *   expressible against this mock — a PREVIOUS version of this docblock
+ *   claimed that coverage; it was never actually written).
+ * - (HOS-1315) The PRODUCER and the CONSUMER actually agree: a row minted by
+ *   the real `replacePastDuePaymentMethod` write path is found and reused by
+ *   its own `findReusableReplacementAttempt` predicate on a second call — the
+ *   in-flight row is never hand-fabricated, only the eventual DB rows a
+ *   REAL mint call itself produces (see the stateful fake DB below).
  *
  * @module test/services/billing/past-due-payment-method-replacement.service
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY,
@@ -471,5 +484,208 @@ describe('replacePastDuePaymentMethod — domain carry-forward (HOS-1287)', () =
             })
         ).rejects.toMatchObject({ code: 'DOMAIN_NOT_REPLACEABLE' });
         expect(create).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * HOS-1315 — the second idempotency layer never matched its own producer.
+ *
+ * `findReusableReplacementAttempt` filters on `status = pending_provider`
+ * (Hospeda's own vocabulary). Before this fix, `replacePastDuePaymentMethod`
+ * minted through `createPaidSubscription` directly, and qzpay-core /
+ * qzpay-drizzle write a freshly-`mode: 'paid'` row as `incomplete` (qzpay's
+ * OWN vocabulary — see `subscription-status-normalize.ts`) and NEVER as
+ * `pending_provider`. The predicate and the writer spoke two different
+ * vocabularies and could never agree.
+ *
+ * Every other test in this file above proves the CONSUMER side works when
+ * handed a row already shaped the way the predicate expects — but that row is
+ * hand-fabricated by `makeFakeDb`, so those tests would stay green even if
+ * the real producer wrote something the predicate could never match (exactly
+ * what shipped). This suite instead drives BOTH sides through one shared,
+ * STATEFUL fake `billing_subscriptions` table: `billing.subscriptions.create`
+ * mimics qzpay-drizzle's real INSERT-time status (`incomplete`), and the fake
+ * `db.update` mutates that SAME row the way `createOwnPreapprovalSubscription`
+ * (or, pre-fix, nothing) actually does. A second `replacePastDuePaymentMethod`
+ * call then re-runs the REAL `findReusableReplacementAttempt` SELECT against
+ * whatever the first call's write path actually left behind — no row is ever
+ * asserted into existence by the test itself.
+ */
+describe('replacePastDuePaymentMethod — producer writes what the consumer reads (HOS-1315)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPlanDomainRead();
+    });
+
+    /** One row of the fake `billing_subscriptions` table below. */
+    interface FakeSubscriptionRow {
+        readonly id: string;
+        readonly customerId: string;
+        status: string;
+        metadata: Record<string, unknown> | null;
+        readonly createdAt: Date;
+    }
+
+    /**
+     * A stateful fake `QZPayBilling` + Drizzle client sharing ONE in-memory
+     * `billing_subscriptions` table.
+     *
+     * `billing.subscriptions.create()` inserts a row exactly the way
+     * qzpay-drizzle's real storage adapter does for a `mode: 'paid'` create —
+     * `status: 'incomplete'`
+     * (`packages/drizzle/src/adapter/drizzle-storage.adapter.ts:452` in the
+     * qzpay clone: `input.mode === 'paid' ? 'incomplete' : ...`) — never
+     * Hospeda's own `pending_provider`. `db.update(billingSubscriptions)...`
+     * mutates that same row for real, so whatever
+     * `createOwnPreapprovalSubscription`'s follow-up UPDATE writes (or, with
+     * the bug reintroduced, whatever `createPaidSubscription` alone leaves
+     * untouched) is exactly what a later `db.select(...)` sees — the two
+     * halves of the bug, reproduced by letting the actual code drive both.
+     */
+    function makeStatefulFakeDbAndBilling() {
+        const table: FakeSubscriptionRow[] = [];
+        let lastCreatedId: string | null = null;
+        let nextId = 1;
+
+        const create = vi
+            .fn()
+            .mockImplementation(
+                async (createInput: {
+                    readonly customerId: string;
+                    readonly metadata?: Record<string, unknown>;
+                }) => {
+                    const id = `sub-new-${nextId++}`;
+                    lastCreatedId = id;
+                    table.push({
+                        id,
+                        customerId: createInput.customerId,
+                        // The real qzpay-drizzle write for a `mode: 'paid'` create.
+                        // NEVER hand-set to `pending_provider` here — that would be
+                        // exactly the fabrication this suite exists to avoid.
+                        status: 'incomplete',
+                        metadata: createInput.metadata ?? null,
+                        createdAt: new Date()
+                    });
+                    return {
+                        id,
+                        providerInitPoint: `https://mercadopago.example/checkout/${id}`,
+                        providerSandboxInitPoint: null,
+                        providerSubscriptionIds: { mercadopago: `mp-${id}` }
+                    };
+                }
+            );
+        const cancel = vi.fn().mockResolvedValue(undefined);
+        const listAll = vi.fn().mockResolvedValue([makePlan()]);
+
+        const billing = {
+            plans: { listAll },
+            subscriptions: { create, cancel }
+        } as unknown as QZPayBilling;
+
+        // Mirrors `findReusableReplacementAttempt`'s own WHERE conditions
+        // (customerId + status=pending_provider + supersedesSubscriptionId),
+        // evaluated against the table's CURRENT state — i.e. whatever the
+        // production write path actually left there, not a value the test
+        // asserted in.
+        const db = {
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: vi.fn(() => ({
+                        orderBy: vi.fn(() => ({
+                            limit: vi.fn(async (n: number) =>
+                                table
+                                    .filter(
+                                        (row) =>
+                                            row.customerId === CUSTOMER_ID &&
+                                            row.status ===
+                                                SubscriptionStatusEnum.PENDING_PROVIDER &&
+                                            (row.metadata as Record<string, unknown> | null)
+                                                ?.supersedesSubscriptionId ===
+                                                PAST_DUE_SUBSCRIPTION_ID
+                                    )
+                                    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+                                    .slice(0, n)
+                                    .map((row) => ({
+                                        id: row.id,
+                                        metadata: row.metadata,
+                                        createdAt: row.createdAt
+                                    }))
+                            )
+                        }))
+                    }))
+                }))
+            })),
+            update: vi.fn(() => ({
+                set: vi.fn((payload: Partial<FakeSubscriptionRow>) => ({
+                    where: vi.fn(async () => {
+                        const row = table.find((r) => r.id === lastCreatedId);
+                        if (row) {
+                            Object.assign(row, payload);
+                        }
+                    })
+                }))
+            }))
+        };
+
+        return { billing, db: db as never, table, create, cancel };
+    }
+
+    it('a second attempt reuses the FIRST mint’s own row instead of minting again', async () => {
+        // Arrange
+        const { billing, db, create } = makeStatefulFakeDbAndBilling();
+
+        // Act — first attempt mints for real.
+        const first = await replacePastDuePaymentMethod({
+            billing,
+            customerId: CUSTOMER_ID,
+            pastDueSubscription: ACCOMMODATION_PAST_DUE_ROW,
+            paymentMethodReturnUrl: 'https://hospeda.example/return',
+            notificationUrl: 'https://hospeda.example/webhook',
+            db
+        });
+
+        // Act — second attempt, same past-due row, same customer.
+        const second = await replacePastDuePaymentMethod({
+            billing,
+            customerId: CUSTOMER_ID,
+            pastDueSubscription: ACCOMMODATION_PAST_DUE_ROW,
+            paymentMethodReturnUrl: 'https://hospeda.example/return',
+            notificationUrl: 'https://hospeda.example/webhook',
+            db
+        });
+
+        // Assert — the SAME row the first call minted is what the second call
+        // reads back and reuses. This is the exact contract HOS-1315 found
+        // broken: before the fix, the row created above stayed `incomplete`
+        // forever, `findReusableReplacementAttempt` never matched it, and this
+        // assertion failed with `second.reused === false` plus a SECOND
+        // `create` call.
+        expect(first.reused).toBe(false);
+        expect(second.reused).toBe(true);
+        expect(second.localSubscriptionId).toBe(first.localSubscriptionId);
+        expect(second.checkoutUrl).toBe(first.checkoutUrl);
+        expect(create).toHaveBeenCalledTimes(1);
+    });
+
+    it('the minted row is actually sealed to pending_provider, not left at qzpay’s raw incomplete', async () => {
+        // Arrange
+        const { billing, db, table } = makeStatefulFakeDbAndBilling();
+
+        // Act
+        await replacePastDuePaymentMethod({
+            billing,
+            customerId: CUSTOMER_ID,
+            pastDueSubscription: ACCOMMODATION_PAST_DUE_ROW,
+            paymentMethodReturnUrl: 'https://hospeda.example/return',
+            notificationUrl: 'https://hospeda.example/webhook',
+            db
+        });
+
+        // Assert — read the table directly (not through the predicate) so
+        // this test fails on the WRITE side specifically, independent of
+        // whatever the SELECT filters on.
+        expect(table).toHaveLength(1);
+        expect(table[0]?.status).toBe(SubscriptionStatusEnum.PENDING_PROVIDER);
+        expect(table[0]?.status).not.toBe('incomplete');
     });
 });
