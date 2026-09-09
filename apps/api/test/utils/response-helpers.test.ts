@@ -234,6 +234,13 @@ describe('handleRouteError — RefinedBodyValidationError (HOS-607)', () => {
             name: 'Guard probe',
             description: 'A plan used only by this test.',
             category: 'owner' as const,
+            // HOS-1233 T-033 made this required. Without it the fixture carries
+            // TWO violations and Zod reports the missing field first, so
+            // `details[0]` is `productDomain` and the cross-field `trialDays`
+            // refinement this test is actually about never reaches the
+            // assertion. The fixture must violate exactly ONE rule — the one
+            // named below — or it stops testing the shape HOS-607 was about.
+            productDomain: 'accommodation' as const,
             monthlyPriceArs: 100000,
             annualPriceArs: null,
             monthlyPriceUsdRef: 100,
