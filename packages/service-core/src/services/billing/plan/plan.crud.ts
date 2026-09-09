@@ -35,7 +35,7 @@ import type {
     BillingPlanResponse,
     PlanPriceChangeEffect
 } from '@repo/schemas';
-import { resolvePlanPublicListing, ServiceErrorCode } from '@repo/schemas';
+import { ProductDomainEnum, resolvePlanPublicListing, ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 import { findCapabilityFieldViolation } from './plan.types.js';
@@ -248,7 +248,17 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
             return {
                 ...base,
                 isDeleted: row.deletedAt != null,
-                activeSubscriptionCount: subCountByPlanId.get(row.id) ?? 0
+                activeSubscriptionCount: subCountByPlanId.get(row.id) ?? 0,
+                // HOS-1314: the admin grant-comp plan selector groups plans by
+                // vertical, so the field travels on the admin-only DTO (never
+                // on `mapDbToPlan`'s base shape, shared with the public
+                // endpoint). NULL reads as accommodation — the same asymmetry
+                // `createCompSubscription` and `subscriptionMatchesDomain`
+                // apply, for the same reason: the column post-dates most rows.
+                // The column is an untyped varchar (like `category` above), so
+                // the cast mirrors `mapDbToPlan`'s own `category` mapping.
+                productDomain: (row.productDomain ??
+                    ProductDomainEnum.ACCOMMODATION) as AdminBillingPlanResponse['productDomain']
             };
         });
 
