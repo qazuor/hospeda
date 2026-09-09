@@ -29,13 +29,14 @@ import {
     readTrialComposition,
     type TrialGrantSource
 } from '@repo/billing';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ProductDomainEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
     isOwnerCategorySubscription,
     RoleEnum,
-    ServiceError
+    ServiceError,
+    subscriptionMatchesDomain
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
@@ -600,7 +601,29 @@ async function loadEntitlements(
                 // 'comp' (free-forever) is an ACTIVE entitlement state — a comped
                 // subscriber retains the full entitlements of the plan they were
                 // comped on (see SubscriptionStatusEnum.COMP doc).
-                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+                isEntitlementGrantingStatus(sub.status) &&
+                // HOS-1233: accommodation OR tourist. Both are the customer's own
+                // consumer plan — `ALL_PLANS` holds the owner tiers and the
+                // tourist tiers together, and this `find` is looking for "the
+                // plan this person pays for", not "an accommodation plan".
+                //
+                // Until this spec the distinction did not exist: tourist plans
+                // were filed as `accommodation` (F-4b), so `tourist-vip` matched
+                // here by accident and its entitlements resolved correctly for
+                // the wrong reason. Reclassified, `isAccommodationSubscription`
+                // returns false for that row, no active subscription is found,
+                // and the branch below hands a PAYING tourist-VIP subscriber the
+                // tourist-FREE defaults — measured: a plan granting `vip_support`
+                // resolved to `[save_favorites, write_reviews, read_reviews]`.
+                //
+                // Written as two explicit calls rather than a union helper:
+                // HOS-1081 deleted `isCommerceSubscription()` for having no
+                // callers, and one consumer does not yet justify reintroducing
+                // that shape. The asymmetry survives — accommodation still fails
+                // OPEN for the legacy rows that predate the column, tourist still
+                // fails CLOSED like every other named domain.
+                (isAccommodationSubscription(sub) ||
+                    subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST))
         );
 
         // HOS-217: a HOST actor can reach role=HOST without ever subscribing to
