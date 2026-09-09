@@ -1592,6 +1592,16 @@ export function getDefaultPlan(category: PlanDefinition['category']): PlanDefini
  * is the guard that catches that omission by cross-checking the set of
  * `productDomain` values this array actually covers against
  * {@link BUSINESS_VERTICAL_PRODUCT_DOMAINS} in `@repo/schemas`.
+ *
+ * `[skip-seed-migration]: additive-code-only` — `plans.config.ts` is a
+ * `BILLING_CONFIG_FILES` entry in `scripts/check-seed-dual-write.sh`, so this
+ * declaration alone trips the seed dual-write guard. Reviewed: this array is
+ * a derived aggregation of the four catalogues already declared above; it
+ * adds no `PlanDefinition`, and changes no plan's price, entitlement, limit,
+ * slug, `isActive`, or `productDomain` — nothing here needs backfilling on an
+ * already-seeded environment. Same shape as HOS-1119 (PR #3177)'s
+ * `COMMERCE_PLANS_BY_VERTICAL` + `findCommercePlanForVertical`, the marker's
+ * first use in this repo.
  */
 export const ALL_PLAN_CATALOGS: readonly (readonly PlanDefinition[])[] = [
     ALL_PLANS,
