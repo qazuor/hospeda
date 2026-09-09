@@ -159,8 +159,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-const { mockInitiateCommerceMonthlySubscription } = vi.hoisted(() => ({
-    mockInitiateCommerceMonthlySubscription: vi.fn()
+const { mockInitiateCommerceSubscription } = vi.hoisted(() => ({
+    mockInitiateCommerceSubscription: vi.fn()
 }));
 vi.mock('../../../../src/services/subscription-checkout.service', async (importOriginal) => {
     const actual =
@@ -169,7 +169,7 @@ vi.mock('../../../../src/services/subscription-checkout.service', async (importO
         >();
     return {
         ...actual,
-        initiateCommerceMonthlySubscription: mockInitiateCommerceMonthlySubscription
+        initiateCommerceSubscription: mockInitiateCommerceSubscription
     };
 });
 
@@ -335,7 +335,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OWNER_ID));
         mockFindByGastronomies.mockResolvedValue(mediaMap([makeMediaRow()]));
         mockFindByExperiences.mockResolvedValue(mediaMap([makeMediaRow()]));
-        mockInitiateCommerceMonthlySubscription.mockResolvedValue({
+        mockInitiateCommerceSubscription.mockResolvedValue({
             checkoutUrl: 'https://mp.test/checkout',
             localSubscriptionId: 'sub-local-1',
             expiresAt: new Date().toISOString()
@@ -387,7 +387,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(foreign.message).not.toContain(ENTITY_ID);
         expect(foreign.message).not.toContain('gastronomy');
 
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
     });
 
     it('proceeds when actor.id === listing.ownerId', async () => {
@@ -399,7 +399,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         });
 
         expect(result).not.toBeInstanceOf(Response);
-        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
+        expect(mockInitiateCommerceSubscription).toHaveBeenCalledTimes(1);
     });
 
     // ── AC-5: completeness gate ──────────────────────────────────────────
@@ -427,7 +427,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         const body = (await response.json()) as { error: { missing: string[] } };
         expect(body.error.missing.length).toBeGreaterThan(0);
         expect(body.error.missing).toContain('media.featuredImage');
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
     });
 
     // ── H-154 / HOS-494: the featured image lives in the relational table ─
@@ -450,7 +450,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(mockFindByGastronomies).toHaveBeenCalledWith(
             expect.objectContaining({ gastronomyIds: [ENTITY_ID] })
         );
-        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
+        expect(mockInitiateCommerceSubscription).toHaveBeenCalledTimes(1);
     });
 
     it('passes the completeness gate when the featured image exists only in experience_media (H-154)', async () => {
@@ -470,7 +470,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(mockFindByExperiences).toHaveBeenCalledWith(
             expect.objectContaining({ experienceIds: [ENTITY_ID] })
         );
-        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
+        expect(mockInitiateCommerceSubscription).toHaveBeenCalledTimes(1);
     });
 
     it('still 422s when the listing has no media rows at all', async () => {
@@ -486,7 +486,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect((result as Response).status).toBe(422);
         const body = (await (result as Response).json()) as { error: { missing: string[] } };
         expect(body.error.missing).toContain('media.featuredImage');
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
     });
 
     it('still 422s when media rows exist but none is featured', async () => {
@@ -541,7 +541,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
             })
         ).rejects.toMatchObject({ status: 409 });
 
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
     });
 
     it('returns 409 when a trialing subscription already exists', async () => {
@@ -567,7 +567,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
             })
         ).rejects.toMatchObject({ status: 409 });
 
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
     });
 
     it('does NOT 409 for a cancelled prior subscription', async () => {
@@ -626,7 +626,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(mockEnsureCustomerExists).toHaveBeenCalledWith(
             expect.objectContaining({ userId: OWNER_ID })
         );
-        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledWith(
+        expect(mockInitiateCommerceSubscription).toHaveBeenCalledWith(
             expect.objectContaining({ customerId: 'cust_healed' })
         );
     });
@@ -645,7 +645,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
 
     // ── Happy path ────────────────────────────────────────────────────────
 
-    it('forwards customerId, planSlug, entityType, entityId to initiateCommerceMonthlySubscription', async () => {
+    it('forwards customerId, planSlug, entityType, entityId to initiateCommerceSubscription', async () => {
         const ctx = createMockContext();
 
         const result = await handleCommerceStartSubscription(ctx as never, {
@@ -654,7 +654,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         });
 
         expect(result).toMatchObject({ localSubscriptionId: 'sub-local-1' });
-        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledWith(
+        expect(mockInitiateCommerceSubscription).toHaveBeenCalledWith(
             expect.objectContaining({
                 customerId: CUSTOMER_ID,
                 // From the catalogue default rather than a literal: HOS-818 moved
@@ -665,6 +665,37 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
                 entityId: ENTITY_ID
             })
         );
+    });
+
+    it('forwards a requested ANNUAL cadence to the checkout (HOS-1285)', async () => {
+        const ctx = createMockContext();
+
+        await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID,
+            requestedBillingInterval: 'annual'
+        });
+
+        expect(mockInitiateCommerceSubscription).toHaveBeenCalledWith(
+            expect.objectContaining({ billingInterval: 'annual' })
+        );
+    });
+
+    it('sends NO billingInterval key when the owner asked for none (HOS-1285)', async () => {
+        // `objectContaining` cannot see a MISSING field, so the absence has to
+        // be read off the recorded call. It matters because the service spreads
+        // this under `exactOptionalPropertyTypes` and defaults an absent key to
+        // monthly — a present `undefined` is a different thing from an absent
+        // key, and every pre-HOS-1285 caller produces the latter.
+        const ctx = createMockContext();
+
+        await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        const call = mockInitiateCommerceSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(Object.hasOwn(call, 'billingInterval')).toBe(false);
     });
 
     it('dispatches to experienceModel for entityType=experience', async () => {
@@ -705,7 +736,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         });
 
         // The assertion that matters: no second preapproval was created.
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
         expect(mockAttachListingToSubscription).toHaveBeenCalledWith(
             expect.objectContaining({
                 subscription: { id: 'sub-1', status: 'active' },
@@ -732,7 +763,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
             })
         ).rejects.toMatchObject({ code: 'LIMIT_REACHED' });
 
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
         expect(mockAttachListingToSubscription).not.toHaveBeenCalled();
     });
 
@@ -753,7 +784,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
             entityId: ENTITY_ID
         });
 
-        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
+        expect(mockInitiateCommerceSubscription).toHaveBeenCalledTimes(1);
         expect(mockAttachListingToSubscription).not.toHaveBeenCalled();
     });
 
@@ -779,7 +810,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
 
         // Not "also opens a checkout": sending the owner to MercadoPago here is
         // precisely the bug, because MP charges on card authorization.
-        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockInitiateCommerceSubscription).not.toHaveBeenCalled();
     });
 
     it('answers with the trial subscription and appliedEffect trial', async () => {

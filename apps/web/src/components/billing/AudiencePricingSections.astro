@@ -29,9 +29,11 @@
 
 import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PlanComparisonTable from '@/components/billing/PlanComparisonTable.astro';
+import { TrialRemainingDaysBanner } from '@/components/billing/TrialRemainingDaysBanner.client';
 import FaqSection from '@/components/marketing/FaqSection.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import type { PricingAudience } from '@/lib/billing-i18n';
+import { resolveTrialScopeForAudience } from '@/lib/billing/trial-start-branch';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import type { BillingFaqItem } from '@/lib/billing/pricing-page-content';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -109,6 +111,17 @@ const closingCtaHref = ctaMode === 'link' ? ctaHref : '#pricing-cards';
  * `null` renders nothing, which is the honest failure.
  */
 const comparisonAudience = audience === 'partner' ? null : audience;
+
+/**
+ * Whether this page has a trial to report at all.
+ *
+ * A fact about the PAGE, not about the visitor — `resolveTrialScopeForAudience`
+ * reads nothing but the audience — so computing it in frontmatter keeps these
+ * pages session-blind and edge-cacheable. It is the canonical resolver and not
+ * a second `audience === 'partner'` test on purpose: the day aliados stops
+ * being the only scopeless audience, both halves must move together.
+ */
+const hasTrialScope = resolveTrialScopeForAudience({ audience }) !== null;
 ---
 
 {/*
@@ -120,6 +133,35 @@ const comparisonAudience = audience === 'partner' ? null : audience;
     both correct and one less thing to keep in step across two files.
 */}
 <section class="pricing-cards section" id="pricing-cards" aria-label={t(`${copyRoot}.cardsHeading`)}>
+    {/*
+        HOS-1233 T-020 / T-021 / AC-7. Mounted HERE and not five times over,
+        because this component IS the body of all five `/planes/…/precios/`
+        pages — the same reason the grid and the comparison live here. Five
+        copies would be five places for the next change to land, and this file's
+        own header says the sections below the hero are "the same page five
+        times, so they are one file".
+
+        An ISLAND, not frontmatter: these pages are edge-cached and must not
+        parse the session (F-8 / AC-10), and a server-rendered "te quedan N
+        días" is exactly the personalised response
+        `cacheable-pages-are-session-blind.guard.test.ts` exists to prevent. The
+        page passes `locale` and `audience` — two facts about the PAGE, nothing
+        about the visitor — and the banner resolves the rest in the browser.
+
+        It renders nothing at all for an anonymous visitor and whenever no
+        trial is running (AC-8), and it is not mounted at all for an audience
+        with no trial scope: aliados would ship and hydrate an island whose
+        every branch returns `null`.
+
+        `client:idle` and not `client:load`: the banner is below the hero,
+        reports a day count nobody is waiting on, and cannot render before its
+        own fetch answers anyway — so competing with the purchase buttons for
+        the main thread buys nothing. The CTA islands keep `client:load`
+        because a click on them can arrive immediately.
+    */}
+    {hasTrialScope && (
+        <TrialRemainingDaysBanner client:idle locale={locale} audience={audience} />
+    )}
     <PricingCardsGrid
         locale={locale}
         plans={plans}

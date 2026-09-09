@@ -51,8 +51,16 @@ import { syncAccommodationSubscriptionCacheForSubscription } from './entity-subs
  * Two independent effects:
  *
  * 1. **Commerce** — update the listing link rows and flip each linked
- *    listing's visibility (active/trialing → PUBLIC, everything else →
- *    PRIVATE). A no-op for a subscription with no commerce links.
+ *    listing's visibility. A no-op for a subscription with no commerce links.
+ *
+ *    HOS-1160: this used to read "active/trialing → PUBLIC, everything else →
+ *    PRIVATE", which was never what the code does.
+ *    `reconcileCommerceListingForSubscription` gates on
+ *    `isPublishingSubscriptionStatus`, which delegates to the canonical
+ *    `isEntitlementGrantingStatus` — `active`, `trialing`, **`comp`** and
+ *    **`courtesy`**. Read literally, the old sentence claims a complimentary
+ *    commerce listing goes dark; it sent this issue's own measurement looking
+ *    for a bug that is not there.
  * 2. **Accommodation** — refresh the `entity_subscriptions` cache rows of the
  *    subscription's owner, so the public reads see the new status without
  *    walking QZPay. A no-op for an owner with no accommodations.

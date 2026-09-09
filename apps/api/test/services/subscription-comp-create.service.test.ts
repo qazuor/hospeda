@@ -1,13 +1,30 @@
 /**
- * SPEC-262 T-012 P2 — subscription-comp-create.service unit tests.
+ * SPEC-262 T-012 P2 / HOS-1160 — subscription-comp-create.service unit tests.
  *
  * Proves the comp subscription creator:
  *  - inserts a `status='comp'` row with NO mp_subscription_id, far-future period,
- *    product_domain='accommodation', and the chosen interval.
+ *    and the chosen interval.
  *  - stamps promo_code_id + records the redemption inside ONE transaction.
  *  - rolls back (throws) when the redemption fails (fail-closed comp grant).
- *  - SPEC-262 M2: throws when the plan belongs to a non-accommodation domain.
- *  - SPEC-262 M2: allows NULL product_domain (legacy plans, treated as accommodation).
+ *  - HOS-1160: writes the CALLER'S vertical into `product_domain`, for each of
+ *    the verticals the issue names, and refuses when the caller's vertical and
+ *    the plan's disagree.
+ *
+ * The domain block carries the mutation coverage this change turns on, in BOTH
+ * directions, because one direction alone would sign off the wrong fix:
+ *
+ *  - toward the BUG (revert the guard — accept any plan without checking):
+ *    `refuses a plan whose domain disagrees…` and `treats a NULL plan domain as
+ *    accommodation and REFUSES a gastronomy request for it` go red.
+ *  - toward the EXCESS (hardcode `productDomain: ACCOMMODATION` in the INSERT
+ *    again, i.e. let comp through but file every row as accommodation): the
+ *    per-vertical cases go red on the inserted value.
+ *
+ * Without the second direction a "fix" that opens comp to gastronomy while
+ * still stamping `accommodation` passes green — and that row hands the customer
+ * the full accommodation entitlements, because `subscriptionMatchesDomain`
+ * fails OPEN for accommodation. Opening the door without writing the domain is
+ * strictly worse than the closed door it replaces.
  *
  * DB + service-core redemption are fully mocked — no real infra. Typed Drizzle
  * queries as of HOS-75 T-005 (previously raw SQL).
@@ -51,8 +68,19 @@ vi.mock('@repo/db', () => ({
         (withTransactionMock as (...a: unknown[]) => unknown)(...args)
 }));
 
+// HOS-1160: all SIX members, not the four the issue's text assumed. `tourist`
+// arrived with HOS-1233 and `addon` with HOS-847; a mock frozen at four would
+// let a comparison against either of them read `undefined` on both sides and
+// compare equal.
 vi.mock('@repo/schemas', () => ({
-    ProductDomainEnum: { ACCOMMODATION: 'accommodation', COMMERCE: 'commerce' },
+    ProductDomainEnum: {
+        ACCOMMODATION: 'accommodation',
+        GASTRONOMY: 'gastronomy',
+        EXPERIENCE: 'experience',
+        PARTNER: 'partner',
+        TOURIST: 'tourist',
+        ADDON: 'addon'
+    },
     SubscriptionStatusEnum: { COMP: 'comp' }
 }));
 
@@ -90,6 +118,7 @@ describe('createCompSubscription', () => {
             promoCodeId: 'pc-1',
             code: 'COMPVIP',
             interval: 'monthly',
+            productDomain: 'accommodation',
             livemode: true
         });
 
@@ -140,6 +169,7 @@ describe('createCompSubscription', () => {
             promoCodeId: 'pc-1',
             code: 'COMPVIP',
             interval: 'annual',
+            productDomain: 'accommodation',
             livemode: false
         });
         const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -159,46 +189,156 @@ describe('createCompSubscription', () => {
                 promoCodeId: 'pc-1',
                 code: 'COMPVIP',
                 interval: 'monthly',
+                productDomain: 'accommodation',
                 livemode: false
             })
         ).rejects.toThrow(/Comp redemption failed/);
     });
 
-    it('SPEC-262 M2: allows NULL product_domain plan (historical accommodation plan, no extras column yet)', async () => {
-        selectLimitMock.mockResolvedValue([{ productDomain: null }]);
+    // -----------------------------------------------------------------------
+    // HOS-1160 — the vertical the row is born with
+    // -----------------------------------------------------------------------
+    describe('HOS-1160: product_domain is the caller vertical, not a literal', () => {
+        // The four verticals the issue names. `accommodation` is included on
+        // purpose rather than assumed from the cases above: the point of the
+        // table is that no vertical is privileged in the INSERT, and leaving out
+        // the one that used to be hardcoded would hide a fix that still
+        // special-cases it.
+        const VERTICALS = ['accommodation', 'gastronomy', 'experience', 'partner'] as const;
 
-        // Should NOT throw — NULL domain treated as accommodation.
-        const result = await createCompSubscription({
-            customerId: 'cust-1',
-            planId: 'plan-legacy',
-            promoCodeId: 'pc-1',
-            code: 'COMPVIP',
-            interval: 'monthly',
-            livemode: false
+        for (const vertical of VERTICALS) {
+            it(`comps a ${vertical} plan and files the row under '${vertical}'`, async () => {
+                selectLimitMock.mockResolvedValue([{ productDomain: vertical }]);
+
+                const result = await createCompSubscription({
+                    customerId: 'cust-1',
+                    planId: `plan-${vertical}`,
+                    interval: 'monthly',
+                    productDomain: vertical,
+                    livemode: false
+                });
+
+                expect(result.localSubscriptionId).toMatch(/[0-9a-f-]{36}/);
+
+                const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+                // The whole point: the row states ITS OWN vertical. A fix that
+                // opens the guard but leaves `ProductDomainEnum.ACCOMMODATION`
+                // in the INSERT fails here for three of the four rows — and that
+                // fix is the dangerous one, because accommodation is the domain
+                // `subscriptionMatchesDomain` fails OPEN for.
+                expect(inserted.productDomain).toBe(vertical);
+                expect(inserted.status).toBe('comp');
+                expect(inserted).not.toHaveProperty('mpSubscriptionId');
+            });
+        }
+
+        it('refuses a plan whose domain disagrees with the requested vertical, before any write', async () => {
+            // The plan is accommodation; the caller believes it is comping
+            // gastronomy. Resolving this in the plan's favour would file a
+            // gastronomy courtesy as an accommodation entitlement.
+            selectLimitMock.mockResolvedValue([{ productDomain: 'accommodation' }]);
+
+            await expect(
+                createCompSubscription({
+                    customerId: 'cust-1',
+                    planId: 'plan-accommodation',
+                    interval: 'monthly',
+                    productDomain: 'gastronomy',
+                    livemode: false
+                })
+            ).rejects.toThrow(
+                /is domain 'accommodation' but the comp was requested for 'gastronomy'/
+            );
+
+            expect(withTransactionMock).not.toHaveBeenCalled();
+            expect(insertValuesMock).not.toHaveBeenCalled();
         });
 
-        expect(result.localSubscriptionId).toMatch(/[0-9a-f-]{36}/);
-    });
+        it('refuses the mirror case too — a gastronomy plan requested as accommodation', async () => {
+            // The direction that used to be the ONLY thing the guard checked.
+            // It still has to refuse, or the door opens both ways.
+            selectLimitMock.mockResolvedValue([{ productDomain: 'gastronomy' }]);
 
-    it('SPEC-262 M2: throws when plan has product_domain=commerce — cannot comp a commerce plan', async () => {
-        selectLimitMock.mockResolvedValue([{ productDomain: 'commerce' }]);
+            await expect(
+                createCompSubscription({
+                    customerId: 'cust-1',
+                    planId: 'plan-gastronomy',
+                    interval: 'monthly',
+                    productDomain: 'accommodation',
+                    livemode: false
+                })
+            ).rejects.toThrow(
+                /is domain 'gastronomy' but the comp was requested for 'accommodation'/
+            );
 
-        await expect(
-            createCompSubscription({
+            expect(withTransactionMock).not.toHaveBeenCalled();
+        });
+
+        it('treats a NULL plan domain as accommodation and ALLOWS an accommodation request', async () => {
+            // Legacy plans predating the column. Accommodation fails open, the
+            // same asymmetry `subscriptionMatchesDomain` applies.
+            selectLimitMock.mockResolvedValue([{ productDomain: null }]);
+
+            const result = await createCompSubscription({
                 customerId: 'cust-1',
-                planId: 'plan-commerce-uuid',
-                promoCodeId: 'pc-1',
-                code: 'COMPVIP',
+                planId: 'plan-legacy',
                 interval: 'monthly',
+                productDomain: 'accommodation',
                 livemode: false
-            })
-        ).rejects.toThrow(/only accommodation plans can be comped/);
+            });
 
-        // Transaction must NOT have started — rejected before any write.
-        expect(withTransactionMock).not.toHaveBeenCalled();
+            expect(result.localSubscriptionId).toMatch(/[0-9a-f-]{36}/);
+            const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(inserted.productDomain).toBe('accommodation');
+        });
+
+        it('treats a NULL plan domain as accommodation and REFUSES a gastronomy request for it', async () => {
+            // The other half of the fail-open asymmetry, and the one that keeps
+            // it from becoming a hole: a plan that never stated its vertical
+            // cannot be claimed as gastronomy just because the caller says so.
+            selectLimitMock.mockResolvedValue([{ productDomain: null }]);
+
+            await expect(
+                createCompSubscription({
+                    customerId: 'cust-1',
+                    planId: 'plan-legacy',
+                    interval: 'monthly',
+                    productDomain: 'gastronomy',
+                    livemode: false
+                })
+            ).rejects.toThrow(
+                /is domain 'accommodation' but the comp was requested for 'gastronomy'/
+            );
+
+            expect(withTransactionMock).not.toHaveBeenCalled();
+        });
+
+        it("refuses a retired 'commerce' plan for both gastronomy and experience", async () => {
+            // `'commerce'` is a RETIRED value surviving only on legacy rows
+            // (release B / HOS-692). HOS-695 narrowed the match on purpose: such
+            // a row satisfies NEITHER `gastronomy` NOR `experience` and goes
+            // dark rather than silently matching a vertical it was never
+            // resolved to. Do not "fix" this by widening the comparison.
+            for (const requested of ['gastronomy', 'experience'] as const) {
+                vi.clearAllMocks();
+                selectLimitMock.mockResolvedValue([{ productDomain: 'commerce' }]);
+
+                await expect(
+                    createCompSubscription({
+                        customerId: 'cust-1',
+                        planId: 'plan-legacy-commerce',
+                        interval: 'monthly',
+                        productDomain: requested,
+                        livemode: false
+                    })
+                ).rejects.toThrow(/is domain 'commerce' but the comp was requested for/);
+
+                expect(withTransactionMock).not.toHaveBeenCalled();
+            }
+        });
     });
 
-    it('SPEC-262 M2: throws when plan is not found (missing from billing_plans)', async () => {
+    it('throws when plan is not found (missing from billing_plans)', async () => {
         selectLimitMock.mockResolvedValue([]); // empty result → plan not found
 
         await expect(
@@ -208,6 +348,7 @@ describe('createCompSubscription', () => {
                 promoCodeId: 'pc-1',
                 code: 'COMPVIP',
                 interval: 'monthly',
+                productDomain: 'accommodation',
                 livemode: false
             })
         ).rejects.toThrow(/plan.*not found/i);
@@ -226,6 +367,7 @@ describe('createCompSubscription', () => {
             promoCodeId: 'pc-1',
             code: 'COMPVIP',
             interval: 'monthly',
+            productDomain: 'accommodation',
             livemode: true
         });
 
@@ -247,6 +389,7 @@ describe('createCompSubscription', () => {
                 promoCodeId: 'pc-1',
                 code: 'COMPVIP',
                 interval: 'monthly',
+                productDomain: 'accommodation',
                 livemode: false
             })
         ).rejects.toThrow(/Comp redemption failed/);

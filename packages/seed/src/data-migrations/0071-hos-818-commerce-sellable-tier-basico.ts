@@ -35,7 +35,7 @@
  * 2. **Creates the missing monthly `billing_prices` row** for each promoted
  *    plan. The seed skipped it (`monthlyPriceArs <= 0` → "unpriced tier"), and
  *    checkout resolves the PRICE row, not the plan column: `NO_MONTHLY_PRICE` is
- *    a hard throw in `initiateCommerceMonthlySubscription`. Without this step the
+ *    a hard throw in `initiateCommerceSubscription`. Without this step the
  *    rename would take both verticals offline.
  * 3. **Retires the `*-premium` row — but ONLY if its `*-basico` counterpart
  *    verifiably took over** (active AND carrying an active monthly ARS price).

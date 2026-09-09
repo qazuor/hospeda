@@ -96,7 +96,6 @@ import {
 } from '../../../services/commerce-plan-resolver';
 import { findOwnerVerticalSubscription } from '../../../services/commerce-subscription-attach.service';
 import {
-    findMonthlyPrice,
     initiatePaidPlanUpgrade,
     resolvePlanBySlug,
     SubscriptionCheckoutError
@@ -218,6 +217,17 @@ async function scheduleCommerceDowngrade(input: {
     readonly targetPlanId: string;
     readonly targetPlanSlug: string;
     readonly targetPlanDisplayName: string;
+    /**
+     * HOS-1285: the cadence the subscription is ALREADY on, resolved by the
+     * handler off `subscription.interval`. `scheduleSubscriptionDowngrade`
+     * resolves the target plan's price by this pair and records it as what the
+     * subscription moves to at period end, so a hardcoded `'month'` would
+     * quietly convert an annual commerce subscriber to monthly billing as a
+     * side effect of asking for a cheaper tier.
+     */
+    readonly billingInterval: 'month' | 'year';
+    /** Interval count of that same cadence — `1` for both cadences sold today. */
+    readonly intervalCount: number;
     readonly keepSelections?: CommerceKeepSelections | undefined;
 }): Promise<unknown> {
     const {
@@ -230,6 +240,8 @@ async function scheduleCommerceDowngrade(input: {
         targetPlanId,
         targetPlanSlug,
         targetPlanDisplayName,
+        billingInterval,
+        intervalCount,
         keepSelections
     } = input;
 
@@ -238,10 +250,15 @@ async function scheduleCommerceDowngrade(input: {
         scheduleResult = await scheduleSubscriptionDowngrade({
             currentSubscriptionId: subscriptionId,
             newPlanId: targetPlanId,
-            // Every commerce tier is monthly and only monthly — see the request
-            // schema's note on why there is no interval field to forward.
-            billingInterval: 'month',
-            intervalCount: 1,
+            // HOS-1285: the subscription's OWN cadence, forwarded rather than
+            // assumed. This read `'month'` while the request schema's note
+            // claimed every commerce tier was monthly and only monthly; once
+            // the six tiers gained an annual price, that hardcode moved an
+            // annual subscriber onto a MONTHLY price row at period end — a
+            // cadence change nobody asked for, arriving as the quiet half of a
+            // tier downgrade.
+            billingInterval,
+            intervalCount,
             billing,
             requestedBy: actorId,
             ...(keepSelections === undefined ? {} : { keepSelections })
@@ -480,18 +497,62 @@ export async function handleCommerceChangePlan(
 
     // ── Dearer-only (422) ──────────────────────────────────────────────────
     //
-    // Compared on the MONTHLY price because every commerce tier is monthly and
-    // only monthly (`commerceVerticalTier` hardcodes `annualPriceArs: null` for
-    // all six), so there is no interval to normalise across and no cross-
-    // category rank to consult — commerce plans all carry `category: 'owner'`,
-    // which is a type-satisfying placeholder rather than a tier signal.
-    const currentPrice = findMonthlyPrice(currentPlan.prices);
-    const targetPrice = findMonthlyPrice(targetPlan.prices);
+    // Compared on the price row for the cadence the owner is ACTUALLY on, read
+    // off the subscription rather than assumed.
+    //
+    // Until HOS-1285 this read `findMonthlyPrice` on both sides, and the comment
+    // here justified it: "every commerce tier is monthly and only monthly
+    // (`commerceVerticalTier` hardcodes `annualPriceArs: null` for all six)".
+    // That stopped being true the moment the six tiers gained an annual price,
+    // and the failure it would have produced is a money bug rather than an
+    // error — an annual subscriber's tier change prorated over the MONTHLY
+    // delta, charging roughly a tenth of what a year of the dearer tier costs,
+    // with a valid MercadoPago URL and a 200 at every layer.
+    //
+    // No cross-category rank is consulted, and that half of the old comment
+    // stands: commerce plans all carry `category: 'owner'`, a type-satisfying
+    // placeholder rather than a tier signal. `compareCategoryRank` has exactly
+    // one consumer (`routes/billing/plan-change.ts`) and that route refuses a
+    // commerce slug outright via `assertAccommodationPlanChangeTarget`.
+    const subscriptionIntervalCount = subscription.intervalCount ?? 1;
+    if (subscription.interval !== 'month' && subscription.interval !== 'year') {
+        // Only the two cadences the catalogue sells can be prorated here: the
+        // seed writes `intervalCount: 1` `'month'`/`'year'` rows and nothing
+        // else, so any other value means the row and the catalogue disagree.
+        // Refusing beats resolving no price and answering a bare 404 that
+        // blames the plan.
+        throw new HTTPException(409, {
+            message: `This subscription bills on an interval this catalogue does not sell ('${subscription.interval}'). Contact support.`
+        });
+    }
+    const subscriptionInterval = subscription.interval;
+    const priceForSubscriptionInterval = <
+        T extends { active: boolean; billingInterval: string; intervalCount?: number | null }
+    >(
+        prices: ReadonlyArray<T>
+    ): T | undefined =>
+        prices.find(
+            (p) =>
+                p.active &&
+                p.billingInterval === subscriptionInterval &&
+                (p.intervalCount ?? 1) === subscriptionIntervalCount
+        );
+
+    const currentPrice = priceForSubscriptionInterval(currentPlan.prices);
+    const targetPrice = priceForSubscriptionInterval(targetPlan.prices);
     if (!currentPrice) {
-        throw new HTTPException(404, { message: 'Current plan has no active monthly price' });
+        throw new HTTPException(404, {
+            message: `Current plan has no active ${subscriptionInterval}ly price`
+        });
     }
     if (!targetPrice) {
-        throw new HTTPException(404, { message: 'Target plan has no active monthly price' });
+        // The real case: a tier that sells monthly but not annually, requested
+        // by an owner who pays annually. Answering "no price" is honest — there
+        // is nothing to move them to at their cadence — and it must never fall
+        // back to the other cadence's row.
+        throw new HTTPException(404, {
+            message: `Target plan has no active ${subscriptionInterval}ly price`
+        });
     }
 
     if (targetPrice.unitAmount === currentPrice.unitAmount) {
@@ -515,6 +576,8 @@ export async function handleCommerceChangePlan(
             targetPlanId: targetPlan.id,
             targetPlanSlug: targetSlug,
             targetPlanDisplayName: planDisplayNameFromPlan(targetPlan),
+            billingInterval: subscriptionInterval,
+            intervalCount: subscriptionIntervalCount,
             keepSelections: parsed.data.keepSelections
         });
     }
@@ -581,8 +644,13 @@ export async function handleCommerceChangePlan(
             customerId: billingCustomerId,
             currentSubscriptionId: subscription.id,
             newPlanId: targetPlan.id,
-            billingInterval: 'month',
-            intervalCount: 1,
+            // HOS-1285 — the owner's OWN cadence, not a hardcoded `'month'`.
+            // `initiatePaidPlanUpgrade` resolves the target price by this pair
+            // and prorates against it, so an annual subscriber sent through
+            // here as monthly paid a monthly-scale delta for a year of the
+            // dearer tier.
+            billingInterval: subscriptionInterval,
+            intervalCount: subscriptionIntervalCount,
             billing,
             urls: {
                 successUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/success/`,

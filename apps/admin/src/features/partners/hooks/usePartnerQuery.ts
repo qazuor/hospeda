@@ -70,6 +70,19 @@ async function registerPartnerManualPayment(id: string, note?: string) {
     return result.data.data;
 }
 
+/** Answers the payment question the review cron raised (HOS-1299). */
+async function reviewPartnerPayment(
+    id: string,
+    body: { readonly decision: 'confirmed-paid' | 'not-paid'; readonly confirmedThrough?: string }
+) {
+    const result = await fetchApi<{ success: boolean; data: Partner }>({
+        path: `/api/v1/admin/partners/${id}/review-payment`,
+        method: 'POST',
+        body
+    });
+    return result.data.data;
+}
+
 export function usePartnerQuery(id: string, options?: { enabled?: boolean }) {
     return useQuery({
         queryKey: partnerQueryKeys.detail(id),
@@ -124,6 +137,27 @@ export function useRegisterPartnerManualPaymentMutation(id: string) {
     return useMutation({
         mutationFn: ({ note }: { readonly note?: string }) =>
             registerPartnerManualPayment(id, note),
+        onSuccess: (updated) => {
+            queryClient.setQueryData(partnerQueryKeys.detail(id), updated);
+            queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });
+        }
+    });
+}
+
+/**
+ * Answers a pending payment review (HOS-1299).
+ *
+ * Invalidates the LIST as well as the detail: `not-paid` archives the partner,
+ * and a stale list would keep showing them as active right beside the decision
+ * that took them down.
+ */
+export function usePartnerPaymentReviewMutation(id: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (body: {
+            readonly decision: 'confirmed-paid' | 'not-paid';
+            readonly confirmedThrough?: string;
+        }) => reviewPartnerPayment(id, body),
         onSuccess: (updated) => {
             queryClient.setQueryData(partnerQueryKeys.detail(id), updated);
             queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });

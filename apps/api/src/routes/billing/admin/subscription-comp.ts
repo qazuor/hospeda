@@ -135,14 +135,16 @@ export const adminGrantCompRoute = createAdminRoute({
     summary: 'Grant a permanently-complimentary subscription (admin)',
     description:
         'Creates a status=comp subscription for a customer on the named plan: full entitlements, ' +
-        'no MercadoPago preapproval, never charged. Every subscription of theirs that could still ' +
-        'be charged is cancelled first and its MercadoPago preapproval hard-cancelled; if ' +
-        'MercadoPago refuses, or cannot be reached, the grant is aborted (502) rather than ' +
-        'leaving a comped customer still being billed — retry, it resumes and skips whatever was ' +
-        'already closed. A customer who already has a comp is refused (409): cancel the existing ' +
-        'one first if the plan must change. Only accommodation-domain plans can be comped. This ' +
-        'is the ONLY way to produce a comp subscription — no promo code grants one. Requires ' +
-        'BILLING_MANAGE.',
+        'no MercadoPago preapproval, never charged. The plan may belong to any vertical — the ' +
+        "grant is scoped to that plan's product_domain, so only subscriptions in the SAME " +
+        'vertical are touched. Every such subscription that could still be charged is cancelled ' +
+        'first and its MercadoPago preapproval hard-cancelled; if MercadoPago refuses, or cannot ' +
+        'be reached, the grant is aborted (502) rather than leaving a comped customer still being ' +
+        'billed — retry, it resumes and skips whatever was already closed. A customer who already ' +
+        'has a comp IN THAT VERTICAL is refused (409): cancel the existing one first if the plan ' +
+        'must change; a comp in a different vertical is left alone, so an owner can hold both an ' +
+        'accommodation and a gastronomy courtesy. This is the ONLY way to produce a comp ' +
+        'subscription — no promo code grants one. Requires BILLING_MANAGE.',
     tags: ['Billing', 'Subscriptions'],
     requiredPermissions: [PermissionEnum.BILLING_MANAGE],
     requestBody: AdminGrantCompBodySchema,
