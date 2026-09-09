@@ -212,6 +212,50 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
         );
     });
 
+    it('HOS-1280 REGRESSION: calls the bridge for EACH superseded row, not only for the new comp row', async () => {
+        // Before HOS-1280 the bridge was called exactly once per grant — for
+        // `localSubscriptionId` (the new comp row) — regardless of how many
+        // rows the loop above superseded. A superseded row's OWN commerce
+        // listing link never got reconciled, so a comm listing linked to a
+        // superseded subscription stayed PUBLIC forever even though that
+        // subscription is now CANCELLED and its preapproval closed.
+        allRows = [
+            payingSubscription({ id: 'sub-1', mpSubscriptionId: 'mp-preapproval-1' }),
+            payingSubscription({ id: 'sub-2', mpSubscriptionId: 'mp-preapproval-2' })
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(reconcileMock).toHaveBeenCalledTimes(3);
+        expect(reconcileMock).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({ subscriptionId: 'sub-1', subscriptionStatus: 'cancelled' })
+        );
+        expect(reconcileMock).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({ subscriptionId: 'sub-2', subscriptionStatus: 'cancelled' })
+        );
+        expect(reconcileMock).toHaveBeenNthCalledWith(
+            3,
+            expect.objectContaining({ subscriptionId: 'comp-sub-1', subscriptionStatus: 'comp' })
+        );
+
+        // The two per-row reconciles happen INSIDE the supersede loop, before
+        // the comp row is even created; the third happens after the comp row
+        // is created and the cache is cleared (step 6, pre-existing behavior).
+        const reconcileIndices = callOrder.reduce<number[]>(
+            (acc, v, i) => (v === 'reconcile' ? [...acc, i] : acc),
+            []
+        );
+        expect(reconcileIndices).toHaveLength(3);
+        const createComp = callOrder.indexOf('create-comp');
+        const cacheClear = callOrder.indexOf('cache-clear');
+        expect(reconcileIndices[0]).toBeLessThan(createComp);
+        expect(reconcileIndices[1]).toBeLessThan(createComp);
+        expect(reconcileIndices[2]).toBeGreaterThan(cacheClear);
+    });
+
     it('REGRESSION: no comp is granted while any preapproval survives', async () => {
         // The invariant in one assertion. Two rows, the second one refused by
         // MercadoPago: if the service ignored the `failed` outcome — which

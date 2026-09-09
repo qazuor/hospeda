@@ -572,6 +572,30 @@ export async function grantCompSubscription(input: {
             });
         });
 
+        // HOS-1280: the transaction above just committed `row.id` to CANCELLED —
+        // that write, not the comp grant below, is what makes `row` stale for
+        // anything reading the shared cache. The single call in step 6 (after
+        // this loop) only ever names `localSubscriptionId`, so without this a
+        // superseded row's OWN commerce listing link stayed PUBLIC forever: the
+        // accommodation half self-heals by re-deriving the owner's current
+        // subscription regardless of which id triggered it, but the commerce
+        // half looks up listings by THIS subscription's id specifically, and
+        // nothing else ever calls the bridge with `row.id`.
+        //
+        // No `reconcilePartnerForSubscription` call here: `allRows` (and so
+        // `supersedable`) is filtered to `ProductDomainEnum.ACCOMMODATION`
+        // above (HOS-1277), so `row` is a partner subscription only through
+        // `subscriptionMatchesDomain`'s documented accommodation fail-open (a
+        // legacy row with `productDomain IS NULL` predating that column) — a
+        // pre-existing, orthogonal gap in the domain filter itself, not
+        // something this call should paper over. Left out; see the PR/issue
+        // notes on HOS-1280 for the measurement.
+        await reconcileSubscriptionLinkedEntities({
+            subscriptionId: row.id,
+            subscriptionStatus: SubscriptionStatusEnum.CANCELLED,
+            source: TRIGGER_SOURCE
+        });
+
         supersededIds.add(row.id);
     }
 
