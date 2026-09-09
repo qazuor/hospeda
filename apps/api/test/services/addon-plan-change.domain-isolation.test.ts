@@ -396,6 +396,14 @@ describe('handlePlanChangeAddonRecalculation — domain isolation (HOS-1279)', (
             db: {} as never
         });
 
-        expect(result.recalculations.filter((r) => r.limitKey === GASTRONOMY_KEY)).toHaveLength(1);
+        // Both halves are needed. Length alone stays green with the filter
+        // reverted — the normal loop also produces exactly one entry per key —
+        // so it would have said nothing about domain isolation. `outcome` is
+        // what separates "excluded once" from "recalculated once", and
+        // `limits.set` is what proves no cap was written for it.
+        expect(result.recalculations.filter((r) => r.limitKey === GASTRONOMY_KEY)).toEqual([
+            expect.objectContaining({ outcome: 'skipped' })
+        ]);
+        expect(billing.limits.set).not.toHaveBeenCalled();
     });
 });
