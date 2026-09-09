@@ -23,12 +23,14 @@ import {
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
     AccommodationMediaSingleOutputSchema,
+    ProductDomainEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { requireEntitlement } from '../../../middlewares/entitlement';
 import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
 import { apiLogger } from '../../../utils/logger';
@@ -145,6 +147,9 @@ export const protectedAddMediaRoute = createCRUDRoute({
     },
     options: {
         // SPEC-145 T-004 / SPEC-204: gallery mutation requires EDIT_ACCOMMODATION_INFO.
-        middlewares: [requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO)]
+        middlewares: [
+            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
+            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
+        ]
     }
 });

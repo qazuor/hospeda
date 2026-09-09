@@ -38,13 +38,15 @@ import { EntitlementKey } from '@repo/billing';
 import {
     ExperienceMediaSingleOutputSchema,
     type ExperienceMediaUpdatePayload,
-    ExperienceMediaUpdatePayloadSchema
+    ExperienceMediaUpdatePayloadSchema,
+    ProductDomainEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
 import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -108,7 +110,8 @@ export const protectedUpdateExperienceMediaRoute = createCRUDRoute({
         // first.
         middlewares: [
             commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO)
+            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
+            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
         ]
     }
 });

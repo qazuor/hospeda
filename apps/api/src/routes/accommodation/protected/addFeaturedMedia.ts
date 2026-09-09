@@ -49,11 +49,13 @@ import {
     AccommodationIdSchema,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
+    ProductDomainEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getRemainingLimit, requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -133,6 +135,9 @@ export const protectedAddFeaturedMediaRoute = createCRUDRoute({
     },
     options: {
         // Gallery mutation gate, same as every sibling media route.
-        middlewares: [requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO)]
+        middlewares: [
+            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
+            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
+        ]
     }
 });
