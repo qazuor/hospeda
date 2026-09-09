@@ -148,12 +148,18 @@ describe('whats-new data file', () => {
         it('is no longer empty', () => {
             // The catalog was shipped empty (HOS-964's root cause): the whole
             // What's New mechanism worked, but there was nothing to show.
+            //
+            // This is the whole of what the catalog's SIZE can promise. A
+            // companion test used to also cap it at 5 ("as agreed for the
+            // initial HOS-964 batch"), but no such agreement exists in the
+            // commit that added it, in HOS-964, or in any spec — 4 entries
+            // shipped and the bound was written as "what is here, plus or
+            // minus one". It asserted nothing anyone can see, either: a
+            // reader is served the entries they have not seen that match
+            // their roles, never "the catalog". And HOS-1214 made every
+            // smoke sign-off append an entry, so a frozen ceiling and a
+            // mechanism that appends forever cannot both be right.
             expect(whatsNewEntries.length).toBeGreaterThan(0);
-        });
-
-        it('has between 3 and 5 entries as agreed for the initial HOS-964 batch', () => {
-            expect(whatsNewEntries.length).toBeGreaterThanOrEqual(3);
-            expect(whatsNewEntries.length).toBeLessThanOrEqual(5);
         });
 
         // ── The mandatory regression guard: every entry must carry all three
@@ -242,14 +248,25 @@ describe('whats-new data file', () => {
         // catalog beyond schema validation at import time. HOS-964 changed a
         // real entry's `publishedAt` to `2026-01-01` and all 78 tests stayed
         // green — none of them looked at the declared array's own ordering
-        // or cross-entry invariants. Note: `publishedAt` values parsing to
-        // valid dates is already guaranteed by `WhatsNewEntrySchema`'s
-        // `z.string().datetime()` at import time (a malformed date would have
-        // thrown before this test file ever ran) — this test pins that
-        // guarantee explicitly against the real data, not just the schema.
-        it('has a valid, parseable publishedAt for every entry', () => {
+        // or cross-entry invariants.
+        //
+        // `publishedAt` has TWO legal shapes, not one (HOS-1214 D-1):
+        // `WhatsNewEntrySchema` declares it as
+        // `z.union([z.string().datetime(), z.literal('on-promotion')])`. The
+        // marker is an entry written at sign-off whose date is decided at
+        // promotion; `new Date('on-promotion')` is `NaN` **by design**, which
+        // is what keeps an unresolved entry out of the visibility filter. So
+        // the invariant is not "every value parses" — it is "every value is
+        // either the marker or a parseable date".
+        it('has a publishedAt that is either the on-promotion marker or a parseable date', () => {
             for (const entry of whatsNewEntries) {
-                expect(Number.isNaN(new Date(entry.publishedAt).getTime())).toBe(false);
+                if (entry.publishedAt === 'on-promotion') {
+                    continue;
+                }
+                expect(
+                    Number.isNaN(new Date(entry.publishedAt).getTime()),
+                    `entry '${entry.id}' has an unparseable publishedAt: '${entry.publishedAt}'`
+                ).toBe(false);
             }
         });
 
@@ -257,10 +274,18 @@ describe('whats-new data file', () => {
         // insert at the top" as an authoring convention (see the module
         // docblock) but nothing enforced it. An entry inserted out of order
         // used to be invisible to every test in this suite.
+        //
+        // Unresolved entries are skipped, exactly as
+        // `scripts/check-whats-new-catalog.sh` skips them: they have no date
+        // yet, so they cannot be out of order. Filtering them is also what
+        // keeps this test HONEST — comparing `NaN`s through a numeric
+        // comparator returns `NaN`, which every engine treats as "leave these
+        // two alone", so a catalog of markers would sort to itself and pass
+        // no matter how it was ordered.
         it('is declared newest-first by publishedAt, per the file authoring convention', () => {
-            const declaredMs = whatsNewEntries.map((entry) =>
-                new Date(entry.publishedAt).getTime()
-            );
+            const declaredMs = whatsNewEntries
+                .filter((entry) => entry.publishedAt !== 'on-promotion')
+                .map((entry) => new Date(entry.publishedAt).getTime());
             const sortedDescMs = [...declaredMs].sort((a, b) => b - a);
             expect(declaredMs).toEqual(sortedDescMs);
         });
