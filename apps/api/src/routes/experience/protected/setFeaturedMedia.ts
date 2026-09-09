@@ -22,12 +22,13 @@
  * (mirrors the reorder-route note).
  */
 import { EntitlementKey } from '@repo/billing';
-import { ExperienceMediaSingleOutputSchema } from '@repo/schemas';
+import { ExperienceMediaSingleOutputSchema, ProductDomainEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
 import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -81,7 +82,8 @@ export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
         // first.
         middlewares: [
             commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO)
+            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
+            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
         ]
     }
 });
