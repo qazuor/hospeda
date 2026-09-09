@@ -1590,12 +1590,20 @@ export function PlanPurchaseButton({
         setShowTrialWarning(false);
     }
 
-    const buttonAriaLabel = isFreePlanUnpurchasable
+    // `undefined` for the VIP-held state, so the accessible name falls back to
+    // the button's own visible label. Naming it with `touristVipHeldNote`
+    // instead put an accessible name ("Tu suscripción activa ya incluye…")
+    // that shares no word with the visible one ("Ya tenés estos beneficios")
+    // — WCAG 2.5.3 Label in Name, which breaks voice control: nobody can say
+    // the sentence they cannot see. The note is not lost, it is the `<p>`
+    // rendered below the button, which is also why announcing it here made a
+    // screen reader read it twice.
+    const buttonAriaLabel: string | undefined = isFreePlanUnpurchasable
         ? freePlanLegendLabel
         : isFreePlanRegisterCta
           ? freeRegisterCtaLabel
           : isTouristVipAlreadyHeld
-            ? touristVipHeldNote
+            ? undefined
             : isCurrentPlan
               ? currentPlanAriaLabel
               : isPlanChange

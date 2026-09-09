@@ -172,6 +172,25 @@ describe('PlanPurchaseButton — HOS-1233 AC-16: an active subscription elsewher
         expect(screen.getByText(HELD_CTA)).toBeInTheDocument();
     });
 
+    it('names the button with its own visible label, and says the note once', async () => {
+        // WCAG 2.5.3 Label in Name. The accessible name used to be the NOTE,
+        // which shares no word with the visible "Ya tenés estos beneficios" —
+        // so a voice-control user had no phrase to speak — and the same
+        // sentence was then announced a second time by the `<p>` below.
+        vi.stubGlobal('fetch', buildFetchMock('active'));
+
+        render(<PlanPurchaseButton {...touristProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('tourist-vip-already-held-note')).toBeInTheDocument();
+        });
+
+        const button = screen.getByTestId('plan-cta-button');
+        expect(button).toHaveAccessibleName(HELD_CTA);
+        expect(button).not.toHaveAttribute('aria-label');
+        expect(screen.getAllByText(HELD_NOTE)).toHaveLength(1);
+    });
+
     it('asks each blocking vertical by name, never with the endpoint default', async () => {
         const fetchMock = buildFetchMock('active');
         vi.stubGlobal('fetch', fetchMock);
