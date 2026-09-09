@@ -78,7 +78,14 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 export const meta = {
     name: '0104-hos-1285-commerce-annual-prices',
     group: 'required',
-    destructive: false
+    destructive: false,
+    // The one column this migration cannot do without. `annual_price_ars` is a
+    // typed Drizzle column (HOS-39 T-003/T-005), promoted off
+    // `metadata.annualPriceArs`; without it every UPDATE here is a no-op that
+    // would still be ledgered as applied forever — the HOS-433 shape. The
+    // runner only refuses when the column is missing AND the table still holds
+    // rows, so an absent column over an empty `billing_plans` loses nothing.
+    requiresColumns: [{ table: 'billing_plans', column: 'annual_price_ars' }]
 } as const satisfies SeedMigrationModule['meta'];
 
 /** One tier's annual price, exactly as `plans.config.ts` now declares it. */
