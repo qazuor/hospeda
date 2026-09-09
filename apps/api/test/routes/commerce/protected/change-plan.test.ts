@@ -533,6 +533,42 @@ describe('handleCommerceChangePlan (HOS-1119)', () => {
         );
     });
 
+    it('schedules an ANNUAL downgrade on the ANNUAL cadence, never converting it to monthly (HOS-1285)', async () => {
+        // `scheduleSubscriptionDowngrade` resolves the target plan's price by
+        // the interval it is handed and records THAT as what the subscription
+        // moves to at period end. This call site passed a literal `'month'`,
+        // so once the tiers gained an annual price an annual subscriber asking
+        // for a cheaper tier would also have been moved onto monthly billing —
+        // a cadence change nobody requested, arriving as the quiet half of a
+        // downgrade, with `status: 'scheduled'` either way.
+        BILLING.subscriptions.get.mockResolvedValue(
+            makeSubscription({ planId: PRO_PLAN_ID, interval: 'year', intervalCount: 1 })
+        );
+        BILLING.plans.get.mockResolvedValue({
+            ...PRO_PLAN_ROW,
+            prices: [monthlyPrice('price-pro', 4_500_000), annualPrice('price-pro-y', 45_000_000)]
+        });
+        mockResolvePlanBySlug.mockResolvedValue({
+            ...BASICO_PLAN_ROW,
+            prices: [
+                monthlyPrice('price-basico', 1_500_000),
+                annualPrice('price-basico-y', 15_000_000)
+            ]
+        });
+
+        await handleCommerceChangePlan(makeCtx({ planSlug: GASTRONOMY_BASICO_PLAN.slug }), {
+            entityType: 'gastronomy'
+        });
+
+        expect(mockScheduleSubscriptionDowngrade).toHaveBeenCalledWith(
+            expect.objectContaining({
+                newPlanId: BASICO_PLAN_ID,
+                billingInterval: 'year',
+                intervalCount: 1
+            })
+        );
+    });
+
     it('previews the excess against the TARGET tier and returns it on the response', async () => {
         arrangeDowngrade();
         mockComputeCommerceDowngradeExcess.mockResolvedValue(excessPreview(1, 3));

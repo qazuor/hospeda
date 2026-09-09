@@ -217,6 +217,17 @@ async function scheduleCommerceDowngrade(input: {
     readonly targetPlanId: string;
     readonly targetPlanSlug: string;
     readonly targetPlanDisplayName: string;
+    /**
+     * HOS-1285: the cadence the subscription is ALREADY on, resolved by the
+     * handler off `subscription.interval`. `scheduleSubscriptionDowngrade`
+     * resolves the target plan's price by this pair and records it as what the
+     * subscription moves to at period end, so a hardcoded `'month'` would
+     * quietly convert an annual commerce subscriber to monthly billing as a
+     * side effect of asking for a cheaper tier.
+     */
+    readonly billingInterval: 'month' | 'year';
+    /** Interval count of that same cadence — `1` for both cadences sold today. */
+    readonly intervalCount: number;
     readonly keepSelections?: CommerceKeepSelections | undefined;
 }): Promise<unknown> {
     const {
@@ -229,6 +240,8 @@ async function scheduleCommerceDowngrade(input: {
         targetPlanId,
         targetPlanSlug,
         targetPlanDisplayName,
+        billingInterval,
+        intervalCount,
         keepSelections
     } = input;
 
@@ -237,10 +250,15 @@ async function scheduleCommerceDowngrade(input: {
         scheduleResult = await scheduleSubscriptionDowngrade({
             currentSubscriptionId: subscriptionId,
             newPlanId: targetPlanId,
-            // Every commerce tier is monthly and only monthly — see the request
-            // schema's note on why there is no interval field to forward.
-            billingInterval: 'month',
-            intervalCount: 1,
+            // HOS-1285: the subscription's OWN cadence, forwarded rather than
+            // assumed. This read `'month'` while the request schema's note
+            // claimed every commerce tier was monthly and only monthly; once
+            // the six tiers gained an annual price, that hardcode moved an
+            // annual subscriber onto a MONTHLY price row at period end — a
+            // cadence change nobody asked for, arriving as the quiet half of a
+            // tier downgrade.
+            billingInterval,
+            intervalCount,
             billing,
             requestedBy: actorId,
             ...(keepSelections === undefined ? {} : { keepSelections })
@@ -558,6 +576,8 @@ export async function handleCommerceChangePlan(
             targetPlanId: targetPlan.id,
             targetPlanSlug: targetSlug,
             targetPlanDisplayName: planDisplayNameFromPlan(targetPlan),
+            billingInterval: subscriptionInterval,
+            intervalCount: subscriptionIntervalCount,
             keepSelections: parsed.data.keepSelections
         });
     }
