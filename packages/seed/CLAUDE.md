@@ -105,7 +105,7 @@ expand/contract rule the structural carril already follows) and declare
 
 ## Test Users for Billing (SPEC-143 Block 1)
 
-A separate `--test-users` seed group creates 17 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
+A separate `--test-users` seed group creates 42 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration. 17 pre-date HOS-1268; the other 25 close the gap that issue exists for — see [Billing-state matrix](#billing-state-matrix-hos-1268) below.
 
 The group is **intentionally not part of `--required` or `--example`** — that way `pnpm db:seed` (production-shaped: `--reset --required --example`) never creates these accounts. Only the local-dev shortcut `pnpm db:fresh-dev` chains `pnpm db:seed:test-users` after the main seed completes.
 
@@ -121,7 +121,7 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=30 |
 | `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=50, MAX_ACTIVE_PROMOTIONS=unlimited |
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
-| `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
+| `host-trial@local.test` | HOST | `owner-trial` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c). Plan fixed HOS-1268 — was `owner-basico`, stale since HOS-1012 D-5 introduced the dedicated trial plan |
 | `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
 | `commerce-gastronomy@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
 | `commerce-experience@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
@@ -208,12 +208,63 @@ target role SET, same mechanism HOS-296 already uses to heal role drift.
 
 All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
 
+### Billing-state matrix (HOS-1268)
+
+Before HOS-1268, `TestUserSpec.subStatus` only admitted `'active' | 'trialing'`
+— mora, pausa, cancelación, cortesía and comp could not be seeded in **any**
+vertical, which blocked a regression test for any bug living in one of those
+states. `ensureSubscription` (`src/test-users/testUsers.seed.ts`) now accepts
+every `SubscriptionStatusEnum` member and populates the columns each one
+needs: `trialStart`/`trialEnd` for `TRIALING`, `currentPeriodEnd` anchored 3
+days in the past for `PAST_DUE` (inside the 7-day grace window —
+`past_due` is otherwise unreachable through any local code path, per
+`dunning.job.ts`'s own docblock), `canceledAt`/`cancelAtPeriodEnd` for
+`CANCELLED`, and `courtesyStartsAt`/`courtesyEndsAt`/`courtesyCyclesGranted`
+for `COURTESY`. `PAUSED` and `COMP` write no extra columns.
+
+`buildBillingStateFixtures` generates one fixture per state
+(`past-due`/`cancelled`/`paused`/`comp`/`courtesy`) for each of the four
+verticals, rather than 20 fixtures hand-written with the same shape repeated:
+
+| Email prefix | Role | Plan |
+|---|---|---|
+| `host-<state>@local.test` | HOST | `owner-basico` |
+| `commerce-gastronomy-<state>@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` |
+| `commerce-experience-<state>@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` |
+| `tourist-<state>@local.test` | USER | `tourist-vip` |
+
+(`<state>` is one of `past-due`, `cancelled`, `paused`, `comp`, `courtesy` —
+e.g. `host-past-due@local.test`, `tourist-courtesy@local.test`.)
+
+None of these declare `subscriptionProductDomain` — it derives from the plan
+row, same as every other fixture since HOS-1233 T-035.
+
+The gastronomy/experience matrix also gained the fixtures accommodation
+already had (HOS-1268 closes a parity gap, not just adds new states):
+
+| Email | Role | Plan | Notes |
+|---|---|---|---|
+| `commerce-gastronomy-trial@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-trial` (status=`trialing`, `COMMERCE_TRIAL_DAYS`) | Mirrors `host-trial@local.test` |
+| `commerce-experience-trial@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-trial` (status=`trialing`) | ditto |
+| `commerce-gastronomy-plus-addon@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` + `extra-gastronomies-1` addon | Mirrors `host-pro-plus-addon@local.test` |
+| `commerce-experience-plus-addon@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` + `extra-experiences-1` addon | ditto |
+| `commerce-experience-at-cap@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico`, `ownsExperienceAtCap: true` | Experiences had no at-cap fixture at all before this; mirrors `commerce-gastronomy-at-cap@local.test` via `ensureExperienceAtCapListing` in `src/test-users/commerceListing.ts` |
+
+Fixing this also surfaced a real bug in the seed's own addon helper:
+`ensureAddonPurchase` resolved its base plan against `ALL_PLANS`, which only
+ever held the accommodation + tourist tiers — a gastronomy/experience addon
+fixture would have thrown `Plan "gastronomy-basico" not found in ALL_PLANS
+catalog`. Fixed by resolving against `ALL_PLANS` + `ALL_GASTRONOMY_PLANS` +
+`ALL_EXPERIENCE_PLANS` combined (`ALL_SEED_ADDON_BASE_PLANS`).
+
 ### HOST accommodation fixture (HOS-30)
 
-Every HOST-role user in the matrix above (`host-basico`, `host-pro`, `host-premium`,
-`host-pro-plus-addon`, `host-trial`) also gets **exactly one fully-featured accommodation
-they own**, created directly (no `--example` JSON fixture involved). This unblocks staging
-crawl/smoke testing of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
+Every HOST-role user in the matrix — `host-basico`, `host-pro`, `host-premium`,
+`host-pro-plus-addon`, `host-trial`, `host-provider`, `host-commerce`, and (since
+HOS-1268) the five `host-<state>@local.test` billing-state fixtures — also gets
+**exactly one fully-featured accommodation they own**, created directly (no
+`--example` JSON fixture involved). This unblocks staging crawl/smoke testing
+of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
 gallery) without depending on the `--example` seed group.
 
 Each fixture accommodation has: every catalog amenity/feature applicable to the
