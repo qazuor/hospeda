@@ -291,6 +291,62 @@ describe('Billing Email Templates', () => {
             // Renewal reminders are REMINDER category, so should have unsubscribe
             expect(html).toContain('preferencias');
         });
+
+        describe('productDomain footer (HOS-1283)', () => {
+            // Regression: RENEWAL_REMINDER fires for an active subscription in
+            // ANY of the five business verticals (`notification-schedule.job.ts`
+            // does not scope its sweep to accommodation), so a gastronomy
+            // renewal used to close with "gracias por confiar en Hospeda para
+            // tus necesidades de alojamiento turístico" — the same defect the
+            // trial series had.
+            it('defaults to the accommodation sentence when productDomain is omitted', () => {
+                const html = renderToStaticMarkup(RenewalReminder(validProps));
+                expect(html).toContain('tus necesidades de alojamiento turístico');
+            });
+
+            it('names the local for a gastronomy renewal, never alojamiento', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'gastronomy' })
+                );
+                expect(html).toContain('tu local gastronómico');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('names the experience for an experience renewal', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'experience' })
+                );
+                expect(html).toContain('tu experiencia turística');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('has its own line for a tourist plan renewal', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'tourist' })
+                );
+                expect(html).toContain('tus próximos viajes');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('has its own line for a partner renewal', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'partner' })
+                );
+                expect(html).toContain('tu alianza comercial');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('fails open to the accommodation sentence for null or an unrecognized value', () => {
+                const nullDomain = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: null })
+                );
+                const unrecognized = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'addon' })
+                );
+                expect(nullDomain).toContain('tus necesidades de alojamiento turístico');
+                expect(unrecognized).toContain('tus necesidades de alojamiento turístico');
+            });
+        });
     });
 
     describe('PlanChangeConfirmation', () => {
