@@ -36,7 +36,16 @@ const { mockPlanGetById, mockPlanGetBySlug, mockCatalogGetBySlug, mockGetBilling
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('@repo/service-core', () => ({
+// HOS-1279: `importOriginal` so the REAL `classifyLimitKeyAgainstPlanDomain`
+// reaches the service. A whole-module factory leaves any symbol it does not
+// name as `undefined`, which is how this file failed with
+// "classifyLimitKeyAgainstPlanDomain is not a function" the moment the service
+// started importing it. Stubbing it with a `vi.fn()` would have been worse:
+// the domain filter is the behaviour under test everywhere else in this PR, and
+// a stub would make every assertion here blind to it.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    classifyLimitKeyAgainstPlanDomain: (await importOriginal<typeof import('@repo/service-core')>())
+        .classifyLimitKeyAgainstPlanDomain,
     AddonCatalogService: vi.fn().mockImplementation(function () {
         return {
             getBySlug: mockCatalogGetBySlug,
