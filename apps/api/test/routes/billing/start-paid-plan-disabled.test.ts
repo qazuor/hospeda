@@ -91,9 +91,28 @@ vi.mock('@repo/db', () => {
             // `test/routes/start-paid.test.ts` — `getMpPayerEmail` reads
             // `billing_customers.mp_payer_email` via raw SQL before the
             // checkout decision logic this suite exercises.
-            execute: vi.fn().mockResolvedValue({ rows: [] })
+            execute: vi.fn().mockResolvedValue({ rows: [] }),
+            // HOS-1271: `resolvePlanProductDomain`'s `.select()` chain, needed
+            // by the "does NOT throw PLAN_DISABLED for an active plan" tests
+            // below, which proceed past the route-level gate into the real
+            // `initiatePaidMonthlySubscription`/`initiatePaidAnnualSubscription`.
+            // Every plan fixture here is accommodation.
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: vi.fn(() => ({
+                        limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
+                    }))
+                }))
+            }))
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
+        // HOS-1271: `resolvePlanProductDomain` (`paid-subscription-create.ts`)
+        // builds its query as `.where(eq(billingPlans.id, planId))` — both
+        // symbols must exist on this wholesale mock (no `...actual` spread)
+        // for that expression to evaluate at all, even though the `select`
+        // stub above ignores the actual predicate.
+        billingPlans: { id: '__billing_plans_id', productDomain: '__product_domain' },
+        eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
     };
 });

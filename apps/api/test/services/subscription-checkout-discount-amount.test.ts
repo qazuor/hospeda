@@ -228,11 +228,25 @@ function buildBilling(): {
     return { billing, captured };
 }
 
-/** Swallows the status-normalize UPDATE `createOwnPreapprovalSubscription` issues. */
+/**
+ * Swallows the status-normalize UPDATE `createOwnPreapprovalSubscription`
+ * issues. Also answers `resolvePlanProductDomain`'s `.select()` chain
+ * (HOS-1271) — this override, not the global `getDb()` mock, is what
+ * `initiatePaidMonthlySubscription` actually reads the plan's domain through,
+ * since it is passed as `db:` on every checkout call below. `owner-basico`
+ * is accommodation.
+ */
 function createDbStub() {
     return {
         execute: vi.fn().mockResolvedValue({ rows: [] }),
-        update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn(async () => undefined) })) }))
+        update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn(async () => undefined) })) })),
+        select: vi.fn(() => ({
+            from: vi.fn(() => ({
+                where: vi.fn(() => ({
+                    limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
+                }))
+            }))
+        }))
     } as never;
 }
 

@@ -5,8 +5,9 @@
  * Mirrors `subscription-checkout-own-preapproval-flag-on.test.ts`'s coverage
  * of the monthly path, applied to annual: with the flag on, the service must
  * call `createOwnPreapprovalSubscription` (never `createPendingProviderSubscription`)
- * with `billingInterval: 'annual'` and no accommodation-specific `productDomain`
- * override (the column's own DB default covers it, same as monthly).
+ * with `billingInterval: 'annual'` and an explicit `productDomain` resolved
+ * from the plan (HOS-1271 — no longer omitted, see that spec for why the
+ * omission was never actually "the column's own DB default" doing the work).
  *
  * Kept as its own file for the same reason the monthly flag-on suite is: the
  * flag is read from `../../src/utils/env` at module scope, so flipping it for
@@ -115,8 +116,23 @@ const OWN_PREAPPROVAL_RESULT = {
  * chains, but throws for the raw `db.execute(sql\`...\`)` shape this read
  * expects. This suite is not about payer-email resolution — stub it out with
  * the real shape, same fix as the monthly flag-on suite.
+ *
+ * HOS-1271: `initiatePaidAnnualSubscription` also reads the resolved plan's
+ * `billing_plans.product_domain` (via `resolvePlanProductDomain`) to validate
+ * it and stamp it explicitly — a `.select().from().where().limit()` chain,
+ * distinct from the raw-SQL `.execute()` above. Every fixture here is an
+ * accommodation plan, so this answers ACCOMMODATION unconditionally.
  */
-const DB_STUB = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+const DB_STUB = {
+    execute: vi.fn().mockResolvedValue({ rows: [] }),
+    select: vi.fn(() => ({
+        from: vi.fn(() => ({
+            where: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
+            }))
+        }))
+    }))
+};
 
 describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = true)', () => {
     beforeEach(() => {
@@ -142,7 +158,7 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
         expect(createPendingProviderSubscription).not.toHaveBeenCalled();
     });
 
-    it('records billingInterval: annual, the resolved MP plan id, and urls.successUrl as the back_url — with no providerPriceId, no externalReference and no productDomain override', async () => {
+    it('records billingInterval: annual, the resolved MP plan id, and urls.successUrl as the back_url — with no providerPriceId and no externalReference', async () => {
         const billing = createBillingMock();
 
         await initiatePaidAnnualSubscription({
@@ -177,11 +193,16 @@ describe('initiatePaidAnnualSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLE
         // appends " - Anual" to it.
         expect(call.planDisplayName).toBe('Anfitrión Premium');
         expect(call.planDisplayName).not.toBe('owner-premium');
-        // Accommodation annual, like monthly, relies on the column's own DB
-        // default ('accommodation') — no override, no domain link row.
         expect(call).not.toHaveProperty('externalReference');
-        expect(call).not.toHaveProperty('productDomain');
         expect(call).not.toHaveProperty('writeDomainLinkRow');
+        // HOS-1271 REGRESSION: `productDomain` used to be omitted entirely on
+        // this branch — harmless only because `createPaidSubscription` (one
+        // layer down) independently resolves the same value from the plan's
+        // own row. Stated explicitly here too now, resolved from the SAME
+        // plan (accommodation), for consistency with the other three checkout
+        // branches and so this row's domain does not depend solely on that
+        // deeper call never regressing.
+        expect(call.productDomain).toBe('accommodation');
     });
 
     it('maps the own-preapproval result into checkoutUrl + localSubscriptionId (from subscription.id, not a pre-generated id)', async () => {

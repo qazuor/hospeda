@@ -113,8 +113,23 @@ const OWN_PREAPPROVAL_RESULT = {
  * `db.execute(sql\`...\`)` shape this new read expects. This suite is not
  * about payer-email resolution — stub it out with the real shape so the
  * pre-existing routing/plumbing assertions stay unaffected.
+ *
+ * HOS-1271: `initiatePaidMonthlySubscription` also reads the resolved plan's
+ * `billing_plans.product_domain` (via `resolvePlanProductDomain`) to validate
+ * it and stamp it explicitly — a `.select().from().where().limit()` chain,
+ * distinct from the raw-SQL `.execute()` above. Every fixture here is an
+ * accommodation plan, so this answers ACCOMMODATION unconditionally.
  */
-const DB_STUB = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+const DB_STUB = {
+    execute: vi.fn().mockResolvedValue({ rows: [] }),
+    select: vi.fn(() => ({
+        from: vi.fn(() => ({
+            where: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
+            }))
+        }))
+    }))
+};
 
 describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = true)', () => {
     beforeEach(() => {
@@ -161,6 +176,31 @@ describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABL
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
                 notificationUrl: URLS.notificationUrl
             })
+        );
+    });
+
+    /**
+     * HOS-1271 REGRESSION. `productDomain` used to be omitted entirely on this
+     * branch, which was harmless only because `createPaidSubscription` (one
+     * layer down, inside the real `createOwnPreapprovalSubscription`) resolves
+     * the same value from the plan's own row. This asserts the field is ALSO
+     * stated explicitly at THIS call site — an `objectContaining` without this
+     * key would stay green even if the field were dropped again, which is
+     * exactly the bug this closes, so the key must be named here.
+     */
+    it('HOS-1271: states productDomain explicitly, resolved from the plan (not omitted)', async () => {
+        const billing = createBillingMock();
+
+        await initiatePaidMonthlySubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            billing: billing as any,
+            urls: URLS,
+            db: DB_STUB as any
+        });
+
+        expect(createOwnPreapprovalSubscription).toHaveBeenCalledWith(
+            expect.objectContaining({ productDomain: 'accommodation' })
         );
     });
 

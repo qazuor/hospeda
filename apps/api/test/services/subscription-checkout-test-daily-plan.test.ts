@@ -35,6 +35,7 @@ vi.mock('@repo/db', async () => {
     };
 });
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
 import {
@@ -43,6 +44,7 @@ import {
     SubscriptionCheckoutError
 } from '../../src/services/subscription-checkout.service';
 import { env } from '../../src/utils/env';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read';
 
 // HOS-191: the real Initiate* flows now resolve/provision a MercadoPago
 // preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
@@ -128,6 +130,10 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
     beforeEach(() => {
         originalFlag = env.HOSPEDA_SHOW_TEST_BILLING_PLAN;
         vi.clearAllMocks();
+        // HOS-1271: `resolvePlanProductDomain`'s `.select()` chain —
+        // `owner-test-daily` is seeded ACCOMMODATION
+        // (`packages/seed/src/data-migrations/0004-test-daily-plan.ts`).
+        mockPlanDomainRead(ProductDomainEnum.ACCOMMODATION);
         vi.mocked(createPendingProviderSubscription).mockResolvedValue({
             localSubscriptionId: LOCAL_SUB_ID,
             nonce: 'nonce-test',

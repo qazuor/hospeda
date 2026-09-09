@@ -119,6 +119,12 @@ vi.mock('@repo/service-core', async () => {
 // exercises. Default to the real `{ rows: [...] }` shape.
 const dbExecuteMock = vi.fn().mockResolvedValue({ rows: [] });
 const dbInsertValuesMock = vi.fn();
+// HOS-1271: `initiatePaidMonthlySubscription`/`initiatePaidAnnualSubscription`
+// now read the resolved plan's `billing_plans.product_domain` via
+// `resolvePlanProductDomain` (`.select().from().where().limit()`), distinct
+// from the raw `.execute()`/`.insert()` this suite already stubs. Every
+// fixture plan in this file is accommodation.
+const dbSelectLimitMock = vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]));
 // HOS-110: importActual (not a full replace) for the same reason as the
 // @repo/service-core mock above — the real @repo/service-core module graph
 // needs real @repo/db exports too.
@@ -128,7 +134,10 @@ vi.mock('@repo/db', async () => {
         ...actual,
         getDb: vi.fn(() => ({
             execute: dbExecuteMock,
-            insert: vi.fn(() => ({ values: dbInsertValuesMock }))
+            insert: vi.fn(() => ({ values: dbInsertValuesMock })),
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({ where: vi.fn(() => ({ limit: dbSelectLimitMock })) }))
+            }))
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
         entitySubscriptions: { __table: 'entity_subscriptions' },
