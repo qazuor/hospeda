@@ -11,6 +11,7 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -57,7 +58,10 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
             ownerId: experience.ownerId
         });
 
-        return applyExperienceDirectionsGate({ experience, ownerGrantsDirections });
+        return applyExperienceDirectionsGate({
+            experience: withPublicIsFeatured(experience),
+            ownerGrantsDirections
+        });
     },
     options: {
         cacheTTL: 300,

@@ -41,6 +41,11 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true,
+    // HOS-1286: server-managed billing flag. Written ONLY by the
+    // featured-by-entitlement sync primitives — never from a request body, not
+    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
+    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
+    featuredByEntitlement: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
     // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
     // request that stores or destroys the Cloudinary asset — never
@@ -293,6 +298,11 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
     lifecycleState: true,
     visibility: true,
     isFeatured: true,
+    // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
+    // primitives, never through create/update — the same treatment
+    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
+    // which admin still controls manually.
+    featuredByEntitlement: true,
     moderationState: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,

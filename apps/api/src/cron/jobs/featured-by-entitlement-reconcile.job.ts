@@ -2,8 +2,12 @@
  * Featured-By-Entitlement Reconciliation Cron Job (SPEC-309 T-014, renamed +
  * extended from SPEC-292 T-006).
  *
- * Backstop that corrects drift between `accommodations.featuredByEntitlement`
- * and its TWO independent sources of truth (SPEC-309 OQ-3):
+ * Backstop that corrects drift between each vertical's
+ * `featuredByEntitlement` column and the billing sources of truth behind it.
+ *
+ * Accommodation (SPEC-309 OQ-3) has TWO independent sources; gastronomy and
+ * experience (HOS-1286) have only the addon, because no commerce plan grants
+ * FEATURED_LISTING. The two sources for accommodation are:
  *
  * - **Plan** — an owner's accommodation subscription plan grants
  *   FEATURED_LISTING owner-wide (all of the owner's accommodations).
@@ -39,19 +43,44 @@
  *       accommodation, if its `featuredByEntitlement` is currently `false`
  *       (the T-007 checkout-confirm hook missed the grant), call
  *       `syncFeaturedByEntitlementForAccommodation` (T-005) to set it `true`.
- * 3. Log corrected-count separately per source (plan vs addon) for
+ * 3. **The two commerce verticals** (HOS-1286) — a two-way set difference
+ *    between the live grants and the rows flagged `featuredByEntitlement`, per
+ *    vertical. NOT the owner walk above: accommodation needs it because a PLAN
+ *    can grant featuring owner-wide, while no commerce plan grants
+ *    FEATURED_LISTING, so for gastronomy and experience the live grants ARE the
+ *    complete expected set. Both directions are corrected — a missing flag is a
+ *    purchase hook that did not fire, an extra one is a boost that expired and
+ *    is still being given away.
+ * 4. Log corrected-count separately per source (plan vs addon vs commerce) for
  *    observability.
  *
  * @module cron/jobs/featured-by-entitlement-reconcile
  */
 
-import { accommodations, and, eq, getDb, isNull } from '@repo/db';
+import { accommodations, and, eq, experiences, gastronomies, getDb, isNull } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import {
+    type CommerceFeaturedEntityType,
+    getActiveFeaturedGrantEntityIds,
     getOwnerAccommodationIdsWithActiveFeaturedAddon,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForAccommodation,
+    syncFeaturedByEntitlementForCommerceListing,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
+
+/** The two commerce verticals step 3 sweeps (HOS-1286). */
+const COMMERCE_FEATURED_VERTICALS: readonly CommerceFeaturedEntityType[] = [
+    ProductDomainEnum.GASTRONOMY,
+    ProductDomainEnum.EXPERIENCE
+];
+
+/** Listing table per commerce vertical, for the drift read. */
+const COMMERCE_TABLES = {
+    [ProductDomainEnum.GASTRONOMY]: gastronomies,
+    [ProductDomainEnum.EXPERIENCE]: experiences
+} as const;
+
 import type { CronJobDefinition } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -87,6 +116,7 @@ export const featuredByEntitlementReconcileJob: CronJobDefinition = {
 
         let correctedPlanOwners = 0;
         let correctedAddonAccommodations = 0;
+        let correctedCommerceListings = 0;
         let totalRowsUpdated = 0;
         let errors = 0;
 
@@ -205,12 +235,78 @@ export const featuredByEntitlementReconcileJob: CronJobDefinition = {
                 }
             }
 
+            // Step 3 (HOS-1286): the two COMMERCE verticals.
+            //
+            // Deliberately NOT the owner walk above. Accommodation has to walk
+            // owners because a PLAN can grant featuring owner-wide, so the
+            // expected value of a row cannot be read off the grant table alone.
+            // No commerce plan grants FEATURED_LISTING, so for gastronomy and
+            // experience the live grants ARE the complete set of listings that
+            // should be flagged — which makes this a two-way set difference
+            // instead of a per-owner query.
+            //
+            // Both directions matter and neither is redundant with the other:
+            // a listing holding a live grant but flagged `false` lost a purchase
+            // hook; a listing flagged `true` with no live grant is a boost that
+            // expired and never got cleared, i.e. product given away for free.
+            for (const entityType of COMMERCE_FEATURED_VERTICALS) {
+                try {
+                    const table = COMMERCE_TABLES[entityType];
+
+                    const shouldBeFeatured = new Set(
+                        await getActiveFeaturedGrantEntityIds({ entityType })
+                    );
+
+                    const flaggedRows = await db
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(and(eq(table.featuredByEntitlement, true), isNull(table.deletedAt)));
+                    const currentlyFlagged = new Set(flaggedRows.map((row) => row.id));
+
+                    const toSet = [...shouldBeFeatured].filter((id) => !currentlyFlagged.has(id));
+                    const toClear = [...currentlyFlagged].filter((id) => !shouldBeFeatured.has(id));
+
+                    for (const entityId of [...toSet, ...toClear]) {
+                        const active = shouldBeFeatured.has(entityId);
+                        logger.info(
+                            'featured-by-entitlement-reconcile: commerce drift detected, correcting',
+                            { entityType, entityId, active, dryRun }
+                        );
+
+                        if (dryRun) {
+                            correctedCommerceListings++;
+                            continue;
+                        }
+
+                        const { updated } = await syncFeaturedByEntitlementForCommerceListing({
+                            entityType,
+                            entityId,
+                            active
+                        });
+                        correctedCommerceListings++;
+                        totalRowsUpdated += updated;
+                    }
+                } catch (commerceError) {
+                    errors++;
+                    logger.warn(
+                        'featured-by-entitlement-reconcile: error processing commerce vertical (skipping)',
+                        {
+                            entityType,
+                            error:
+                                commerceError instanceof Error
+                                    ? commerceError.message
+                                    : String(commerceError)
+                        }
+                    );
+                }
+            }
             const durationMs = Date.now() - startedAt.getTime();
 
             logger.info('featured-by-entitlement-reconcile: completed', {
                 totalOwners: ownerIds.length,
                 correctedPlanOwners,
                 correctedAddonAccommodations,
+                correctedCommerceListings,
                 totalRowsUpdated,
                 errors,
                 durationMs,
@@ -220,8 +316,8 @@ export const featuredByEntitlementReconcileJob: CronJobDefinition = {
             return {
                 success: true,
                 message: dryRun
-                    ? `Dry run — ${correctedPlanOwners} owner(s) + ${correctedAddonAccommodations} accommodation(s) would be corrected`
-                    : `Corrected ${correctedPlanOwners} owner(s) (plan) + ${correctedAddonAccommodations} accommodation(s) (addon), ${totalRowsUpdated} row(s) updated`,
+                    ? `Dry run — ${correctedPlanOwners} owner(s) + ${correctedAddonAccommodations} accommodation(s) + ${correctedCommerceListings} commerce listing(s) would be corrected`
+                    : `Corrected ${correctedPlanOwners} owner(s) (plan) + ${correctedAddonAccommodations} accommodation(s) (addon) + ${correctedCommerceListings} commerce listing(s), ${totalRowsUpdated} row(s) updated`,
                 processed: ownerIds.length,
                 errors,
                 durationMs,
@@ -229,6 +325,7 @@ export const featuredByEntitlementReconcileJob: CronJobDefinition = {
                     totalOwners: ownerIds.length,
                     correctedPlanOwners,
                     correctedAddonAccommodations,
+                    correctedCommerceListings,
                     totalRowsUpdated,
                     dryRun
                 }

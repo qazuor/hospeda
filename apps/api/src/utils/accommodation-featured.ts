@@ -1,5 +1,13 @@
 /**
- * Public-tier "featured" resolution (HOS-929).
+ * Public-tier "featured" resolution (HOS-929; extended to the commerce
+ * verticals by HOS-1286).
+ *
+ * The module keeps its accommodation-era filename because the helper is
+ * imported at fifteen sites and the rename would be noise, but its subject is
+ * now every listing that carries the two columns — `accommodations`,
+ * `gastronomies` and `experiences`. `FeaturedSourceColumns` was already
+ * structural rather than tied to `Accommodation`, so nothing here had to change
+ * for the other two to use it.
  *
  * `accommodations` carries TWO deliberately independent boolean columns
  * (SPEC-292, renamed SPEC-309 OQ-3): `isFeatured` (admin-curated) and
@@ -37,3 +45,34 @@ export interface FeaturedSourceColumns {
  */
 export const resolvePublicIsFeatured = (input: FeaturedSourceColumns): boolean =>
     input.isFeatured || Boolean(input.featuredByEntitlement);
+
+/**
+ * Returns `entity` with its PUBLIC `isFeatured` resolved (HOS-1286).
+ *
+ * The accommodation routes had a natural place to apply
+ * {@link resolvePublicIsFeatured}, because each already built its response
+ * object for other reasons. The commerce routes do not: `getById` and both
+ * `getByDestination` handlers return what the service handed them, untouched.
+ * Introducing four hand-written spreads there is four chances to write the OR
+ * one way in one file and another way in the next, so the spread lives here
+ * once.
+ *
+ * @param entity - Any row carrying the two featured source columns.
+ * @returns A shallow copy whose `isFeatured` is the disjunction.
+ */
+export const withPublicIsFeatured = <T extends FeaturedSourceColumns>(
+    entity: T
+): T & { isFeatured: boolean } => ({
+    ...entity,
+    isFeatured: resolvePublicIsFeatured(entity)
+});
+
+/**
+ * List form of {@link withPublicIsFeatured}.
+ *
+ * @param items - The page of listings to serialize.
+ * @returns The same items with each `isFeatured` resolved.
+ */
+export const withPublicIsFeaturedList = <T extends FeaturedSourceColumns>(
+    items: readonly T[]
+): (T & { isFeatured: boolean })[] => items.map(withPublicIsFeatured);
