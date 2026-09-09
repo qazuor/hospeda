@@ -268,10 +268,6 @@ const HAND_ROLLED_SCAN_EXCLUSIONS: ReadonlyArray<{
     {
         file: 'services/plan-disable-lifecycle.service.ts',
         why: 'LIVE_STATUSES omits comp, but this path never calls MercadoPago (verified: zero preapproval/qzpay references) — it only flips cancelAtPeriodEnd and notifies. So a comped subscriber is invisible to plan retirement: never told, never migrated. That is the INVERSE of the historical bug (benefits kept, not denied) and is a product decision, not something a guard should force. Tracked as an owner decision.'
-    },
-    {
-        file: 'services/commerce-subscription-attach.service.ts',
-        why: 'SLOT_OCCUPYING_STATUSES omits comp while findOwnerVerticalSubscription in the same file uses the canonical predicate. Unreachable today — subscription-comp-create rejects non-accommodation plans — so it is a latent gap, not a live bug.'
     }
 ] as const;
 
