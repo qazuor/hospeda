@@ -19,9 +19,9 @@
 --> did exactly that to `accommodations.schedule` and the public page served 404
 --> for 8m10s. So this file only ever ADDS and WIDENS: it cannot lose data, and
 --> it cannot break a deploy halfway through.
-ALTER TABLE "featured_listing_addon_grants" DROP CONSTRAINT "featured_listing_addon_grants_accommodation_id_accommodations_id_fk";
+ALTER TABLE "featured_listing_addon_grants" DROP CONSTRAINT IF EXISTS "featured_listing_addon_grants_accommodation_id_accommodations_id_fk";
 --> statement-breakpoint
-DROP INDEX "featuredListingAddonGrants_accommodationId_idx";--> statement-breakpoint
+DROP INDEX IF EXISTS "featuredListingAddonGrants_accommodationId_idx";--> statement-breakpoint
 ALTER TABLE "featured_listing_addon_grants" ALTER COLUMN "accommodation_id" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "featured_listing_addon_grants" ADD COLUMN "entity_type" varchar(50) DEFAULT 'accommodation' NOT NULL;--> statement-breakpoint
 ALTER TABLE "featured_listing_addon_grants" ADD COLUMN "entity_id" uuid;--> statement-breakpoint
