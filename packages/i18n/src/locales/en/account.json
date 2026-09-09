@@ -686,7 +686,9 @@
                 "properties": "My properties",
                 "propertiesDesc": "Published accommodations",
                 "messages": "Unread messages",
-                "messagesDesc": "Guest inquiries"
+                "messagesDesc": "Guest inquiries",
+                "listings": "My listings",
+                "listingsDesc": "Published listings"
             },
             "sectionsLabel": "Secciones"
         },

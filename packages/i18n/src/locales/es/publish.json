@@ -31,6 +31,8 @@
             "title": "Publicá tu local y que te encuentren",
             "body": "Empezá acá con lo básico: cómo se llama tu local, qué tipo es y en qué destino está. Las fotos, el menú y los horarios los cargás después, desde tu panel."
         },
+        "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día, sin tarjeta. La prueba arranca sola cuando publicás tu primer local.",
+        "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días, sin tarjeta. La prueba arranca sola cuando publicás tu primer local.",
         "steps": {
             "step1": {
                 "title": "Cargá los datos básicos",
@@ -71,6 +73,8 @@
             "title": "Publicá tu experiencia y llenala",
             "body": "Empezá acá con lo básico: qué ofrecés, de qué tipo es y desde qué destino salís. Las fotos, el punto de encuentro y los horarios los cargás después, desde tu panel."
         },
+        "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día, sin tarjeta. La prueba arranca sola cuando publicás tu primera experiencia.",
+        "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días, sin tarjeta. La prueba arranca sola cuando publicás tu primera experiencia.",
         "steps": {
             "step1": {
                 "title": "Contá qué ofrecés",

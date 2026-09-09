@@ -12,9 +12,11 @@
  *  - Purchase click sends the selected accommodationId and redirects to
  *    the returned checkoutUrl
  *  - Purchase failure shows a toast and does not redirect
+ *  - HOS-1293: the subscription-gate CTA is resolved PER add-on from its own
+ *    `productDomain`, not hardcoded to the host plans page
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AddonCardData } from '../../../src/components/account/AddonsPurchasePanel.client';
@@ -606,5 +608,86 @@ describe('AddonsPurchasePanel — recurring-charge notice (HOS-847)', () => {
             screen.getByTestId(`addon-card-${RECURRING_LABEL_ONLY_ADDON.slug}`)
         ).toBeInTheDocument();
         expect(RECURRING_LABEL_ONLY_ADDON.billingType).toBe('recurring');
+    });
+});
+
+// ─── HOS-1293: subscription-gate CTA audience, resolved per add-on ────────────
+
+/**
+ * Real gastronomy-domain add-on, mirroring `extra-gastronomies-1` from
+ * `packages/billing/src/config/addons.config.ts`.
+ */
+const GASTRONOMY_ADDON: AddonCardData = {
+    ...ACCOUNT_ADDON,
+    slug: 'extra-gastronomies-1',
+    name: 'Extra Gastronomy Listing (+1)',
+    affectsLimitKey: 'maxGastronomies',
+    productDomain: 'gastronomy'
+};
+
+/** Real experience-domain twin of {@link GASTRONOMY_ADDON}. */
+const EXPERIENCE_ADDON: AddonCardData = {
+    ...ACCOUNT_ADDON,
+    slug: 'extra-experiences-1',
+    name: 'Extra Experience Listing (+1)',
+    affectsLimitKey: 'maxExperiences',
+    productDomain: 'experience'
+};
+
+/** Triggers the subscription-gate banner on the given add-on's card. */
+async function triggerSubscriptionGate(addon: AddonCardData): Promise<HTMLElement> {
+    mockPurchaseAddon.mockResolvedValue({
+        ok: false,
+        error: {
+            status: 422,
+            code: 'VALIDATION_ERROR',
+            reason: 'NO_ACTIVE_SUBSCRIPTION',
+            message: 'You must have an active subscription to purchase add-ons'
+        }
+    });
+    const user = userEvent.setup();
+    render(
+        <AddonsPurchasePanel
+            locale="es"
+            addons={[addon]}
+            ownedAddonSlugs={[]}
+            targetListingsByDomain={{ accommodation: [] }}
+        />
+    );
+
+    await user.click(screen.getByTestId(`addon-buy-button-${addon.slug}`));
+
+    return screen.findByTestId(`addon-subscription-gate-${addon.slug}`);
+}
+
+describe('AddonsPurchasePanel — subscription-gate CTA audience (HOS-1293)', () => {
+    it("a gastronomy add-on's gate CTA points at the gastronomy plans page, not the host plans", async () => {
+        // HOS-1293 regression: before this fix EVERY card's gate CTA was
+        // hardcoded to `resolveSubscriptionPlansPathForAudience({ audience: 'host' })`
+        // (`/es/planes/anfitriones/precios/`), so a gastronomy-only owner who
+        // hit this exact banner on their OWN add-on was offered an
+        // accommodation plan instead of the gastronomy one they actually need.
+        const banner = await triggerSubscriptionGate(GASTRONOMY_ADDON);
+
+        const cta = within(banner).getByRole('link', { name: 'Ver planes' });
+        expect(cta).toHaveAttribute('href', '/es/planes/gastronomia/precios/');
+    });
+
+    it("an experience add-on's gate CTA points at the experience plans page", async () => {
+        const banner = await triggerSubscriptionGate(EXPERIENCE_ADDON);
+
+        const cta = within(banner).getByRole('link', { name: 'Ver planes' });
+        expect(cta).toHaveAttribute('href', '/es/planes/experiencias/precios/');
+    });
+
+    it("preserves the pre-fix behaviour: an accommodation add-on's gate CTA still points at the owner plans page", async () => {
+        // Non-vacuity for the two cases above: if the per-addon resolution were
+        // broken in the OTHER direction (e.g. always resolving to gastronomy),
+        // this case would catch it — the accommodation majority must be
+        // untouched by the fix.
+        const banner = await triggerSubscriptionGate(ACCOUNT_ADDON);
+
+        const cta = within(banner).getByRole('link', { name: 'Ver planes' });
+        expect(cta).toHaveAttribute('href', '/es/planes/anfitriones/precios/');
     });
 });

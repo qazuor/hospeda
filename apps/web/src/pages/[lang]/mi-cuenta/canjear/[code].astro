@@ -21,9 +21,9 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import RedeemCodeSection from '@/components/account/RedeemCodeSection.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { userApi } from '@/lib/api/endpoints-protected';
 import { buildUrl } from '@/lib/urls';
 import { normalizePromoCodeParam } from '@/lib/billing/promo-code-param';
+import { resolveRedeemableSubscriptionId } from '@/lib/billing/redeemable-subscription';
 
 export const prerender = false;
 
@@ -45,7 +45,7 @@ const description = t('account.pages.redeem.description');
 const initialCode = normalizePromoCodeParam(Astro.params.code ?? null);
 
 /**
- * The accommodation subscription a discount code should act on.
+ * The subscription a discount code should act on.
  *
  * Resolved HERE, in the page, rather than inside `RedeemCodeSection` — a
  * component that resolves the visitor poisons every page that renders it, and
@@ -54,6 +54,11 @@ const initialCode = normalizePromoCodeParam(Astro.params.code ?? null);
  * `[lang]/mi-cuenta/`, which that guard exempts by prefix: personalization
  * belongs here and is accounted for.
  *
+ * HOS-1293: tries every real subscribable domain (accommodation, gastronomy,
+ * experience, tourist), not accommodation alone — see
+ * `resolveRedeemableSubscriptionId`'s doc for why the old accommodation-only
+ * read left every commerce-only owner unable to redeem a discount code at all.
+ *
  * Degrades to `undefined` on ANY failure. The primary job of this surface is
  * trial-extension codes, which the endpoint resolves from the session on its
  * own, so a failure to read the subscription must not take the page down with
@@ -61,11 +66,7 @@ const initialCode = normalizePromoCodeParam(Astro.params.code ?? null);
  * checkout" instead of being applied.
  */
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const subscriptionResult = await userApi.getSubscription({ cookieHeader });
-const subscriptionId =
-	subscriptionResult.ok && subscriptionResult.data.subscription
-		? subscriptionResult.data.subscription.id
-		: undefined;
+const subscriptionId = await resolveRedeemableSubscriptionId({ cookieHeader });
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="suscripcion">

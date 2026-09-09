@@ -31,6 +31,8 @@
             "title": "List your venue and let people find it",
             "body": "Start here with the basics: your venue's name, what kind it is and which destination it's in. Photos, menu and opening hours come later, from your dashboard."
         },
+        "trialCallout_one": "Try Hospeda free for {{trialDays}} day, no card needed. The trial starts on its own when you publish your first venue.",
+        "trialCallout_other": "Try Hospeda free for {{trialDays}} days, no card needed. The trial starts on its own when you publish your first venue.",
         "steps": {
             "step1": {
                 "title": "Fill in the basics",
@@ -71,6 +73,8 @@
             "title": "List your experience and fill it up",
             "body": "Start here with the basics: what you offer, what kind it is and which destination you set off from. Photos, meeting point and schedules come later, from your dashboard."
         },
+        "trialCallout_one": "Try Hospeda free for {{trialDays}} day, no card needed. The trial starts on its own when you publish your first experience.",
+        "trialCallout_other": "Try Hospeda free for {{trialDays}} days, no card needed. The trial starts on its own when you publish your first experience.",
         "steps": {
             "step1": {
                 "title": "Tell us what you offer",

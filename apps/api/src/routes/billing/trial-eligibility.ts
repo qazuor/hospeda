@@ -1,8 +1,10 @@
 /**
- * Trial Eligibility Route (HOS-226)
+ * Trial Eligibility Route (HOS-226, widened by HOS-1293)
  *
  * Lightweight, read-only endpoint answering whether the CURRENT
- * authenticated user is still eligible for a free trial.
+ * authenticated user is still eligible for a free trial, scoped to one
+ * product domain (`?productDomain=`, HOS-1293 — defaults to `'accommodation'`
+ * when omitted, matching every pre-existing caller's behaviour).
  *
  * Exists because the pricing card's "N days free" badge is rendered from
  * `GET /api/v1/public/plans` — a public, unauthenticated, 1h-edge-cached
@@ -13,13 +15,25 @@
  * correct it client-side, at hydration time, only for a logged-in visitor
  * who turns out to be ineligible.
  *
+ * ## Why this route, and not `GET /commerce/subscriptions/{vertical}/trial-verdict`
+ *
+ * The commerce trial-verdict endpoint answers a richer question (three states
+ * plus the real grant amount) but requires `COMMERCE_EDIT_OWN`
+ * (`commerceTrialVerdictRouter`'s own middleware) — a role a brand-new
+ * gastronomy/experience publisher does not hold yet (HOS-687: creating a
+ * listing is what grants it). This route only ever required authentication
+ * (`createCRUDRoute` here declares no `requiredPermissions`, same posture as
+ * `GET /trial/status`), which is why HOS-1293 widened THIS one instead of
+ * switching the publish pages to the verdict endpoint — that would have 403'd
+ * for exactly the first-time visitor the trial callout is for.
+ *
  * Routes:
  * - GET /api/v1/protected/billing/trial-eligibility
  *
  * @module routes/billing/trial-eligibility
  */
 
-import type { TrialEligibilityResponse } from '@repo/schemas';
+import type { ProductDomainValue, TrialEligibilityResponse } from '@repo/schemas';
 import {
     ProductDomainEnum,
     TrialEligibilityQuerySchema,
@@ -42,7 +56,7 @@ import { createCRUDRoute } from '../../utils/route-factory';
  *   set by the parent billing router's middleware chain).
  * @param _params - Unused URL path params (none for this route).
  * @param _body - Unused request body (GET endpoint).
- * @param query - Validated query params (`{ planSlug?: string }`).
+ * @param query - Validated query params (`{ planSlug?: string; productDomain?: ProductDomainValue }`).
  * @returns `{ eligible, planSlug }` — see {@link TrialEligibilityResponseSchema}.
  * @throws HTTPException 503 when billing is not configured/available.
  * @throws HTTPException 400 when the caller has no billing customer on session.
@@ -79,25 +93,20 @@ export const handleTrialEligibility = async (
 
     const planSlug = (query?.planSlug as string | undefined) ?? null;
 
+    // HOS-1012 D-2: eligibility is per vertical. Until HOS-1293 this route
+    // pinned `ACCOMMODATION` unconditionally because its only caller was an
+    // accommodation surface (`PlanPurchaseButton`) — see this file's git
+    // history for the superseded reasoning. HOS-1293 gave it a second real
+    // caller (the gastronomy/experience publish pages), so the domain is now
+    // read from the query, defaulting to `ACCOMMODATION` for every
+    // pre-existing caller that never asks.
+    const productDomain =
+        (query?.productDomain as ProductDomainValue | undefined) ?? ProductDomainEnum.ACCOMMODATION;
+
     const { eligible } = await resolveTrialEligibility({
         billing,
         customerId: billingCustomerId,
-        // HOS-1012 D-2: eligibility is per vertical, and this route pins
-        // accommodation because its only caller is an accommodation surface.
-        //
-        // Corrected by HOS-1184. The reasoning here used to be that the commerce
-        // plans are kept out of `GET /public/plans`, so no commerce caller could
-        // exist. That has been false since HOS-685 opened that endpoint by
-        // `?domain=`: /planes/gastronomia and /planes/experiencias are built
-        // from it and advertise their own free days. (Still true, and a separate
-        // fact: those plans stay out of `ALL_PLANS`.)
-        //
-        // What actually keeps this route accommodation-only is narrower. Its one
-        // caller is the `PlanPurchaseButton` island, and the commerce and partner
-        // grids run `ctaMode="link"` — they render a plain link and never mount
-        // it, so nothing on those pages reaches here. A commerce surface that
-        // needs a verdict passes its own domain rather than inheriting this one.
-        productDomain: ProductDomainEnum.ACCOMMODATION
+        productDomain
     });
 
     return { eligible, planSlug };
@@ -107,16 +116,17 @@ export const handleTrialEligibility = async (
  * GET /api/v1/protected/billing/trial-eligibility
  *
  * Returns whether the authenticated user is still eligible for a free
- * trial (one trial per customer, for life). Read-only; no entitlement gate
- * beyond authentication — mirrors `GET /trial/status` and the
- * downgrade-preview route, which are informational in the same way.
+ * trial in one product domain (one trial per customer PER DOMAIN, for life —
+ * HOS-1012 D-2). Read-only; no entitlement gate beyond authentication —
+ * mirrors `GET /trial/status` and the downgrade-preview route, which are
+ * informational in the same way.
  */
 export const getTrialEligibilityRoute = createCRUDRoute({
     method: 'get',
     path: '/',
     summary: 'Get trial eligibility',
     description:
-        'Returns whether the authenticated user is still eligible for a free trial (one trial per customer, for life, any status, any product domain). Read-only — never reserves or consumes a trial.',
+        "Returns whether the authenticated user is still eligible for a free trial in one product domain (one trial per customer per domain, for life). Accepts an optional `?productDomain=` (HOS-1293), defaulting to 'accommodation' when omitted. Read-only — never reserves or consumes a trial.",
     tags: ['Billing', 'Trial'],
     requestQuery: TrialEligibilityQuerySchema.shape,
     responseSchema: TrialEligibilityResponseSchema,

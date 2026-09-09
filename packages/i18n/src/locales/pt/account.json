@@ -686,7 +686,9 @@
                 "properties": "Meus imóveis",
                 "propertiesDesc": "Acomodações publicadas",
                 "messages": "Mensagens não lidas",
-                "messagesDesc": "Consultas de hóspedes"
+                "messagesDesc": "Consultas de hóspedes",
+                "listings": "Minhas fichas",
+                "listingsDesc": "Fichas publicadas"
             },
             "sectionsLabel": "Secciones"
         },

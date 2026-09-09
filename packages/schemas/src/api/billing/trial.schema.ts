@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ProductDomainEnumSchema } from '../../enums/product-domain.schema.js';
 
 /**
  * Schema for starting a free trial.
@@ -210,7 +211,8 @@ export const ExtendTrialRequestSchema = z.object({
 export type ExtendTrialRequest = z.infer<typeof ExtendTrialRequestSchema>;
 
 /**
- * Query params for `GET /api/v1/protected/billing/trial-eligibility` (HOS-226).
+ * Query params for `GET /api/v1/protected/billing/trial-eligibility` (HOS-226,
+ * widened by HOS-1293).
  *
  * `planSlug` is optional and purely informational — echoed back on the
  * response. The "one trial per customer, for life" rule this endpoint
@@ -218,6 +220,16 @@ export type ExtendTrialRequest = z.infer<typeof ExtendTrialRequestSchema>;
  * gate documented on `resolveCheckoutFreeTrialDays` in `@repo/service-core`),
  * so the eligibility verdict is identical regardless of which trial-bearing
  * plan the caller is asking about. Reserved for a future per-plan rule.
+ *
+ * `productDomain` is optional and scopes the verdict to ONE vertical, mirroring
+ * `GET /trial/status`'s own `?productDomain=` (HOS-1282). Eligibility has been
+ * per-domain since HOS-1012 D-2 — `resolveTrialEligibility` in
+ * `apps/api` REQUIRES the caller to pass one, precisely so a commerce call site
+ * cannot forget and silently consume the accommodation trial instead — but the
+ * route itself only ever pinned `'accommodation'` until HOS-1293 gave it a
+ * second real caller (the gastronomy/experience publish pages) that needed its
+ * OWN vertical's verdict. Omitted, the route still defaults to
+ * `'accommodation'`, matching every pre-existing caller's behaviour.
  */
 export const TrialEligibilityQuerySchema = z.object({
     planSlug: z
@@ -225,23 +237,30 @@ export const TrialEligibilityQuerySchema = z.object({
             message: 'zodError.billing.trial.eligibility.planSlug.invalidType'
         })
         .min(1, { message: 'zodError.billing.trial.eligibility.planSlug.min' })
-        .optional()
+        .optional(),
+    productDomain: ProductDomainEnumSchema.optional()
 });
 
 /** TypeScript type inferred from TrialEligibilityQuerySchema */
 export type TrialEligibilityQuery = z.infer<typeof TrialEligibilityQuerySchema>;
 
 /**
- * Response body for `GET /api/v1/protected/billing/trial-eligibility` (HOS-226).
+ * Response body for `GET /api/v1/protected/billing/trial-eligibility` (HOS-226,
+ * widened by HOS-1293).
  *
  * `eligible: true` means the authenticated user has NEVER had any prior
- * `billing_subscriptions` row — any status, any product domain, including
- * cancelled — and would still receive a free trial at checkout on a
- * trial-bearing plan. This mirrors, via the shared `hasAnyPriorSubscription`
- * query, the EXACT rule `subscription-checkout.service.ts` enforces at
- * actual checkout time, so this read-only check can never diverge from what
- * checkout will actually grant. A user on the implicit `tourist-free`
- * default (which never creates a subscription row) is always `eligible`.
+ * `billing_subscriptions` row IN THE REQUESTED PRODUCT DOMAIN — any status,
+ * including cancelled — and would still receive a free trial at checkout on a
+ * trial-bearing plan of that vertical. (Before HOS-1293 this endpoint only ever
+ * asked about `'accommodation'`, so its own docs used to say "any product
+ * domain" — that was accurate for the ONE caller that existed, not for the
+ * underlying rule, which has been per-domain since HOS-1012 D-2: someone who
+ * spent their accommodation trial starts clean in gastronomy.) This mirrors,
+ * via the shared `hasAnyPriorSubscription` query, the EXACT rule
+ * `subscription-checkout.service.ts` enforces at actual checkout time for that
+ * same domain, so this read-only check can never diverge from what checkout
+ * will actually grant. A user on the implicit `tourist-free` default (which
+ * never creates a subscription row) is always `eligible`.
  *
  * This endpoint never reserves or consumes a trial — it is purely
  * informational, used by the pricing page to suppress the static "N days

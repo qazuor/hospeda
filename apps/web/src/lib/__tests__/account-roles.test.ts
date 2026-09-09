@@ -9,8 +9,10 @@
  * platform staff, denies plain tourists, accommodation-only hosts, and
  * unauthenticated visitors, that the commerce set stays distinct from the
  * accommodations set, and that `resolveSubscriptionPlansPath` routes
- * host-level role sets to the owner pricing page and everyone else (tourists,
- * anonymous) to the tourist pricing page.
+ * host-level role sets to the owner pricing page, commerce-only role sets
+ * (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`/legacy `COMMERCE_OWNER`, HOS-1293) to
+ * their own vertical's pricing page, and everyone else (tourists, anonymous)
+ * to the tourist pricing page.
  *
  * HOS-296: every predicate now takes the actor's whole role SET, so the
  * multi-hat cases (HOST + COMMERCE_OWNER) are asserted explicitly — that
@@ -119,20 +121,52 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
         );
     });
 
-    it('routes a COMMERCE_OWNER (not an accommodation host) to the tourist page', () => {
-        // Commerce is a separate billing domain; a commerce owner is not an
-        // accommodation host, so the accommodation-plans upsell treats them as a
-        // tourist (consistent with the host-tier predicate).
+    it('routes a COMMERCE_OWNER (not an accommodation host) to the gastronomy plans page (HOS-1293)', () => {
+        // HOS-1293 regression: before this fix, commerce is a separate billing
+        // domain and this function only knew host-vs-everyone-else, so a
+        // commerce-only owner fell all the way through to the tourist page —
+        // from `/mi-cuenta/addons/`'s gate CTA and the bare
+        // `/suscriptores/checkout/` root redirect. The legacy COMMERCE_OWNER
+        // role predates the per-vertical split and carries no vertical of its
+        // own, so it degrades to the gastronomy plans page (an arbitrary but
+        // documented tie-break) rather than to tourist.
         expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.COMMERCE_OWNER] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
+            PRICING_PAGE_PATH_BY_AUDIENCE.gastronomy
         );
+    });
+
+    it('routes a GASTRONOMY_OWNER (not a host) to the gastronomy plans page (HOS-1293)', () => {
+        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.GASTRONOMY_OWNER] })).toBe(
+            PRICING_PAGE_PATH_BY_AUDIENCE.gastronomy
+        );
+    });
+
+    it('routes an EXPERIENCE_OWNER (not a host) to the experience plans page (HOS-1293)', () => {
+        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.EXPERIENCE_OWNER] })).toBe(
+            PRICING_PAGE_PATH_BY_AUDIENCE.experience
+        );
+    });
+
+    it('routes a GASTRONOMY_OWNER who also holds EXPERIENCE_OWNER (no host) to gastronomy — the documented tie-break', () => {
+        expect(
+            resolveSubscriptionPlansPath({
+                roles: [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER]
+            })
+        ).toBe(PRICING_PAGE_PATH_BY_AUDIENCE.gastronomy);
     });
 
     it('routes a COMMERCE_OWNER who is ALSO a HOST to the owner page', () => {
         // Holding the host hat is the stronger signal about which catalog the
-        // user can actually buy from (HOS-296).
+        // user can actually buy from (HOS-296), and HOS-1293 keeps that
+        // precedence: host beats commerce beats tourist.
         expect(
             resolveSubscriptionPlansPath({ roles: [RoleEnum.COMMERCE_OWNER, RoleEnum.HOST] })
+        ).toBe(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
+    });
+
+    it('routes a GASTRONOMY_OWNER who is ALSO a HOST to the owner page (HOS-1293)', () => {
+        expect(
+            resolveSubscriptionPlansPath({ roles: [RoleEnum.GASTRONOMY_OWNER, RoleEnum.HOST] })
         ).toBe(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
     });
 
@@ -177,6 +211,23 @@ describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
         );
         expect(resolveSubscriptionPlansPathForAudience({ audience: 'tourist' })).toBe(
             resolveSubscriptionPlansPath({ roles: [RoleEnum.USER] })
+        );
+    });
+
+    // HOS-1293 — the two commerce audiences, unreachable from the API's
+    // `upgradeAudience` field (which only ever sends 'host'/'tourist') but
+    // needed by callers that already know the vertical directly, e.g.
+    // `AddonsPurchasePanel.client.tsx` resolving one CTA per add-on card from
+    // that add-on's own `productDomain`.
+    it('routes a gastronomy audience to the gastronomy plans page', () => {
+        expect(resolveSubscriptionPlansPathForAudience({ audience: 'gastronomy' })).toBe(
+            PRICING_PAGE_PATH_BY_AUDIENCE.gastronomy
+        );
+    });
+
+    it('routes an experience audience to the experience plans page', () => {
+        expect(resolveSubscriptionPlansPathForAudience({ audience: 'experience' })).toBe(
+            PRICING_PAGE_PATH_BY_AUDIENCE.experience
         );
     });
 });
