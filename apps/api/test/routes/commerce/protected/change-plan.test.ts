@@ -158,9 +158,14 @@ const SUB_ID = 'sub-gastro-1';
 const BASICO_PLAN_ID = 'plan-uuid-basico';
 const PRO_PLAN_ID = 'plan-uuid-pro';
 
-/** Monthly price row shaped as `findMonthlyPrice` (the REAL one) matches on. */
+/** Monthly price row shaped as the handler's own interval lookup matches on. */
 function monthlyPrice(id: string, unitAmount: number) {
     return { id, billingInterval: 'month', intervalCount: 1, active: true, unitAmount };
+}
+
+/** The `'year'` sibling `seedCommercePlan` writes beside it (HOS-1285). */
+function annualPrice(id: string, unitAmount: number) {
+    return { id, billingInterval: 'year', intervalCount: 1, active: true, unitAmount };
 }
 
 const BASICO_PLAN_ROW = {
@@ -321,6 +326,111 @@ describe('handleCommerceChangePlan (HOS-1119)', () => {
                 intervalCount: 1
             })
         );
+    });
+
+    // ── HOS-1285: the owner's own cadence, not a hardcoded month ──────────
+    //
+    // This route compared both plans on `findMonthlyPrice` and passed a literal
+    // `billingInterval: 'month'` to the upgrade, justified by a comment saying
+    // every commerce tier was monthly-only. Once the six tiers gained an annual
+    // price that stopped being true, and the failure is a MONEY bug, not an
+    // error: an annual subscriber's tier change prorated over the monthly
+    // delta — roughly a tenth of a year of the dearer tier — with a valid
+    // MercadoPago URL and a 200 at every layer.
+
+    it('prorates an ANNUAL subscription over its ANNUAL prices', async () => {
+        BILLING.subscriptions.get.mockResolvedValue(
+            makeSubscription({ interval: 'year', intervalCount: 1 })
+        );
+        BILLING.plans.get.mockResolvedValue({
+            ...BASICO_PLAN_ROW,
+            prices: [
+                monthlyPrice('price-basico', 1_500_000),
+                annualPrice('price-basico-y', 15_000_000)
+            ]
+        });
+        mockResolvePlanBySlug.mockResolvedValue({
+            ...PRO_PLAN_ROW,
+            prices: [monthlyPrice('price-pro', 4_500_000), annualPrice('price-pro-y', 45_000_000)]
+        });
+
+        await handleCommerceChangePlan(makeCtx({ planSlug: GASTRONOMY_PRO_PLAN.slug }), {
+            entityType: 'gastronomy'
+        });
+
+        // Both halves. The interval alone would stay green while the monthly
+        // rows were compared (the direction is the same, so the dearer-only
+        // gate still lets it through); the delta the upgrade computes is what
+        // actually differs, and it is computed from THIS pair.
+        expect(mockInitiatePaidPlanUpgrade).toHaveBeenCalledWith(
+            expect.objectContaining({
+                newPlanId: PRO_PLAN_ID,
+                billingInterval: 'year',
+                intervalCount: 1
+            })
+        );
+    });
+
+    it('mutates the ANNUAL amount when an annual subscription upgrades while trialing', async () => {
+        // The trialing branch never reaches `initiatePaidPlanUpgrade`; it mutates
+        // the preapproval's amount directly, in MAJOR units. Reading the monthly
+        // row here would drop an annual subscriber's renewal to a month's price
+        // and keep charging it once a year, forever, with no error anywhere.
+        BILLING.subscriptions.get.mockResolvedValue(
+            makeSubscription({ status: 'trialing', interval: 'year', intervalCount: 1 })
+        );
+        BILLING.plans.get.mockResolvedValue({
+            ...BASICO_PLAN_ROW,
+            prices: [
+                monthlyPrice('price-basico', 1_500_000),
+                annualPrice('price-basico-y', 15_000_000)
+            ]
+        });
+        mockResolvePlanBySlug.mockResolvedValue({
+            ...PRO_PLAN_ROW,
+            prices: [monthlyPrice('price-pro', 4_500_000), annualPrice('price-pro-y', 45_000_000)]
+        });
+        mockApplyTrialingPlanUpgrade.mockResolvedValue({
+            subscriptionId: SUB_ID,
+            previousPlanId: BASICO_PLAN_ID,
+            newPlanId: PRO_PLAN_ID
+        });
+
+        await handleCommerceChangePlan(makeCtx({ planSlug: GASTRONOMY_PRO_PLAN.slug }), {
+            entityType: 'gastronomy'
+        });
+
+        expect(mockApplyTrialingPlanUpgrade).toHaveBeenCalledWith(
+            expect.objectContaining({
+                newPriceId: 'price-pro-y',
+                currentPriceId: 'price-basico-y',
+                targetTransactionAmountMajor: 450_000
+            })
+        );
+    });
+
+    it('refuses rather than falling back when the target tier does not sell the cadence', async () => {
+        // A tier sold monthly but not annually, requested by an owner who pays
+        // annually. There is nothing to move them to at their cadence, and the
+        // one answer that must never happen is a silent fallback to the monthly
+        // row — which is what the pre-HOS-1285 code did by construction.
+        BILLING.subscriptions.get.mockResolvedValue(
+            makeSubscription({ interval: 'year', intervalCount: 1 })
+        );
+        BILLING.plans.get.mockResolvedValue({
+            ...BASICO_PLAN_ROW,
+            prices: [
+                monthlyPrice('price-basico', 1_500_000),
+                annualPrice('price-basico-y', 15_000_000)
+            ]
+        });
+        mockResolvePlanBySlug.mockResolvedValue(PRO_PLAN_ROW); // monthly only
+
+        const refusal = await captureRefusal({ planSlug: GASTRONOMY_PRO_PLAN.slug });
+
+        expect(refusal.status).toBe(404);
+        expect(mockInitiatePaidPlanUpgrade).not.toHaveBeenCalled();
+        expect(mockApplyTrialingPlanUpgrade).not.toHaveBeenCalled();
     });
 
     it('selects the subscription by DOMAIN, never by "first live subscription"', async () => {
