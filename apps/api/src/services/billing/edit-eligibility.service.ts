@@ -99,9 +99,16 @@
  *
  * `billing.subscriptions.getByCustomerId()` never populates `productDomain`.
  * Compared un-hydrated, `subscriptionMatchesDomain` reads `undefined`, fails
- * OPEN for accommodation and CLOSED for every other domain — so gastronomy and
- * experience would resolve `'lapsed'` for every owner, turning the edit gate
- * off for two entire verticals with no thrown error and no log line.
+ * OPEN for accommodation and CLOSED for every other domain.
+ *
+ * **In THIS function that fails open, not closed, which is the more dangerous
+ * of the two** — measured, not reasoned: dropping the hydration call turns 27
+ * of this module's tests red. Every gastronomy/experience row stops matching,
+ * so `domainSubscriptions` empties, so the verdict is `'pre_trial'` — the
+ * branch that PASSES. The gate would silently refuse nobody in two of the
+ * three verticals, with no thrown error and no log line, which reads exactly
+ * like a gate that is working. (Elsewhere in the codebase the same omission
+ * fails CLOSED and turns listings dark, which at least announces itself.)
  * `scripts/check-subscription-domain-hydration.sh` fails CI on a file that
  * compares without hydrating.
  *
