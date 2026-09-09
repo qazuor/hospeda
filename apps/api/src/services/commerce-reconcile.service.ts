@@ -3,8 +3,16 @@
  *
  * Bridges the billing lifecycle (MP webhook + dunning / finalize crons) to the
  * commerce visibility reconciler. When a subscription's status changes, any
- * commerce listing linked to it must flip visibility (active/trialing → PUBLIC,
- * everything else → PRIVATE).
+ * commerce listing linked to it must flip visibility.
+ *
+ * HOS-1160: the parenthetical here used to say "active/trialing → PUBLIC,
+ * everything else → PRIVATE". That was never the predicate this module applies.
+ * Both gates below call {@link isPublishingSubscriptionStatus}, which delegates
+ * to the canonical `isEntitlementGrantingStatus` — `active`, `trialing`,
+ * **`comp`** and **`courtesy`**. The distinction is load-bearing now that a
+ * commerce listing can be comped: read literally, the old sentence says a
+ * complimentary gastronomy or experience listing must go dark, which is the
+ * opposite of what the code does and of what the courtesy is for.
  *
  * The reconciler (`reconcileCommerceListingVisibility` in `@repo/service-core`)
  * is generic over `entityType` and needs a {@link CommerceEntityModel}. This

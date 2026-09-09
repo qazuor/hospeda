@@ -18,8 +18,18 @@
  * A comp subscription short-circuits billing entirely:
  *   - No MP preapproval is created, so no `mp_subscription_id`.
  *   - The dunning cron excludes `status='comp'` rows (never delinquent).
- *   - `loadEntitlements` treats `comp` as an active accommodation subscription,
- *     so the subscriber retains the full entitlements of the comped plan.
+ *   - `loadEntitlements` treats `comp` as an active subscription, so the
+ *     subscriber retains the full entitlements of the comped plan.
+ *
+ * HOS-1160: a comp is no longer accommodation-only. The vertical is the
+ * caller's `productDomain`, asserted against the plan, so gastronomy,
+ * experiences and partners can be comped too — which is what HOS-278 §6.3
+ * promised and what nothing implemented. The exclusion of `comp` from the
+ * billing machinery was measured across the whole workspace for this change:
+ * ~21 sites, of which 17 compare STATUS and are therefore blind to the vertical
+ * and already correct, and 4 read the canonical `isEntitlementGrantingStatus`
+ * predicate. None of them needed widening. The single thing that did was the
+ * domain written here.
  *
  * The whole operation (insert + promo stamp + redemption record) runs in ONE DB
  * transaction so a comp grant is atomic: a partial write can never leave a
@@ -45,7 +55,7 @@ import {
     getDb,
     withTransaction
 } from '@repo/db';
-import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import { redeemAndRecordUsage } from '@repo/service-core';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
@@ -84,6 +94,11 @@ export interface CreateCompSubscriptionResult {
  *   `promoCodeId`.
  * @param input.interval - The billing interval (`'monthly'` | `'annual'`).
  *   Stored on the row for audit; comp is never charged either way.
+ * @param input.productDomain - The vertical this grant belongs to. REQUIRED and
+ *   asserted against the plan's own `billing_plans.product_domain`: the caller
+ *   states the vertical it believes it is comping, and a mismatch is refused
+ *   rather than silently resolved in the plan's favour. See the domain guard
+ *   below for why this is a parameter and not a read.
  * @param input.livemode - Whether the customer/record is in live mode.
  * @param input.db - Optional Drizzle client override for tests.
  * @returns The created subscription id.
@@ -95,16 +110,33 @@ export async function createCompSubscription(input: {
     readonly promoCodeId?: string;
     readonly code?: string;
     readonly interval: 'monthly' | 'annual';
+    readonly productDomain: ProductDomainValue;
     readonly livemode: boolean;
     readonly db?: DrizzleClient;
 }): Promise<CreateCompSubscriptionResult> {
-    const { customerId, planId, promoCodeId, code, interval, livemode } = input;
+    const { customerId, planId, promoCodeId, code, interval, productDomain, livemode } = input;
 
-    // SPEC-262 M2: assert the plan is accommodation-domain before comping.
-    // SELECT from billing_plans to check whether the plan exists at all and
-    // what domain it belongs to. A null/missing row rejects (plan not found).
-    // A non-accommodation domain rejects (wrong product context). This guard
-    // runs BEFORE the transaction so a bad planId fails fast.
+    // HOS-1160: assert the plan's domain MATCHES the one the caller asked for,
+    // rather than asserting it is accommodation. Until this issue the guard read
+    // `!== ACCOMMODATION → throw`, which is why HOS-278 §6.3's promise of a
+    // COMP redemption for partners had no code behind it, and why gastronomy and
+    // experiences could not be comped either.
+    //
+    // The domain is a PARAMETER, not a read of the plan row, and the difference
+    // is the whole point. Writing whatever the plan happens to say would make a
+    // caller that names the wrong vertical succeed silently; and a row that
+    // comes out stamped `accommodation` when the plan was gastronomy is the one
+    // genuine fail-open on this path — `subscriptionMatchesDomain` fails OPEN
+    // for accommodation, so that row hands the customer the full accommodation
+    // entitlements with no error and no log. Opening the door without writing
+    // the domain is strictly worse than today's closed door, so the caller has
+    // to state its intent and have it checked.
+    //
+    // Mirrors `createTrialSubscription` (`subscription-trial-create.service.ts`),
+    // whose own comment says it was modelled on this function back when this
+    // function only knew one vertical. This aligns the original with its copy.
+    //
+    // Runs BEFORE the transaction so a bad planId fails fast.
     const db = input.db ?? getDb();
     const [planRow] = await db
         .select({ productDomain: billingPlans.productDomain })
@@ -114,15 +146,15 @@ export async function createCompSubscription(input: {
     if (!planRow) {
         throw new Error(`createCompSubscription: plan '${planId}' not found`);
     }
-    // productDomain is NULL for plans that pre-date the column (or accommodation
-    // plans that weren't explicitly stamped). NULL is treated as accommodation
-    // (historical default). Only an explicit non-accommodation domain is rejected.
-    if (
-        planRow.productDomain !== null &&
-        planRow.productDomain !== ProductDomainEnum.ACCOMMODATION
-    ) {
+    // NULL reads as accommodation — the same asymmetry `subscriptionMatchesDomain`
+    // and `resolvePlanProductDomain` apply, for the same reason: the column
+    // post-dates most rows, so accommodation fails open and every other domain
+    // fails closed. This is a read of an existing row, not a write that omits
+    // the value.
+    const planDomain = planRow.productDomain ?? ProductDomainEnum.ACCOMMODATION;
+    if (planDomain !== productDomain) {
         throw new Error(
-            `createCompSubscription: plan '${planId}' is domain '${planRow.productDomain}' — only accommodation plans can be comped`
+            `createCompSubscription: plan '${planId}' is domain '${planDomain}' but the comp was requested for '${productDomain}'`
         );
     }
 
@@ -135,8 +167,12 @@ export async function createCompSubscription(input: {
 
     await withTransaction(async (tx) => {
         // 1. Insert the comp subscription row. No mp_subscription_id (never billed).
-        //    product_domain='accommodation' so loadEntitlements resolves it (the
-        //    entitlement engine filters to accommodation-domain subs).
+        //    `product_domain` carries the caller's asserted vertical, so an
+        //    accommodation comp still resolves through `loadEntitlements` (which
+        //    filters to accommodation) while a gastronomy/experience/partner comp
+        //    is found by ITS vertical's resolver instead — `findOwnerVerticalSubscription`
+        //    for commerce, `reconcilePartnerForSubscription` for alliances — and
+        //    is invisible to the accommodation entitlement engine.
         await tx.insert(billingSubscriptions).values({
             id: localSubscriptionId,
             customerId,
@@ -147,13 +183,21 @@ export async function createCompSubscription(input: {
             currentPeriodEnd: periodEnd,
             status: SubscriptionStatusEnum.COMP,
             livemode,
-            // HOS-1233 T-035: stated in the INSERT rather than stamped by the
-            // UPDATE below. A comp grant is accommodation-only by design, but
-            // "the column's default happens to agree with us" is not the same
-            // claim as "this row states its vertical" — and it stops being true
-            // for anyone the day the default changes or disappears (T-036),
-            // where the INSERT is rejected before its correction can run.
-            productDomain: ProductDomainEnum.ACCOMMODATION,
+            // HOS-1233 T-035: stated in the INSERT rather than stamped by a
+            // follow-up UPDATE, because "the column's default happens to agree
+            // with us" is not the same claim as "this row states its vertical"
+            // — and it stops being true the day the default changes or
+            // disappears (T-036), where the INSERT is rejected before its
+            // correction can run.
+            //
+            // HOS-1160: the value is the caller's asserted domain, checked
+            // against the plan above, rather than the `ACCOMMODATION` literal
+            // this line used to hold. That literal was the single genuine
+            // fail-open of this whole surface: the ~21 sites that special-case
+            // `comp` compare STATUS, which is blind to the vertical and so
+            // already correct for all of them, and the one place a wrong
+            // vertical could be introduced was here.
+            productDomain,
             // Folded in from the UPDATE that used to follow this insert. Unlike
             // the domain above, a conditional spread is the RIGHT shape here:
             // omitting the key means "this grant names no promo code", which is

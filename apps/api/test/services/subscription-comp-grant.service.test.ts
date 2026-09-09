@@ -34,6 +34,8 @@ const updateMock = vi.fn();
 const insertMock = vi.fn();
 const clearCacheMock = vi.fn();
 const retrieveMock = vi.fn();
+const resolvePlanDomainMock = vi.fn();
+const partnerReconcileMock = vi.fn();
 
 /** Every non-deleted subscription row the customer has, statuses RAW. */
 let allRows: Array<Record<string, unknown>> = [];
@@ -66,6 +68,25 @@ vi.mock('../../src/services/subscription-linked-entities.service.js', () => ({
     reconcileSubscriptionLinkedEntities: (...args: unknown[]) => {
         callOrder.push('reconcile');
         return reconcileMock(...args);
+    }
+}));
+
+// HOS-1160: step 0 resolves the granted plan's vertical before anything else
+// runs, and every step below is scoped by it. Defaults to `accommodation` in
+// `beforeEach` so the pre-existing cases keep describing the behaviour they
+// were written for.
+vi.mock('../../src/services/billing/paid-subscription-create.js', () => ({
+    resolvePlanProductDomain: (...args: unknown[]) => resolvePlanDomainMock(...args)
+}));
+
+// HOS-1160: the alliance half of INV-1. A comp fires no MercadoPago webhook, so
+// this reconciler — which the other nine call sites all reach through a webhook
+// or a cron — has to be called by hand, and ONLY when the granted domain is
+// `partner`.
+vi.mock('../../src/services/partner-reconcile.service.js', () => ({
+    reconcilePartnerForSubscription: (...args: unknown[]) => {
+        callOrder.push('partner-reconcile');
+        return partnerReconcileMock(...args);
     }
 }));
 
@@ -181,6 +202,10 @@ beforeEach(() => {
     reconcileMock.mockResolvedValue(undefined);
     updateMock.mockResolvedValue(undefined);
     insertMock.mockResolvedValue(undefined);
+    // HOS-1160: accommodation by default, so every case written before this
+    // issue keeps exercising the vertical it was written against.
+    resolvePlanDomainMock.mockResolvedValue('accommodation');
+    partnerReconcileMock.mockResolvedValue(undefined);
 });
 
 describe('grantCompSubscription — the preapproval is closed before the comp exists', () => {
@@ -774,10 +799,14 @@ describe('grantCompSubscription — the entitlement cache is cleared here, and l
 });
 
 describe('grantCompSubscription — plan refusals keep their meaning', () => {
-    it('maps a non-accommodation plan to INVALID_PLAN', async () => {
+    it('maps a plan/vertical mismatch to INVALID_PLAN', async () => {
+        // HOS-1160: the message changed with the guard. It used to be
+        // "only accommodation plans can be comped", which stopped being raised
+        // the moment comp stopped being accommodation-only — leaving the catch
+        // matching a string nothing throws, and every mismatch escaping as a 500.
         createCompMock.mockRejectedValue(
             new Error(
-                "createCompSubscription: plan 'plan-1' is domain 'gastronomy' — only accommodation plans can be comped"
+                "createCompSubscription: plan 'plan-1' is domain 'accommodation' but the comp was requested for 'gastronomy'"
             )
         );
 
@@ -787,6 +816,22 @@ describe('grantCompSubscription — plan refusals keep their meaning', () => {
         expect(result.success === false && result.error.code).toBe('INVALID_PLAN');
     });
 
+    it('maps a plan whose domain cannot be resolved to NOT_FOUND, before touching MercadoPago', async () => {
+        // Step 0 fails closed: a plan we cannot resolve is a plan we do not comp,
+        // and nothing has been cancelled at the provider yet.
+        resolvePlanDomainMock.mockRejectedValue(
+            new Error("resolvePlanProductDomain: plan 'plan-1' not found")
+        );
+        allRows = [{ id: 'sub-live', status: 'active', mpSubscriptionId: 'mp-1' }];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(false);
+        expect(result.success === false && result.error.code).toBe('NOT_FOUND');
+        expect(hardCancelMock).not.toHaveBeenCalled();
+        expect(createCompMock).not.toHaveBeenCalled();
+    });
+
     it('maps an unknown plan to NOT_FOUND', async () => {
         createCompMock.mockRejectedValue(new Error("Plan 'plan-1' not found"));
 
@@ -794,5 +839,204 @@ describe('grantCompSubscription — plan refusals keep their meaning', () => {
 
         expect(result.success).toBe(false);
         expect(result.success === false && result.error.code).toBe('NOT_FOUND');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1160 — comp for every vertical, scoped to the granted one
+// ---------------------------------------------------------------------------
+describe('grantCompSubscription — the grant is scoped to the granted vertical', () => {
+    it('passes the plan-resolved vertical through to createCompSubscription', async () => {
+        resolvePlanDomainMock.mockResolvedValue('gastronomy');
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        const arg = createCompMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        // Not the literal it used to be. The creator asserts this against the
+        // plan's own column and refuses a disagreement, so a caller that stopped
+        // forwarding the resolved domain fails loudly instead of filing the row
+        // under the one vertical that fails OPEN.
+        expect(arg.productDomain).toBe('gastronomy');
+    });
+
+    it("does NOT supersede another vertical's live subscription", async () => {
+        // A dual owner: an active gastronomy plan they pay for, and the
+        // accommodation plan being comped. `isSupersedableStatus` supersedes
+        // anything not terminal, so an unscoped read would hard-cancel the
+        // restaurant's preapproval at MercadoPago as a side effect of comping
+        // the hotel — a service the customer is still paying for.
+        resolvePlanDomainMock.mockResolvedValue('accommodation');
+        allRows = [
+            {
+                id: 'sub-gastronomy',
+                status: 'active',
+                mpSubscriptionId: 'mp-gastro',
+                productDomain: 'gastronomy'
+            },
+            {
+                id: 'sub-accommodation',
+                status: 'active',
+                mpSubscriptionId: 'mp-accom',
+                productDomain: 'accommodation'
+            }
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.supersededSubscriptionIds).toEqual([
+            'sub-accommodation'
+        ]);
+        // The provider call is the one that cannot be undone: assert on it
+        // directly rather than trusting the id list alone.
+        const cancelledIds = hardCancelMock.mock.calls.map(
+            (call) => (call[0] as Record<string, unknown>).mpSubscriptionId
+        );
+        expect(cancelledIds).toEqual(['mp-accom']);
+    });
+
+    it("supersedes only the granted vertical's rows when comping gastronomy", async () => {
+        // The mirror of the case above, so the scope cannot be satisfied by a
+        // filter that happens to hardcode accommodation.
+        resolvePlanDomainMock.mockResolvedValue('gastronomy');
+        allRows = [
+            {
+                id: 'sub-gastronomy',
+                status: 'active',
+                mpSubscriptionId: 'mp-gastro',
+                productDomain: 'gastronomy'
+            },
+            {
+                id: 'sub-accommodation',
+                status: 'active',
+                mpSubscriptionId: 'mp-accom',
+                productDomain: 'accommodation'
+            }
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.supersededSubscriptionIds).toEqual(['sub-gastronomy']);
+        const cancelledIds = hardCancelMock.mock.calls.map(
+            (call) => (call[0] as Record<string, unknown>).mpSubscriptionId
+        );
+        expect(cancelledIds).toEqual(['mp-gastro']);
+    });
+
+    it('lets an owner hold a gastronomy comp alongside an existing accommodation comp', async () => {
+        // Idempotency is PER VERTICAL. A hotelier who also runs a restaurant is
+        // two customers of two products; refusing the second with a message
+        // naming a subscription in an unrelated vertical reads to the operator
+        // as a broken button.
+        resolvePlanDomainMock.mockResolvedValue('gastronomy');
+        allRows = [
+            {
+                id: 'comp-accommodation',
+                status: 'comp',
+                mpSubscriptionId: null,
+                productDomain: 'accommodation'
+            }
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(createCompMock).toHaveBeenCalledOnce();
+    });
+
+    it('still refuses a second comp in the SAME vertical', async () => {
+        // The other half: scoping the check must not disable it.
+        resolvePlanDomainMock.mockResolvedValue('gastronomy');
+        allRows = [
+            {
+                id: 'comp-gastronomy',
+                status: 'comp',
+                mpSubscriptionId: null,
+                productDomain: 'gastronomy'
+            }
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(false);
+        expect(result.success === false && result.error.code).toBe('ALREADY_COMPED');
+        expect(result.success === false && result.error.message).toContain('gastronomy');
+        expect(createCompMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('grantCompSubscription — the alliance bridge (HOS-278 §6.3)', () => {
+    it('reconciles the partner for a partner comp, so the alliance goes ACTIVE', async () => {
+        // Without this the courtesy buys the partner nothing: no MercadoPago
+        // webhook ever fires for a comp, so `partners.subscriptionStatus` is
+        // never touched and the alliance keeps rendering from whatever its last
+        // real subscription left behind.
+        resolvePlanDomainMock.mockResolvedValue('partner');
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(partnerReconcileMock).toHaveBeenCalledOnce();
+        const arg = partnerReconcileMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(arg.subscriptionId).toBe('comp-sub-1');
+        // `comp`, not a laundered `active`: the mapper puts it in the live
+        // branch through `isEntitlementGrantingStatus` (HOS-702), and handing it
+        // a substituted status would hide a regression in that predicate.
+        expect(arg.subscriptionStatus).toBe('comp');
+    });
+
+    it('does NOT reconcile a partner for an accommodation comp', async () => {
+        // The reconciler resolves its partners from the subscription id, so a
+        // stray call is not merely wasted work — it is a lookup on a row that
+        // has nothing to do with any alliance.
+        resolvePlanDomainMock.mockResolvedValue('accommodation');
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(partnerReconcileMock).not.toHaveBeenCalled();
+    });
+
+    it('does NOT reconcile a partner for a gastronomy comp either', async () => {
+        // Guards against a fix that keys on "not accommodation" rather than on
+        // "is partner" — the two differ for four of the six domains.
+        resolvePlanDomainMock.mockResolvedValue('gastronomy');
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(partnerReconcileMock).not.toHaveBeenCalled();
+    });
+
+    it('mirrors a superseded partner subscription as CANCELLED before the new grant', async () => {
+        resolvePlanDomainMock.mockResolvedValue('partner');
+        allRows = [
+            {
+                id: 'sub-partner-old',
+                status: 'active',
+                mpSubscriptionId: 'mp-partner',
+                productDomain: 'partner'
+            }
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(partnerReconcileMock).toHaveBeenCalledTimes(2);
+        const [first, second] = partnerReconcileMock.mock.calls.map(
+            (call) => call[0] as Record<string, unknown>
+        );
+        expect(first?.subscriptionId).toBe('sub-partner-old');
+        expect(first?.subscriptionStatus).toBe('cancelled');
+        expect(second?.subscriptionId).toBe('comp-sub-1');
+        expect(second?.subscriptionStatus).toBe('comp');
+        // Ordering matters: the retirement is mirrored while the row is being
+        // retired and the grant after it, so the state the partner ends on is
+        // the comp and not the cancellation.
+        expect(callOrder.lastIndexOf('partner-reconcile')).toBeGreaterThan(
+            callOrder.indexOf('create-comp')
+        );
     });
 });
