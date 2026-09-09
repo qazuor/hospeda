@@ -244,6 +244,121 @@ describe('handleStartPaidSubscription — ALREADY_SUBSCRIBED guard (SPEC-262 H2)
 
         expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
     });
+
+    it('allows checkout when existing sub is paused (status=paused — deliberately NOT live)', async () => {
+        // Guards the widening from going too far: `paused` is explicitly OUT of
+        // `LIVE_SUBSCRIPTION_STATUSES` (is-live-subscription-status.ts docblock)
+        // — a real pause is meant to cut access, unlike past_due mid-dunning.
+        const billing = makeBillingMock([{ status: 'paused' }]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — HOS-1273: a past-due accommodation subscription must block a
+// second checkout, mirroring the commerce vertical (AC-16, HOS-166 W1).
+// ---------------------------------------------------------------------------
+
+describe('handleStartPaidSubscription — HOS-1273 past_due parity with commerce', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('throws ALREADY_EXISTS when customer has a past_due accommodation sub (regression for HOS-1273)', async () => {
+        // Before the fix, start-paid.ts gated on isEntitlementGrantingStatus
+        // (active | trialing | comp | courtesy) alone, so a moroso host could
+        // open a SECOND preapproval on top of the one they already owe. The
+        // commerce route already refused this via isLiveSubscriptionStatus
+        // (active | trialing | comp | courtesy | past_due) — this test pins
+        // that the accommodation route now agrees.
+        mockBillingWith(makeBillingMock([{ status: 'past_due' }]));
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect(err).toBeInstanceOf(ServiceError);
+        expect((err as ServiceError).code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+    });
+
+    it('provider.subscriptions.create NOT called when the past_due guard fires', async () => {
+        const billing = makeBillingMock([{ status: 'past_due' }]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'annual'
+        }).catch(() => undefined);
+
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('also blocks the annual branch on a past_due accommodation sub (both intervals share the guard)', async () => {
+        mockBillingWith(makeBillingMock([{ status: 'past_due' }]));
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'annual'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+    });
+
+    it('dual-owner: a past_due ACCOMMODATION sub still blocks alongside an active COMMERCE sub (domain isolation intact)', async () => {
+        // The host-provider case (host-provider@local.test fixture): a
+        // customer with an active commerce subscription AND a past-due
+        // accommodation subscription must be blocked on the accommodation
+        // reason, never silently let through because of the unrelated
+        // commerce row.
+        const billing = makeBillingMock([
+            { status: 'active', productDomain: 'commerce' } as {
+                status: string;
+                cancelAtPeriodEnd?: boolean;
+                productDomain?: string;
+            },
+            { status: 'past_due' } // no productDomain -> accommodation fail-open
+        ]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect(err).toBeInstanceOf(ServiceError);
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+    });
+
+    it('does NOT block on a past_due COMMERCE sub (SPEC-239 isolation — this route is accommodation-only)', async () => {
+        const billing = makeBillingMock([
+            { status: 'past_due', productDomain: 'gastronomy' } as {
+                status: string;
+                cancelAtPeriodEnd?: boolean;
+                productDomain?: string;
+            }
+        ]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+    });
 });
 
 // ---------------------------------------------------------------------------
