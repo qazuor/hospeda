@@ -86,10 +86,21 @@ CLEANED="$(grep -vE '^[[:space:]]*(//|\*|/\*)' "${FILE}")"
 # Extract retired ids: only from the RETIRED_WHATS_NEW_IDS declaration block,
 # up to (and including) the first closing `]);` that follows it.
 # -----------------------------------------------------------------------------
+#
+# NOTE: this awk must read its input to EOF — it stops PRINTING at the first
+# `]);`, it does not `exit` there. It used to, and under `set -o pipefail`
+# that is a landmine: awk exiting early closes the pipe while `printf` is
+# still writing, `printf` takes SIGPIPE, the substitution exits 141, and
+# `set -e` kills the guard on a plain assignment — before it prints a single
+# finding. Whether it fires depends on how much of the file is still
+# unwritten when awk leaves, i.e. on the catalog's SIZE: the declaration sits
+# near the top, so everything below it is in flight. It passed locally at
+# 73 KB and died in CI on the same commit. A guard that stops working as the
+# thing it guards grows is worse than no guard, so it drains its input.
 RETIRED_BLOCK="$(printf '%s\n' "${CLEANED}" | awk '
     /RETIRED_WHATS_NEW_IDS/ { capture=1 }
-    capture { print }
-    capture && /\]\)/ { exit }
+    capture && !closed { print }
+    capture && /\]\)/ { closed=1 }
 ')"
 RETIRED_IDS="$(printf '%s\n' "${RETIRED_BLOCK}" | grep -oE "'[a-z0-9-]+'" | tr -d "'" | sort -u || true)"
 
