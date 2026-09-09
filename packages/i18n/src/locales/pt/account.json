@@ -1268,6 +1268,22 @@
                 "name": "Impulso de visibilidade (30 dias)",
                 "description": "Sua hospedagem aparece em destaque nos resultados de busca por 30 dias."
             },
+            "visibility-boost-gastronomy-7d": {
+                "name": "Impulso de visibilidade — Restaurante (7 dias)",
+                "description": "Seu restaurante aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-gastronomy-30d": {
+                "name": "Impulso de visibilidade — Restaurante (30 dias)",
+                "description": "Seu restaurante aparece em destaque nos resultados de busca por 30 dias."
+            },
+            "visibility-boost-experience-7d": {
+                "name": "Impulso de visibilidade — Experiência (7 dias)",
+                "description": "Sua experiência aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-experience-30d": {
+                "name": "Impulso de visibilidade — Experiência (30 dias)",
+                "description": "Sua experiência aparece em destaque nos resultados de busca por 30 dias."
+            },
             "extra-photos-20": {
                 "name": "Pacote de fotos extra (+20 fotos)",
                 "description": "Adiciona 20 fotos adicionais a cada hospedagem. Renova mensalmente."

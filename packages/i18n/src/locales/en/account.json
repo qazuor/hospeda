@@ -1268,6 +1268,22 @@
                 "name": "Visibility Boost (30 days)",
                 "description": "Your accommodation appears featured in search results for 30 days."
             },
+            "visibility-boost-gastronomy-7d": {
+                "name": "Visibility Boost — Restaurant (7 days)",
+                "description": "Your restaurant appears featured in search results for 7 days."
+            },
+            "visibility-boost-gastronomy-30d": {
+                "name": "Visibility Boost — Restaurant (30 days)",
+                "description": "Your restaurant appears featured in search results for 30 days."
+            },
+            "visibility-boost-experience-7d": {
+                "name": "Visibility Boost — Experience (7 days)",
+                "description": "Your experience appears featured in search results for 7 days."
+            },
+            "visibility-boost-experience-30d": {
+                "name": "Visibility Boost — Experience (30 days)",
+                "description": "Your experience appears featured in search results for 30 days."
+            },
             "extra-photos-20": {
                 "name": "Extra Photos Pack (+20 photos)",
                 "description": "Adds 20 additional photos to each accommodation. Renews monthly."
