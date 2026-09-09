@@ -270,13 +270,41 @@ tourist touches:
    of the admin gate D-8 named; only the admin half was fixed (T-039).
 3. **`routes/user/protected/subscription.ts:284`** — the domain comes from a
    query param that **defaults to `ACCOMMODATION`**, so a tourist reading their
-   own subscription finds nothing unless the caller passes
-   `?productDomain=tourist`. No caller does: the value did not exist until this
-   spec.
+   own subscription finds nothing.
 
-All three are the same one-line shape as F-4f (accept accommodation OR tourist),
-except #3, which additionally needs a decision about what the default should be
-for a caller that names no domain.
+   The draft of this finding said the caller could work around it by passing
+   `?productDomain=tourist`, and that *"no caller does"*. Weaker than the truth,
+   and in the direction that matters: **no caller CAN.**
+   `SUBSCRIPTION_SCOPE_DOMAINS` (`schemas/product-domain-query.schema.ts:37`)
+   holds `accommodation | gastronomy | experience` and the param is a
+   `z.enum` over exactly that tuple, so `?productDomain=tourist` is a **400**,
+   not an unused escape hatch. There is no client-side workaround to fall back
+   on while this is unfixed — which is the fifth hand-audited claim in this spec
+   to come apart on contact, and the second time the mistake was reading a
+   default as an *option*.
+
+**All three fixed in `c64ed5f0c`**, each with a probe that failed first and a
+sibling proving the widening is not a widening to everything (5 mutations
+applied and killed: drop the widening, widen to any domain, drop the fallback,
+invert the preference order, make the fallback unconditional).
+
+The first is the same one-line shape as F-4f. The other two are **ordered**, not
+an "either" match: accommodation is tried first and tourist is the fallback. A host
+auto-promoted by host-onboarding legitimately holds both — the very case the
+HOS-217 discard in `loadEntitlements` exists for — and an unordered match would
+let the storage adapter's ordering decide which subscription is read or mutated,
+which is HOS-259's bug wearing a new domain. Ordered, the fallback can only ever
+turn a `null` into an answer: wherever an accommodation subscription exists, the
+result is byte-identical to before.
+
+**The resolution for the third one's open question** (what a caller that names
+no domain should get): the fallback applies to the DEFAULT only. An explicit
+`?productDomain=X` stays strict — a caller that names a domain means it, and
+`gastronomy` must never pick up a tourist row. Neither path falls back to a
+commerce vertical. `SUBSCRIPTION_SCOPE_DOMAINS` was deliberately NOT widened to
+admit `tourist`: it is shared with `routes/billing/usage.ts`, no client needs to
+ask for it now that the default answers correctly, and admitting it there is a
+separate change with its own two-route blast radius.
 
 Two smaller items from the same sweep, recorded so they are not rediscovered:
 
@@ -487,9 +515,9 @@ Verdict for each of the 12 previously unlisted sites in that third group:
 
 | Site | Verdict |
 | -- | -- |
-| `routes/user/protected/entitlements.ts:139` | **BREAKS** → F-4g. Returns `plan: null` to a paying tourist |
-| `billing/plan-domain-guard.ts:242` → `routes/billing/plan-change.ts:246` | **BREAKS** → F-4g. HTTP 404 `No active subscription found`; a tourist cannot change plan |
-| `routes/user/protected/subscription.ts:284` | **BREAKS** → F-4g. Domain defaults to `ACCOMMODATION`, so a tourist sees no subscription |
+| `routes/user/protected/entitlements.ts:139` | **BROKE → FIXED** (`c64ed5f0c`) → F-4g. Returned `plan: null` to a paying tourist |
+| `billing/plan-domain-guard.ts:242` → `routes/billing/plan-change.ts:246` | **BROKE → FIXED** (`c64ed5f0c`) → F-4g. HTTP 404 `No active subscription found`; a tourist could not change plan |
+| `routes/user/protected/subscription.ts:284` | **BROKE → FIXED** (`c64ed5f0c`) → F-4g. Domain defaults to `ACCOMMODATION`, so a tourist saw no subscription |
 | `billing/apply-price-increase.service.ts:345` | **BEHAVIOUR CHANGED, fails safe.** A price increase on a tourist plan matches zero rows and reports `matched: 0` |
 | `addon-entitlement.service.ts:153,458,725` | Indifferent → correct. No add-on targets a tourist cap, so a pure tourist never held one; a dual-holder's add-on now lands on the right row |
 | `billing/addon/addon-user-addons.ts:189` | Indifferent → correct. Same reasoning |
