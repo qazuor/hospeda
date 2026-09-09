@@ -40,18 +40,27 @@ export const TRIAL_WARNING_THRESHOLD_DAYS = 3;
 /**
  * What "Empezar" does, per HOS-1233 D-2.
  *
- * - `create_form` — the trial has never started. The visitor goes to step 1 of
- *   that vertical's create form, NOT to payment. Starting a trial is what that
- *   form does; charging them first would sell what they can have free.
- * - `warn_then_checkout` — a trial is running with more than
+ * - `trial_create_form` — the trial has never started. The visitor goes to step
+ *   1 of that vertical's create form, NOT to payment. Starting a trial is what
+ *   that form does; charging them first would sell what they can have free.
+ * - `trial_warn_then_checkout` — a trial is running with more than
  *   {@link TRIAL_WARNING_THRESHOLD_DAYS} days left. The days are real value the
  *   charge destroys, so the visitor is told how many they lose and that the
  *   charge is immediate, and may cancel.
- * - `checkout` — either the remaining days are down to the threshold (little
- *   left to lose, and the warning would only add friction to a conversion the
- *   visitor already wants), or there is no running trial to protect.
+ * - `trial_checkout` — either the remaining days are down to the threshold
+ *   (little left to lose, and the warning would only add friction to a
+ *   conversion the visitor already wants), or there is no running trial to
+ *   protect.
+ *
+ * **The `trial_` prefix is load-bearing, not decoration.** AC-11's guard scans
+ * `apps/web/src` for these names sitting next to a decision construct, and
+ * `'checkout'` unprefixed is already a common literal here — `ctaMode` alone
+ * is `'checkout' | 'link'` on every pricing grid. A guard anchored on the bare
+ * word would fire on unrelated code, and a guard that cries wolf is a guard
+ * somebody switches off. Renaming any of these three means updating the
+ * guard's `BRANCH_LITERAL` in the same commit.
  */
-export type TrialStartBranch = 'create_form' | 'warn_then_checkout' | 'checkout';
+export type TrialStartBranch = 'trial_create_form' | 'trial_warn_then_checkout' | 'trial_checkout';
 
 /**
  * The fields this decision reads off `billingApi.getTrialStatus()`.
@@ -147,7 +156,7 @@ export function resolveTrialStartBranch({
 }): TrialStartBranch {
     // AC-9. An unknown clock must not be read as "no trial to protect".
     if (reading === null) {
-        return 'warn_then_checkout';
+        return 'trial_warn_then_checkout';
     }
 
     // A running trial is the only state with days to lose.
@@ -157,23 +166,25 @@ export function resolveTrialStartBranch({
         // `isOnTrial` without a usable day count is a contradiction in the
         // payload, not a state to guess at: warn rather than charge silently.
         if (typeof daysRemaining !== 'number' || Number.isNaN(daysRemaining)) {
-            return 'warn_then_checkout';
+            return 'trial_warn_then_checkout';
         }
 
         // `>=`, not `>`. D-2 spells only "more than 3" and "fewer than 3";
         // exactly 3 is the case it leaves open, and AC-9 decides it for the
         // warning side. Flipping this to `>` charges the boundary visitor
         // without asking — which is the whole bug, one day earlier.
-        return daysRemaining >= TRIAL_WARNING_THRESHOLD_DAYS ? 'warn_then_checkout' : 'checkout';
+        return daysRemaining >= TRIAL_WARNING_THRESHOLD_DAYS
+            ? 'trial_warn_then_checkout'
+            : 'trial_checkout';
     }
 
     // Never started: the create form is where a trial begins. `startedAt` is
     // the field that separates this from an elapsed trial — `isExpired` alone
     // would send a visitor who never had one to checkout.
     if (!reading.isExpired && reading.startedAt === null) {
-        return 'create_form';
+        return 'trial_create_form';
     }
 
     // Elapsed, or otherwise nothing left to protect.
-    return 'checkout';
+    return 'trial_checkout';
 }

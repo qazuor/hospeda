@@ -85,13 +85,15 @@ describe('resolveTrialStartBranch — trial not started (AC-3)', () => {
             }
         });
 
-        expect(branch).toBe('create_form');
+        expect(branch).toBe('trial_create_form');
     });
 });
 
 describe('resolveTrialStartBranch — trial running (AC-4 / AC-5 / AC-6)', () => {
     it('warns with 4 days left — comfortably above the threshold', () => {
-        expect(resolveTrialStartBranch({ reading: runningTrial(4) })).toBe('warn_then_checkout');
+        expect(resolveTrialStartBranch({ reading: runningTrial(4) })).toBe(
+            'trial_warn_then_checkout'
+        );
     });
 
     it('warns at EXACTLY 3 days — the boundary AC-6 requires to be defined', () => {
@@ -99,15 +101,17 @@ describe('resolveTrialStartBranch — trial running (AC-4 / AC-5 / AC-6)', () =>
         // case it leaves open, for the side that asks before taking money.
         // Flipping the predicate from `>=` to `>` makes this the only failing
         // test in the file, which is the point of having it.
-        expect(resolveTrialStartBranch({ reading: runningTrial(3) })).toBe('warn_then_checkout');
+        expect(resolveTrialStartBranch({ reading: runningTrial(3) })).toBe(
+            'trial_warn_then_checkout'
+        );
     });
 
     it('goes straight to checkout at 2 days — the other side of the same boundary', () => {
-        expect(resolveTrialStartBranch({ reading: runningTrial(2) })).toBe('checkout');
+        expect(resolveTrialStartBranch({ reading: runningTrial(2) })).toBe('trial_checkout');
     });
 
     it('goes straight to checkout on the last day', () => {
-        expect(resolveTrialStartBranch({ reading: runningTrial(0) })).toBe('checkout');
+        expect(resolveTrialStartBranch({ reading: runningTrial(0) })).toBe('trial_checkout');
     });
 });
 
@@ -122,7 +126,7 @@ describe('resolveTrialStartBranch — nothing left to protect', () => {
             }
         });
 
-        expect(branch).toBe('checkout');
+        expect(branch).toBe('trial_checkout');
     });
 
     it('sends a started-but-no-longer-running trial to checkout', () => {
@@ -138,7 +142,7 @@ describe('resolveTrialStartBranch — nothing left to protect', () => {
             }
         });
 
-        expect(branch).toBe('checkout');
+        expect(branch).toBe('trial_checkout');
     });
 });
 
@@ -147,11 +151,13 @@ describe('resolveTrialStartBranch — the unresolved read (AC-9, R-2)', () => {
         // The dangerous direction here is the opposite of the usual one: a
         // failed read that skips the warning charges real money without
         // asking. This must never return 'checkout'.
-        expect(resolveTrialStartBranch({ reading: null })).toBe('warn_then_checkout');
+        expect(resolveTrialStartBranch({ reading: null })).toBe('trial_warn_then_checkout');
     });
 
     it('WARNS on a contradictory payload — on trial with no day count', () => {
-        expect(resolveTrialStartBranch({ reading: runningTrial(null) })).toBe('warn_then_checkout');
+        expect(resolveTrialStartBranch({ reading: runningTrial(null) })).toBe(
+            'trial_warn_then_checkout'
+        );
     });
 
     it('WARNS on a NaN day count rather than comparing it', () => {
@@ -159,7 +165,7 @@ describe('resolveTrialStartBranch — the unresolved read (AC-9, R-2)', () => {
         // through to 'checkout' — a silent charge produced by a comparison
         // that looks correct.
         expect(resolveTrialStartBranch({ reading: runningTrial(Number.NaN) })).toBe(
-            'warn_then_checkout'
+            'trial_warn_then_checkout'
         );
     });
 
@@ -171,7 +177,7 @@ describe('resolveTrialStartBranch — the unresolved read (AC-9, R-2)', () => {
         ];
 
         for (const reading of unresolvedShapes) {
-            expect(resolveTrialStartBranch({ reading })).not.toBe('checkout');
+            expect(resolveTrialStartBranch({ reading })).not.toBe('trial_checkout');
         }
     });
 });
