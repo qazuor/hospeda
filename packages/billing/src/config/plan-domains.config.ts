@@ -26,7 +26,7 @@
  * one level up.
  *
  * ---
- * DERIVED FROM THE CATALOGUES, NEVER RESTATED
+ * BUILT FROM THE CATALOGUES — BUT ONE BRANCH RESTATES, AND SAYS SO
  *
  * The map is built at module load by walking {@link ALL_PLANS},
  * {@link COMMERCE_PLANS_BY_VERTICAL} and the three partner plans. Listing the
@@ -35,6 +35,26 @@
  * it, resolve to `undefined`, and be refused by a guard that was supposed to let
  * it through. Walking the catalogues means a plan added there is classified here
  * by construction.
+ *
+ * This header used to claim the DOMAINS were "DERIVED FROM THE CATALOGUES,
+ * NEVER RESTATED". That holds for the commerce and partner branches, which read
+ * the tier's own vertical. It does NOT hold for the `ALL_PLANS` branch, which
+ * writes `ACCOMMODATION` literally rather than reading each plan's own
+ * `productDomain` — and since HOS-1233 made `productDomain` a required field on
+ * `PlanDefinition`, the two now disagree for exactly two slugs: `tourist-free`
+ * and `tourist-vip` declare `ProductDomainEnum.TOURIST` in `plans.config.ts`
+ * while this map answers `'accommodation'` for them.
+ *
+ * That divergence is LOAD-BEARING, which is why HOS-1279 documented it instead
+ * of removing it. {@link assertAccommodationPlanChangeTarget} refuses any target
+ * slug resolving to a non-accommodation domain, and
+ * `selectAccommodationSubscription` deliberately governs the accommodation AND
+ * the tourist subscription through the one plan-change route (there is no second
+ * route for tourists the way commerce has one per vertical). Making this branch
+ * read `plan.productDomain` would therefore reject every tourist plan change
+ * outright. Reconciling the two is a change with its own scope; until then, do
+ * not read this map as "the domain the plan declares" — read it as "the domain
+ * whose plan-change machinery owns this slug".
  *
  * @module config/plan-domains
  */
@@ -59,9 +79,16 @@ import {
 function buildProductDomainByPlanSlug(): ReadonlyMap<string, ProductDomainValue> {
     const map = new Map<string, ProductDomainValue>();
 
-    // `ALL_PLANS` is accommodation-only by construction — the owner tiers and
-    // the tourist tiers, which ride on the accommodation subscription (see
-    // `PRODUCT_DOMAIN_BY_LIMIT_KEY`'s tourist block for the same reasoning).
+    // The owner tiers AND the two tourist tiers, all filed as accommodation.
+    //
+    // This comment used to justify that by saying the tourist tiers "ride on the
+    // accommodation subscription". HOS-1233 made that false: they carry
+    // `productDomain: ProductDomainEnum.TOURIST` in `plans.config.ts` and their
+    // subscription rows were reclassified to `product_domain = 'tourist'`. The
+    // literal below is knowingly kept — it is what the plan-change route's
+    // guards read, and reading `plan.productDomain` here would refuse every
+    // tourist plan change. See this module's header for the full trace
+    // (HOS-1279); this is a divergence with a reason, not an oversight.
     for (const plan of ALL_PLANS) {
         map.set(plan.slug, ProductDomainEnum.ACCOMMODATION);
     }

@@ -260,7 +260,7 @@ afterEach(() => {
 
 const OLD_PLAN_SLUG = 'owner-pro';
 const NEW_PLAN_SLUG = 'owner-basico';
-const LIMIT_KEY = 'max_active_accommodations';
+const LIMIT_KEY = 'max_accommodations'; // HOS-1279: a real LimitKey (was an invented string)
 const CUSTOMER_ID = 'cus_advisory_lock_test_001';
 
 // DB shape: limits is Record<string, number> (SPEC-192 T-026 cutover).
@@ -666,7 +666,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 addonSlug: 'extra-featured-3',
                 status: 'active',
                 deletedAt: null,
-                limitAdjustments: [{ limitKey: 'max_featured_listings', increase: 3 }],
+                limitAdjustments: [{ limitKey: 'max_active_promotions', increase: 3 }],
                 entitlementAdjustments: []
             };
 
@@ -680,7 +680,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                         data: {
                             ...mockAddonDef,
                             slug: 'extra-featured-3',
-                            affectsLimitKey: 'max_featured_listings',
+                            affectsLimitKey: 'max_active_promotions',
                             limitIncrease: 3
                         }
                     });
@@ -696,7 +696,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                         success: true,
                         data: {
                             ...mockOldPlan,
-                            limits: { [LIMIT_KEY]: 10, max_featured_listings: 2 } as Record<
+                            limits: { [LIMIT_KEY]: 10, max_active_promotions: 2 } as Record<
                                 string,
                                 number
                             >
@@ -708,7 +708,7 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                         success: true,
                         data: {
                             ...mockNewPlan,
-                            limits: { [LIMIT_KEY]: 3, max_featured_listings: 1 } as Record<
+                            limits: { [LIMIT_KEY]: 3, max_active_promotions: 1 } as Record<
                                 string,
                                 number
                             >
