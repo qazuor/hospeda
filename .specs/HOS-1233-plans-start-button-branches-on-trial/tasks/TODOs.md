@@ -1,14 +1,29 @@
 # HOS-1233: The plans page reads the trial before it charges
 
-## Progress: 21/42 done, 7 resolved without implementation, 14 open
+## Progress: 32/42 done, 10 resolved without implementation, 0 open
 
+> **Implementation is COMPLETE and merged to `staging`** (2026-09-09, five PRs:
+> #3288, #3291, #3298, #3313, #3321). The Linear issue is `In Review` and stays
+> open until both `status-needs-smoke-*` labels are signed off — an implemented
+> spec is not a verified one. What to exercise in that smoke, including the two
+> cases the adversarial review turned up, is listed on the issue itself.
+>
+> **What this work does NOT fix, so nobody looks for it in the smoke:** the
+> tourist vertical has no trial mechanism at all — `tourist-vip` declares
+> `trialDays` but `ALL_TRIAL_PLANS` holds three entries and none is tourist — so
+> AC-3/AC-4/AC-5 are inert there and §2.1's second measurement (the traveller
+> charged ARS 15.000 on the spot) is unchanged. Tracked as `HOS-1313` with the
+> two product paths.
+>
+> ---
+>
 > **This file and `state.json` were both STALE and cost the next session real
 > time (2026-09-09).** They reported all 42 tasks pending while the whole domain
 > half was merged. Every box below was re-verified against `origin/staging`
 > `f938edb42` with a file-and-line citation before being flipped — not against
 > the working tree, which lagged 70 commits.
 >
-> **Seven tasks are resolved but will never be checked**, because they are not
+> **Ten tasks are resolved but will never be checked**, because they are not
 > work any more. Do not re-open them:
 >
 > - **T-004, T-005, T-006** — superseded by T-034 and T-038 (already noted below).
@@ -29,6 +44,11 @@
 >   `packages/billing/test/commerce-vertical-plans.test.ts:321` (HOS-975 D-A,
 >   "grants the whole tourist-VIP block on ALL SIX tiers", plus the limit VALUES
 >   at `:166`). 52 tests, verified green 2026-09-09.
+> - **T-028 — moot.** It exists to add the new endpoint to
+>   `docs/billing/endpoint-gate-matrix.md`, whose snapshot guard fails CI on a
+>   handler file with no matrix row. No endpoint was built (see T-008..T-011), and
+>   the shipped diff touches no file under `apps/api` at all, so there is no row
+>   to add and nothing for that guard to catch.
 >
 > **T-037 left this spec and is now `HOS-1312` (P1).** Its partner T-036 merged
 > in `7aadeab8e` with the `0121` migration and **zero tests** — the only
@@ -184,27 +204,27 @@
 
 ### Integration Phase
 
-- [ ] **T-016** (complexity: 3) — Warn-and-confirm dialog for losing the remaining trial days
+- [x] **T-016** (complexity: 3) — Warn-and-confirm dialog for losing the remaining trial days
   - AC-4.
   - Blocked by: none · Blocks: T-017, T-019
 
-- [ ] **T-017** (complexity: 3) — Wire the three branches into PlanPurchaseButton
+- [x] **T-017** (complexity: 3) — Wire the three branches into PlanPurchaseButton
   - D-2.
   - Blocked by: T-011, T-014, T-016 · Blocks: T-024
 
-- [ ] **T-018** (complexity: 2) — Disabled already-VIP state on the tourist cards
+- [x] **T-018** (complexity: 2) — Disabled already-VIP state on the tourist cards
   - D-4 / AC-16.
   - Blocked by: T-015 · Blocks: T-019, T-024
 
-- [ ] **T-019** (complexity: 2) — i18n keys for the dialog, the banner and the already-VIP copy
+- [x] **T-019** (complexity: 2) — i18n keys for the dialog, the banner and the already-VIP copy
   - Add the new strings to es/en/pt.
   - Blocked by: T-016, T-018 · Blocks: T-021
 
-- [ ] **T-020** (complexity: 2) — Remaining-days banner component
+- [x] **T-020** (complexity: 2) — Remaining-days banner component
   - AC-7 / AC-8.
   - Blocked by: T-011 · Blocks: T-021
 
-- [ ] **T-021** (complexity: 3) — Mount the banner on all five pricing pages
+- [x] **T-021** (complexity: 3) — Mount the banner on all five pricing pages
   - AC-7 / AC-10 / AC-12.
   - Blocked by: T-019, T-020 · Blocks: T-025, T-026
 
@@ -222,19 +242,19 @@
   - AC-19.
   - Blocked by: T-004 · Blocks: T-027
 
-- [ ] **T-024** (complexity: 3) — Button behaviour tests: three branches plus the already-VIP state
+- [x] **T-024** (complexity: 3) — Button behaviour tests: three branches plus the already-VIP state
   - AC-3/4/5/16/17.
   - Blocked by: T-015, T-017, T-018 · Blocks: T-027
 
-- [ ] **T-025** (complexity: 2) — Banner present/absent tests, in PAIRS
+- [x] **T-025** (complexity: 2) — Banner present/absent tests, in PAIRS
   - AC-7 / AC-8.
   - Blocked by: T-021 · Blocks: T-027
 
-- [ ] **T-026** (complexity: 1) — Test that the three link pages still link to signup then create form
+- [x] **T-026** (complexity: 1) — Test that the three link pages still link to signup then create form
   - AC-12 / R-4.
   - Blocked by: T-021 · Blocks: T-027
 
-- [ ] **T-027** (complexity: 3) — Mutation-verify the whole new suite
+- [x] **T-027** (complexity: 3) — Mutation-verify the whole new suite
   - The spec's test plan says most assertions here are about an ABSENCE (no dialog, no banner, no checkout, no charge), which is the shape that passes for….
   - Blocked by: T-022, T-023, T-024, T-025, T-026, T-037, T-038, T-039, T-040, T-041 · Blocks: T-028, T-029, T-042
 
@@ -252,7 +272,7 @@
   - `docs/billing/endpoint-gate-matrix.md` is the source of truth for gate decisions, and its snapshot guard fails CI when a new handler file has no matrix row.
   - Blocked by: T-010, T-027 · Blocks: none
 
-- [ ] **T-029** (complexity: 2) — Document the tourist domain and the already-VIP rule
+- [x] **T-029** (complexity: 2) — Document the tourist domain and the already-VIP rule
   - Root CLAUDE.md states ProductDomainEnum 'holds exactly four values' and that 'commerce' is retired — both need updating for TOURIST, plus a line on why….
   - Blocked by: T-027 · Blocks: none
 
