@@ -44,6 +44,7 @@ import { mockPlanDomainRead } from '../../helpers/plan-domain-read.js';
 
 const PLAN_ID = 'plan-uuid-001';
 const CUSTOMER_ID = 'customer-uuid-001';
+const OTHER_CUSTOMER_ID = 'customer-uuid-002';
 const PAST_DUE_SUBSCRIPTION_ID = 'sub-past-due-001';
 const GASTRONOMY_ENTITY_ID = 'entity-gastro-001';
 const EXPERIENCE_ENTITY_ID = 'entity-exp-001';
@@ -173,6 +174,52 @@ describe('replacePastDuePaymentMethod (HOS-348 Part B)', () => {
         // the new subscription's confirmed PENDING_PROVIDER -> ACTIVE
         // transition (subscription-logic.ts) — untouched by this service.
         expect(cancel).not.toHaveBeenCalled();
+    });
+
+    it('states trialDays: 0 explicitly — a past-due replacement never re-opens a trial (HOS-1315)', async () => {
+        // This is NOT the same fix as the status-seal above, and is easy to
+        // mistake for cosmetic. Before this PR, the call into
+        // `createPaidSubscription` omitted `trialDays` entirely. qzpay-core's
+        // OWN fallback (`packages/core/src/billing.ts`, verified in the qzpay
+        // clone): `if (input.trialDays !== undefined) createInput.trialDays =
+        // input.trialDays; else if (price?.trialDays != null)
+        // createInput.trialDays = price.trialDays;` — so an OMITTED trialDays
+        // silently inherited the RESOLVED PRICE's own `trial_days` column,
+        // which every `owner-*`/`tourist-*` monthly price carries as 30 (see
+        // `own-preapproval-subscription-create.ts`'s identical
+        // `trialDays: 0` JSDoc, measured on staging 5 of 5). qzpay-drizzle's
+        // storage adapter then writes `trial_end = now + 30d` on the new row
+        // regardless of `mode` (`drizzle-storage.adapter.ts:435-436` in the
+        // qzpay clone — this computation does not check `mode` the way the
+        // `initialStatus` one does), and `deriveTrialingStatus` reads that
+        // `trial_end` once the preapproval is confirmed authorized. Net
+        // effect: a customer who was `past_due` — the WORST candidate for a
+        // free trial — got 30 days of `trialing` on the replacement, unbilled,
+        // purely because this call site forgot to state the one field that
+        // suppresses qzpay-core's own default. `trialDays: 0` (via routing
+        // through `createOwnPreapprovalSubscription`, which REQUIRES it) is
+        // what closes that — not merely "the same semantics made explicit".
+        //
+        // Only testable at this file's own boundary (the fake `QZPayBilling`
+        // stands in for qzpay-core entirely, so its internal trialDays
+        // fallback never runs here): assert this service states `trialDays: 0`
+        // on every call into `billing.subscriptions.create`, so a future edit
+        // that drops the field goes red instead of silently reopening the
+        // trial-leak.
+        const { billing, create } = makeFakeBilling();
+        const { db } = makeFakeDb([]);
+
+        await replacePastDuePaymentMethod({
+            billing,
+            customerId: CUSTOMER_ID,
+            pastDueSubscription: ACCOMMODATION_PAST_DUE_ROW,
+            paymentMethodReturnUrl: 'https://hospeda.example/return',
+            notificationUrl: 'https://hospeda.example/webhook',
+            db
+        });
+
+        const createArgs = create.mock.calls[0]?.[0] as { trialDays?: number };
+        expect(createArgs.trialDays).toBe(0);
     });
 
     it('reuses an in-flight replacement attempt within the reuse window instead of minting a second preapproval', async () => {
@@ -527,6 +574,56 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
     }
 
     /**
+     * `apps/api/test/setup.ts` mocks `@repo/db` wholesale
+     * (`test/helpers/mocks/db-mock.ts`), which replaces `eq`/`and`/`gte` with
+     * plain, INSPECTABLE object builders rather than real `drizzle-orm` SQL —
+     * `eq(a, b)` → `{ type: 'eq', left: a, right: b }`, `and(...args)` →
+     * `{ type: 'and', conditions: args }` (verified empirically: logged the
+     * actual object `findReusableReplacementAttempt`'s `and(...)` call
+     * produces under this mock before writing the two helpers below). Column
+     * references resolve to their plain DB-name string (the SAME mock file's
+     * `billingSubscriptions.customerId === 'customer_id'`), so a leaf's
+     * `left` is directly comparable to a column name — no SQL-AST walking
+     * needed, unlike a suite that exercises the real `drizzle-orm` package.
+     */
+    interface MockCondition {
+        readonly type?: string;
+        readonly left?: unknown;
+        readonly right?: unknown;
+        readonly conditions?: readonly unknown[];
+    }
+
+    /** Flattens an `and(...)`-composed mock condition into its leaf conditions. */
+    function flattenAndClause(clause: unknown): unknown[] {
+        const condition = clause as MockCondition | undefined;
+        if (condition?.type === 'and' && Array.isArray(condition.conditions)) {
+            return condition.conditions.flatMap((child) => flattenAndClause(child));
+        }
+        return [clause];
+    }
+
+    /**
+     * Reads the value a real `eq(<column named columnName>, value)` leaf
+     * bound in `clause`, or `undefined` when no such leaf exists (e.g. a
+     * mutation deleted it from the source's `and(...)` list). Used so the
+     * fake SELECT below filters on what the query genuinely asked for,
+     * instead of a value the test asserts in from the outside.
+     */
+    function eqValueFor(clause: unknown, columnName: string): string | undefined {
+        for (const leaf of flattenAndClause(clause)) {
+            const condition = leaf as MockCondition | undefined;
+            if (
+                condition?.type === 'eq' &&
+                condition.left === columnName &&
+                typeof condition.right === 'string'
+            ) {
+                return condition.right;
+            }
+        }
+        return undefined;
+    }
+
+    /**
      * A stateful fake `QZPayBilling` + Drizzle client sharing ONE in-memory
      * `billing_subscriptions` table.
      *
@@ -541,6 +638,16 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
      * the bug reintroduced, whatever `createPaidSubscription` alone leaves
      * untouched) is exactly what a later `db.select(...)` sees — the two
      * halves of the bug, reproduced by letting the actual code drive both.
+     *
+     * The SELECT's `customerId` filter is read from the REAL condition object
+     * `findReusableReplacementAttempt` passes to `.where(...)` (via
+     * {@link eqValueFor}), not hardcoded — so a mutation that drops
+     * `eq(billingSubscriptions.customerId, ...)` from that `and(...)` list
+     * changes what THIS fake actually filters on, same as it would change a
+     * real query. The `status` / `supersedesSubscriptionId` conditions are
+     * still matched against fixed test constants (see the "not chased" note
+     * on the mutation report for why — those two don't cross a tenant
+     * boundary the way `customerId` does).
      */
     function makeStatefulFakeDbAndBilling() {
         const table: FakeSubscriptionRow[] = [];
@@ -582,21 +689,29 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
             subscriptions: { create, cancel }
         } as unknown as QZPayBilling;
 
-        // Mirrors `findReusableReplacementAttempt`'s own WHERE conditions
-        // (customerId + status=pending_provider + supersedesSubscriptionId),
-        // evaluated against the table's CURRENT state — i.e. whatever the
+        // Evaluated against the table's CURRENT state — i.e. whatever the
         // production write path actually left there, not a value the test
-        // asserted in.
+        // asserted in. The `customerId` bound is read off the REAL `where(...)`
+        // argument (see `eqValueFor` above); `status` /
+        // `supersedesSubscriptionId` are matched against fixed test constants.
         const db = {
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
-                    where: vi.fn(() => ({
+                    where: vi.fn((condition: unknown) => ({
                         orderBy: vi.fn(() => ({
-                            limit: vi.fn(async (n: number) =>
-                                table
+                            limit: vi.fn(async (n: number) => {
+                                const boundCustomerId = eqValueFor(condition, 'customer_id');
+                                return table
                                     .filter(
                                         (row) =>
-                                            row.customerId === CUSTOMER_ID &&
+                                            // `undefined` means the SOURCE'S OWN
+                                            // condition carried no customerId
+                                            // `eq(...)` leaf at all (e.g. a mutation
+                                            // deleted it) — mirrored here as "do not
+                                            // filter by customer", exactly what a real
+                                            // query missing that clause would do.
+                                            (boundCustomerId === undefined ||
+                                                row.customerId === boundCustomerId) &&
                                             row.status ===
                                                 SubscriptionStatusEnum.PENDING_PROVIDER &&
                                             (row.metadata as Record<string, unknown> | null)
@@ -609,8 +724,8 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
                                         id: row.id,
                                         metadata: row.metadata,
                                         createdAt: row.createdAt
-                                    }))
-                            )
+                                    }));
+                            })
                         }))
                     }))
                 }))
@@ -627,7 +742,12 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
             }))
         };
 
-        return { billing, db: db as never, table, create, cancel };
+        /** Shorthand: calls `replacePastDuePaymentMethod` bound to this fake's own `billing`/`db`. */
+        const callReplace = (
+            replaceInput: Omit<Parameters<typeof replacePastDuePaymentMethod>[0], 'billing' | 'db'>
+        ) => replacePastDuePaymentMethod({ ...replaceInput, billing, db: db as never });
+
+        return { billing, db: db as never, table, create, cancel, callReplace };
     }
 
     it('a second attempt reuses the FIRST mint’s own row instead of minting again', async () => {
@@ -687,5 +807,38 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
         expect(table).toHaveLength(1);
         expect(table[0]?.status).toBe(SubscriptionStatusEnum.PENDING_PROVIDER);
         expect(table[0]?.status).not.toBe('incomplete');
+    });
+
+    it('does NOT reuse another customer’s in-flight row, even one pointing at the SAME past-due subscription id', async () => {
+        // Arrange — deliberately adversarial: two DIFFERENT customers, whose
+        // in-flight rows both carry `supersedesSubscriptionId ===
+        // PAST_DUE_SUBSCRIPTION_ID` (a real deployment could never collide on
+        // a past-due subscription id this way — ids are unique — but the
+        // point is to isolate the customerId condition on its own, not to
+        // model a realistic scenario). If `findReusableReplacementAttempt`'s
+        // `eq(billingSubscriptions.customerId, ...)` condition were ever
+        // dropped, customer B would walk away with customer A's checkout.
+        const { callReplace, create } = makeStatefulFakeDbAndBilling();
+
+        const forCustomerA = await callReplace({
+            customerId: CUSTOMER_ID,
+            pastDueSubscription: ACCOMMODATION_PAST_DUE_ROW,
+            paymentMethodReturnUrl: 'https://hospeda.example/return',
+            notificationUrl: 'https://hospeda.example/webhook'
+        });
+
+        // Act — customer B, same billing/db instance, same past-due id.
+        const forCustomerB = await callReplace({
+            customerId: OTHER_CUSTOMER_ID,
+            pastDueSubscription: ACCOMMODATION_PAST_DUE_ROW,
+            paymentMethodReturnUrl: 'https://hospeda.example/return',
+            notificationUrl: 'https://hospeda.example/webhook'
+        });
+
+        // Assert — customer B mints their OWN row rather than being handed
+        // customer A's checkout.
+        expect(forCustomerB.reused).toBe(false);
+        expect(forCustomerB.localSubscriptionId).not.toBe(forCustomerA.localSubscriptionId);
+        expect(create).toHaveBeenCalledTimes(2);
     });
 });
