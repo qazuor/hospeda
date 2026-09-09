@@ -337,3 +337,74 @@ describe('SubscriptionDashboard — plan change per product domain (HOS-1213)', 
         });
     });
 });
+
+// ─── HOS-1278: the pause/resume button is accommodation-only ──────────────────
+
+/**
+ * `canPause`/`canResume` (SubscriptionDashboard.client.tsx) never checked
+ * `commerceVertical`, so a gastronomy/experience dashboard offered "Pausar
+ * suscripción" — a modal whose copy is hardcoded to accommodations
+ * ("tus alojamientos se ocultan del sitio") and whose backend effect used to
+ * be scoped to `accommodations.owner_suspended` regardless of the paused
+ * subscription's domain. Both buttons must be absent on a commerce dashboard
+ * (a dedicated commerce pause UI is a separate follow-up), and both must still
+ * render for an accommodation subscription.
+ */
+describe('SubscriptionDashboard — pause/resume is accommodation-only (HOS-1278)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('does NOT render the pause button on a gastronomy dashboard (active subscription)', async () => {
+        mockSubscription(GASTRONOMY_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={COMMERCE_OWNER}
+                plans={[]}
+                commercePlans={GASTRONOMY_PLANS}
+                productDomain="gastronomy"
+            />
+        );
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('button', { name: /pausar suscripción/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('does NOT render the resume button on a gastronomy dashboard (paused subscription)', async () => {
+        mockSubscription({ ...GASTRONOMY_SUBSCRIPTION, status: 'paused' });
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={COMMERCE_OWNER}
+                plans={[]}
+                commercePlans={GASTRONOMY_PLANS}
+                productDomain="gastronomy"
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.queryByText(/reanudar suscripción/i)).not.toBeInTheDocument();
+    });
+
+    it('still renders the pause button on an accommodation dashboard (active subscription)', async () => {
+        mockSubscription(ACCOMMODATION_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={HOST}
+                plans={TOURIST_PLANS}
+                commercePlans={[]}
+                productDomain="accommodation"
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /pausar suscripción/i })).toBeInTheDocument();
+    });
+});
