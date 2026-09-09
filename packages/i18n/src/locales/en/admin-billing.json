@@ -1149,7 +1149,8 @@
             "paused": "Paused",
             "comp": "Complimentary",
             "abandoned": "Abandoned",
-            "pendingProvider": "Awaiting provider"
+            "pendingProvider": "Awaiting provider",
+            "courtesy": "Gifted periods"
         },
         "promoEffect": {
             "title": "Active promotion",

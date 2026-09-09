@@ -1149,7 +1149,8 @@
             "paused": "Pausada",
             "comp": "Cortesía",
             "abandoned": "Abandonada",
-            "pendingProvider": "Esperando al proveedor"
+            "pendingProvider": "Esperando al proveedor",
+            "courtesy": "Períodos regalados"
         },
         "promoEffect": {
             "title": "Promoción activa",
