@@ -129,13 +129,16 @@ vi.mock('../../src/services/billing/pending-provider-subscription-create', () =>
         createPendingProviderSubscriptionMock(...args)
 }));
 
-// Commerce/partner in-flight-checkout reuse reads the DB before the branch this
-// suite exercises. Always "no reusable checkout".
+// Commerce/partner/accommodation in-flight-checkout reuse reads the DB before
+// the branch this suite exercises. Always "no reusable checkout".
 vi.mock('../../src/services/billing/checkout-idempotency', () => ({
     resolveReusableCommerceCheckout: vi.fn().mockResolvedValue(null),
     resolveReusableCommerceOwnPreapprovalCheckout: vi.fn().mockResolvedValue(null),
     resolveReusablePartnerCheckout: vi.fn().mockResolvedValue(null),
-    resolveReusablePartnerOwnPreapprovalCheckout: vi.fn().mockResolvedValue(null)
+    resolveReusablePartnerOwnPreapprovalCheckout: vi.fn().mockResolvedValue(null),
+    // HOS-1272
+    resolveReusableAccommodationCheckout: vi.fn().mockResolvedValue(null),
+    resolveReusableAccommodationOwnPreapprovalCheckout: vi.fn().mockResolvedValue(null)
 }));
 
 vi.mock('../../src/services/subscription-checkout-promo.service', () => ({
@@ -165,9 +168,12 @@ const DB_STUB = {
     // by hand and do not depend on this read.
     select: vi.fn(() => ({
         from: vi.fn(() => ({
-            where: vi.fn(() => ({
-                limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
-            }))
+            where: vi.fn(() => {
+                const limit = vi.fn(() =>
+                    Promise.resolve([{ productDomain: 'accommodation', createdAt: new Date() }])
+                );
+                return { limit, orderBy: vi.fn(() => ({ limit })) };
+            })
         }))
     }))
 };

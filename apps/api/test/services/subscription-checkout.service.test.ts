@@ -30,6 +30,28 @@ vi.mock('@repo/db', async () => {
     const actual = await vi.importActual<typeof import('@repo/db')>('@repo/db');
     return {
         ...actual,
+        // HOS-1272: `checkout-idempotency.ts`'s `loadCorrelationRow` — now
+        // reachable from THIS suite via `resolveReusableAccommodationCheckout`
+        // — reads `billingPendingCheckouts` from `@repo/db`'s root barrel,
+        // which resolves to the package's BUILT `dist/index.js` (its
+        // package.json `exports["."]` — unlike `@repo/db/schemas/billing`,
+        // which resolves straight to source). `vi.importActual` follows that
+        // same resolution, so a `dist` that has not been rebuilt since this
+        // table's schema landed hands back `actual` without the key. Stated
+        // explicitly here (column-marker shape only, matching
+        // `checkout-idempotency-by-entity.test.ts`'s fixture) so this suite
+        // does not depend on the local dist being fresh.
+        billingPendingCheckouts: actual.billingPendingCheckouts ?? {
+            localSubscriptionId: 'local_subscription_id',
+            customerId: 'customer_id',
+            planId: 'plan_id',
+            mpPreapprovalPlanId: 'mp_preapproval_plan_id',
+            nonce: 'nonce',
+            status: 'status',
+            expiresAt: 'expires_at',
+            pendingDiscount: 'pending_discount',
+            pendingTrialExtension: 'pending_trial_extension'
+        },
         getDb: vi.fn(() => ({ execute: vi.fn().mockResolvedValue({ rows: [] }) }))
     };
 });
@@ -1410,6 +1432,112 @@ describe('initiatePaidPlanUpgrade', () => {
         expect(metadata.newPriceId).toBe(NEW_PRICE_ID);
         expect(metadata.targetTransactionAmountMajor).toBe(35_000); // 3_500_000 / 100
         expect(metadata.deltaCentavos).toBe(1_000_000);
+    });
+
+    /**
+     * HOS-1272 regression. Upgrade mints a one-time `mode: 'payment'` checkout
+     * for the prorated delta rather than a preapproval, so its double-click
+     * protection is a DETERMINISTIC provider-level `idempotencyKey`
+     * (`${currentSubscriptionId}:upgrade:${newPlanId}`) instead of the
+     * per-customer DB check the monthly/annual preapproval paths gained in
+     * this same spec. This asserts the determinism itself: two consecutive
+     * upgrade attempts for the SAME subscription and target plan produce the
+     * IDENTICAL key. A regression that swapped in a fresh id per call —
+     * exactly the bug HOS-1272 found in the one-time add-on checkout's
+     * `randomUUID()` — would defeat MercadoPago's own dedup on this key and
+     * is what this test is built to catch.
+     */
+    it('HOS-1272: sends the SAME idempotencyKey on two consecutive upgrade attempts (double-click protection)', async () => {
+        const billing = createUpgradeBillingMock();
+
+        await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            now: HALFWAY
+        });
+        await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            now: HALFWAY
+        });
+
+        const firstCall = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        const secondCall = billing.checkout.create.mock.calls[1]?.[0] as Record<string, unknown>;
+        expect(secondCall.idempotencyKey).toBe(firstCall.idempotencyKey);
+        expect(firstCall.idempotencyKey).toBe(`${UPGRADE_SUB_ID}:upgrade:${NEW_PLAN_ID}`);
+    });
+
+    /**
+     * SYMMETRIC case: a DIFFERENT target plan for the SAME subscription must
+     * mint a DIFFERENT key — an idempotency fix that collapsed every upgrade
+     * attempt for a subscription onto one key, regardless of target plan,
+     * would be worse than the bug (it would silently reuse a stale checkout
+     * priced for the WRONG plan).
+     */
+    it('HOS-1272: sends a DIFFERENT idempotencyKey for a different target plan (SYMMETRIC case)', async () => {
+        const OTHER_NEW_PLAN_ID = '00000000-0000-4000-8000-0000000000cc';
+        const billing = createUpgradeBillingMock();
+        // Extend the default plan map with a THIRD plan so both upgrade
+        // targets resolve — `createUpgradeBillingMock` only ever seeds one.
+        vi.mocked(billing.plans.get).mockImplementation(async (id: string) => {
+            if (id === PLAN_ID) {
+                return {
+                    id: PLAN_ID,
+                    name: 'owner-basico',
+                    prices: [priceWith({ id: 'price_monthly_current', unitAmount: 1_500_000 })]
+                };
+            }
+            if (id === NEW_PLAN_ID) {
+                return {
+                    id: NEW_PLAN_ID,
+                    name: 'owner-premium',
+                    prices: [priceWith({ id: NEW_PRICE_ID, unitAmount: 3_500_000 })]
+                };
+            }
+            if (id === OTHER_NEW_PLAN_ID) {
+                return {
+                    id: OTHER_NEW_PLAN_ID,
+                    name: 'owner-enterprise',
+                    prices: [priceWith({ id: 'price_monthly_other', unitAmount: 5_000_000 })]
+                };
+            }
+            return null;
+        });
+
+        await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            now: HALFWAY
+        });
+        await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: OTHER_NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            now: HALFWAY
+        });
+
+        const firstCall = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        const secondCall = billing.checkout.create.mock.calls[1]?.[0] as Record<string, unknown>;
+        expect(secondCall.idempotencyKey).not.toBe(firstCall.idempotencyKey);
     });
 
     it('throws SUBSCRIPTION_NOT_FOUND when the active sub does not exist', async () => {

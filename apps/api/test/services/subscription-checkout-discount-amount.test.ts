@@ -242,9 +242,12 @@ function createDbStub() {
         update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn(async () => undefined) })) })),
         select: vi.fn(() => ({
             from: vi.fn(() => ({
-                where: vi.fn(() => ({
-                    limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
-                }))
+                where: vi.fn(() => {
+                    const limit = vi.fn(() =>
+                        Promise.resolve([{ productDomain: 'accommodation', createdAt: new Date() }])
+                    );
+                    return { limit, orderBy: vi.fn(() => ({ limit })) };
+                })
             }))
         }))
     } as never;
