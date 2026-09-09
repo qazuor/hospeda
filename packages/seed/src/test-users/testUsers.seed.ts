@@ -102,13 +102,18 @@ export interface TestUserSpec {
      */
     readonly extraRoles?: readonly (typeof RoleEnum)[keyof typeof RoleEnum][];
     /**
-     * `billing_subscriptions.product_domain` to stamp on this user's
-     * subscription (HOS-694). Required for a commerce-vertical subscription
-     * (`'gastronomy'` / `'experience'`) — `subscriptionMatchesDomain` reads
-     * this column exactly for those two domains, so an unstamped row (which
-     * defaults to `'accommodation'`) would be invisible to the commerce
-     * entitlement loader. Omitted for every accommodation/tourist/complex
-     * plan, where the column's `'accommodation'` default is already correct.
+     * OVERRIDE for `billing_subscriptions.product_domain` (HOS-694). Omitting it
+     * no longer means "let the column default answer" — since HOS-1233 T-035 the
+     * domain is derived from `planSlug`'s own plan row, so every fixture is
+     * stamped with its plan's real vertical whether or not it declares one here.
+     *
+     * That derivation is why this field is now rarely needed. It used to be
+     * REQUIRED for the two commerce verticals and deliberately omitted for
+     * accommodation, tourist and complex "where the column's `'accommodation'`
+     * default is already correct" — reasoning that was true for accommodation,
+     * incidental for complex, and wrong for tourist, which has been a domain of
+     * its own since this spec. Declare a value only for a fixture that
+     * deliberately wants a domain its plan does NOT name.
      */
     readonly subscriptionProductDomain?: ProductDomainValue;
     /**
