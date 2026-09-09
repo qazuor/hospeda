@@ -1349,8 +1349,8 @@ export const billingApi = {
      * @example
      * ```ts
      * const result = await billingApi.purchaseAddon({
-     *   slug: 'visibility-boost-7d',
-     *   body: { accommodationId: 'acc-uuid' },
+     *   slug: 'visibility-boost-gastronomy-7d',
+     *   body: { entityId: 'gastronomy-uuid' },
      *   idempotencyKey: crypto.randomUUID()
      * });
      * if (result.ok) window.location.href = result.data.checkoutUrl;
@@ -1365,6 +1365,16 @@ export const billingApi = {
         readonly slug: string;
         readonly body?: {
             readonly promoCode?: string;
+            /**
+             * Target listing for a `requiresAccommodationTarget` add-on
+             * (HOS-1286). Any of the three verticals; the server derives WHICH
+             * table from the add-on's own `productDomain`.
+             */
+            readonly entityId?: string;
+            /**
+             * @deprecated Since HOS-1286 — send `entityId`. Still accepted by
+             * the server for one release; this client no longer sends it.
+             */
             readonly accommodationId?: string;
         };
         readonly idempotencyKey: string;
@@ -3560,6 +3570,46 @@ const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>
  * entitlement key: gastronomy's most-viewed dishes, and experience's origin
  * destinations.
  */
+/**
+ * Protected commerce listing endpoints the OWNER reads about their own listings
+ * (HOS-1286).
+ *
+ * Separate from {@link commerceAnalyticsApi} on purpose: that object is the
+ * `view_basic_stats` surface and everything on it is entitlement-gated
+ * telemetry. This is "which listings do I own", which the add-on purchase panel
+ * needs to offer a per-listing visibility boost a target to point at, and which
+ * no entitlement gates.
+ */
+export const commerceListingsApi = {
+    /**
+     * List the caller's own listings in one commerce vertical.
+     *
+     * @param params - `{ vertical }`
+     * @returns `{ listings }` — the owner's listing summaries for that vertical.
+     */
+    listMine({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: CommerceAnalyticsVertical;
+        /** Forwarded when called from SSR, as `hostAnalyticsApi.listOwnAccommodations` does. */
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly listings: readonly {
+                readonly id: string;
+                readonly name: string;
+                readonly slug: string;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine`,
+            cookieHeader
+        });
+    }
+};
+
 export const commerceAnalyticsApi = {
     /**
      * Get view stats (cumulative) for every listing the caller owns in one
