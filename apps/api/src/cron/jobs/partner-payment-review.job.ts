@@ -51,6 +51,7 @@
 import { PartnerModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { PartnerPaymentReviewStateEnum } from '@repo/schemas';
+import { PARTNER_PAYMENT_REVIEW_AFTER_DAYS } from '@repo/service-core';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { trySendNotification } from '../../utils/notification-helper.js';
@@ -58,26 +59,14 @@ import { resolveOpsRecipients } from '../../utils/ops-recipients.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 /**
- * How long a partner may run before an admin is asked to confirm the payment.
+ * The window, re-exported from its single home in `@repo/service-core`.
  *
- * A constant rather than a value read off the partner's plan, and that is a
- * MEASURED limitation, not a shortcut. Three things were checked:
- *
- * - `partners` records `plan_id` but no cadence, so a plan cannot say which
- *   period was agreed;
- * - a partner plan carries BOTH prices — the seed writes a `month` row and a
- *   `year` row for the same plan (`partnerPlan.seed.ts`) — so `plan_id` maps to
- *   two cadences, not one;
- * - `registerManualPayment` never reads `plan_id` at all, so a partner
- *   activated in cash may legitimately have none.
- *
- * 30 days is therefore the shortest cadence the platform actually executes
- * (`initiatePartnerMonthlySubscription` is the only checkout there is), and
- * erring short is the cheap error under the asymmetry above: reviewing too
- * often costs an alert the admin dismisses, reviewing too rarely gives away a
- * year. Changing it is one line.
+ * NOT redeclared here. The confirmation endpoint pushes
+ * `paymentConfirmedThrough` forward by exactly this amount when the admin does
+ * not type a date, so a second copy would let a partner be confirmed for 30
+ * days and re-asked about after 14 — forever, and invisibly.
  */
-export const PAYMENT_REVIEW_AFTER_DAYS = 30;
+export const PAYMENT_REVIEW_AFTER_DAYS = PARTNER_PAYMENT_REVIEW_AFTER_DAYS;
 
 /** Batch ceiling per tick, mirroring the other two partner crons. */
 const BATCH_LIMIT = 100;
