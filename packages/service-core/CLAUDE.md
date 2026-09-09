@@ -1072,19 +1072,42 @@ Three discriminated kinds, controlled by `billing_promo_codes.effect_kind` (varc
 
 ```
 { kind: 'none' }        — no code supplied
-{ kind: 'trial' }       — trial_extension → freeTrialDays forwarded to qzpay
+{ kind: 'trial' }       — trial_extension. STILL IN THE UNION, BUT DEAD: checkout
+                          never branches on it (HOS-1012 removed the card-first
+                          trial, so nothing is forwarded to qzpay)
 { kind: 'discount' }    — discount → discounted amount + cycle-counter seed inputs
-{ kind: 'comp' }        — comp → createCompSubscription (no MP preapproval)
 { kind: 'invalid' }     — validation failed (caller maps to INVALID_PROMO_CODE)
 ```
 
+Two corrections worth keeping in view, because the type still models more than
+the code does:
+
+- **`{ kind: 'comp' }` no longer exists.** HOS-1171 removed the member; a `comp`
+  code is now refused at checkout and comes back as `{ kind: 'invalid' }`. The
+  union at `subscription-checkout-promo.service.ts:47-68` has four members, not
+  five.
+- **`{ kind: 'trial' }` is declared but unreachable.** `subscription-checkout.service.ts`
+  only ever tests `promoPlan.kind === 'invalid'` (lines 463, 1556) and
+  `=== 'discount'` (lines 522, 1581). No branch reads `'trial'`, so its
+  `freeTrialDays` is never forwarded anywhere. The variant's own docstring still
+  claims it is — a stale reason under a type that still compiles.
+
 ### Comp subscription: why no MercadoPago preapproval
 
-A `comp` promo code causes `apps/api/src/services/subscription-comp-create.service.ts` to insert a `billing_subscriptions` row with `status = 'comp'` (the `SubscriptionStatusEnum.COMP` value) directly in DB, skipping qzpay entirely. Key consequences:
+**A comp is granted by an ADMIN, not by a promo code at checkout.** HOS-1171
+removed the checkout branch; the live entry point is
+`POST` on `apps/api/src/routes/billing/admin/subscription-comp.ts` →
+`grantCompSubscription` (`services/subscription-comp-grant.service.ts:348`),
+which wraps `createCompSubscription`
+(`services/subscription-comp-create.service.ts:92`, still the only inserter,
+called at `subscription-comp-grant.service.ts:563`). It inserts a
+`billing_subscriptions` row with `status = 'comp'` (the
+`SubscriptionStatusEnum.COMP` value) directly in DB, skipping qzpay entirely.
+Key consequences:
 
 - `mp_subscription_id` is NULL — no preapproval is created or charged.
 - The dunning cron excludes `status='comp'` rows.
-- `loadEntitlements` treats `comp` as an active accommodation subscription, so full plan entitlements are retained.
+- `loadEntitlements` treats `comp` as an active subscription, so full plan entitlements are retained. Note it resolves the customer's plan over `accommodation` **or `tourist`** since HOS-1233, not accommodation alone.
 - The insert, promo stamp, and redemption record are wrapped in one transaction for atomicity.
 
 ### Multi-cycle discount: how the renewal counter works

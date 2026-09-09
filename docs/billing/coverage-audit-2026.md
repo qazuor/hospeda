@@ -4,6 +4,13 @@
 > **Scope**: Test coverage audit across the billing surface — services, routes, webhook handlers, and `@repo/billing` adapters.
 > **Goal**: 100% line coverage with documented exceptions for true-impossible-in-e2e branches. Functional audit cross-checks every documented operational runbook flow against at least one e2e test.
 > **Status**: in-progress (built incrementally under T-143-55).
+> **Drift (HOS-1302, 2026-09-09)**: a 2026-05-20 snapshot whose cron section has
+> gone stale. It names files that do not exist (`dunning-cron.job.ts`,
+> `addon-expiration.job.ts`, `trial-expiration.job.ts` — the real ones are
+> `dunning.job.ts`, `addon-expiry.job.ts`, `trial-expiry.ts`), covers a
+> `trial-pre-end-notif` job that HOS-121 DELETED, and lists schedules that no
+> longer match. Take cron names and schedules from
+> `apps/api/src/cron/schedules.manifest.ts`, not from here.
 
 ---
 

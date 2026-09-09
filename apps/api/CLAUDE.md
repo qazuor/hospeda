@@ -558,11 +558,16 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 Every protected route runs middleware in this order:
 
 ```
-auth → actor → billing → billingCustomer → trial → [options.middlewares]
+auth → actor → billing → billingCustomer → entitlement → trial → [options.middlewares]
 ```
 
 `options.middlewares` is where entitlement and limit gates live. Gate the
 route there — never inside the handler body.
+
+The `entitlement` step is `entitlementMiddleware()`
+(`src/utils/create-app.ts:176`), the LOADER that populates `userEntitlements` /
+`userLimits` on the context. It is NOT the gate, and it runs before `trial`.
+This diagram used to omit it entirely.
 
 ### Ordering invariants
 
@@ -775,7 +780,20 @@ Routes live in `src/routes/billing/`: `start-paid.ts`, `plan-change.ts`,
 Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
 `finalize-cancelled-subs.ts`, `trial-expiry.ts`, `addon-expiry.job.ts`,
 `apply-scheduled-plan-changes.ts`, `subscription-poll.job.ts`,
-`abandoned-pending-subs.job.ts`, `exchange-rate-fetch.job.ts`.
+`abandoned-pending-subs.job.ts`, `exchange-rate-fetch.job.ts`,
+`preapproval-less-expiry.job.ts`, `entity-subscription-cache-reconcile.job.ts`,
+`addon-subscription-reconcile.job.ts`, `courtesy-expiry.job.ts`,
+`propagate-plan-price-changes.job.ts`,
+`reactivation-supersession-reconcile.job.ts`, `partner-expiry.job.ts` and
+`partner-unpaid-reaper.job.ts`.
+
+Two traps in that list. **A job's registered NAME is not its filename** —
+`trial-expiry.ts` registers as `trial-reconcile`, and that string is what
+`hops cron-trigger` and the admin cron UI expect; `src/cron/schedules.manifest.ts`
+is the authoritative name → schedule mapping. And the last two belong to the
+**partner** vertical, which does not go through
+`reconcileSubscriptionLinkedEntities` at all — its bridge is
+`services/partner-reconcile.service.ts`.
 
 For MP sandbox setup and operator procedures:
 [`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md)

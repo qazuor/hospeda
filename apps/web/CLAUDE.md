@@ -61,7 +61,6 @@ src/
     media.ts           # Image/media URL extraction helpers
     middleware-helpers.ts  # Locale, auth, route detection helpers
     page-helpers.ts    # Shared page-level data fetching helpers
-    pricing-fallbacks.ts   # Hardcoded pricing fallback data
     pricing-plans.ts       # Pricing plan fetching + mapping logic
     routes.ts          # Route constants (protected paths, auth paths, static paths)
     sanitize-html.ts   # HTML sanitization for user content
@@ -188,9 +187,23 @@ API Response (raw)  →  transforms.ts  →  Component Props (clean)
 - Components NEVER import from `@repo/schemas` directly.. they receive pre-transformed props
 - When adding a new entity, ALWAYS add its transform function
 
-### Pricing Exception
+### Pricing pages
 
-The pricing page (`/suscriptores/planes/*`) is the **only page with hardcoded fallback data**. If the billing API fails, it renders `pricing-fallbacks.ts` instead of showing an error. This is intentional.. a pricing page must never be empty as it's critical for conversion.
+**There is no hardcoded pricing fallback any more.** `pricing-fallbacks.ts` does
+not exist anywhere under `src/` — this section used to say the pricing page was
+"the only page with hardcoded fallback data" and rendered that file when the
+billing API failed. Both halves are dead. `pricing-plans.ts` (the fetch + mapping
+layer) is still there and is the real entry point.
+
+The URLs moved too (HOS-1032): pricing now lives at
+`/{lang}/planes/<vertical>/precios/` for the five verticals — `anfitriones`,
+`turistas`, `gastronomia`, `experiencias`, `aliados`. The old
+`/{lang}/suscriptores/planes/*` pages survive only as SSR 301 redirects to the
+new locations.
+
+NOT VERIFIED: what these pages actually render when the billing API fails.
+Nobody has measured it since the fallback was removed — do not assume they
+degrade gracefully.
 
 All other pages depend entirely on the API. If the API fails, they show an error or redirect to 404.
 
@@ -426,8 +439,13 @@ All other routes (including `/suscriptores/*`) are public.
 experience listings under `/[lang]/mi-cuenta/comercio`. Identity/core fields
 (name, slug, type, destination, lifecycle/visibility) are read-only and
 server-stripped — owners only maintain content (description, contact, hours,
-media, amenities, price). Admins create the listing and provision the owner; the
-owner maintains it. Full reference:
+media, amenities, price). **Owners create their own listings** since HOS-166 §7.2:
+`POST /api/v1/protected/commerce/listings/{gastronomy,experience}`
+(`apps/api/src/routes/commerce/protected/create.ts`) declares NO
+`requiredPermissions` (HOS-687), creates the listing for `actor.id`, and grants
+`COMMERCE_OWNER` in the same transaction via `createForOwner`. The admin
+create/provision path still exists in parallel — it is no longer the only way in.
+Full reference:
 [docs/commerce-owner-self-service.md](docs/commerce-owner-self-service.md).
 
 ### Auth UI
@@ -1108,12 +1126,16 @@ Four things a future reader would otherwise re-derive wrongly:
 
 - **The gate is three-state, not boolean.** `PartnerService.getPublicBySlug`
   returns `found` / `gone` / `notFound`, and the route maps them to 200 / 410 /
-  404. `gone` means a gold partner that fails the visibility check (`ACTIVE` +
-  `active` subscription): it WAS published, so 410 tells crawlers to deindex it.
-  `notFound` means not gold, or no row — that URL was never served. Collapsing
-  the two renders identically in a browser and silently costs the deindex
-  signal. A gold partner downgraded to silver therefore 404s, deliberately: no
-  "was published" flag is stored, and the URL leaves the sitemap either way.
+  404. **`gone` keys off `partner.revokedAt` and nothing else** (HOS-562 —
+  `packages/service-core/src/services/partner/partner.service.ts:608`): a
+  revocation is a deliberate act, so 410 tells crawlers to deindex it. EVERY
+  other non-visible state answers 404, **including a gold partner that fails the
+  visibility check** (`ACTIVE` + `active` subscription) — i.e. one who simply
+  stopped paying. That is deliberate: "they stopped paying" is not the claim
+  "this is permanently gone", and a lapsed partner can come back. `notFound`
+  also covers not-gold and no-row. Collapsing the two renders identically in a
+  browser and silently costs the deindex signal. A gold partner downgraded to
+  silver 404s for the same reason.
 - **`noindex` is never a literal.** `evaluatePartnerIndexability`
   (`src/lib/seo/partner-indexable.ts`) is the ONE predicate, shared by the page
   and `sitemap-dynamic.xml.ts`, so the sitemap cannot advertise a URL the page
@@ -1264,7 +1286,6 @@ Files in `src/lib/` come from the previous web app iteration with varying levels
 - `logger.ts` - Same prefix `[HOSPEDA-WEB]`
 - `i18n.ts` - Verify namespace imports match `@repo/i18n`
 - `colors.ts` - Expanded from `category-colors.ts` to include accommodation types, post categories, event categories, tags
-- `pricing-fallbacks.ts` - Updated plan data
 - `pricing-plans.ts` - Adjusted field mapping if billing API structure changes
 - `auth-client.ts` - Unified error types to use `ApiResult<T>` instead of custom `AuthApiResult`
 

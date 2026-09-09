@@ -888,10 +888,12 @@ await sendMetrics(metrics);
 **What it does:**
 
 1. Queries all subscriptions with `status='trialing'`
-2. Filters for subscriptions where `trial_end_date <= now()`
-3. Updates expired trials to `status='expired'`
-4. Uses `TrialService.blockExpiredTrials()` for processing
-5. Processes in batches of 100 to avoid memory issues
+2. Filters for subscriptions where `trial_end` has passed
+3. **Re-reads each preapproval and mirrors the provider's verdict** — converts the ones whose charge landed, hands failed charges to dunning, mirrors cancellations. It does NOT flip them to `expired` or `cancelled` (HOS-171)
+4. Uses `TrialService.reconcileExpiredTrials()` for processing
+5. Processes in bounded batches, draining the backlog over successive runs
+
+> Corrected by HOS-1302: steps 3 and 4 said the job "updates expired trials to `status='expired'`" via `TrialService.blockExpiredTrials()`. That method was deleted by HOS-171 and the cancel-on-expiry behaviour with it — cancelling here would terminate every converting customer at the moment they start paying.
 
 **Expected Results:**
 

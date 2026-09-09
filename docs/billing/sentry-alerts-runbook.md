@@ -11,7 +11,7 @@
 | Task | Section | Code prerequisite |
 | ---- | ------- | ----------------- |
 | T-143-47 | §1 (tag conventions, `expected_error:true` filter) | `lib/sentry.ts` `beforeSend` drop (commit `ca5b7f8f`) |
-| T-143-49 | §2.1 (failed-payment) + §2.2 (signature) | `lib/sentry.ts` `captureWebhookError` (pre-existing) + `event-handler.ts:262` (pre-existing) |
+| T-143-49 | §2.1 (failed-payment) + §2.2 (signature) | `lib/sentry.ts` `captureWebhookError` (pre-existing) + `event-handler.ts:331` (pre-existing; this said `:262`, which is inside an unrelated docblock — HOS-1302) |
 | T-143-50 | §2.3 (cron generic) + §2.4 (dunning) | `cron/bootstrap.ts` Sentry capture (commit `62cc7ec0`) |
 | T-143-51 | §3 (billing health dashboard) | Above + `cron_run_history` table + billing DB |
 
@@ -137,9 +137,18 @@ event_type:cron_failure
 
 **Threshold**: any 1 event in 5 minutes.
 
-**Notification target**: `#hospeda-ops` Slack. PagerDuty only if the failing job is in the "Critical" tier of `billing-runbooks.md` §3 (trial-expiry, addon-expiry, apply-scheduled-plan-changes, exchange-rate-fetch, abandoned-pending-subs, webhook-retry). Non-critical (trial-pre-end-notif) → Slack only.
+**Notification target**: `#hospeda-ops` Slack. PagerDuty only if the failing job is in the "Critical" tier of `billing-runbooks.md` §3 (**`trial-reconcile`**, `addon-expiry`, `apply-scheduled-plan-changes`, `exchange-rate-fetch`, `abandoned-pending-subs`, `webhook-retry`).
 
-> Practical implementation: the simplest setup is one alert that sends to Slack always, and a second filtered alert that pages on the critical subset by chaining `job_name:trial-expiry OR job_name:addon-expiry OR …` in a separate rule. Or set up two rules and dedupe at the Slack side via the channel routing.
+> **Two corrections, either of which silently breaks the alert rule (HOS-1302).**
+> The tier list used to name `trial-expiry`. That is the FILE name; the job
+> registers as `trial-reconcile` (renamed by HOS-171 —
+> `apps/api/src/cron/schedules.manifest.ts:295`). A `job_name:trial-expiry`
+> filter matches nothing and pages nobody, which is indistinguishable from a
+> healthy job. And `trial-pre-end-notif` was **deleted** by HOS-121 — the
+> manifest says so explicitly at line 302 — so the "non-critical" example it
+> used to give no longer exists.
+>
+> Practical implementation: the simplest setup is one alert that sends to Slack always, and a second filtered alert that pages on the critical subset by chaining `job_name:trial-reconcile OR job_name:addon-expiry OR …` in a separate rule. Or set up two rules and dedupe at the Slack side via the channel routing. Take job names from `schedules.manifest.ts`, never from a filename.
 
 **Sentry UI setup**:
 
@@ -297,7 +306,7 @@ GROUP BY job_name
 ORDER BY job_name;
 ```
 
-Display: table widget. Highlight rows where `last_success` is older than the job's schedule interval (e.g., dunning every 30 min → red if `last_success < now() - interval '1 hour'`).
+Display: table widget. Highlight rows where `last_success` is older than the job's schedule interval (e.g. dunning runs daily at 06:00 — `schedules.manifest.ts:185` — so red if `last_success < now() - interval '25 hours'`. This said "every 30 min"; HOS-1302).
 
 ### 3.4 Setup steps
 

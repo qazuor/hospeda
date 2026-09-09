@@ -71,7 +71,13 @@ The `error_message` column maps to one of four classes. Treat each differently.
 
 ### Retries
 
-The webhook router auto-retries via `apps/api/src/cron/jobs/webhook-retry.job.ts`. Default cadence: every 5 minutes, max 10 attempts with exponential backoff (`retry_count` column tracks position). If `retry_count = 10` and `status = 'failed'`, the event is DEAD-LETTERED and will not retry without manual intervention.
+The webhook router auto-retries via `apps/api/src/cron/jobs/webhook-retry.job.ts`. Cadence: **hourly** (`0 */1 * * *`), max **5** attempts with exponential backoff (`retry_count` column tracks position). If `retry_count = 5` and `status = 'failed'`, the event is DEAD-LETTERED and will not retry without manual intervention.
+
+> Corrected by HOS-1302: this said "every 5 minutes, max 10 attempts" and
+> "`retry_count = 10`". The constant is `WEBHOOK_RETRY_MAX_ATTEMPTS = 5`
+> (`apps/api/src/routes/webhooks/mercadopago/dead-letter.ts:67`). Both errors
+> point the same way — you would wait for retries that already stopped, and
+> query for a `retry_count` no row ever reaches.
 
 To replay a dead-lettered event:
 
@@ -180,16 +186,26 @@ hops logs api --since=2h | grep -iE 'cron|<job-name>'
 
 ### Triage by job
 
-| Job | When it runs | What it does | Critical? |
+> **Every row of this table was wrong until HOS-1302 (2026-09-09)** — all seven
+> schedules, one job name, one deleted job, and the description of what
+> `trial-reconcile` does. The values below are read off
+> `apps/api/src/cron/schedules.manifest.ts`, which is the source of truth.
+> When you next find yourself here at 3am, re-check against the manifest rather
+> than trusting this table: a stale schedule turns "the job never ran" into a
+> false alarm and back.
+
+| Job (registered name) | When it runs | What it does | Critical? |
 |---|---|---|---|
-| `dunning` | every 30 min | retries failed-payment subs, cancels after N attempts | YES — §4 |
-| `trial-pre-end-notif` | daily 09:00 | sends "trial ending" emails | NO |
-| `trial-expiry` | hourly | flips expired trials to `cancelled` | YES |
-| `addon-expiry` | hourly | revokes expired addon entitlements | YES |
-| `apply-scheduled-plan-changes` | hourly | applies downgrades scheduled for now | YES |
-| `exchange-rate-fetch` | daily 03:00 | refreshes ARS/USD/BRL rates | YES (prices drift) |
-| `abandoned-pending-subs` | daily 02:00 | flips `pending_provider` stuck >24h to `incomplete` | YES |
-| `webhook-retry` | every 5 min | replays failed webhook events | YES |
+| `dunning` | daily 06:00 | walks failed-payment subs. **Currently does not mutate**: `DUNNING_MUTATIONS_ENABLED = false` (`dunning.job.ts:245`, owner decision, HOS-191 F5), so `past_due` is unreachable end to end | YES — §4 |
+| `trial-reconcile` | daily 02:00 | **CONVERTS** elapsed trials against the provider — converts the paid ones, hands failed charges to dunning, mirrors cancellations. It does NOT flip them to `cancelled` (HOS-171). Lives in `trial-expiry.ts`; `trial-expiry` is not a registered name | YES |
+| `addon-expiry` | daily 05:00 | revokes expired addon entitlements | YES |
+| `apply-scheduled-plan-changes` | every 15 min | applies downgrades scheduled for now | YES |
+| `exchange-rate-fetch` | every 3 h | refreshes ARS/USD/BRL rates | YES (prices drift) |
+| `abandoned-pending-subs` | hourly | flips `pending_provider` stuck >24h to `incomplete` | YES |
+| `webhook-retry` | hourly | replays failed webhook events; dead-letters at `WEBHOOK_RETRY_MAX_ATTEMPTS = 5` (`dead-letter.ts:67`), not 10 | YES |
+
+`trial-pre-end-notif` used to be listed here. It was **DELETED** by HOS-121 —
+`schedules.manifest.ts:302` says so explicitly. Do not go looking for it.
 
 "Critical?" = downstream billing correctness depends on it. Non-critical can wait for the next scheduled run; critical needs immediate manual trigger.
 
@@ -268,7 +284,7 @@ hops cron-list --target=prod | grep dunning
 
 - All in `<1d`: dunning is processing them; this is normal load. No action.
 - Pile in `1-3d` AND dunning cron NOT failing: dunning is succeeding but MP returns "no payment method" or "preapproval cancelled". Each requires per-customer outreach (§7).
-- Pile in `>7d`: dunning is supposed to give up at attempt N (see `HOSPEDA_DUNNING_MAX_ATTEMPTS` env, default 5) and flip to `cancelled`. If it isn't, the cron has a bug. Check Sentry for `dunning` errors AND the `billing_dunning_attempts` table for a row with `attempt_number = MAX + 1` that succeeded.
+- Pile in `>7d`: dunning is supposed to give up and flip to `cancelled`. **Two corrections (HOS-1302)**: there is no `HOSPEDA_DUNNING_MAX_ATTEMPTS` env var — it appears nowhere in `apps/api` or `packages`; the retry schedule is the `DUNNING_RETRY_INTERVALS = [1, 3, 5, 7]` constant in `packages/billing/src/constants/billing.constants.ts:98`, inside `DUNNING_GRACE_PERIOD_DAYS = 7`. And the cron does not mutate at all right now (`DUNNING_MUTATIONS_ENABLED = false`, `dunning.job.ts:245`), and no subscription is ever written to `past_due` today — so a pile here is the expected state, not evidence of a cron bug. Check Sentry for `dunning` errors AND the `billing_dunning_attempts` table for a row with `attempt_number = MAX + 1` that succeeded.
 - Pile in `3-7d` with dunning cron failing in §3: cron is broken. Fix per §3, then run manually:
 
   ```bash
@@ -341,7 +357,7 @@ This procedure works around `bug/refund-flow-gaps` (engram), which has 5 sub-gap
 
 ```bash
 hops psql --target=prod -c "
-INSERT INTO billing_refunds (id, payment_id, amount_cents, currency, reason, status, mp_refund_id, created_at)
+INSERT INTO billing_refunds (id, payment_id, amount, currency, reason, status, provider_refund_id, created_at)
 VALUES (gen_random_uuid(), '<payment-uuid>', <amount-centavos>, 'ARS', '<reason>', 'pending', '<mp-refund-id>', now());"
 ```
 
@@ -368,7 +384,7 @@ require('./dist/middlewares/entitlement').clearEntitlementCache('<billing-custom
 
 ```bash
 # Refund row exists and webhook arrived.
-hops psql --target=prod -c "SELECT id, status, mp_refund_id, created_at FROM billing_refunds WHERE payment_id = '<payment-uuid>';"
+hops psql --target=prod -c "SELECT id, status, provider_refund_id, created_at FROM billing_refunds WHERE payment_id = '<payment-uuid>';"
 # Expected: status = 'succeeded'
 
 # Customer's MP dashboard view shows the refund.
@@ -435,6 +451,12 @@ ORDER BY created_at DESC LIMIT 50;"
 2. Click "Presentar evidencia". Upload: usage logs (export from audit_log), subscription history, any user communications.
 3. Submit. MP forwards to the issuing bank. Outcome arrives in 7-30 days.
 4. Update the dispute tracking row:
+
+   > **`billing_disputes` DOES NOT EXIST (HOS-1302).** No migration in
+   > `packages/db/src/migrations/` creates that table, so every `INSERT` and
+   > `SELECT` against it in this section fails with "relation does not exist".
+   > Dispute tracking has no DB surface today. Record the outcome in the Linear
+   > issue for the dispute until someone builds one.
 
    ```bash
    hops psql --target=prod -c "
@@ -901,7 +923,7 @@ hops cron-list --target=prod
 
 ```bash
 hops psql --target=prod -c "
-SELECT p.id, p.status, p.amount_cents, p.created_at, p.error_message
+SELECT p.id, p.status, p.amount, p.created_at, p.failure_message
 FROM billing_payments p
 JOIN billing_customers c ON c.id = p.customer_id
 WHERE c.email = '<email>'
