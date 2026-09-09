@@ -1,18 +1,19 @@
 /**
  * @file tourist-vip-already-held.test.ts
  * @description HOS-1233 D-4 / AC-16..AC-19 — who already holds the tourist-VIP
- * benefits, and the two states that must NOT count.
+ * benefits, and the states that must NOT count.
  *
  * The assertion that matters most here is a `false` (AC-17: a trialing visitor
  * keeps the button), and a `false` is the shape that passes for the wrong
  * reason most easily — a typo in the status string produces it too. Every
  * negative case below therefore has a positive sibling differing ONLY in the
- * status value, so a misspelt fixture fails the sibling instead of quietly
+ * field under test, so a misspelt fixture fails the sibling instead of quietly
  * satisfying both.
  */
 
 import { describe, expect, it } from 'vitest';
 
+import type { SubscriptionStatusReading } from '@/lib/billing/tourist-vip-already-held';
 import {
     holdsTouristVipBenefits,
     TOURIST_VIP_BLOCKING_DOMAINS,
@@ -30,6 +31,23 @@ const KNOWN_WIRE_STATUSES = [
     'paused',
     'courtesy'
 ] as const;
+
+/**
+ * One subscription reading, defaulting to one that is NOT scheduled to end.
+ *
+ * `cancelAtPeriodEnd` is a required field of the reading, so every fixture has
+ * to state it; a helper keeps that from burying the field each case is actually
+ * about. The default is what the wire sends for an ordinary subscription, so
+ * every pre-existing case below reads exactly as it did before the field
+ * existed.
+ *
+ * @param status - The wire status.
+ * @param cancelAtPeriodEnd - Whether a soft cancel is already scheduled.
+ * @returns The reading to hand the predicate.
+ */
+function reading(status: string, cancelAtPeriodEnd = false): SubscriptionStatusReading {
+    return { status, cancelAtPeriodEnd };
+}
 
 describe('the blocking domains (D-4)', () => {
     it('is exactly accommodation, gastronomy and experience', () => {
@@ -79,7 +97,7 @@ describe('holdsTouristVipBenefits — holds (AC-16)', () => {
     ] as const)('an active subscription in %s holds the benefits', (domain) => {
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { [domain]: { status: 'active' } }
+                subscriptionsByDomain: { [domain]: reading('active') }
             })
         ).toBe(true);
     });
@@ -87,7 +105,7 @@ describe('holdsTouristVipBenefits — holds (AC-16)', () => {
     it('a past_due subscription still holds them during the dunning grace', () => {
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { accommodation: { status: 'past_due' } }
+                subscriptionsByDomain: { accommodation: reading('past_due') }
             })
         ).toBe(true);
     });
@@ -95,7 +113,7 @@ describe('holdsTouristVipBenefits — holds (AC-16)', () => {
     it('a courtesy window holds them', () => {
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { gastronomy: { status: 'courtesy' } }
+                subscriptionsByDomain: { gastronomy: reading('courtesy') }
             })
         ).toBe(true);
     });
@@ -106,7 +124,7 @@ describe('holdsTouristVipBenefits — holds (AC-16)', () => {
         // assertion rather than by memory.
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { accommodation: { status: 'active' } }
+                subscriptionsByDomain: { accommodation: reading('active') }
             })
         ).toBe(true);
     });
@@ -115,9 +133,9 @@ describe('holdsTouristVipBenefits — holds (AC-16)', () => {
         expect(
             holdsTouristVipBenefits({
                 subscriptionsByDomain: {
-                    accommodation: { status: 'cancelled' },
+                    accommodation: reading('cancelled'),
                     gastronomy: null,
-                    experience: { status: 'active' }
+                    experience: reading('active')
                 }
             })
         ).toBe(true);
@@ -131,7 +149,7 @@ describe('holdsTouristVipBenefits — does NOT hold (AC-17 / AC-18 / R-7)', () =
         // benefits if the trial lapses.
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { accommodation: { status: 'trial' } }
+                subscriptionsByDomain: { accommodation: reading('trial') }
             })
         ).toBe(false);
     });
@@ -139,7 +157,7 @@ describe('holdsTouristVipBenefits — does NOT hold (AC-17 / AC-18 / R-7)', () =
     it('the SAME fixture with status active holds — the sibling that proves the above is not a typo', () => {
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { accommodation: { status: 'active' } }
+                subscriptionsByDomain: { accommodation: reading('active') }
             })
         ).toBe(true);
     });
@@ -152,7 +170,7 @@ describe('holdsTouristVipBenefits — does NOT hold (AC-17 / AC-18 / R-7)', () =
     ] as const)('a %s subscription does not hold them', (status) => {
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { accommodation: { status } }
+                subscriptionsByDomain: { accommodation: reading(status) }
             })
         ).toBe(false);
     });
@@ -163,9 +181,9 @@ describe('holdsTouristVipBenefits — does NOT hold (AC-17 / AC-18 / R-7)', () =
         expect(
             holdsTouristVipBenefits({
                 subscriptionsByDomain: {
-                    accommodation: { status: 'expired' },
-                    gastronomy: { status: 'cancelled' },
-                    experience: { status: 'paused' }
+                    accommodation: reading('expired'),
+                    gastronomy: reading('cancelled'),
+                    experience: reading('paused')
                 }
             })
         ).toBe(false);
@@ -192,7 +210,7 @@ describe('holdsTouristVipBenefits — does NOT hold (AC-17 / AC-18 / R-7)', () =
         // enabled, not disable it. A denylist would do the opposite.
         expect(
             holdsTouristVipBenefits({
-                subscriptionsByDomain: { accommodation: { status: 'some_future_status' } }
+                subscriptionsByDomain: { accommodation: reading('some_future_status') }
             })
         ).toBe(false);
     });
@@ -207,7 +225,70 @@ describe('holdsTouristVipBenefits — does NOT hold (AC-17 / AC-18 / R-7)', () =
                     // biome-ignore lint/suspicious/noExplicitAny: deliberately
                     // passing a domain outside the blocking set, which the type
                     // correctly rejects — that rejection is what is under test.
-                    ...({ tourist: { status: 'active' } } as any)
+                    ...({ tourist: reading('active') } as any)
+                }
+            })
+        ).toBe(false);
+    });
+});
+
+describe('holdsTouristVipBenefits — a soft cancel does not hold them', () => {
+    // The fourth flagged boundary, and the one that reads as `active` on the
+    // wire. Each case here is paired with the identical fixture differing ONLY
+    // in `cancelAtPeriodEnd`, because a `false` returned for the wrong reason
+    // (a mistyped status, a domain that is not read) is indistinguishable from
+    // the one under test.
+
+    it.each([
+        'active',
+        'past_due',
+        'courtesy'
+    ] as const)('a soft-cancelled %s subscription does not hold them — their end date is already set', (status) => {
+        expect(
+            holdsTouristVipBenefits({
+                subscriptionsByDomain: { accommodation: reading(status, true) }
+            })
+        ).toBe(false);
+    });
+
+    it.each([
+        'active',
+        'past_due',
+        'courtesy'
+    ] as const)('the same %s subscription without the soft cancel DOES hold them', (status) => {
+        expect(
+            holdsTouristVipBenefits({
+                subscriptionsByDomain: { accommodation: reading(status, false) }
+            })
+        ).toBe(true);
+    });
+
+    it('a soft cancel in one vertical does not hide a live subscription in another', () => {
+        // `.some()` over the three domains, so the soft cancel must disqualify
+        // only the row it is on. A predicate that returned early on it would
+        // enable the button for somebody who genuinely still holds the
+        // benefits elsewhere.
+        expect(
+            holdsTouristVipBenefits({
+                subscriptionsByDomain: {
+                    accommodation: reading('active', true),
+                    experience: reading('active', false)
+                }
+            })
+        ).toBe(true);
+    });
+
+    it('an ABSENT flag does not hold them — the same direction as an absent reading', () => {
+        // The wire field is required, so this can only come from a hand-built
+        // reading. It resolves to "does not hold" rather than to the claim
+        // "they already have it", which is R-7's harm.
+        expect(
+            holdsTouristVipBenefits({
+                subscriptionsByDomain: {
+                    // biome-ignore lint/suspicious/noExplicitAny: the omission
+                    // is the point — the type requires the field, and this
+                    // asserts what happens if it arrives missing anyway.
+                    accommodation: { status: 'active' } as any
                 }
             })
         ).toBe(false);
@@ -219,7 +300,7 @@ describe('every known wire status is classified', () => {
         // Non-vacuity: proves the predicate returns a real boolean for each of
         // the eight, rather than only for the ones named individually above.
         const result = holdsTouristVipBenefits({
-            subscriptionsByDomain: { accommodation: { status } }
+            subscriptionsByDomain: { accommodation: reading(status) }
         });
 
         expect(typeof result).toBe('boolean');

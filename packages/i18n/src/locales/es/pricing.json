@@ -5,6 +5,24 @@
     "trial_one": "{{count}} día de prueba gratis",
     "trial_other": "{{count}} días de prueba gratis",
     "trialNotEligible": "Sin período de prueba",
+    "trialWarning": {
+        "title": "Vas a perder tu prueba gratis",
+        "body_one": "Te queda {{count}} día de prueba gratis. Si contratás ahora, lo perdés.",
+        "body_other": "Te quedan {{count}} días de prueba gratis. Si contratás ahora, los perdés.",
+        "bodyUnknown": "Puede que tengas una prueba gratis en curso. Si contratás ahora, la perdés.",
+        "immediateCharge": "El cobro es inmediato: se hace ahora, no al terminar la prueba.",
+        "confirm": "Contratar igual",
+        "cancel": "Seguir con la prueba"
+    },
+    "trialBanner": {
+        "message_one": "Tu prueba gratis sigue activa: te queda {{count}} día.",
+        "message_other": "Tu prueba gratis sigue activa: te quedan {{count}} días.",
+        "hint": "Si contratás un plan ahora, el cobro es inmediato y perdés los días que te quedan."
+    },
+    "touristVipHeld": {
+        "cta": "Ya tenés estos beneficios",
+        "note": "Tu suscripción activa ya incluye todos los beneficios VIP de turista."
+    },
     "includesEverything": "Todo lo del plan {plan}, más:",
     "includesAll": "Este plan incluye:",
     "limitsLabel": "Límites de este plan",

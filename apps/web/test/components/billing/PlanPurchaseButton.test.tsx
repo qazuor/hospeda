@@ -62,6 +62,25 @@ vi.mock('../../../src/lib/i18n', () => ({
 }));
 
 /**
+ * HOS-1233: this file's account already BURNED its accommodation trial, so the
+ * trial gate in `handleClick` is a no-op here and the checkout path these tests
+ * were written for is what they still exercise. Mocked at the module boundary
+ * rather than through `fetch` because `fetchTrialClock` caches its answer in a
+ * module singleton — one throwing fetch in the first test would otherwise leave
+ * every later test reading an UNRESOLVED clock, which warns.
+ */
+vi.mock('../../../src/lib/billing/trial-clock', () => ({
+    fetchTrialClock: () =>
+        Promise.resolve({
+            isOnTrial: false,
+            isExpired: true,
+            daysRemaining: null,
+            startedAt: '2026-01-01T00:00:00.000Z'
+        }),
+    resetTrialClockCache: () => undefined
+}));
+
+/**
  * Mock urls module to produce predictable URL output in JSDOM.
  */
 vi.mock('../../../src/lib/urls', () => ({
@@ -137,6 +156,7 @@ const defaultProps = {
     currency: 'ARS' as const,
     ctaText: 'Contratar',
     locale: 'es' as const,
+    audience: 'owner' as const,
     // HOS-942: the post-signin return path is a prop now — the component no
     // longer knows which of the two pricing pages it was mounted on.
     plansPath: 'suscriptores/planes/anfitriones',

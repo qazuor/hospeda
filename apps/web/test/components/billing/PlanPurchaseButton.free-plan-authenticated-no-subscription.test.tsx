@@ -64,7 +64,8 @@ const freeProps = {
     annualPrice: null,
     currency: 'ARS' as const,
     ctaText: 'Empezar',
-    locale: 'es' as const
+    locale: 'es' as const,
+    audience: 'owner' as const
 };
 
 function mockAuthenticated() {
