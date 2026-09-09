@@ -1378,15 +1378,27 @@ export const billingApi = {
      * `?interval=` query param).
      *
      * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
+     *   plus an optional `productDomain` (HOS-1282) to scope the check to one
+     *   vertical (accommodation | gastronomy | experience | tourist) — e.g. the
+     *   publish flow asking "is THIS accommodation's trial expired" rather than
+     *   the domain-blind answer every pre-existing caller gets. Omitted, the
+     *   server keeps its long-standing domain-blind resolution, matching every
+     *   caller's behaviour before this parameter existed.
      * @returns Trial status information for the current user.
      *
      * @example
      * ```ts
      * const result = await billingApi.getTrialStatus();
      * if (result.ok && result.data.isExpired) { ... }
+     *
+     * // Scope to the gastronomy trial instead of the domain-blind default:
+     * const gastronomy = await billingApi.getTrialStatus({ productDomain: 'gastronomy' });
      * ```
      */
-    getTrialStatus(params?: { readonly cookieHeader?: string }): Promise<
+    getTrialStatus(params?: {
+        readonly cookieHeader?: string;
+        readonly productDomain?: ProductDomainScope;
+    }): Promise<
         ApiResult<{
             readonly isOnTrial: boolean;
             readonly isExpired: boolean;
@@ -1399,6 +1411,7 @@ export const billingApi = {
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/trial/status`,
+            params: params?.productDomain ? { productDomain: params.productDomain } : undefined,
             cookieHeader: params?.cookieHeader
         });
     },

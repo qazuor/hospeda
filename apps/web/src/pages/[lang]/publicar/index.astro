@@ -54,7 +54,6 @@ import PublishHowItWorks from '@/components/publish/PublishHowItWorks.astro';
 import PublishPlanLinks from '@/components/publish/PublishPlanLinks.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
-import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger as logger } from '@/lib/logger';
@@ -62,7 +61,7 @@ import {
     PLANS_PAGE_PATH_BY_VERTICAL,
     PRICING_PAGE_PATH_BY_VERTICAL
 } from '@/lib/publish/publish-page-paths';
-import { publishApi } from '@/lib/api/endpoints-protected';
+import { billingApi, publishApi } from '@/lib/api/endpoints-protected';
 import { shouldShowPublishTrialCallout } from '@/lib/host/publish-trial-callout';
 import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
 import { buildUrl } from '@/lib/urls';
@@ -109,15 +108,17 @@ let trialEligibility: boolean | null = null;
 
 if (isAuthenticated && cookieHeader) {
     try {
-        const [trialResponse, eligibility] = await Promise.all([
-            fetch(`${getApiUrl()}/api/v1/protected/billing/trial/status`, {
-                headers: { cookie: cookieHeader }
-            }),
+        const [trialResult, eligibility] = await Promise.all([
+            // HOS-1282: scoped to this page's own vertical. The endpoint used
+            // to be called with no domain at all — the capability did not
+            // exist — so a dual-role owner with a live GASTRONOMY/EXPERIENCE
+            // subscription resolved that unrelated row first and this page
+            // never saw its own (possibly expired) accommodation trial.
+            billingApi.getTrialStatus({ cookieHeader, productDomain: VERTICAL }),
             publishApi.accommodationEligibility({ cookieHeader })
         ]);
-        if (trialResponse.ok) {
-            const trialJson = (await trialResponse.json()) as { data?: TrialStatusData };
-            trialStatus = trialJson.data ?? null;
+        if (trialResult.ok) {
+            trialStatus = trialResult.data;
         }
         if (eligibility.ok) {
             trialEligibility = eligibility.data.startsTrial;
