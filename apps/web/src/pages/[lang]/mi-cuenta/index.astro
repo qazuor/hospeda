@@ -7,8 +7,10 @@
  * Middleware redirects before the page renders; the in-page guard is a safety net
  * for any SSR edge case where middleware did not run.
  *
- * Quick stats (bookmarks, reviews, subscription) are fetched client-side so that
- * we avoid SSR cookie-forwarding complexity and the page can show a skeleton first.
+ * Quick stats (bookmarks/reviews for tourists, properties/messages for hosts,
+ * listings/messages for commerce owners — HOS-1293, subscription for all) are
+ * fetched client-side so that we avoid SSR cookie-forwarding complexity and the
+ * page can show a skeleton first.
  *
  * @route    /[lang]/mi-cuenta/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -207,7 +209,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         <h2 class="account__section-title">{dashboardLabel}</h2>
 
         <!-- Stat cards row -->
-        <AccountStatsGrid locale={locale} isHost={isHost} />
+        <AccountStatsGrid locale={locale} isHost={isHost} isCommerceOwner={isCommerceOwner} />
 
         <!-- Navigation cards grid (secondary) -->
         <AccountSectionCards locale={locale} navItems={navItems} />
@@ -530,17 +532,23 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         const base = `${getApiUrl()}/api/v1/protected`;
 
         // Detect view mode from the DOM: host view renders stat-properties;
-        // tourist view renders stat-favorites/stat-reviews.
+        // commerce-owner view (HOS-1293) renders stat-commerce-listings;
+        // tourist view renders stat-favorites/stat-reviews. The three are
+        // mutually exclusive — see AccountStatsGrid's isHost/isCommerceOwner
+        // precedence (host wins over commerce wins over tourist).
         const isHostView = document.getElementById('stat-properties') !== null;
+        const isCommerceView = document.getElementById('stat-commerce-listings') !== null;
+        const isTouristView = !isHostView && !isCommerceView;
 
         try {
-            // /users/me/stats feeds the subscription widget for BOTH roles.
+            // /users/me/stats feeds the subscription widget for ALL views.
             // Reviews are only fetched when the tourist view is active (the
-            // stat-reviews element exists), avoiding a needless request for hosts.
+            // stat-reviews element exists), avoiding a needless request for
+            // hosts and commerce owners alike.
             const fetchPromises: Array<Promise<Response>> = [
                 fetch(`${base}/users/me/stats`, { credentials: 'include' }),
             ];
-            if (!isHostView) {
+            if (isTouristView) {
                 fetchPromises.push(
                     fetch(`${base}/users/me/reviews?pageSize=1`, { credentials: 'include' })
                 );
@@ -628,7 +636,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
             }
 
             // ── Tourist view: reviews counter ────────────────────────────────
-            if (!isHostView && reviewsRes?.ok) {
+            if (isTouristView && reviewsRes?.ok) {
                 const reviewsData = (await reviewsRes.json()) as {
                     data?: { totals?: { total?: number } };
                 };
@@ -652,41 +660,86 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         // ── Host view: properties + messages counters ────────────────────────
         // Runs independently of the tourist stats so a failure in one does not
         // affect the other. Only executes when the host DOM elements exist.
-        if (!isHostView) {
+        if (isHostView) {
+            try {
+                const hostRes = await fetch(`${getApiUrl()}/api/v1/protected/host/dashboard`, {
+                    credentials: 'include',
+                });
+
+                if (hostRes.ok) {
+                    const hostData = (await hostRes.json()) as {
+                        data?: {
+                            properties?: { total?: number };
+                            unreadConversations?: number;
+                        };
+                    };
+
+                    const propEl = document.getElementById('stat-properties');
+                    if (propEl) {
+                        propEl.textContent = String(hostData.data?.properties?.total ?? 0);
+                        propEl.classList.remove('stat-value--loading');
+                    }
+
+                    const msgEl = document.getElementById('stat-messages');
+                    if (msgEl) {
+                        msgEl.textContent = String(hostData.data?.unreadConversations ?? 0);
+                        msgEl.classList.remove('stat-value--loading');
+                    }
+                } else {
+                    // Non-2xx: clear shimmer so widgets don't stay stuck.
+                    clearLoadingState(['stat-properties', 'stat-messages']);
+                }
+            } catch (error) {
+                console.error('[account] Failed to load host dashboard stats:', error);
+                clearLoadingState(['stat-properties', 'stat-messages']);
+            }
             return;
         }
 
-        try {
-            const hostRes = await fetch(`${getApiUrl()}/api/v1/protected/host/dashboard`, {
-                credentials: 'include',
-            });
+        // ── Commerce-owner view: listings counter (HOS-1293) ──────────────────
+        // Runs independently of the tourist stats, same as the host block above.
+        // Only executes when the commerce DOM elements exist. No "messages"
+        // counterpart — see AccountStatsGrid's comment on why this platform has
+        // no conversation model for commerce listings to count from.
+        if (isCommerceView) {
+            try {
+                const [gastronomyRes, experienceRes] = await Promise.all([
+                    fetch(`${base}/gastronomies/mine`, { credentials: 'include' }),
+                    fetch(`${base}/experiences/mine`, { credentials: 'include' }),
+                ]);
 
-            if (hostRes.ok) {
-                const hostData = (await hostRes.json()) as {
-                    data?: {
-                        properties?: { total?: number };
-                        unreadConversations?: number;
+                // Combine both verticals' listing counts. One vertical's
+                // request failing does not zero the other's count — only both
+                // failing (or a thrown error) falls back to the SSR-rendered
+                // "0" default via the outer catch below.
+                let listingsCount = 0;
+                let listingsFetchOk = false;
+                if (gastronomyRes.ok) {
+                    const gastronomyData = (await gastronomyRes.json()) as {
+                        data?: { listings?: unknown[] };
                     };
-                };
-
-                const propEl = document.getElementById('stat-properties');
-                if (propEl) {
-                    propEl.textContent = String(hostData.data?.properties?.total ?? 0);
-                    propEl.classList.remove('stat-value--loading');
+                    listingsCount += gastronomyData.data?.listings?.length ?? 0;
+                    listingsFetchOk = true;
+                }
+                if (experienceRes.ok) {
+                    const experienceData = (await experienceRes.json()) as {
+                        data?: { listings?: unknown[] };
+                    };
+                    listingsCount += experienceData.data?.listings?.length ?? 0;
+                    listingsFetchOk = true;
                 }
 
-                const msgEl = document.getElementById('stat-messages');
-                if (msgEl) {
-                    msgEl.textContent = String(hostData.data?.unreadConversations ?? 0);
-                    msgEl.classList.remove('stat-value--loading');
+                const listingsEl = document.getElementById('stat-commerce-listings');
+                if (listingsEl) {
+                    if (listingsFetchOk) {
+                        listingsEl.textContent = String(listingsCount);
+                    }
+                    listingsEl.classList.remove('stat-value--loading');
                 }
-            } else {
-                // Non-2xx: clear shimmer so widgets don't stay stuck.
-                clearLoadingState(['stat-properties', 'stat-messages']);
+            } catch (error) {
+                console.error('[account] Failed to load commerce dashboard stats:', error);
+                clearLoadingState(['stat-commerce-listings']);
             }
-        } catch (error) {
-            console.error('[account] Failed to load host dashboard stats:', error);
-            clearLoadingState(['stat-properties', 'stat-messages']);
         }
     }
 
