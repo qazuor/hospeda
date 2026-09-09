@@ -51,7 +51,8 @@ const defaultProps = {
     annualPrice: 1200000,
     currency: 'ARS' as const,
     ctaText: 'Contratar',
-    locale: 'es' as const
+    locale: 'es' as const,
+    audience: 'owner' as const
 };
 
 function mockAuthenticated() {
