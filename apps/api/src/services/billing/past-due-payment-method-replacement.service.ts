@@ -21,11 +21,19 @@
  * (`reactivation-supersession-complete.ts`) already completes once the new
  * preapproval is confirmed. This module reuses BOTH exactly as they stand:
  *
- * - {@link createPaidSubscription} (`paid-subscription-create.ts`) — the
- *   same low-level `mode: 'paid'` preapproval-create helper `/start-paid`
- *   and reactivation both call. No trial field is ever set here (guard G-1,
- *   `scripts/check-no-trial-to-mercadopago.sh`, would fail CI if one were
- *   added) — the customer already used whatever trial they had.
+ * - {@link createOwnPreapprovalSubscription} (`own-preapproval-subscription-create.ts`)
+ *   — the same wrapper every other self-serve `mode: 'paid'` flow mints
+ *   through (`/start-paid`, the recurring add-on, and
+ *   `mintRetryPreapprovalAttempt`'s retry mint). It wraps the lower-level
+ *   `createPaidSubscription` (`paid-subscription-create.ts`) and, right
+ *   after mint, normalizes the row's status from qzpay's raw `incomplete` to
+ *   Hospeda's own `pending_provider` — the label {@link
+ *   findReusableReplacementAttempt} below filters on (HOS-1315: this module
+ *   used to call `createPaidSubscription` directly and skip that
+ *   normalization, so the row it minted could never satisfy its own reuse
+ *   predicate — see "Idempotency" below). No trial field is ever set here
+ *   (guard G-1, `scripts/check-no-trial-to-mercadopago.sh`, would fail CI if
+ *   one were added) — the customer already used whatever trial they had.
  * - {@link resolveReactivationPlan} (`reactivation-plan-guard.ts`) — resolves
  *   the plan + price to mint against. Unlike reactivation, the caller here
  *   does NOT choose a plan: this is "fix my card for my current plan", not a
@@ -103,6 +111,11 @@
  *    (a fresh page load, a retried request the client didn't dedupe) — the
  *    request-level cache alone cannot catch that case.
  *
+ *    This predicate reads Hospeda's own `pending_provider` vocabulary
+ *    (`SubscriptionStatusEnum.PENDING_PROVIDER`), never qzpay's raw
+ *    creation-time `incomplete` — see {@link createOwnPreapprovalSubscription}
+ *    above for the writer that seals the row to that label (HOS-1315).
+ *
  * @module services/billing/past-due-payment-method-replacement
  */
 
@@ -111,7 +124,7 @@ import { and, billingSubscriptions, type DrizzleClient, eq, getDb, gte, sql } fr
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
 import { OWN_PREAPPROVAL_REUSE_WINDOW_MS } from './checkout-idempotency.js';
-import { createPaidSubscription } from './paid-subscription-create.js';
+import { createOwnPreapprovalSubscription } from './own-preapproval-subscription-create.js';
 import { resolveReactivationPlan } from './reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 import {
@@ -269,8 +282,10 @@ async function findReusableReplacementAttempt(input: {
  *   reused from an in-flight attempt).
  * @throws SubscriptionCheckoutError From {@link resolveReactivationPlan}
  *   (`PLAN_NOT_FOUND`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
- *   `INVALID_REACTIVATION_PLAN`) or {@link createPaidSubscription}
- *   (`MISSING_INIT_POINT`, `MISSING_PROVIDER_SUBSCRIPTION_ID`); and
+ *   `INVALID_REACTIVATION_PLAN`) or propagated unchanged through
+ *   {@link createOwnPreapprovalSubscription} from the underlying
+ *   `createPaidSubscription` call (`MISSING_INIT_POINT`,
+ *   `MISSING_PROVIDER_SUBSCRIPTION_ID`); and
  *   `DOMAIN_NOT_REPLACEABLE` (HOS-1287, → 422) when the past-due row's product
  *   domain cannot be carried onto a fresh preapproval — see the module JSDoc's
  *   "the listing pointer" section.
@@ -325,13 +340,32 @@ export async function replacePastDuePaymentMethod(
         billingInterval: 'monthly'
     });
 
-    const { subscription, checkoutUrl } = await createPaidSubscription({
+    const { subscription, checkoutUrl } = await createOwnPreapprovalSubscription({
         billing,
         customerId,
         planId: plan.id,
         priceId,
         paymentMethodReturnUrl,
         notificationUrl,
+        // HOS-1315: routes this mint through the SAME wrapper every other
+        // self-serve preapproval flow uses (checkout, the recurring add-on,
+        // and `mintRetryPreapprovalAttempt` in `preapproval-recovery.service.ts`)
+        // instead of calling `createPaidSubscription` directly. Calling the
+        // low-level helper directly is what left the row's status at qzpay's
+        // raw `incomplete` forever — `findReusableReplacementAttempt` below
+        // filters on Hospeda's own `pending_provider`, and the two vocabularies
+        // never matched (see the module JSDoc's "Idempotency" section and
+        // `subscription-status-normalize.ts`, whose HOS-108 history is the
+        // same class of bug). `createOwnPreapprovalSubscription` performs the
+        // explicit Hospeda-side normalize UPDATE right after mint, with a
+        // compensating MP-preapproval cancel if that UPDATE fails — the same
+        // safety net every other own-preapproval flow already has, which this
+        // one was missing entirely.
+        db,
+        // A replacement mints a PAID preapproval for an already-active plan,
+        // never a fresh trial — zero, stated explicitly (same rationale as
+        // `mintRetryPreapprovalAttempt`'s identical `trialDays: 0`).
+        trialDays: 0,
         metadata: {
             supersedesSubscriptionId: pastDueSubscription.id,
             [PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY]: 'true',
@@ -353,19 +387,13 @@ export async function replacePastDuePaymentMethod(
         }
     });
 
-    // Stamp checkoutUrl onto the new row's own metadata so a LATER call
-    // (a different idempotency key, e.g. a fresh page load) can find and
-    // reuse this same in-flight attempt via findReusableReplacementAttempt
-    // above, instead of minting a second preapproval. Mirrors the identical
-    // stamp `own-preapproval-subscription-create.ts` performs for the same
-    // reason (HOS-937 step 4) — `createPaidSubscription` itself never writes
-    // this, only the caller.
-    await db
-        .update(billingSubscriptions)
-        .set({
-            metadata: sql`jsonb_set(coalesce(${billingSubscriptions.metadata}, '{}'::jsonb), '{checkoutUrl}', to_jsonb(${checkoutUrl}::text))`
-        })
-        .where(eq(billingSubscriptions.id, subscription.id));
+    // No separate checkoutUrl stamp here (HOS-1315): `createOwnPreapprovalSubscription`
+    // already stamps `metadata.checkoutUrl` — the same key `findReusableReplacementAttempt`
+    // reads above — as part of its own status-normalize UPDATE, atomically with
+    // the `pending_provider` write. A second, separate update here would be
+    // redundant and would reopen the exact "write landed but caller crashed
+    // before the follow-up write" gap `createOwnPreapprovalSubscription`'s
+    // compensating cancel exists to close.
 
     apiLogger.info(
         {
