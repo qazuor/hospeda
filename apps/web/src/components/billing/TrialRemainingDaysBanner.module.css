@@ -1,0 +1,35 @@
+/* TrialRemainingDaysBanner.module.css
+ * The remaining-days notice above the pricing grid (HOS-1233 T-020). It has to
+ * be read BEFORE the cards — it is the reason not to press "Empezar" yet — so
+ * it is a bordered, tinted strip rather than another line of muted text. All
+ * values reference design tokens from global.css; no hardcoded colours, so dark
+ * mode follows for free. */
+
+.banner {
+    max-width: var(--container-max, 1350px);
+    margin: 0 auto var(--space-6, 1.5rem);
+    padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+    border: 2px solid var(--brand-accent);
+    border-radius: var(--radius-md);
+    background-color: var(--surface-warm);
+    text-align: center;
+}
+
+.message {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    font-weight: 700;
+    line-height: 1.5;
+    /* The AA-normal-size step of the accent (SPEC-308). `--brand-accent` itself
+       is the fill hue and is not a text token. */
+    color: var(--brand-accent-text);
+}
+
+.hint {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: 1.5;
+    color: var(--core-foreground);
+}

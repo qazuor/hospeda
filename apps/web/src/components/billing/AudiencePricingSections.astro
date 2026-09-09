@@ -29,6 +29,7 @@
 
 import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PlanComparisonTable from '@/components/billing/PlanComparisonTable.astro';
+import { TrialRemainingDaysBanner } from '@/components/billing/TrialRemainingDaysBanner.client';
 import FaqSection from '@/components/marketing/FaqSection.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import type { PricingAudience } from '@/lib/billing-i18n';
@@ -120,6 +121,25 @@ const comparisonAudience = audience === 'partner' ? null : audience;
     both correct and one less thing to keep in step across two files.
 */}
 <section class="pricing-cards section" id="pricing-cards" aria-label={t(`${copyRoot}.cardsHeading`)}>
+    {/*
+        HOS-1233 T-020 / T-021 / AC-7. Mounted HERE and not five times over,
+        because this component IS the body of all five `/planes/…/precios/`
+        pages — the same reason the grid and the comparison live here. Five
+        copies would be five places for the next change to land, and this file's
+        own header says the sections below the hero are "the same page five
+        times, so they are one file".
+
+        An ISLAND, not frontmatter: these pages are edge-cached and must not
+        parse the session (F-8 / AC-10), and a server-rendered "te quedan N
+        días" is exactly the personalised response
+        `cacheable-pages-are-session-blind.guard.test.ts` exists to prevent. The
+        page passes `locale` and `audience` — two facts about the PAGE, nothing
+        about the visitor — and the banner resolves the rest in the browser.
+
+        It renders nothing at all for aliados (no trial scope), for an
+        anonymous visitor, and whenever no trial is running (AC-8).
+    */}
+    <TrialRemainingDaysBanner client:load locale={locale} audience={audience} />
     <PricingCardsGrid
         locale={locale}
         plans={plans}
