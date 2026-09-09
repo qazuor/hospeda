@@ -8,8 +8,17 @@
 --> The backfill is a CONSTANT, not a lookup: every pre-existing row reached this
 --> table through a foreign key to `accommodations.id` (dropped on line 1 below),
 --> so `entity_type = 'accommodation'` is correct for 100% of rows whatever the
---> row count is. `accommodation_id` is kept nullable here and dropped by the
---> CONTRACT migration that follows, so this file alone never loses data.
+--> row count is.
+-->
+--> `accommodation_id` is made NULLABLE here and deliberately NOT dropped. This
+--> release is the one that stops reading it; the DROP belongs to the release
+--> AFTER this one is actually deployed (HOS-601, docs/guides/migrations.md
+--> "Deploy order"). Dropping it here would mean the still-running old container
+--> — which projects an explicit column list, never `SELECT *` — reading a column
+--> that no longer exists, for the length of the container swap. Migration 0090
+--> did exactly that to `accommodations.schedule` and the public page served 404
+--> for 8m10s. So this file only ever ADDS and WIDENS: it cannot lose data, and
+--> it cannot break a deploy halfway through.
 ALTER TABLE "featured_listing_addon_grants" DROP CONSTRAINT "featured_listing_addon_grants_accommodation_id_accommodations_id_fk";
 --> statement-breakpoint
 DROP INDEX "featuredListingAddonGrants_accommodationId_idx";--> statement-breakpoint

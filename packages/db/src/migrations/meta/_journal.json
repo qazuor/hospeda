@@ -862,13 +862,6 @@
       "when": 1788972508610,
       "tag": "0122_brief_nebula",
       "breakpoints": true
-    },
-    {
-      "idx": 123,
-      "version": "7",
-      "when": 1788972550730,
-      "tag": "0123_cute_zodiak",
-      "breakpoints": true
     }
   ]
 }

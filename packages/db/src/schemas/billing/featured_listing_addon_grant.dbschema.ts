@@ -82,6 +82,32 @@ export const featuredListingAddonGrants = pgTable(
          * or `experiences.id`, per `entityType`. No FK: see the module docblock.
          */
         entityId: uuid('entity_id').notNull(),
+        /**
+         * @deprecated Superseded by {@link featuredListingAddonGrants.entityId}.
+         *   Read by nothing; kept alive for exactly one release.
+         *
+         * ## Why this column is still here (HOS-601's rule, docs/guides/migrations.md)
+         *
+         * A column can only be DROPPED in the release AFTER the one that stops
+         * using it. Between a `DROP COLUMN` applying and the new container going
+         * live, the OLD container is still serving — and Drizzle projects an
+         * explicit column list, never `SELECT *`, so every read it issues names
+         * a column that no longer exists. That is not theoretical: migration
+         * 0090 dropped `accommodations.schedule` in the same release that
+         * stopped reading it, and the public page served 404 for 8m10s while the
+         * two containers swapped.
+         *
+         * This branch's own code no longer reads or writes it — that is what
+         * makes THIS the release that "stops using it". `0122` widened the table
+         * and copied every value into `entity_id`; the drop belongs to the next
+         * release, once this one is actually deployed. The guide is explicit
+         * that Release N must leave the TS schema alone so `db:generate` emits
+         * no `DROP COLUMN`, which is why the property stays declared here rather
+         * than being deleted with a stale snapshot behind it.
+         *
+         * Nullable since `0122`, so nothing has to write it.
+         */
+        accommodationId: uuid('accommodation_id'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },
