@@ -602,25 +602,58 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
         return [clause];
     }
 
+    /** DB column name → {@link FakeSubscriptionRow} field, for the three columns this query compares. */
+    const ROW_FIELD_BY_COLUMN: Readonly<Record<string, 'customerId' | 'status' | 'createdAt'>> = {
+        customer_id: 'customerId',
+        status: 'status',
+        created_at: 'createdAt'
+    };
+
     /**
-     * Reads the value a real `eq(<column named columnName>, value)` leaf
-     * bound in `clause`, or `undefined` when no such leaf exists (e.g. a
-     * mutation deleted it from the source's `and(...)` list). Used so the
-     * fake SELECT below filters on what the query genuinely asked for,
-     * instead of a value the test asserts in from the outside.
+     * Evaluates the REAL condition object `findReusableReplacementAttempt`
+     * builds against one row, leaf by leaf — `eq(customerId, x)` and
+     * `eq(status, x)` require exact equality; `gte`/`lte(createdAt, x)`
+     * compare timestamps in the direction the operator actually names (so
+     * inverting `gte` to `lte` in the source, or vice versa, changes what
+     * this returns, same as it would change a real query). The
+     * `supersedesSubscriptionId` leaf is a raw `sql\`...\`` template, which
+     * this repo's `@repo/db` test mock compiles to a bare `vi.fn()` call
+     * returning `undefined` — no value survives to introspect — so that ONE
+     * leaf is matched separately, against the fixed `PAST_DUE_SUBSCRIPTION_ID`
+     * test constant, same as before. An unrecognized leaf (a column this
+     * table doesn't have, or an unreadable one) is treated as satisfied
+     * rather than causing a crash — it plays no part in what these tests
+     * distinguish.
      */
-    function eqValueFor(clause: unknown, columnName: string): string | undefined {
+    function rowMatchesClause(row: FakeSubscriptionRow, clause: unknown): boolean {
         for (const leaf of flattenAndClause(clause)) {
             const condition = leaf as MockCondition | undefined;
-            if (
-                condition?.type === 'eq' &&
-                condition.left === columnName &&
-                typeof condition.right === 'string'
-            ) {
-                return condition.right;
+            if (typeof condition?.left !== 'string') {
+                continue;
+            }
+            const field = ROW_FIELD_BY_COLUMN[condition.left];
+            if (!field) {
+                continue;
+            }
+            const rowValue = row[field];
+            if (condition.type === 'eq') {
+                if (rowValue !== condition.right) {
+                    return false;
+                }
+            } else if (condition.type === 'gte' || condition.type === 'lte') {
+                if (!(rowValue instanceof Date) || !(condition.right instanceof Date)) {
+                    return false;
+                }
+                const satisfied =
+                    condition.type === 'gte'
+                        ? rowValue.getTime() >= condition.right.getTime()
+                        : rowValue.getTime() <= condition.right.getTime();
+                if (!satisfied) {
+                    return false;
+                }
             }
         }
-        return undefined;
+        return true;
     }
 
     /**
@@ -639,15 +672,17 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
      * untouched) is exactly what a later `db.select(...)` sees — the two
      * halves of the bug, reproduced by letting the actual code drive both.
      *
-     * The SELECT's `customerId` filter is read from the REAL condition object
-     * `findReusableReplacementAttempt` passes to `.where(...)` (via
-     * {@link eqValueFor}), not hardcoded — so a mutation that drops
-     * `eq(billingSubscriptions.customerId, ...)` from that `and(...)` list
-     * changes what THIS fake actually filters on, same as it would change a
-     * real query. The `status` / `supersedesSubscriptionId` conditions are
-     * still matched against fixed test constants (see the "not chased" note
-     * on the mutation report for why — those two don't cross a tenant
-     * boundary the way `customerId` does).
+     * The SELECT's `customerId` / `status` / freshness filters are read from
+     * the REAL condition object `findReusableReplacementAttempt` passes to
+     * `.where(...)` (via {@link rowMatchesClause}), not hardcoded — so a
+     * mutation that drops `eq(billingSubscriptions.customerId, ...)`,
+     * changes the compared `status` literal, or inverts `gte(createdAt, …)`
+     * to `lte(...)` changes what THIS fake actually filters on, same as it
+     * would change a real query. `supersedesSubscriptionId` alone is still
+     * matched against a fixed test constant — that leaf is a raw
+     * `sql\`...\`` template, and this repo's `@repo/db` test mock compiles
+     * `sql` to a bare `vi.fn()` returning `undefined`, so no value survives
+     * to introspect for it.
      */
     function makeStatefulFakeDbAndBilling() {
         const table: FakeSubscriptionRow[] = [];
@@ -691,29 +726,20 @@ describe('replacePastDuePaymentMethod — producer writes what the consumer read
 
         // Evaluated against the table's CURRENT state — i.e. whatever the
         // production write path actually left there, not a value the test
-        // asserted in. The `customerId` bound is read off the REAL `where(...)`
-        // argument (see `eqValueFor` above); `status` /
-        // `supersedesSubscriptionId` are matched against fixed test constants.
+        // asserted in. `customerId` / `status` / freshness are read off the
+        // REAL `where(...)` argument via `rowMatchesClause` above;
+        // `supersedesSubscriptionId` alone is matched against a fixed test
+        // constant, for the `sql\`...\`` reason documented on that function.
         const db = {
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
                     where: vi.fn((condition: unknown) => ({
                         orderBy: vi.fn(() => ({
                             limit: vi.fn(async (n: number) => {
-                                const boundCustomerId = eqValueFor(condition, 'customer_id');
                                 return table
                                     .filter(
                                         (row) =>
-                                            // `undefined` means the SOURCE'S OWN
-                                            // condition carried no customerId
-                                            // `eq(...)` leaf at all (e.g. a mutation
-                                            // deleted it) — mirrored here as "do not
-                                            // filter by customer", exactly what a real
-                                            // query missing that clause would do.
-                                            (boundCustomerId === undefined ||
-                                                row.customerId === boundCustomerId) &&
-                                            row.status ===
-                                                SubscriptionStatusEnum.PENDING_PROVIDER &&
+                                            rowMatchesClause(row, condition) &&
                                             (row.metadata as Record<string, unknown> | null)
                                                 ?.supersedesSubscriptionId ===
                                                 PAST_DUE_SUBSCRIPTION_ID
