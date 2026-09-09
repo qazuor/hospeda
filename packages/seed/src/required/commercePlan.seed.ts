@@ -1,109 +1,39 @@
 import { ALL_EXPERIENCE_PLANS, ALL_GASTRONOMY_PLANS, type PlanDefinition } from '@repo/billing';
-import { and, billingPlans, billingPrices, type DrizzleClient, eq, getDb } from '@repo/db';
-import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
+import { and, billingPrices, type DrizzleClient, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
-
-/** Outcome of seeding one plan row. */
-type EnsureOutcome = { plan: 'created' | 'skipped'; price: 'created' | 'skipped' | 'none' };
+import { ensurePlan } from './billingPlans.seed.js';
 
 /**
- * Seeds one commerce-domain plan row (and its monthly `billing_prices` row).
- *
- * `product_domain` is set at insert time AND re-stamped by a typed `UPDATE`
- * afterwards, so a re-run self-heals the domain regardless of how an existing
- * row got there — which matters here because HOS-692 rewrites the domain of
- * every commerce row and the undo migration puts it back.
+ * Ensures the monthly `billing_prices` row for one commerce-domain plan.
  *
  * The price row is skipped when `monthlyPriceArs <= 0`. The disabled tiers of
- * each vertical have not been priced yet (§6.8 enables only premium), and
- * seeding a zero-amount price would be worse than seeding none: it reads as a
- * free plan rather than as an unpriced one.
+ * each vertical have not been priced yet, and seeding a zero-amount price
+ * would be worse than seeding none: it reads as a free plan rather than as an
+ * unpriced one.
  *
- * Idempotent: matches by `name` (the slug), skips the insert on a re-run, and
- * never overwrites a price an operator has since changed — `monthlyPriceArs` is
- * a `'commercial'` field, so the database wins.
+ * Idempotent: never overwrites a price an operator has since changed —
+ * `monthlyPriceArs` is a `'commercial'` field, so the database wins.
  *
  * @param input.db - Drizzle client.
- * @param input.plan - The plan definition to seed.
- * @param input.productDomain - The `billing_plans.product_domain` to stamp.
+ * @param input.planId - The `billing_plans.id` to attach the price to.
+ * @param input.plan - The plan definition (for `monthlyPriceArs`).
  * @param input.isProduction - Drives the `livemode` flag.
- * @returns What was created and what was skipped.
+ * @returns What was created or skipped.
  */
-async function ensureCommercePlan(input: {
+async function ensureCommercePriceRow(input: {
     db: DrizzleClient;
+    planId: string;
     plan: PlanDefinition;
-    productDomain: ProductDomainValue;
     isProduction: boolean;
-}): Promise<EnsureOutcome> {
-    const { db, plan, productDomain, isProduction } = input;
-
-    const existing = await db
-        .select({ id: billingPlans.id })
-        .from(billingPlans)
-        .where(eq(billingPlans.name, plan.slug))
-        .limit(1);
-
-    let planId: string;
-    let planStatus: 'created' | 'skipped';
-
-    const existingRow = existing[0];
-    if (existingRow) {
-        planId = existingRow.id;
-        planStatus = 'skipped';
-    } else {
-        const limitsObj: Record<string, number> = {};
-        for (const l of plan.limits) {
-            limitsObj[l.key] = l.value;
-        }
-
-        const inserted = await db
-            .insert(billingPlans)
-            .values({
-                name: plan.slug,
-                description: plan.description,
-                active: plan.isActive,
-                entitlements: plan.entitlements as string[],
-                limits: limitsObj,
-                livemode: isProduction,
-                // HOS-39 T-005 / HOS-73: displayName/monthlyPriceArs/annualPriceArs
-                // are typed top-level columns as of qzpay-drizzle 1.11.0 (still
-                // duplicated in metadata below).
-                displayName: plan.name,
-                monthlyPriceArs: plan.monthlyPriceArs,
-                annualPriceArs: plan.annualPriceArs,
-                productDomain,
-                metadata: {
-                    slug: plan.slug,
-                    displayName: plan.name,
-                    category: plan.category,
-                    isDefault: plan.isDefault,
-                    sortOrder: plan.sortOrder,
-                    trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
-                    monthlyPriceArs: plan.monthlyPriceArs,
-                    annualPriceArs: plan.annualPriceArs,
-                    monthlyPriceUsdRef: plan.monthlyPriceUsdRef
-                }
-            })
-            .returning({ id: billingPlans.id });
-
-        const insertedRow = inserted[0];
-        if (!insertedRow) {
-            throw new Error(`Insert of commerce plan "${plan.slug}" returned no row`);
-        }
-        planId = insertedRow.id;
-        planStatus = 'created';
-    }
-
-    // Re-stamp product_domain (idempotent no-op when already correct).
-    await db.update(billingPlans).set({ productDomain }).where(eq(billingPlans.id, planId));
+}): Promise<'created' | 'skipped' | 'none'> {
+    const { db, planId, plan, isProduction } = input;
 
     if (plan.monthlyPriceArs <= 0) {
         // Unpriced tier — see the docblock.
-        return { plan: planStatus, price: 'none' };
+        return 'none';
     }
 
     const existingPrice = await db
@@ -120,7 +50,7 @@ async function ensureCommercePlan(input: {
         .limit(1);
 
     if (existingPrice.length > 0) {
-        return { plan: planStatus, price: 'skipped' };
+        return 'skipped';
     }
 
     await db.insert(billingPrices).values({
@@ -133,13 +63,15 @@ async function ensureCommercePlan(input: {
         livemode: isProduction
     });
 
-    return { plan: planStatus, price: 'created' };
+    return 'created';
 }
 
 /**
- * Commerce plan seed (SPEC-239 T-049 → HOS-688 §6.8).
+ * Commerce plan seed (SPEC-239 T-049 → HOS-688 §6.8, reworked by HOS-1290).
  *
- * Seeds two catalogues, each stamped with its own `billing_plans.product_domain`:
+ * Seeds two catalogues, each `PlanDefinition` already carrying its own
+ * `product_domain` (HOS-1233 T-034 — `commerceVerticalTier()` derives it from
+ * the tier's own vertical, so it never needs restating here):
  *
  * | Catalogue | `product_domain` | Why |
  * | --- | --- | --- |
@@ -161,13 +93,36 @@ async function ensureCommercePlan(input: {
  * Why a dedicated seed and NOT the `ALL_PLANS` loop in `billingPlans.seed.ts`:
  * every plan here is deliberately excluded from `ALL_PLANS` so the
  * accommodation-facing plan list, the grant-matrix snapshot tests and the
- * config-drift checks stay accommodation-only.
+ * config-drift checks stay accommodation-only. That isolation is
+ * `SPEC-239`'s and this seed does not touch it (HOS-1290's whole point is
+ * the opposite: reuse the SAME propagation engine without folding the
+ * catalogues together).
  *
- * Idempotent throughout — see {@link ensureCommercePlan}.
+ * **HOS-1290 — now shares the Model C sync engine with `ALL_PLANS`.** Before
+ * this change, an existing row was only ever re-stamped for `product_domain`;
+ * a config edit that added a `LimitKey` or an entitlement to a commerce plan
+ * silently never reached an already-seeded staging/production row. This seed
+ * now calls the exact same {@link ensurePlan} the accommodation/tourist loop
+ * uses, so capability-layer drift (entitlements, limit-key presence,
+ * `product_domain`, `metadata.category`/`isDefault`) syncs from config on
+ * every commerce plan too, while commercial-layer fields (price, description,
+ * `active`, limit numeric values) keep preserving the DB / operator edit,
+ * exactly as accommodation plans already do.
+ *
+ * Idempotent throughout.
  *
  * @param _context - Seed context (unused; kept for the runner contract).
+ * @param deps - Injectable dependencies. Defaults to the real `getDb()`
+ *   client; tests inject a stub instead (`vi.mock('@repo/db', ...)` does not
+ *   reliably intercept a `getDb()` call made from inside a `src/` module
+ *   under this repo's `vite-tsconfig-paths` + `pool: 'forks'` vitest config —
+ *   same limitation and same fix as
+ *   `pointOfInterestCatalogRelations.ts`'s own "Testability" JSDoc note).
  */
-export async function seedCommercePlan(_context: SeedContext): Promise<void> {
+export async function seedCommercePlan(
+    _context: SeedContext,
+    deps: { db?: DrizzleClient } = {}
+): Promise<void> {
     const entityName = 'Commerce Plan';
     const separator = '─'.repeat(80);
 
@@ -178,37 +133,42 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
 
     try {
         const isProduction = process.env.NODE_ENV === 'production';
-        const db: DrizzleClient = getDb();
+        const db: DrizzleClient = deps.db ?? getDb();
 
         const catalogues: ReadonlyArray<{
+            label: string;
             plans: readonly PlanDefinition[];
-            productDomain: ProductDomainValue;
         }> = [
-            { plans: ALL_GASTRONOMY_PLANS, productDomain: ProductDomainEnum.GASTRONOMY },
-            { plans: ALL_EXPERIENCE_PLANS, productDomain: ProductDomainEnum.EXPERIENCE }
+            { label: 'gastronomy', plans: ALL_GASTRONOMY_PLANS },
+            { label: 'experience', plans: ALL_EXPERIENCE_PLANS }
         ];
 
         let created = 0;
         let skipped = 0;
+        let synced = 0;
 
-        for (const { plans, productDomain } of catalogues) {
+        for (const { plans } of catalogues) {
             for (const plan of plans) {
-                const outcome = await ensureCommercePlan({
+                const planResult = await ensurePlan(plan, isProduction, db);
+                const priceStatus = await ensureCommercePriceRow({
                     db,
+                    planId: planResult.planId,
                     plan,
-                    productDomain,
                     isProduction
                 });
 
-                if (outcome.plan === 'created') {
+                if (planResult.status === 'created') {
                     created++;
                     logger.success({
-                        msg: `${STATUS_ICONS.Success}  Created plan "${plan.name}" (${plan.slug}) with product_domain='${productDomain}' (price: ${outcome.price})`
+                        msg: `${STATUS_ICONS.Success}  Created plan "${plan.name}" (${plan.slug}) with product_domain='${plan.productDomain}' (price: ${priceStatus})`
                     });
+                } else if (planResult.status === 'synced') {
+                    synced++;
+                    // Field-level detail already logged inside ensurePlan.
                 } else {
                     skipped++;
                     logger.info(
-                        `${STATUS_ICONS.Skip}  Plan "${plan.name}" (${plan.slug}) already exists — re-stamped product_domain='${productDomain}' (price: ${outcome.price})`
+                        `${STATUS_ICONS.Skip}  Plan "${plan.name}" (${plan.slug}) already exists, no drift (price: ${priceStatus})`
                     );
                 }
             }
@@ -216,7 +176,7 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
 
         logger.info(`${separator}`);
         logger.info(
-            `${STATUS_ICONS.Info}  Commerce plans: ${created} created, ${skipped} skipped. Prices are 'commercial' fields — the seed never overwrites one that already exists, so any admin-UI override stands.`
+            `${STATUS_ICONS.Info}  Commerce plans: ${created} created, ${skipped} skipped, ${synced} synced (Model C). Prices are 'commercial' fields — the seed never overwrites one that already exists, so any admin-UI override stands.`
         );
 
         summaryTracker.trackSuccess(entityName);
