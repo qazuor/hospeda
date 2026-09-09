@@ -1,16 +1,21 @@
 # HOS-1233: The plans page reads the trial before it charges
 
-## Progress: 10/42 tasks (24%)
+## Progress: 11/42 tasks (26%)
 
-> T-030 and T-031 are done on the **qzpay** side and merged nowhere yet: they live
-> in PR #85, unpublished. Everything downstream of the package (T-032, and T-036
-> after it) stays blocked until the whole wave publishes — the five siblings pin
-> core at an exact version, so bumping one alone puts two cores in the lockfile.
+> **The qzpay wave PUBLISHED (2026-09-08).** PR #85 merged and shipped as core
+> 6.0.0, with all four siblings republished against it; Hospeda is on the whole
+> wave. T-030/T-031/T-032 are done and nothing is blocked on the package any
+> more.
 >
-> T-035's guard reports `createPaidSubscription` as BLOCKED rather than failing,
-> and derives that state from the installed package's own `.d.ts`. The day the
-> wave publishes, that line turns into a CI failure with no edit to the guard —
-> which is the reminder that T-032 is outstanding.
+> T-035's guard flipped from BLOCKED to a hard failure by itself when the wave
+> installed, with no edit to it — which is what forced T-032 the same hour. That
+> was the point of deriving the exemption from the package's own `.d.ts`.
+>
+> **T-036 (drop the default) is now UNBLOCKED and is the last dangerous step.**
+> Its four prerequisites (T-032, T-033, T-034, T-035) are all done, so the
+> ordering AC-15i demands is satisfied: every write names its domain BEFORE the
+> default disappears. Verified when the wave landed: `.default('accommodation')`
+> is still on both qzpay-drizzle columns, so R-8 has not fired on its own.
 
 **Average complexity:** 2.2 / 3 (max) — every task is ≤ 3  
 **Levels:** 10 topological levels, no cycles, all references resolve in both directions  
@@ -103,7 +108,7 @@
   - D-4 / AC-16..AC-18.
   - Blocked by: none · Blocks: T-018, T-024
 
-- [ ] **T-032** (complexity: 3) — createPaidSubscription forwards the domain, resolved from the plan
+- [x] **T-032** (complexity: 3) — createPaidSubscription forwards the domain, resolved from the plan
   - AC-15e.
   - Blocked by: T-030 · Blocks: T-034, T-036
 
