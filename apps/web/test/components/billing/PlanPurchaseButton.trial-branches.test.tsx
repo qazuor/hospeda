@@ -213,6 +213,43 @@ describe('PlanPurchaseButton — HOS-1233 AC-3: an unstarted trial goes to the c
     });
 });
 
+describe('PlanPurchaseButton — HOS-1233: an audience with no create form falls through to checkout', () => {
+    it('a traveller whose trial never started goes to checkout, not to a create form', async () => {
+        // D-2's first branch says "step 1 of that vertical's create form", and
+        // a traveller has no listing to create — `tourist` maps to `null` in
+        // `resolvePublishPathForPricingAudience`. Falling through to checkout
+        // is what the page already did and promises nothing; the alternative
+        // is a button that does nothing at all.
+        //
+        // FLAGGED FOR THE OWNER: this is the one behaviour in HOS-1233 that
+        // D-2 does not spell out. If a traveller with an unstarted trial should
+        // instead be warned, or sent somewhere else, this test is what changes.
+        const user = userEvent.setup();
+        const fetchMock = buildFetchMock();
+        vi.stubGlobal('fetch', fetchMock);
+        fetchTrialClockMock.mockResolvedValue(NEVER_STARTED);
+
+        render(
+            <PlanPurchaseButton
+                {...ownerProps}
+                planSlug="tourist-vip"
+                audience="tourist"
+                plansPath="planes/turistas/precios"
+            />
+        );
+        await waitFor(() => {
+            expect(fetchTrialClockMock).toHaveBeenCalled();
+        });
+        await user.click(screen.getByTestId('plan-cta-button'));
+
+        await waitFor(() => {
+            expect(window.location.href).toBe(CHECKOUT_URL);
+        });
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(startPaidCalls(fetchMock)).toHaveLength(1);
+    });
+});
+
 describe('PlanPurchaseButton — HOS-1233 AC-4: more days left than the threshold warns first', () => {
     it('opens a dialog naming the number of days and the immediate charge', async () => {
         const user = userEvent.setup();
