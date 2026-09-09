@@ -126,7 +126,7 @@ import { getQZPayBilling } from './billing';
  * One listing, matching every tier in the shipped catalogue. It exists so the
  * "I don't know" branch still produces a NUMBER — see the invariant in the
  * module docblock. It is NOT the source of truth for the cap: the database is,
- * and {@link loadVerticalBaseLimit} reads it on every cache miss.
+ * and {@link loadVerticalBaseLimits} reads it on every cache miss.
  */
 const FALLBACK_VERTICAL_CAP = 1;
 
@@ -150,14 +150,27 @@ const FALLBACK_VERTICAL_CAP = 1;
  */
 const AI_CHAT_CAP_WITHOUT_PLAN = 0;
 
-/** TTL of the per-vertical base-cap memo. Matches the entitlement cache TTL. */
+/** TTL of the per-vertical base-limits memo. Matches the entitlement cache TTL. */
 const BASE_LIMIT_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /** Shared PlanService — no mutable state, safe across requests. */
 const planService = new PlanService();
 
-/** Memoised base cap per vertical, with its population timestamp. */
-const baseLimitCache = new Map<CommerceVertical, { value: number; cachedAt: number }>();
+/**
+ * Memoised base limits map per vertical, with its population timestamp.
+ *
+ * HOS-1276: used to memoise a single NUMBER (the listing cap only). Now
+ * memoises the vertical's FULL declared limits map — every key its base plan
+ * carries (`TOURIST_VIP_LIMITS` plus its own listing/AI-chat/gallery keys) —
+ * because that whole map, not one key of it, is what gets published into
+ * `userLimits`. Each cache read returns a CLONE (see {@link loadVerticalBaseLimits}),
+ * so a caller layering the subscription's own plan or a customer override on
+ * top can never corrupt the memo.
+ */
+const baseLimitsCache = new Map<
+    CommerceVertical,
+    { value: Map<LimitKey, number>; cachedAt: number }
+>();
 
 /**
  * The product domain of a commerce vertical.
@@ -177,30 +190,61 @@ function domainOf(vertical: CommerceVertical): ProductDomainValue {
 }
 
 /**
- * Reads the vertical's base listing cap off its plan in `billing_plans`.
+ * Reads the vertical's FULL base limits map off its plan in `billing_plans`
+ * (HOS-1276).
  *
  * The plan slug comes from {@link resolveCommercePlanSlug} — the single place a
- * vertical is turned into a plan slug (AC-35). The VALUE comes from the
- * database rather than from `plans.config.ts`, because the cap is a
+ * vertical is turned into a plan slug (AC-35). The VALUES come from the
+ * database rather than from `plans.config.ts`, because a cap is a
  * `'commercial'` field: an operator raising it through the admin UI must take
  * effect without a deploy.
  *
- * Memoised for {@link BASE_LIMIT_CACHE_TTL_MS} so this stays off the hot path,
- * mirroring `buildHostDraftDefaultsResult`'s owner-basico memo. A miss is NOT
- * memoised, so a plan seeded after boot is picked up without a restart.
+ * Returns every `LimitKey` the plan row declares — not just the vertical's own
+ * listing cap. A commerce plan declares `TOURIST_VIP_LIMITS` (favorites,
+ * compare, AI search, AI consumer-chat, search history, collections) MERGED
+ * with its own listing cap, AI-chat cap and (experience-only) private-gallery
+ * cap — see `plans.config.ts`'s `commerceVerticalTier`. Publishing only ONE of
+ * those keys is exactly the HOS-1276 bug: every other key then reads as
+ * ABSENT, and an absent `LimitKey` resolves to `-1` (unlimited) through
+ * `getRemainingLimit` and every layer beneath it.
  *
- * @param vertical - The commerce vertical whose cap is wanted.
- * @returns The cap, falling back to {@link FALLBACK_VERTICAL_CAP} when the plan
- *   cannot be read or does not declare the key.
+ * The two keys THIS module's invariant is built around — the vertical's own
+ * listing cap and its AI-chat cap — are guaranteed present even when the DB
+ * read fails or the plan omits them, via the `floor` seeded before any lookup.
+ * Every other key is best-effort: present when the plan declares it, absent
+ * otherwise (which is fine for a key nothing on the commerce request path
+ * currently reads at NUMBER significance).
+ *
+ * Memoised for {@link BASE_LIMIT_CACHE_TTL_MS} so this stays off the hot path,
+ * mirroring `buildHostDraftDefaultsResult`'s owner-basico memo. A miss — no
+ * plan row, or the plan found but not declaring the vertical's OWN cap — is
+ * NOT memoised, so a plan seeded after boot is picked up without a restart.
+ * Returns a fresh `Map` on every call (a clone of the cached one, when cached)
+ * so a caller mutating it — {@link resolveCommerceVerticalGrants} layers the
+ * subscription's plan and customer overrides on top — can never corrupt the
+ * memo for the next request.
+ *
+ * @param vertical - The commerce vertical whose limits are wanted.
+ * @returns The vertical's base limits, always containing at least its own
+ *   listing-cap key (falling back to {@link FALLBACK_VERTICAL_CAP}) and its
+ *   AI-chat-cap key (falling back to {@link AI_CHAT_CAP_WITHOUT_PLAN}).
  */
-async function loadVerticalBaseLimit(vertical: CommerceVertical): Promise<number> {
+async function loadVerticalBaseLimits(vertical: CommerceVertical): Promise<Map<LimitKey, number>> {
     const now = Date.now();
-    const cached = baseLimitCache.get(vertical);
+    const cached = baseLimitsCache.get(vertical);
     if (cached && now - cached.cachedAt < BASE_LIMIT_CACHE_TTL_MS) {
-        return cached.value;
+        return new Map(cached.value);
     }
 
     const limitKey = LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
+    const aiChatLimitKey = AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
+
+    // The floor: the two keys this module's invariant is built around, never
+    // absent even when everything below fails.
+    const floor = new Map<LimitKey, number>([
+        [limitKey, FALLBACK_VERTICAL_CAP],
+        [aiChatLimitKey, AI_CHAT_CAP_WITHOUT_PLAN]
+    ]);
 
     let planSlug: string;
     try {
@@ -214,9 +258,9 @@ async function loadVerticalBaseLimit(vertical: CommerceVertical): Promise<number
         }
         apiLogger.error(
             { vertical },
-            'commerce plan mapping unresolvable at request time — falling back to the base cap'
+            'commerce plan mapping unresolvable at request time — falling back to the base limits floor'
         );
-        return FALLBACK_VERTICAL_CAP;
+        return floor;
     }
 
     try {
@@ -224,34 +268,45 @@ async function loadVerticalBaseLimit(vertical: CommerceVertical): Promise<number
         if (!result.success) {
             apiLogger.warn(
                 { vertical, planSlug, errorCode: result.error.code },
-                'commerce vertical plan not found in DB — falling back to the base cap'
+                'commerce vertical plan not found in DB — falling back to the base limits floor'
             );
-            return FALLBACK_VERTICAL_CAP;
+            return floor;
         }
 
-        const value = result.data.limits[limitKey];
-        if (typeof value !== 'number') {
+        // Merge EVERY key the plan declares over the floor — not just the
+        // vertical's own cap. `isLimitKey` drops anything that is not a known
+        // `LimitKey` rather than casting it (same defensive pattern the
+        // entitlement union below uses for `plan.entitlements`).
+        for (const [key, value] of Object.entries(result.data.limits)) {
+            if (isLimitKey(key) && typeof value === 'number') {
+                floor.set(key, value);
+            }
+        }
+
+        if (typeof result.data.limits[limitKey] !== 'number') {
             apiLogger.warn(
                 { vertical, planSlug, limitKey },
                 'commerce vertical plan does not declare its own cap — falling back to the base cap'
             );
-            return FALLBACK_VERTICAL_CAP;
+            // Not cached — same "immediate pickup after a DB fix" guarantee
+            // the original single-key version gave for this exact case.
+            return floor;
         }
 
-        baseLimitCache.set(vertical, { value, cachedAt: now });
-        return value;
+        baseLimitsCache.set(vertical, { value: new Map(floor), cachedAt: now });
+        return floor;
     } catch (error) {
         apiLogger.warn(
             { vertical, planSlug, error: error instanceof Error ? error.message : String(error) },
-            'commerce vertical plan lookup threw — falling back to the base cap'
+            'commerce vertical plan lookup threw — falling back to the base limits floor'
         );
-        return FALLBACK_VERTICAL_CAP;
+        return floor;
     }
 }
 
-/** Clears the memoised base caps. Exported for tests. */
+/** Clears the memoised base limits. Exported for tests. */
 export function _resetCommerceBaseLimitCache(): void {
-    baseLimitCache.clear();
+    baseLimitsCache.clear();
 }
 
 /**
@@ -284,12 +339,17 @@ export async function resolveCommerceVerticalCap(input: {
     customerId: string | null | undefined;
     vertical: CommerceVertical;
 }): Promise<number> {
-    return (await resolveCommerceVerticalGrants(input)).cap;
+    const limitKey = LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical];
+    const { limits } = await resolveCommerceVerticalGrants(input);
+    // `limits` always carries this key — seeded by `loadVerticalBaseLimits`'s
+    // floor and never removed downstream — but `?? FALLBACK_VERTICAL_CAP`
+    // keeps this call defensive rather than trusting that invariant blindly.
+    return limits.get(limitKey) ?? FALLBACK_VERTICAL_CAP;
 }
 
 /**
- * Resolves BOTH halves of what a caller may do in one commerce vertical: the
- * listing cap they are subject to, and the entitlements they hold (HOS-1074).
+ * Resolves BOTH halves of what a caller may do in one commerce vertical: every
+ * limit the vertical's plan declares, and the entitlements they hold (HOS-1074).
  *
  * The two are resolved together because they read the SAME subscription and the
  * SAME plan row — splitting them would double every billing round-trip on the
@@ -298,9 +358,19 @@ export async function resolveCommerceVerticalCap(input: {
  *
  * The precedence rules differ by half, and deliberately so:
  *
- * - **cap** — customer-level override > subscription plan > vertical base cap
- *   read from the DATABASE. The cap is a `'commercial'` field: an operator
- *   raising it in the admin UI must take effect without a deploy.
+ * - **limits** — customer-level override > subscription plan > vertical base
+ *   limits read from the DATABASE, MERGED key-by-key rather than replaced
+ *   wholesale at each step. A limit is a `'commercial'` field: an operator
+ *   raising it in the admin UI must take effect without a deploy. HOS-1276:
+ *   this used to resolve (and return) only the vertical's own listing cap and
+ *   AI-chat cap as two scalar fields, so the caller — the middleware below —
+ *   had no way to publish the REST of the plan's declared keys
+ *   (`TOURIST_VIP_LIMITS`: favorites, compare, AI search, AI consumer-chat,
+ *   search history, collections) into `userLimits`, and every one of them read
+ *   as unlimited. Returning the full merged map is what lets the middleware
+ *   publish everything the vertical declares, in one wholesale REPLACE of
+ *   `userLimits` — see its own docblock for why REPLACE (not merging with the
+ *   accommodation domain's map) is still correct here.
  * - **entitlements** — the vertical's CONFIG floor, UNIONED with whatever the
  *   subscription's plan row declares. An entitlement set is a `'capability'`
  *   field: config wins and the database follows. Union, not replacement, is
@@ -310,32 +380,31 @@ export async function resolveCommerceVerticalCap(input: {
  *
  * @param input.customerId - The caller's billing customer id, when they have one.
  * @param input.vertical - The commerce vertical being resolved.
- * @returns The cap to publish into `userLimits` and the entitlements to publish
- *   into `userEntitlements`.
+ * @returns The limits map to publish into `userLimits` and the entitlements to
+ *   publish into `userEntitlements`.
  */
 export async function resolveCommerceVerticalGrants(input: {
     customerId: string | null | undefined;
     vertical: CommerceVertical;
-}): Promise<{ cap: number; aiChatCap: number; entitlements: Set<EntitlementKey> }> {
+}): Promise<{ limits: Map<LimitKey, number>; entitlements: Set<EntitlementKey> }> {
     const { customerId, vertical } = input;
     const limitKey = LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
     const aiChatLimitKey = AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
-    const baseCap = await loadVerticalBaseLimit(vertical);
 
     // The floor, from code. Never narrowed below this point — only added to.
     const entitlements = new Set<EntitlementKey>(ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[vertical]);
+    // The floor, from the DATABASE (the vertical's base plan) — every key it
+    // declares, not just its own cap. See `loadVerticalBaseLimits`.
+    const limits = await loadVerticalBaseLimits(vertical);
 
     if (!customerId) {
-        return { cap: baseCap, aiChatCap: AI_CHAT_CAP_WITHOUT_PLAN, entitlements };
+        return { limits, entitlements };
     }
 
     const billing = getQZPayBilling();
     if (!billing) {
-        return { cap: baseCap, aiChatCap: AI_CHAT_CAP_WITHOUT_PLAN, entitlements };
+        return { limits, entitlements };
     }
-
-    let cap = baseCap;
-    let aiChatCap = AI_CHAT_CAP_WITHOUT_PLAN;
 
     try {
         const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
@@ -352,10 +421,20 @@ export async function resolveCommerceVerticalGrants(input: {
 
         if (activeSubscription) {
             const plan = await billing.plans.get(activeSubscription.planId);
-            const planCap = plan?.limits?.[limitKey];
-            if (typeof planCap === 'number') {
-                cap = planCap;
-            } else {
+
+            // Merge EVERY key the subscription's plan declares over the base
+            // floor (HOS-1276) — not just the vertical's own listing cap. This
+            // is the SAME merge `loadVerticalBaseLimits` does for the base
+            // plan, applied again here because the active subscription's own
+            // plan (a higher tier, or one with an operator-adjusted cap) is
+            // the more authoritative source once it exists.
+            for (const [key, value] of Object.entries(plan?.limits ?? {})) {
+                if (isLimitKey(key) && typeof value === 'number') {
+                    limits.set(key, value);
+                }
+            }
+
+            if (typeof plan?.limits?.[limitKey] !== 'number') {
                 apiLogger.warn(
                     {
                         vertical,
@@ -377,11 +456,12 @@ export async function resolveCommerceVerticalGrants(input: {
             // entitlement gate first and the quota is never consulted. The zero
             // is what covers the one incoherent state left: a row that grants
             // the chat but declares no cap, which would otherwise resolve to
-            // unlimited through the layers beneath.
-            const planAiChatCap = plan?.limits?.[aiChatLimitKey];
-            if (typeof planAiChatCap === 'number') {
-                aiChatCap = planAiChatCap;
-            } else if (plan?.entitlements?.includes(EntitlementKey.AI_CHAT)) {
+            // unlimited through the layers beneath. The merge loop above already
+            // applied a numeric value when present; this only logs the gap.
+            if (
+                typeof plan?.limits?.[aiChatLimitKey] !== 'number' &&
+                plan?.entitlements?.includes(EntitlementKey.AI_CHAT)
+            ) {
                 apiLogger.warn(
                     {
                         vertical,
@@ -415,8 +495,17 @@ export async function resolveCommerceVerticalGrants(input: {
     try {
         const customerLimits = await billing.limits.getByCustomerId(customerId);
         for (const cl of customerLimits) {
-            if (isLimitKey(cl.limitKey) && cl.limitKey === limitKey) {
-                cap = cl.maxValue;
+            // Restricted to keys THIS vertical's resolved map already carries
+            // (its own cap, AI-chat cap, or any `TOURIST_VIP_LIMITS` key it
+            // inherits) — generalising the original single-key check
+            // (`cl.limitKey === limitKey`) rather than narrowing it. A
+            // customer-level row can target ANY `LimitKey` (e.g. the
+            // experience-only private-gallery add-on), and the docblock's own
+            // claim — "it is keyed by limit key so it can only ever move the
+            // vertical it names" — is honoured by `limits.has()`, not by
+            // hardcoding which single key that vertical owns.
+            if (isLimitKey(cl.limitKey) && limits.has(cl.limitKey)) {
+                limits.set(cl.limitKey, cl.maxValue);
             }
         }
     } catch (error) {
@@ -429,7 +518,7 @@ export async function resolveCommerceVerticalGrants(input: {
         );
     }
 
-    return { cap, aiChatCap, entitlements };
+    return { limits, entitlements };
 }
 
 /**
@@ -442,6 +531,16 @@ export async function resolveCommerceVerticalGrants(input: {
  * `enforceExperienceLimit()`. It replaces `userEntitlements` and `userLimits`
  * wholesale rather than merging into them — see the module docblock on why the
  * two domains are never mixed.
+ *
+ * **"Replace" means replace the SET, not collapse it to one key (HOS-1276).**
+ * Before this fix, `userLimits` was replaced with a Map holding ONLY the
+ * vertical's own listing-cap key — `new Map([[limitKey, cap]])` — which is a
+ * DIFFERENT thing from "the commerce domain's limits replace the accommodation
+ * domain's". `resolveCommerceVerticalGrants` now returns every `LimitKey` the
+ * vertical's plan declares (`TOURIST_VIP_LIMITS` plus its own cap, AI-chat cap,
+ * and — for experience — the private-gallery cap), and THAT full map is what
+ * gets published here. The entitlement side was never affected by this bug: it
+ * already published its full resolved `Set`, never a single key.
  *
  * **The order is load-bearing in both directions.** Mounted after the gate, the
  * gate reads the ACCOMMODATION set, which never carries a commerce key, and
@@ -465,8 +564,6 @@ export async function resolveCommerceVerticalGrants(input: {
 export function commerceVerticalEntitlementMiddleware(
     vertical: CommerceVertical
 ): MiddlewareHandler<AppBindings> {
-    const limitKey: LimitKey = LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
-
     return async (c, next) => {
         // Platform staff bypass (SPEC-171), identical in spirit to
         // `entitlementMiddleware`'s: staff operate without a billing customer
@@ -484,7 +581,7 @@ export function commerceVerticalEntitlementMiddleware(
             return;
         }
 
-        const { cap, entitlements } = await resolveCommerceVerticalGrants({
+        const { limits, entitlements } = await resolveCommerceVerticalGrants({
             customerId: c.get('billingCustomerId'),
             vertical
         });
@@ -494,9 +591,10 @@ export function commerceVerticalEntitlementMiddleware(
         // what would let an owner who happens to also host an accommodation
         // pass a commerce gate for the wrong reason — the exact confusion the
         // four separate keys exist to prevent (HOS-1074). This vertical's set
-        // is the whole answer for the rest of the request.
+        // — now every `LimitKey` its plan declares, not one — is the whole
+        // answer for the rest of the request.
         c.set('userEntitlements', entitlements);
-        c.set('userLimits', new Map<LimitKey, number>([[limitKey, cap]]));
+        c.set('userLimits', limits);
         c.set('billingLoadFailed', false);
 
         await next();
