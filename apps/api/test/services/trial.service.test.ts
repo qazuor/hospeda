@@ -1286,6 +1286,198 @@ describe('TrialService', () => {
                 expect(result.planSlug).toBe(`${domain}-basico`);
             });
         });
+
+        describe('HOS-337 — dominant cancellation paths (2-L `cancelled`) now recognized', () => {
+            it.each([
+                'canceled',
+                'cancelled'
+            ] as const)("REGRESSION: an owner-category trial cancelled via status '%s' that never converted is recognized as expired (was invisible before this fix for 'cancelled')", async (statusSpelling) => {
+                // Arrange — the exact HOS-337 headline bug: no live subscription
+                // (never converted), only a historical row cancelled through one
+                // of the DOMINANT paths (the MercadoPago webhook via
+                // `QZPAY_TO_HOSPEDA_STATUS`, `finalize-cancelled-subs`,
+                // `refund-lifecycle.service.ts`), all of which write the 2-L
+                // `'cancelled'`. Before this fix, only the 1-L `'canceled'` that
+                // qzpay-core writes directly was recognized here — every one of
+                // those DIRECT Hospeda writers fell through to "never had a
+                // trial" and kept full write access forever.
+                const customerId = `customer-hos337-${statusSpelling}`;
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 5);
+
+                const cancelledOwnerTrial = {
+                    id: `sub-hos337-${statusSpelling}`,
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: statusSpelling,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    cancelledOwnerTrial
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+                // isOwnerCategorySubscription's billing_plans lookup: the
+                // beforeEach default (`[{ productDomain: 'accommodation' }]`,
+                // no `category`) already falls back to `'owner'` — spelled out
+                // here so the test does not depend silently on that default.
+                mockDbForTrial.limit.mockResolvedValueOnce([{ category: 'owner' }]);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBe('owner-basico');
+            });
+
+            it("does NOT paywall a cancelled TOURIST trial ('cancelled', 2-L): tourist-plus/tourist-vip carry their own 14-day trial and this is a global gate", async () => {
+                // Arrange — HOS-337 point 1: widening the match to 'cancelled'
+                // without owner/complex scoping would 402 a tourist's
+                // favourites/reviews/profile writes with a "your trial expired,
+                // upgradeAudience: 'host'" message, contradicting the entitlement
+                // middleware immediately before this one (which already resolved
+                // them to the free tier).
+                const customerId = 'customer-hos337-tourist-cancelled';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 5);
+
+                const cancelledTouristTrial = {
+                    id: 'sub-hos337-tourist-cancelled',
+                    customerId,
+                    planId: 'plan-tourist-vip',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'tourist'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    cancelledTouristTrial
+                ] as never);
+                // The plan lookup for `isOwnerCategorySubscription` reports the
+                // tourist category — NOT owner/complex.
+                mockDbForTrial.limit.mockResolvedValueOnce([{ category: 'tourist' }]);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — falls all the way through to "never had a trial"
+                // defaults, exactly as if this row did not exist.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBeNull();
+            });
+
+            it('does NOT report "trial expired" for an owner subscription that DID convert before being cancelled (`trial_converted: true`)', async () => {
+                // Arrange — a subscription that converted to paid
+                // (`trial-supersede-on-activation.ts` /
+                // `subscription-payment-handler.ts` both stamp
+                // `trial_converted: true`) and was cancelled long after: this is
+                // "a paid plan the customer cancelled", not "a trial that expired
+                // without paying". `trial_converted` defaults to `false`, so this
+                // exclusion cannot suppress the dominant never-converted case —
+                // only a row that positively recorded a conversion is skipped.
+                const customerId = 'customer-hos337-converted-then-cancelled';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 200); // long-ago trial window
+
+                const convertedThenCancelled = {
+                    id: 'sub-hos337-converted-cancelled',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    convertedThenCancelled
+                ] as never);
+                // hydrateTrialConverted's lookup reports this row as converted.
+                mockDbForTrial.where.mockReturnValueOnce(
+                    Object.assign(
+                        Promise.resolve([
+                            { id: 'sub-hos337-converted-cancelled', trialConverted: true }
+                        ]),
+                        { limit: mockDbForTrial.limit }
+                    )
+                );
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — excluded from the historical-trial bucket entirely.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBeNull();
+            });
+
+            it('a newer cancelled TOURIST row does not mask an older cancelled OWNER trial (scoping applies while selecting candidates, not to the sort winner)', async () => {
+                // Arrange — mirrors the dual-role shape this whole epic keeps
+                // seeding `host-provider@local.test` for for: the customer holds
+                // both an owner-category row (older trialEnd) and a tourist row
+                // (newer trialEnd). A naive "most recent trialEnd wins" sort with
+                // the category check applied only to the winner would let the
+                // newer tourist row win the sort FIRST and then either wrongly
+                // paywall on tourist grounds or wrongly discard the real owner
+                // trial. The scope has to narrow the candidate SET before the
+                // sort ever runs.
+                const customerId = 'customer-hos337-dual-role-cancelled';
+                const now = new Date();
+                const olderOwnerTrialEnd = new Date(now);
+                olderOwnerTrialEnd.setDate(olderOwnerTrialEnd.getDate() - 10);
+                const newerTouristTrialEnd = new Date(now);
+                newerTouristTrialEnd.setDate(newerTouristTrialEnd.getDate() - 2);
+
+                const ownerCancelled = {
+                    id: 'sub-hos337-dual-owner',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: olderOwnerTrialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+                const touristCancelled = {
+                    id: 'sub-hos337-dual-tourist',
+                    customerId,
+                    planId: 'plan-tourist-vip',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: newerTouristTrialEnd.toISOString(),
+                    productDomain: 'tourist'
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    ownerCancelled,
+                    touristCancelled
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+                // Candidates are queued in fixture order: owner first, tourist
+                // second.
+                mockDbForTrial.limit
+                    .mockResolvedValueOnce([{ category: 'owner' }])
+                    .mockResolvedValueOnce([{ category: 'tourist' }]);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — the owner row wins despite being the OLDER one, because
+                // the tourist row was never a candidate at all.
+                expect(result.isExpired).toBe(true);
+                expect(result.planSlug).toBe('owner-basico');
+            });
+        });
     });
 
     describe('checkTrialExpiry', () => {
