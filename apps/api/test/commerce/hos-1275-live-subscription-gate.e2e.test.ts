@@ -64,7 +64,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
  * never populates (HOS-934). `mocks.hydrate` stamps the real column value on
  * afterwards, keyed by id, mirroring the batched recovery SELECT.
  */
-let fakeSubscriptions: Array<{ id: string; status: string; planId: string }> = [];
+let fakeSubscriptions: Array<{
+    id: string;
+    status: string;
+    planId: string;
+    currentPeriodEnd?: Date;
+}> = [];
 let fakeDomains: Record<string, string | null> = {};
 
 vi.mock('../../src/middlewares/billing.js', async (importOriginal) => {
@@ -156,11 +161,23 @@ const SUCCESS_RESULT = { data: {}, error: undefined } as never;
  * @param rows - `[id, status, real productDomain]` triples. The domain is
  *   applied by the hydration mock, never injected into the row itself.
  */
-function given(rows: ReadonlyArray<readonly [string, string, string | null]>): void {
-    fakeSubscriptions = rows.map(([id, status]) => ({ id, status, planId: 'plan-1' }));
+function given(
+    rows: ReadonlyArray<readonly [string, string, string | null, (Date | undefined)?]>
+): void {
+    fakeSubscriptions = rows.map(([id, status, , currentPeriodEnd]) =>
+        currentPeriodEnd === undefined
+            ? { id, status, planId: 'plan-1' }
+            : { id, status, planId: 'plan-1', currentPeriodEnd }
+    );
     fakeDomains = Object.fromEntries(rows.map(([id, , domain]) => [id, domain]));
     clearEntitlementCache(CUSTOMER_ID);
 }
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+/** A period end still in the future: the owner has paid through it. */
+const future = () => new Date(Date.now() + THIRTY_DAYS_MS);
+/** A period end well in the past, beyond any grace window. */
+const past = () => new Date(Date.now() - THIRTY_DAYS_MS);
 
 interface RefusalCase {
     readonly label: string;
@@ -259,7 +276,7 @@ describe('the content-editing subscription gate — REFUSES a lapsed owner (HOS-
     it.each(
         cases().map((c) => [c.label, c] as const)
     )('refuses %s with 402 NO_ACTIVE_SUBSCRIPTION', async (_label, testCase) => {
-        given([['sub-lapsed', SubscriptionStatusEnum.CANCELLED, testCase.domain]]);
+        given([['sub-lapsed', SubscriptionStatusEnum.CANCELLED, testCase.domain, past()]]);
 
         const res = await app.request(testCase.path, {
             method: testCase.method,
@@ -324,7 +341,7 @@ describe('the content-editing subscription gate — REFUSES a lapsed owner (HOS-
         // `trialMiddleware` leaves open, closed here by scoping.
         given([
             ['acc', SubscriptionStatusEnum.ACTIVE, ProductDomainEnum.ACCOMMODATION],
-            ['gas', SubscriptionStatusEnum.CANCELLED, ProductDomainEnum.GASTRONOMY]
+            ['gas', SubscriptionStatusEnum.CANCELLED, ProductDomainEnum.GASTRONOMY, past()]
         ]);
 
         const gastronomy = await app.request(`/api/v1/protected/gastronomies/${LISTING_ID}/faqs`, {
@@ -343,11 +360,80 @@ describe('the content-editing subscription gate — REFUSES a lapsed owner (HOS-
         expect(accommodationAddFaq).toHaveBeenCalled();
     });
 
+    it.each([
+        [
+            'accommodation',
+            ProductDomainEnum.ACCOMMODATION,
+            `/api/v1/protected/accommodations/${LISTING_ID}/faqs`
+        ],
+        [
+            'gastronomy',
+            ProductDomainEnum.GASTRONOMY,
+            `/api/v1/protected/gastronomies/${LISTING_ID}/faqs`
+        ],
+        [
+            'experience',
+            ProductDomainEnum.EXPERIENCE,
+            `/api/v1/protected/experiences/${LISTING_ID}/faqs`
+        ]
+    ] as const)('SOFT-CANCEL: %s keeps editing while the paid period runs', async (_label, domain, path) => {
+        // REGRESSION (HOS-1275). The first cut of this gate was status-only
+        // and 402'd here. Cancelling writes `status = 'cancelled'` and
+        // `cancel_at_period_end = true` IMMEDIATELY, a month before the
+        // period ends — see `apps/e2e/tests/host/host-04-cancellation-grace.spec.ts`,
+        // which is the suite that caught it in CI because none of THESE
+        // covered it. This is that scenario, on the wire, in all three
+        // verticals rather than only the one the e2e exercises.
+        given([['sub-soft', SubscriptionStatusEnum.CANCELLED, domain, future()]]);
+
+        const res = await app.request(path, {
+            method: 'POST',
+            headers: ownerHeaders,
+            body: FAQ_BODY
+        });
+
+        expect(res.status).not.toBe(402);
+    });
+
+    it.each([
+        [
+            'accommodation',
+            ProductDomainEnum.ACCOMMODATION,
+            `/api/v1/protected/accommodations/${LISTING_ID}/faqs`
+        ],
+        [
+            'gastronomy',
+            ProductDomainEnum.GASTRONOMY,
+            `/api/v1/protected/gastronomies/${LISTING_ID}/faqs`
+        ],
+        [
+            'experience',
+            ProductDomainEnum.EXPERIENCE,
+            `/api/v1/protected/experiences/${LISTING_ID}/faqs`
+        ]
+    ] as const)('SOFT-CANCEL: %s IS refused once that period has passed', async (_label, domain, path) => {
+        // The other half of the rule the e2e's own name states:
+        // "cancel keeps grace -> period_end past blocks writes". Without
+        // this case the fix above could be widened to "cancelled always
+        // passes" with everything still green.
+        given([['sub-spent', SubscriptionStatusEnum.CANCELLED, domain, past()]]);
+
+        const res = await app.request(path, {
+            method: 'POST',
+            headers: ownerHeaders,
+            body: FAQ_BODY
+        });
+
+        expect(res.status).toBe(402);
+    });
+
     it('platform staff bypass the gate on a lapsed customer', async () => {
         // A platform editor fixing somebody else's listing operates without a
         // billing customer of their own. Refusing them would be a regression,
         // not enforcement.
-        given([['sub-lapsed', SubscriptionStatusEnum.CANCELLED, ProductDomainEnum.GASTRONOMY]]);
+        given([
+            ['sub-lapsed', SubscriptionStatusEnum.CANCELLED, ProductDomainEnum.GASTRONOMY, past()]
+        ]);
 
         const res = await app.request(`/api/v1/protected/gastronomies/${LISTING_ID}/faqs`, {
             method: 'POST',

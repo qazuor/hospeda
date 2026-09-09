@@ -27,8 +27,16 @@
  * with a green suite. Here the column is recovered through a mocked
  * `hydrateSubscriptionProductDomains`, which is what the function really calls.
  *
- * `subscriptionMatchesDomain` and `isLiveSubscriptionStatus` are deliberately
- * NOT mocked: they are the predicates under test. Mocking them would leave
+ * `subscriptionMatchesDomain`, `isLiveSubscriptionStatus` and `isSubscriptionLive`
+ * are deliberately NOT mocked: they are the predicates under test.
+ *
+ * ## Every `cancelled` fixture carries a `currentPeriodEnd`
+ *
+ * Not decoration. `cancelled` is the ONE status whose verdict a date
+ * decides — future period end means the host paid through it and keeps
+ * editing; past means they are out. A dateless fixture tests a row shape
+ * production does not produce, and would have hidden the very regression
+ * this file now pins (see the SOFT-CANCEL block at the bottom). Mocking them would leave
  * assertions that can only ever confirm the mock.
  *
  * @module test/services/billing/edit-eligibility.service
@@ -60,10 +68,22 @@ import { resolveEditEligibility } from '../../../src/services/billing/edit-eligi
 
 const CUSTOMER_ID = 'cus-1';
 
-/** A `getByCustomerId()`-shaped row: no `productDomain` key at all (HOS-934). */
-function row(id: string, status: string) {
-    return { id, status };
+/**
+ * A `getByCustomerId()`-shaped row: no `productDomain` key at all (HOS-934).
+ *
+ * `currentPeriodEnd` is optional and real rows carry it. It matters for exactly
+ * one status — `cancelled`, where it separates a soft-cancel still inside its
+ * paid period from a subscription that has actually run out.
+ */
+function row(id: string, status: string, currentPeriodEnd?: Date) {
+    return currentPeriodEnd === undefined ? { id, status } : { id, status, currentPeriodEnd };
 }
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+/** A period end still in the future: the host has paid through it. */
+const future = () => new Date(Date.now() + THIRTY_DAYS_MS);
+/** A period end well in the past, beyond any grace window. */
+const past = () => new Date(Date.now() - THIRTY_DAYS_MS);
 
 /**
  * Wires the provider read and the hydration together.
@@ -97,7 +117,7 @@ describe('resolveEditEligibility — REFUSES a lapsed owner (the load-bearing ca
 
     for (const { label, domain } of VERTICALS) {
         it(`answers 'lapsed' in ${label} when the only subscription is cancelled`, async () => {
-            given([row('s1', SubscriptionStatusEnum.CANCELLED)], { s1: domain });
+            given([row('s1', SubscriptionStatusEnum.CANCELLED, past())], { s1: domain });
 
             expect(await resolveEditEligibility({ customerId: CUSTOMER_ID, domain })).toBe(
                 'lapsed'
@@ -166,7 +186,7 @@ describe('resolveEditEligibility — the grace states must NOT be cut', () => {
         // to the `active` one that replaced it.
         given(
             [
-                row('old', SubscriptionStatusEnum.CANCELLED),
+                row('old', SubscriptionStatusEnum.CANCELLED, past()),
                 row('new', SubscriptionStatusEnum.ACTIVE)
             ],
             { old: ProductDomainEnum.ACCOMMODATION, new: ProductDomainEnum.ACCOMMODATION }
@@ -228,7 +248,7 @@ describe('resolveEditEligibility — the dual owner is answered per domain', () 
         given(
             [
                 row('acc', SubscriptionStatusEnum.ACTIVE),
-                row('gas', SubscriptionStatusEnum.CANCELLED)
+                row('gas', SubscriptionStatusEnum.CANCELLED, past())
             ],
             { acc: ProductDomainEnum.ACCOMMODATION, gas: ProductDomainEnum.GASTRONOMY }
         );
@@ -245,7 +265,7 @@ describe('resolveEditEligibility — the dual owner is answered per domain', () 
         given(
             [
                 row('acc', SubscriptionStatusEnum.ACTIVE),
-                row('gas', SubscriptionStatusEnum.CANCELLED)
+                row('gas', SubscriptionStatusEnum.CANCELLED, past())
             ],
             { acc: ProductDomainEnum.ACCOMMODATION, gas: ProductDomainEnum.GASTRONOMY }
         );
@@ -285,7 +305,7 @@ describe('resolveEditEligibility — the dual owner is answered per domain', () 
         given(
             [
                 row('tou', SubscriptionStatusEnum.ACTIVE),
-                row('acc', SubscriptionStatusEnum.CANCELLED)
+                row('acc', SubscriptionStatusEnum.CANCELLED, past())
             ],
             { tou: ProductDomainEnum.TOURIST, acc: ProductDomainEnum.ACCOMMODATION }
         );
@@ -313,7 +333,7 @@ describe('resolveEditEligibility — hydration is what makes the domain scoping 
         // gastronomy — the domain filter empties, and the verdict flips from
         // 'lapsed' to 'pre_trial'. The gate would then refuse nobody in
         // gastronomy or experience, with no thrown error and no log line.
-        given([row('gas', SubscriptionStatusEnum.CANCELLED)], {
+        given([row('gas', SubscriptionStatusEnum.CANCELLED, past())], {
             gas: ProductDomainEnum.GASTRONOMY
         });
 
@@ -327,7 +347,7 @@ describe('resolveEditEligibility — hydration is what makes the domain scoping 
     });
 
     it('and the same for experience', async () => {
-        given([row('exp', SubscriptionStatusEnum.CANCELLED)], {
+        given([row('exp', SubscriptionStatusEnum.CANCELLED, past())], {
             exp: ProductDomainEnum.EXPERIENCE
         });
 
@@ -396,5 +416,88 @@ describe('resolveEditEligibility — fails OPEN on everything it cannot evaluate
                 domain: ProductDomainEnum.ACCOMMODATION
             })
         ).toBe('live');
+    });
+});
+
+describe('resolveEditEligibility — SOFT-CANCEL keeps editing until the period ends', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    // REGRESSION (HOS-1275). The first cut of this gate was status-only, on the
+    // stated assumption that a soft-cancel keeps `status = 'active'` until
+    // `finalize-cancelled-subs` flips it. That assumption was wrong, and the
+    // pre-existing E2E `host-04-cancellation-grace.spec.ts` proved it in CI:
+    // cancelling writes `status = 'cancelled'` + `cancel_at_period_end = true`
+    // IMMEDIATELY, while `current_period_end` is still a month away. The
+    // status-only read refused that host — a 402 to somebody who has paid
+    // through the period, which is the exact incident this gate must not cause.
+    //
+    // The fix composes the repo's OTHER liveness predicate rather than inventing
+    // date arithmetic here: `isSubscriptionLive` already answers `cancelled`
+    // correctly (live iff `currentPeriodEnd > now`, with no extra grace beyond
+    // it) and is what the accommodation publish gate uses.
+    for (const { label, domain } of VERTICALS) {
+        it(`answers 'live' in ${label} for a cancelled sub still inside its paid period`, async () => {
+            given([row('s1', SubscriptionStatusEnum.CANCELLED, future())], { s1: domain });
+
+            expect(await resolveEditEligibility({ customerId: CUSTOMER_ID, domain })).toBe('live');
+        });
+
+        it(`answers 'lapsed' in ${label} once that period has passed`, async () => {
+            given([row('s1', SubscriptionStatusEnum.CANCELLED, past())], { s1: domain });
+
+            expect(await resolveEditEligibility({ customerId: CUSTOMER_ID, domain })).toBe(
+                'lapsed'
+            );
+        });
+    }
+
+    it('a cancelled sub with NO period end fails OPEN — inherited, and deliberate', async () => {
+        // `isSubscriptionLive` treats an absent/unparseable date as live, and
+        // this gate inherits that rather than second-guessing it: the same
+        // policy already governs the accommodation publish gate, and a row that
+        // is cancelled with no period at all is a data anomaly, not a signal to
+        // withhold someone's own content. Asserted so the inheritance is a
+        // decision on record instead of an accident.
+        given([row('s1', SubscriptionStatusEnum.CANCELLED)], {
+            s1: ProductDomainEnum.ACCOMMODATION
+        });
+
+        expect(
+            await resolveEditEligibility({
+                customerId: CUSTOMER_ID,
+                domain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe('live');
+    });
+
+    it("'expired' is NOT rescued by a future period end", async () => {
+        // The distinction that keeps the composition honest: `isSubscriptionLive`
+        // returns false for `expired` whatever the dates say, so a locally
+        // expired trial cannot buy itself more time through this branch.
+        given([row('s1', SubscriptionStatusEnum.EXPIRED, future())], {
+            s1: ProductDomainEnum.ACCOMMODATION
+        });
+
+        expect(
+            await resolveEditEligibility({
+                customerId: CUSTOMER_ID,
+                domain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe('lapsed');
+    });
+
+    it("'paused' is NOT rescued by a future period end either", async () => {
+        given([row('s1', SubscriptionStatusEnum.PAUSED, future())], {
+            s1: ProductDomainEnum.ACCOMMODATION
+        });
+
+        expect(
+            await resolveEditEligibility({
+                customerId: CUSTOMER_ID,
+                domain: ProductDomainEnum.ACCOMMODATION
+            })
+        ).toBe('lapsed');
     });
 });

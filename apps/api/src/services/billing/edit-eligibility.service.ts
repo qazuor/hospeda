@@ -56,24 +56,51 @@
  *   publish gate (`services/accommodation-publish-deps.ts`'s
  *   `checkEligibility`).
  *
- * **This module deliberately builds on the status-only one**, widened to
- * {@link isLiveSubscriptionStatus} (which adds `past_due`). Three reasons:
+ * **This module uses BOTH, OR-ed together**, and neither half is optional:
  *
- * 1. Editing is not publishing. The date-aware predicate exists to stop a
- *    lapsed listing from staying PUBLIC; cutting someone's ability to FIX their
- *    listing during a 6-hour webhook lag punishes them for our cron timing.
- *    Failing open on cron lag is the safe direction here and the unsafe one
- *    there.
- * 2. `isSubscriptionLive` returns `false` for `past_due`, which would cut a
- *    delinquent owner inside their 7-day dunning grace — see the next section.
- * 3. Soft-cancel needs nothing extra either way: a subscription cancelled but
- *    paid through keeps `status = 'active'` until `finalize-cancelled-subs`
- *    flips it, so the status-only read already covers it.
+ * - {@link isLiveSubscriptionStatus} (status-only, plus `past_due`) is the base.
+ *   Editing is not publishing: the date-aware predicate exists to stop a lapsed
+ *   listing from staying PUBLIC, and cutting someone's ability to FIX their
+ *   listing during a 6-hour webhook lag would punish them for our cron timing.
+ *   Failing open on cron lag is the safe direction here and the unsafe one
+ *   there. It also carries `past_due`, which `isSubscriptionLive` refuses — see
+ *   the next section for why that must pass.
+ * - {@link isSubscriptionLive} is OR-ed on top for exactly one status it answers
+ *   better: **`cancelled`**, which it treats as live while `currentPeriodEnd` is
+ *   still in the future, with no extra grace beyond it. For every other status
+ *   it is a strict subset of the status-only answer, so the OR adds nothing
+ *   else.
  *
- * That the two predicates disagree is a real open divergence, NOT resolved by
- * this issue: reconciling them touches the accommodation publish gate, which is
- * out of scope here. It is named rather than silently forked so the next reader
- * picks one of the two that exist instead of writing a third.
+ * ### The first cut of this module got that wrong, and CI caught it
+ *
+ * It was status-only, on the stated assumption that a soft-cancel keeps
+ * `status = 'active'` until `finalize-cancelled-subs` flips it after the period
+ * ends. **That assumption was false.** Cancelling writes `status = 'cancelled'`
+ * and `cancel_at_period_end = true` IMMEDIATELY, while `current_period_end` is
+ * still up to a month away — as the pre-existing E2E
+ * `apps/e2e/tests/host/host-04-cancellation-grace.spec.ts` demonstrates by
+ * doing precisely that UPDATE and then asserting the write still succeeds. The
+ * status-only read answered 402 to a host who had paid through the period.
+ *
+ * **The composition is the fix, and it is not a style choice — do NOT collapse
+ * it back into a single `Set` of statuses.** That is exactly what the first cut
+ * was, and it 402'd a paying host. The date comparison is mandatory here because
+ * `cancelled` is a status whose meaning changes over time: the same row is
+ * "still paid through" on Monday and "out" a month later, and no set of strings
+ * can tell those apart.
+ *
+ * The underlying problem — that this repo carries two divergent liveness
+ * predicates at all — stopped being theoretical the moment CI caught it, and is
+ * tracked as **HOS-1310**. It is NOT resolved here: reconciling them touches the
+ * accommodation publish gate. Composing the two that exist is what kept a THIRD
+ * set of date arithmetic from being written in this file, which is the defect
+ * this epic exists to close.
+ *
+ * One inherited consequence, on record rather than by accident: a `cancelled`
+ * row with a NULL or unparseable `currentPeriodEnd` fails OPEN, because that is
+ * `isSubscriptionLive`'s documented policy and the accommodation publish gate
+ * already lives with it. A subscription cancelled with no period at all is a
+ * data anomaly, not a signal to withhold somebody's own content.
  *
  * ## `past_due` and `pending_provider` PASS — deliberately, and neither is obvious
  *
@@ -115,7 +142,7 @@
  * @module services/billing/edit-eligibility.service
  */
 
-import { isLiveSubscriptionStatus } from '@repo/billing';
+import { isLiveSubscriptionStatus, isSubscriptionLive } from '@repo/billing';
 import type { ProductDomainValue } from '@repo/schemas';
 import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -217,10 +244,24 @@ export async function resolveEditEligibility(input: {
             return 'pre_trial';
         }
 
-        const hasLive = domainSubscriptions.some((sub: { status: string }) => {
-            const status = sub.status as string;
-            return isLiveSubscriptionStatus(status) || EDIT_ELIGIBLE_EXTRA_STATUSES.has(status);
-        });
+        const hasLive = domainSubscriptions.some(
+            (sub: { status: string; trialEnd?: Date | null; currentPeriodEnd?: Date | null }) => {
+                const status = sub.status as string;
+                return (
+                    isLiveSubscriptionStatus(status) ||
+                    EDIT_ELIGIBLE_EXTRA_STATUSES.has(status) ||
+                    // The soft-cancel arm. See the module docblock: this is the
+                    // one status where a date decides, and delegating it to the
+                    // repo's existing date-aware predicate is what keeps a third
+                    // liveness rule from being written here.
+                    isSubscriptionLive({
+                        status,
+                        trialEnd: sub.trialEnd,
+                        currentPeriodEnd: sub.currentPeriodEnd
+                    })
+                );
+            }
+        );
 
         return hasLive ? 'live' : 'lapsed';
     } catch (error) {
