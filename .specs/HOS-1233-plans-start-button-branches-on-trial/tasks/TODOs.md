@@ -1,6 +1,6 @@
 # HOS-1233: The plans page reads the trial before it charges
 
-## Progress: 7/42 tasks (17%)
+## Progress: 9/42 tasks (21%)
 
 > T-030 and T-031 are done on the **qzpay** side and merged nowhere yet: they live
 > in PR #85, unpublished. Everything downstream of the package (T-032, and T-036
@@ -127,7 +127,7 @@
   - R-11 / AC-14.
   - Blocked by: T-036 · Blocks: T-027, T-039, T-040, T-041
 
-- [ ] **T-040** (complexity: 3) — Trace PRODUCT_DOMAIN_BY_LIMIT_KEY and pin the answer
+- [x] **T-040** (complexity: 3) — Trace PRODUCT_DOMAIN_BY_LIMIT_KEY and pin the answer
   - D-8 / AC-15k.
   - Blocked by: T-038 · Blocks: T-027
 
@@ -157,7 +157,7 @@
   - AC-7 / AC-10 / AC-12.
   - Blocked by: T-019, T-020 · Blocks: T-025, T-026
 
-- [ ] **T-039** (complexity: 2) — Make the admin plan-change gate domain-aware
+- [x] **T-039** (complexity: 2) — Make the admin plan-change gate domain-aware
   - D-8 / AC-15j.
   - Blocked by: T-038 · Blocks: T-027
 

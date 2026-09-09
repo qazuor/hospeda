@@ -188,6 +188,68 @@ counted here: the row it stamps is created by `createPaidSubscription`, so it is
 covered once T-032 lands and its own UPDATE becomes redundant rather than
 load-bearing.
 
+### F-4f · The read that BREAKS worst was the one filed as indifferent
+
+Found while tracing AC-15k, and measured — not inferred — 2026-09-08.
+
+§4b's read table filed `middlewares/entitlement.ts:596-636` as *"Guarded by
+`isOwnerCategorySubscription` for HOST actors; non-HOST path unverified →
+Indifferent → fixed"*. The non-HOST path is the whole tourist audience, and it
+does not survive the reclassification.
+
+`loadEntitlements` finds the customer's subscription with:
+
+```ts
+subscriptions.find((sub) =>
+    isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub))
+```
+
+A `tourist-vip` row matched that predicate **because it was misfiled** (F-4b), so
+its entitlements resolved correctly for the wrong reason — the same accident
+that made every other tourist read look fine. Reclassified, the predicate
+returns false, no active subscription is found, and the fallback below it hands
+the caller `buildDefaultEntitlementsResult()` — the tourist-**FREE** baseline.
+
+Measured through the middleware before the fix, with a plan granting
+`vip_support`: the request resolved exactly
+`[save_favorites, write_reviews, read_reviews]`. A customer paying for VIP gets
+the free tier, with no error, no log line and no 402.
+
+The fix accepts either domain in that `find`, because it is looking for *the
+plan this person pays for* — `ALL_PLANS` holds the owner tiers and the tourist
+tiers together — not for an accommodation plan. `isOwnerCategorySubscription`'s
+HOST-side discard below is untouched and still keyed on plan CATEGORY, so a
+HOST who happens to hold a tourist sub still falls to the owner-basico draft
+defaults exactly as HOS-217 intended.
+
+Three things this finding is worth keeping for:
+
+1. **The severity was inverted by the audit.** The reads §4b marked FIXED are
+   real but minor; the one it marked indifferent takes away something a
+   customer paid for. R-10 predicted precisely this ("the unaudited risk is a
+   read nobody thought to grep for").
+2. **Prod is not currently exposed, staging is.** Prod holds one `tourist-vip`
+   row and it is `abandoned` — not entitlement-granting. Staging holds an
+   `active` one and a `past_due` one. The exposure is every future subscriber,
+   not a live incident.
+3. **This is the third hand-audited claim in this spec to be wrong** (F-4b's
+   first draft, F-4e's four write sites, and now this). The pattern is not
+   carelessness — it is that reading code answers "what does this say" and the
+   question here is always "what does this do to a row shaped like X". Only
+   running it answers that.
+
+**Still open, reported and deliberately NOT actioned**: `plan-domains.config.ts`
+builds `PRODUCT_DOMAIN_BY_PLAN_SLUG` by walking `ALL_PLANS` and stamping every
+slug `ACCOMMODATION`, tourist tiers included, on the same reasoning F-4b
+invalidated — and its own docblock says the map is *"derived from the
+catalogues, never restated"*, which that hardcode now contradicts, since each
+`PlanDefinition` states its own domain since T-034. It reads plan SLUGS, never
+the `product_domain` column, so the reclassification does not break it; it is
+merely inconsistent. Its consumers (`applyDowngradeRestrictions`,
+`applyUpgradeRestorations`) act on accommodations and promotions, which a pure
+tourist has none of. Correcting it is a separate change with its own blast
+radius.
+
 ### F-5 · The two verdict enums are deliberately separate and must stay that way
 
 `commerce-trial-verdict.schema.ts:18-25` and `publish-eligibility.schema.ts:18-26` each carry the same instruction from the other side: `PublishEligibilityKindSchema` (`first_publish` / `has_active_sub` / `subscription_required`) and `CommerceTrialVerdictKindSchema` (`trial_available` / `has_active_sub` / `payment_required`) spell their states differently **on purpose**, because publishing a commerce listing opens a MercadoPago checkout where publishing an accommodation starts a local trial.
@@ -349,12 +411,12 @@ Audited 2026-09-08 against this worktree. This table IS the acceptance criterion
 | -- | -- | -- |
 | `start-paid.ts:202-213` `hasActiveAccommodationSub` | Tourist counted → host checkout refused `ALREADY_SUBSCRIBED` | **FIXED** — a tourist can become a host |
 | `accommodation-publish-deps.ts:141-194` → `hasAnyPriorSubscription` | Tourist row read as a prior accommodation sub → trial `consumed` → `subscription_required` | **FIXED** — a tourist-turned-host gets `first_publish` and their real trial |
-| `middlewares/entitlement.ts:596-636` | Guarded by `isOwnerCategorySubscription` for HOST actors; non-HOST path unverified | Indifferent → fixed; ambiguity removed |
+| `middlewares/entitlement.ts:596-636` | The `find` matched a tourist row via `isAccommodationSubscription` — **only because it was misfiled** | **BREAKS, and it is the worst one** → F-4f. A paying tourist-VIP subscriber silently drops to the tourist-FREE defaults |
 | `middlewares/owner-entitlement.ts:226-240,655` | **No** owner-category guard here — a tourist row can compete as "the" accommodation sub | **FIXED**, with no extra code |
 | `cron/entity-subscription-cache-reconcile.job.ts:100-134` | Same gap: a tourist row could outrank a real owner plan in the cache | **FIXED** |
 | `user/protected/stats.ts` via `BUSINESS_VERTICAL_PRODUCT_DOMAINS` | Counted tourist as accommodation, so the widget showed the plan | **Already handled** — `TOURIST` added to the constant in the same change; omitting it would have shown "no plan" to a paying tourist |
 | `admin/billing-subscriptions/utils.ts:158` | Passes the `!== 'accommodation'` gate **because of the bug** | **BREAKS** → D-8 |
-| `commerce-limits.config.ts:130-175` | Tourist-owned limit keys mapped to `ACCOMMODATION` | **UNRESOLVED** → D-8, must be traced |
+| `commerce-limits.config.ts:130-175` | Tourist-owned limit keys mapped to `ACCOMMODATION` | **RESOLVED: indifferent** (T-040). Its only consumer is the add-on recalculator and no add-on targets a tourist cap; a pure tourist's limits come from their plan, not this table. Pinned by a test that fails the day that changes |
 | `trial.service.ts:258-360` `getTrialStatus` | Domain-blind by design (AC-2) | Indifferent |
 | dunning / poll / finalize / abandoned crons | Exclude `addon` only | Indifferent |
 | `admin/SubscriptionFilters.tsx:22` | Derives from `Object.values` | Auto-correct, no change |
