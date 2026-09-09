@@ -22,18 +22,25 @@
  * preapproval is confirmed. This module reuses BOTH exactly as they stand:
  *
  * - {@link createOwnPreapprovalSubscription} (`own-preapproval-subscription-create.ts`)
- *   — the same wrapper every other self-serve `mode: 'paid'` flow mints
- *   through (`/start-paid`, the recurring add-on, and
- *   `mintRetryPreapprovalAttempt`'s retry mint). It wraps the lower-level
- *   `createPaidSubscription` (`paid-subscription-create.ts`) and, right
- *   after mint, normalizes the row's status from qzpay's raw `incomplete` to
- *   Hospeda's own `pending_provider` — the label {@link
- *   findReusableReplacementAttempt} below filters on (HOS-1315: this module
- *   used to call `createPaidSubscription` directly and skip that
- *   normalization, so the row it minted could never satisfy its own reuse
- *   predicate — see "Idempotency" below). No trial field is ever set here
- *   (guard G-1, `scripts/check-no-trial-to-mercadopago.sh`, would fail CI if
- *   one were added) — the customer already used whatever trial they had.
+ *   — the wrapper `/start-paid`'s checkout, the recurring add-on, and
+ *   `mintRetryPreapprovalAttempt`'s retry mint (`preapproval-recovery.service.ts`)
+ *   all mint a self-serve `mode: 'paid'` preapproval through. NOT every
+ *   `mode: 'paid'` caller in this codebase does — `TrialService`'s own
+ *   `reactivateFromTrial` / `reactivateSubscription`
+ *   (`apps/api/src/services/trial.service.ts`, reached from the equally
+ *   self-serve `POST /reactivate` route) still call the lower-level
+ *   `createPaidSubscription` directly and carry no local `pending_provider`
+ *   idempotency layer of their own, so they had no equivalent bug for this
+ *   PR to fix. The wrapper normalizes the row's status from qzpay's raw
+ *   `incomplete` to Hospeda's own `pending_provider` right after mint — the
+ *   label {@link findReusableReplacementAttempt} below filters on (HOS-1315:
+ *   this module used to call `createPaidSubscription` directly and skip
+ *   that normalization, so the row it minted could never satisfy its own
+ *   reuse predicate — see "Idempotency" below). No trial field is ever set
+ *   here (guard G-1, `scripts/check-no-trial-to-mercadopago.sh`, would fail
+ *   CI if one were added) — the customer already used whatever trial they
+ *   had, and `trialDays: 0` (below) additionally forecloses qzpay-core's own
+ *   default-trial fallback for the OMITTED case (see that field's JSDoc).
  * - {@link resolveReactivationPlan} (`reactivation-plan-guard.ts`) — resolves
  *   the plan + price to mint against. Unlike reactivation, the caller here
  *   does NOT choose a plan: this is "fix my card for my current plan", not a
@@ -364,7 +371,23 @@ export async function replacePastDuePaymentMethod(
         db,
         // A replacement mints a PAID preapproval for an already-active plan,
         // never a fresh trial — zero, stated explicitly (same rationale as
-        // `mintRetryPreapprovalAttempt`'s identical `trialDays: 0`).
+        // `mintRetryPreapprovalAttempt`'s identical `trialDays: 0`). This is
+        // NOT merely a style choice: qzpay-core's own fallback (`if
+        // (input.trialDays !== undefined) ... else if (price?.trialDays !=
+        // null) createInput.trialDays = price.trialDays`,
+        // `packages/core/src/billing.ts` in the qzpay clone) means an
+        // OMITTED trialDays silently inherits the resolved price's own
+        // `trial_days` — 30 for every `owner-*`/`tourist-*` monthly price
+        // (measured on staging, 5 of 5 — see
+        // `own-preapproval-subscription-create.ts`'s identical note).
+        // qzpay-drizzle's storage adapter writes `trial_end = now + 30d`
+        // regardless of `mode` (`drizzle-storage.adapter.ts:435-436` in the
+        // qzpay clone), so a past-due customer replacing their card — the
+        // worst candidate for a free trial — would have been granted 30
+        // unbilled `trialing` days on the replacement the moment it confirmed
+        // authorized. Before this PR, `trialDays` was never passed here at
+        // all, so that fallback silently applied. Do not remove this line as
+        // "redundant" without re-reading this comment.
         trialDays: 0,
         metadata: {
             supersedesSubscriptionId: pastDueSubscription.id,
