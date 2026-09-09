@@ -45,9 +45,11 @@ import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
 import { closeAddonPreapproval } from '../../../services/addon-preapproval-cancel';
+import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service';
 import { applyDowngradeRestrictionsOrWarn } from '../../../services/plan-downgrade-remediation.service';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
+import { reconcileSubscriptionLinkedEntities } from '../../../services/subscription-linked-entities.service';
 import {
     resolveOwnerUserId,
     setOwnerServiceSuspension
@@ -380,6 +382,27 @@ const onAfterSubscriptionCancel: NonNullable<
     });
 
     clearEntitlementCache(subscription.customerId);
+
+    // HOS-1280: this hook runs AFTER qzpay has committed the cancel (per this
+    // file's module docblock), so the write is durable and the bridge sees the
+    // real post-cancel status. Without this, a hard-cancelled commerce
+    // subscription's listing stayed PUBLIC forever — the accommodation cache
+    // has the 6-hourly `entity-subscription-cache-reconcile` cron as a
+    // backstop, but commerce visibility has no backstop at all.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.CANCELLED,
+        source: 'admin-cancel'
+    });
+    // This admin surface is generic to every `billing_subscriptions` row
+    // (`createAdminRoutes` is mounted once, unscoped by `product_domain`), so a
+    // partner subscription can be hard-cancelled here too — a no-op for any
+    // other domain (no linked `partner_subscriptions` row to update).
+    await reconcilePartnerForSubscription({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.CANCELLED,
+        source: 'admin-cancel'
+    });
 
     apiLogger.info(
         { subscriptionId: subscription.id, customerId: subscription.customerId, adminUserId },
@@ -956,6 +979,20 @@ const onAfterSubscriptionPause: NonNullable<
 
     clearEntitlementCache(subscription.customerId);
 
+    // HOS-1280: same bridge call as the cancel hook above, same reasoning — the
+    // write already committed at qzpay, and a paused commerce subscription's
+    // listing must go PRIVATE the same way a cancelled one does.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.PAUSED,
+        source: 'admin-pause'
+    });
+    await reconcilePartnerForSubscription({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.PAUSED,
+        source: 'admin-pause'
+    });
+
     apiLogger.info(
         {
             subscriptionId: subscription.id,
@@ -1022,6 +1059,19 @@ const onAfterSubscriptionResume: NonNullable<
     });
 
     clearEntitlementCache(subscription.customerId);
+
+    // HOS-1280: same bridge call as cancel/pause above — a resumed commerce
+    // subscription's listing must go back PUBLIC.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+        source: 'admin-resume'
+    });
+    await reconcilePartnerForSubscription({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+        source: 'admin-resume'
+    });
 
     apiLogger.info(
         {
