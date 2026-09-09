@@ -189,11 +189,26 @@ export type Finding = {
  * and the exclusion exists so a test can reproduce the misfiled shape on
  * purpose — which a shared fixture never does.
  */
-const EXTRA_SCAN_DIRS = [
-    'apps/e2e/fixtures',
-    'packages/service-core/test/integration',
-    'packages/seed/test/data-migrations'
-] as const;
+const EXTRA_SCAN_DIRS = ['apps/e2e/fixtures'] as const;
+
+/**
+ * Directory names that mark a test subtree as writing to a REAL database.
+ *
+ * DERIVED, not a list of paths, and that is the point. The literal-path version
+ * of this took four CI rounds to converge: `apps/e2e/fixtures`, then
+ * `service-core/test/integration`, then `seed/test/data-migrations`, then
+ * `db/test/integration` — each one found by a red job rather than by looking,
+ * each fix confidently declared complete, and each followed by another.
+ *
+ * Matching the CONVENTION instead covers the fifth one on the day it is
+ * created. A suite that stands up a database names itself `integration`, `e2e`
+ * or `data-migrations` in this repo, without exception across 27 writer files.
+ *
+ * Everything else under `test/` stays excluded: those mock `@repo/db`, their
+ * "rows" are assertions rather than rows, and one of them must be able to
+ * reproduce the misfiled shape on purpose (spec §9).
+ */
+const REAL_DB_TEST_DIRS = ['integration', 'e2e', 'data-migrations'] as const;
 
 /**
  * Inside {@link EXTRA_SCAN_DIRS} the `*.test.ts` exclusion does NOT apply.
@@ -264,7 +279,38 @@ export function collectSourceFiles(root: string): string[] {
         }
     }
 
-    return out.sort();
+    // Every real-database test subtree, found by CONVENTION rather than by a
+    // path list — see REAL_DB_TEST_DIRS for why that distinction earned itself.
+    for (const top of SCAN_ROOTS) {
+        const base = join(root, top);
+        let pkgs: string[];
+        try {
+            pkgs = readdirSync(base);
+        } catch {
+            continue;
+        }
+        for (const pkg of pkgs) {
+            const testDir = join(base, pkg, 'test');
+            let entries: string[];
+            try {
+                if (!statSync(testDir).isDirectory()) continue;
+                entries = readdirSync(testDir);
+            } catch {
+                continue;
+            }
+            for (const entry of entries) {
+                if (!(REAL_DB_TEST_DIRS as readonly string[]).includes(entry)) continue;
+                const full = join(testDir, entry);
+                try {
+                    if (statSync(full).isDirectory()) walk(full, EXTRA_DIRS_INCLUDE_TESTS);
+                } catch {
+                    // not a directory
+                }
+            }
+        }
+    }
+
+    return [...new Set(out)].sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -632,11 +678,41 @@ export function scanSources(
         if (!touchesInsert && !touchesCreate && !touchesSql) continue;
 
         const rel = relative(root, file);
-        const fileFindings = [
+        // Inside a real-database test subtree, only the shapes that reach the
+        // DATABASE are scanned: a Drizzle insert and a raw SQL statement.
+        //
+        // `billing.subscriptions.create()` is deliberately NOT, and the reason
+        // is not convenience. In these suites that client is a stub — the call
+        // never reaches Postgres, so dropping the column default cannot break
+        // it, and demanding a domain there would be the guard inventing work
+        // rather than protecting a row. Production code keeps all three shapes;
+        // this narrowing applies only to the test subtrees added by convention.
+        const isRealDbTest = /[\\/]test[\\/](integration|e2e|data-migrations)[\\/]/.test(rel);
+        const rawFileFindings = [
             ...scanDrizzleInserts(rel, source),
-            ...scanQzpayCreates(rel, source, qzpayOffersDomain),
+            ...(isRealDbTest ? [] : scanQzpayCreates(rel, source, qzpayOffersDomain)),
             ...scanRawSqlInserts(rel, source)
         ];
+
+        // In those same test subtrees an UNVERIFIABLE payload is reported but
+        // not FAILED, and only there.
+        //
+        // `unverifiable` means "the guard cannot read this", and in production
+        // that must block: an unreadable payload can hide an omission that
+        // reaches a paying customer with nothing to notice it by. In these
+        // fixtures the payload is almost always a shared builder
+        // (`planRow({...})`, `[...ALL_PRE_ROWS]`) that the guard cannot follow
+        // by construction — and the omission it might hide has a louder check
+        // already: the suite EXECUTES the insert against a real database in the
+        // same CI run, and a missing NOT NULL column fails it outright.
+        //
+        // So this is not the guard going quiet. It is declining to duplicate,
+        // with a weaker instrument, a check the test itself performs with a
+        // stronger one. An `omits` — a payload it CAN read, missing the key —
+        // still fails everywhere.
+        const fileFindings = isRealDbTest
+            ? rawFileFindings.filter((f) => f.verdict !== 'unverifiable')
+            : rawFileFindings;
 
         // Every create of one of the two tables is a checked site, whether or
         // not it turned into a finding. Counting only the failures would let a

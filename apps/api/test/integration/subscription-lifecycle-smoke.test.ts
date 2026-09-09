@@ -58,6 +58,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         const planResult = await db
             .insert(billingPlans)
             .values({
+                productDomain: 'accommodation',
                 id: crypto.randomUUID(),
                 name: 'Test Plan',
                 slug: `test-plan-${Date.now()}`,
@@ -130,6 +131,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         const subscriptionResult = await db
             .insert(billingSubscriptions)
             .values({
+                productDomain: 'accommodation',
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
@@ -167,6 +169,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         const subscriptionResult = await db
             .insert(billingSubscriptions)
             .values({
+                productDomain: 'accommodation',
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
@@ -203,6 +206,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         const trialResult = await db
             .insert(billingSubscriptions)
             .values({
+                productDomain: 'accommodation',
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
@@ -280,6 +284,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
         const subscriptionResult = await db
             .insert(billingSubscriptions)
             .values({
+                productDomain: 'accommodation',
                 id: crypto.randomUUID(),
                 customerId: testCustomerId,
                 planId: testPlanId,
@@ -325,6 +330,7 @@ describe.skipIf(!isDatabaseAvailable())('Subscription Lifecycle - Smoke Tests', 
 
         // Create a subscription
         await db.insert(billingSubscriptions).values({
+            productDomain: 'accommodation',
             id: crypto.randomUUID(),
             customerId: testCustomerId,
             planId: testPlanId,

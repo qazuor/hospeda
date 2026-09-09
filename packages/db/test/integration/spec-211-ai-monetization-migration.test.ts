@@ -64,10 +64,15 @@ async function applyMigration(): Promise<void> {
 /**
  * Minimal factory for a billing_plans insert row.
  *
- * Only `name` is required (NOT NULL without default). All other NOT NULL
- * columns have DB-side defaults (id: gen_random_uuid, active: true,
- * features: '[]', entitlements: '{}', limits: '{}', metadata: '{}',
- * livemode: true, version: gen_random_uuid, created_at/updated_at: now).
+ * `name` and `product_domain` are the NOT NULL columns with no DB-side default.
+ * The rest do have one (id: gen_random_uuid, active: true, features: '[]',
+ * entitlements: '{}', limits: '{}', metadata: '{}', livemode: true, version:
+ * gen_random_uuid, created_at/updated_at: now).
+ *
+ * `product_domain` joined that list in HOS-1233, which dropped its
+ * `DEFAULT 'accommodation'`. The domain is DERIVED from the slug rather than
+ * hardcoded: this file seeds tourist tiers next to owner ones, and one blanket
+ * value would reproduce the misfiling inside the fixtures.
  */
 function planRow(
     overrides: Partial<QZPayBillingPlanInsert> & Pick<QZPayBillingPlanInsert, 'name'>
@@ -76,6 +81,7 @@ function planRow(
         entitlements: [],
         limits: {},
         livemode: false,
+        productDomain: overrides.name.startsWith('tourist') ? 'tourist' : 'accommodation',
         ...overrides
     } as QZPayBillingPlanInsert;
 }
