@@ -360,14 +360,21 @@ export interface MintRetryPreapprovalAttemptResult {
  * A gastronomy/experience/partner row's entity pointer is recovered from its
  * own `metadata` (`resolveSubscriptionDomainCarryForward`) and the fresh
  * attempt re-points the bridge row in the SAME transaction — the identical
- * upsert the checkout performs on a second click, and safe for the same
- * reason: the cancelled attempt was never authorized, so the listing was never
- * public under it.
+ * upsert the checkout performs on a second click. That the SOURCE row (the
+ * `cancelled` attempt) never entitled anything says nothing about who
+ * currently OCCUPIES the bridge row it is about to re-point: a later checkout
+ * for the same listing may since have gone on to activate, in which case the
+ * row already belongs to that live, paying subscription.
+ * {@link writeCarryForwardBridgeRow} guards exactly that — reading the
+ * incumbent before writing and refusing to steal the row from a publishing
+ * subscription — so this path is safe by that guard, not by the source row's
+ * own history.
  *
  * @throws SubscriptionDomainCarryForwardError When the row's `productDomain`
  *   is one no mint can faithfully reproduce (`addon`, the retired umbrella
- *   value, anything unrecognized), or when a listing-owning domain's entity
- *   pointer is missing or disagrees with the column.
+ *   value, anything unrecognized), when a listing-owning domain's entity
+ *   pointer is missing or disagrees with the column, or when the bridge row
+ *   is currently held by another, still-publishing subscription.
  * @throws Error When the row is missing data this recovery needs
  *   (`mpPreapprovalPlanId`, the plan, or a matching price).
  */
