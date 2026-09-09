@@ -1,5 +1,20 @@
 import type { LifecycleStatusEnum, Partner, PartnerSubscriptionStatusEnum } from '@repo/schemas';
-import { and, asc, count, desc, eq, exists, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
+import {
+    and,
+    asc,
+    count,
+    desc,
+    eq,
+    exists,
+    gte,
+    isNotNull,
+    isNull,
+    lte,
+    ne,
+    not,
+    or,
+    sql
+} from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
 import { allianceLeads } from '../../schemas/alliance/alliance_lead.dbschema.js';
@@ -264,6 +279,90 @@ export class PartnerModel extends BaseModelImpl<Partner> {
                     lte(partners.endsAt, now)
                 )
             );
+
+        return result as Partner[];
+    }
+
+    /**
+     * Partners whose confirmed period has elapsed and for whom the system holds
+     * no record of payment (HOS-1299).
+     *
+     * The population `partner-expiry` cannot see and `partner-unpaid-reaper`
+     * deliberately excludes: somebody an admin activated with
+     * `registerManualPayment` — cash, cheque, a transfer — who is therefore
+     * active, has a `starts_at`, has no `ends_at` (NOTHING in the codebase
+     * writes that column outside the admin form) and has no billing
+     * subscription. Both crons miss them by construction, so nothing looks at
+     * them again, ever.
+     *
+     * This query does NOT decide anything. It produces the list a human is
+     * asked about. Five conditions narrow it, and each excludes a population
+     * that belongs to somebody else:
+     *
+     * - **`content_approved_at IS NOT NULL`** — the payment gate itself. Both
+     *   `registerManualPayment` and `send-link` refuse without it, so a partner
+     *   who never cleared it has never been able to pay through any path and
+     *   cannot be suspected of having stopped. This is also what keeps the six
+     *   curated example fixtures (`src/data/partner/*.json`, backfilled into
+     *   live environments by seed migration 0019) out: they carry a 2025
+     *   `starts_at` and no approval, so they would otherwise be flagged on the
+     *   first tick for a payment nobody ever expected.
+     * - **no `partner_subscriptions` row** — a partner with a live MercadoPago
+     *   subscription is already governed by the webhook, dunning and
+     *   `finalize-cancelled-subs`. (That chain has its own gaps — HOS-1306 —
+     *   but they are that issue's, and flagging here would double up on
+     *   machinery that mostly works.) A CANCELLED subscription already moved
+     *   the row out of `active`/`ACTIVE`, so this excludes only the ones being
+     *   charged.
+     * - **`starts_at IS NOT NULL`** — a partner who never started is the unpaid
+     *   reaper's, which reads exactly that column.
+     * - **`payment_review_state IS NULL`** — already asked. This is what makes
+     *   the cron idempotent: the flag is its own memory, so the admin gets one
+     *   alert and not one per night.
+     * - **`revoked_at IS NULL`** — an admin already dealt with them.
+     *
+     * The clock is `coalesce(payment_confirmed_through, starts_at)`, never
+     * `ends_at`: writing a period into that column would arm `partner-expiry`,
+     * which archives unattended.
+     *
+     * @param input - `{ confirmedThroughBefore }` (RO-RO) — the cutoff, i.e.
+     *   `now` minus the review window.
+     * @param limit - Batch ceiling, mirroring the other two partner crons.
+     * @returns The partners an admin should be asked about.
+     */
+    async findDueForPaymentReview(
+        input: { readonly confirmedThroughBefore: Date },
+        limit = 100
+    ): Promise<Partner[]> {
+        const db = getDb();
+
+        const result = await db
+            .select()
+            .from(partners)
+            .where(
+                and(
+                    eq(partners.lifecycleState, 'ACTIVE'),
+                    eq(partners.subscriptionStatus, 'active'),
+                    isNull(partners.deletedAt),
+                    isNull(partners.revokedAt),
+                    isNull(partners.paymentReviewState),
+                    isNotNull(partners.contentApprovedAt),
+                    isNotNull(partners.startsAt),
+                    lte(
+                        sql`coalesce(${partners.paymentConfirmedThrough}, ${partners.startsAt})`,
+                        input.confirmedThroughBefore
+                    ),
+                    not(
+                        exists(
+                            db
+                                .select({ one: sql`1` })
+                                .from(partnerSubscriptions)
+                                .where(eq(partnerSubscriptions.partnerId, partners.id))
+                        )
+                    )
+                )
+            )
+            .limit(limit);
 
         return result as Partner[];
     }
