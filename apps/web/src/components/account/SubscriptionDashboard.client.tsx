@@ -773,9 +773,12 @@ export function SubscriptionDashboard({
     }
 
     async function handlePause() {
+        if (!subscription) return;
         setIsPausing(true);
         try {
-            const result = await billingApi.pauseSubscription();
+            const result = await billingApi.pauseSubscription({
+                subscriptionId: subscription.id
+            });
             if (!result.ok) {
                 addToast({
                     type: 'error',
@@ -798,9 +801,12 @@ export function SubscriptionDashboard({
     }
 
     async function handleResume() {
+        if (!subscription) return;
         setIsPausing(true);
         try {
-            const result = await billingApi.resumeSubscription();
+            const result = await billingApi.resumeSubscription({
+                subscriptionId: subscription.id
+            });
             if (!result.ok) {
                 addToast({
                     type: 'error',
@@ -1026,14 +1032,27 @@ export function SubscriptionDashboard({
         (status === 'active' || status === 'trial' || status === 'courtesy') &&
         !isCancelScheduled &&
         !isComplimentary;
+    // HOS-1278: `commerceVertical === null` is the same defence in depth
+    // HOS-1213 put on `canChangePlan`'s modal (see the `showPlanChangeFlow`
+    // render below) — the pause/resume flow here is accommodation-specific
+    // (`PauseConfirmModal`'s copy literally says "tus alojamientos se ocultan",
+    // and the backend's `accommodationsUpdated` effect is scoped to that
+    // domain). Offering it on a commerce dashboard would show accommodation
+    // copy to a gastronomy/experience owner and doesn't fit
+    // `CommercePlanChange`'s per-vertical flow model. A dedicated commerce
+    // pause UI (with correct copy) is a separate follow-up, not this fix.
     const canPause =
-        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
+        (status === 'active' || status === 'trial') &&
+        !isCancelScheduled &&
+        !isComplimentary &&
+        commerceVertical === null;
     // HOS-236: a soft-cancelled subscription can end up `paused` (e.g. a
     // pre-existing stranded row). "Resume" must NOT be offered there — resuming
     // reactivates the MP preapproval and re-charges a subscription the user
     // already cancelled, while the "Cancelación programada" badge is shown right
     // next to it. Gate on `!isCancelScheduled`, mirroring canCancel/canPause.
-    const canResume = status === 'paused' && !isCancelScheduled;
+    // `commerceVertical === null` mirrors `canPause` above (HOS-1278).
+    const canResume = status === 'paused' && !isCancelScheduled && commerceVertical === null;
     // HOS-348 Part B: the ONE self-service action a past-due subscription
     // offers — mint a replacement preapproval. `past_due` never carries
     // `isComplimentary` (a comp is never charged, so it can never fail to

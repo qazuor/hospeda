@@ -831,11 +831,20 @@ export const billingApi = {
     /**
      * Pause the authenticated user's own subscription (SPEC-143 #29).
      *
-     * A host self-pause is always "full": it stops billing AND hides/edit-locks
-     * the owner's accommodations until resume. No body — it targets the caller's
-     * own active subscription.
+     * Always stops billing. For an accommodation-domain subscription it also
+     * hides/edit-locks the owner's accommodations until resume; for a commerce
+     * (gastronomy/experience) subscription, the linked listing's visibility is
+     * instead handled by the shared subscription-linked-entities bridge —
+     * `accommodationsUpdated` stays `0` in that case (HOS-1278).
+     *
+     * `subscriptionId` is REQUIRED (HOS-1278): the route no longer guesses the
+     * caller's "current" subscription — a customer can legitimately hold more
+     * than one (a dual host/commerce owner, or a host auto-promoted from a
+     * paying tourist), so the caller must name the exact one.
+     *
+     * @param params - The id of the subscription to pause.
      */
-    pauseSubscription(): Promise<
+    pauseSubscription({ subscriptionId }: { readonly subscriptionId: string }): Promise<
         ApiResult<{
             readonly success: boolean;
             readonly subscriptionId: string;
@@ -845,15 +854,21 @@ export const billingApi = {
     > {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/me/subscription-pause`,
-            body: {}
+            body: { subscriptionId }
         });
     },
 
     /**
      * Resume the authenticated user's own paused subscription (SPEC-143 #29).
-     * Restarts billing and restores the owner's accommodations.
+     * Restarts billing and reverts whichever service-suspension effect applied
+     * to that subscription's domain (see {@link pauseSubscription}).
+     *
+     * `subscriptionId` is REQUIRED (HOS-1278) — same reasoning as
+     * {@link pauseSubscription}.
+     *
+     * @param params - The id of the subscription to resume.
      */
-    resumeSubscription(): Promise<
+    resumeSubscription({ subscriptionId }: { readonly subscriptionId: string }): Promise<
         ApiResult<{
             readonly success: boolean;
             readonly subscriptionId: string;
@@ -863,7 +878,7 @@ export const billingApi = {
     > {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/me/subscription-resume`,
-            body: {}
+            body: { subscriptionId }
         });
     },
     /**
