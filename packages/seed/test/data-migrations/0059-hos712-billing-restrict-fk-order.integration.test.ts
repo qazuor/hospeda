@@ -153,6 +153,7 @@ async function insertBillingSubscription(tx: DrizzleClient, customerId: string):
     const inserted = await tx
         .insert(billingSubscriptions)
         .values({
+            productDomain: 'accommodation',
             customerId,
             planId: 'zzqa-hos712-plan',
             status: 'active',

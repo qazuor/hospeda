@@ -189,13 +189,34 @@ export type Finding = {
  * and the exclusion exists so a test can reproduce the misfiled shape on
  * purpose — which a shared fixture never does.
  */
-const EXTRA_SCAN_DIRS = ['apps/e2e/fixtures'] as const;
+const EXTRA_SCAN_DIRS = [
+    'apps/e2e/fixtures',
+    'packages/service-core/test/integration',
+    'packages/seed/test/data-migrations'
+] as const;
+
+/**
+ * Inside {@link EXTRA_SCAN_DIRS} the `*.test.ts` exclusion does NOT apply.
+ *
+ * The exclusion exists so a unit test can reproduce the misfiled shape on
+ * purpose against a MOCKED database, where the row is an assertion and not a
+ * row. These directories are the opposite: their `.integration.test.ts` files
+ * write to a REAL database through raw SQL, and three of them omitted the
+ * column — which surfaced as a red Integration job, never as a guard failure,
+ * because the filename ended in `.test.ts`.
+ *
+ * If a test here ever needs to write an omitting row deliberately, give it a
+ * mocked db or move it out of these directories. Do NOT add a per-file
+ * allowlist: that is how a guard becomes fail-open one justified exception at
+ * a time.
+ */
+const EXTRA_DIRS_INCLUDE_TESTS = true;
 
 /** Collects production `.ts`/`.tsx` sources under every app's and package's `src`. */
 export function collectSourceFiles(root: string): string[] {
     const out: string[] = [];
 
-    const walk = (dir: string): void => {
+    const walk = (dir: string, includeTests = false): void => {
         let entries: string[];
         try {
             entries = readdirSync(dir);
@@ -206,11 +227,11 @@ export function collectSourceFiles(root: string): string[] {
             if (SKIP_DIRS.has(entry)) continue;
             const full = join(dir, entry);
             if (statSync(full).isDirectory()) {
-                walk(full);
+                walk(full, includeTests);
                 continue;
             }
             if (!/\.tsx?$/.test(entry)) continue;
-            if (/\.(test|spec)\.tsx?$/.test(entry)) continue;
+            if (!includeTests && /\.(test|spec)\.tsx?$/.test(entry)) continue;
             if (/\.d\.ts$/.test(entry)) continue;
             out.push(full);
         }
@@ -237,7 +258,7 @@ export function collectSourceFiles(root: string): string[] {
     for (const extra of EXTRA_SCAN_DIRS) {
         const dir = join(root, extra);
         try {
-            if (statSync(dir).isDirectory()) walk(dir);
+            if (statSync(dir).isDirectory()) walk(dir, EXTRA_DIRS_INCLUDE_TESTS);
         } catch {
             // directory absent in this checkout
         }
@@ -300,8 +321,35 @@ const condense = (text: string): string => text.replace(/\s+/g, ' ').trim().slic
  * whose keys this guard can read.
  */
 export function isInlineObjectLiteral(payload: string): boolean {
-    const trimmed = payload.trim();
+    const trimmed = stripTrailingTypeAssertion(payload);
     return trimmed.startsWith('{') && trimmed.endsWith('}');
+}
+
+/**
+ * Drops a trailing `as <Type>` from an object literal.
+ *
+ * `.values({ ... } as typeof billingSubscriptions.$inferInsert)` is a literal
+ * whose keys are perfectly readable, but it does not END in `}` — so without
+ * this the guard called it UNVERIFIABLE and blocked on a payload that was
+ * complete. That is the right posture for something it cannot read; it is the
+ * wrong answer for something it can.
+ *
+ * Reading through the assertion makes the guard STRONGER, not weaker: a payload
+ * in this form that OMITS the domain now reports `omits` and names the missing
+ * key, where before it reported only that it could not look. The trailing text
+ * is discarded, never trusted — the keys still come from the literal itself.
+ *
+ * Only a top-level assertion is stripped. A nested `as` inside the object is
+ * untouched, because the scan stops at the literal's own closing brace.
+ */
+export function stripTrailingTypeAssertion(payload: string): string {
+    const trimmed = payload.trim();
+    if (!trimmed.startsWith('{')) return trimmed;
+    const close = readBalanced(trimmed, 0);
+    if (close === null) return trimmed;
+    const rest = trimmed.slice(close.length + 2).trim();
+    if (rest === '' || /^as\s/.test(rest)) return trimmed.slice(0, close.length + 2);
+    return trimmed;
 }
 
 /**

@@ -140,6 +140,12 @@ async function ensureCommerceListingPlanAtAmount(
         const inserted = await tx
             .insert(billingPlans)
             .values({
+                // HOS-1233: derived from the slug, never hardcoded — several of these
+                // fixtures seed TOURIST plans, and stamping 'accommodation' would
+                // reproduce the misfiling the migration tests exist to check.
+                productDomain: COMMERCE_LISTING_PLAN_FIXTURE.slug.startsWith('tourist')
+                    ? 'tourist'
+                    : 'accommodation',
                 name: COMMERCE_LISTING_PLAN_FIXTURE.slug,
                 description: COMMERCE_LISTING_PLAN_FIXTURE.description,
                 active: COMMERCE_LISTING_PLAN_FIXTURE.isActive,

@@ -146,6 +146,10 @@ async function ensureTouristPlanFixtures(tx: DrizzleClient): Promise<void> {
         }
 
         await tx.insert(billingPlans).values({
+            // HOS-1233: derived from the slug, never hardcoded — several of these
+            // fixtures seed TOURIST plans, and stamping 'accommodation' would
+            // reproduce the misfiling the migration tests exist to check.
+            productDomain: name.startsWith('tourist') ? 'tourist' : 'accommodation',
             name,
             description: `Test fixture plan for ${name}`,
             active: true,

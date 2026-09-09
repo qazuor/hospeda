@@ -171,6 +171,11 @@ export async function createTestPlan(
         .insert(billingPlans)
         .values({
             name,
+            // HOS-1233 T-036: required now that the column has no default.
+            // Derived from the slug rather than hardcoded, so a tourist-tier
+            // fixture cannot be filed under accommodation — the misfiling this
+            // spec exists to end.
+            productDomain: name.startsWith('tourist') ? 'tourist' : 'accommodation',
             description:
                 overrides.description ??
                 `E2E test plan created at ${new Date(timestamp).toISOString()}`,

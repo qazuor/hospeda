@@ -116,6 +116,12 @@ async function ensureTestDailyPlanAtAmount(tx: DrizzleClient, unitAmount: number
         const inserted = await tx
             .insert(billingPlans)
             .values({
+                // HOS-1233: derived from the slug, never hardcoded — several of these
+                // fixtures seed TOURIST plans, and stamping 'accommodation' would
+                // reproduce the misfiling the migration tests exist to check.
+                productDomain: TEST_DAILY_PLAN.slug.startsWith('tourist')
+                    ? 'tourist'
+                    : 'accommodation',
                 name: TEST_DAILY_PLAN.slug,
                 description: TEST_DAILY_PLAN.description,
                 active: TEST_DAILY_PLAN.isActive,

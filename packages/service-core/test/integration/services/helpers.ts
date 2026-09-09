@@ -891,7 +891,7 @@ export async function seedCommerceListingSubscription(
     await tx.execute(sql`
         INSERT INTO billing_subscriptions (
             id, customer_id, plan_id, status, billing_interval,
-            current_period_start, current_period_end, livemode
+            current_period_start, current_period_end, product_domain, livemode
         ) VALUES (
             ${subscriptionId},
             ${customerId},
@@ -900,6 +900,7 @@ export async function seedCommerceListingSubscription(
             'month',
             now(),
             now() + interval '30 days',
+            'gastronomy',
             false
         )
     `);

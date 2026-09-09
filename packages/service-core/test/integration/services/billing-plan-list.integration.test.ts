@@ -49,7 +49,7 @@ async function seedPlan(
     }
 ): Promise<string> {
     const rows = await tx.execute<{ id: string }>(sql`
-        INSERT INTO billing_plans (name, description, active, entitlements, limits, livemode, metadata, deleted_at)
+        INSERT INTO billing_plans (name, description, active, entitlements, limits, livemode, metadata, product_domain, deleted_at)
         VALUES (
             ${options.slug},
             ${`Description for ${options.slug}`},
@@ -63,6 +63,7 @@ async function seedPlan(
                 category: options.category,
                 sortOrder: options.sortOrder
             })}::jsonb,
+            'accommodation',
             ${options.deleted ? sql`now()` : sql`NULL`}
         )
         RETURNING id
@@ -100,7 +101,7 @@ async function seedSubscription(
     await tx.execute(sql`
         INSERT INTO billing_subscriptions (
             customer_id, plan_id, status, billing_interval,
-            current_period_start, current_period_end, livemode, deleted_at
+            current_period_start, current_period_end, product_domain, livemode, deleted_at
         )
         VALUES (
             ${options.customerId},
@@ -109,6 +110,7 @@ async function seedSubscription(
             'month',
             now(),
             now() + interval '30 days',
+            (SELECT product_domain FROM billing_plans WHERE id = ${options.planId}),
             false,
             ${options.deleted ? sql`now()` : sql`NULL`}
         )
