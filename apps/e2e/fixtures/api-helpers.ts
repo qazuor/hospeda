@@ -623,12 +623,22 @@ export async function createSubscription(options: {
     // reads the plan's own `productDomain` and forwards it — so a fixture can
     // never disagree with the plan it names.
     //
-    // `$2::uuid` is not decoration. The same placeholder feeds
-    // `billing_subscriptions.plan_id`, which is VARCHAR, and
-    // `billing_plans.id`, which is UUID (the schema mismatch the root
-    // CLAUDE.md calls out by name). Without the cast Postgres deduces two
-    // types for one parameter and refuses the statement outright:
+    // The plan id is passed TWICE, as two placeholders, and that is the fix —
+    // not a cast.
+    //
+    // One placeholder cannot serve both readings. It feeds
+    // `billing_subscriptions.plan_id`, which is `character varying`, and it is
+    // compared against `billing_plans.id`, which is `uuid` — the schema
+    // mismatch the root CLAUDE.md calls out by name. Postgres deduces ONE type
+    // per parameter, so it refuses the statement outright:
     // `inconsistent types deduced for parameter $2`.
+    //
+    // Measured against a real Postgres rather than reasoned about, because two
+    // plausible casts were tried first and BOTH still failed: `$2::uuid`
+    // (demands uuid where the insert column wants text) and `id::text = $2`
+    // (still one parameter, still two deductions). Only a second placeholder
+    // gets past type deduction — it reached the NOT NULL check, which is how
+    // far a well-typed statement is supposed to get on null inputs.
     const subRows = await execSQL<{ id: string }>(
         `INSERT INTO billing_subscriptions (
              customer_id, plan_id, status,
@@ -637,10 +647,10 @@ export async function createSubscription(options: {
              product_domain,
              livemode, created_at, updated_at
          ) VALUES ($1, $2, $3, 'month', 1, $4, $5,
-             (SELECT product_domain FROM billing_plans WHERE id = $2::uuid),
+             (SELECT product_domain FROM billing_plans WHERE id::text = $6),
              false, NOW(), NOW())
          RETURNING id`,
-        [customerId, options.planId, options.status, periodStart, periodEnd]
+        [customerId, options.planId, options.status, periodStart, periodEnd, options.planId]
     );
     const subscriptionId = subRows[0]?.id;
     if (!subscriptionId) throw new Error('createSubscription: subscription insert returned no id');
