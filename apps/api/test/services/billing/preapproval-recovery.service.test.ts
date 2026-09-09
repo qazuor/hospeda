@@ -382,7 +382,11 @@ describe('mintRetryPreapprovalAttempt', () => {
         ).rejects.toThrow(/mpPreapprovalPlanId/);
     });
 
-    it('throws for an unsupported product domain (commerce/partner retry is out of scope for this change)', async () => {
+    it('throws for a commerce row whose entity pointer was never stamped — the one thing HOS-1287 still cannot retry', async () => {
+        // Pre-HOS-1287 this asserted that ANY gastronomy row was refused. The
+        // domain is supported now; what is still refused is a row with nothing
+        // pointing at its listing, because the fresh attempt would be charged
+        // while the listing stayed dark.
         const billing = makeBilling();
 
         await expect(
@@ -397,7 +401,7 @@ describe('mintRetryPreapprovalAttempt', () => {
                 },
                 ...URLS
             })
-        ).rejects.toThrow(/productDomain/);
+        ).rejects.toThrow(/no commerce entity pointer/);
     });
 
     it('throws when the plan has no active price for the recovered interval', async () => {
@@ -635,5 +639,284 @@ describe('recoverCancelledPreapproval', () => {
         });
 
         expect(outcome.kind).toBe('unsupported');
+    });
+});
+
+/**
+ * HOS-1287 — the retry now works for every vertical that can reach it, not for
+ * accommodation alone.
+ *
+ * The pre-HOS-1287 module refused commerce and partner through a one-element
+ * allowlist, on the stated grounds that it did not have the entity pointer the
+ * bridge-row write needs. It did: the checkout stamps that pointer on the row's
+ * own `metadata` (`subscription-domain-metadata.ts`), which is the same place
+ * the two reconcilers already read it from.
+ *
+ * Both mutation directions are covered here:
+ *  - toward the BUG — drop `writeDomainLinkRow` / the `domainMetadata` stamp and
+ *    the bridge assertions go red;
+ *  - toward the TOO-WIDE fix — accept any domain without checking, or trust the
+ *    stamped pointer over the row's own domain column, and the last four tests
+ *    go red.
+ */
+describe('mintRetryPreapprovalAttempt — domain carry-forward (HOS-1287)', () => {
+    const GASTRONOMY_ENTITY_ID = 'entity-gastro-001';
+    const EXPERIENCE_ENTITY_ID = 'entity-exp-001';
+    const PARTNER_ID = 'partner-001';
+    const RETRY_METADATA = { mpPreapprovalPlanId: MP_PLAN_ID, billingInterval: 'monthly' };
+
+    /**
+     * Drizzle mock with the `.transaction()` + `.insert()` shapes the
+     * commerce/partner branch needs. `createOwnPreapprovalSubscription` opens a
+     * REAL local transaction for that branch (never for accommodation), so a
+     * mock without `.transaction` fails with `client.transaction is not a
+     * function` rather than proving anything.
+     */
+    function makeBridgeDbMock() {
+        const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+        const values = vi.fn().mockReturnValue({ onConflictDoUpdate });
+        const insert = vi.fn().mockReturnValue({ values });
+        const txSet = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+        const txUpdate = vi.fn().mockReturnValue({ set: txSet });
+        const tx = { insert, update: txUpdate };
+        const transaction = vi.fn(async (cb: (t: unknown) => Promise<void>) => cb(tx));
+
+        return {
+            db: { transaction, update: txUpdate, insert } as never,
+            transaction,
+            insert,
+            values,
+            onConflictDoUpdate,
+            txSet
+        };
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPlanDomainRead();
+    });
+
+    it.each([
+        ['gastronomy', GASTRONOMY_ENTITY_ID],
+        ['experience', EXPERIENCE_ENTITY_ID]
+    ])('mints a fresh %s attempt, stamps the entity pointer, and re-points the bridge row in the SAME transaction', async (vertical, entityId) => {
+        const billing = makeBilling();
+        const { db, transaction, values, onConflictDoUpdate } = makeBridgeDbMock();
+
+        const result = await mintRetryPreapprovalAttempt({
+            billing: billing as never,
+            localSubscription: {
+                id: LOCAL_SUB_ID,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                productDomain: vertical,
+                metadata: {
+                    ...RETRY_METADATA,
+                    commerceEntityType: vertical,
+                    commerceEntityId: entityId
+                }
+            },
+            ...URLS,
+            db
+        });
+
+        expect(result.localSubscriptionId).toBe(NEW_LOCAL_SUB_ID);
+        // The bridge row is written, and inside the transaction — the
+        // invariant that a `pending_provider` row never exists without one.
+        expect(transaction).toHaveBeenCalledTimes(1);
+        expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
+        const bridgeRow = values.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(bridgeRow.subscriptionId).toBe(NEW_LOCAL_SUB_ID);
+        expect(bridgeRow.entityType).toBe(vertical);
+        expect(bridgeRow.entityId).toBe(entityId);
+        expect(bridgeRow.productDomain).toBe(vertical);
+        expect(bridgeRow.status).toBe('pending_provider');
+    });
+
+    it('mints a fresh partner attempt and re-points the partner bridge row', async () => {
+        const billing = makeBilling();
+        const { db, transaction, values } = makeBridgeDbMock();
+
+        await mintRetryPreapprovalAttempt({
+            billing: billing as never,
+            localSubscription: {
+                id: LOCAL_SUB_ID,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                productDomain: 'partner',
+                metadata: { ...RETRY_METADATA, partnerId: PARTNER_ID }
+            },
+            ...URLS,
+            db
+        });
+
+        expect(transaction).toHaveBeenCalledTimes(1);
+        const bridgeRow = values.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(bridgeRow.subscriptionId).toBe(NEW_LOCAL_SUB_ID);
+        expect(bridgeRow.partnerId).toBe(PARTNER_ID);
+        expect(bridgeRow.productDomain).toBe('partner');
+        expect(bridgeRow.status).toBe('pending_provider');
+    });
+
+    it("states the row's own productDomain on the fresh commerce attempt, never accommodation", async () => {
+        const billing = makeBilling();
+        const { db, txSet } = makeBridgeDbMock();
+
+        await mintRetryPreapprovalAttempt({
+            billing: billing as never,
+            localSubscription: {
+                id: LOCAL_SUB_ID,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                productDomain: 'gastronomy',
+                metadata: {
+                    ...RETRY_METADATA,
+                    commerceEntityType: 'gastronomy',
+                    commerceEntityId: GASTRONOMY_ENTITY_ID
+                }
+            },
+            ...URLS,
+            db
+        });
+
+        // The follow-up UPDATE inside the transaction is where
+        // `createOwnPreapprovalSubscription` writes the domain + the merged
+        // metadata; both halves are asserted here.
+        const written = txSet.mock.calls[0]?.[0] as {
+            productDomain?: string;
+            metadata?: Record<string, unknown>;
+        };
+        expect(written.productDomain).toBe('gastronomy');
+        expect(written.metadata?.commerceEntityType).toBe('gastronomy');
+        expect(written.metadata?.commerceEntityId).toBe(GASTRONOMY_ENTITY_ID);
+    });
+
+    it('retries tourist like accommodation: no bridge row, no transaction, no entity pointer', async () => {
+        // Tourist plans bought through the accommodation checkout are filed
+        // `tourist` since HOS-1233, so before HOS-1287 they hit the same 422 the
+        // issue only reported for commerce and partner. They own no listing, so
+        // the fix for them is that there is nothing extra to carry.
+        const billing = makeBilling();
+        const { db, transaction, insert } = makeBridgeDbMock();
+
+        await mintRetryPreapprovalAttempt({
+            billing: billing as never,
+            localSubscription: {
+                id: LOCAL_SUB_ID,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                productDomain: 'tourist',
+                metadata: RETRY_METADATA
+            },
+            ...URLS,
+            db
+        });
+
+        expect(transaction).not.toHaveBeenCalled();
+        expect(insert).not.toHaveBeenCalled();
+    });
+
+    it('TOO-WIDE GUARD: refuses an addon row instead of minting at the BORROWED plan price', async () => {
+        // The recurring add-on borrows the owner plan's price row and states
+        // its real amount as `providerUnitAmountOverride`. This retry re-derives
+        // the price from the plan, so accepting the domain would bill an
+        // ARS 5.000 add-on at the plan's own price, forever.
+        const billing = makeBilling();
+        const { db } = makeBridgeDbMock();
+
+        await expect(
+            mintRetryPreapprovalAttempt({
+                billing: billing as never,
+                localSubscription: {
+                    id: LOCAL_SUB_ID,
+                    customerId: CUSTOMER_ID,
+                    planId: PLAN_ID,
+                    productDomain: 'addon',
+                    metadata: RETRY_METADATA
+                },
+                ...URLS,
+                db
+            })
+        ).rejects.toThrow(/not supported for productDomain='addon'/);
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('TOO-WIDE GUARD: refuses to re-point an experience listing from a gastronomy row', async () => {
+        // The column and the pointer encode the same fact from opposite ends.
+        // When they disagree there is no way to tell which is wrong, and
+        // trusting the pointer would hand another vertical's listing to this
+        // subscription.
+        const billing = makeBilling();
+        const { db } = makeBridgeDbMock();
+
+        await expect(
+            mintRetryPreapprovalAttempt({
+                billing: billing as never,
+                localSubscription: {
+                    id: LOCAL_SUB_ID,
+                    customerId: CUSTOMER_ID,
+                    planId: PLAN_ID,
+                    productDomain: 'gastronomy',
+                    metadata: {
+                        ...RETRY_METADATA,
+                        commerceEntityType: 'experience',
+                        commerceEntityId: EXPERIENCE_ENTITY_ID
+                    }
+                },
+                ...URLS,
+                db
+            })
+        ).rejects.toThrow(/does not match productDomain='gastronomy'/);
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('TOO-WIDE GUARD: refuses the retired pre-HOS-685 umbrella domain even with a valid-looking pointer', async () => {
+        // HOS-695: a legacy row carrying the umbrella value satisfies NEITHER
+        // vertical and goes dark on purpose. A pointer on its metadata is not a
+        // licence to widen the comparison.
+        const retiredUmbrellaDomain = ['comm', 'erce'].join('');
+        const billing = makeBilling();
+        const { db } = makeBridgeDbMock();
+
+        await expect(
+            mintRetryPreapprovalAttempt({
+                billing: billing as never,
+                localSubscription: {
+                    id: LOCAL_SUB_ID,
+                    customerId: CUSTOMER_ID,
+                    planId: PLAN_ID,
+                    productDomain: retiredUmbrellaDomain,
+                    metadata: {
+                        ...RETRY_METADATA,
+                        commerceEntityType: 'gastronomy',
+                        commerceEntityId: GASTRONOMY_ENTITY_ID
+                    }
+                },
+                ...URLS,
+                db
+            })
+        ).rejects.toThrow(/not supported for productDomain=/);
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a partner row with no partnerId stamped, rather than minting a pointerless attempt', async () => {
+        const billing = makeBilling();
+        const { db } = makeBridgeDbMock();
+
+        await expect(
+            mintRetryPreapprovalAttempt({
+                billing: billing as never,
+                localSubscription: {
+                    id: LOCAL_SUB_ID,
+                    customerId: CUSTOMER_ID,
+                    planId: PLAN_ID,
+                    productDomain: 'partner',
+                    metadata: RETRY_METADATA
+                },
+                ...URLS,
+                db
+            })
+        ).rejects.toThrow(/no partnerId/);
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 });
