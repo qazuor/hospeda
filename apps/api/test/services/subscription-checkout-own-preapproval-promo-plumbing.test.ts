@@ -65,16 +65,26 @@ vi.mock('@repo/service-core', async () => {
 
 const dbExecuteMock = vi.fn();
 const dbInsertValuesMock = vi.fn();
+// HOS-1271: `initiatePaidMonthlySubscription` now reads the resolved plan's
+// `billing_plans.product_domain` via `resolvePlanProductDomain`
+// (`.select().from().where().limit()`), distinct from the raw `.execute()`
+// payer-email read and the `.insert()` this suite already stubs. The fixture
+// plan below is accommodation, so this answers ACCOMMODATION unconditionally.
+const dbSelectLimitMock = vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]));
 vi.mock('@repo/db', async () => {
     const actual = await vi.importActual('@repo/db');
     return {
         ...actual,
         getDb: vi.fn(() => ({
             execute: dbExecuteMock,
-            insert: vi.fn(() => ({ values: dbInsertValuesMock }))
+            insert: vi.fn(() => ({ values: dbInsertValuesMock })),
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({ where: vi.fn(() => ({ limit: dbSelectLimitMock })) }))
+            }))
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
         entitySubscriptions: { __table: 'entity_subscriptions' },
+        billingPlans: { __table: 'billing_plans' },
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
         withTransaction: vi.fn()
     };

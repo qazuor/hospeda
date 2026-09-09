@@ -235,9 +235,29 @@ vi.mock('@repo/db', () => {
             // (`getMpPayerEmail`, `db.execute(sql\`...\`)`) before resolving
             // the checkout. Not what this suite tests — default to the real
             // `{ rows: [...] }` shape so it never blocks the route's happy path.
-            execute: vi.fn().mockResolvedValue({ rows: [] })
+            execute: vi.fn().mockResolvedValue({ rows: [] }),
+            // HOS-1271: `initiatePaidMonthlySubscription`/
+            // `initiatePaidAnnualSubscription` also read the resolved plan's
+            // `billing_plans.product_domain` via `resolvePlanProductDomain`
+            // (`.select().from().where().limit()`), to validate it and stamp
+            // it explicitly. Every plan fixture in this route suite is
+            // accommodation.
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: vi.fn(() => ({
+                        limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
+                    }))
+                }))
+            }))
         })),
         billingSubscriptions: { __table: 'billing_subscriptions' },
+        // HOS-1271: `resolvePlanProductDomain` (`paid-subscription-create.ts`)
+        // builds its query as `.where(eq(billingPlans.id, planId))` — both
+        // symbols must exist on this wholesale mock (no `...actual` spread)
+        // for that expression to evaluate at all, even though the `select`
+        // stub above ignores the actual predicate.
+        billingPlans: { id: '__billing_plans_id', productDomain: '__product_domain' },
+        eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
         // Required by role-permissions-cache.ts (loaded via the actor middleware
         // at module load, staging fix 05bc14a9e). This test never resolves
         // permissions, so empty findAll stubs suffice.

@@ -40,9 +40,11 @@ vi.mock('@repo/db', async () => {
     };
 });
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
 import { initiatePaidAnnualSubscription } from '../../src/services/subscription-checkout.service';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read';
 
 // HOS-191: the real Initiate* flows now resolve/provision a MercadoPago
 // preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
@@ -154,6 +156,9 @@ function callAnnual(billing: ReturnType<typeof createBillingMock>) {
 describe('initiatePaidAnnualSubscription wiring (HOS-171 AC-11, HOS-191 Path C)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-1271: `resolvePlanProductDomain`'s `.select()` chain — every
+        // fixture plan here is accommodation.
+        mockPlanDomainRead(ProductDomainEnum.ACCOMMODATION);
         vi.mocked(createPendingProviderSubscription).mockResolvedValue({
             localSubscriptionId: LOCAL_SUB_ID,
             nonce: 'nonce-test',

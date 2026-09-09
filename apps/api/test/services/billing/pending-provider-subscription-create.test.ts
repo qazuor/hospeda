@@ -5,8 +5,9 @@
  *  - inserts a `status='pending_provider'` row with NO mp_subscription_id and
  *    no promo_code_id, mapping `billingInterval` to the qzpay storage shape
  *    (`'monthly' -> 'month'`, `'annual' -> 'year'`).
- *  - stamps `product_domain` (default `'accommodation'`, override respected)
- *    via a typed UPDATE, mirroring `createCompSubscription`'s two-step stamp.
+ *  - stamps `product_domain` in the INSERT itself with EXACTLY what the caller
+ *    passes — the field is REQUIRED (HOS-1271: no `?? ACCOMMODATION` fallback
+ *    left to silently misfile a row when a caller forgets it).
  *  - NEVER writes a trial window: `trialStart`/`trialEnd` are always NULL and
  *    no `trialGranted` metadata key is stamped (HOS-1012). A checkout is the
  *    paid path and nothing else; the local trial row is opened at the owner's
@@ -93,6 +94,10 @@ const BASE_INPUT = {
     billingInterval: 'monthly' as const,
     mpPreapprovalPlanId: 'mp-plan-1',
     payerEmail: 'host@hospeda.test',
+    // HOS-1271: REQUIRED on the real input type now — no default left to fall
+    // back on. Every fixture in this suite states it explicitly, the same way
+    // every real caller must.
+    productDomain: 'accommodation',
     livemode: false
 };
 
@@ -147,8 +152,9 @@ describe('createPendingProviderSubscription', () => {
         // HOS-1012: the key is gone entirely, not written as 'false'.
         expect(metadata).not.toHaveProperty('trialGranted');
 
-        // HOS-1233 T-035: product_domain is stated in the INSERT, defaulting to
-        // accommodation when the caller names none.
+        // HOS-1233 T-035 / HOS-1271: product_domain is stated in the INSERT,
+        // with EXACTLY the value the caller passes — REQUIRED since HOS-1271,
+        // no `?? ACCOMMODATION` fallback left for a caller to omit.
         //
         // This used to assert a follow-up `UPDATE ... SET product_domain`, which
         // is a weaker claim wearing the same words: it says the row ENDS UP

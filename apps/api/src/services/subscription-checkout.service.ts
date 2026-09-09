@@ -106,6 +106,7 @@ import {
     resolveCheckoutMpPlanId
 } from './billing/mp-plan-provisioning.service.js';
 import { createOwnPreapprovalSubscription } from './billing/own-preapproval-subscription-create.js';
+import { resolvePlanProductDomain } from './billing/paid-subscription-create.js';
 import { getMpPayerEmail, resolvePayerEmail } from './billing/payer-email.js';
 import type { PendingCheckoutDiscount } from './billing/pending-provider-subscription-create.js';
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
@@ -156,9 +157,66 @@ export async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string)
         return null;
     }
     // `listAll`: resolving a plan by slug must search the whole catalogue, not
-    // the first page (HOS-854).
+    // the first page (HOS-854). NOTE (HOS-1271): this search has NO domain
+    // filter — it matches `p.name === planSlug` across EVERY plan in the
+    // catalogue, accommodation/tourist/gastronomy/experience/partner alike.
+    // That is deliberate here (the function is shared by all of them via
+    // `billing.plans.get`/`listAll`), but it means a caller MUST validate the
+    // resolved plan's domain itself before acting on it — see
+    // {@link assertAccommodationOrTouristPlanDomain}, called by both
+    // `initiatePaidMonthlySubscription` and `initiatePaidAnnualSubscription`
+    // right after this resolves, which is exactly the check that was missing:
+    // a `gastronomy-pro` slug used to resolve here just as happily as
+    // `owner-pro` and proceed to create a subscription with no domain
+    // validation at all.
     const plans = await billing.plans.listAll();
     return plans.find((p) => p.name === planSlug) ?? null;
+}
+
+/**
+ * Asserts a plan resolved by {@link resolvePlanBySlug} belongs to the
+ * ACCOMMODATION or TOURIST domain — the only two products
+ * `POST /start-paid` (accommodation monthly/annual) is allowed to sell
+ * (HOS-1271).
+ *
+ * `resolvePlanBySlug` matches a slug against the ENTIRE plan catalogue with no
+ * domain filter, so nothing before this call stopped `planSlug:
+ * 'gastronomy-pro'` from resolving successfully and being handed to the rest
+ * of this checkout — which then created a `billing_subscriptions` row with no
+ * `productDomain` stated, landing on the column's `'accommodation'` default.
+ * The row looked like a completely ordinary, valid accommodation subscription
+ * (the exact fail-open `subscriptionMatchesDomain` documents), so a customer
+ * paying for a gastronomy listing got nothing, silently.
+ *
+ * Domain is read from the ACTUAL `billing_plans.product_domain` column via
+ * {@link resolvePlanProductDomain} — never from the static plan-slug
+ * catalogue (`@repo/billing`'s `productDomainForPlanSlug`) — so an
+ * admin-created negotiated plan (HOS-1062, present in no static catalogue)
+ * is judged correctly too.
+ *
+ * TOURIST is accepted alongside ACCOMMODATION because both are consumer-side
+ * plans this SAME endpoint sells: `ALL_PLANS` — the catalogue
+ * `resolvePlanBySlug` searches — holds the owner tiers and the tourist tiers
+ * together, and HOS-1233 reclassified the tourist tiers' own domain without
+ * giving them a second `/start-paid` to be sold through.
+ *
+ * @throws SubscriptionCheckoutError With code `PLAN_DOMAIN_MISMATCH` when the
+ *   plan belongs to any other domain (gastronomy, experience, partner, addon).
+ */
+function assertAccommodationOrTouristPlanDomain(input: {
+    readonly productDomain: ProductDomainEnum;
+    readonly planSlug: string;
+}): void {
+    if (
+        input.productDomain === ProductDomainEnum.ACCOMMODATION ||
+        input.productDomain === ProductDomainEnum.TOURIST
+    ) {
+        return;
+    }
+    throw new SubscriptionCheckoutError(
+        'PLAN_DOMAIN_MISMATCH',
+        `Plan '${input.planSlug}' belongs to product domain '${input.productDomain}' and cannot be purchased through this checkout.`
+    );
 }
 
 interface PriceShape {
@@ -406,6 +464,18 @@ export async function initiatePaidMonthlySubscription(
     if (!plan) {
         throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
     }
+
+    // HOS-1271: `resolvePlanBySlug` matches against the WHOLE plan catalogue
+    // with no domain filter, so a gastronomy/experience/partner slug resolves
+    // here just as happily as an accommodation one. Reject it BEFORE any
+    // price/promo/MP work — see the assertion's own JSDoc for why this is the
+    // actual fix, not the row-stamping below (which only prevents the
+    // resulting row from being MISCLASSIFIED; this is what stops it existing
+    // at all). The resolved domain is also what gets stamped explicitly on
+    // both branches further down, instead of leaning on either checkout
+    // helper's DB-default fallback.
+    const productDomain = await resolvePlanProductDomain({ planId: plan.id, db: input.db });
+    assertAccommodationOrTouristPlanDomain({ productDomain, planSlug });
 
     // Testing-only special case (HOSPEDA_SHOW_TEST_BILLING_PLAN): the hidden
     // daily test plan ({@link TEST_DAILY_PLAN}) carries ONLY a `'day'` price
@@ -696,6 +766,14 @@ export async function initiatePaidMonthlySubscription(
             // project is the SLUG — the buyer saw "owner-basico - Mensual".
             // Same resolver Path C already used for the plan's own reason.
             planDisplayName: planDisplayNameFromPlan(plan),
+            // HOS-1271: stated explicitly, ACCOMMODATION or TOURIST (already
+            // asserted above). Redundant with `createPaidSubscription`'s own
+            // resolution one layer down (which reads the same plan row and
+            // would land on the same value regardless) — kept explicit anyway
+            // so this branch matches the commerce/partner branches below,
+            // which have always stated it, and so this row's domain does not
+            // depend on that deeper call never regressing.
+            productDomain,
             // HOS-1221 D2: the discounted cycle-1 amount, in centavos.
             //
             // The discount used to ride inside the MercadoPago
@@ -754,6 +832,14 @@ export async function initiatePaidMonthlySubscription(
         // code is reported ignored rather than snapshotted for a redemption
         // that would grant nothing.
         ...(pendingDiscount ? { pendingDiscount } : {}),
+        // HOS-1271: stated explicitly — ACCOMMODATION or TOURIST, already
+        // asserted above. This is THE fix for the live bug: Path C is the
+        // default-off-flag path (own-preapproval is dark by default), so this
+        // is the branch every production `/start-paid` checkout actually
+        // takes, and it used to omit this field entirely — every row born
+        // here landed on the column's `'accommodation'` default regardless of
+        // which plan was actually purchased.
+        productDomain,
         livemode: customer.livemode
     });
 
@@ -1528,6 +1614,14 @@ export async function initiatePaidAnnualSubscription(
         throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
     }
 
+    // HOS-1271: same cross-domain guard as the monthly path — see
+    // `assertAccommodationOrTouristPlanDomain`'s JSDoc. `resolvePlanBySlug`
+    // has no domain filter, so this is what stops a gastronomy/experience/
+    // partner slug from being purchased through the annual accommodation
+    // checkout.
+    const productDomain = await resolvePlanProductDomain({ planId: plan.id, db: input.db });
+    assertAccommodationOrTouristPlanDomain({ productDomain, planSlug });
+
     const annualPrice = findAnnualPrice(plan.prices);
     if (!annualPrice) {
         throw new SubscriptionCheckoutError(
@@ -1674,6 +1768,9 @@ export async function initiatePaidAnnualSubscription(
             // HOS-1221 D4: the buyer-visible name, not the slug — see the
             // monthly branch. The adapter appends " - Anual" here.
             planDisplayName: planDisplayNameFromPlan(plan),
+            // HOS-1271: stated explicitly — see the identical note on the
+            // monthly own-preapproval branch.
+            productDomain,
             // No `providerUnitAmountOverride`: annual rejects `discount` promo
             // codes outright above (HOS-244 is monthly-only), so there is never
             // a cycle-1 amount to override with on this path.
@@ -1707,6 +1804,12 @@ export async function initiatePaidAnnualSubscription(
         payerEmail,
         // HOS-1012: no `trialGranted` / `freeTrialDays` / `pendingTrialExtension`
         // — see the monthly path.
+        // HOS-1271: stated explicitly — see the identical note on the
+        // monthly path's Path C call. This is the annual half of the live
+        // bug: an annual `gastronomy-pro`/etc checkout hit this exact branch
+        // and, with no domain stated, landed on the column's `'accommodation'`
+        // default too.
+        productDomain,
         livemode: customer.livemode
     });
 

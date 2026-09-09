@@ -127,7 +127,22 @@ export type SubscriptionCheckoutErrorCode =
     // email. Maps to HTTP 400 — the resolved value is not something
     // MercadoPago will accept, closer to a validation failure than a
     // provider or business-rule error.
-    | 'PAYER_EMAIL_UNSUPPORTED_CHARACTER';
+    | 'PAYER_EMAIL_UNSUPPORTED_CHARACTER'
+    // HOS-1271: the accommodation/tourist paid-checkout entry points
+    // (`initiatePaidMonthlySubscription` / `initiatePaidAnnualSubscription`)
+    // resolve a plan slug against the WHOLE catalogue with no domain filter
+    // (`resolvePlanBySlug`), so a gastronomy/experience/partner slug used to
+    // resolve just as happily as an accommodation one and proceed to create a
+    // subscription with no domain stated — landing on the column's
+    // `'accommodation'` default regardless of which plan was actually
+    // purchased. This code is thrown by
+    // `assertAccommodationOrTouristPlanDomain` the moment such a plan
+    // resolves, before any price/promo/MP work. Not a 404: the plan itself
+    // exists, it just cannot be purchased through THIS checkout — same
+    // reasoning `assertAccommodationPlanChangeTarget`
+    // (`billing/plan-domain-guard.ts`) already applies to the plan-change
+    // route's mirror-image case.
+    | 'PLAN_DOMAIN_MISMATCH';
 
 /**
  * Domain-level error thrown across the paid-subscription checkout and

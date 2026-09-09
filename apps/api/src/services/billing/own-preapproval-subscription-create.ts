@@ -29,10 +29,12 @@
  * reusing `applyPendingDiscountBestEffort` / `applyPendingTrialExtensionBestEffort`
  * from `link-preapproval.service.ts`.
  *
- * HOS-937 step 4 (commerce/partner): optionally stamps `productDomain`
- * (omitted for accommodation monthly/annual, which rely on the column's own
- * DB default — `'accommodation'`) and, when the caller supplies
- * `writeDomainLinkRow`, writes the commerce/partner bridge row in the SAME
+ * HOS-937 step 4 (commerce/partner): optionally stamps `productDomain` — see
+ * {@link CreateOwnPreapprovalSubscriptionInput.productDomain}'s JSDoc for why
+ * this is NOT the column's DB default for any caller (HOS-1233 T-032 resolves
+ * it from the plan being purchased at INSERT time regardless), and why every
+ * checkout branch states it explicitly since HOS-1271 — and, when the caller
+ * supplies `writeDomainLinkRow`, writes the commerce/partner bridge row in the SAME
  * local transaction as the status/domain UPDATE — mirroring
  * `createPendingProviderSubscription`'s identical guarantee for the OLD Path C
  * flow (a `pending_provider` row must never exist without its bridge row, or
@@ -154,13 +156,34 @@ export interface CreateOwnPreapprovalSubscriptionInput extends CreatePaidSubscri
      */
     readonly pendingTrialExtension?: PendingTrialExtension;
     /**
-     * Product domain to stamp on the row (HOS-937 step 4). Omitted for
-     * accommodation monthly/annual — the column's own DB default already
-     * resolves to `'accommodation'` (see `@qazuor/qzpay-drizzle`'s
-     * `subscriptions.schema.ts`), so this stays `undefined` and no extra
-     * write is issued for those two flows, matching the paso-1 behavior byte
-     * for byte. Commerce passes `'gastronomy'`/`'experience'`
-     * (`ProductDomainEnum`), partner passes `'partner'`.
+     * Product domain to stamp on the row, via the follow-up UPDATE this
+     * function issues below (HOS-937 step 4). Optional — when `undefined`,
+     * that UPDATE simply does not touch the column, so whatever
+     * {@link createPaidSubscription} already wrote at INSERT time stands.
+     *
+     * IMPORTANT (HOS-1271 correction — this field was previously documented
+     * as "omitted for accommodation monthly/annual, which rely on the
+     * column's own DB default", which was never actually true and is doubly
+     * wrong today: `createPaidSubscription` resolves the domain from the
+     * PLAN'S OWN `billing_plans.product_domain` row (HOS-1233 T-032) and
+     * states it explicitly on every `mode: 'paid'` create — the column
+     * default is never the value that lands, for ANY caller of this
+     * function, regardless of whether this parameter is supplied. And for a
+     * `tourist-*` plan bought through the accommodation checkout, that
+     * resolution correctly writes `'tourist'`, not `'accommodation'` — the
+     * old docblock's claim was wrong even before this field mattered.
+     *
+     * Since HOS-1271, every checkout branch states this field explicitly
+     * anyway — accommodation and tourist monthly/annual (resolved from the
+     * SAME plan-domain read, for defense-in-depth and consistency with the
+     * other three), commerce (`'gastronomy'`/`'experience'`), partner
+     * (`'partner'`) — so the follow-up UPDATE below double-states the same
+     * value the INSERT already wrote. The one caller that still omits it is
+     * `preapproval-recovery.service.ts`'s retry mint, which re-subscribes
+     * against the SAME plan as the row it is retrying and relies on
+     * `createPaidSubscription`'s own resolution alone; it is deliberately
+     * scoped to `RETRY_SUPPORTED_PRODUCT_DOMAINS` (accommodation only) so
+     * that reliance is safe.
      */
     readonly productDomain?: string;
     /**

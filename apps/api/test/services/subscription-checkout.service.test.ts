@@ -34,6 +34,7 @@ vi.mock('@repo/db', async () => {
     };
 });
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
 import {
@@ -44,6 +45,7 @@ import {
     PENDING_PROVIDER_TTL_MS,
     SubscriptionCheckoutError
 } from '../../src/services/subscription-checkout.service';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read';
 
 // HOS-191: the real Initiate* flows now resolve/provision a MercadoPago
 // preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
@@ -210,6 +212,18 @@ function createBillingMock(opts: BillingMockOpts = {}) {
 // Tests
 // ---------------------------------------------------------------------------
 
+// HOS-1271: `initiatePaidMonthlySubscription`/`initiatePaidAnnualSubscription`
+// now read the resolved plan's REAL `billing_plans.product_domain` (via
+// `resolvePlanProductDomain`) to validate it and to stamp it explicitly on the
+// created row — see `assertAccommodationOrTouristPlanDomain`'s JSDoc. Every
+// test fixture in this file is an accommodation plan (`createPlan(...)`
+// carries no domain override), so arm the lookup once, globally, to answer
+// ACCOMMODATION by default. Tests that need a different domain (a cross-domain
+// rejection, or a tourist plan) re-arm it locally with `mockPlanDomainRead`.
+beforeEach(() => {
+    mockPlanDomainRead(ProductDomainEnum.ACCOMMODATION);
+});
+
 describe('PENDING_PROVIDER_TTL_MS', () => {
     it('is 30 minutes to match the front-end expiresAt expectation', () => {
         expect(PENDING_PROVIDER_TTL_MS).toBe(30 * 60 * 1000);
@@ -328,6 +342,91 @@ describe('initiatePaidMonthlySubscription', () => {
         ).rejects.toMatchObject({
             name: 'SubscriptionCheckoutError',
             code: 'PLAN_NOT_FOUND'
+        });
+    });
+
+    // ── HOS-1271 REGRESSION ───────────────────────────────────────────────
+    //
+    // `resolvePlanBySlug` matches a slug against the WHOLE plan catalogue with
+    // NO domain filter — `POST /start-paid` with `planSlug: 'gastronomy-pro'`
+    // used to resolve exactly as happily as `owner-premium` and proceed to
+    // create a `billing_subscriptions` row with NO `productDomain` stated,
+    // landing on the column's `'accommodation'` default. No error, no log —
+    // a customer paying for a gastronomy listing got a subscription silently
+    // filed as an accommodation one.
+    describe('HOS-1271: cross-domain plan rejection', () => {
+        it('throws PLAN_DOMAIN_MISMATCH when the resolved plan is GASTRONOMY, before creating anything', async () => {
+            const billing = createBillingMock({
+                plans: [{ id: PLAN_ID, name: 'gastronomy-pro', prices: [MONTHLY_PRICE] }]
+            });
+            mockPlanDomainRead(ProductDomainEnum.GASTRONOMY);
+
+            await expect(
+                initiatePaidMonthlySubscription({
+                    customerId: CUSTOMER_ID,
+                    planSlug: 'gastronomy-pro',
+                    billing: billing as any,
+                    urls: URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'PLAN_DOMAIN_MISMATCH'
+            });
+
+            // The actual fix: nothing was created at all — not a row later
+            // corrected, not a row born on the wrong domain.
+            expect(createPendingProviderSubscription).not.toHaveBeenCalled();
+        });
+
+        it('throws PLAN_DOMAIN_MISMATCH for EXPERIENCE and PARTNER too, not just gastronomy', async () => {
+            for (const domain of [ProductDomainEnum.EXPERIENCE, ProductDomainEnum.PARTNER]) {
+                const billing = createBillingMock({
+                    plans: [{ id: PLAN_ID, name: 'owner-premium', prices: [MONTHLY_PRICE] }]
+                });
+                mockPlanDomainRead(domain);
+
+                await expect(
+                    initiatePaidMonthlySubscription({
+                        customerId: CUSTOMER_ID,
+                        planSlug: 'owner-premium',
+                        billing: billing as any,
+                        urls: URLS
+                    })
+                ).rejects.toMatchObject({ code: 'PLAN_DOMAIN_MISMATCH' });
+            }
+        });
+
+        it('accepts a TOURIST-domain plan and stamps productDomain=tourist on the created row', async () => {
+            const billing = createBillingMock({
+                plans: [{ id: PLAN_ID, name: 'tourist-vip', prices: [MONTHLY_PRICE] }]
+            });
+            mockPlanDomainRead(ProductDomainEnum.TOURIST);
+
+            await initiatePaidMonthlySubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'tourist-vip',
+                billing: billing as any,
+                urls: URLS
+            });
+
+            expect(createPendingProviderSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ productDomain: ProductDomainEnum.TOURIST })
+            );
+        });
+
+        it('stamps productDomain=accommodation explicitly on an ordinary owner checkout (not left to the column default)', async () => {
+            const billing = createBillingMock();
+
+            await initiatePaidMonthlySubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'owner-premium',
+                billing: billing as any,
+                urls: URLS
+            });
+
+            expect(createPendingProviderSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ productDomain: ProductDomainEnum.ACCOMMODATION })
+            );
         });
     });
 
@@ -790,7 +889,9 @@ describe('initiatePaidAnnualSubscription', () => {
                 billingInterval: 'annual',
                 mpPreapprovalPlanId: 'mp_plan_test',
                 payerEmail: CUSTOMER_FIXTURE.email,
-                livemode: CUSTOMER_FIXTURE.livemode
+                livemode: CUSTOMER_FIXTURE.livemode,
+                // HOS-1271: stated explicitly — not left to the column default.
+                productDomain: ProductDomainEnum.ACCOMMODATION
             })
         );
         const annualPendingArg = vi.mocked(createPendingProviderSubscription).mock.calls[0]?.[0] as
@@ -840,6 +941,52 @@ describe('initiatePaidAnnualSubscription', () => {
                 urls: ANNUAL_URLS
             })
         ).rejects.toMatchObject({ code: 'PLAN_NOT_FOUND' });
+    });
+
+    // ── HOS-1271 REGRESSION (annual half of the bug) ────────────────────────
+    //
+    // Same defect as monthly, same fix: `resolvePlanBySlug` has no domain
+    // filter, so an ANNUAL checkout on a gastronomy/experience/partner slug
+    // used to resolve and proceed to create a row with no domain stated too.
+    describe('HOS-1271: cross-domain plan rejection', () => {
+        it('throws PLAN_DOMAIN_MISMATCH when the resolved plan is GASTRONOMY, before creating anything', async () => {
+            const billing = createAnnualBillingMock({
+                plans: [{ id: PLAN_ID, name: 'gastronomy-pro', prices: [ANNUAL_PRICE_WITH_AMOUNT] }]
+            });
+            mockPlanDomainRead(ProductDomainEnum.GASTRONOMY);
+
+            await expect(
+                initiatePaidAnnualSubscription({
+                    customerId: CUSTOMER_ID,
+                    planSlug: 'gastronomy-pro',
+                    billing: billing as any,
+                    urls: ANNUAL_URLS
+                })
+            ).rejects.toMatchObject({
+                name: 'SubscriptionCheckoutError',
+                code: 'PLAN_DOMAIN_MISMATCH'
+            });
+
+            expect(createPendingProviderSubscription).not.toHaveBeenCalled();
+        });
+
+        it('accepts a TOURIST-domain plan and stamps productDomain=tourist on the created row', async () => {
+            const billing = createAnnualBillingMock({
+                plans: [{ id: PLAN_ID, name: 'tourist-vip', prices: [ANNUAL_PRICE_WITH_AMOUNT] }]
+            });
+            mockPlanDomainRead(ProductDomainEnum.TOURIST);
+
+            await initiatePaidAnnualSubscription({
+                customerId: CUSTOMER_ID,
+                planSlug: 'tourist-vip',
+                billing: billing as any,
+                urls: ANNUAL_URLS
+            });
+
+            expect(createPendingProviderSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ productDomain: ProductDomainEnum.TOURIST })
+            );
+        });
     });
 
     it('throws NO_ANNUAL_PRICE when the plan has no active annual price', async () => {

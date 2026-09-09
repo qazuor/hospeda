@@ -201,6 +201,55 @@ export interface CreatePaidSubscriptionResult {
 }
 
 /**
+ * Resolves the product domain a PLAN currently carries in the database
+ * (`billing_plans.product_domain`), read fresh rather than trusted from any
+ * caller (HOS-1233 T-032, extracted standalone by HOS-1271).
+ *
+ * This is the ONE authoritative source `createPaidSubscription` uses to state
+ * `productDomain` on every `mode: 'paid'` preapproval it creates, and HOS-1271
+ * reuses it in `subscription-checkout.service.ts` to VALIDATE a plan's domain
+ * before minting anything — e.g. rejecting a `gastronomy-pro` slug at the
+ * accommodation/tourist `/start-paid` endpoint. Reading the actual DB column
+ * (rather than the static plan-slug catalogue in `@repo/billing`) is
+ * deliberate: it is correct for an admin-created negotiated plan too
+ * (HOS-1062 — one row per agreement, present in no static catalogue), which a
+ * catalogue lookup would resolve to `undefined` and either wrongly reject or
+ * require a separate fail-open carve-out to admit.
+ *
+ * @param input.planId - The plan whose domain to resolve (`billing_plans.id`).
+ * @param input.db - Optional read client override (tests, or a caller already
+ *   inside a transaction that must read its own uncommitted plan row).
+ * @returns The plan's product domain.
+ * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND` when no plan
+ *   row exists for `planId` — fails closed rather than guessing a domain.
+ */
+export async function resolvePlanProductDomain(input: {
+    readonly planId: string;
+    readonly db?: DrizzleClient;
+}): Promise<ProductDomainEnum> {
+    const readClient = input.db ?? getDb();
+    const [planRow] = await readClient
+        .select({ productDomain: billingPlans.productDomain })
+        .from(billingPlans)
+        .where(eq(billingPlans.id, input.planId))
+        .limit(1);
+
+    if (!planRow) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_FOUND',
+            `resolvePlanProductDomain: plan '${input.planId}' not found`
+        );
+    }
+
+    // NULL reads as accommodation — the same asymmetry `subscriptionMatchesDomain`
+    // applies, for the same reason: the column post-dates most rows, so
+    // accommodation fails open and every other domain fails closed. This is a
+    // read of an existing row, not a write that omits the value, so it does not
+    // reintroduce what AC-15b forbids.
+    return (planRow.productDomain as ProductDomainEnum | null) ?? ProductDomainEnum.ACCOMMODATION;
+}
+
+/**
  * Create a `mode: 'paid'` qzpay subscription (a real MercadoPago
  * preapproval) and resolve its checkout URL.
  *
@@ -266,26 +315,15 @@ export async function createPaidSubscription(
     // of which arrive here down the same code path with only `planId` telling
     // them apart. Hence the read, and hence the two checkouts being asserted
     // separately in the tests.
-    const readClient = input.db ?? getDb();
-    const [planRow] = await readClient
-        .select({ productDomain: billingPlans.productDomain })
-        .from(billingPlans)
-        .where(eq(billingPlans.id, planId))
-        .limit(1);
-
-    if (!planRow) {
-        throw new SubscriptionCheckoutError(
-            'PLAN_NOT_FOUND',
-            `createPaidSubscription: plan '${planId}' not found`
-        );
-    }
-
-    // NULL reads as accommodation — the same asymmetry `subscriptionMatchesDomain`
-    // applies, for the same reason: the column post-dates most rows, so
-    // accommodation fails open and every other domain fails closed. This is a
-    // read of an existing row, not a write that omits the value, so it does not
-    // reintroduce what AC-15b forbids.
-    const productDomain = planRow.productDomain ?? ProductDomainEnum.ACCOMMODATION;
+    //
+    // HOS-1271: extracted into {@link resolvePlanProductDomain} so a checkout
+    // that needs to know (and validate) a plan's domain BEFORE minting
+    // anything — `subscription-checkout.service.ts`'s accommodation/tourist
+    // entry points — reads the exact same authoritative value this create
+    // path stamps, instead of trusting the static plan-slug catalogue (which
+    // does not cover admin-created negotiated plans, HOS-1062) or duplicating
+    // the query.
+    const productDomain = await resolvePlanProductDomain({ planId, db: input.db });
 
     // The preapproval create is wrapped in the E2E test-control seam so the
     // resilience suite can force the provider to be down or time out at exactly

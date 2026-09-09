@@ -101,8 +101,21 @@ const PENDING_RESULT = {
  * `@repo/db` mock's `execute()` resolves to `[]`, not `{ rows: [] }`, which
  * breaks the new `getMpPayerEmail` raw-SQL read. Not what this suite is
  * testing, so stub it with the real shape.
+ *
+ * HOS-1271: also supports the `.select().from().where().limit()` chain
+ * `resolvePlanProductDomain` issues — see the identical addition in the
+ * flag-on suite. Every fixture here is accommodation.
  */
-const DB_STUB = { execute: vi.fn().mockResolvedValue({ rows: [] }) };
+const DB_STUB = {
+    execute: vi.fn().mockResolvedValue({ rows: [] }),
+    select: vi.fn(() => ({
+        from: vi.fn(() => ({
+            where: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
+            }))
+        }))
+    }))
+};
 
 describe('initiatePaidMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED unset)', () => {
     beforeEach(() => {
