@@ -112,6 +112,37 @@ describe('BillingMetricsService', () => {
             expect(result.data?.mrr).toBe(12501); // Math.round(12500.50)
         });
 
+        it('HOS-337 (caught in review): the churn query counts BOTH cancellation spellings, not just the 1-L one', async () => {
+            // Arrange — before this fix the raw SQL was
+            // `WHERE status = 'canceled'`, matching only qzpay-core's 1-L
+            // spelling and silently undercounting every subscription cancelled
+            // through the DOMINANT paths (the MercadoPago webhook,
+            // `finalize-cancelled-subs`, `refund-lifecycle.service.ts`), which
+            // all store the 2-L `'cancelled'`.
+            mockExecute
+                .mockResolvedValueOnce({ rows: [{ count: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '3' }] })
+                .mockResolvedValueOnce({ rows: [{ mrr_total: '8000' }] })
+                .mockResolvedValueOnce({ rows: [{ churned: '2' }] })
+                .mockResolvedValueOnce({ rows: [{ converted: '5', total_trials: '10' }] })
+                .mockResolvedValueOnce({ rows: [{ count: '50' }] })
+                .mockResolvedValueOnce({ rows: [{ total: '100000' }] });
+
+            // Act
+            await service.getOverviewMetrics(true);
+
+            // Assert — the churn query (4th `db.execute` call) embeds BOTH
+            // spellings in its literal SQL text.
+            const churnQueryCall = mockExecute.mock.calls[3]?.[0] as
+                | { queryChunks: unknown[] }
+                | undefined;
+            const churnQueryText = (churnQueryCall?.queryChunks?.[0] as string[] | undefined)?.join(
+                ''
+            );
+            expect(churnQueryText).toContain("'canceled'");
+            expect(churnQueryText).toContain("'cancelled'");
+        });
+
         it('should calculate churn rate as percentage of active subscriptions', async () => {
             // Arrange
             mockExecute
