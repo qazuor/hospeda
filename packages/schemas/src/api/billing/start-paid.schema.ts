@@ -72,18 +72,19 @@ export type StartPaidSubscriptionRequest = z.infer<typeof StartPaidSubscriptionR
  * Request body for the commerce owner self-checkout
  * (`POST /api/v1/protected/commerce/listings/{entityType}/{entityId}/start-subscription`).
  *
- * Carries `payerEmail` (HOS-1008) and `planSlug` (HOS-1119). The interval is
- * always monthly, so unlike {@link StartPaidSubscriptionRequestSchema} there is
- * still nothing else for the caller to choose. **Every field is optional and so
- * is the body itself** — omitting it entirely keeps the exact pre-HOS-1008
- * behavior, which is what the `ownPreapprovalEnabled` flag being off must
- * produce, and what a caller with no tier picker must keep producing.
+ * Carries `payerEmail` (HOS-1008), `planSlug` (HOS-1119) and `billingInterval`
+ * (HOS-1285). **Every field is optional and so is the body itself** — omitting
+ * it entirely keeps the exact pre-HOS-1008 behavior, which is what the
+ * `ownPreapprovalEnabled` flag being off must produce, and what a caller with no
+ * tier picker must keep producing.
  *
  * Deliberately NOT accepted on the ADMIN commerce start-subscription route:
  * that route provisions on the OWNER's behalf, and the admin has no way to
  * know which MercadoPago account the owner pays with — an editable field
  * there would let one person bind another person's payer email. Same
- * reasoning that keeps the partner flow on a synthetic address.
+ * reasoning that keeps the partner flow on a synthetic address, and the same
+ * reasoning that keeps `billingInterval` off that route: committing somebody
+ * else to a twelve-month charge is not an admin's call either.
  *
  * The `payerEmail` field reuses the same validation and the same i18n error
  * keys as its accommodation sibling on purpose: it is the same value, bound
@@ -115,7 +116,25 @@ export const CommerceStartSubscriptionRequestSchema = z.object({
             message: 'zodError.billing.startPaid.planSlug.invalid'
         })
         .max(100, { message: 'zodError.billing.startPaid.planSlug.max' })
-        .optional()
+        .optional(),
+    /**
+     * HOS-1285: the cadence the owner picked. Omitted means `'monthly'`, i.e.
+     * the pre-HOS-1285 behaviour exactly — which is what every existing
+     * bodyless caller keeps getting.
+     *
+     * The SAME {@link StartPaidBillingIntervalSchema} the accommodation request
+     * uses, and the same i18n error key, on purpose: it is the same choice
+     * bound to the same `billing_prices.billing_interval` column, and a second
+     * enum would be free to drift into offering commerce a cadence the price
+     * lookups (`findMonthlyPrice` / `findAnnualPrice`) cannot resolve.
+     *
+     * Whether the named tier actually SELLS this cadence is decided by
+     * `initiateCommerceSubscription`, which answers `NO_ANNUAL_PRICE` when the
+     * plan has no `'year'` price row — the same division of labour that keeps
+     * the per-vertical slug check in `resolveCommercePlanSlug` and out of this
+     * schema.
+     */
+    billingInterval: StartPaidBillingIntervalSchema.optional()
 });
 export type CommerceStartSubscriptionRequest = z.infer<
     typeof CommerceStartSubscriptionRequestSchema

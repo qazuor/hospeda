@@ -91,9 +91,16 @@ export type PlanChangeRequest = z.infer<typeof PlanChangeRequestSchema>;
  *   that validation may live — speaks slugs. Taking a UUID here would mean
  *   resolving the plan first and checking the vertical afterwards, i.e. a
  *   second place that decides which plans a vertical may be on.
- * - **No `billingInterval`.** Every commerce plan is monthly and only monthly;
- *   `commerceVerticalTier` hardcodes `annualPriceArs: null` for all six tiers.
- *   An interval field would be a choice with exactly one legal value.
+ * - **No `billingInterval`.** The conclusion stands; its REASON has been
+ *   replaced. It used to be "every commerce plan is monthly and only monthly;
+ *   `commerceVerticalTier` hardcodes `annualPriceArs: null` for all six tiers",
+ *   which stopped being true in HOS-1285 — the six tiers sell a year now. The
+ *   field is still absent because a TIER change is not a CADENCE change: the
+ *   handler resolves both plans' prices, the prorated delta and the scheduled
+ *   downgrade against the interval the subscription is ALREADY on, read off
+ *   `subscription.interval`. Accepting one here would let a caller change
+ *   cadence through a route whose whole contract is "same cadence, different
+ *   tier".
  * - **A NARROWER `keepSelections`.** The accommodation field steers three
  *   dimensions — accommodations, promotions and per-accommodation photos — and
  *   a commerce vertical has none of them. HOS-1122 gave commerce a downgrade,

@@ -159,11 +159,26 @@ const ALL_COMMERCE_PLANS_IN_ORDER: readonly PlanDefinition[] = [
 ];
 
 /**
- * Queues one (plan-lookup, price-lookup) select pair per plan in
+ * Queues the price lookups one plan contributes, in source order.
+ *
+ * TWO per plan since HOS-1285 — `ensureCommercePriceRows` asks for the
+ * `'month'` row and then the `'year'` row — and both report an EXISTING row, so
+ * no price insert occurs. Keeping the count in one helper is what stops a third
+ * cadence from silently turning a later plan's plan-lookup into a price-lookup:
+ * the stub is a positional queue, so one missing entry shifts every plan after
+ * it and the suite would fail somewhere unrelated to the change.
+ */
+function queueExistingPriceRows(state: StubState, slug: string): void {
+    state.selectQueue.push([{ id: `${slug}-monthly-price-uuid` }]);
+    state.selectQueue.push([{ id: `${slug}-annual-price-uuid` }]);
+}
+
+/**
+ * Queues one (plan-lookup, price-lookups) group per plan in
  * `ALL_COMMERCE_PLANS_IN_ORDER`, matching every field for every plan EXCEPT
  * `staleSlug`, whose row is missing ALL of its `limits` entirely (the shape
- * of a row seeded before those keys existed). The price lookup always
- * reports an existing price row, so no price insert occurs for any plan —
+ * of a row seeded before those keys existed). The price lookups always
+ * report an existing price row, so no price insert occurs for any plan —
  * this file is only about the `billing_plans` row's Model C sync.
  */
 function queueAllPlansWithOneStale(state: StubState, staleSlug: string): void {
@@ -173,7 +188,7 @@ function queueAllPlansWithOneStale(state: StubState, staleSlug: string): void {
                 ? { ...makeMatchingDbRow(plan, `${plan.slug}-uuid`), limits: {} }
                 : makeMatchingDbRow(plan, `${plan.slug}-uuid`);
         state.selectQueue.push([row]); // plan lookup
-        state.selectQueue.push([{ id: `${plan.slug}-price-uuid` }]); // price lookup
+        queueExistingPriceRows(state, plan.slug);
     }
 }
 
@@ -218,12 +233,50 @@ describe('seedCommercePlan (HOS-1290 — Model C propagation)', () => {
         const state = freshState();
         for (const plan of ALL_COMMERCE_PLANS_IN_ORDER) {
             state.selectQueue.push([makeMatchingDbRow(plan, `${plan.slug}-uuid`)]);
-            state.selectQueue.push([{ id: `${plan.slug}-price-uuid` }]);
+            queueExistingPriceRows(state, plan.slug);
         }
 
         await seedCommercePlan({} as never, { db: makeStubDb(state) });
 
         expect(state.insertCalls).toHaveLength(0);
         expect(state.updateCalls).toHaveLength(0);
+    });
+
+    it('seeds the ANNUAL price row for every commerce tier (HOS-1285)', async () => {
+        // A fresh database: the plan row exists (so `ensurePlan` writes nothing
+        // and the assertions below see price inserts only), but NEITHER price
+        // row does. Checkout resolves the PRICE row and not the plan column, so
+        // a tier carrying `annualPriceArs` with no `'year'` row is a tier whose
+        // annual cadence hard-throws `NO_ANNUAL_PRICE` — the exact shape
+        // `experience-pro` hit on the monthly side when HOS-975 activated it.
+        const state = freshState();
+        for (const plan of ALL_COMMERCE_PLANS_IN_ORDER) {
+            state.selectQueue.push([makeMatchingDbRow(plan, `${plan.slug}-uuid`)]);
+            state.selectQueue.push([]); // monthly price lookup — absent
+            state.selectQueue.push([]); // annual price lookup — absent
+        }
+
+        await seedCommercePlan({} as never, { db: makeStubDb(state) });
+
+        const annualInserts = state.insertCalls.filter(
+            (call) => call.values.billingInterval === 'year'
+        );
+        expect(annualInserts).toHaveLength(ALL_COMMERCE_PLANS_IN_ORDER.length);
+
+        // Per plan, and by AMOUNT — asserting only that six `'year'` rows exist
+        // would stay green if every one of them carried the monthly figure,
+        // which is the mistake that actually charges a year at a month's price.
+        for (const plan of ALL_COMMERCE_PLANS_IN_ORDER) {
+            const inserted = state.insertCalls.find(
+                (call) =>
+                    call.values.planId === `${plan.slug}-uuid` &&
+                    call.values.billingInterval === 'year'
+            );
+            expect(inserted, `no annual price row seeded for ${plan.slug}`).toBeDefined();
+            expect(inserted?.values.unitAmount).toBe(plan.annualPriceArs);
+            expect(inserted?.values.currency).toBe('ARS');
+            expect(inserted?.values.intervalCount).toBe(1);
+            expect(inserted?.values.active).toBe(true);
+        }
     });
 });

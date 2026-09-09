@@ -46,13 +46,14 @@
  */
 import {
     type CommerceVertical,
-    ENTITLEMENT_GRANTING_STATUSES,
+    isLiveSubscriptionStatus,
     LIMIT_KEY_BY_COMMERCE_VERTICAL
 } from '@repo/billing';
 import { experienceModel, gastronomyModel } from '@repo/db';
 import type {
     CommerceEntityType,
     CommerceListingCompletenessListing,
+    StartPaidBillingInterval,
     StartPaidSubscriptionResponse
 } from '@repo/schemas';
 import {
@@ -86,7 +87,7 @@ import {
 } from '../../../services/commerce-subscription-attach.service';
 import { startCommerceListingTrial } from '../../../services/commerce-trial-start.service';
 import {
-    initiateCommerceMonthlySubscription,
+    initiateCommerceSubscription,
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
 import { getActorFromContext } from '../../../utils/actor';
@@ -113,27 +114,16 @@ const StartSubscriptionParamsSchema = {
     entityId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 };
 
-/**
- * Subscription statuses (`entity_subscriptions.status`, mirroring
- * `billing_subscriptions.status` — see `SubscriptionStatusEnum`) that
- * indicate the listing already has a LIVE-ish subscription and must block a
- * new checkout (AC-16 / HOS-166 judgment-day W1).
- *
- * `past_due` is included alongside `active`/`trialing`: a dunning
- * subscription is still a real MercadoPago preapproval mid-retry, not a dead
- * one, so letting the owner start a SECOND checkout here would create a
- * second concurrent preapproval for the same listing rather than resolving
- * the first one (the dunning flow — grace period, retries, eventual
- * cancel/reactivate — is the correct path back to `active`). Deliberately
- * excludes `cancelled`, `expired`, `abandoned`, and `paused` — those ARE
- * terminal/inactive enough that a fresh checkout is the correct next step.
- *
- * HOS-702: built as the canonical `ENTITLEMENT_GRANTING_STATUSES` PLUS
- * `past_due`, never as a hand-rolled list. The hand-rolled version omitted
- * `comp`, so an owner whose listing already carried a complimentary
- * subscription could start a second, real, CHARGED checkout for it.
+/*
+ * The "this listing already has a live-ish subscription, block a new checkout"
+ * set (AC-16 / HOS-166 judgment-day W1) used to be declared here as a local
+ * `new Set([...ENTITLEMENT_GRANTING_STATUSES, 'past_due'])`. HOS-1275 promoted
+ * it to `@repo/billing`'s `LIVE_SUBSCRIPTION_STATUSES` / the
+ * `isLiveSubscriptionStatus` predicate, because the edit gate that issue builds
+ * needs the SAME set for the same reason (a past-due owner has not walked away)
+ * and a second local copy is how HOS-702's `comp` omission happened in the
+ * first place. Its full rationale now lives in that module's docblock.
  */
-const LIVE_SUBSCRIPTION_STATUSES = new Set<string>([...ENTITLEMENT_GRANTING_STATUSES, 'past_due']);
 
 /**
  * Subset of the raw `gastronomies`/`experiences` row this route reads —
@@ -237,9 +227,27 @@ export async function handleCommerceStartSubscription(
          * it did before.
          */
         requestedPlanSlug?: string;
+        /**
+         * HOS-1285: the cadence the owner picked. `undefined` means monthly —
+         * the pre-HOS-1285 behaviour, and what every bodyless caller still
+         * gets.
+         *
+         * Only reaches the CHECKOUT branch. The attach branch and the trial
+         * branch below open no MercadoPago resource at all, so there is no
+         * cadence for them to honour: an owner attaching a second listing joins
+         * whatever cadence they already pay, and a trial has no charge to
+         * schedule.
+         */
+        requestedBillingInterval?: StartPaidBillingInterval;
     }
 ): Promise<StartPaidSubscriptionResponse | Response> {
-    const { entityType, entityId, requestedPayerEmail, requestedPlanSlug } = input;
+    const {
+        entityType,
+        entityId,
+        requestedPayerEmail,
+        requestedPlanSlug,
+        requestedBillingInterval
+    } = input;
     const actor = getActorFromContext(ctx);
 
     // ── Ownership check (AC-2) — the entire security boundary. ─────────────
@@ -327,7 +335,7 @@ export async function handleCommerceStartSubscription(
         entityType,
         entityId
     });
-    if (existingStatus !== null && LIVE_SUBSCRIPTION_STATUSES.has(existingStatus)) {
+    if (existingStatus !== null && isLiveSubscriptionStatus(existingStatus)) {
         throw new HTTPException(409, {
             message: 'This listing already has an active subscription.'
         });
@@ -506,12 +514,15 @@ export async function handleCommerceStartSubscription(
     // Branch 1 — no subscription for this vertical yet, and no trial to grant.
     // Today's behaviour.
     try {
-        const result = await initiateCommerceMonthlySubscription({
+        const result = await initiateCommerceSubscription({
             customerId: billingCustomerId,
             planSlug,
             entityType: entityType as CommerceVertical,
             entityId,
             ...(requestedPayerEmail === undefined ? {} : { requestedPayerEmail }),
+            ...(requestedBillingInterval === undefined
+                ? {}
+                : { billingInterval: requestedBillingInterval }),
             billing,
             urls: {
                 paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
@@ -596,9 +607,11 @@ export async function handleCommerceStartSubscription(
  * is the risky half of HOS-1008 (every pre-existing caller relies on it) and
  * route-level tests in this app do not reliably reach the handler.
  */
-export async function readCommerceCheckoutOptions(
-    ctx: Context
-): Promise<{ requestedPayerEmail?: string; requestedPlanSlug?: string }> {
+export async function readCommerceCheckoutOptions(ctx: Context): Promise<{
+    requestedPayerEmail?: string;
+    requestedPlanSlug?: string;
+    requestedBillingInterval?: StartPaidBillingInterval;
+}> {
     const raw: unknown = await ctx.req.json().catch(() => undefined);
     if (raw === undefined || raw === null) {
         return {};
@@ -607,14 +620,15 @@ export async function readCommerceCheckoutOptions(
     const parsed = CommerceStartSubscriptionRequestSchema.safeParse(raw);
     if (!parsed.success) {
         throw new HTTPException(400, {
-            message: 'Invalid payerEmail or planSlug in request body.'
+            message: 'Invalid payerEmail, planSlug or billingInterval in request body.'
         });
     }
 
-    const { payerEmail, planSlug } = parsed.data;
+    const { payerEmail, planSlug, billingInterval } = parsed.data;
     return {
         ...(payerEmail === undefined ? {} : { requestedPayerEmail: payerEmail }),
-        ...(planSlug === undefined ? {} : { requestedPlanSlug: planSlug })
+        ...(planSlug === undefined ? {} : { requestedPlanSlug: planSlug }),
+        ...(billingInterval === undefined ? {} : { requestedBillingInterval: billingInterval })
     };
 }
 
@@ -626,8 +640,8 @@ export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
         "Starts a MercadoPago subscription for the caller's OWN commerce listing. Requires COMMERCE_EDIT_OWN and ownership of the target listing; the listing must be complete (422 otherwise).",
     tags: ['Protected - Commerce', 'Billing'],
     requestParams: StartSubscriptionParamsSchema,
-    // HOS-1008 deliberately does NOT declare `requestBody` here, and HOS-1119
-    // keeps it that way. The factory only calls `ctx.req.valid('json')` when
+    // HOS-1008 deliberately does NOT declare `requestBody` here; HOS-1119 and
+    // HOS-1285 keep it that way. The factory only calls `ctx.req.valid('json')` when
     // one is declared, and this endpoint has always been called with NO body at
     // all — by the web client and by several existing tests. Declaring a schema
     // would make every one of those bodyless POSTs parse a body that is not

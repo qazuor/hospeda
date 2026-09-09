@@ -1,5 +1,5 @@
 /**
- * Unit tests for `initiateCommerceMonthlySubscription` (SPEC-239 T-048,
+ * Unit tests for `initiateCommerceSubscription` (SPEC-239 T-048,
  * migrated to HOS-191 Path C).
  *
  * Commerce checkout used to call `createPaidSubscription` →
@@ -102,7 +102,7 @@ vi.mock('@repo/db', () => ({
     // `test/services/billing/checkout-idempotency-by-entity.test.ts`.
     getDb: vi.fn(() => ({
         select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
-        // HOS-937 step 4: `initiateCommerceMonthlySubscription` resolves the
+        // HOS-937 step 4: `initiateCommerceSubscription` resolves the
         // payer email via `getMpPayerEmail` (raw `db.execute(sql...)`) before
         // either checkout branch runs — an empty result falls through to
         // `customer.email`, which is what these cases already assert.
@@ -127,7 +127,7 @@ vi.mock('@repo/db', () => ({
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
-import { initiateCommerceMonthlySubscription } from '../../src/services/subscription-checkout.service';
+import { initiateCommerceSubscription } from '../../src/services/subscription-checkout.service';
 
 const CUSTOMER_ID = 'cust_owner';
 const CUSTOMER_EMAIL = 'owner@hospeda.test';
@@ -215,7 +215,7 @@ const BASE_INPUT = {
     urls: URLS
 };
 
-describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
+describe('initiateCommerceSubscription (HOS-191 Path C)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         onConflictDoUpdate.mockResolvedValue(undefined);
@@ -243,7 +243,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
     it('NEVER creates a server-side preapproval (the MP 400 "card_token_id is required" shape)', async () => {
         const { billing, create } = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         expect(create).not.toHaveBeenCalled();
     });
@@ -251,7 +251,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
     it('redirects to the MercadoPago hosted share link carrying the checkout nonce', async () => {
         const { billing } = createBillingMock();
 
-        const result = await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        const result = await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         expect(result.checkoutUrl).toBe(
             'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test&external_reference=nonce-test'
@@ -263,7 +263,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
     it('materializes the pending_provider subscription stamped with the listing own vertical (HOS-695)', async () => {
         const { billing } = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         expect(createPendingProviderSubscription).toHaveBeenCalledTimes(1);
         const arg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -292,7 +292,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
     it('stamps EXPERIENCE, not GASTRONOMY, for an experience checkout (HOS-695)', async () => {
         const { billing } = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({
+        await initiateCommerceSubscription({
             ...BASE_INPUT,
             entityType: 'experience',
             billing
@@ -306,7 +306,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
     it('upserts the link row at pending_provider INSIDE the subscription transaction (D4)', async () => {
         const { billing } = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         expect(txStub.insert).toHaveBeenCalledTimes(1);
         const insertedValues = insertValues.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -334,7 +334,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         // leave a listing unpublished with a live charge.
         const { billing } = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         const arg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(arg.domainMetadata).toEqual({
@@ -346,7 +346,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
     it('provisions the MP plan with the buyer-visible display name, not the raw slug', async () => {
         const { billing } = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
         expect(planArg?.planName).toBe(PLAN_DISPLAY_NAME);
@@ -377,7 +377,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
                 priorSubscriptions: []
             });
 
-            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+            await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
             // Load-bearing (not cosmetic): `resolveCheckoutMpPlanId` resolves the
             // MP preapproval PLAN from this value and bakes `free_trial` into it
@@ -401,7 +401,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
                 ]
             });
 
-            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+            await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
             expect(vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0]?.trialDays).toBe(0);
         });
@@ -417,7 +417,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
                 ]
             });
 
-            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+            await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
             expect(vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0]?.trialDays).toBe(0);
             expect(billing.subscriptions.getByCustomerId).not.toHaveBeenCalled();
@@ -428,7 +428,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
                 planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: false, trialDays: 0 }
             });
 
-            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+            await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
             expect(vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0]?.trialDays).toBe(0);
         });
@@ -442,7 +442,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
                 priorSubscriptions: []
             });
 
-            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+            await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
             const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
             const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
@@ -463,7 +463,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         billing.plans.listAll = vi.fn().mockResolvedValue([]);
 
         await expect(
-            initiateCommerceMonthlySubscription({
+            initiateCommerceSubscription({
                 ...BASE_INPUT,
                 planSlug: 'does-not-exist',
                 billing
@@ -477,17 +477,17 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
             .fn()
             .mockResolvedValue([{ id: PLAN_ID, name: PLAN_SLUG, metadata: {}, prices: [] }]);
 
-        await expect(
-            initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing })
-        ).rejects.toThrow(/monthly price/i);
+        await expect(initiateCommerceSubscription({ ...BASE_INPUT, billing })).rejects.toThrow(
+            /monthly price/i
+        );
     });
 
     it('throws CUSTOMER_NOT_FOUND when the billing customer is missing', async () => {
         const { billing } = createBillingMock();
         billing.customers.get = vi.fn().mockResolvedValue(null);
 
-        await expect(
-            initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing })
-        ).rejects.toThrow(/customer/i);
+        await expect(initiateCommerceSubscription({ ...BASE_INPUT, billing })).rejects.toThrow(
+            /customer/i
+        );
     });
 });

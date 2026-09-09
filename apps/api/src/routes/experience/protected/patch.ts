@@ -31,6 +31,7 @@ import {
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
     ExperienceProtectedSchema,
+    ProductDomainEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { ExperienceService } from '@repo/service-core';
@@ -44,6 +45,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
 import { hasEntitlement, requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -177,7 +179,8 @@ export const protectedPatchExperienceRoute = createProtectedRoute({
         // ones whose plan grants exactly this.
         middlewares: [
             commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO)
+            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
+            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
         ]
     }
 });
