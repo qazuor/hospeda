@@ -134,23 +134,74 @@ describe('parseOriginPrs', () => {
     });
 });
 
+// `isUnpublished` is the predicate `drop` refuses on (HOS-1214 D-7) and
+// `pending` lists by. Until the catalog held its first `on-promotion` entry,
+// the ONLY assertion on it in this suite was `toBe(false)` over the real file
+// — one branch. An implementation returning a constant `false` passed, and
+// would have left `hops whats-new pending` reporting nothing while looking
+// perfectly healthy. Both branches are pinned here, on fixtures, so the
+// coverage does not depend on what the real catalog happens to hold today.
+describe('isUnpublished', () => {
+    it('should be true for an entry still carrying the marker', () => {
+        const [entry] = parseCatalog({ content: makeSource({ entries: SIMPLE_ENTRY }) });
+
+        expect(entry).toBeDefined();
+        expect(entry && isUnpublished({ entry })).toBe(true);
+    });
+
+    it('should be false for an entry with a resolved date', () => {
+        const source = makeSource({
+            entries: `    {
+        id: 'published',
+        publishedAt: '2026-09-07T12:00:00Z',
+        title: { es: 'T' },
+        body: { es: 'B' }
+    }`
+        });
+        const [entry] = parseCatalog({ content: source });
+
+        expect(entry).toBeDefined();
+        expect(entry && isUnpublished({ entry })).toBe(false);
+    });
+});
+
 describe('the real catalog', () => {
     const content = readFileSync(join(REPO_ROOT, CATALOG_FILE_PATH), 'utf8');
 
-    it('should parse into the four entries HOS-964 loaded, in declared order', () => {
+    // Looked up BY ID, never by index. This used to assert
+    // `entries).toHaveLength(4)` and pin `entries[0]`, which froze both the
+    // catalog's size and whichever entry happened to be on top the day it was
+    // written. The file's own authoring convention is "always insert at the
+    // top", and HOS-1214 made every smoke sign-off insert one, so both pins
+    // were guaranteed to break on work that had nothing to do with the parser
+    // they exist to test.
+    it('should read every field of a known entry off the real file', () => {
         const entries = parseCatalog({ content });
 
         expect(hasEntriesArray({ content })).toBe(true);
-        expect(entries).toHaveLength(4);
-        expect(entries[0]?.id).toBe('2026-09-05-commerce-publish-free-trial');
-        expect(entries[0]?.roles).toEqual(['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER']);
-        expect(entries[0]?.titleEs).toContain('Publicá tu comercio');
+        expect(entries.length).toBeGreaterThan(0);
+
+        const known = entries.find(
+            (entry) => entry.id === '2026-09-05-commerce-publish-free-trial'
+        );
+        expect(known).toBeDefined();
+        expect(known?.roles).toEqual(['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER']);
+        expect(known?.titleEs).toContain('Publicá tu comercio');
     });
 
-    it('should read a real ISO publishedAt as published, never as a marker', () => {
+    // `publishedAt` has exactly two legal shapes (HOS-1214 D-1), and
+    // `isUnpublished` must agree with whichever one an entry carries. Stated
+    // this way the test holds whatever the catalog happens to hold today: all
+    // published, all awaiting promotion, or the mix it is in mid-tanda. It
+    // used to assert `isUnpublished(entry) === false` for every entry, which
+    // was true only while no sign-off had written a marker yet.
+    it('should agree with the publishedAt shape of every entry in the real file', () => {
         for (const entry of parseCatalog({ content })) {
-            expect(isUnpublished({ entry })).toBe(false);
-            expect(entry.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+            if (isUnpublished({ entry })) {
+                expect(entry.publishedAt).toBe('on-promotion');
+            } else {
+                expect(entry.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+            }
         }
     });
 
