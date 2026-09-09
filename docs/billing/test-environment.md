@@ -147,9 +147,12 @@ signature verifier was unable to distinguish them.
 
 ### `HOSPEDA_MERCADO_PAGO_SANDBOX=true`
 
-`packages/billing/src/adapters/mercadopago.ts` derives `livemode` from
-this flag (`livemode = !sandbox`) and passes it to both the storage
+`apps/api/src/middlewares/billing.ts:152` derives `livemode` from
+this flag (`const livemode = !sandbox`) and passes it to both the storage
 adapter and the qzpay-billing instance. When `livemode=false`:
+
+> This paragraph used to name `packages/billing/src/adapters/mercadopago.ts` as
+> the derivation site. That file contains no `livemode` at all (HOS-1302).
 
 - qzpay-billing's `customers.create()` skips the MP `/v1/customers`
   sync (or treats the failure as soft), so signup creates a local

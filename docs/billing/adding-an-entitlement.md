@@ -20,9 +20,12 @@ export enum EntitlementKey {
 }
 ```
 
-The two runtime guards (`isEntitlementKey` / `isLimitKey` in
-`packages/billing/src/types/guards.ts`) iterate `Object.values(EntitlementKey)`,
-so no manual update is needed there. The new key is automatically valid.
+The two runtime guards live in `packages/billing/src/types/guards.ts` and each
+builds a `ReadonlySet` at module load, so no manual update is needed — the new key
+is automatically valid. They read **different enums**: `isEntitlementKey` from
+`Object.values(EntitlementKey)`, `isLimitKey` from `Object.values(LimitKey)`. This
+paragraph claimed both iterate `EntitlementKey` (HOS-1302); adding a `LimitKey`
+would then look covered by a guard that never sees it.
 
 ---
 

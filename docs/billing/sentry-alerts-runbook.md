@@ -11,7 +11,7 @@
 | Task | Section | Code prerequisite |
 | ---- | ------- | ----------------- |
 | T-143-47 | §1 (tag conventions, `expected_error:true` filter) | `lib/sentry.ts` `beforeSend` drop (commit `ca5b7f8f`) |
-| T-143-49 | §2.1 (failed-payment) + §2.2 (signature) | `lib/sentry.ts` `captureWebhookError` (pre-existing) + `event-handler.ts:262` (pre-existing) |
+| T-143-49 | §2.1 (failed-payment) + §2.2 (signature) | `lib/sentry.ts` `captureWebhookError` (pre-existing) + `event-handler.ts:331` (pre-existing; this said `:262`, which is inside an unrelated docblock — HOS-1302) |
 | T-143-50 | §2.3 (cron generic) + §2.4 (dunning) | `cron/bootstrap.ts` Sentry capture (commit `62cc7ec0`) |
 | T-143-51 | §3 (billing health dashboard) | Above + `cron_run_history` table + billing DB |
 
@@ -306,7 +306,7 @@ GROUP BY job_name
 ORDER BY job_name;
 ```
 
-Display: table widget. Highlight rows where `last_success` is older than the job's schedule interval (e.g., dunning every 30 min → red if `last_success < now() - interval '1 hour'`).
+Display: table widget. Highlight rows where `last_success` is older than the job's schedule interval (e.g. dunning runs daily at 06:00 — `schedules.manifest.ts:185` — so red if `last_success < now() - interval '25 hours'`. This said "every 30 min"; HOS-1302).
 
 ### 3.4 Setup steps
 
