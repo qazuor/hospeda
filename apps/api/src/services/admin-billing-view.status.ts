@@ -69,6 +69,13 @@ export const STORED_SUBSCRIPTION_STATUS_SPELLINGS: readonly string[] = [
     'pending_provider',
     'abandoned',
     'comp',
+    // `courtesy` (HOS-180) is written ONLY by `courtesy-grant.service.ts`,
+    // never by qzpay or the MP webhook directly (it is DERIVED locally from a
+    // paused preapproval + a local window — see
+    // `SubscriptionStatusEnum.COURTESY`'s doc). Missing here meant the admin
+    // "Courtesy" filter option could never match a single row even after the
+    // vocabulary itself was widened (HOS-1245).
+    'courtesy',
     // qzpay vocabulary (qzpay-core / qzpay-drizzle / the qzpay admin tier)
     'canceled',
     'incomplete',
