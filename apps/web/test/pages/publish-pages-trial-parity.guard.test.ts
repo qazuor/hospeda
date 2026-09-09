@@ -165,4 +165,24 @@ describe('HOS-1293 — every publish page mentions the trial it may grant', () =
             expect(src).not.toContain('billingApi.getTrialEligibility({ cookieHeader })');
         }
     });
+
+    it("trialEligible is bound to the eligibility call's REAL result, not discarded (HOS-1293 mutation hardening)", () => {
+        // The guard right above only proves the CALL is made correctly — it
+        // says nothing about what happens to its answer. Measured: hardcoding
+        // `if (eligibilityResult.ok) { trialEligible = true; }` (discarding
+        // `eligibilityResult.data.eligible`) left the call-shape assertion
+        // green, the showTrialCallout wiring assertion green (that line never
+        // changed), and every other assertion in this file green — while
+        // showing the "probá gratis" callout to EVERY authenticated visitor,
+        // eligible or not. This pins the exact assignment, closing the gap the
+        // way `trialCalloutWiring` closes it one variable downstream.
+        for (const page of [PUBLISH_PAGES[1], PUBLISH_PAGES[2]]) {
+            const src = readPage((page as (typeof PUBLISH_PAGES)[number]).file);
+            expect(src).toContain(
+                'if (eligibilityResult.ok) {\n' +
+                    '            trialEligible = eligibilityResult.data.eligible;\n' +
+                    '        }'
+            );
+        }
+    });
 });

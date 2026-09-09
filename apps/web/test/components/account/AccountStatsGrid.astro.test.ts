@@ -75,17 +75,39 @@ describe('AccountStatsGrid.astro — commerce-owner branch (HOS-1293)', () => {
         expect(source).toContain('account.pages.dashboard.stats.listingsDesc');
     });
 
-    it('the subscription card stays outside all three branches — always rendered', () => {
+    it('the subscription card stays outside all three branches — always rendered (HOS-1293 mutation hardening)', () => {
         // Regression guard for a DIFFERENT mistake this refactor could make:
         // nesting the subscription card inside one of the three arms would
         // make it vanish for the other two audiences.
+        //
+        // The PREVIOUS version of this test used
+        // `source.indexOf(')}', closingTernaryIndex)` to find the ternary's own
+        // close — but `)}` also matches the tail of ANY JSX expression ending in
+        // a function call, e.g. `href={buildUrl({ ... })}`. Measured: the FIRST
+        // such match after `{isHost ?` is `{statPropertiesLabel.toLowerCase()}`
+        // a few lines in — nowhere near the real close — so `ternaryCloseIndex`
+        // resolved to a point near the very TOP of the file. Every mutation that
+        // moved the subscription card into, say, the tourist branch still left
+        // it after that bogus index, so the test passed unconditionally: it
+        // could not have failed no matter where the card moved.
+        //
+        // The real ternary close is the ONE line containing nothing but `)}`
+        // (optionally indented) — every other `)}` in this file sits at the end
+        // of a longer line (an attribute, an expression). Anchoring on the
+        // WHOLE-LINE match is what makes this specific to the ternary's own
+        // closing brace.
         const subscriptionCardIndex = source.indexOf('id="stat-subscription"');
-        const closingTernaryIndex = source.indexOf('{isHost ?');
         expect(subscriptionCardIndex).toBeGreaterThan(-1);
-        expect(closingTernaryIndex).toBeGreaterThan(-1);
+
+        const ternaryCloseMatch = source.match(/^[ \t]*\)\}[ \t]*$/m);
+        expect(
+            ternaryCloseMatch,
+            "expected exactly one line containing only the ternary's closing `)}` — if this fails, the branch structure changed shape and this guard needs to be re-anchored, not silenced"
+        ).not.toBeNull();
+        const ternaryCloseIndex = (ternaryCloseMatch as RegExpMatchArray).index as number;
+
         // The subscription card's own id must not appear before the whole
         // three-way ternary closes — i.e. it is a sibling, not a nested arm.
-        const ternaryCloseIndex = source.indexOf(')}', closingTernaryIndex);
         expect(subscriptionCardIndex).toBeGreaterThan(ternaryCloseIndex);
     });
 });
