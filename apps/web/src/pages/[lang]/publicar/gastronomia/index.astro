@@ -21,7 +21,7 @@
  *            slot; consequently absent from every cacheable-route list, AC-8).
  */
 
-import { CheckCircleIcon, ClockIcon, EyeIcon, ForkKnifeIcon, ImageIcon, ReceiptIcon, SettingsIcon } from '@repo/icons';
+import { AlertCircleIcon, CheckCircleIcon, ClockIcon, EyeIcon, ForkKnifeIcon, ImageIcon, ReceiptIcon, SettingsIcon } from '@repo/icons';
 import { CommerceCreateForm } from '@/components/commerce/CommerceCreateForm.client';
 import PublishFormSlot from '@/components/publish/PublishFormSlot.astro';
 import PublishHero from '@/components/publish/PublishHero.astro';
@@ -29,8 +29,13 @@ import PublishHowItWorks from '@/components/publish/PublishHowItWorks.astro';
 import PublishPlanLinks from '@/components/publish/PublishPlanLinks.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
+import { billingApi } from '@/lib/api/endpoints-protected';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { resolveCommerceLandingOffer } from '@/lib/billing/commerce-landing-plan';
+import { shouldShowPublishTrialCallout } from '@/lib/host/publish-trial-callout';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
 import {
     PLANS_PAGE_PATH_BY_VERTICAL,
     PRICING_PAGE_PATH_BY_VERTICAL
@@ -43,16 +48,84 @@ export const prerender = false;
 const VERTICAL = 'gastronomy' as const;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
+
+const isAuthenticated = Boolean(Astro.locals.user);
+const cookieHeader = Astro.request.headers.get('cookie');
 
 const slot = await resolvePublishPageSlot({
     locale,
     vertical: VERTICAL,
-    isAuthenticated: Boolean(Astro.locals.user),
-    cookieHeader: Astro.request.headers.get('cookie'),
+    isAuthenticated,
+    cookieHeader,
     pathname: Astro.url.pathname,
     wantsCreate: Astro.url.searchParams.get('create') === '1'
 });
+
+/**
+ * The trial fields the hero callout/expired-banner read (HOS-1293).
+ *
+ * Mirrors `/publicar/index.astro`'s own `TrialStatusData` byte-for-byte — the
+ * accommodation publish page mentions its trial 52 times and this one
+ * mentioned it zero, even though `/planes/gastronomia/precios/` already
+ * promises a free trial one click away. Same shape, same reasoning: an
+ * expired trial is not a full plan, so it produces `create_direct` and a form
+ * that will refuse on submit, and telling the owner up front is the whole
+ * point of the banner.
+ */
+type TrialStatusData = {
+    readonly isOnTrial: boolean;
+    readonly isExpired: boolean;
+    readonly daysRemaining: number | null;
+    readonly startedAt: string | null;
+    readonly expiresAt: string | null;
+    readonly planSlug: string | null;
+};
+
+let trialStatus: TrialStatusData | null = null;
+
+// Lifetime-scoped, not vertical-scoped: unlike accommodation this vertical has
+// no `publish-eligibility` endpoint of its own, and `getTrialEligibility` (HOS-226)
+// already answers the question this callout needs — "has this customer ever
+// spent their one trial" — across every product domain. `null` (signed out, or
+// a failed read) stays UNRESOLVED rather than collapsing to `false`, matching
+// `shouldShowPublishTrialCallout`'s documented fail-open for the same reason
+// the accommodation page fails open: this callout is the page's main draw.
+let trialEligible: boolean | null = null;
+
+if (isAuthenticated && cookieHeader) {
+    try {
+        const [trialResult, eligibilityResult] = await Promise.all([
+            billingApi.getTrialStatus({ cookieHeader, productDomain: VERTICAL }),
+            billingApi.getTrialEligibility({ cookieHeader })
+        ]);
+        if (trialResult.ok) {
+            trialStatus = trialResult.data;
+        }
+        if (eligibilityResult.ok) {
+            trialEligible = eligibilityResult.data.eligible;
+        }
+    } catch (error) {
+        logger.warn('publicar/gastronomia: failed to fetch trial status', { error });
+        // Non-fatal: the page renders without a trial callout on this path.
+    }
+}
+
+const isTrialExpired = trialStatus?.isExpired === true;
+
+// The trial length this page may promise, read from the SAME catalogue
+// `/planes/gastronomia/` (the sales landing) already reads via
+// `resolveCommerceLandingOffer` — never a hardcoded number (HOS-525). `null`
+// covers both a failed fetch and a plan that genuinely offers no trial, and
+// both must render nothing rather than "0 días" or an invented figure.
+const plansResult = await fetchPublicPlans({ domain: VERTICAL });
+const { trialDays } = resolveCommerceLandingOffer({ plansResult });
+
+const showTrialCallout =
+    trialDays !== null &&
+    shouldShowPublishTrialCallout({ isTrialExpired, trialEligibility: trialEligible });
+const expiredAtDisplay = trialStatus?.expiresAt ? trialStatus.expiresAt.substring(0, 10) : '';
+const expiredPlanSlug = trialStatus?.planSlug ?? '';
 
 // The destination catalog is fetched ONLY when the form is what renders. On the
 // other two states the island is never emitted (see `PublishFormSlot`), so this
@@ -137,7 +210,37 @@ const benefits = [
         )}
         Icon={ForkKnifeIcon}
         floatingIcons={[ImageIcon, ClockIcon, CheckCircleIcon]}
-    />
+    >
+        {isTrialExpired ? (
+            <div class="publicar-hero__trial-expired" role="alert" aria-live="polite">
+                <span class="publicar-hero__trial-expired-icon" aria-hidden="true">
+                    <AlertCircleIcon size={20} weight="duotone" />
+                </span>
+                <div class="publicar-hero__trial-expired-body">
+                    <p class="publicar-hero__trial-expired-title">
+                        {t('billing.subscription.trial.expiredBanner.title', 'Tu prueba gratuita terminó')}
+                    </p>
+                    <p class="publicar-hero__trial-expired-text">
+                        {t(
+                            'billing.subscription.trial.expiredBanner.body',
+                            'Tu prueba del plan {{planSlug}} venció el {{expiresAt}}. Suscribite para volver a publicar.',
+                            { planSlug: expiredPlanSlug, expiresAt: expiredAtDisplay }
+                        )}
+                    </p>
+                    <a href={slot.subscriptionUrl} class="publicar-hero__trial-expired-cta">
+                        {t('billing.subscription.trial.expiredBanner.cta', 'Ver planes')}
+                    </a>
+                </div>
+            </div>
+        ) : showTrialCallout && trialDays !== null ? (
+            <div class="publicar-hero__trial-callout" role="note">
+                <span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
+                <p class="publicar-hero__trial-callout-text">
+                    {tPlural('publish.gastronomy.trialCallout', trialDays, { trialDays })}
+                </p>
+            </div>
+        ) : null}
+    </PublishHero>
 
     <PublishFormSlot locale={locale} vertical={VERTICAL} resolution={slot}>
         <CommerceCreateForm
@@ -164,3 +267,96 @@ const benefits = [
         pricingUrl={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
     />
 </MarketingLayout>
+
+<style>
+    /* ── Trial callout / expired banner (HOS-1293) ─────────────────────────
+       Rendered into the hero's slot, mirroring `/publicar/index.astro`'s own
+       block byte-for-byte — Astro scopes `<style>` per file, so this cannot
+       be shared without lifting it into `PublishHero.astro` itself, which
+       would also style the accommodation page's UNRELATED plain hero uses. */
+    .publicar-hero__trial-callout {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        font-family: var(--font-sans);
+        line-height: 1.5;
+        margin: var(--space-5) 0 0;
+        padding: var(--space-4) var(--space-5);
+        background-color: var(--brand-accent-a15);
+        border: 1px solid var(--brand-accent-a35);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-button);
+        max-width: 56ch;
+    }
+
+    .publicar-hero__trial-callout-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .publicar-hero__trial-callout-text {
+        margin: 0;
+        font-size: var(--text-body-md);
+        color: var(--brand-accent);
+        font-weight: 500;
+    }
+
+    .publicar-hero__trial-expired {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        font-family: var(--font-sans);
+        line-height: 1.5;
+        margin: var(--space-5) 0 0;
+        padding: var(--space-4) var(--space-5);
+        background-color: var(--core-foreground-a05);
+        border: 1px solid var(--core-foreground-a20);
+        border-left: 4px solid var(--core-muted-foreground);
+        border-radius: var(--radius-button);
+        max-width: 56ch;
+    }
+
+    .publicar-hero__trial-expired-icon {
+        flex-shrink: 0;
+        color: var(--core-muted-foreground);
+        opacity: 0.8;
+        line-height: 1;
+        padding-top: 2px;
+    }
+
+    .publicar-hero__trial-expired-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+
+    .publicar-hero__trial-expired-title {
+        margin: 0;
+        font-size: var(--text-body-md);
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .publicar-hero__trial-expired-text {
+        margin: 0;
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+
+    .publicar-hero__trial-expired-cta {
+        display: inline-flex;
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--brand-primary);
+        text-decoration: none;
+        text-underline-offset: 2px;
+        margin-top: var(--space-1);
+        transition: color var(--duration-fast) ease;
+    }
+
+    .publicar-hero__trial-expired-cta:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+</style>

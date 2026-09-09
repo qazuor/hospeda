@@ -31,6 +31,8 @@
             "title": "Publique seu estabelecimento e seja encontrado",
             "body": "Comece aqui pelo básico: o nome do seu estabelecimento, que tipo é e em qual destino fica. As fotos, o cardápio e os horários você preenche depois, no seu painel."
         },
+        "trialCallout_one": "Experimente o Hospeda grátis por {{trialDays}} dia, sem cartão. O teste começa sozinho quando você publica seu primeiro estabelecimento.",
+        "trialCallout_other": "Experimente o Hospeda grátis por {{trialDays}} dias, sem cartão. O teste começa sozinho quando você publica seu primeiro estabelecimento.",
         "steps": {
             "step1": {
                 "title": "Preencha os dados básicos",
@@ -71,6 +73,8 @@
             "title": "Publique sua experiência e lote as vagas",
             "body": "Comece aqui pelo básico: o que você oferece, de que tipo é e de qual destino sai. As fotos, o ponto de encontro e os horários você preenche depois, no seu painel."
         },
+        "trialCallout_one": "Experimente o Hospeda grátis por {{trialDays}} dia, sem cartão. O teste começa sozinho quando você publica sua primeira experiência.",
+        "trialCallout_other": "Experimente o Hospeda grátis por {{trialDays}} dias, sem cartão. O teste começa sozinho quando você publica sua primeira experiência.",
         "steps": {
             "step1": {
                 "title": "Conte o que você oferece",
