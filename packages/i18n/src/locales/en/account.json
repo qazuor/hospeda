@@ -1241,10 +1241,22 @@
         "buyingButton": "Processing...",
         "owned": "Active",
         "accommodationSelect": {
-            "label": "Accommodation",
-            "placeholder": "Choose an accommodation",
+            "label": {
+                "accommodation": "Accommodation",
+                "gastronomy": "Restaurant",
+                "experience": "Experience"
+            },
+            "placeholder": {
+                "accommodation": "Choose an accommodation",
+                "gastronomy": "Choose a restaurant",
+                "experience": "Choose an experience"
+            },
             "required": "Choose an accommodation to continue",
-            "empty": "You need an accommodation first"
+            "empty": {
+                "accommodation": "You need an accommodation first",
+                "gastronomy": "You need a published restaurant first",
+                "experience": "You need a published experience first"
+            }
         },
         "gate": {
             "title": "You need an active subscription",

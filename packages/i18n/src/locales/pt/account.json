@@ -1241,10 +1241,22 @@
         "buyingButton": "Processando...",
         "owned": "Ativo",
         "accommodationSelect": {
-            "label": "Hospedagem",
-            "placeholder": "Escolha uma hospedagem",
+            "label": {
+                "accommodation": "Hospedagem",
+                "gastronomy": "Restaurante",
+                "experience": "Experiência"
+            },
+            "placeholder": {
+                "accommodation": "Escolha uma hospedagem",
+                "gastronomy": "Escolha um restaurante",
+                "experience": "Escolha uma experiência"
+            },
             "required": "Escolha uma hospedagem para continuar",
-            "empty": "Você precisa de uma hospedagem primeiro"
+            "empty": {
+                "accommodation": "Você precisa de uma hospedagem primeiro",
+                "gastronomy": "Você precisa de um restaurante publicado primeiro",
+                "experience": "Você precisa de uma experiência publicada primeiro"
+            }
         },
         "gate": {
             "title": "Você precisa de uma assinatura ativa",

@@ -1217,10 +1217,22 @@
         "buyingButton": "Procesando...",
         "owned": "Activo",
         "accommodationSelect": {
-            "label": "Alojamiento",
-            "placeholder": "Elegí un alojamiento",
+            "label": {
+                "accommodation": "Alojamiento",
+                "gastronomy": "Local gastronómico",
+                "experience": "Experiencia"
+            },
+            "placeholder": {
+                "accommodation": "Elegí un alojamiento",
+                "gastronomy": "Elegí un local",
+                "experience": "Elegí una experiencia"
+            },
             "required": "Elegí un alojamiento para continuar",
-            "empty": "Necesitás un alojamiento primero"
+            "empty": {
+                "accommodation": "Necesitás un alojamiento primero",
+                "gastronomy": "Necesitás un local publicado primero",
+                "experience": "Necesitás una experiencia publicada primero"
+            }
         },
         "gate": {
             "title": "Necesitás una suscripción activa",
