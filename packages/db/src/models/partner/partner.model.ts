@@ -1,4 +1,3 @@
-import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
 import type { LifecycleStatusEnum, Partner, PartnerSubscriptionStatusEnum } from '@repo/schemas';
 import {
     and,
@@ -360,16 +359,35 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      * `ends_at`: writing a period into that column would arm `partner-expiry`,
      * which archives unattended.
      *
-     * @param input - `{ confirmedThroughBefore }` (RO-RO) — the cutoff, i.e.
-     *   `now` minus the review window.
+     * @param input - `{ confirmedThroughBefore, exemptSubscriptionStatuses }`
+     *   (RO-RO). The cutoff is `now` minus the review window. The exempt set is
+     *   INJECTED rather than imported, and that is not style: `@repo/billing`'s
+     *   only entry point is one barrel that pulls in the MercadoPago adapter,
+     *   and `packages/db` is imported by nearly every test in the monorepo — so
+     *   importing the canonical set here dragged the adapter into module graphs
+     *   whose `@repo/logger` mock does not define `createLogger`, and two unit
+     *   shards went red on suites that have nothing to do with partners. The
+     *   caller (`partner-payment-review.job.ts`) already lives in `apps/api`,
+     *   which imports billing legitimately, so it passes
+     *   `ENTITLEMENT_GRANTING_STATUSES` and the single source of truth is kept
+     *   without db taking on the dependency.
      * @param limit - Batch ceiling, mirroring the other two partner crons.
      * @returns The partners an admin should be asked about.
      */
     async findDueForPaymentReview(
-        input: { readonly confirmedThroughBefore: Date },
+        input: {
+            readonly confirmedThroughBefore: Date;
+            readonly exemptSubscriptionStatuses: readonly string[];
+        },
         limit = 100
     ): Promise<Partner[]> {
         const db = getDb();
+
+        // An empty set would make `inArray` degenerate to false, the NOT EXISTS
+        // always true, and every subscription-governed partner — comped ones
+        // included — land in the alert. Fall back to excluding any partner that
+        // has a link row at all: fewer questions, never a wrong accusation.
+        const hasExemptSet = input.exemptSubscriptionStatuses.length > 0;
 
         const result = await db
             .select()
@@ -395,14 +413,19 @@ export class PartnerModel extends BaseModelImpl<Partner> {
                                 .where(
                                     and(
                                         eq(partnerSubscriptions.partnerId, partners.id),
-                                        // Never narrow this to `['active']`. It
-                                        // would re-admit `comp` (HOS-1160) and
-                                        // `courtesy` (HOS-180) — partners who
-                                        // legitimately never pay — into an alert
-                                        // asking an admin to take them down.
-                                        inArray(partnerSubscriptions.status, [
-                                            ...ENTITLEMENT_GRANTING_STATUSES
-                                        ])
+                                        // Never narrow the injected set to
+                                        // `['active']`. That would re-admit
+                                        // `comp` (HOS-1160) and `courtesy`
+                                        // (HOS-180) — partners who legitimately
+                                        // never pay — into an alert asking an
+                                        // admin to take them down.
+                                        ...(hasExemptSet
+                                            ? [
+                                                  inArray(partnerSubscriptions.status, [
+                                                      ...input.exemptSubscriptionStatuses
+                                                  ])
+                                              ]
+                                            : [])
                                     )
                                 )
                         )

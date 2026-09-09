@@ -21,12 +21,18 @@
  *
  * Without the exclusion an admin receives an email asking whether to take down
  * a partner the platform deliberately gave the product to.
+ *
+ * The exempt SET is injected by the caller rather than imported here — see the
+ * method's docblock for why — so this file defends the model's half (it applies
+ * whatever it is given, and degrades safely when given nothing) and its sibling
+ * in `apps/api` defends the caller's half (it passes the canonical set, never a
+ * literal). Neither is sufficient alone: this one would pass against a caller
+ * that hands over `['active']`.
  */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
 import { describe, expect, it } from 'vitest';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -58,15 +64,13 @@ function readMethodBody(): string {
 }
 
 describe('HOS-1160 — a comped partner is never accused of not paying', () => {
-    it('exempts every entitlement-granting status, comp and courtesy included', () => {
+    it('filters the link-row exclusion by the injected status set', () => {
         // Arrange + Act
         const body = readMethodBody();
 
-        // Assert — the exclusion is expressed through the shared set, so a
-        // future status that grants entitlements without a charge is exempt the
-        // day it is added rather than the day somebody notices.
+        // Assert
         expect(body).toMatch(/inArray\(\s*partnerSubscriptions\.status/);
-        expect(body).toMatch(/ENTITLEMENT_GRANTING_STATUSES/);
+        expect(body).toMatch(/input\.exemptSubscriptionStatuses/);
     });
 
     it('does not hardcode the exempt statuses', () => {
@@ -74,22 +78,25 @@ describe('HOS-1160 — a comped partner is never accused of not paying', () => {
         const body = readMethodBody();
 
         // Assert — a literal list is how `comp` gets dropped: somebody
-        // "simplifies" the shared set to the one status they were thinking
-        // about, and every comped partner starts receiving the takedown
-        // question. The hardcoded form is what is forbidden, not a particular
-        // spelling of the safe one.
+        // "simplifies" the injected set down to the one status they were
+        // thinking about, and every comped partner starts receiving the
+        // takedown question.
         expect(body).not.toMatch(/'active'\s*,\s*'trialing'/);
         expect(body).not.toMatch(/\[\s*'active'\s*\]/);
         expect(body).not.toMatch(/status,\s*'active'/);
     });
 
-    it('relies on a set that really does contain comp and courtesy', () => {
-        // Assert — the clause above is only worth anything if the set it points
-        // at carries the two exemptions. If a future edit removes them from
-        // `@repo/billing`, this file must fail rather than keep vouching for a
-        // guarantee that moved out from under it.
-        expect(ENTITLEMENT_GRANTING_STATUSES).toContain('comp');
-        expect(ENTITLEMENT_GRANTING_STATUSES).toContain('courtesy');
+    it('degrades to excluding every linked partner when handed an empty set', () => {
+        // Arrange + Act
+        const body = readMethodBody();
+
+        // Assert — an empty array makes `inArray` degenerate to false, which
+        // makes the NOT EXISTS always true and drops every subscription-governed
+        // partner, comped ones included, into the alert. The guard against that
+        // has to be in the source, because the failure is silent and only shows
+        // up as an admin being asked about somebody we comped.
+        expect(body).toMatch(/exemptSubscriptionStatuses\.length\s*>\s*0/);
+        expect(body).toMatch(/hasExemptSet/);
     });
 
     /**
@@ -104,5 +111,18 @@ describe('HOS-1160 — a comped partner is never accused of not paying', () => {
         expect(body).toMatch(/paymentConfirmedThrough/);
         expect(body).toMatch(/contentApprovedAt/);
         expect(body).toMatch(/isNull\(partners\.paymentReviewState\)/);
+    });
+
+    it('does not import @repo/billing — that barrel carries the MercadoPago adapter', () => {
+        // Arrange — `packages/db` sits in nearly every module graph in the
+        // monorepo, and `@repo/billing` exports exactly one barrel, which pulls
+        // `adapters/mercadopago.ts` and through it `@repo/logger`'s
+        // `createLogger`. Importing it here turned two unit shards red on suites
+        // that have nothing to do with partners, because their `@repo/logger`
+        // mock does not define that export.
+        const source = readFileSync(PARTNER_MODEL, 'utf-8');
+
+        // Act + Assert
+        expect(source).not.toMatch(/from\s+'@repo\/billing'/);
     });
 });

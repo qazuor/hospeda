@@ -48,6 +48,7 @@
  * @module cron/jobs/partner-payment-review
  */
 
+import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
 import { PartnerModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { PartnerPaymentReviewStateEnum } from '@repo/schemas';
@@ -116,7 +117,18 @@ export const partnerPaymentReviewJob: CronJobDefinition = {
                     confirmedThroughBefore: paymentReviewCutoff({
                         now: startedAt,
                         days: PAYMENT_REVIEW_AFTER_DAYS
-                    })
+                    }),
+                    // The canonical set, passed in rather than imported by the
+                    // model: `@repo/db` is in nearly every module graph in the
+                    // monorepo, and `@repo/billing`'s single barrel drags the
+                    // MercadoPago adapter along with it. This job already lives
+                    // where billing is a legitimate dependency.
+                    //
+                    // It is what exempts `comp` (HOS-1160) and `courtesy`
+                    // (HOS-180) — partners the platform gave the product to,
+                    // who by definition never register a payment. Never replace
+                    // this with a literal list.
+                    exemptSubscriptionStatuses: ENTITLEMENT_GRANTING_STATUSES
                 },
                 BATCH_LIMIT
             );

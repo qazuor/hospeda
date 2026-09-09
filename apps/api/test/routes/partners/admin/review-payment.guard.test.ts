@@ -86,6 +86,20 @@ describe('HOS-1299 — nothing on this path arms an unattended takedown', () => 
         expect(code).toMatch(/paymentReviewState/);
     });
 
+    it('the cron hands the model the canonical exempt set, never a literal', () => {
+        // Arrange — the model applies whatever set it is given, so THIS is
+        // where "a comped partner is never accused" is actually decided. Its
+        // sibling guard in `packages/db` cannot see it: the set is injected
+        // precisely so `@repo/db` does not have to import `@repo/billing`,
+        // whose single barrel drags the MercadoPago adapter into every module
+        // graph that touches a model.
+        const code = readCode(PAYMENT_REVIEW_JOB);
+
+        // Act + Assert
+        expect(code).toMatch(/exemptSubscriptionStatuses:\s*ENTITLEMENT_GRANTING_STATUSES/);
+        expect(code).not.toMatch(/exemptSubscriptionStatuses:\s*\[/);
+    });
+
     it('the review route itself writes nothing — it delegates to the service', () => {
         const code = readCode(REVIEW_PAYMENT_ROUTE);
         expect(code).toMatch(/partnerService\.reviewPayment/);

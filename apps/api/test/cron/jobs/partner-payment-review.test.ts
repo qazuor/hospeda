@@ -142,12 +142,19 @@ describe('partner-payment-review — the flag is the job memory', () => {
         // Assert
         expect(mockFindDue).toHaveBeenCalledTimes(1);
         const [input, limit] = mockFindDue.mock.calls[0] as [
-            { confirmedThroughBefore: Date },
+            { confirmedThroughBefore: Date; exemptSubscriptionStatuses: readonly string[] },
             number
         ];
         expect(input.confirmedThroughBefore).toEqual(
             paymentReviewCutoff({ now: NOW, days: PAYMENT_REVIEW_AFTER_DAYS })
         );
+        // The exempt set is injected, so the job — not the model — is what
+        // keeps a comped (HOS-1160) or courtesy (HOS-180) partner out of the
+        // alert. Asserted by VALUE, because passing `['active']` would
+        // typecheck, pass every other test here, and quietly start asking an
+        // admin whether to take down partners the platform comped.
+        expect(input.exemptSubscriptionStatuses).toContain('comp');
+        expect(input.exemptSubscriptionStatuses).toContain('courtesy');
         expect(limit).toBe(100);
     });
 
