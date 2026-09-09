@@ -196,16 +196,20 @@ export async function resolveChatOwnerGrants(input: {
     const customerId = await loadOwnerBillingCustomerId(ownerId);
     const grants = await resolveCommerceVerticalGrants({ customerId, vertical });
 
-    // Sanity: the quota key this vertical is metered under must be the one the
-    // resolver read. Kept as an assertion in the type system rather than a
-    // runtime check — `AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL` is exhaustive over
-    // the vertical union, so this cannot resolve to undefined.
-    void AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
+    // HOS-1276: `resolveCommerceVerticalGrants` now returns the vertical's
+    // FULL limits map (every `LimitKey` its plan declares) rather than a
+    // scalar `aiChatCap` field, so the quota is read off the vertical's own
+    // AI-chat key directly. `AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL` is
+    // exhaustive over the vertical union and `loadVerticalBaseLimits`'s floor
+    // guarantees this key is never absent, so `?? 0` is defensive rather than
+    // a real fallback path — 0 is also the correct "no plan" answer (refuse
+    // the chat, never leave it uncapped).
+    const monthlyQuota = grants.limits.get(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical]) ?? 0;
 
     return {
         ownerId,
         grantsAiChat: grants.entitlements.has(EntitlementKey.AI_CHAT),
-        monthlyQuota: grants.aiChatCap,
+        monthlyQuota,
         entitlements: new Set<string>(grants.entitlements)
     };
 }
