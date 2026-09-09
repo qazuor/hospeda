@@ -167,6 +167,37 @@ describe('TrialRemainingDaysBanner — HOS-1233 AC-8: absent in every state with
         expect(screen.queryByTestId(BANNER)).toBeNull();
     });
 
+    it('renders nothing when a day count arrives without a running trial', async () => {
+        // Found by mutation: dropping `isOnTrial` from the render condition
+        // left every other test in this file green, because the "no trial"
+        // fixture above also reports `daysRemaining: null`. A payload carrying
+        // BOTH — an elapsed trial that still counts days — is the only shape
+        // that tells the two conditions apart, and announcing "te quedan 5
+        // días" to somebody whose trial is over is a promise the product
+        // cannot keep.
+        vi.stubGlobal(
+            'fetch',
+            buildFetchMock({
+                isOnTrial: false,
+                isExpired: true,
+                daysRemaining: 5,
+                startedAt: '2026-08-01T00:00:00.000Z'
+            })
+        );
+
+        render(
+            <TrialRemainingDaysBanner
+                locale="es"
+                audience="owner"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.queryByTestId(BANNER)).toBeNull();
+        });
+        expect(screen.queryByText(/5/)).toBeNull();
+    });
+
     it('never renders "0 días" — a running trial reporting no days renders nothing', async () => {
         vi.stubGlobal(
             'fetch',
