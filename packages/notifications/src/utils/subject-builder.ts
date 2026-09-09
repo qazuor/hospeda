@@ -53,6 +53,12 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // operator nothing they can act on without opening the admin, which is the
     // dependency this alert exists to remove.
     [NotificationType.ADMIN_LEAD_RECEIVED]: '[Admin] Nuevo lead de {programLabel} — {contactName}',
+    // Names the partner AND phrases it as a question, for the same triage reason
+    // plus one of its own: nothing has happened to this partner yet, and a
+    // subject that read like a notice of removal would be a lie about the only
+    // thing this email is for.
+    [NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW]:
+        '[Admin] ¿{partnerName} sigue pagando? No hay pago registrado',
     [NotificationType.FEEDBACK_REPORT]: '[{reportType}] {reportTitle}',
     [NotificationType.CONTACT_SUBMISSION]: '[Contacto] {contactType} - {senderName}',
     [NotificationType.SUBSCRIPTION_CANCELLED]: 'Tu suscripción {planName} ha sido cancelada',
