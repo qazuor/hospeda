@@ -19,7 +19,7 @@
  * resolve — and this file needs four different clocks.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanPurchaseButton } from '../../../src/components/billing/PlanPurchaseButton.client';
@@ -166,6 +166,16 @@ function startPaidCalls(fetchMock: ReturnType<typeof buildFetchMock>): string[] 
         .map((call) => String(call[0]))
         .filter((url) => url.includes('/start-paid'));
 }
+
+/**
+ * The AC-9 copy shown when the clock resolved to UNKNOWN.
+ *
+ * Named here because two suites read it in opposite directions: AC-9 asserts it
+ * IS rendered for a read that genuinely failed, and the pending-clock suite
+ * asserts it is NOT — a click that merely beat the read must not be told it
+ * "might" have a trial when the answer is one RTT away.
+ */
+const UNKNOWN_TRIAL_COPY = COPY['pricing.trialWarning.bodyUnknown'] as string;
 
 /** Renders the button and waits for the trial clock to have been consulted. */
 async function renderAndSettle() {
@@ -321,6 +331,63 @@ describe('PlanPurchaseButton — HOS-1233 AC-5: at or under the threshold goes s
         });
         expect(screen.queryByRole('dialog')).toBeNull();
         expect(startPaidCalls(fetchMock)).toHaveLength(1);
+    });
+});
+
+describe('PlanPurchaseButton — HOS-1233 AC-3/AC-9: a click that beats the clock is deferred, not answered', () => {
+    // Every other suite in this file goes through `renderAndSettle`, which
+    // waits for the clock before clicking — which is exactly why this state had
+    // no coverage. These two render WITHOUT settling: the button is
+    // SSR-rendered and interactive from `client:load`, so the window between
+    // `useSession` resolving and `GET /billing/trial/status` answering is a
+    // real, clickable one.
+
+    it('opens no dialog and starts no checkout while the read is still in flight', async () => {
+        const user = userEvent.setup();
+        const fetchMock = buildFetchMock();
+        vi.stubGlobal('fetch', fetchMock);
+        // Held open forever: the pending state, isolated.
+        fetchTrialClockMock.mockReturnValue(new Promise<TrialClockReading | null>(() => undefined));
+
+        render(<PlanPurchaseButton {...ownerProps} />);
+        await user.click(screen.getByTestId('plan-cta-button'));
+
+        expect(screen.queryByRole('dialog')).toBeNull();
+        // The specific harm: a pending read read as a resolved unknown would
+        // tell an account whose trial is fully intact that it "might" have one.
+        expect(screen.queryByText(UNKNOWN_TRIAL_COPY)).toBeNull();
+        expect(startPaidCalls(fetchMock)).toEqual([]);
+        expect(window.location.href).toBe('');
+    });
+
+    it('answers that same click once the clock lands — the positive sibling', async () => {
+        // Same fixture, same click, the only difference being that the read is
+        // allowed to resolve. A selector typo in the negative above cannot pass
+        // this one: it asserts the AC-3 navigation actually happens, from a
+        // click made before the clock existed.
+        const user = userEvent.setup();
+        const fetchMock = buildFetchMock();
+        vi.stubGlobal('fetch', fetchMock);
+        let resolveClock: (value: TrialClockReading | null) => void = () => undefined;
+        fetchTrialClockMock.mockReturnValue(
+            new Promise<TrialClockReading | null>((resolve) => {
+                resolveClock = resolve;
+            })
+        );
+
+        render(<PlanPurchaseButton {...ownerProps} />);
+        await user.click(screen.getByTestId('plan-cta-button'));
+        expect(window.location.href).toBe('');
+
+        await act(async () => {
+            resolveClock(NEVER_STARTED);
+        });
+
+        await waitFor(() => {
+            expect(window.location.href).toBe('/es/publicar/');
+        });
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(startPaidCalls(fetchMock)).toEqual([]);
     });
 });
 

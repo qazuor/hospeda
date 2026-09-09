@@ -410,6 +410,27 @@ export function PlanPurchaseButton({
     // `{ isOnTrial: false }`, which would read as "no trial to protect" and
     // land the visitor in the silent charge this spec exists to stop.
     const [trialClock, setTrialClock] = useState<TrialClockReading | null>(null);
+    // HOS-1233: whether the read above has SETTLED. `trialClock` alone cannot
+    // say — `null` is both "still in flight" and "resolved to unknown", and the
+    // two must do different things: an in-flight read defers the click, a
+    // resolved unknown warns (AC-9). Collapsing them is a measured bug, not a
+    // hypothetical: this button is SSR-rendered and interactive from
+    // `client:load`, so a click can land one RTT before
+    // `GET /billing/trial/status` answers, and reading that pending state as a
+    // resolved `null` showed `pricing.trialWarning.bodyUnknown` ("puede que
+    // tengas una prueba gratis en curso") to the exact account AC-3 exists for
+    // — one whose trial is fully intact and never started. Confirming that
+    // dialog charges them and burns every untouched day.
+    //
+    // Starts `false` only for a visitor who will actually be asked: the effect
+    // below sets it `true` immediately for an anonymous visitor and for an
+    // audience with no trial scope, so neither is ever left waiting.
+    const [trialClockSettled, setTrialClockSettled] = useState(false);
+    // A click that arrived before the clock did. The button keeps its label and
+    // stays on screen, but is non-actionable until the read lands — so the
+    // deferred click cannot be queued a second time, and no branch is
+    // dispatched off a reading nobody has yet.
+    const [awaitingTrialClock, setAwaitingTrialClock] = useState(false);
     // HOS-1233 T-016 / AC-4: the warn-and-confirm dialog in front of a checkout
     // that would destroy a running trial.
     const [showTrialWarning, setShowTrialWarning] = useState(false);
@@ -730,12 +751,31 @@ export function PlanPurchaseButton({
     useEffect(() => {
         if (!isAuthenticated || trialScope === null) {
             setTrialClock(null);
+            // Settled without asking anything. An anonymous visitor's click is
+            // answered by the sign-in redirect long before a trial question
+            // arises, and an audience with no trial scope has no clock to read
+            // — neither may leave the button waiting on a read that will never
+            // happen.
+            setTrialClockSettled(true);
             return;
         }
         let cancelled = false;
-        fetchTrialClock({ productDomain: trialScope }).then((clock) => {
-            if (!cancelled) setTrialClock(clock);
-        });
+        setTrialClockSettled(false);
+        fetchTrialClock({ productDomain: trialScope })
+            .then((clock) => {
+                if (cancelled) return;
+                setTrialClock(clock);
+                setTrialClockSettled(true);
+            })
+            .catch(() => {
+                // `fetchTrialClock` resolves its own failures to `null`, so
+                // this is belt-and-braces against a rejection parking the
+                // button in "waiting" forever. `null` + settled is AC-9's
+                // warning branch, which is where an unresolvable read belongs.
+                if (cancelled) return;
+                setTrialClock(null);
+                setTrialClockSettled(true);
+            });
         return () => {
             cancelled = true;
         };
@@ -1288,8 +1328,11 @@ export function PlanPurchaseButton({
             return;
         }
 
-        // Prevent double-submission.
-        if (loading) {
+        // Prevent double-submission. `awaitingTrialClock` is the same guard for
+        // a click already parked on the trial read (HOS-1233): the button
+        // renders non-actionable in both states, and this is the
+        // belt-and-suspenders behind that.
+        if (loading || awaitingTrialClock) {
             return;
         }
 
@@ -1297,7 +1340,7 @@ export function PlanPurchaseButton({
         // click and real money. Everything above it answers "can this person
         // buy this plan at all"; this answers "should they be buying it right
         // now, or do they already have it free for another N days".
-        startTrialAwareCheckout();
+        await startTrialAwareCheckout();
     }
 
     /**
@@ -1328,8 +1371,18 @@ export function PlanPurchaseButton({
      *   is deliberately NOT a warning: that branch is reached only when no
      *   trial ever started, so there are no days to lose and no figure that
      *   could be stated honestly.
+     *
+     * **A click that beats the clock is DEFERRED, never answered.** The button
+     * is interactive from `client:load` while the read is one RTT behind, and
+     * `resolveTrialStartBranch` cannot tell a pending read from a failed one —
+     * both reach it as `null`, and it correctly warns. Warning is right for a
+     * failed read (AC-9 / R-2: an unresolved read must never become a silent
+     * charge) and wrong for a pending one, whose real answer may well be AC-3's
+     * navigation to the create form. So a click arriving early awaits the SAME
+     * module-cached promise the mount effect started — no second request — and
+     * dispatches on the reading that actually comes back.
      */
-    function startTrialAwareCheckout(): void {
+    async function startTrialAwareCheckout(): Promise<void> {
         if (trialScope === null) {
             // HOS-937 step 2 (spec §8.1): show the payer-email confirm dialog
             // right before actually creating the MercadoPago preapproval.
@@ -1356,7 +1409,21 @@ export function PlanPurchaseButton({
             }
         };
 
-        branchActions[resolveTrialStartBranch({ reading: trialClock })]();
+        let reading = trialClock;
+        if (!trialClockSettled) {
+            setAwaitingTrialClock(true);
+            try {
+                reading = await fetchTrialClock({ productDomain: trialScope });
+            } catch {
+                // Same direction as the mount effect's own catch: an
+                // unresolvable read is `null`, which warns.
+                reading = null;
+            } finally {
+                setAwaitingTrialClock(false);
+            }
+        }
+
+        branchActions[resolveTrialStartBranch({ reading })]();
     }
 
     /**
@@ -1539,8 +1606,13 @@ export function PlanPurchaseButton({
                     ? processingAriaLabel
                     : `${ctaText} — ${formattedPrice}`;
 
+    // `awaitingTrialClock` sits with `loading` and not with the states below it:
+    // it is transient (one RTT) and says nothing about whether this plan can be
+    // bought, so it stays out of `aria-disabled`, which describes the permanent
+    // refusals. HOS-1233.
     const buttonDisabled =
         loading ||
+        awaitingTrialClock ||
         isCurrentPlan ||
         isAnnualUnavailable ||
         isFreePlanUnpurchasable ||
@@ -1554,7 +1626,7 @@ export function PlanPurchaseButton({
                 data-testid="plan-cta-button"
                 disabled={buttonDisabled}
                 aria-label={buttonAriaLabel}
-                aria-busy={loading}
+                aria-busy={loading || awaitingTrialClock}
                 aria-disabled={
                     isCurrentPlan ||
                     isAnnualUnavailable ||
