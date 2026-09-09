@@ -3,7 +3,7 @@
  * @description Astro image service that fixes the `Content-Type` served for
  * AVIF (HOS-369).
  *
- * THE BUG (upstream, Astro 7.1.6)
+ * THE BUG (upstream; observed on Astro 7.1.6, re-verified still present on 7.3.1)
  * `/_image/?...&f=avif` responds with `Content-Type: image/heif` instead of
  * `image/avif`. The chain:
  *
@@ -33,6 +33,14 @@
  * What a wrong media type does affect is anything downstream that trusts the
  * header instead of the bytes: CDN/proxy content negotiation, `Vary` handling,
  * asset pipelines, and monitoring that buckets responses by type.
+ *
+ * NOTE ON THE `logger` PARAMETER
+ * Astro 7.3.0 added a fourth argument (`logger`) to every image-service hook.
+ * Forwarding it is NOT cosmetic: the underlying sharp service calls
+ * `logger.warn()` on two real paths — when sharp cannot encode the buffer and
+ * falls back to the input unchanged, and when a `format="svg"` request gets a
+ * non-SVG source. Dropping the argument leaves `logger` undefined there, so
+ * those paths would throw a TypeError instead of degrading with a warning.
  *
  * NOTE ON THE DEFAULT EXPORT
  * The repo rule is named exports only. Astro's image service contract requires
@@ -75,8 +83,13 @@ export function resolveOutputFormat({
 
 const service: LocalImageService = {
     ...sharpService,
-    async transform(inputBuffer, transformOptions, imageConfig) {
-        const result = await sharpService.transform(inputBuffer, transformOptions, imageConfig);
+    async transform(inputBuffer, transformOptions, imageConfig, logger) {
+        const result = await sharpService.transform(
+            inputBuffer,
+            transformOptions,
+            imageConfig,
+            logger
+        );
         return {
             ...result,
             format: resolveOutputFormat({

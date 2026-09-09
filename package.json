@@ -124,7 +124,7 @@
         "husky": "^9.1.7",
         "lint-staged": "^17.2.0",
         "markdownlint-cli2": "^0.23.1",
-        "sharp": "^0.35.2",
+        "sharp": "^0.35.4",
         "tsx": "^4.23.11",
         "turbo": "^2.10.9",
         "typescript": "6.0.3",
