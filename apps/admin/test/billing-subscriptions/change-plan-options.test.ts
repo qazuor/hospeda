@@ -14,6 +14,7 @@
  */
 
 import { ALL_PLANS, type PlanDefinition } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { getChangePlanOptions, getPlanBySlug } from '@/features/billing-subscriptions/utils';
 
@@ -36,6 +37,7 @@ const RETIRED_TOURIST_PLAN: PlanDefinition = {
     name: 'Retired',
     description: 'Test-only retired plan — never part of ALL_PLANS.',
     category: 'tourist',
+    productDomain: ProductDomainEnum.TOURIST,
     monthlyPriceArs: 500000,
     annualPriceArs: 5000000,
     monthlyPriceUsdRef: 5,

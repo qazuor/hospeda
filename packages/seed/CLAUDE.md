@@ -152,11 +152,18 @@ fixtures close that gap:
 
 - `commerce-gastronomy@local.test` / `commerce-experience@local.test` — one
   owner per vertical, subscribed and **under** their cap (0 listings owned).
-  `subscriptionProductDomain` stamps `billing_subscriptions.product_domain`
-  with the exact vertical (`'gastronomy'` / `'experience'`, not the legacy
-  `'commerce'` umbrella) — `subscriptionMatchesDomain` requires an exact match
-  for those two domains, so an unstamped subscription (defaulting to
-  `'accommodation'`) would be invisible to the commerce entitlement loader.
+  Their subscriptions carry the exact vertical in
+  `billing_subscriptions.product_domain` (`'gastronomy'` / `'experience'`, not
+  the legacy `'commerce'` umbrella) — `subscriptionMatchesDomain` requires an
+  exact match for those two domains, so an unstamped subscription (defaulting
+  to `'accommodation'`) would be invisible to the commerce entitlement loader.
+  Since HOS-1233 T-035 that value is **derived from the plan's own row**, not
+  declared per fixture: `subscriptionProductDomain` survives only as an
+  override for a fixture that wants a domain its plan does not name. The old
+  rule — declare it for commerce, omit it everywhere else "because the
+  `'accommodation'` default is already correct" — is what filed every tourist
+  fixture as an accommodation subscriber, reproducing locally the
+  misclassification measured in prod and staging.
 - `commerce-gastronomy-at-cap@local.test` — subscribed AND already owning one
   gastronomy listing, so it sits exactly `AT` its `MAX_GASTRONOMIES: 1` cap.
   The listing is seeded via `GastronomyService.create()` (mirrors

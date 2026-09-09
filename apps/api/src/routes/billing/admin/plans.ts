@@ -198,6 +198,10 @@ export const adminCreatePlanRoute = createAdminRoute({
                 name: input.name,
                 description: input.description,
                 category: input.category,
+                // HOS-1233: forwarded, never derived from `category` here.
+                // The two are different questions, and the commerce verticals
+                // share one category across three domains.
+                productDomain: input.productDomain,
                 monthlyPriceArs: input.monthlyPriceArs,
                 annualPriceArs: input.annualPriceArs,
                 monthlyPriceUsdRef: input.monthlyPriceUsdRef,

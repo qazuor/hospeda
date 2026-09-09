@@ -54,6 +54,10 @@ const EXPECTED_SEED_CONTROLLED_FIELDS: ReadonlySet<string> = new Set([
     // top-level billing_plans columns
     'description',
     'active',
+    // HOS-1233: the vertical whose entitlement engine counts a subscription to
+    // the plan. Capability — never operator-editable, and config winning is
+    // what lets a seed run repair a row that was never stamped at all.
+    'productDomain',
     'entitlements',
     // limits JSONB — two logical facets (one physical column, two Model C layers)
     'limitsKeysPresent',

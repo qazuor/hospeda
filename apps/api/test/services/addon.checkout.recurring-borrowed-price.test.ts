@@ -65,6 +65,7 @@ import {
     type CreateOwnPreapprovalSubscriptionInput,
     createOwnPreapprovalSubscription
 } from '../../src/services/billing/own-preapproval-subscription-create';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read.js';
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -331,6 +332,10 @@ function baseInput(billing: QZPayBilling, db: never) {
 describe("HOS-847 — the recurring add-on preapproval charges the add-on's price", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-1233 T-032: the shared paid-create helper resolves the BORROWED
+        // plan's product_domain before minting the preapproval, and fails
+        // closed when it finds no plan. Armed after clearAllMocks.
+        mockPlanDomainRead();
     });
 
     it('SUBJECT: charges the add-on price, not the borrowed plan price', async () => {

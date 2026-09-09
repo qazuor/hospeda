@@ -213,11 +213,28 @@ export async function isAccommodationDomainSubscription(subscription: {
  * a real domain string, so they are excluded on their own value, not on a
  * default.
  *
+ * ## It selects accommodation OR tourist, and keeps the narrower name (HOS-1233)
+ *
+ * The name is now narrower than the behaviour, deliberately. Tourist plans were
+ * filed as `accommodation` until this spec, so they were always in scope here;
+ * reclassifying them changed which predicate reaches them, not which route
+ * changes them. What the name still says correctly is the thing worth saying:
+ * this is NOT the commerce selector, and a gastronomy or experience
+ * subscription must never come back from it.
+ *
+ * Renaming was weighed and refused: the symbol is exported, and a guard or a
+ * doc anchored on it dies silently on a rename while the PR that does the
+ * renaming never sees it fail. If a second consumer ever needs the same pair,
+ * that is the moment to name the concept — not this one (HOS-1081 deleted
+ * `isCommerceSubscription()` for having exactly one hypothetical caller).
+ *
  * @param subscriptions - Candidate subscriptions, already narrowed to the
  *   statuses the caller considers changeable.
- * @returns The first accommodation-domain subscription, or `undefined` when the
- *   customer holds none — which the caller must answer the same way it answers
- *   "no subscription at all", because for this route that is what it means.
+ * @returns The customer's accommodation-domain subscription, or their
+ *   tourist-domain one when they hold no accommodation subscription, or
+ *   `undefined` when they hold neither — which the caller must answer the same
+ *   way it answers "no subscription at all", because for this route that is
+ *   what it means.
  */
 export async function selectAccommodationSubscription<
     T extends { id: string; productDomain?: string | null }
@@ -239,7 +256,27 @@ export async function selectAccommodationSubscription<
         );
     }
 
-    return resolved.find((sub) => subscriptionMatchesDomain(sub, 'accommodation'));
+    // HOS-1233: accommodation OR tourist. Both are the customer's own consumer
+    // plan and both change through THIS route — `ALL_PLANS` holds the owner
+    // tiers and the tourist tiers together, and there is no second plan-change
+    // route for tourists the way commerce has one per vertical.
+    //
+    // Until this spec a `tourist-vip` row satisfied the accommodation match by
+    // accident, because tourist plans were filed as `accommodation` (F-4b).
+    // Reclassified, this returns `undefined` and `plan-change.ts` answers HTTP
+    // 404 `No active subscription found`: a paying tourist VIP cannot change
+    // their plan, and the 404 is indistinguishable from the one a customer with
+    // no subscription at all gets (F-4g #2).
+    //
+    // Accommodation is tried FIRST, not matched indiscriminately. A host
+    // auto-promoted by host-onboarding can hold both, and this route governs
+    // the owner plan — an unordered match would let the storage adapter's
+    // ordering decide which subscription gets mutated, which is the HOS-1213
+    // bug this function was written to close, wearing a new domain.
+    return (
+        resolved.find((sub) => subscriptionMatchesDomain(sub, ProductDomainEnum.ACCOMMODATION)) ??
+        resolved.find((sub) => subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST))
+    );
 }
 
 /**

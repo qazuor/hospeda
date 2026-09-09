@@ -359,6 +359,7 @@ describe('T-009: adminCreatePlanRoute handler', () => {
         name: 'Nuevo Plan',
         description: 'Desc',
         category: 'owner' as const,
+        productDomain: 'accommodation' as const,
         monthlyPriceArs: 100000,
         annualPriceArs: null,
         monthlyPriceUsdRef: 1,
@@ -392,6 +393,36 @@ describe('T-009: adminCreatePlanRoute handler', () => {
             expect.objectContaining({ slug: 'owner-nuevo' }),
             expect.objectContaining({ actorId: 'actor-00000000-0000-0000-0000-000000000001' })
         );
+    });
+
+    it("HOS-1233: forwards the body's productDomain instead of deriving it from category", async () => {
+        // The route enumerates every field by hand, so the realistic defect is
+        // not "it forgot the field" but "it computed one". A domain derived
+        // from `category` is right for accommodation and tourist and WRONG for
+        // all three commerce verticals, which share the `owner` category — so
+        // the case that catches it is a gastronomy plan sold to an owner.
+        const config = findRouteCall(mockCreateAdminRoute, 'post', '/');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanCreate.mockResolvedValue({ success: true, data: SAMPLE_PLAN });
+
+        await handler(
+            createMockContext(),
+            {},
+            {
+                ...createInput,
+                slug: 'gastronomy-basico',
+                category: 'owner' as const,
+                productDomain: 'gastronomy' as const
+            }
+        );
+
+        const [passedInput] = mockPlanCreate.mock.calls[0] as [{ productDomain?: unknown }];
+        expect(passedInput.productDomain).toBe('gastronomy');
     });
 
     it('should call auditLog on successful create', async () => {

@@ -380,6 +380,116 @@ describe('GET /me/subscription — productDomain filter (HOS-259, HOS-934)', () 
         expect(experienceResult.subscription).toBeNull();
     });
 
+    // -----------------------------------------------------------------------
+    // HOS-1233 F-4g #3 — the tourist reclassification, and the default this
+    // route resolves for a caller that names no domain.
+    //
+    // The other two F-4g fixes are a one-line widening of a `find`. This one is
+    // not, because the domain here comes from a query param that DEFAULTS to
+    // `accommodation`, so a reclassified tourist reading their own subscription
+    // finds nothing — and no client can ask for the tourist one: `tourist` is
+    // not in `SUBSCRIPTION_SCOPE_DOMAINS`, so `?productDomain=tourist` is a 400,
+    // not an unused escape hatch.
+    //
+    // The default resolves accommodation FIRST and falls back to tourist, rather
+    // than matching either indiscriminately. A host auto-promoted by
+    // host-onboarding can hold BOTH (see the HOS-217 discard in
+    // `loadEntitlements`), and an "either" match would hand that host whichever
+    // row the storage adapter ordered first — reintroducing HOS-259's bug under
+    // a new name. Ordered, the fallback can only ever turn a `null` into an
+    // answer: where an accommodation subscription exists the result is
+    // byte-identical to today's.
+    //
+    // An EXPLICIT `?productDomain=X` stays strict. A caller that names a domain
+    // means it.
+    // -----------------------------------------------------------------------
+
+    it('HOS-1233: an unqualified caller resolves a reclassified tourist subscription instead of null', async () => {
+        const touristSub = buildSubscription({
+            id: 'sub-tourist',
+            status: 'active',
+            planId: 'plan-tourist-vip'
+        });
+        mockGetByCustomerId.mockResolvedValue([touristSub]);
+        mockGetDb({ 'sub-tourist': 'tourist' });
+
+        const handler = getSubscriptionHandler();
+        const result = (await handler(buildContext(), {}, {}, {})) as {
+            subscription: { id: string } | null;
+        };
+
+        expect(result.subscription?.id).toBe('sub-tourist');
+    });
+
+    it('HOS-1233: an unqualified caller holding BOTH still resolves the accommodation one, whatever the order', async () => {
+        const accommodationSub = buildSubscription({
+            id: 'sub-accommodation',
+            status: 'active',
+            planId: 'plan-accommodation'
+        });
+        const touristSub = buildSubscription({
+            id: 'sub-tourist',
+            status: 'active',
+            planId: 'plan-tourist-vip'
+        });
+        mockGetDb({ 'sub-accommodation': 'accommodation', 'sub-tourist': 'tourist' });
+
+        const handler = getSubscriptionHandler();
+
+        // Tourist row first: an unordered "either" match returns it here, which
+        // is HOS-259's bug wearing a new domain.
+        mockGetByCustomerId.mockResolvedValue([touristSub, accommodationSub]);
+        const touristFirst = (await handler(buildContext(), {}, {}, {})) as {
+            subscription: { id: string } | null;
+        };
+        expect(touristFirst.subscription?.id).toBe('sub-accommodation');
+
+        mockGetByCustomerId.mockResolvedValue([accommodationSub, touristSub]);
+        const accommodationFirst = (await handler(buildContext(), {}, {}, {})) as {
+            subscription: { id: string } | null;
+        };
+        expect(accommodationFirst.subscription?.id).toBe('sub-accommodation');
+    });
+
+    it('HOS-1233: an unqualified caller does NOT resolve a gastronomy subscription — the fallback is tourist, not "any domain"', async () => {
+        const gastronomySub = buildSubscription({
+            id: 'sub-gastronomy',
+            status: 'active',
+            planId: 'plan-gastronomy'
+        });
+        mockGetByCustomerId.mockResolvedValue([gastronomySub]);
+        mockGetDb({ 'sub-gastronomy': 'gastronomy' });
+
+        const handler = getSubscriptionHandler();
+        const result = (await handler(buildContext(), {}, {}, {})) as {
+            subscription: { id: string } | null;
+        };
+
+        expect(result.subscription).toBeNull();
+    });
+
+    it('HOS-1233: an EXPLICIT productDomain stays strict — gastronomy does not pick up a tourist row', async () => {
+        const touristSub = buildSubscription({
+            id: 'sub-tourist',
+            status: 'active',
+            planId: 'plan-tourist-vip'
+        });
+        mockGetByCustomerId.mockResolvedValue([touristSub]);
+        mockGetDb({ 'sub-tourist': 'tourist' });
+
+        const handler = getSubscriptionHandler();
+        const result = (await handler(
+            buildContext(),
+            {},
+            {},
+            {
+                productDomain: 'gastronomy'
+            }
+        )) as { subscription: { id: string } | null };
+
+        expect(result.subscription).toBeNull();
+    });
+
     it('HOS-934 AC-2 (control): an accommodation-only account still resolves under accommodation — the fix must not invert the bug', async () => {
         const accommodationSub = buildSubscription({
             id: 'sub-accommodation-only',

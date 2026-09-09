@@ -173,6 +173,30 @@ export function composeTrialGrants(input: {
  *   constant — each vertical inherits the one it already had.
  * @returns The trial plan definition.
  */
+/**
+ * Resolves the product domain a trial plan inherits from the two plans it is
+ * composed of.
+ *
+ * @param input.entitlementsSource - The vertical's `pro` plan.
+ * @param input.limitsSource - The vertical's `basico` plan.
+ * @returns The shared domain of both sources.
+ * @throws When the two sources disagree, which means the trial was wired to
+ *   plans from two different verticals.
+ */
+function resolveTrialProductDomain(input: {
+    readonly entitlementsSource: PlanDefinition;
+    readonly limitsSource: PlanDefinition;
+}): ProductDomainValue {
+    if (input.entitlementsSource.productDomain !== input.limitsSource.productDomain) {
+        throw new Error(
+            `Trial plan sources disagree on product domain: ${input.entitlementsSource.slug} is ` +
+                `'${input.entitlementsSource.productDomain}' but ${input.limitsSource.slug} is ` +
+                `'${input.limitsSource.productDomain}'. A trial must be built from one vertical.`
+        );
+    }
+    return input.entitlementsSource.productDomain;
+}
+
 function buildTrialPlan(input: {
     slug: string;
     name: string;
@@ -192,6 +216,13 @@ function buildTrialPlan(input: {
         // discards it. For the two commerce trials `product_domain` is the real
         // discriminator and filters them out long before category is asked.
         category: 'owner',
+        // DERIVED from the plans this trial is built out of, never restated:
+        // a gastronomy trial cannot end up filed under accommodation because
+        // somebody added it and forgot a line. The two sources are always the
+        // same vertical's `pro` and `basico`, so a disagreement between them
+        // is a config mistake, and one that would otherwise be silent — the
+        // trial would simply resolve against the wrong entitlement engine.
+        productDomain: resolveTrialProductDomain(input),
         // Never sold: the trial is granted at first publish, never bought. No
         // `billing_prices` row is ever created for these plans, so a checkout
         // that somehow reached one would fail with PRICE_NOT_FOUND on top of

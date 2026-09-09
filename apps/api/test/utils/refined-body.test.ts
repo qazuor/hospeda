@@ -22,7 +22,12 @@
  * green while the rule is dead.
  */
 
-import { CreateBillingPlanSchema, CreateSocialDraftSchema, ServiceErrorCode } from '@repo/schemas';
+import {
+    CreateBillingPlanSchema,
+    CreateSocialDraftSchema,
+    ProductDomainEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import { describe, expect, it } from 'vitest';
 import { parseRefinedBody, RefinedBodyValidationError } from '../../src/utils/refined-body';
@@ -33,6 +38,7 @@ const validPlan = {
     name: 'Guard probe',
     description: 'A plan used only by this guard.',
     category: 'owner' as const,
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 100000,
     annualPriceArs: null,
     monthlyPriceUsdRef: 100,

@@ -8,7 +8,7 @@
  */
 
 import { MODEL_C_FIELD_SPLIT, type ModelCField } from '@repo/billing';
-import type { BillingPlanCategory, BillingPlanResponse } from '@repo/schemas';
+import type { BillingPlanCategory, BillingPlanResponse, ProductDomain } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Input types
@@ -27,6 +27,17 @@ export interface CreatePlanInput {
     readonly description: string;
     /** Target user category */
     readonly category: BillingPlanCategory;
+    /**
+     * Product domain the plan belongs to — which vertical's entitlement engine
+     * counts a subscription to it.
+     *
+     * Required rather than optional: `billing_plans.product_domain` is
+     * `NOT NULL` with a default, so omitting it does not create a plan without
+     * a domain, it creates one silently filed under the default's vertical
+     * (HOS-1233 F-4b). Not derivable from {@link category} — the commerce
+     * verticals share one category and hold three different domains.
+     */
+    readonly productDomain: ProductDomain;
     /** Monthly price in ARS cents (0 for free plans) */
     readonly monthlyPriceArs: number;
     /** Annual price in ARS cents (null when there is no annual option) */

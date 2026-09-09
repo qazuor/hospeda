@@ -299,7 +299,23 @@ async function ensureCommerceSubscription(
             billingInterval: 'month',
             livemode: false,
             currentPeriodStart: now,
-            currentPeriodEnd: periodEnd
+            currentPeriodEnd: periodEnd,
+            // HOS-692: this fixture is always a gastronomy listing (see
+            // `ensureListingSubscriptionLink` below, which hardcodes
+            // entityType: 'gastronomy' for the same reason) — stamp the typed
+            // vertical directly instead of the pre-HOS-685 'commerce' umbrella,
+            // or a fresh seed run would keep recreating rows Bloque B's rewrite
+            // has to clean up again.
+            //
+            // HOS-1233 T-035: written HERE, in the insert. It used to be a raw
+            // `UPDATE ... SET product_domain` issued a statement later, on the
+            // grounds that the column lived in the extras carril and not in the
+            // TS schema — true when that comment was written, and untrue since
+            // HOS-73 promoted it to a typed Drizzle column. The row therefore
+            // spent a moment filed under the column default, which is the exact
+            // shape that stops working once the default is dropped (T-036):
+            // this insert would be rejected before its correction ever ran.
+            productDomain: ProductDomainEnum.GASTRONOMY
         })
         .returning({ id: billingSubscriptions.id });
 
@@ -309,18 +325,6 @@ async function ensureCommerceSubscription(
             `Insert into billing_subscriptions returned no row for customerId=${customerId}`
         );
     }
-
-    // HOS-692: this fixture is always a gastronomy listing (see
-    // `ensureListingSubscriptionLink` below, which hardcodes
-    // entityType: 'gastronomy' for the same reason) — stamp the typed
-    // vertical directly instead of the pre-HOS-685 'commerce' umbrella, or a
-    // fresh seed run would keep recreating rows Bloque B's rewrite has to
-    // clean up again. Raw SQL because `product_domain` is an extras-carril
-    // column, not in the qzpay-drizzle TS schema — this is exactly the site
-    // AC-33's guard exists to catch, so it names the column explicitly.
-    await db.execute(
-        sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.GASTRONOMY} WHERE id = ${insertedRow.id}`
-    );
 
     return insertedRow.id;
 }

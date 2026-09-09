@@ -1,3 +1,4 @@
+import { ProductDomainEnum } from '@repo/schemas';
 import {
     COMMERCE_TRIAL_DAYS,
     COMPLEX_TRIAL_DAYS,
@@ -10,6 +11,7 @@ import { ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL } from './commerce-entitlements.c
 import {
     AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
     type CommerceVertical,
+    commerceVerticalToProductDomain,
     LIMIT_KEY_BY_COMMERCE_VERTICAL,
     PRIVATE_GALLERY_LIMIT_KEY
 } from './commerce-limits.config.js';
@@ -115,6 +117,7 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
     name: 'Basic',
     description: 'Basic plan for individual property owners. Ideal for getting started.',
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 1800000, // ARS $18,000 (in cents) — HOS-301 D1
     annualPriceArs: 18000000, // ARS $180,000/year (2 months free) — HOS-301 D1
     monthlyPriceUsdRef: 18,
@@ -158,6 +161,7 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
     name: 'Professional',
     description: 'Professional plan with featured listing and more room to grow.',
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 3500000, // ARS $35,000
     annualPriceArs: 35000000, // ARS $350,000/year
     monthlyPriceUsdRef: 35,
@@ -207,6 +211,7 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
     name: 'Premium',
     description: 'Premium plan with all features, custom branding, and unlimited promotions.',
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 6500000, // ARS $65,000 — HOS-301 D1
     annualPriceArs: 65000000, // ARS $650,000/year (2 months free) — HOS-301 D1
     monthlyPriceUsdRef: 65,
@@ -265,6 +270,7 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
     name: 'Complex Basic',
     description: 'Basic plan for complexes and hotels. Multi-property management.',
     category: 'complex',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 5000000, // ARS $50,000
     annualPriceArs: 50000000, // ARS $500,000/year
     monthlyPriceUsdRef: 50,
@@ -309,6 +315,7 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
     name: 'Complex Professional',
     description: 'Professional plan for complexes with consolidated analytics.',
     category: 'complex',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 10000000, // ARS $100,000
     annualPriceArs: 100000000, // ARS $1,000,000/year
     monthlyPriceUsdRef: 100,
@@ -364,6 +371,7 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
     name: 'Complex Premium',
     description: 'Premium plan for large complexes with all features.',
     category: 'complex',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 20000000, // ARS $200,000
     annualPriceArs: 200000000, // ARS $2,000,000/year
     monthlyPriceUsdRef: 200,
@@ -424,6 +432,7 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
     name: 'Free',
     description: 'Free plan for tourists. Basic features included.',
     category: 'tourist',
+    productDomain: ProductDomainEnum.TOURIST,
     monthlyPriceArs: 0,
     annualPriceArs: null,
     monthlyPriceUsdRef: 0,
@@ -474,6 +483,7 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     name: 'VIP',
     description: 'VIP plan for discerning tourists. All premium features included.',
     category: 'tourist',
+    productDomain: ProductDomainEnum.TOURIST,
     monthlyPriceArs: 1500000, // ARS $15,000
     annualPriceArs: 15000000, // ARS $150,000/year
     monthlyPriceUsdRef: 15,
@@ -671,9 +681,15 @@ function commerceVerticalTier(input: {
         description: input.description,
         // 'owner' only satisfies the PlanCategory type (D-ISOLATION forbids
         // widening it to add a commerce value). product_domain
-        // ('gastronomy' / 'experience') is the real discriminator, stamped by
-        // `seedCommercePlan`.
+        // ('gastronomy' / 'experience') is the real discriminator, and as of
+        // HOS-1233 it is carried by the definition itself rather than only
+        // being stamped downstream by `seedCommercePlan`.
         category: 'owner',
+        // DERIVED from the tier's own vertical, never a slug list: a new
+        // vertical passed here cannot be filed under a neighbouring domain
+        // by omission. `commerceVerticalToProductDomain` composes the two
+        // existing exhaustive maps rather than restating the association.
+        productDomain: commerceVerticalToProductDomain(input.vertical),
         monthlyPriceArs: input.monthlyPriceArs,
         annualPriceArs: null,
         monthlyPriceUsdRef: Math.round(input.monthlyPriceArs / 100000),
@@ -1265,6 +1281,7 @@ export const PARTNER_LISTING_PLAN: PlanDefinition = {
     name: 'Partner Listing',
     description: 'Subscription that makes a partner visible in the public directory (SPEC-271).',
     category: 'owner',
+    productDomain: ProductDomainEnum.PARTNER,
     monthlyPriceArs: 500000,
     annualPriceArs: null,
     monthlyPriceUsdRef: 5,
@@ -1311,6 +1328,7 @@ export const PARTNER_SILVER_PLAN: PlanDefinition = {
     // See PARTNER_LISTING_PLAN: 'owner' only satisfies the PlanCategory type;
     // product_domain is the real discriminator.
     category: 'owner',
+    productDomain: ProductDomainEnum.PARTNER,
     monthlyPriceArs: 1500000,
     annualPriceArs: 15000000,
     monthlyPriceUsdRef: 15,
@@ -1333,6 +1351,7 @@ export const PARTNER_GOLD_PLAN: PlanDefinition = {
     description:
         'Partner tier with carousel presence plus a dedicated /partners/<slug>/ page (HOS-278 §6.3).',
     category: 'owner',
+    productDomain: ProductDomainEnum.PARTNER,
     monthlyPriceArs: 3000000,
     annualPriceArs: 30000000,
     monthlyPriceUsdRef: 30,
@@ -1437,6 +1456,7 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
     // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain
     // (stamped by the seed as 'accommodation') is what makes entitlements load.
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     // PLACEHOLDER — never seeded as a 'month' price row (daily-only plan).
     monthlyPriceArs: TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS,
     annualPriceArs: null,

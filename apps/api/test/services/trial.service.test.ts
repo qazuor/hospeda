@@ -200,6 +200,24 @@ describe('TrialService', () => {
     beforeEach(() => {
         mockBilling = createMockBilling();
         trialService = new TrialService(mockBilling);
+
+        // HOS-1233 T-032: `createPaidSubscription` — which both reactivation
+        // paths go through — resolves the plan's own `product_domain` before
+        // creating the preapproval, via `select().from().where().limit(1)`, and
+        // fails CLOSED when it finds no plan.
+        //
+        // It is armed HERE, per test, rather than as the module default,
+        // because `mockDbForTrial` is module-scoped: the trial-reconcile
+        // describe's own `beforeEach` sets `limit` to `[]`, and a
+        // `mockResolvedValue` survives every test that runs after it. A default
+        // set once at construction would be silently stomped for every
+        // reactivation test that happens to run later in the file. This outer
+        // hook runs BEFORE each nested one, so a describe that needs `[]` still
+        // gets it.
+        //
+        // The hydration recovery is unaffected either way: it awaits `where()`
+        // directly (the thenable), never `.limit()`.
+        mockDbForTrial.limit.mockResolvedValue([{ productDomain: 'accommodation' }]);
     });
 
     describe('getTrialStatus', () => {

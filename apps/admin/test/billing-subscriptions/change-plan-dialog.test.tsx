@@ -24,7 +24,7 @@
  * at least one other active sibling — so it is exercised via the
  * `productDomain` mismatch guard in `getChangePlanOptions` instead (a real,
  * not mocked, code path): a plan slug that resolves in `ALL_PLANS` but whose
- * subscription carries a non-accommodation `productDomain`.
+ * subscription row carries a domain the resolved plan does not.
  *
  * `test/setup.tsx` mocks `useTranslations` to return the key verbatim, so the
  * assertions below match on translation keys rather than copy.
@@ -97,11 +97,16 @@ describe('ChangePlanDialog — empty states (HOS-331)', () => {
     });
 
     it('explains that the category has no active destinations when the subscription domain does not match (real code path, not mocked)', () => {
-        // getChangePlanOptions's productDomain guard returns [] whenever the
-        // subscription's productDomain isn't 'accommodation', even though
-        // the plan slug itself resolves fine — so currentPlan IS defined,
-        // exercising the 'noDestinationPlans' branch through the same real,
-        // unmocked getChangePlanOptions/getPlanBySlug the component calls.
+        // getChangePlanOptions returns [] when the subscription's row domain
+        // and its resolved plan's own domain disagree — here a `commerce` row
+        // on `owner-basico`, an accommodation plan. The slug itself resolves
+        // fine, so currentPlan IS defined, exercising the 'noDestinationPlans'
+        // branch through the same real, unmocked
+        // getChangePlanOptions/getPlanBySlug the component calls.
+        //
+        // HOS-1233 T-039: the disagreement is what blocks it now, NOT the fact
+        // that the domain is non-accommodation — a tourist row on a tourist
+        // plan agrees, and is correctly offered its tourist destinations.
         render(
             <ChangePlanDialog
                 subscription={makeSubscription('owner-basico', 'commerce')}

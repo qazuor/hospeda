@@ -33,12 +33,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import {
-    billingPendingCheckoutModel,
-    billingSubscriptions,
-    type DrizzleClient,
-    eq
-} from '@repo/db';
+import { billingPendingCheckoutModel, billingSubscriptions, type DrizzleClient } from '@repo/db';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger.js';
@@ -315,6 +310,14 @@ export async function createPendingProviderSubscription(
             trialStart: null,
             trialEnd: null,
             livemode,
+            // HOS-1233 T-035: stated in the INSERT, not corrected by a follow-up
+            // UPDATE. The column carries a default, so an omitted create does
+            // not fail — it files the row under the default's vertical, which is
+            // how every tourist plan came to claim `accommodation` (spec F-4b).
+            // A row that starts wrong and is fixed a statement later is also the
+            // one shape that does not survive the default's removal (T-036): the
+            // INSERT is rejected before its correction ever runs.
+            productDomain,
             metadata: {
                 source: 'start-paid-share-link',
                 createdBy: 'subscription-flow',
@@ -331,14 +334,7 @@ export async function createPendingProviderSubscription(
             }
         });
 
-        // 2. Stamp product_domain via a typed UPDATE — mirrors the commerce
-        //    flow's and the comp flow's identical two-step stamp.
-        await tx
-            .update(billingSubscriptions)
-            .set({ productDomain })
-            .where(eq(billingSubscriptions.id, localSubscriptionId));
-
-        // 3. Retire this customer's earlier in-flight checkouts for the SAME
+        // 2. Retire this customer's earlier in-flight checkouts for the SAME
         //    MercadoPago plan (HOS-276 follow-up), inside the same transaction
         //    so two live correlation rows for one pair can never coexist.
         //
@@ -376,7 +372,7 @@ export async function createPendingProviderSubscription(
             );
         }
 
-        // 4. Insert the correlation row, INSIDE the same transaction so the
+        // 3. Insert the correlation row, INSIDE the same transaction so the
         //    pending_provider subscription can never exist without a way to
         //    link it (or vice versa). Both `pendingDiscount` and
         //    `pendingTrialExtension` (HOS-240) are SNAPSHOTTED here — their
@@ -397,7 +393,7 @@ export async function createPendingProviderSubscription(
             tx
         );
 
-        // 5. Domain-specific link row (commerce listing / partner), inside the
+        // 4. Domain-specific link row (commerce listing / partner), inside the
         //    SAME transaction — see `writeDomainLinkRow`'s JSDoc for why it
         //    cannot be written after this function returns.
         await writeDomainLinkRow?.({ tx, localSubscriptionId });

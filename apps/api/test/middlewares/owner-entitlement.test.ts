@@ -312,6 +312,92 @@ describe('ownerEntitlementMiddleware', () => {
         });
     });
 
+    /**
+     * HOS-1233 T-041 / AC-15c — §4b filed this read as FIXED: "no owner-category
+     * guard here, so a tourist row can compete as *the* accommodation sub".
+     *
+     * Note the direction, because it is the OPPOSITE of the fix HOS-1233 had to
+     * make in `middlewares/entitlement.ts` for the same predicate. That one
+     * resolves what the customer PAYS FOR, and the tourist tiers are among
+     * those. This one resolves an OWNER's entitlements over their
+     * accommodation, and a tourist plan grants none of them. Both point the way
+     * they do deliberately; copying either onto the other reintroduces a bug.
+     *
+     * The MISFILED case is here because the fix is the data migration, not a
+     * line of code — a fixture built with the corrected domain would have
+     * passed before T-038 too, which §9 names as the way this suite could go
+     * green while the bug survived.
+     */
+    describe('HOS-1233 — a tourist row never supplies owner entitlements', () => {
+        it('MISFILED: a tourist row stored as accommodation grants its plan', async () => {
+            mockAccommodationLookup({ ownerId: 'host-tourist-row', ownerRole: RoleEnum.HOST });
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-tourist-row' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-tourist-vip', status: 'active', planId: 'plan-tourist-vip' }
+            ]);
+            // The shape measured in prod and staging before T-038 (spec F-4b).
+            mockHydrationRows.mockResolvedValueOnce([
+                { id: 'sub-tourist-vip', productDomain: 'accommodation' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-tourist-vip',
+                slug: 'tourist-vip',
+                entitlements: [EntitlementKey.CAN_USE_RICH_DESCRIPTION],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use(
+                '/accommodations/:accommodationId',
+                ownerEntitlementMiddleware({ paramName: 'accommodationId' })
+            );
+            app.get('/accommodations/:accommodationId', (c) =>
+                c.json({ size: c.get('ownerEntitlements').size })
+            );
+
+            const res = await app.request('/accommodations/acc-001');
+            const body = await res.json();
+
+            expect(res.status).toBe(200);
+            // An owner-side entitlement resolved off a tourist plan.
+            expect(body.size).toBe(1);
+        });
+
+        it('CORRECTED: the same row filed as tourist grants nothing', async () => {
+            mockAccommodationLookup({ ownerId: 'host-tourist-row', ownerRole: RoleEnum.HOST });
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-tourist-row' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-tourist-vip', status: 'active', planId: 'plan-tourist-vip' }
+            ]);
+            mockHydrationRows.mockResolvedValueOnce([
+                { id: 'sub-tourist-vip', productDomain: 'tourist' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-tourist-vip',
+                slug: 'tourist-vip',
+                entitlements: [EntitlementKey.CAN_USE_RICH_DESCRIPTION],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use(
+                '/accommodations/:accommodationId',
+                ownerEntitlementMiddleware({ paramName: 'accommodationId' })
+            );
+            app.get('/accommodations/:accommodationId', (c) =>
+                c.json({ size: c.get('ownerEntitlements').size })
+            );
+
+            const res = await app.request('/accommodations/acc-001');
+            const body = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(body.size).toBe(0);
+        });
+    });
+
     describe('error short-circuits', () => {
         it('returns 400 when no accommodationId param is available (no implicit host resolution)', async () => {
             // The middleware factory configures the param name; if the param

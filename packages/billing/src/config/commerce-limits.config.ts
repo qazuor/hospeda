@@ -155,10 +155,35 @@ const PRODUCT_DOMAIN_BY_LIMIT_KEY: Readonly<Record<LimitKey, ProductDomainValue>
     [LimitKey.MAX_PROPERTIES]: ProductDomainEnum.ACCOMMODATION,
     [LimitKey.MAX_STAFF_ACCOUNTS]: ProductDomainEnum.ACCOMMODATION,
 
-    // Accommodation domain — tourist caps. They ride on the accommodation
-    // subscription too: `loadEntitlements` reads one domain, and the tourist
-    // plans live in it (see `subscriptionMatchesDomain`, which reads a null
-    // `product_domain` as accommodation).
+    // Tourist caps — mapped to ACCOMMODATION, and the reason is no longer the
+    // one written here originally (HOS-1233 T-040 / AC-15k).
+    //
+    // That reason was "they ride on the accommodation subscription: the tourist
+    // plans live in that domain". Since HOS-1233 they do not — `tourist` is its
+    // own `ProductDomainEnum` member and the rows were reclassified. The
+    // mapping is unchanged anyway, because it is INDIFFERENT today, and the
+    // trace that establishes that is worth keeping:
+    //
+    //   - The only production consumer of this table is
+    //     `addon-limit-recalculation.service.ts`, which resolves which
+    //     subscription supplies an ADD-ON's base cap.
+    //   - No add-on in `addons.config.ts` carries an `affectsLimitKey` pointing
+    //     at any of the five keys below. They are reached by nothing.
+    //   - A pure tourist's own caps do not come from here at all. They come
+    //     from their plan, through `loadEntitlements` — the read HOS-1233 had
+    //     to widen to accept the tourist domain, and where the real break was.
+    //
+    // These five are ALSO declared by every accommodation plan (each spreads
+    // `TOURIST_VIP_LIMITS` whole — HOS-975 D-A), so they are genuinely shared
+    // caps and this `Record` cannot say "either". Which domain owns them stops
+    // being academic the moment an add-on targets one, and the answer differs
+    // by who the add-on is sold to: a host-facing favorites add-on wants
+    // ACCOMMODATION, a tourist-facing one wants TOURIST. That is a product
+    // decision, deliberately NOT made here.
+    //
+    // `commerce-limits.tourist-domain.test.ts` fails the day an add-on points
+    // at one of these, so the decision is forced then rather than silently
+    // resolved by whatever this line happens to say.
     [LimitKey.MAX_FAVORITES]: ProductDomainEnum.ACCOMMODATION,
     [LimitKey.MAX_ACTIVE_ALERTS]: ProductDomainEnum.ACCOMMODATION,
     [LimitKey.MAX_COMPARE_ITEMS]: ProductDomainEnum.ACCOMMODATION,

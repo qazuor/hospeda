@@ -102,13 +102,18 @@ export interface TestUserSpec {
      */
     readonly extraRoles?: readonly (typeof RoleEnum)[keyof typeof RoleEnum][];
     /**
-     * `billing_subscriptions.product_domain` to stamp on this user's
-     * subscription (HOS-694). Required for a commerce-vertical subscription
-     * (`'gastronomy'` / `'experience'`) — `subscriptionMatchesDomain` reads
-     * this column exactly for those two domains, so an unstamped row (which
-     * defaults to `'accommodation'`) would be invisible to the commerce
-     * entitlement loader. Omitted for every accommodation/tourist/complex
-     * plan, where the column's `'accommodation'` default is already correct.
+     * OVERRIDE for `billing_subscriptions.product_domain` (HOS-694). Omitting it
+     * no longer means "let the column default answer" — since HOS-1233 T-035 the
+     * domain is derived from `planSlug`'s own plan row, so every fixture is
+     * stamped with its plan's real vertical whether or not it declares one here.
+     *
+     * That derivation is why this field is now rarely needed. It used to be
+     * REQUIRED for the two commerce verticals and deliberately omitted for
+     * accommodation, tourist and complex "where the column's `'accommodation'`
+     * default is already correct" — reasoning that was true for accommodation,
+     * incidental for complex, and wrong for tourist, which has been a domain of
+     * its own since this spec. Declare a value only for a fixture that
+     * deliberately wants a domain its plan does NOT name.
      */
     readonly subscriptionProductDomain?: ProductDomainValue;
     /**
@@ -306,9 +311,12 @@ function splitDisplayName(displayName: string): { firstName: string; lastName: s
  *
  * @throws {Error} When the plan is not found (billing plans must be seeded first)
  */
-async function resolvePlanId(planSlug: string, db: DrizzleClient): Promise<string> {
+async function resolvePlan(
+    planSlug: string,
+    db: DrizzleClient
+): Promise<{ readonly id: string; readonly productDomain: ProductDomainValue }> {
     const rows = await db
-        .select({ id: billingPlans.id })
+        .select({ id: billingPlans.id, productDomain: billingPlans.productDomain })
         .from(billingPlans)
         .where(eq(billingPlans.name, planSlug))
         .limit(1);
@@ -319,7 +327,19 @@ async function resolvePlanId(planSlug: string, db: DrizzleClient): Promise<strin
             `Plan "${planSlug}" not found in billing_plans. Run the required seed (billingPlans.seed.ts) before seedTestUsers.`
         );
     }
-    return row.id;
+
+    // The column is a plain `varchar`, so its TS type is `string` and narrowing
+    // it is a real check rather than a formality: a plan row carrying a domain
+    // no longer in the enum fails the seed here, loudly, instead of being
+    // copied onto every subscription that plan backs.
+    const domains: readonly string[] = Object.values(ProductDomainEnum);
+    if (!domains.includes(row.productDomain)) {
+        throw new Error(
+            `Plan "${planSlug}" reports product_domain "${row.productDomain}", which is not a ProductDomainEnum member.`
+        );
+    }
+
+    return { id: row.id, productDomain: row.productDomain as ProductDomainValue };
 }
 
 /**
@@ -384,20 +404,25 @@ async function ensureBillingCustomer(
  * UPDATE the existing row instead of relying on the seed to swap status.
  *
  * @param productDomain - Stamped on `billing_subscriptions.product_domain`
- *   (HOS-694) when provided. Omitted for accommodation/tourist/complex plans,
- *   where the column's `'accommodation'` default is already correct; REQUIRED
- *   for a commerce-vertical subscription (`'gastronomy'` / `'experience'`) —
- *   `subscriptionMatchesDomain` reads this column exactly for those two
- *   domains, so an unstamped row would be invisible to the commerce
- *   entitlement loader.
+ *   (HOS-694). REQUIRED, and resolved by the caller from the PLAN's own row
+ *   rather than declared per test user.
+ *
+ *   It used to be optional, on the stated grounds that "the column's
+ *   `'accommodation'` default is already correct" for accommodation, tourist
+ *   and complex plans. That reasoning was the bug HOS-1233 exists to kill:
+ *   tourist is a domain of its own since this spec, so every tourist test user
+ *   was seeded claiming to be an accommodation subscriber — locally reproducing
+ *   the exact misfiling measured in prod and staging (spec F-4b). Deriving the
+ *   value from the plan means a vertical added later cannot be forgotten here,
+ *   because nobody has to remember to declare anything.
  */
 async function ensureSubscription(
     customerId: string,
     planId: string,
     db: DrizzleClient,
+    productDomain: ProductDomainValue,
     subStatus: 'active' | 'trialing' = 'active',
-    trialDays = OWNER_TRIAL_DAYS,
-    productDomain?: ProductDomainValue
+    trialDays = OWNER_TRIAL_DAYS
 ): Promise<string> {
     const existing = await db
         .select({ id: billingSubscriptions.id })
@@ -440,7 +465,7 @@ async function ensureSubscription(
             livemode: false,
             currentPeriodStart: now,
             currentPeriodEnd: periodEnd,
-            ...(productDomain ? { productDomain } : {}),
+            productDomain,
             ...(isTrialing ? { trialStart, trialEnd } : {})
         })
         .returning({ id: billingSubscriptions.id });
@@ -828,14 +853,20 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
 
             // ── Ensure subscription (+ addon) only for paid-tier users ────────
             if (spec.planSlug) {
-                const planId = await resolvePlanId(spec.planSlug, db);
+                const plan = await resolvePlan(spec.planSlug, db);
+                // HOS-1233 T-035: the plan's own row is the source of the
+                // subscription's domain. `subscriptionProductDomain` stays as an
+                // explicit override for a fixture that deliberately wants a
+                // domain its plan does not name; when absent, the derivation
+                // answers — so a vertical added later cannot be silently
+                // seeded as accommodation just because nobody declared it.
                 const subscriptionId = await ensureSubscription(
                     customerId,
-                    planId,
+                    plan.id,
                     db,
+                    spec.subscriptionProductDomain ?? plan.productDomain,
                     spec.subStatus ?? 'active',
-                    spec.trialDays ?? OWNER_TRIAL_DAYS,
-                    spec.subscriptionProductDomain
+                    spec.trialDays ?? OWNER_TRIAL_DAYS
                 );
 
                 logger.info(

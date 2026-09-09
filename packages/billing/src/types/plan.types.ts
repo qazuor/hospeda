@@ -1,3 +1,4 @@
+import type { ProductDomainValue } from '@repo/schemas';
 import type { EntitlementKey } from './entitlement.types.js';
 
 /**
@@ -232,6 +233,23 @@ export interface PlanDefinition {
     description: string;
     /** Target user category */
     category: PlanCategory;
+    /**
+     * Product domain the plan belongs to — which vertical's entitlement engine
+     * counts a subscription to it.
+     *
+     * Required, so that a plan added to this file cannot inherit somebody
+     * else's vertical by saying nothing. `billing_plans.product_domain` is
+     * `NOT NULL` with a default, so a seed that omits it does not produce a
+     * plan without a domain: it produces one filed under the default's
+     * vertical. That is how the two tourist plans right below came to claim
+     * `accommodation` in production and staging alike (HOS-1233 F-4b) — no
+     * line of code was wrong, the value was simply never stated.
+     *
+     * NOT derivable from {@link category}, which answers a different question
+     * (who the plan is sold to). The three commerce verticals all sit in one
+     * category and hold three distinct domains.
+     */
+    productDomain: ProductDomainValue;
     /** Monthly price in ARS cents (0 for free plans) */
     monthlyPriceArs: number;
     /** Annual price in ARS cents (0 for free, null if no annual option) */

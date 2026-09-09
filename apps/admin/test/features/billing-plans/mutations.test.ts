@@ -10,6 +10,7 @@
  *   findById via the real admin endpoint (replaces the throwing stub).
  */
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
@@ -95,6 +96,7 @@ describe('billing-plans/mutations — T-013 (HTTP adapter + mutations wired)', (
                     name: 'Básico',
                     description: 'Plan básico',
                     category: 'owner',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
                     monthlyPriceArs: 150000,
                     annualPriceArs: null,
                     monthlyPriceUsdRef: 12,
@@ -138,6 +140,7 @@ describe('billing-plans/mutations — T-013 (HTTP adapter + mutations wired)', (
                     name: 'Básico',
                     description: 'Plan básico',
                     category: 'owner',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
                     monthlyPriceArs: 150000,
                     annualPriceArs: null,
                     monthlyPriceUsdRef: 12,
@@ -183,6 +186,7 @@ describe('billing-plans/mutations — T-013 (HTTP adapter + mutations wired)', (
                         name: 'Básico',
                         description: 'Plan básico',
                         category: 'owner',
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         monthlyPriceArs: 150000,
                         annualPriceArs: null,
                         monthlyPriceUsdRef: 12,

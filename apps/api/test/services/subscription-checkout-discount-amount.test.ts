@@ -40,6 +40,7 @@ import {
 } from '@qazuor/qzpay-core';
 import { PromoEffectKindEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read.js';
 
 vi.mock('../../src/utils/env', () => ({
     env: { HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED: true }
@@ -250,6 +251,10 @@ describe('HOS-1221 D2: the amount MercadoPago is told to charge', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
+        // HOS-1233 T-032: the shared paid-create helper resolves the plan's
+        // product_domain before creating the preapproval, and fails closed when
+        // it finds no plan. Armed after clearAllMocks.
+        mockPlanDomainRead();
     });
 
     it('charges the FULL price when no promo code applies', async () => {

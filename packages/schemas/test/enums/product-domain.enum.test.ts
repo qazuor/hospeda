@@ -29,6 +29,10 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.ADDON).toBe('addon');
         });
 
+        it('should define TOURIST', () => {
+            expect(ProductDomainEnum.TOURIST).toBe('tourist');
+        });
+
         // HOS-685 — this count is a frozen baseline, not a formality. Nothing in
         // the type system reacts to a member appearing or disappearing (no
         // `Record<ProductDomainEnum, …>`, no exhaustive `switch`, no `satisfies`),
@@ -45,8 +49,14 @@ describe('ProductDomainEnum', () => {
         // `subscriptionMatchesDomain`'s accommodation fail-open. Every sweep
         // that assumed one row per customer was updated in the same PR — see
         // `subscription-product-domain.ts` and its call sites.
-        it('should have exactly 5 values', () => {
-            expect(Object.values(ProductDomainEnum)).toHaveLength(5);
+        // HOS-1233 added TOURIST, raising the count to 6. RECOUNTED against the
+        // members below, not incremented: accommodation, gastronomy, experience,
+        // partner, tourist, addon. The tourist plans had been filed as
+        // `accommodation` in staging AND production because no member existed to
+        // assign, which made a paying tourist indistinguishable from an
+        // accommodation subscriber to the entitlement engine.
+        it('should have exactly 6 values', () => {
+            expect(Object.values(ProductDomainEnum)).toHaveLength(6);
         });
 
         it('should NOT define COMMERCE (HOS-695 — retired)', () => {
@@ -84,6 +94,11 @@ describe('ProductDomainEnum', () => {
 
         it('should accept "addon"', () => {
             const result = ProductDomainEnumSchema.safeParse('addon');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "tourist"', () => {
+            const result = ProductDomainEnumSchema.safeParse('tourist');
             expect(result.success).toBe(true);
         });
 

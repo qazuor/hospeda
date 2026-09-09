@@ -281,6 +281,69 @@ describe('handleStartPaidSubscription — SPEC-239 commerce isolation in H2 guar
         expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
     });
 
+    // HOS-1233 T-041 / AC-15c — §4b filed this read as FIXED: "Tourist counted →
+    // host checkout refused ALREADY_SUBSCRIBED" becomes "a tourist can become a
+    // host".
+    //
+    // The pair is required rather than decorative: nothing in this file's CODE
+    // changes to achieve the fix — the fix is the T-038 data migration — so a
+    // fixture built with the corrected domain would have passed before it too,
+    // which §9 names as the way this suite could go green while the bug
+    // survived. The first test reproduces the MISFILED shape and asserts the
+    // refusal it caused.
+    it('MISFILED: a tourist row stored as accommodation blocks the host checkout', async () => {
+        const billing = makeBillingMock([{ id: 'sub-tourist-vip', status: 'active' }]);
+        // The shape measured in prod and staging before T-038 (spec F-4b).
+        mockHydrationRows.mockResolvedValueOnce([
+            { id: 'sub-tourist-vip', productDomain: 'accommodation' }
+        ]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        // A paying tourist is told they already have a host subscription.
+        expect((err as ServiceError).reason ?? '').toBe('ALREADY_SUBSCRIBED');
+    });
+
+    it('CORRECTED: the same row filed as tourist lets them become a host', async () => {
+        const billing = makeBillingMock([{ id: 'sub-tourist-vip', status: 'active' }]);
+        mockHydrationRows.mockResolvedValueOnce([
+            { id: 'sub-tourist-vip', productDomain: 'tourist' }
+        ]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+    });
+
+    it('and a REAL accommodation sub still blocks (the fix is not a blanket unblock)', async () => {
+        // The sibling that keeps the assertion above honest: widening the gate
+        // by accident — or deleting it — would satisfy "not ALREADY_SUBSCRIBED"
+        // for every input, including the one it exists to refuse.
+        const billing = makeBillingMock([{ id: 'sub-owner-pro', status: 'active' }]);
+        mockHydrationRows.mockResolvedValueOnce([
+            { id: 'sub-owner-pro', productDomain: 'accommodation' }
+        ]);
+        mockBillingWith(billing);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason ?? '').toBe('ALREADY_SUBSCRIBED');
+    });
+
     it('does NOT block when customer has an active COMMERCE sub (product_domain=commerce)', async () => {
         // A customer with an active commerce subscription should be allowed to
         // start a paid ACCOMMODATION subscription. The H2 guard must only look at

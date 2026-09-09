@@ -119,20 +119,48 @@ export function getPlanBySlug(slug: string): PlanDefinition | undefined {
  * cannot become an owner one — (2) different from the current plan, and (3)
  * **active**.
  *
- * `currentProductDomain` is a DEFENSE-IN-DEPTH guard, checked independently
- * of the `ALL_PLANS` category lookup (HOS-331 follow-up trap): `ALL_PLANS`
- * is accommodation-only by design, but `commerce-listing`, `partner-listing`,
- * `partner-silver`, and `partner-gold` are all stamped `category: 'owner'` in
- * `plans.config.ts` purely to satisfy the `PlanCategory` type — their REAL
- * discriminator is `product_domain`. If `currentPlan` is ever resolved from a
- * wider catalog than `ALL_PLANS` (or `ALL_PLANS`'s accommodation-only
- * invariant erodes), a category-only match would offer an operator
- * `owner-basico` as a "same family" destination for a `partner-gold`
- * subscription. `currentProductDomain` is read directly off the subscription
- * payload's `plan.productDomain` (served by the admin billing view contract)
- * and gates BEFORE the `ALL_PLANS` filter runs. A `null`/`undefined` domain
- * (unresolvable plan) is treated as "unknown, do not block" — the `!currentPlan`
- * guard above already covers that case.
+ * A destination must ALSO be in the same product domain, and that is now a
+ * real comparison rather than an allowlist of one (HOS-1233 T-039 / AC-15j).
+ *
+ * The trap it defends against is the HOS-331 follow-up: `commerce-listing`,
+ * `partner-listing`, `partner-silver` and `partner-gold` are all stamped
+ * `category: 'owner'` in `plans.config.ts` purely to satisfy the `PlanCategory`
+ * type — their REAL discriminator is `product_domain`. A category-only match
+ * would offer an operator `owner-basico` as a "same family" destination for a
+ * `partner-gold` subscription.
+ *
+ * This used to read `if (currentProductDomain !== 'accommodation') return []`,
+ * which closed that trap by refusing every non-accommodation subscription
+ * outright. It worked only because tourist subscriptions were MISFILED as
+ * accommodation and slipped through it (spec F-4b) — they passed the gate and
+ * were then correctly narrowed to tourist plans by the category filter. Once
+ * T-038 reclassifies those rows, that same gate returns **zero** destinations
+ * for every tourist subscription: a silent regression, in a surface nobody
+ * would think to re-test. Hence the two-sided comparison below.
+ *
+ * Two independent reads, both required, because they can disagree:
+ *
+ *   - **The catalog side** (`plan.productDomain === currentPlan.productDomain`)
+ *     is what actually closes the trap. Since T-034 every `PlanDefinition`
+ *     states its own domain, so `partner-gold` no longer matches an
+ *     accommodation destination even if it were resolvable here — no allowlist
+ *     needed, and a vertical added later is covered without editing this file.
+ *   - **The row side** (`currentProductDomain`, read off the subscription
+ *     payload's `plan.productDomain` served by the admin billing view contract)
+ *     is defense in depth against the catalog and the live row drifting apart.
+ *     When they disagree, this returns nothing — deliberately fail-closed: an
+ *     operator moving a subscription between plans on a stale reading of what
+ *     it IS is the failure worth preventing here.
+ *
+ * That fail-closed direction is why this task is ordered AFTER T-038 and not
+ * before: an un-migrated tourist row still claiming `accommodation` disagrees
+ * with its own tourist plan and would be offered no destinations. The backfill
+ * is what makes the two sides agree.
+ *
+ * A `null`/`undefined` row domain is NOT a disagreement. It is how every
+ * subscription predating the column reads, and `subscriptionMatchesDomain`
+ * treats it as accommodation for that reason; here the catalog plan's own
+ * domain answers instead, which is a real value rather than a bypass.
  */
 export function getChangePlanOptions(input: {
     readonly currentPlan: PlanDefinition | undefined;
@@ -155,9 +183,18 @@ export function getChangePlanOptions(input: {
 }): PlanDefinition[] {
     const { currentPlan, currentSlug, currentProductDomain, plans = ALL_PLANS } = input;
     if (!currentPlan) return [];
-    if (currentProductDomain && currentProductDomain !== 'accommodation') return [];
+
+    // A row that states no domain is a legacy row, not a contradicting one —
+    // the catalog plan's own domain answers for it. `currentPlan` is non-null
+    // here, so this never falls through to "no domain at all".
+    const domain = currentProductDomain ?? currentPlan.productDomain;
+    if (domain !== currentPlan.productDomain) return [];
+
     return plans.filter(
         (plan) =>
-            plan.category === currentPlan.category && plan.slug !== currentSlug && plan.isActive
+            plan.productDomain === domain &&
+            plan.category === currentPlan.category &&
+            plan.slug !== currentSlug &&
+            plan.isActive
     );
 }
