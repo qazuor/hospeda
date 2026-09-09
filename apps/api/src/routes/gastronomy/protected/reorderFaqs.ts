@@ -7,12 +7,17 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  */
 import { EntitlementKey } from '@repo/billing';
-import { FaqReorderPayloadSchema, GastronomyFaqRemoveOutputSchema } from '@repo/schemas';
+import {
+    FaqReorderPayloadSchema,
+    GastronomyFaqRemoveOutputSchema,
+    ProductDomainEnum
+} from '@repo/schemas';
 import { GastronomyService, reorderGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
 import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -67,7 +72,8 @@ export const protectedReorderGastronomyFaqsRoute = createCRUDRoute({
         // `addFaq.ts` for why the vertical loader must be first.
         middlewares: [
             commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO)
+            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
+            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
         ]
     }
 });

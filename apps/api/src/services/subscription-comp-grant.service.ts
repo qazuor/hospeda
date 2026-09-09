@@ -116,7 +116,7 @@ import {
     isNull,
     withTransaction
 } from '@repo/db';
-import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import {
     BILLING_EVENT_TYPES,
     normalizeStoredSubscriptionStatus,
@@ -125,9 +125,11 @@ import {
 import { getQZPayBilling } from '../middlewares/billing.js';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
+import { resolvePlanProductDomain } from './billing/paid-subscription-create.js';
 import { hardCancelPreapprovalBestEffort } from './billing/preapproval-hard-cancel.js';
 import { CONFIRMED_TERMINAL_STATUSES } from './billing/reactivation-supersession-complete.js';
 import { sendCompGrantedNotification } from './comp-notifications.service.js';
+import { reconcilePartnerForSubscription } from './partner-reconcile.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
 import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entities.service.js';
 
@@ -359,6 +361,32 @@ export async function grantCompSubscription(input: {
     const { customerId, planId, interval, livemode, actorId } = input;
     const db = getDb();
 
+    // 0. Resolve the vertical this grant belongs to, from the plan's own column,
+    //    BEFORE anything else reads or cancels a subscription. Every step below
+    //    is scoped by it: which subscriptions may be superseded, which existing
+    //    comp counts as a duplicate, and what the new row is stamped with.
+    //
+    //    `resolvePlanProductDomain` is the same authoritative read the paid
+    //    checkout uses — the DB column, not the static `@repo/billing`
+    //    catalogue, so an admin-created negotiated plan (HOS-1062: one row per
+    //    agreement, in no catalogue) resolves correctly instead of falling into
+    //    a carve-out.
+    let productDomain: ProductDomainValue;
+    try {
+        productDomain = await resolvePlanProductDomain({ planId });
+    } catch (error) {
+        // Fails closed: a plan we cannot resolve is a plan we do not comp.
+        // `resolvePlanProductDomain` throws only `PLAN_NOT_FOUND`, which is a
+        // caller mistake the route maps to 404 — the same code the transaction
+        // below returns for the same condition.
+        const message = error instanceof Error ? error.message : String(error);
+        apiLogger.warn({ customerId, planId, actorId, error: message }, 'Comp grant: unknown plan');
+        return {
+            success: false,
+            error: { code: 'NOT_FOUND', message: `Comp grant: plan '${planId}' not found` }
+        };
+    }
+
     // 1. Read the customer's whole subscription set, statuses RAW. The
     //    supersedable filter runs in TypeScript, never in SQL — see
     //    `isSupersedableStatus` for why a SQL `IN (…)` over enum values is the
@@ -383,28 +411,34 @@ export async function grantCompSubscription(input: {
             )
         );
 
-    // HOS-1277: `createCompSubscription` rejects any non-accommodation plan
-    // (see its own guard), so a comp grant is accommodation-only by
-    // construction — TODAY. Before this filter, a customer's OTHER vertical's
-    // live subscription (e.g. an active gastronomy plan on a dual-owner) was
-    // read into `allRows` right alongside the accommodation one, with nothing
-    // distinguishing them: `isSupersedableStatus` supersedes anything not in
-    // `NO_ACTION_STATUSES`, so that gastronomy subscription got hard-cancelled
-    // at MercadoPago as a side effect of comping the customer's UNRELATED
-    // accommodation plan. Scoping to accommodation here is what
-    // `selectAccommodationSubscription` does for plan-change (HOS-1213) and
-    // `subscriptionMatchesDomain` does everywhere else — a legacy row with no
-    // `productDomain` still counts (the column post-dates most rows), only an
-    // explicit non-accommodation domain is excluded.
-    const allRows = allRowsRaw.filter((row) =>
-        subscriptionMatchesDomain(row, ProductDomainEnum.ACCOMMODATION)
-    );
+    // HOS-1277 scoped this filter to accommodation because a comp could only
+    // ever BE accommodation. HOS-1160 opened comp to every vertical, so the
+    // scope became the GRANTED plan's domain instead of a literal.
+    //
+    // The hazard it defends is unchanged and is why the filter cannot simply be
+    // dropped now that more than one domain is reachable: `isSupersedableStatus`
+    // supersedes anything not in `NO_ACTION_STATUSES`, so without a scope a
+    // dual-owner's live gastronomy subscription would be hard-cancelled at
+    // MercadoPago as a side effect of comping their unrelated accommodation
+    // plan. Scoping to the granted domain is what `selectAccommodationSubscription`
+    // does for plan-change (HOS-1213) and `subscriptionMatchesDomain` does
+    // everywhere else — a legacy row with no `productDomain` still counts as
+    // accommodation (the column post-dates most rows), every other domain fails
+    // closed.
+    const allRows = allRowsRaw.filter((row) => subscriptionMatchesDomain(row, productDomain));
 
-    // 2. Idempotency. Two clicks on the admin button used to produce two comp
-    //    rows, after which `loadEntitlements`'s `.find()` picked one of them at
-    //    random — including, potentially, the one on the wrong plan. Refusing is
-    //    better than returning the existing grant: an operator who meant a
-    //    DIFFERENT plan needs to hear that the customer already has one.
+    // 2. Idempotency, PER DOMAIN — `allRows` is already scoped above. Two clicks
+    //    on the admin button used to produce two comp rows, after which
+    //    `loadEntitlements`'s `.find()` picked one of them at random — including,
+    //    potentially, the one on the wrong plan. Refusing is better than
+    //    returning the existing grant: an operator who meant a DIFFERENT plan
+    //    needs to hear that the customer already has one.
+    //
+    //    HOS-1160: scoped rather than global on purpose. A hotelier who also
+    //    runs a restaurant can hold an accommodation comp AND a gastronomy comp
+    //    — they are different products. A global check would refuse the second
+    //    with `ALREADY_COMPED` naming a subscription in an unrelated vertical,
+    //    which reads to the operator as a bug in the button.
     const existingComp = allRows.find(
         (row) => normalizeStoredSubscriptionStatus(row.status) === SubscriptionStatusEnum.COMP
     );
@@ -414,10 +448,10 @@ export async function grantCompSubscription(input: {
             error: {
                 code: 'ALREADY_COMPED',
                 message:
-                    `Customer ${customerId} already has a complimentary subscription ` +
-                    `(${existingComp.id}). Cancel it first if the plan needs to change; ` +
-                    'granting a second one would leave the entitlement engine choosing ' +
-                    'between them.'
+                    `Customer ${customerId} already has a complimentary '${productDomain}' ` +
+                    `subscription (${existingComp.id}). Cancel it first if the plan needs to ` +
+                    'change; granting a second one in the same vertical would leave the ' +
+                    'entitlement engine choosing between them.'
             }
         };
     }
@@ -582,19 +616,27 @@ export async function grantCompSubscription(input: {
         // half looks up listings by THIS subscription's id specifically, and
         // nothing else ever calls the bridge with `row.id`.
         //
-        // No `reconcilePartnerForSubscription` call here: `allRows` (and so
-        // `supersedable`) is filtered to `ProductDomainEnum.ACCOMMODATION`
-        // above (HOS-1277), so `row` is a partner subscription only through
-        // `subscriptionMatchesDomain`'s documented accommodation fail-open (a
-        // legacy row with `productDomain IS NULL` predating that column) — a
-        // pre-existing, orthogonal gap in the domain filter itself, not
-        // something this call should paper over. Left out; see the PR/issue
-        // notes on HOS-1280 for the measurement.
         await reconcileSubscriptionLinkedEntities({
             subscriptionId: row.id,
             subscriptionStatus: SubscriptionStatusEnum.CANCELLED,
             source: TRIGGER_SOURCE
         });
+
+        // HOS-1280 left this call out because `supersedable` was filtered to
+        // accommodation, which made a partner row reachable here only through
+        // `subscriptionMatchesDomain`'s accommodation fail-open. HOS-1160 scopes
+        // the filter to the GRANTED domain instead, so when that domain is
+        // `partner` every row in this loop is a real partner subscription being
+        // retired — and `partners.subscriptionStatus` has to hear about it, or
+        // the alliance keeps rendering from the subscription that was just
+        // cancelled. Non-throwing by its own contract.
+        if (productDomain === ProductDomainEnum.PARTNER) {
+            await reconcilePartnerForSubscription({
+                subscriptionId: row.id,
+                subscriptionStatus: SubscriptionStatusEnum.CANCELLED,
+                source: TRIGGER_SOURCE
+            });
+        }
 
         supersededIds.add(row.id);
     }
@@ -603,11 +645,12 @@ export async function grantCompSubscription(input: {
     //    is handed this transaction so its insert, its promo stamp and the event
     //    row below either all land or none do.
     //
-    //    It throws on an unknown or non-accommodation plan; those are caller
-    //    mistakes the route maps to 404/422. Reaching them means the supersede
-    //    loop above already ran, which is fine and is why the operation is
-    //    written to be resumable: the customer is not comped, is no longer
-    //    billed, and a corrected retry finishes the job.
+    //    It throws on an unknown plan, or on one whose domain disagrees with the
+    //    `productDomain` resolved in step 0; those are caller mistakes the route
+    //    maps to 404/422. Reaching them means the supersede loop above already
+    //    ran, which is fine and is why the operation is written to be resumable:
+    //    the customer is not comped, is no longer billed, and a corrected retry
+    //    finishes the job.
     let localSubscriptionId: string;
     try {
         localSubscriptionId = await withTransaction(async (tx) => {
@@ -615,6 +658,7 @@ export async function grantCompSubscription(input: {
                 customerId,
                 planId,
                 interval,
+                productDomain,
                 livemode,
                 db: tx
             });
@@ -628,6 +672,7 @@ export async function grantCompSubscription(input: {
                     actorId,
                     planId,
                     interval,
+                    productDomain,
                     supersededSubscriptionIds: [...supersededIds],
                     hadActiveBilling
                 }
@@ -637,9 +682,17 @@ export async function grantCompSubscription(input: {
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        apiLogger.error({ customerId, planId, actorId, error: message }, 'Comp grant failed');
+        apiLogger.error(
+            { customerId, planId, productDomain, actorId, error: message },
+            'Comp grant failed'
+        );
 
-        if (message.includes('only accommodation plans can be comped')) {
+        // HOS-1160: matches the domain-mismatch message `createCompSubscription`
+        // now raises, replacing the `'only accommodation plans can be comped'`
+        // string it raised while comp was accommodation-only. In practice step 0
+        // resolved `productDomain` from this very plan, so a mismatch means the
+        // plan's row changed underneath the grant — still a 422, not a 500.
+        if (message.includes('but the comp was requested for')) {
             return { success: false, error: { code: 'INVALID_PLAN', message } };
         }
         if (message.includes('not found')) {
@@ -670,6 +723,48 @@ export async function grantCompSubscription(input: {
         source: TRIGGER_SOURCE
     });
 
+    // 6b. The alliance half of the same INV-1 argument (HOS-1160). A partner
+    //     comp reaches `partners.subscriptionStatus` through nothing else: the
+    //     reconciler's other nine call sites are all downstream of a MercadoPago
+    //     webhook or a billing cron, and a comp fires neither. Without this call
+    //     `mapBillingStatusToPartnerState` is never invoked for the grant, the
+    //     partner stays on whatever state their last real subscription left, and
+    //     the courtesy HOS-278 §6.3 promised buys them nothing.
+    //
+    //     The mapper already knows what to do with `comp`: HOS-702 moved the live
+    //     branch onto `isEntitlementGrantingStatus`, which includes it, precisely
+    //     because comp used to fall into the `default` arm and archive a
+    //     complimentary partner off the carousel. This is the tenth caller of an
+    //     existing path, not a new one.
+    //
+    //     >>> COUPLING, HOS-1299 <<<
+    //     This call SEALS `partners.startsAt` (see `reconcilePartnerForSubscription`,
+    //     which stamps it whenever the mapper returns ACTIVE — and comp does).
+    //     That seal is deliberate and load-bearing: `partner-unpaid-reaper.job.ts`
+    //     decides "never paid" by `starts_at IS NULL`, NOT by reading a status, so
+    //     a comped partner left with a null date is indistinguishable from a
+    //     deadbeat and gets an unpaid notice on day 30 and archived on day 90 —
+    //     which would make partner courtesy not work at all, the exact defect
+    //     HOS-1160 exists to fix.
+    //
+    //     The consequence for HOS-1299, which is building unpaid-partner
+    //     detection on `coalesce(payment_confirmed_through, starts_at) + N < now`:
+    //     a comped partner now HAS a `starts_at` and will therefore enter that
+    //     predicate's range, while legitimately having no payment behind it,
+    //     because the access was given away on purpose. That detection must
+    //     exclude partners whose subscription is `status = 'comp'`. The machine-
+    //     readable marker for it to key on is the audit row this grant writes:
+    //     `billing_subscription_events.event_type = ADMIN_SUBSCRIPTION_COMP_GRANTED`
+    //     with `metadata.productDomain = 'partner'`, alongside the subscription's
+    //     own `status` — no field has to be inferred from a date.
+    if (productDomain === ProductDomainEnum.PARTNER) {
+        await reconcilePartnerForSubscription({
+            subscriptionId: localSubscriptionId,
+            subscriptionStatus: SubscriptionStatusEnum.COMP,
+            source: TRIGGER_SOURCE
+        });
+    }
+
     // 7. Fire-and-forget, and the OPPOSITE criterion from step 3 on purpose: a
     //    mail failure must not undo a grant that MercadoPago and the database
     //    have both already accepted, whereas a provider failure must stop the
@@ -689,6 +784,7 @@ export async function grantCompSubscription(input: {
             subscriptionId: localSubscriptionId,
             customerId,
             planId,
+            productDomain,
             actorId,
             supersededSubscriptionIds: [...supersededIds],
             hadActiveBilling

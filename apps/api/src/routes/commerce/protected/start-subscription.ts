@@ -46,7 +46,7 @@
  */
 import {
     type CommerceVertical,
-    ENTITLEMENT_GRANTING_STATUSES,
+    isLiveSubscriptionStatus,
     LIMIT_KEY_BY_COMMERCE_VERTICAL
 } from '@repo/billing';
 import { experienceModel, gastronomyModel } from '@repo/db';
@@ -113,27 +113,16 @@ const StartSubscriptionParamsSchema = {
     entityId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 };
 
-/**
- * Subscription statuses (`entity_subscriptions.status`, mirroring
- * `billing_subscriptions.status` — see `SubscriptionStatusEnum`) that
- * indicate the listing already has a LIVE-ish subscription and must block a
- * new checkout (AC-16 / HOS-166 judgment-day W1).
- *
- * `past_due` is included alongside `active`/`trialing`: a dunning
- * subscription is still a real MercadoPago preapproval mid-retry, not a dead
- * one, so letting the owner start a SECOND checkout here would create a
- * second concurrent preapproval for the same listing rather than resolving
- * the first one (the dunning flow — grace period, retries, eventual
- * cancel/reactivate — is the correct path back to `active`). Deliberately
- * excludes `cancelled`, `expired`, `abandoned`, and `paused` — those ARE
- * terminal/inactive enough that a fresh checkout is the correct next step.
- *
- * HOS-702: built as the canonical `ENTITLEMENT_GRANTING_STATUSES` PLUS
- * `past_due`, never as a hand-rolled list. The hand-rolled version omitted
- * `comp`, so an owner whose listing already carried a complimentary
- * subscription could start a second, real, CHARGED checkout for it.
+/*
+ * The "this listing already has a live-ish subscription, block a new checkout"
+ * set (AC-16 / HOS-166 judgment-day W1) used to be declared here as a local
+ * `new Set([...ENTITLEMENT_GRANTING_STATUSES, 'past_due'])`. HOS-1275 promoted
+ * it to `@repo/billing`'s `LIVE_SUBSCRIPTION_STATUSES` / the
+ * `isLiveSubscriptionStatus` predicate, because the edit gate that issue builds
+ * needs the SAME set for the same reason (a past-due owner has not walked away)
+ * and a second local copy is how HOS-702's `comp` omission happened in the
+ * first place. Its full rationale now lives in that module's docblock.
  */
-const LIVE_SUBSCRIPTION_STATUSES = new Set<string>([...ENTITLEMENT_GRANTING_STATUSES, 'past_due']);
 
 /**
  * Subset of the raw `gastronomies`/`experiences` row this route reads —
@@ -327,7 +316,7 @@ export async function handleCommerceStartSubscription(
         entityType,
         entityId
     });
-    if (existingStatus !== null && LIVE_SUBSCRIPTION_STATUSES.has(existingStatus)) {
+    if (existingStatus !== null && isLiveSubscriptionStatus(existingStatus)) {
         throw new HTTPException(409, {
             message: 'This listing already has an active subscription.'
         });
