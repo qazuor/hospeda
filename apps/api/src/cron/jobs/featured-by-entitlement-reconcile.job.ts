@@ -75,11 +75,15 @@ const COMMERCE_FEATURED_VERTICALS: readonly CommerceFeaturedEntityType[] = [
     ProductDomainEnum.EXPERIENCE
 ];
 
-/** Listing table per commerce vertical, for the drift read. */
-const COMMERCE_TABLES = {
-    [ProductDomainEnum.GASTRONOMY]: gastronomies,
-    [ProductDomainEnum.EXPERIENCE]: experiences
-} as const;
+/**
+ * Listing table per commerce vertical, for the drift read.
+ *
+ * A function rather than a module-level record, for the same reason
+ * `commerce.sync-featured-by-entitlement.ts` uses one: reading a `@repo/db`
+ * export at import time breaks every suite that partially mocks that module.
+ */
+const commerceTable = (entityType: CommerceFeaturedEntityType) =>
+    entityType === ProductDomainEnum.GASTRONOMY ? gastronomies : experiences;
 
 import type { CronJobDefinition } from '../types.js';
 
@@ -251,7 +255,7 @@ export const featuredByEntitlementReconcileJob: CronJobDefinition = {
             // expired and never got cleared, i.e. product given away for free.
             for (const entityType of COMMERCE_FEATURED_VERTICALS) {
                 try {
-                    const table = COMMERCE_TABLES[entityType];
+                    const table = commerceTable(entityType);
 
                     const shouldBeFeatured = new Set(
                         await getActiveFeaturedGrantEntityIds({ entityType })

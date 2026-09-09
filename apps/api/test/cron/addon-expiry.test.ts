@@ -219,7 +219,9 @@ vi.mock('@repo/db', async (importOriginal) => ({
     featuredListingAddonGrants: {
         id: 'id',
         purchaseId: 'purchase_id',
-        accommodationId: 'accommodation_id'
+        // HOS-1286: polymorphic link columns, replacing `accommodation_id`.
+        entityType: 'entity_type',
+        entityId: 'entity_id'
     },
     eq: vi.fn((...args: unknown[]) => ({ op: 'eq', args })),
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
@@ -685,8 +687,11 @@ describe('Add-on Expiry Cron Job', () => {
                 return buildMockServiceForAddon(addon) as never;
             });
 
-            // T-007 grant link: purchase -> accommodation
-            mockDbGrantLinkWhere.mockResolvedValueOnce([{ accommodationId: 'acc-featured-1' }]);
+            // T-007 grant link: purchase -> listing. HOS-1286: the row now
+            // names its own vertical, and the dispatch reads it.
+            mockDbGrantLinkWhere.mockResolvedValueOnce([
+                { entityType: 'accommodation', entityId: 'acc-featured-1' }
+            ]);
             // Accommodation owner lookup
             mockDbAccommodationOwnerWhere.mockResolvedValueOnce([{ ownerId: 'owner-featured-1' }]);
             // Owner's plan does NOT independently grant FEATURED_LISTING
@@ -731,7 +736,9 @@ describe('Add-on Expiry Cron Job', () => {
                 return buildMockServiceForAddon(addon) as never;
             });
 
-            mockDbGrantLinkWhere.mockResolvedValueOnce([{ accommodationId: 'acc-featured-2' }]);
+            mockDbGrantLinkWhere.mockResolvedValueOnce([
+                { entityType: 'accommodation', entityId: 'acc-featured-2' }
+            ]);
             mockDbAccommodationOwnerWhere.mockResolvedValueOnce([{ ownerId: 'owner-featured-2' }]);
             // Owner's plan independently still grants FEATURED_LISTING
             mockResolveOwnerPlanGrantsFeatured.mockResolvedValueOnce(true);

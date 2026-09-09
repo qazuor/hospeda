@@ -1095,7 +1095,10 @@ describe('confirmAddonPurchase', () => {
             expect(result.success).toBe(true);
             expect(mockGrantInsertValues).toHaveBeenCalledWith({
                 purchaseId: expectedPurchaseId,
-                accommodationId: 'accom_own'
+                // HOS-1286: the grant is polymorphic. `entityType` is derived
+                // from the ADD-ON's productDomain, not read off the metadata.
+                entityType: 'accommodation',
+                entityId: 'accom_own'
             });
         });
 

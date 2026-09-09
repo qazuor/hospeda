@@ -60,11 +60,17 @@ export type CommerceFeaturedEntityType =
  * A lookup rather than an `if`/`switch` so a third commerce vertical is a
  * one-line addition that the type system forces the caller to handle, instead
  * of an `else` branch that silently writes the wrong table.
+ *
+ * Built inside a FUNCTION, not at module scope. A module-level
+ * `{ gastronomy: gastronomies }` reads the `@repo/db` export the instant this
+ * module is imported, and several suites replace that module with a partial
+ * mock — which turned an unrelated `import { ServiceError } from
+ * '@repo/service-core'` into a load-time crash in four test files, because the
+ * barrel pulls this module in. Reading the table when a write actually happens
+ * costs nothing and removes the import-order coupling entirely.
  */
-const COMMERCE_FEATURED_TABLES = {
-    [ProductDomainEnum.GASTRONOMY]: gastronomies,
-    [ProductDomainEnum.EXPERIENCE]: experiences
-} as const;
+const commerceFeaturedTable = (entityType: CommerceFeaturedEntityType) =>
+    entityType === ProductDomainEnum.GASTRONOMY ? gastronomies : experiences;
 
 /** A row written by {@link syncFeaturedByEntitlementForCommerceListing}. */
 export interface SyncCommerceFeaturedRow {
@@ -118,7 +124,7 @@ export async function syncFeaturedByEntitlementForCommerceListing(
 ): Promise<SyncCommerceFeaturedResult> {
     const { entityType, entityId, active, db: injectedDb } = input;
     const db = injectedDb ?? getDb();
-    const table = COMMERCE_FEATURED_TABLES[entityType];
+    const table = commerceFeaturedTable(entityType);
 
     const rows = await db
         .update(table)

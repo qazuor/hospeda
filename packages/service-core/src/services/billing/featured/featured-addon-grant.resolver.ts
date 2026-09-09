@@ -276,8 +276,10 @@ export async function getFeaturedAddonGrantTarget(
             entityId: featuredListingAddonGrants.entityId
         })
         .from(featuredListingAddonGrants)
-        .where(eq(featuredListingAddonGrants.purchaseId, input.purchaseId))
-        .limit(1);
+        // No `.limit(1)`: `featuredListingAddonGrants_purchaseId_uniq` already
+        // caps this at one row, and the destructure takes the first. This is the
+        // shape the two call sites used before HOS-1286 moved the query here.
+        .where(eq(featuredListingAddonGrants.purchaseId, input.purchaseId));
 
     return grant;
 }
