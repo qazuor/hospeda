@@ -115,6 +115,29 @@ const IMPORT_RE = /(?:^|\n)\s*(?:import|export)[\s\S]{0,400}?from\s*['"]([^'"]+)
 const DYNAMIC_IMPORT_RE = /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g;
 const SIDE_EFFECT_IMPORT_RE = /(?:^|\n)\s*import\s*['"]([^'"]+)['"]/g;
 
+/**
+ * A whole-statement `import type` / `export type`, which is erased at build
+ * time and therefore reaches no browser.
+ *
+ * {@link IMPORT_RE} cannot tell the two apart — `import type { X } from './y'`
+ * matches it exactly as a value import does — so without this the graph walks
+ * edges that do not exist at runtime. The cost is not a false alarm you can
+ * wave through: it is pressure to declare namespaces the client never needs,
+ * which is the opposite of what the subsetting this file protects was built
+ * for (HOS-369 measured a 26.9% i18n payload reduction).
+ *
+ * Found via HOS-1233: two islands importing `PricingAudience` as a TYPE from
+ * `lib/billing-i18n.ts` pulled that module's six key prefixes into the
+ * "reachable" set, and shipping them would have grown every pricing island's
+ * payload for an import that does not survive compilation.
+ *
+ * **The inline form is deliberately NOT matched.** `import { type A, B }`
+ * still imports `B` at runtime, so that statement must keep its edge — which
+ * is why this anchors on `type` as the token right after `import`/`export`,
+ * never on the mere presence of the word.
+ */
+const TYPE_ONLY_STATEMENT_RE = /^\s*(?:import|export)\s+type\s/;
+
 interface GraphResult {
     readonly modules: ReadonlySet<string>;
     readonly unresolved: readonly string[];
@@ -142,6 +165,10 @@ function buildClientGraph(): GraphResult {
         const src = readFileSync(file, 'utf8');
         for (const re of [IMPORT_RE, DYNAMIC_IMPORT_RE, SIDE_EFFECT_IMPORT_RE]) {
             for (const match of src.matchAll(re)) {
+                // A type-only statement is erased at build time, so its edge
+                // does not exist in the browser. See TYPE_ONLY_STATEMENT_RE.
+                if (TYPE_ONLY_STATEMENT_RE.test(match[0])) continue;
+
                 const target = resolveSpecifier(match[1] as string, file);
                 if (target === null) continue;
                 if (target === undefined) {
@@ -265,6 +292,34 @@ describe('HOS-369 W3-2 — client i18n key prefixes', () => {
             // the whole namespace stays reachable from PUBLIC forms.
             expect(src).toContain('resolveValidationMessage');
             expect(declared).toContain('validation');
+        });
+    });
+
+    describe('the graph skips type-only edges, and ONLY those (HOS-1233)', () => {
+        it('skips a whole-statement import type', () => {
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nimport type { A } from './a'")).toBe(true);
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nimport type A from './a'")).toBe(true);
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nexport type { A } from './a'")).toBe(true);
+        });
+
+        it('does NOT skip the inline type modifier — that statement still imports a value', () => {
+            // The dangerous case. `import { type A, B }` erases A and keeps B,
+            // so the edge is real and dropping it would hide every prefix B's
+            // module names. Anchoring on `type` as the token right after
+            // `import` is what separates the two forms.
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nimport { type A, B } from './a'")).toBe(false);
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nimport { type A } from './a'")).toBe(false);
+        });
+
+        it('does NOT skip an ordinary value import', () => {
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nimport { A } from './a'")).toBe(false);
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nimport A from './a'")).toBe(false);
+        });
+
+        it('does not match a module whose name merely contains "type"', () => {
+            // Non-vacuity: the predicate must read the STATEMENT shape, never
+            // the presence of the word anywhere in it.
+            expect(TYPE_ONLY_STATEMENT_RE.test("\nimport { typeOf } from './types'")).toBe(false);
         });
     });
 });
