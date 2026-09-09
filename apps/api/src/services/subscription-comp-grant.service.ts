@@ -116,8 +116,12 @@ import {
     isNull,
     withTransaction
 } from '@repo/db';
-import { SubscriptionStatusEnum } from '@repo/schemas';
-import { BILLING_EVENT_TYPES, normalizeStoredSubscriptionStatus } from '@repo/service-core';
+import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import {
+    BILLING_EVENT_TYPES,
+    normalizeStoredSubscriptionStatus,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import { getQZPayBilling } from '../middlewares/billing.js';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
@@ -359,11 +363,17 @@ export async function grantCompSubscription(input: {
     //    supersedable filter runs in TypeScript, never in SQL — see
     //    `isSupersedableStatus` for why a SQL `IN (…)` over enum values is the
     //    bug and not the shortcut.
-    const allRows = await db
+    //
+    //    HOS-1277: `productDomain` is selected and filtered on directly — this
+    //    is a typed Drizzle column read straight off the row, not a
+    //    `getByCustomerId()`-mapped object, so no `hydrateSubscriptionProductDomains`
+    //    step is needed the way it is at qzpay-mapped call sites.
+    const allRowsRaw = await db
         .select({
             id: billingSubscriptions.id,
             status: billingSubscriptions.status,
-            mpSubscriptionId: billingSubscriptions.mpSubscriptionId
+            mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
+            productDomain: billingSubscriptions.productDomain
         })
         .from(billingSubscriptions)
         .where(
@@ -372,6 +382,23 @@ export async function grantCompSubscription(input: {
                 isNull(billingSubscriptions.deletedAt)
             )
         );
+
+    // HOS-1277: `createCompSubscription` rejects any non-accommodation plan
+    // (see its own guard), so a comp grant is accommodation-only by
+    // construction — TODAY. Before this filter, a customer's OTHER vertical's
+    // live subscription (e.g. an active gastronomy plan on a dual-owner) was
+    // read into `allRows` right alongside the accommodation one, with nothing
+    // distinguishing them: `isSupersedableStatus` supersedes anything not in
+    // `NO_ACTION_STATUSES`, so that gastronomy subscription got hard-cancelled
+    // at MercadoPago as a side effect of comping the customer's UNRELATED
+    // accommodation plan. Scoping to accommodation here is what
+    // `selectAccommodationSubscription` does for plan-change (HOS-1213) and
+    // `subscriptionMatchesDomain` does everywhere else — a legacy row with no
+    // `productDomain` still counts (the column post-dates most rows), only an
+    // explicit non-accommodation domain is excluded.
+    const allRows = allRowsRaw.filter((row) =>
+        subscriptionMatchesDomain(row, ProductDomainEnum.ACCOMMODATION)
+    );
 
     // 2. Idempotency. Two clicks on the admin button used to produce two comp
     //    rows, after which `loadEntitlements`'s `.find()` picked one of them at

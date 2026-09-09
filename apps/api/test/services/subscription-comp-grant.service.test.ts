@@ -583,6 +583,76 @@ describe('grantCompSubscription — one comp per customer', () => {
     });
 });
 
+describe('grantCompSubscription — domain isolation (HOS-1277)', () => {
+    it('REGRESSION: does not hard-cancel a dual-owner’s OTHER vertical subscription', async () => {
+        // The dual-owner case this bug hit in production: comping the customer's
+        // accommodation plan used to hard-cancel EVERY supersedable row on the
+        // customer, including a live gastronomy subscription that has nothing to
+        // do with this grant — `createCompSubscription` only ever comps
+        // accommodation plans, so a gastronomy row should never even be examined.
+        allRows = [
+            payingSubscription({
+                id: 'sub-accommodation',
+                mpSubscriptionId: 'mp-accommodation',
+                productDomain: 'accommodation'
+            }),
+            payingSubscription({
+                id: 'sub-gastronomy',
+                mpSubscriptionId: 'mp-gastronomy',
+                productDomain: 'gastronomy'
+            })
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        // Only the accommodation row was ever handed to the hard-cancel step.
+        expect(hardCancelMock).toHaveBeenCalledTimes(1);
+        expect(hardCancelMock).toHaveBeenCalledWith(
+            expect.objectContaining({ subscriptionId: 'sub-accommodation' })
+        );
+        expect(hardCancelMock).not.toHaveBeenCalledWith(
+            expect.objectContaining({ subscriptionId: 'sub-gastronomy' })
+        );
+        // The gastronomy row is untouched: not superseded, not written.
+        expect(updateMock).toHaveBeenCalledTimes(1);
+        expect(result.success && result.data.supersededSubscriptionIds).toEqual([
+            'sub-accommodation'
+        ]);
+    });
+
+    it('a legacy row with no productDomain still counts as accommodation (fail-open)', async () => {
+        // `productDomain` post-dates most rows — omitting it must not exempt a
+        // real accommodation subscription from being superseded, or a comp grant
+        // would leave the customer's old preapproval charging forever.
+        allRows = [payingSubscription({ productDomain: undefined })];
+
+        const result = await grantCompSubscription(GRANT);
+
+        expect(result.success).toBe(true);
+        expect(hardCancelMock).toHaveBeenCalledWith(
+            expect.objectContaining({ subscriptionId: 'sub-1' })
+        );
+    });
+
+    it('a PARTNER subscription is excluded exactly like a gastronomy one', async () => {
+        allRows = [
+            payingSubscription({
+                id: 'sub-partner',
+                mpSubscriptionId: 'mp-partner',
+                productDomain: 'partner'
+            })
+        ];
+
+        const result = await grantCompSubscription(GRANT);
+
+        // No accommodation row at all: nothing to supersede, comp still grants.
+        expect(result.success).toBe(true);
+        expect(hardCancelMock).not.toHaveBeenCalled();
+        expect(result.success && result.data.supersededSubscriptionIds).toEqual([]);
+    });
+});
+
 describe('grantCompSubscription — what the customer is told', () => {
     it('reports hadActiveBilling only when a preapproval was really cancelled', async () => {
         allRows = [payingSubscription()];
