@@ -147,6 +147,19 @@ export async function createCompSubscription(input: {
             currentPeriodEnd: periodEnd,
             status: SubscriptionStatusEnum.COMP,
             livemode,
+            // HOS-1233 T-035: stated in the INSERT rather than stamped by the
+            // UPDATE below. A comp grant is accommodation-only by design, but
+            // "the column's default happens to agree with us" is not the same
+            // claim as "this row states its vertical" — and it stops being true
+            // for anyone the day the default changes or disappears (T-036),
+            // where the INSERT is rejected before its correction can run.
+            productDomain: ProductDomainEnum.ACCOMMODATION,
+            // Folded in from the UPDATE that used to follow this insert. Unlike
+            // the domain above, a conditional spread is the RIGHT shape here:
+            // omitting the key means "this grant names no promo code", which is
+            // the normal case since HOS-1171, and the column has no default
+            // standing by to answer for it.
+            ...(promoCodeId === undefined ? {} : { promoCodeId }),
             metadata: {
                 // HOS-1171: the only caller is the admin grant route. The old
                 // 'start-paid-comp' / 'subscription-flow' pair described the
@@ -160,18 +173,7 @@ export async function createCompSubscription(input: {
             }
         });
 
-        // 2. Stamp product_domain + promo_code_id via a typed UPDATE — mirrors
-        //    the commerce flow's product_domain stamp in
-        //    initiateCommerceMonthlySubscription.
-        await tx
-            .update(billingSubscriptions)
-            .set({
-                productDomain: ProductDomainEnum.ACCOMMODATION,
-                ...(promoCodeId === undefined ? {} : { promoCodeId })
-            })
-            .where(eq(billingSubscriptions.id, localSubscriptionId));
-
-        // 3. Record the redemption (usage increment + usage row) against the new
+        // 2. Record the redemption (usage increment + usage row) against the new
         //    sub, INSIDE the same transaction so the grant is atomic.
         //
         //    Only when the grant NAMES a promo code. Since HOS-1171 a comp is
