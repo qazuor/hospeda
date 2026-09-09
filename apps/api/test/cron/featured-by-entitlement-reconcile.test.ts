@@ -101,6 +101,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 // Import after mocks
 // ---------------------------------------------------------------------------
 
+import * as dbTables from '@repo/db';
 import { featuredByEntitlementReconcileJob } from '../../src/cron/jobs/featured-by-entitlement-reconcile.job';
 
 // ---------------------------------------------------------------------------
@@ -155,12 +156,25 @@ function setupDbMocks(
     // the sweep throws, the job counts two errors, and — since no assertion in
     // this file looked at `errors` before — every test stayed green over a
     // completely broken step.
-    for (const flagged of commerceFlaggedByVertical) {
-        mockSelectRows.mockReturnValueOnce({
-            from: vi.fn().mockReturnThis(),
-            where: vi.fn().mockResolvedValue(flagged.map((id) => ({ id })))
-        });
-    }
+    //
+    // Routed on the TABLE the sweep passes to `.from()`, never positionally. A
+    // positional prime cannot tell gastronomy from experience, so a sweep that
+    // read the gastronomy table for BOTH verticals passed every case here — a
+    // mutation that survived until this dispatch replaced it.
+    const [gastronomyFlagged = [], experienceFlagged = []] = commerceFlaggedByVertical;
+    mockSelectRows.mockImplementation(() => ({
+        from: (table: unknown) => ({
+            where: () =>
+                Promise.resolve(
+                    (table === dbTables.gastronomies
+                        ? gastronomyFlagged
+                        : table === dbTables.experiences
+                          ? experienceFlagged
+                          : []
+                    ).map((id) => ({ id }))
+                )
+        })
+    }));
 }
 
 // ---------------------------------------------------------------------------
