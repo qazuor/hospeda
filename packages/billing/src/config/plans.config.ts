@@ -1569,6 +1569,48 @@ export function getDefaultPlan(category: PlanDefinition['category']): PlanDefini
 }
 
 /**
+ * Every plan catalogue the platform maintains, across every vertical
+ * (HOS-1290).
+ *
+ * **For cross-cutting DEFENSES only** — the startup config validator, the
+ * Model C DB-sync engine, and any "does every catalogue get covered"
+ * exhaustiveness guard. These are the only kinds of consumer that legitimately
+ * need to see every plan at once, regardless of vertical.
+ *
+ * **NEVER use this to drive a consumer-facing surface.** `ALL_PLANS` alone
+ * (accommodation + tourist) is what SPEC-239 isolates on purpose: the
+ * accommodation entitlement engine, `GET /api/v1/public/plans`, the
+ * `seedBillingPlans` loop and the grant-matrix snapshot tests all read
+ * `ALL_PLANS` directly and MUST keep doing so — folding the commerce/partner
+ * catalogues into `ALL_PLANS` itself would undo that isolation instead of
+ * fixing the gap this constant exists to close (HOS-1290's whole point: the
+ * three catalogue-wide defenses should walk every catalogue, not that every
+ * catalogue should look like `ALL_PLANS`).
+ *
+ * A catalogue added to `plans.config.ts` and not registered here is invisible
+ * to every one of those defenses — `plan-catalog-domain-coverage.guard.test.ts`
+ * is the guard that catches that omission by cross-checking the set of
+ * `productDomain` values this array actually covers against
+ * {@link BUSINESS_VERTICAL_PRODUCT_DOMAINS} in `@repo/schemas`.
+ *
+ * `[skip-seed-migration]: additive-code-only` — `plans.config.ts` is a
+ * `BILLING_CONFIG_FILES` entry in `scripts/check-seed-dual-write.sh`, so this
+ * declaration alone trips the seed dual-write guard. Reviewed: this array is
+ * a derived aggregation of the four catalogues already declared above; it
+ * adds no `PlanDefinition`, and changes no plan's price, entitlement, limit,
+ * slug, `isActive`, or `productDomain` — nothing here needs backfilling on an
+ * already-seeded environment. Same shape as HOS-1119 (PR #3177)'s
+ * `COMMERCE_PLANS_BY_VERTICAL` + `findCommercePlanForVertical`, the marker's
+ * first use in this repo.
+ */
+export const ALL_PLAN_CATALOGS: readonly (readonly PlanDefinition[])[] = [
+    ALL_PLANS,
+    ALL_GASTRONOMY_PLANS,
+    ALL_EXPERIENCE_PLANS,
+    ALL_PARTNER_PLANS
+];
+
+/**
  * Returns the entitlements and limits granted to authenticated users that do
  * not have an active paid subscription (SPEC-143 T-143-58).
  *

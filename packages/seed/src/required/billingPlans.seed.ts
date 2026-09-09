@@ -242,7 +242,7 @@ const SEED_CURRENCY = 'ARS';
  *   config; commercial-layer fields were left as-is (DB wins). A summary
  *   of what was synced and what was skipped is logged.
  */
-interface EnsurePlanResult {
+export interface EnsurePlanResult {
     readonly planId: string;
     readonly status: 'created' | 'skipped' | 'synced';
 }
@@ -362,8 +362,17 @@ function buildCapabilitySyncPayload(
  *
  * `db` is injectable for tests; production callers omit it and the
  * default `getDb()` resolves the runtime client.
+ *
+ * **Exported (HOS-1290)** so `commercePlan.seed.ts` and `partnerPlan.seed.ts`
+ * can reuse the exact same Model C sync engine instead of a bespoke
+ * insert-only/re-stamp-domain routine that never propagated a config change
+ * (a new `LimitKey`, an entitlement, a description edit) to an
+ * already-seeded row. Every field this function syncs is generic across
+ * verticals — `plan.productDomain` already carries the right domain for
+ * whichever catalogue the caller passes in, so no vertical-specific branching
+ * is needed here.
  */
-async function ensurePlan(
+export async function ensurePlan(
     plan: PlanDefinition,
     livemode: boolean,
     db: DrizzleClient = getDb()

@@ -2,8 +2,9 @@
  * Tests for billing configuration validator
  */
 
+import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { ALL_ADDONS, ALL_PLANS, DEFAULT_PROMO_CODES } from '../../src/config/index.js';
+import { ALL_ADDONS, ALL_PLAN_CATALOGS, DEFAULT_PROMO_CODES } from '../../src/config/index.js';
 import type { PromoCodeDefinition } from '../../src/config/promo-codes.config.js';
 import type { AddonDefinition } from '../../src/types/addon.types.js';
 import { EntitlementKey } from '../../src/types/entitlement.types.js';
@@ -41,6 +42,7 @@ function createTestPlan(overrides: Partial<PlanDefinition> = {}): PlanDefinition
         name: 'Test Plan',
         description: 'Test description',
         category: 'owner',
+        productDomain: ProductDomainEnum.ACCOMMODATION,
         monthlyPriceArs: 1000000,
         annualPriceArs: 10000000,
         monthlyPriceUsdRef: 10,
@@ -119,16 +121,19 @@ function validateTestConfig(input: {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validate plans
+    // Validate plans — grouped by `productDomain`, matching the real
+    // `validatePlans` (HOS-1290): every commerce/partner tier shares
+    // `category: 'owner'`, so category can no longer tell verticals apart.
+    const DOMAINS_ALLOWED_ZERO_DEFAULT: ReadonlySet<ProductDomainValue> = new Set([
+        ProductDomainEnum.GASTRONOMY,
+        ProductDomainEnum.EXPERIENCE,
+        ProductDomainEnum.PARTNER
+    ]);
     const slugsSeen = new Set<string>();
-    const categoryCounts: Record<
-        'owner' | 'complex' | 'tourist',
+    const domainData = new Map<
+        ProductDomainValue,
         { defaultCount: number; sortOrders: Set<number> }
-    > = {
-        owner: { defaultCount: 0, sortOrders: new Set() },
-        complex: { defaultCount: 0, sortOrders: new Set() },
-        tourist: { defaultCount: 0, sortOrders: new Set() }
-    };
+    >();
     const validEntitlements = new Set(Object.values(EntitlementKey));
 
     for (const plan of input.plans) {
@@ -165,25 +170,31 @@ function validateTestConfig(input: {
             }
         }
 
-        const categoryData = categoryCounts[plan.category];
+        let domainStats = domainData.get(plan.productDomain);
+        if (!domainStats) {
+            domainStats = { defaultCount: 0, sortOrders: new Set() };
+            domainData.set(plan.productDomain, domainStats);
+        }
         if (plan.isDefault) {
-            categoryData.defaultCount++;
+            domainStats.defaultCount++;
         }
 
-        if (categoryData.sortOrders.has(plan.sortOrder)) {
+        if (domainStats.sortOrders.has(plan.sortOrder)) {
             errors.push(
-                `${prefix}: Duplicate sortOrder ${plan.sortOrder} in category "${plan.category}"`
+                `${prefix}: Duplicate sortOrder ${plan.sortOrder} in product domain "${plan.productDomain}"`
             );
         }
-        categoryData.sortOrders.add(plan.sortOrder);
+        domainStats.sortOrders.add(plan.sortOrder);
     }
 
-    for (const [category, data] of Object.entries(categoryCounts)) {
-        if (data.defaultCount === 0 && input.plans.some((p) => p.category === category)) {
-            errors.push(`Category "${category}": No default plan found`);
+    for (const [domain, data] of domainData.entries()) {
+        if (data.defaultCount === 0) {
+            if (!DOMAINS_ALLOWED_ZERO_DEFAULT.has(domain as ProductDomainValue)) {
+                errors.push(`Product domain "${domain}": No default plan found`);
+            }
         } else if (data.defaultCount > 1) {
             errors.push(
-                `Category "${category}": Multiple default plans found (${data.defaultCount})`
+                `Product domain "${domain}": Multiple default plans found (${data.defaultCount})`
             );
         }
     }
@@ -344,48 +355,65 @@ describe('Plan Validation', () => {
         expect(result.errors).toContain('Plan "duplicate": Duplicate slug found');
     });
 
-    it('should fail when category has no default plan', () => {
+    it('should fail when a product domain has no default plan', () => {
         const plan1 = createTestPlan({ slug: 'plan1', isDefault: false, sortOrder: 1 });
         const plan2 = createTestPlan({ slug: 'plan2', isDefault: false, sortOrder: 2 });
         const result = validateTestConfig({ plans: [plan1, plan2], addons: [], promoCodes: [] });
 
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain('Category "owner": No default plan found');
+        expect(result.errors).toContain('Product domain "accommodation": No default plan found');
     });
 
-    it('should fail when category has multiple default plans', () => {
+    it('should fail when a product domain has multiple default plans', () => {
         const plan1 = createTestPlan({ slug: 'plan1', isDefault: true, sortOrder: 1 });
         const plan2 = createTestPlan({ slug: 'plan2', isDefault: true, sortOrder: 2 });
         const result = validateTestConfig({ plans: [plan1, plan2], addons: [], promoCodes: [] });
 
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain('Category "owner": Multiple default plans found (2)');
+        expect(result.errors).toContain(
+            'Product domain "accommodation": Multiple default plans found (2)'
+        );
     });
 
-    it('should fail when sortOrder is duplicated within category', () => {
+    it('should not require a default plan for a zero-default-allowed domain (gastronomy)', () => {
+        const plan1 = createTestPlan({
+            slug: 'plan1',
+            productDomain: ProductDomainEnum.GASTRONOMY,
+            isDefault: false,
+            sortOrder: 1
+        });
+        const result = validateTestConfig({ plans: [plan1], addons: [], promoCodes: [] });
+
+        expect(result.valid).toBe(true);
+        expect(result.errors).not.toContain('Product domain "gastronomy": No default plan found');
+    });
+
+    it('should fail when sortOrder is duplicated within the same product domain', () => {
         const plan1 = createTestPlan({ slug: 'plan1', isDefault: true, sortOrder: 1 });
         const plan2 = createTestPlan({ slug: 'plan2', isDefault: false, sortOrder: 1 });
         const result = validateTestConfig({ plans: [plan1, plan2], addons: [], promoCodes: [] });
 
         expect(result.valid).toBe(false);
-        expect(result.errors).toContain('Plan "plan2": Duplicate sortOrder 1 in category "owner"');
+        expect(result.errors).toContain(
+            'Plan "plan2": Duplicate sortOrder 1 in product domain "accommodation"'
+        );
     });
 
-    it('should pass when different categories have same sortOrder', () => {
+    it('should pass when different product domains have the same sortOrder', () => {
         const ownerPlan = createTestPlan({
             slug: 'owner-plan',
-            category: 'owner',
+            productDomain: ProductDomainEnum.ACCOMMODATION,
             isDefault: true,
             sortOrder: 1
         });
-        const complexPlan = createTestPlan({
-            slug: 'complex-plan',
-            category: 'complex',
-            isDefault: true,
+        const gastronomyPlan = createTestPlan({
+            slug: 'gastronomy-plan',
+            productDomain: ProductDomainEnum.GASTRONOMY,
+            isDefault: false,
             sortOrder: 1
         });
         const result = validateTestConfig({
-            plans: [ownerPlan, complexPlan],
+            plans: [ownerPlan, gastronomyPlan],
             addons: [],
             promoCodes: []
         });
@@ -605,20 +633,26 @@ describe('Integration Tests', () => {
         expect(result.errors).toHaveLength(0);
     });
 
-    it('should have valid plan configurations', () => {
-        expect(ALL_PLANS.length).toBeGreaterThan(0);
+    it('should have valid plan configurations across every catalogue (HOS-1290)', () => {
+        const allPlansAcrossDomains = ALL_PLAN_CATALOGS.flat();
+        expect(allPlansAcrossDomains.length).toBeGreaterThan(0);
 
-        // Check each category has at least one plan — except 'complex', which
-        // HOS-692 (spec §6.9) deliberately emptied (zero live subscriptions,
-        // vertical never built).
-        const categories = new Set(ALL_PLANS.map((p) => p.category));
-        expect(categories.has('owner')).toBe(true);
-        expect(categories.has('complex')).toBe(false);
-        expect(categories.has('tourist')).toBe(true);
+        // Every BUSINESS_VERTICAL_PRODUCT_DOMAINS member must have at least
+        // one plan — the full cross-check lives in
+        // plan-catalog-domain-coverage.guard.test.ts; this just confirms the
+        // validator's own input isn't accidentally narrower.
+        const domains = new Set(allPlansAcrossDomains.map((p) => p.productDomain));
+        expect(domains.has(ProductDomainEnum.ACCOMMODATION)).toBe(true);
+        expect(domains.has(ProductDomainEnum.TOURIST)).toBe(true);
+        expect(domains.has(ProductDomainEnum.GASTRONOMY)).toBe(true);
+        expect(domains.has(ProductDomainEnum.EXPERIENCE)).toBe(true);
+        expect(domains.has(ProductDomainEnum.PARTNER)).toBe(true);
 
-        // Check each non-empty category has exactly one default
-        for (const category of ['owner', 'tourist']) {
-            const defaults = ALL_PLANS.filter((p) => p.category === category && p.isDefault);
+        // Accommodation and tourist each have exactly one default plan.
+        for (const domain of [ProductDomainEnum.ACCOMMODATION, ProductDomainEnum.TOURIST]) {
+            const defaults = allPlansAcrossDomains.filter(
+                (p) => p.productDomain === domain && p.isDefault
+            );
             expect(defaults.length).toBe(1);
         }
     });
