@@ -42,12 +42,13 @@
  */
 
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     createOwnPreapprovalSubscription,
     PENDING_DISCOUNT_METADATA_KEY,
     PENDING_TRIAL_EXTENSION_METADATA_KEY
 } from '../../../src/services/billing/own-preapproval-subscription-create';
+import { mockPlanDomainRead } from '../../helpers/plan-domain-read.js';
 
 const CUSTOMER_ID = 'cust_owner';
 const PLAN_ID = '00000000-0000-4000-8000-0000000000aa';
@@ -118,6 +119,14 @@ function createTxDbMock(opts: { failUpdate?: boolean; failLinkRow?: boolean } = 
 }
 
 describe('createOwnPreapprovalSubscription', () => {
+    beforeEach(() => {
+        // HOS-1233 T-032: `createPaidSubscription`, which this wraps, resolves
+        // the plan's domain before creating the preapproval. The `db` this
+        // suite passes is destructured OUT before `paidInput` is forwarded, so
+        // that lookup falls through to the global `getDb()` mock.
+        mockPlanDomainRead();
+    });
+
     it('never passes an externalReference to billing.subscriptions.create (qzpay-core owns it)', async () => {
         const billing = createBillingMock();
         const db = createDbMock();

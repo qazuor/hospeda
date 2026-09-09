@@ -111,16 +111,18 @@ describe('createCompSubscription', () => {
             50 * 365 * 24 * 60 * 60 * 1000
         );
 
-        // product_domain + promo_code_id stamped via a typed UPDATE (HOS-75 T-005).
-        expect(updateSetMock).toHaveBeenCalledWith({
-            productDomain: 'accommodation',
-            promoCodeId: 'pc-1'
-        });
-        expect(updateWhereMock).toHaveBeenCalledWith({
-            op: 'eq',
-            col: 'id',
-            val: result.localSubscriptionId
-        });
+        // HOS-1233 T-035: product_domain and promo_code_id are stated in the
+        // INSERT, not stamped by a follow-up UPDATE.
+        //
+        // The old assertion said the row ENDS UP right; this one says it is
+        // BORN right, which is what AC-15b actually requires. In between the
+        // two statements the row existed filed under the column's own default —
+        // the mechanism that made every tourist plan report `accommodation` in
+        // prod and staging alike (spec F-4b) — and once T-036 drops that
+        // default the INSERT is rejected before any correction can run.
+        expect(inserted.productDomain).toBe('accommodation');
+        expect(inserted.promoCodeId).toBe('pc-1');
+        expect(updateSetMock).not.toHaveBeenCalled();
 
         // Redemption recorded against the NEW sub id, discountAmount 0, inside tx.
         expect(redeemAndRecordUsageMock).toHaveBeenCalledOnce();

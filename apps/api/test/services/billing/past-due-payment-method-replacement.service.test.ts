@@ -27,6 +27,7 @@ import {
     PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY,
     replacePastDuePaymentMethod
 } from '../../../src/services/billing/past-due-payment-method-replacement.service';
+import { mockPlanDomainRead } from '../../helpers/plan-domain-read.js';
 
 const PLAN_ID = 'plan-uuid-001';
 const CUSTOMER_ID = 'customer-uuid-001';
@@ -98,6 +99,11 @@ function makeFakeDb(selectRows: Record<string, unknown>[] = []) {
 describe('replacePastDuePaymentMethod (HOS-348 Part B)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-1233 T-032: the shared paid-create helper resolves the plan's
+        // domain before minting the replacement preapproval, and fails closed
+        // when the plan is not found. Armed AFTER clearAllMocks, which would
+        // otherwise wipe it.
+        mockPlanDomainRead();
     });
 
     it('mints a fresh preapproval stamped with supersedesSubscriptionId and the debt-forgiveness markers', async () => {

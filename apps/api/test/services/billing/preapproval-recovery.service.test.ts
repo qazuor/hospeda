@@ -19,7 +19,7 @@
  * @module test/services/billing/preapproval-recovery.service
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     claimRetryMintSlot,
     classifyPreapprovalStatus,
@@ -28,6 +28,7 @@ import {
     mintRetryPreapprovalAttempt,
     recoverCancelledPreapproval
 } from '../../../src/services/billing/preapproval-recovery.service';
+import { mockPlanDomainRead } from '../../helpers/plan-domain-read.js';
 
 const LOCAL_SUB_ID = '11111111-1111-4111-8111-111111111111';
 const NEW_LOCAL_SUB_ID = '22222222-2222-4222-8222-222222222222';
@@ -206,6 +207,13 @@ describe('confirmCancellationDeferred', () => {
 });
 
 describe('mintRetryPreapprovalAttempt', () => {
+    beforeEach(() => {
+        // HOS-1233 T-032: the retry mints through `createPaidSubscription`,
+        // which resolves the plan's own product_domain first and fails closed
+        // when the plan is not found.
+        mockPlanDomainRead();
+    });
+
     it('mints a fresh preapproval on the SAME cadence/price recovered from the row metadata, WITHOUT sending the MP plan id (HOS-1221)', async () => {
         const billing = makeBilling();
 

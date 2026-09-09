@@ -49,6 +49,7 @@ import {
     type CreateOwnPreapprovalSubscriptionInput,
     createOwnPreapprovalSubscription
 } from '../../src/services/billing/own-preapproval-subscription-create';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read.js';
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -248,6 +249,8 @@ function addonPreapprovalInput(billing: QZPayBilling) {
 describe("HOS-847 — the add-on row does not inherit the borrowed price's trial", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-1233 T-032: see the sibling borrowed-price suite.
+        mockPlanDomainRead();
     });
 
     it('CONTROL: omitting trialDays writes a 30-day trial nobody asked MercadoPago for', async () => {

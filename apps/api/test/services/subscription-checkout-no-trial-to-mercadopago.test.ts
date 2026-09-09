@@ -152,7 +152,24 @@ const dbTxMock = {
 const DB_STUB = {
     execute: vi.fn().mockResolvedValue({ rows: [] }),
     update: vi.fn(() => ({ set: vi.fn(() => ({ where: dbUpdateWhereMock })) })),
-    transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(dbTxMock))
+    transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(dbTxMock)),
+    // HOS-1233 T-032: `createPaidSubscription` resolves the plan's own
+    // `product_domain` before creating the preapproval, and fails CLOSED when
+    // the plan is not found. Every flow this file exercises goes through it, so
+    // the stub has to answer that SELECT or none of them reach a payload at all.
+    //
+    // Accommodation is the right constant here rather than a per-flow value:
+    // this suite is about what LEAVES for MercadoPago (guard G-1, no trial in
+    // the body), and the domain never travels in that payload — it is stored
+    // locally. The commerce and partner flows in this file build their own rows
+    // by hand and do not depend on this read.
+    select: vi.fn(() => ({
+        from: vi.fn(() => ({
+            where: vi.fn(() => ({
+                limit: vi.fn(() => Promise.resolve([{ productDomain: 'accommodation' }]))
+            }))
+        }))
+    }))
 };
 
 vi.mock('@repo/db', async () => {

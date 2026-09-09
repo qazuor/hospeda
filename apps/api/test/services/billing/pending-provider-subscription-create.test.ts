@@ -147,13 +147,17 @@ describe('createPendingProviderSubscription', () => {
         // HOS-1012: the key is gone entirely, not written as 'false'.
         expect(metadata).not.toHaveProperty('trialGranted');
 
-        // product_domain stamped via a typed UPDATE, defaulting to accommodation.
-        expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'accommodation' });
-        expect(updateWhereMock).toHaveBeenCalledWith({
-            op: 'eq',
-            col: 'id',
-            val: result.localSubscriptionId
-        });
+        // HOS-1233 T-035: product_domain is stated in the INSERT, defaulting to
+        // accommodation when the caller names none.
+        //
+        // This used to assert a follow-up `UPDATE ... SET product_domain`, which
+        // is a weaker claim wearing the same words: it says the row ENDS UP
+        // right, not that it was BORN right. In between, the row existed filed
+        // under the column's own default — which is how every tourist plan came
+        // to report `accommodation` in prod and staging alike (spec F-4b) — and
+        // once T-036 drops that default the INSERT is rejected before its
+        // correction can run at all.
+        expect(inserted.productDomain).toBe('accommodation');
 
         // Correlation row created INSIDE the same tx.
         expect(pendingCheckoutCreateMock).toHaveBeenCalledOnce();
@@ -200,7 +204,8 @@ describe('createPendingProviderSubscription', () => {
     it('respects an explicit productDomain override', async () => {
         await createPendingProviderSubscription({ ...BASE_INPUT, productDomain: 'commerce' });
 
-        expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'commerce' });
+        const [inserted] = insertValuesMock.mock.calls[0] ?? [];
+        expect((inserted as Record<string, unknown>).productDomain).toBe('commerce');
     });
 
     it('stamps domainMetadata into the subscription metadata (the subscription → entity path)', async () => {
@@ -316,9 +321,14 @@ describe('createPendingProviderSubscription', () => {
             pendingTrialExtension: { promoCodeId: 'pc-trial-1', code: 'FREEMONTH' }
         });
 
-        // Deferred: no promo_code_id stamped here (only product_domain) — the
-        // stamp + redemption happen at link time (link-preapproval.service.ts).
-        expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'accommodation' });
+        // Deferred: no promo_code_id on the row — the stamp + redemption happen
+        // at link time (link-preapproval.service.ts). The claim used to be made
+        // as "the only UPDATE is the product_domain one"; since HOS-1233 T-035
+        // states the domain in the INSERT and removed that UPDATE, it is made
+        // directly instead: the inserted row carries no promo id at all.
+        const [inserted] = insertValuesMock.mock.calls[0] ?? [];
+        expect(inserted as Record<string, unknown>).not.toHaveProperty('promoCodeId');
+        expect(updateSetMock).not.toHaveBeenCalled();
 
         // The promo identity is snapshotted on the correlation row, like pendingDiscount.
         const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];

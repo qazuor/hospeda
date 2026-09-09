@@ -19,11 +19,25 @@
  * (reactivation, which carries `planId` directly) share the same helper
  * without either owning the other's identifier space.
  *
+ * ONE exception to "never looks a plan up", added by HOS-1233 T-032: it reads
+ * the resolved plan's `product_domain` to state on the preapproval, because
+ * qzpay-core 6.0.0 requires it. Doing that here rather than at each caller is
+ * deliberate — every paid checkout of every vertical funnels through this one
+ * call, distinguished only by `planId`, so a caller-supplied value would be a
+ * value somebody could forget or hardcode wrong. That is the shape of the bug
+ * this replaces: the parameter did not exist, so every row it created was born
+ * on the column's `'accommodation'` default, and every tourist plan reported
+ * `accommodation` in prod and staging alike (spec F-4b/F-4c). It stays a
+ * DOMAIN lookup and nothing more: no slug resolution, no price selection, no
+ * eligibility.
+ *
  * @module services/billing/paid-subscription-create
  */
 
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { applyTestControl } from '@repo/billing';
+import { billingPlans, type DrizzleClient, eq, getDb } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
@@ -38,8 +52,12 @@ export interface CreatePaidSubscriptionInput {
     /**
      * Resolved qzpay plan ID (`billing_plans.id`, a UUID). The caller is
      * responsible for resolving this beforehand — by slug (checkout) or by
-     * whatever identifier its own contract carries (reactivation) — this
-     * helper never looks a plan up itself.
+     * whatever identifier its own contract carries (reactivation).
+     *
+     * This helper reads exactly ONE thing off the resolved plan: its
+     * `product_domain`, to state on the preapproval (HOS-1233 T-032). It still
+     * never resolves the plan itself, never picks a price, and never checks
+     * eligibility.
      */
     readonly planId: string;
     /** Resolved qzpay price ID (`billing_prices.id`) for {@link planId}. */
@@ -155,6 +173,15 @@ export interface CreatePaidSubscriptionInput {
      * backwards-compatible when omitted.
      */
     readonly payerEmail?: string;
+    /**
+     * Optional read client for the plan-domain lookup (HOS-1233 T-032).
+     *
+     * Only ever used for the `SELECT product_domain FROM billing_plans` this
+     * helper issues before creating the preapproval. Omitted, it falls back to
+     * `getDb()`. It exists so a caller already inside a transaction reads its
+     * own uncommitted plan row rather than a stale one.
+     */
+    readonly db?: DrizzleClient;
 }
 
 /**
@@ -223,6 +250,43 @@ export async function createPaidSubscription(
         trialDays
     } = input;
 
+    // HOS-1233 T-032 / AC-15e — the domain is RESOLVED FROM THE PLAN BEING
+    // PURCHASED, and resolving it here rather than at each caller is the point.
+    //
+    // Every `mode: 'paid'` checkout funnels through this one call: the host
+    // plans and the tourist plans alike, plus both reactivation paths and the
+    // past-due card replacement. Until qzpay-core 6.0.0 the parameter did not
+    // exist, so every row this created was born on the column's
+    // `'accommodation'` default — which is why every tourist plan reported
+    // `accommodation` in prod and staging alike (spec F-4b/F-4c). Nothing was
+    // wrong in the code; the value was simply never stated.
+    //
+    // A hardcoded forward would be the same bug with extra steps: it would be
+    // right for the accommodation checkout and wrong for the tourist one, both
+    // of which arrive here down the same code path with only `planId` telling
+    // them apart. Hence the read, and hence the two checkouts being asserted
+    // separately in the tests.
+    const readClient = input.db ?? getDb();
+    const [planRow] = await readClient
+        .select({ productDomain: billingPlans.productDomain })
+        .from(billingPlans)
+        .where(eq(billingPlans.id, planId))
+        .limit(1);
+
+    if (!planRow) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_FOUND',
+            `createPaidSubscription: plan '${planId}' not found`
+        );
+    }
+
+    // NULL reads as accommodation — the same asymmetry `subscriptionMatchesDomain`
+    // applies, for the same reason: the column post-dates most rows, so
+    // accommodation fails open and every other domain fails closed. This is a
+    // read of an existing row, not a write that omits the value, so it does not
+    // reintroduce what AC-15b forbids.
+    const productDomain = planRow.productDomain ?? ProductDomainEnum.ACCOMMODATION;
+
     // The preapproval create is wrapped in the E2E test-control seam so the
     // resilience suite can force the provider to be down or time out at exactly
     // this point — a failure the real MP sandbox cannot produce on demand. It is
@@ -242,6 +306,10 @@ export async function createPaidSubscription(
             billingInterval,
             paymentMethodReturnUrl,
             notificationUrl,
+            // HOS-1233 T-032: required by qzpay-core since 6.0.0 — see the
+            // resolution above for why it is read from the plan rather than
+            // taken from the caller.
+            productDomain,
             // HOS-1012: no trial field of any kind reaches this payload — not
             // `freeTrialDays`, not `startDate`. HOS-171 measured that
             // `auto_recurring.free_trial` and `start_date` are the same

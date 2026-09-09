@@ -19,6 +19,7 @@
 import { failNext, resetTestControl } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPaidSubscription } from '../../src/services/billing/paid-subscription-create.js';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read.js';
 
 const CUSTOMER_ID = 'cust_resilience';
 const OTHER_CUSTOMER_ID = 'cust_other_worker';
@@ -50,6 +51,9 @@ describe('createPaidSubscription — E2E test-control seam', () => {
     beforeEach(() => {
         process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
         resetTestControl();
+        // HOS-1233 T-032: the helper resolves the plan's domain before creating
+        // the preapproval, and fails closed when the plan is not found.
+        mockPlanDomainRead();
     });
 
     afterEach(() => {

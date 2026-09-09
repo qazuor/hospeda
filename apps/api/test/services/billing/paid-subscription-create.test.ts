@@ -14,9 +14,11 @@
  * @module test/services/billing/paid-subscription-create
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { ProductDomainEnum } from '@repo/schemas';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPaidSubscription } from '../../../src/services/billing/paid-subscription-create';
 import { SubscriptionCheckoutError } from '../../../src/services/billing/subscription-checkout-error';
+import { mockPlanDomainRead, mockPlanDomainReadMissing } from '../../helpers/plan-domain-read';
 
 const CUSTOMER_ID = 'cust_owner';
 const PLAN_ID = '00000000-0000-4000-8000-0000000000aa';
@@ -56,6 +58,72 @@ function createBillingMock(opts: BillingMockOpts = {}) {
 }
 
 describe('createPaidSubscription', () => {
+    beforeEach(() => {
+        // HOS-1233 T-032: the helper reads the plan's own product_domain before
+        // creating the preapproval, and fails closed when it finds no plan.
+        mockPlanDomainRead();
+    });
+
+    // The two assertions AC-15e is actually about. They are written as a PAIR
+    // because the spec's §9 says so in as many words: both checkouts arrive
+    // here down the same code path with only `planId` telling them apart, so a
+    // hardcoded forward would satisfy one and not the other. One test alone
+    // cannot tell "resolved from the plan" from "always accommodation".
+    it('states the domain the ACCOMMODATION plan reports', async () => {
+        const billing = createBillingMock();
+        mockPlanDomainRead(ProductDomainEnum.ACCOMMODATION);
+
+        await createPaidSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl
+        });
+
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({ productDomain: ProductDomainEnum.ACCOMMODATION })
+        );
+    });
+
+    it('states the domain the TOURIST plan reports, from the same code path', async () => {
+        const billing = createBillingMock();
+        mockPlanDomainRead(ProductDomainEnum.TOURIST);
+
+        await createPaidSubscription({
+            billing: billing as any,
+            customerId: CUSTOMER_ID,
+            planId: PLAN_ID,
+            priceId: PRICE_ID,
+            paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+            notificationUrl: URLS.notificationUrl
+        });
+
+        expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect.objectContaining({ productDomain: ProductDomainEnum.TOURIST })
+        );
+    });
+
+    it('fails CLOSED when the plan cannot be found — it does not guess a domain', async () => {
+        const billing = createBillingMock();
+        mockPlanDomainReadMissing();
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            })
+        ).rejects.toMatchObject({ code: 'PLAN_NOT_FOUND' });
+
+        // And no preapproval is created at MercadoPago on the way out.
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
     it('returns checkoutUrl + subscription when the provider init point is present', async () => {
         const billing = createBillingMock();
 
