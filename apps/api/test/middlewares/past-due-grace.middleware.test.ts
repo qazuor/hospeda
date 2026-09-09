@@ -63,6 +63,24 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: mockGetQZPayBilling
 }));
 
+// `hydrateSubscriptionProductDomains` is mocked (not the real DB-backed
+// implementation) so these unit tests never touch a database; it mirrors what
+// the real function does for objects that already carry (or lack)
+// `productDomain` — a fixture that sets it keeps its value, one that omits it
+// reads `null` (the fail-open legacy-row case), same as the real hydration.
+// `subscriptionMatchesDomain` is left REAL (from `@repo/service-core`): it is
+// the predicate HOS-1277 relies on, and mocking it would only ever confirm
+// the mock.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        hydrateSubscriptionProductDomains: vi.fn(async (subs: readonly Record<string, unknown>[]) =>
+            subs.map((sub) => ({ ...sub, productDomain: (sub.productDomain as string) ?? null }))
+        )
+    };
+});
+
 // The api logger is provided by @repo/logger which is already mocked in
 // test/setup.ts via vi.mock('@repo/logger'). The logger module re-exports
 // the mocked logger, so no additional mock is needed here.
@@ -94,6 +112,7 @@ interface MockSubscription {
     isInGracePeriod: Mock;
     daysRemainingInGrace: Mock;
     currentPeriodEnd?: Date;
+    productDomain?: string | null;
 }
 
 /**
@@ -141,25 +160,30 @@ function createMockContext(options: MockContextOptions = {}) {
  */
 function createMockSubscription(
     overrides: {
+        id?: string;
         isPastDue?: boolean;
         isInGracePeriod?: boolean;
         daysRemainingInGrace?: number | null;
         currentPeriodEnd?: Date;
+        productDomain?: string | null;
     } = {}
 ): MockSubscription {
     const {
+        id = 'sub_abc123',
         isPastDue = false,
         isInGracePeriod = false,
         daysRemainingInGrace = null,
-        currentPeriodEnd
+        currentPeriodEnd,
+        productDomain
     } = overrides;
 
     return {
-        id: 'sub_abc123',
+        id,
         isPastDue: vi.fn().mockReturnValue(isPastDue),
         isInGracePeriod: vi.fn().mockReturnValue(isInGracePeriod),
         daysRemainingInGrace: vi.fn().mockReturnValue(daysRemainingInGrace),
-        currentPeriodEnd
+        currentPeriodEnd,
+        productDomain
     };
 }
 
@@ -916,6 +940,129 @@ describe('pastDueGraceMiddleware', () => {
                 code: 'GRACE_PERIOD_EXPIRED',
                 daysOverdue: 3 // ceil(10d) - 7d grace = 3
             });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Domain isolation (HOS-1277): a past-due subscription in ONE vertical
+    // must not gate a request that belongs to a different vertical.
+    // -----------------------------------------------------------------------
+
+    describe('domain isolation (HOS-1277)', () => {
+        it('REGRESSION: a dual-owner is NOT blocked on an accommodation route by a past-due gastronomy subscription', async () => {
+            // The dual-owner case named in the issue: accommodation is paid up,
+            // gastronomy is past-due and grace-expired. Before the fix, a
+            // domain-blind "most urgent past-due" scan picked the gastronomy row
+            // and 402'd every /protected/* request, including this one.
+            const gastronomyPastDue = createMockSubscription({
+                id: 'sub-gastronomy',
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -10,
+                productDomain: 'gastronomy'
+            });
+            setupBillingWith([gastronomyPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/accommodations/acc-1' });
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.header).not.toHaveBeenCalled();
+        });
+
+        it('blocks the SAME dual-owner on a gastronomy route with the same past-due subscription', async () => {
+            const gastronomyPastDue = createMockSubscription({
+                id: 'sub-gastronomy',
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -10,
+                productDomain: 'gastronomy'
+            });
+            setupBillingWith([gastronomyPastDue]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/gastronomies/gas-1/menu'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+        });
+
+        it('a legacy subscription with no productDomain still gates the default (accommodation) route', async () => {
+            // Fail-open, same as `subscriptionMatchesDomain`: a row predating the
+            // column must not silently escape grace enforcement.
+            const legacyPastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -1,
+                productDomain: undefined
+            });
+            setupBillingWith([legacyPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/host' });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+        });
+
+        it('a past-due PARTNER subscription does not gate an accommodation route', async () => {
+            // Widening past-due gating to another vertical must not widen it to
+            // EVERY vertical — partner stays excluded exactly like gastronomy.
+            const partnerPastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -5,
+                productDomain: 'partner'
+            });
+            setupBillingWith([partnerPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/accommodations/acc-1' });
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+        });
+
+        it('blocks a past-due PARTNER subscription on its own partner route', async () => {
+            const partnerPastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -5,
+                productDomain: 'partner'
+            });
+            setupBillingWith([partnerPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/partners/mine' });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+        });
+
+        it('scopes the commerce checkout surface by its :entityType path segment', async () => {
+            const experiencePastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -2,
+                productDomain: 'experience'
+            });
+            setupBillingWith([experiencePastDue]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/commerce/subscriptions/experience/change-plan'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
         });
     });
 });

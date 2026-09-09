@@ -19,7 +19,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
-import { SubscriptionStatusEnum } from '@repo/schemas';
+import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import {
     BILLING_EVENT_TYPES,
     calculateTrialDaysRemaining,
@@ -34,6 +34,7 @@ import {
     type ReactivateSubscriptionResult,
     resolveIntendedInterval,
     type StartTrialInput,
+    subscriptionMatchesDomain,
     type TrialEndingSubscription,
     type TrialStatus,
     withServiceTransaction
@@ -42,8 +43,12 @@ import * as Sentry from '@sentry/node';
 import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
-import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import {
+    createPaidSubscription,
+    resolvePlanProductDomain
+} from './billing/paid-subscription-create.js';
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
+import { selectAccommodationSubscription } from './billing/plan-domain-guard.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 import { expireLocalTrial } from './billing/trial-local-expiry.service.js';
@@ -1423,13 +1428,55 @@ export class TrialService {
                 );
             }
 
-            // Reject if any subscription is already live. HOS-702: the canonical
-            // entitlement-granting set, so a `comp` subscriber cannot "reactivate"
-            // a stale cancelled row on top of their complimentary grant — the
-            // hand-rolled pair this replaces let exactly that through.
-            const activeOrTrialing = subscriptions.find((sub) =>
-                isEntitlementGrantingStatus(sub.status)
-            );
+            // HOS-1277: which domain THIS reactivation is for. `subscriptions`
+            // above hydrates every one of the customer's product domains, so
+            // without this the checks below reached across verticals — a host
+            // reactivating their ACCOMMODATION plan got a 409
+            // `ACTIVE_SUBSCRIPTION_EXISTS` off an unrelated live GASTRONOMY
+            // subscription, and the "find a canceled subscription" step could
+            // just as easily hand a gastronomy plan's cancelled row to an
+            // accommodation reactivation.
+            //
+            // `resolvePlanProductDomain` re-reads the column fresh rather than
+            // trusting `plan` (HOS-1233 T-032) — but `resolveReactivationPlan`
+            // already proved this exact `planId` exists, so a failure here is a
+            // transient DB blip, not a bad id. Defaulting to ACCOMMODATION on
+            // that failure — rather than refusing the whole reactivation — keeps
+            // this degrading exactly like it did before this fix existed (when
+            // the domain was never read at all), for the domain most
+            // reactivation targets belong to.
+            let planDomain: ProductDomainValue;
+            try {
+                planDomain = await resolvePlanProductDomain({ planId: plan.id });
+            } catch (error) {
+                apiLogger.warn(
+                    {
+                        customerId,
+                        planId: plan.id,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    'Reactivation: plan product-domain lookup failed — defaulting to accommodation'
+                );
+                planDomain = ProductDomainEnum.ACCOMMODATION;
+            }
+
+            // Accommodation OR tourist, ORDERED — never an unordered match
+            // between them — for the same reason `selectAccommodationSubscription`
+            // exists (HOS-1213/HOS-1233): a plan filed under the accommodation
+            // catalogue bucket can be a tourist-tier plan whose SUBSCRIPTION rows
+            // carry `productDomain: 'tourist'`, not `'accommodation'`. Every
+            // other domain matches itself exactly — there is no tourist-style
+            // ambiguity for gastronomy/experience/partner subscriptions.
+            const activeOrTrialing =
+                planDomain === ProductDomainEnum.ACCOMMODATION
+                    ? await selectAccommodationSubscription(
+                          subscriptions.filter((sub) => isEntitlementGrantingStatus(sub.status))
+                      )
+                    : subscriptions.find(
+                          (sub) =>
+                              isEntitlementGrantingStatus(sub.status) &&
+                              subscriptionMatchesDomain(sub, planDomain)
+                      );
 
             if (activeOrTrialing) {
                 // Report the actual status rather than collapsing it to one of two
@@ -1445,8 +1492,18 @@ export class TrialService {
                 );
             }
 
-            // Find a canceled subscription to reactivate from
-            const canceledSub = subscriptions.find((sub) => sub.status === 'canceled');
+            // Find a canceled subscription to reactivate from, scoped to the
+            // SAME domain as the target plan (HOS-1277) — see above.
+            const canceledSub =
+                planDomain === ProductDomainEnum.ACCOMMODATION
+                    ? await selectAccommodationSubscription(
+                          subscriptions.filter((sub) => sub.status === 'canceled')
+                      )
+                    : subscriptions.find(
+                          (sub) =>
+                              sub.status === 'canceled' &&
+                              subscriptionMatchesDomain(sub, planDomain)
+                      );
 
             if (!canceledSub) {
                 // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a

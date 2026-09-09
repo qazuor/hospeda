@@ -40,8 +40,18 @@
  */
 
 import { and, billingSubscriptions, desc, eq, getDb } from '@repo/db';
-import { PromoEffectKindEnum, ServiceErrorCode, SubscriptionStatusEnum } from '@repo/schemas';
-import { extendExistingSubscriptionTrial, getPromoCodeByCode } from '@repo/service-core';
+import {
+    ProductDomainEnum,
+    type ProductDomainValue,
+    PromoEffectKindEnum,
+    ServiceErrorCode,
+    SubscriptionStatusEnum
+} from '@repo/schemas';
+import {
+    extendExistingSubscriptionTrial,
+    getPromoCodeByCode,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 
 /**
  * Typed error code returned when the caller has no trial to extend.
@@ -78,19 +88,37 @@ export type ApplyTrialExtensionToRunningTrialResult =
 /**
  * Resolve the subscription whose trial should be extended for a billing customer.
  *
- * Returns the customer's most recently created `trialing` subscription, or
- * `null` when the customer has none. Callers that already know which
- * subscription they mean pass `subscriptionId` and never reach this.
+ * Callers that already know which subscription they mean pass `subscriptionId`
+ * on the public function and never reach this.
+ *
+ * **HOS-1277 — ordered domain preference, not "most recent, any vertical".**
+ * Since HOS-688 one billing customer can run MULTIPLE trials at once — one per
+ * vertical (a dual-role host-provider is the concrete case: an accommodation
+ * trial and a gastronomy trial, both `trialing`, simultaneously). The web has
+ * no way to tell this seam which vertical a redemption is for yet (`input.domain`
+ * exists for a future caller that can), so absent an explicit domain this picks
+ * deterministically rather than by creation order: ACCOMMODATION first, then
+ * TOURIST (the same ordered pair `selectAccommodationSubscription`
+ * (`services/billing/plan-domain-guard.ts`) and `entitlement.ts` use for "the
+ * customer's own consumer plan" per HOS-1233 — never an unordered match
+ * between them), and only when the customer holds
+ * NEITHER does it fall back to the single most-recently-created trial of
+ * whatever vertical remains. Before this, a promo code meant to extend an
+ * accommodation trial could silently land on a newer gastronomy trial (or vice
+ * versa) purely because of which one was created later.
  *
  * @param input.billingCustomerId - The billing customer to search.
- * @returns The subscription id, or `null` when no trial is running.
+ * @param input.domain - Optional explicit target domain. When supplied, only a
+ *   trial in exactly this domain is returned (no ordered fallback).
+ * @returns The subscription id, or `null` when no matching trial is running.
  * @internal
  */
 async function findRunningTrialSubscriptionId(input: {
     readonly billingCustomerId: string;
+    readonly domain?: ProductDomainValue;
 }): Promise<string | null> {
     const rows = await getDb()
-        .select({ id: billingSubscriptions.id })
+        .select({ id: billingSubscriptions.id, productDomain: billingSubscriptions.productDomain })
         .from(billingSubscriptions)
         .where(
             and(
@@ -98,10 +126,29 @@ async function findRunningTrialSubscriptionId(input: {
                 eq(billingSubscriptions.status, SubscriptionStatusEnum.TRIALING)
             )
         )
-        .orderBy(desc(billingSubscriptions.createdAt))
-        .limit(1);
+        .orderBy(desc(billingSubscriptions.createdAt));
 
-    return rows[0]?.id ?? null;
+    if (rows.length === 0) {
+        return null;
+    }
+
+    if (input.domain) {
+        return (
+            rows.find((row) => subscriptionMatchesDomain(row, input.domain as ProductDomainValue))
+                ?.id ?? null
+        );
+    }
+
+    return (
+        rows.find((row) => subscriptionMatchesDomain(row, ProductDomainEnum.ACCOMMODATION))?.id ??
+        rows.find((row) => subscriptionMatchesDomain(row, ProductDomainEnum.TOURIST))?.id ??
+        // Neither: the customer's only running trial(s) are in a commerce
+        // vertical (gastronomy/experience/partner). No ordering precedent
+        // exists across those yet, so keep the pre-HOS-1277 behavior — the
+        // most recently created — for this narrower remaining case.
+        rows[0]?.id ??
+        null
+    );
 }
 
 /**
@@ -124,6 +171,11 @@ async function findRunningTrialSubscriptionId(input: {
  *   to the subscription's customer inside the mutator).
  * @param input.subscriptionId - Optional explicit target. Ownership MUST have
  *   been verified by the caller (the route runs `assertSubscriptionOwnership`).
+ * @param input.domain - Optional explicit target domain (HOS-1277), for a
+ *   caller that knows which vertical's trial it means. Not yet wired to the
+ *   web — no route passes it today — so omitting it falls back to the ordered
+ *   accommodation-then-tourist auto-resolution documented on
+ *   `findRunningTrialSubscriptionId`. Ignored when `subscriptionId` is given.
  * @param input.livemode - Whether to operate in live mode (default: false).
  * @returns Typed success carrying the PERSISTED `trial_end`, or a typed error.
  *
@@ -142,9 +194,10 @@ export async function applyTrialExtensionToRunningTrial(input: {
     readonly billingCustomerId: string;
     readonly actorId: string;
     readonly subscriptionId?: string;
+    readonly domain?: ProductDomainValue;
     readonly livemode?: boolean;
 }): Promise<ApplyTrialExtensionToRunningTrialResult> {
-    const { code, billingCustomerId, actorId, subscriptionId, livemode = false } = input;
+    const { code, billingCustomerId, actorId, subscriptionId, domain, livemode = false } = input;
 
     try {
         // Step 1: resolve + validate the code. Mirrors the checks `applyPromoCode`
@@ -193,7 +246,7 @@ export async function applyTrialExtensionToRunningTrial(input: {
         // Step 2: resolve the target trial. No trial → typed no-op; the code is
         // left unburnt and usable once a trial does exist.
         const targetSubscriptionId =
-            subscriptionId ?? (await findRunningTrialSubscriptionId({ billingCustomerId }));
+            subscriptionId ?? (await findRunningTrialSubscriptionId({ billingCustomerId, domain }));
 
         if (!targetSubscriptionId) {
             return {
