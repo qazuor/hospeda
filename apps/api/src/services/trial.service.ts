@@ -24,7 +24,6 @@ import {
     BILLING_EVENT_TYPES,
     calculateTrialDaysRemaining,
     checkSubscriptionStatusTransition,
-    DEFAULT_TRIAL_PLAN_SLUG,
     excludeAddonDomainCondition,
     hydrateSubscriptionProductDomains,
     isAddonSubscription,
@@ -89,65 +88,115 @@ const BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004;
 const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
 
 /**
- * Web path (with locale) to the owner pricing page that renders
- * `PricingCardsGrid.astro` — the ONLY page with the monthly/annual billing
- * toggle (HOS-115 §5). `/mi-cuenta/suscripcion` (the account subscription
- * page previously used here) renders `SubscriptionDashboard` instead, which
- * has no toggle — a `?interval=` query param appended to that URL would be
- * silently ignored. Every trial-eligible plan today is an owner plan (see
- * {@link DEFAULT_TRIAL_PLAN_SLUG}), so the owner pricing page is the correct,
- * single nudge target for every trial regardless of which plan it started on.
+ * Web path segment (under `/es/planes/<segment>/precios/`) to each vertical's
+ * own pricing page — the ONLY pages with the monthly/annual billing toggle
+ * (HOS-115 §5). `/mi-cuenta/suscripcion` (the account subscription page
+ * previously used here) renders `SubscriptionDashboard` instead, which has no
+ * toggle — a `?interval=` query param appended to that URL would be silently
+ * ignored.
  *
- * HOS-1032 moved that page to `/planes/anfitriones/precios/`. The old URL still
- * 301s there, so an unrepointed link would not 404 — it would cost a round trip
- * and, worse, DROP THE QUERY STRING, which is the one thing this URL exists to
- * carry. An `?interval=annual` nudge would have landed on the monthly toggle,
- * silently, for the customer who had already chosen annual.
+ * **This used to be a single constant** (`'/es/planes/anfitriones/precios/'`),
+ * on the claim that "every trial-eligible plan today is an owner plan". That
+ * was true when it was written (HOS-115) and false by the time HOS-1184
+ * restored local trials for gastronomy and experience listings — the
+ * conclusion (one hardcoded URL) survived the reason that had justified it,
+ * and every commerce trial's nudge email pointed a restaurant or tour owner at
+ * the ANFITRIONES (host) pricing page instead of their own (HOS-1283). The
+ * per-domain map below is the fix: one path segment per vertical that can
+ * actually hold a Hospeda-owned local trial today (see
+ * `createTrialSubscription`'s two callers — `accommodation-publish-deps.ts`
+ * and `commerce-trial-start.service.ts`). `tourist` and `partner` are included
+ * for completeness / fail-open safety even though neither currently reaches
+ * this function via a real trial.
+ *
+ * HOS-1032 moved the accommodation page to `/planes/anfitriones/precios/`. The
+ * old URL still 301s there, so an unrepointed link would not 404 — it would
+ * cost a round trip and, worse, DROP THE QUERY STRING, which is the one thing
+ * this URL exists to carry. An `?interval=annual` nudge would have landed on
+ * the monthly toggle, silently, for the customer who had already chosen
+ * annual.
  *
  * Spelled here rather than imported: `apps/api` does not depend on `apps/web`,
- * so `PRICING_PAGE_PATH_BY_AUDIENCE` is not reachable from this package. The
+ * so `PRICING_PAGE_PATH_BY_AUDIENCE` (`apps/web/src/lib/pricing-plans.ts`,
+ * the canonical mapping this mirrors) is not reachable from this package. The
  * static guard `apps/web/test/static-guards/retired-pricing-urls.guard.test.ts`
- * is what keeps this literal from going stale again — it scans `apps/` and
- * `packages/` for the retired paths, not just `apps/web`.
+ * is what keeps every one of these literals from going stale again — it scans
+ * `apps/` and `packages/` for the retired paths, not just `apps/web`.
  */
-const TRIAL_UPGRADE_PATH = '/es/planes/anfitriones/precios/';
+const TRIAL_UPGRADE_PATH_SEGMENT_BY_DOMAIN: Readonly<Record<string, string>> = {
+    accommodation: 'anfitriones',
+    gastronomy: 'gastronomia',
+    experience: 'experiencias',
+    tourist: 'turistas',
+    partner: 'aliados'
+};
 
 /**
- * Builds the trial→paid conversion nudge URL sent on the `TRIAL_ENDING_REMINDER`
- * notification (HOS-115 §5). Appends `?interval=<intendedInterval>` when the
- * trial recorded a valid intent, so the pricing page can pre-select the same
- * toggle the customer started from instead of defaulting to monthly. Degrades
- * gracefully — the query param is simply omitted — when `intendedInterval` is
- * missing or not one of the two known values.
+ * Resolves the pricing-page path segment for a trial's vertical.
  *
- * Single source of truth for this URL, with one live sender left:
- * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER`. It used to be shared
- * with `blockExpiredTrials`'s `TRIAL_EXPIRED` email, which HOS-171 deleted along
- * with the cancel-at-expiry cron — an elapsed card-first trial is a customer
- * MercadoPago is about to charge, not one to nudge into paying.
+ * Fails OPEN to accommodation — same convention as
+ * `subscriptionMatchesDomain` and `createTrialSubscription`'s own
+ * `planDomain ?? 'accommodation'` fallback — for `null`, `undefined`, or any
+ * value this map does not recognize (including `'addon'`, which never backs a
+ * real trial). Accommodation is overwhelmingly the common case and, unlike
+ * every other domain, was already correct before HOS-1283; failing closed
+ * here would regress it for a merely unrecognized value.
+ */
+function resolveTrialUpgradePathSegment(productDomain: string | null | undefined): string {
+    const fallback = TRIAL_UPGRADE_PATH_SEGMENT_BY_DOMAIN.accommodation as string;
+    if (!productDomain) return fallback;
+    return TRIAL_UPGRADE_PATH_SEGMENT_BY_DOMAIN[productDomain] ?? fallback;
+}
+
+/**
+ * Builds the trial→paid conversion nudge URL sent on all nine sends of the
+ * trial series (HOS-1012, HOS-1283). Appends `?interval=<intendedInterval>`
+ * when the trial recorded a valid intent, so the pricing page can pre-select
+ * the same toggle the customer started from instead of defaulting to monthly.
+ * Degrades gracefully — the query param is simply omitted — when
+ * `intendedInterval` is missing or not one of the two known values.
  *
- * A third sender once existed — `trial-pre-end-notif.job.ts` (SPEC-126 D5)
- * also sent `TRIAL_ENDING_REMINDER`, duplicating `notification-schedule`'s
- * send and building its own divergent `/cuenta/planes` link inline instead
- * of calling this function. It was disabled under HOS-115 as a duplicate-cron
- * fix and then DELETED under HOS-121, once its two robustness advantages
- * (skip-tolerant D-3 window + durable `billing_subscription_events` dedup)
- * were ported into `notification-schedule.job.ts`. Its divergent link is gone;
- * this function is again literally the only trial-nudge URL pattern in play.
+ * **Corrected (HOS-1283): this is NOT called from `TRIAL_ENDING_REMINDER`.**
+ * The previous docblock here claimed "one live sender left:
+ * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER`" — that was true at
+ * HOS-115 but stopped being true once HOS-1012 replaced the single-send
+ * reminder with the nine-send series: `NotificationType.TRIAL_ENDING_REMINDER`
+ * has no `sendNotification` call anywhere in the codebase today (verified by
+ * search), and the ONE actual caller of this function is
+ * `trial-series-dispatch.ts`'s `dispatchOne`, for all nine sends. The
+ * `TrialEndingReminder` template and type still exist but are effectively
+ * dead — left alone here since retiring them is outside HOS-1283's scope.
+ * `blockExpiredTrials`'s `TRIAL_EXPIRED` email, which used to share this URL
+ * too, was deleted entirely by HOS-171 along with the cancel-at-expiry cron —
+ * an elapsed card-first trial is a customer MercadoPago is about to charge,
+ * not one to nudge into paying.
+ *
+ * The locale segment stays a hardcoded `/es/` even though the vertical is now
+ * derived (HOS-1283): every template in `@repo/notifications` is Spanish-only
+ * by owner decision (2026-09-01, see `trial-series-shared.ts`'s docblock), so
+ * varying the URL's locale without the surrounding copy following it would
+ * send a Portuguese-reading link inside a Spanish email. Locale-aware CTAs are
+ * therefore NOT part of this fix — flagged for the owner rather than decided
+ * here (this repo's "no autonomous product decisions" rule).
  *
  * @param input.siteUrl - `HOSPEDA_SITE_URL` (no trailing slash expected).
  * @param input.intendedInterval - Raw value read off the trial
  *   subscription's `metadata.intendedInterval` (unknown/untyped at the
  *   source — the QZPay SDK does not narrow subscription metadata).
+ * @param input.productDomain - The trial's `billing_subscriptions.product_domain`
+ *   value (HOS-1283). `null`/`undefined`/unrecognized fails open to the
+ *   accommodation pricing page — see {@link resolveTrialUpgradePathSegment}.
  * @returns The absolute upgrade URL, with `?interval=` appended only when a
  *   valid interval was recorded.
  */
 export function buildTrialUpgradeUrl(input: {
     readonly siteUrl: string;
     readonly intendedInterval?: unknown;
+    readonly productDomain?: string | null;
 }): string {
-    const { siteUrl, intendedInterval } = input;
-    const base = `${siteUrl}${TRIAL_UPGRADE_PATH}`;
+    const { siteUrl, intendedInterval, productDomain } = input;
+    const segment = resolveTrialUpgradePathSegment(productDomain);
+    const base = `${siteUrl}/es/planes/${segment}/precios/`;
     const resolved = resolveIntendedInterval(intendedInterval);
     return resolved ? `${base}?interval=${resolved}` : base;
 }
@@ -224,9 +273,16 @@ export class TrialService {
      * was the `TRIAL_EXPIRED` email the cancel-at-expiry cron sent. Card-first
      * reconciliation sends nothing (HOS-171): a converting customer was already
      * warned by `TRIAL_ENDING_REMINDER` before the charge, and a failed charge is
-     * the dunning cron's story. `TRIAL_ENDING_REMINDER` is dispatched by
-     * `notification-schedule.job.ts`, not from here, so the sender is gone rather
-     * than left dangling for callers to dutifully wire into nothing.
+     * the dunning cron's story, so the sender is gone rather than left dangling
+     * for callers to dutifully wire into nothing.
+     *
+     * "`TRIAL_ENDING_REMINDER` is dispatched by `notification-schedule.job.ts`"
+     * was true at HOS-171 and stopped being true once HOS-1012 replaced that
+     * single-send reminder with the nine-send trial series — the type has no
+     * live `sendNotification` call anywhere in the codebase today (HOS-1283
+     * verified this while fixing `buildTrialUpgradeUrl`'s own stale doc; see
+     * that function). The reasoning above (why this constructor takes no
+     * sender) still holds regardless.
      */
     constructor(private readonly billing: QZPayBilling | null) {}
 
