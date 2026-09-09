@@ -383,10 +383,14 @@ export function SubscriptionDetailsDialog({
                                             )}
                                         </Button>
                                     )}
-                                {/* HOS-1314: hidden only when already comped in this
-                                    vertical — every other status may still be granted
-                                    one, and the endpoint's own 409 backstops a
-                                    duplicate. */}
+                                {/* HOS-1314: hidden only when THIS subscription's own
+                                    status is already 'comp' — the predicate is blind to
+                                    which vertical that comp belongs to, and blind to any
+                                    OTHER subscription the same customer might hold. It
+                                    is a UI convenience, not the actual guard: the
+                                    endpoint itself is what refuses (409) a second comp
+                                    in the same vertical, and it is the only thing this
+                                    button can rely on for that. */}
                                 {subscription.status !== 'comp' && (
                                     <Button
                                         variant="outline"
