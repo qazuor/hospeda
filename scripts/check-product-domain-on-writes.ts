@@ -174,6 +174,23 @@ export type Finding = {
 // Source walking
 // ---------------------------------------------------------------------------
 
+/**
+ * Extra directories scanned beyond `<app|package>/src` (HOS-1233 T-036).
+ *
+ * `apps/e2e/fixtures` writes `billing_subscriptions` rows in RAW SQL against a
+ * REAL database, and it lives outside any `src`, so the roots above never saw
+ * it. That gap was not theoretical: `api-helpers.ts`'s `createSubscription`
+ * omitted the column, this guard reported a clean 14 sites, and dropping the
+ * default took down 16 P0 specs at once — the only surface where the failure
+ * could surface at all, because every other suite mocks `@repo/db`.
+ *
+ * Scanned despite being test-adjacent, unlike the `*.test.ts` files the walker
+ * excludes: a fixture is not a test asserting a shape, it is a WRITER of rows,
+ * and the exclusion exists so a test can reproduce the misfiled shape on
+ * purpose — which a shared fixture never does.
+ */
+const EXTRA_SCAN_DIRS = ['apps/e2e/fixtures'] as const;
+
 /** Collects production `.ts`/`.tsx` sources under every app's and package's `src`. */
 export function collectSourceFiles(root: string): string[] {
     const out: string[] = [];
@@ -214,6 +231,15 @@ export function collectSourceFiles(root: string): string[] {
             } catch {
                 // package without a src/ directory
             }
+        }
+    }
+
+    for (const extra of EXTRA_SCAN_DIRS) {
+        const dir = join(root, extra);
+        try {
+            if (statSync(dir).isDirectory()) walk(dir);
+        } catch {
+            // directory absent in this checkout
         }
     }
 

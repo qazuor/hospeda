@@ -608,13 +608,30 @@ export async function createSubscription(options: {
     const periodEnd = options.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const periodStart = new Date(); // billing_subscriptions.current_period_start is NOT NULL
     // livemode=false: matches the E2E environment's sandbox livemode (see customer insert above).
+    // HOS-1233 T-036: `product_domain` is stated, and DERIVED from the plan
+    // being subscribed to rather than hardcoded.
+    //
+    // The column lost its `DEFAULT 'accommodation'` (migration 0121), so an
+    // insert that omits it is now rejected outright — which is what this
+    // statement did, taking 16 P0 specs down with it. Hardcoding
+    // `'accommodation'` would have made them pass again and quietly recreated
+    // the original bug in the fixtures: a `tourist-vip` subscription filed
+    // under the wrong vertical, which is precisely the shape this spec exists
+    // to end (F-4b).
+    //
+    // The subselect mirrors what production does — `createPaidSubscription`
+    // reads the plan's own `productDomain` and forwards it — so a fixture can
+    // never disagree with the plan it names.
     const subRows = await execSQL<{ id: string }>(
         `INSERT INTO billing_subscriptions (
              customer_id, plan_id, status,
              billing_interval, interval_count,
              current_period_start, current_period_end,
+             product_domain,
              livemode, created_at, updated_at
-         ) VALUES ($1, $2, $3, 'month', 1, $4, $5, false, NOW(), NOW())
+         ) VALUES ($1, $2, $3, 'month', 1, $4, $5,
+             (SELECT product_domain FROM billing_plans WHERE id = $2),
+             false, NOW(), NOW())
          RETURNING id`,
         [customerId, options.planId, options.status, periodStart, periodEnd]
     );
