@@ -20,9 +20,12 @@ export enum EntitlementKey {
 }
 ```
 
-The two runtime guards (`isEntitlementKey` / `isLimitKey` in
-`packages/billing/src/types/guards.ts`) iterate `Object.values(EntitlementKey)`,
-so no manual update is needed there. The new key is automatically valid.
+The two runtime guards live in `packages/billing/src/types/guards.ts` and each
+builds a `ReadonlySet` at module load, so no manual update is needed — the new key
+is automatically valid. They read **different enums**: `isEntitlementKey` from
+`Object.values(EntitlementKey)`, `isLimitKey` from `Object.values(LimitKey)`. This
+paragraph claimed both iterate `EntitlementKey` (HOS-1302); adding a `LimitKey`
+would then look covered by a guard that never sees it.
 
 ---
 
@@ -130,8 +133,16 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
 The middleware chain order on every protected route is:
 
 ```
-auth → actor → billing → billingCustomer → trial → [options.middlewares]
+auth → actor → billing → billingCustomer → entitlement → trial → [options.middlewares]
 ```
+
+The `entitlement` step (`entitlementMiddleware()`, registered at
+`apps/api/src/utils/create-app.ts:176`) is easy to miss and used to be absent
+from this diagram: it is the LOADER that populates `userEntitlements` /
+`userLimits` on the context, and it runs BEFORE `trial`. It is not the gate.
+The gate is `requireEntitlement(key)`, which lives in `[options.middlewares]`
+and therefore still runs after `trial` — which is why the first invariant below
+holds despite the loader's position.
 
 Key ordering invariants:
 

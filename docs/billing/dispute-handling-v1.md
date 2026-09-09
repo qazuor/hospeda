@@ -6,11 +6,18 @@ In v1, dispute and chargeback handling is a semi-automated process. The API webh
 
 ## Webhook Events
 
-The API processes `chargebacks` and `payment.dispute` IPN events from MercadoPago:
+The API registers the normalized events **`dispute.created`** and **`dispute.updated`**
+(`apps/api/src/routes/webhooks/mercadopago/router.ts:186-187`), which is what MP's
+raw `chargebacks.created` / `chargebacks.updated` map to.
+
+> **There is no real MP event that normalizes to `payment.dispute`** — the
+> router says so in a comment at lines 179-184, where a previous
+> `'payment.dispute'` registration was found dead and removed. This document
+> named it until HOS-1302.
 
 - Events are logged at `warn` level with metadata: disputeId, paymentId, status, amount, reason
 - Events are marked as `processed` in the `billing_webhook_events` table for audit trail
-- Admin email notifications are sent to addresses in `ADMIN_NOTIFICATION_EMAILS` env var (severity: critical, with idempotency)
+- Admin email notifications are sent to addresses in the **`HOSPEDA_ADMIN_NOTIFICATION_EMAILS`** env var (severity: critical, with idempotency) — `dispute-logic.ts:53`. Per SPEC-035 there is no unprefixed alias, so the `ADMIN_NOTIFICATION_EMAILS` this line used to name resolves to nothing.
 - Logic is extracted to `dispute-logic.ts` for reuse by both webhook handlers and cron retry jobs
 - Handler: `apps/api/src/routes/webhooks/mercadopago/dispute-handler.ts`
 - Logic: `apps/api/src/routes/webhooks/mercadopago/dispute-logic.ts`

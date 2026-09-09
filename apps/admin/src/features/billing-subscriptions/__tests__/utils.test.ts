@@ -33,7 +33,13 @@ const ALL_SUBSCRIPTION_STATUSES: AdminSubscriptionViewStatus[] = [
     'expired',
     'pending_provider',
     'abandoned',
-    'comp'
+    'comp',
+    // HOS-1245: `courtesy` was missing here too — this list is what a
+    // `Record<AdminSubscriptionViewStatus, ...>` compile error would have
+    // forced once the schema widened, so it is worth keeping in lockstep with
+    // `AdminSubscriptionViewStatusSchema` by hand rather than relying on `tsc`
+    // alone to notice a drift.
+    'courtesy'
 ];
 
 describe('billing-subscriptions utils — status vocabulary', () => {
@@ -44,6 +50,20 @@ describe('billing-subscriptions utils — status vocabulary', () => {
         const label = getStatusLabel(status, (key) => key);
         expect(label).toBeDefined();
         expect(label).not.toBe('');
+    });
+
+    it('HOS-1245: gives courtesy a label distinct from comp (both would otherwise render "Cortesía")', () => {
+        // `comp` (permanently complimentary, SPEC-262) and `courtesy` (a
+        // finite gifted window, HOS-180) are different lifecycle states, but
+        // the Spanish locale's existing `comp` label is literally "Cortesía" —
+        // the Spanish word for "courtesy". Reusing the same word for the new
+        // status would make two different badges read identically to an
+        // operator. This asserts the i18n keys resolve to different strings
+        // (using the real `t` would require loading the i18n package; here we
+        // assert the KEYS differ, which is what the labels map controls).
+        const compLabel = getStatusLabel('comp', (key) => key);
+        const courtesyLabel = getStatusLabel('courtesy', (key) => key);
+        expect(compLabel).not.toBe(courtesyLabel);
     });
 });
 

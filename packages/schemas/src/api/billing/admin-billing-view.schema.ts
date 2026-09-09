@@ -73,6 +73,15 @@ export type AdminPaymentViewStatus = z.infer<typeof AdminPaymentViewStatusSchema
  * `canceled` is served here as `cancelled`. `abandoned` and `pending_provider`
  * are included because they exist in production data and previously rendered as
  * an empty badge — the UI map had no entry for them.
+ *
+ * `courtesy` (HOS-180, {@link SubscriptionStatusEnum.COURTESY}) was MISSING
+ * here until HOS-1245: `assertKnownStatus` in `admin-billing-view.shared.ts`
+ * throws inside the row-mapping `Array.map`, so a single subscription granted
+ * a courtesy window took down the ENTIRE admin subscriptions list with a 500 —
+ * not a degraded row, the whole screen. Same class of bug HOS-1007 found on
+ * the subscriber-facing panel (there it fell back to a wrong default instead
+ * of throwing); see `CLAUDE.md` — "a new status must be in EVERY enum on the
+ * path".
  */
 export const AdminSubscriptionViewStatusSchema = z.enum([
     'active',
@@ -83,7 +92,8 @@ export const AdminSubscriptionViewStatusSchema = z.enum([
     'expired',
     'pending_provider',
     'abandoned',
-    'comp'
+    'comp',
+    'courtesy'
 ]);
 
 /** TypeScript type inferred from {@link AdminSubscriptionViewStatusSchema} */

@@ -21,7 +21,7 @@ is a quick operational reference. **Always check the registry for the authoritat
 | `1001` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/webhook-retry.job.ts` | Prevent overlapping webhook retry cron executions |
 | `1002` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/notification-schedule.job.ts` | Prevent overlapping notification schedule cron executions |
 | `1003` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/dunning.job.ts` | Prevent overlapping dunning cron executions |
-| `1004` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/services/trial.service.ts` (`blockExpiredTrials`) | Prevent concurrent trial-blocking batch runs across instances |
+| `1004` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/services/trial.service.ts` (`TrialService.reconcileExpiredTrials`, run by the `trial-reconcile` cron) | Prevent concurrent trial-reconciliation batch runs across instances. **`blockExpiredTrials` no longer exists** — HOS-171 deleted it and `reconcileExpiredTrials` replaced it; only the constant `BLOCK_EXPIRED_TRIALS_LOCK_KEY` still carries the dead name. That job CONVERTS elapsed trials, it does not cancel them. |
 | hash-derived | `pg_advisory_xact_lock` (blocking) | `apps/api/src/services/addon-plan-change.service.ts` | Per-customer addon recalculation serialization |
 
 Hash-derived lock IDs are computed from the customer UUID using `hashCustomerId()` from

@@ -52,7 +52,12 @@ export function formatArsFromCents(cents: number, locale: string = defaultIntlLo
  * Covers every member of {@link AdminSubscriptionViewStatus}. `abandoned` and
  * `pending_provider` are real production values that previously fell through
  * to `undefined` (empty badge) because the local `SubscriptionStatus` union
- * omitted them.
+ * omitted them. `courtesy` (HOS-180) was ALSO missing until HOS-1245 — this
+ * map is a `Record`, so TypeScript would have caught it here the moment the
+ * schema widened, but the schema itself never declared `courtesy` in the
+ * first place (the actual HOS-1245 defect, one layer down in
+ * `admin-billing-view.shared.ts`'s `assertKnownStatus`, which THROWS on an
+ * unmapped status instead of falling through to `undefined`).
  */
 export function getStatusVariant(
     status: SubscriptionStatus
@@ -69,7 +74,8 @@ export function getStatusVariant(
         paused: 'secondary',
         pending_provider: 'outline',
         abandoned: 'destructive',
-        comp: 'secondary'
+        comp: 'secondary',
+        courtesy: 'secondary'
     };
     return variantMap[status];
 }
@@ -91,7 +97,8 @@ export function getStatusLabel(
         paused: 'admin-billing.subscriptions.statuses.paused',
         pending_provider: 'admin-billing.subscriptions.statuses.pendingProvider',
         abandoned: 'admin-billing.subscriptions.statuses.abandoned',
-        comp: 'admin-billing.subscriptions.statuses.comp'
+        comp: 'admin-billing.subscriptions.statuses.comp',
+        courtesy: 'admin-billing.subscriptions.statuses.courtesy'
     };
     return t(labels[status]);
 }

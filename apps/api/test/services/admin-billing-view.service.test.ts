@@ -286,6 +286,82 @@ describe('listSubscriptions — row mapping', () => {
         await expect(listSubscriptions({ page: 1, pageSize: 20 })).rejects.toThrow(/weird/);
     });
 
+    describe('HOS-1245 — a courtesy row must not take down the whole list', () => {
+        it('maps a single courtesy row instead of throwing (the reported 500)', async () => {
+            // Arrange — the exact reproduction from the issue: an admin grants a
+            // courtesy window, and `status` is written `courtesy` on that row.
+            mockDbReturning({
+                total: 1,
+                rows: [{ ...SUBSCRIPTION_ROW, rawStatus: 'courtesy' }]
+            });
+
+            // Act
+            const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+            // Assert — before the fix, `assertKnownStatus` threw here because
+            // `AdminSubscriptionViewStatusSchema` had no `courtesy` member, and
+            // that throw happens inside the `rows.map(...)` in
+            // `listSubscriptions`, so ONE such row failed the ENTIRE list.
+            expect(items[0]?.status).toBe('courtesy');
+            expect(items[0]?.rawStatus).toBe('courtesy');
+            expect(AdminSubscriptionViewSchema.safeParse(items[0]).success).toBe(true);
+        });
+
+        it('does not let one courtesy row poison the other rows in the same page', async () => {
+            // Arrange — the fail-open scenario the issue describes: "no se
+            // degrada una fila: se cae la lista completa". A page mixing a
+            // courtesy row with an ordinary active row must return BOTH.
+            mockDbReturning({
+                total: 2,
+                rows: [
+                    { ...SUBSCRIPTION_ROW, id: 'a', rawStatus: 'courtesy' },
+                    { ...SUBSCRIPTION_ROW, id: 'b', rawStatus: 'active' }
+                ]
+            });
+
+            // Act
+            const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+            // Assert
+            expect(items).toHaveLength(2);
+            expect(items.map((item) => item.status)).toEqual(['courtesy', 'active']);
+        });
+
+        it('maps a courtesy row correctly in every one of the five billed verticals', async () => {
+            // Arrange — the admin subscriptions screen lists all five things
+            // that charge (accommodation, gastronomy, experience, tourist,
+            // partner). A courtesy grant is not accommodation-specific, and
+            // this sweep is what the issue explicitly flagged as unmeasured
+            // ("no probé si otras pantallas... con la misma fila").
+            const verticals = [
+                'accommodation',
+                'gastronomy',
+                'experience',
+                'tourist',
+                'partner'
+            ] as const;
+            const rows = verticals.map((productDomain, index) => ({
+                ...SUBSCRIPTION_ROW,
+                id: `99999999-9999-4999-8999-99999999999${index}`,
+                rawStatus: 'courtesy',
+                productDomain,
+                planProductDomain: productDomain
+            }));
+            mockDbReturning({ total: rows.length, rows });
+
+            // Act
+            const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+            // Assert
+            expect(items).toHaveLength(verticals.length);
+            for (const item of items) {
+                expect(item.status).toBe('courtesy');
+                expect(AdminSubscriptionViewSchema.safeParse(item).success).toBe(true);
+            }
+            expect(items.map((item) => item.productDomain)).toEqual([...verticals]);
+        });
+    });
+
     it('returns page/pageSize pagination — never limit/offset', async () => {
         mockDbReturning({ total: 45, rows: [SUBSCRIPTION_ROW] });
 

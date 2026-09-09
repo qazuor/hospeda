@@ -45,7 +45,8 @@ stateDiagram-v2
 
 1. **TrialService** (`services/trial.service.ts`)
    - Core business logic for trial management
-   - Methods: startTrial, getTrialStatus, checkTrialExpiry, blockExpiredTrials, reactivateFromTrial
+   - Methods: `getTrialStatus`, `checkTrialExpiry`, `reconcileExpiredTrials`, `extendTrial`, `reactivateFromTrial`, `reactivateSubscription`, `findTrialsEndingSoon`, `reconcileDuplicateSubscriptions`
+   - HOS-1302: this list used to name `startTrial` and `blockExpiredTrials`. Neither exists — `blockExpiredTrials` was deleted by HOS-171 (`reconcileExpiredTrials` replaced it, and it CONVERTS rather than cancels), and trial creation lives in `services/subscription-trial-create.service.ts` (`createTrialSubscription`), called at first publish.
 
 2. **Trial Middleware** (`middlewares/trial.ts`)
    - Blocks access to protected routes when trial expired
