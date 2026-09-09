@@ -66,10 +66,10 @@ const makePartner = (id: string, overrides: Record<string, unknown> = {}) => ({
 });
 
 const ctx = {
-    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
     startedAt: NOW,
     dryRun: false
-};
+} as unknown as Parameters<typeof partnerPaymentReviewJob.handler>[0];
 
 beforeEach(() => {
     vi.clearAllMocks();
