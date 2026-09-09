@@ -34,7 +34,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { billingPendingCheckoutModel, billingSubscriptions, type DrizzleClient } from '@repo/db';
-import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger.js';
 
@@ -163,8 +163,31 @@ export interface CreatePendingProviderSubscriptionInput {
      * trials, and non-trial checkouts.
      */
     readonly pendingTrialExtension?: PendingTrialExtension;
-    /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
-    readonly productDomain?: string;
+    /**
+     * Product domain to stamp on the subscription. REQUIRED (HOS-1271) — no
+     * default, and deliberately so.
+     *
+     * This was `productDomain?: string` with `input.productDomain ??
+     * ProductDomainEnum.ACCOMMODATION` inside the function, which is the exact
+     * shape of the bug HOS-1271 exists to close: the column carries the same
+     * default (`DEFAULT 'accommodation' NOT NULL`), so a caller that forgot to
+     * pass this parameter produced a row indistinguishable from a correctly
+     * classified accommodation subscription — no error, no log, and
+     * `subscriptionMatchesDomain` fails OPEN for accommodation, so the
+     * misfiled row then passed every downstream entitlement check too. This is
+     * precisely how `POST /start-paid` with `planSlug: 'gastronomy-pro'` used
+     * to create a subscription reported as ALOJAMIENTO (HOS-1271): the two
+     * accommodation/tourist checkout branches never passed this field.
+     *
+     * Requiring it is the guard, and deliberately a compiler one rather than a
+     * runtime check or a static grep: every call site is checked, a rename
+     * cannot defeat it, and it fails at the call rather than at file
+     * granularity — same reasoning `own-preapproval-subscription-create.ts`
+     * already applies to `trialDays`. Every caller resolves the plan being
+     * purchased BEFORE calling this function, so the value is always on hand;
+     * there is no legitimate case where it cannot be stated.
+     */
+    readonly productDomain: string;
     /**
      * Domain coordinates merged into the subscription's `metadata` — the
      * SUBSCRIPTION → ENTITY path (`{ commerceEntityType, commerceEntityId }`
@@ -245,6 +268,7 @@ export interface CreatePendingProviderSubscriptionResult {
  *   billingInterval: 'monthly',
  *   mpPreapprovalPlanId: providerPriceId,
  *   payerEmail: customer.email,
+ *   productDomain: resolvedPlanProductDomain,
  *   livemode: customer.livemode
  * });
  * ```
@@ -263,9 +287,9 @@ export async function createPendingProviderSubscription(
         pendingTrialExtension,
         writeDomainLinkRow,
         domainMetadata,
-        livemode
+        livemode,
+        productDomain
     } = input;
-    const productDomain = input.productDomain ?? ProductDomainEnum.ACCOMMODATION;
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + PENDING_CHECKOUT_TTL_MS);
