@@ -173,7 +173,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
 
 const OLD_PLAN_SLUG = 'owner-pro';
 const NEW_PLAN_SLUG = 'owner-basico';
-const LIMIT_KEY = 'max_active_accommodations';
+const LIMIT_KEY = 'max_accommodations'; // HOS-1279: a real LimitKey (was an invented string)
 
 // DB shape: limits is Record<string, number> (SPEC-192 T-026 cutover).
 const mockOldPlan = {

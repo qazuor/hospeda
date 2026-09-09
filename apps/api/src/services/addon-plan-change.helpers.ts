@@ -4,9 +4,10 @@
  *
  * @module services/addon-plan-change.helpers
  */
-export type { PlanChangeDirection } from '@repo/service-core';
+export type { LimitKeyDomainVerdict, PlanChangeDirection } from '@repo/service-core';
 
 export {
+    classifyLimitKeyAgainstPlanDomain,
     computeDirection,
     hashCustomerId,
     resolvePlanBaseLimit,

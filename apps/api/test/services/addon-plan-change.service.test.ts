@@ -283,11 +283,18 @@ afterEach(() => {
 
 const OLD_PLAN_SLUG = 'owner-pro';
 const NEW_PLAN_SLUG = 'owner-basico';
-const LIMIT_KEY = 'max_active_accommodations';
+// HOS-1279: REAL `LimitKey` members, not invented strings. These were
+// `'max_active_accommodations'` and `'max_featured_listings'`, neither of which
+// exists in the enum. Domain isolation resolves a cap's owning domain through
+// `productDomainForLimitKey`, exhaustive over `LimitKey` and `undefined` for
+// anything else — so an invented key is now correctly refused as
+// unclassifiable and never reaches `limits.set`. Both replacements are
+// accommodation-domain caps, which is what these suites always meant.
+const LIMIT_KEY = 'max_accommodations';
 const CUSTOMER_ID = 'cus_test_downgrade_001';
 
 const UPGRADE_PLAN_SLUG = 'owner-premium';
-const SECOND_LIMIT_KEY = 'max_featured_listings';
+const SECOND_LIMIT_KEY = 'max_active_promotions';
 
 /**
  * Old plan: base 10 for LIMIT_KEY, base 2 for SECOND_LIMIT_KEY.
