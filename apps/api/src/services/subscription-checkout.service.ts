@@ -84,6 +84,7 @@ import {
     TEST_DAILY_PLAN
 } from '@repo/billing';
 import { type DrizzleClient, entitySubscriptions, getDb, partnerSubscriptions } from '@repo/db';
+import type { StartPaidBillingInterval } from '@repo/schemas';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 // HOS-1012: `resolveCheckoutFreeTrialDays` / `resolvePlanTrialConfig` are NOT
 // imported here any more. Checkout is the PAID path and nothing else — the trial
@@ -257,9 +258,15 @@ function findDailyPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | nul
 
 /**
  * Resolve the annual price within a plan. Matches qzpay-core's `'year'`
- * with `intervalCount: 1`. Hospeda's annual variant is a one-time
- * upfront charge with the discounted full-year price (no recurring
- * preapproval), so a single matching row is sufficient.
+ * with `intervalCount: 1`.
+ *
+ * This docblock used to say Hospeda's annual variant was "a one-time upfront
+ * charge with the discounted full-year price (no recurring preapproval)". That
+ * has been false since HOS-171: annual is a RECURRING preapproval at qzpay's
+ * `'annual'` cadence (MercadoPago `frequency: 12, frequency_type: 'months'`),
+ * it renews itself, and the one-time Checkout Pro path it describes was deleted
+ * along with `create-annual-subscription.ts`. The row shape this function looks
+ * for is unchanged, which is exactly why nothing caught the drift.
  */
 function findAnnualPrice<T extends PriceShape>(prices: ReadonlyArray<T>): T | null {
     return (
@@ -912,14 +919,14 @@ export async function initiatePaidMonthlySubscription(
 }
 
 /**
- * Input for {@link initiateCommerceMonthlySubscription} (SPEC-239 T-048).
+ * Input for {@link initiateCommerceSubscription} (SPEC-239 T-048).
  *
  * Mirrors {@link InitiatePaidMonthlySubscriptionInput} but adds the commerce
  * entity coordinates so the function can stamp the new subscription as a
  * commerce-domain sub (D3) and upsert the `entity_subscriptions`
  * link row (D4). No promo support — commerce listings have no trial promos.
  */
-export interface InitiateCommerceMonthlySubscriptionInput {
+export interface InitiateCommerceSubscriptionInput {
     /** Hospeda billing customer ID (the qzpay customer ID of the listing owner). */
     readonly customerId: string;
     /** Plan slug — matched against `QZPayPlan.name` (the commerce plan slug). */
@@ -945,6 +952,26 @@ export interface InitiateCommerceMonthlySubscriptionInput {
      * somebody else typed.
      */
     readonly requestedPayerEmail?: string;
+    /**
+     * HOS-1285: the cadence the owner picked. Defaults to `'monthly'`, which is
+     * the only thing this function could do before — every commerce tier
+     * carried `annualPriceArs: null`, sealed inside `commerceVerticalTier`.
+     *
+     * `'annual'` resolves the plan's `'year'` price row instead of its
+     * `'month'` one and hands that cadence to `resolveCheckoutMpPlanId`, which
+     * keys a SEPARATE MercadoPago `preapproval_plan` per
+     * `(plan, billingInterval, trialDays, discount)`. The two cadences of one
+     * tier are therefore two provider plans, exactly as they are on the
+     * accommodation side, and an owner cannot end up on one while being charged
+     * for the other.
+     *
+     * NOT accepted on the admin-initiated route (see
+     * `routes/commerce/admin/start-subscription.ts`), for the same reason
+     * `requestedPayerEmail` is not: that route provisions on the OWNER's
+     * behalf, and committing somebody else to a twelve-month charge is not an
+     * admin's call.
+     */
+    readonly billingInterval?: StartPaidBillingInterval;
     /** Resolved qzpay billing instance. */
     readonly billing: QZPayBilling;
     /** URL builders the route already resolved from env. */
@@ -958,15 +985,25 @@ export interface InitiateCommerceMonthlySubscriptionInput {
  * Output shape for a commerce subscription initiation. Mirrors the
  * accommodation monthly result so the route returns either uniformly.
  */
-export interface InitiateCommerceMonthlySubscriptionResult {
+export interface InitiateCommerceSubscriptionResult {
     readonly checkoutUrl: string;
     readonly localSubscriptionId: string;
     readonly expiresAt: string;
 }
 
 /**
- * Initiate a monthly commerce-listing subscription (SPEC-239 T-048), through the
- * same Path C hosted share-link checkout the accommodation flows use (HOS-191).
+ * Initiate a commerce-listing subscription (SPEC-239 T-048), monthly or annual
+ * (HOS-1285), through the same Path C hosted share-link checkout the
+ * accommodation flows use (HOS-191).
+ *
+ * **One function, two cadences — not two functions.** Annual needs no separate
+ * entry point here for the same reason it needs none on the accommodation side
+ * since HOS-171: it is the SAME recurring preapproval on a 12-month frequency,
+ * so the only thing that differs is which `billing_prices` row is resolved and
+ * which `billing_mp_plans` variant that amount keys. This function was called
+ * `initiateCommerceMonthlySubscription` until HOS-1285, and the name was cited
+ * as evidence in two `presentacion/` page docblocks that commerce could not be
+ * sold annually.
  *
  * Commerce used to call `createPaidSubscription` →
  * `billing.subscriptions.create({ mode: 'paid', providerPriceId })`, which issues
@@ -1000,16 +1037,18 @@ export interface InitiateCommerceMonthlySubscriptionResult {
  * before. `reconcileCommerceListingForSubscription` then updates the link row and
  * flips the listing on the `pending_provider → active` transition.
  *
- * @param input - See {@link InitiateCommerceMonthlySubscriptionInput}.
+ * @param input - See {@link InitiateCommerceSubscriptionInput}.
  * @returns The hosted checkout URL, the local subscription id, and its expiry.
- * @throws SubscriptionCheckoutError When the plan, monthly price, or billing
- *   customer is missing, or when the MP plan could not be provisioned.
+ * @throws SubscriptionCheckoutError When the plan, the price row for the
+ *   requested cadence, or the billing customer is missing, or when the MP plan
+ *   could not be provisioned.
  */
-export async function initiateCommerceMonthlySubscription(
-    input: InitiateCommerceMonthlySubscriptionInput
-): Promise<InitiateCommerceMonthlySubscriptionResult> {
+export async function initiateCommerceSubscription(
+    input: InitiateCommerceSubscriptionInput
+): Promise<InitiateCommerceSubscriptionResult> {
     const { customerId, planSlug, entityType, entityId, requestedPayerEmail, billing, urls } =
         input;
+    const billingInterval = input.billingInterval ?? 'monthly';
 
     // HOS-695: the subscription and its link row are stamped with the
     // listing's OWN vertical, never the retired 'commerce' umbrella — same
@@ -1023,12 +1062,23 @@ export async function initiateCommerceMonthlySubscription(
         throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
     }
 
-    const monthlyPrice = findMonthlyPrice(plan.prices);
-    if (!monthlyPrice) {
-        throw new SubscriptionCheckoutError(
-            'NO_MONTHLY_PRICE',
-            `Plan '${planSlug}' has no active monthly price`
-        );
+    // HOS-1285: the price row for the CADENCE the owner asked for. A tier that
+    // does not sell the requested cadence has no row and is refused here rather
+    // than silently sold at the other one — an annual request answered with a
+    // monthly charge (or the reverse) is the whole failure mode a shared
+    // `plan.prices` array makes easy.
+    const price =
+        billingInterval === 'annual' ? findAnnualPrice(plan.prices) : findMonthlyPrice(plan.prices);
+    if (!price) {
+        throw billingInterval === 'annual'
+            ? new SubscriptionCheckoutError(
+                  'NO_ANNUAL_PRICE',
+                  `Plan '${planSlug}' has no active annual price`
+              )
+            : new SubscriptionCheckoutError(
+                  'NO_MONTHLY_PRICE',
+                  `Plan '${planSlug}' has no active monthly price`
+              );
     }
 
     // HOS-917: same free-plan guard as the accommodation paths (see
@@ -1036,7 +1086,7 @@ export async function initiateCommerceMonthlySubscription(
     // commerce plan is priced at 0 today, but the guard is defensive: it
     // closes the "amount 0 reaches MP" bug class for this catalog too, not
     // just the one plan that tripped it.
-    if (monthlyPrice.unitAmount === 0) {
+    if (price.unitAmount === 0) {
         throw new SubscriptionCheckoutError(
             'PLAN_NOT_PURCHASABLE',
             `Plan '${planSlug}' is a free plan and cannot be purchased through checkout`
@@ -1062,9 +1112,15 @@ export async function initiateCommerceMonthlySubscription(
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
         planName: planDisplayNameFromPlan(plan),
-        amountCentavos: monthlyPrice.unitAmount,
-        currency: monthlyPrice.currency,
-        billingInterval: 'monthly',
+        amountCentavos: price.unitAmount,
+        currency: price.currency,
+        // HOS-1285: the cadence is part of the `billing_mp_plans` KEY, so the
+        // monthly and annual variants of one commerce tier resolve to two
+        // distinct MercadoPago `preapproval_plan`s. Passing a literal
+        // `'monthly'` here while charging the annual amount would put both on
+        // one provider plan and let the drift snapshot re-provision each into
+        // the other's price on alternating checkouts.
+        billingInterval,
         // HOS-1012: a LITERAL zero — see the identical note on the accommodation
         // monthly path. `resolveCheckoutMpPlanId` bakes `free_trial` into the MP
         // `preapproval_plan` whenever this is > 0, so a constant is the point.
@@ -1152,8 +1208,13 @@ export async function initiateCommerceMonthlySubscription(
             billing,
             customerId,
             planId: plan.id,
-            priceId: monthlyPrice.id,
-            billingInterval: 'monthly',
+            priceId: price.id,
+            // HOS-1285. As on the accommodation annual branch, the MP cadence
+            // is derived by the adapter from the resolved PRICE ROW
+            // (`billing_prices.billing_interval`, via `toMercadoPagoInterval`),
+            // not from this label — which is exactly why `price` above is
+            // resolved by the same `billingInterval` the two must agree on.
+            billingInterval,
             paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
             notificationUrl: urls.notificationUrl,
             // HOS-1221: recorded for the §6.6-B reuse check above, not sent to
@@ -1221,8 +1282,12 @@ export async function initiateCommerceMonthlySubscription(
     const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
-        priceId: monthlyPrice.id,
-        billingInterval: 'monthly',
+        priceId: price.id,
+        // HOS-1285 — the cadence the buyer asked for, on the row that records
+        // it. The share link itself carries the cadence through
+        // `providerPriceId`: `resolveCheckoutMpPlanId` keyed that
+        // `preapproval_plan` on this same interval a few lines up.
+        billingInterval,
         mpPreapprovalPlanId: providerPriceId,
         // The listing owner IS the payer here (both the owner self-checkout and
         // the admin-initiated route resolve the OWNER's billing customer), so the
@@ -1320,7 +1385,7 @@ export interface InitiatePartnerMonthlySubscriptionResult {
  * Like commerce, this path used to issue a server-side `POST /preapproval` from a
  * `preapproval_plan_id` with no `card_token_id` — the shape MercadoPago answers
  * with HTTP 400 ("card_token_id is required"). See
- * {@link initiateCommerceMonthlySubscription} for the full rationale.
+ * {@link initiateCommerceSubscription} for the full rationale.
  *
  * ## Why the payer email is NOT snapshotted here
  *

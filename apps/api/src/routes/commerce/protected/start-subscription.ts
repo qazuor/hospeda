@@ -53,6 +53,7 @@ import { experienceModel, gastronomyModel } from '@repo/db';
 import type {
     CommerceEntityType,
     CommerceListingCompletenessListing,
+    StartPaidBillingInterval,
     StartPaidSubscriptionResponse
 } from '@repo/schemas';
 import {
@@ -86,7 +87,7 @@ import {
 } from '../../../services/commerce-subscription-attach.service';
 import { startCommerceListingTrial } from '../../../services/commerce-trial-start.service';
 import {
-    initiateCommerceMonthlySubscription,
+    initiateCommerceSubscription,
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
 import { getActorFromContext } from '../../../utils/actor';
@@ -237,9 +238,27 @@ export async function handleCommerceStartSubscription(
          * it did before.
          */
         requestedPlanSlug?: string;
+        /**
+         * HOS-1285: the cadence the owner picked. `undefined` means monthly —
+         * the pre-HOS-1285 behaviour, and what every bodyless caller still
+         * gets.
+         *
+         * Only reaches the CHECKOUT branch. The attach branch and the trial
+         * branch below open no MercadoPago resource at all, so there is no
+         * cadence for them to honour: an owner attaching a second listing joins
+         * whatever cadence they already pay, and a trial has no charge to
+         * schedule.
+         */
+        requestedBillingInterval?: StartPaidBillingInterval;
     }
 ): Promise<StartPaidSubscriptionResponse | Response> {
-    const { entityType, entityId, requestedPayerEmail, requestedPlanSlug } = input;
+    const {
+        entityType,
+        entityId,
+        requestedPayerEmail,
+        requestedPlanSlug,
+        requestedBillingInterval
+    } = input;
     const actor = getActorFromContext(ctx);
 
     // ── Ownership check (AC-2) — the entire security boundary. ─────────────
@@ -506,12 +525,15 @@ export async function handleCommerceStartSubscription(
     // Branch 1 — no subscription for this vertical yet, and no trial to grant.
     // Today's behaviour.
     try {
-        const result = await initiateCommerceMonthlySubscription({
+        const result = await initiateCommerceSubscription({
             customerId: billingCustomerId,
             planSlug,
             entityType: entityType as CommerceVertical,
             entityId,
             ...(requestedPayerEmail === undefined ? {} : { requestedPayerEmail }),
+            ...(requestedBillingInterval === undefined
+                ? {}
+                : { billingInterval: requestedBillingInterval }),
             billing,
             urls: {
                 paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
@@ -596,9 +618,11 @@ export async function handleCommerceStartSubscription(
  * is the risky half of HOS-1008 (every pre-existing caller relies on it) and
  * route-level tests in this app do not reliably reach the handler.
  */
-export async function readCommerceCheckoutOptions(
-    ctx: Context
-): Promise<{ requestedPayerEmail?: string; requestedPlanSlug?: string }> {
+export async function readCommerceCheckoutOptions(ctx: Context): Promise<{
+    requestedPayerEmail?: string;
+    requestedPlanSlug?: string;
+    requestedBillingInterval?: StartPaidBillingInterval;
+}> {
     const raw: unknown = await ctx.req.json().catch(() => undefined);
     if (raw === undefined || raw === null) {
         return {};
@@ -607,14 +631,15 @@ export async function readCommerceCheckoutOptions(
     const parsed = CommerceStartSubscriptionRequestSchema.safeParse(raw);
     if (!parsed.success) {
         throw new HTTPException(400, {
-            message: 'Invalid payerEmail or planSlug in request body.'
+            message: 'Invalid payerEmail, planSlug or billingInterval in request body.'
         });
     }
 
-    const { payerEmail, planSlug } = parsed.data;
+    const { payerEmail, planSlug, billingInterval } = parsed.data;
     return {
         ...(payerEmail === undefined ? {} : { requestedPayerEmail: payerEmail }),
-        ...(planSlug === undefined ? {} : { requestedPlanSlug: planSlug })
+        ...(planSlug === undefined ? {} : { requestedPlanSlug: planSlug }),
+        ...(billingInterval === undefined ? {} : { requestedBillingInterval: billingInterval })
     };
 }
 
@@ -626,8 +651,8 @@ export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
         "Starts a MercadoPago subscription for the caller's OWN commerce listing. Requires COMMERCE_EDIT_OWN and ownership of the target listing; the listing must be complete (422 otherwise).",
     tags: ['Protected - Commerce', 'Billing'],
     requestParams: StartSubscriptionParamsSchema,
-    // HOS-1008 deliberately does NOT declare `requestBody` here, and HOS-1119
-    // keeps it that way. The factory only calls `ctx.req.valid('json')` when
+    // HOS-1008 deliberately does NOT declare `requestBody` here; HOS-1119 and
+    // HOS-1285 keep it that way. The factory only calls `ctx.req.valid('json')` when
     // one is declared, and this endpoint has always been called with NO body at
     // all — by the web client and by several existing tests. Declaring a schema
     // would make every one of those bodyless POSTs parse a body that is not

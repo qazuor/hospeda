@@ -1,5 +1,5 @@
 /**
- * Unit tests for `initiateCommerceMonthlySubscription` with the HOS-937
+ * Unit tests for `initiateCommerceSubscription` with the HOS-937
  * step 4 own-preapproval flag ON (`HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED`).
  *
  * Mirrors `subscription-checkout-own-preapproval-flag-on.test.ts`'s coverage
@@ -91,7 +91,7 @@ vi.mock('@repo/db', () => ({
     // covered in `test/services/billing/checkout-idempotency-by-entity.test.ts`.
     getDb: vi.fn(() => ({
         select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
-        // HOS-937 step 4: `initiateCommerceMonthlySubscription` resolves the
+        // HOS-937 step 4: `initiateCommerceSubscription` resolves the
         // payer email via `getMpPayerEmail` (raw `db.execute(sql...)`) before
         // creating the own-preapproval — an empty `mp_payer_email` here just
         // means the resolution falls through to `customer.email`.
@@ -117,7 +117,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { entitySubscriptions } from '@repo/db';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
-import { initiateCommerceMonthlySubscription } from '../../src/services/subscription-checkout.service';
+import { initiateCommerceSubscription } from '../../src/services/subscription-checkout.service';
 
 const CUSTOMER_ID = 'cust_owner';
 const CUSTOMER_EMAIL = 'owner@hospeda.test';
@@ -125,6 +125,9 @@ const PLAN_ID = '00000000-0000-4000-8000-0000000000aa';
 const PRICE_ID = 'price_m';
 const ENTITY_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PLAN_SLUG = 'commerce-listing';
+
+/** The `'year'` row `seedCommercePlan` writes beside the monthly one (HOS-1285). */
+const ANNUAL_PRICE_ID = 'price_y';
 
 function createBillingMock() {
     return {
@@ -141,6 +144,14 @@ function createBillingMock() {
                             intervalCount: 1,
                             active: true,
                             unitAmount: 1_500_000,
+                            currency: 'ARS'
+                        },
+                        {
+                            id: ANNUAL_PRICE_ID,
+                            billingInterval: 'year',
+                            intervalCount: 1,
+                            active: true,
+                            unitAmount: 15_000_000,
                             currency: 'ARS'
                         }
                     ]
@@ -172,7 +183,7 @@ const BASE_INPUT = {
     urls: URLS
 };
 
-describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = true)', () => {
+describe('initiateCommerceSubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED = true)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(resolveCheckoutMpPlanId).mockResolvedValue('mp_plan_test');
@@ -184,7 +195,7 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
     it('calls createOwnPreapprovalSubscription, never createPendingProviderSubscription', async () => {
         const billing = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         expect(createOwnPreapprovalSubscription).toHaveBeenCalledTimes(1);
         expect(createPendingProviderSubscription).not.toHaveBeenCalled();
@@ -193,7 +204,7 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
     it('stamps productDomain to the LISTING OWN vertical (gastronomy), never the retired commerce umbrella', async () => {
         const billing = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         const call = createOwnPreapprovalSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(call.productDomain).toBe('gastronomy');
@@ -203,7 +214,7 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
     it('passes the entity pointer as domainMetadata, no externalReference, and RECORDS the resolved MP plan id without forwarding it to MercadoPago', async () => {
         const billing = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         const call = createOwnPreapprovalSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(call).toMatchObject({
@@ -228,10 +239,36 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
         expect(call.planDisplayName).not.toBe('gastronomy-basico');
     });
 
+    it('builds the preapproval off the ANNUAL price row when annual is requested (HOS-1285)', async () => {
+        const billing = createBillingMock();
+
+        await initiateCommerceSubscription({
+            ...BASE_INPUT,
+            billingInterval: 'annual',
+            billing
+        });
+
+        const call = createOwnPreapprovalSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
+        // `priceId` is the load-bearing half: the MercadoPago adapter derives
+        // the real `frequency`/`frequency_type` from the PRICE ROW
+        // (`billing_prices.billing_interval` via `toMercadoPagoInterval`), not
+        // from the `billingInterval` label beside it. A call carrying the annual
+        // label and the MONTHLY price row bills monthly while every log and
+        // every local row says annual.
+        expect(call.priceId).toBe(ANNUAL_PRICE_ID);
+        expect(call.billingInterval).toBe('annual');
+        // And the provider plan the amount was keyed on — the two must not
+        // disagree, or `resolveOrProvisionMpPlan`'s drift snapshot re-provisions
+        // one cadence into the other's price on alternating checkouts.
+        expect(resolveCheckoutMpPlanId).toHaveBeenCalledWith(
+            expect.objectContaining({ amountCentavos: 15_000_000, billingInterval: 'annual' })
+        );
+    });
+
     it('writeDomainLinkRow inserts into entitySubscriptions with the SAME transaction client', async () => {
         const billing = createBillingMock();
 
-        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         expect(txStub.insert).toHaveBeenCalledWith(entitySubscriptions);
         expect(insertValues).toHaveBeenCalledWith(
@@ -247,7 +284,7 @@ describe('initiateCommerceMonthlySubscription (HOSPEDA_BILLING_OWN_PREAPPROVAL_E
     it('maps the own-preapproval result into checkoutUrl + localSubscriptionId', async () => {
         const billing = createBillingMock();
 
-        const result = await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+        const result = await initiateCommerceSubscription({ ...BASE_INPUT, billing });
 
         expect(result.checkoutUrl).toBe(
             'https://mp.test/subscriptions/checkout?preapproval_id=own-commerce-1'

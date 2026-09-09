@@ -26,7 +26,7 @@ function ctxWithBody(body: unknown, { throws = false } = {}) {
     } as never;
 }
 
-describe('readCommerceCheckoutOptions (HOS-1008 + HOS-1119)', () => {
+describe('readCommerceCheckoutOptions (HOS-1008 + HOS-1119 + HOS-1285)', () => {
     it('returns {} when the request carries no body at all', async () => {
         await expect(
             readCommerceCheckoutOptions(ctxWithBody(null, { throws: true }))
@@ -108,5 +108,59 @@ describe('readCommerceCheckoutOptions (HOS-1008 + HOS-1119)', () => {
         await expect(
             readCommerceCheckoutOptions(ctxWithBody({ planSlug: 'experience-basico' }))
         ).resolves.toEqual({ requestedPlanSlug: 'experience-basico' });
+    });
+
+    // ── HOS-1285: the cadence ────────────────────────────────────────────
+
+    it('forwards an annual billing interval', async () => {
+        await expect(
+            readCommerceCheckoutOptions(ctxWithBody({ billingInterval: 'annual' }))
+        ).resolves.toEqual({ requestedBillingInterval: 'annual' });
+    });
+
+    it('forwards a monthly billing interval as itself, not by dropping it', async () => {
+        // `'monthly'` is also the default the handler applies when the key is
+        // absent, which makes "forwarded" and "ignored" produce the same
+        // checkout. Asserting the KEY is what separates them — an early `return`
+        // that dropped this field would still sell a monthly subscription and
+        // still pass every downstream test.
+        await expect(
+            readCommerceCheckoutOptions(ctxWithBody({ billingInterval: 'monthly' }))
+        ).resolves.toEqual({ requestedBillingInterval: 'monthly' });
+    });
+
+    it('omits the billingInterval KEY rather than setting it to undefined', async () => {
+        // Same `exactOptionalPropertyTypes` hazard the other two fields cover.
+        const result = await readCommerceCheckoutOptions(
+            ctxWithBody({ planSlug: 'gastronomy-pro' })
+        );
+        expect(Object.hasOwn(result, 'requestedBillingInterval')).toBe(false);
+    });
+
+    it('rejects a cadence the price lookups cannot resolve with a 400', async () => {
+        // `'quarterly'` is a real `BillingIntervalEnum` member and a real
+        // MercadoPago frequency, and it is still refused here: the seed writes
+        // only `intervalCount: 1` rows and the only lookups are
+        // `findMonthlyPrice` / `findAnnualPrice`, so a quarterly commerce
+        // checkout would resolve NO price row and 500 rather than 400.
+        await expect(
+            readCommerceCheckoutOptions(ctxWithBody({ billingInterval: 'quarterly' }))
+        ).rejects.toBeInstanceOf(HTTPException);
+    });
+
+    it('forwards all three fields together', async () => {
+        await expect(
+            readCommerceCheckoutOptions(
+                ctxWithBody({
+                    payerEmail: 'owner@local.test',
+                    planSlug: 'gastronomy-premium',
+                    billingInterval: 'annual'
+                })
+            )
+        ).resolves.toEqual({
+            requestedPayerEmail: 'owner@local.test',
+            requestedPlanSlug: 'gastronomy-premium',
+            requestedBillingInterval: 'annual'
+        });
     });
 });

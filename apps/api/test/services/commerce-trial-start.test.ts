@@ -6,7 +6,7 @@
  * rather than to describe the code as it stands now:
  *
  *  - a commerce owner publishing their first listing reached
- *    `initiateCommerceMonthlySubscription`, which hardcodes `trialDays: 0` and
+ *    `initiateCommerceSubscription`, which hardcodes `trialDays: 0` and
  *    sends them to MercadoPago. The test that matters most is therefore that a
  *    trial IS created and that the vertical's own trial plan is the one used —
  *    a fix that granted the accommodation trial instead would be worse than the

@@ -156,7 +156,7 @@ const H = vi.hoisted(() => {
                 }
             })
         }),
-        // HOS-937 step 4: `initiateCommerceMonthlySubscription` now resolves
+        // HOS-937 step 4: `initiateCommerceSubscription` now resolves
         // the payer email via `getMpPayerEmail` (raw `db.execute(sql...)`,
         // not the typed `select` modeled above) before either checkout
         // branch runs. No `mp_payer_email` fixture is relevant to this
@@ -303,7 +303,7 @@ vi.mock('@repo/db', () => ({
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import {
-    initiateCommerceMonthlySubscription,
+    initiateCommerceSubscription,
     initiatePartnerMonthlySubscription
 } from '../../../src/services/subscription-checkout.service';
 
@@ -391,12 +391,12 @@ beforeEach(() => {
 // Commerce
 // ──────────────────────────────────────────────────────────────────────────
 
-describe('initiateCommerceMonthlySubscription — idempotent per entity', () => {
+describe('initiateCommerceSubscription — idempotent per entity', () => {
     it('returns the SAME share link and creates ONE subscription on two consecutive clicks', async () => {
         const { billing } = createBillingMock();
 
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
-        const second = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         // Two live MercadoPago share links for one listing = two real charges.
         expect(second.checkoutUrl).toBe(first.checkoutUrl);
@@ -410,7 +410,7 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
 
         const urls: string[] = [];
         for (let i = 0; i < 4; i += 1) {
-            const result = await initiateCommerceMonthlySubscription({
+            const result = await initiateCommerceSubscription({
                 ...COMMERCE_INPUT,
                 billing
             });
@@ -427,10 +427,10 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
         // First click writes a correlation row already past its TTL — an
         // abandoned checkout must never wedge the listing.
         H.knobs.pendingTtlMs = -1_000;
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         H.knobs.pendingTtlMs = 3 * 60 * 60 * 1000;
-        const second = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
         expect(second.localSubscriptionId).not.toBe(first.localSubscriptionId);
@@ -440,13 +440,13 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
     it('creates a NEW checkout when the resolved MercadoPago plan DRIFTED', async () => {
         const { billing } = createBillingMock();
 
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         // The commercial price changed, so `resolveOrProvisionMpPlan` handed back
         // a different preapproval_plan. Serving the old link would charge the old
         // price.
         H.knobs.mpPlanId = 'mp_plan_v2';
-        const second = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
         expect(second.checkoutUrl).toContain('preapproval_plan_id=mp_plan_v2');
@@ -456,12 +456,12 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
     it('creates a NEW checkout when the correlation row is no longer `pending` (already linked)', async () => {
         const { billing } = createBillingMock();
 
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
         // The buyer paid: F2/F3 flipped the correlation row to `linked`.
         const row = H.store.pendingCheckouts[0];
         if (row) row.status = 'linked';
 
-        const second = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
         expect(H.createPendingProviderSubscription).toHaveBeenCalledTimes(2);
@@ -470,13 +470,13 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
     it('creates a NEW checkout when the bridge row is no longer pending_provider (live subscription)', async () => {
         const { billing } = createBillingMock();
 
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
         // The webhook activated the subscription. This is the window the route's
         // 409 owns; the service must never answer it with a stale share link.
         const bridge = H.store.commerceBridge[0];
         if (bridge) bridge.status = 'active';
 
-        const second = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
         expect(H.createPendingProviderSubscription).toHaveBeenCalledTimes(2);
@@ -485,8 +485,8 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
     it('creates a NEW checkout when the OWNER (billing customer) changed', async () => {
         const { billing } = createBillingMock();
 
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
-        const second = await initiateCommerceMonthlySubscription({
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({
             ...COMMERCE_INPUT,
             customerId: 'cust_new_owner',
             billing
@@ -505,10 +505,10 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
         H.knobs.promoSnapshot = {
             pendingDiscount: { promoCodeId: 'promo-1', finalAmountCentavos: 1_000_000 }
         };
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         H.knobs.promoSnapshot = {};
-        const second = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
         expect(H.createPendingProviderSubscription).toHaveBeenCalledTimes(2);
@@ -522,10 +522,10 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
         H.knobs.promoSnapshot = {
             pendingTrialExtension: { promoCodeId: 'promo-2', code: 'EXTRA30' }
         };
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         H.knobs.promoSnapshot = {};
-        const second = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
+        const second = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
         expect(H.createPendingProviderSubscription).toHaveBeenCalledTimes(2);
@@ -534,8 +534,8 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
     it('keeps two DIFFERENT listings on two independent checkouts', async () => {
         const { billing } = createBillingMock();
 
-        const first = await initiateCommerceMonthlySubscription({ ...COMMERCE_INPUT, billing });
-        const other = await initiateCommerceMonthlySubscription({
+        const first = await initiateCommerceSubscription({ ...COMMERCE_INPUT, billing });
+        const other = await initiateCommerceSubscription({
             ...COMMERCE_INPUT,
             entityId: OTHER_ENTITY_ID,
             billing
@@ -551,11 +551,11 @@ describe('initiateCommerceMonthlySubscription — idempotent per entity', () => 
 
         // gastronomy and experience ids are drawn from independent key spaces,
         // so the bridge lookup must be keyed on BOTH columns.
-        const gastronomy = await initiateCommerceMonthlySubscription({
+        const gastronomy = await initiateCommerceSubscription({
             ...COMMERCE_INPUT,
             billing
         });
-        const experience = await initiateCommerceMonthlySubscription({
+        const experience = await initiateCommerceSubscription({
             ...COMMERCE_INPUT,
             entityType: 'experience',
             billing
