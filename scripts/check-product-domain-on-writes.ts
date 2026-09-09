@@ -9,26 +9,42 @@
  * ---------------------------------------------------------------------------
  * WHY THIS GUARD EXISTS
  * ---------------------------------------------------------------------------
- * `@qazuor/qzpay-drizzle` declares both columns
- * `varchar(...).notNull().default('accommodation')`. A create that omits the
- * column therefore does not fail — it succeeds, and files the row under
- * whatever vertical the default names. Measured 2026-09-08 in BOTH live
+ * `@qazuor/qzpay-drizzle` USED TO declare both columns
+ * `varchar(...).notNull().default('accommodation')`. A create that omitted the
+ * column therefore did not fail — it succeeded, and filed the row under
+ * whatever vertical the default named. Measured 2026-09-08 in BOTH live
  * environments: every `tourist-*` plan row, and every subscription on one,
  * reported `product_domain = 'accommodation'`. Not one line of code was wrong.
  * The value was simply never stated, and the default answered for a whole
  * vertical for as long as the plans had existed (spec §3 F-4b / F-4c).
  *
- * That is the failure mode this guard is built against: silent, plausible, and
- * invisible to the type system. While the default exists, `productDomain` is
- * OPTIONAL in Drizzle's insert type, so `tsc` has no opinion on an omission —
- * and the enum's own docblock says nothing in the type system defends it. The
- * guard is what makes D-6.3 real rather than aspirational.
+ * That is the failure mode this guard was built against: silent, plausible, and
+ * — at the time — invisible to the type system.
  *
- * It is deliberately ordered BEFORE the default is dropped (T-036, AC-15i):
- * dropping it while a create still omits the column breaks every paid
- * checkout, of every vertical, at the first insert (R-8). This guard is how
- * "every write names its domain" is known to be true beforehand, rather than
- * discovered in production afterwards.
+ * ---------------------------------------------------------------------------
+ * WHAT CHANGED, AND WHY THE GUARD STILL EARNS ITS KEEP (HOS-1312)
+ * ---------------------------------------------------------------------------
+ * This header used to say "while the default exists, `productDomain` is OPTIONAL
+ * in Drizzle's insert type, so `tsc` has no opinion on an omission". That is no
+ * longer true. `@qazuor/qzpay-drizzle` 4.0.0 declares both columns `.notNull()`
+ * with NO `.default()`, so `productDomain` is a REQUIRED key of `$inferInsert`
+ * and an omitting create does not compile. Measured 2026-09-09 by deleting the
+ * key from one create in each package: `apps/api` and `@repo/seed` both fail
+ * `tsc` with `Property 'productDomain' is missing ... but required`.
+ * `packages/service-core/test/billing/product-domain-insert-required.type.test.ts`
+ * freezes that so it cannot regress silently.
+ *
+ * The compiler now covers shapes 1 and 2 below. Shape 3 — raw SQL — it does not
+ * and cannot: `INSERT INTO billing_plans` inside a template literal type-checks
+ * no matter which columns it names. That, plus catching an omission at the diff
+ * rather than at whichever package's `tsc` runs last, is what this guard is for.
+ *
+ * The ordering it was built to protect is now spent: migration
+ * `0121_smart_mulholland_black.sql` (T-036, AC-15i) drops the default, and
+ * dropping it while a create still omitted the column would have broken every
+ * paid checkout, of every vertical, at the first insert (R-8). "Every write
+ * names its domain" was known to be true beforehand rather than discovered in
+ * production afterwards — which is exactly what the migration was waiting on.
  *
  * ---------------------------------------------------------------------------
  * WHAT IT ASSERTS
