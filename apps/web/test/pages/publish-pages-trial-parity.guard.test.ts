@@ -35,17 +35,37 @@ const PUBLISH_PAGES: ReadonlyArray<{
     readonly route: string;
     readonly file: string;
     readonly vertical: string;
+    /**
+     * The EXACT `showTrialCallout` assignment this page's source must
+     * contain, verbatim (HOS-1293 mutation hardening — see the "computed,
+     * not just present" test below for why this exists).
+     */
+    readonly trialCalloutWiring: string;
 }> = [
-    { route: '/{lang}/publicar/', file: 'publicar/index.astro', vertical: 'accommodation' },
+    {
+        route: '/{lang}/publicar/',
+        file: 'publicar/index.astro',
+        vertical: 'accommodation',
+        trialCalloutWiring:
+            'const showTrialCallout = shouldShowPublishTrialCallout({ isTrialExpired, trialEligibility });'
+    },
     {
         route: '/{lang}/publicar/gastronomia/',
         file: 'publicar/gastronomia/index.astro',
-        vertical: 'gastronomy'
+        vertical: 'gastronomy',
+        trialCalloutWiring:
+            'const showTrialCallout =\n' +
+            '    trialDays !== null &&\n' +
+            '    shouldShowPublishTrialCallout({ isTrialExpired, trialEligibility: trialEligible });'
     },
     {
         route: '/{lang}/publicar/experiencias/',
         file: 'publicar/experiencias/index.astro',
-        vertical: 'experience'
+        vertical: 'experience',
+        trialCalloutWiring:
+            'const showTrialCallout =\n' +
+            '    trialDays !== null &&\n' +
+            '    shouldShowPublishTrialCallout({ isTrialExpired, trialEligibility: trialEligible });'
     }
 ];
 
@@ -67,6 +87,21 @@ describe('HOS-1293 — every publish page mentions the trial it may grant', () =
                     "import { shouldShowPublishTrialCallout } from '@/lib/host/publish-trial-callout';"
                 );
                 expect(src).toContain('shouldShowPublishTrialCallout(');
+            });
+
+            it('shows the callout ONLY when it is actually computed by that call — not hardcoded, not discarded (HOS-1293 mutation hardening)', () => {
+                // The test above is a `toContain` over the whole file: it is
+                // satisfied by the call appearing ANYWHERE, including inside a
+                // dead/discarded expression left in place purely to keep the
+                // string present. Measured: a mutation that keeps the call
+                // (`if (trialDays !== null) { shouldShowPublishTrialCallout(...); }`)
+                // but hardcodes `const showTrialCallout = true;` right after it
+                // passed every other assertion in this file — the callout would
+                // over-promise a trial to an already-ineligible visitor, and
+                // nothing here said so. This pins the exact assignment
+                // expression, so `showTrialCallout` must be bound to the real
+                // call's result, not merely share a file with it.
+                expect(src).toContain(page.trialCalloutWiring);
             });
 
             it("fetches its OWN vertical's trial status, not a hardcoded default", () => {

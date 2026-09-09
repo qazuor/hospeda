@@ -31,6 +31,21 @@ describe('AccountStatsGrid.astro — commerce-owner branch (HOS-1293)', () => {
         expect(source).toContain('isHost');
     });
 
+    it('isCommerceOwner is bound DIRECTLY to Astro.props — never aliased, never hardcoded (HOS-1293 mutation hardening)', () => {
+        // The two tests above check that the STRING `isCommerceOwner` and the
+        // `isHost ? ( ... ) : isCommerceOwner ? (` SYNTAX are present — both
+        // satisfied even if the identifier is captured under an alias and the
+        // real binding is a hardcoded literal, e.g.
+        // `const { isCommerceOwner: isCommerceOwnerProp = false } = Astro.props;
+        //  const isCommerceOwner = true;` — which renders the commerce branch
+        // for EVERY non-host account, tourists included, and passed every
+        // other assertion in this file when measured. This pins the exact
+        // destructuring so `isCommerceOwner` can only ever be the prop itself.
+        expect(source).toContain(
+            'const { locale, isHost = false, isCommerceOwner = false } = Astro.props;'
+        );
+    });
+
     it('is a THREE-way branch — host, then commerce, then tourist — not a binary one', () => {
         // The regression shape: `isHost ? (...) : (...)` has exactly two arms.
         // Reintroducing that (e.g. by deleting the isCommerceOwner arm) would
