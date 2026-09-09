@@ -1071,6 +1071,26 @@ export function createDbMock() {
             updatedAt: 'updated_at'
         },
 
+        // HOS-1272: the Path C correlation row `checkout-idempotency.ts` reads
+        // (`loadCorrelationRow`) to decide whether an in-flight checkout's
+        // share link may be handed back. Imported at module scope by
+        // `subscription-checkout.service.ts` (via `checkout-idempotency.ts`),
+        // so any test that boots the accommodation/commerce/partner checkout
+        // path resolves it through this mock — column-marker stub only, same
+        // shape as `billingSubscriptions` above; the generic `getDb()` builder
+        // resolves every `.limit()` to `[]` regardless of table.
+        billingPendingCheckouts: {
+            localSubscriptionId: 'local_subscription_id',
+            customerId: 'customer_id',
+            planId: 'plan_id',
+            mpPreapprovalPlanId: 'mp_preapproval_plan_id',
+            nonce: 'nonce',
+            status: 'status',
+            expiresAt: 'expires_at',
+            pendingDiscount: 'pending_discount',
+            pendingTrialExtension: 'pending_trial_extension'
+        },
+
         // Admin billing VIEW service (HOS-474) joins these four to turn qzpay's
         // customerId/planId into a user and a plan. They are imported at module
         // scope by the payments/subscriptions view routes, so EVERY test that
