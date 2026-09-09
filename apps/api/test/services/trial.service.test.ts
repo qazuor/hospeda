@@ -1059,6 +1059,233 @@ describe('TrialService', () => {
                 expect(result.intendedInterval).toBeNull();
             });
         });
+
+        describe('HOS-1282 — expired-vs-canceled mismatch and domain scoping', () => {
+            it("REGRESSION: a locally-expired trial (status 'expired') is recognized as an expired trial, not 'never had a trial'", async () => {
+                // Arrange — the exact HOS-1282 defect 1 shape: no live subscription
+                // (the trial never converted), and the only subscription on file is
+                // the one `trial-local-expiry.service.ts`'s `expireLocalTrial` (and
+                // `trial-supersede-on-activation.ts`'s SUPERSEDED_TRIAL_STATUS) write
+                // on a lapsed Hospeda-owned trial: status EXPIRED, never 'canceled'.
+                // Before this fix the historical-trial filter checked only
+                // `status === 'canceled'`, so this row was invisible and the method
+                // answered "you never had a trial" to a host whose trial the SYSTEM
+                // ITSELF had already marked expired.
+                const customerId = 'customer-locally-expired-trial';
+                const now = new Date();
+                const trialStart = new Date(now);
+                trialStart.setDate(trialStart.getDate() - 20);
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 6);
+
+                const expiredLocalTrialSub = {
+                    id: 'sub-expired-local-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'expired' as const,
+                    trialStart: trialStart.toISOString(),
+                    trialEnd: trialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    expiredLocalTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — recognized as an expired trial, never "never had a trial".
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.expiresAt).toBe(trialEnd.toISOString());
+                expect(result.planSlug).toBe('owner-basico');
+            });
+
+            it("still recognizes the legacy 1-L 'canceled' historical trial (unchanged by this fix)", async () => {
+                // Arrange — the pre-HOS-1012 shape this branch already handled must
+                // keep working: this fix ADDS `expired` recognition, it does not
+                // replace the existing 'canceled' one.
+                const customerId = 'customer-legacy-canceled-trial';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 3);
+
+                const canceledTrialSub = {
+                    id: 'sub-legacy-canceled-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'canceled' as const,
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+            });
+
+            it('REGRESSION: an omitted productDomain stays domain-BLIND (default behaviour is unchanged)', async () => {
+                // Arrange — the exact HOS-1282 defect 2 dual-role shape: a live
+                // GASTRONOMY `active` subscription outranks a `trialing`
+                // ACCOMMODATION one on `LIVE_STATUS_PRECEDENCE` regardless of which
+                // one has actually elapsed. This is the paywall's own, deliberately
+                // domain-blind, default resolution (see the inline "DELIBERATELY
+                // NOT domain-filtered BY DEFAULT" comment) and must NOT change when
+                // `productDomain` is simply never passed — every existing caller
+                // (both `trialMiddleware` call sites, this route with no query
+                // param) relies on exactly this.
+                const customerId = 'customer-dual-role-domain-blind';
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 10);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-accommodation-trialing-elapsed',
+                        customerId,
+                        planId: 'plan-owner-basico',
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString(),
+                        productDomain: 'accommodation'
+                    },
+                    {
+                        id: 'sub-gastronomy-active',
+                        customerId,
+                        planId: 'gastronomy-pro',
+                        status: 'active',
+                        trialStart: null,
+                        trialEnd: null,
+                        productDomain: 'gastronomy'
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'gastronomy-pro',
+                    name: 'gastronomy-pro'
+                } as never);
+
+                // Act — no productDomain at all.
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — the live gastronomy sub wins, masking the elapsed
+                // accommodation trial. This is the pre-existing, documented hole
+                // (HOS-337) that stays open by design for the domain-blind default.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBe('gastronomy-pro');
+            });
+
+            it('REGRESSION: scoped to productDomain, a live GASTRONOMY subscription no longer masks an elapsed ACCOMMODATION trial', async () => {
+                // Arrange — identical dual-role fixture to the test above; only the
+                // call changes.
+                const customerId = 'customer-dual-role-domain-scoped';
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 10);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-accommodation-trialing-elapsed',
+                        customerId,
+                        planId: 'plan-owner-basico',
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString(),
+                        productDomain: 'accommodation'
+                    },
+                    {
+                        id: 'sub-gastronomy-active',
+                        customerId,
+                        planId: 'gastronomy-pro',
+                        status: 'active',
+                        trialStart: null,
+                        trialEnd: null,
+                        productDomain: 'gastronomy'
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico'
+                } as never);
+
+                // Act — explicitly scoped to the accommodation domain.
+                const result = await trialService.getTrialStatus({
+                    customerId,
+                    productDomain: 'accommodation'
+                });
+
+                // Assert — the gastronomy row is filtered out before resolution, so
+                // the elapsed accommodation trial is the one found and reported.
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(true);
+                expect(result.planSlug).toBe('owner-basico');
+            });
+
+            it.each([
+                { domain: 'gastronomy' as const, otherDomain: 'accommodation' as const },
+                { domain: 'experience' as const, otherDomain: 'accommodation' as const }
+            ])('REGRESSION: scoped to productDomain=$domain, a live ACCOMMODATION subscription does not mask an elapsed $domain trial', async ({
+                domain,
+                otherDomain
+            }) => {
+                // Arrange — the other two verticals that hold a local trial
+                // (`createTrialSubscription` has exactly two call sites:
+                // accommodation and commerce). Unlike accommodation,
+                // `subscriptionMatchesDomain` fails CLOSED for these, so this
+                // also proves the domain filter does not accidentally admit an
+                // unrelated row for a non-accommodation query.
+                const customerId = `customer-dual-role-${domain}-scoped`;
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 10);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: `sub-${domain}-trialing-elapsed`,
+                        customerId,
+                        planId: `plan-${domain}-basico`,
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString(),
+                        productDomain: domain
+                    },
+                    {
+                        id: `sub-${otherDomain}-active`,
+                        customerId,
+                        planId: 'plan-owner-pro',
+                        status: 'active',
+                        trialStart: null,
+                        trialEnd: null,
+                        productDomain: otherDomain
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: `plan-${domain}-basico`,
+                    name: `${domain}-basico`
+                } as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({
+                    customerId,
+                    productDomain: domain
+                });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(true);
+                expect(result.planSlug).toBe(`${domain}-basico`);
+            });
+        });
     });
 
     describe('checkTrialExpiry', () => {
