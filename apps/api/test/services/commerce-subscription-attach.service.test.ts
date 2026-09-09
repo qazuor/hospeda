@@ -14,8 +14,12 @@
  */
 
 import { getDb } from '@repo/db';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { findOwnerVerticalSubscription } from '../../src/services/commerce-subscription-attach.service';
+import {
+    countAttachedListings,
+    findOwnerVerticalSubscription
+} from '../../src/services/commerce-subscription-attach.service';
 
 /**
  * Configures the mocked `getDb()` to answer
@@ -98,5 +102,92 @@ describe('findOwnerVerticalSubscription (HOS-934)', () => {
         // Assert — an accommodation-only subscription must never satisfy a
         // commerce vertical scope.
         expect(match).toBeNull();
+    });
+});
+
+/**
+ * Configures the mocked `getDb()` to answer `countAttachedListings`'s
+ * `SELECT status FROM entity_subscriptions WHERE subscription_id = ...` with
+ * the given rows.
+ */
+function mockLinkRows(rows: readonly { status: string }[]) {
+    vi.mocked(getDb).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue(rows)
+            })
+        })
+    } as never);
+}
+
+describe('countAttachedListings (HOS-1274)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('counts a `courtesy` subscription as occupying its slot — regression for HOS-1274', async () => {
+        // Arrange — a gastronomy owner's ONLY listing is on a courtesy
+        // subscription. Before the fix, SLOT_OCCUPYING_STATUSES omitted
+        // `courtesy`, so this counted zero and the owner's cap never engaged.
+        mockLinkRows([{ status: SubscriptionStatusEnum.COURTESY }]);
+
+        // Act
+        const attached = await countAttachedListings({ subscriptionId: 'sub-courtesy' });
+
+        // Assert — the slot IS counted, so a cap of 1 would now block a
+        // second attach (`attached >= cap` in the caller route).
+        expect(attached).toBe(1);
+    });
+
+    it('counts a `comp` subscription as occupying its slot — regression for HOS-1274 (experience vertical)', async () => {
+        // Arrange — an experience owner's ONLY listing is on a comp subscription.
+        mockLinkRows([{ status: SubscriptionStatusEnum.COMP }]);
+
+        // Act
+        const attached = await countAttachedListings({ subscriptionId: 'sub-comp' });
+
+        // Assert
+        expect(attached).toBe(1);
+    });
+
+    it('tops the cap once occupied slots reach it, even under courtesy', async () => {
+        // Arrange — a cap of 2, two listings already attached under a
+        // courtesy subscription. This is the exact shape the caller route
+        // compares as `attached >= cap` to refuse the next attach.
+        const cap = 2;
+        mockLinkRows([
+            { status: SubscriptionStatusEnum.COURTESY },
+            { status: SubscriptionStatusEnum.COURTESY }
+        ]);
+
+        // Act
+        const attached = await countAttachedListings({ subscriptionId: 'sub-courtesy' });
+
+        // Assert — the owner is AT the cap; the route's `attached >= cap` gate
+        // would now refuse a third listing instead of publishing unbounded.
+        expect(attached).toBeGreaterThanOrEqual(cap);
+    });
+
+    it.each([
+        [SubscriptionStatusEnum.ACTIVE, true],
+        [SubscriptionStatusEnum.TRIALING, true],
+        [SubscriptionStatusEnum.PAST_DUE, true],
+        [SubscriptionStatusEnum.PENDING_PROVIDER, true],
+        [SubscriptionStatusEnum.COMP, true],
+        [SubscriptionStatusEnum.COURTESY, true],
+        [SubscriptionStatusEnum.PAUSED, false],
+        [SubscriptionStatusEnum.CANCELLED, false],
+        [SubscriptionStatusEnum.EXPIRED, false],
+        [SubscriptionStatusEnum.ABANDONED, false]
+    ])('status %s occupies a slot: %s — full enum coverage, not just courtesy', async (status, shouldOccupy) => {
+        // Arrange — a single link row at this exact status, nothing else.
+        mockLinkRows([{ status }]);
+
+        // Act
+        const attached = await countAttachedListings({ subscriptionId: 'sub-1' });
+
+        // Assert — behavior (does the count reach 1?), not the shape of
+        // any internal constant.
+        expect(attached).toBe(shouldOccupy ? 1 : 0);
     });
 });
