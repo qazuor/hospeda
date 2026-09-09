@@ -291,13 +291,16 @@ Commerce listings use a **separate billing domain** that must never pollute the
 accommodation entitlement engine:
 
 - `billing_subscriptions.product_domain` — **one domain per vertical**, not a single
-  `'commerce'` bucket. `ProductDomainEnum` holds five values:
+  `'commerce'` bucket. `ProductDomainEnum` holds six values:
   `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'`,
-  `'partner'`, and `'addon'` (HOS-847 — a recurring add-on's own MercadoPago
-  preapproval, isolated from the customer's real plan subscription). The
-  entitlement engine only ever counts `'accommodation'`, so a user who is at
-  once a host, a restaurant owner and a partner keeps correct accommodation
-  entitlements regardless of the other subscriptions' state.
+  `'partner'`, `'tourist'` (HOS-1233 — the tourist tiers, which own no listings
+  at all; before that spec they were filed as `'accommodation'`, so every read
+  that wanted "the plan this person pays for" matched them BY ACCIDENT), and
+  `'addon'` (HOS-847 — a recurring add-on's own MercadoPago preapproval,
+  isolated from the customer's real plan subscription). The entitlement engine
+  only ever counts `'accommodation'`, so a user who is at once a host, a
+  restaurant owner and a partner keeps correct accommodation entitlements
+  regardless of the other subscriptions' state.
 - **`'commerce'` is a RETIRED value** (release B / HOS-692) that survives only on
   legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
   `'commerce'` satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
@@ -316,6 +319,30 @@ accommodation entitlement engine:
   outside its own file and tests. Do not reintroduce it without a consumer, and
   do not reach for `isAccommodationSubscription()` as a substitute — it answers
   a different question and, unlike the rest, fails OPEN.
+- **When you build that pair by hand, ORDER it — never match "either" (HOS-1233).**
+  The reads that resolve *the plan this person pays for* need `accommodation` OR
+  `tourist`, and the tempting shape is one `find` whose predicate accepts both.
+  That shape is a bug: a HOST auto-promoted by host-onboarding legitimately holds
+  BOTH subscriptions at once — the case the HOS-217 discard in `loadEntitlements`
+  exists for — so an unordered match lets the storage adapter's row ordering
+  decide which subscription is read, or which one a plan change MUTATES. That is
+  HOS-259 wearing a new domain, and it is indistinguishable from correct
+  behaviour from outside. Try the domain the surface actually governs first and
+  use the other as a FALLBACK: ordered, it can only ever turn a `null` into an
+  answer, so every account holding the primary domain is byte-identical to
+  before. Live examples: `middlewares/entitlement.ts`,
+  `routes/user/protected/entitlements.ts`, `services/billing/plan-domain-guard.ts`
+  and `routes/user/protected/subscription.ts`.
+  Two corollaries that bite:
+  - A route scoped by an EXPLICIT `?productDomain=` must stay strict — a caller
+    that names a domain means it, and must never pick up the fallback. Only the
+    DEFAULT falls back.
+  - `'tourist'` is deliberately NOT in `SUBSCRIPTION_SCOPE_DOMAINS`
+    (`apps/api/src/schemas/product-domain-query.schema.ts`), so
+    `?productDomain=tourist` is a **400**, not an unused escape hatch. There is
+    no client-side workaround for a default that resolves the wrong domain — fix
+    the default, and widen that tuple only with its two `routes/billing/usage.ts`
+    consumers in view.
 - **Hydrate before you compare.** `getByCustomerId()` does not populate
   `productDomain` (QZPay's mapper drops it — HOS-934), so
   `subscriptionMatchesDomain` over a raw result reads `undefined` and fails
