@@ -61,10 +61,14 @@ import { billingSubscriptions } from '../../billing/index.ts';
  *    reconciler (`reconcileSubscriptionLinkedEntities`) — the MP webhook,
  *    dunning, `finalize-cancelled-subs`, `abandoned-pending-subs`,
  *    `preapproval-less-expiry` and the commerce attach path;
- * 2. the `entity-subscription-cache-reconcile` cron re-derives every
- *    accommodation row from live billing on a schedule, as the backstop for
- *    anything the write path missed (a dropped webhook, a crash between the
- *    billing write and this one);
+ * 2. the `entity-subscription-cache-reconcile` cron re-derives from live billing
+ *    on a schedule, as the backstop for anything the write path missed (a
+ *    dropped webhook, a crash between the billing write and this one). It
+ *    rebuilds an accommodation row WHOLE — link, status and plan all come from
+ *    `accommodations.owner_id` plus billing — while for a commerce row it
+ *    corrects only the mirrored `status`, since which listing the row points at
+ *    is an owner's choice billing does not hold (HOS-1292). A commerce row is
+ *    therefore never created or pruned by the cron, only corrected;
  * 3. a **missing** row is never a correctness bug: the public read falls back
  *    to the live billing resolution it used before this table existed. Only a
  *    row that is present AND wrong can lie, which is what (1) and (2) defend.
