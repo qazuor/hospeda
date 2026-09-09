@@ -17,11 +17,21 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { billingApi, userApi } from '../../lib/api/endpoints-protected';
 import { useSession } from '../../lib/auth-client';
 import { storePendingCheckoutSubId } from '../../lib/billing/checkout-pending';
+import { resolvePublishPathForPricingAudience } from '../../lib/billing/pricing-audience-publish-vertical';
+import { fetchHoldsTouristVipBenefits } from '../../lib/billing/tourist-vip-status';
+import { fetchTrialClock } from '../../lib/billing/trial-clock';
+import type { TrialClockReading, TrialStartBranch } from '../../lib/billing/trial-start-branch';
+import {
+    resolveTrialScopeForAudience,
+    resolveTrialStartBranch
+} from '../../lib/billing/trial-start-branch';
+import type { PricingAudience } from '../../lib/billing-i18n';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl, buildUrlWithParams } from '../../lib/urls';
 import { PayerEmailConfirmDialog } from './PayerEmailConfirmDialog.client';
 import styles from './PlanPurchaseButton.module.css';
+import { TrialWarningDialog } from './TrialWarningDialog.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,6 +116,23 @@ export interface PlanPurchaseButtonProps {
      * customer — see `payerEmailKnown` / `proceedPastPayerEmailStep`.
      */
     readonly ownPreapprovalEnabled?: boolean;
+    /**
+     * The audience of the pricing surface this button was mounted on
+     * (HOS-1233). Two independent decisions read it, and neither can be
+     * derived from `planSlug` — a slug names a tier, not the page a visitor is
+     * standing on:
+     *
+     * - WHICH vertical's trial clock is consulted before charging
+     *   (`resolveTrialScopeForAudience`). A host's trial must never gate a
+     *   traveller's purchase, and `aliados` has no clock to read at all.
+     * - Where the "trial not started" branch navigates to
+     *   (`resolvePublishPathForPricingAudience`).
+     *
+     * Required rather than defaulted, for the same reason `plansPath` is: every
+     * mount point knows its own audience, and a default here could only be a
+     * guess that is wrong on some page.
+     */
+    readonly audience: PricingAudience;
 }
 
 // ---------------------------------------------------------------------------
@@ -354,6 +381,7 @@ export function PlanPurchaseButton({
     ctaText,
     locale,
     plansPath,
+    audience,
     showPromo = true,
     ownPreapprovalEnabled = false
 }: PlanPurchaseButtonProps): JSX.Element {
@@ -375,6 +403,22 @@ export function PlanPurchaseButton({
     // unauthenticated visitor, while the lookup is still in flight, or if it
     // fails. Only flips to `true` on a confirmed, successful lookup.
     const [payerEmailKnown, setPayerEmailKnown] = useState(false);
+    // HOS-1233: the trial clock for THIS page's vertical. `null` is the
+    // UNKNOWN state — unauthenticated, still in flight, the read failed, or
+    // this audience has no trial scope — and `resolveTrialStartBranch` turns it
+    // into the warning branch (AC-9). It must never be seeded with a fabricated
+    // `{ isOnTrial: false }`, which would read as "no trial to protect" and
+    // land the visitor in the silent charge this spec exists to stop.
+    const [trialClock, setTrialClock] = useState<TrialClockReading | null>(null);
+    // HOS-1233 T-016 / AC-4: the warn-and-confirm dialog in front of a checkout
+    // that would destroy a running trial.
+    const [showTrialWarning, setShowTrialWarning] = useState(false);
+    // HOS-1233 D-4 / AC-16: whether a live subscription in accommodation,
+    // gastronomy or experiences already grants every tourist-VIP entitlement.
+    // Starts `false` — R-7's direction: an unknown answer leaves the button
+    // ENABLED, because claiming a benefit the visitor does not hold is
+    // invisible in testing and costs a sale.
+    const [touristVipHeld, setTouristVipHeld] = useState(false);
     // The toggle lives outside this island (vanilla JS in PricingCardsGrid).
     // The island observes the closest `data-billing` ancestor for changes so
     // the displayed price + the checkout payload stay in sync with the
@@ -410,6 +454,17 @@ export function PlanPurchaseButton({
     const { t, tPlural } = createTranslations(locale);
 
     const isAuthenticated = !sessionPending && Boolean(session?.user);
+    // HOS-1233. `null` means "this audience has no trial to read" (aliados) and
+    // never "the read failed" — the two degrade in opposite directions, so they
+    // must not collapse into one value here either.
+    const trialScope = resolveTrialScopeForAudience({ audience });
+    // Where D-2's first branch navigates. `null` for an audience that creates
+    // no listing — see `resolvePublishPathForPricingAudience`.
+    const publishPath = resolvePublishPathForPricingAudience({ audience });
+    // AC-16 applies to the tourist cards and nowhere else: it is the tourist
+    // purchase that sells an empty delta to somebody already subscribed
+    // elsewhere, not the other way round.
+    const isTouristAudience = audience === 'tourist';
     const hasAnnual = annualPrice !== null && annualPrice > 0;
     // Convert cents to major units for the display formatter (the formatter
     // takes a number that it prefixes with the currency symbol; passing
@@ -486,6 +541,11 @@ export function PlanPurchaseButton({
     // so the card shows a legend instead of a clickable checkout button.
     const freeRegisterCtaLabel = t('billing.checkout.button.freeRegisterCta', 'Registrate gratis');
     const freePlanLegendLabel = t('billing.checkout.button.freePlanLegend', 'Ya tenés este plan');
+    // HOS-1233 AC-16. No hardcoded fallback: `resolve()` serves a fallback
+    // verbatim under /en and /pt, so one here would render Spanish on an
+    // English page — `check:i18n-keys` fails on exactly that for a new key.
+    const touristVipHeldLabel = t('pricing.touristVipHeld.cta');
+    const touristVipHeldNote = t('pricing.touristVipHeld.note');
 
     // Promo i18n strings
     const promoLabel = t('billing.checkout.promoApply.label', 'Código de descuento');
@@ -658,6 +718,46 @@ export function PlanPurchaseButton({
         };
     }, [isAuthenticated, ownPreapprovalEnabled]);
 
+    // HOS-1233: read this vertical's trial clock once the visitor is
+    // authenticated, shared across every island on the page by
+    // `fetchTrialClock`'s module cache (one request, not one per card).
+    //
+    // Skipped entirely when the audience has no trial scope: `partner` is not a
+    // member of the API's `ProductDomainScopeEnumSchema`, so asking for it is a
+    // 400 rather than an empty answer. Skipped for an anonymous visitor too —
+    // their click is answered by the sign-in redirect long before any trial
+    // question arises, and the endpoint is protected.
+    useEffect(() => {
+        if (!isAuthenticated || trialScope === null) {
+            setTrialClock(null);
+            return;
+        }
+        let cancelled = false;
+        fetchTrialClock({ productDomain: trialScope }).then((clock) => {
+            if (!cancelled) setTrialClock(clock);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, trialScope]);
+
+    // HOS-1233 D-4 / AC-16: only the tourist cards ask this, and only for an
+    // authenticated visitor. Three reads (one per blocking vertical), shared
+    // across the page by `fetchHoldsTouristVipBenefits`' module cache.
+    useEffect(() => {
+        if (!isAuthenticated || !isTouristAudience) {
+            setTouristVipHeld(false);
+            return;
+        }
+        let cancelled = false;
+        fetchHoldsTouristVipBenefits().then((held) => {
+            if (!cancelled) setTouristVipHeld(held);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, isTouristAudience]);
+
     // HOS-226: correct the SSR-rendered "N days free" badge for an
     // authenticated, non-eligible visitor. The badge itself comes from the
     // static, unauthenticated, 1h-cached `GET /api/v1/public/plans` (Pricing
@@ -740,6 +840,16 @@ export function PlanPurchaseButton({
     // already redirects to sign-in, so this only changes the label shown.
     const isFreePlanRegisterCta = isFreePlan && !isAuthenticated;
 
+    // HOS-1233 D-4 / AC-16: this visitor's live subscription in another
+    // vertical already spreads `TOURIST_VIP_ENTITLEMENTS` whole, so the tourist
+    // purchase sells nothing they do not have. Reads a subscription STATUS and
+    // nothing else (AC-18) — never a role, never the mere presence of a plan.
+    //
+    // `touristVipHeld` is `false` for an anonymous visitor and while the lookup
+    // is in flight, so the card is never born disabled: it is the R-7 direction
+    // — an unknown answer keeps the button usable.
+    const isTouristVipAlreadyHeld = isTouristAudience && touristVipHeld;
+
     // BETA-195: the user already has an active subscription on a DIFFERENT plan.
     // There is one subscription per customer, so firing start-paid for a second
     // plan is rejected by the backend with a non-transitory 409 ("You already
@@ -764,11 +874,15 @@ export function PlanPurchaseButton({
     // is for. An unauthenticated visitor still cannot validate against the
     // protected endpoint (see `handleApplyPromo`), so the field defers to
     // registration instead of calling it.
+    //
+    // HOS-1233: never on a card whose purchase is blocked because the VIP
+    // benefits are already held — there is no checkout for a code to reach.
     const showPromoSection =
         showPromo &&
         !isCurrentPlan &&
         !isAnnualUnavailable &&
         !isPlanChange &&
+        !isTouristVipAlreadyHeld &&
         displayPriceCents > 0;
 
     // HOS-452/H-82: the payer-email notice that used to live here (BETA-183)
@@ -1143,6 +1257,13 @@ export function PlanPurchaseButton({
             return;
         }
 
+        // HOS-1233 AC-16: the card renders no clickable state for this, but
+        // guard here too — the same belt-and-suspenders the $0 branch above
+        // takes, against a disabled state bypassed by assistive tech.
+        if (isTouristVipAlreadyHeld) {
+            return;
+        }
+
         if (!isAuthenticated) {
             // HOS-984: if this card's promo widget already has a code
             // deferred (`pending-auth` — the visitor clicked "Aplicar"
@@ -1172,13 +1293,70 @@ export function PlanPurchaseButton({
             return;
         }
 
-        // HOS-937 step 2 (spec §8.1): show the payer-email confirm dialog
-        // right before actually creating the MercadoPago preapproval — but
-        // ONLY on the checkout path that actually binds payer_email
-        // server-side. Zero extra fields for whoever's email already
-        // matches — the dialog pre-fills from the session and one click
-        // (Continue) proceeds.
-        proceedPastPayerEmailStep();
+        // HOS-1233 T-017: the trial gate, and the last thing between this
+        // click and real money. Everything above it answers "can this person
+        // buy this plan at all"; this answers "should they be buying it right
+        // now, or do they already have it free for another N days".
+        startTrialAwareCheckout();
+    }
+
+    /**
+     * Dispatches D-2's three branches for this page's vertical (HOS-1233
+     * T-017 / AC-3 / AC-4 / AC-5).
+     *
+     * **The dispatch is an exhaustive record, not a `switch`, and that is
+     * load-bearing.** `test/lib/billing/trial-start-branch-canonical.guard.test.ts`
+     * (AC-11 / F-6) fails CI on any branch literal sitting next to a decision
+     * construct anywhere in `apps/web/src` outside the canonical module — a
+     * `switch` or an `===` here is precisely the second derivation R-1 names as
+     * this spec's own risk. A `Record<TrialStartBranch, …>` keyed by unquoted
+     * property names carries the same exhaustiveness (a fourth branch fails to
+     * compile) while deciding nothing: `resolveTrialStartBranch` decides, this
+     * only looks up what it decided.
+     *
+     * Two escapes, both of which resolve to today's behaviour rather than to a
+     * dead button:
+     *
+     * - **No trial scope** (`aliados`). Nothing to consult, so the click goes
+     *   straight to checkout as it always has. This is not a fail-safe, it is
+     *   the absence of a question — and it must not be confused with a failed
+     *   read, which warns.
+     * - **No create form** (`turistas`). D-2's first branch says "step 1 of
+     *   that vertical's create form"; a traveller has no listing to create, so
+     *   there is no step 1 to send them to. Falling through to checkout is what
+     *   the page already did, promises nothing, and keeps the button alive. It
+     *   is deliberately NOT a warning: that branch is reached only when no
+     *   trial ever started, so there are no days to lose and no figure that
+     *   could be stated honestly.
+     */
+    function startTrialAwareCheckout(): void {
+        if (trialScope === null) {
+            // HOS-937 step 2 (spec §8.1): show the payer-email confirm dialog
+            // right before actually creating the MercadoPago preapproval.
+            proceedPastPayerEmailStep();
+            return;
+        }
+
+        const branchActions: Record<TrialStartBranch, () => void> = {
+            trial_create_form: () => {
+                if (publishPath === null) {
+                    proceedPastPayerEmailStep();
+                    return;
+                }
+                // AC-3: no payer-email dialog on this path. Starting a trial is
+                // what the create form does; charging first sells what they can
+                // have free.
+                window.location.href = buildUrl({ locale, path: publishPath });
+            },
+            trial_warn_then_checkout: () => {
+                setShowTrialWarning(true);
+            },
+            trial_checkout: () => {
+                proceedPastPayerEmailStep();
+            }
+        };
+
+        branchActions[resolveTrialStartBranch({ reading: trialClock })]();
     }
 
     /**
@@ -1324,22 +1502,49 @@ export function PlanPurchaseButton({
         setShowPayerEmailConfirm(false);
     }
 
+    /**
+     * The visitor accepted losing the remaining trial days (HOS-1233 AC-4).
+     * Closes the warning and continues into the ordinary checkout path — which
+     * is the payer-email step, exactly as an unwarned click would have taken.
+     */
+    function handleTrialWarningConfirm(): void {
+        setShowTrialWarning(false);
+        proceedPastPayerEmailStep();
+    }
+
+    /**
+     * The visitor cancelled the warning (button, `Escape` or overlay click).
+     *
+     * AC-4: this performs NO checkout and leaves the subscription untouched —
+     * closing the dialog is the whole of it. Nothing here may call
+     * `runCheckout`, `proceedPastPayerEmailStep`, or navigate.
+     */
+    function handleTrialWarningCancel(): void {
+        setShowTrialWarning(false);
+    }
+
     const buttonAriaLabel = isFreePlanUnpurchasable
         ? freePlanLegendLabel
         : isFreePlanRegisterCta
           ? freeRegisterCtaLabel
-          : isCurrentPlan
-            ? currentPlanAriaLabel
-            : isPlanChange
-              ? changePlanCtaLabel
-              : isAnnualUnavailable
-                ? monthlyOnlyLabel
-                : loading
-                  ? processingAriaLabel
-                  : `${ctaText} — ${formattedPrice}`;
+          : isTouristVipAlreadyHeld
+            ? touristVipHeldNote
+            : isCurrentPlan
+              ? currentPlanAriaLabel
+              : isPlanChange
+                ? changePlanCtaLabel
+                : isAnnualUnavailable
+                  ? monthlyOnlyLabel
+                  : loading
+                    ? processingAriaLabel
+                    : `${ctaText} — ${formattedPrice}`;
 
     const buttonDisabled =
-        loading || isCurrentPlan || isAnnualUnavailable || isFreePlanUnpurchasable;
+        loading ||
+        isCurrentPlan ||
+        isAnnualUnavailable ||
+        isFreePlanUnpurchasable ||
+        isTouristVipAlreadyHeld;
 
     return (
         <div className={styles.wrapper}>
@@ -1350,11 +1555,16 @@ export function PlanPurchaseButton({
                 disabled={buttonDisabled}
                 aria-label={buttonAriaLabel}
                 aria-busy={loading}
-                aria-disabled={isCurrentPlan || isAnnualUnavailable || isFreePlanUnpurchasable}
+                aria-disabled={
+                    isCurrentPlan ||
+                    isAnnualUnavailable ||
+                    isFreePlanUnpurchasable ||
+                    isTouristVipAlreadyHeld
+                }
                 onClick={buttonDisabled ? undefined : () => void handleClick()}
-                className={`${styles.button}${isCurrentPlan || isFreePlanUnpurchasable ? ` ${styles.buttonCurrent}` : ''}`}
+                className={`${styles.button}${isCurrentPlan || isFreePlanUnpurchasable || isTouristVipAlreadyHeld ? ` ${styles.buttonCurrent}` : ''}`}
             >
-                {isCurrentPlan || isFreePlanUnpurchasable ? (
+                {isCurrentPlan || isFreePlanUnpurchasable || isTouristVipAlreadyHeld ? (
                     <span className={styles.currentContent}>
                         <svg
                             className={styles.currentIcon}
@@ -1374,7 +1584,11 @@ export function PlanPurchaseButton({
                             />
                         </svg>
                         <span>
-                            {isFreePlanUnpurchasable ? freePlanLegendLabel : currentPlanLabel}
+                            {isFreePlanUnpurchasable
+                                ? freePlanLegendLabel
+                                : isTouristVipAlreadyHeld
+                                  ? touristVipHeldLabel
+                                  : currentPlanLabel}
                         </span>
                     </span>
                 ) : loading ? (
@@ -1418,6 +1632,19 @@ export function PlanPurchaseButton({
                     className={styles.errorMessage}
                 >
                     {error}
+                </p>
+            )}
+
+            {/* HOS-1233 AC-16: the button label alone says the purchase is
+                blocked; this says WHY, which is the part that keeps it from
+                reading as a bug. Only ever rendered off a live subscription
+                status (AC-18). */}
+            {isTouristVipAlreadyHeld && (
+                <p
+                    className={styles.touristVipHeldNote}
+                    data-testid="tourist-vip-already-held-note"
+                >
+                    {touristVipHeldNote}
                 </p>
             )}
 
@@ -1532,6 +1759,17 @@ export function PlanPurchaseButton({
                     </div>
                 </div>
             )}
+
+            {/* HOS-1233 T-016 / AC-4. Sits IN FRONT of the payer-email dialog,
+                not beside it: the question "do you accept losing N free days"
+                has to be answered before the one about which email pays. */}
+            <TrialWarningDialog
+                isOpen={showTrialWarning}
+                locale={locale}
+                daysRemaining={trialClock?.daysRemaining ?? null}
+                onCancel={handleTrialWarningCancel}
+                onConfirm={handleTrialWarningConfirm}
+            />
 
             <PayerEmailConfirmDialog
                 isOpen={showPayerEmailConfirm}

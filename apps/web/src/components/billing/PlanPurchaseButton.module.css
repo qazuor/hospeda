@@ -163,6 +163,18 @@
     line-height: 1.4;
 }
 
+/* HOS-1233 AC-16: why the tourist purchase is blocked. Muted, not destructive
+ * — nothing has gone wrong; the visitor simply already holds what this card
+ * sells. */
+.touristVipHeldNote {
+    margin: var(--space-2, 0.5rem) 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    text-align: center;
+    line-height: 1.4;
+}
+
 /* ---------------------------------------------------------------------------
  * Promo code section
  * ------------------------------------------------------------------------- */
