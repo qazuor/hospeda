@@ -712,3 +712,69 @@ describe('hasAnyPriorSubscription — per product domain (HOS-1012 D-2)', () => 
         expect(dbSpies.eventsWhere).not.toHaveBeenCalled();
     });
 });
+
+/**
+ * HOS-1233 T-041 / AC-15c — the reads the reclassification FIXES.
+ *
+ * §4b classified this one as FIXED: "Tourist row read as a prior accommodation
+ * sub → trial `consumed` → `subscription_required`" becomes "a tourist-turned-
+ * host gets `first_publish` and their real trial".
+ *
+ * Nothing in the CODE changes to achieve that — the fix is the data migration
+ * (T-038). Which is exactly why the pair below is written the way it is: the
+ * spec's §9 warns that "running the read regressions against seeded fixtures
+ * that were themselves built with the corrected domain" would pass before the
+ * fix too, so the first test reproduces the MISFILED shape explicitly and
+ * asserts the behaviour that made this a bug. The second asserts the corrected
+ * shape. Only the two together say anything.
+ */
+describe('hasAnyPriorSubscription — the tourist reclassification (HOS-1233 AC-15c)', () => {
+    it('MISFILED: a tourist row stored as accommodation consumes the host trial', async () => {
+        // The shape measured in prod and staging before T-038 (spec F-4b): a
+        // `tourist-vip` subscription whose `product_domain` says accommodation,
+        // because nothing ever stated one and the column default answered.
+        mockDb({ storedDomains: { 'sub-tourist-vip': 'accommodation' } });
+        const billing = makeBilling([{ id: 'sub-tourist-vip', status: 'active' }]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
+
+        // `true` = "this customer already had an accommodation subscription", so
+        // their host trial classifies as `consumed` and publish-eligibility
+        // answers `subscription_required`. They never held a host plan.
+        expect(result).toBe(true);
+    });
+
+    it('CORRECTED: the same row filed as tourist leaves the host trial intact', async () => {
+        mockDb({ storedDomains: { 'sub-tourist-vip': 'tourist' } });
+        const billing = makeBilling([{ id: 'sub-tourist-vip', status: 'active' }]);
+
+        const result = await hasAnyPriorSubscription({
+            billing,
+            customerId: CUSTOMER_ID,
+            productDomain: ProductDomainEnum.ACCOMMODATION
+        });
+
+        expect(result).toBe(false);
+    });
+
+    it('and the tourist trial itself is still consumed by that row', async () => {
+        // The sibling that stops the fix from being a blanket "tourist rows
+        // count for nothing": asked about its OWN domain, the row answers.
+        // Without this, deleting the domain comparison entirely would satisfy
+        // the test above.
+        mockDb({ storedDomains: { 'sub-tourist-vip': 'tourist' } });
+        const billing = makeBilling([{ id: 'sub-tourist-vip', status: 'active' }]);
+
+        expect(
+            await hasAnyPriorSubscription({
+                billing,
+                customerId: CUSTOMER_ID,
+                productDomain: ProductDomainEnum.TOURIST
+            })
+        ).toBe(true);
+    });
+});

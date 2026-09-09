@@ -269,6 +269,109 @@ describe('entity-subscription-cache-reconcile — drift correction', () => {
         });
     });
 
+    /**
+     * HOS-1233 T-041 / AC-15c — §4b filed this read as FIXED: "a tourist row
+     * could outrank a real owner plan in the cache".
+     *
+     * The pair matters here more than anywhere else, because the fix is the
+     * data migration and not a line of code: a fixture built with the corrected
+     * domain would pass before T-038 too, which §9 names as the way this suite
+     * could go green while the bug survived. So the first case reproduces the
+     * MISFILED shape and asserts the wrong answer it produced.
+     */
+    it('MISFILED: a tourist row stored as accommodation is cached as the owner plan', async () => {
+        queueReads({
+            accommodations: [{ id: 'acc-1', ownerId: 'owner-tourist-only' }],
+            subscriptions: [
+                {
+                    ownerId: 'owner-tourist-only',
+                    id: 'sub-tourist-vip',
+                    status: 'active',
+                    planId: 'plan-tourist-vip',
+                    // The shape measured in prod and staging before T-038: a
+                    // tourist plan claiming the column default (spec F-4b).
+                    productDomain: 'accommodation',
+                    createdAt: new Date('2026-05-01')
+                }
+            ],
+            existing: []
+        });
+
+        await entitySubscriptionCacheReconcileJob.handler(buildCtx());
+
+        // The accommodation is cached as covered by a subscription that is not
+        // a host plan at all.
+        expect(inserted[0]).toMatchObject({
+            entityId: 'acc-1',
+            subscriptionId: 'sub-tourist-vip',
+            status: 'active'
+        });
+    });
+
+    it('CORRECTED: the same row filed as tourist writes the NEGATIVE row', async () => {
+        queueReads({
+            accommodations: [{ id: 'acc-1', ownerId: 'owner-tourist-only' }],
+            subscriptions: [
+                {
+                    ownerId: 'owner-tourist-only',
+                    id: 'sub-tourist-vip',
+                    status: 'active',
+                    planId: 'plan-tourist-vip',
+                    productDomain: 'tourist',
+                    createdAt: new Date('2026-05-01')
+                }
+            ],
+            existing: []
+        });
+
+        await entitySubscriptionCacheReconcileJob.handler(buildCtx());
+
+        expect(inserted[0]).toMatchObject({
+            entityId: 'acc-1',
+            subscriptionId: null,
+            status: 'none',
+            planId: null
+        });
+    });
+
+    it('and a real owner plan still outranks a tourist row on the same owner', async () => {
+        // The sibling that keeps the assertion above from being satisfied by a
+        // cron that simply caches nothing: the owner holds BOTH, and the
+        // accommodation one has to win regardless of which is newer.
+        queueReads({
+            accommodations: [{ id: 'acc-1', ownerId: 'owner-both' }],
+            subscriptions: [
+                {
+                    ownerId: 'owner-both',
+                    id: 'sub-tourist-vip',
+                    status: 'active',
+                    planId: 'plan-tourist-vip',
+                    productDomain: 'tourist',
+                    // NEWER than the host plan, so "the newest wins" alone
+                    // would pick the wrong one.
+                    createdAt: new Date('2026-06-01')
+                },
+                {
+                    ownerId: 'owner-both',
+                    id: 'sub-owner-pro',
+                    status: 'active',
+                    planId: 'plan-owner-pro',
+                    productDomain: 'accommodation',
+                    createdAt: new Date('2026-05-01')
+                }
+            ],
+            existing: []
+        });
+
+        await entitySubscriptionCacheReconcileJob.handler(buildCtx());
+
+        expect(inserted[0]).toMatchObject({
+            entityId: 'acc-1',
+            subscriptionId: 'sub-owner-pro',
+            status: 'active'
+        });
+    });
+
     it('prunes a row whose accommodation no longer exists', async () => {
         queueReads({
             accommodations: [{ id: 'acc-1', ownerId: 'owner-a' }],
