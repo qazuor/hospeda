@@ -194,7 +194,7 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 
 - **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
 - **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
-- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch)
+- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch — **a partial list**; `preapproval-less-expiry`, `entity-subscription-cache-reconcile`, `addon-subscription-reconcile`, `courtesy-expiry`, `partner-expiry`, `partner-unpaid-reaper`, `propagate-plan-price-changes` and `reactivation-supersession-reconcile` are billing-side too). These are JOB NAMES, not filenames — `trial-reconcile` lives in `trial-expiry.ts`, so `ls` will not find it. `apps/api/src/cron/schedules.manifest.ts` is the authoritative name → schedule list.
 - **Config**: `packages/billing/` (plan definitions, entitlement keys, limits, MP adapter factory)
 - **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
 
@@ -241,11 +241,15 @@ yet, which is why anything that depends on a confirmed payment (see
   design as current.** The original design put the trial on MercadoPago: a
   preapproval carrying `auto_recurring.free_trial`, card collected on day 1, first
   charge deferred to day N, with `freeTrialDays` resolved once at checkout by
-  `resolveCheckoutFreeTrialDays`. HOS-1012 deleted that path —
+  `resolveCheckoutFreeTrialDays`. HOS-1012 deleted the PATH, not the functions:
   `subscription-checkout.service.ts` no longer imports `resolveCheckoutFreeTrialDays`
   or `resolvePlanTrialConfig` at all, and `scripts/check-no-trial-to-mercadopago.sh`
-  (guard G-1) fails CI if a checkout payload names a free trial again. The next
-  bullet is why.
+  (guard G-1) fails CI if a checkout payload names a free trial again. Both
+  functions still EXIST and are still exported
+  (`packages/service-core/src/services/billing/addon/trial.types.ts:337` and `:459`),
+  with **zero production call sites** — only their own unit tests call them. Treat
+  any doc, docblock or test comment describing either as live on the checkout path
+  as stale; do not resurrect them as "the" trial resolver. The next bullet is why.
 - **Nothing is asked of MercadoPago about trials anymore (HOS-1012).** MercadoPago
   grants a preapproval's free trial once per `(payer, preapproval_plan)`, so
   `auto_recurring.free_trial` and `first_invoice_offset` describe the PLAN'S terms
@@ -298,9 +302,11 @@ accommodation entitlement engine:
   that wanted "the plan this person pays for" matched them BY ACCIDENT), and
   `'addon'` (HOS-847 — a recurring add-on's own MercadoPago preapproval,
   isolated from the customer's real plan subscription). The entitlement engine
-  only ever counts `'accommodation'`, so a user who is at once a host, a
-  restaurant owner and a partner keeps correct accommodation entitlements
-  regardless of the other subscriptions' state.
+  counts `'accommodation'` **and `'tourist'`** — since HOS-1233 `loadEntitlements`
+  (`apps/api/src/middlewares/entitlement.ts:626`) matches either, because both are
+  "the plan this person pays for". It counts no other domain, so a user who is at
+  once a host, a restaurant owner and a partner keeps correct accommodation
+  entitlements regardless of the other subscriptions' state.
 - **`'commerce'` is a RETIRED value** (release B / HOS-692) that survives only on
   legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
   `'commerce'` satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
@@ -330,9 +336,15 @@ accommodation entitlement engine:
   behaviour from outside. Try the domain the surface actually governs first and
   use the other as a FALLBACK: ordered, it can only ever turn a `null` into an
   answer, so every account holding the primary domain is byte-identical to
-  before. Live examples: `middlewares/entitlement.ts`,
-  `routes/user/protected/entitlements.ts`, `services/billing/plan-domain-guard.ts`
-  and `routes/user/protected/subscription.ts`.
+  before. Only **two** call sites actually implement the ordered shape:
+  `services/billing/plan-domain-guard.ts:277` (`find(accommodation) ?? find(tourist)`)
+  and `routes/user/protected/subscription.ts:315`. The other two —
+  `middlewares/entitlement.ts:626` and `routes/user/protected/entitlements.ts:164` —
+  still use the single unordered `find` with `isAccommodationSubscription(sub) ||
+  subscriptionMatchesDomain(sub, TOURIST)`. Copy the first pair, not the second.
+  (NOT VERIFIED: whether the unordered shape is actually harmful in those two —
+  `entitlement.ts` runs the HOS-217 HOST discard immediately afterwards, which may
+  or may not neutralise it. Nobody has measured it.)
   Two corollaries that bite:
   - A route scoped by an EXPLICIT `?productDomain=` must stay strict — a caller
     that names a domain means it, and must never pick up the fallback. Only the
@@ -377,13 +389,26 @@ accommodation entitlement engine:
   - a **missing** row is never a wrong answer: the public read falls back to the
     live resolution. Only a row that is present AND wrong can lie, which is what
     the write-through path and the reconcile cron defend.
-- **One reconciler, six sites.** `reconcileSubscriptionLinkedEntities`
-  (`apps/api/src/services/subscription-linked-entities.service.ts`) is the only
-  bridge from the billing lifecycle to the rest of the platform: the MP webhook,
-  dunning (both branches), `finalize-cancelled-subs`, `abandoned-pending-subs`,
-  `preapproval-less-expiry` and the commerce attach path all call it and nothing
-  else. It drives commerce visibility AND the accommodation cache, so "did every
-  site get wired?" has one answer instead of six. The accommodation half ignores
+- **TWO reconcilers, and the second one is partners.** `reconcileSubscriptionLinkedEntities`
+  (`apps/api/src/services/subscription-linked-entities.service.ts:57`) drives commerce
+  visibility AND the accommodation `entity_subscriptions` cache, from **nine**
+  invocation sites: the MP webhook (`subscription-logic.ts:1341`), dunning (both
+  branches), `finalize-cancelled-subs`, `abandoned-pending-subs`,
+  `preapproval-less-expiry`, the commerce attach path, `subscription-comp-grant`
+  and `trial-local-expiry`. It does **not** touch partners.
+  `reconcilePartnerForSubscription`
+  (`apps/api/src/services/partner-reconcile.service.ts:150`) is a separate bridge
+  writing its own `partner_subscriptions` table (partners are NOT in
+  `entity_subscriptions`), and it is wired at only **five** of those nine — the MP
+  webhook, dunning (both branches), `finalize-cancelled-subs`,
+  `abandoned-pending-subs`. The other four — commerce attach, `subscription-comp-grant`,
+  `trial-local-expiry` and `preapproval-less-expiry` — leave partner rows untouched.
+  So "did every site get wired?" has TWO answers, and an audit that reads only the
+  first reconciler skips the partner vertical entirely. (NOT VERIFIED: whether those
+  four gaps matter in practice. The daily `partner-expiry` cron only archives
+  partners whose `endsAt` has passed while still ACTIVE — it is not a general
+  backstop for the four unwired paths, and nobody has checked whether a partner
+  subscription can reach them.) The accommodation half ignores
   the status it was handed and **re-derives** the owner's current subscription
   from the DB, so a late webhook for a superseded subscription cannot un-publish
   the one they are paying for. Backstop: the 6-hourly
