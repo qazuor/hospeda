@@ -1456,13 +1456,21 @@ describe('TrialService', () => {
                     trialEnd: newerTouristTrialEnd.toISOString(),
                     productDomain: 'tourist'
                 };
-                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
-
                 vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
                     ownerCancelled,
                     touristCancelled
                 ] as never);
-                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+                // Argument-aware, NOT a single fixed `mockResolvedValue`: a mock
+                // that returns the same plan regardless of which id was asked for
+                // would make `planSlug` pass even if the TOURIST row won the sort
+                // (measured — an earlier version of this test did exactly that and
+                // stayed green under a mutation that deleted the owner-category
+                // scope entirely).
+                vi.spyOn(mockBilling.plans, 'get').mockImplementation(async (planId: string) =>
+                    planId === 'plan-tourist-vip'
+                        ? ({ id: 'plan-tourist-vip', name: 'tourist-vip' } as never)
+                        : ({ id: 'plan-owner-basico', name: 'owner-basico' } as never)
+                );
                 // Candidates are queued in fixture order: owner first, tourist
                 // second.
                 mockDbForTrial.limit
@@ -1473,8 +1481,11 @@ describe('TrialService', () => {
                 const result = await trialService.getTrialStatus({ customerId });
 
                 // Assert — the owner row wins despite being the OLDER one, because
-                // the tourist row was never a candidate at all.
+                // the tourist row was never a candidate at all. `expiresAt` pins
+                // WHICH row's trialEnd was reported — independent of the
+                // `plans.get` mock — so this fails if the newer tourist row wins.
                 expect(result.isExpired).toBe(true);
+                expect(result.expiresAt).toBe(olderOwnerTrialEnd.toISOString());
                 expect(result.planSlug).toBe('owner-basico');
             });
         });
