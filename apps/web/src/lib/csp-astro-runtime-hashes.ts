@@ -61,8 +61,28 @@ import { createHash } from 'node:crypto';
  * would quietly reinstate HOS-798. When the guard fails: re-capture the
  * payloads from a built page, update `ASTRO_RUNTIME_INLINE_SCRIPTS`, and bump
  * this constant in the same commit.
+ *
+ * ## 7.1.6 → 7.3.1 (2026-09-08): all five payloads verified UNCHANGED
+ *
+ * The guard fired on the security-advisory bump. Every payload was re-derived
+ * from the installed astro 7.3.1 package and hashed with `node:crypto`,
+ * independently of anything in this module:
+ *
+ * - The four hydration IIFEs ship as prebuilt string literals in
+ *   `astro/<build>/runtime/client/{load,only,idle,visible}.prebuilt.js`. All
+ *   four are byte-identical to the payloads pinned below.
+ * - `replaceServerIsland` was rebuilt from astro's own template in
+ *   `runtime/server/render/server-islands.js`, applying astro's own transform
+ *   (`split('\n').map(trim).filter(non-empty, non-comment).join(' ')`) with
+ *   `SERVER_ISLAND_START` imported from astro rather than assumed. 7.3.1 adds a
+ *   new `//` comment to that template, which the filter drops — so the emitted
+ *   payload is unchanged even though the source is not.
+ *
+ * So only this constant moved. The digests below were NOT touched, which is the
+ * point: had any of them needed to change, the payloads would have had to be
+ * re-captured too.
  */
-export const VERIFIED_ASTRO_VERSION = '7.1.6';
+export const VERIFIED_ASTRO_VERSION = '7.3.1';
 
 /**
  * One entry per inline script Astro's client runtime emits, keyed by the global
