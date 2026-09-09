@@ -62,14 +62,13 @@ vi.mock('../../../src/lib/i18n', () => ({
 }));
 
 /**
- * Mock urls module to produce predictable URL output in JSDOM.
+ * HOS-1233: this file's account already BURNED its accommodation trial, so the
+ * trial gate in `handleClick` is a no-op here and the checkout path these tests
+ * were written for is what they still exercise. Mocked at the module boundary
+ * rather than through `fetch` because `fetchTrialClock` caches its answer in a
+ * module singleton — one throwing fetch in the first test would otherwise leave
+ * every later test reading an UNRESOLVED clock, which warns.
  */
-// HOS-1233: this file's account already BURNED its accommodation trial, so the
-// new trial gate in `handleClick` is a no-op here and the checkout path these
-// tests were written for is what they still exercise. Mocked at the module
-// boundary rather than through `fetch` because `fetchTrialClock` caches its
-// answer in a module singleton — one throwing fetch in the first test would
-// otherwise leave every later test reading an UNRESOLVED clock, which warns.
 vi.mock('../../../src/lib/billing/trial-clock', () => ({
     fetchTrialClock: () =>
         Promise.resolve({
@@ -81,6 +80,9 @@ vi.mock('../../../src/lib/billing/trial-clock', () => ({
     resetTrialClockCache: () => undefined
 }));
 
+/**
+ * Mock urls module to produce predictable URL output in JSDOM.
+ */
 vi.mock('../../../src/lib/urls', () => ({
     buildUrl: ({ locale, path = '' }: { locale: string; path?: string }) => {
         const normalized = path.startsWith('/') ? path : `/${path}`;
