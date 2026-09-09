@@ -1149,7 +1149,8 @@
             "paused": "Pausada",
             "comp": "Cortesía",
             "abandoned": "Abandonada",
-            "pendingProvider": "Esperando al proveedor"
+            "pendingProvider": "Esperando al proveedor",
+            "courtesy": "Períodos regalados"
         },
         "promoEffect": {
             "title": "Promoción activa",
@@ -1346,7 +1347,7 @@
             "title": "Regalar períodos",
             "description": "Regalar períodos sin cargo a",
             "cyclesLabel": "¿Cuántos períodos querés regalar?",
-            "startsAtNotice": "El regalo empieza cuando termina el período que ya pagó, no hoy. Hasta entonces no cambia nada para el suscriptor.",
+            "startsAtNotice": "La suscripción queda marcada como regalada desde ahora, y el cobro automático se corta de inmediato. El suscriptor no pierde nada: conserva todo hasta que termine el período que ya pagó, y ahí es cuando empiezan a correr los períodos regalados.",
             "leadTimeWarning": "Si faltan menos de 3 días para el próximo cobro, el regalo se rechaza: pausar tan cerca puede no frenar ese cobro y le terminaríamos cobrando justo el período regalado.",
             "confirmButton": "Regalar",
             "backButton": "Volver"

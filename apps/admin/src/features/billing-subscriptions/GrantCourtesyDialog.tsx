@@ -31,9 +31,18 @@ export interface GrantCourtesyDialogProps {
  * Two things the admin needs to understand before confirming, and the dialog
  * says both rather than assuming:
  *
- * 1. **The gift starts at the end of the period they already paid for**, not
- *    today. Nothing changes for them this month, because they already paid for
- *    this month.
+ * 1. **The grant takes effect immediately, not at the end of the current
+ *    period.** `grantCourtesyCycles` pauses the MercadoPago preapproval and
+ *    flips the local status to `courtesy` in the SAME call (see
+ *    `courtesy-grant.service.ts`) — this is NOT "nothing changes until
+ *    later". What genuinely does not change is the subscriber's access:
+ *    `courtesy` is an entitlement-granting status exactly like `active` (see
+ *    `ENTITLEMENT_GRANTING_STATUSES`), so they keep everything they already
+ *    paid for. Only the gifted cycles themselves are deferred — they start
+ *    counting once the period already paid for ends. HOS-1245 corrected this
+ *    copy after the previous wording ("nothing changes for the subscriber
+ *    until then") read as "nothing changes at all", which was false: billing
+ *    stops today, not at period end.
  * 2. **It can be refused for being too late.** Pausing the MercadoPago
  *    preapproval is what stops the next charge, so a grant made under three days
  *    before the due date may lose that race — and the subscriber would be

@@ -114,6 +114,9 @@ export function SubscriptionFilters({
                             <option value="comp">
                                 {t('admin-billing.subscriptions.statuses.comp')}
                             </option>
+                            <option value="courtesy">
+                                {t('admin-billing.subscriptions.statuses.courtesy')}
+                            </option>
                         </select>
                     </div>
                     <div>
