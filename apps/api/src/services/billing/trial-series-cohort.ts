@@ -18,6 +18,21 @@
  * distance that is not true. A dropped send is better than a wrong one, and
  * with nine sends losing one is no longer losing the only one.
  *
+ * **Selection is deliberately symmetric across verticals; the domain rides
+ * along instead (HOS-1283).** Neither query filters on `product_domain` — a
+ * gastronomy or experience owner's local trial (HOS-1184) is exactly as
+ * eligible for this series as an accommodation one, and that is correct: all
+ * three verticals grant a Hospeda-owned trial the same way
+ * (`createTrialSubscription`), so all three deserve the reminder series. What
+ * was missing was not a filter but a column: `TrialSeriesCandidate` did not
+ * carry `productDomain` at all, so every one of the nine templates rendered
+ * accommodation-only copy ("tu alojamiento", "tus fotos") regardless of which
+ * vertical actually qualified. Both queries below now select
+ * `billing_subscriptions.product_domain` and thread it onto the candidate, so
+ * the dispatcher (`trial-series-dispatch.ts`) and the templates
+ * (`packages/notifications/src/templates/trial/`) can render the right
+ * vertical's words instead of always defaulting to the wrong one.
+ *
  * @module services/billing/trial-series-cohort
  */
 
@@ -61,6 +76,23 @@ export interface TrialSeriesCandidate {
     readonly planId: string;
     /** When the trial ends (or ended). Rendered in most of the nine templates. */
     readonly trialEnd: Date;
+    /**
+     * The billing vertical this trial belongs to (HOS-1283), read straight off
+     * `billing_subscriptions.product_domain` — written at trial creation by
+     * `createTrialSubscription` for both of its callers (accommodation's first
+     * publish and commerce's, HOS-1184). This is a direct Drizzle read of the
+     * local table, not a `QZPaySubscription` from the SDK, so none of the
+     * "hydrate before you compare" concern applies here.
+     *
+     * `null` on a row that predates the column. Every template resolves a
+     * `null`/unrecognized value to the accommodation copy, matching this
+     * repo's standing fail-open convention for that domain
+     * (`subscriptionMatchesDomain`'s doc in `@repo/service-core`) — never
+     * fail-closed to a generic "your account" message, which would be a
+     * regression for the (overwhelming majority) accommodation trials this
+     * series was written for.
+     */
+    readonly productDomain: string | null;
     /**
      * The billing interval the customer originally chose, read back from
      * `metadata.intendedInterval`. Untyped at the source, so it may be absent.
@@ -124,7 +156,8 @@ export async function findPreExpiryCohorts(input: {
             customerId: billingSubscriptions.customerId,
             planId: billingSubscriptions.planId,
             trialEnd: billingSubscriptions.trialEnd,
-            metadata: billingSubscriptions.metadata
+            metadata: billingSubscriptions.metadata,
+            productDomain: billingSubscriptions.productDomain
         })
         .from(billingSubscriptions)
         .where(
@@ -153,6 +186,7 @@ export async function findPreExpiryCohorts(input: {
             customerId: row.customerId,
             planId: row.planId,
             trialEnd: row.trialEnd,
+            productDomain: row.productDomain ?? null,
             ...(readIntendedInterval(row.metadata)
                 ? { intendedInterval: readIntendedInterval(row.metadata) }
                 : {})
@@ -198,6 +232,7 @@ export async function findPostExpiryCohorts(input: {
             planId: billingSubscriptions.planId,
             trialEnd: billingSubscriptions.trialEnd,
             metadata: billingSubscriptions.metadata,
+            productDomain: billingSubscriptions.productDomain,
             expiredAt: billingSubscriptionEvents.createdAt
         })
         .from(billingSubscriptions)
@@ -236,6 +271,7 @@ export async function findPostExpiryCohorts(input: {
             // what selects the bucket. Falls back to the event date on the rows
             // (none today) that carry no trial_end.
             trialEnd: row.trialEnd ?? row.expiredAt,
+            productDomain: row.productDomain ?? null,
             ...(readIntendedInterval(row.metadata)
                 ? { intendedInterval: readIntendedInterval(row.metadata) }
                 : {})

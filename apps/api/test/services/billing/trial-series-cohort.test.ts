@@ -75,23 +75,39 @@ function leaves(condition: Condition | undefined): Condition[] {
     return condition.conditions ? condition.conditions.flatMap(leaves) : [condition];
 }
 
-function trialRow(overrides: { id: string; trialEnd: Date; metadata?: unknown }) {
+function trialRow(overrides: {
+    id: string;
+    trialEnd: Date;
+    metadata?: unknown;
+    productDomain?: string | null;
+}) {
+    const productDomain =
+        overrides.productDomain === undefined ? 'accommodation' : overrides.productDomain;
     return {
         id: overrides.id,
         customerId: `cust-${overrides.id}`,
         planId: 'plan-owner-basico',
         trialEnd: overrides.trialEnd,
-        metadata: overrides.metadata ?? null
+        metadata: overrides.metadata ?? null,
+        productDomain
     };
 }
 
-function expiredRow(overrides: { id: string; expiredAt: Date; trialEnd?: Date }) {
+function expiredRow(overrides: {
+    id: string;
+    expiredAt: Date;
+    trialEnd?: Date;
+    productDomain?: string | null;
+}) {
+    const productDomain =
+        overrides.productDomain === undefined ? 'accommodation' : overrides.productDomain;
     return {
         id: overrides.id,
         customerId: `cust-${overrides.id}`,
         planId: 'plan-owner-basico',
         trialEnd: overrides.trialEnd ?? overrides.expiredAt,
         metadata: null,
+        productDomain,
         expiredAt: overrides.expiredAt
     };
 }
@@ -165,6 +181,30 @@ describe('findPreExpiryCohorts (HOS-1012 T-016)', () => {
 
         expect([...cohorts.values()].flat()).toEqual([]);
     });
+
+    it('carries the ROW-level productDomain, not a hardcoded accommodation default (HOS-1283)', async () => {
+        // Regression: before HOS-1283 the SELECT never fetched
+        // `product_domain` at all, so a gastronomy owner's local trial
+        // (HOS-1184) reached the dispatcher with no way to tell it apart from
+        // an accommodation one — every one of the nine templates then rendered
+        // "tu alojamiento" for a restaurant.
+        const { db } = fakeDb([
+            trialRow({ id: 'sub-gastro', trialEnd: daysFromNow(5), productDomain: 'gastronomy' }),
+            trialRow({ id: 'sub-exp', trialEnd: daysFromNow(5), productDomain: 'experience' }),
+            trialRow({ id: 'sub-host', trialEnd: daysFromNow(5), productDomain: 'accommodation' }),
+            trialRow({ id: 'sub-legacy', trialEnd: daysFromNow(5), productDomain: null })
+        ]);
+
+        const cohorts = await findPreExpiryCohorts({ sends: TRIAL_SERIES_SENDS, now: NOW, db });
+        const byId = new Map(
+            (cohorts.get(-5) ?? []).map((c) => [c.subscriptionId, c.productDomain])
+        );
+
+        expect(byId.get('sub-gastro')).toBe('gastronomy');
+        expect(byId.get('sub-exp')).toBe('experience');
+        expect(byId.get('sub-host')).toBe('accommodation');
+        expect(byId.get('sub-legacy')).toBeNull();
+    });
 });
 
 describe('findPostExpiryCohorts (HOS-1012 T-017)', () => {
@@ -224,6 +264,20 @@ describe('findPostExpiryCohorts (HOS-1012 T-017)', () => {
             type: 'isNull',
             column: 'mp_subscription_id'
         });
+    });
+
+    it('carries the ROW-level productDomain on the post-expiry side too (HOS-1283)', async () => {
+        const { db } = fakeDb([
+            expiredRow({
+                id: 'sub-gastro',
+                expiredAt: daysFromNow(-1),
+                productDomain: 'gastronomy'
+            })
+        ]);
+
+        const cohorts = await findPostExpiryCohorts({ sends: TRIAL_SERIES_SENDS, now: NOW, db });
+
+        expect(cohorts.get(1)?.[0]?.productDomain).toBe('gastronomy');
     });
 });
 
