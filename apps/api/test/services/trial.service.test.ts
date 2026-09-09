@@ -2420,6 +2420,188 @@ describe('TrialService', () => {
             });
         });
 
+        // ── HOS-1277: reactivation's "any subscription is live" / "find a
+        // canceled subscription" checks used to scan EVERY vertical at once.
+        // A dual-owner (accommodation + gastronomy) could get a bogus 409 off
+        // an unrelated live subscription in the OTHER domain, or have the
+        // wrong vertical's canceled row picked to reactivate from.
+        describe('domain isolation (HOS-1277)', () => {
+            it('REGRESSION: a live GASTRONOMY subscription does not block reactivating the ACCOMMODATION plan', async () => {
+                // Arrange — outer beforeEach already resolves the target plan's
+                // domain to 'accommodation' (mockDbForTrial.limit default).
+                const customerId = 'customer-dual-owner-1';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-gastronomy-active',
+                        customerId,
+                        status: 'active',
+                        planId: 'gastronomy-pro',
+                        productDomain: 'gastronomy'
+                    },
+                    {
+                        id: 'sub-accommodation-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'plan-old',
+                        productDomain: 'accommodation'
+                    }
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                // Act
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — no 409, and the ACCOMMODATION canceled row is the one
+                // superseded, never the live gastronomy one.
+                expect(result.success).toBe(true);
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-accommodation-canceled'
+                        })
+                    })
+                );
+            });
+
+            it('picks the ACCOMMODATION canceled row over a gastronomy one held at the same time', async () => {
+                const customerId = 'customer-dual-owner-2';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-gastronomy-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'gastronomy-basico',
+                        productDomain: 'gastronomy'
+                    },
+                    {
+                        id: 'sub-accommodation-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'plan-old',
+                        productDomain: 'accommodation'
+                    }
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-accommodation-canceled',
+                            previousPlanId: 'plan-old'
+                        })
+                    })
+                );
+            });
+
+            it('a live ACCOMMODATION subscription does not block reactivating a GASTRONOMY plan', async () => {
+                // Arrange — the target plan resolves to a DIFFERENT domain this
+                // time: override the shared plan-domain DB stub.
+                mockDbForTrial.limit.mockResolvedValue([{ productDomain: 'gastronomy' }]);
+                const customerId = 'customer-dual-owner-3';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan({ id: 'plan-gastronomy-pro', name: 'gastronomy-pro' })
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-accommodation-active',
+                        customerId,
+                        status: 'active',
+                        planId: PAID_PLAN_ID,
+                        productDomain: 'accommodation'
+                    },
+                    {
+                        id: 'sub-gastronomy-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'gastronomy-old',
+                        productDomain: 'gastronomy'
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-gastronomy-reactivated',
+                    customerId,
+                    planId: 'plan-gastronomy-pro',
+                    status: 'incomplete',
+                    providerInitPoint: 'https://mp.test/checkout/reactivate-gastronomy',
+                    providerSubscriptionIds: { mercadopago: 'mp_preapproval_gastronomy' }
+                } as never);
+
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: 'plan-gastronomy-pro',
+                    urls: URLS
+                });
+
+                expect(result.success).toBe(true);
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-gastronomy-canceled'
+                        })
+                    })
+                );
+            });
+
+            it('a PARTNER subscription is excluded from an accommodation reactivation exactly like gastronomy', async () => {
+                const customerId = 'customer-dual-owner-4';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-partner-active',
+                        customerId,
+                        status: 'active',
+                        planId: 'partner-gold',
+                        productDomain: 'partner'
+                    },
+                    {
+                        id: 'sub-accommodation-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'plan-old',
+                        productDomain: 'accommodation'
+                    }
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                expect(result.success).toBe(true);
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-accommodation-canceled'
+                        })
+                    })
+                );
+            });
+        });
+
         // ── HOS-171 §7.2: annual reactivation is now a recurring MercadoPago
         // preapproval routed through the SAME `createPaidSubscription`
         // helper as monthly (`billingInterval: 'annual'` is the only
