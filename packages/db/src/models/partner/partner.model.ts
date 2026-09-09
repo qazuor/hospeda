@@ -1,3 +1,4 @@
+import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
 import type { LifecycleStatusEnum, Partner, PartnerSubscriptionStatusEnum } from '@repo/schemas';
 import {
     and,
@@ -7,6 +8,7 @@ import {
     eq,
     exists,
     gte,
+    inArray,
     isNotNull,
     isNull,
     lte,
@@ -307,13 +309,36 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      *   live environments by seed migration 0019) out: they carry a 2025
      *   `starts_at` and no approval, so they would otherwise be flagged on the
      *   first tick for a payment nobody ever expected.
-     * - **no `partner_subscriptions` row** — a partner with a live MercadoPago
-     *   subscription is already governed by the webhook, dunning and
+     * - **no link row in an entitlement-granting status** — the subscription
+     *   carril already governs those, through the webhook, dunning and
      *   `finalize-cancelled-subs`. (That chain has its own gaps — HOS-1306 —
      *   but they are that issue's, and flagging here would double up on
-     *   machinery that mostly works.) A CANCELLED subscription already moved
-     *   the row out of `active`/`ACTIVE`, so this excludes only the ones being
-     *   charged.
+     *   machinery that mostly works.) The status set is
+     *   {@link ENTITLEMENT_GRANTING_STATUSES}, reused rather than spelled out,
+     *   and the two members that are NOT about being charged are the reason
+     *   this clause has to be a status test rather than a plain row test:
+     *
+     *   - `comp` — a permanently complimentary subscription. **HOS-1160** opens
+     *     these to partners, and grants one by calling
+     *     `reconcilePartnerForSubscription`, which seals `starts_at` (it must:
+     *     otherwise `partner-unpaid-reaper` archives the comped partner on day
+     *     90). A comped partner therefore has a sealed start date and, by
+     *     design, no payments EVER. Without this clause the cron would email an
+     *     admin asking whether to take down a partner the platform deliberately
+     *     gave the product to — the exact false accusation this feature exists
+     *     to avoid, aimed at the one partner who can never clear it.
+     *   - `courtesy` — a finite run of gifted cycles (HOS-180). Same shape, same
+     *     answer: no charge is expected while the window runs.
+     *
+     *   Reading the STATUS and not merely the row's existence also closes a real
+     *   gap in the other direction: a partner whose MercadoPago subscription
+     *   lapsed and who then paid cash keeps a stale `cancelled` link row, and a
+     *   plain row test would hide them forever — which is the very bug this
+     *   issue is about, wearing a different hat.
+     *
+     *   Note the split: `comp`/`courtesy` are NOT representable on
+     *   `partners.subscription_status` (a four-value enum), so this exclusion
+     *   cannot be read off the partner row and genuinely needs the link table.
      * - **`starts_at IS NOT NULL`** — a partner who never started is the unpaid
      *   reaper's, which reads exactly that column.
      * - **`payment_review_state IS NULL`** — already asked. This is what makes
@@ -357,7 +382,19 @@ export class PartnerModel extends BaseModelImpl<Partner> {
                             db
                                 .select({ one: sql`1` })
                                 .from(partnerSubscriptions)
-                                .where(eq(partnerSubscriptions.partnerId, partners.id))
+                                .where(
+                                    and(
+                                        eq(partnerSubscriptions.partnerId, partners.id),
+                                        // Never narrow this to `['active']`. It
+                                        // would re-admit `comp` (HOS-1160) and
+                                        // `courtesy` (HOS-180) — partners who
+                                        // legitimately never pay — into an alert
+                                        // asking an admin to take them down.
+                                        inArray(partnerSubscriptions.status, [
+                                            ...ENTITLEMENT_GRANTING_STATUSES
+                                        ])
+                                    )
+                                )
                         )
                     )
                 )
