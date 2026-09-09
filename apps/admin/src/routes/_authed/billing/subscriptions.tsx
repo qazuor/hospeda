@@ -1,6 +1,6 @@
 import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useToast } from '@/components/ui/ToastProvider';
 import { usePlansQuery } from '@/features/billing-plans/hooks';
@@ -25,6 +25,7 @@ import { SubscriptionDetailsDialog } from '@/features/billing-subscriptions/Subs
 import { SubscriptionFilters } from '@/features/billing-subscriptions/SubscriptionFilters';
 import { SubscriptionsTable } from '@/features/billing-subscriptions/SubscriptionsTable';
 import type { Subscription, SubscriptionStatus } from '@/features/billing-subscriptions/types';
+import { buildGrantCompPayload } from '@/features/billing-subscriptions/utils';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 
@@ -86,8 +87,43 @@ function BillingSubscriptionsPage() {
     const subscriptions = subscriptionsData?.items ?? [];
 
     // Plans query — needed to resolve plan slug -> UUID for the qzpay
-    // change-plan endpoint, which only accepts UUIDs.
-    const { data: plansData } = usePlansQuery();
+    // change-plan endpoint (UUIDs only) and to feed the grant-comp plan
+    // selector (HOS-1314), which needs EVERY comped-able plan across every
+    // vertical, not just the first page.
+    //
+    // `pageSize: 100` is the server's own hard ceiling
+    // (`BillingPlanSearchSchema.pageSize.max` in
+    // `packages/schemas/src/api/billing/billing-plan.schema.ts`) — the most a
+    // single request can ever return, so there is no larger fixed value to
+    // ask for. The unqualified default (20) undercounted today's own seed:
+    // ALL_PLANS (5) + 3 trial + 3 gastronomy + 3 experience + 3 partner +
+    // owner-test-daily is ~18 non-deleted rows already, two short of the
+    // default page. The truncation guard below is what stops a FUTURE
+    // overflow (e.g. a HOS-1062 negotiated plan pushing past 100) from
+    // silently dropping a plan out of the selector with no signal at all.
+    const { data: plansData } = usePlansQuery({ pageSize: 100 });
+
+    // HOS-1314 review: a plan the operator cannot see in the selector is a
+    // plan nobody can grant a comp for, with no error anywhere — the exact
+    // "fails silently" this guard exists to close. Fires at most once per
+    // mount (not once per render/refetch) so it cannot spam the toast queue.
+    const plansTruncationWarned = useRef(false);
+    useEffect(() => {
+        if (!plansData) return;
+        const total = plansData.pagination.total;
+        const totalCount = typeof total === 'number' ? total : Number(total);
+        if (
+            !plansTruncationWarned.current &&
+            Number.isFinite(totalCount) &&
+            totalCount > plansData.items.length
+        ) {
+            plansTruncationWarned.current = true;
+            addToast({
+                message: `${t('admin-billing.subscriptions.toasts.plansTruncated')} ${plansData.items.length}/${totalCount}`,
+                variant: 'warning'
+            });
+        }
+    }, [plansData, addToast, t]);
 
     // Mutations
     const cancelMutation = useCancelSubscriptionMutation();
@@ -189,11 +225,11 @@ function BillingSubscriptionsPage() {
             : payload.planId;
 
         grantCompMutation.mutate(
-            {
-                customerId: selectedSubscription.customerId,
+            buildGrantCompPayload({
+                subscription: selectedSubscription,
                 planId: payload.planId,
                 interval: payload.interval
-            },
+            }),
             {
                 onSuccess: () => {
                     addToast({

@@ -1330,7 +1330,8 @@
             "courtesyGranted": "Períodos presenteados",
             "courtesyError": "Não foi possível presentear:",
             "compGranted": "Cortesia concedida:",
-            "compError": "Não foi possível conceder a cortesia:"
+            "compError": "Não foi possível conceder a cortesia:",
+            "plansTruncated": "Não foi possível carregar todos os planos para conceder cortesia, mostrando"
         },
         "unknownUser": "Usuário não identificado",
         "unknownPlan": "Plano não identificado",

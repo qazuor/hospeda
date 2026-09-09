@@ -1330,7 +1330,8 @@
             "courtesyGranted": "Cycles gifted",
             "courtesyError": "Could not gift cycles:",
             "compGranted": "Comp granted:",
-            "compError": "Could not grant the comp:"
+            "compError": "Could not grant the comp:",
+            "plansTruncated": "Could not load every plan for granting a comp, showing"
         },
         "unknownUser": "Unknown user",
         "unknownPlan": "Unknown plan",
