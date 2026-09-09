@@ -44,6 +44,12 @@ vi.mock('@repo/service-core', () => ({
     // SPEC-239 T-034: all test subscriptions here are accommodation-domain
     // (no productDomain set), so this should always return true.
     isAccommodationSubscription: () => true,
+    // HOS-1270: this suite is about the AddonCatalogService/PlanService
+    // cutover, not domain matching — stub as always-match so the catalog
+    // stubs' `productDomain: ACCOMMODATION` (needed only to clear the
+    // fail-closed `!addon.productDomain` guard) never has to be reconciled
+    // against the fixture subscription's own (absent) domain.
+    subscriptionMatchesDomain: () => true,
     // HOS-1104: pass-through stub. Deliberately does NOT fabricate a
     // `productDomain` value onto the fixtures (that would hide the bug this
     // hydration exists to fix) — it mirrors the real function's own no-op
@@ -124,6 +130,11 @@ const STUB_VISIBILITY_7D = {
     limitIncrease: null,
     grantsEntitlement: 'FEATURED_LISTING',
     targetCategories: ['owner', 'complex'] as Array<'owner' | 'complex'>,
+    // HOS-1270: required — `addon.productDomain` now gates
+    // `applyAddonEntitlements`/`removeAddonEntitlements` (fail-closed on
+    // `undefined`); `subscriptionMatchesDomain` is stubbed always-true above,
+    // so only presence (not value) matters here.
+    productDomain: 'accommodation',
     isActive: true,
     sortOrder: 1
 };
@@ -140,6 +151,7 @@ const STUB_EXTRA_ACCOMMODATIONS = {
     limitIncrease: 5,
     grantsEntitlement: null,
     targetCategories: ['owner'] as Array<'owner' | 'complex'>,
+    productDomain: 'accommodation',
     isActive: true,
     sortOrder: 4
 };
@@ -156,6 +168,7 @@ const STUB_EXTRA_PHOTOS = {
     limitIncrease: 20,
     grantsEntitlement: null,
     targetCategories: ['owner', 'complex'] as Array<'owner' | 'complex'>,
+    productDomain: 'accommodation',
     isActive: true,
     sortOrder: 3
 };

@@ -31,8 +31,8 @@ import type { ServiceResult } from '@repo/service-core';
 import {
     AddonCatalogService,
     hydrateSubscriptionProductDomains,
-    isAccommodationSubscription,
     PlanService,
+    subscriptionMatchesDomain,
     syncFeaturedByEntitlementForAccommodation
 } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -143,14 +143,38 @@ export class AddonEntitlementService {
             // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
             // `hydrateSubscriptionProductDomains`'s doc) — without this, every
             // subscription below fails OPEN to accommodation regardless of its
-            // real vertical, making the SPEC-239 T-034 filter a no-op.
+            // real vertical, making the domain filter below a no-op.
             const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
-            // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
-            // Treats null/undefined productDomain as 'accommodation' (legacy rows).
+            // HOS-1270: this used to be hardcoded to `isAccommodationSubscription`,
+            // which is exactly the bug HOS-1178 already closed at checkout —
+            // `createAddonCheckout` resolves the subscription of the ADD-ON's own
+            // domain (`subscriptionMatchesDomain(sub, addon.productDomain)`), but
+            // the grant that runs right after payment kept the accommodation-only
+            // filter. A gastronomy/experience owner passed the checkout gate, paid,
+            // and this `find` found nothing — `NO_ACTIVE_SUBSCRIPTION`, no cupo, and
+            // the cron retried the same broken path forever. Mirror the checkout
+            // gate's own predicate so the two agree on the same purchase.
+            //
+            // Callers MUST fail CLOSED on `addon.productDomain === undefined` (see
+            // `AddonDefinition.productDomain`'s doc) — an add-on the catalogue
+            // cannot classify must not fall back to accommodation.
+            const addonProductDomain = addon.productDomain;
+
+            if (!addonProductDomain) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'ADDON_DOMAIN_UNKNOWN',
+                        message: `Add-on '${input.addonSlug}' does not declare a product domain and cannot be granted`
+                    }
+                };
+            }
+
             const activeSubscription = subscriptions.find(
                 (sub: { status: string }) =>
-                    isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+                    isEntitlementGrantingStatus(sub.status) &&
+                    subscriptionMatchesDomain(sub, addonProductDomain)
             );
 
             if (!activeSubscription) {
@@ -448,14 +472,39 @@ export class AddonEntitlementService {
             // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
             // `hydrateSubscriptionProductDomains`'s doc) — without this, every
             // subscription below fails OPEN to accommodation regardless of its
-            // real vertical, making the SPEC-239 T-034 filter a no-op.
+            // real vertical, making the domain filter below a no-op.
             const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
-            // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
-            // Treats null/undefined productDomain as 'accommodation' (legacy rows).
+            // HOS-1270: mirror the grant-side fix (and the checkout gate's own
+            // predicate) — this used to be hardcoded to
+            // `isAccommodationSubscription`, so a gastronomy/experience owner
+            // cancelling their add-on found no "active subscription" here (their
+            // only subscription is never accommodation), took the early
+            // "nothing to remove" return below, and the add-on's entitlement/limit
+            // was NEVER revoked in QZPay — left dangling after the customer
+            // stopped paying for it.
+            //
+            // `addon.productDomain === undefined` fails CLOSED here too: we
+            // cannot resolve which domain's subscription should gate the
+            // revocation, so we do not assume accommodation. This is checkout-time
+            // unreachable (HOS-1178 refuses to sell such an add-on), kept purely
+            // defensive.
+            const addonProductDomain = addon.productDomain;
+
+            if (!addonProductDomain) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'ADDON_DOMAIN_UNKNOWN',
+                        message: `Add-on '${input.addonSlug}' does not declare a product domain and cannot be revoked`
+                    }
+                };
+            }
+
             const activeSubscription = subscriptions.find(
                 (sub: { status: string }) =>
-                    isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+                    isEntitlementGrantingStatus(sub.status) &&
+                    subscriptionMatchesDomain(sub, addonProductDomain)
             );
 
             if (!activeSubscription) {
@@ -712,41 +761,51 @@ export class AddonEntitlementService {
             const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
             if (rawSubscriptions && rawSubscriptions.length > 0) {
-                // HOS-1104: `getByCustomerId()` never populates `productDomain`
-                // (see `hydrateSubscriptionProductDomains`'s doc) — without this,
-                // every subscription below fails OPEN to accommodation regardless
-                // of its real vertical, making the SPEC-239 T-034 filter a no-op.
-                const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
-
-                // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
-                // Treats null/undefined productDomain as 'accommodation' (legacy rows).
-                const activeSubscription = subscriptions.find(
-                    (sub: { status: string }) =>
-                        isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+                // HOS-1270: this used to hydrate and then filter down to a single
+                // `isAccommodationSubscription` match before reading metadata —
+                // the third sibling of the same accommodation-only bug (grant and
+                // revoke were the other two). Unlike those two, this read is not
+                // scoped to one addon's own domain: a customer can hold an
+                // accommodation subscription AND a commerce one at once
+                // (`host-provider@local.test`), and legacy `addonAdjustments` JSON
+                // (retired by SPEC-194 T-021, before commerce/product-domain
+                // existed at all — HOS-73/SPEC-239) could in principle live on
+                // either. Scoping to accommodation-only risked picking the WRONG
+                // subscription's metadata (or none) for a dual-domain customer and
+                // silently dropping the other domain's legacy adjustments. So this
+                // reads metadata off EVERY entitlement-granting subscription,
+                // regardless of domain, and merges the results — hydration is no
+                // longer needed since nothing here compares `productDomain`.
+                const activeSubscriptions = rawSubscriptions.filter((sub: { status: string }) =>
+                    isEntitlementGrantingStatus(sub.status)
                 );
 
-                if (activeSubscription) {
+                for (const activeSubscription of activeSubscriptions) {
                     const metadataAdjustments = this.getAddonAdjustments(activeSubscription);
 
-                    // Only include adjustments not already in table results
+                    // Only include adjustments not already in table results or
+                    // already collected from another subscription's metadata.
                     for (const adj of metadataAdjustments) {
                         const existsInTable = adjustmentsFromTable.some(
                             (tableAdj) => tableAdj.addonSlug === adj.addonSlug
                         );
+                        const existsInMetadata = adjustmentsFromMetadata.some(
+                            (metaAdj) => metaAdj.addonSlug === adj.addonSlug
+                        );
 
-                        if (!existsInTable) {
+                        if (!existsInTable && !existsInMetadata) {
                             adjustmentsFromMetadata.push(adj);
                         }
                     }
-
-                    apiLogger.debug(
-                        {
-                            customerId,
-                            adjustmentsCountFromMetadata: adjustmentsFromMetadata.length
-                        },
-                        'Retrieved add-on adjustments from subscription metadata'
-                    );
                 }
+
+                apiLogger.debug(
+                    {
+                        customerId,
+                        adjustmentsCountFromMetadata: adjustmentsFromMetadata.length
+                    },
+                    'Retrieved add-on adjustments from subscription metadata'
+                );
             }
 
             // Merge results (table takes priority)

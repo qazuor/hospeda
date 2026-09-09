@@ -92,7 +92,12 @@ describe('AddonEntitlementService — productDomain hydration (HOS-1104)', () =>
                 grantsEntitlement: EntitlementKey.FEATURED_LISTING,
                 affectsLimitKey: null,
                 limitIncrease: null,
-                durationDays: 7
+                durationDays: 7,
+                // HOS-1270: required — `addon.productDomain` now gates
+                // `removeAddonEntitlements` (fail-closed on `undefined`), and this
+                // suite deliberately keeps the real `subscriptionMatchesDomain`.
+                // `visibility-boost-7d` is accommodation-only in the real catalog.
+                productDomain: 'accommodation'
             }
         });
     });
