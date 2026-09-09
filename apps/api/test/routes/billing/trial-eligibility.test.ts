@@ -84,8 +84,11 @@ function makeContext(
     };
 }
 
-function makeQuery(planSlug?: string): Record<string, unknown> {
-    return planSlug === undefined ? {} : { planSlug };
+function makeQuery(planSlug?: string, productDomain?: string): Record<string, unknown> {
+    return {
+        ...(planSlug === undefined ? {} : { planSlug }),
+        ...(productDomain === undefined ? {} : { productDomain })
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -131,7 +134,11 @@ describe('handleTrialEligibility', () => {
             expect(result).toEqual({ eligible: true, planSlug: 'owner-basico' });
         });
 
-        it('calls resolveTrialEligibility with the resolved billing instance and customer id', async () => {
+        it('defaults productDomain to ACCOMMODATION when the query omits it (HOS-1293)', async () => {
+            // Preserves every pre-existing caller's behaviour (PlanPurchaseButton
+            // never sends productDomain) — the regression this pins is the route
+            // silently defaulting to `undefined` and failing the required-field
+            // service contract, or defaulting to the wrong domain.
             vi.mocked(resolveTrialEligibility).mockResolvedValue({ eligible: true });
 
             const ctx = makeContext();
@@ -141,11 +148,50 @@ describe('handleTrialEligibility', () => {
             expect(resolveTrialEligibility).toHaveBeenCalledWith({
                 billing: FAKE_BILLING,
                 customerId: CUSTOMER_ID,
-                // HOS-1012 D-2: eligibility is per vertical, and this route
-                // backs the accommodation pricing page. Asserted explicitly
+                // HOS-1012 D-2: eligibility is per vertical. Asserted explicitly
                 // rather than with objectContaining, so dropping the domain
                 // fails here instead of passing silently.
                 productDomain: ProductDomainEnum.ACCOMMODATION
+            });
+        });
+
+        it('passes through an explicit productDomain query param (HOS-1293)', async () => {
+            // The regression this closes: before HOS-1293, this route pinned
+            // ACCOMMODATION unconditionally — a caller asking about gastronomy
+            // silently got the wrong vertical's verdict. This is the exact call
+            // the gastronomy/experience publish pages now make.
+            vi.mocked(resolveTrialEligibility).mockResolvedValue({ eligible: false });
+
+            const ctx = makeContext();
+            const result = await handleTrialEligibility(
+                ctx as never,
+                {},
+                {},
+                makeQuery(undefined, 'gastronomy')
+            );
+
+            expect(resolveTrialEligibility).toHaveBeenCalledOnce();
+            expect(resolveTrialEligibility).toHaveBeenCalledWith({
+                billing: FAKE_BILLING,
+                customerId: CUSTOMER_ID,
+                productDomain: 'gastronomy'
+            });
+            expect(result).toEqual({ eligible: false, planSlug: null });
+        });
+
+        it('passes through the experience domain too (not just gastronomy)', async () => {
+            // Non-vacuity for the case above: if the handler hardcoded
+            // 'gastronomy' as its new default, this would still pass the
+            // previous test and fail here.
+            vi.mocked(resolveTrialEligibility).mockResolvedValue({ eligible: true });
+
+            const ctx = makeContext();
+            await handleTrialEligibility(ctx as never, {}, {}, makeQuery(undefined, 'experience'));
+
+            expect(resolveTrialEligibility).toHaveBeenCalledWith({
+                billing: FAKE_BILLING,
+                customerId: CUSTOMER_ID,
+                productDomain: 'experience'
             });
         });
     });

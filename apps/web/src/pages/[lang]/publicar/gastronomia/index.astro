@@ -68,10 +68,17 @@ const slot = await resolvePublishPageSlot({
  * Mirrors `/publicar/index.astro`'s own `TrialStatusData` byte-for-byte — the
  * accommodation publish page mentions its trial 52 times and this one
  * mentioned it zero, even though `/planes/gastronomia/precios/` already
- * promises a free trial one click away. Same shape, same reasoning: an
- * expired trial is not a full plan, so it produces `create_direct` and a form
- * that will refuse on submit, and telling the owner up front is the whole
- * point of the banner.
+ * promises a free trial one click away.
+ *
+ * Unlike accommodation, an EXPIRED trial does NOT block this page's create
+ * form: `POST /commerce/listings/gastronomy` declares no billing-related
+ * gate at all (HOS-687) — draft creation always works, and every owner-created
+ * listing starts `visibility: PRIVATE` regardless of subscription state (see
+ * `commerce/protected/create.ts`). The paywall only appears later, at
+ * publish/subscribe time (`start-subscription`). The banner warns the owner
+ * of that BEFORE they invest time filling out a form that will let them
+ * create a draft but not make it public — not because the form itself would
+ * refuse.
  */
 type TrialStatusData = {
     readonly isOnTrial: boolean;
@@ -84,11 +91,13 @@ type TrialStatusData = {
 
 let trialStatus: TrialStatusData | null = null;
 
-// Lifetime-scoped, not vertical-scoped: unlike accommodation this vertical has
-// no `publish-eligibility` endpoint of its own, and `getTrialEligibility` (HOS-226)
-// already answers the question this callout needs — "has this customer ever
-// spent their one trial" — across every product domain. `null` (signed out, or
-// a failed read) stays UNRESOLVED rather than collapsing to `false`, matching
+// Vertical-scoped since HOS-1293 (was accommodation-blind before it — the
+// BLOQUEANTE that fix closed). Eligibility has been per-domain since HOS-1012
+// D-2: someone who spent their accommodation trial starts clean in
+// gastronomy, and someone whose gastronomy trial already converted to a paid
+// subscription must NOT be re-promised a free trial (the HOS-1183 F-6 bug,
+// reintroduced here by reading the wrong domain). `null` (signed out, or a
+// failed read) stays UNRESOLVED rather than collapsing to `false`, matching
 // `shouldShowPublishTrialCallout`'s documented fail-open for the same reason
 // the accommodation page fails open: this callout is the page's main draw.
 let trialEligible: boolean | null = null;
@@ -97,7 +106,7 @@ if (isAuthenticated && cookieHeader) {
     try {
         const [trialResult, eligibilityResult] = await Promise.all([
             billingApi.getTrialStatus({ cookieHeader, productDomain: VERTICAL }),
-            billingApi.getTrialEligibility({ cookieHeader })
+            billingApi.getTrialEligibility({ cookieHeader, productDomain: VERTICAL })
         ]);
         if (trialResult.ok) {
             trialStatus = trialResult.data;

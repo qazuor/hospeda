@@ -1487,19 +1487,26 @@ export const billingApi = {
 
     /**
      * Get whether the authenticated user is still eligible for a free trial
-     * (one trial per customer, for life — any status, any product domain).
+     * in one product domain (one trial per customer PER DOMAIN, for life —
+     * HOS-1012 D-2).
      *
      * Read-only, never reserves or consumes a trial. Used by
-     * `PlanPurchaseButton.client.tsx` to correct the SSR-rendered "N days
-     * free" pricing badge at hydration time for a logged-in visitor who
-     * already consumed their lifetime trial — the badge itself comes from
-     * the static, unauthenticated, 1h-cached `GET /api/v1/public/plans` and
-     * has no notion of per-user eligibility.
+     * `PlanPurchaseButton.client.tsx` (accommodation, omits `productDomain`)
+     * to correct the SSR-rendered "N days free" pricing badge at hydration
+     * time for a logged-in visitor who already consumed their lifetime trial
+     * — the badge itself comes from the static, unauthenticated, 1h-cached
+     * `GET /api/v1/public/plans` and has no notion of per-user eligibility.
+     * The gastronomy/experience publish pages (HOS-1293) pass their own
+     * vertical explicitly, for the same reason `getTrialStatus` takes one:
+     * an unscoped read silently answers about accommodation regardless of
+     * which vertical the caller actually asked about.
      *
      * @param params - Optional plan slug (informational, echoed back — the
-     *   eligibility rule is customer-scoped, not plan-scoped) and SSR cookie
+     *   eligibility rule is customer-scoped, not plan-scoped), an optional
+     *   `productDomain` (HOS-1293) defaulting server-side to `'accommodation'`
+     *   when omitted (matching every pre-existing caller), and SSR cookie
      *   header (see {@link protectedConversationsApi.list}).
-     * @returns Whether the current user is trial-eligible.
+     * @returns Whether the current user is trial-eligible in that domain.
      *
      * @example
      * ```ts
@@ -1507,10 +1514,14 @@ export const billingApi = {
      * if (result.ok && !result.data.eligible) {
      *   // suppress the "N days free" badge for this visitor
      * }
+     *
+     * // Scope to the gastronomy vertical instead of accommodation:
+     * const gastronomy = await billingApi.getTrialEligibility({ productDomain: 'gastronomy' });
      * ```
      */
     getTrialEligibility(params?: {
         readonly planSlug?: string;
+        readonly productDomain?: ProductDomainScope;
         readonly cookieHeader?: string;
     }): Promise<
         ApiResult<{
@@ -1518,10 +1529,17 @@ export const billingApi = {
             readonly planSlug: string | null;
         }>
     > {
-        const { planSlug, cookieHeader } = params ?? {};
+        const { planSlug, productDomain, cookieHeader } = params ?? {};
+        const queryParams: Record<string, string> = {};
+        if (planSlug !== undefined) {
+            queryParams.planSlug = planSlug;
+        }
+        if (productDomain !== undefined) {
+            queryParams.productDomain = productDomain;
+        }
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/trial-eligibility`,
-            params: planSlug === undefined ? undefined : { planSlug },
+            params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
             cookieHeader
         });
     },

@@ -20,10 +20,11 @@
  * decision function's real branches (expired / eligible / ineligible /
  * unresolved) with real inputs. What THIS guard adds is the one thing that
  * unit test cannot see — that all three pages actually WIRE that function
- * in, scoped to their own vertical's trial status. Deleting the import, or
- * hardcoding `productDomain` to `'accommodation'` on the commerce pages,
- * would regress the exact bug HOS-1293 reports while `publish-trial-callout.test.ts`
- * stayed fully green (it never touches these page files).
+ * in, scoped to their own vertical's trial status AND eligibility. Deleting
+ * the import, or hardcoding `productDomain` to `'accommodation'` on the
+ * commerce pages' `getTrialStatus`/`getTrialEligibility` calls, would regress
+ * the exact bug HOS-1293 reports while `publish-trial-callout.test.ts` stayed
+ * fully green (it never touches these page files).
  */
 
 import { readFileSync } from 'node:fs';
@@ -141,6 +142,27 @@ describe('HOS-1293 — every publish page mentions the trial it may grant', () =
             expect(src).toContain('resolveCommerceLandingOffer({ plansResult })');
             // Never invented: the callout must be gated on trialDays !== null.
             expect(src).toContain('trialDays !== null');
+        }
+    });
+
+    it("the two commerce pages read THEIR OWN vertical's trial eligibility, not accommodation's (HOS-1293 blocker)", () => {
+        // Measured regression this closes: `getTrialEligibility({ cookieHeader })`
+        // with no `productDomain` resolves the SERVER's hardcoded ACCOMMODATION
+        // default (`trial-eligibility.ts`, pre-HOS-1293). Two real scenarios that
+        // broke: a dual host+gastronomy owner (accommodation ineligible) kept the
+        // callout suppressed on THIS page even though publishing would grant a
+        // real gastronomy trial (under-promise); a gastronomy-only owner whose
+        // gastronomy trial had already converted to paid (accommodation eligible,
+        // since they never touched that domain) got re-promised a free trial on a
+        // subscription they are already paying for — HOS-1183 F-6, reintroduced.
+        for (const page of [PUBLISH_PAGES[1], PUBLISH_PAGES[2]]) {
+            const src = readPage((page as (typeof PUBLISH_PAGES)[number]).file);
+            expect(src).toContain(
+                'billingApi.getTrialEligibility({ cookieHeader, productDomain: VERTICAL })'
+            );
+            // Non-vacuity for the guard right above it: the OLD, unscoped call
+            // shape must be gone, not merely coexist alongside the new one.
+            expect(src).not.toContain('billingApi.getTrialEligibility({ cookieHeader })');
         }
     });
 });

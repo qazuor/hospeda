@@ -72,14 +72,16 @@ type TrialStatusData = {
 
 let trialStatus: TrialStatusData | null = null;
 
-// Lifetime-scoped — see the gastronomy page's identical block for why.
+// Vertical-scoped since HOS-1293 — see the gastronomy page's identical block
+// for why (the BLOQUEANTE that fix closed, and the HOS-1183 F-6 over-promise
+// it prevents in this vertical).
 let trialEligible: boolean | null = null;
 
 if (isAuthenticated && cookieHeader) {
     try {
         const [trialResult, eligibilityResult] = await Promise.all([
             billingApi.getTrialStatus({ cookieHeader, productDomain: VERTICAL }),
-            billingApi.getTrialEligibility({ cookieHeader })
+            billingApi.getTrialEligibility({ cookieHeader, productDomain: VERTICAL })
         ]);
         if (trialResult.ok) {
             trialStatus = trialResult.data;
