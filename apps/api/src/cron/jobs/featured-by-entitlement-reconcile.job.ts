@@ -68,6 +68,7 @@ import {
     syncFeaturedByEntitlementForCommerceListing,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
+import type { CronJobDefinition } from '../types.js';
 
 /** The two commerce verticals step 3 sweeps (HOS-1286). */
 const COMMERCE_FEATURED_VERTICALS: readonly CommerceFeaturedEntityType[] = [
@@ -84,8 +85,6 @@ const COMMERCE_FEATURED_VERTICALS: readonly CommerceFeaturedEntityType[] = [
  */
 const commerceTable = (entityType: CommerceFeaturedEntityType) =>
     entityType === ProductDomainEnum.GASTRONOMY ? gastronomies : experiences;
-
-import type { CronJobDefinition } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Job definition
