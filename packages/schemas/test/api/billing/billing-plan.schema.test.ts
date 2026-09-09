@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AdminBillingPlanResponseSchema,
     AdminBillingPlanUpdateResponseSchema,
     type BillingPlanResponse,
     BillingPlanResponseSchema,
@@ -261,6 +262,54 @@ describe('BillingPlanResponseSchema', () => {
         const result = BillingPlanResponseSchema.safeParse({
             ...validResponse,
             createdAt: 'yesterday'
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('AdminBillingPlanResponseSchema (HOS-1314)', () => {
+    const validAdminResponse = {
+        id: '11111111-1111-4111-8111-111111111111',
+        slug: 'gastronomy-pro',
+        name: 'Pro',
+        description: 'Gastronomy pro plan.',
+        category: 'owner' as const,
+        monthlyPriceArs: 1_500_000,
+        annualPriceArs: 15_000_000,
+        monthlyPriceUsdRef: 15,
+        hasTrial: false,
+        trialDays: 0,
+        isDefault: false,
+        sortOrder: 1,
+        entitlements: ['publish_gastronomy'],
+        limits: { max_listings: 3 },
+        isActive: true,
+        publicListing: 'listed' as const,
+        createdAt: '2026-05-30T00:00:00.000Z',
+        updatedAt: '2026-05-30T00:00:00.000Z',
+        isDeleted: false,
+        activeSubscriptionCount: 2,
+        productDomain: ProductDomainEnum.GASTRONOMY
+    };
+
+    it('accepts a valid admin response DTO carrying productDomain', () => {
+        expect(AdminBillingPlanResponseSchema.safeParse(validAdminResponse).success).toBe(true);
+    });
+
+    // HOS-1314: the admin grant-comp plan selector groups plans by vertical.
+    // Without this field on the response, the DB-backed list route already
+    // returned every domain's plans unfiltered but with no way to tell them
+    // apart — this is the regression test for that gap.
+    it('rejects a response missing productDomain', () => {
+        const { productDomain: _omit, ...withoutDomain } = validAdminResponse;
+        const result = AdminBillingPlanResponseSchema.safeParse(withoutDomain);
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects an unrecognised productDomain value', () => {
+        const result = AdminBillingPlanResponseSchema.safeParse({
+            ...validAdminResponse,
+            productDomain: 'commerce'
         });
         expect(result.success).toBe(false);
     });

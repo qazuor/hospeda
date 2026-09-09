@@ -433,7 +433,19 @@ export const AdminBillingPlanResponseSchema = BillingPlanResponseSchema.extend({
     /** Whether the plan is soft-deleted (`deletedAt IS NOT NULL`) */
     isDeleted: z.boolean(),
     /** Count of live subscribers (status active/trialing, not soft-deleted) */
-    activeSubscriptionCount: z.number().int().nonnegative()
+    activeSubscriptionCount: z.number().int().nonnegative(),
+    /**
+     * Which vertical (`billing_plans.product_domain`) the plan belongs to.
+     *
+     * Admin-only, like the two fields above — deliberately NOT on the base
+     * {@link BillingPlanResponseSchema} shared with the public plans endpoint.
+     * Added for HOS-1314: the admin "grant comp subscription" plan selector
+     * groups the DB-backed plan list by vertical (an operator choosing the
+     * wrong plan grants the customer another vertical's entitlements), and
+     * without this field the list route already returned every domain's
+     * plans unfiltered but with no way for the UI to tell them apart.
+     */
+    productDomain: ProductDomainEnumSchema
 });
 
 /** TypeScript type inferred from {@link AdminBillingPlanResponseSchema} */
