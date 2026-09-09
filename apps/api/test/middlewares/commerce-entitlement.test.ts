@@ -48,7 +48,7 @@ let fakeStoredProductDomains: Record<string, string | null> = {};
 /** Subscriptions the fake billing provider returns for the customer. */
 let fakeSubscriptions: Array<Record<string, unknown>> = [];
 /** Plans the fake provider resolves by id. */
-let fakePlans: Record<string, { limits: Record<string, number> }> = {};
+let fakePlans: Record<string, { limits: Record<string, number>; entitlements?: string[] }> = {};
 /** Customer-level limit overrides — how a purchased add-on raises a cap. */
 let fakeCustomerLimits: Array<{ limitKey: string; maxValue: number }> = [];
 /** When set, every provider call throws it. */
@@ -80,13 +80,20 @@ vi.mock('../../src/middlewares/billing', () => ({
 /**
  * The catalogue plan each vertical falls back to when the owner has no
  * subscription. Mirrors what `PlanService.getBySlug` returns from the DB.
+ *
+ * HOS-1276: each base plan now also declares a `TOURIST_VIP_LIMITS`-shaped key
+ * (`max_favorites`) alongside its own listing cap, mirroring the REAL shape a
+ * commerce plan row has in `plans.config.ts` (`mergeLimits(TOURIST_VIP_LIMITS,
+ * [...])`). A fixture that only ever declared the vertical's own key could not
+ * catch the bug this issue is about: it would pass with the OLD single-key
+ * `userLimits` map just as easily as with the fixed one.
  */
 vi.mock('../../src/services/plan.service', () => ({
     PlanService: class {
         async getBySlug(slug: string) {
             const limits: Record<string, Record<string, number>> = {
-                'gastronomy-premium': { max_gastronomies: 1 },
-                'experience-premium': { max_experiences: 1 }
+                'gastronomy-premium': { max_gastronomies: 1, max_favorites: -1 },
+                'experience-premium': { max_experiences: 1, max_favorites: -1 }
             };
             const found = limits[slug];
             if (!found) {
@@ -100,22 +107,25 @@ vi.mock('../../src/services/plan.service', () => ({
 const { commerceVerticalEntitlementMiddleware, _resetCommerceBaseLimitCache } = await import(
     '../../src/middlewares/commerce-entitlement.js'
 );
+const { getRemainingLimit } = await import('../../src/middlewares/entitlement.js');
 
 /**
  * Runs the middleware and reports the limits map it published.
  *
  * @param input.vertical - The vertical to gate.
  * @param input.billingCustomerId - The caller's billing customer, when they have one.
+ * @param input.actorId - The requesting actor's id (default `'owner-1'`).
  * @returns The published limits as a plain object.
  */
 async function runMiddleware(input: {
     vertical: 'gastronomy' | 'experience';
     billingCustomerId?: string;
+    actorId?: string;
 }): Promise<Record<string, number>> {
     const app = new Hono<AppBindings>();
 
     app.use('*', async (c, next) => {
-        c.set('actor', { id: 'owner-1', roles: [] } as never);
+        c.set('actor', { id: input.actorId ?? 'owner-1', roles: [] } as never);
         if (input.billingCustomerId) {
             c.set('billingCustomerId', input.billingCustomerId);
         }
@@ -126,6 +136,41 @@ async function runMiddleware(input: {
 
     const res = await app.request('/');
     return (await res.json()) as Record<string, number>;
+}
+
+/**
+ * Runs the middleware and reports what `getRemainingLimit` — the SAME
+ * function `createAiQuotaMiddleware` and every other quota gate reads —
+ * resolves for a given key. This is the "does anyone actually consume the
+ * published map" check (HOS-1276 rule 3): asserting the map merely CONTAINS a
+ * key is not enough, since a consumer could still read the wrong Context or a
+ * stale reference. Reading through the real accessor closes that gap.
+ *
+ * @param input.vertical - The vertical to gate.
+ * @param input.billingCustomerId - The caller's billing customer, when they have one.
+ * @param input.limitKey - The `LimitKey` to resolve via `getRemainingLimit`.
+ * @returns Whatever `getRemainingLimit` resolves (`-1` for unlimited/absent).
+ */
+async function runMiddlewareAndReadLimit(input: {
+    vertical: 'gastronomy' | 'experience';
+    billingCustomerId?: string;
+    limitKey: LimitKey;
+}): Promise<number> {
+    const app = new Hono<AppBindings>();
+
+    app.use('*', async (c, next) => {
+        c.set('actor', { id: 'owner-1', roles: [] } as never);
+        if (input.billingCustomerId) {
+            c.set('billingCustomerId', input.billingCustomerId);
+        }
+        await next();
+    });
+    app.use('*', commerceVerticalEntitlementMiddleware(input.vertical));
+    app.get('/', (c) => c.json({ value: getRemainingLimit(c, input.limitKey) }));
+
+    const res = await app.request('/');
+    const body = (await res.json()) as { value: number };
+    return body.value;
 }
 
 /**
@@ -175,13 +220,43 @@ describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
         expect(limits[LimitKey.MAX_GASTRONOMIES]).not.toBe(-1);
     });
 
-    it('publishes ONLY this vertical key, never the other one', async () => {
+    it("publishes the OTHER vertical's keys never, but every key THIS vertical's subscription plan declares (HOS-1276)", async () => {
         // The two domains are never merged (SPEC-239's isolation, made explicit
-        // at the call site). A gastronomy route publishing `max_experiences`
-        // would let one plan's cap answer for the other vertical.
-        const limits = await runMiddleware({ vertical: 'gastronomy' });
+        // at the call site) — a gastronomy route publishing `max_experiences`
+        // would let one plan's cap answer for the other vertical. That part
+        // pre-dates HOS-1276. What HOS-1276 fixes is the OTHER failure mode
+        // this test used to hide: `userLimits` collapsing to a Map with a
+        // single entry, silently dropping every other key gastronomy's own
+        // plan declares (here, the TOURIST_VIP_LIMITS-shaped `max_favorites`
+        // and the AI-chat key) — each of which then read as unlimited.
+        //
+        // Uses an active subscription (not the no-subscription branch) so the
+        // plan's full `limits` object — including `max_favorites` — is
+        // actually read; see the base-plan-lookup fixture at the top of this
+        // file for what the no-subscription branch resolves to instead.
+        fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-gastro-full' }];
+        fakeStoredProductDomains = { s1: 'gastronomy' };
+        mockProductDomainRecovery();
+        fakePlans = {
+            'p-gastro-full': {
+                limits: {
+                    max_gastronomies: 5,
+                    max_ai_chat_gastronomy_per_month: 100,
+                    max_favorites: -1
+                }
+            }
+        };
 
-        expect(Object.keys(limits)).toEqual([LimitKey.MAX_GASTRONOMIES]);
+        const limits = await runMiddleware({ vertical: 'gastronomy', billingCustomerId: 'cus-1' });
+
+        // Gastronomy's own declared keys are ALL present.
+        expect(Object.hasOwn(limits, LimitKey.MAX_GASTRONOMIES)).toBe(true);
+        expect(Object.hasOwn(limits, LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH)).toBe(true);
+        expect(Object.hasOwn(limits, LimitKey.MAX_FAVORITES)).toBe(true);
+
+        // Experience's keys are never present on a gastronomy request.
+        expect(Object.hasOwn(limits, LimitKey.MAX_EXPERIENCES)).toBe(false);
+        expect(Object.hasOwn(limits, LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH)).toBe(false);
     });
 
     it("reads the cap off the owner's own vertical subscription", async () => {
@@ -289,5 +364,157 @@ describe('commerceVerticalEntitlementMiddleware (HOS-688)', () => {
         });
 
         expect(limits[LimitKey.MAX_GASTRONOMIES]).toBe(1);
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1276: the AI-chat quota is CALCULATED and then DISCARDED.
+    //
+    // `resolveCommerceVerticalGrants` always computed the vertical's AI-chat
+    // cap correctly (HOS-400's `aiChatCap` field). The bug was entirely on the
+    // publishing side: `commerceVerticalEntitlementMiddleware` replaced
+    // `userLimits` with `new Map([[listingCapKey, cap]])` — ONE entry — so
+    // `MAX_AI_CHAT_GASTRONOMY_PER_MONTH` / `MAX_AI_CHAT_EXPERIENCE_PER_MONTH`
+    // were never in the map ANY quota gate reads. An absent key resolves to
+    // `-1` (unlimited) through `getRemainingLimit`, which is what
+    // `createAiQuotaMiddleware('chat_gastronomy' | 'chat_experience')` — the
+    // enforcement machinery already wired to read exactly this key
+    // (`AI_LIMIT_BY_FEATURE` in `middlewares/ai-quota.ts`) — would consult the
+    // moment it is mounted on a commerce route. These tests read through the
+    // REAL `getRemainingLimit`, not just `Object.hasOwn` on the map, so a
+    // regression that re-introduces the single-key Map fails here even if it
+    // happens to leave the raw Map object shaped correctly for some other
+    // reader.
+    // -----------------------------------------------------------------------
+    describe('AI-chat quota is published and enforceable (HOS-1276)', () => {
+        it('a gastronomy owner on a plan granting a finite chat quota is capped at that number, not unlimited', async () => {
+            fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-gastro-premium' }];
+            fakeStoredProductDomains = { s1: 'gastronomy' };
+            mockProductDomainRecovery();
+            // Mirrors GASTRONOMY_PREMIUM_PLAN's real shape: grants AI_CHAT with
+            // a finite monthly quota, on top of the vertical's own listing cap.
+            fakePlans = {
+                'p-gastro-premium': {
+                    limits: { max_gastronomies: 5, max_ai_chat_gastronomy_per_month: 100 },
+                    entitlements: ['ai_chat']
+                }
+            };
+
+            const resolved = await runMiddlewareAndReadLimit({
+                vertical: 'gastronomy',
+                billingCustomerId: 'cus-1',
+                limitKey: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH
+            });
+
+            // The case that actually catches the bug: BEFORE the fix this key
+            // was absent from `userLimits`, and an absent key resolves to -1
+            // through `getRemainingLimit` — a plan that promises 100 chats a
+            // month would spend without limit. `Object.hasOwn` alone would not
+            // have caught this if some OTHER code path had happened to leave a
+            // stale `-1` under the same key; asserting the real number does.
+            expect(resolved).toBe(100);
+            expect(resolved).not.toBe(-1);
+        });
+
+        it('an experience owner on a plan granting a finite chat quota is capped at that number, not unlimited', async () => {
+            fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-experience-premium' }];
+            fakeStoredProductDomains = { s1: 'experience' };
+            mockProductDomainRecovery();
+            fakePlans = {
+                'p-experience-premium': {
+                    limits: { max_experiences: 5, max_ai_chat_experience_per_month: 150 },
+                    entitlements: ['ai_chat']
+                }
+            };
+
+            const resolved = await runMiddlewareAndReadLimit({
+                vertical: 'experience',
+                billingCustomerId: 'cus-1',
+                limitKey: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH
+            });
+
+            expect(resolved).toBe(150);
+            expect(resolved).not.toBe(-1);
+        });
+
+        it('a gastronomy owner with NO subscription gets the chat quota refused (0), never unlimited', async () => {
+            // No active subscription — resolves to `AI_CHAT_CAP_WITHOUT_PLAN`
+            // (0), the safe direction. Before the fix this key was simply
+            // absent, which `getRemainingLimit` reads as unlimited (-1).
+            const resolved = await runMiddlewareAndReadLimit({
+                vertical: 'gastronomy',
+                limitKey: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH
+            });
+
+            expect(resolved).toBe(0);
+        });
+
+        it("publishes the plan's TOURIST_VIP_LIMITS keys too, not only the AI-chat key (HOS-1276 scope)", async () => {
+            // The issue names this explicitly: "también se pierden los
+            // TOURIST_VIP_LIMITS que los propios planes de comercio declaran".
+            // `max_favorites` here stands in for that whole inherited block —
+            // any of its sibling keys would show the identical failure.
+            fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p-gastro-premium' }];
+            fakeStoredProductDomains = { s1: 'gastronomy' };
+            mockProductDomainRecovery();
+            fakePlans = {
+                'p-gastro-premium': {
+                    limits: {
+                        max_gastronomies: 5,
+                        max_ai_chat_gastronomy_per_month: 100,
+                        max_favorites: -1
+                    }
+                }
+            };
+
+            const limits = await runMiddleware({
+                vertical: 'gastronomy',
+                billingCustomerId: 'cus-1'
+            });
+
+            expect(Object.hasOwn(limits, LimitKey.MAX_FAVORITES)).toBe(true);
+            expect(limits[LimitKey.MAX_FAVORITES]).toBe(-1);
+        });
+
+        it('a dual host+commerce owner (host-provider@local.test shape): the ACCOMMODATION subscription never supplies or blocks the commerce AI-chat quota', async () => {
+            // HOS-1074's guarantee, extended to limits: an owner who is BOTH a
+            // host and a gastronomy owner must get exactly the gastronomy
+            // vertical's own numbers on a gastronomy request — neither raised
+            // nor lowered by whatever their accommodation plan carries. Two
+            // subscriptions on the same customer, only one of them matches the
+            // gastronomy domain via `subscriptionMatchesDomain` (hydrated
+            // above via `fakeStoredProductDomains`).
+            fakeSubscriptions = [
+                { id: 's-accommodation', status: 'active', planId: 'p-owner-basico' },
+                { id: 's-gastro', status: 'active', planId: 'p-gastro-premium' }
+            ];
+            fakeStoredProductDomains = {
+                's-accommodation': 'accommodation',
+                's-gastro': 'gastronomy'
+            };
+            mockProductDomainRecovery();
+            fakePlans = {
+                'p-owner-basico': {
+                    // The accommodation plan grants its OWN (unrelated) AI-chat
+                    // key at a different number — must never leak into the
+                    // gastronomy-keyed quota.
+                    limits: { max_accommodations: 1, max_ai_chat_per_month: 999 }
+                },
+                'p-gastro-premium': {
+                    limits: { max_gastronomies: 5, max_ai_chat_gastronomy_per_month: 100 },
+                    entitlements: ['ai_chat']
+                }
+            };
+
+            const limits = await runMiddleware({
+                vertical: 'gastronomy',
+                billingCustomerId: 'cus-dual',
+                actorId: 'host-provider-1'
+            });
+
+            expect(limits[LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]).toBe(100);
+            // The accommodation-only key never appears on a commerce request.
+            expect(Object.hasOwn(limits, LimitKey.MAX_ACCOMMODATIONS)).toBe(false);
+            expect(Object.hasOwn(limits, LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(false);
+        });
     });
 });
