@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
@@ -20,9 +21,11 @@ export function TrialEnding5Days({
     recipientName,
     planName,
     trialEndDate,
-    upgradeUrl
+    upgradeUrl,
+    productDomain
 }: TrialSeriesEmailProps) {
     const formattedEndDate = formatDate({ dateString: trialEndDate });
+    const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
         <EmailLayout
@@ -54,9 +57,8 @@ export function TrialEnding5Days({
             </Section>
 
             <Text style={styles.paragraph}>
-                No perdés nada de lo que cargaste. Tus fotos, tu descripción, tus servicios y tus
-                datos quedan guardados tal como están; lo único que cambia es que dejan de verse
-                mientras no haya un plan activo.
+                No perdés nada de lo que cargaste. {copy.savedItemsLine} quedan guardados tal como
+                están; lo único que cambia es que dejan de verse mientras no haya un plan activo.
             </Text>
 
             <Section style={styles.buttonContainer}>

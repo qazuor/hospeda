@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -16,10 +17,16 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
  *
  * @param props - Trial series email data
  */
-export function TrialWinBack5Days({ recipientName, upgradeUrl }: TrialSeriesEmailProps) {
+export function TrialWinBack5Days({
+    recipientName,
+    upgradeUrl,
+    productDomain
+}: TrialSeriesEmailProps) {
+    const copy = resolveTrialSeriesCopy(productDomain);
+
     return (
         <EmailLayout
-            previewText="Hay gente buscando alojamiento en tu zona ahora mismo"
+            previewText={`Hay gente buscando ${copy.searchIntent} en tu zona ahora mismo`}
             showUnsubscribe={true}
         >
             <Heading>Volvé a aparecer en Hospeda</Heading>
@@ -27,16 +34,16 @@ export function TrialWinBack5Days({ recipientName, upgradeUrl }: TrialSeriesEmai
             <Text style={styles.greeting}>Hola {recipientName},</Text>
 
             <Text style={styles.paragraph}>
-                Todos los días entra gente a Hospeda buscando dónde quedarse en el Litoral: fines de
-                semana largos, escapadas a las termas, familias que arman las vacaciones con meses
-                de anticipación.
+                Todos los días entra gente a Hospeda buscando {copy.searchIntent} en el Litoral:
+                fines de semana largos, escapadas a las termas, familias que arman las vacaciones
+                con meses de anticipación.
             </Text>
 
             <Section style={styles.calmBox}>
                 <Text style={styles.paragraph}>
-                    Cada día que tu publicación está fuera del sitio son búsquedas en las que tu
-                    alojamiento no aparece. No es una penalización ni nada que se acumule en tu
-                    contra: simplemente no estás en la lista.
+                    Cada día que tu publicación está fuera del sitio son búsquedas en las que{' '}
+                    {copy.possessive} no aparece. No es una penalización ni nada que se acumule en
+                    tu contra: simplemente no estás en la lista.
                 </Text>
             </Section>
 

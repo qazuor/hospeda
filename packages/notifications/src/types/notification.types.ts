@@ -394,6 +394,17 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
     daysRemaining?: number;
     oldPlanName?: string;
     newPlanName?: string;
+    /**
+     * The subscription's billing vertical (HOS-1283) — the raw
+     * `billing_subscriptions.product_domain` string (`'accommodation'`,
+     * `'gastronomy'`, `'experience'`, `'tourist'`, `'partner'`, or `null` on a
+     * pre-domain row), never the `@repo/schemas` enum: this package does not
+     * depend on `@repo/schemas` (see {@link PartnerMentionEntryPayload}'s doc).
+     * Only `RENEWAL_REMINDER` reads it today, to pick the right footer noun in
+     * `RenewalReminder` — a plan change already names both plans by their
+     * display name and needs no vertical wording of its own.
+     */
+    productDomain?: string | null;
 }
 
 /**
@@ -564,8 +575,20 @@ export interface TrialSeriesPayload extends BaseNotificationPayload {
     planName: string;
     /** ISO date at which the trial ends (or ended). */
     trialEndDate: string;
-    /** Owner pricing page, carrying the interval the host originally chose. */
+    /** Vertical-specific pricing page, carrying the interval the customer originally chose. */
     upgradeUrl: string;
+    /**
+     * The trial's billing vertical (HOS-1283) — the raw
+     * `billing_subscriptions.product_domain` string, never the `@repo/schemas`
+     * enum (this package does not depend on it, see
+     * {@link PartnerMentionEntryPayload}'s doc). Every one of the nine
+     * templates uses it to render vertical-appropriate copy instead of always
+     * assuming accommodation ("tu alojamiento", "tus fotos") — see
+     * `resolveTrialSeriesCopy` in `utils/product-domain-copy.ts`. `null` or an
+     * unrecognized value fails open to the accommodation copy, matching this
+     * repo's standing convention for that domain.
+     */
+    productDomain?: string | null;
 }
 
 /** Feedback report notifications (Linear API fallback) */

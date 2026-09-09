@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -20,9 +21,11 @@ export function TrialEnding10Days({
     recipientName,
     planName,
     trialEndDate,
-    upgradeUrl
+    upgradeUrl,
+    productDomain
 }: TrialSeriesEmailProps) {
     const formattedEndDate = formatDate({ dateString: trialEndDate });
+    const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
         <EmailLayout
@@ -34,9 +37,9 @@ export function TrialEnding10Days({
             <Text style={styles.greeting}>Hola {recipientName},</Text>
 
             <Text style={styles.paragraph}>
-                Hace unos días publicaste tu alojamiento en Hospeda y queríamos saber cómo te está
-                yendo. Esto no es un recordatorio de pago: todavía te quedan diez días de prueba y
-                no hay nada que tengas que hacer hoy.
+                Hace unos días publicaste {copy.possessive} en Hospeda y queríamos saber cómo te
+                está yendo. Esto no es un recordatorio de pago: todavía te quedan diez días de
+                prueba y no hay nada que tengas que hacer hoy.
             </Text>
 
             <Section style={styles.calmBox}>
@@ -46,9 +49,8 @@ export function TrialEnding10Days({
                 </Text>
                 <Text style={styles.paragraph}>
                     • Fotos con luz de día, empezando por la que mejor muestra el lugar.
-                    <br />• Una descripción que cuente cómo se vive el alojamiento, no sólo cuántas
-                    camas tiene.
-                    <br />• Los servicios cargados completos: es lo que la gente filtra al buscar.
+                    <br />• {copy.descriptionTip}
+                    <br />• {copy.detailsTip}
                 </Text>
             </Section>
 

@@ -3,6 +3,11 @@
  */
 
 export {
+    resolveRenewalReminderFooter,
+    resolveTrialSeriesCopy,
+    type TrialSeriesVerticalCopy
+} from './product-domain-copy.js';
+export {
     findUnresolvedPlaceholders,
     getSubject,
     getSubjectPlaceholders,

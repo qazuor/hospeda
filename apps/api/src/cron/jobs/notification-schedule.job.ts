@@ -174,12 +174,18 @@ async function markNotificationSent(
  * every object arrives with it `undefined`, never the real string. See
  * {@link hydrateSubscriptionProductDomains}'s own doc for the full mechanism.
  *
+ * The return type carries `productDomain` explicitly (HOS-1283) rather than
+ * widening back to bare `QZPaySubscription[]`: the RENEWAL_REMINDER sender
+ * below reads it off the subscriptions this function returns, and a widened
+ * return type would let that read compile against `undefined` silently
+ * dropping the hydration this function exists to do.
+ *
  * @param billing - The QZPay billing facade (`getQZPayBilling()`).
  * @returns Every active subscription that is NOT an add-on's own preapproval.
  */
 async function loadActiveNonAddonSubscriptions(
     billing: QZPayBilling
-): Promise<QZPaySubscription[]> {
+): Promise<(QZPaySubscription & { productDomain: string | null })[]> {
     const activeSubscriptions = await billing.subscriptions.listAll({
         filters: { status: 'active' }
     });
@@ -440,6 +446,15 @@ export const notificationScheduleJob: CronJobDefinition = {
                                     ...(amount === undefined ? {} : { amount, currency }),
                                     renewalDate: endDate.toISOString(),
                                     daysRemaining,
+                                    // HOS-1283: this sweep is NOT scoped to
+                                    // accommodation (unlike `entitlement.ts` /
+                                    // `start-paid.ts`), so a gastronomy, experience,
+                                    // tourist or partner renewal needs its own footer
+                                    // line instead of always claiming "alojamiento
+                                    // turístico". `subscription` already carries the
+                                    // hydrated domain — see
+                                    // `loadActiveNonAddonSubscriptions`'s doc.
+                                    productDomain: subscription.productDomain,
                                     idempotencyKey: generateIdempotencyKey(
                                         NotificationType.RENEWAL_REMINDER,
                                         subscription.customerId

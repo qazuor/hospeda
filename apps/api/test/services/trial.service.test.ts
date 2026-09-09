@@ -1567,6 +1567,76 @@ describe('TrialService', () => {
             expect(url).not.toContain('/suscriptores/');
             expect(url).toContain('?interval=annual');
         });
+
+        describe('productDomain (HOS-1283)', () => {
+            // Regression: before HOS-1283 this function always pointed at the
+            // ANFITRIONES (host) pricing page regardless of which vertical the
+            // trial actually belonged to — a gastronomy or experience owner's
+            // nudge email sent them to buy a HOST plan.
+            it('points a gastronomy trial at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'gastronomy'
+                });
+                expect(url).toBe('https://example.test/es/planes/gastronomia/precios/');
+            });
+
+            it('points an experience trial at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'experience'
+                });
+                expect(url).toBe('https://example.test/es/planes/experiencias/precios/');
+            });
+
+            it('points a tourist plan at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'tourist'
+                });
+                expect(url).toBe('https://example.test/es/planes/turistas/precios/');
+            });
+
+            it('points a partner plan at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'partner'
+                });
+                expect(url).toBe('https://example.test/es/planes/aliados/precios/');
+            });
+
+            it('fails OPEN to the accommodation page for null, undefined, or an unrecognized value', () => {
+                // Matches `subscriptionMatchesDomain`'s standing convention: a
+                // missing/unrecognized domain must not regress the majority
+                // (accommodation) case, which was already correct.
+                expect(
+                    buildTrialUpgradeUrl({ siteUrl: 'https://example.test', productDomain: null })
+                ).toBe('https://example.test/es/planes/anfitriones/precios/');
+                expect(
+                    buildTrialUpgradeUrl({
+                        siteUrl: 'https://example.test',
+                        productDomain: undefined
+                    })
+                ).toBe('https://example.test/es/planes/anfitriones/precios/');
+                expect(
+                    buildTrialUpgradeUrl({
+                        siteUrl: 'https://example.test',
+                        productDomain: 'addon'
+                    })
+                ).toBe('https://example.test/es/planes/anfitriones/precios/');
+            });
+
+            it('composes with the interval query param', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'gastronomy',
+                    intendedInterval: 'annual'
+                });
+                expect(url).toBe(
+                    'https://example.test/es/planes/gastronomia/precios/?interval=annual'
+                );
+            });
+        });
     });
 
     describe('reactivateFromTrial (HOS-114)', () => {

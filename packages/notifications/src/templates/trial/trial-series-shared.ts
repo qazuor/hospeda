@@ -32,8 +32,19 @@ export interface TrialSeriesEmailProps {
     readonly planName: string;
     /** ISO date at which the trial ends (or ended). */
     readonly trialEndDate: string;
-    /** Owner pricing page, carrying the interval the host originally chose. */
+    /** Vertical-specific pricing page, carrying the interval the customer originally chose. */
     readonly upgradeUrl: string;
+    /**
+     * The trial's billing vertical (HOS-1283) — the raw
+     * `billing_subscriptions.product_domain` string, e.g. `'accommodation'` /
+     * `'gastronomy'` / `'experience'`, or `null`/`undefined` on a pre-domain
+     * row. Every template that names a listing, its photos, or what shows up
+     * in a search resolves this via `resolveTrialSeriesCopy`
+     * (`../../utils/product-domain-copy.js`) instead of hardcoding
+     * accommodation wording. Omitted or unrecognized fails open to
+     * accommodation copy — see that function's doc.
+     */
+    readonly productDomain?: string | null;
 }
 
 /**
