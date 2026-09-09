@@ -174,11 +174,64 @@ export type Finding = {
 // Source walking
 // ---------------------------------------------------------------------------
 
+/**
+ * Extra directories scanned beyond `<app|package>/src` (HOS-1233 T-036).
+ *
+ * `apps/e2e/fixtures` writes `billing_subscriptions` rows in RAW SQL against a
+ * REAL database, and it lives outside any `src`, so the roots above never saw
+ * it. That gap was not theoretical: `api-helpers.ts`'s `createSubscription`
+ * omitted the column, this guard reported a clean 14 sites, and dropping the
+ * default took down 16 P0 specs at once — the only surface where the failure
+ * could surface at all, because every other suite mocks `@repo/db`.
+ *
+ * Scanned despite being test-adjacent, unlike the `*.test.ts` files the walker
+ * excludes: a fixture is not a test asserting a shape, it is a WRITER of rows,
+ * and the exclusion exists so a test can reproduce the misfiled shape on
+ * purpose — which a shared fixture never does.
+ */
+const EXTRA_SCAN_DIRS = ['apps/e2e/fixtures'] as const;
+
+/**
+ * Directory names that mark a test subtree as writing to a REAL database.
+ *
+ * DERIVED, not a list of paths, and that is the point. The literal-path version
+ * of this took four CI rounds to converge: `apps/e2e/fixtures`, then
+ * `service-core/test/integration`, then `seed/test/data-migrations`, then
+ * `db/test/integration` — each one found by a red job rather than by looking,
+ * each fix confidently declared complete, and each followed by another.
+ *
+ * Matching the CONVENTION instead covers the fifth one on the day it is
+ * created. A suite that stands up a database names itself `integration`, `e2e`
+ * or `data-migrations` in this repo, without exception across 27 writer files.
+ *
+ * Everything else under `test/` stays excluded: those mock `@repo/db`, their
+ * "rows" are assertions rather than rows, and one of them must be able to
+ * reproduce the misfiled shape on purpose (spec §9).
+ */
+const REAL_DB_TEST_DIRS = ['integration', 'e2e', 'data-migrations'] as const;
+
+/**
+ * Inside {@link EXTRA_SCAN_DIRS} the `*.test.ts` exclusion does NOT apply.
+ *
+ * The exclusion exists so a unit test can reproduce the misfiled shape on
+ * purpose against a MOCKED database, where the row is an assertion and not a
+ * row. These directories are the opposite: their `.integration.test.ts` files
+ * write to a REAL database through raw SQL, and three of them omitted the
+ * column — which surfaced as a red Integration job, never as a guard failure,
+ * because the filename ended in `.test.ts`.
+ *
+ * If a test here ever needs to write an omitting row deliberately, give it a
+ * mocked db or move it out of these directories. Do NOT add a per-file
+ * allowlist: that is how a guard becomes fail-open one justified exception at
+ * a time.
+ */
+const EXTRA_DIRS_INCLUDE_TESTS = true;
+
 /** Collects production `.ts`/`.tsx` sources under every app's and package's `src`. */
 export function collectSourceFiles(root: string): string[] {
     const out: string[] = [];
 
-    const walk = (dir: string): void => {
+    const walk = (dir: string, includeTests = false): void => {
         let entries: string[];
         try {
             entries = readdirSync(dir);
@@ -189,11 +242,11 @@ export function collectSourceFiles(root: string): string[] {
             if (SKIP_DIRS.has(entry)) continue;
             const full = join(dir, entry);
             if (statSync(full).isDirectory()) {
-                walk(full);
+                walk(full, includeTests);
                 continue;
             }
             if (!/\.tsx?$/.test(entry)) continue;
-            if (/\.(test|spec)\.tsx?$/.test(entry)) continue;
+            if (!includeTests && /\.(test|spec)\.tsx?$/.test(entry)) continue;
             if (/\.d\.ts$/.test(entry)) continue;
             out.push(full);
         }
@@ -217,7 +270,47 @@ export function collectSourceFiles(root: string): string[] {
         }
     }
 
-    return out.sort();
+    for (const extra of EXTRA_SCAN_DIRS) {
+        const dir = join(root, extra);
+        try {
+            if (statSync(dir).isDirectory()) walk(dir, EXTRA_DIRS_INCLUDE_TESTS);
+        } catch {
+            // directory absent in this checkout
+        }
+    }
+
+    // Every real-database test subtree, found by CONVENTION rather than by a
+    // path list — see REAL_DB_TEST_DIRS for why that distinction earned itself.
+    for (const top of SCAN_ROOTS) {
+        const base = join(root, top);
+        let pkgs: string[];
+        try {
+            pkgs = readdirSync(base);
+        } catch {
+            continue;
+        }
+        for (const pkg of pkgs) {
+            const testDir = join(base, pkg, 'test');
+            let entries: string[];
+            try {
+                if (!statSync(testDir).isDirectory()) continue;
+                entries = readdirSync(testDir);
+            } catch {
+                continue;
+            }
+            for (const entry of entries) {
+                if (!(REAL_DB_TEST_DIRS as readonly string[]).includes(entry)) continue;
+                const full = join(testDir, entry);
+                try {
+                    if (statSync(full).isDirectory()) walk(full, EXTRA_DIRS_INCLUDE_TESTS);
+                } catch {
+                    // not a directory
+                }
+            }
+        }
+    }
+
+    return [...new Set(out)].sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -274,8 +367,35 @@ const condense = (text: string): string => text.replace(/\s+/g, ' ').trim().slic
  * whose keys this guard can read.
  */
 export function isInlineObjectLiteral(payload: string): boolean {
-    const trimmed = payload.trim();
+    const trimmed = stripTrailingTypeAssertion(payload);
     return trimmed.startsWith('{') && trimmed.endsWith('}');
+}
+
+/**
+ * Drops a trailing `as <Type>` from an object literal.
+ *
+ * `.values({ ... } as typeof billingSubscriptions.$inferInsert)` is a literal
+ * whose keys are perfectly readable, but it does not END in `}` — so without
+ * this the guard called it UNVERIFIABLE and blocked on a payload that was
+ * complete. That is the right posture for something it cannot read; it is the
+ * wrong answer for something it can.
+ *
+ * Reading through the assertion makes the guard STRONGER, not weaker: a payload
+ * in this form that OMITS the domain now reports `omits` and names the missing
+ * key, where before it reported only that it could not look. The trailing text
+ * is discarded, never trusted — the keys still come from the literal itself.
+ *
+ * Only a top-level assertion is stripped. A nested `as` inside the object is
+ * untouched, because the scan stops at the literal's own closing brace.
+ */
+export function stripTrailingTypeAssertion(payload: string): string {
+    const trimmed = payload.trim();
+    if (!trimmed.startsWith('{')) return trimmed;
+    const close = readBalanced(trimmed, 0);
+    if (close === null) return trimmed;
+    const rest = trimmed.slice(close.length + 2).trim();
+    if (rest === '' || /^as\s/.test(rest)) return trimmed.slice(0, close.length + 2);
+    return trimmed;
 }
 
 /**
@@ -289,7 +409,12 @@ export function isInlineObjectLiteral(payload: string): boolean {
  */
 export function statesDomainUnconditionally(payload: string): boolean {
     if (!isInlineObjectLiteral(payload)) return false;
-    const body = payload.trim().slice(1, -1);
+    // Strip the same trailing `as <Type>` the literal test reads through.
+    // Without this the slice below removes the last character of the TYPE
+    // instead of the closing brace, and the body it scans is malformed — which
+    // only shows up when `productDomain` is not the first key, because an early
+    // match returns before the mangled tail is ever reached.
+    const body = stripTrailingTypeAssertion(payload).slice(1, -1);
 
     let depth = 0;
     for (let i = 0; i < body.length; i++) {
@@ -339,6 +464,19 @@ function scanDrizzleInserts(rel: string, source: string): Finding[] {
         const pattern = new RegExp(`\\.insert\\(\\s*${table}\\s*\\)`, 'g');
         for (const match of source.matchAll(pattern)) {
             const at = match.index;
+
+            // Skip prose. `scanQzpayCreates` has always done this; this scan
+            // never did, and a docblock that QUOTES the call it documents —
+            // `tx.insert(billingSubscriptions).values(...)` — matched, then read
+            // the literal `...` as its payload and reported UNVERIFIABLE.
+            //
+            // A guard that fails on a COMMENT is worse than one that misses a
+            // call: the failure names a line nobody can fix by writing better
+            // code, and the only way out is to reword the documentation.
+            const lineStart = source.lastIndexOf('\n', at) + 1;
+            const linePrefix = source.slice(lineStart, at).trimStart();
+            if (linePrefix.startsWith('*') || linePrefix.startsWith('//')) continue;
+
             const valuesAt = source.indexOf('.values(', at);
             if (valuesAt < 0) {
                 findings.push({
@@ -540,11 +678,41 @@ export function scanSources(
         if (!touchesInsert && !touchesCreate && !touchesSql) continue;
 
         const rel = relative(root, file);
-        const fileFindings = [
+        // Inside a real-database test subtree, only the shapes that reach the
+        // DATABASE are scanned: a Drizzle insert and a raw SQL statement.
+        //
+        // `billing.subscriptions.create()` is deliberately NOT, and the reason
+        // is not convenience. In these suites that client is a stub — the call
+        // never reaches Postgres, so dropping the column default cannot break
+        // it, and demanding a domain there would be the guard inventing work
+        // rather than protecting a row. Production code keeps all three shapes;
+        // this narrowing applies only to the test subtrees added by convention.
+        const isRealDbTest = /[\\/]test[\\/](integration|e2e|data-migrations)[\\/]/.test(rel);
+        const rawFileFindings = [
             ...scanDrizzleInserts(rel, source),
-            ...scanQzpayCreates(rel, source, qzpayOffersDomain),
+            ...(isRealDbTest ? [] : scanQzpayCreates(rel, source, qzpayOffersDomain)),
             ...scanRawSqlInserts(rel, source)
         ];
+
+        // In those same test subtrees an UNVERIFIABLE payload is reported but
+        // not FAILED, and only there.
+        //
+        // `unverifiable` means "the guard cannot read this", and in production
+        // that must block: an unreadable payload can hide an omission that
+        // reaches a paying customer with nothing to notice it by. In these
+        // fixtures the payload is almost always a shared builder
+        // (`planRow({...})`, `[...ALL_PRE_ROWS]`) that the guard cannot follow
+        // by construction — and the omission it might hide has a louder check
+        // already: the suite EXECUTES the insert against a real database in the
+        // same CI run, and a missing NOT NULL column fails it outright.
+        //
+        // So this is not the guard going quiet. It is declining to duplicate,
+        // with a weaker instrument, a check the test itself performs with a
+        // stronger one. An `omits` — a payload it CAN read, missing the key —
+        // still fails everywhere.
+        const fileFindings = isRealDbTest
+            ? rawFileFindings.filter((f) => f.verdict !== 'unverifiable')
+            : rawFileFindings;
 
         // Every create of one of the two tables is a checked site, whether or
         // not it turned into a finding. Counting only the failures would let a
@@ -657,5 +825,26 @@ function main(): void {
 
 // Only run when invoked directly, so the unit test can import the predicates.
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
-    main();
+    try {
+        main();
+    } catch (error) {
+        // A thrown guard exits 1 with nothing on stdout, which reads in CI as
+        // "the invariant is violated" when it actually means "the check could
+        // not run". Those need different fixes, and telling them apart from a
+        // bare `Process completed with exit code 1` is not possible — the job
+        // log is not always retrievable. So name it.
+        console.error('');
+        console.error('ERROR: this guard could not COMPLETE — it did not find a violation.');
+        console.error('');
+        console.error(`  ${error instanceof Error ? error.message : String(error)}`);
+        if (error instanceof Error && error.stack) {
+            console.error('');
+            console.error(error.stack);
+        }
+        console.error('');
+        console.error(
+            '  Treat this as an inconclusive run, not a clean one and not a failing one.'
+        );
+        process.exit(1);
+    }
 }

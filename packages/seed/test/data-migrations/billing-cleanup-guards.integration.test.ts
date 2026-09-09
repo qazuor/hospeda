@@ -116,6 +116,7 @@ async function insertSubscription(tx: DrizzleClient, customerId: string): Promis
     const inserted = await tx
         .insert(billingSubscriptions)
         .values({
+            productDomain: 'accommodation',
             customerId,
             planId: 'zzqa-hos749-plan',
             status: 'active',
@@ -151,7 +152,8 @@ async function insertUnclassifiedReferrer(
     subscriptionId: string
 ): Promise<void> {
     const plan = await tx.execute<{ id: string }>(sql`
-        INSERT INTO billing_plans (name) VALUES ('HOS-749 guard fixture plan') RETURNING id
+        INSERT INTO billing_plans (name, product_domain)
+        VALUES ('HOS-749 guard fixture plan', 'accommodation') RETURNING id
     `);
     const planId = plan.rows[0]?.id;
     if (!planId) {

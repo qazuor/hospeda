@@ -195,6 +195,13 @@ export interface CreateTestSubscriptionInput {
     readonly providerSubscriptionId?: string;
     readonly livemode?: boolean;
     readonly metadata?: Readonly<Record<string, unknown>>;
+    /**
+     * Product domain for the row (HOS-1233 T-036). Defaults to
+     * `'accommodation'`, which is what every existing caller means; a test that
+     * needs a tourist or commerce subscription states it, because the column no
+     * longer has a default to fall back on.
+     */
+    readonly productDomain?: string;
 }
 
 /**
@@ -243,6 +250,11 @@ export async function createTestSubscription(
         id: subscriptionId,
         customerId: input.customerId,
         planId: input.planId,
+        // HOS-1233 T-036: the column lost its default, so this is required by
+        // the insert type as well as by the database. Taken from the caller
+        // when given, defaulting to accommodation — which is what these e2e
+        // subscriptions have always been, and now says so.
+        productDomain: input.productDomain ?? 'accommodation',
         billingInterval,
         intervalCount,
         status,

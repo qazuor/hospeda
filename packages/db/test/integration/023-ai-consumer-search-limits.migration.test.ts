@@ -66,8 +66,16 @@ async function applyMigration(): Promise<void> {
 
 /**
  * Minimal factory for a billing_plans insert row.
- * Only `name` is required (NOT NULL without default). All other NOT NULL
- * columns have DB-side defaults.
+ *
+ * `name` and `product_domain` are the two NOT NULL columns with no DB-side
+ * default. That was one until HOS-1233 dropped `DEFAULT 'accommodation'` from
+ * `product_domain` — this docblock said so, and the fixtures that trusted it
+ * started failing with `null value in column "product_domain"`.
+ *
+ * The domain is DERIVED from the slug, never hardcoded: this file seeds tourist
+ * tiers alongside owner ones, and stamping `'accommodation'` on all nine would
+ * reproduce inside the fixtures the exact misfiling the migration under test
+ * exists to correct.
  */
 function planRow(
     overrides: Partial<QZPayBillingPlanInsert> & Pick<QZPayBillingPlanInsert, 'name'>
@@ -76,6 +84,7 @@ function planRow(
         entitlements: [],
         limits: {},
         livemode: false,
+        productDomain: overrides.name.startsWith('tourist') ? 'tourist' : 'accommodation',
         ...overrides
     } as QZPayBillingPlanInsert;
 }

@@ -213,6 +213,10 @@ async function resetPlanToPreMigrationState(
     const inserted = await tx
         .insert(billingPlans)
         .values({
+            // HOS-1233: derived from the slug, never hardcoded — several of these
+            // fixtures seed TOURIST plans, and stamping 'accommodation' would
+            // reproduce the misfiling the migration tests exist to check.
+            productDomain: planName.startsWith('tourist') ? 'tourist' : 'accommodation',
             name: planName,
             description: 'Test fixture row for HOS-975 migration tests.',
             active: true,

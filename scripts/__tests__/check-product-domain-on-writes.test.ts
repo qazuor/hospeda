@@ -237,6 +237,65 @@ describe('scanSources', () => {
         expect(findings).toEqual([]);
     });
 
+    it('ignores a DRIZZLE insert quoted in a docblock', () => {
+        // The twin of the test above, and it did not exist. The prose skip was
+        // written for the qzpay shape only, so a docblock quoting the Drizzle
+        // call matched, read the literal `...` as its payload, and reported
+        // UNVERIFIABLE — a guard failing on a COMMENT, fixable only by
+        // rewording documentation.
+        //
+        // This is the exact docblock that did it, added to
+        // `service-core/test/integration/services/helpers.ts` on staging while
+        // the scan roots were being widened. It surfaced ONLY in the merge:
+        // staging did not scan that directory, and the branch that scanned it
+        // did not have the file.
+        const { findings } = scanTree({
+            'apps/api/src/a.ts': [
+                '/**',
+                ' * Both billing rows are written via typed Drizzle inserts, NOT raw SQL —',
+                ' * confirmed by compiling',
+                ' * `tx.insert(billingSubscriptions).values(...)` against',
+                ' * `typeof billingSubscriptions.$inferInsert` before writing this.',
+                ' */',
+                'export const noop = 1;'
+            ].join('\n')
+        });
+        expect(findings).toEqual([]);
+    });
+
+    it('reads through a trailing type assertion on a .values() payload', () => {
+        // `{ ... } as typeof billingSubscriptions.$inferInsert` is a literal
+        // whose keys are perfectly readable, but it does not END in `}`. It was
+        // reported UNVERIFIABLE while being complete — the right posture for
+        // something the guard cannot read, the wrong answer for something it
+        // can.
+        const { findings } = scanTree({
+            'packages/seed/src/a.ts': [
+                'await tx.insert(billingSubscriptions).values({',
+                '    customerId,',
+                "    productDomain: 'experience'",
+                '} as typeof billingSubscriptions.$inferInsert);'
+            ].join('\n')
+        });
+        expect(findings).toEqual([]);
+    });
+
+    it('still fails an omitting payload that carries a type assertion', () => {
+        // Reading through the assertion must make the guard STRONGER, not
+        // weaker: this shape used to be merely "unreadable", and now says which
+        // key is missing.
+        const { findings } = scanTree({
+            'packages/seed/src/a.ts': [
+                'await tx.insert(billingSubscriptions).values({',
+                '    customerId,',
+                "    status: 'active'",
+                '} as typeof billingSubscriptions.$inferInsert);'
+            ].join('\n')
+        });
+        expect(findings).toHaveLength(1);
+        expect(findings[0]?.verdict).toBe('omits');
+    });
+
     it('does not scan test files — a fixture must be able to reproduce the bug', () => {
         const { findings, sitesChecked } = scanTree({
             'packages/seed/src/a.test.ts':

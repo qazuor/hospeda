@@ -8,9 +8,9 @@
 import { SocialPublishFormatEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    resolveVideoPipelinePreset,
     STORY_ASPECT_RATIO_TRANSFORM,
-    VIDEO_POST_LIMITS,
-    resolveVideoPipelinePreset
+    VIDEO_POST_LIMITS
 } from '../../../src/services/social/social-video-pipeline-config.util';
 
 describe('STORY_ASPECT_RATIO_TRANSFORM', () => {

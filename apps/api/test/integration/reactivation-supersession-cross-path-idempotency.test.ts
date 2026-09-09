@@ -98,6 +98,7 @@ describe.skipIf(!isDatabaseAvailable())(
             if (!db) throw new Error('Database not initialized');
             const id = crypto.randomUUID();
             await db.insert(billingSubscriptions).values({
+                productDomain: 'accommodation',
                 id,
                 customerId: testCustomerId,
                 planId: crypto.randomUUID(),

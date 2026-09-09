@@ -34,8 +34,8 @@ import type {
     IngestionResult
 } from '../../../src/services/social/social-draft-ingestion.service';
 import { SocialDraftIngestionService } from '../../../src/services/social/social-draft-ingestion.service';
-import { SocialImagePipelineService as RealSocialImagePipelineService } from '../../../src/services/social/social-image-pipeline.service';
 import type { SocialImagePipelineService } from '../../../src/services/social/social-image-pipeline.service';
+import { SocialImagePipelineService as RealSocialImagePipelineService } from '../../../src/services/social/social-image-pipeline.service';
 import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
 import { createModelMock } from '../../utils/modelMockFactory';
 
