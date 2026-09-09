@@ -47,6 +47,9 @@ function makeSubscription(
 ): Subscription {
     return {
         id: '11111111-1111-4111-8111-111111111111',
+        // HOS-1314: required on AdminSubscriptionView, added so the admin
+        // grant-comp dialog can identify the billing customer behind a row.
+        customerId: '55555555-5555-4555-8555-555555555555',
         status: 'active',
         rawStatus: 'active',
         user: {

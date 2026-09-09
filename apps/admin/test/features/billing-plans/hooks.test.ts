@@ -44,7 +44,10 @@ const validPlanRecord = {
     updatedAt: '2024-01-15T00:00:00.000Z',
     // Admin list-only fields (SPEC-168)
     isDeleted: false,
-    activeSubscriptionCount: 3
+    activeSubscriptionCount: 3,
+    // HOS-1314: required on the admin DTO so the grant-comp plan selector can
+    // group plans by vertical.
+    productDomain: 'accommodation' as const
 };
 
 /** Valid API list envelope */
