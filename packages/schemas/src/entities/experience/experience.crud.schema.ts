@@ -461,6 +461,16 @@ export const ExperienceUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
+                // Server-managed (HOS-1286): written ONLY by the
+                // featured-by-entitlement sync primitives, the addon checkout
+                // confirmation and the reconcile cron — never through the generic
+                // PATCH path. Omitted here because these schemas are built with
+                // `.omit(...)`, so a field is accepted unless it is named: leaving
+                // it in would let an owner send `featuredByEntitlement: true` in
+                // their own update and feature their listing without buying the
+                // add-on, which is the exact product HOS-1286 exists to sell.
+                // `isFeatured`, the admin-curated flag beside it, stays writable.
+                featuredByEntitlement: true,
                 // Server-managed: ownership change requires a dedicated admin action.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.
