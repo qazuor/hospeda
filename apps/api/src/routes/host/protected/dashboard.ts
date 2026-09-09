@@ -9,9 +9,16 @@
  * GET /api/v1/protected/host/dashboard
  */
 import { EntitlementKey, isEntitlementGrantingStatus } from '@repo/billing';
-import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, ProductDomainEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
+import {
+    AccommodationService,
+    ConversationService,
+    hydrateSubscriptionProductDomains,
+    isAccommodationSubscription,
+    ServiceError,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { requireEntitlement } from '../../../middlewares/entitlement';
@@ -178,13 +185,36 @@ async function resolvePlan(input: { actor: Actor }): Promise<HostDashboardPlan |
             return null;
         }
 
-        const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+        // HOS-1160: hydrate before comparing. `getByCustomerId()` never populates
+        // `productDomain` (QZPay's mapper drops it — HOS-934), so every row would
+        // reach the domain check below reading `undefined` and fail OPEN to
+        // accommodation, which is the exact condition the filter is here to stop.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
         // H-70: use the canonical predicate rather than a hand-written
         // `active || trialing` pair. `comp` is entitlement-granting too, and
         // omitting it here is what made a comped owner's dashboard report
         // `plan: null` — which the frontend renders as "Plan Gratuito".
-        const activeSubscription = subscriptions.find((sub) =>
-            isEntitlementGrantingStatus(sub.status)
+        //
+        // HOS-1160: the domain filter is new, and measuring it is what found the
+        // gap. This `find` took the FIRST entitlement-granting subscription of any
+        // vertical, so a dual owner's gastronomy plan could be reported as the
+        // plan on their HOST dashboard. It was reachable before this issue (a paid
+        // gastronomy subscription would do it), and opening comp to gastronomy and
+        // experiences puts a second way to reach it in the same release, so it is
+        // fixed here rather than left as pre-existing.
+        //
+        // Accommodation OR tourist, written as two explicit calls, mirroring
+        // `entitlements.ts` and `loadEntitlements` — the sibling endpoints that
+        // answer the same "which plan am I on" question. Accommodation still fails
+        // OPEN for the legacy rows predating the column; tourist, like every other
+        // named domain, fails CLOSED. There is deliberately no union helper
+        // (HOS-1081 deleted `isCommerceSubscription()` for having no callers).
+        const activeSubscription = subscriptions.find(
+            (sub: { status: string }) =>
+                isEntitlementGrantingStatus(sub.status) &&
+                (isAccommodationSubscription(sub) ||
+                    subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST))
         );
         if (!activeSubscription) {
             return null;
