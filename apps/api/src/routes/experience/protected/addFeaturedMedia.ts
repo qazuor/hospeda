@@ -32,6 +32,7 @@
  *
  * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff) — enforced inside `addExperienceFeaturedMedia` via `checkExperienceCanEditMedia`.
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     type ExperienceFeaturedMediaAddInput,
     ExperienceFeaturedMediaAddOutputSchema,
@@ -41,6 +42,8 @@ import {
 import { addExperienceFeaturedMedia, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -99,5 +102,14 @@ export const protectedAddExperienceFeaturedMediaRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1275: mirrors the gastronomy twin. See
+        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
+        // first.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('experience'),
+            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO)
+        ]
     }
 });

@@ -32,6 +32,7 @@
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) — enforced inside `addGastronomyFeaturedMedia` via `checkGastronomyCanEditMedia`.
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     type GastronomyFeaturedMediaAddInput,
     GastronomyFeaturedMediaAddOutputSchema,
@@ -41,6 +42,8 @@ import {
 import { addGastronomyFeaturedMedia, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -99,5 +102,13 @@ export const protectedAddGastronomyFeaturedMediaRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
+        // `addFaq.ts` for why the vertical loader must be first.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('gastronomy'),
+            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO)
+        ]
     }
 });

@@ -21,10 +21,13 @@
  * Hono resolves the static `featured` segment regardless of insertion order
  * (mirrors the reorder-route note).
  */
+import { EntitlementKey } from '@repo/billing';
 import { ExperienceMediaSingleOutputSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -71,5 +74,14 @@ export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1275: mirrors the gastronomy twin. See
+        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
+        // first.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('experience'),
+            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO)
+        ]
     }
 });
