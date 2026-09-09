@@ -244,10 +244,12 @@ describe('grantCompSubscription — the preapproval is closed before the comp ex
         // The two per-row reconciles happen INSIDE the supersede loop, before
         // the comp row is even created; the third happens after the comp row
         // is created and the cache is cleared (step 6, pre-existing behavior).
-        const reconcileIndices = callOrder.reduce<number[]>(
-            (acc, v, i) => (v === 'reconcile' ? [...acc, i] : acc),
-            []
-        );
+        const reconcileIndices = callOrder.reduce<number[]>((acc, v, i) => {
+            if (v === 'reconcile') {
+                acc.push(i);
+            }
+            return acc;
+        }, []);
         expect(reconcileIndices).toHaveLength(3);
         const createComp = callOrder.indexOf('create-comp');
         const cacheClear = callOrder.indexOf('cache-clear');
