@@ -21,12 +21,14 @@ import { LimitKey } from '../src/types/plan.types.js';
 
 describe('Add-on Configuration', () => {
     describe('ALL_ADDONS', () => {
-        it('should export 11 add-ons', () => {
+        it('should export 15 add-ons', () => {
             // 6 accommodation-era add-ons, the two per-vertical extra-listing
-            // add-ons HOS-688 introduced, and HOS-1060's three private-gallery
-            // packs. Recounted rather than incremented: the previous number was
-            // 8 and "8 + 3" is only right while nothing else moved.
-            expect(ALL_ADDONS).toHaveLength(11);
+            // add-ons HOS-688 introduced, HOS-1060's three private-gallery
+            // packs, and HOS-1286's four commerce visibility boosts (7d + 30d
+            // for gastronomy and for experience). Recounted rather than
+            // incremented: the previous number was 11, and "11 + 4" is only
+            // right while nothing else moved.
+            expect(ALL_ADDONS).toHaveLength(15);
         });
 
         it('should have one-time add-ons', () => {
@@ -222,7 +224,15 @@ describe('Add-on Configuration', () => {
             'extra-experiences-1': ProductDomainEnum.EXPERIENCE,
             'private-galleries-5': ProductDomainEnum.EXPERIENCE,
             'private-galleries-10': ProductDomainEnum.EXPERIENCE,
-            'private-galleries-20': ProductDomainEnum.EXPERIENCE
+            'private-galleries-20': ProductDomainEnum.EXPERIENCE,
+            // HOS-1286. These four are the sharpest case this table guards: the
+            // four rows differ from the accommodation boosts in `productDomain`
+            // and in nothing else that gates anything, and a wrong domain here
+            // features a listing in the wrong vertical.
+            'visibility-boost-gastronomy-7d': ProductDomainEnum.GASTRONOMY,
+            'visibility-boost-gastronomy-30d': ProductDomainEnum.GASTRONOMY,
+            'visibility-boost-experience-7d': ProductDomainEnum.EXPERIENCE,
+            'visibility-boost-experience-30d': ProductDomainEnum.EXPERIENCE
         };
 
         it('declares a domain on EVERY add-on — none falls through', () => {

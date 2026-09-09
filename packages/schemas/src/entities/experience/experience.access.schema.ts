@@ -293,6 +293,10 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     descriptionI18n: true,
     richDescriptionI18n: true,
     isFeatured: true,
+    // HOS-1286: the owner's own editor sees both featuring sources separately,
+    // like the accommodation protected tier. Never added to the PUBLIC pick —
+    // public reads get the OR under `isFeatured` and nothing else.
+    featuredByEntitlement: true,
     destinationId: true,
     media: true,
     videos: true,

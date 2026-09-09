@@ -24,7 +24,12 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { AddonsPurchasePanel } from '@/components/account/AddonsPurchasePanel.client';
 import type { AddonCardData } from '@/components/account/AddonsPurchasePanel.client';
-import { billingApi, hostAnalyticsApi, userApi } from '@/lib/api/endpoints-protected';
+import {
+    billingApi,
+    commerceListingsApi,
+    hostAnalyticsApi,
+    userApi
+} from '@/lib/api/endpoints-protected';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import { filterAddonsByHeldDomains } from '@/lib/billing/addon-domain';
 import { ADDON_FOCUS_PARAM } from '@/lib/billing/addon-focus';
@@ -72,6 +77,14 @@ const ADDON_GATE_DOMAINS: readonly ProductDomainScope[] = [
 let availableAddons: AddonCardData[] = [];
 let ownedAddonSlugs: string[] = [];
 let accommodations: { readonly id: string; readonly name: string }[] = [];
+// HOS-1286: the caller's own commerce listings, per vertical. A failed fetch
+// leaves the vertical empty, which renders the card's "you need a listing
+// first" state — never a page-level failure, the same degradation the
+// accommodation fetch above has always had.
+const commerceListings: Record<'gastronomy' | 'experience', { readonly id: string; readonly name: string }[]> = {
+    gastronomy: [],
+    experience: []
+};
 let fetchError = false;
 
 const [[addonsResult, ownedResult], subscriptionResults] = await Promise.all([
@@ -138,13 +151,33 @@ const hasUsableSubscription = visibleAddons.length > 0;
 // Best-effort: a tourist without host entitlements will get a non-ok result
 // here, which just means the selector falls back to "necesitás un
 // alojamiento primero" — never a page-level failure.
-const needsAccommodationTarget = visibleAddons.some(
-    (addon) => addon.requiresAccommodationTarget
+// HOS-1286: one list PER VERTICAL, and only for the verticals whose add-ons are
+// actually on the page. `visibleAddons` is already filtered to the domains the
+// caller holds a subscription in (`filterAddonsByHeldDomains`), so a
+// restaurant-only owner fetches restaurants and nothing else — this adds no
+// round-trip to a page that shows no targeted add-on for that vertical.
+const targetDomains = new Set<string>(
+    visibleAddons
+        .filter((addon) => addon.requiresAccommodationTarget)
+        .map((addon) => addon.productDomain)
+        .filter((domain): domain is NonNullable<typeof domain> => domain != null)
 );
-if (needsAccommodationTarget) {
+
+if (targetDomains.has('accommodation')) {
     const accommodationsResult = await hostAnalyticsApi.listOwnAccommodations({ cookieHeader });
     if (accommodationsResult.ok) {
         accommodations = [...accommodationsResult.data.items];
+    }
+}
+
+for (const vertical of ['gastronomy', 'experience'] as const) {
+    if (!targetDomains.has(vertical)) continue;
+    const listingsResult = await commerceListingsApi.listMine({ vertical, cookieHeader });
+    if (listingsResult.ok) {
+        commerceListings[vertical] = listingsResult.data.listings.map((listing) => ({
+            id: listing.id,
+            name: listing.name
+        }));
     }
 }
 
@@ -227,7 +260,11 @@ const upgradeUrl = buildUrl({
             locale={locale}
             addons={visibleAddons}
             ownedAddonSlugs={ownedAddonSlugs}
-            accommodations={accommodations}
+            targetListingsByDomain={{
+                accommodation: accommodations,
+                gastronomy: commerceListings.gastronomy,
+                experience: commerceListings.experience
+            }}
             focusSlug={focusSlugParam}
         />
     )}

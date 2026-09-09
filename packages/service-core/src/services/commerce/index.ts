@@ -37,6 +37,13 @@ export {
     checkCanModerateReview,
     checkCanViewAll
 } from './commerce.permissions';
+export {
+    type CommerceFeaturedEntityType,
+    type SyncCommerceFeaturedResult,
+    type SyncCommerceFeaturedRow,
+    type SyncFeaturedByEntitlementForCommerceListingInput,
+    syncFeaturedByEntitlementForCommerceListing
+} from './commerce.sync-featured-by-entitlement';
 export type { CommerceEntityType, CommerceListingHookState } from './commerce.types';
 // NOTE (HOS-166 R-5): `resolveListingCompleteness` and its types moved to
 // `@repo/schemas` (`packages/schemas/src/common/commerce-completeness.ts`) —

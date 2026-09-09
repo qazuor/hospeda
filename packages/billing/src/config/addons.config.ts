@@ -5,44 +5,180 @@ import { LimitKey } from '../types/plan.types.js';
 
 // ─── ONE-TIME ADD-ONS ──────────────────────────────────────────
 
-export const VISIBILITY_BOOST_ADDON: AddonDefinition = {
-    slug: 'visibility-boost-7d',
-    name: 'Visibility Boost (7 days)',
-    description: 'Your accommodation appears featured in search results for 7 days.',
-    billingType: 'one_time',
-    priceArs: 500000, // ARS $5,000
-    annualPriceArs: null, // One-time purchase
-    durationDays: 7,
-    affectsLimitKey: null,
-    limitIncrease: null,
-    grantsEntitlement: EntitlementKey.FEATURED_LISTING,
-    targetCategories: ['owner', 'complex'],
-    // HOS-1060: accommodation machinery — featuring is a search-result placement
-    // on an ACCOMMODATION, and there is no commerce equivalent for it to leak to.
-    productDomain: ProductDomainEnum.ACCOMMODATION,
-    isActive: true,
-    sortOrder: 1,
-    requiresAccommodationTarget: true
+/**
+ * What a 7-day visibility boost costs, in ARS centavos — for EVERY vertical
+ * (HOS-1286).
+ *
+ * The owner's instruction was "same price as accommodation", so the six
+ * definitions below read these two constants instead of repeating two numbers
+ * six times. If the verticals are ever priced apart, the change is to split
+ * this pair per domain, and the six literals it feeds do not have to be hunted
+ * for one at a time.
+ *
+ * These are also the only per-vertical prices in the visibility family, which
+ * is why they sit together at the top of the file rather than inline: the
+ * decision "gastronomy pays what a hotel pays" should be visible in one glance,
+ * not reconstructed from six scattered fields.
+ */
+export const VISIBILITY_BOOST_7D_PRICE_ARS = 500_000; // ARS $5,000
+/** 30-day counterpart of {@link VISIBILITY_BOOST_7D_PRICE_ARS}. */
+export const VISIBILITY_BOOST_30D_PRICE_ARS = 1_500_000; // ARS $15,000
+
+/**
+ * Human label for the listing a visibility boost features, per vertical — used
+ * only to build each add-on's display `name` and `description`.
+ *
+ * The three add-on FAMILIES cannot share one slug: `productDomain` is a single
+ * value per definition (that is the point of HOS-1060 — two verticals sharing
+ * one row is exactly the collision it closed), so "boost a restaurant" and
+ * "boost a hotel" are necessarily different catalogue entries.
+ */
+const VISIBILITY_BOOST_SUBJECT: Readonly<Record<string, { noun: string; label: string }>> = {
+    [ProductDomainEnum.ACCOMMODATION]: { noun: 'accommodation', label: 'Accommodation' },
+    [ProductDomainEnum.GASTRONOMY]: { noun: 'restaurant', label: 'Restaurant' },
+    [ProductDomainEnum.EXPERIENCE]: { noun: 'experience', label: 'Experience' }
 };
 
-export const VISIBILITY_BOOST_30D_ADDON: AddonDefinition = {
+/**
+ * Builds one visibility-boost add-on (HOS-1286).
+ *
+ * ## Why a factory, and why all six go through it
+ *
+ * Before HOS-1286 there were two hand-written literals. Six hand-written
+ * literals differing in three fields is the copy-paste
+ * `EXTRA_GASTRONOMIES_ADDON` / `EXTRA_EXPERIENCES_ADDON` were deliberately kept
+ * apart to avoid — except that pair differs in its `affectsLimitKey`, where a
+ * wrong copy raises the wrong cap silently. This family differs in
+ * `productDomain`, where a wrong copy features a listing in the WRONG VERTICAL,
+ * which is worse and just as silent. The factory makes the domain a parameter
+ * that cannot be forgotten.
+ *
+ * The two accommodation entries are built here too, at their existing slugs,
+ * names and prices — identical rows to what shipped, so the `billing_addons`
+ * seed (idempotent on `name`) and every stored purchase keep matching.
+ *
+ * ## `requiresAccommodationTarget` on a gastronomy add-on
+ *
+ * The flag is `true` for all six: every visibility boost is scoped to ONE
+ * listing. The field name is historical — it predates commerce — and the table
+ * the target id points into is decided by {@link AddonDefinition.productDomain},
+ * never by the flag. The name is kept rather than corrected because it is on the
+ * wire (`AddonResponseSchema.requiresAccommodationTarget`) and a rename would
+ * break in-flight clients; consumers must read the DOMAIN to know which listings
+ * to offer.
+ *
+ * @param input.domain - The vertical this boost belongs to and features in.
+ * @param input.days - Boost duration, 7 or 30.
+ * @param input.slug - Catalogue slug (explicit, so the two accommodation
+ *   entries keep their pre-HOS-1286 slugs rather than a derived one).
+ * @param input.name - Display name; also the `billing_addons` idempotency key.
+ * @param input.sortOrder - Display order within the add-on catalogue.
+ * @returns The boost's {@link AddonDefinition}.
+ */
+function visibilityBoostAddon(input: {
+    domain: ProductDomainValue;
+    days: 7 | 30;
+    slug: string;
+    name: string;
+    sortOrder: number;
+}): AddonDefinition {
+    const subject = VISIBILITY_BOOST_SUBJECT[input.domain];
+    const noun = subject ? subject.noun : 'listing';
+    return {
+        slug: input.slug,
+        name: input.name,
+        description: `Your ${noun} appears featured in search results for ${input.days} days.`,
+        billingType: 'one_time',
+        priceArs: input.days === 7 ? VISIBILITY_BOOST_7D_PRICE_ARS : VISIBILITY_BOOST_30D_PRICE_ARS,
+        annualPriceArs: null, // One-time purchase
+        durationDays: input.days,
+        affectsLimitKey: null,
+        limitIncrease: null,
+        grantsEntitlement: EntitlementKey.FEATURED_LISTING,
+        // 'owner'/'complex' for accommodation as before; commerce definitions use
+        // 'owner' for the reason every other one here does — PlanCategory has no
+        // commerce member, so `productDomain` is the real discriminator.
+        targetCategories:
+            input.domain === ProductDomainEnum.ACCOMMODATION ? ['owner', 'complex'] : ['owner'],
+        productDomain: input.domain,
+        isActive: true,
+        sortOrder: input.sortOrder,
+        // Scoped to ONE listing, of this add-on's own domain. See the factory doc
+        // for why the field keeps its accommodation-era name.
+        requiresAccommodationTarget: true
+    };
+}
+
+export const VISIBILITY_BOOST_ADDON: AddonDefinition = visibilityBoostAddon({
+    domain: ProductDomainEnum.ACCOMMODATION,
+    days: 7,
+    slug: 'visibility-boost-7d',
+    name: 'Visibility Boost (7 days)',
+    sortOrder: 1
+});
+
+export const VISIBILITY_BOOST_30D_ADDON: AddonDefinition = visibilityBoostAddon({
+    domain: ProductDomainEnum.ACCOMMODATION,
+    days: 30,
     slug: 'visibility-boost-30d',
     name: 'Visibility Boost (30 days)',
-    description: 'Your accommodation appears featured in search results for 30 days.',
-    billingType: 'one_time',
-    priceArs: 1500000, // ARS $15,000
-    annualPriceArs: null, // One-time purchase
-    durationDays: 30,
-    affectsLimitKey: null,
-    limitIncrease: null,
-    grantsEntitlement: EntitlementKey.FEATURED_LISTING,
-    targetCategories: ['owner', 'complex'],
-    // HOS-1060 — see the 7-day twin above.
-    productDomain: ProductDomainEnum.ACCOMMODATION,
-    isActive: true,
-    sortOrder: 2,
-    requiresAccommodationTarget: true
-};
+    sortOrder: 2
+});
+
+/**
+ * Gastronomy visibility boosts (HOS-1286) — the reason this issue exists: a
+ * restaurant owner had reviews and an `is_featured` column and no way to buy
+ * placement.
+ */
+export const VISIBILITY_BOOST_GASTRONOMY_ADDON: AddonDefinition = visibilityBoostAddon({
+    domain: ProductDomainEnum.GASTRONOMY,
+    days: 7,
+    slug: 'visibility-boost-gastronomy-7d',
+    name: 'Visibility Boost — Restaurant (7 days)',
+    sortOrder: 12
+});
+
+/** 30-day twin of {@link VISIBILITY_BOOST_GASTRONOMY_ADDON}. */
+export const VISIBILITY_BOOST_GASTRONOMY_30D_ADDON: AddonDefinition = visibilityBoostAddon({
+    domain: ProductDomainEnum.GASTRONOMY,
+    days: 30,
+    slug: 'visibility-boost-gastronomy-30d',
+    name: 'Visibility Boost — Restaurant (30 days)',
+    sortOrder: 13
+});
+
+/** Experience-side twin of {@link VISIBILITY_BOOST_GASTRONOMY_ADDON}. */
+export const VISIBILITY_BOOST_EXPERIENCE_ADDON: AddonDefinition = visibilityBoostAddon({
+    domain: ProductDomainEnum.EXPERIENCE,
+    days: 7,
+    slug: 'visibility-boost-experience-7d',
+    name: 'Visibility Boost — Experience (7 days)',
+    sortOrder: 14
+});
+
+/** 30-day twin of {@link VISIBILITY_BOOST_EXPERIENCE_ADDON}. */
+export const VISIBILITY_BOOST_EXPERIENCE_30D_ADDON: AddonDefinition = visibilityBoostAddon({
+    domain: ProductDomainEnum.EXPERIENCE,
+    days: 30,
+    slug: 'visibility-boost-experience-30d',
+    name: 'Visibility Boost — Experience (30 days)',
+    sortOrder: 15
+});
+
+/**
+ * The four commerce visibility boosts (HOS-1286), gastronomy first.
+ *
+ * Kept as its own list, like {@link ALL_PRIVATE_GALLERY_ADDONS}, so the
+ * dual-write data-migration that inserts them into an already-seeded
+ * environment iterates the same array this file exports rather than repeating
+ * the four slugs.
+ */
+export const ALL_COMMERCE_VISIBILITY_BOOST_ADDONS: readonly AddonDefinition[] = [
+    VISIBILITY_BOOST_GASTRONOMY_ADDON,
+    VISIBILITY_BOOST_GASTRONOMY_30D_ADDON,
+    VISIBILITY_BOOST_EXPERIENCE_ADDON,
+    VISIBILITY_BOOST_EXPERIENCE_30D_ADDON
+];
 
 // ─── RECURRING ADD-ONS ─────────────────────────────────────────
 
@@ -325,7 +461,8 @@ export const ALL_ADDONS: AddonDefinition[] = [
     AI_SUPPORT_ADDON,
     EXTRA_GASTRONOMIES_ADDON,
     EXTRA_EXPERIENCES_ADDON,
-    ...ALL_PRIVATE_GALLERY_ADDONS
+    ...ALL_PRIVATE_GALLERY_ADDONS,
+    ...ALL_COMMERCE_VISIBILITY_BOOST_ADDONS
 ];
 
 /**

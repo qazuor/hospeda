@@ -62,8 +62,32 @@ export interface PurchaseAddonInput {
     /** User ID for tracking */
     userId: string;
     /**
-     * The accommodation this purchase targets (SPEC-309 OQ-3). Required when
-     * the addon's `requiresAccommodationTarget` flag is true; ignored otherwise.
+     * The LISTING this purchase targets (HOS-1286). Required when the addon's
+     * `requiresAccommodationTarget` flag is true; ignored otherwise.
+     *
+     * Only the id travels. Which table it belongs to is derived from the addon's
+     * own `productDomain` (`resolveAddonTargetListing`), never declared by the
+     * caller — otherwise a request could pair a gastronomy add-on with an
+     * accommodation target and have the grant written against the wrong table.
+     *
+     * Prefer this over the deprecated {@link accommodationId}.
+     */
+    entityId?: string;
+    /**
+     * @deprecated Since HOS-1286 — use {@link entityId}, which carries the same
+     * id for any of the three verticals.
+     *
+     * Kept for one release rather than renamed. MercadoPago checkouts created
+     * before this change stored the target under the `accommodationId` metadata
+     * key, and a payer who completes one of those AFTER the deploy comes back
+     * through the webhook carrying only the old key. Renaming in place would
+     * drop the target for every in-flight checkout — which is exactly the
+     * silent, log-only failure HOS-675 already spent months in production
+     * (`featured_listing_addon_grants` stayed empty because the confirm path
+     * read a key nobody sent).
+     *
+     * Read through the resolution helper, never directly: the two are the same
+     * field, and `entityId` wins when both are present.
      */
     accommodationId?: string;
     /**

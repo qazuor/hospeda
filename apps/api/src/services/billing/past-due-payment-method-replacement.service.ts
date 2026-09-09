@@ -56,6 +56,33 @@
  * activating the new preapproval, and do not read `unpaidPeriodForgiven` in
  * the stamped metadata (below) as a bug — it is the record of that decision.
  *
+ * ## The listing pointer — HOS-1287
+ *
+ * This flow is not accommodation-only, and never was: a gastronomy, experience
+ * or partner subscription goes `past_due` the same way and reaches the same
+ * endpoint. Until HOS-1287 it minted the replacement without carrying the
+ * source row's entity pointer, which was the silent half of the same threat
+ * `preapproval-recovery.service.ts` refused outright: the new subscription
+ * eventually confirms, `completeSupersessionPairing` cancels the old
+ * preapproval, and the listing's `entity_subscriptions` /
+ * `partner_subscriptions` row is still pointing at the CANCELLED subscription.
+ * A paying customer, a dark listing, nothing thrown, nothing logged.
+ *
+ * The fix is the pointer and ONLY the pointer:
+ * {@link domainMetadataForCarryForward} merges the coordinates onto the new
+ * row's own `metadata`, and the reconcilers' existing
+ * `recoverCommerceLinkFromSubscriptionMetadata` /
+ * `recoverPartnerLinkFromSubscriptionMetadata` re-point the bridge row when the
+ * new subscription actually goes live. Writing the bridge row HERE, at mint
+ * time, would be the opposite of this module's whole invariant: it would hand
+ * the listing to a `pending_provider` row and unpublish it while the old
+ * preapproval is still the one being charged — and if the customer then
+ * abandons MercadoPago's authorization page, it would stay unpublished.
+ *
+ * A domain whose price is not derivable from its plan (`addon`, which borrows a
+ * plan's price row and states its real amount as an override) refuses with
+ * `DOMAIN_NOT_REPLACEABLE` rather than minting at the borrowed price.
+ *
  * ## Idempotency
  *
  * Two independent layers, matching the two idempotency patterns that already
@@ -86,6 +113,13 @@ import { apiLogger } from '../../utils/logger.js';
 import { OWN_PREAPPROVAL_REUSE_WINDOW_MS } from './checkout-idempotency.js';
 import { createPaidSubscription } from './paid-subscription-create.js';
 import { resolveReactivationPlan } from './reactivation-plan-guard.js';
+import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
+import {
+    domainMetadataForCarryForward,
+    resolveSubscriptionDomainCarryForward,
+    type SubscriptionDomainCarryForward,
+    SubscriptionDomainCarryForwardError
+} from './subscription-domain-carry-forward.js';
 
 /**
  * Metadata key stamped `'true'` on the NEW subscription row, read back by
@@ -122,6 +156,23 @@ export interface PastDueSubscriptionForReplacement {
     readonly id: string;
     /** `billing_subscriptions.plan_id` — the plan to mint the replacement against. */
     readonly planId: string;
+    /**
+     * `billing_subscriptions.product_domain` of the past-due row. REQUIRED, and
+     * required together with {@link metadata} (HOS-1287): a replacement that
+     * does not know which vertical it is replacing cannot carry that vertical's
+     * entity pointer, and the compiler asking every call site for it is what
+     * stops the next one from omitting it silently.
+     *
+     * `null` is accepted and means accommodation — the column post-dates most
+     * rows, so absence fails OPEN there exactly as `subscriptionMatchesDomain`
+     * documents.
+     */
+    readonly productDomain: string | null;
+    /**
+     * `billing_subscriptions.metadata` of the past-due row — where the commerce
+     * / partner entity pointer was stamped at checkout. See {@link productDomain}.
+     */
+    readonly metadata: unknown;
 }
 
 /** Input for {@link replacePastDuePaymentMethod}. */
@@ -219,7 +270,10 @@ async function findReusableReplacementAttempt(input: {
  * @throws SubscriptionCheckoutError From {@link resolveReactivationPlan}
  *   (`PLAN_NOT_FOUND`, `ANNUAL_REACTIVATION_UNSUPPORTED`,
  *   `INVALID_REACTIVATION_PLAN`) or {@link createPaidSubscription}
- *   (`MISSING_INIT_POINT`, `MISSING_PROVIDER_SUBSCRIPTION_ID`).
+ *   (`MISSING_INIT_POINT`, `MISSING_PROVIDER_SUBSCRIPTION_ID`); and
+ *   `DOMAIN_NOT_REPLACEABLE` (HOS-1287, → 422) when the past-due row's product
+ *   domain cannot be carried onto a fresh preapproval — see the module JSDoc's
+ *   "the listing pointer" section.
  */
 export async function replacePastDuePaymentMethod(
     input: ReplacePastDuePaymentMethodInput
@@ -245,6 +299,24 @@ export async function replacePastDuePaymentMethod(
         return { ...reusable, reused: true };
     }
 
+    // HOS-1287: which vertical is being replaced, and where its listing is.
+    // Resolved BEFORE anything is minted, so a domain this flow cannot
+    // faithfully reproduce refuses instead of minting a preapproval that would
+    // then have to be cleaned up.
+    let carryForward: SubscriptionDomainCarryForward;
+    try {
+        carryForward = resolveSubscriptionDomainCarryForward({
+            productDomain: pastDueSubscription.productDomain,
+            metadata: pastDueSubscription.metadata,
+            context: `HOS-348 replacement: subscription ${pastDueSubscription.id}`
+        });
+    } catch (error) {
+        if (error instanceof SubscriptionDomainCarryForwardError) {
+            throw new SubscriptionCheckoutError('DOMAIN_NOT_REPLACEABLE', error.message);
+        }
+        throw error;
+    }
+
     // "Fix my card for my current plan", not a plan change — the plan is
     // always the past-due row's own, never caller-supplied.
     const { plan, priceId } = await resolveReactivationPlan({
@@ -265,6 +337,13 @@ export async function replacePastDuePaymentMethod(
             [PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY]: 'true',
             replacedAt: new Date().toISOString(),
             previousPlanId: pastDueSubscription.planId,
+            // HOS-1287: the SUBSCRIPTION → ENTITY pointer, carried onto the
+            // replacement row. The pointer ONLY — no bridge-row write here, see
+            // the module JSDoc's "the listing pointer" section for why writing
+            // one at mint time would unpublish a listing that is still being
+            // paid for under the old preapproval. Empty for a domain that owns
+            // no listing (accommodation, tourist).
+            ...domainMetadataForCarryForward(carryForward),
             // HOS-348 (owner decision, 2026-09-02): the unpaid period on the
             // superseded past-due subscription is deliberately NOT charged
             // through this new preapproval and is NOT tracked as a debt to

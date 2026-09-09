@@ -32,7 +32,6 @@
 import { EntitlementKey, isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
-    accommodations,
     and,
     asc,
     billingAddonPurchases,
@@ -40,7 +39,6 @@ import {
     billingSubscriptionEvents,
     billingSubscriptions,
     eq,
-    featuredListingAddonGrants,
     getDb,
     inArray,
     isNull,
@@ -50,7 +48,7 @@ import { NotificationType } from '@repo/notifications';
 import {
     AddonCatalogService,
     BILLING_EVENT_TYPES,
-    syncFeaturedByEntitlementForAccommodation
+    getFeaturedAddonGrantTarget
 } from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
 import * as Sentry from '@sentry/node';
@@ -61,6 +59,7 @@ import { AddonEntitlementService } from '../../services/addon-entitlement.servic
 import { AddonExpirationService } from '../../services/addon-expiration.service.js';
 import { revokeAddonForSubscriptionCancellation } from '../../services/addon-lifecycle.service.js';
 import { closeAddonPreapproval } from '../../services/addon-preapproval-cancel.js';
+import { syncFeaturedForGrantTarget } from '../../services/featured-listing-sync.js';
 import { resolveRecipientLocale } from '../../services/notification-recipient-locale.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -370,7 +369,7 @@ export const addonExpiryJob: CronJobDefinition = {
                                     // FEATURED_LISTING and is linked to a target
                                     // accommodation (T-007), clear featuredByEntitlement
                                     // on that accommodation now that the grant expired.
-                                    // syncFeaturedByEntitlementForAccommodation (T-005)
+                                    // the accommodation primitive (T-005)
                                     // internally no-ops if the owner's plan still grants
                                     // FEATURED_LISTING independently (H-1 mirror). Soft-fail
                                     // — the whole check (including the entitlement-key
@@ -387,41 +386,21 @@ export const addonExpiryJob: CronJobDefinition = {
                                             );
 
                                         if (grantedFeaturedListing) {
-                                            const db = getDb();
-                                            const [grantLink] = await db
-                                                .select({
-                                                    accommodationId:
-                                                        featuredListingAddonGrants.accommodationId
-                                                })
-                                                .from(featuredListingAddonGrants)
-                                                .where(
-                                                    eq(
-                                                        featuredListingAddonGrants.purchaseId,
-                                                        addon.id
-                                                    )
-                                                );
+                                            // HOS-1286: the grant carries its own
+                                            // vertical, so the clear dispatches to
+                                            // whichever listing table it names —
+                                            // shared with the entitlement-grant path
+                                            // so the two cannot drift.
+                                            const target = await getFeaturedAddonGrantTarget({
+                                                purchaseId: addon.id
+                                            });
 
-                                            if (grantLink) {
-                                                const [accommodation] = await db
-                                                    .select({ ownerId: accommodations.ownerId })
-                                                    .from(accommodations)
-                                                    .where(
-                                                        eq(
-                                                            accommodations.id,
-                                                            grantLink.accommodationId
-                                                        )
-                                                    );
-
-                                                if (accommodation) {
-                                                    await syncFeaturedByEntitlementForAccommodation(
-                                                        {
-                                                            accommodationId:
-                                                                grantLink.accommodationId,
-                                                            active: false,
-                                                            ownerId: accommodation.ownerId
-                                                        }
-                                                    );
-                                                }
+                                            if (target) {
+                                                await syncFeaturedForGrantTarget({
+                                                    entityType: target.entityType,
+                                                    entityId: target.entityId,
+                                                    active: false
+                                                });
                                             }
                                         }
                                     } catch (syncError) {

@@ -44,9 +44,26 @@ export const PurchaseAddonSchema = z.object({
         .max(50, { message: 'validation.billing.addon.purchase.promoCode.max' })
         .optional(),
     /**
-     * The accommodation this purchase targets (SPEC-309 OQ-3). Required when
-     * the addon's `requiresAccommodationTarget` flag is true (e.g.
-     * `visibility-boost-7d`/`-30d`); ignored for all other addons.
+     * The LISTING this purchase targets (SPEC-309 OQ-3, generalised to the three
+     * verticals by HOS-1286). Required when the addon's
+     * `requiresAccommodationTarget` flag is true (the six `visibility-boost-*`
+     * entries); ignored for all other addons.
+     *
+     * Only the id is accepted. WHICH table it belongs to is derived server-side
+     * from the addon's own `productDomain` — a client that could name the
+     * vertical could pair a gastronomy addon with an accommodation target.
+     *
+     * Validated with `AccommodationIdSchema` because all three listing tables use
+     * `uuid` primary keys and that schema is a UUID check; existence and
+     * ownership are settled by `resolveAddonTargetListing` against the right
+     * table, which is where they belong.
+     */
+    entityId: AccommodationIdSchema.optional(),
+    /**
+     * @deprecated Since HOS-1286 — send {@link entityId} instead.
+     *
+     * Accepted for one release so a client built before the change keeps
+     * working. The server reads `entityId` first and falls back to this.
      */
     accommodationId: AccommodationIdSchema.optional()
 });

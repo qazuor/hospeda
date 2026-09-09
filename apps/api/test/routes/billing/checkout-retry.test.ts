@@ -235,6 +235,41 @@ describe('handleCheckoutRetry', () => {
         expect(result.checkoutUrl).not.toBe('https://mp.test/checkout/old');
     });
 
+    it('HOS-1287: forwards a gastronomy row’s productDomain AND its entity pointer to the recovery service', async () => {
+        // The PRODUCER half of the commerce retry. The service can only carry
+        // the vertical forward if the route hands it both the domain column and
+        // the metadata the pointer lives on — a service test that builds the
+        // input by hand cannot see this half go missing.
+        mockRow(
+            baseRow({
+                productDomain: 'gastronomy',
+                metadata: {
+                    checkoutUrl: 'https://mp.test/checkout/old',
+                    commerceEntityType: 'gastronomy',
+                    commerceEntityId: 'entity-gastro-001'
+                }
+            })
+        );
+        mockRetrieve.mockResolvedValue({ status: 'canceled' });
+        mockClassifyPreapprovalStatus.mockReturnValue('cancelled');
+        mockRecoverCancelledPreapproval.mockResolvedValue({
+            kind: 'minted',
+            localSubscriptionId: 'sub-new',
+            checkoutUrl: 'https://mp.test/checkout/fresh'
+        });
+        const ctx = createMockContext();
+
+        await handleCheckoutRetry(ctx as never, { localId: LOCAL_SUB_ID });
+
+        const forwarded = mockRecoverCancelledPreapproval.mock.calls[0]?.[0] as {
+            localSubscription: { productDomain?: unknown; metadata?: unknown };
+        };
+        expect(forwarded.localSubscription.productDomain).toBe('gastronomy');
+        expect(
+            (forwarded.localSubscription.metadata as Record<string, unknown>).commerceEntityId
+        ).toBe('entity-gastro-001');
+    });
+
     // R-4 (adversarial review): the deferred re-read inside
     // recoverCancelledPreapproval sometimes finds the preapproval
     // RESURRECTED (spec R-3: six preapprovals read `cancelled` on the PUT

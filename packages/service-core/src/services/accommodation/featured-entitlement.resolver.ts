@@ -30,18 +30,19 @@ import { ENTITLEMENT_GRANTING_STATUSES, EntitlementKey } from '@repo/billing';
 import {
     accommodations,
     and,
-    billingAddonPurchases,
     billingCustomers,
     billingPlans,
     billingSubscriptions,
     eq,
-    featuredListingAddonGrants,
     getDb,
-    gt,
     inArray,
-    isNull,
-    or
+    isNull
 } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
+import {
+    getEntityIdsWithActiveFeaturedAddon,
+    resolveEntityHasActiveFeaturedAddon
+} from '../billing/featured/featured-addon-grant.resolver.js';
 import { isAccommodationSubscription } from '../billing/subscription/subscription-product-domain.js';
 
 /**
@@ -170,28 +171,14 @@ export interface ResolveAccommodationHasActiveFeaturedAddonInput {
 export async function resolveAccommodationHasActiveFeaturedAddon(
     input: ResolveAccommodationHasActiveFeaturedAddonInput
 ): Promise<boolean> {
-    const db = getDb();
-
-    const [grant] = await db
-        .select({ id: featuredListingAddonGrants.id })
-        .from(featuredListingAddonGrants)
-        .innerJoin(
-            billingAddonPurchases,
-            eq(featuredListingAddonGrants.purchaseId, billingAddonPurchases.id)
-        )
-        .where(
-            and(
-                eq(featuredListingAddonGrants.accommodationId, input.accommodationId),
-                eq(billingAddonPurchases.status, 'active'),
-                or(
-                    isNull(billingAddonPurchases.expiresAt),
-                    gt(billingAddonPurchases.expiresAt, new Date())
-                )
-            )
-        )
-        .limit(1);
-
-    return Boolean(grant);
+    // HOS-1286: delegates rather than querying. The grant table is polymorphic
+    // now, so the `entity_type = 'accommodation'` filter is what keeps a
+    // gastronomy grant from answering an accommodation question — and that
+    // filter lives in exactly one module.
+    return resolveEntityHasActiveFeaturedAddon({
+        entityType: ProductDomainEnum.ACCOMMODATION,
+        entityId: input.accommodationId
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -224,28 +211,19 @@ export async function getOwnerAccommodationIdsWithActiveFeaturedAddon(
 ): Promise<string[]> {
     const db = getDb();
 
+    // HOS-1286: the owner join stays here — it is accommodation-specific, since
+    // only this vertical resolves its listings from `owner_id`. What moved is
+    // the grant-liveness read, so the `entity_type` filter cannot be forgotten
+    // on one of the two paths. The join to `accommodations` is ALSO what makes
+    // this correct on a polymorphic table: an id belonging to another vertical
+    // cannot survive it, even before the type filter narrows the grants.
     const rows = await db
-        .select({ accommodationId: featuredListingAddonGrants.accommodationId })
-        .from(featuredListingAddonGrants)
-        .innerJoin(
-            billingAddonPurchases,
-            eq(featuredListingAddonGrants.purchaseId, billingAddonPurchases.id)
-        )
-        .innerJoin(
-            accommodations,
-            eq(featuredListingAddonGrants.accommodationId, accommodations.id)
-        )
-        .where(
-            and(
-                eq(accommodations.ownerId, input.ownerId),
-                isNull(accommodations.deletedAt),
-                eq(billingAddonPurchases.status, 'active'),
-                or(
-                    isNull(billingAddonPurchases.expiresAt),
-                    gt(billingAddonPurchases.expiresAt, new Date())
-                )
-            )
-        );
+        .select({ id: accommodations.id })
+        .from(accommodations)
+        .where(and(eq(accommodations.ownerId, input.ownerId), isNull(accommodations.deletedAt)));
 
-    return rows.map((r) => r.accommodationId);
+    return getEntityIdsWithActiveFeaturedAddon({
+        entityType: ProductDomainEnum.ACCOMMODATION,
+        entityIds: rows.map((row) => row.id)
+    });
 }

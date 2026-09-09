@@ -208,6 +208,11 @@ export const purchaseAddonRoute = createProtectedRoute({
             addonSlug: params.slug as string,
             promoCode: body.promoCode as string | undefined,
             userId: actor.id,
+            // HOS-1286: `entityId` is canonical; `accommodationId` is the
+            // deprecated alias a pre-change client still sends. Both are
+            // forwarded and `resolveAddonTargetId` picks the winner, so the
+            // fallback lives in one place rather than at each reader.
+            entityId: body.entityId as string | undefined,
             accommodationId: body.accommodationId as string | undefined,
             successUrl: buildAddonSuccessUrl(locale, params.slug as string),
             cancelUrl: buildAddonCancelUrl(locale, params.slug as string),

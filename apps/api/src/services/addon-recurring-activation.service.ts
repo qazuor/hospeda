@@ -35,6 +35,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { type FeaturableEntityType, resolveFeaturableEntityType } from '@repo/service-core';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
 import {
@@ -206,23 +207,29 @@ async function syncAddonSubscriptionRowToActive(params: {
  * Soft-fail: the purchase is already active and the entitlement already granted.
  *
  * @param params.purchaseId - The activated purchase.
- * @param params.accommodationId - Target read from the purchase metadata.
+ * @param params.entityType - Vertical the target belongs to, derived (HOS-1286)
+ *   from the add-on's own `productDomain` — never read off metadata.
+ * @param params.entityId - Target listing read from the purchase metadata.
  */
 async function linkFeaturedGrantBestEffort(params: {
     readonly purchaseId: string;
-    readonly accommodationId: string;
+    readonly entityType: FeaturableEntityType;
+    readonly entityId: string;
 }): Promise<void> {
     try {
         const { getDb } = await import('@repo/db');
         const { featuredListingAddonGrants } = await import('@repo/db/schemas/billing');
-        await getDb()
-            .insert(featuredListingAddonGrants)
-            .values({ purchaseId: params.purchaseId, accommodationId: params.accommodationId });
+        await getDb().insert(featuredListingAddonGrants).values({
+            purchaseId: params.purchaseId,
+            entityType: params.entityType,
+            entityId: params.entityId
+        });
     } catch (error) {
         apiLogger.error(
             {
                 purchaseId: params.purchaseId,
-                accommodationId: params.accommodationId,
+                entityType: params.entityType,
+                entityId: params.entityId,
                 error: error instanceof Error ? error.message : String(error)
             },
             'HOS-847: failed to write featured_listing_addon_grants row for a recurring add-on activation'
@@ -474,13 +481,29 @@ export async function activateRecurringAddonPurchase(
     // (both `requiresAccommodationTarget` add-ons are one-time), so the ORDER is
     // the whole of what is being fixed here.
     if (addon.requiresAccommodationTarget) {
-        const accommodationId = purchase.metadata?.accommodationId;
-        if (typeof accommodationId === 'string' && accommodationId.length > 0) {
-            await linkFeaturedGrantBestEffort({ purchaseId: purchase.id, accommodationId });
+        // HOS-1286: `entityId` is the canonical metadata key; `accommodationId` is
+        // the pre-HOS-1286 name kept for one release so a purchase created before
+        // the deploy still resolves its target.
+        const rawTargetId = purchase.metadata?.entityId ?? purchase.metadata?.accommodationId;
+        // The vertical comes from the add-on, not the metadata — the add-on cannot
+        // disagree with itself, and a forged/stale type field could.
+        const entityType = resolveFeaturableEntityType({ productDomain: addon.productDomain });
+        if (typeof rawTargetId === 'string' && rawTargetId.length > 0 && entityType) {
+            await linkFeaturedGrantBestEffort({
+                purchaseId: purchase.id,
+                entityType,
+                entityId: rawTargetId
+            });
         } else {
             apiLogger.error(
-                { purchaseId: purchase.id, addonSlug: purchase.addonSlug, triggerSource },
-                'HOS-847: target-required recurring add-on activated with no accommodationId in its purchase metadata; featured_listing_addon_grants row NOT written',
+                {
+                    purchaseId: purchase.id,
+                    addonSlug: purchase.addonSlug,
+                    triggerSource,
+                    hasTargetId: typeof rawTargetId === 'string' && rawTargetId.length > 0,
+                    resolvedEntityType: entityType ?? null
+                },
+                'HOS-847: target-required recurring add-on activated with no resolvable target (missing listing id in purchase metadata, or the add-on declares no vertical that owns listings); featured_listing_addon_grants row NOT written',
                 { capture: true }
             );
         }

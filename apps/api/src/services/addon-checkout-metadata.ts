@@ -68,10 +68,25 @@
  */
 export type AddonCheckoutMetadata = {
     /**
-     * Target accommodation for a `requiresAccommodationTarget` add-on
-     * (SPEC-309 / HOS-675). Drives the `featured_listing_addon_grants` write.
+     * Target LISTING for a `requiresAccommodationTarget` add-on
+     * (SPEC-309 / HOS-675, generalised to the three verticals by HOS-1286).
+     * Drives the `featured_listing_addon_grants` write.
+     *
+     * The key name is accommodation-era and the VALUE may now be a gastronomy
+     * or experience id. It was not renamed because a checkout created before
+     * HOS-1286 stored the target under this exact key, and its payer can come
+     * back after the deploy — a rename would drop their target silently, which
+     * is HOS-675's failure repeated. Which table the id belongs to is never read
+     * from here: `confirmAddonPurchase` derives it from the add-on's own
+     * `productDomain`.
      */
     readonly accommodationId?: string;
+    /**
+     * Canonical alias of {@link accommodationId} (HOS-1286), forwarded when a
+     * checkout writes it. Read FIRST by the confirm path; the two are the same
+     * field under two names during the deprecation window.
+     */
+    readonly entityId?: string;
     /** UUID of the redeemed `billing_promo_codes` row. */
     readonly promoCodeId?: string;
     /** Human-facing promo code as typed by the customer (logging only). */
@@ -286,12 +301,14 @@ export function normalizeAddonCheckoutMetadata({
     const meta = normalizeMercadoPagoMetadata({ metadata });
 
     const accommodationId = toOptionalString(meta.accommodationId);
+    const entityId = toOptionalString(meta.entityId);
     const promoCodeId = toOptionalString(meta.promoCodeId);
     const promoCode = toOptionalString(meta.promoCode);
     const discountAmount = parseMetadataNumber({ value: meta.discountAmount });
 
     return {
         ...(accommodationId === undefined ? {} : { accommodationId }),
+        ...(entityId === undefined ? {} : { entityId }),
         ...(promoCodeId === undefined ? {} : { promoCodeId }),
         ...(promoCode === undefined ? {} : { promoCode }),
         ...(discountAmount === undefined ? {} : { discountAmount })

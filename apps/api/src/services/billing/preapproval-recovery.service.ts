@@ -55,6 +55,12 @@ import type {
     PendingTrialExtension
 } from './pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from './plan-change-reason.js';
+import {
+    domainMetadataForCarryForward,
+    resolveSubscriptionDomainCarryForward,
+    type SubscriptionDomainCarryForward,
+    writeCarryForwardBridgeRow
+} from './subscription-domain-carry-forward.js';
 
 /**
  * Minimum spacing (ms) between two calls to MercadoPago's preapproval `GET`
@@ -272,15 +278,42 @@ export interface RecoverableSubscriptionRow {
 }
 
 /**
- * Product domains {@link mintRetryPreapprovalAttempt} currently supports.
- * `undefined`/`null` covers accommodation monthly/annual (the column's own
- * DB default). Commerce/partner retries need their bridge-row write
- * (`writeDomainLinkRow` — see `own-preapproval-subscription-create.ts`),
- * which requires re-resolving the commerce/partner entity pointer this
- * module does not have; deliberately out of scope for this change (reported
- * as a known limitation, not silently unsupported).
+ * Extra `createOwnPreapprovalSubscription` input a retry needs to reproduce the
+ * cancelled row's DOMAIN identity, derived from its resolved carry-forward.
+ *
+ * HOS-1287: this replaces a one-element allowlist
+ * (`RETRY_SUPPORTED_PRODUCT_DOMAINS = new Set(['accommodation'])`) that
+ * answered 422 for every commerce and partner checkout. That allowlist was
+ * honest about being a limitation rather than silent about it, but the pointer
+ * it said the module "does not have" was in fact already stamped on the
+ * cancelled row's own `metadata` at checkout time
+ * (`subscription-domain-metadata.ts`) — so the bridge-row write it was waiting
+ * for is a read away, not a redesign.
+ *
+ * A `'no-bridge'` domain (accommodation, tourist) contributes nothing here on
+ * purpose, including no `productDomain`: it re-subscribes against the SAME plan
+ * as the row it retries, so `createPaidSubscription`'s own plan-domain
+ * resolution (HOS-1233 T-032) already lands the correct value.
  */
-const RETRY_SUPPORTED_PRODUCT_DOMAINS: ReadonlySet<string> = new Set(['accommodation']);
+function retryDomainInput(carryForward: SubscriptionDomainCarryForward): {
+    readonly productDomain?: string;
+    readonly domainMetadata?: Readonly<Record<string, string>>;
+    readonly writeDomainLinkRow?: (params: {
+        readonly tx: DrizzleClient;
+        readonly localSubscriptionId: string;
+    }) => Promise<void>;
+} {
+    if (carryForward.kind === 'no-bridge') {
+        return {};
+    }
+
+    return {
+        productDomain: carryForward.productDomain,
+        domainMetadata: domainMetadataForCarryForward(carryForward),
+        writeDomainLinkRow: async ({ tx, localSubscriptionId }) =>
+            writeCarryForwardBridgeRow({ tx, localSubscriptionId, carryForward })
+    };
+}
 
 /** Input for {@link mintRetryPreapprovalAttempt}. */
 export interface MintRetryPreapprovalAttemptInput {
@@ -323,9 +356,27 @@ export interface MintRetryPreapprovalAttemptResult {
  * was redeemed yet) — if THIS attempt converts, the webhook redeems it same
  * as any first attempt.
  *
- * @throws Error When `productDomain` is not (yet) supported, or the row is
- *   missing data this recovery needs (`mpPreapprovalPlanId`, the plan, or a
- *   matching price) — see {@link RETRY_SUPPORTED_PRODUCT_DOMAINS}.
+ * HOS-1287: works for every listing-owning vertical, not accommodation alone.
+ * A gastronomy/experience/partner row's entity pointer is recovered from its
+ * own `metadata` (`resolveSubscriptionDomainCarryForward`) and the fresh
+ * attempt re-points the bridge row in the SAME transaction — the identical
+ * upsert the checkout performs on a second click. That the SOURCE row (the
+ * `cancelled` attempt) never entitled anything says nothing about who
+ * currently OCCUPIES the bridge row it is about to re-point: a later checkout
+ * for the same listing may since have gone on to activate, in which case the
+ * row already belongs to that live, paying subscription.
+ * {@link writeCarryForwardBridgeRow} guards exactly that — reading the
+ * incumbent before writing and refusing to steal the row from a publishing
+ * subscription — so this path is safe by that guard, not by the source row's
+ * own history.
+ *
+ * @throws SubscriptionDomainCarryForwardError When the row's `productDomain`
+ *   is one no mint can faithfully reproduce (`addon`, the retired umbrella
+ *   value, anything unrecognized), when a listing-owning domain's entity
+ *   pointer is missing or disagrees with the column, or when the bridge row
+ *   is currently held by another, still-publishing subscription.
+ * @throws Error When the row is missing data this recovery needs
+ *   (`mpPreapprovalPlanId`, the plan, or a matching price).
  */
 export async function mintRetryPreapprovalAttempt({
     billing,
@@ -334,12 +385,11 @@ export async function mintRetryPreapprovalAttempt({
     notificationUrl,
     db
 }: MintRetryPreapprovalAttemptInput): Promise<MintRetryPreapprovalAttemptResult> {
-    const domain = localSubscription.productDomain ?? 'accommodation';
-    if (!RETRY_SUPPORTED_PRODUCT_DOMAINS.has(domain)) {
-        throw new Error(
-            `HOS-937 retry: minting a fresh preapproval is not yet supported for productDomain='${domain}'`
-        );
-    }
+    const carryForward = resolveSubscriptionDomainCarryForward({
+        productDomain: localSubscription.productDomain ?? null,
+        metadata: localSubscription.metadata,
+        context: `HOS-937 retry: subscription ${localSubscription.id}`
+    });
 
     const metadata = (localSubscription.metadata ?? {}) as Record<string, unknown>;
     const mpPreapprovalPlanId =
@@ -378,13 +428,15 @@ export async function mintRetryPreapprovalAttempt({
         // MercadoPago answers with "card_token_id is required" — the retry
         // reproduced the checkout's own 500 for the same reason.
         mpPreapprovalPlanId,
-        // ZERO, stated (HOS-1221 D3). This retry is accommodation-only
-        // (`RETRY_SUPPORTED_PRODUCT_DOMAINS`), i.e. exactly the domain whose
-        // monthly price rows carry `trial_days = 30`. Omitted, qzpay-core
-        // inherits that 30 and the fresh row is born claiming a month of free
-        // days on a card MercadoPago charges on day 1 — the same phantom trial
-        // the four checkouts had. A retry re-opens a PAID checkout; it never
-        // re-opens a trial.
+        // ZERO, stated (HOS-1221 D3). The accommodation and tourist monthly
+        // price rows carry `trial_days = 30`; omitted, qzpay-core inherits that
+        // 30 and the fresh row is born claiming a month of free days on a card
+        // MercadoPago charges on day 1 — the same phantom trial the four
+        // checkouts had. The zero is stated for every domain, not only those:
+        // HOS-1287 widened this retry past accommodation, and the commerce /
+        // partner price rows are exactly where somebody mirrors a plan's
+        // declared `trialDays` next. A retry re-opens a PAID checkout; it never
+        // re-opens a trial, in any vertical.
         trialDays: 0,
         // HOS-1221 D4: the buyer-visible name, not `plan.name` (the slug) —
         // this retry sends the payer to a fresh MercadoPago page, so it reads
@@ -405,6 +457,11 @@ export async function mintRetryPreapprovalAttempt({
             : {}),
         ...(pendingDiscount ? { pendingDiscount } : {}),
         ...(pendingTrialExtension ? { pendingTrialExtension } : {}),
+        // HOS-1287: `productDomain` + `domainMetadata` + `writeDomainLinkRow`
+        // for a listing-owning vertical, nothing at all for accommodation and
+        // tourist. Spread LAST so the domain identity is unmistakably the
+        // resolved one and cannot be shadowed by an earlier field.
+        ...retryDomainInput(carryForward),
         ...(db ? { db } : {})
     });
 

@@ -62,6 +62,17 @@ export type SubscriptionCheckoutErrorCode =
     // `transaction_amount` of 0 outright (previously surfaced as a bare 502
     // `MP_PLAN_PROVISIONING_FAILED` instead of a clear validation error).
     | 'PLAN_NOT_PURCHASABLE'
+    // HOS-1287: `replacePastDuePaymentMethod` cannot carry the past-due row's
+    // product domain onto the fresh preapproval it is about to mint — the
+    // domain is one no mint reproduces faithfully (`addon`, whose real price is
+    // an override on a BORROWED plan's price row; the retired pre-HOS-685
+    // umbrella value; anything unrecognized), or a listing-owning row's entity
+    // pointer is missing or disagrees with its own domain column. A well-formed
+    // request against a real row whose state this flow cannot process -> 422,
+    // same family as `PLAN_NOT_PURCHASABLE`. Deliberately an ERROR rather than
+    // a silent best effort: minting anyway is what left a paying commerce
+    // customer with a dark listing and nothing in the logs.
+    | 'DOMAIN_NOT_REPLACEABLE'
     // HOS-114 T-004: the reactivation plan-resolution guard rejects a
     // monthly reactivation request (`billingInterval` omitted or `'monthly'`)
     // against a plan with no active monthly price (e.g. an annual-only

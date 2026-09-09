@@ -76,6 +76,9 @@ function makeAddon(overrides: Partial<AddonCardData> & { slug: string }): AddonC
         isActive: true,
         sortOrder: 1,
         requiresAccommodationTarget: false,
+        // HOS-1286: the real API always declares this, and the panel reads it to
+        // pick which vertical's listings the target selector offers.
+        productDomain: 'accommodation',
         ...overrides
     };
 }
@@ -110,7 +113,7 @@ function renderPanel(focusSlug?: string | null) {
             locale="es"
             addons={CATALOG}
             ownedAddonSlugs={[]}
-            accommodations={ACCOMMODATIONS}
+            targetListingsByDomain={{ accommodation: ACCOMMODATIONS }}
             focusSlug={focusSlug}
         />
     );

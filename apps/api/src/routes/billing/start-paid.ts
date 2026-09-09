@@ -31,7 +31,11 @@
  */
 
 import { AnalyticsEvents } from '@repo/analytics';
-import { isEntitlementGrantingStatus, TEST_DAILY_PLAN } from '@repo/billing';
+import {
+    isEntitlementGrantingStatus,
+    isLiveSubscriptionStatus,
+    TEST_DAILY_PLAN
+} from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
     ServiceErrorCode,
@@ -190,28 +194,36 @@ export const handleStartPaidSubscription = async (
         const existingSubscriptions =
             await hydrateSubscriptionProductDomains(rawExistingSubscriptions);
 
-        // SPEC-262 H2: block checkout when the customer already has ANY active
-        // ACCOMMODATION subscription (active, trialing, OR comp). Creating a second
-        // subscription on top of an existing one causes ambiguous entitlements —
-        // two subs for the same customer, neither clearly dominant.
+        // SPEC-262 H2: block checkout when the customer already has ANY live
+        // ACCOMMODATION subscription (active, trialing, comp, OR past_due).
+        // Creating a second subscription on top of an existing one causes
+        // ambiguous entitlements — two subs for the same customer, neither
+        // clearly dominant.
         // Comp subs are perpetual (100-year far-future) so the user cannot "wait
         // them out" like a soft-cancel; they should contact support.
         // SPEC-239 isolation: filter to accommodation-domain subs FIRST using the
         // same predicate as the entitlement middleware, so a customer with an active
         // COMMERCE subscription is never wrongly blocked here.
-        const hasActiveAccommodationSub = existingSubscriptions.some((sub) => {
+        // HOS-1273: past_due is included via `isLiveSubscriptionStatus`, not the
+        // narrower `isEntitlementGrantingStatus`. A past-due preapproval is
+        // mid-dunning at the provider, not gone — without this the commerce route
+        // (`routes/commerce/protected/start-subscription.ts`) already refused a
+        // second checkout for a past-due listing while this one did not, so a
+        // moroso host could open a SECOND preapproval on top of the one they
+        // already owe. Unifying on the same widened predicate is the fix; see
+        // that module's docblock (HOS-1275) for why the two sets differ.
+        const hasLiveAccommodationSub = existingSubscriptions.some((sub) => {
             if (!isAccommodationSubscription(sub)) return false;
             // A soft-cancelled sub (cancelAtPeriodEnd=true) is intentionally NOT
             // caught here — the dedicated SPEC-147 guard below handles it with the
             // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
             // perpetual (no cancelAtPeriodEnd) so they still match.
             if (sub.cancelAtPeriodEnd === true) return false;
-            // HOS-239: canonical entitlement-granting status set (active |
-            // trialing | comp). Takes a string; QZPay's union excludes the
-            // Hospeda-specific 'comp', hence the widening cast.
-            return isEntitlementGrantingStatus(sub.status as string);
+            // Takes a string; QZPay's union excludes the Hospeda-specific
+            // 'comp', hence the widening cast.
+            return isLiveSubscriptionStatus(sub.status as string);
         });
-        if (hasActiveAccommodationSub) {
+        if (hasLiveAccommodationSub) {
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'You already have an active subscription. To change your plan, use the plan-change endpoint.',

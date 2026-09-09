@@ -1134,6 +1134,20 @@ export function createDbMock() {
             updatedAt: 'updated_at'
         },
         ENTITY_SUBSCRIPTION_STATUS_NONE: 'none',
+        // SPEC-271: the partner half of the same bridge, one row per partner
+        // (UNIQUE `partner_id`). Imported at module scope by
+        // `subscription-domain-carry-forward.ts` (HOS-1287), which every
+        // partner mint/retry path now goes through — without it the module
+        // resolves the table as `undefined` and the insert throws.
+        partnerSubscriptions: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            productDomain: 'product_domain',
+            partnerId: 'partner_id',
+            status: 'status',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        },
         billingPlans: {
             id: 'id',
             name: 'name',

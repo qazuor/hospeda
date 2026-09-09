@@ -22,22 +22,19 @@ import {
     type LimitKey
 } from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
-import {
-    accommodations,
-    billingAddonPurchases,
-    featuredListingAddonGrants
-} from '@repo/db/schemas';
+import { billingAddonPurchases } from '@repo/db/schemas';
 import type { ServiceResult } from '@repo/service-core';
 import {
     AddonCatalogService,
+    getFeaturedAddonGrantTarget,
     hydrateSubscriptionProductDomains,
     PlanService,
-    subscriptionMatchesDomain,
-    syncFeaturedByEntitlementForAccommodation
+    subscriptionMatchesDomain
 } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
+import { syncFeaturedForGrantTarget } from './featured-listing-sync';
 
 /**
  * Add-on entitlement adjustment tracking
@@ -224,25 +221,20 @@ export class AddonEntitlementService {
                 // reconcile cron (T-014) corrects any drift left behind.
                 try {
                     if (addon.grantsEntitlement === EntitlementKey.FEATURED_LISTING) {
-                        const db = getDb();
-                        const [grantLink] = await db
-                            .select({ accommodationId: featuredListingAddonGrants.accommodationId })
-                            .from(featuredListingAddonGrants)
-                            .where(eq(featuredListingAddonGrants.purchaseId, input.purchaseId));
+                        // HOS-1286: the grant row now says WHICH vertical it
+                        // points at, so this reads the target and dispatches
+                        // instead of assuming an accommodation. The dispatch
+                        // lives in one module shared with the expiry cron.
+                        const target = await getFeaturedAddonGrantTarget({
+                            purchaseId: input.purchaseId
+                        });
 
-                        if (grantLink) {
-                            const [accommodation] = await db
-                                .select({ ownerId: accommodations.ownerId })
-                                .from(accommodations)
-                                .where(eq(accommodations.id, grantLink.accommodationId));
-
-                            if (accommodation) {
-                                await syncFeaturedByEntitlementForAccommodation({
-                                    accommodationId: grantLink.accommodationId,
-                                    active: true,
-                                    ownerId: accommodation.ownerId
-                                });
-                            }
+                        if (target) {
+                            await syncFeaturedForGrantTarget({
+                                entityType: target.entityType,
+                                entityId: target.entityId,
+                                active: true
+                            });
                         }
                     }
                 } catch (syncError) {
