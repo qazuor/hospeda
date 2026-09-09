@@ -363,7 +363,12 @@ export function stripTrailingTypeAssertion(payload: string): string {
  */
 export function statesDomainUnconditionally(payload: string): boolean {
     if (!isInlineObjectLiteral(payload)) return false;
-    const body = payload.trim().slice(1, -1);
+    // Strip the same trailing `as <Type>` the literal test reads through.
+    // Without this the slice below removes the last character of the TYPE
+    // instead of the closing brace, and the body it scans is malformed — which
+    // only shows up when `productDomain` is not the first key, because an early
+    // match returns before the mangled tail is ever reached.
+    const body = stripTrailingTypeAssertion(payload).slice(1, -1);
 
     let depth = 0;
     for (let i = 0; i < body.length; i++) {
@@ -731,5 +736,26 @@ function main(): void {
 
 // Only run when invoked directly, so the unit test can import the predicates.
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) {
-    main();
+    try {
+        main();
+    } catch (error) {
+        // A thrown guard exits 1 with nothing on stdout, which reads in CI as
+        // "the invariant is violated" when it actually means "the check could
+        // not run". Those need different fixes, and telling them apart from a
+        // bare `Process completed with exit code 1` is not possible — the job
+        // log is not always retrievable. So name it.
+        console.error('');
+        console.error('ERROR: this guard could not COMPLETE — it did not find a violation.');
+        console.error('');
+        console.error(`  ${error instanceof Error ? error.message : String(error)}`);
+        if (error instanceof Error && error.stack) {
+            console.error('');
+            console.error(error.stack);
+        }
+        console.error('');
+        console.error(
+            '  Treat this as an inconclusive run, not a clean one and not a failing one.'
+        );
+        process.exit(1);
+    }
 }
