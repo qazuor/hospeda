@@ -107,8 +107,11 @@ function mockAuthenticated(): void {
  *
  * @param accommodationStatus - The wire status of the visitor's accommodation
  *   subscription, or `null` when they have none.
+ * @param cancelAtPeriodEnd - Whether that subscription is already scheduled to
+ *   end. A soft cancel keeps reporting `status: 'active'` on the wire until
+ *   `currentPeriodEnd`, so this is the only field that separates the pair.
  */
-function buildFetchMock(accommodationStatus: string | null) {
+function buildFetchMock(accommodationStatus: string | null, cancelAtPeriodEnd = false) {
     return vi.fn().mockImplementation((url: string) => {
         const href = String(url);
         const scoped = href.includes('productDomain=accommodation');
@@ -121,8 +124,8 @@ function buildFetchMock(accommodationStatus: string | null) {
                       status: accommodationStatus,
                       isComplimentary: false,
                       currentPeriodStart: null,
-                      currentPeriodEnd: null,
-                      cancelAtPeriodEnd: false,
+                      currentPeriodEnd: '2026-12-01T00:00:00.000Z',
+                      cancelAtPeriodEnd,
                       trialEndsAt: null,
                       monthlyPriceArs: 1800000
                   }
@@ -224,6 +227,38 @@ describe('PlanPurchaseButton — HOS-1233 AC-17/AC-18: the button stays enabled 
             expect(screen.getByTestId('plan-cta-button')).toBeEnabled();
         });
         expect(screen.queryByTestId('tourist-vip-already-held-note')).toBeNull();
+    });
+
+    it('a SOFT-CANCELLED subscription does not block the purchase', async () => {
+        // It reports `status: 'active'` on the wire until `currentPeriodEnd`,
+        // so reading the status alone disabled the button for a subscriber
+        // whose benefits end on a date that is already set. That is verbatim
+        // AC-17's position — holds them today, may not tomorrow — and R-7's
+        // harm: a claim that becomes false on a scheduled date.
+        vi.stubGlobal('fetch', buildFetchMock('active', true));
+
+        render(<PlanPurchaseButton {...touristProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('plan-cta-button')).toBeEnabled();
+        });
+        expect(screen.queryByTestId('tourist-vip-already-held-note')).toBeNull();
+        expect(screen.queryByText(HELD_CTA)).toBeNull();
+    });
+
+    it('the SAME fixture without the soft cancel DOES block it — the sibling of the above', async () => {
+        // One field apart. Without this, a selector typo or a broken fetch
+        // dispatcher would satisfy the negative above on its own.
+        vi.stubGlobal('fetch', buildFetchMock('active', false));
+
+        render(<PlanPurchaseButton {...touristProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('tourist-vip-already-held-note')).toHaveTextContent(
+                HELD_NOTE
+            );
+        });
+        expect(screen.getByTestId('plan-cta-button')).toBeDisabled();
     });
 });
 

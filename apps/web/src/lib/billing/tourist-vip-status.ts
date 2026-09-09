@@ -58,7 +58,15 @@ function readDomainSubscription(
         .getSubscription({ productDomain: domain })
         .then((result): SubscriptionStatusReading | null => {
             if (!result.ok || !result.data.subscription) return null;
-            return { status: result.data.subscription.status };
+            // `cancelAtPeriodEnd` is forwarded verbatim, never `?? false`: the
+            // wire field is required, so a missing one means the response is
+            // not what we think it is — and the predicate resolves an absent
+            // flag to "does not hold", which is the safe direction. A `?? false`
+            // here would convert that unknown into the claim "they hold it".
+            return {
+                status: result.data.subscription.status,
+                cancelAtPeriodEnd: result.data.subscription.cancelAtPeriodEnd
+            };
         })
         .catch(() => null);
 }
