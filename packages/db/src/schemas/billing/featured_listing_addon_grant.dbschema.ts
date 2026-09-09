@@ -98,14 +98,14 @@ export const featuredListingAddonGrants = pgTable(
          * two containers swapped.
          *
          * This branch's own code no longer reads or writes it — that is what
-         * makes THIS the release that "stops using it". `0122` widened the table
+         * makes THIS the release that "stops using it". `0123` widened the table
          * and copied every value into `entity_id`; the drop belongs to the next
          * release, once this one is actually deployed. The guide is explicit
          * that Release N must leave the TS schema alone so `db:generate` emits
          * no `DROP COLUMN`, which is why the property stays declared here rather
          * than being deleted with a stale snapshot behind it.
          *
-         * Nullable since `0122`, so nothing has to write it.
+         * Nullable since `0123`, so nothing has to write it.
          */
         accommodationId: uuid('accommodation_id'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

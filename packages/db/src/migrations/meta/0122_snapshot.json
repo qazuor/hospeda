@@ -1,5 +1,5 @@
 {
-  "id": "4eeffdf9-5aaa-4d43-986e-df44f94f817f",
+  "id": "346a529f-a8e1-4bb7-bfa2-76b89e2b0437",
   "prevId": "79e0e5fe-fc2e-420c-9f8d-974f5efda9e2",
   "version": "7",
   "dialect": "postgresql",
@@ -7305,23 +7305,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "entity_type": {
-          "name": "entity_type",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "entity_id": {
-          "name": "entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "accommodation_id": {
           "name": "accommodation_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -7354,17 +7342,11 @@
           "method": "btree",
           "with": {}
         },
-        "featuredListingAddonGrants_entity_idx": {
-          "name": "featuredListingAddonGrants_entity_idx",
+        "featuredListingAddonGrants_accommodationId_idx": {
+          "name": "featuredListingAddonGrants_accommodationId_idx",
           "columns": [
             {
-              "expression": "entity_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "entity_id",
+              "expression": "accommodation_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -7383,6 +7365,19 @@
           "tableTo": "billing_addon_purchases",
           "columnsFrom": [
             "purchase_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "featured_listing_addon_grants_accommodation_id_accommodations_id_fk": {
+          "name": "featured_listing_addon_grants_accommodation_id_accommodations_id_fk",
+          "tableFrom": "featured_listing_addon_grants",
+          "tableTo": "accommodations",
+          "columnsFrom": [
+            "accommodation_id"
           ],
           "columnsTo": [
             "id"
@@ -13508,13 +13503,6 @@
           "notNull": true,
           "default": false
         },
-        "featured_by_entitlement": {
-          "name": "featured_by_entitlement",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "reviews_count": {
           "name": "reviews_count",
           "type": "integer",
@@ -13610,21 +13598,6 @@
           "columns": [
             {
               "expression": "is_featured",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "experiences_featuredByEntitlement_idx": {
-          "name": "experiences_featuredByEntitlement_idx",
-          "columns": [
-            {
-              "expression": "featured_by_entitlement",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -14392,13 +14365,6 @@
           "notNull": true,
           "default": false
         },
-        "featured_by_entitlement": {
-          "name": "featured_by_entitlement",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "reviews_count": {
           "name": "reviews_count",
           "type": "integer",
@@ -14494,21 +14460,6 @@
           "columns": [
             {
               "expression": "is_featured",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "gastronomies_featuredByEntitlement_idx": {
-          "name": "gastronomies_featuredByEntitlement_idx",
-          "columns": [
-            {
-              "expression": "featured_by_entitlement",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -18967,6 +18918,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "payment_review_state": {
+          "name": "payment_review_state",
+          "type": "partner_payment_review_state_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_confirmed_through": {
+          "name": "payment_confirmed_through",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -19117,6 +19081,21 @@
           "columns": [
             {
               "expression": "content_review_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "partners_paymentReviewState_idx": {
+          "name": "partners_paymentReviewState_idx",
+          "columns": [
+            {
+              "expression": "payment_review_state",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -34109,6 +34088,13 @@
         "NEWSLETTER",
         "WHATSAPP",
         "OTHER"
+      ]
+    },
+    "public.partner_payment_review_state_enum": {
+      "name": "partner_payment_review_state_enum",
+      "schema": "public",
+      "values": [
+        "pending_confirmation"
       ]
     },
     "public.partner_subscription_status_enum": {

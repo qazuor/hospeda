@@ -50,6 +50,12 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // alert that reached nobody.
     [NotificationType.ADMIN_LEAD_RECEIVED]: NotificationCategory.ADMIN,
 
+    // Partner with no recorded payment (HOS-1299) - ops list, never the partner,
+    // and not opt-out-able for the same reason as the lead alert above: this is
+    // the only signal that a manual-payment partner needs a decision at all, and
+    // an operator who muted it would be muting the decision, not a notification.
+    [NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW]: NotificationCategory.ADMIN,
+
     // Feedback - Sent to admin notification list, not end-user
     [NotificationType.FEEDBACK_REPORT]: NotificationCategory.ADMIN,
 

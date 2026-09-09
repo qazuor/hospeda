@@ -47,6 +47,7 @@ export { notificationLogPurgeJob } from './notification-log-purge.job.js';
 export { notificationScheduleJob } from './notification-schedule.job.js';
 export { pageRevalidationJob } from './page-revalidation.job.js';
 export { partnerExpiryJob } from './partner-expiry.job.js';
+export { partnerPaymentReviewJob } from './partner-payment-review.job.js';
 export { partnerUnpaidReaperJob } from './partner-unpaid-reaper.job.js';
 export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';
 export { preapprovalLessExpiryJob } from './preapproval-less-expiry.job.js';

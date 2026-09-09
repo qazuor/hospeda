@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import {
+    PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS,
     PARTNER_REAPER_MANAGED_FIELDS,
     PARTNER_REVIEW_MANAGED_FIELDS,
     PARTNER_REVOKE_MANAGED_FIELDS,
@@ -25,6 +26,7 @@ export const createPartnerSchema = partnerSchema.omit({
     ...PARTNER_REVIEW_MANAGED_FIELDS,
     ...PARTNER_REVOKE_MANAGED_FIELDS,
     ...PARTNER_REAPER_MANAGED_FIELDS,
+    ...PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS,
     id: true,
     createdAt: true,
     updatedAt: true,

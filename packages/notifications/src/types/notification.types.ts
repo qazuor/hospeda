@@ -87,6 +87,19 @@ export enum NotificationType {
      * type exists to close.
      */
     ADMIN_LEAD_RECEIVED = 'admin_lead_received',
+    /**
+     * A partner is active with no record of payment for the current period, and
+     * an admin has to decide whether to take them down (HOS-1299).
+     *
+     * ADMIN category, like the lead alert above and for the same reason: it goes
+     * to the operations list and is not opt-out-able. What it is NOT is a
+     * notice of something already done — nothing changes state when this is
+     * sent. The owner's decision (2026-09-09) is that the two possible mistakes
+     * are asymmetric: leaving a non-payer published costs a month of product,
+     * cutting off somebody who paid costs the customer. So the system asks and
+     * waits, and this email is the asking.
+     */
+    ADMIN_PARTNER_PAYMENT_REVIEW = 'admin_partner_payment_review',
     FEEDBACK_REPORT = 'feedback_report',
     CONTACT_SUBMISSION = 'contact_submission',
     SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
@@ -1453,8 +1466,37 @@ export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
     readonly submittedAtLabel: string;
 }
 
+/**
+ * Payload for the ADMIN_PARTNER_PAYMENT_REVIEW notification (HOS-1299).
+ *
+ * The question, not a verdict. Sent by the `partner-payment-review` cron when a
+ * partner activated outside MercadoPago has run past the period an admin last
+ * confirmed, and NEVER as the record of an action — the partner's status,
+ * lifecycle and visibility are all untouched when this goes out.
+ *
+ * It carries the date the clock ran from so the operator can tell "we never
+ * confirmed anything since they started" from "the period we confirmed has
+ * lapsed"; those need different answers, and the first is the far more common
+ * one on a listing that predates this feature.
+ */
+export interface AdminPartnerPaymentReviewPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW;
+    /** Display name of the partner in question. */
+    readonly partnerName: string;
+    /**
+     * Date the review clock ran from — the last confirmation, or the day the
+     * alliance began when there has never been one. Already formatted.
+     */
+    readonly coveredThroughLabel: string;
+    /** Days elapsed since that date. */
+    readonly daysSinceCovered: number;
+    /** Deep link to the partner's admin detail, where the question is answered. */
+    readonly adminUrl: string;
+}
+
 export type NotificationPayload =
     | AdminLeadReceivedPayload
+    | AdminPartnerPaymentReviewPayload
     | PurchaseConfirmationPayload
     | AddonPurchaseConfirmationPayload
     | AddonSubscriptionStartedPayload

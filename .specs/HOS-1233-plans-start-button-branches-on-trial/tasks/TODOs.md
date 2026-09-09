@@ -1,7 +1,66 @@
 # HOS-1233: The plans page reads the trial before it charges
 
-## Progress: 11/42 tasks (26%)
+## Progress: 32/42 done, 10 resolved without implementation, 0 open
 
+> **Implementation is COMPLETE and merged to `staging`** (2026-09-09, five PRs:
+> #3288, #3291, #3298, #3313, #3321). The Linear issue is `In Review` and stays
+> open until both `status-needs-smoke-*` labels are signed off — an implemented
+> spec is not a verified one. What to exercise in that smoke, including the two
+> cases the adversarial review turned up, is listed on the issue itself.
+>
+> **What this work does NOT fix, so nobody looks for it in the smoke:** the
+> tourist vertical has no trial mechanism at all — `tourist-vip` declares
+> `trialDays` but `ALL_TRIAL_PLANS` holds three entries and none is tourist — so
+> AC-3/AC-4/AC-5 are inert there and §2.1's second measurement (the traveller
+> charged ARS 15.000 on the spot) is unchanged. Tracked as `HOS-1313` with the
+> two product paths.
+>
+> ---
+>
+> **This file and `state.json` were both STALE and cost the next session real
+> time (2026-09-09).** They reported all 42 tasks pending while the whole domain
+> half was merged. Every box below was re-verified against `origin/staging`
+> `f938edb42` with a file-and-line citation before being flipped — not against
+> the working tree, which lagged 70 commits.
+>
+> **Ten tasks are resolved but will never be checked**, because they are not
+> work any more. Do not re-open them:
+>
+> - **T-004, T-005, T-006** — superseded by T-034 and T-038 (already noted below).
+> - **T-008, T-009, T-010, T-011 — DROPPED (owner, 2026-09-09).** F-3 is stale:
+>   it says nothing answers "days left in THIS vertical", which was true when
+>   written. **HOS-1282 shipped it since** — `GET /protected/billing/trial/status`
+>   takes an optional `?productDomain=`, and `billingApi.getTrialStatus({
+>   productDomain })` exists at `apps/web/src/lib/api/endpoints-protected.ts:1413`.
+>   Verified in three layers rather than from the docblock: it runs
+>   `hydrateSubscriptionProductDomains` (`trial.service.ts:374`) BEFORE narrowing
+>   with `subscriptionMatchesDomain` (`:385`), so it dodges the HOS-934 silent
+>   failure and composes with T-003's fail-closed tourist. Building a second
+>   endpoint would have violated this spec's own AC-1 and R-1.
+> - **T-023 — already satisfied by pre-existing tests**, so no new guard was
+>   written (a duplicate with no consumer is what HOS-1081 deleted). AC-19's
+>   claim is covered on both halves: `packages/billing/test/owner-inherits-tourist.test.ts`
+>   (SPEC-216, the six accommodation tiers) and
+>   `packages/billing/test/commerce-vertical-plans.test.ts:321` (HOS-975 D-A,
+>   "grants the whole tourist-VIP block on ALL SIX tiers", plus the limit VALUES
+>   at `:166`). 52 tests, verified green 2026-09-09.
+> - **T-028 — moot.** It exists to add the new endpoint to
+>   `docs/billing/endpoint-gate-matrix.md`, whose snapshot guard fails CI on a
+>   handler file with no matrix row. No endpoint was built (see T-008..T-011), and
+>   the shipped diff touches no file under `apps/api` at all, so there is no row
+>   to add and nothing for that guard to catch.
+>
+> **T-037 left this spec and is now `HOS-1312` (P1).** Its partner T-036 merged
+> in `7aadeab8e` with the `0121` migration and **zero tests** — the only
+> occurrence of "AC-15h/AC-15i" outside `.specs/` is prose in a docblock. R-8
+> ("dropping the default breaks EVERY paid checkout") therefore has no coverage.
+> `db:migrate` is held until that issue is green. Note for whoever takes it: the
+> compile-time half needs no database — with the default dropped from the Drizzle
+> column, `productDomain` becomes REQUIRED in the insert type, so `tsc` rejects an
+> omitting write. Read `scripts/check-product-domain-on-writes.ts:22-25` backwards.
+>
+> ---
+>
 > **The qzpay wave PUBLISHED (2026-09-08).** PR #85 merged and shipped as core
 > 6.0.0, with all four siblings republished against it; Hospeda is on the whole
 > wave. T-030/T-031/T-032 are done and nothing is blocked on the package any
@@ -11,11 +70,16 @@
 > installed, with no edit to it — which is what forced T-032 the same hour. That
 > was the point of deriving the exemption from the package's own `.d.ts`.
 >
-> **T-036 (drop the default) is now UNBLOCKED and is the last dangerous step.**
-> Its four prerequisites (T-032, T-033, T-034, T-035) are all done, so the
-> ordering AC-15i demands is satisfied: every write names its domain BEFORE the
-> default disappears. Verified when the wave landed: `.default('accommodation')`
-> is still on both qzpay-drizzle columns, so R-8 has not fired on its own.
+> **T-036 (drop the default) is DONE and merged** — `7aadeab8e`, migration
+> `0121`. Its four prerequisites (T-032, T-033, T-034, T-035) were all done
+> first, so the ordering AC-15i demands was respected in fact.
+>
+> **But it shipped without T-037, its own proof, and the migration has NOT been
+> run on any database.** Merging does not apply it: staging and prod still carry
+> `DEFAULT 'accommodation'`. That window closes silently — while nobody runs
+> `db:migrate` everything works, and the day somebody does, the way you find out
+> is paid checkouts failing. Tracked as `HOS-1312`; the migration is held until
+> it is green.
 
 **Average complexity:** 2.2 / 3 (max) — every task is ≤ 3  
 **Levels:** 10 topological levels, no cycles, all references resolve in both directions  
@@ -25,7 +89,9 @@
 > obvious from the issue and come from measurement, not from reading:
 >
 > - The charge-without-looking button is on **two** pricing pages, not five.
-> - **No endpoint answers "days left in THIS vertical"** — that gap is T-008…T-011.
+> - ~~**No endpoint answers "days left in THIS vertical"** — that gap is T-008…T-011.~~
+>   **No longer true.** HOS-1282 shipped the `?productDomain=` scoping; T-008…T-011
+>   are dropped and the existing endpoint is consumed. See the header note.
 > - **Tourist plans are filed as `accommodation` in prod and staging** (F-4b), and the
 >   root cause is that **no paid checkout names its domain at all** (F-4c). Commerce is
 >   correct only by accident of dodging a MercadoPago bug.
@@ -42,7 +108,7 @@
   - Add `TOURIST = 'tourist'` to `packages/schemas/src/enums/product-domain.enum.ts`.
   - Blocked by: none · Blocks: T-002, T-003, T-004
 
-- [ ] **T-002** (complexity: 3) — Repair the frozen-count guards a new enum value trips
+- [x] **T-002** (complexity: 3) — Repair the frozen-count guards a new enum value trips
   - R-5.
   - Blocked by: T-001 · Blocks: T-005
 
@@ -56,7 +122,7 @@
 
 ### Core Phase
 
-- [ ] **T-003** (complexity: 2) — Make subscriptionMatchesDomain fail CLOSED for tourist
+- [x] **T-003** (complexity: 2) — Make subscriptionMatchesDomain fail CLOSED for tourist
   - AC-15.
   - Blocked by: T-001 · Blocks: T-007, T-009
 
@@ -72,7 +138,7 @@
   - SUPERSEDED by T-038, which merges both migrations under one expand/contract story with the ordering constraint (R-8) attached.
   - Blocked by: T-005 · Blocks: T-007
 
-- [ ] **T-007** (complexity: 2) — Guard: no tourist plan reports the accommodation domain
+- [x] **T-007** (complexity: 2) — Guard: no tourist plan reports the accommodation domain
   - AC-14.
   - Blocked by: T-003, T-006 · Blocks: none
 
@@ -92,19 +158,19 @@
   - Add the wrapper to `apps/web/src/lib/api/endpoints-protected.ts` — never a raw fetch() in a page or component.
   - Blocked by: T-008, T-010 · Blocks: T-017, T-020
 
-- [ ] **T-012** (complexity: 1) — Assert trial/status keeps its per-account semantics
+- [x] **T-012** (complexity: 1) — Assert trial/status keeps its per-account semantics
   - AC-2.
   - Blocked by: none · Blocks: none
 
-- [ ] **T-013** (complexity: 1) — Name the 3-day threshold as one constant
+- [x] **T-013** (complexity: 1) — Name the 3-day threshold as one constant
   - AC-6.
   - Blocked by: none · Blocks: T-014
 
-- [ ] **T-014** (complexity: 3) — Pure function: which of the three branches applies
+- [x] **T-014** (complexity: 3) — Pure function: which of the three branches applies
   - D-2 / AC-3..AC-6.
   - Blocked by: T-013 · Blocks: T-017, T-022
 
-- [ ] **T-015** (complexity: 2) — Pure predicate: does this visitor already hold the VIP benefits?
+- [x] **T-015** (complexity: 2) — Pure predicate: does this visitor already hold the VIP benefits?
   - D-4 / AC-16..AC-18.
   - Blocked by: none · Blocks: T-018, T-024
 
@@ -124,7 +190,7 @@
   - AC-15d / D-6.3, and the piece that makes this permanent.
   - Blocked by: T-034 · Blocks: T-036
 
-- [ ] **T-036** (complexity: 3) — Drop .default('accommodation') from both qzpay columns
+- [x] **T-036** (complexity: 3) — Drop .default('accommodation') from both qzpay columns
   - D-7.2 / AC-15h.
   - Blocked by: T-032, T-033, T-035 · Blocks: T-037, T-038
 
@@ -138,27 +204,27 @@
 
 ### Integration Phase
 
-- [ ] **T-016** (complexity: 3) — Warn-and-confirm dialog for losing the remaining trial days
+- [x] **T-016** (complexity: 3) — Warn-and-confirm dialog for losing the remaining trial days
   - AC-4.
   - Blocked by: none · Blocks: T-017, T-019
 
-- [ ] **T-017** (complexity: 3) — Wire the three branches into PlanPurchaseButton
+- [x] **T-017** (complexity: 3) — Wire the three branches into PlanPurchaseButton
   - D-2.
   - Blocked by: T-011, T-014, T-016 · Blocks: T-024
 
-- [ ] **T-018** (complexity: 2) — Disabled already-VIP state on the tourist cards
+- [x] **T-018** (complexity: 2) — Disabled already-VIP state on the tourist cards
   - D-4 / AC-16.
   - Blocked by: T-015 · Blocks: T-019, T-024
 
-- [ ] **T-019** (complexity: 2) — i18n keys for the dialog, the banner and the already-VIP copy
+- [x] **T-019** (complexity: 2) — i18n keys for the dialog, the banner and the already-VIP copy
   - Add the new strings to es/en/pt.
   - Blocked by: T-016, T-018 · Blocks: T-021
 
-- [ ] **T-020** (complexity: 2) — Remaining-days banner component
+- [x] **T-020** (complexity: 2) — Remaining-days banner component
   - AC-7 / AC-8.
   - Blocked by: T-011 · Blocks: T-021
 
-- [ ] **T-021** (complexity: 3) — Mount the banner on all five pricing pages
+- [x] **T-021** (complexity: 3) — Mount the banner on all five pricing pages
   - AC-7 / AC-10 / AC-12.
   - Blocked by: T-019, T-020 · Blocks: T-025, T-026
 
@@ -168,7 +234,7 @@
 
 ### Testing Phase
 
-- [ ] **T-022** (complexity: 3) — Web-side twin of the canonical-predicate guard
+- [x] **T-022** (complexity: 3) — Web-side twin of the canonical-predicate guard
   - AC-11 / F-6.
   - Blocked by: T-014 · Blocks: T-027
 
@@ -176,19 +242,19 @@
   - AC-19.
   - Blocked by: T-004 · Blocks: T-027
 
-- [ ] **T-024** (complexity: 3) — Button behaviour tests: three branches plus the already-VIP state
+- [x] **T-024** (complexity: 3) — Button behaviour tests: three branches plus the already-VIP state
   - AC-3/4/5/16/17.
   - Blocked by: T-015, T-017, T-018 · Blocks: T-027
 
-- [ ] **T-025** (complexity: 2) — Banner present/absent tests, in PAIRS
+- [x] **T-025** (complexity: 2) — Banner present/absent tests, in PAIRS
   - AC-7 / AC-8.
   - Blocked by: T-021 · Blocks: T-027
 
-- [ ] **T-026** (complexity: 1) — Test that the three link pages still link to signup then create form
+- [x] **T-026** (complexity: 1) — Test that the three link pages still link to signup then create form
   - AC-12 / R-4.
   - Blocked by: T-021 · Blocks: T-027
 
-- [ ] **T-027** (complexity: 3) — Mutation-verify the whole new suite
+- [x] **T-027** (complexity: 3) — Mutation-verify the whole new suite
   - The spec's test plan says most assertions here are about an ABSENCE (no dialog, no banner, no checkout, no charge), which is the shape that passes for….
   - Blocked by: T-022, T-023, T-024, T-025, T-026, T-037, T-038, T-039, T-040, T-041 · Blocks: T-028, T-029, T-042
 
@@ -206,11 +272,11 @@
   - `docs/billing/endpoint-gate-matrix.md` is the source of truth for gate decisions, and its snapshot guard fails CI when a new handler file has no matrix row.
   - Blocked by: T-010, T-027 · Blocks: none
 
-- [ ] **T-029** (complexity: 2) — Document the tourist domain and the already-VIP rule
+- [x] **T-029** (complexity: 2) — Document the tourist domain and the already-VIP rule
   - Root CLAUDE.md states ProductDomainEnum 'holds exactly four values' and that 'commerce' is retired — both need updating for TOURIST, plus a line on why….
   - Blocked by: T-027 · Blocks: none
 
-- [ ] **T-042** (complexity: 2) — Document the domain contract and its history
+- [x] **T-042** (complexity: 2) — Document the domain contract and its history
   - Root CLAUDE.md still says ProductDomainEnum 'holds exactly four values'.
   - Blocked by: T-027 · Blocks: none
 
