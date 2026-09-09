@@ -102,6 +102,26 @@ function getMainButton(): HTMLElement {
     return screen.getByTestId('plan-cta-button');
 }
 
+/**
+ * Number of calls `fetchMock` received for the actual checkout POST
+ * (`/subscriptions/start-paid`).
+ *
+ * HOS-1234: this file's earlier assertions counted `fetchMock`'s TOTAL call
+ * count, which held only because no other authenticated effect happened to
+ * call `fetch` before the dialog gate. That is no longer true — the new
+ * `hasKnownPayerEmail` lookup (module-cached exactly like
+ * `trialEligibilityPromise`/`subscriptionPromise`) also fires once
+ * `ownPreapprovalEnabled` first goes `true` in this file, on mount, before
+ * any click. Filtering by URL keeps these assertions meaningful (checkout
+ * really did/did not fire) instead of coupling them to how many *other*
+ * background lookups happen to run first.
+ */
+function countCheckoutCalls(fetchMock: ReturnType<typeof vi.fn>): number {
+    return fetchMock.mock.calls.filter((call) =>
+        String(call[0]).includes('/billing/subscriptions/start-paid')
+    ).length;
+}
+
 beforeEach(() => {
     vi.clearAllMocks();
     mockAuthenticated();
@@ -188,7 +208,7 @@ describe('PlanPurchaseButton — own-preapproval gate (HOS-937 review fix)', () 
         // Assert — dialog appears, checkout has NOT fired yet.
         const dialog = await screen.findByRole('dialog');
         expect(dialog).toBeInTheDocument();
-        expect(fetchMock).not.toHaveBeenCalled();
+        expect(countCheckoutCalls(fetchMock)).toBe(0);
         expect(window.location.href).toBe('');
 
         // Confirm — checkout fires with the pre-filled session email.
@@ -197,7 +217,7 @@ describe('PlanPurchaseButton — own-preapproval gate (HOS-937 review fix)', () 
         await waitFor(() => {
             expect(window.location.href).toBe(CHECKOUT_URL);
         });
-        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(countCheckoutCalls(fetchMock)).toBe(1);
     });
 
     it('flag ON + annual interval: the dialog STILL appears — HOS-937 step 4 extended own-preapproval to annual too', async () => {
@@ -228,7 +248,7 @@ describe('PlanPurchaseButton — own-preapproval gate (HOS-937 review fix)', () 
         // Assert — dialog appears, checkout has NOT fired yet.
         const dialog = await screen.findByRole('dialog');
         expect(dialog).toBeInTheDocument();
-        expect(fetchMock).not.toHaveBeenCalled();
+        expect(countCheckoutCalls(fetchMock)).toBe(0);
         expect(window.location.href).toBe('');
 
         // Confirm — checkout fires with the pre-filled session email.
@@ -237,6 +257,6 @@ describe('PlanPurchaseButton — own-preapproval gate (HOS-937 review fix)', () 
         await waitFor(() => {
             expect(window.location.href).toBe(CHECKOUT_URL);
         });
-        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(countCheckoutCalls(fetchMock)).toBe(1);
     });
 });

@@ -100,6 +100,10 @@ export interface PlanPurchaseButtonProps {
      * to `false` so any caller that omits it — and any SSR fetch failure —
      * renders the pre-HOS-937 checkout flow byte for byte (fail-closed,
      * matches the flag's own dark-by-default posture).
+     *
+     * HOS-1234: when this is `true`, the dialog is further skipped (without
+     * changing this prop) whenever a payer email is already known for the
+     * customer — see `payerEmailKnown` / `proceedPastPayerEmailStep`.
      */
     readonly ownPreapprovalEnabled?: boolean;
 }
@@ -153,6 +157,29 @@ function fetchTrialEligible(): Promise<boolean | null> {
         .then((result) => (result.ok ? result.data.eligible : null))
         .catch(() => null);
     return trialEligibilityPromise;
+}
+
+/**
+ * Module-level promise that fetches whether the current user already has a
+ * known MercadoPago payer email on file (HOS-1234). Same sharing rationale
+ * as {@link fetchTrialEligible}: the answer is customer-scoped, so every
+ * <PlanPurchaseButton> island on the page shares one request.
+ *
+ * Resolves to `false` on any failure, when unauthenticated, or when the
+ * lookup genuinely found nothing — there is no separate "unknown" state here
+ * (unlike {@link fetchTrialEligible}'s `null`), because the caller
+ * (`proceedPastPayerEmailStep`) must FAIL OPEN toward showing the confirm
+ * dialog, and `false` already means exactly that.
+ */
+let payerEmailKnownPromise: Promise<boolean> | null = null;
+
+function fetchPayerEmailKnown(): Promise<boolean> {
+    if (payerEmailKnownPromise) return payerEmailKnownPromise;
+    payerEmailKnownPromise = billingApi
+        .getPayerEmailKnown()
+        .then((result) => (result.ok ? result.data.hasKnownPayerEmail : false))
+        .catch(() => false);
+    return payerEmailKnownPromise;
 }
 
 // ---------------------------------------------------------------------------
@@ -342,6 +369,12 @@ export function PlanPurchaseButton({
     // failed) — the SSR "N days free" badge stays untouched in that case.
     // `false` is the only value that triggers badge suppression below.
     const [trialEligible, setTrialEligible] = useState<boolean | null>(null);
+    // HOS-1234: whether a MercadoPago payer email is already known for this
+    // customer (`billing_customers.mp_payer_email`). Starts `false` — the
+    // fail-open default — so the confirm dialog still shows for an
+    // unauthenticated visitor, while the lookup is still in flight, or if it
+    // fails. Only flips to `true` on a confirmed, successful lookup.
+    const [payerEmailKnown, setPayerEmailKnown] = useState(false);
     // The toggle lives outside this island (vanilla JS in PricingCardsGrid).
     // The island observes the closest `data-billing` ancestor for changes so
     // the displayed price + the checkout payload stay in sync with the
@@ -603,6 +636,27 @@ export function PlanPurchaseButton({
             cancelled = true;
         };
     }, [isAuthenticated]);
+
+    // HOS-1234: fetch whether a payer email is already known, once
+    // authenticated AND on the own-preapproval path — the only path that
+    // ever shows the confirm dialog this feeds. Gating on `ownPreapprovalEnabled`
+    // avoids a wasted request on every other checkout path (the flag's own
+    // dark-by-default posture, still production today for some flows).
+    // Fails open to `false` (dialog shown) on any error, timing, or
+    // unauthenticated state — see `fetchPayerEmailKnown`.
+    useEffect(() => {
+        if (!isAuthenticated || !ownPreapprovalEnabled) {
+            setPayerEmailKnown(false);
+            return;
+        }
+        let cancelled = false;
+        fetchPayerEmailKnown().then((known) => {
+            if (!cancelled) setPayerEmailKnown(known);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, ownPreapprovalEnabled]);
 
     // HOS-226: correct the SSR-rendered "N days free" badge for an
     // authenticated, non-eligible visitor. The badge itself comes from the
@@ -1150,13 +1204,30 @@ export function PlanPurchaseButton({
      * Reached from `handleClick`, the only checkout path this component has
      * since HOS-1012 T-027 removed the trial-warning dialog that used to sit
      * in front of it.
+     *
+     * HOS-1234: even on the own-preapproval path, the dialog is skipped when
+     * `payerEmailKnown` is `true` — a prior charge already confirmed an
+     * address MercadoPago accepted (`billing_customers.mp_payer_email`), so
+     * asking again is pure friction with no new information gained.
+     * `runCheckout('')` passes an empty string here on purpose:
+     * `billingApi.createCheckout` only adds `payerEmail` to the request body
+     * when it is truthy, so an empty string means the field is OMITTED and
+     * `/start-paid` resolves it server-side via `resolvePayerEmail`'s own
+     * precedence — which is exactly the cached address this branch is
+     * skipping the dialog because of. Sending the session email here instead
+     * would silently override that cache with a value that may not be the
+     * one MercadoPago actually expects (HOS-971's whole point).
      */
     function proceedPastPayerEmailStep(): void {
-        if (ownPreapprovalEnabled) {
-            setShowPayerEmailConfirm(true);
+        if (!ownPreapprovalEnabled) {
+            void runCheckout(session?.user?.email ?? '');
             return;
         }
-        void runCheckout(session?.user?.email ?? '');
+        if (payerEmailKnown) {
+            void runCheckout('');
+            return;
+        }
+        setShowPayerEmailConfirm(true);
     }
 
     /**
