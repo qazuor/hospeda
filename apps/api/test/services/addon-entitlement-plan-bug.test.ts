@@ -55,6 +55,12 @@ vi.mock('@repo/service-core', () => ({
     // SPEC-239 T-034: all test subscriptions here are accommodation-domain
     // (no productDomain set), so this should always return true.
     isAccommodationSubscription: () => true,
+    // HOS-1270: this suite is about the plan-resolve bug (UUID vs slug
+    // planId), not domain matching — stub as always-match so
+    // `STUB_EXTRA_ACCOMMODATIONS.productDomain` (needed only to clear the
+    // fail-closed `!addon.productDomain` guard) never has to be reconciled
+    // against the fixture subscription's own (absent) domain.
+    subscriptionMatchesDomain: () => true,
     // HOS-1104: pass-through stub. Deliberately does NOT fabricate a
     // `productDomain` value onto the fixtures (that would hide the bug this
     // hydration exists to fix) — it mirrors the real function's own no-op
@@ -168,6 +174,7 @@ const STUB_EXTRA_ACCOMMODATIONS = {
     limitIncrease: 5,
     grantsEntitlement: null,
     targetCategories: ['owner'] as Array<'owner' | 'complex'>,
+    productDomain: 'accommodation',
     isActive: true,
     sortOrder: 4
 };
