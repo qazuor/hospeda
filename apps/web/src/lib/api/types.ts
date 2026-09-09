@@ -12,18 +12,24 @@ import type { MediaAttribution } from '../media';
  *
  * Derived from {@link ProductDomainValue} so it widens with the vocabulary
  * instead of restating it. That alias is the *string* form on purpose: every
- * caller passes a plain literal (`productDomain: 'commerce'`), which TypeScript
- * would reject against the enum type itself. The import is type-only, so
- * nothing reaches the client bundle.
+ * caller passes a plain literal (`productDomain: 'accommodation'`), which
+ * TypeScript would reject against the enum type itself. The import is
+ * type-only, so nothing reaches the client bundle.
  *
  * `partner` is excluded to match the API, which answers 400 for it: these
  * endpoints resolve the caller's own listing subscriptions, and a partner
- * directory subscription is not one of them.
+ * directory subscription is not one of them. `addon` is excluded for the same
+ * reason — it tags a recurring add-on's own MercadoPago preapproval (HOS-847),
+ * never a customer's real plan subscription.
  *
- * `commerce` is the transitional umbrella covering both verticals until
- * HOS-692 rewrites the rows; `gastronomy` / `experience` scope to one.
+ * `tourist` widened in (HOS-1282), mirroring the API's own widening of
+ * `SUBSCRIPTION_SCOPE_DOMAINS` — see that schema's doc for why.
+ *
+ * `gastronomy` / `experience` scope to one commerce vertical each. The
+ * transitional `commerce` umbrella is retired (HOS-695) — there is no longer
+ * a way to scope a read to "any commerce vertical" here.
  */
-export type ProductDomainScope = Exclude<ProductDomainValue, 'partner'>;
+export type ProductDomainScope = Exclude<ProductDomainValue, 'partner' | 'addon'>;
 
 /** Pagination metadata returned by list endpoints */
 export interface PaginationMeta {

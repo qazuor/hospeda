@@ -1108,4 +1108,106 @@ describe('UsageTrackingService', () => {
             expect(result.data).toBeNull();
         });
     });
+
+    describe('cross-vertical stock counts (HOS-1282 pre-merge condition)', () => {
+        // HOS-1282's recalibration widened `?productDomain=` to accept
+        // `'tourist'` and required verifying, before merging that widening,
+        // that `GET /billing/usage?productDomain=tourist` for a DUAL-ROLE
+        // customer (host + tourist) produces acceptable "cross" stock counts.
+        //
+        // `getCurrentUsage` (usage-tracking.service.ts:704-844) counts by
+        // OWNER ID for every `LimitKey`, regardless of which domain the
+        // caller asked for — `getUsageSummary`'s `for (const limitKey of
+        // Object.values(LimitKey))` loop calls it unconditionally. This is
+        // NOT new and this PR does not fix it: the exact same thing already
+        // happens today for a host querying `?productDomain=gastronomy` with
+        // no gastronomy listings. Widening to `tourist` only makes an
+        // existing imperfection reachable from a third domain — this suite
+        // pins what that imperfection actually produces, so the "acceptable"
+        // verdict is verified against real service output, not assumed.
+        const touristPlanId = 'plan_tourist_vip';
+
+        /** A tourist-vip subscription living under the SAME billing customer. */
+        const touristSubscription = {
+            ...mockSubscription,
+            id: 'sub_tourist_1',
+            planId: touristPlanId
+        };
+
+        /** The host side of the same dual-role customer. */
+        const accommodationSubscription = {
+            ...mockSubscription,
+            id: 'sub_accommodation_dual'
+        };
+
+        /**
+         * Tourist plans do NOT declare `MAX_ACCOMMODATIONS` — that cap belongs
+         * to the accommodation vertical's own plans (`mockPlan` above), never
+         * a tourist tier. Only the 5 caps `TOURIST_VIP_LIMITS` actually grants
+         * are present (`packages/billing/test/config/commerce-limits.tourist-domain.test.ts`
+         * pins the full shared set; a subset is enough to prove this test's point).
+         */
+        const touristPlan = {
+            id: touristPlanId,
+            name: 'Tourist VIP',
+            limits: {
+                [LimitKey.MAX_FAVORITES]: 50,
+                [LimitKey.MAX_ACTIVE_ALERTS]: 10
+            }
+        };
+
+        beforeEach(() => {
+            (mockBilling.plans.get as Mock).mockImplementation((planId: string) =>
+                Promise.resolve(planId === touristPlanId ? touristPlan : mockPlan)
+            );
+            storedProductDomains = {
+                [touristSubscription.id]: 'tourist',
+                [accommodationSubscription.id]: 'accommodation'
+            };
+        });
+
+        it("REGRESSION/PIN: ?productDomain=tourist for a dual-role customer still reports the host's real MAX_ACCOMMODATIONS count under a 0-max entry, and never as 'exceeded'", async () => {
+            // Arrange — dual role: the customer owns 3 REAL accommodations (the
+            // host side) AND holds an active tourist-vip subscription.
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                accommodationSubscription,
+                touristSubscription
+            ]);
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn((limitKey: string) => {
+                // Mirrors the REAL getCurrentUsage: it counts by ownerId,
+                // oblivious to which domain the caller asked for.
+                if (limitKey === LimitKey.MAX_ACCOMMODATIONS) return Promise.resolve(3);
+                return Promise.resolve(0);
+            });
+
+            // Act — scoped to the tourist domain.
+            const result = await service.getUsageSummary(mockCustomerId, 'tourist');
+
+            // Assert — resolves the TOURIST plan/limits, not the accommodation one.
+            expect(result.success).toBe(true);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith(touristPlanId);
+
+            // The verdict this test exists to pin: MAX_ACCOMMODATIONS still
+            // carries the real owner-side count (3), because getCurrentUsage
+            // is not domain-scoped — but maxAllowed is 0 (the tourist plan
+            // declares no accommodation cap), and `calculateThreshold` treats
+            // max<=0 as 'ok' unconditionally, so this can never surface as an
+            // alarming "exceeded" badge to a tourist-scoped caller. No OTHER
+            // customer's data is involved — `ownerId` scopes to this same
+            // customer throughout — so this is a data-ACCURACY imperfection,
+            // not a privacy leak.
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.currentUsage).toBe(3);
+            expect(accommodationsLimit?.maxAllowed).toBe(0);
+            expect(accommodationsLimit?.threshold).toBe('ok');
+
+            // The tourist plan's OWN caps resolve correctly and are unaffected.
+            const favoritesLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_FAVORITES
+            );
+            expect(favoritesLimit?.maxAllowed).toBe(50);
+        });
+    });
 });

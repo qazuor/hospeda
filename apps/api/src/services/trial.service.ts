@@ -27,6 +27,7 @@ import {
     excludeAddonDomainCondition,
     hydrateSubscriptionProductDomains,
     isAddonSubscription,
+    normalizeStoredSubscriptionStatus,
     QZPAY_TO_HOSPEDA_STATUS,
     type ReactivateFromTrialInput,
     type ReactivateFromTrialResult,
@@ -312,11 +313,29 @@ export class TrialService {
      *    canceled trial, reported as expired **iff** its `trialEnd` has actually
      *    elapsed — or if the stored date is corrupt, which fails closed.
      *
-     * @param input - Receives the billing customer ID.
+     * `input.productDomain` (HOS-1282) is an OPT-IN narrowing, not a change to
+     * the default resolution the paywall depends on. Omitted (both
+     * `trialMiddleware` call sites and this route's own default), the method
+     * keeps its long-standing domain-BLIND behavior — see the "DELIBERATELY
+     * NOT domain-filtered" comment inline below for why that default must
+     * stay as-is. Passed explicitly, `subscriptions` is narrowed to that one
+     * domain (via `subscriptionMatchesDomain`) before either resolution step
+     * runs, so a caller that already knows which vertical it cares about —
+     * e.g. the publish flow asking "is THIS accommodation's trial expired",
+     * never "should this write be paywalled" — gets an answer that cannot be
+     * masked by an unrelated live subscription in a different vertical (the
+     * exact failure this function's default behavior still has, by design,
+     * per HOS-337).
+     *
+     * @param input - Receives the billing customer ID, and optionally the
+     *   product domain to scope the resolution to.
      * @returns Trial status information. Never throws: on error it returns the
      *   safe "no trial" defaults so a billing outage cannot paywall the site.
      */
-    async getTrialStatus(input: { customerId: string }): Promise<TrialStatus> {
+    async getTrialStatus(input: {
+        customerId: string;
+        productDomain?: ProductDomainValue;
+    }): Promise<TrialStatus> {
         if (!this.billing) {
             return {
                 isOnTrial: false,
@@ -329,7 +348,7 @@ export class TrialService {
             };
         }
 
-        const { customerId } = input;
+        const { customerId, productDomain } = input;
 
         try {
             // Get customer's subscriptions.
@@ -351,9 +370,20 @@ export class TrialService {
             // second product the customer subscribed to, it is a line item on
             // this one.
             const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
-            const subscriptions = (
+            const hydratedSubscriptions = (
                 await hydrateSubscriptionProductDomains(rawSubscriptions ?? [])
             ).filter((sub) => !isAddonSubscription(sub));
+
+            // HOS-1282: opt-in narrowing (see the doc above). `undefined` keeps
+            // the domain-BLIND default every existing caller (the paywall, this
+            // route with no query param) relies on — every subscription stays
+            // in play, same as before this parameter existed.
+            const subscriptions =
+                productDomain === undefined
+                    ? hydratedSubscriptions
+                    : hydratedSubscriptions.filter((sub) =>
+                          subscriptionMatchesDomain(sub, productDomain)
+                      );
 
             if (subscriptions.length === 0) {
                 return {
@@ -378,16 +408,20 @@ export class TrialService {
             // `isEntitlementGrantingStatus` is the shared definition of "which
             // statuses are live right now", so that divergence cannot come back.
             //
-            // DELIBERATELY NOT domain-filtered, unlike `entitlement.ts` and
-            // `start-paid.ts`, which AND this predicate with
+            // DELIBERATELY NOT domain-filtered BY DEFAULT, unlike `entitlement.ts`
+            // and `start-paid.ts`, which AND this predicate with
             // `isAccommodationSubscription` (SPEC-239): `trialMiddleware` is global
             // and paywalls writes of EVERY domain, so scoping the lookup to
             // accommodation subs would start answering a commerce owner's commerce
             // writes with a 402 about an accommodation trial. Known consequence: a
             // live commerce sub can mask an elapsed accommodation trial — and this
             // change EXTENDS that hole to `comp`, since a comp row could not be
-            // selected at all before. Narrowing it needs per-domain trial state, not a
-            // one-line predicate change (HOS-337).
+            // selected at all before. Narrowing the PAYWALL's own resolution needs
+            // per-domain trial state layered into the global gate itself, not a
+            // one-line predicate change (HOS-337) — `input.productDomain` above
+            // does NOT do that: it is opt-in, and `subscriptions` is already
+            // narrowed to the requested domain by the time this line runs, only
+            // when a caller other than the paywall asked for it (HOS-1282).
             //
             // Second consequence of the ordering below: a customer holding a live
             // commerce `active` sub AND a genuine accommodation trial now
@@ -427,24 +461,52 @@ export class TrialService {
                 // definition NOT the customer's current state, so it must only be
                 // consulted when there is no current state to read.
                 //
-                // KNOWN, DELIBERATELY UNFIXED HERE — see HOS-337. This filter matches
-                // only the 1-L `'canceled'` that qzpay-core writes, while every DIRECT
-                // Hospeda writer stores the 2-L `'cancelled'`, and it ignores `expired`
-                // entirely. The branch is NOT dead (the HOS-285 prod lockout came
-                // through it) but it is blind to the dominant cancellation paths, so
-                // for most cancelled customers the paywall never fires. Closing that
-                // activates the gate for a large population and needs its own scoping:
-                // owner-category only (tourist plans carry a 14-day trial too),
-                // `trial_converted` as the conversion signal (`current_period_start` is
-                // insert-only, so period arithmetic cannot detect a charge), the
-                // dunning/pause interaction, and a staging smoke.
+                // CORRECTED (HOS-1282). This comment used to say the filter "ignores
+                // `expired` entirely" and left that unfixed — true when it was
+                // written (pre-HOS-1012, a trial that lapsed without converting was
+                // cancelled at the provider, landing here as `'canceled'`). HOS-1012
+                // made a Hospeda-owned local trial (`mp_subscription_id = NULL`) the
+                // only kind that expires organically, and BOTH writers of that
+                // outcome — `trial-local-expiry.service.ts`'s `expireLocalTrial` and
+                // `trial-supersede-on-activation.ts`'s `SUPERSEDED_TRIAL_STATUS` —
+                // stamp `SubscriptionStatusEnum.EXPIRED`, never `'canceled'`. So the
+                // "ignores `expired`" gap stopped being partial and started being
+                // total: EVERY locally-expired trial fell through this branch and got
+                // "you never had a trial" instead of the paywall this function backs.
+                // Fixed below by also matching the normalized `EXPIRED` status.
+                //
+                // STILL OPEN, STILL HOS-337's: this filter matches only the 1-L
+                // `'canceled'` that qzpay-core writes, while every DIRECT Hospeda
+                // writer of a genuine (non-expiry) cancellation stores the 2-L
+                // `'cancelled'`. The branch is NOT dead (the HOS-285 prod lockout
+                // came through it) but it is blind to the dominant cancellation
+                // paths, so for most cancelled (not merely expired) customers the
+                // paywall still never fires. Recognizing `'cancelled'` here too would
+                // require normalizing that comparison as well, which HOS-337
+                // deliberately does NOT do in one line: it activates the gate for a
+                // much larger population and needs its own scoping — owner-category
+                // only (tourist plans carry a 14-day trial too), `trial_converted` as
+                // the conversion signal (`current_period_start` is insert-only, so
+                // period arithmetic cannot detect a charge), the dunning/pause
+                // interaction, and a staging smoke. `EXPIRED` needed none of that
+                // scoping to add safely here: it is written ONLY by the two local-
+                // trial paths above, both already accommodation/gastronomy/experience-
+                // only (`createTrialSubscription` has exactly two call sites), so
+                // widening to it cannot reach the tourist/dunning/blast-radius cases
+                // HOS-337 is scoped around.
                 //
                 // Note one behaviour change this fix DOES make here: with the date
                 // comparison below, a subscription hard-cancelled mid-trial keeps write
                 // access until its original `trialEnd` instead of losing it at once.
                 // Whether an admin revocation should be immediate is part of HOS-337.
                 const historicalTrialSub = subscriptions
-                    .filter((sub) => sub.status === 'canceled' && sub.trialEnd != null)
+                    .filter(
+                        (sub) =>
+                            (sub.status === 'canceled' ||
+                                normalizeStoredSubscriptionStatus(sub.status) ===
+                                    SubscriptionStatusEnum.EXPIRED) &&
+                            sub.trialEnd != null
+                    )
                     .sort((a, b) => {
                         // Most-recent first: use trialEnd as the ordering key. An
                         // unparseable value sorts FIRST (not as NaN, which would make
