@@ -36,10 +36,21 @@ import { AccommodationModel, ExperienceModel, GastronomyModel } from '@repo/db';
 import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 import { type FeaturableEntityType, resolveFeaturableEntityType } from '@repo/service-core';
 
-/** Lazily-constructed models, mirroring the module-level singletons in `addon.checkout.ts`. */
-const accommodationModel = new AccommodationModel();
-const gastronomyModel = new GastronomyModel();
-const experienceModel = new ExperienceModel();
+/**
+ * Models, constructed on FIRST USE rather than at module scope.
+ *
+ * `addon.checkout.ts` has always built its `AccommodationModel` at module load,
+ * and got away with it because every suite that partially mocks `@repo/db`
+ * happens to provide that one class. The two commerce models are new, so a
+ * module-level `new GastronomyModel()` turned an unrelated import of
+ * `addon.checkout.ts` into a load-time crash in suites whose db mock never
+ * needed them — a whole test FILE failing while reporting zero failed tests.
+ * Deferring construction removes the coupling instead of asking every existing
+ * mock to grow two entries.
+ */
+let accommodationModel: AccommodationModel | undefined;
+let gastronomyModel: GastronomyModel | undefined;
+let experienceModel: ExperienceModel | undefined;
 
 /** The minimal shape every listing table shares for this check. */
 interface OwnedListingRow {
@@ -61,15 +72,24 @@ const TARGET_LISTING_LOOKUP: Readonly<
 > = {
     [ProductDomainEnum.ACCOMMODATION]: {
         noun: 'Accommodation',
-        findById: (id) => accommodationModel.findById(id)
+        findById: (id) => {
+            accommodationModel ??= new AccommodationModel();
+            return accommodationModel.findById(id);
+        }
     },
     [ProductDomainEnum.GASTRONOMY]: {
         noun: 'Gastronomy listing',
-        findById: (id) => gastronomyModel.findById(id)
+        findById: (id) => {
+            gastronomyModel ??= new GastronomyModel();
+            return gastronomyModel.findById(id);
+        }
     },
     [ProductDomainEnum.EXPERIENCE]: {
         noun: 'Experience listing',
-        findById: (id) => experienceModel.findById(id)
+        findById: (id) => {
+            experienceModel ??= new ExperienceModel();
+            return experienceModel.findById(id);
+        }
     }
 };
 
