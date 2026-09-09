@@ -94,6 +94,23 @@ describe('syncFeaturedByEntitlementForCommerceListing', () => {
             expect.objectContaining({ featuredByEntitlement: true })
         );
         expect(result.updated).toBe(1);
+
+        // The `isNull(table.deletedAt)` half of the predicate is what makes a
+        // soft-deleted row's write a no-op instead of resurrecting its billing
+        // flag (see "reports zero updates for a missing or soft-deleted
+        // listing" below). Nothing there asserts the QUERY carries that
+        // guard — only that the mocked `.returning()` happens to resolve
+        // empty — so a regression that drops `isNull(table.deletedAt)` from
+        // the primitive's `.where()` would leave every test in this file
+        // green. Assert the exact predicate `and`/`eq`/`isNull` build it from
+        // (all three mocked above to echo their args verbatim).
+        expect(mockWhere).toHaveBeenCalledWith({
+            op: 'and',
+            args: [
+                { op: 'eq', col: table.id, val: 'listing-1' },
+                { op: 'isNull', col: table.deletedAt }
+            ]
+        });
     });
 
     it.each([
