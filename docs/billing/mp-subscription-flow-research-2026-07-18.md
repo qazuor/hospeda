@@ -2,7 +2,17 @@
 
 **Fecha:** 2026-07-18
 **Ambiente de pruebas:** PRODUCCIÓN, MercadoPago real (cuenta `HOSPEDA_COM_AR`, id `3497516165`, `mp@hospeda.com.ar`, site MLA). Pagos con `qazuor@gmail.com` (payer real `5860436`).
-**Estado:** núcleo del camino elegido (C) validado en prod. Falta: cobro día-N (canario, mañana), multi-user, addons a fondo.
+**Estado:** HISTÓRICO — mediciones reales del 18/07/2026, conclusiones de diseño
+CADUCAS (HOS-1302, 09/09/2026). Las mediciones contra MercadoPago siguen siendo
+evidencia válida de ese día; el diseño que proponen ya no es el vigente:
+
+- El "trial en manos de MP" y la guarda de dos capas que describe **ya no
+  existen**. HOS-1012 retiró el card-first entero: el trial es local de Hospeda y
+  a MercadoPago no se le pide ni un día gratis. `scripts/check-no-trial-to-mercadopago.sh`
+  falla el CI si un payload de checkout vuelve a nombrar un trial.
+- "El share link ignora `external_reference` y el preapproval queda en `null`" ya
+  no aplica: HOS-209 lo manda como query param
+  (`mp-plan-provisioning.service.ts:557-565`).
 
 ---
 
