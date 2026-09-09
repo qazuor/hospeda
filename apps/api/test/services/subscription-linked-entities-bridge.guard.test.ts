@@ -64,9 +64,13 @@
  *     named follow-up rather than a rushed, possibly-wrong allowlist.
  *   - It is source-level (`.matchAll` over file text), not a runtime
  *     assertion: it proves the call is PRESENT, not that it sits on the
- *     reachable branch or is never dead code. Per-file behavioral tests
- *     (see `subscription-linked-entities-bridge.regression.test.ts` for the
- *     three sites this PR fixed) are what prove the runtime effect.
+ *     reachable branch or is never dead code. The HOS-1280 regression tests
+ *     added alongside the three fixed sites — in
+ *     `test/routes/billing/admin/hooks/qzpay-admin-hooks.test.ts`,
+ *     `test/routes/subscription-pause.test.ts`, and
+ *     `test/services/subscription-comp-grant.service.test.ts` — are what
+ *     prove the runtime effect (the call fires with the right arguments, in
+ *     the right order relative to the underlying write).
  *   - It says nothing about `reconcilePartnerForSubscription`'s OTHER four
  *     call sites (or lack thereof) outside the two files HOS-1280 touched —
  *     that full audit is HOS-1306's.
