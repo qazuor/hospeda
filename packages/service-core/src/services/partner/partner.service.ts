@@ -7,6 +7,7 @@ import {
     PartnerContentReviewStateEnum,
     type PartnerOwnerUpdate,
     PartnerOwnerUpdateSchema,
+    PartnerPaymentReviewStateEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     RoleEnum,
@@ -26,6 +27,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { defaultPaymentConfirmedThrough } from './partner.payment-review';
 import {
     checkCanAdminList,
     checkCanCount,
@@ -95,6 +97,23 @@ const revokePartnerInputSchema = z.object({
         .trim()
         .min(1, { message: 'zodError.partner.revokeReason.required' })
         .max(1000, { message: 'zodError.partner.revokeReason.max' })
+});
+
+/** Input for {@link PartnerService.reviewPayment} (HOS-1299). */
+const reviewPartnerPaymentInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    decision: z.enum(['confirmed-paid', 'not-paid'], {
+        message: 'zodError.partner.paymentReview.decision.invalid'
+    }),
+    /**
+     * How far the confirmed period now runs. Optional: omitted means "one more
+     * standard period from today", the answer in the common case of a partner
+     * paying the same amount on the same cadence.
+     *
+     * Only meaningful on `confirmed-paid`. A `not-paid` decision does not take
+     * the partner down here — see {@link PartnerService.reviewPayment}.
+     */
+    confirmedThrough: z.coerce.date().optional()
 });
 
 /** Input for {@link PartnerService.reviewContent}. */
@@ -820,6 +839,116 @@ export class PartnerService extends BaseCrudService<
             }
         });
     }
+    /**
+     * Answers the question the `partner-payment-review` cron asked (HOS-1299).
+     *
+     * The human half of the owner's decision (2026-09-09). The cron detects
+     * that a partner activated outside MercadoPago has run past the period an
+     * admin last confirmed, flags them and sends one email; NOTHING about the
+     * partner changes until this method runs. That asymmetry is the point:
+     * leaving a non-payer published costs a month of product, cutting off
+     * somebody who paid costs the customer, and a machine cannot tell "they did
+     * not pay" from "nobody wrote it down".
+     *
+     * Two answers:
+     *
+     * - **`confirmed-paid`** — they are up to date (or the admin has now
+     *   recorded the payment they forgot). Clears the flag and moves
+     *   `paymentConfirmedThrough` forward, which is what re-arms the clock.
+     *   Nothing else moves: they were never taken down, so there is nothing to
+     *   restore.
+     * - **`not-paid`** — the same transition `partner-expiry` performs on a
+     *   partner whose term ran out, `CANCELLED` + `ARCHIVED`, only with a human
+     *   behind it.
+     *
+     * `not-paid` deliberately does NOT go through {@link PartnerService.revoke}.
+     * Revoking sets `revokedAt`, and `getPublicBySlug` answers **410 Gone** on
+     * that column — the one irreversible answer, which tells a crawler to drop
+     * the URL for good. A partner who stopped paying is a TEMPORARY outage: they
+     * must be able to regularise and come back with their ranking, so this path
+     * leaves `revokedAt` alone and earns a reversible 404. Revoke stays what it
+     * is, a deliberate takedown with a reason.
+     *
+     * @param actor - The admin answering.
+     * @param input - `{ id, decision, confirmedThrough? }` (RO-RO).
+     * @param ctx - Optional service execution context.
+     * @returns The updated partner.
+     * @throws `NOT_FOUND` when no such partner exists.
+     * @throws `VALIDATION_ERROR` when nothing was asked about this partner —
+     *   answering a question nobody posed would push the clock forward on a
+     *   partner the system never doubted.
+     */
+    public async reviewPayment(
+        actor: Actor,
+        input: {
+            readonly id: string;
+            readonly decision: 'confirmed-paid' | 'not-paid';
+            readonly confirmedThrough?: Date;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ partner: Partner }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reviewPayment',
+            input: { actor, ...input },
+            schema: reviewPartnerPaymentInputSchema,
+            ctx,
+            execute: async (validated, a) => {
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Partner not found: ${validated.id}`
+                    );
+                }
+
+                checkCanUpdate(a, existing);
+
+                if (
+                    existing.paymentReviewState !==
+                    PartnerPaymentReviewStateEnum.PENDING_CONFIRMATION
+                ) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'This partner has no pending payment review to answer'
+                    );
+                }
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    validated.decision === 'confirmed-paid'
+                        ? {
+                              paymentReviewState: null,
+                              paymentConfirmedThrough:
+                                  validated.confirmedThrough ??
+                                  defaultPaymentConfirmedThrough({ from: new Date() }),
+                              updatedById: a.id
+                          }
+                        : {
+                              // The flag is cleared here too: the question has
+                              // been answered. Leaving it set would keep the
+                              // partner in the admin queue after the decision
+                              // was made, and the queue is what tells an
+                              // operator what still needs them.
+                              paymentReviewState: null,
+                              subscriptionStatus: PartnerSubscriptionStatusEnum.CANCELLED,
+                              lifecycleState: LifecycleStatusEnum.ARCHIVED,
+                              updatedById: a.id
+                          },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Partner not found: ${validated.id}`
+                    );
+                }
+
+                return { partner: updated };
+            }
+        });
+    }
+
     /**
      * Revokes a partner: makes it invisible while KEEPING the row.
      *
