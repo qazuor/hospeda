@@ -24,6 +24,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { productDomainForPlanSlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import type { BillingPlanResponse } from '@repo/schemas';
 import {
@@ -40,7 +41,12 @@ import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 import { detectAndNotifyDowngrades } from './addon-downgrade-detection.service.js';
 import type { RecalculationResult } from './addon-limit-recalculation.service.js';
-import { computeDirection, hashCustomerId, sumIncrements } from './addon-plan-change.helpers.js';
+import {
+    classifyLimitKeyAgainstPlanDomain,
+    computeDirection,
+    hashCustomerId,
+    sumIncrements
+} from './addon-plan-change.helpers.js';
 
 // ─── Catalog service (DB-backed addon reads — SPEC-192 T-013) ─────────────────
 // Instantiated once, on first use; stateless, no DB connection held.
@@ -181,6 +187,10 @@ export interface PlanChangeRecalculationInput {
  *    the customer.
  * 2. Resolves each purchase's addon definition via `AddonCatalogService.getBySlug` (DB-backed, SPEC-192 T-013).
  * 3. Filters to limit-type addons only (`addon.affectsLimitKey != null`).
+ * 3b. Filters OUT every cap that belongs to another product domain (HOS-1279).
+ *    A plan change governs one vertical; recomputing another vertical's cap
+ *    against this plan resolves its base to 0 and writes the stomped value
+ *    back. See {@link classifyLimitKeyAgainstPlanDomain}.
  * 4. Groups purchases by `limitKey`.
  * 5. For each unique `limitKey`:
  *    - Resolves the new plan's base limit from canonical config.
@@ -265,6 +275,38 @@ export async function handlePlanChangeAddonRecalculation(
     const newPlanDef = await resolvePlanByIdOrSlug(newPlanId);
     const oldPlanDef = await resolvePlanByIdOrSlug(oldPlanId);
 
+    // ── HOS-1279: the domain THIS plan change governs ────────────────────────
+    // Every active add-on purchase is classified against it below, and only the
+    // caps this vertical owns are recalculated. See
+    // `classifyLimitKeyAgainstPlanDomain`'s doc for the bug and for why the
+    // domain is derived rather than stored on the limit row.
+    //
+    // Resolved from the plan's SLUG and not from the plan row, because the row
+    // does not carry it: `billing_plans.product_domain` exists and is NOT NULL,
+    // but `BillingPlanResponseSchema` — what `PlanService.getById/getBySlug`
+    // returns — has no `productDomain` field, so the read drops it. (Same shape
+    // as HOS-934, where qzpay's subscription mapper drops the identical column.)
+    // Widening that response is a wire-contract change the admin client parses;
+    // it is deliberately NOT bundled into this fix.
+    const planProductDomain = newPlanDef ? productDomainForPlanSlug(newPlanDef.slug) : undefined;
+
+    // A slug in no static catalogue — an HOS-1062 NEGOTIATED plan, one row per
+    // agreement, created in admin and absent from `ALL_PLANS`. Those are a live
+    // feature, so this keeps the pre-HOS-1279 behaviour for them (recalculate
+    // everything) rather than refusing.
+    //
+    // This is the SAME fail-open `assertAccommodationPlanChangeTarget` chose for
+    // the same input class, and for the same reason spelled out in its doc:
+    // treating "not in the static catalogue" as "not classifiable" would break
+    // every plan change onto a negotiated plan. It is NOT the `?? ACCOMMODATION`
+    // HOS-1078 deleted — nothing is being answered `'accommodation'` here; the
+    // classification is skipped entirely and nothing new is asserted.
+    //
+    // KNOWN RESIDUE: a customer on a negotiated plan who also holds a commerce
+    // add-on keeps the cross-domain stomp this spec fixes for everyone else.
+    // Closing it needs `productDomain` carried on the plan read.
+    const planDomainIsClassifiable = planProductDomain !== undefined;
+
     // Limits maps for direction/base-limit computation in Phase-2.
     // Empty maps are safe: resolvePlanBaseLimit returns 0 for missing keys.
     const newPlanLimits: Readonly<Record<string, number>> = newPlanDef?.limits ?? {};
@@ -290,6 +332,15 @@ export async function handlePlanChangeAddonRecalculation(
               byLimitKey: Map<string, PurchaseRecord[]>;
               affectedLimitKeys: readonly string[];
               subscriptionId: string | undefined;
+              /**
+               * HOS-1279: keys excluded by the domain classification, already
+               * shaped as results. Reported so an excluded cap is visible in the
+               * summary and in the dedup event's metadata, but deliberately kept
+               * OUT of `affectedLimitKeys` — that list drives `computeDirection`
+               * and the downgrade notification, and neither has any business
+               * reasoning about another vertical's cap.
+               */
+              domainExcluded: RecalculationResult[];
           };
 
     const phase1 = await withServiceTransaction(async (ctx) => {
@@ -367,6 +418,9 @@ export async function handlePlanChangeAddonRecalculation(
         }
 
         const limitAddons: LimitAddon[] = [];
+        // HOS-1279: one entry per limit key this plan change must NOT touch.
+        const domainExcluded: RecalculationResult[] = [];
+        const domainExcludedKeys = new Set<string>();
 
         for (const purchase of activePurchases) {
             // SPEC-192 T-013: resolve addon definition from DB-backed catalog.
@@ -387,6 +441,67 @@ export async function handlePlanChangeAddonRecalculation(
                 continue;
             }
 
+            // ── HOS-1279: domain isolation ────────────────────────────────
+            // A plan change governs ONE vertical. Recomputing another
+            // vertical's cap here resolves its base to 0 (the new plan does
+            // not declare the key) and writes `0 + increase` back — stomping
+            // a cap the customer pays for, silently and with no error.
+            //
+            // Skipped when the plan's own domain could not be established:
+            //  - `newPlanDef === null` is ALREADY fatal at Step 6, which
+            //    reports one failed result per affected key AND raises a Sentry
+            //    error naming the plan. Classifying here would swallow those
+            //    keys into the early exit below and lose the alert — a quieter
+            //    answer to a worse problem.
+            //  - an unclassifiable slug is a negotiated plan; see
+            //    `planDomainIsClassifiable` above.
+            const verdict = planDomainIsClassifiable
+                ? classifyLimitKeyAgainstPlanDomain({
+                      limitKey: addonDef.affectsLimitKey,
+                      planDomain: planProductDomain
+                  })
+                : ({ kind: 'owned' } as const);
+
+            if (verdict.kind !== 'owned') {
+                // One result per KEY, not per purchase: several add-ons can
+                // raise the same cap, and the caller reads this list keyed by
+                // limit key like every other outcome in it.
+                if (!domainExcludedKeys.has(addonDef.affectsLimitKey)) {
+                    domainExcludedKeys.add(addonDef.affectsLimitKey);
+                    domainExcluded.push({
+                        limitKey: addonDef.affectsLimitKey,
+                        oldMaxValue: 0,
+                        newMaxValue: 0,
+                        addonCount: 0,
+                        // 'foreign' is a deliberate no-op; 'unclassified' is a
+                        // refusal — the same fail-closed answer
+                        // `recalculateAddonLimitsForCustomer` gives an unknown
+                        // key, and never a fallback to accommodation.
+                        outcome: verdict.kind === 'foreign' ? 'skipped' : 'failed',
+                        reason:
+                            verdict.kind === 'foreign'
+                                ? `Limit key "${addonDef.affectsLimitKey}" belongs to product domain "${verdict.limitDomain}", not "${planProductDomain}" — left untouched by this plan change`
+                                : `Unknown limit key "${addonDef.affectsLimitKey}" or unresolved plan domain — no product domain owns it`
+                    });
+                }
+
+                apiLogger.info(
+                    {
+                        customerId,
+                        oldPlanId,
+                        newPlanId,
+                        purchaseId: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        limitKey: addonDef.affectsLimitKey,
+                        limitDomain: verdict.limitDomain,
+                        planDomain: planProductDomain,
+                        verdict: verdict.kind
+                    },
+                    'Plan-change recalculation skipped an add-on by domain isolation'
+                );
+                continue;
+            }
+
             limitAddons.push({ purchase, limitKey: addonDef.affectsLimitKey });
         }
 
@@ -401,7 +516,11 @@ export async function handlePlanChangeAddonRecalculation(
                     customerId,
                     oldPlanId,
                     newPlanId,
-                    recalculations: [],
+                    // HOS-1279: a customer whose ONLY limit add-ons belong to
+                    // another vertical lands here. Reporting the exclusions
+                    // rather than `[]` is what distinguishes "nothing to do"
+                    // from "something was deliberately left alone".
+                    recalculations: domainExcluded,
                     direction: computeDirection([], oldPlanLimits, newPlanLimits)
                 }
             };
@@ -455,6 +574,30 @@ export async function handlePlanChangeAddonRecalculation(
         }
 
         // ── Pre-fetch subscriptionId for dedup event write (Phase 3) ─────────
+        //
+        // HOS-1279 — READ THIS BEFORE COPYING THE PATTERN. This `LIMIT 1` has
+        // NO domain predicate, no status predicate and no ORDER BY, so with a
+        // customer who holds more than one subscription — a host auto-promoted
+        // from tourist, or an owner who also runs a restaurant — the storage
+        // adapter's row order decides which subscription this resolves to. It
+        // is therefore INDETERMINATE for a dual owner, on purpose left that way
+        // rather than fixed blind:
+        //
+        //  - the id is used for ONE thing, the `ADDON_RECALC_COMPLETED` dedup
+        //    event written in Phase 3, and the dedup check that reads it back
+        //    (Step 0d) joins on `billingSubscriptions.customerId` — it matches
+        //    ANY of the customer's subscriptions, so dedup works correctly
+        //    whichever row is picked here;
+        //  - narrowing it to the plan's own domain would need the subscription
+        //    rows hydrated (`getByCustomerId` does not populate
+        //    `productDomain`), inside the advisory-lock transaction, for an
+        //    attribution nothing reads.
+        //
+        // So the cost today is an event attributed to the wrong sibling
+        // subscription in the audit trail — not a wrong limit. If anything ever
+        // starts reading `billing_subscription_events.subscription_id` for this
+        // event type PER DOMAIN, this is the line that has to change first.
+        //
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const activeSubRows = await ctx
             .tx!.select({ id: billingSubscriptions.id })
@@ -485,23 +628,28 @@ export async function handlePlanChangeAddonRecalculation(
         const result: PlanChangeData = {
             byLimitKey: purchaseRecordMap,
             affectedLimitKeys,
-            subscriptionId: activeSubRows[0]?.id
+            subscriptionId: activeSubRows[0]?.id,
+            domainExcluded
         };
         return result;
     });
 
     // Early return if phase 1 decided we should stop
     if ('earlyReturn' in phase1) {
+        // HOS-1279: "no cap was written" rather than "the list is empty". The
+        // Step 4 exit can now carry domain-excluded entries, and a customer
+        // whose only limit add-ons belong to another vertical still just had
+        // their plan changed — their cached entitlements are stale either way.
         if (
             'recalculations' in phase1.earlyReturn &&
-            phase1.earlyReturn.recalculations.length === 0
+            !phase1.earlyReturn.recalculations.some((r) => r.outcome === 'success')
         ) {
             clearEntitlementCache(customerId);
         }
         return phase1.earlyReturn;
     }
 
-    const { byLimitKey, affectedLimitKeys, subscriptionId } = phase1;
+    const { byLimitKey, affectedLimitKeys, subscriptionId, domainExcluded } = phase1;
 
     // ── Phase 2: QZPay calls — OUTSIDE any open transaction ──────────────────
     // Calling billing.limits.set() while holding a DB transaction is hazardous:
@@ -512,7 +660,11 @@ export async function handlePlanChangeAddonRecalculation(
     // By calling QZPay here (after the Phase 1 tx committed) we eliminate both
     // risks. The dedup event is written in Phase 3 after QZPay completes.
 
-    const recalculations: RecalculationResult[] = [];
+    // HOS-1279: seeded with the keys domain isolation refused to touch. They are
+    // inert downstream — `detectDowngradedKeys` filters to `outcome === 'success'`
+    // — so they reach the summary, the returned result and the dedup event's
+    // metadata without ever reaching a notification or a `limits.set`.
+    const recalculations: RecalculationResult[] = [...domainExcluded];
 
     for (const [limitKey, purchases] of byLimitKey) {
         // ── Resolve new plan base limit from pre-fetched DB limits map (T-026) ──
