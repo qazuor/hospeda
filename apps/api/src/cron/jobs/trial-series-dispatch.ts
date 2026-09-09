@@ -191,11 +191,17 @@ async function dispatchOne(input: {
 
     const upgradeUrl = buildTrialUpgradeUrl({
         siteUrl: env.HOSPEDA_SITE_URL,
-        intendedInterval: candidate.intendedInterval
+        intendedInterval: candidate.intendedInterval,
+        productDomain: candidate.productDomain
     });
 
     // Fire-and-forget, matching every other send in this job: delivery failures
     // are the notification-retry pipeline's problem, not the cron's.
+    //
+    // `productDomain` (HOS-1283) is what lets the template render the right
+    // vertical's words. Passing the URL through `buildTrialUpgradeUrl` above
+    // is not enough on its own — the CTA would point at the right pricing page
+    // while the body still said "tu alojamiento" to a gastronomy owner.
     sendNotification({
         type: send.notificationType as TrialSeriesNotificationType,
         recipientEmail: customer.email,
@@ -205,6 +211,7 @@ async function dispatchOne(input: {
         planName,
         trialEndDate: candidate.trialEnd.toISOString(),
         upgradeUrl,
+        productDomain: candidate.productDomain,
         idempotencyKey: `${send.eventType}-${candidate.subscriptionId}`
     }).catch((notifError) => {
         logger.debug('Trial series notification failed (will retry)', {

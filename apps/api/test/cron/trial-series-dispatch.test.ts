@@ -70,7 +70,8 @@ vi.mock('../../src/utils/notification-helper', () => ({
 
 vi.mock('../../src/services/trial.service', () => ({
     buildTrialUpgradeUrl: vi.fn(
-        (input: { siteUrl: string }) => `${input.siteUrl}/es/suscriptores/planes/`
+        (input: { siteUrl: string; productDomain?: string | null }) =>
+            `${input.siteUrl}/es/suscriptores/planes/`
     )
 }));
 
@@ -85,6 +86,7 @@ import {
     findPreExpiryCohorts,
     type TrialSeriesCandidate
 } from '../../src/services/billing/trial-series-cohort';
+import { buildTrialUpgradeUrl } from '../../src/services/trial.service';
 import { lookupCustomerDetails } from '../../src/utils/customer-lookup';
 import { sendNotification } from '../../src/utils/notification-helper';
 
@@ -93,12 +95,16 @@ const billing = {
     plans: { get: vi.fn().mockResolvedValue({ name: 'owner-basico', metadata: {} }) }
 } as never;
 
-function candidate(id: string): TrialSeriesCandidate {
+function candidate(
+    id: string,
+    productDomain: string | null = 'accommodation'
+): TrialSeriesCandidate {
     return {
         subscriptionId: id,
         customerId: `cust-${id}`,
         planId: 'plan-1',
-        trialEnd: new Date('2026-09-26T00:00:00.000Z')
+        trialEnd: new Date('2026-09-26T00:00:00.000Z'),
+        productDomain
     };
 }
 
@@ -112,7 +118,13 @@ function withCohorts(byOffset: Record<number, string[]>): void {
     const post = new Map<number, TrialSeriesCandidate[]>();
     for (const [rawOffset, ids] of Object.entries(byOffset)) {
         const offset = Number(rawOffset);
-        (offset < 0 ? pre : post).set(offset, ids.map(candidate));
+        // NOT `ids.map(candidate)`: Array#map passes the index as a second
+        // argument, which would silently land in `candidate`'s new
+        // `productDomain` parameter instead of the default.
+        (offset < 0 ? pre : post).set(
+            offset,
+            ids.map((id) => candidate(id))
+        );
     }
     vi.mocked(findPreExpiryCohorts).mockResolvedValue(pre);
     vi.mocked(findPostExpiryCohorts).mockResolvedValue(post);
@@ -172,6 +184,32 @@ describe('dispatchTrialSeries (HOS-1012)', () => {
             NotificationType.TRIAL_WIN_BACK_30D,
             NotificationType.TRIAL_WIN_BACK_60D
         ]);
+    });
+
+    it('passes the candidate productDomain to the URL builder and the mailer (HOS-1283)', async () => {
+        // Regression: before HOS-1283 neither the CTA nor the notification
+        // payload carried the vertical at all, so a gastronomy owner's trial
+        // series was indistinguishable from an accommodation one downstream —
+        // every template defaulted to "tu alojamiento" regardless of what the
+        // cohort had actually selected.
+        vi.mocked(findPreExpiryCohorts).mockResolvedValue(
+            new Map([[-5, [candidate('gastro-sub', 'gastronomy')]]])
+        );
+        vi.mocked(findPostExpiryCohorts).mockResolvedValue(new Map());
+
+        await dispatchTrialSeries({
+            billing,
+            dryRun: false,
+            logger: logger(),
+            remindersEnabled: true
+        });
+
+        expect(buildTrialUpgradeUrl).toHaveBeenCalledWith(
+            expect.objectContaining({ productDomain: 'gastronomy' })
+        );
+        expect(sendNotification).toHaveBeenCalledWith(
+            expect.objectContaining({ productDomain: 'gastronomy' })
+        );
     });
 
     it('gives the pre-1-day and post-1-day sends different ledger rows and keys', async () => {
