@@ -36,7 +36,7 @@ You reach the plans page from the admin sidebar under **Comercial → Planes**.
 | **Annual price** | Price per year, also in centavos ARS. Leave at `0` to offer monthly billing only. | Yes |
 | **Entitlements** | The list of features the plan unlocks (checkbox list in the form). | Yes |
 | **Limits** | Numeric caps per feature (e.g. max accommodations), keyed by name. | Yes |
-| **Trial** | Whether the plan offers a trial and for how many days (trials are HOST-only — see ADR-009). | Yes |
+| **Trial** | Whether the plan offers a trial and for how many days. **Not HOST-only**: `tourist-vip` and the six gastronomy/experience plans all carry a 30-day trial, `complex-*` is the only tier still at 14, and the three partner plans have none. Live values in `packages/billing/src/constants/billing.constants.ts`. (ADR-009 still says "14 days, HOST-only" — it is superseded.) | Yes |
 | **Default** | Marks the plan assigned by default for its role tier. Only one default per tier. | **No — set at creation only.** Changing which plan is the tier default is a structural/config decision, not an operator edit; it is not exposed on the edit form. |
 | **Sort order** | Controls the order plans appear in on the pricing pages and lists. | Yes |
 | **Active** | Whether the plan is offered. Inactive plans disappear from the public pricing pages but existing subscriptions keep working. | Yes |
@@ -164,7 +164,7 @@ hard-delete is guarded and discouraged.
 - [ADR-020: Billing Plans — Source of Truth](../decisions/ADR-020-billing-plans-source-of-truth.md)
   (superseded by SPEC-168; explains the prior code-only model)
 - [ADR-006: Integer Monetary Values](../decisions/ADR-006-integer-monetary-values.md)
-- [ADR-009: Trial Host-Only](../decisions/ADR-009-trial-host-only.md)
+- [ADR-009: Trial Host-Only](../decisions/ADR-009-trial-host-only.md) — **superseded**; kept as a historical record only
 - [Billing Package](../../packages/billing/CLAUDE.md)
 - SPEC-168: `.claude/specs/SPEC-168-admin-plan-management/spec.md`
 - HOS-39: `.specs/HOS-39-plans-limits-entitlements-editable/spec.md` — narrowed

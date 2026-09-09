@@ -47,14 +47,23 @@ hops cron-trigger
 hops cron-trigger 3
 
 # By exact name
-hops cron-trigger trial-expiry
+hops cron-trigger trial-reconcile
 
 # Dry-run (does not execute writes — depends on the job honouring the flag)
-hops cron-trigger trial-expiry --dry-run
+hops cron-trigger trial-reconcile --dry-run
 
 # Non-interactive (for wrapper scripts)
-hops cron-trigger trial-expiry --dry-run --yes
+hops cron-trigger trial-reconcile --dry-run --yes
 ```
+
+> **The name is the job's `name:` field, not its filename.** `cron-trigger`
+> matches with `jobs.find(j => j.name === arg)`, so a filename is rejected with
+> "No job named '…'". The trap: the job named `trial-reconcile` lives in
+> `apps/api/src/cron/jobs/trial-expiry.ts`. Run `hops cron-list` — or grep
+> `apps/api/src/cron/schedules.manifest.ts` — for the real names.
+> (This guide said `trial-expiry` until HOS-1302; that command has never worked.
+> The `--help` text in `scripts/server-tools/src/commands/cron-trigger.ts:54`
+> carries the same wrong example.)
 
 The triggered run goes through the same `handler(jobContext)` code path
 as the scheduled run, with `jobContext.dryRun` reflecting the flag.
