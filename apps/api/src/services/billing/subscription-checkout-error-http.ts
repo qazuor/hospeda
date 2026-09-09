@@ -111,6 +111,13 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
             // the provider will accept — 400, so the front-end can prompt for a
             // different email (spec §11 OQ-1).
             return new HTTPException(400, { message: err.message });
+        case 'PLAN_DOMAIN_MISMATCH':
+            // HOS-1271: a well-formed request naming a real plan that simply
+            // belongs to a domain this checkout does not sell. Not 404 (the
+            // plan exists) — 422, same family as `PLAN_NOT_PURCHASABLE` and
+            // the plan-change route's identical `PLAN_DOMAIN_MISMATCH`
+            // (`ServiceError` `VALIDATION_ERROR`, `plan-domain-guard.ts`).
+            return new HTTPException(422, { message: err.message });
         default: {
             // Defensive: the union should be exhaustive, but TS doesn't
             // enforce that downstream consumers add new codes here. Fall
