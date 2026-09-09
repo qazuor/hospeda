@@ -27,6 +27,7 @@ import {
     excludeAddonDomainCondition,
     hydrateSubscriptionProductDomains,
     isAddonSubscription,
+    isOwnerCategorySubscription,
     normalizeStoredSubscriptionStatus,
     QZPAY_TO_HOSPEDA_STATUS,
     type ReactivateFromTrialInput,
@@ -41,7 +42,7 @@ import {
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 import {
@@ -256,6 +257,47 @@ function toIsoOrNull(value: unknown): string | null {
 }
 
 /**
+ * Reads `billing_subscriptions.trial_converted` for a set of subscription
+ * ids, keyed by id.
+ *
+ * `trial_converted` is a Hospeda-only Drizzle column (like `product_domain`
+ * — see {@link hydrateSubscriptionProductDomains}'s doc) that the QZPay SDK's
+ * mapper drops from the objects `subscriptions.getByCustomerId()` returns, so
+ * it has to be read straight from `@repo/db` instead of off the mapped
+ * subscription. It is written by exactly three call sites —
+ * `trial-supersede-on-activation.ts` and
+ * `webhooks/mercadopago/subscription-payment-handler.ts` (`true`, the trial
+ * converted to paid), and `trial-local-expiry.service.ts` (`false`, it
+ * expired without converting) — and defaults to `false`
+ * (`packages/drizzle/src/schema/subscriptions.schema.ts`) for every row none
+ * of those three ever touched, so a subscription that was cancelled by, say,
+ * `finalize-cancelled-subs` without ever having converted correctly reads as
+ * `false` here, not as a false "converted" positive.
+ *
+ * @param ids - Subscription ids to look up. Deduplication is the caller's
+ *   concern; an empty array short-circuits without a query.
+ * @returns Map of subscription id to its stored `trial_converted` value
+ *   (`false` when the row itself stores `null`, matching the column's own
+ *   default).
+ */
+async function hydrateTrialConverted(ids: readonly string[]): Promise<Map<string, boolean>> {
+    if (ids.length === 0) {
+        return new Map();
+    }
+
+    const db = getDb();
+    const rows = await db
+        .select({
+            id: billingSubscriptions.id,
+            trialConverted: billingSubscriptions.trialConverted
+        })
+        .from(billingSubscriptions)
+        .where(inArray(billingSubscriptions.id, ids as string[]));
+
+    return new Map(rows.map((row) => [row.id, row.trialConverted === true]));
+}
+
+/**
  * Result of a reconciliation run for a single customer.
  */
 export interface ReconcileResult {
@@ -310,8 +352,12 @@ export class TrialService {
      *    - `trialing` is the only status whose trial can expire (HOS-171: a
      *      converted card-first row keeps its `trialEnd` while `active`).
      * 2. Only when there is NO live subscription, the most recent historical
-     *    canceled trial, reported as expired **iff** its `trialEnd` has actually
-     *    elapsed — or if the stored date is corrupt, which fails closed.
+     *    expired-or-cancelled trial (HOS-337: both cancellation spellings —
+     *    qzpay-core's 1-L `canceled` and Hospeda's own 2-L `cancelled` — via
+     *    `normalizeStoredSubscriptionStatus`; `CANCELLED` additionally scoped
+     *    to owner/complex-category plans that never converted, see inline),
+     *    reported as expired **iff** its `trialEnd` has actually elapsed — or
+     *    if the stored date is corrupt, which fails closed.
      *
      * `input.productDomain` (HOS-1282) is an OPT-IN narrowing, not a change to
      * the default resolution the paywall depends on. Omitted (both
@@ -475,36 +521,87 @@ export class TrialService {
                 // "you never had a trial" instead of the paywall this function backs.
                 // Fixed below by also matching the normalized `EXPIRED` status.
                 //
-                // STILL OPEN, STILL HOS-337's: this filter matches only the 1-L
+                // FIXED (HOS-337): this filter used to match only the 1-L
                 // `'canceled'` that qzpay-core writes, while every DIRECT Hospeda
                 // writer of a genuine (non-expiry) cancellation stores the 2-L
-                // `'cancelled'`. The branch is NOT dead (the HOS-285 prod lockout
-                // came through it) but it is blind to the dominant cancellation
-                // paths, so for most cancelled (not merely expired) customers the
-                // paywall still never fires. Recognizing `'cancelled'` here too would
-                // require normalizing that comparison as well, which HOS-337
-                // deliberately does NOT do in one line: it activates the gate for a
-                // much larger population and needs its own scoping — owner-category
-                // only (tourist plans carry a 14-day trial too), `trial_converted` as
-                // the conversion signal (`current_period_start` is insert-only, so
-                // period arithmetic cannot detect a charge), the dunning/pause
-                // interaction, and a staging smoke. `EXPIRED` needed none of that
-                // scoping to add safely here: it is written ONLY by the two local-
-                // trial paths above, both already accommodation/gastronomy/experience-
-                // only (`createTrialSubscription` has exactly two call sites), so
-                // widening to it cannot reach the tourist/dunning/blast-radius cases
-                // HOS-337 is scoped around.
+                // `'cancelled'` (the MercadoPago webhook via
+                // `QZPAY_TO_HOSPEDA_STATUS`, `finalize-cancelled-subs`,
+                // `refund-lifecycle.service.ts`) — the DOMINANT cancellation
+                // paths, for which the paywall never fired. Both spellings are
+                // now unified via `normalizeStoredSubscriptionStatus`, which
+                // maps qzpay's 1-L `canceled` AND Hospeda's own 2-L `cancelled`
+                // to the same `SubscriptionStatusEnum.CANCELLED` (see that
+                // function's docblock) — the same normalizer already used below
+                // for `EXPIRED`.
                 //
-                // Note one behaviour change this fix DOES make here: with the date
-                // comparison below, a subscription hard-cancelled mid-trial keeps write
-                // access until its original `trialEnd` instead of losing it at once.
-                // Whether an admin revocation should be immediate is part of HOS-337.
+                // Recognizing `CANCELLED` is scoped, unlike `EXPIRED` (which
+                // needs no scoping: it is written ONLY by the two local-trial
+                // paths, both already accommodation/gastronomy/experience-only —
+                // `createTrialSubscription` has exactly two call sites):
+                //
+                // 1. Owner/complex-category plans ONLY
+                //    (`isOwnerCategorySubscription`, computed per candidate
+                //    BELOW, before the sort — not on the sort's winner, or a
+                //    newer tourist cancellation could still mask an older owner
+                //    one by winning the "most recent trialEnd" sort first).
+                //    Tourist plans carry their own 14-day trial
+                //    (`TOURIST_TRIAL_DAYS === OWNER_TRIAL_DAYS`) and this
+                //    middleware is GLOBAL: an unscoped match would 402 a
+                //    tourist's favourites/reviews/profile writes with a "your
+                //    trial expired, upgradeAudience: 'host'" message that
+                //    contradicts the entitlement middleware immediately before
+                //    it, which already resolved them to the free tier (the same
+                //    divergence class HOS-285 was about). KNOWN RESIDUAL RISK:
+                //    `isOwnerCategorySubscription` returns `false` — "not
+                //    owner" — for a missing or soft-deleted plan row, so a
+                //    dangling `planId` fails this branch OPEN (no paywall)
+                //    rather than closed. Not hardened here; tracked as a
+                //    pre-existing property of that shared predicate (also used
+                //    by `entitlement.ts`), not something this fix introduces.
+                // 2. `trial_converted !== true` (see {@link hydrateTrialConverted}).
+                //    A subscription that DID convert to paid before being
+                //    cancelled is not "a trial that expired without paying" —
+                //    it is a paid plan the customer later cancelled, and this
+                //    branch exists to report the former, not the latter.
+                //    `trial_converted` defaults to `false`, so the dominant
+                //    "cancelled without ever converting" case this fix targets
+                //    is unaffected by the exclusion.
+                //
+                // Note one behaviour change the EXPIRED half of this fix (HOS-1282)
+                // already made: with the date comparison below, a subscription
+                // hard-cancelled mid-trial keeps write access until its original
+                // `trialEnd` instead of losing it at once. Whether an admin
+                // revocation should be immediate remains an open owner decision
+                // (HOS-337), unchanged by this pass. Also unchanged: the
+                // dunning/pause interaction (`trialMiddleware` runs before
+                // `pastDueGraceMiddleware`) and the blast-radius allowlist gap
+                // (profile/comments/conversations/bookmarks) the original
+                // HOS-337 analysis flagged — neither is a status-matching bug,
+                // so neither is touched by this pass.
+                const cancelledCandidates = subscriptions.filter(
+                    (sub) =>
+                        normalizeStoredSubscriptionStatus(sub.status) ===
+                            SubscriptionStatusEnum.CANCELLED && sub.trialEnd != null
+                );
+                const trialConvertedById = await hydrateTrialConverted(
+                    cancelledCandidates.map((sub) => sub.id)
+                );
+                const ownerCancelledIds = new Set<string>();
+                for (const sub of cancelledCandidates) {
+                    if (trialConvertedById.get(sub.id) === true) {
+                        continue;
+                    }
+                    if (await isOwnerCategorySubscription({ planId: sub.planId })) {
+                        ownerCancelledIds.add(sub.id);
+                    }
+                }
+
                 const historicalTrialSub = subscriptions
                     .filter(
                         (sub) =>
-                            (sub.status === 'canceled' ||
-                                normalizeStoredSubscriptionStatus(sub.status) ===
-                                    SubscriptionStatusEnum.EXPIRED) &&
+                            (normalizeStoredSubscriptionStatus(sub.status) ===
+                                SubscriptionStatusEnum.EXPIRED ||
+                                ownerCancelledIds.has(sub.id)) &&
                             sub.trialEnd != null
                     )
                     .sort((a, b) => {
