@@ -298,6 +298,30 @@ describe('PlanPurchaseButton — HOS-1233 AC-4: more days left than the threshol
         expect(window.location.href).toBe('');
     });
 
+    it('Escape cancels it too, and charges nothing', async () => {
+        // `handleTrialWarningCancel`'s docblock promises the cancel path covers
+        // "button, Escape or overlay click", and only the button was tested.
+        // Escape is wired through the shared `<Dialog>`'s document listener, so
+        // it is a different code path from the cancel button's `onClick` — a
+        // regression there would leave the button test green.
+        const user = userEvent.setup();
+        const fetchMock = buildFetchMock();
+        vi.stubGlobal('fetch', fetchMock);
+        fetchTrialClockMock.mockResolvedValue(RUNNING_WITH_DAYS);
+
+        const button = await renderAndSettle();
+        await user.click(button);
+        await screen.findByRole('dialog');
+
+        await user.keyboard('{Escape}');
+
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog')).toBeNull();
+        });
+        expect(startPaidCalls(fetchMock)).toEqual([]);
+        expect(window.location.href).toBe('');
+    });
+
     it('confirming proceeds to checkout — the positive sibling of the two above', async () => {
         const user = userEvent.setup();
         const fetchMock = buildFetchMock();
