@@ -304,11 +304,21 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      * - **`content_approved_at IS NOT NULL`** — the payment gate itself. Both
      *   `registerManualPayment` and `send-link` refuse without it, so a partner
      *   who never cleared it has never been able to pay through any path and
-     *   cannot be suspected of having stopped. This is also what keeps the six
-     *   curated example fixtures (`src/data/partner/*.json`, backfilled into
-     *   live environments by seed migration 0019) out: they carry a 2025
-     *   `starts_at` and no approval, so they would otherwise be flagged on the
-     *   first tick for a payment nobody ever expected.
+     *   cannot be suspected of having stopped.
+     *
+     *   MEASURED CAVEAT about the six curated example fixtures
+     *   (`packages/seed/src/data/partner/*.json`): this clause excludes them on
+     *   an already-seeded environment and NOT on a fresh one, because the two
+     *   paths that put them there write different rows. Seed migration 0019
+     *   inserts through `PartnerModel` directly, bypassing
+     *   `PartnerService._beforeCreate`, so staging and production hold them
+     *   with `content_approved_at` NULL — excluded. A fresh seed runs
+     *   `partners.seed.ts`, which goes through `PartnerService.create()`, and
+     *   that hook stamps `contentApprovedAt` — so on a local database the six
+     *   demo partners DO match, carry a 2025 `starts_at`, and are flagged on
+     *   the first tick. Noisy rather than wrong (a partner with no payment
+     *   record is the shape this hunts for) and it changes no state, but do not
+     *   read this predicate as "the fixtures are excluded".
      * - **no link row in an entitlement-granting status** — the subscription
      *   carril already governs those, through the webhook, dunning and
      *   `finalize-cancelled-subs`. (That chain has its own gaps — HOS-1306 —
