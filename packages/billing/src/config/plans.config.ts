@@ -720,9 +720,9 @@ function commerceVerticalTier(input: {
         monthlyPriceArs: input.monthlyPriceArs,
         // HOS-1285 — declared BY TIER, never sealed here. The `null` this line
         // used to hold applied to all six tiers at once and was invisible from
-        // every tier declaration, so the two `presentacion/` landing pages could
-        // publish a "Por año" row for eighteen months while no commerce plan had
-        // an annual price row and the checkout could not have sold one.
+        // every tier declaration, which is how the two `presentacion/` landing
+        // pages came to publish a "Por año" row (2026-09-05) while no commerce
+        // plan had an annual price row and the checkout could not have sold one.
         annualPriceArs: input.annualPriceArs,
         monthlyPriceUsdRef: Math.round(input.monthlyPriceArs / 100000),
         // HOS-590: every sellable tier declares the same 30-day trial every
