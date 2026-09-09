@@ -625,6 +625,32 @@ export const COMMERCE_AI_CHAT_PER_MONTH = 1250;
  *   can still be unreachable while another vertical tier stays the default.
  * @param input.monthlyPriceArs - Monthly price in centavos; `0` for a tier that
  *   has not been priced yet, which is also why such a tier ships inactive.
+ * @param input.annualPriceArs - Annual price in centavos (HOS-1285). REQUIRED,
+ *   with no default, for the reason `aiChatPerMonth` and `privateGalleries` are:
+ *   until HOS-1285 this was hardcoded `null` INSIDE this factory, so all six
+ *   tiers lost their annual option at once and no tier declaration named the
+ *   fact. A default would put that back — "nobody priced this tier annually"
+ *   would read exactly like "this tier is deliberately monthly-only". Pass
+ *   `null` to mean the latter, and mean it.
+ *
+ *   **The six values, together** (owner rule: ten months charged for twelve
+ *   served, the same discount accommodation uses — the figures the two
+ *   `presentacion/` landing pages have published since 2026-09-05):
+ *
+ *   | Tier | Monthly | Annual |
+ *   | --- | --- | --- |
+ *   | `gastronomy-basico`  | $30.000 | **$300.000** |
+ *   | `gastronomy-pro`     | $65.000 | **$650.000** |
+ *   | `gastronomy-premium` | $80.000 | **$800.000** |
+ *   | `experience-basico`  | $15.000 | **$150.000** |
+ *   | `experience-pro`     | $35.000 | **$350.000** |
+ *   | `experience-premium` | $50.000 | **$500.000** |
+ *
+ *   Declared as a literal per tier rather than derived from `monthlyPriceArs`
+ *   times a shared multiplier: the discount is an owner decision per tier, not
+ *   an arithmetic identity, and a multiplier would silently reprice all six the
+ *   day one of them moves. Same reason the two verticals' monthly prices stopped
+ *   sharing a constant in HOS-975.
  * @param input.hasTrial - Whether the tier grants a free trial (HOS-590).
  *   Defaults to `false` — a disabled, unpriced tier has no price and is not
  *   sellable, so a trial has nothing to precede. Every `isActive: true` tier
@@ -669,6 +695,7 @@ function commerceVerticalTier(input: {
     sortOrder: number;
     isActive: boolean;
     monthlyPriceArs: number;
+    annualPriceArs: number | null;
     hasTrial?: boolean;
     trialDays?: number;
     extraEntitlements?: readonly EntitlementKey[];
@@ -691,7 +718,12 @@ function commerceVerticalTier(input: {
         // existing exhaustive maps rather than restating the association.
         productDomain: commerceVerticalToProductDomain(input.vertical),
         monthlyPriceArs: input.monthlyPriceArs,
-        annualPriceArs: null,
+        // HOS-1285 — declared BY TIER, never sealed here. The `null` this line
+        // used to hold applied to all six tiers at once and was invisible from
+        // every tier declaration, so the two `presentacion/` landing pages could
+        // publish a "Por año" row for eighteen months while no commerce plan had
+        // an annual price row and the checkout could not have sold one.
+        annualPriceArs: input.annualPriceArs,
         monthlyPriceUsdRef: Math.round(input.monthlyPriceArs / 100000),
         // HOS-590: every sellable tier declares the same 30-day trial every
         // accommodation plan does. Since HOS-975 all six tiers are sellable and
@@ -845,6 +877,8 @@ export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     // HOS-975: ARS $30.000/mo. Was 1_500_000 (the shared pre-HOS-688 price).
     monthlyPriceArs: 3_000_000,
+    // HOS-1285: ARS $300.000/yr — ten months charged for twelve served.
+    annualPriceArs: 30_000_000,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-400: the AI chat is premium-only in both verticals (owner decision),
@@ -902,6 +936,8 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     // HOS-975: ARS $65.000/mo. Was 4_500_000 (HOS-895 PR2's activation price).
     monthlyPriceArs: 6_500_000,
+    // HOS-1285: ARS $650.000/yr — ten months charged for twelve served.
+    annualPriceArs: 65_000_000,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-895 — the first thing that separates `-pro` from `-basico` by more
@@ -967,6 +1003,8 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     // HOS-975: ARS $80.000/mo. Was 1_500_000 (the shared pre-HOS-688 price).
     monthlyPriceArs: 8_000_000,
+    // HOS-1285: ARS $800.000/yr — ten months charged for twelve served.
+    annualPriceArs: 80_000_000,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-1058: the printable PDF ficha. Owner decision, 2026-09-01 — premium,
@@ -1051,6 +1089,8 @@ export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     // HOS-975: ARS $15.000/mo — deliberately UNCHANGED, see the docblock.
     monthlyPriceArs: 1_500_000,
+    // HOS-1285: ARS $150.000/yr — ten months charged for twelve served.
+    annualPriceArs: 15_000_000,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-400: the AI chat is premium-only in both verticals (owner decision),
@@ -1105,6 +1145,8 @@ export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     // HOS-975: ARS $35.000/mo. Was 0 ("not priced yet").
     monthlyPriceArs: 3_500_000,
+    // HOS-1285: ARS $350.000/yr — ten months charged for twelve served.
+    annualPriceArs: 35_000_000,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS,
     // The two things that separate `-pro` from `-basico` by more than its
@@ -1146,6 +1188,8 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     isActive: true,
     // HOS-975: ARS $50.000/mo. Was 1_500_000 (the shared pre-HOS-688 price).
     monthlyPriceArs: 5_000_000,
+    // HOS-1285: ARS $500.000/yr — ten months charged for twelve served.
+    annualPriceArs: 50_000_000,
     hasTrial: true,
     trialDays: COMMERCE_TRIAL_DAYS,
     // HOS-1058 — R-1: the two verticals are separate domains, so the same

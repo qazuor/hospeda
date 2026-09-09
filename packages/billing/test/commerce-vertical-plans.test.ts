@@ -244,6 +244,31 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         expect(EXPERIENCE_PREMIUM_PLAN.monthlyPriceArs).toBe(5_000_000); // ARS $50.000
     });
 
+    it('charges ten months for a year on every one of the six tiers (HOS-1285)', () => {
+        // Literals on BOTH sides, for the reason the monthly test right above
+        // states: these are the figures the two `presentacion/` landing pages
+        // have published since 2026-09-05, not a re-derivation of a rule.
+        expect(GASTRONOMY_BASICO_PLAN.annualPriceArs).toBe(30_000_000); // ARS $300.000
+        expect(GASTRONOMY_PRO_PLAN.annualPriceArs).toBe(65_000_000); // ARS $650.000
+        expect(GASTRONOMY_PREMIUM_PLAN.annualPriceArs).toBe(80_000_000); // ARS $800.000
+        expect(EXPERIENCE_BASICO_PLAN.annualPriceArs).toBe(15_000_000); // ARS $150.000
+        expect(EXPERIENCE_PRO_PLAN.annualPriceArs).toBe(35_000_000); // ARS $350.000
+        expect(EXPERIENCE_PREMIUM_PLAN.annualPriceArs).toBe(50_000_000); // ARS $500.000
+    });
+
+    it('leaves NO commerce tier without an annual price (HOS-1285)', () => {
+        // The half the six literals above cannot catch: a SEVENTH tier added
+        // later. `commerceVerticalTier` sealed `annualPriceArs: null` inside
+        // itself until HOS-1285, which is exactly how six plans came to be
+        // monthly-only without any tier declaration saying so — the parameter is
+        // now required precisely so a new tier has to decide, and this is what
+        // notices if it decides `null`.
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            expect(plan.annualPriceArs).not.toBeNull();
+            expect(plan.annualPriceArs).toBeGreaterThan(plan.monthlyPriceArs);
+        }
+    });
+
     it('prices each vertical as a strictly ascending ladder (HOS-975)', () => {
         // The property that makes the three tiers a LADDER rather than three
         // unrelated products, and the one an accidental digit slip breaks
