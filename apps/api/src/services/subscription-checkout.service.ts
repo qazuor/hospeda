@@ -96,6 +96,8 @@ import {
 import { env } from '../utils/env.js';
 import { sanitizeEmailForMercadoPago } from '../utils/mp-email.js';
 import {
+    resolveReusableAccommodationCheckout,
+    resolveReusableAccommodationOwnPreapprovalCheckout,
     resolveReusableCommerceCheckout,
     resolveReusableCommerceOwnPreapprovalCheckout,
     resolveReusablePartnerCheckout,
@@ -676,11 +678,55 @@ export async function initiatePaidMonthlySubscription(
     // precedence (spec §6.3). Throws `PAYER_EMAIL_UNSUPPORTED_CHARACTER`
     // (mapped to HTTP 400) before any MercadoPago resource is provisioned
     // when the resolved email contains a `+` (spec §11 OQ-1).
+    //
+    // Resolved BEFORE the idempotency check below (HOS-1272) — unlike
+    // commerce/partner, `InitiatePaidMonthlySubscriptionResult.payerEmail` is
+    // REQUIRED, and a reused in-flight checkout must answer it too (the
+    // front-end's pre-redirect screen reads it either way).
     const { payerEmail } = resolvePayerEmail({
         requestedPayerEmail: input.payerEmail,
         mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
         customerEmail: customer.email
     });
+
+    // ── Idempotency per CUSTOMER (HOS-1272, checkout-idempotency.ts) ────────
+    // Accommodation was the ONE entry point below with no per-entity
+    // idempotency at all: two clicks on "pay" minted two independent,
+    // both-payable MercadoPago preapprovals for the same host — a real double
+    // charge, not merely two rows. The route-level 409 (`start-paid.ts`)
+    // cannot cover it: it keys on `{active, trialing, comp}`, and an in-flight
+    // checkout sits at `pending_provider`, deliberately outside that set
+    // (blocking it would wedge the host forever on a single abandoned
+    // checkout). Instead, while the checkout is genuinely in flight, hand back
+    // THE SAME link — same pattern commerce/partner already had (see the
+    // module docblock on `checkout-idempotency.ts` for why the CUSTOMER
+    // stands in for the bridge table those two verticals have and
+    // accommodation does not).
+    //
+    // Placed after the MP plan is resolved for the same reason as commerce/
+    // partner: the resolved plan is one of the reuse conditions, and it
+    // resolves from cache here, so this costs no extra MercadoPago call.
+    //
+    // Nothing is cancelled or refunded for a superseded pending — the
+    // `abandoned-pending-subs` cron already reaps exactly that row shape.
+    const accommodationReusable = env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED
+        ? await resolveReusableAccommodationOwnPreapprovalCheckout({
+              customerId,
+              planId: plan.id,
+              productDomain,
+              mpPreapprovalPlanId: providerPriceId,
+              ...(input.db ? { db: input.db } : {})
+          })
+        : await resolveReusableAccommodationCheckout({
+              customerId,
+              planId: plan.id,
+              productDomain,
+              mpPreapprovalPlanId: providerPriceId,
+              ...(input.db ? { db: input.db } : {})
+          });
+    if (accommodationReusable) {
+        return { ...accommodationReusable, payerEmail };
+    }
 
     // ── HOS-937 step 1: own-preapproval checkout, behind a dark-by-default
     // flag ─────────────────────────────────────────────────────────────────
@@ -1729,6 +1775,30 @@ export async function initiatePaidAnnualSubscription(
         mpPayerEmail: await getMpPayerEmail(customerId, input.db ?? getDb()),
         customerEmail: customer.email
     });
+
+    // ── Idempotency per CUSTOMER (HOS-1272, checkout-idempotency.ts) ────────
+    // Same bug and same fix as the monthly path's identical block — see its
+    // comment for the full rationale. Resolved after `payerEmail` for the
+    // same reason as monthly: `InitiatePaidAnnualSubscriptionResult.payerEmail`
+    // is required, and a reused in-flight checkout must answer it too.
+    const accommodationReusable = env.HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED
+        ? await resolveReusableAccommodationOwnPreapprovalCheckout({
+              customerId,
+              planId: plan.id,
+              productDomain,
+              mpPreapprovalPlanId: providerPriceId,
+              ...(input.db ? { db: input.db } : {})
+          })
+        : await resolveReusableAccommodationCheckout({
+              customerId,
+              planId: plan.id,
+              productDomain,
+              mpPreapprovalPlanId: providerPriceId,
+              ...(input.db ? { db: input.db } : {})
+          });
+    if (accommodationReusable) {
+        return { ...accommodationReusable, payerEmail };
+    }
 
     // ── HOS-937 step 4: own-preapproval checkout, same dark-by-default flag
     // as the monthly path ────────────────────────────────────────────
