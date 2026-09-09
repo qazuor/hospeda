@@ -39,6 +39,7 @@ import { checkoutRetryRouter } from './checkout-retry';
 import { createCollectionListingBlocker } from './collection-listing-block';
 import { downgradePreviewRouter } from './downgrade-preview';
 import { linkPreapprovalRouter } from './link-preapproval';
+import { payerEmailKnownRouter } from './payer-email-known';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { protectedPlansListRouter } from './protected-plans-list';
@@ -260,6 +261,11 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // deliberately kept off the `/trial` lifecycle namespace above (it never
     // starts, extends, or reactivates anything, it only answers a question).
     router.route('/trial-eligibility', trialEligibilityRouter);
+
+    // Mount the read-only payer-email-known check (HOS-1234) — lets the
+    // pricing page's own-preapproval checkout skip the pre-redirect
+    // payer-email confirm dialog once a prior charge already confirmed one.
+    router.route('/payer-email-known', payerEmailKnownRouter);
 
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);

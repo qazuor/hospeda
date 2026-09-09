@@ -110,9 +110,23 @@ overrides:
   # and its own CI step. It proves one core version resolves, not WHICH one; the
   # floors above stay prose, and are not machine-checked.
   #
-  # Current wave (2026-09-01): core 5.1.1 · mercadopago 2.9.4 · drizzle 2.1.0 ·
-  # hono 1.6.13 · react 1.1.28. Declared as `^` ranges in apps/api, apps/admin,
+  # HOS-1233 (2026-09-08): raised to core 6.0.0. `productDomain` is now REQUIRED
+  # on subscription creation — a major because omitting it stops compiling.
+  # Until then the parameter did not exist at all, so every row Hospeda created
+  # through `createPaidSubscription` was born on `billing_subscriptions`'s own
+  # `'accommodation'` column default. Measured in prod AND staging: every
+  # `tourist-*` plan, and every subscription on one, reported `accommodation`.
+  # Not one line of code was wrong; the value was simply never stated. The floor
+  # is what keeps it stateable. FLOOR: core >= 6.0.0.
+  #
+  # Current wave (2026-09-08): core 6.0.0 · mercadopago 2.11.1 · drizzle 3.0.0 ·
+  # hono 2.0.0 · react 2.0.0. Declared as `^` ranges in apps/api, apps/admin,
   # packages/billing, packages/db and packages/service-core.
+  #
+  # This line was stale for two waves before anyone noticed (it still named the
+  # 2026-09-01 wave while the workspace had moved twice). It is prose, so no
+  # guard reads it — `check-qzpay-wave-convergence.sh` proves ONE core resolves,
+  # never which one. Update it in the same commit that moves the ranges.
   #
   # WHAT KEEPS THE WAVE TOGETHER. The rule above is about two DIFFERENT exact
   # core demands coexisting, which is narrower than "never bump one package".
@@ -195,11 +209,39 @@ overrides:
   # version. Raising the selector to the full advisory range is the fix.
   # Transitive only (xmlbuilder2, @tanstack/start-plugin-core, ~100 paths), so
   # an override is the only reachable route — Dependabot cannot patch these.
-  "js-yaml@<4.3.1": "^4.3.1"
+  #
+  # AMPLIADO otra vez el 2026-09-08 por GHSA-2883-xcg3-v3hh (high):
+  # `maxTotalMergeKeys` no acota el CPU cuando las fuentes del merge están
+  # vacías, y el rango vulnerable llega hasta <4.3.2. El piso anterior (4.3.1)
+  # volvió a ser exactamente la versión que el advisory nombra — tercera vez que
+  # este override se queda corto por la misma razón, así que vale escribirla:
+  # cuando el rango de un advisory se amplía, el piso que lo cerraba pasa a ser
+  # el techo de lo vulnerable. Además de xmlbuilder2, ahora también entra por
+  # apps/api > @better-auth/expo > expo > @expo/cli > @expo/xcpretty.
+  "js-yaml@<4.3.2": "^4.3.2"
   # The 5.x line is a separate advisory track from the 4.x pin above: 5.2.0 is
   # installed and is hit by both the flow-collection and the !!omap DoS. Already
   # above the !!omap fix, so this line needed no change.
   "js-yaml@>=5.0.0": ">=5.2.2"
+  # Lote de advisories del 2026-09-08 (~10 GHSAs high sobre las dos líneas vivas:
+  # GHSA-6mj3-qw4j-hgrw, -c7q8-3ch8-vqpv, -27p8-2357-5qqv, -8344-3jmq-59r6,
+  # -965w-775f-mr7g, -93r5-fhx6-vmg9, -3px3-54cx-rmw9, -vr34-hp96-76pp,
+  # -w2rr-34g9-rvrj, -4w3w-2rp5-g8jm). Amplificación de salida y mismatches de
+  # parseo en XML/HTML.
+  #
+  # Las DOS líneas se pinean por separado a propósito: `@expo/plist` declara
+  # `^0.8.8` y `@expo/config-plugins` la 0.9.x, así que un solo override con
+  # `>=0.9.12` cruzaría a un consumidor de la 0.8 por encima de un major.
+  #
+  # Transitivo puro y por un solo camino: apps/api > @better-auth/expo > expo >
+  # @expo/cli > (@expo/plist | @expo/config-plugins > xcode > simple-plist >
+  # plist). Ese sub-árbol es herramental de prebuild de iOS/Android — la API
+  # Hono no lo ejecuta nunca; lo que sí se usa de `@better-auth/expo` es el
+  # plugin `expo()` de apps/api/src/lib/auth.ts, que es server-side puro (un
+  # endpoint de deep-link y un hook sobre `origin`) y no toca XML. Por eso el
+  # riesgo de forzar estas versiones es bajo, pero el advisory se cierra igual.
+  "@xmldom/xmldom@<0.9.0": ">=0.8.15 <0.9.0"
+  "@xmldom/xmldom@>=0.9.0": ">=0.9.12"
   # 0.0.33 and 0.1.0 both reach the arbitrary-write and path-traversal
   # advisories. Only reachable through external-editor (CLI prompt tooling).
   tmp: ">=0.2.6"
@@ -324,8 +366,16 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0 || 4.0.0 || 5.0.0 || 5.1.0 || 5.1.1 || 5.2.0 || 6.0.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1 || 2.9.2 || 2.9.4 || 2.10.0 || 2.11.1'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0 || 2.1.0 || 2.1.1 || 3.0.0'
-  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11 || 1.6.13 || 1.6.14 || 2.0.0'
-  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26 || 1.1.28 || 1.1.29 || 2.0.0'
+  # UNION of both waves, not a choice between them (merge of `staging`,
+  # 2026-09-09). `staging` had converged on core 5.3.0 while this branch was on
+  # 6.0.0; the installed wave is 6.0.0 (a strict descendant — qzpay PR #83's
+  # payer-email fix released as 5.3.0, PR #85's required productDomain as
+  # 6.0.0), but the older entries stay listed. This is an allowlist of versions
+  # permitted past the minimum-release-age policy, so dropping the side that
+  # lost the version race removes a permission another branch may still need
+  # and buys nothing.
+  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0 || 4.0.0 || 5.0.0 || 5.1.0 || 5.1.1 || 5.2.0 || 5.3.0 || 6.0.0'
+  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1 || 2.9.2 || 2.9.4 || 2.10.0 || 2.11.0 || 2.11.1'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0 || 2.1.0 || 2.1.1 || 2.1.2 || 3.0.0'
+  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11 || 1.6.13 || 1.6.14 || 1.6.15 || 2.0.0'
+  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26 || 1.1.28 || 1.1.29 || 1.1.30 || 2.0.0'

@@ -73,6 +73,10 @@ import {
 import type { getQZPayBilling } from '../../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import {
+    getMpPayerEmail,
+    persistMpPayerEmailBestEffort
+} from '../../../services/billing/payer-email.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -169,6 +173,90 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
         )
         .limit(1);
     return rows[0] ?? null;
+}
+
+/**
+ * Remember which email MercadoPago actually charged for this subscription.
+ *
+ * This is the recording path for SUBSCRIPTION charges, and it exists separately
+ * from the one in `payment-logic.ts` because a recurring charge cannot use it:
+ * such a payment arrives with `metadata: {}` (measured on payment
+ * `177923168044`, 2026-09-08), so there is no customer in the payload to write
+ * against. Here the customer is already resolved from
+ * `billing_subscriptions.mp_subscription_id` — a dedicated column, not an
+ * overloaded reference field — which makes this the trustworthy half.
+ *
+ * Why a second provider call is needed at all: the authorized-payment REST
+ * payload this handler runs on carries no payer email. Its inner `payment`
+ * block holds `{ id, status, status_detail }` and nothing else (verified
+ * against authorized payment `7031725770`), so the address has to be read off
+ * the payment itself.
+ *
+ * That call is skipped once the customer already has an email on file, which is
+ * also the point of the feature: the value is asked for once and then reused, so
+ * steady-state renewals add no provider traffic at all.
+ *
+ * Fire-and-forget and fully swallowed: a charge is already on record by the time
+ * this runs, and a bookkeeping column must never turn a settled payment into a
+ * failed webhook.
+ *
+ * @param input.customerId - Billing customer resolved from the local subscription.
+ * @param input.mpPaymentId - MercadoPago `payment.id` of the settled charge.
+ * @param input.paymentAdapter - Provider adapter used to read the payment.
+ * @param input.status - QZPay-normalized status of the charge just recorded.
+ */
+async function recordPayerEmailFromSettledCharge(input: {
+    readonly customerId: string;
+    readonly mpPaymentId: string;
+    readonly paymentAdapter: {
+        readonly payments: {
+            retrieve: (id: string) => Promise<{ readonly payerEmail?: string | null }>;
+        };
+    };
+    readonly status: string;
+    readonly requestId: string;
+}): Promise<void> {
+    const { customerId, mpPaymentId, paymentAdapter, status, requestId } = input;
+
+    // Only a charge that actually cleared says anything about the address. A
+    // failed or still-pending one must never write: the value is later used to
+    // STOP asking the user which email to bill, so an unconfirmed address would
+    // suppress that question while naming an account that cannot pay.
+    if (status !== 'succeeded') {
+        return;
+    }
+
+    try {
+        if (await getMpPayerEmail(customerId)) {
+            return;
+        }
+
+        const payment = await paymentAdapter.payments.retrieve(mpPaymentId);
+
+        // `''` is what MercadoPago returns for "no email" elsewhere, and it is
+        // falsy enough to look handled while still being a `string`. qzpay >=
+        // 2.11.0 already collapses it to `null`; this is the second line.
+        if (!payment.payerEmail) {
+            return;
+        }
+
+        await persistMpPayerEmailBestEffort({ customerId, payerEmail: payment.payerEmail });
+
+        apiLogger.info(
+            { customerId, mpPaymentId, requestId },
+            'HOS-1234: recorded the confirmed MercadoPago payer email from a settled subscription charge'
+        );
+    } catch (error) {
+        apiLogger.warn(
+            {
+                customerId,
+                mpPaymentId,
+                requestId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'HOS-1234: could not record the payer email for this charge (best-effort, the charge itself is unaffected)'
+        );
+    }
 }
 
 /*
@@ -992,6 +1080,19 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             },
             'MercadoPago webhook: recurring payment recorded in billing_payments'
         );
+
+        // HOS-1234: the charge is on record, so MercadoPago accepted whatever
+        // account is behind this subscription — this is the moment its email
+        // becomes a confirmed fact rather than something the user typed. Same
+        // fire-and-forget contract as the two accounting defenses below: the
+        // money already settled, and nothing here may delay the ACK or fail it.
+        void recordPayerEmailFromSettledCharge({
+            customerId: sub.customerId,
+            mpPaymentId: details.paymentId,
+            paymentAdapter,
+            status,
+            requestId
+        });
 
         // Accounting defense (HOS-171 §7.5): the money that arrived is now on
         // record; check whether MercadoPago's own campaign engine is the reason

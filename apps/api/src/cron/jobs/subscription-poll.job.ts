@@ -395,7 +395,14 @@ async function runOneTimePaymentPoll(params: {
                 transaction_amount: toMajor(asCentavos(succeeded.amount)),
                 currency_id: succeeded.currency,
                 metadata: syntheticMetadata,
-                external_reference: locked.providerResourceId
+                external_reference: locked.providerResourceId,
+                // HOS-1234: forwarded for the same reason as in the live webhook
+                // handler — this producer holds a `QZPayProviderPayment` too, so
+                // a charge first observed by the poll (webhook dropped, MP late)
+                // records the payer email exactly like one seen live. Leaving it
+                // out here would have made the column's population depend on
+                // WHICH producer noticed the payment first.
+                payer_email: succeeded.payerEmail ?? null
             };
 
             try {
