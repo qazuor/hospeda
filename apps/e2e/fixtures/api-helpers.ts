@@ -622,6 +622,13 @@ export async function createSubscription(options: {
     // The subselect mirrors what production does — `createPaidSubscription`
     // reads the plan's own `productDomain` and forwards it — so a fixture can
     // never disagree with the plan it names.
+    //
+    // `$2::uuid` is not decoration. The same placeholder feeds
+    // `billing_subscriptions.plan_id`, which is VARCHAR, and
+    // `billing_plans.id`, which is UUID (the schema mismatch the root
+    // CLAUDE.md calls out by name). Without the cast Postgres deduces two
+    // types for one parameter and refuses the statement outright:
+    // `inconsistent types deduced for parameter $2`.
     const subRows = await execSQL<{ id: string }>(
         `INSERT INTO billing_subscriptions (
              customer_id, plan_id, status,
@@ -630,7 +637,7 @@ export async function createSubscription(options: {
              product_domain,
              livemode, created_at, updated_at
          ) VALUES ($1, $2, $3, 'month', 1, $4, $5,
-             (SELECT product_domain FROM billing_plans WHERE id = $2),
+             (SELECT product_domain FROM billing_plans WHERE id = $2::uuid),
              false, NOW(), NOW())
          RETURNING id`,
         [customerId, options.planId, options.status, periodStart, periodEnd]
