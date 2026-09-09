@@ -28,8 +28,8 @@
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
-        "@astrojs/node": "^11.0.3",
-        "@astrojs/react": "^6.0.2",
+        "@astrojs/node": "^11.1.5",
+        "@astrojs/react": "^6.0.5",
         "@astrojs/rss": "^4.0.19",
         "@repo/analytics": "workspace:*",
         "@repo/billing": "workspace:*",
@@ -43,7 +43,7 @@
         "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
-        "@sentry/astro": "^10.69.0",
+        "@sentry/astro": "^10.73.0",
         "@tiptap/react": "^3.31.3",
         "@tiptap/starter-kit": "^3.31.3",
         "@vercel/og": "^1.0.1",
