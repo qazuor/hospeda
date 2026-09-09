@@ -29,6 +29,7 @@
 import {
     type CommerceVertical,
     commerceVerticalToProductDomain,
+    ENTITLEMENT_GRANTING_STATUSES,
     isEntitlementGrantingStatus
 } from '@repo/billing';
 import { entitySubscriptions, eq, getDb } from '@repo/db';
@@ -40,18 +41,32 @@ import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entit
 /**
  * Statuses under which a link row counts against the owner's cap.
  *
- * Deliberately WIDER than the visibility reconciler's `{active, trialing}`:
- * a `past_due` listing is still occupying a slot the owner is paying (late)
- * for, and `pending_provider` is an in-flight checkout that will occupy one the
- * moment it lands. Counting only the visible ones would let an owner hold N
- * listings by keeping N-1 of them mid-dunning.
+ * DERIVED from the canonical {@link ENTITLEMENT_GRANTING_STATUSES}
+ * (`active`, `trialing`, `comp`, `courtesy`) PLUS two statuses that are
+ * deliberately NOT entitlement-granting but still occupy a slot:
+ *
+ * - `past_due` — the listing is still occupying a slot the owner is paying
+ *   (late) for; entitlements are already cut elsewhere, but the slot itself
+ *   is not freed until dunning finalizes the subscription.
+ * - `pending_provider` — an in-flight checkout that will occupy a slot the
+ *   moment it lands. Counting only the granting ones would let an owner hold
+ *   N listings by keeping N-1 of them mid-checkout.
+ *
+ * Building this by SPREADING `ENTITLEMENT_GRANTING_STATUSES` (rather than
+ * listing `active`/`trialing`/`comp`/`courtesy` by hand) is the point, not a
+ * style preference: it is what closed HOS-1274, where a hand-rolled copy of
+ * this list silently fell out of sync with the shared predicate the moment
+ * `comp`/`courtesy` were added there, and let a courtesy commerce owner
+ * publish with zero slots ever counted as occupied. A future entitlement
+ * status added to the canonical set is picked up here automatically; only a
+ * genuinely NEW non-entitlement "occupies a slot anyway" status would need a
+ * manual addition to the two above.
  */
-const SLOT_OCCUPYING_STATUSES: readonly string[] = [
-    SubscriptionStatusEnum.ACTIVE,
-    SubscriptionStatusEnum.TRIALING,
+const SLOT_OCCUPYING_STATUSES: ReadonlySet<string> = new Set([
+    ...ENTITLEMENT_GRANTING_STATUSES,
     SubscriptionStatusEnum.PAST_DUE,
     SubscriptionStatusEnum.PENDING_PROVIDER
-];
+]);
 
 /** A live subscription the owner already holds for one vertical. */
 export interface OwnerVerticalSubscription {
@@ -130,7 +145,7 @@ export async function countAttachedListings(input: { subscriptionId: string }): 
         .from(entitySubscriptions)
         .where(eq(entitySubscriptions.subscriptionId, input.subscriptionId));
 
-    return rows.filter((row) => SLOT_OCCUPYING_STATUSES.includes(row.status)).length;
+    return rows.filter((row) => SLOT_OCCUPYING_STATUSES.has(row.status)).length;
 }
 
 /**
