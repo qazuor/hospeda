@@ -349,11 +349,16 @@ accommodation entitlement engine:
   - A route scoped by an EXPLICIT `?productDomain=` must stay strict — a caller
     that names a domain means it, and must never pick up the fallback. Only the
     DEFAULT falls back.
-  - `'tourist'` is deliberately NOT in `SUBSCRIPTION_SCOPE_DOMAINS`
-    (`apps/api/src/schemas/product-domain-query.schema.ts`), so
-    `?productDomain=tourist` is a **400**, not an unused escape hatch. There is
-    no client-side workaround for a default that resolves the wrong domain — fix
-    the default, and widen that tuple only with its two `routes/billing/usage.ts`
+  - **`'tourist'` IS in `SUBSCRIPTION_SCOPE_DOMAINS` since HOS-1282**
+    (`apps/api/src/schemas/product-domain-query.schema.ts:54-58`), so
+    `?productDomain=tourist` is a **200**. This paragraph previously said the
+    opposite — it was left out at HOS-1233 on purpose and HOS-1282 widened it —
+    and the stale version is what makes a reader "fix" a caller that is already
+    correct. What the tuple still excludes is **`partner` and `addon`**, because
+    neither owns a trial site, so `?productDomain=partner` is a 400 and
+    `/planes/aliados/precios/` reads no clock at all. There is still no
+    client-side workaround for a default that resolves the wrong domain — fix
+    the default, and widen that tuple only with its `routes/billing/usage.ts`
     consumers in view.
 - **Hydrate before you compare.** `getByCustomerId()` does not populate
   `productDomain` (QZPay's mapper drops it — HOS-934), so
