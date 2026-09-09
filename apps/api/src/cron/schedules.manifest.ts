@@ -375,7 +375,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'billing',
         schedule: '30 */6 * * *',
         description:
-            'Re-derive the accommodation rows of entity_subscriptions from live billing (HOS-1084 backstop): corrects stale status/plan, fills missing rows and prunes orphans.'
+            'Re-derive entity_subscriptions from live billing (HOS-1084 / HOS-1292 backstop): rebuilds every accommodation row (stale status/plan, missing rows, orphans) and corrects the mirrored status of every commerce row, reconciling the listing visibility that follows from it.'
     },
     {
         name: 'featured-by-entitlement-reconcile',

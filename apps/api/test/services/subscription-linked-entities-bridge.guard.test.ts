@@ -11,11 +11,20 @@
  * unpublishes a commerce listing: the admin hard-cancel hook, both pause/
  * resume surfaces (admin + self-serve), and the comp-grant supersede loop
  * (which called it once for the NEW row, never for each row it superseded).
- * The accommodation half is self-healing — the 6-hourly
+ * The accommodation half was self-healing — the 6-hourly
  * `entity-subscription-cache-reconcile` cron re-derives every accommodation
- * row — but commerce visibility has no such backstop, so a cancelled/paused
+ * row — but commerce visibility had no such backstop, so a cancelled/paused
  * gastronomy or experience listing stayed PUBLIC with the underlying charge
- * dead, forever (HOS-1280).
+ * dead, FOREVER (HOS-1280).
+ *
+ * HOS-1292 closed the "forever": that same cron now also compares every
+ * non-accommodation row's cached status against live billing and, on a
+ * disagreement, drives `reconcileCommerceListingForSubscription` — which is
+ * exactly the shape a missed bridge call leaves behind. This guard is NOT
+ * thereby redundant. The backstop bounds the damage at one cron interval; it
+ * does not remove it, and the window it leaves open is up to six hours of a
+ * dead charge holding a listing public. A missing bridge call is still a bug
+ * to catch at review time, not a state to wait out.
  *
  * ## Why a hand-maintained comment could not be trusted (and why this isn't one)
  *
