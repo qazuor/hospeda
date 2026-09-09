@@ -111,7 +111,10 @@ describe('Admin Usage API - GET /:customerId', () => {
 
             // Assert
             expect(result).toEqual(expectedData);
-            expect(mockUsageService.getUsageSummary).toHaveBeenCalledWith(customerId);
+            expect(mockUsageService.getUsageSummary).toHaveBeenCalledWith(
+                customerId,
+                'accommodation'
+            );
             expect(mockUsageService.getUsageSummary).toHaveBeenCalledTimes(1);
         });
 
@@ -256,7 +259,7 @@ describe('Admin Usage API - GET /:customerId', () => {
             (getQZPayBilling as any).mockReturnValue(mockQZPayBilling);
         });
 
-        it('should throw 500 when service returns error', async () => {
+        it('should throw 404, NOT 500, when the customer has no subscription (HOS-1288)', async () => {
             // Arrange
             const customerId = 'customer-error';
             mockUsageService.getUsageSummary = vi.fn().mockResolvedValue({
@@ -274,14 +277,43 @@ describe('Admin Usage API - GET /:customerId', () => {
                 return mockUsageService;
             });
 
-            // Act & Assert
-            await expect(
-                getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId })
-            ).rejects.toThrow(HTTPException);
+            // Act
+            const thrown = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                customerId
+            }).catch((err: unknown) => err);
 
-            await expect(
-                getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId })
-            ).rejects.toThrow('Customer has no subscription');
+            // Assert — a business condition, never INTERNAL_ERROR (error contract).
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(404);
+            expect((thrown as HTTPException).message).toBe('Customer has no subscription');
+        });
+
+        it('should still throw 500 for a non-NOT_FOUND service failure', async () => {
+            // Arrange
+            const customerId = 'customer-broken';
+            mockUsageService.getUsageSummary = vi.fn().mockResolvedValue({
+                success: false,
+                error: {
+                    code: 'INTERNAL_ERROR',
+                    message: 'Boom'
+                }
+            });
+
+            const { UsageTrackingService } = await import(
+                '../../src/services/usage-tracking.service'
+            );
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
+
+            // Act
+            const thrown = await getAdminCustomerUsageSummaryHandler(mockContext as Context, {
+                customerId
+            }).catch((err: unknown) => err);
+
+            // Assert
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(500);
         });
 
         it('should throw 500 when service returns success but no data', async () => {
@@ -472,6 +504,83 @@ describe('Admin Usage API - GET /:customerId', () => {
             expect(UsageTrackingServiceSpy).toHaveBeenCalledTimes(1);
         });
 
+        it.each([
+            'gastronomy',
+            'experience',
+            'tourist'
+        ] as const)('scopes the read to ?productDomain=%s instead of defaulting to accommodation (HOS-1288)', async (productDomain) => {
+            // Arrange
+            const customerId = 'customer-vertical';
+            const expectedData = {
+                customerId,
+                limits: [],
+                overallThreshold: 'ok',
+                upgradeUrl: '/billing/plans'
+            };
+            mockUsageService.getUsageSummary = vi
+                .fn()
+                .mockResolvedValue({ success: true, data: expectedData });
+
+            const { UsageTrackingService } = await import(
+                '../../src/services/usage-tracking.service'
+            );
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
+
+            // Act
+            const result = await getAdminCustomerUsageSummaryHandler(
+                mockContext as Context,
+                { customerId },
+                undefined,
+                { productDomain }
+            );
+
+            // Assert — the domain reaches the service; it is not dropped on
+            // the floor and replaced by the 'accommodation' default.
+            expect(result).toEqual(expectedData);
+            expect(mockUsageService.getUsageSummary).toHaveBeenCalledWith(
+                customerId,
+                productDomain
+            );
+        });
+
+        it('answers 404 naming the requested domain when the customer has none there (HOS-1288)', async () => {
+            // Arrange: the dual-role case in reverse — an accommodation-only
+            // customer looked up under gastronomy.
+            const customerId = 'customer-accom-only';
+            mockUsageService.getUsageSummary = vi.fn().mockResolvedValue({
+                success: false,
+                error: {
+                    code: 'NOT_FOUND',
+                    message: 'Customer has no active gastronomy subscription'
+                }
+            });
+
+            const { UsageTrackingService } = await import(
+                '../../src/services/usage-tracking.service'
+            );
+            (UsageTrackingService as any).mockImplementation(function () {
+                return mockUsageService;
+            });
+
+            // Act
+            const thrown = await getAdminCustomerUsageSummaryHandler(
+                mockContext as Context,
+                { customerId },
+                undefined,
+                { productDomain: 'gastronomy' }
+            ).catch((err: unknown) => err);
+
+            // Assert
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(404);
+            expect((thrown as HTTPException).message).toBe(
+                'Customer has no active gastronomy subscription'
+            );
+            expect(mockUsageService.getUsageSummary).toHaveBeenCalledWith(customerId, 'gastronomy');
+        });
+
         it('should call getUsageSummary with correct customer ID', async () => {
             // Arrange
             const customerId = 'customer-call-check';
@@ -496,7 +605,10 @@ describe('Admin Usage API - GET /:customerId', () => {
             await getAdminCustomerUsageSummaryHandler(mockContext as Context, { customerId });
 
             // Assert
-            expect(mockUsageService.getUsageSummary).toHaveBeenCalledWith(customerId);
+            expect(mockUsageService.getUsageSummary).toHaveBeenCalledWith(
+                customerId,
+                'accommodation'
+            );
             expect(mockUsageService.getUsageSummary).toHaveBeenCalledTimes(1);
         });
     });
