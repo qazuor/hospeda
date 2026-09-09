@@ -2,6 +2,7 @@ import type { TranslationKey } from '@repo/i18n';
 import {
     CalendarIcon,
     CreditCardIcon,
+    CrownIcon,
     PlayIcon,
     PowerOffIcon,
     SparkleIcon,
@@ -50,6 +51,12 @@ export interface SubscriptionDetailsDialogProps {
     /** Opens the courtesy-grant dialog (HOS-180). Only offered on an `active` subscription. */
     readonly onGrantCourtesy: (sub: Subscription) => void;
     readonly onResume: (sub: Subscription) => void;
+    /**
+     * Opens the comp-grant dialog (HOS-1314). Offered on every status except
+     * `comp` itself — the endpoint refuses a second comp in the same vertical
+     * with a 409, so there is nothing productive the button could do there.
+     */
+    readonly onGrantComp: (sub: Subscription) => void;
 }
 
 /**
@@ -66,7 +73,8 @@ export function SubscriptionDetailsDialog({
     onExtendTrial,
     onPause,
     onGrantCourtesy,
-    onResume
+    onResume,
+    onGrantComp
 }: SubscriptionDetailsDialogProps) {
     const { t, locale } = useTranslations();
     const [activeTab, setActiveTab] = useState('detalles');
@@ -375,6 +383,22 @@ export function SubscriptionDetailsDialog({
                                             )}
                                         </Button>
                                     )}
+                                {/* HOS-1314: hidden only when already comped in this
+                                    vertical — every other status may still be granted
+                                    one, and the endpoint's own 409 backstops a
+                                    duplicate. */}
+                                {subscription.status !== 'comp' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onGrantComp(subscription)}
+                                    >
+                                        <CrownIcon className="mr-2 h-4 w-4" />
+                                        {t(
+                                            'admin-billing.subscriptions.detailsDialog.grantCompButton'
+                                        )}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </TabsContent>

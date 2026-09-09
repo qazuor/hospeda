@@ -1,3 +1,4 @@
+import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
@@ -6,11 +7,13 @@ import { usePlansQuery } from '@/features/billing-plans/hooks';
 import { CancelSubscriptionDialog } from '@/features/billing-subscriptions/CancelSubscriptionDialog';
 import { ChangePlanDialog } from '@/features/billing-subscriptions/ChangePlanDialog';
 import { ExtendTrialDialog } from '@/features/billing-subscriptions/ExtendTrialDialog';
+import { GrantCompDialog } from '@/features/billing-subscriptions/GrantCompDialog';
 import { GrantCourtesyDialog } from '@/features/billing-subscriptions/GrantCourtesyDialog';
 import {
     useCancelSubscriptionMutation,
     useChangePlanMutation,
     useExtendTrialMutation,
+    useGrantCompMutation,
     useGrantCourtesyMutation,
     usePauseSubscriptionMutation,
     useResumeSubscriptionMutation,
@@ -53,6 +56,7 @@ function BillingSubscriptionsPage() {
     const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
     const [courtesyDialogOpen, setCourtesyDialogOpen] = useState(false);
     const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
+    const [compDialogOpen, setCompDialogOpen] = useState(false);
 
     // Data fetching
     const {
@@ -92,6 +96,7 @@ function BillingSubscriptionsPage() {
     const pauseMutation = usePauseSubscriptionMutation();
     const grantCourtesyMutation = useGrantCourtesyMutation();
     const resumeMutation = useResumeSubscriptionMutation();
+    const grantCompMutation = useGrantCompMutation();
 
     // Handlers: navigation between dialogs
     const handleViewDetails = (subscription: Subscription) => {
@@ -123,6 +128,12 @@ function BillingSubscriptionsPage() {
         setDetailsDialogOpen(false);
     };
 
+    const handleGrantCompClick = (subscription: Subscription) => {
+        setSelectedSubscription(subscription);
+        setCompDialogOpen(true);
+        setDetailsDialogOpen(false);
+    };
+
     /**
      * Confirms a courtesy grant.
      *
@@ -147,6 +158,54 @@ function BillingSubscriptionsPage() {
                 onError: (error) => {
                     addToast({
                         message: `${t('admin-billing.subscriptions.toasts.courtesyError')} ${error.message}`,
+                        variant: 'error'
+                    });
+                }
+            }
+        );
+    };
+
+    /**
+     * Confirms a comp grant (HOS-1314).
+     *
+     * The success toast names the VERTICAL that got comped, not just "listo" —
+     * the issue's own T-3 requirement, because an operator who picked the
+     * wrong plan otherwise has no confirmation of which entitlements the
+     * customer actually received. The domain is resolved from the SAME
+     * `plansData` the dialog's own selector reads from, mirroring how
+     * `handleConfirmChangePlan` resolves `newPlanName` below.
+     */
+    const handleConfirmGrantComp = (payload: {
+        planId: string;
+        interval: 'monthly' | 'annual';
+    }) => {
+        if (!selectedSubscription) return;
+
+        const planRow = plansData?.items?.find((p) => p.id === payload.planId);
+        const domainLabel = planRow
+            ? t(
+                  `admin-billing.subscriptions.productDomainLabels.${planRow.productDomain}` as TranslationKey
+              )
+            : payload.planId;
+
+        grantCompMutation.mutate(
+            {
+                customerId: selectedSubscription.customerId,
+                planId: payload.planId,
+                interval: payload.interval
+            },
+            {
+                onSuccess: () => {
+                    addToast({
+                        message: `${t('admin-billing.subscriptions.toasts.compGranted')} ${domainLabel}`,
+                        variant: 'success'
+                    });
+                    setCompDialogOpen(false);
+                    setSelectedSubscription(null);
+                },
+                onError: (error) => {
+                    addToast({
+                        message: `${t('admin-billing.subscriptions.toasts.compError')} ${error.message}`,
                         variant: 'error'
                     });
                 }
@@ -348,6 +407,7 @@ function BillingSubscriptionsPage() {
                 onPause={handlePauseClick}
                 onGrantCourtesy={handleGrantCourtesyClick}
                 onResume={handleResumeClick}
+                onGrantComp={handleGrantCompClick}
             />
 
             {selectedSubscription && (
@@ -379,6 +439,15 @@ function BillingSubscriptionsPage() {
                         isOpen={courtesyDialogOpen}
                         onClose={() => setCourtesyDialogOpen(false)}
                         onConfirm={handleConfirmGrantCourtesy}
+                    />
+
+                    <GrantCompDialog
+                        subscription={selectedSubscription}
+                        plans={plansData?.items ?? []}
+                        isOpen={compDialogOpen}
+                        onClose={() => setCompDialogOpen(false)}
+                        onConfirm={handleConfirmGrantComp}
+                        isPending={grantCompMutation.isPending}
                     />
 
                     <PauseSubscriptionDialog
