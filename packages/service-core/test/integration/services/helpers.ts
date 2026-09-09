@@ -8,6 +8,8 @@
 import {
     accommodationReviews,
     accommodations,
+    billingCustomers,
+    billingSubscriptions,
     type DrizzleClient,
     destinationReviews,
     destinations,
@@ -1071,6 +1073,12 @@ interface SeedExperienceListingSubscriptionOverrides {
  * `billing_subscriptions` row proves nothing about the reconciliation path
  * this suite exists to cover.
  *
+ * Both billing rows are written via typed Drizzle inserts (HOS-73/HOS-75),
+ * NOT raw SQL — `billingCustomers` / `billingSubscriptions` are ordinary
+ * typed tables from `@qazuor/qzpay-drizzle`, confirmed by compiling
+ * `tx.insert(billingSubscriptions).values(...)` against
+ * `typeof billingSubscriptions.$inferInsert` before writing this.
+ *
  * @param tx - Drizzle transaction client.
  * @param options - Required `experienceId` and `status`; optional `linkId`.
  * @returns Object containing `{ linkId, subscriptionId }`.
@@ -1084,45 +1092,46 @@ export async function seedExperienceListingSubscription(
 }> {
     const linkId = options.linkId ?? crypto.randomUUID();
     const subscriptionId = crypto.randomUUID();
+    const customerId = crypto.randomUUID();
+    const uid = customerId.slice(0, 8);
 
     // Insert a minimal billing_customers stub row first (billing_subscriptions
     // has a FK to billing_customers.id ON DELETE RESTRICT).
-    const customerId = crypto.randomUUID();
-    const uid = customerId.slice(0, 8);
-    await tx.execute(sql`
-        INSERT INTO billing_customers (
-            id, external_id, email, livemode
-        ) VALUES (
-            ${customerId},
-            ${`ext-${uid}`},
-            ${`billing-stub-${uid}@test.local`},
-            false
-        )
-    `);
+    //
+    // Typed Drizzle insert (HOS-73/HOS-75) — NOT raw SQL. `billingCustomers`
+    // and `billingSubscriptions` are ordinary typed Drizzle tables re-exported
+    // from `@qazuor/qzpay-drizzle` via `@repo/db`'s `src/billing/index.ts`;
+    // verified against `typeof billingCustomers.$inferInsert` /
+    // `typeof billingSubscriptions.$inferInsert` before writing this — both
+    // compile cleanly through `tx.insert(...).values(...)`. An earlier version
+    // of this helper (mirroring `seedCommerceListingSubscription` below, which
+    // still does this) used raw SQL under the belief that Drizzle's
+    // client-side `$defaultFn` does not fire inside a raw tx context — that
+    // reasoning is irrelevant here because every column below is supplied
+    // explicitly, not left to a default.
+    await tx.insert(billingCustomers).values({
+        id: customerId,
+        externalId: `ext-${uid}`,
+        email: `billing-stub-${uid}@test.local`,
+        livemode: false
+    } as typeof billingCustomers.$inferInsert);
 
     // Insert a minimal billing_subscriptions stub row to satisfy the FK from
-    // entity_subscriptions. Uses raw SQL to ensure billing_interval (NOT NULL
-    // in the qzpay-drizzle schema) is provided without relying on Drizzle
-    // client-side $defaultFn, which does not fire inside raw tx contexts.
-    // product_domain is stated explicitly (HOS-1233): the column carries a
-    // NOT NULL DEFAULT 'accommodation', so an omitted insert would silently
-    // file this row under the wrong vertical instead of failing loudly.
-    await tx.execute(sql`
-        INSERT INTO billing_subscriptions (
-            id, customer_id, plan_id, status, billing_interval,
-            current_period_start, current_period_end, livemode, product_domain
-        ) VALUES (
-            ${subscriptionId},
-            ${customerId},
-            ${crypto.randomUUID()},
-            ${options.status},
-            'month',
-            now(),
-            now() + interval '30 days',
-            false,
-            'experience'
-        )
-    `);
+    // entity_subscriptions. product_domain is stated explicitly (HOS-1233):
+    // the column carries a NOT NULL DEFAULT 'accommodation', so an omitted
+    // insert would silently file this row under the wrong vertical instead of
+    // failing loudly.
+    await tx.insert(billingSubscriptions).values({
+        id: subscriptionId,
+        customerId,
+        planId: crypto.randomUUID(),
+        status: options.status,
+        billingInterval: 'month',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        livemode: false,
+        productDomain: 'experience'
+    } as typeof billingSubscriptions.$inferInsert);
 
     await tx.insert(entitySubscriptions).values({
         id: linkId,

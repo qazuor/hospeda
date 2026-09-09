@@ -833,22 +833,30 @@ describe('HOS-1269 — Experience commerce admin-sells lifecycle (integration)',
                 // the point is only that a same-owner, different-domain row exists
                 // in the same table the experience reconciler could, in principle,
                 // be pointed at).
-                const { entitySubscriptions, sql } = await import('@repo/db');
+                // Typed Drizzle inserts (HOS-73/HOS-75), not raw SQL — see
+                // helpers.ts' seedExperienceListingSubscription docblock for
+                // why raw SQL is unnecessary for these two tables.
+                const { billingCustomers, billingSubscriptions, entitySubscriptions } =
+                    await import('@repo/db');
                 const accommodationSubscriptionId = crypto.randomUUID();
                 const customerId = crypto.randomUUID();
-                await tx.execute(sql`
-                    INSERT INTO billing_customers (id, external_id, email, livemode)
-                    VALUES (${customerId}, ${`ext-${uid}`}, ${`billing-${uid}@test.local`}, false)
-                `);
-                await tx.execute(sql`
-                    INSERT INTO billing_subscriptions (
-                        id, customer_id, plan_id, status, billing_interval,
-                        current_period_start, current_period_end, livemode, product_domain
-                    ) VALUES (
-                        ${accommodationSubscriptionId}, ${customerId}, ${crypto.randomUUID()},
-                        'active', 'month', now(), now() + interval '30 days', false, 'accommodation'
-                    )
-                `);
+                await tx.insert(billingCustomers).values({
+                    id: customerId,
+                    externalId: `ext-${uid}`,
+                    email: `billing-${uid}@test.local`,
+                    livemode: false
+                } as typeof billingCustomers.$inferInsert);
+                await tx.insert(billingSubscriptions).values({
+                    id: accommodationSubscriptionId,
+                    customerId,
+                    planId: crypto.randomUUID(),
+                    status: 'active',
+                    billingInterval: 'month',
+                    currentPeriodStart: new Date(),
+                    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                    livemode: false,
+                    productDomain: 'accommodation'
+                } as typeof billingSubscriptions.$inferInsert);
                 await tx.insert(entitySubscriptions).values({
                     id: crypto.randomUUID(),
                     subscriptionId: accommodationSubscriptionId,
