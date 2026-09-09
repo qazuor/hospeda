@@ -22,23 +22,27 @@
  * @module test/services/promo-trial-extension-apply.service
  */
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks (declared before importing the module under test).
 // ---------------------------------------------------------------------------
 
-/** Rows the customer's running-trial lookup resolves to. */
-let trialLookupRows: Array<{ id: string }> = [];
+/**
+ * Rows the customer's running-trial lookup resolves to, already ordered
+ * newest-first (mirroring `orderBy(desc(createdAt))` — no `.limit()` anymore
+ * since HOS-1277: the seam now needs every running trial to pick among them by
+ * domain, not just the newest).
+ */
+let trialLookupRows: Array<{ id: string; productDomain?: string | null }> = [];
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
         select: vi.fn(() => ({
             from: vi.fn(() => ({
                 where: vi.fn(() => ({
-                    orderBy: vi.fn(() => ({
-                        limit: vi.fn(async () => trialLookupRows)
-                    }))
+                    orderBy: vi.fn(async () => trialLookupRows)
                 }))
             }))
         }))
@@ -47,7 +51,8 @@ vi.mock('@repo/db', () => ({
         id: 'id',
         customerId: 'customer_id',
         status: 'status',
-        createdAt: 'created_at'
+        createdAt: 'created_at',
+        productDomain: 'product_domain'
     },
     and: vi.fn((...args: unknown[]) => ({ and: args })),
     desc: vi.fn((col: unknown) => ({ desc: col })),
@@ -56,11 +61,18 @@ vi.mock('@repo/db', () => ({
 
 const getPromoCodeByCodeMock = vi.fn();
 const extendExistingSubscriptionTrialMock = vi.fn();
-vi.mock('@repo/service-core', () => ({
-    getPromoCodeByCode: (...args: unknown[]) => getPromoCodeByCodeMock(...args),
-    extendExistingSubscriptionTrial: (...args: unknown[]) =>
-        extendExistingSubscriptionTrialMock(...args)
-}));
+// `subscriptionMatchesDomain` is left REAL (HOS-1277 depends on its actual
+// accommodation-fail-open / everything-else-fail-closed behavior); only the
+// two DB/redemption-facing functions are mocked.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        getPromoCodeByCode: (...args: unknown[]) => getPromoCodeByCodeMock(...args),
+        extendExistingSubscriptionTrial: (...args: unknown[]) =>
+            extendExistingSubscriptionTrialMock(...args)
+    };
+});
 
 import {
     applyTrialExtensionToRunningTrial,
@@ -296,6 +308,103 @@ describe('applyTrialExtensionToRunningTrial (HOS-1012 T-039)', () => {
             if (result.success) return;
             expect(result.error.code).toBe('VALIDATION_ERROR');
             expect(extendExistingSubscriptionTrialMock).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Domain ordering (HOS-1277): a dual-role customer can run more than one
+    // trial at once. Auto-resolution must not depend on creation order.
+    // -----------------------------------------------------------------------
+    describe('domain ordering when the customer runs more than one trial (HOS-1277)', () => {
+        it('REGRESSION: prefers the ACCOMMODATION trial over a NEWER gastronomy trial', async () => {
+            // Creation order alone would pick the gastronomy row (it comes first
+            // in the array, mirroring `orderBy(desc(createdAt))` returning the
+            // newer one first) — the exact bug: a code meant for the
+            // accommodation trial landing on gastronomy because it happened to
+            // start later.
+            trialLookupRows = [
+                { id: 'sub-gastronomy-newer', productDomain: 'gastronomy' },
+                { id: 'sub-accommodation-older', productDomain: 'accommodation' }
+            ];
+
+            const result = await applyTrialExtensionToRunningTrial({
+                code: 'LANZAMIENTO60',
+                billingCustomerId: BILLING_CUSTOMER_ID,
+                actorId: ACTOR_ID
+            });
+
+            expect(result.success).toBe(true);
+            expect(extendExistingSubscriptionTrialMock).toHaveBeenCalledWith(
+                expect.objectContaining({ subscriptionId: 'sub-accommodation-older' })
+            );
+        });
+
+        it('falls back to TOURIST when the customer has no accommodation trial', async () => {
+            trialLookupRows = [{ id: 'sub-tourist', productDomain: 'tourist' }];
+
+            await applyTrialExtensionToRunningTrial({
+                code: 'LANZAMIENTO60',
+                billingCustomerId: BILLING_CUSTOMER_ID,
+                actorId: ACTOR_ID
+            });
+
+            expect(extendExistingSubscriptionTrialMock).toHaveBeenCalledWith(
+                expect.objectContaining({ subscriptionId: 'sub-tourist' })
+            );
+        });
+
+        it('does NOT select a PARTNER trial over accommodation/tourist auto-resolution semantics — it only wins when nothing else qualifies', async () => {
+            // A partner trial coexists with neither accommodation nor tourist
+            // here, so it is the only candidate left — auto-resolution must
+            // still find SOMETHING rather than reporting NO_ACTIVE_TRIAL, but
+            // must never let a partner trial outrank an accommodation one.
+            trialLookupRows = [{ id: 'sub-partner', productDomain: 'partner' }];
+
+            const result = await applyTrialExtensionToRunningTrial({
+                code: 'LANZAMIENTO60',
+                billingCustomerId: BILLING_CUSTOMER_ID,
+                actorId: ACTOR_ID
+            });
+
+            expect(result.success).toBe(true);
+            expect(extendExistingSubscriptionTrialMock).toHaveBeenCalledWith(
+                expect.objectContaining({ subscriptionId: 'sub-partner' })
+            );
+        });
+
+        it('a PARTNER trial never displaces an accommodation trial held at the same time', async () => {
+            trialLookupRows = [
+                { id: 'sub-partner', productDomain: 'partner' },
+                { id: 'sub-accommodation', productDomain: 'accommodation' }
+            ];
+
+            await applyTrialExtensionToRunningTrial({
+                code: 'LANZAMIENTO60',
+                billingCustomerId: BILLING_CUSTOMER_ID,
+                actorId: ACTOR_ID
+            });
+
+            expect(extendExistingSubscriptionTrialMock).toHaveBeenCalledWith(
+                expect.objectContaining({ subscriptionId: 'sub-accommodation' })
+            );
+        });
+
+        it('respects an explicit domain over the ordered auto-resolution', async () => {
+            trialLookupRows = [
+                { id: 'sub-accommodation', productDomain: 'accommodation' },
+                { id: 'sub-gastronomy', productDomain: 'gastronomy' }
+            ];
+
+            await applyTrialExtensionToRunningTrial({
+                code: 'LANZAMIENTO60',
+                billingCustomerId: BILLING_CUSTOMER_ID,
+                actorId: ACTOR_ID,
+                domain: ProductDomainEnum.GASTRONOMY
+            });
+
+            expect(extendExistingSubscriptionTrialMock).toHaveBeenCalledWith(
+                expect.objectContaining({ subscriptionId: 'sub-gastronomy' })
+            );
         });
     });
 });
