@@ -126,6 +126,16 @@ vi.mock('drizzle-orm', async () => {
         // condition an inspectable POJO, consistent with the siblings above.
         ne: (a: unknown, b: unknown) => ({ type: 'ne', a, b }),
         or: (...args: unknown[]) => ({ type: 'or', args }),
+        // HOS-337 (caught in review): `hydrateTrialConverted` (this file's own
+        // service) calls `inArray` to scope its query to the candidate ids.
+        // `mockDbForTrial.where` itself ignores whatever it is called with, so
+        // without this marker a mutation that deletes the `inArray(...)` scope
+        // entirely (fetching the whole table instead) would be invisible to
+        // any assertion here — only the mock's incidental `from().mockReturnThis()`
+        // shape (which breaks for an unrelated reason without a trailing
+        // `.where()`) would happen to fail it. The marker makes the SCOPE
+        // itself — which ids were asked for — directly inspectable.
+        inArray: (a: unknown, b: unknown) => ({ type: 'inArray', a, b }),
         sql: Object.assign(
             (strings: TemplateStringsArray, ..._values: unknown[]) => ({ type: 'sql', strings }),
             { raw: (s: string) => ({ type: 'sql_raw', value: s }) }
@@ -158,6 +168,7 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+import { billingSubscriptions } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { buildTrialUpgradeUrl, TrialService } from '../../src/services/trial.service';
@@ -1334,15 +1345,31 @@ describe('TrialService', () => {
                 expect(result.isExpired).toBe(true);
                 expect(result.isOnTrial).toBe(false);
                 expect(result.planSlug).toBe('owner-basico');
+
+                // Assert — hydrateTrialConverted scopes its query to the
+                // candidate id(s) via `inArray`, not the whole table. A
+                // mutation that deletes that scope (fetches every row) would
+                // leave `b` empty/undefined here even though the paywall
+                // verdict above stays correct by accident.
+                expect(mockDbForTrial.where).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'inArray',
+                        a: billingSubscriptions.id,
+                        b: [`sub-hos337-${statusSpelling}`]
+                    })
+                );
             });
 
-            it("does NOT paywall a cancelled TOURIST trial ('cancelled', 2-L): tourist-plus/tourist-vip carry their own 14-day trial and this is a global gate", async () => {
+            it("does NOT paywall a cancelled TOURIST trial ('cancelled', 2-L): tourist-vip carries its own 30-day trial and this is a global gate", async () => {
                 // Arrange — HOS-337 point 1: widening the match to 'cancelled'
                 // without owner/complex scoping would 402 a tourist's
                 // favourites/reviews/profile writes with a "your trial expired,
                 // upgradeAudience: 'host'" message, contradicting the entitlement
                 // middleware immediately before this one (which already resolved
-                // them to the free tier).
+                // them to the free tier). CORRECTED: `TOURIST_TRIAL_DAYS === 30`,
+                // not 14 (`packages/billing/src/constants/billing.constants.ts`),
+                // and `tourist-plus` was retired by HOS-1224 — the only two
+                // tourist tiers left are `tourist-free` and `tourist-vip`.
                 const customerId = 'customer-hos337-tourist-cancelled';
                 const now = new Date();
                 const trialEnd = new Date(now);
@@ -3238,6 +3265,68 @@ describe('TrialService', () => {
                 });
 
                 expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('HOS-337 (caught in review) — the paywall that now fires on a 2-L `cancelled` row must not lock the customer out of reactivating it', () => {
+            // Arrange/Act/Assert combined across BOTH methods on purpose: the
+            // bug this closes is a CYCLE, not a single call. `getTrialStatus`
+            // paywalling a `'cancelled'` (2-L) row and `reactivateSubscription`
+            // finding that SAME row are two different code paths in this file
+            // that used to disagree on which spellings count — a unit test on
+            // either one alone would never show the customer getting locked out
+            // between them.
+            it.each([
+                'canceled',
+                'cancelled'
+            ] as const)("REGRESSION: a subscription cancelled via status '%s' both trips the trial paywall AND is found by reactivateSubscription (was a 404 NO_CANCELED_SUBSCRIPTION dead end for 'cancelled')", async (statusSpelling) => {
+                const customerId = `customer-hos337-cycle-${statusSpelling}`;
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 5);
+
+                const cancelledSub = {
+                    id: `sub-hos337-cycle-${statusSpelling}`,
+                    customerId,
+                    planId: 'plan-old',
+                    status: statusSpelling,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+
+                // Step 1 — the paywall sees it and fires.
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    cancelledSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-old',
+                    name: 'owner-basico'
+                } as never);
+
+                const trialStatus = await trialService.getTrialStatus({ customerId });
+                expect(trialStatus.isExpired).toBe(true);
+
+                // Step 2 — the SAME customer, with the SAME row still the only
+                // one on file, tries to exit through reactivation.
+                mockPaidCreateHappyPath(customerId);
+
+                const reactivateResult = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — found and reactivated, not a 404 dead end.
+                expect(reactivateResult.success).toBe(true);
+                expect(reactivateResult.previousPlanId).toBe('plan-old');
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: cancelledSub.id
+                        })
+                    })
+                );
             });
         });
     });
