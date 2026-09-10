@@ -34,10 +34,15 @@
  * ## Loudness
  *
  * Every outcome is reported at a level production actually emits. `LOG_LEVEL`
- * defaults to `info`, so a `debug` line is invisible exactly where it is needed —
- * and a receipt that could not be delivered is logged `error` with `capture`,
- * because a customer who just paid and heard nothing is the failure this module
- * exists to make impossible to miss.
+ * defaults to `info`, so a `debug` line is invisible exactly where it is needed.
+ *
+ * Escalation is narrower than reporting, deliberately. A receipt that did not go out
+ * is logged either way, but only a disposition that is neither retried nor expected
+ * (`'error'`) gets `capture`. Paging on every `delivered: false` would alert once per
+ * charge for a transport failure the notification service has already enqueued a
+ * retry for, for a customer who opted out, and for every charge in an environment
+ * with no `HOSPEDA_EMAIL_API_KEY` — noise that teaches people to ignore the one alert
+ * that means a receipt is genuinely lost.
  *
  * @module routes/webhooks/mercadopago/subscription-charge-receipt
  */
@@ -240,16 +245,28 @@ export async function wasPaymentSuccessAlreadyDispatched(params: {
  *
  * @param params.customerId - Billing customer resolved from the local subscription.
  * @param params.planId - `billing_plans.id` of the subscription that was charged,
- *   or `null` when the local row carries none (the label then degrades to a
- *   generic one rather than to a wrong one).
+ *   or `null` when the local row carries none — in which case the label degrades to
+ *   a generic one rather than to a wrong one.
+ *
+ *   That second half was FALSE until the review caught it. The producer collapsed
+ *   `null` and "argument omitted" with `??`, so passing `null` selected the
+ *   `getByCustomerId()[0]` fallback — i.e. the wrong plan, which is the exact thing
+ *   this parameter exists to prevent — and the test asserting otherwise passed
+ *   because it only checked that the `null` was forwarded. It is true now because
+ *   the producer distinguishes the two. Unreachable either way while
+ *   `billing_subscriptions.plan_id` is `.notNull()`, which is precisely how it could
+ *   sit here being wrong with a green test agreeing with it.
  * @param params.providerPaymentId - MercadoPago `payment.id` of the settled charge.
  * @param params.amountMajor - The charged amount in MAJOR units (ARS pesos).
  *   MercadoPago's `transaction_amount` already is; `billing_payments` stores
  *   CENTAVOS, and handing those over is HOS-713 — a real $150.00 charge mailed as
  *   $15.000,00. The {@link Major} brand is what keeps the two apart here.
  * @param params.currency - ISO 4217 code of the charge.
- * @param params.chargeStatus - QZPay-normalized status of the charge. Anything
- *   other than the cleared spelling returns without sending.
+ * @param params.chargeStatus - QZPay-normalized status of the charge, as MAPPED from
+ *   the provider's own disposition — never asserted by the caller. Anything other
+ *   than the cleared spelling returns without sending, so this gate is only as
+ *   truthful as the value handed to it;
+ *   `subscription-charge-receipt-sites.guard.test.ts` fails CI on a literal.
  * @param params.billing - QZPay billing instance.
  * @param params.localSubscriptionId - For the log line only.
  * @param params.source - Caller label, recorded in every log line below.
@@ -308,14 +325,49 @@ export async function dispatchSubscriptionChargeReceipt(params: {
         );
 
         if (!outcome.delivered) {
-            // The customer's card was debited and they were told nothing. This is
-            // the exact silence HOS-1238 was filed for, so it is reported at a
-            // level production emits and escalated, never left as a `debug` line.
-            apiLogger.error(
-                { customerId, providerPaymentId, localSubscriptionId, planId, currency, source },
-                'Subscription charge receipt was NOT delivered — the customer paid and received no acknowledgement',
-                { capture: true }
-            );
+            // Reported at a level production emits — never `debug`, which was the
+            // original defect. But NOT escalated indiscriminately: `delivered: false`
+            // covers a receipt that is lost AND one that is merely late, and paging
+            // on both means an alert per charge for things that self-heal in a minute
+            // or were never meant to send at all.
+            //
+            // - `'skipped'`: the customer opted out of this notification type. The
+            //   system did what it was told; there is nothing to fix.
+            // - `'send-failed'`: the transport refused and `NotificationService.send`
+            //   already enqueued a retry before returning, so the usual outcome is
+            //   delivery ~60s later. If the retries themselves exhaust, that is the
+            //   retry service's to report — it owns the attempt count, and this
+            //   function cannot see it.
+            // - `'unavailable'`: no notification service in the process at all
+            //   (`HOSPEDA_EMAIL_API_KEY` unset). Identical for every notification
+            //   rather than specific to this charge, and already logged by the helper.
+            //
+            // Only `'error'` — something threw on the way out — is both unexpected and
+            // unretried, so only it is escalated here. The sibling `catch` below does
+            // the same for a throw this function can see itself.
+            const escalate = outcome.disposition === 'error';
+            const detail = {
+                customerId,
+                providerPaymentId,
+                localSubscriptionId,
+                planId,
+                currency,
+                source,
+                disposition: outcome.disposition ?? 'unknown'
+            };
+
+            if (escalate) {
+                apiLogger.error(
+                    detail,
+                    'Subscription charge receipt was NOT delivered — the customer paid and received no acknowledgement',
+                    { capture: true }
+                );
+            } else {
+                apiLogger.warn(
+                    detail,
+                    'Subscription charge receipt did not go out on this attempt — see `disposition` for whether it is retried, declined by the customer, or environmental'
+                );
+            }
             return { dispatched: false, reason: 'not-delivered' };
         }
 

@@ -54,13 +54,16 @@ import { sanitizeErrorForNotification } from './utils';
  *   Passing it does NOT itself prevent a second delivery — it only records the
  *   key; the caller's pre-send lookup is the gate, exactly as in
  *   `addon-expiry.job.ts`.
- * @param planId - Optional `billing_plans.id` of the subscription this payment
- *   actually belongs to (HOS-1238). When given, the plan label is resolved from
- *   IT; otherwise the customer's first subscription supplies it. That fallback is
- *   a guess: an account legitimately holds several subscriptions at once across
- *   the five product domains, so on a gastronomy or partner charge
- *   `getByCustomerId()[0]` names a plan the customer was not charged for. Any
- *   caller that knows which subscription was charged must pass this.
+ * @param planId - `billing_plans.id` of the subscription this payment actually
+ *   belongs to (HOS-1238). Three distinct values:
+ *   - a plan id → the label is resolved from IT;
+ *   - `null` → the caller knows the charged subscription and it carries no plan;
+ *     the label degrades to the GENERIC one, never to another subscription's;
+ *   - **omitted** → the caller does not know, and the customer's FIRST subscription
+ *     is guessed at. That guess is wrong whenever an account holds more than one
+ *     subscription, which it legitimately does across the five product domains, so
+ *     on a gastronomy or partner charge `getByCustomerId()[0]` names a plan the
+ *     customer was not charged for. Any caller that knows must pass it.
  * @returns `{ delivered: true }` only when the notification service reported a
  *   successful send; `{ delivered: false }` when the customer could not be
  *   resolved, the send was not delivered, or anything threw.
@@ -96,11 +99,22 @@ export async function sendPaymentSuccessNotification(
         const userId =
             typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
 
-        // HOS-1238: prefer the plan of the subscription that was actually
-        // charged. Only fall back to the customer's first subscription when the
-        // caller could not say — see the `planId` parameter docs.
-        let resolvedPlanId: string | null = planId ?? null;
-        if (resolvedPlanId === null) {
+        // HOS-1238: prefer the plan of the subscription that was actually charged.
+        //
+        // `undefined` and `null` are DIFFERENT answers here, and collapsing them with
+        // `??` was a real bug hiding behind a correct-sounding docblock.
+        // `undefined` means "the caller does not know which subscription this is" —
+        // only then is the customer's first subscription worth guessing at.
+        // `null` means "the caller knows, and that subscription carries no plan",
+        // which must degrade to the GENERIC label. Falling back there would answer a
+        // question the caller already answered, with the plan of some other
+        // subscription the customer was not charged for.
+        //
+        // Unreachable today because `billing_subscriptions.plan_id` is `.notNull()`,
+        // so the distinction costs nothing now and is the whole guarantee the day
+        // anyone relaxes that column.
+        let resolvedPlanId: string | null | undefined = planId;
+        if (resolvedPlanId === undefined) {
             const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
             resolvedPlanId = subscriptions?.[0]?.planId ?? null;
         }
