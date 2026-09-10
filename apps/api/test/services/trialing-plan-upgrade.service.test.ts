@@ -26,10 +26,20 @@ vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({}))
 }));
 
-vi.mock('@repo/service-core', () => ({
-    resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
-    syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue(undefined)
-}));
+// `ServiceError` comes from the REAL module, not a stub. A whole-module factory
+// that omitted it would leave the SUT's `new ServiceError(...)` as
+// `new undefined(...)` — and, because this suite only exercises the throw path,
+// the resulting TypeError would still satisfy a bare `rejects` assertion while
+// the actual contract went untested (the failure shape @repo/db's own notes call
+// out for whole-module `vi.mock`s).
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ServiceError: actual.ServiceError,
+        resolveOwnerPlanGrantsFeatured: vi.fn().mockResolvedValue(false),
+        syncFeaturedByEntitlementForOwner: vi.fn().mockResolvedValue(undefined)
+    };
+});
 
 vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
@@ -70,9 +80,14 @@ vi.mock('../../src/services/billing/plan-change-reason', () => ({
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { resolvePlanChangeReason } from '../../src/services/billing/plan-change-reason';
 import { SubscriptionCheckoutError } from '../../src/services/billing/subscription-checkout-error';
-import { applyTrialingPlanUpgrade } from '../../src/services/billing/trialing-plan-upgrade.service';
+import {
+    applyTrialingPlanUpgrade,
+    TRIAL_REQUIRES_CHECKOUT_REASON
+} from '../../src/services/billing/trialing-plan-upgrade.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -180,12 +195,46 @@ describe('applyTrialingPlanUpgrade', () => {
         expect(resolvePlanChangeReason).not.toHaveBeenCalled();
     });
 
-    it('fails closed when there is no linked MP preapproval (never touches MP)', async () => {
+    // HOS-1236 — this test used to assert `SubscriptionCheckoutError`, which
+    // both plan-change routes map to HTTP 502. That assertion FROZE the bug:
+    // since HOS-1012 a Hospeda-owned trial has no preapproval by construction,
+    // so every trial-time plan change on the platform answered "our payment
+    // provider is having trouble, try again" — with a "Reintentar" that could
+    // never succeed, because no retry mints a preapproval. It is a local
+    // precondition, reached before any call to MercadoPago is made.
+    it('refuses with TRIAL_REQUIRES_CHECKOUT (409, not 502) when there is no linked MP preapproval', async () => {
         const { billing, mpUpdate, changePlan } = makeBilling();
 
-        await expect(
-            applyTrialingPlanUpgrade({ ...baseInput(billing), mpSubscriptionId: undefined })
-        ).rejects.toBeInstanceOf(SubscriptionCheckoutError);
+        const err = await applyTrialingPlanUpgrade({
+            ...baseInput(billing),
+            mpSubscriptionId: undefined
+        }).catch((e: unknown) => e);
+
+        expect(err).toBeInstanceOf(ServiceError);
+        // ALREADY_EXISTS is the error-contract code for a state conflict, which
+        // `getHttpStatusFromErrorCode` renders as 409.
+        expect((err as ServiceError).code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+        expect((err as ServiceError).reason).toBe(TRIAL_REQUIRES_CHECKOUT_REASON);
+        // The claim it is NOT: a provider failure. Nothing upstream was asked.
+        expect(err).not.toBeInstanceOf(SubscriptionCheckoutError);
+        expect(mpUpdate).not.toHaveBeenCalled();
+        expect(changePlan).not.toHaveBeenCalled();
+    });
+
+    it('refuses the same way for an EMPTY-STRING preapproval id', async () => {
+        // `mp_subscription_id` can hold `''` (HOS-1326), and qzpay's row→domain
+        // mapper hides that behind a truthiness check so it arrives here exactly
+        // as `undefined` does. Both must reach the 409, never the MP call — an
+        // `''` sent to `subscriptions.update` asks MercadoPago to mutate a
+        // preapproval that does not exist.
+        const { billing, mpUpdate, changePlan } = makeBilling();
+
+        const err = await applyTrialingPlanUpgrade({
+            ...baseInput(billing),
+            mpSubscriptionId: ''
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe(TRIAL_REQUIRES_CHECKOUT_REASON);
         expect(mpUpdate).not.toHaveBeenCalled();
         expect(changePlan).not.toHaveBeenCalled();
     });

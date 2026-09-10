@@ -114,6 +114,8 @@ vi.mock('@repo/db', async (importOriginal) => {
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { getQZPayBilling } from '../../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../../src/middlewares/entitlement';
 import { handlePlanChange } from '../../../src/routes/billing/plan-change';
@@ -293,9 +295,15 @@ describe('handlePlanChange — HOS-211 trialing-upgrade branch', () => {
         expect(checkoutCreate).not.toHaveBeenCalled();
     });
 
-    it('fails closed when the trialing subscription has no linked MP preapproval', async () => {
+    // HOS-1236 — ACCOMMODATION half of the three-vertical fix. This test used to
+    // assert `{ status: 502 }`, freezing the bug: since HOS-1012 a Hospeda-owned
+    // trial has `mp_subscription_id = NULL` by construction, so this is the state
+    // of EVERY trial, and 502 told the host their plan change failed because our
+    // payment provider was unreachable — offering a retry that no number of
+    // attempts can satisfy. `error-contract.md`: a business rule is never a 5xx.
+    it('a trialing subscription with no linked MP preapproval answers 409 TRIAL_REQUIRES_CHECKOUT, not 502', async () => {
         const { billing, changePlan } = makeTrialingBillingMock();
-        // Simulate a trialing row with no live preapproval id at all.
+        // The HOS-1012 shape: a trial row MercadoPago knows nothing about.
         billing.subscriptions.getByCustomerId = vi.fn().mockResolvedValue([
             {
                 id: SUB_ID,
@@ -310,7 +318,15 @@ describe('handlePlanChange — HOS-211 trialing-upgrade branch', () => {
         mockBilling(billing);
 
         const ctx = makeContext();
-        await expect(handlePlanChange(ctx as never)).rejects.toMatchObject({ status: 502 });
+        const err = await handlePlanChange(ctx as never).catch((e: unknown) => e);
+
+        expect(err).toBeInstanceOf(ServiceError);
+        expect((err as ServiceError).code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+        // The machine-readable half — this is what lets the web route the user to
+        // the paid checkout instead of rendering a retry button.
+        expect((err as ServiceError).reason).toBe('TRIAL_REQUIRES_CHECKOUT');
+        // And it must NOT be an HTTPException carrying a 5xx.
+        expect((err as { status?: number }).status).toBeUndefined();
         expect(changePlan).not.toHaveBeenCalled();
     });
 
