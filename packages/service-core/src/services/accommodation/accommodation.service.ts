@@ -2109,18 +2109,24 @@ export class AccommodationService extends BaseCrudService<
                 // COMMITTED. A local trial has no preapproval and therefore no
                 // webhook, so this is the only thing that will ever drop the
                 // owner's cached (empty) entitlement set — without it they are
-                // told they are live and still gated for up to 5 minutes.
+                // told they are live and still gated for up to 5 minutes. The
+                // API-side hook also re-points the SHARED entity_subscriptions
+                // cache through the reconcile bridge (HOS-1336): without that
+                // half, every owner-gated read keeps answering "no entitlements"
+                // for up to the 6-hour reconcile-cron interval.
                 if (trial) {
                     try {
                         await this._publishDeps?.onTrialStarted(trial);
                     } catch (error) {
                         // The publish is already committed and the trial row is
                         // durable. Failing the request now would tell the owner
-                        // their listing did not go live when it did; a stale
-                        // cache self-heals in 5 minutes.
+                        // their listing did not go live when it did; the caches
+                        // self-heal on their own timers (the in-memory
+                        // entitlement cache within its TTL, entity_subscriptions
+                        // at the next reconcile-cron tick).
                         this.logger.error(
                             { error, ...trial },
-                            '[accommodation.publish] trial post-commit hook failed (non-blocking; entitlement cache self-heals within the TTL)'
+                            '[accommodation.publish] trial post-commit hook failed (non-blocking; caches self-heal on their own timers)'
                         );
                     }
                 }
