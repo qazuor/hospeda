@@ -48,6 +48,12 @@ import {
 } from '../services/billing/addon-grant-domain';
 import { selectAccommodationSubscription } from '../services/billing/plan-domain-guard';
 import {
+    mergeTouristVipGift,
+    resolveTouristVipGift,
+    subscriptionNeedsTouristVipGift,
+    type TouristVipGift
+} from '../services/billing/tourist-vip-inheritance';
+import {
     loadDeferredAddonGrants,
     mergeDeferredAddonGrants
 } from '../services/deferred-addon-grants.service';
@@ -554,6 +560,37 @@ function buildStaffUnlimitedResult(): LoadEntitlementsResult {
 }
 
 /**
+ * Applies the tourist-VIP gift (HOS-1323) onto an already-built result.
+ *
+ * Clones first, on purpose. {@link withDeferredAddonGrants} returns its `base`
+ * object UNCHANGED when there is nothing to add, and on the HOST path that
+ * object is the one memoised inside {@link buildHostDraftDefaultsResult} for
+ * five minutes. Merging in place would write the gift into that memo and hand it
+ * to the next HOST who has no gifted subscription at all.
+ *
+ * @param base - The result the ordinary resolution produced.
+ * @param gift - The resolved gift, or `null` when this customer holds no
+ *   subscription in a gifted vertical.
+ * @returns `base` untouched when there is no gift; otherwise a merged clone.
+ */
+function withTouristVipGift(
+    base: LoadEntitlementsResult,
+    gift: TouristVipGift | null
+): LoadEntitlementsResult {
+    if (gift === null) {
+        return base;
+    }
+
+    const merged: LoadEntitlementsResult = {
+        ...base,
+        entitlements: new Set<EntitlementKey>(base.entitlements),
+        limits: new Map<LimitKey, number>(base.limits)
+    };
+    mergeTouristVipGift({ grants: merged, gift });
+    return merged;
+}
+
+/**
  * Load entitlements and limits for a billing customer.
  *
  * Three paths:
@@ -641,6 +678,37 @@ async function loadEntitlements(
             isEntitlementGrantingStatus(sub.status)
         );
 
+        // ── HOS-1323: the tourist-VIP gift ────────────────────────────────────
+        // Owner decision, 2026-09-10: accommodation, gastronomy and experience
+        // inherit every entitlement and limit of a tourist-VIP without
+        // subscribing to one. Partners do not.
+        //
+        // Only gastronomy and experience are resolved HERE. Accommodation
+        // inherits the identical block through its own plan row, which
+        // `plans.config.ts` builds from the same constants, so it already
+        // arrives by the ordinary path — re-adding it would be a second delivery
+        // of the same set to the same people on the hot path. That split is
+        // DERIVED from which domains this loader already selects a plan for, not
+        // configured twice: see `RUNTIME_GIFTED_DOMAINS`.
+        //
+        // This is resolved from the customer's whole granting set, NOT from the
+        // one subscription selected below. That is the entire fix: a gastronomy
+        // owner's subscription is invisible to `selectAccommodationSubscription`
+        // (commerce never matches, by design — SPEC-239 isolation), so before
+        // this they fell through to the tourist-FREE defaults and the twelve VIP
+        // keys their own plan row declares reached nothing. `price-alert/
+        // protected/create.ts` gates on `PRICE_ALERTS` and answered 403 to an
+        // owner whose plan grants it.
+        //
+        // The selection below is deliberately left alone. It answers "which plan
+        // is this customer's own consumer plan" — accommodation first, tourist as
+        // an ORDERED fallback (HOS-1233/HOS-1303) — and widening it to admit
+        // commerce would put a gastronomy plan back where an accommodation plan
+        // belongs, which is the HOS-1213 ambiguity in a third set of clothes. The
+        // gift is a separate, additive question with a separate answer.
+        const giftedSubscription = grantingSubscriptions.find(subscriptionNeedsTouristVipGift);
+        const touristVipGift = giftedSubscription ? await resolveTouristVipGift() : null;
+
         // HOS-1303: this used to be a single `find` matching
         // `isAccommodationSubscription(sub) || subscriptionMatchesDomain(sub,
         // TOURIST)` — one pass, one OR, so whichever row the storage adapter
@@ -707,9 +775,17 @@ async function loadEntitlements(
             // HOS-847 PR 7b: this is THE branch a host lands on the day after
             // their plan is cancelled, and the one where a deferred add-on has
             // to keep paying out until its own period ends.
-            return await withDeferredAddonGrants(
-                customerId,
-                isHost ? await buildHostDraftDefaultsResult() : buildDefaultEntitlementsResult()
+            //
+            // HOS-1323: it is ALSO the branch a gastronomy- or experience-only
+            // owner lands on every single request — they have a live
+            // subscription, it just is not one this selector can return. The
+            // gift is what makes their plan's consumer half arrive.
+            return withTouristVipGift(
+                await withDeferredAddonGrants(
+                    customerId,
+                    isHost ? await buildHostDraftDefaultsResult() : buildDefaultEntitlementsResult()
+                ),
+                touristVipGift
             );
         }
 
@@ -810,6 +886,27 @@ async function loadEntitlements(
                     limits.set(key, value);
                 }
             }
+        }
+
+        // HOS-1323 — the gift, merged onto the resolved plan rather than instead
+        // of it. Applied HERE, before the customer-level merge, so a
+        // customer-level override still has the last word.
+        //
+        // It matters on this path too, not only on the fallback above. A
+        // customer who holds BOTH an accommodation (or tourist) subscription and
+        // a commerce one resolves their consumer plan here, and that plan can be
+        // the FREE tier: without this, `tourist-free`'s small `max_favorites`
+        // would be the whole answer for someone who also runs a paid restaurant.
+        // `mergeTouristVipGift` moves a limit only when the gift is more
+        // generous, so a plan that raises a VIP key above the gift keeps its own
+        // value — the same precedence `mergeLimits(TOURIST_VIP_LIMITS, [...])`
+        // states for the declaration in `plans.config.ts`.
+        //
+        // `entitlements` and `limits` are freshly built locals here, so merging
+        // in place is safe (unlike the fallback branch — see
+        // {@link withTouristVipGift}).
+        if (touristVipGift !== null) {
+            mergeTouristVipGift({ grants: { entitlements, limits }, gift: touristVipGift });
         }
 
         // Attempt to merge customer-level entitlements and limits.
