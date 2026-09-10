@@ -630,7 +630,7 @@ describe('HOS-1323 — the gift owns the tourist axis and replaces on it', () =>
      * `packages/billing/test/tourist-vip-axis-disjointness.test.ts` — so a
      * wholesale replacement on the gift's keys cannot reach a vertical's cap.
      *
-     * This is the property that made `Math.max` unnecessary: there is never a
+     * This is the property that made the old comparison unnecessary: there is never a
      * second value for the same thing arriving from a different product.
      */
     it('replacing on the tourist axis leaves the vertical cap untouched', async () => {
@@ -665,14 +665,17 @@ describe('HOS-1323 — the gift owns the tourist axis and replaces on it', () =>
     });
 
     /**
-     * **THE ABSURD CASE — the reason `Math.max` had to go.**
+     * **THE ABSURD CASE — the reason `moreGenerousLimit` had to go.**
      *
      * The one real collision in the catalogue is `tourist-free` vs
      * `tourist-vip`: two tiers of the SAME product, which of course share keys.
      * A commerce-only owner lands on the free tier's defaults, so on those three
      * keys the gift meets a value.
      *
-     * `Math.max` picked the larger. That agreed with the tier ordering only
+     * `moreGenerousLimit` picked the more generous, reading `-1` as unlimited
+     * rather than as a small number — it was never a bare `Math.max`, and that
+     * sentinel-awareness was its whole reason for existing. It agreed with the
+     * tier ordering only
      * because the VIP is more generous in all three today (`-1 > 5`,
      * `200 > 10`, `200 > 10`). Lower a VIP key — for abuse, for cost — and MAX
      * returns the FREE number, leaving a gastronomy owner holding **more than a
@@ -700,9 +703,60 @@ describe('HOS-1323 — the gift owns the tourist axis and replaces on it', () =>
 
         const { limits } = await loadThroughMiddleware();
 
-        // `Math.max(5, 2)` would answer 5 — the FREE value — and hand this owner
+        // `moreGenerousLimit(5, 2)` would answer 5 — the FREE value — and hand this owner
         // more than a paying tourist-VIP, who holds 2.
         expect(limits.max_favorites).toBe(2);
+    });
+
+    /**
+     * **The `-1` sentinel, whose only coverage left with the function that
+     * handled it.**
+     *
+     * `moreGenerousLimit` was sentinel-aware for a stated reason: `-1` is
+     * unlimited, not "less than 5". Replacement drops that, so a caller holding
+     * an uncapped tourist key now has it overwritten by the gift's finite value.
+     * The case that covered it (`does not demote a plan limit that is more
+     * generous than the gift`) was deleted along with the function — coverage
+     * lost inside a diff that reads as cleanup.
+     *
+     * **Why it still earns its place after the derived-universe guard.** That
+     * guard forbids a CATALOGUE plan from declaring a tourist key at a non-tier
+     * value, which closes the code path completely — no plan definition can put
+     * `-1` here any more. It cannot see the `billing_plans` ROW, which
+     * `PUT /admin/billing/plans/{id}` edits with no deploy. So this is not a
+     * duplicate of the guard: it is the only coverage of the one route left
+     * reachable.
+     *
+     * It pins the CURRENT behaviour, which is a demotion. That is correct under
+     * the union model — the tourist axis is not `owner-basico`'s to set — but it
+     * is a silent split between two hosts on the same plan, so it gets written
+     * down rather than discovered.
+     */
+    it('a caller holding -1 on a tourist key is REPLACED, not preserved', async () => {
+        const vipCompare = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_compare_items');
+        // Finite on the gift side, or the demotion would not be observable.
+        expect(vipCompare?.value).toBe(5);
+
+        // The dual owner is the only shape where a caller value and the gift
+        // meet: the gastronomy subscription triggers the gift, the accommodation
+        // one supplies the plan the loader actually reads.
+        const uncapped = planRow(OWNER_BASICO_PLAN);
+        uncapped.limits.max_compare_items = -1;
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' },
+            { id: 'sub-accom', planId: 'plan-owner-basico', status: 'active' }
+        ]);
+        hydrateAs([
+            { id: 'sub-gastro', productDomain: 'gastronomy' },
+            { id: 'sub-accom', productDomain: 'accommodation' }
+        ]);
+        mockBilling.plans.get.mockResolvedValue(uncapped);
+
+        const { limits } = await loadThroughMiddleware();
+
+        // `moreGenerousLimit` answered -1 here. Replacement answers 5.
+        expect(limits.max_compare_items).toBe(5);
     });
 
     /**
@@ -883,7 +937,7 @@ describe('HOS-1323 — the commerce middleware republishes the gift', () => {
  *    lose it and the verticals keep it until the next deploy.
  *
  * The third item this block used to carry — "a lowered cap cannot reduce a key
- * the caller declares" — was a consequence of the `Math.max` merge and is now
+ * the caller declares" — was a consequence of the `moreGenerousLimit` merge and is now
  * FALSE by design. Its replacement lives above, as the absurd case.
  */
 describe('HOS-1323 — consequences pinned as design (owner, 2026-09-10)', () => {

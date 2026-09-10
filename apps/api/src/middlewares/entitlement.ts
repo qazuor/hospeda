@@ -782,6 +782,17 @@ async function loadEntitlements(
             // owner lands on every single request — they have a live
             // subscription, it just is not one this selector can return. The
             // gift is what makes their plan's consumer half arrive.
+            //
+            // ORDER CAVEAT: the add-on's `limitIncrements` are applied FIRST and
+            // the gift then REPLACES on its own keys, so an add-on raising a
+            // tourist key would be silently undone here. Unreachable today — no
+            // add-on's `affectsLimitKey` names one of the seven
+            // (`addons.config.ts`) — and note this was harmless under the old
+            // `moreGenerousLimit`, which would have kept the raised value. The
+            // swap to replacement is what made the order matter, which is
+            // exactly the kind of coupling that leaves no trace in a diff. If an
+            // add-on ever targets a tourist key, merge the gift BEFORE the
+            // add-on grants rather than after.
             return withTouristVipGift(
                 await withDeferredAddonGrants(
                     customerId,
@@ -907,11 +918,13 @@ async function loadEntitlements(
         // owner plan. Both are the same axis at a lower or equal tier, and the
         // paid tier supersedes them.
         //
-        // This replaced a `Math.max` (owner redesign, 2026-09-10). MAX agreed
-        // with replacement on every value in today's catalogue and would have
-        // diverged the first time a VIP key was LOWERED: it would have returned
-        // `tourist-free`'s number and left a gastronomy owner holding MORE than
-        // a tourist who pays for VIP.
+        // This replaced `moreGenerousLimit` (owner redesign, 2026-09-10) — a
+        // sentinel-aware comparison, not a bare `Math.max`: it read `-1` as
+        // unlimited rather than as less than 5. It agreed with replacement on
+        // every value in today's catalogue and would have diverged the first
+        // time a VIP key was LOWERED: it would have returned `tourist-free`'s
+        // number and left a gastronomy owner holding MORE than a tourist who
+        // pays for VIP.
         //
         // `entitlements` and `limits` are freshly built locals here, so merging
         // in place is safe (unlike the fallback branch — see

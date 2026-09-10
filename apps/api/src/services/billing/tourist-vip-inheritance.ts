@@ -88,13 +88,16 @@
  *
  * Intersection: empty, in all three directions. A gastronomy plan declares no
  * tourist key of its own, and no shipped plan declares a tourist key at a value
- * other than the VIP tier's (measured: zero divergences across all eight).
+ * other than the VIP tier's. Stronger than that, measured by grepping the
+ * seven keys across `packages/billing/src`: **no other plan DECLARES them at
+ * all**, not even at the same value. There are no values that could diverge
+ * today — only future plans.
  *
  * **So the gift REPLACES on its own axis, and touches nothing else.** There is
  * no "more generous of the two" question to answer, because there are never two
  * values for the same thing coming from different products.
  *
- * ## The one real collision, and why `Math.max` was the wrong answer to it
+ * ## The one real collision, and why the old merge was the wrong answer to it
  *
  * An earlier version of this file merged with a MAX, on the theory that the gift
  * is a floor. The collision that motivated it is real but it is **not** vertical
@@ -103,9 +106,11 @@
  * (`plans.config.ts:455-459`) declares three of the seven, all tourist keys.
  *
  * On that axis the right operator is **replacement, not max**: the paid tier
- * supersedes the free one. `Math.max` happens to agree today only because the
- * VIP is more generous in all three (`-1 > 5`, `200 > 10`, `200 > 10`). The day
- * a VIP key is lowered — for abuse, for cost — MAX would return the FREE value
+ * supersedes the free one. `moreGenerousLimit` — the sentinel-aware comparison
+ * this replaced, NOT a bare `Math.max`: `-1` meant unlimited and beat any finite
+ * value — happens to agree today only because the VIP is the more generous of
+ * the two on all three (unlimited vs 5, 200 vs 10, 200 vs 10). The day
+ * a VIP key is lowered — for abuse, for cost — it would return the FREE value
  * and hand a gastronomy owner **more than a tourist who pays for VIP**. That
  * absurdity is pinned as a regression test.
  *
@@ -300,9 +305,29 @@ export async function selectGiftBearingSubscription<
  *   the inherited block on an owner plan. Both are the same axis at a lower or
  *   equal tier, and the paid tier supersedes it.
  *
- * The `Math.max` this replaced would, the day a VIP key is lowered, return the
- * FREE value on those three shared keys and hand a gastronomy owner more than a
- * tourist paying for VIP. Pinned as a regression test.
+ * **The second bullet is true of the CATALOGUE and not of the row, and the
+ * difference matters.** The caller's value is read from `billing_plans`, which
+ * `PUT /admin/billing/plans/{id}` edits with no deploy — the same fact this file
+ * states surgically for the GIFT's row and omitted here until HOS-1323's review.
+ * So an operator who raises `max_ai_search_per_month` to 500 on the
+ * `owner-premium` row, an edit this codebase advertises as legitimate, gives a
+ * pure `owner-premium` host 500 and a host who ALSO runs a restaurant 200,
+ * because the gift replaced it. No log, no error. It is the model working as
+ * designed — the tourist axis is not `owner-premium`'s to set — but it is a
+ * split outcome between two hosts on the same plan, and nobody should discover
+ * it by reading a bug report.
+ *
+ * **`-1` gets no special treatment here, and that is a deliberate loss.** The
+ * function this replaced was sentinel-aware on purpose (`-1` is unlimited, not
+ * "less than 5"), so a caller holding an uncapped tourist key kept it. Under
+ * replacement a gift value of `5` overwrites a caller's `-1`. No catalogue plan
+ * can produce that — the guard above forbids a plan declaring a tourist key at a
+ * non-tier value — so the only route is the row edit described above. Pinned, in
+ * both directions, in `tourist-vip-vertical-inheritance.test.ts`.
+ *
+ * The `moreGenerousLimit` this replaced would, the day a VIP key is lowered,
+ * return the FREE value on those three shared keys and hand a gastronomy owner
+ * more than a tourist paying for VIP. Pinned as a regression test.
  *
  * @param input.grants - The caller's resolved entitlements and limits, mutated.
  * @param input.gift - The resolved tourist-VIP gift.
@@ -366,7 +391,7 @@ function giftFromConfig(): { entitlements: Set<EntitlementKey>; limits: Map<Limi
  * gift that can hand out another vertical's cap is not a gift, it is a hole.
  *
  * **The 2026-09-10 redesign did not retire this, it promoted it.** Under the
- * earlier `Math.max` merge the filter was a defensive extra; under replacement
+ * earlier `moreGenerousLimit` merge the filter was a defensive extra; under replacement
  * it is the invariant's enforcement, because a foreign key that reaches the gift
  * no longer merely competes with the vertical's own cap — it overwrites it.
  *
@@ -462,7 +487,7 @@ export async function resolveTouristVipGift(): Promise<TouristVipGift> {
             // direction** — since the merge became a replacement on the tourist
             // axis, a LOWERED value reaches the gifted verticals too, which is
             // the point: they hold the VIP tier, so lowering the tier lowers
-            // what they hold. `Math.max` used to swallow that and is gone.
+            // what they hold. `moreGenerousLimit` used to swallow that and is gone.
             for (const [key, value] of Object.entries(result.data.limits)) {
                 if (!isLimitKey(key) || typeof value !== 'number') {
                     continue;

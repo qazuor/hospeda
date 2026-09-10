@@ -32,6 +32,7 @@
  * redundant.
  */
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
@@ -39,18 +40,9 @@ import {
     PRIVATE_GALLERY_LIMIT_KEY
 } from '../src/config/commerce-limits.config.js';
 import {
-    COMPLEX_BASICO_PLAN,
-    COMPLEX_PREMIUM_PLAN,
-    COMPLEX_PRO_PLAN,
-    EXPERIENCE_BASICO_PLAN,
-    EXPERIENCE_PREMIUM_PLAN,
-    EXPERIENCE_PRO_PLAN,
-    GASTRONOMY_BASICO_PLAN,
-    GASTRONOMY_PREMIUM_PLAN,
-    GASTRONOMY_PRO_PLAN,
-    OWNER_BASICO_PLAN,
+    ALL_PLAN_CATALOGS,
     OWNER_PREMIUM_PLAN,
-    OWNER_PRO_PLAN,
+    TEST_DAILY_PLAN,
     TOURIST_FREE_PLAN,
     TOURIST_VIP_PLAN
 } from '../src/config/plans.config.js';
@@ -75,27 +67,64 @@ const COMMERCE_OWN_KEYS: readonly LimitKey[] = [
     PRIVATE_GALLERY_LIMIT_KEY
 ];
 
-/** Every plan that carries the tourist block, for the value-agreement check. */
-const PLANS_CARRYING_THE_BLOCK = [
-    OWNER_BASICO_PLAN,
-    OWNER_PRO_PLAN,
-    OWNER_PREMIUM_PLAN,
-    COMPLEX_BASICO_PLAN,
-    COMPLEX_PRO_PLAN,
-    COMPLEX_PREMIUM_PLAN,
-    GASTRONOMY_BASICO_PLAN,
-    GASTRONOMY_PRO_PLAN,
-    GASTRONOMY_PREMIUM_PLAN,
-    EXPERIENCE_BASICO_PLAN,
-    EXPERIENCE_PRO_PLAN,
-    EXPERIENCE_PREMIUM_PLAN
-];
+/**
+ * Every plan that carries the tourist block — **DERIVED from the catalogues,
+ * never listed.**
+ *
+ * The first version of this file hand-wrote twelve plan constants here, which is
+ * the exact trap HOS-1290 had already found and named: *"three separate defences
+ * each narrowed their own scope to `ALL_PLANS`, so the six commerce plans and
+ * the three partner plans fell outside all three at once"*. A guard whose
+ * universe is a literal goes green on the plan nobody added to it — and this
+ * one was already wrong in both directions, carrying the three `COMPLEX_*` that
+ * HOS-692 removed from `ALL_PLANS` while missing `owner-test-daily`.
+ *
+ * `ALL_PLAN_CATALOGS` (`plans.config.ts:1650`) is the catalogue-of-catalogues
+ * HOS-1290 introduced for precisely this. Filtering it by "does this plan
+ * declare any tourist key" means a future `owner-elite` is inspected the day it
+ * is written, with no edit here.
+ *
+ * The question a guard has to answer is not "does my assertion discriminate?"
+ * but **"where does the universe I iterate come from, and who maintains it?"**
+ */
+const PLANS_CARRYING_THE_BLOCK = ALL_PLAN_CATALOGS.flat().filter(
+    (plan) =>
+        // The tourist tiers are the axis, not carriers of it. `tourist-free`
+        // legitimately declares three of the seven at FREE values; asserting it
+        // against the VIP tier would be asserting that the two tiers are the
+        // same tier. Their relationship has its own case at the bottom of this
+        // file. Excluded by DOMAIN, so a third tourist tier is excluded too.
+        plan.productDomain !== ProductDomainEnum.TOURIST &&
+        plan.limits.some((l) => TOURIST_AXIS.has(l.key))
+);
 
 describe('HOS-1323 — the tourist axis is disjoint from every vertical axis', () => {
     it('the tourist tier declares exactly seven limit keys', () => {
         // Not a magic number for its own sake: every claim below is about THIS
         // set, and a silent change to it should surface here first.
         expect(TOURIST_AXIS.size).toBe(7);
+    });
+
+    /**
+     * Anti-vacuity for the DERIVED universe, and the price of deriving it.
+     *
+     * A hand-written list is wrong silently; a derived one can go EMPTY silently,
+     * and `it.each([])` contributes zero cases without failing — the whole
+     * value-agreement block below would simply stop existing. A rename in
+     * `plans.config.ts`, or a filter that stops matching, has to land as a red
+     * test rather than as a suite that quietly shrank.
+     *
+     * Nine today: the three owner tiers plus the six commerce ones. Asserted as
+     * a FLOOR, not an equality — a new plan carrying the block should extend the
+     * guard, not break it.
+     */
+    it('the derived universe is non-empty and covers both catalogues', () => {
+        expect(PLANS_CARRYING_THE_BLOCK.length).toBeGreaterThanOrEqual(9);
+
+        const domains = new Set(PLANS_CARRYING_THE_BLOCK.map((p) => p.productDomain));
+        expect(domains.has(ProductDomainEnum.ACCOMMODATION)).toBe(true);
+        expect(domains.has(ProductDomainEnum.GASTRONOMY)).toBe(true);
+        expect(domains.has(ProductDomainEnum.EXPERIENCE)).toBe(true);
     });
 
     it.each(
@@ -105,26 +134,19 @@ describe('HOS-1323 — the tourist axis is disjoint from every vertical axis', (
     });
 
     /**
-     * The accommodation side of the same rule. An owner plan's `limits` array
-     * DOES contain the tourist block (it spreads `TOURIST_VIP_LIMITS`), so its
-     * own keys are what remains after removing that block — and none of what
-     * remains may be a tourist key, which is the same statement as "the two
-     * lists in `plans.config.ts` do not overlap".
+     * `owner-test-daily` is the one plan that carries the block and is NOT in
+     * `ALL_PLAN_CATALOGS`, so the derived universe above does not reach it. It is
+     * covered TRANSITIVELY instead — `limits: [...OWNER_PREMIUM_PLAN.limits]`
+     * (`plans.config.ts:1532`) is a spread copy, so whatever holds for
+     * `owner-premium` holds for it.
+     *
+     * This asserts that PREMISE rather than the conclusion. The day somebody
+     * gives the test plan limits of its own, this goes red and the transitive
+     * argument stops being available — which is the moment to decide whether the
+     * derived universe needs widening.
      */
-    it.each(
-        [OWNER_BASICO_PLAN, OWNER_PRO_PLAN, OWNER_PREMIUM_PLAN].map(
-            (plan) => [plan.slug, plan] as const
-        )
-    )('%s declares no tourist key outside the inherited block', (_slug, plan) => {
-        const declaredTwice = plan.limits
-            .map((l) => l.key)
-            .filter((key, index, all) => all.indexOf(key) !== index);
-
-        // `mergeLimits` collapses by key, so a genuine override would appear as
-        // a single entry with a non-VIP value — covered by the next test. What
-        // this rules out is the plan declaring the same key twice, which would
-        // make "its own keys" ambiguous.
-        expect(declaredTwice).toEqual([]);
+    it('owner-test-daily still inherits owner-premium limits verbatim', () => {
+        expect(TEST_DAILY_PLAN.limits).toEqual(OWNER_PREMIUM_PLAN.limits);
     });
 
     /**
