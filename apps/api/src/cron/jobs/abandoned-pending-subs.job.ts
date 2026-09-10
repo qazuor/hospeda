@@ -44,7 +44,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
-import { createMercadoPagoAdapter, QZPAY_STORED_STATUS_ALIASES } from '@repo/billing';
+import { createMercadoPagoAdapter } from '@repo/billing';
 import {
     billingPendingCheckoutModel,
     billingSubscriptions,
@@ -96,54 +96,6 @@ const PENDING_STATUSES = ['incomplete', 'pending_provider'] as const;
  * handled by the `010-abandoned-status.data-migration.sql` extras migration.
  */
 const ABANDONED_STATUS = SubscriptionStatusEnum.ABANDONED;
-
-/**
- * Every stored spelling that means CANCELLED, derived from the canonical alias
- * map rather than typed out (HOS-1310). qzpay-core writes the American
- * `canceled`; Hospeda's own writers use the British `cancelled`. A ninth alias
- * that folds to the same state is picked up here the day it is added.
- */
-const CANCELLED_SPELLINGS: readonly string[] = [
-    SubscriptionStatusEnum.CANCELLED,
-    ...Object.keys(QZPAY_STORED_STATUS_ALIASES).filter(
-        (raw) => QZPAY_STORED_STATUS_ALIASES[raw] === SubscriptionStatusEnum.CANCELLED
-    )
-];
-
-/**
- * The statuses the terminal UPDATE below accepts as a row's pre-abandon state.
- *
- * **Why this is wider than {@link PENDING_STATUSES}, and why the reason is THIS
- * function (HOS-1310):** when a candidate holds a preapproval, the
- * `billing.subscriptions.cancel()` call earlier in `reapPendingCandidate` has
- * ALREADY moved the row out of the pending set by the time the UPDATE runs —
- * qzpay-core writes `status = 'canceled'` whenever `cancelAtPeriodEnd` is falsy
- * (`packages/core/src/billing.ts`), and this call passes no options. So the
- * pending-only WHERE matched nothing, `returning()` came back empty, and every
- * such candidate reported `already-reaped` while its row stayed `canceled`
- * forever — never reaching `abandoned`, which is the one status this cron exists
- * to write. The unit suite could not see it: it mocks
- * `billing.subscriptions.cancel`, so the status write never happened in a test.
- *
- * That stranded row is not inert. qzpay stamps `current_period_end = now + 30
- * days` at INSERT, before any payment
- * (`packages/drizzle/src/adapter/drizzle-storage.adapter.ts`), and `cancel()`
- * does not clear it — so a `canceled` row from an unauthorized checkout carries
- * a period end a month in the future, and the accommodation publish gate reads
- * every non-deleted subscription with no status filter. `abandoned` is refused
- * by every liveness predicate; `canceled` is not.
- *
- * Widening is safe BECAUSE of the surrounding guards, not in spite of them:
- * Phase 1 only ever selects pending candidates, the cancel happened inside this
- * same call seconds earlier, MercadoPago has confirmed the preapproval terminal,
- * and the `mpGuard` pins the provider id. Idempotency is untouched — `abandoned`
- * is NOT in this set, so a row a concurrent run already reaped still no-ops into
- * `already-reaped`.
- */
-const REAPABLE_PRE_ABANDON_STATUSES: readonly string[] = [
-    ...PENDING_STATUSES,
-    ...CANCELLED_SPELLINGS
-];
 
 /** Minimal subscription info for post-abandon notifications. */
 interface AbandonedSubInfo {
@@ -314,13 +266,8 @@ async function reapPendingCandidate(params: {
 
     // Either there was no preapproval to cancel, or MP has confirmed it is
     // cancelled/terminal. Flip the local row to `abandoned`. The WHERE clause
-    // re-asserts the pre-abandon precondition so a concurrent run that already
+    // re-asserts the pending precondition so a concurrent run that already
     // abandoned the row makes this a no-op (idempotent).
-    //
-    // The precondition is `REAPABLE_PRE_ABANDON_STATUSES`, not the pending set:
-    // our own cancel() above has already moved a preapproval-holding row to
-    // `canceled`. Read that constant's docblock before narrowing this back —
-    // the pending-only version could never abandon such a row (HOS-1310).
     //
     // FIX 2 (reaper TOCTOU): `candidate.mpSubscriptionId` is a snapshot from the
     // Phase-1 SELECT. Between that SELECT and this UPDATE, the link-preapproval
@@ -344,7 +291,7 @@ async function reapPendingCandidate(params: {
         .where(
             and(
                 eq(billingSubscriptions.id, candidate.id),
-                inArray(billingSubscriptions.status, [...REAPABLE_PRE_ABANDON_STATUSES]),
+                inArray(billingSubscriptions.status, [...PENDING_STATUSES]),
                 mpGuard,
                 isNull(billingSubscriptions.deletedAt)
             )
@@ -728,7 +675,6 @@ export const _internals = {
     ADVISORY_LOCK_KEY,
     PENDING_PROVIDER_TTL_MS,
     PENDING_STATUSES,
-    REAPABLE_PRE_ABANDON_STATUSES,
     ABANDONED_STATUS,
     reapPendingCandidate
 };
