@@ -784,8 +784,25 @@ Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
 `preapproval-less-expiry.job.ts`, `entity-subscription-cache-reconcile.job.ts`,
 `addon-subscription-reconcile.job.ts`, `courtesy-expiry.job.ts`,
 `propagate-plan-price-changes.job.ts`,
-`reactivation-supersession-reconcile.job.ts`, `partner-expiry.job.ts` and
+`reactivation-supersession-reconcile.job.ts`,
+`subscription-drift-reconcile.job.ts`, `partner-expiry.job.ts` and
 `partner-unpaid-reaper.job.ts`.
+
+**Which of those re-reads MercadoPago, and when** — worth knowing before adding a
+sweep, because the answer used to be "almost none of them". Every job above
+except one is keyed on a LOCAL trigger: an enqueued polling job
+(`subscription-poll`), an elapsed `trial_end` (`trial-reconcile`), a
+`cancel_at_period_end` flag (`finalize-cancelled-subs`), a 30-minute TTL
+(`abandoned-pending-subs`), a missing preapproval (`preapproval-less-expiry`).
+A row that diverged from the provider with none of those markers set was
+invisible to all of them, permanently — measured in HOS-913 at over three hours
+for one `paused` row. `subscription-drift-reconcile` (HOS-914) is the only sweep
+whose trigger is the PROVIDER: it re-reads every non-terminal row that holds a
+preapproval and re-applies the verdict through `processSubscriptionUpdated`.
+Two rules it follows and a new one must too: a failed read is never a verdict
+(a preapproval MercadoPago cannot resolve is reported, never cancelled — a
+cash-paid partner has no counterpart at all, HOS-1062), and a correction goes
+through the webhook transition rather than a second state machine.
 
 Two traps in that list. **A job's registered NAME is not its filename** —
 `trial-expiry.ts` registers as `trial-reconcile`, and that string is what
