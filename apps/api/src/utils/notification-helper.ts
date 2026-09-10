@@ -124,6 +124,30 @@ async function getNotificationService(): Promise<NotificationService | null> {
  */
 export interface NotificationSendOutcome {
     readonly delivered: boolean;
+    /**
+     * WHY it was not delivered — so a caller can tell a notification that is LOST
+     * from one that is merely LATE (HOS-1238). Optional, and every existing caller
+     * that only reads `delivered` keeps working.
+     *
+     * `delivered: false` is four different situations, and escalating them alike
+     * produces an alert per occurrence for things that either self-heal or were never
+     * meant to send:
+     *
+     * - `'sent'` — delivered (`delivered: true`).
+     * - `'skipped'` — the recipient opted out of this notification type. Not a
+     *   failure; the system did what it was told.
+     * - `'send-failed'` — the transport refused. `NotificationService.send` has
+     *   ALREADY enqueued a retry before returning (when a retry service is
+     *   configured — `RetryService` logs and no-ops when Redis is absent), so this is
+     *   usually a notification that arrives a minute later.
+     * - `'unavailable'` — there is no notification service at all
+     *   (`HOSPEDA_EMAIL_API_KEY` unset, or initialization failed). Environmental and
+     *   identical for every notification in the process, rather than specific to this
+     *   one.
+     * - `'error'` — something threw. The only disposition that is neither retried nor
+     *   expected.
+     */
+    readonly disposition?: 'sent' | 'skipped' | 'send-failed' | 'unavailable' | 'error';
 }
 
 /**
@@ -166,7 +190,7 @@ export async function trySendNotification(
                 },
                 'NotificationService not available, skipping notification'
             );
-            return { delivered: false };
+            return { delivered: false, disposition: 'unavailable' };
         }
 
         // Send notification via NotificationService
@@ -181,7 +205,7 @@ export async function trySendNotification(
                 },
                 'Notification sent successfully'
             );
-            return { delivered: true };
+            return { delivered: true, disposition: 'sent' };
         }
         apiLogger.warn(
             {
@@ -192,7 +216,13 @@ export async function trySendNotification(
             },
             'Notification not sent'
         );
-        return { delivered: false };
+        // HOS-1238: `'skipped'` is the recipient's own preference and must not read as
+        // a failure; anything else the transport refused has already been enqueued for
+        // retry by `NotificationService.send` before it returned.
+        return {
+            delivered: false,
+            disposition: result.status === 'skipped' ? 'skipped' : 'send-failed'
+        };
     } catch (error) {
         // Log but don't throw - fire-and-forget pattern. NOT delivered.
         apiLogger.error(
@@ -202,7 +232,7 @@ export async function trySendNotification(
             },
             'Failed to send notification'
         );
-        return { delivered: false };
+        return { delivered: false, disposition: 'error' };
     }
 }
 

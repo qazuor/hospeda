@@ -15,10 +15,13 @@
  *   conversion, promo-discounted and comp-adjacent charges alike;
  * - it must NOT send twice, and must not send for money that never arrived.
  *
- * Its wiring into the two settlement sites is covered in
- * `subscription-payment-handler.test.ts` and `webhook-retry.job.test.ts`; that the
- * two sites exist at all is frozen by
- * `subscription-charge-receipt-sites.guard.test.ts`.
+ * Its wiring into the THREE settlement sites is covered elsewhere:
+ * `subscription-payment-handler.test.ts` (the live webhook),
+ * `webhook-retry.job.test.ts` (the dead-letter retry) and
+ * `payment-reconcile.service.test.ts` (the HOS-765 operator backfill, whose subject
+ * is by definition a charge nobody told the customer about). That all three dispatch,
+ * and that none of them asserts the charge status instead of deriving it, is frozen
+ * by `subscription-charge-receipt-sites.guard.test.ts`.
  *
  * @module test/webhooks/subscription-charge-receipt
  */
@@ -333,10 +336,13 @@ describe('dispatchSubscriptionChargeReceipt', () => {
 
     // The issue's second half: "ese silencio no queda registrado en ningún lado".
     // `LOG_LEVEL` defaults to `info` in production, so a `debug` line here would be
-    // invisible exactly where it is needed. Asserted as "not debug" as well as
-    // "error", because moving this line back to `debug` is the regression.
-    it('reports a non-delivered receipt at error with capture, never at debug', async () => {
-        mockSendPaymentSuccessNotification.mockResolvedValue({ delivered: false });
+    // invisible exactly where it is needed. Every non-delivery is therefore LOGGED —
+    // but escalation is narrower, and the two are asserted separately below.
+    it('escalates a receipt that threw inside the sender, with capture', async () => {
+        mockSendPaymentSuccessNotification.mockResolvedValue({
+            delivered: false,
+            disposition: 'error'
+        });
 
         const outcome = await dispatchSubscriptionChargeReceipt(params());
 
@@ -346,6 +352,47 @@ describe('dispatchSubscriptionChargeReceipt', () => {
         expect(message).toMatch(/NOT delivered/);
         expect(options).toEqual({ capture: true });
         expect(apiLogger.debug).not.toHaveBeenCalled();
+    });
+
+    // The false-positive the review predicted. `NotificationService.send` enqueues a
+    // retry BEFORE returning `success: false`, so a transport refusal usually becomes
+    // a delivery ~60s later; `'skipped'` is the customer's own preference; and
+    // `'unavailable'` is an environment with no email key, which would otherwise
+    // escalate once per charge. All are reported, none are paged.
+    it.each([
+        'send-failed',
+        'skipped',
+        'unavailable'
+    ])('reports a %s receipt at warn, without escalating', async (disposition) => {
+        mockSendPaymentSuccessNotification.mockResolvedValue({
+            delivered: false,
+            disposition
+        });
+
+        const outcome = await dispatchSubscriptionChargeReceipt(params());
+
+        expect(outcome).toEqual({ dispatched: false, reason: 'not-delivered' });
+        expect(apiLogger.error).not.toHaveBeenCalled();
+        expect(apiLogger.warn).toHaveBeenCalledTimes(1);
+        // The disposition has to reach the log line, or the warn cannot be told
+        // apart from the other two by whoever reads it.
+        expect(vi.mocked(apiLogger.warn).mock.calls[0]?.[0]).toMatchObject({ disposition });
+        expect(apiLogger.debug).not.toHaveBeenCalled();
+    });
+
+    // A sender that reports no disposition at all must still be LOGGED — the silence
+    // is the thing this issue is about — just not escalated on a guess.
+    it('reports a non-delivery with no disposition at warn, not silently', async () => {
+        mockSendPaymentSuccessNotification.mockResolvedValue({ delivered: false });
+
+        const outcome = await dispatchSubscriptionChargeReceipt(params());
+
+        expect(outcome).toEqual({ dispatched: false, reason: 'not-delivered' });
+        expect(apiLogger.warn).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(apiLogger.warn).mock.calls[0]?.[0]).toMatchObject({
+            disposition: 'unknown'
+        });
+        expect(apiLogger.error).not.toHaveBeenCalled();
     });
 
     it('records a delivered receipt at info, so the silence is observable', async () => {
