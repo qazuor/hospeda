@@ -52,9 +52,7 @@ function makeCtx(scenario: {
         where: async () => rowsByTable.get(getTableName(table as any)) ?? []
     });
 
-    const suspectRows = new Map<string, unknown[]>([
-        ['billing_subscriptions', scenario.suspects]
-    ]);
+    const suspectRows = new Map<string, unknown[]>([['billing_subscriptions', scenario.suspects]]);
     const moneyRows = new Map<string, unknown[]>([
         ['billing_payments', (scenario.paidIds ?? []).map((id) => ({ subscriptionId: id }))],
         [
