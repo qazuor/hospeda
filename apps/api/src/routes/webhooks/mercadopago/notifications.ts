@@ -13,14 +13,30 @@ import type { getQZPayBilling } from '../../../middlewares/billing';
 import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
-import { sendNotification } from '../../../utils/notification-helper';
+import {
+    type NotificationSendOutcome,
+    sendNotification,
+    trySendNotification
+} from '../../../utils/notification-helper';
 import { sanitizeErrorForNotification } from './utils';
 
 /**
- * Send payment success notification (best-effort, awaitable).
+ * Send payment success notification (best-effort, awaitable) and REPORT whether
+ * it was delivered.
  *
  * Looks up customer and plan data, then sends a PAYMENT_SUCCESS notification.
- * Failures are logged at debug level and do not propagate.
+ * Never throws.
+ *
+ * This is the single producer of `PAYMENT_SUCCESS` — every docblock in
+ * `@repo/notifications` that calls it "the only producer" of a {@link Major}
+ * amount depends on that staying true, which is why HOS-1238 added a second
+ * CALL SITE here rather than a second producer.
+ *
+ * HOS-1238 made it return a {@link NotificationSendOutcome} instead of `void`.
+ * It previously reported a failure at `debug`, which production never emits
+ * (`LOG_LEVEL` defaults to `info`), so a receipt that never went out left no
+ * trace anywhere — and a caller had no way to notice either. The outcome is what
+ * lets {@link dispatchSubscriptionChargeReceipt} escalate that silence.
  *
  * @param customerId - Billing customer ID
  * @param amount - Payment amount in MAJOR units (ARS pesos) — the unit the
@@ -38,6 +54,19 @@ import { sanitizeErrorForNotification } from './utils';
  *   Passing it does NOT itself prevent a second delivery — it only records the
  *   key; the caller's pre-send lookup is the gate, exactly as in
  *   `addon-expiry.job.ts`.
+ * @param planId - `billing_plans.id` of the subscription this payment actually
+ *   belongs to (HOS-1238). Three distinct values:
+ *   - a plan id → the label is resolved from IT;
+ *   - `null` → the caller knows the charged subscription and it carries no plan;
+ *     the label degrades to the GENERIC one, never to another subscription's;
+ *   - **omitted** → the caller does not know, and the customer's FIRST subscription
+ *     is guessed at. That guess is wrong whenever an account holds more than one
+ *     subscription, which it legitimately does across the five product domains, so
+ *     on a gastronomy or partner charge `getByCustomerId()[0]` names a plan the
+ *     customer was not charged for. Any caller that knows must pass it.
+ * @returns `{ delivered: true }` only when the notification service reported a
+ *   successful send; `{ delivered: false }` when the customer could not be
+ *   resolved, the send was not delivered, or anything threw.
  */
 export async function sendPaymentSuccessNotification(
     customerId: string,
@@ -45,60 +74,83 @@ export async function sendPaymentSuccessNotification(
     currency: string,
     paymentMethod: string | null,
     billing: ReturnType<typeof getQZPayBilling>,
-    idempotencyKey?: string
-): Promise<void> {
-    if (!billing) return;
+    idempotencyKey?: string,
+    planId?: string | null
+): Promise<NotificationSendOutcome> {
+    if (!billing) return { delivered: false };
 
     try {
         const customer = await billing.customers.get(customerId);
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-        const subscription = subscriptions?.[0];
 
-        if (customer) {
-            const customerName =
-                typeof customer.metadata?.name === 'string'
-                    ? customer.metadata.name
-                    : customer.email;
-            const userId =
-                typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
-
-            // HOS-231: `plan.name` is the SLUG; resolve the display name so the
-            // payment-success email shows a human label (falls back to generic).
-            let planName = 'Subscription';
-            if (subscription?.planId) {
-                planName =
-                    (await resolvePlanDisplayName({ planId: subscription.planId })) ?? planName;
-            }
-
-            await sendNotification({
-                type: NotificationType.PAYMENT_SUCCESS,
-                recipientEmail: customer.email,
-                recipientName: customerName,
-                userId,
-                customerId: customer.id,
-                planName,
-                amount,
-                currency,
-                paymentMethod: paymentMethod || undefined,
-                ...(idempotencyKey === undefined ? {} : { idempotencyKey })
-            }).catch((error) => {
-                apiLogger.debug(
-                    {
-                        customerId,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    'Payment success notification failed (will retry)'
-                );
-            });
+        if (!customer) {
+            // Previously returned in total silence. A customer that cannot be
+            // resolved is a receipt nobody will ever send, so it is reported at a
+            // level production emits — matching the failure sibling below, which
+            // has always warned on this exact case.
+            apiLogger.warn(
+                { customerId },
+                'Customer not found for payment success notification — no receipt sent'
+            );
+            return { delivered: false };
         }
+
+        const customerName =
+            typeof customer.metadata?.name === 'string' ? customer.metadata.name : customer.email;
+        const userId =
+            typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
+
+        // HOS-1238: prefer the plan of the subscription that was actually charged.
+        //
+        // `undefined` and `null` are DIFFERENT answers here, and collapsing them with
+        // `??` was a real bug hiding behind a correct-sounding docblock.
+        // `undefined` means "the caller does not know which subscription this is" —
+        // only then is the customer's first subscription worth guessing at.
+        // `null` means "the caller knows, and that subscription carries no plan",
+        // which must degrade to the GENERIC label. Falling back there would answer a
+        // question the caller already answered, with the plan of some other
+        // subscription the customer was not charged for.
+        //
+        // Unreachable today because `billing_subscriptions.plan_id` is `.notNull()`,
+        // so the distinction costs nothing now and is the whole guarantee the day
+        // anyone relaxes that column.
+        let resolvedPlanId: string | null | undefined = planId;
+        if (resolvedPlanId === undefined) {
+            const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+            resolvedPlanId = subscriptions?.[0]?.planId ?? null;
+        }
+
+        // HOS-231: `plan.name` is the SLUG; resolve the display name so the
+        // payment-success email shows a human label (falls back to generic).
+        let planName = 'Subscription';
+        if (resolvedPlanId) {
+            planName = (await resolvePlanDisplayName({ planId: resolvedPlanId })) ?? planName;
+        }
+
+        return await trySendNotification({
+            type: NotificationType.PAYMENT_SUCCESS,
+            recipientEmail: customer.email,
+            recipientName: customerName,
+            userId,
+            customerId: customer.id,
+            planName,
+            amount,
+            currency,
+            paymentMethod: paymentMethod || undefined,
+            ...(idempotencyKey === undefined ? {} : { idempotencyKey })
+        });
     } catch (error) {
-        apiLogger.debug(
+        // Raised at `error` from `debug` (HOS-1238): a paying customer left
+        // without a receipt is not a diagnostic detail, and at `debug` it was
+        // never emitted in production at all.
+        apiLogger.error(
             {
                 customerId,
                 error: error instanceof Error ? error.message : String(error)
             },
-            'Failed to prepare payment success notification'
+            'Failed to prepare payment success notification — no receipt sent',
+            { capture: true }
         );
+        return { delivered: false };
     }
 }
 
