@@ -89,6 +89,43 @@ const HOSPEDA_STATUS_VALUES: ReadonlySet<string> = new Set<string>(
 );
 
 /**
+ * Every spelling `billing_subscriptions.status` can hold for a subscription that
+ * exists locally but has NOT been confirmed by the payment provider yet — i.e.
+ * every stored value that {@link normalizeStoredSubscriptionStatus} resolves to
+ * {@link SubscriptionStatusEnum.PENDING_PROVIDER}.
+ *
+ * Today that is `'incomplete'` (what qzpay-core's `mode: 'paid'` create inserts)
+ * and `'pending_provider'` (what every direct Hospeda writer uses). It is
+ * **DERIVED from {@link QZPAY_STORED_STATUS_ALIASES}**, not typed out, so a third
+ * alias added to that map joins this set on its own. A hand-written pair is the
+ * exact shape that goes blind the day a spelling is added, which is the failure
+ * this column keeps producing (HOS-108, HOS-282, HOS-1310).
+ *
+ * Use it as the `WHERE status IN (...)` precondition of any write that means
+ * "this checkout never started" — the abandoned-pending-subs reaper and the
+ * unlinkable-preapproval cleanup in `paid-subscription-create` both do (HOS-1326).
+ * Do NOT extend it with a cancellation spelling: `canceled`/`cancelled` mean a
+ * relationship that existed and ended, and admitting them here would let a real
+ * cancellation be rewritten as an abandonment.
+ */
+export const PENDING_PROVIDER_STORED_STATUSES: readonly string[] = Object.freeze([
+    // Deduplicated through a Set rather than appended blindly. The alias map's
+    // own docblock says it carries "only qzpay-vocabulary keys that DIFFER from
+    // Hospeda's vocabulary", so `pending_provider` is not expected to be in it —
+    // but nothing enforces that, and the day someone adds it as a pass-through
+    // the array form would list the spelling twice. Harmless inside an
+    // `IN (...)`, misleading in a log line or a length assertion, and free to
+    // prevent here.
+    ...new Set<string>([
+        ...Object.keys(QZPAY_STORED_STATUS_ALIASES).filter(
+            (alias) =>
+                QZPAY_STORED_STATUS_ALIASES[alias] === SubscriptionStatusEnum.PENDING_PROVIDER
+        ),
+        SubscriptionStatusEnum.PENDING_PROVIDER
+    ])
+]);
+
+/**
  * Normalize a raw stored subscription status into Hospeda's
  * {@link SubscriptionStatusEnum} vocabulary.
  *

@@ -88,7 +88,8 @@ export type HardCancelPreapprovalSource =
     | 'refund-lifecycle'
     | 'courtesy-expiry'
     | 'admin-comp-grant'
-    | 'addon-cancellation';
+    | 'addon-cancellation'
+    | 'own-preapproval-create-compensation';
 
 /**
  * Sentry `action` tag per source.
@@ -114,7 +115,12 @@ const SENTRY_ACTION_BY_SOURCE: Readonly<Record<HardCancelPreapprovalSource, stri
     // "which add-on path asked" lands — in `extra.addonCancelSource` — rather
     // than as five more members of this union. ONE tag means ops alerting reads
     // "an add-on preapproval refused to close" without enumerating call sites.
-    'addon-cancellation': 'addon_hard_cancel_preapproval'
+    'addon-cancellation': 'addon_hard_cancel_preapproval',
+    // HOS-1326: the HOS-937 "Hueco A" compensation — a preapproval that exists at
+    // MercadoPago while the local write meant to track it failed. Its own tag
+    // because a failure here leaves the exact untracked orphan HOS-937 targets,
+    // and ops needs to tell it apart from a background sweep's silent miss.
+    'own-preapproval-create-compensation': 'own_preapproval_create_hard_cancel_preapproval'
 };
 
 /**
@@ -230,7 +236,15 @@ export async function hardCancelPreapprovalBestEffort(
     }
 
     const billing = input.billing ?? getQZPayBilling();
-    const paymentAdapter = billing?.getPaymentAdapter();
+    // `typeof` rather than an optional call: this function's contract is that it
+    // NEVER throws, and every caller is already on an error path relying on that.
+    // A billing object without the method — an incompletely constructed client,
+    // or one of this repo's deliberately-partial test doubles
+    // (`billing-mock-must-be-partial.guard.test.ts`) — would otherwise raise a
+    // TypeError out of a compensating path and mask the original failure with a
+    // second one. "No adapter reachable" is exactly the `skipped` outcome below.
+    const paymentAdapter =
+        typeof billing?.getPaymentAdapter === 'function' ? billing.getPaymentAdapter() : null;
     if (!paymentAdapter) {
         logger.warn(
             `${source}: payment adapter unavailable — skipping MP preapproval hard-cancel`,

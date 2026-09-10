@@ -405,6 +405,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Marks a PENDING/never-activated subscription as abandoned. The row never granted entitlements, so there is nothing cached to invalidate.'
     },
     {
+        file: 'services/billing/abandon-never-confirmed-subscription.ts',
+        requiresCacheClear: false,
+        reason: 'HOS-1326: the single write that closes a subscription whose checkout never completed, shared by the `paid-subscription-create` missing-provider-id path and the `own-preapproval-create` compensating path. Both used to delegate to `billing.subscriptions.cancel()`, which wrote `canceled` — the wrong word for a checkout that never started, in the qzpay spelling. No cache clear: its WHERE admits ONLY the pending statuses (`PENDING_PROVIDER_STORED_STATUSES`), so by construction it can only ever touch a row that never granted an entitlement to anyone, and `writeDomainLinkRow` runs after `createPaidSubscription` so there is no `entity_subscriptions` row to invalidate either.'
+    },
+    {
         file: 'cron/jobs/finalize-cancelled-subs.ts',
         requiresCacheClear: true,
         reason: 'Finalizes a cancellation — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'

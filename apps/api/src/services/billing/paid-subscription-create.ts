@@ -38,7 +38,7 @@ import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-c
 import { applyTestControl } from '@repo/billing';
 import { billingPlans, type DrizzleClient, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
-import { apiLogger } from '../../utils/logger.js';
+import { abandonNeverConfirmedSubscription } from './abandon-never-confirmed-subscription.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 /**
@@ -391,31 +391,27 @@ export async function createPaidSubscription(
     // HOS-151 Bug C: a 2xx preapproval with no provider subscription id is
     // unrecoverable — the webhook lookup keys on `mpSubscriptionId`, so a row
     // persisted with an empty id can never activate and its preapproval can
-    // never be located to cancel. Fail loudly instead of leaving an orphan.
-    // Clean up the just-created local row best-effort first (mirrors the
-    // `cancelSubscriptionFailClosed` fail-closed pattern in
-    // subscription-checkout.service.ts); the abandoned-pending cron is the
-    // backstop if the cancel does not take effect.
+    // never be located to cancel. Fail loudly instead of leaving an orphan, and
+    // close the seconds-old local row on the way out. The abandoned-pending cron
+    // is the backstop if that write does not take effect.
     const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
     if (!mpSubscriptionId) {
-        try {
-            await billing.subscriptions.cancel(subscription.id);
-            apiLogger.warn(
-                { subscriptionId: subscription.id },
-                'HOS-151 Bug C: cancelled subscription created with an empty provider id (fail-closed)'
-            );
-        } catch (cancelErr) {
-            apiLogger.error(
-                {
-                    subscriptionId: subscription.id,
-                    error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr)
-                },
-                'HOS-151 Bug C: FAILED to cancel subscription created with an empty provider id — abandoned-pending cron will reap it'
-            );
-        }
+        // The row has NO provider id — that is the condition that got us here —
+        // so there is nothing to cancel at MercadoPago and the only work left is
+        // the local terminal status. Deliberately NOT
+        // `billing.subscriptions.cancel()`: on this row that call does no
+        // provider work at all (qzpay resolves the preapproval from
+        // `providerSubscriptionIds`, finds none, skips) and its entire effect was
+        // a local `canceled` write — the wrong word, in the wrong spelling.
+        await abandonNeverConfirmedSubscription({
+            subscriptionId: subscription.id,
+            expectedMpSubscriptionId: null,
+            source: 'paid-subscription-create-missing-provider-id',
+            db: input.db
+        });
         throw new SubscriptionCheckoutError(
             'MISSING_PROVIDER_SUBSCRIPTION_ID',
-            'Payment provider returned no subscription id — cannot link the preapproval; subscription cancelled.'
+            'Payment provider returned no subscription id — cannot link the preapproval; subscription abandoned.'
         );
     }
 

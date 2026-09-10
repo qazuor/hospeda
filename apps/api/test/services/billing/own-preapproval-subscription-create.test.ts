@@ -62,6 +62,11 @@ const URLS = {
 };
 
 function createBillingMock() {
+    // HOS-1326: the compensating cancel goes through the PAYMENT ADAPTER now, so
+    // the mock has to expose one. `billing.subscriptions.cancel` is kept purely so
+    // the tests can assert it is NEVER reached — it is the call that used to ride
+    // a local `status: 'canceled'` write along with the provider cancel.
+    const adapterCancel = vi.fn().mockResolvedValue(undefined);
     return {
         subscriptions: {
             create: vi.fn().mockResolvedValue({
@@ -70,7 +75,12 @@ function createBillingMock() {
                 providerSubscriptionIds: { mercadopago: MP_SUBSCRIPTION_ID }
             }),
             cancel: vi.fn().mockResolvedValue(undefined)
-        }
+        },
+        getPaymentAdapter: vi.fn(() => ({
+            provider: 'mercadopago',
+            subscriptions: { cancel: adapterCancel }
+        })),
+        __adapterCancel: adapterCancel
     };
 }
 
@@ -239,13 +249,18 @@ describe('createOwnPreapprovalSubscription', () => {
             })
         ).rejects.toThrow('connection reset');
 
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
-        expect(billing.subscriptions.cancel).toHaveBeenCalledWith(LOCAL_SUB_ID);
+        // HOS-1326: the PROVIDER is closed through the adapter, addressed by the
+        // preapproval id and with `false` (irreversible) — and NOT through
+        // `billing.subscriptions.cancel(localRowId)`, which would also stamp
+        // `status: 'canceled'` on a row whose buyer authorized nothing.
+        expect(billing.__adapterCancel).toHaveBeenCalledTimes(1);
+        expect(billing.__adapterCancel).toHaveBeenCalledWith(MP_SUBSCRIPTION_ID, false);
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
     });
 
     it('Hueco A: still rethrows the ORIGINAL DB error (not the cancel error) when the compensating cancel itself fails', async () => {
         const billing = createBillingMock();
-        billing.subscriptions.cancel.mockRejectedValueOnce(new Error('MP unreachable'));
+        billing.__adapterCancel.mockRejectedValueOnce(new Error('MP unreachable'));
         const db = createDbMock({ failUpdate: true });
 
         await expect(
@@ -263,7 +278,8 @@ describe('createOwnPreapprovalSubscription', () => {
             })
         ).rejects.toThrow('connection reset');
 
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+        expect(billing.__adapterCancel).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
     });
 
     it('HOS-937 follow-up: snapshots pendingDiscount onto the row metadata as JSON, redeems nothing itself', async () => {
@@ -584,7 +600,8 @@ describe('createOwnPreapprovalSubscription', () => {
             })
         ).rejects.toThrow('bridge row insert failed');
 
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
-        expect(billing.subscriptions.cancel).toHaveBeenCalledWith(LOCAL_SUB_ID);
+        expect(billing.__adapterCancel).toHaveBeenCalledTimes(1);
+        expect(billing.__adapterCancel).toHaveBeenCalledWith(MP_SUBSCRIPTION_ID, false);
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
     });
 });

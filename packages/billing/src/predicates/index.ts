@@ -58,5 +58,6 @@ export type { IsSubscriptionLiveInput } from './is-subscription-live.js';
 export { isSubscriptionLive } from './is-subscription-live.js';
 export {
     normalizeStoredSubscriptionStatus,
+    PENDING_PROVIDER_STORED_STATUSES,
     QZPAY_STORED_STATUS_ALIASES
 } from './subscription-status-normalize.js';
