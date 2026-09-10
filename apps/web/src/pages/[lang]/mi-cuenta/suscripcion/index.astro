@@ -19,6 +19,8 @@ import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-pla
 import { toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { userApi } from '@/lib/api/endpoints-protected';
 import {
+	type AccommodationSubscriptionReading,
+	CHANGE_PLAN_RESOLVABLE_STATUSES,
 	planChangeWouldResolveAnotherSubscription,
 	resolveActiveSubscriptionDomain,
 	resolveDashboardPlanSource,
@@ -73,6 +75,32 @@ const heldDomains: SubscriptionDashboardDomain[] = SUBSCRIPTION_DASHBOARD_DOMAIN
 
 const rawDomain = Astro.url.searchParams.get('domain');
 const productDomain = resolveActiveSubscriptionDomain({ rawDomain, heldDomains });
+
+/**
+ * What we could establish about the caller's ACCOMMODATION subscription
+ * (HOS-1321).
+ *
+ * Deliberately NOT derived from `heldDomains`. That list answers a NAVIGATION
+ * question — which tabs to show, which one to land on — and a failed read there
+ * costs a tab. This answers a SAFETY question: may the tourist tab offer a plan
+ * change whose route resolves accommodation first? A failed read must not read
+ * as "they have no accommodation subscription" there, or the guard is re-opened
+ * by the failure mode of its own input.
+ *
+ * `'absent'` is narrower than "no subscription": `change-plan` filters to the
+ * statuses in `CHANGE_PLAN_RESOLVABLE_STATUSES` before selecting, so a paused
+ * or past-due accommodation subscription is invisible to it and cannot be the
+ * row it mutates — withholding for one would be withholding for nothing.
+ */
+const accommodationResult =
+	domainSubscriptionResults[SUBSCRIPTION_DASHBOARD_DOMAINS.indexOf('accommodation')];
+const accommodationSubscription: AccommodationSubscriptionReading = !accommodationResult?.ok
+	? 'unknown'
+	: accommodationResult.data.subscription === null
+		? 'absent'
+		: CHANGE_PLAN_RESOLVABLE_STATUSES.includes(accommodationResult.data.subscription.status)
+			? 'held'
+			: 'absent';
 
 /**
  * HOS-937 step 4: `?retryCheckoutId=<localSubscriptionId>` is the card-
@@ -151,19 +179,20 @@ const islandUser = {
  * vertical, whose tiers are all `category: 'owner'` and are separated from every
  * other catalogue by their product domain instead.
  *
- * ## Which catalogue is a lookup, not a negation (HOS-1321)
+ * ## Every tab fetches ITS OWN domain's catalogue (HOS-1321)
  *
- * This used to be `productDomain !== 'accommodation'`. With `tourist` added to
- * `SUBSCRIPTION_DASHBOARD_DOMAINS` that negation classifies the tourist
- * dashboard as a COMMERCE vertical: it would fetch `?domain=tourist` (no such
- * catalogue — the tourist tiers are accommodation-domain plans separated by
- * `category`), hand `CommercePlanChange` an empty list and post to
- * `/protected/commerce/tourist/change-plan`. `resolveDashboardPlanSource` is
- * the exhaustive lookup that replaces it, and it is unit-tested — a fifth
- * domain fails to compile there rather than inheriting a flow nobody chose.
+ * Which `?domain=` to send is `resolveDashboardPlanSource`'s answer, per domain,
+ * and the tourist tab's answer is `tourist` — not "no domain". Since HOS-1233
+ * the tourist tiers carry `product_domain = 'tourist'`, and `listPlans.ts`
+ * excludes every out-of-domain plan, so a no-domain fetch returns a catalogue
+ * with NO tourist tiers in it: `filterPlansByCategory(…, 'tourist')` yields `[]`
+ * and the tab renders no "Cambiar plan" button at all. This replaced a
+ * `productDomain !== 'accommodation'` negation, which had the opposite failure —
+ * it classified the tourist tab as a COMMERCE vertical and posted to
+ * `/protected/commerce/tourist/change-plan`.
  */
 const planSource = resolveDashboardPlanSource({ domain: productDomain });
-const isCommerceDomain = planSource.kind === 'commerce';
+const isCommerceDomain = planSource.flow === 'commerce';
 /**
  * The tourist dashboard PINS its category instead of deferring to roles: the
  * owner's 2026-09-10 ruling is that a `tourist-vip` holder's "Cambiar plan"
@@ -173,13 +202,10 @@ const isCommerceDomain = planSource.kind === 'commerce';
  * wrong subscription.
  */
 const planCategory =
-	planSource.kind === 'accommodation' && planSource.category !== null
-		? planSource.category
-		: hasAccommodationsNavAccess({ roles: islandUser.roles })
-			? 'owner'
-			: 'tourist';
+	planSource.category ??
+	(hasAccommodationsNavAccess({ roles: islandUser.roles }) ? 'owner' : 'tourist');
 const plansResult = await fetchPublicPlans(
-	planSource.kind === 'commerce' ? { domain: planSource.domain } : {}
+	planSource.planDomain ? { domain: planSource.planDomain } : {}
 );
 
 /**
@@ -191,13 +217,16 @@ const plansResult = await fetchPublicPlans(
  * subscription) the tourist tab's plan change would therefore mutate their
  * OWNER subscription onto a tourist tier — a silent downgrade of a paid plan.
  * `SubscriptionDashboard` degrades an empty `plans` list to the
- * "Ver planes disponibles" link, which is where a move between audiences
- * belongs anyway. Cancel and pause are unaffected: they act on the
- * subscription id this tab already read.
+ * "Ver planes disponibles" link, which for a dual holder is their OWNER pricing
+ * page (`resolveSubscriptionPlansPath` reads the HOST role). Cancel and pause
+ * are unaffected: they act on the subscription id this tab already read.
+ *
+ * Fed the three-state reading, not `heldDomains`: an accommodation read that
+ * failed must withhold, not wave through. See the predicate's own note.
  */
 const canOfferPlanChange = !planChangeWouldResolveAnotherSubscription({
 	domain: productDomain,
-	heldDomains
+	accommodationSubscription
 });
 
 /** Accommodation-catalogue tiers for `PlanChangeFlow` — empty on a commerce dashboard. */

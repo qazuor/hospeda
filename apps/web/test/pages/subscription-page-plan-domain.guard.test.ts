@@ -64,23 +64,32 @@ const FRONTMATTER_CODE = FRONTMATTER.replace(/\/\*[\s\S]*?\*\//g, '').replace(
 );
 
 describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain', () => {
-    it('never calls fetchPublicPlans with no argument', () => {
-        // The bug, spelled exactly: `await fetchPublicPlans()` served the
-        // endpoint's `accommodation` default to the gastronomy and experience
-        // dashboards too.
-        expect(FRONTMATTER).not.toMatch(/fetchPublicPlans\(\s*\)/);
-    });
-
-    it('passes a commerce dashboard its own vertical as the ?domain=', () => {
-        // The slice runs from the fetch to the first catalogue built from it, so
-        // a match cannot be borrowed from a later line.
+    it('drives the catalogue fetch from the resolved domain, in every branch', () => {
+        // ## Why this replaced "never calls fetchPublicPlans with no argument"
+        //
+        // That assertion was escapable by SPELLING, and HOS-1321 escaped it
+        // without meaning to: `fetchPublicPlans({})` is not `fetchPublicPlans()`,
+        // so the guard stayed green while the defect it names came back — the
+        // tourist tab fetching the endpoint's accommodation default and getting
+        // a catalogue with no tourist tiers in it (they carry
+        // `product_domain = 'tourist'` since HOS-1233, and `listPlans.ts`
+        // excludes every out-of-domain plan). Two characters defeated it.
+        //
+        // Anchored on the EFFECT instead: the only argument this call may be
+        // given is the domain `resolveDashboardPlanSource` resolved. A bare
+        // `()`, a literal `{}`, a hardcoded domain and a role-derived one all
+        // fail, because none of them is that expression.
         const slice = FRONTMATTER.slice(
             FRONTMATTER.indexOf('const plansResult'),
             FRONTMATTER.indexOf('const availablePlans')
         );
         expect(slice).not.toHaveLength(0);
-        expect(slice).toMatch(/planSource\.kind\s*===\s*'commerce'/);
-        expect(slice).toMatch(/\{\s*domain:\s*planSource\.domain\s*\}/);
+        expect(slice).toMatch(/fetchPublicPlans\(/);
+        expect(slice).toMatch(
+            /fetchPublicPlans\(\s*planSource\.planDomain\s*\?\s*\{\s*domain:\s*planSource\.planDomain\s*\}\s*:\s*\{\s*\}\s*\)/
+        );
+        // Nothing else in the page may fetch a catalogue behind this one's back.
+        expect(FRONTMATTER_CODE.match(/fetchPublicPlans\(/g)).toHaveLength(1);
     });
 
     it('derives the catalogue choice from the resolved domain, not from the caller roles', () => {
@@ -97,7 +106,7 @@ describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain
             /const\s+planSource\s*=\s*resolveDashboardPlanSource\(\{\s*domain:\s*productDomain\s*\}\)/
         );
         expect(FRONTMATTER).toMatch(
-            /const\s+isCommerceDomain\s*=\s*planSource\.kind\s*===\s*'commerce'/
+            /const\s+isCommerceDomain\s*=\s*planSource\.flow\s*===\s*'commerce'/
         );
 
         // And the roles are nowhere in that decision — only in the category.
@@ -151,6 +160,18 @@ describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain
         expect(FRONTMATTER).toMatch(
             /const\s+canOfferPlanChange\s*=\s*!planChangeWouldResolveAnotherSubscription\(/
         );
+        // Fed the three-state reading, never `heldDomains`. That list drops a
+        // domain whose read FAILED, so feeding it here would let a 500 on the
+        // accommodation fetch read as "they have no accommodation subscription"
+        // and hand a dual holder a plan change aimed at their owner row — the
+        // guard re-opened by the failure mode of its own input.
+        const guardCall = FRONTMATTER_CODE.slice(
+            FRONTMATTER_CODE.indexOf('const canOfferPlanChange'),
+            FRONTMATTER_CODE.indexOf('const availablePlans')
+        );
+        expect(guardCall).not.toHaveLength(0);
+        expect(guardCall).toContain('accommodationSubscription');
+        expect(guardCall).not.toContain('heldDomains');
     });
 
     it('builds the commerce catalogue only on a commerce dashboard', () => {
