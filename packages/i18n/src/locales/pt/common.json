@@ -75,6 +75,7 @@
         "REVIEW_ALREADY_EXISTS": "Voce já avaliou este fornecedor. Voce pode editar a sua avaliação.",
         "PROVIDER_REVOKED": "Este fornecedor não faz mais parte do diretório.",
         "ALREADY_EXISTS": "Esse recurso já existe.",
+        "ALREADY_SUBSCRIBED": "Você já tem uma assinatura ativa. Para mudar de plano, entre em Minha conta → Assinatura e use “Mudar plano”.",
         "INTERNAL_ERROR": "Algo deu errado do nosso lado. Tente novamente em instantes.",
         "NETWORK_ERROR": "Não conseguimos conectar ao servidor. Tente novamente.",
         "TIMEOUT": "A solicitação demorou demais. Tente novamente.",

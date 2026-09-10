@@ -15,6 +15,7 @@ import type { EffectPreview } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { billingApi, userApi } from '../../lib/api/endpoints-protected';
+import { translateApiError } from '../../lib/api-errors';
 import { useSession } from '../../lib/auth-client';
 import { storePendingCheckoutSubId } from '../../lib/billing/checkout-pending';
 import { resolvePublishPathForPricingAudience } from '../../lib/billing/pricing-audience-publish-vertical';
@@ -1507,7 +1508,29 @@ export function PlanPurchaseButton({
                     'billing.checkout.button.error',
                     'No pudimos iniciar el pago. Intenta de nuevo.'
                 );
-                setError(checkoutError);
+                // HOS-1321: read the rejection instead of flattening every one
+                // of them into "No pudimos iniciar el pago". `/start-paid`
+                // refuses a second live subscription with a 409 carrying
+                // `reason: 'ALREADY_SUBSCRIBED'` (HOS-1260 widened that guard
+                // to catch a live `tourist-vip`), and that generic sentence is
+                // what turned the refusal into a dead end: it reads as a
+                // transient payment failure, so the only thing it suggests is
+                // clicking again — which is deterministically refused again.
+                // `translateApiError` is the repo's own reason → code → status
+                // chain, so the specific copy is one `common.apiError.<REASON>`
+                // key away and an unmapped reason falls through to exactly the
+                // string this line used to hardcode.
+                //
+                // `result.ok` with a missing `checkoutUrl` carries no error at
+                // all; `translateApiError` resolves `undefined` to the fallback,
+                // which is the same generic sentence.
+                setError(
+                    translateApiError({
+                        error: result.ok ? undefined : result.error,
+                        t,
+                        fallback: checkoutError
+                    })
+                );
                 return;
             }
 
