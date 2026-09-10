@@ -453,6 +453,33 @@ describe('HOS-1310: the paid-through grace requires cancelAtPeriodEnd, not just 
         ).toBe(false);
     });
 
+    it('the REAL staging row, shape for shape, is not live (measured 2026-09-10)', () => {
+        /*
+         * Not a hypothetical. A cancelled, never-charged preapproval in staging
+         * (`summarized.charged_quantity = null`, `last_charged_date = null`) whose
+         * `current_period_end` is MercadoPago's `date_created` plus one month —
+         * written by the adapter through the webhook, not by the local insert, as
+         * the millisecond tail proves. MercadoPago returns `auto_recurring`
+         * intact on a cancelled preapproval (frequency 1 month,
+         * transaction_amount 35000, no end_date), so `calculatePeriodEnd` adds
+         * the month and the window is ~30 days rather than zero.
+         *
+         * This exact shape answered `true` before the fix, and that row was still
+         * reading live fifteen days after it died.
+         */
+        const dateCreated = Date.UTC(2026, 7, 25, 9, 10, 37, 767);
+        const oneMonthAfterCreation = new Date(Date.UTC(2026, 8, 25, 9, 10, 37, 767));
+        expect(
+            isSubscriptionLive({
+                status: 'cancelled',
+                cancelAtPeriodEnd: false,
+                currentPeriodEnd: oneMonthAfterCreation,
+                // Fifteen days into the phantom window.
+                nowMs: dateCreated + 15 * 24 * 3_600_000
+            })
+        ).toBe(false);
+    });
+
     it('a real soft-cancel (cancelAtPeriodEnd true) with the SAME date IS live', () => {
         expect(
             isSubscriptionLive({

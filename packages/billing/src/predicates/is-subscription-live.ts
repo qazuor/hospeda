@@ -112,10 +112,13 @@ export interface IsSubscriptionLiveInput {
  *    `CANCELLED` — a transition its own table documents as routine for the
  *    redirect checkout (`subscription-status-transitions.ts`) — and, on exactly
  *    the `pending_provider` → cancelled edge, it REWRITES `currentPeriodEnd`
- *    from `date_created + 1 month` rather than clearing it
- *    (`routes/webhooks/mercadopago/subscription-logic.ts`, and the adapter's
- *    `calculatePeriodEnd`). The phantom date is refreshed, not removed. The same
- *    path is reachable without a webhook through `subscription-poll.job.ts`.
+ *    rather than clearing it (`subscription-logic.ts`, a HOS-211 line meant to
+ *    correct the 3 h placeholder). The adapter's `calculatePeriodEnd` derives
+ *    that date from the preapproval's `date_created` — NOT from
+ *    `auto_recurring.start_date` — so the window starts at the checkout instant
+ *    and is the widest one available. The phantom date is refreshed, not removed.
+ *    The same path is reachable without a webhook through
+ *    `subscription-poll.job.ts`.
  * 4. Nothing reaps that row: the abandoned-pending reaper only selects
  *    `incomplete`/`pending_provider`, and `finalize-cancelled-subs` only
  *    `active`/`past_due`/`trialing`. It ages out on its own, ~30 days later.
@@ -127,12 +130,33 @@ export interface IsSubscriptionLiveInput {
  * trial they still had. `cancelAtPeriodEnd` is the one column that tells the two
  * populations apart, and it is not set on the phantom row.
  *
- * **Unverified, and it decides the size of the window, not the correctness of
- * this guard:** if MercadoPago omits `auto_recurring` on a cancelled
- * preapproval, `calculatePeriodEnd` returns its `startDate` unchanged, so
- * `currentPeriodEnd` lands in the past and the exposure was always zero. If MP
- * returns it, the window is 30 days. That cannot be measured without the real
- * provider — it is what a smoke of this change should look at.
+ * ### Measured, not hypothesised (2026-09-10, real MercadoPago sandbox)
+ *
+ * The open question used to be whether MP returns `auto_recurring` on a
+ * CANCELLED preapproval — if it omitted it, `calculatePeriodEnd` would hand back
+ * its `startDate` unchanged, the date would land in the past, and this hole would
+ * have been zero-sized. It does not omit it. A `GET` on a cancelled, NEVER-CHARGED
+ * preapproval (`summarized.charged_quantity = null`, `last_charged_date = null`)
+ * returned the plan's terms intact three days after cancellation —
+ * `frequency: 1`, `frequency_type: 'months'`, `transaction_amount: 35000`, no
+ * `end_date` — so the month is added and **the window is ~30 days**.
+ *
+ * The staging row proves which writer produced it, to the millisecond: its
+ * `current_period_end` is MercadoPago's `date_created` plus one month, not the
+ * local `created_at` plus one month (27 seconds earlier). Two control groups in
+ * the same environment carry different fingerprints — `incomplete` rows with no
+ * preapproval sit at local `created_at + 1 month`, `abandoned` rows at the 3 h
+ * placeholder. Three paths, three signatures.
+ *
+ * So the old comment on that branch — "the host paid through
+ * `currentPeriodEnd`" — is simply false for a row that died in
+ * `pending_provider` without a single charge.
+ *
+ * **Scope, so this is not over-fixed:** `loadEntitlements` is NOT affected. Its
+ * set is status-only (`active | trialing | comp | courtesy`) and `cancelled` is
+ * not in it. The hole belongs to this date-aware predicate alone — the publish
+ * gate and `edit-eligibility` — so a fix that reached into the status-only set or
+ * the entitlement find would be changing something that never had the bug.
  * - `'courtesy'` (HOS-180): live iff `courtesyEndsAt` is absent/null **or**
  *   the window has not exceeded the cron-lag grace, mirroring `'active'`.
  * - All other statuses (`past_due`, `paused`, `expired`, etc.) → `false`.
