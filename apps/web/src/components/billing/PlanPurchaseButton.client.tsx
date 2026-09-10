@@ -153,6 +153,32 @@ export interface PlanPurchaseButtonProps {
  */
 let subscriptionPromise: Promise<string | null> | null = null;
 
+/**
+ * Reads "which plan does this visitor pay for today", for `isCurrentPlan` and
+ * `isPlanChange` below.
+ *
+ * ## The call is UNQUALIFIED on purpose — naming a domain here is a regression
+ *
+ * `GET /protected/users/me/subscription` treats "no `?productDomain=`" and
+ * "`?productDomain=accommodation`" as two different questions (HOS-1233). Only
+ * the unqualified one resolves accommodation FIRST and then falls back to
+ * tourist; naming a domain makes the read strict, and a `tourist-vip` holder
+ * would come back `null` — read here as "no subscription", so their card would
+ * offer a fresh "Contratar", fire `/start-paid`, and be refused with the 409
+ * `runCheckout` now translates. That is the exact dead end HOS-1321 exists to
+ * close, so passing `{ productDomain }` here would reopen it while looking like
+ * a fix. `test/components/billing/PlanPurchaseButton.subscription-lookup.test.tsx`
+ * fails if the param ever appears.
+ *
+ * The fallback is ORDERED, not an "either" match, which is what makes one
+ * unqualified read correct for every audience this component is mounted on: a
+ * host who ALSO holds a tourist subscription (host-onboarding auto-promotes a
+ * traveller to HOST without touching it) gets the OWNER plan back, never the
+ * tourist one. The audience-scoped question — "do they already hold the VIP
+ * benefits this tourist card sells?" — is a different read with a different
+ * failure direction, and it lives in `./tourist-vip-status.ts`, which names
+ * every one of its domains for exactly that reason.
+ */
 function fetchCurrentPlanSlug(): Promise<string | null> {
     if (subscriptionPromise) return subscriptionPromise;
     subscriptionPromise = userApi
