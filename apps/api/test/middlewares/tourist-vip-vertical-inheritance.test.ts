@@ -373,6 +373,49 @@ describe('HOS-1323 — the dual owner', () => {
             expect(entitlements).toContain(key);
         }
     });
+
+    /**
+     * The case that actually EXERCISES the gift on the plan-resolved path, and
+     * the reason the test above cannot: `owner-basico`'s row carries the VIP
+     * block itself, so its fifteen keys arrive whether or not the gift is
+     * merged there — measured, by deleting the merge and watching the case above
+     * stay green.
+     *
+     * A restaurant owner who is also an ordinary tourist is the shape that
+     * separates them. `selectAccommodationSubscription` resolves their
+     * tourist-FREE plan (accommodation absent, tourist is the ordered fallback),
+     * the loader publishes that plan's three keys — and without the gift on this
+     * path, the person paying for a gastronomy listing is served the free
+     * baseline.
+     */
+    it('a gastronomy owner who is also a tourist-free subscriber still receives it', async () => {
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' },
+            { id: 'sub-tourist', planId: 'plan-tourist-free', status: 'active' }
+        ]);
+        hydrateAs([
+            { id: 'sub-gastro', productDomain: 'gastronomy' },
+            { id: 'sub-tourist', productDomain: 'tourist' }
+        ]);
+        mockBilling.plans.get.mockImplementation(async (planId: string) =>
+            planId === 'plan-tourist-free'
+                ? planRow(TOURIST_FREE_PLAN)
+                : planRow(GASTRONOMY_BASICO_PLAN)
+        );
+
+        // The resolved plan is the one that does NOT carry the block, so every
+        // key below can only have arrived as the gift.
+        expect(TOURIST_FREE_PLAN.entitlements).not.toContain(EntitlementKey.VIP_SUPPORT);
+
+        const { entitlements, limits } = await loadThroughMiddleware();
+
+        for (const key of VIP_ENTITLEMENTS) {
+            expect(entitlements).toContain(key);
+        }
+        for (const [key, value] of VIP_LIMITS) {
+            expect(limits[key]).toBe(value);
+        }
+    });
 });
 
 describe('HOS-1323 — by REFERENCE, not by copy', () => {
@@ -482,6 +525,24 @@ describe('HOS-1323 — the gift is a floor, never a ceiling', () => {
     });
 });
 
+/**
+ * A gastronomy plan row that predates HOS-975's VIP block — its own vertical
+ * pair and its own caps, and none of the fifteen. The shape every already-seeded
+ * environment carries until its data-migration lands.
+ */
+function laggingGastronomyRow(): ReturnType<typeof planRow> {
+    const row = planRow(GASTRONOMY_BASICO_PLAN);
+    const vipKeys = new Set<string>(VIP_ENTITLEMENTS);
+    const vipLimitKeys = new Set<string>(VIP_LIMITS.map(([key]) => key));
+    return {
+        ...row,
+        entitlements: row.entitlements.filter((key) => !vipKeys.has(key)),
+        limits: Object.fromEntries(
+            Object.entries(row.limits).filter(([key]) => !vipLimitKeys.has(key))
+        )
+    };
+}
+
 describe('HOS-1323 — the commerce middleware republishes the gift', () => {
     /**
      * `commerceVerticalEntitlementMiddleware` REPLACES `userEntitlements`
@@ -489,20 +550,33 @@ describe('HOS-1323 — the commerce middleware republishes the gift', () => {
      * published — the gift included — is dropped for the rest of a commerce
      * request. It has to put the gift back, or the invariant would hold on
      * every route except the vertical's own.
+     *
+     * **The plan row here is a LAGGING one, and that is the whole test.** A
+     * fixture using the catalogue's own gastronomy row proves nothing: that row
+     * carries the fifteen keys itself (`plans.config.ts:765`), and the
+     * pre-existing `plan?.entitlements` union a few lines above would admit
+     * them with or without the gift — measured, by mutating the gift call away
+     * and watching this case stay green.
+     *
+     * A lagging row is not hypothetical either: `ensureCommercePlan` INSERTs
+     * only, so every already-seeded environment carries the older shape until
+     * its data-migration runs, and `PUT /admin/billing/plans/{id}` can leave one
+     * behind at any time. Only a runtime read of the tourist-VIP plan can serve
+     * that owner.
      */
-    it('a gastronomy route still sees every tourist-VIP key after the replace', async () => {
+    it('a gastronomy route sees every tourist-VIP key even from a LAGGING plan row', async () => {
         vi.spyOn(PlanService.prototype, 'getBySlug').mockImplementation(async (slug: string) => {
             if (slug === TOURIST_VIP_PLAN.slug) {
                 return { success: true, data: planRow(TOURIST_VIP_PLAN) } as never;
             }
-            return { success: true, data: planRow(GASTRONOMY_BASICO_PLAN) } as never;
+            return { success: true, data: laggingGastronomyRow() } as never;
         });
 
         mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
             { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
         ]);
         hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
-        mockBilling.plans.get.mockResolvedValue(planRow(GASTRONOMY_BASICO_PLAN));
+        mockBilling.plans.get.mockResolvedValue(laggingGastronomyRow());
 
         const app = new Hono<AppBindings>();
         app.use((c, next) => {
