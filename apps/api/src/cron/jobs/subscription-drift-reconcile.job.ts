@@ -35,6 +35,23 @@
  *   `paused` and cut a gifted subscriber's entitlements hours before
  *   `courtesy-expiry` resumes the preapproval. Excluding it is the correctness
  *   requirement, not the tidiness one.
+ * - `dunning` owns `past_due`, and for that population the provider carries NO
+ *   information this job could act on. `MERCADOPAGO_SUBSCRIPTION_STATUS`
+ *   (`@qazuor/qzpay-mercadopago`) has four values and maps `authorized → active`;
+ *   there is no preapproval status meaning "the charge failed". While MercadoPago
+ *   runs its native recycling the preapproval stays `authorized`, so MP's verdict
+ *   for a row in arrears is "active" — and re-applying it would be a REVERSAL,
+ *   not a repair. Concretely, HOS-348 Part B's card-replacement flow mints a new
+ *   preapproval and cancels the old one only once the new one is confirmed, so a
+ *   `past_due` row legitimately sits beside a live `authorized` preapproval; this
+ *   sweep would read that, write ACTIVE, restore full entitlements for an unpaid
+ *   customer and have `shouldSendReactivationEmail` congratulate them while their
+ *   card is still failing. `past_due` is unreachable in the column today
+ *   (`cron/jobs/dunning.job.ts` documents why, and `MERCADOPAGO_SUBSCRIPTION_STATUS`
+ *   confirms it), but that same docblock names teaching the adapter to expose
+ *   recycling as `past_due` as intended work — so this is a mine, not a
+ *   hypothetical. It stays out of the allowlist rather than being guarded by a
+ *   comment.
  * - `comp` never has a preapproval (SPEC-262), so it cannot match the
  *   `mp_subscription_id IS NOT NULL` filter. It is also absent from the status
  *   allowlist, so the exclusion does not depend on that filter holding.
@@ -58,6 +75,23 @@
  * population). Such rows carry `mp_subscription_id = NULL` and are therefore not
  * even candidates — the guarantee rests on the SQL filter first and on the
  * never-write-on-a-failed-read rule second, so both would have to break at once.
+ *
+ * ## Fairness is a cursor, not an ORDER BY
+ *
+ * The batch is bounded, so something must guarantee every eligible row is eventually
+ * reached. Sorting by `updated_at ASC` does NOT: an in-sync row is never written, so
+ * its position never moves and the same page is re-read for ever. See
+ * {@link cursorAfterId} for why the cursor rides on `id` and why it cannot ride on
+ * `updated_at`, and for exactly what it survives.
+ *
+ * ## What this job reports, and what it refuses to call healthy
+ *
+ * `statusChanged: false` comes back from nine different situations in
+ * `processSubscriptionUpdated` and only one of them means "they agree". A refused
+ * transition, an unmappable stored status, a provider status we do not know — each is
+ * a divergence that was NOT applied, and the last safety net in the system must not
+ * file those as "already in sync". They are counted as `unresolved`, named with their
+ * outcome, and held against `success`.
  *
  * ## All five verticals, and the dual-owner case
  *
@@ -94,11 +128,14 @@ import {
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { excludeAddonDomainCondition } from '@repo/service-core';
-import * as Sentry from '@sentry/node';
 import { asc, gt, lt, ne, or } from 'drizzle-orm';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
-import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
+import { isProviderReadFailure } from '../../routes/webhooks/mercadopago/provider-read-failure.js';
+import {
+    processSubscriptionUpdated,
+    type SubscriptionUpdateOutcome
+} from '../../routes/webhooks/mercadopago/subscription-logic.js';
 import { MP_CALL_SPACING_MS } from '../../services/billing/preapproval-recovery.service.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -132,28 +169,69 @@ export const DRIFT_TOLERANCE_MINUTES = 15;
 /** Candidates examined per tick; bounds the MercadoPago call budget. */
 const BATCH_LIMIT = 50;
 
-/** Statuses this sweep owns. Every exclusion is argued in the module doc. */
+/**
+ * Where the next tick resumes, as the `id` of the last row the previous tick
+ * SELECTED (not the last one it acted on). `null` means "start from the beginning
+ * of the id space".
+ *
+ * ## Why a cursor exists at all
+ *
+ * Ordering by `updated_at ASC` and taking the oldest 50 does NOT drain a backlog,
+ * because nothing advances a healthy row's position: when local and provider agree,
+ * `processSubscriptionUpdated` writes nothing and `updated_at` does not move. So the
+ * same 50 rows are selected every tick, for ever. With 60 eligible subscriptions the
+ * 55th could diverge and never be looked at, while the tick reports
+ * `0 corrected, 50 already in sync` and `success: true` — the divergence staying
+ * exactly as invisible as it was before this job existed, and the job reporting
+ * health while being blind. A non-convergible row (a ghost preapproval) is worse
+ * still: it is a permanent resident of the batch, burning a slot and a provider call
+ * every tick for ever.
+ *
+ * `id` rather than `updated_at`, and this is the crux: the two cannot be the same
+ * column. `updated_at` is load-bearing for the LATENCY TOLERANCE — "has this row
+ * been quiet long enough that a webhook must be presumed lost" — and that question
+ * needs the real last-change time. Advancing a cursor by touching `updated_at` would
+ * overwrite the very signal the cutoff reads, turning "15 minutes since the row
+ * changed" into "15 minutes since we last looked at it" and quietly destroying the
+ * guard against racing a live webhook. Two jobs, two timestamps; `id` is a third,
+ * stable, totally-ordered, indexed (primary key) axis that belongs to neither.
+ *
+ * ## What this does and does not survive — stated, not hidden
+ *
+ * Module-level state, so it is per-process and resets on deploy or restart. A reset
+ * costs one wrap of the id space, not correctness: every eligible row is still
+ * reached within `ceil(population / BATCH_LIMIT)` ticks of any fresh start, and at
+ * hourly ticks a daily deploy leaves ~23 of 24 ticks advancing. Replicas each keep
+ * their own cursor, which covers different windows rather than colliding (and the
+ * advisory lock means only one runs at a time anyway).
+ *
+ * Making fairness durable across restarts needs a persisted `last_drift_checked_at`
+ * column — deliberately NOT done here: it is a schema change with migration-carril
+ * and dual-write consequences, and it is flagged for the owner rather than decided
+ * by this job. `cron_runs.details` was considered as a no-migration home and
+ * rejected: `recordCronRun` is fire-and-forget and swallows its own errors, so a lost
+ * write would silently reset the cursor — a silent failure inside the mechanism built
+ * to remove one.
+ */
+let cursorAfterId: string | null = null;
+
+/**
+ * Statuses this sweep owns. Every exclusion is argued in the module doc.
+ *
+ * No stored-vocabulary alias accompanies this list, and that is not an
+ * oversight. `billing_subscriptions.status` does hold two vocabularies (see
+ * `services/admin-billing-view.status.ts`), but the only alias
+ * `normalizeStoredSubscriptionStatus` has for any status in this job's reach was
+ * `unpaid` → `past_due`, and `past_due` is no longer in the list. `incomplete`
+ * normalizes to `pending_provider` (subscription-poll's), and
+ * `incomplete_expired`/`canceled` are terminal. `active`, `paused` and
+ * `trialing` have exactly one spelling each.
+ */
 const DRIFTABLE_STATUSES = [
     SubscriptionStatusEnum.ACTIVE,
     SubscriptionStatusEnum.PAUSED,
-    SubscriptionStatusEnum.PAST_DUE,
     SubscriptionStatusEnum.TRIALING
 ] as const;
-
-/**
- * The same population as {@link DRIFTABLE_STATUSES}, plus the qzpay spelling the
- * column can physically hold for one of them.
- *
- * `billing_subscriptions.status` is written by two layers and holds both
- * vocabularies (see `services/admin-billing-view.status.ts`): `unpaid` is
- * qzpay's spelling of `past_due`, and `normalizeStoredSubscriptionStatus` maps it
- * accordingly. Matching only the Hospeda spelling is the HOS-108 bug class — a
- * row stored in the other vocabulary is simply never selected, and nothing says
- * so. The other aliases are deliberately absent: `incomplete` normalizes to
- * `pending_provider` and `incomplete_expired`/`canceled` are terminal, so all
- * three are outside this population in either spelling.
- */
-const DRIFTABLE_STORED_STATUSES = [...DRIFTABLE_STATUSES, 'unpaid'] as const;
 
 const MINUTE_MS = 60 * 1000;
 
@@ -166,14 +244,21 @@ export interface DriftCandidateRow {
     readonly trialEnd: Date | null;
     readonly cancelAtPeriodEnd: boolean | null;
     readonly updatedAt: Date | null;
+    readonly deletedAt: Date | null;
 }
 
 /**
  * Decides whether a row is one this sweep may re-read at MercadoPago.
  *
  * Pure and total, so the population can be pinned without a database. The SQL
- * filter in the handler is an optimisation; THIS is the specification, and a
- * loosened query cannot silently widen what gets touched.
+ * filter in the handler is an optimisation; THIS is the specification, and every
+ * condition of that filter is re-checked here — including `deleted_at`, which
+ * until HOS-914's review was the one condition with no in-memory backstop, making
+ * this paragraph false where it mattered most. A soft-deleted row that slipped
+ * through reaches `processSubscriptionUpdated`, whose own lookup filters
+ * `deletedAt` and therefore finds nothing, which sends it into
+ * `linkPreapprovalToLocalSub` — a WRITE path that sets `mp_subscription_id`,
+ * flips the row to `pending_provider`, and can resurrect an `abandoned` one.
  *
  * @param input - The row, the reference instant, and the latency tolerance.
  * @returns `true` when the row should be compared against the provider.
@@ -183,7 +268,8 @@ export interface DriftCandidateRow {
  * isDriftReconcileCandidate({
  *   row: { id: 's1', customerId: 'c1', status: 'paused',
  *          mpSubscriptionId: 'preapproval-abc', trialEnd: null,
- *          cancelAtPeriodEnd: false, updatedAt: new Date('2026-08-15T10:00:00Z') },
+ *          cancelAtPeriodEnd: false, updatedAt: new Date('2026-08-15T10:00:00Z'),
+ *          deletedAt: null },
  *   now: new Date('2026-08-15T12:00:00Z'),
  *   toleranceMinutes: 15,
  * }); // => true
@@ -196,6 +282,12 @@ export function isDriftReconcileCandidate(input: {
 }): boolean {
     const { row, now, toleranceMinutes } = input;
 
+    // Soft-deleted rows are not this job's business, and letting one through is
+    // not merely useless: see the docblock — it ends in a write that can
+    // resurrect the row.
+    if (row.deletedAt !== null) {
+        return false;
+    }
     // No preapproval means there is nothing to compare against, and — the part
     // that matters — a cash-paid partner (HOS-1062) looks exactly like this. A
     // blank string counts as absent here rather than as a usable id: asking
@@ -204,7 +296,7 @@ export function isDriftReconcileCandidate(input: {
     if (row.mpSubscriptionId === null || row.mpSubscriptionId.trim() === '') {
         return false;
     }
-    if (!(DRIFTABLE_STORED_STATUSES as readonly string[]).includes(row.status)) {
+    if (!(DRIFTABLE_STATUSES as readonly string[]).includes(row.status)) {
         return false;
     }
     // A pending soft-cancel is owned by finalize-cancelled-subs for its whole
@@ -229,32 +321,48 @@ export function isDriftReconcileCandidate(input: {
 }
 
 /**
- * How a failed provider read is reported. Neither value ever produces a write.
+ * How a failure inside one row's reconcile is reported. No value ever produces a
+ * write — the classification decides what a human is told, nothing else.
  *
- * - `unknown_at_provider` — MercadoPago could not resolve the preapproval at
- *   all. This is the case that must NEVER be read as "cancel it": the row may
- *   belong to a payer whose id we hold wrongly, or to a flow that never reached
- *   the provider. It is escalated for a human.
- * - `transient` — network, 5xx, rate limit, bad token. Retried next tick.
+ * - `unknown_at_provider` — the provider READ failed and MercadoPago could not
+ *   resolve the preapproval at all. This is the case that must NEVER be read as
+ *   "cancel it": the row may belong to a payer whose id we hold wrongly, or to a
+ *   flow that never reached the provider. It is escalated for a human.
+ * - `transient` — anything else: network, 5xx, rate limit, bad token, and every
+ *   failure from a LATER phase (the status write, the audit insert, a
+ *   notification, a reconciler bridge). Retried next tick.
  */
 export type ProviderReadFailure = 'unknown_at_provider' | 'transient';
 
 /**
- * Classify why a provider read failed.
+ * Classify a failure raised while reconciling one row.
  *
- * Deliberately defensive rather than trusting one signal. `@qazuor/qzpay-mercadopago`
- * maps a MercadoPago error to `QZPayErrorCode.RESOURCE_NOT_FOUND` only when the
- * SDK surfaces a `cause` array whose first entry has `code === '404'`; a plain
- * HTTP 404 arrives with just a `status`/`message` and falls through to the
- * generic `provider_error` branch. Reading only the mapped code would therefore
- * classify most real "unknown at provider" reads as transient and retry them
- * silently forever. All three signals are checked.
+ * Two gates, in order, and the first one is the one the review added.
  *
- * @param error - Whatever the adapter threw.
+ * 1. **Provenance.** `processSubscriptionUpdated` is wrapped whole, so this
+ *    receives errors from every phase, not just the read. Only an error stamped
+ *    by the `subscriptions.retrieve()` boundary (see
+ *    `routes/webhooks/mercadopago/provider-read-failure.ts`) can be about the
+ *    preapproval at all. Without this gate an
+ *    `Error('Notification template not found')` matched the message heuristic
+ *    below and sent a human hunting for a preapproval that was fine.
+ * 2. **Shape**, and deliberately not one signal. `@qazuor/qzpay-mercadopago` maps
+ *    a MercadoPago error to `QZPayErrorCode.RESOURCE_NOT_FOUND` only when the SDK
+ *    surfaces a `cause` array whose first entry has `code === '404'`; a plain HTTP
+ *    404 arrives with just a `status`/`message` and falls through to the generic
+ *    `provider_error` branch. Reading only the mapped code would classify most
+ *    real "unknown at provider" reads as transient and retry them silently
+ *    forever.
+ *
+ * @param error - Whatever was thrown while reconciling the row.
  * @returns Which of the two failure kinds this is.
  */
 export function classifyProviderReadFailure(error: unknown): ProviderReadFailure {
     if (typeof error !== 'object' || error === null) {
+        return 'transient';
+    }
+    // Gate 1: not from the provider read → not a statement about the preapproval.
+    if (!isProviderReadFailure(error)) {
         return 'transient';
     }
     const candidate = error as {
@@ -276,10 +384,50 @@ export function classifyProviderReadFailure(error: unknown): ProviderReadFailure
     return 'transient';
 }
 
+/**
+ * Outcomes that mean "the provider and the local row genuinely agree, nothing to
+ * do". Everything else `processSubscriptionUpdated` can report without writing is
+ * an unresolved condition, not a clean bill of health.
+ *
+ * `addon_routed` and `provider_pending` are benign in exactly this sense: the
+ * first says another owner handled it, the second that MercadoPago has not decided
+ * yet. Neither hides a divergence this job could act on.
+ */
+const BENIGN_NO_OP_OUTCOMES: ReadonlySet<SubscriptionUpdateOutcome> = new Set([
+    'already_in_sync',
+    'addon_routed',
+    'provider_pending',
+    // The row is inside its soft-cancel grace on purpose; finalize-cancelled-subs
+    // owns the flip.
+    'soft_cancel_grace',
+    // Deliberately not auto-corrected by owner decision (HOS-211).
+    'transition_refused_legacy_active_to_trialing'
+]);
+
+/**
+ * Is this no-op a clean bill of health, or a divergence nobody applied?
+ *
+ * Written as "benign unless listed" — an allowlist with everything else counted as
+ * UNRESOLVED — so the default direction is loud. A new `SubscriptionUpdateOutcome`
+ * added upstream shows up as unresolved and fails the tick until someone decides
+ * it is benign, rather than being silently filed as "already in sync", which is the
+ * exact defect this replaced. `transition_refused`,
+ * `stored_status_unrecognized`, `provider_status_unknown`, `local_row_not_found`
+ * and a missing/unknown value all land here.
+ *
+ * @param outcome - What `processSubscriptionUpdated` reported, if anything.
+ * @returns `true` when the no-op hides a condition a human should see.
+ */
+function isUnresolvedNoOp(outcome: SubscriptionUpdateOutcome | undefined): boolean {
+    return outcome === undefined || !BENIGN_NO_OP_OUTCOMES.has(outcome);
+}
+
 /** Counters a tick accumulates. */
 interface SweepTotals {
     corrected: number;
     inSync: number;
+    /** Divergences the system refused to apply. See {@link UNRESOLVED_OUTCOMES}. */
+    unresolved: number;
     unknownAtProvider: number;
     errors: number;
 }
@@ -369,12 +517,15 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
                     mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
                     trialEnd: billingSubscriptions.trialEnd,
                     cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd,
-                    updatedAt: billingSubscriptions.updatedAt
+                    updatedAt: billingSubscriptions.updatedAt,
+                    // Selected so the in-memory predicate can re-check it; the
+                    // WHERE clause below filters it too.
+                    deletedAt: billingSubscriptions.deletedAt
                 })
                 .from(billingSubscriptions)
                 .where(
                     and(
-                        inArray(billingSubscriptions.status, [...DRIFTABLE_STORED_STATUSES]),
+                        inArray(billingSubscriptions.status, [...DRIFTABLE_STATUSES]),
                         isNotNull(billingSubscriptions.mpSubscriptionId),
                         isNull(billingSubscriptions.deletedAt),
                         eq(billingSubscriptions.cancelAtPeriodEnd, false),
@@ -385,12 +536,20 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
                             ne(billingSubscriptions.status, SubscriptionStatusEnum.TRIALING),
                             gt(billingSubscriptions.trialEnd, startedAt)
                         ),
-                        excludeAddonDomainCondition()
+                        excludeAddonDomainCondition(),
+                        // The cursor (see `cursorAfterId`). Without it the same
+                        // oldest-N rows are re-read every tick for ever, because a
+                        // row that is already in sync is never written and so never
+                        // changes position.
+                        cursorAfterId === null
+                            ? undefined
+                            : gt(billingSubscriptions.id, cursorAfterId)
                     )
                 )
-                // Oldest first, so a backlog drains fairly instead of the same
-                // head of the table being re-read every tick.
-                .orderBy(asc(billingSubscriptions.updatedAt))
+                // By id, the cursor's axis — a total order over an indexed primary
+                // key. NOT by `updated_at`: that column answers the latency
+                // tolerance and must keep meaning "last real change".
+                .orderBy(asc(billingSubscriptions.id))
                 .limit(BATCH_LIMIT);
 
             return { locked: true, rows: rows as DriftCandidateRow[] };
@@ -406,6 +565,40 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
                 durationMs: durationMs(),
                 details: { acquiredLock: false }
             };
+        }
+
+        // Advance the cursor from what was SELECTED, not from what was acted on: a
+        // row dropped by the in-memory predicate, a ghost that 404s, and a row whose
+        // transition is refused must all still move the cursor past themselves, or
+        // each of them pins the window and starves everything behind it — the exact
+        // starvation the cursor exists to prevent.
+        //
+        // A short page means the id space is exhausted, so wrap to the beginning. A
+        // full page leaves the cursor at its last id. This is the only place the
+        // cursor moves, and it happens BEFORE any provider call, so a crash
+        // mid-batch still advances rather than replaying the same window.
+        // A dry run is a rehearsal and must not move real state: advancing the cursor
+        // would make the NEXT real tick skip every row the rehearsal merely counted.
+        const pageWasFull = selection.rows.length === BATCH_LIMIT;
+        const lastSelectedId = selection.rows.at(-1)?.id ?? null;
+        const cursorBefore = cursorAfterId;
+        if (!dryRun) {
+            cursorAfterId = pageWasFull ? lastSelectedId : null;
+        }
+
+        if (pageWasFull) {
+            // The only possible signal that the population outgrew the per-tick
+            // budget. Not an error — the cursor means the remainder is examined on
+            // following ticks — but the number worth seeing before a backlog gets
+            // long enough that a divergence waits hours.
+            logger.warn(
+                'subscription-drift-reconcile: batch limit reached — population exceeds the per-tick budget, remainder continues from the cursor next tick',
+                {
+                    batchLimit: BATCH_LIMIT,
+                    cursorFrom: cursorBefore,
+                    cursorTo: cursorAfterId
+                }
+            );
         }
 
         // Re-apply the rule in code: the SQL is the optimisation, the predicate
@@ -429,17 +622,25 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
                 processed: candidates.length,
                 errors: 0,
                 durationMs: durationMs(),
-                details: { dryRun: true, ids: candidates.map((r) => r.id) }
+                details: {
+                    dryRun: true,
+                    ids: candidates.map((r) => r.id),
+                    batchLimitReached: pageWasFull,
+                    // Unchanged by a rehearsal, and reported so that is visible.
+                    cursorAfterId
+                }
             };
         }
 
         const totals: SweepTotals = {
             corrected: 0,
             inSync: 0,
+            unresolved: 0,
             unknownAtProvider: 0,
             errors: 0
         };
         const unknownIds: string[] = [];
+        const unresolved: Array<{ id: string; outcome: string }> = [];
         let first = true;
 
         for (const row of candidates) {
@@ -467,6 +668,24 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
                         localStatus: row.status,
                         newStatus: result.newStatus
                     });
+                } else if (isUnresolvedNoOp(result.outcome)) {
+                    // The divergence exists and the system declined to apply it —
+                    // a refused transition, an unmappable status, a vanished row.
+                    // Filing this as "in sync" is precisely the blindness this job
+                    // was built to remove, so it is named, counted apart, and held
+                    // against `success`.
+                    totals.unresolved += 1;
+                    unresolved.push({ id: row.id, outcome: result.outcome ?? 'unknown' });
+                    logger.error(
+                        'subscription-drift-reconcile: divergence could NOT be applied — the row is not in sync',
+                        {
+                            subscriptionId: row.id,
+                            customerId: row.customerId,
+                            localStatus: row.status,
+                            outcome: result.outcome ?? 'unknown'
+                        },
+                        { capture: true }
+                    );
                 } else {
                     totals.inSync += 1;
                 }
@@ -489,17 +708,14 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
                             localStatus: row.status,
                             error: message
                         },
+                        // Forwards to Sentry via the logger's capture hook. There
+                        // used to be an explicit `Sentry.captureException` here
+                        // too, which — together with the runner's soft-failure
+                        // capture for `success: false` — meant THREE Sentry events
+                        // per ghost row per tick, with no dedup or backoff. The
+                        // logger's hook and the runner's capture already say it
+                        // twice; a third said nothing new.
                         { capture: true }
-                    );
-                    Sentry.captureException(
-                        new Error(`Drift reconcile: preapproval unknown at provider: ${message}`),
-                        {
-                            extra: { subscriptionId: row.id, localStatus: row.status },
-                            tags: {
-                                module: 'subscription-drift-reconcile',
-                                operation: 'unknownAtProvider'
-                            }
-                        }
                     );
                 } else {
                     totals.errors += 1;
@@ -511,10 +727,11 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
             }
         }
 
-        // An unresolvable preapproval is NOT a successful tick. Reporting it as
-        // one is how a divergence that needs a human becomes a green line in the
-        // cron log that nobody reads.
-        const success = totals.errors === 0 && totals.unknownAtProvider === 0;
+        // Neither an unresolvable preapproval nor an unapplied divergence is a
+        // successful tick. Reporting either as one is how a row that needs a human
+        // becomes a green line in the cron log that nobody reads.
+        const success =
+            totals.errors === 0 && totals.unknownAtProvider === 0 && totals.unresolved === 0;
 
         logger.info('subscription-drift-reconcile: tick complete', {
             candidates: candidates.length,
@@ -526,17 +743,23 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
             success,
             message:
                 `Compared ${candidates.length} subscription(s): ${totals.corrected} corrected, ` +
-                `${totals.inSync} already in sync, ${totals.unknownAtProvider} unknown at ` +
-                `MercadoPago (NOT cancelled), ${totals.errors} transient error(s)`,
+                `${totals.inSync} already in sync, ${totals.unresolved} diverging but NOT ` +
+                `applied, ${totals.unknownAtProvider} unknown at MercadoPago (NOT cancelled), ` +
+                `${totals.errors} transient error(s)`,
             processed: candidates.length,
-            errors: totals.errors + totals.unknownAtProvider,
+            errors: totals.errors + totals.unknownAtProvider + totals.unresolved,
             durationMs: durationMs(),
             details: {
                 corrected: totals.corrected,
                 inSync: totals.inSync,
+                unresolved: totals.unresolved,
+                unresolvedRows: unresolved,
                 unknownAtProvider: totals.unknownAtProvider,
                 unknownAtProviderIds: unknownIds,
-                transientErrors: totals.errors
+                transientErrors: totals.errors,
+                batchLimitReached: pageWasFull,
+                cursorFrom: cursorBefore,
+                cursorAfterId
             }
         };
     }

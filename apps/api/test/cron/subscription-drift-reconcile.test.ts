@@ -22,6 +22,7 @@ import {
     type DriftCandidateRow,
     isDriftReconcileCandidate
 } from '../../src/cron/jobs/subscription-drift-reconcile.job';
+import { markProviderReadFailure } from '../../src/routes/webhooks/mercadopago/provider-read-failure';
 
 /** Reference instant for every case. */
 const NOW = new Date('2026-09-09T12:00:00Z');
@@ -39,6 +40,7 @@ function buildRow(overrides: Partial<DriftCandidateRow> = {}): DriftCandidateRow
         cancelAtPeriodEnd: false,
         // Two hours stale: comfortably past the latency tolerance.
         updatedAt: new Date(NOW.getTime() - 120 * MINUTE_MS),
+        deletedAt: null,
         ...overrides
     };
 }
@@ -63,22 +65,6 @@ describe('isDriftReconcileCandidate — the population this sweep re-reads', () 
         // never touching the row.
         // Act & Assert
         expect(candidate(buildRow({ status: 'paused' }))).toBe(true);
-    });
-
-    it('selects a past_due subscription', () => {
-        // Arrange — dunning defers to MercadoPago's native recycling and never
-        // re-reads the preapproval, so a lost cancellation webhook strands it.
-        // Act & Assert
-        expect(candidate(buildRow({ status: 'past_due' }))).toBe(true);
-    });
-
-    it("selects qzpay's `unpaid` spelling of past_due too", () => {
-        // Arrange — the column holds BOTH vocabularies (admin-billing-view.status
-        // documents the live `canceled`/`cancelled` split for the same reason).
-        // Matching only the Hospeda spelling is the HOS-108 bug class: the row is
-        // never selected and nothing says so.
-        // Act & Assert
-        expect(candidate(buildRow({ status: 'unpaid' }))).toBe(true);
     });
 
     it('selects a trialing subscription whose trial has NOT elapsed', () => {
@@ -137,6 +123,40 @@ describe('isDriftReconcileCandidate — rows another sweep owns', () => {
     it('never selects a pending soft-cancel — finalize-cancelled-subs owns the whole grace', () => {
         // Arrange & Act & Assert
         expect(candidate(buildRow({ cancelAtPeriodEnd: true }))).toBe(false);
+    });
+
+    it('never selects a past_due row — the provider says "active" for EVERY row in arrears', () => {
+        // Arrange — MERCADOPAGO_SUBSCRIPTION_STATUS has four values and maps
+        // `authorized → active`; no preapproval status means "the charge failed".
+        // While MP runs its native recycling the preapproval stays `authorized`,
+        // so re-applying the provider verdict to a past_due row is a REVERSAL:
+        // it would restore full entitlements to an unpaid customer and have
+        // shouldSendReactivationEmail congratulate them with the card still
+        // failing. Sharpest case: HOS-348 Part B mints a replacement preapproval
+        // and only cancels the old one once the new one confirms, so a past_due
+        // row legitimately sits beside a live `authorized` preapproval.
+        // Act & Assert
+        expect(candidate(buildRow({ status: 'past_due' }))).toBe(false);
+    });
+
+    it("never selects qzpay's `unpaid` spelling of past_due either", () => {
+        // Arrange — `unpaid` normalizes to past_due, so it leaves with it. Asserted
+        // rather than assumed: excluding one spelling and keeping the other is the
+        // HOS-108 bug class wearing the opposite hat.
+        // Act & Assert
+        expect(candidate(buildRow({ status: 'unpaid' }))).toBe(false);
+    });
+
+    it('never selects a SOFT-DELETED row — the one condition with no in-memory backstop', () => {
+        // Arrange — this is not merely useless work. processSubscriptionUpdated's
+        // own lookup filters deletedAt, so it finds nothing and falls through to
+        // linkPreapprovalToLocalSub, which WRITES: it sets mp_subscription_id,
+        // flips the row to pending_provider, and has a branch that resurrects an
+        // `abandoned` row. Until HOS-914's review this was the only WHERE condition
+        // the predicate did not re-check, which made the "a loosened query cannot
+        // silently widen what gets touched" claim false exactly where it mattered.
+        // Act & Assert
+        expect(candidate(buildRow({ deletedAt: new Date(NOW.getTime() - MINUTE_MS) }))).toBe(false);
     });
 
     it('never selects a trialing row whose trial ALREADY elapsed — that is trial-reconcile', () => {
@@ -206,6 +226,7 @@ describe('classifyProviderReadFailure — "dead" and "unknown" are different fac
         const error = Object.assign(new Error('Retrieve subscription - Resource not found: x'), {
             code: 'resource_not_found'
         });
+        markProviderReadFailure(error);
         // Act & Assert
         expect(classifyProviderReadFailure(error)).toBe('unknown_at_provider');
     });
@@ -219,6 +240,7 @@ describe('classifyProviderReadFailure — "dead" and "unknown" are different fac
             code: 'provider_error',
             originalError: { status: 404 }
         });
+        markProviderReadFailure(error);
         // Act & Assert
         expect(classifyProviderReadFailure(error)).toBe('unknown_at_provider');
     });
@@ -226,6 +248,7 @@ describe('classifyProviderReadFailure — "dead" and "unknown" are different fac
     it('recognises a 404 carried on the error itself', () => {
         // Arrange
         const error = Object.assign(new Error('Not Found'), { status: 404 });
+        markProviderReadFailure(error);
         // Act & Assert
         expect(classifyProviderReadFailure(error)).toBe('unknown_at_provider');
     });
@@ -262,5 +285,38 @@ describe('classifyProviderReadFailure — "dead" and "unknown" are different fac
         expect(classifyProviderReadFailure('boom')).toBe('transient');
         expect(classifyProviderReadFailure(null)).toBe('transient');
         expect(classifyProviderReadFailure(undefined)).toBe('transient');
+    });
+
+    it('does NOT escalate a later-phase error whose message merely says "not found"', () => {
+        // Arrange — the regression the review found. `processSubscriptionUpdated`
+        // is wrapped whole, so the status write, the audit insert, the
+        // notifications and both reconciler bridges throw through the same catch.
+        // An unmarked Error('Notification template not found') matched the message
+        // heuristic and logged "MercadoPago does not know this preapproval",
+        // sending a human to hunt for a preapproval that is perfectly fine.
+        const error = new Error('Notification template not found');
+        // Deliberately NOT marked: it did not come from the provider read.
+        // Act & Assert
+        expect(classifyProviderReadFailure(error)).toBe('transient');
+    });
+
+    it('does NOT escalate an unmarked error carrying a literal 404', () => {
+        // Arrange — the shape check alone is not enough; provenance gates it. A
+        // downstream helper failing with its own 404 says nothing about the
+        // preapproval.
+        const error = Object.assign(new Error('revalidation endpoint failed'), { status: 404 });
+        // Act & Assert
+        expect(classifyProviderReadFailure(error)).toBe('transient');
+    });
+
+    it('needs BOTH the mark and the shape — a marked rate limit is still transient', () => {
+        // Arrange — provenance alone must not escalate either, or a provider outage
+        // would page a human once per row.
+        const error = Object.assign(new Error('Rate limit exceeded'), {
+            code: 'rate_limit_error'
+        });
+        markProviderReadFailure(error);
+        // Act & Assert
+        expect(classifyProviderReadFailure(error)).toBe('transient');
     });
 });
