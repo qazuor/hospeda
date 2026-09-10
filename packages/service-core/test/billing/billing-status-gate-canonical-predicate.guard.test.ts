@@ -147,10 +147,20 @@ const HAND_ROLLED_SCAN_EXCLUSIONS: ReadonlyArray<{
         file: 'services/billing/subscription/subscription-status-constants.ts',
         why: 'Pure status constants — enumerating them is the whole point of the file.'
     },
-    {
-        file: 'services/billing/subscription/subscription-status-normalize.ts',
-        why: 'The qzpay→Hospeda spelling map. It must name every status to translate them.'
-    },
+    /*
+     * `services/billing/subscription/subscription-status-normalize.ts` used to be
+     * listed here ("the qzpay→Hospeda spelling map; it must name every status to
+     * translate them"). HOS-1310 moved the map to
+     * `packages/billing/src/predicates/subscription-status-normalize.ts` — the
+     * liveness predicates there are consumers of the same kind as the state
+     * machine here, and `@repo/service-core` depends on `@repo/billing` rather
+     * than the reverse. What remains at the old path is a re-export with no
+     * status literal in it, so the entry went stale and the "every exclusion
+     * still needs to be there" case below caught it. Removed rather than
+     * repointed: the scan is rooted at this package's `src`, so a file in
+     * `@repo/billing` is out of its reach either way, and an exclusion and an
+     * out-of-root file get the same zero scrutiny — no check was lost.
+     */
     {
         file: 'services/billing/subscription/subscription-status-transitions.ts',
         why: 'The transition state machine, which documents COMP explicitly. Enumerating states is its definition.'
