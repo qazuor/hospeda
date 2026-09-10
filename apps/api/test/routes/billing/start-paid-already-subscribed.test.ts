@@ -622,8 +622,14 @@ describe('handleStartPaidSubscription — HOS-1260 tourist-vip is replaced, not 
     }
 
     // ── Toward the bug: every live status on a tourist sub must block ────────
+    //
+    // The list is the whole of `LIVE_SUBSCRIPTION_STATUSES`
+    // (`packages/billing/src/predicates/is-live-subscription-status.ts:58` —
+    // `ENTITLEMENT_GRANTING_STATUSES` plus `past_due`), not a sample of it. A
+    // subset would leave whichever member it omitted as the one status through
+    // which the stacking hole survives.
 
-    for (const status of ['active', 'trialing', 'comp', 'past_due'] as const) {
+    for (const status of ['active', 'trialing', 'comp', 'courtesy', 'past_due'] as const) {
         it(`blocks the host checkout on a ${status} tourist-vip subscription`, async () => {
             const billing = armHydratedSubs([{ id: 'sub-vip', status, productDomain: 'tourist' }]);
             const ctx = makeContext();
