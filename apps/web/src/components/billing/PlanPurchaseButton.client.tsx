@@ -15,6 +15,7 @@ import type { EffectPreview } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { billingApi, userApi } from '../../lib/api/endpoints-protected';
+import { translateApiError } from '../../lib/api-errors';
 import { useSession } from '../../lib/auth-client';
 import { storePendingCheckoutSubId } from '../../lib/billing/checkout-pending';
 import { resolvePublishPathForPricingAudience } from '../../lib/billing/pricing-audience-publish-vertical';
@@ -152,6 +153,32 @@ export interface PlanPurchaseButtonProps {
  */
 let subscriptionPromise: Promise<string | null> | null = null;
 
+/**
+ * Reads "which plan does this visitor pay for today", for `isCurrentPlan` and
+ * `isPlanChange` below.
+ *
+ * ## The call is UNQUALIFIED on purpose — naming a domain here is a regression
+ *
+ * `GET /protected/users/me/subscription` treats "no `?productDomain=`" and
+ * "`?productDomain=accommodation`" as two different questions (HOS-1233). Only
+ * the unqualified one resolves accommodation FIRST and then falls back to
+ * tourist; naming a domain makes the read strict, and a `tourist-vip` holder
+ * would come back `null` — read here as "no subscription", so their card would
+ * offer a fresh "Contratar", fire `/start-paid`, and be refused with the 409
+ * `runCheckout` now translates. That is the exact dead end HOS-1321 exists to
+ * close, so passing `{ productDomain }` here would reopen it while looking like
+ * a fix. `test/components/billing/PlanPurchaseButton.subscription-lookup.test.tsx`
+ * fails if the param ever appears.
+ *
+ * The fallback is ORDERED, not an "either" match, which is what makes one
+ * unqualified read correct for every audience this component is mounted on: a
+ * host who ALSO holds a tourist subscription (host-onboarding auto-promotes a
+ * traveller to HOST without touching it) gets the OWNER plan back, never the
+ * tourist one. The audience-scoped question — "do they already hold the VIP
+ * benefits this tourist card sells?" — is a different read with a different
+ * failure direction, and it lives in `./tourist-vip-status.ts`, which names
+ * every one of its domains for exactly that reason.
+ */
 function fetchCurrentPlanSlug(): Promise<string | null> {
     if (subscriptionPromise) return subscriptionPromise;
     subscriptionPromise = userApi
@@ -1507,7 +1534,47 @@ export function PlanPurchaseButton({
                     'billing.checkout.button.error',
                     'No pudimos iniciar el pago. Intenta de nuevo.'
                 );
-                setError(checkoutError);
+                // HOS-1321: read the rejection instead of flattening every one
+                // of them into "No pudimos iniciar el pago". `/start-paid`
+                // refuses a second live subscription with a 409 carrying
+                // `reason: 'ALREADY_SUBSCRIBED'` (HOS-1260 widened that guard
+                // to catch a live `tourist-vip`), and that generic sentence is
+                // what turned the refusal into a dead end: it reads as a
+                // transient payment failure, so the only thing it suggests is
+                // clicking again — which is deterministically refused again.
+                // `translateApiError` is the repo's own reason → code → status
+                // chain, so the specific copy is one `common.apiError.<REASON>`
+                // key away and an unmapped reason falls through to exactly the
+                // string this line used to hardcode.
+                //
+                // The rejection is handed over WITHOUT its `message`, and that
+                // is the whole of the safety here. `translateApiError`'s last
+                // step is `apiMessage || fallback`, and `apiMessage` is the
+                // API's ENGLISH text — reachable exactly when the response
+                // carried no machine-readable identifier at all (a raw upstream
+                // 502, a body with no `error` envelope, a network failure the
+                // client turns into `API request failed with status N`).
+                // Dropping the field makes that term empty, so every one of
+                // those falls to `checkoutError`: the same localized sentence
+                // this line used to hardcode, and English can never surface.
+                //
+                // Preferred over gating the call on `reason || code`, which was
+                // the first attempt: that also skipped the STATUS branch, so a
+                // 429 or a client-side timeout lost the specific copy
+                // (`RATE_LIMIT_EXCEEDED`, `TIMEOUT`) that already ships in all
+                // three locales. Stripping one field keeps every mapped branch
+                // and closes the only unmapped one.
+                //
+                // `result.ok` with a missing `checkoutUrl` carries no error
+                // object at all, and takes the same generic sentence.
+                const rejection = result.ok ? undefined : result.error;
+                setError(
+                    translateApiError({
+                        error: rejection ? { ...rejection, message: undefined } : undefined,
+                        t,
+                        fallback: checkoutError
+                    })
+                );
                 return;
             }
 

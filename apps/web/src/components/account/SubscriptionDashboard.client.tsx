@@ -119,6 +119,78 @@ function isCommerceVertical(domain: ProductDomainScope | undefined): domain is C
     return domain === 'gastronomy' || domain === 'experience';
 }
 
+/**
+ * Whether this dashboard is showing the ACCOMMODATION subscription (HOS-1321).
+ *
+ * Gates pause/resume, which are accommodation-specific in their copy AND in
+ * their effect. It exists because `commerceVertical === null` — the shape
+ * HOS-1278 used for the same job — is a NEGATION, and a fourth domain walks
+ * straight through it: `isCommerceVertical('tourist')` is `false`, so a
+ * `tourist-vip` holder was offered "Pausar" and a modal reading "tus
+ * alojamientos se ocultan del sitio y no podrás editarlos", about accommodation
+ * they do not have.
+ *
+ * ## The backend is NOT a backstop here — read that route per DIMENSION
+ *
+ * `POST /billing/subscriptions/pause` does two separable things and gates only
+ * one of them:
+ *
+ * - **Billing dimension** — `billing.subscriptions.pause(target.id)`
+ *   (`subscription-pause.ts:258`) pauses the MercadoPago preapproval and flips
+ *   the local status. It runs for EVERY domain, ungated.
+ * - **Service dimension** — `setOwnerServiceSuspension`, which hides the
+ *   owner's accommodations, is the only part wrapped in
+ *   `isAccommodationDomainSubscription` (`:414`), and that is what makes
+ *   `accommodationsUpdated` come back `0`.
+ *
+ * So a tourist pause was never impossible server-side: it really would have
+ * stopped their charges, and the modal's promise about hidden accommodation was
+ * the only part that could not happen. An earlier version of this comment said
+ * the route "fails closed for a non-accommodation domain", which is false —
+ * "fails closed" on a two-dimension route has to be read one dimension at a
+ * time.
+ *
+ * Known consequence, NOT introduced here: a `tourist-vip` who paused before
+ * HOS-1233 reclassified their row (while the accommodation dashboard still
+ * showed them a Pausar button) now lands on the tourist tab with
+ * `status: 'paused'`, where `canResume` is `false` and `canCancel` excludes
+ * `paused` — a paused subscription with no action on it. Strictly better than
+ * the "Sin suscripción activa" they saw before this spec, and commerce has
+ * carried the same gap since HOS-1278, so it is left alone rather than grown
+ * into this change.
+ *
+ * An INCLUSION list, so a fifth domain is excluded until somebody decides what
+ * pausing means for it and writes copy that is true.
+ *
+ * `undefined` counts as accommodation: the prop is optional and every caller
+ * that omits it is the accommodation dashboard (`userApi.getSubscription`
+ * defaults to that domain server-side).
+ */
+export function isAccommodationDashboard(domain: ProductDomainScope | undefined): boolean {
+    return domain === undefined || domain === 'accommodation';
+}
+
+/**
+ * Whether this dashboard changes plans through `PlanChangeFlow` and
+ * `POST /billing/subscriptions/change-plan` (HOS-1321).
+ *
+ * The accommodation AND tourist tabs do — `plan-domains.config.ts` files both
+ * catalogues under the accommodation plan-change machinery, and there is no
+ * second route for tourists the way commerce has one per vertical.
+ *
+ * Also an INCLUSION list, and for the same reason as
+ * {@link isAccommodationDashboard}: the two call sites below used to say
+ * `commerceVertical === null`, which hands the accommodation flow to every
+ * domain that is not one of the two commerce verticals — a fifth domain
+ * included. Listed instead, a fifth domain renders NO plan-change UI until
+ * somebody decides which flow it belongs to, which is dark rather than wrong.
+ */
+export function isAccommodationPlanChangeDashboard(
+    domain: ProductDomainScope | undefined
+): boolean {
+    return domain === undefined || domain === 'accommodation' || domain === 'tourist';
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -1032,27 +1104,34 @@ export function SubscriptionDashboard({
         (status === 'active' || status === 'trial' || status === 'courtesy') &&
         !isCancelScheduled &&
         !isComplimentary;
-    // HOS-1278: `commerceVertical === null` is the same defence in depth
-    // HOS-1213 put on `canChangePlan`'s modal (see the `showPlanChangeFlow`
-    // render below) — the pause/resume flow here is accommodation-specific
+    // HOS-1278: the pause/resume flow is accommodation-specific
     // (`PauseConfirmModal`'s copy literally says "tus alojamientos se ocultan",
     // and the backend's `accommodationsUpdated` effect is scoped to that
     // domain). Offering it on a commerce dashboard would show accommodation
     // copy to a gastronomy/experience owner and doesn't fit
     // `CommercePlanChange`'s per-vertical flow model. A dedicated commerce
     // pause UI (with correct copy) is a separate follow-up, not this fix.
+    //
+    // HOS-1321: gated on `isAccommodationDashboard`, NOT on the
+    // `commerceVertical === null` this used to say. That was a negation, and
+    // `tourist` — the fourth domain — walked straight through it: a
+    // `tourist-vip` holder was offered "Pausar" and told their accommodation
+    // would be hidden. The backend refuses the domain and reports
+    // `accommodationsUpdated: 0`, so the modal described an effect that would
+    // not happen. An inclusion list cannot be widened by adding a domain.
     const canPause =
         (status === 'active' || status === 'trial') &&
         !isCancelScheduled &&
         !isComplimentary &&
-        commerceVertical === null;
+        isAccommodationDashboard(productDomain);
     // HOS-236: a soft-cancelled subscription can end up `paused` (e.g. a
     // pre-existing stranded row). "Resume" must NOT be offered there — resuming
     // reactivates the MP preapproval and re-charges a subscription the user
     // already cancelled, while the "Cancelación programada" badge is shown right
     // next to it. Gate on `!isCancelScheduled`, mirroring canCancel/canPause.
-    // `commerceVertical === null` mirrors `canPause` above (HOS-1278).
-    const canResume = status === 'paused' && !isCancelScheduled && commerceVertical === null;
+    // The domain gate mirrors `canPause` above (HOS-1278 / HOS-1321).
+    const canResume =
+        status === 'paused' && !isCancelScheduled && isAccommodationDashboard(productDomain);
     // HOS-348 Part B: the ONE self-service action a past-due subscription
     // offers — mint a replacement preapproval. `past_due` never carries
     // `isComplimentary` (a comp is never charged, so it can never fail to
@@ -1205,8 +1284,15 @@ export function SubscriptionDashboard({
                     why this branch is not gated on a plan count the way the
                     accommodation one is. `canChangePlan` still gates it: that
                     predicate mirrors the backend's own `active | trialing` find,
-                    and the commerce route answers the same way. */}
-                {commerceVertical === null ? (
+                    and the commerce route answers the same way.
+
+                    HOS-1321: the accommodation branch is now selected by an
+                    inclusion list, not by `commerceVertical === null`. Same
+                    class of bug as `canPause` above — a negation hands this
+                    flow to every domain that is merely not-commerce, so a fifth
+                    one would silently POST to the accommodation change-plan
+                    route. Listed, it renders neither branch until classified. */}
+                {isAccommodationPlanChangeDashboard(productDomain) ? (
                     plans && plans.length > 0 ? (
                         <button
                             type="button"
@@ -1241,7 +1327,13 @@ export function SubscriptionDashboard({
                             {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
                         </a>
                     )
-                ) : canChangePlan && subscription ? (
+                ) : commerceVertical !== null && canChangePlan && subscription ? (
+                    // HOS-1321: the two branches are now selected by two
+                    // INDEPENDENT inclusion lists, so "not the accommodation
+                    // flow" no longer implies "a commerce vertical" — a fifth
+                    // domain is neither, and renders no plan-change UI at all.
+                    // The null check is what makes that a rendered `null`
+                    // instead of `CommercePlanChange` handed a null vertical.
                     <CommercePlanChange
                         vertical={commerceVertical}
                         currentPlanSlug={subscription.planSlug}
@@ -1498,13 +1590,15 @@ export function SubscriptionDashboard({
             )}
 
             {/* ── Plan-change flow modal (SPEC-203 T-005/T-007/T-008/T-009) ──
-               `commerceVertical === null` is defence in depth (HOS-1213): the CTA
-               that sets `showPlanChangeFlow` is not rendered on a commerce
-               dashboard, so this can only fire if a future edit reintroduces one.
-               It is cheap, and what it prevents is a commerce subscription being
-               offered accommodation plans — the exact bug this closes. */}
+               The domain gate is defence in depth (HOS-1213): the CTA that sets
+               `showPlanChangeFlow` is not rendered on a commerce dashboard, so
+               this can only fire if a future edit reintroduces one. It is cheap,
+               and what it prevents is a commerce subscription being offered
+               accommodation plans — the exact bug this closes. HOS-1321 turned
+               it from `commerceVertical === null` into the same inclusion list
+               the CTA uses, so the two cannot disagree about a new domain. */}
             {showPlanChangeFlow &&
-                commerceVertical === null &&
+                isAccommodationPlanChangeDashboard(productDomain) &&
                 plans &&
                 plans.length > 0 &&
                 subscription && (

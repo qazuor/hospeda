@@ -865,11 +865,13 @@
             },
             "titleGastronomy": "Assinatura de gastronomia",
             "titleExperience": "Assinatura de experiências",
+            "titleTourist": "Assinatura de turista",
             "domainSwitcher": {
                 "label": "Escolha qual assinatura ver",
                 "accommodation": "Hospedagem",
                 "gastronomy": "Gastronomia",
-                "experience": "Experiências"
+                "experience": "Experiências",
+                "tourist": "Turista"
             },
             "courtesyUntilLabel": "Sem cobrança até"
         },

@@ -865,11 +865,13 @@
             },
             "titleGastronomy": "Suscripción de gastronomía",
             "titleExperience": "Suscripción de experiencias",
+            "titleTourist": "Suscripción de turista",
             "domainSwitcher": {
                 "label": "Elegí qué suscripción ver",
                 "accommodation": "Alojamiento",
                 "gastronomy": "Gastronomía",
-                "experience": "Experiencias"
+                "experience": "Experiencias",
+                "tourist": "Turista"
             },
             "courtesyUntilLabel": "Sin cargo hasta"
         },

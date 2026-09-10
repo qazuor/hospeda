@@ -1,13 +1,17 @@
 /**
  * @file subscription-domain.test.ts
- * @description Unit tests for the three-way `/mi-cuenta/suscripcion/` domain
- * resolution helpers (HOS-689 item 3).
+ * @description Unit tests for the four-way `/mi-cuenta/suscripcion/` domain
+ * resolution helpers (HOS-689 item 3, widened to `tourist` by HOS-1321).
  */
 
 import { describe, expect, it } from 'vitest';
 import {
+    CHANGE_PLAN_RESOLVABLE_STATUSES,
     isSubscriptionDashboardDomain,
+    planChangeWouldResolveAnotherSubscription,
+    resolveAccommodationSubscriptionReading,
     resolveActiveSubscriptionDomain,
+    resolveDashboardPlanSource,
     SUBSCRIPTION_DASHBOARD_DOMAINS
 } from '../../../src/lib/billing/subscription-domain';
 
@@ -16,14 +20,17 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('SUBSCRIPTION_DASHBOARD_DOMAINS', () => {
-    it('is exactly the three domains — accommodation, gastronomy, experience (HOS-689 AC-21)', () => {
+    it('is exactly the four domains, tourist LAST (HOS-689 AC-21 / HOS-1321)', () => {
         // HOS-688 retired the binary 'accommodation' | 'commerce' union — the
-        // dashboard must resolve all three real subscription domains, never
-        // the transitional 'commerce' umbrella.
+        // dashboard must resolve all real subscription domains, never the
+        // transitional 'commerce' umbrella. HOS-1321 added 'tourist' as the
+        // fourth, and its POSITION is asserted, not just its presence: the
+        // resolver below lands an unqualified visitor on heldDomains[0].
         expect(SUBSCRIPTION_DASHBOARD_DOMAINS).toEqual([
             'accommodation',
             'gastronomy',
-            'experience'
+            'experience',
+            'tourist'
         ]);
     });
 });
@@ -37,6 +44,7 @@ describe('isSubscriptionDashboardDomain', () => {
         expect(isSubscriptionDashboardDomain('accommodation')).toBe(true);
         expect(isSubscriptionDashboardDomain('gastronomy')).toBe(true);
         expect(isSubscriptionDashboardDomain('experience')).toBe(true);
+        expect(isSubscriptionDashboardDomain('tourist')).toBe(true);
     });
 
     it('rejects the retired "commerce" umbrella value', () => {
@@ -99,5 +107,331 @@ describe('resolveActiveSubscriptionDomain', () => {
 
         // Assert
         expect(result).toBe('accommodation');
+    });
+
+    // -- HOS-1321: the tourist audience ------------------------------------
+
+    it('HOS-1321: a tourist-only holder lands on their OWN subscription, not an accommodation empty state', () => {
+        // Arrange & Act — the whole bug: before tourist was a selectable
+        // domain this resolved 'accommodation' and rendered "Sin suscripción
+        // activa" to a paying `tourist-vip` holder.
+        const result = resolveActiveSubscriptionDomain({
+            rawDomain: null,
+            heldDomains: ['tourist']
+        });
+
+        // Assert
+        expect(result).toBe('tourist');
+    });
+
+    it('HOS-1321: ?domain=tourist is honored explicitly (the switcher link)', () => {
+        // Arrange & Act
+        const result = resolveActiveSubscriptionDomain({
+            rawDomain: 'tourist',
+            heldDomains: ['accommodation', 'tourist']
+        });
+
+        // Assert
+        expect(result).toBe('tourist');
+    });
+
+    it('HOS-1321: the DUAL host+tourist holder defaults to accommodation, never tourist', () => {
+        // Arrange — host-onboarding auto-promotes a traveller to HOST without
+        // touching their tourist subscription, so one account legitimately
+        // holds both. HOS-1233 made the API's tourist resolution an ORDERED
+        // fallback for exactly this; the dashboard must not disagree with it.
+        // Fed in the order the page derives them (SUBSCRIPTION_DASHBOARD_DOMAINS).
+        const result = resolveActiveSubscriptionDomain({
+            rawDomain: null,
+            heldDomains: ['accommodation', 'tourist']
+        });
+
+        // Assert
+        expect(result).toBe('accommodation');
+    });
+
+    it('HOS-1321: a commerce owner who is ALSO a tourist defaults to their commerce vertical', () => {
+        // Arrange & Act — tourist is last in the priority order, so it only
+        // ever wins when nothing else is held.
+        const result = resolveActiveSubscriptionDomain({
+            rawDomain: null,
+            heldDomains: ['gastronomy', 'tourist']
+        });
+
+        // Assert
+        expect(result).toBe('gastronomy');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// resolveDashboardPlanSource
+// ---------------------------------------------------------------------------
+
+describe('resolveDashboardPlanSource', () => {
+    it('accommodation sends NO domain and defers the category to roles', () => {
+        // Arrange & Act
+        const result = resolveDashboardPlanSource({ domain: 'accommodation' });
+
+        // Assert — `undefined` is "send no ?domain=", which the endpoint
+        // answers with its accommodation default; `null` is "decide by roles"
+        // (BETA-173). Both unchanged.
+        expect(result).toEqual({
+            flow: 'accommodation',
+            planDomain: undefined,
+            category: null
+        });
+    });
+
+    it('HOS-1321: tourist fetches ?domain=tourist, pinned to the tourist category', () => {
+        // Arrange & Act — THE blocker. Since HOS-1233 the tourist tiers carry
+        // `product_domain = 'tourist'` (`plans.config.ts`, the seed, and
+        // data-migration 0103), and `listPlans.ts` excludes every out-of-domain
+        // plan from a no-domain fetch. A tourist tab that sent no domain got a
+        // catalogue with no tourist tiers in it, `filterPlansByCategory` yielded
+        // `[]`, and the "Cambiar plan" button was never rendered for anybody.
+        const result = resolveDashboardPlanSource({ domain: 'tourist' });
+
+        // Assert
+        expect(result).toEqual({
+            flow: 'accommodation',
+            planDomain: 'tourist',
+            category: 'tourist'
+        });
+    });
+
+    it('HOS-1321: tourist uses the accommodation plan-change flow, not the commerce one', () => {
+        // Arrange & Act — the other half: `productDomain !== 'accommodation'`
+        // would have posted a tourist plan change to
+        // `/protected/commerce/tourist/change-plan`.
+        const result = resolveDashboardPlanSource({ domain: 'tourist' });
+
+        // Assert
+        expect(result.flow).toBe('accommodation');
+    });
+
+    it.each([
+        'gastronomy',
+        'experience'
+    ] as const)('%s fetches its own vertical through the commerce flow', (domain) => {
+        // Arrange & Act
+        const result = resolveDashboardPlanSource({ domain });
+
+        // Assert
+        expect(result).toEqual({ flow: 'commerce', planDomain: domain, category: 'owner' });
+    });
+
+    it('accommodation is the ONLY tab that sends no ?domain=', () => {
+        // Arrange & Act & Assert — the property the blocker violated, stated
+        // once over the whole mapping so a fifth domain cannot inherit the
+        // accommodation default by omission.
+        for (const domain of SUBSCRIPTION_DASHBOARD_DOMAINS) {
+            const { planDomain } = resolveDashboardPlanSource({ domain });
+            if (domain === 'accommodation') {
+                expect(planDomain).toBeUndefined();
+            } else {
+                expect(planDomain).toBe(domain);
+            }
+        }
+    });
+
+    it('answers for every dashboard domain', () => {
+        // Arrange & Act & Assert — a fifth domain added to the list without a
+        // decision here fails this before it reaches a user.
+        for (const domain of SUBSCRIPTION_DASHBOARD_DOMAINS) {
+            expect(resolveDashboardPlanSource({ domain })).toBeDefined();
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// planChangeWouldResolveAnotherSubscription
+// ---------------------------------------------------------------------------
+
+describe('planChangeWouldResolveAnotherSubscription', () => {
+    it('HOS-1321: the DUAL host+tourist holder gets no plan change on their tourist tab', () => {
+        // Arrange & Act — `POST /billing/subscriptions/change-plan` takes no
+        // domain and resolves accommodation FIRST, so this tab's tourist tiers
+        // would be applied to the OWNER subscription: a paid host plan silently
+        // downgraded onto a tourist tier, with no error anywhere.
+        const result = planChangeWouldResolveAnotherSubscription({
+            domain: 'tourist',
+            accommodationSubscription: 'held'
+        });
+
+        // Assert
+        expect(result).toBe(true);
+    });
+
+    it('HOS-1321: an UNRESOLVED accommodation read withholds too — the guard fails CLOSED', () => {
+        // Arrange & Act — the read is one of four parallel SSR fetches and the
+        // client times out at 10s. Treating a failed read as "they have none"
+        // re-opens the bug through the failure mode of its own input: one 500
+        // and the dual holder lands here with a live plan change aimed at their
+        // owner row.
+        const result = planChangeWouldResolveAnotherSubscription({
+            domain: 'tourist',
+            accommodationSubscription: 'unknown'
+        });
+
+        // Assert
+        expect(result).toBe(true);
+    });
+
+    it('HOS-1321: a tourist-ONLY holder keeps their plan change', () => {
+        // Arrange & Act — with no accommodation subscription the route's
+        // ordered pair falls through to the tourist one, which is the row this
+        // tab is showing. Withholding here would strand the audience the tab
+        // was built for.
+        const result = planChangeWouldResolveAnotherSubscription({
+            domain: 'tourist',
+            accommodationSubscription: 'absent'
+        });
+
+        // Assert
+        expect(result).toBe(false);
+    });
+
+    it.each([
+        'accommodation',
+        'gastronomy',
+        'experience'
+    ] as const)('never withholds the plan change on the %s tab, whatever the accommodation read said', (domain) => {
+        // Arrange & Act — every other tab either IS the row the route
+        // resolves, or has its own per-vertical change route.
+        for (const reading of ['held', 'absent', 'unknown'] as const) {
+            // Assert
+            expect(
+                planChangeWouldResolveAnotherSubscription({
+                    domain,
+                    accommodationSubscription: reading
+                })
+            ).toBe(false);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// CHANGE_PLAN_RESOLVABLE_STATUSES
+// ---------------------------------------------------------------------------
+
+describe('CHANGE_PLAN_RESOLVABLE_STATUSES', () => {
+    it('is exactly the statuses change-plan selects on', () => {
+        // Arrange & Act & Assert — `plan-change.ts` filters
+        // `sub.status === 'active' || sub.status === 'trialing'` before calling
+        // `selectAccommodationSubscription`, and this endpoint reports
+        // `trialing` as `'trial'`. Anything wider withholds the tourist tab's
+        // plan change for an accommodation subscription that route would never
+        // have resolved.
+        expect(CHANGE_PLAN_RESOLVABLE_STATUSES).toEqual(['active', 'trial']);
+    });
+
+    // The statuses this ENDPOINT can actually report — `SUBSCRIPTION_STATUSES`
+    // in `routes/user/protected/subscription.ts`. Deliberately not the stored
+    // vocabulary: `'comp'` is absent from this list because the endpoint maps it
+    // to `'active'` on the way out, and `'trialing'` because it is reported as
+    // `'trial'`. An earlier version of this test asserted
+    // `not.toContain('comp')`, which passes forever — that string never travels
+    // this wire, so the assertion described nothing. A test of absence has to be
+    // written over the vocabulary the layer actually receives.
+    it.each([
+        'paused',
+        'past_due',
+        'courtesy',
+        'cancelled',
+        'expired',
+        'pending'
+    ])('does not include %s — change-plan cannot resolve it', (status) => {
+        // Arrange & Act & Assert
+        expect(CHANGE_PLAN_RESOLVABLE_STATUSES).not.toContain(status);
+    });
+
+    it('does not carry a stored-only spelling the endpoint never emits', () => {
+        // Arrange & Act & Assert — the flip side. `trialing` and `comp` are the
+        // STORED spellings; putting either here would be a value this list is
+        // compared against and never matches, which is a silent no-op rather
+        // than a visible mistake.
+        expect(CHANGE_PLAN_RESOLVABLE_STATUSES).not.toContain('trialing');
+        expect(CHANGE_PLAN_RESOLVABLE_STATUSES).not.toContain('comp');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// resolveAccommodationSubscriptionReading
+// ---------------------------------------------------------------------------
+
+describe('resolveAccommodationSubscriptionReading', () => {
+    it('reads a failed accommodation fetch as unknown, never as absent', () => {
+        // Arrange & Act — `undefined` is how the page spells "the read did not
+        // come back": a 500 (`ok: false`), the client's 10s timeout (408) or a
+        // dead network (status 0) all arrive here the same way.
+        const result = resolveAccommodationSubscriptionReading({ subscription: undefined });
+
+        // Assert
+        expect(result).toBe('unknown');
+    });
+
+    it('reads "no subscription" as absent', () => {
+        // Arrange & Act
+        const result = resolveAccommodationSubscriptionReading({ subscription: null });
+
+        // Assert
+        expect(result).toBe('absent');
+    });
+
+    it.each(['active', 'trial'])('reads a %s subscription as held', (status) => {
+        // Arrange & Act — the two the plan-change route really selects on.
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status, isComplimentary: false }
+        });
+
+        // Assert
+        expect(result).toBe('held');
+    });
+
+    it.each([
+        'paused',
+        'past_due',
+        'courtesy',
+        'cancelled',
+        'expired',
+        'pending'
+    ])('reads a %s subscription as absent — change-plan cannot resolve it', (status) => {
+        // Arrange & Act
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status, isComplimentary: false }
+        });
+
+        // Assert
+        expect(result).toBe('absent');
+    });
+
+    it('HOS-1321: a COMP subscription is absent, even though it arrives spelled "active"', () => {
+        // Arrange — the case the old `not.toContain('comp')` test could not
+        // reach. `QZPAY_STATUS_MAP` maps `comp → 'active'`, so `'comp'` never
+        // travels this wire and a status check alone reads a complimentary
+        // accommodation subscription as HELD. The effect was a holder of a comp
+        // accommodation plan plus a live `tourist-vip` being denied a tourist
+        // plan change that was perfectly safe — `plan-change.ts` selects on the
+        // STORED status and would never have resolved that row.
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status: 'active', isComplimentary: true }
+        });
+
+        // Assert
+        expect(result).toBe('absent');
+    });
+
+    it('treats a missing isComplimentary as not complimentary', () => {
+        // Arrange & Act — the flag is required on the wire, so its absence
+        // means the payload is not what we think it is. Reading it as "comp"
+        // would withhold from every ordinary subscriber; reading it as "not
+        // comp" degrades to the plain status check, which is this function's
+        // behaviour before the flag existed.
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status: 'active' }
+        });
+
+        // Assert
+        expect(result).toBe('held');
     });
 });
