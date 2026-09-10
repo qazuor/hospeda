@@ -861,7 +861,8 @@
                 "activeBody": "Your plan was changed successfully.",
                 "redirecting": "Redirecting to payment...",
                 "previewError": "Could not get the change preview. Please try again.",
-                "changeError": "Could not change the plan. Please try again."
+                "changeError": "Could not change the plan. Please try again.",
+                "goToPlans": "See plans and subscribe"
             },
             "titleGastronomy": "Gastronomy subscription",
             "titleExperience": "Experience subscription",

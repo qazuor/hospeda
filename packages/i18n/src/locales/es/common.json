@@ -76,6 +76,7 @@
         "PROVIDER_REVOKED": "Este proveedor ya no forma parte del directorio.",
         "ALREADY_EXISTS": "Ese recurso ya existe.",
         "ALREADY_SUBSCRIBED": "Ya tenés una suscripción activa. En Mi cuenta → Suscripción podés cambiar de plan dentro de la que tenés, o darla de baja para contratar una distinta.",
+        "TRIAL_REQUIRES_CHECKOUT": "Estás en tu prueba gratis, así que todavía no hay una suscripción que cambiar. Elegí el plan que quieras y activá tu suscripción: tu prueba se cierra sola cuando se confirma el pago.",
         "INTERNAL_ERROR": "Algo salió mal del lado nuestro. Intentá de nuevo en un momento.",
         "NETWORK_ERROR": "No pudimos conectar con el servidor. Probá de nuevo.",
         "TIMEOUT": "La solicitud tardó demasiado. Probá de nuevo.",
