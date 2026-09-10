@@ -42,10 +42,12 @@ const CONSUMER = { servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS } as const;
 
 describe('classifyAddonGrantDomain — the five verticals of the billing axis', () => {
     it('serves an ACCOMMODATION add-on', () => {
-        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-7d' })).toEqual({
-            kind: 'served',
-            domain: ProductDomainEnum.ACCOMMODATION
-        });
+        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-7d' })).toEqual(
+            {
+                kind: 'served',
+                domain: ProductDomainEnum.ACCOMMODATION
+            }
+        );
     });
 
     it('serves every accommodation add-on in the catalogue, not just the boost', () => {
@@ -69,13 +71,15 @@ describe('classifyAddonGrantDomain — the five verticals of the billing axis', 
         // `visibility-boost-gastronomy-7d` grants EntitlementKey.FEATURED_LISTING,
         // the same key the accommodation boost grants. The key cannot tell them
         // apart; only the add-on's declared domain can.
-        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-gastronomy-7d' })).toEqual(
-            {
-                kind: 'foreign',
-                domain: ProductDomainEnum.GASTRONOMY
-            }
-        );
-        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'extra-gastronomies-1' })).toEqual({
+        expect(
+            classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-gastronomy-7d' })
+        ).toEqual({
+            kind: 'foreign',
+            domain: ProductDomainEnum.GASTRONOMY
+        });
+        expect(
+            classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'extra-gastronomies-1' })
+        ).toEqual({
             kind: 'foreign',
             domain: ProductDomainEnum.GASTRONOMY
         });
@@ -88,10 +92,12 @@ describe('classifyAddonGrantDomain — the five verticals of the billing axis', 
             kind: 'foreign',
             domain: ProductDomainEnum.EXPERIENCE
         });
-        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'private-galleries-5' })).toEqual({
-            kind: 'foreign',
-            domain: ProductDomainEnum.EXPERIENCE
-        });
+        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'private-galleries-5' })).toEqual(
+            {
+                kind: 'foreign',
+                domain: ProductDomainEnum.EXPERIENCE
+            }
+        );
     });
 
     it('serves TOURIST for the consumer scope, which shares that loader with accommodation', () => {
