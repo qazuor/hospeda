@@ -52,6 +52,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { QZPAY_STORED_STATUS_ALIASES } from '../src/predicates/subscription-status-normalize.js';
 
 const PREDICATES_DIR = resolve(__dirname, '../src/predicates');
 const REPO_ROOT = resolve(__dirname, '../../..');
@@ -88,11 +89,29 @@ function stripComments(source: string): string {
     return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }
 
-/** Every `.ts` module in `src/predicates` that is not explicitly exempt. */
+/**
+ * Every `.ts` module under `src/predicates`, RECURSIVELY, that is not explicitly
+ * exempt. Paths are relative to that directory.
+ *
+ * Recursion is not hypothetical tidiness: the first cut used a flat
+ * `readdirSync` + `.endsWith('.ts')`, which silently drops every directory
+ * entry. A predicate added at `src/predicates/vertical/is-whatever.ts` simply did
+ * not appear in the scanned list, and the guard reported a pass — the same
+ * "checks less than it claims" shape as the name-shape rule this file already
+ * replaced once.
+ */
 function predicateModules(): readonly string[] {
-    return readdirSync(PREDICATES_DIR)
-        .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
-        .filter((name) => !EXEMPT_FILE_NAMES.has(name))
+    const walk = (dir: string, prefix: string): string[] =>
+        readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+            const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
+            if (entry.isDirectory()) {
+                return walk(resolve(dir, entry.name), rel);
+            }
+            return entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts') ? [rel] : [];
+        });
+
+    return walk(PREDICATES_DIR, '')
+        .filter((rel) => !EXEMPT_FILE_NAMES.has(rel))
         .sort();
 }
 
@@ -149,6 +168,36 @@ describe('HOS-1310 Part 1: every liveness predicate normalizes the stored status
                 'HOS-1310 closed it for the three predicates that existed. Normalize first, ' +
                 'or add the module to EXEMPT_MODULES with the reason it compares no status.'
         ).toMatch(new RegExp(`\\b${NORMALIZER}\\s*\\(`));
+
+        /*
+         * Calling it is not using it. This was a real hole, reproduced by hand:
+         *
+         *     normalizeStoredSubscriptionStatus(status);
+         *     return COVERED.has(status);
+         *
+         * satisfies the assertion above and compares the RAW value anyway. So the
+         * result has to be BOUND to an identifier, and that identifier has to be
+         * referenced again. The behavioural suite below is the real proof; this is
+         * the cheap structural half that also covers a module whose exports the
+         * prober cannot shape-match.
+         */
+        const binding = new RegExp(
+            `(?:const|let)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*${NORMALIZER}\\s*\\(`
+        ).exec(liveCode);
+        expect(
+            binding,
+            `${moduleName} calls ${NORMALIZER} without binding its result. Calling it and then ` +
+                'comparing the raw status is the bug wearing the fix as a costume.'
+        ).not.toBeNull();
+        const boundName = binding?.[1] ?? '';
+        const usesAfterBinding =
+            new RegExp(`\\b${boundName}\\b`, 'g').exec(
+                liveCode.slice((binding?.index ?? 0) + (binding?.[0]?.length ?? 0))
+            ) !== null;
+        expect(
+            usesAfterBinding,
+            `${moduleName} binds ${NORMALIZER}'s result to \`${boundName}\` and never reads it.`
+        ).toBe(true);
     });
 
     it('and the normalizer is imported from within the package, never re-declared', () => {
@@ -173,6 +222,117 @@ describe('HOS-1310 Part 1: every liveness predicate normalizes the stored status
                 `${moduleName} re-declares a qzpay spelling. The alias map lives in ` +
                     'subscription-status-normalize.ts and nowhere else.'
             ).not.toMatch(/['"]incomplete_expired['"]/);
+        }
+    });
+});
+
+/**
+ * Every exported function in the predicates barrel, probed for both call shapes
+ * the directory actually uses: a bare status string, and an input object with a
+ * `status` key. Derived from the module's own exports, so a fourth predicate is
+ * probed without being added anywhere.
+ */
+async function probeablePredicates(): Promise<
+    ReadonlyArray<{ readonly name: string; readonly call: (status: string) => boolean }>
+> {
+    const barrel = (await import('../src/predicates/index.js')) as Record<string, unknown>;
+    const found: Array<{ name: string; call: (status: string) => boolean }> = [];
+
+    for (const [name, value] of Object.entries(barrel)) {
+        if (typeof value !== 'function') {
+            continue;
+        }
+        const fn = value as (arg: unknown) => unknown;
+        // Shape A: fn(status). Shape B: fn({ status }). Whichever returns a
+        // boolean is the one this predicate speaks; a function that returns a
+        // boolean for neither is not a status predicate and is skipped.
+        const asString = (() => {
+            try {
+                return fn('active');
+            } catch {
+                return undefined;
+            }
+        })();
+        if (typeof asString === 'boolean') {
+            found.push({ name, call: (status) => fn(status) as boolean });
+            continue;
+        }
+        const asObject = (() => {
+            try {
+                // `cancelAtPeriodEnd: true` so the cancelled branch is reachable —
+                // HOS-1310 made it a requirement, and the point here is the
+                // SPELLING, not the payment evidence.
+                return fn({ status: 'active', cancelAtPeriodEnd: true });
+            } catch {
+                return undefined;
+            }
+        })();
+        if (typeof asObject === 'boolean') {
+            found.push({
+                name,
+                call: (status) => fn({ status, cancelAtPeriodEnd: true }) as boolean
+            });
+        }
+    }
+
+    return found;
+}
+
+describe('HOS-1310 Part 1b: BEHAVIOURAL — every predicate answers the alias like its twin', () => {
+    /*
+     * The assertions in Part 1 read source text. This reads answers, which is the
+     * only thing that can tell a normalizer that DECIDES from one that is merely
+     * called: the hand-planted
+     *
+     *     normalizeStoredSubscriptionStatus(status);
+     *     return COVERED.has(status);
+     *
+     * passes a textual check and fails every case below.
+     *
+     * Both the predicate list and the alias list are derived — from the barrel's
+     * own exports and from QZPAY_STORED_STATUS_ALIASES — so neither goes stale
+     * when a fifth predicate or a ninth alias lands.
+     */
+    it('finds predicates to probe — the derived probe is not vacuous', async () => {
+        const probes = await probeablePredicates();
+        expect(probes.length).toBeGreaterThanOrEqual(3);
+        expect(probes.map((probe) => probe.name).sort()).toEqual(
+            expect.arrayContaining([
+                'isEntitlementGrantingStatus',
+                'isLiveSubscriptionStatus',
+                'isSubscriptionLive'
+            ])
+        );
+    });
+
+    it('every probed predicate gives a qzpay alias its twin answer', async () => {
+        const probes = await probeablePredicates();
+        const aliases = Object.entries(QZPAY_STORED_STATUS_ALIASES);
+        expect(aliases.length).toBeGreaterThan(0);
+
+        const disagreements: string[] = [];
+        for (const { name, call } of probes) {
+            for (const [alias, hospedaStatus] of aliases) {
+                if (call(alias) !== call(hospedaStatus)) {
+                    disagreements.push(`${name}: '${alias}' !== '${hospedaStatus}'`);
+                }
+            }
+        }
+
+        expect(
+            disagreements,
+            'These predicates answer differently about ONE state depending on which layer ' +
+                `wrote the row:\n${disagreements.map((d) => `  - ${d}`).join('\n')}\n\n` +
+                'That is the HOS-108 mechanism. Route the status through ' +
+                'normalizeStoredSubscriptionStatus and compare the RESULT — calling it and then ' +
+                'comparing the raw value passes the source-level check in Part 1 and fails here.'
+        ).toEqual([]);
+    });
+
+    it('and an unknown spelling is refused by all of them (fails closed)', async () => {
+        const probes = await probeablePredicates();
+        for (const { name, call } of probes) {
+            expect(call('not-a-status'), `${name} accepted an unknown status`).toBe(false);
         }
     });
 });

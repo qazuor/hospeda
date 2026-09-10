@@ -36,8 +36,12 @@
  * All three normalize their input through
  * {@link normalizeStoredSubscriptionStatus} first, because the column they read
  * holds two vocabularies. A fourth predicate added to this directory must do the
- * same; `packages/billing/test/predicates-normalize-stored-status.guard.test.ts`
- * fails CI otherwise.
+ * same, and must BIND the result rather than merely calling it:
+ * `packages/billing/test/liveness-predicate-call-site.guard.test.ts` fails CI
+ * otherwise — on the source AND on the answers the predicate gives for every
+ * qzpay alias. (That path was wrong here until HOS-1310's review caught it: it
+ * named a file that has never existed, so anyone grepping it would have
+ * concluded there was no guard at all.)
  *
  * @module predicates
  */
