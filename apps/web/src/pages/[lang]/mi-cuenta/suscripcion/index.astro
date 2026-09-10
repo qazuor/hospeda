@@ -20,6 +20,7 @@ import { toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { userApi } from '@/lib/api/endpoints-protected';
 import {
 	resolveActiveSubscriptionDomain,
+	resolveDashboardPlanSource,
 	SUBSCRIPTION_DASHBOARD_DOMAINS,
 	type SubscriptionDashboardDomain
 } from '@/lib/billing/subscription-domain';
@@ -34,9 +35,9 @@ if (!user) {
 const { t } = createTranslations(locale);
 
 /**
- * HOS-259 / HOS-689: `?domain=<domain>` scopes the dashboard to one of the
- * owner's (up to three) independent subscriptions — accommodation,
- * gastronomy, experience (HOS-688 retired the old binary
+ * HOS-259 / HOS-689 / HOS-1321: `?domain=<domain>` scopes the dashboard to one
+ * of the caller's (up to four) independent subscriptions — accommodation,
+ * gastronomy, experience, tourist (HOS-688 retired the old binary
  * `'accommodation' | 'commerce'` union: commerce billing is per-VERTICAL
  * now, so `'commerce'` is no longer a real subscription scope). Used by the
  * commerce SUSPENDED recover CTA (`CommerceListingActions.client.tsx`,
@@ -48,6 +49,13 @@ const { t } = createTranslations(locale);
  * `?domain=` is given (HOS-689 AC-21: a commerce-only owner must land on
  * THEIR subscription, not an accommodation "no subscription" empty state),
  * and the domain switcher rendered below when the owner holds more than one.
+ *
+ * Every read here NAMES its domain, so none of them picks up the unqualified
+ * caller's accommodation→tourist fallback (HOS-1233). That is what keeps
+ * `heldDomains` honest: a tourist-only holder answers `null` for
+ * `?productDomain=accommodation` and a subscription for
+ * `?productDomain=tourist`, so they resolve to the tourist tab instead of an
+ * accommodation tab that reports a subscription it cannot manage.
  */
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 const domainSubscriptionResults = await Promise.all(
@@ -84,6 +92,10 @@ const TITLE_KEY_BY_DOMAIN: Record<SubscriptionDashboardDomain, { key: string; fa
 	experience: {
 		key: 'account.pages.subscription.titleExperience',
 		fallback: 'Suscripción de experiencias'
+	},
+	tourist: {
+		key: 'account.pages.subscription.titleTourist',
+		fallback: 'Suscripción de turista'
 	}
 };
 const title = t(TITLE_KEY_BY_DOMAIN[productDomain].key, TITLE_KEY_BY_DOMAIN[productDomain].fallback);
@@ -91,7 +103,8 @@ const title = t(TITLE_KEY_BY_DOMAIN[productDomain].key, TITLE_KEY_BY_DOMAIN[prod
 const DOMAIN_SWITCHER_LABEL_KEY: Record<SubscriptionDashboardDomain, { key: string; fallback: string }> = {
 	accommodation: { key: 'account.pages.subscription.domainSwitcher.accommodation', fallback: 'Alojamiento' },
 	gastronomy: { key: 'account.pages.subscription.domainSwitcher.gastronomy', fallback: 'Gastronomía' },
-	experience: { key: 'account.pages.subscription.domainSwitcher.experience', fallback: 'Experiencias' }
+	experience: { key: 'account.pages.subscription.domainSwitcher.experience', fallback: 'Experiencias' },
+	tourist: { key: 'account.pages.subscription.domainSwitcher.tourist', fallback: 'Turista' }
 };
 
 /** Link to this page scoped to one domain — accommodation omits `?domain=` (its historical default). */
@@ -136,12 +149,39 @@ const islandUser = {
  * matching the "Ver planes" CTA of BETA-165). It has no meaning in a commerce
  * vertical, whose tiers are all `category: 'owner'` and are separated from every
  * other catalogue by their product domain instead.
+ *
+ * ## Which catalogue is a lookup, not a negation (HOS-1321)
+ *
+ * This used to be `productDomain !== 'accommodation'`. With `tourist` added to
+ * `SUBSCRIPTION_DASHBOARD_DOMAINS` that negation classifies the tourist
+ * dashboard as a COMMERCE vertical: it would fetch `?domain=tourist` (no such
+ * catalogue — the tourist tiers are accommodation-domain plans separated by
+ * `category`), hand `CommercePlanChange` an empty list and post to
+ * `/protected/commerce/tourist/change-plan`. `resolveDashboardPlanSource` is
+ * the exhaustive lookup that replaces it, and it is unit-tested — a fifth
+ * domain fails to compile there rather than inheriting a flow nobody chose.
  */
-const isCommerceDomain = productDomain !== 'accommodation';
-const planCategory = hasAccommodationsNavAccess({ roles: islandUser.roles }) ? 'owner' : 'tourist';
-const plansResult = await fetchPublicPlans(isCommerceDomain ? { domain: productDomain } : {});
+const planSource = resolveDashboardPlanSource({ domain: productDomain });
+const isCommerceDomain = planSource.kind === 'commerce';
+/**
+ * The tourist dashboard PINS its category instead of deferring to roles: the
+ * owner's 2026-09-10 ruling is that a `tourist-vip` holder's "Cambiar plan"
+ * offers tourist plans only. Without the pin, a host who also holds a tourist
+ * subscription (host-onboarding auto-promotes travellers) would be offered the
+ * OWNER catalogue on their tourist tab — a plan change that would move the
+ * wrong subscription.
+ */
+const planCategory =
+	planSource.kind === 'accommodation' && planSource.category !== null
+		? planSource.category
+		: hasAccommodationsNavAccess({ roles: islandUser.roles })
+			? 'owner'
+			: 'tourist';
+const plansResult = await fetchPublicPlans(
+	planSource.kind === 'commerce' ? { domain: planSource.domain } : {}
+);
 
-/** Accommodation tiers for `PlanChangeFlow` — empty on a commerce dashboard. */
+/** Accommodation-catalogue tiers for `PlanChangeFlow` — empty on a commerce dashboard. */
 const availablePlans =
 	!isCommerceDomain && plansResult.ok
 		? filterPlansByCategory(plansResult.plans, planCategory)

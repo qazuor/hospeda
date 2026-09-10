@@ -865,11 +865,13 @@
             },
             "titleGastronomy": "Gastronomy subscription",
             "titleExperience": "Experience subscription",
+            "titleTourist": "Traveler subscription",
             "domainSwitcher": {
                 "label": "Choose which subscription to view",
                 "accommodation": "Accommodation",
                 "gastronomy": "Gastronomy",
-                "experience": "Experiences"
+                "experience": "Experiences",
+                "tourist": "Traveler"
             },
             "courtesyUntilLabel": "No charge until"
         },
