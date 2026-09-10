@@ -59,6 +59,21 @@ status stays `active` until the `finalize-cancelled-subs` cron flips it to `canc
 header. This is not a "grace period" in the traditional sense; it is the natural behavior of
 scheduled cancellation.
 
+### Not a fourth grace: the drift-reconcile latency tolerance (HOS-914)
+
+`subscription-drift-reconcile` skips any row touched within
+`DRIFT_TOLERANCE_MINUTES` (15) before re-reading its preapproval at MercadoPago.
+That window looks like a grace period and is not one, so it deliberately does
+**not** reuse `BILLING_CRON_LAG_GRACE_HOURS`.
+
+The three mechanisms above all answer *how long does a customer keep access*.
+This one answers *how long before a webhook that has not arrived is presumed
+lost* — it gates a READ, grants nobody anything, and changes no entitlement. The
+two must not be unified: widening the tolerance to the 6-hour cron-lag value
+would leave a real divergence uncorrected for most of a working day, and
+narrowing the cron-lag grace to 15 minutes would reap subscriptions whose renewal
+webhook is merely late.
+
 ---
 
 ## Past-due dunning grace

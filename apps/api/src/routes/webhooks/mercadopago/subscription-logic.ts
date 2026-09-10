@@ -64,6 +64,7 @@ import {
     DEFAULT_RETURN_URL_LOCALE
 } from '../../billing/checkout-return-urls.js';
 import { routeAddonPreapprovalEvent } from './addon-recurring-handler.js';
+import { markProviderReadFailure } from './provider-read-failure.js';
 
 /**
  * Safety margin timeout before MercadoPago's 22s webhook deadline.
@@ -472,12 +473,59 @@ interface ProcessSubscriptionUpdatedInput {
     readonly source?: string;
 }
 
+/**
+ * WHY this call ended where it did (HOS-914).
+ *
+ * `statusChanged: false` is returned from nine distinct situations and only ONE of
+ * them means "local and provider already agree". The rest are divergences that
+ * could not be applied — an illegal transition, an unrecognised stored status, a
+ * provider status we do not map, a soft-cancel guard, a row that vanished under
+ * the lock. A caller that reads the boolean alone cannot tell them apart, and
+ * `subscription-drift-reconcile` reported the worst case ("paused locally,
+ * `finished` at MercadoPago, transition refused") as *"already in sync"* — the one
+ * sentence the system's last safety net must never be able to say about a row that
+ * is, in fact, diverging.
+ *
+ * So the reason is reported by the code that knows it, rather than inferred by the
+ * caller. `already_in_sync` is the only benign value; `status_written` is the only
+ * one that wrote.
+ */
+export type SubscriptionUpdateOutcome =
+    /** The status was written. Accompanied by `statusChanged: true`. */
+    | 'status_written'
+    /** Local status already equals the derived target. The one benign no-op. */
+    | 'already_in_sync'
+    /** The event carried no preapproval id. */
+    | 'no_provider_id'
+    /** The preapproval belongs to a recurring add-on; the add-on path handled it. */
+    | 'addon_routed'
+    /** MercadoPago reports `pending`; nothing is decided yet. */
+    | 'provider_pending'
+    /** MercadoPago reported a status this codebase does not map. */
+    | 'provider_status_unknown'
+    /** No local row matches this preapproval (and linking did not produce one). */
+    | 'local_row_not_found'
+    /** The stored status does not map to Hospeda vocabulary — a data-integrity bug. */
+    | 'stored_status_unrecognized'
+    /** The state machine refused the transition. A REAL, unapplied divergence. */
+    | 'transition_refused'
+    /** The known legacy ACTIVE→TRIALING no-op, deliberately not auto-corrected. */
+    | 'transition_refused_legacy_active_to_trialing'
+    /** PAUSED skipped because the row is inside its soft-cancel grace. */
+    | 'soft_cancel_grace';
+
 /** Result of processing a subscription_preapproval.updated event */
-interface ProcessSubscriptionUpdatedResult {
+export interface ProcessSubscriptionUpdatedResult {
     readonly success: boolean;
     readonly statusChanged: boolean;
     readonly newStatus?: string;
     readonly error?: string;
+    /**
+     * Why this call ended where it did. Optional only so the two `success: false`
+     * early exits in the callers' own error paths need not invent one; every
+     * return inside {@link processSubscriptionUpdated} sets it.
+     */
+    readonly outcome?: SubscriptionUpdateOutcome;
 }
 
 /**
@@ -506,7 +554,7 @@ export async function processSubscriptionUpdated({
             { eventId: event.id, source },
             'No subscription ID found in webhook event data'
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'no_provider_id' };
     }
 
     // Step 1b (HOS-847 PR 5): route an ADD-ON's own preapproval away from every
@@ -540,7 +588,7 @@ export async function processSubscriptionUpdated({
             },
             'HOS-847: preapproval belongs to a recurring add-on — handled by the add-on path, never as a plan subscription'
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'addon_routed' };
     }
 
     apiLogger.info(
@@ -556,6 +604,15 @@ export async function processSubscriptionUpdated({
             Sentry.captureException(error, {
                 extra: { mpPreapprovalId: maskId(mpPreapprovalId), providerEventId, source }
             });
+            // HOS-914: stamp the error as having come from THIS read before it
+            // leaves. Everything below this line can also throw — the status
+            // write, the audit insert, a notification, a reconciler bridge — and
+            // a caller that cannot tell those apart from a provider read will
+            // misattribute them. `subscription-drift-reconcile` in particular
+            // reports an unresolvable preapproval as an anomaly for a human, and
+            // a mailer error whose message happens to contain "not found" would
+            // otherwise send someone hunting for a preapproval that is fine.
+            markProviderReadFailure(error);
             throw error;
         });
 
@@ -576,7 +633,7 @@ export async function processSubscriptionUpdated({
             { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
             'Subscription in pending state - no status change applied'
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'provider_pending' };
     }
 
     if (providerStatus === undefined) {
@@ -588,7 +645,7 @@ export async function processSubscriptionUpdated({
         Sentry.captureException(new Error(`Unknown QZPay subscription status: ${qzpayStatus}`), {
             extra: { mpPreapprovalId: maskId(mpPreapprovalId), providerEventId, source }
         });
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'provider_status_unknown' };
     }
 
     // Step 5: Query local subscription via direct Drizzle query.
@@ -646,7 +703,7 @@ export async function processSubscriptionUpdated({
                 },
                 `No local subscription found for mp_subscription_id=${maskId(mpPreapprovalId)} (HOS-191 link outcome: ${linkResult.outcome})`
             );
-            return { success: true, statusChanged: false };
+            return { success: true, statusChanged: false, outcome: 'local_row_not_found' };
         }
     }
 
@@ -806,7 +863,7 @@ export async function processSubscriptionUpdated({
             'Subscription webhook: stored status not recognized — skipping status write and side effects',
             { capture: true }
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'stored_status_unrecognized' };
     }
 
     if (previousStatus === mappedStatus) {
@@ -822,7 +879,7 @@ export async function processSubscriptionUpdated({
             { subscriptionId: localSubscription.id, status: mappedStatus, source },
             `No status change for subscription ${localSubscription.id}: still ${mappedStatus}`
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'already_in_sync' };
     }
 
     // Step 6b: Guard — verify the transition is permitted by the state machine
@@ -883,7 +940,11 @@ export async function processSubscriptionUpdated({
                 },
                 'Subscription webhook: expected ACTIVE→TRIALING no-op for a legacy pre-HOS-211 row (activated before the trial-sync fix, trial_end was never populated) — state machine intentionally does not auto-correct this; skipping status write'
             );
-            return { success: true, statusChanged: false };
+            return {
+                success: true,
+                statusChanged: false,
+                outcome: 'transition_refused_legacy_active_to_trialing'
+            };
         }
 
         // SPEC-180: invalid transitions are actionable (indicate MP/local state divergence).
@@ -901,7 +962,7 @@ export async function processSubscriptionUpdated({
             'Subscription webhook: invalid status transition — skipping status write and all dependent side effects',
             { capture: true }
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'transition_refused' };
     }
 
     // Step 7: Update billing_subscriptions and insert audit log in a single transaction.
@@ -959,6 +1020,19 @@ export async function processSubscriptionUpdated({
     // whether to run the post-commit side effects (notifications, addon cleanup, etc.).
     let txStatusChanged = true;
 
+    /**
+     * Why the transaction wrote nothing, when it wrote nothing (HOS-914). Set
+     * beside every `txStatusChanged = false` so the post-commit return can report
+     * the reason instead of collapsing six distinct outcomes — including a refused
+     * transition, which is a real divergence — into one bare `false`.
+     *
+     * Initialised to the refused-transition value rather than to `already_in_sync`:
+     * if a future branch sets `txStatusChanged = false` and forgets to set this,
+     * the result errs toward "something was wrong here" rather than toward the one
+     * value that means "nothing to see".
+     */
+    let txOutcome: SubscriptionUpdateOutcome = 'transition_refused';
+
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
@@ -990,6 +1064,7 @@ export async function processSubscriptionUpdated({
                 'Subscription webhook tx: row not found under FOR UPDATE lock — skipping write'
             );
             txStatusChanged = false;
+            txOutcome = 'local_row_not_found';
             return;
         }
 
@@ -1011,6 +1086,7 @@ export async function processSubscriptionUpdated({
                 { capture: true }
             );
             txStatusChanged = false;
+            txOutcome = 'stored_status_unrecognized';
             return;
         }
 
@@ -1021,6 +1097,7 @@ export async function processSubscriptionUpdated({
                 'Subscription webhook tx: status already up-to-date (concurrent write) — skipping'
             );
             txStatusChanged = false;
+            txOutcome = 'already_in_sync';
             return;
         }
 
@@ -1055,6 +1132,7 @@ export async function processSubscriptionUpdated({
                 'Subscription webhook tx: skipping PAUSED transition — intentional soft-cancel grace period'
             );
             txStatusChanged = false;
+            txOutcome = 'soft_cancel_grace';
             return;
         }
 
@@ -1093,6 +1171,7 @@ export async function processSubscriptionUpdated({
                     'Subscription webhook tx: expected ACTIVE→TRIALING no-op for a legacy pre-HOS-211 row (activated before the trial-sync fix, trial_end was never populated) — state machine intentionally does not auto-correct this; committing nothing'
                 );
                 txStatusChanged = false;
+                txOutcome = 'transition_refused_legacy_active_to_trialing';
                 return;
             }
 
@@ -1113,6 +1192,7 @@ export async function processSubscriptionUpdated({
                 { capture: true }
             );
             txStatusChanged = false;
+            txOutcome = 'transition_refused';
             return;
         }
 
@@ -1236,7 +1316,7 @@ export async function processSubscriptionUpdated({
     // If the tx-internal guard determined no write happened (stale-read scenario),
     // skip all post-commit side effects and return statusChanged:false.
     if (!txStatusChanged) {
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: txOutcome };
     }
 
     // Clear entitlement cache to reflect status change immediately
@@ -1707,7 +1787,12 @@ export async function processSubscriptionUpdated({
             { error: lookupError, subscriptionId: localSubscription.id },
             'Failed to fetch customer/plan for notification. Status update succeeded, skipping notifications.'
         );
-        return { success: true, statusChanged: true, newStatus: mappedStatus };
+        return {
+            success: true,
+            statusChanged: true,
+            newStatus: mappedStatus,
+            outcome: 'status_written'
+        };
     }
 
     // `plan.name` from the qzpay adapter is the SLUG (`owner-basico`) — fine for
@@ -1879,7 +1964,12 @@ export async function processSubscriptionUpdated({
     }
 
     // Step 10: Return success
-    return { success: true, statusChanged: true, newStatus: mappedStatus };
+    return {
+        success: true,
+        statusChanged: true,
+        newStatus: mappedStatus,
+        outcome: 'status_written'
+    };
 }
 
 // GAP-043-53, CORRECTED BY HOS-847 PR 5. The comment that stood here was wrong,

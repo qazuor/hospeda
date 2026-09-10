@@ -666,7 +666,7 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert
-        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(result).toEqual({ success: true, statusChanged: false, outcome: 'no_provider_id' });
         expect(mockRetrieve).not.toHaveBeenCalled();
     });
 
@@ -719,7 +719,11 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert
-        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(result).toEqual({
+            success: true,
+            statusChanged: false,
+            outcome: 'provider_pending'
+        });
         // HOS-847 PR 5: the add-on routing lookup at step 1b runs before this
         // early return, so `select` is no longer never-called. What the
         // assertion has always meant — no PLAN-subscription read, and no write
@@ -769,7 +773,7 @@ describe('processSubscriptionUpdated', () => {
         // matters — the plan-subscription read never happened and no transaction
         // was opened. Without the routing this fixture activates a subscription,
         // writes an audit row and dispatches notifications.
-        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(result).toEqual({ success: true, statusChanged: false, outcome: 'addon_routed' });
         expect(dbMock.subscriptionSelectChain.limit).not.toHaveBeenCalled();
         expect(dbMock.transaction).not.toHaveBeenCalled();
     });
@@ -795,7 +799,11 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert
-        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(result).toEqual({
+            success: true,
+            statusChanged: false,
+            outcome: 'provider_status_unknown'
+        });
         expect(Sentry.captureException).toHaveBeenCalledWith(
             expect.objectContaining({ message: expect.stringContaining('Unknown QZPay') }),
             expect.objectContaining({
@@ -833,7 +841,11 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert
-        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(result).toEqual({
+            success: true,
+            statusChanged: false,
+            outcome: 'local_row_not_found'
+        });
         expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
@@ -887,7 +899,11 @@ describe('processSubscriptionUpdated', () => {
                 providerEventId: 'evt-hos191-b'
             });
 
-            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(result).toEqual({
+                success: true,
+                statusChanged: false,
+                outcome: 'local_row_not_found'
+            });
             expect(dbMock.transaction).not.toHaveBeenCalled();
         });
 
@@ -922,7 +938,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.ACTIVE
+                newStatus: SubscriptionStatusEnum.ACTIVE,
+                outcome: 'status_written'
             });
             expect(dbMock.transaction).toHaveBeenCalled();
         });
@@ -951,7 +968,7 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert
-        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(result).toEqual({ success: true, statusChanged: false, outcome: 'already_in_sync' });
         expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
@@ -980,7 +997,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.CANCELLED
+            newStatus: SubscriptionStatusEnum.CANCELLED,
+            outcome: 'status_written'
         });
         expect(dbMock.transaction).toHaveBeenCalled();
         expect(dbMock.tx.update).toHaveBeenCalled();
@@ -1029,7 +1047,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.CANCELLED
+                newStatus: SubscriptionStatusEnum.CANCELLED,
+                outcome: 'status_written'
             });
 
             expect(sendNotification).toHaveBeenCalledWith(
@@ -1106,7 +1125,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.CANCELLED
+                newStatus: SubscriptionStatusEnum.CANCELLED,
+                outcome: 'status_written'
             });
         });
 
@@ -1158,7 +1178,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.PAUSED
+            newStatus: SubscriptionStatusEnum.PAUSED,
+            outcome: 'status_written'
         });
         expect(dbMock.transaction).toHaveBeenCalled();
         expect(dbMock.tx.update).toHaveBeenCalled();
@@ -1211,7 +1232,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.TRIALING
+            newStatus: SubscriptionStatusEnum.TRIALING,
+            outcome: 'status_written'
         });
         expect(dbMock.tx.update).toHaveBeenCalled();
 
@@ -1253,7 +1275,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.ACTIVE
+            newStatus: SubscriptionStatusEnum.ACTIVE,
+            outcome: 'status_written'
         });
 
         // Verify the update included cancelAtPeriodEnd: false
@@ -1295,7 +1318,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.ACTIVE
+            newStatus: SubscriptionStatusEnum.ACTIVE,
+            outcome: 'status_written'
         });
 
         const txUpdateChain = dbMock.tx.update({});
@@ -1339,7 +1363,11 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert: no status change, and the transaction was never opened.
-        expect(result).toEqual({ success: true, statusChanged: false });
+        expect(result).toEqual({
+            success: true,
+            statusChanged: false,
+            outcome: 'stored_status_unrecognized'
+        });
         expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
@@ -1437,7 +1465,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.ACTIVE
+            newStatus: SubscriptionStatusEnum.ACTIVE,
+            outcome: 'status_written'
         });
         // …but the soft-cancel flag is preserved (NOT reset to false), so the
         // finalization cron will still honour the user's cancellation.
@@ -1476,7 +1505,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.ACTIVE
+            newStatus: SubscriptionStatusEnum.ACTIVE,
+            outcome: 'status_written'
         });
         const txUpdateChain = dbMock.tx.update({});
         expect(txUpdateChain.set).toHaveBeenCalledWith(
@@ -1549,7 +1579,8 @@ describe('processSubscriptionUpdated', () => {
         ).resolves.toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.CANCELLED
+            newStatus: SubscriptionStatusEnum.CANCELLED,
+            outcome: 'status_written'
         });
     });
 
@@ -1581,7 +1612,8 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({
             success: true,
             statusChanged: true,
-            newStatus: SubscriptionStatusEnum.PAUSED
+            newStatus: SubscriptionStatusEnum.PAUSED,
+            outcome: 'status_written'
         });
         expect(dbMock.transaction).toHaveBeenCalled();
         expect(dbMock.tx.update).toHaveBeenCalled();
@@ -2584,7 +2616,11 @@ describe('processSubscriptionUpdated', () => {
 
             // Assert: no-op, no status write, no transaction opened at all
             // (Step 6b's fast-path guard fires before withServiceTransaction).
-            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(result).toEqual({
+                success: true,
+                statusChanged: false,
+                outcome: 'transition_refused_legacy_active_to_trialing'
+            });
             expect(dbMock.transaction).not.toHaveBeenCalled();
 
             // Warn, not error — and critically WITHOUT `{ capture: true }`, so this
@@ -2653,7 +2689,11 @@ describe('processSubscriptionUpdated', () => {
 
             // Assert: the transaction DID open (Step 6b passed), but no write
             // committed — the in-tx guard caught the fresh ACTIVE→TRIALING case.
-            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(result).toEqual({
+                success: true,
+                statusChanged: false,
+                outcome: 'transition_refused_legacy_active_to_trialing'
+            });
             expect(dbMock.transaction).toHaveBeenCalled();
             expect(dbMock.tx.update).not.toHaveBeenCalled();
 
@@ -3114,7 +3154,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.COURTESY
+                newStatus: SubscriptionStatusEnum.COURTESY,
+                outcome: 'status_written'
             });
             expect(dbMock.tx.update).toHaveBeenCalled();
         });
@@ -3152,7 +3193,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.PAUSED
+                newStatus: SubscriptionStatusEnum.PAUSED,
+                outcome: 'status_written'
             });
             expect(dbMock.tx.update).toHaveBeenCalled();
         });
@@ -3412,7 +3454,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.CANCELLED
+                newStatus: SubscriptionStatusEnum.CANCELLED,
+                outcome: 'status_written'
             });
             expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -3829,7 +3872,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.ACTIVE
+                newStatus: SubscriptionStatusEnum.ACTIVE,
+                outcome: 'status_written'
             });
             expect(mockCancel).toHaveBeenCalledTimes(1);
             expect(mockCancel).toHaveBeenCalledWith('sub-old-trial-001');
@@ -4089,7 +4133,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.ACTIVE
+                newStatus: SubscriptionStatusEnum.ACTIVE,
+                outcome: 'status_written'
             });
             expect(mockCancel).toHaveBeenCalledWith('sub-old-trial-001');
             expect(mockGet).toHaveBeenCalledWith('sub-old-trial-001');
@@ -4179,7 +4224,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.ACTIVE
+                newStatus: SubscriptionStatusEnum.ACTIVE,
+                outcome: 'status_written'
             });
             expect(mockCancel).not.toHaveBeenCalled();
             expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
@@ -4220,7 +4266,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.PAUSED
+                newStatus: SubscriptionStatusEnum.PAUSED,
+                outcome: 'status_written'
             });
             expect(mockCancel).not.toHaveBeenCalled();
             expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
@@ -4253,7 +4300,11 @@ describe('processSubscriptionUpdated', () => {
             });
 
             // Assert
-            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(result).toEqual({
+                success: true,
+                statusChanged: false,
+                outcome: 'provider_pending'
+            });
             // HOS-847 PR 5: the add-on routing lookup at step 1b runs before this
             // early return. `subscriptionSelectLimit` counts only the PLAN reads,
             // which is what this assertion has always been about.
@@ -4307,7 +4358,8 @@ describe('processSubscriptionUpdated', () => {
             expect(result).toEqual({
                 success: true,
                 statusChanged: true,
-                newStatus: SubscriptionStatusEnum.ACTIVE
+                newStatus: SubscriptionStatusEnum.ACTIVE,
+                outcome: 'status_written'
             });
             expect(mockCancel).not.toHaveBeenCalled();
             expect(dbMock.topLevelInsertValues).not.toHaveBeenCalled();
@@ -4375,7 +4427,11 @@ describe('processSubscriptionUpdated', () => {
 
             // Assert: second delivery is a no-op (already up to date); cancel and
             // audit insert counts are UNCHANGED from after the first delivery.
-            expect(secondResult).toEqual({ success: true, statusChanged: false });
+            expect(secondResult).toEqual({
+                success: true,
+                statusChanged: false,
+                outcome: 'already_in_sync'
+            });
             expect(mockCancel).toHaveBeenCalledTimes(1);
             expect(dbMockFirstDelivery.topLevelInsertValues).toHaveBeenCalledTimes(1);
             expect(dbMockSecondDelivery.topLevelInsertValues).not.toHaveBeenCalled();

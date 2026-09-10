@@ -56,6 +56,7 @@ export { reactivationSupersessionReconcileJob } from './reactivation-supersessio
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
+export { subscriptionDriftReconcileJob } from './subscription-drift-reconcile.job.js';
 export { subscriptionPollJob } from './subscription-poll.job.js';
 export { trialExpiryJob } from './trial-expiry.js';
 export { viewMonthlyRollupJob } from './view-monthly-rollup.job.js';

@@ -268,6 +268,10 @@ const HAND_ROLLED_SCAN_EXCLUSIONS: ReadonlyArray<{
         why: 'Its own docstring: comp has no preapproval and must never be reaped — excluded by the status filter, deliberately.'
     },
     {
+        file: 'cron/jobs/subscription-drift-reconcile.job.ts',
+        why: 'Its entire population is "rows that HAVE a MercadoPago preapproval" (isNotNull(mpSubscriptionId)): it GETs the preapproval and re-applies the provider verdict. A comp has none by design, so it is not a dropped entitlement but a row that cannot occur in this set. The allowlist is also not the entitlement-granting set wearing a disguise — it carries paused and past_due, which that set does not and must not contain (HOS-914).'
+    },
+    {
         file: 'routes/billing/admin/qzpay-admin-hooks.ts',
         why: 'Guards on "MercadoPago only accepts pausing an active preapproval".'
     },

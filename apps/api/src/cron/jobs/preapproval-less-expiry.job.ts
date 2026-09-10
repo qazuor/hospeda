@@ -147,7 +147,11 @@ export function isOrphanedElapsedSubscription(input: {
 }): boolean {
     const { row, now, graceHours } = input;
 
-    // A preapproval means the normal reconcilers own this row. Anything
+    // A preapproval means another sweep owns this row — `subscription-poll`
+    // while the checkout is still resolving, and `subscription-drift-reconcile`
+    // (HOS-914) once it is live. That second half only became true with HOS-914:
+    // until then nothing re-read the provider status of an `active`/`paused` row,
+    // so this line's conclusion was right and its stated reason was not. Anything
     // non-null counts, including a blank string: an empty id is a data problem,
     // not a licence to expire someone's subscription. This mirrors the SQL
     // filter, which uses IS NULL and likewise never matches an empty string.

@@ -362,6 +362,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Expire active/trialing subscriptions that have no MercadoPago preapproval and whose period elapsed (H-21). Without a preapproval they are invisible to subscription-poll and to dunning, so nothing else ever moves them out of active.'
     },
     {
+        name: 'subscription-drift-reconcile',
+        displayName: 'Divergencias con MercadoPago',
+        category: 'billing',
+        schedule: '17 * * * *',
+        description:
+            'Re-read every non-terminal subscription that holds a MercadoPago preapproval and re-apply the provider verdict through the webhook transition (HOS-914). Catches the divergence a lost webhook leaves behind, which no other sweep looks for. A preapproval MercadoPago cannot resolve is reported for a human, never cancelled.'
+    },
+    {
         name: 'partner-payment-review',
         displayName: 'Aliados sin pago registrado',
         category: 'billing',

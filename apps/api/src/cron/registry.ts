@@ -47,6 +47,7 @@ import {
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
+    subscriptionDriftReconcileJob,
     subscriptionPollJob,
     trialExpiryJob,
     viewMonthlyRollupJob,
@@ -110,7 +111,12 @@ export const cronJobs: CronJobDefinition[] = [
     entitySubscriptionCacheReconcileJob,
     featuredByEntitlementReconcileJob,
     reactivationSupersessionReconcileJob,
-    preapprovalLessExpiryJob
+    preapprovalLessExpiryJob,
+    // Registered next to preapproval-less-expiry because the two are exact
+    // complements: that job owns rows with NO preapproval, this one owns the
+    // rows that HAVE one and whose provider status nothing else re-reads
+    // (HOS-914).
+    subscriptionDriftReconcileJob
 ];
 
 /**
