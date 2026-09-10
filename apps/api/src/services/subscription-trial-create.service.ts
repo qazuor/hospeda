@@ -29,6 +29,7 @@ import {
     billingPlans,
     billingSubscriptions,
     type DrizzleClient,
+    entitySubscriptions,
     eq,
     getDb,
     withTransaction
@@ -89,6 +90,19 @@ export interface CreateTrialSubscriptionInput {
      * `new Date()` call, so the window cannot straddle a tick.
      */
     readonly now?: Date;
+    /**
+     * Optional listing to attach to this trial inside the SAME transaction.
+     *
+     * When set, the `entity_subscriptions` link row is upserted as part of the
+     * subscription insert, so the two writes commit together or neither commits.
+     * The visibility reconcile is deliberately NOT done here — it happens
+     * after-commit in the caller, because reconciling on uncommitted data would
+     * publish a listing that may still roll back.
+     */
+    readonly attachEntity?: {
+        readonly entityType: string;
+        readonly entityId: string;
+    };
 }
 
 /**
@@ -131,7 +145,7 @@ export interface CreateTrialSubscriptionResult {
 export async function createTrialSubscription(
     input: CreateTrialSubscriptionInput
 ): Promise<CreateTrialSubscriptionResult> {
-    const { customerId, planId, productDomain, livemode, tx } = input;
+    const { customerId, planId, productDomain, livemode, tx, attachEntity } = input;
     const trialDays = input.trialDays ?? OWNER_TRIAL_DAYS;
 
     if (!Number.isInteger(trialDays) || trialDays <= 0) {
@@ -197,6 +211,32 @@ export async function createTrialSubscription(
                 trialDays
             }
         });
+
+        // HOS-1338: upsert the entity link row INSIDE the same transaction as
+        // the subscription insert, so the two writes commit together or neither
+        // commits. The visibility reconcile is deliberately NOT done here — it
+        // happens after-commit in the caller, because reconciling on uncommitted
+        // data would publish a listing that may still roll back.
+        if (attachEntity) {
+            await client
+                .insert(entitySubscriptions)
+                .values({
+                    subscriptionId: localSubscriptionId,
+                    productDomain,
+                    entityType: attachEntity.entityType,
+                    entityId: attachEntity.entityId,
+                    status: SubscriptionStatusEnum.TRIALING
+                })
+                .onConflictDoUpdate({
+                    target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
+                    set: {
+                        subscriptionId: localSubscriptionId,
+                        status: SubscriptionStatusEnum.TRIALING,
+                        planRestricted: false,
+                        updatedAt: new Date()
+                    }
+                });
+        }
     }, tx ?? input.db);
 
     // INV-1: a local trial has no preapproval and therefore no webhook, so no

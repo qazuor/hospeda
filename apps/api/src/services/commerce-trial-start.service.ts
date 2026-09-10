@@ -47,10 +47,8 @@ import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 import { resolveTrialEligibility } from './billing/trial-eligibility.service.js';
-import {
-    attachListingToSubscription,
-    findOwnerVerticalSubscription
-} from './commerce-subscription-attach.service.js';
+import { findOwnerVerticalSubscription } from './commerce-subscription-attach.service.js';
+import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entities.service.js';
 import { createTrialSubscription } from './subscription-trial-create.service.js';
 
 /**
@@ -281,10 +279,11 @@ export interface StartCommerceListingTrialResult {
  * subscription behind it, which is invisible from the API and looks to the owner
  * exactly like the bug being fixed.
  *
- * The attach is what publishes the listing: `attachListingToSubscription` calls
- * `reconcileSubscriptionLinkedEntities`, and the visibility reconciler flips a
- * COMPLETE listing to PUBLIC/ACTIVE for any entitlement-granting status —
- * `trialing` included. No visibility write happens here.
+ * HOS-1338: the `entity_subscriptions` link row is upserted inside the same
+ * transaction as the subscription insert (via `createTrialSubscription`'s
+ * `attachEntity` param), so the two writes commit together or neither commits.
+ * The visibility reconcile runs after-commit, because reconciling on
+ * uncommitted data would publish a listing that may still roll back.
  *
  * @param input.billing - Resolved qzpay billing instance.
  * @param input.customerId - The owner's billing customer id.
@@ -332,6 +331,11 @@ export async function startCommerceListingTrial(input: {
     // `trialDays` is passed only when the plan row carries a usable one.
     // Omitting it lets `createTrialSubscription` apply its own default rather
     // than this module inventing a second place the length is decided.
+    //
+    // HOS-1338: the entity link row is upserted INSIDE the same transaction as
+    // the subscription insert, so the two writes commit together or neither
+    // commits. If the upsert fails, the subscription is rolled back too — no
+    // orphaned trial rows.
     const { localSubscriptionId, trialStart, trialEnd } = await createTrialSubscription({
         customerId,
         planId: plan.planId,
@@ -339,21 +343,17 @@ export async function startCommerceListingTrial(input: {
         ...(plan.trialDays > 0 ? { trialDays: plan.trialDays } : {}),
         // Same single source of truth as `middlewares/billing.ts` and every
         // other local-insert path.
-        livemode: !env.HOSPEDA_MERCADO_PAGO_SANDBOX
+        livemode: !env.HOSPEDA_MERCADO_PAGO_SANDBOX,
+        attachEntity: { entityType: vertical, entityId }
     });
 
-    // Attach AFTER the subscription row exists, and outside its transaction:
-    // `attachListingToSubscription` reconciles visibility as its last step, and
-    // reconciling from inside an uncommitted transaction would publish a listing
-    // on the strength of a row that can still roll back.
-    await attachListingToSubscription({
-        subscription: {
-            id: localSubscriptionId,
-            status: 'trialing',
-            planId: plan.planId
-        },
-        entityType: vertical,
-        entityId
+    // Reconcile AFTER the transaction commits. The visibility reconciler reads
+    // the subscription status to decide PUBLIC vs PRIVATE; running it on
+    // uncommitted data would publish a listing that may still roll back.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: localSubscriptionId,
+        subscriptionStatus: 'trialing',
+        source: 'commerce-trial-attach'
     });
 
     // `createTrialSubscription` clears the cache itself when it opens its own
