@@ -449,10 +449,22 @@ export async function createOwnPreapprovalSubscription(
                 { localSubscriptionId, mpSubscriptionId },
                 'HOS-937: cancelled MP preapproval after the local pending_provider status-normalize write failed (fail-closed)'
             );
-        } else {
+        } else if (cancelOutcome.kind === 'failed') {
             apiLogger.error(
-                { localSubscriptionId, mpSubscriptionId, outcome: cancelOutcome },
+                { localSubscriptionId, mpSubscriptionId, error: cancelOutcome.error },
                 'HOS-937: FAILED to cancel MP preapproval after the local pending_provider status-normalize write failed — needs manual reconciliation, this is exactly the orphan class HOS-937 targets'
+            );
+        } else {
+            // `skipped` is NOT a failure and must not be logged as one. It means
+            // there was nothing to cancel (no preapproval id) or no adapter was
+            // reachable. Unreachable on this path today — `mpSubscriptionId` is
+            // guaranteed present here — but a log line that says "FAILED … needs
+            // manual reconciliation" for a clean no-op asserts more than the
+            // predicate above it, which is how an ops runbook learns to ignore
+            // the message that matters.
+            apiLogger.warn(
+                { localSubscriptionId, mpSubscriptionId, reason: cancelOutcome.reason },
+                'HOS-937: no MP preapproval hard-cancel was attempted after the local pending_provider status-normalize write failed'
             );
         }
 
@@ -462,7 +474,13 @@ export async function createOwnPreapprovalSubscription(
         await abandonNeverConfirmedSubscription({
             subscriptionId: localSubscriptionId,
             expectedMpSubscriptionId: mpSubscriptionId ?? null,
-            source: 'own-preapproval-create-local-write-failed'
+            source: 'own-preapproval-create-local-write-failed',
+            // The caller's own client, as `paid-subscription-create` passes it.
+            // Identical to `getDb()` in production; the difference is that a test
+            // supplying a client now has it honoured instead of silently falling
+            // through to the suite-wide mock — which is how a write can look
+            // asserted while landing somewhere nobody is watching.
+            db: input.db
         });
 
         throw updateError;
