@@ -21,6 +21,8 @@
  * @module test/cron/subscription-drift-reconcile.handler
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
@@ -377,5 +379,58 @@ describe('subscription-drift-reconcile — counting and the two no-op exits', ()
         // Assert
         expect(processSubscriptionUpdatedMock).not.toHaveBeenCalled();
         expect(result.message).toBe('billing_not_configured');
+    });
+});
+
+describe('subscription-drift-reconcile — the WHERE clause the mocked builder cannot see', () => {
+    /*
+     * The tests above feed rows straight past a stubbed query builder, so they
+     * are structurally blind to the predicates in the SELECT itself. These two
+     * claims live only there, and both are load-bearing:
+     *
+     *   - the preapproval filter is what keeps a cash-paid partner (HOS-1062)
+     *     out of the population entirely;
+     *   - the ONLY product-domain predicate is the add-on exclusion, which is
+     *     what makes the sweep cover all five verticals on identical terms.
+     *
+     * Source-level, therefore: it proves the predicate is present, not that it
+     * ran. That is exactly the gap, and a scan is the only thing that closes it
+     * without a live database.
+     */
+    const source = readFileSync(
+        resolve(__dirname, '../../src/cron/jobs/subscription-drift-reconcile.job.ts'),
+        'utf-8'
+    );
+    /** Live code only: the module doc legitimately names domains in prose. */
+    const liveCode = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+    it('requires a preapproval id — the filter that excludes a cash-paid partner', () => {
+        // Arrange & Act & Assert
+        expect(liveCode).toContain('isNotNull(billingSubscriptions.mpSubscriptionId)');
+    });
+
+    it('excludes the add-on domain', () => {
+        // Arrange & Act & Assert
+        expect(liveCode).toContain('excludeAddonDomainCondition()');
+    });
+
+    it('filters on product domain ONLY to exclude add-ons, so all five verticals are swept', () => {
+        // Arrange — a `ProductDomainEnum` comparison, a
+        // `subscriptionMatchesDomain` call or a `productDomain` predicate here
+        // would silently narrow the sweep to one vertical while every test above
+        // kept passing, because those tests never see the WHERE clause.
+        // Act & Assert
+        expect(liveCode).not.toContain('ProductDomainEnum');
+        expect(liveCode).not.toContain('subscriptionMatchesDomain');
+        expect(liveCode).not.toContain('billingSubscriptions.productDomain');
+    });
+
+    it('never calls either reconciler bridge itself — processSubscriptionUpdated owns both', () => {
+        // Arrange — calling them here would double-fire them for every
+        // corrected row, and would also owe this file an entry in
+        // test/services/subscription-linked-entities-bridge.guard.test.ts.
+        // Act & Assert
+        expect(liveCode).not.toContain('reconcileSubscriptionLinkedEntities(');
+        expect(liveCode).not.toContain('reconcilePartnerForSubscription(');
     });
 });
