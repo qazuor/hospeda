@@ -405,6 +405,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Marks a PENDING/never-activated subscription as abandoned. The row never granted entitlements, so there is nothing cached to invalidate.'
     },
     {
+        file: 'services/billing/paid-subscription-create.ts',
+        requiresCacheClear: false,
+        reason: 'HOS-1326: became a writer when the HOS-151 Bug C cleanup stopped delegating to `billing.subscriptions.cancel()` (which wrote `canceled` — the wrong word for a checkout that never started, in the qzpay spelling) and began writing `abandoned` itself. Same verdict as the abandoned-pending-subs reaper next door, and for the same reason: the row is seconds old, still `incomplete`, has no provider subscription id, and never granted an entitlement to anyone. Its WHERE admits only the pending statuses, so it can never touch an entitlement-bearing row even by accident.'
+    },
+    {
         file: 'cron/jobs/finalize-cancelled-subs.ts',
         requiresCacheClear: true,
         reason: 'Finalizes a cancellation — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
