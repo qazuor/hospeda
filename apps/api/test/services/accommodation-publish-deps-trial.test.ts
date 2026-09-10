@@ -14,7 +14,11 @@
  *    be created, because `publish()` turns `null` into a rejection and a
  *    listing must never go live without a clock;
  *  - the entitlement cache is cleared by `onTrialStarted` and NOT by the
- *    creator, because the creator runs before the commit (INV-1).
+ *    creator, because the creator runs before the commit (INV-1);
+ *  - `onTrialStarted` also re-points the SHARED `entity_subscriptions` cache
+ *    through the reconcile bridge (HOS-1336): a trial has no provider object,
+ *    so no webhook will ever do it, and the 6-hourly reconcile cron may have
+ *    cached a negative row over the owner's draft before they subscribed.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,6 +33,7 @@ const fixtures = vi.hoisted(() => ({
 const mocks = vi.hoisted(() => ({
     createTrialSubscription: vi.fn(),
     clearEntitlementCache: vi.fn(),
+    reconcileSubscriptionLinkedEntities: vi.fn(),
     resolveTrialEligibility: vi.fn()
 }));
 
@@ -99,6 +104,10 @@ vi.mock('../../src/services/subscription-trial-create.service', () => ({
 
 vi.mock('../../src/services/billing/trial-eligibility.service', () => ({
     resolveTrialEligibility: mocks.resolveTrialEligibility
+}));
+
+vi.mock('../../src/services/subscription-linked-entities.service', () => ({
+    reconcileSubscriptionLinkedEntities: mocks.reconcileSubscriptionLinkedEntities
 }));
 
 vi.mock('../../src/middlewares/entitlement', () => ({
@@ -225,5 +234,55 @@ describe('HOS-1012 — buildAccommodationPublishDeps.onTrialStarted', () => {
         // A local trial has no preapproval and therefore no webhook: nothing
         // else in the system will ever clear this.
         expect(mocks.clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    it('HOS-1336: re-points the shared entity_subscriptions cache for the trial', async () => {
+        // The bug's timeline, pinned at the seam that broke it. The owner's
+        // draft exists when the 6-hourly entity-subscription-cache-reconcile
+        // cron ticks, so the cron upserts a negative row (`status='none'`,
+        // `subscription_id=NULL`) over it — a correct answer AT THAT MOMENT,
+        // since the owner holds no subscription yet. Then they publish, the
+        // local trial is inserted, and NO webhook ever fires for it (a trial
+        // has no provider object), so nothing but this hook rewrites the row:
+        // without this call every owner-gated read keeps answering "no
+        // entitlements" for up to 6 hours after the listing went live.
+        const deps = buildAccommodationPublishDeps(getBillingStub);
+
+        await deps.onTrialStarted({
+            subscriptionId: 'sub-local-1',
+            customerId: CUSTOMER_ID,
+            trialEnd: TRIAL_END
+        });
+
+        expect(mocks.reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(mocks.reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: 'sub-local-1',
+            subscriptionStatus: 'trialing',
+            source: 'publish-trial-started'
+        });
+    });
+
+    it('HOS-1336: clears the in-memory entitlement cache BEFORE the shared-cache write-through', async () => {
+        // Ordering is load-bearing: if the bridge call ever throws, the INV-1
+        // clear must already have happened. The publish caller catches and the
+        // caches self-heal on their own timers (5-minute TTL in memory, the
+        // 6-hourly cron for entity_subscriptions) — but only if the clear was
+        // not skipped by a failure above it.
+        const deps = buildAccommodationPublishDeps(getBillingStub);
+
+        await deps.onTrialStarted({
+            subscriptionId: 'sub-local-1',
+            customerId: CUSTOMER_ID,
+            trialEnd: TRIAL_END
+        });
+
+        const clearOrder = mocks.clearEntitlementCache.mock.invocationCallOrder[0];
+        const bridgeOrder = mocks.reconcileSubscriptionLinkedEntities.mock.invocationCallOrder[0];
+        expect(clearOrder).toBeDefined();
+        expect(bridgeOrder).toBeDefined();
+        if (clearOrder === undefined || bridgeOrder === undefined) {
+            throw new Error('both mocks must have been invoked');
+        }
+        expect(clearOrder).toBeLessThan(bridgeOrder);
     });
 });

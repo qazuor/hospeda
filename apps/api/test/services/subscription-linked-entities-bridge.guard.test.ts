@@ -183,6 +183,12 @@ const BRIDGE_CALL_SITES: ReadonlyArray<{
         note: 'Pre-existing (predates HOS-1280).'
     },
     {
+        file: 'services/accommodation-publish-deps.ts',
+        minCalls: 1,
+        hos1280Fix: false,
+        note: 'HOS-1336: the publish-trial write-through. The local trial is the only subscription-GAIN path with no provider object, so no webhook can ever re-point the entity_subscriptions rows on its behalf — the post-commit onTrialStarted hook is the one site that can.'
+    },
+    {
         file: 'services/billing/trial-local-expiry.service.ts',
         minCalls: 1,
         hos1280Fix: false,
@@ -336,6 +342,18 @@ const BRIDGE_ONLY_SITES: ReadonlyArray<{ readonly file: string; readonly reason:
             "'experience', and whose .find() requires subscriptionMatchesDomain(sub, domain) — " +
             'which fails CLOSED for every non-accommodation domain. A partner subscription ' +
             'satisfies neither vertical, so it cannot be the subscription a listing is attached to.'
+    },
+    {
+        file: 'services/accommodation-publish-deps.ts',
+        reason:
+            "A partner subscription can never be created by this site. The trial's product " +
+            'domain is pinned to ProductDomainEnum.ACCOMMODATION (PUBLISH_PRODUCT_DOMAIN), ' +
+            "and createTrialSubscription throws when the plan's product_domain disagrees with " +
+            'the requested one, so the row this hook reconciles is accommodation-domain by ' +
+            'construction. The partner plans also carry trialDays: 0 with trial_end: null, so ' +
+            'no partner row can ever be trialing — the same measurement the ' +
+            'trial-local-expiry entry below records, and this file is one of the two ' +
+            'createTrialSubscription call sites it names.'
     }
 ] as const;
 

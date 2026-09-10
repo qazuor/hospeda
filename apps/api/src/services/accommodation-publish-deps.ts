@@ -44,7 +44,7 @@ import {
     getDb,
     isNull
 } from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
+import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import {
     type AccommodationPublishDeps,
     isAccommodationSubscription,
@@ -56,6 +56,7 @@ import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { resolveTrialEligibility } from './billing/trial-eligibility.service';
+import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entities.service';
 import { createTrialSubscription } from './subscription-trial-create.service';
 
 /**
@@ -282,7 +283,7 @@ export function buildAccommodationPublishDeps(
             return { subscriptionId: localSubscriptionId, customerId: customer.id, trialEnd };
         },
 
-        onTrialStarted: async ({ customerId }): Promise<void> => {
+        onTrialStarted: async ({ subscriptionId, customerId }): Promise<void> => {
             // INV-1. `createTrialSubscription` deliberately skips this when it
             // is handed a transaction — clearing before the commit would publish
             // entitlements for a row that can still roll back — so this is the
@@ -291,6 +292,26 @@ export function buildAccommodationPublishDeps(
             // owner keeps their previous (empty) entitlements for the full
             // 5-minute TTL, right after being told their listing is live.
             clearEntitlementCache(customerId);
+            // HOS-1336: the same "no webhook" argument extends to the SHARED
+            // `entity_subscriptions` cache. The 6-hourly reconcile cron writes
+            // a negative row (`status='none'`) over every accommodation of an
+            // owner who holds no subscription — drafts included — and that row
+            // is only ever re-pointed by a billing-lifecycle event. A trial is
+            // born with no provider object, so no webhook will EVER fire for
+            // it: without this write-through the negative row keeps answering
+            // "no entitlements" on every owner-gated read for up to 6 hours
+            // (the cron interval), right after the owner published. The
+            // accommodation half of the bridge re-derives the owner's live
+            // subscription, so the fresh `trialing` state lands on EVERY
+            // accommodation of this owner — sibling drafts included, which
+            // the publish itself never touches. The partner reconciler is
+            // deliberately not called: a partner subscription can never be
+            // this trial (see BRIDGE_ONLY_SITES in the HOS-1280/1306 guard).
+            await reconcileSubscriptionLinkedEntities({
+                subscriptionId,
+                subscriptionStatus: SubscriptionStatusEnum.TRIALING,
+                source: 'publish-trial-started'
+            });
         }
     };
 }
