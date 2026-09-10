@@ -19,6 +19,7 @@ import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-pla
 import { toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { userApi } from '@/lib/api/endpoints-protected';
 import {
+	planChangeWouldResolveAnotherSubscription,
 	resolveActiveSubscriptionDomain,
 	resolveDashboardPlanSource,
 	SUBSCRIPTION_DASHBOARD_DOMAINS,
@@ -181,9 +182,27 @@ const plansResult = await fetchPublicPlans(
 	planSource.kind === 'commerce' ? { domain: planSource.domain } : {}
 );
 
+/**
+ * Whether this tab may offer a plan change at all (HOS-1321).
+ *
+ * `POST /billing/subscriptions/change-plan` takes no domain: it resolves the
+ * row to mutate accommodation-first, tourist-as-fallback. For a holder of BOTH
+ * (host-onboarding auto-promotes travellers without touching their tourist
+ * subscription) the tourist tab's plan change would therefore mutate their
+ * OWNER subscription onto a tourist tier — a silent downgrade of a paid plan.
+ * `SubscriptionDashboard` degrades an empty `plans` list to the
+ * "Ver planes disponibles" link, which is where a move between audiences
+ * belongs anyway. Cancel and pause are unaffected: they act on the
+ * subscription id this tab already read.
+ */
+const canOfferPlanChange = !planChangeWouldResolveAnotherSubscription({
+	domain: productDomain,
+	heldDomains
+});
+
 /** Accommodation-catalogue tiers for `PlanChangeFlow` — empty on a commerce dashboard. */
 const availablePlans =
-	!isCommerceDomain && plansResult.ok
+	!isCommerceDomain && canOfferPlanChange && plansResult.ok
 		? filterPlansByCategory(plansResult.plans, planCategory)
 		: [];
 
