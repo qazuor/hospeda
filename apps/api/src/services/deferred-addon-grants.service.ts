@@ -54,9 +54,15 @@
 
 import { type EntitlementKey, isEntitlementKey, isLimitKey, type LimitKey } from '@repo/billing';
 import { and, billingAddonPurchases, eq, getDb, gt, isNull } from '@repo/db';
+import type { ProductDomainValue } from '@repo/schemas';
 import { parseEntitlementAdjustments, parseLimitAdjustments } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
-import { admitsConsumerAddonGrant } from './billing/consumer-addon-grant-domain';
+import {
+    type AddonGrantDomainReporter,
+    type AddonGrantDomainResidue,
+    classifyAddonGrantDomain,
+    reportAddonGrantDomainOutcome
+} from './billing/addon-grant-domain';
 
 /**
  * The entitlements and limit deltas contributed by a customer's still-running
@@ -95,6 +101,27 @@ const EMPTY_GRANTS: DeferredAddonGrants = {
 export interface LoadDeferredAddonGrantsInput {
     /** QZPay `billing_customers.id`. */
     readonly customerId: string;
+    /**
+     * The verticals the CALLING resolver answers for (HOS-1303).
+     *
+     * `CONSUMER_SIDE_PRODUCT_DOMAINS` from `middlewares/entitlement.ts`
+     * (accommodation + tourist), `OWNER_SIDE_PRODUCT_DOMAINS` from
+     * `middlewares/owner-entitlement.ts` (accommodation alone). A deferred add-on
+     * outside the caller's set contributes neither its entitlements nor its limit
+     * increases.
+     *
+     * Required, with no default, on purpose. The first version of this gate
+     * hard-coded the consumer-side pair here on a comment claiming this function
+     * had one caller; it has three, and the other two serve a NARROWER set. A
+     * default is how that happened, and a required argument is what stops the
+     * fourth caller from inheriting somebody else's scope.
+     */
+    readonly servedDomains: readonly ProductDomainValue[];
+    /**
+     * Which resolver is asking, for the `info` line the gate emits when it drops
+     * anything. Only used for reporting.
+     */
+    readonly reporter: AddonGrantDomainReporter;
 }
 
 /**
@@ -111,24 +138,39 @@ export interface LoadDeferredAddonGrantsInput {
  * - `deleted_at IS NULL` — soft-delete, as everywhere.
  *
  * A fifth predicate runs in TypeScript rather than SQL, because it reads the
- * static add-on catalogue and not a column: the add-on must belong to a vertical
- * this answer is scoped to (`CONSUMER_SIDE_PRODUCT_DOMAINS` — HOS-1303).
+ * static add-on catalogue and not a column: the add-on must belong to one of the
+ * verticals the CALLER serves (`input.servedDomains` — HOS-1303).
+ *
+ * ## Three callers, two different scopes
+ *
+ * This function is reached from `middlewares/entitlement.ts:407`
+ * (`withDeferredAddonGrants`, the consumer-side loader) and from
+ * `middlewares/owner-entitlement.ts:256` and `:820` (the owner-side resolver's
+ * two no-live-subscription cuts). The consumer side resolves accommodation OR
+ * tourist; the owner side resolves accommodation alone. They are NOT
+ * interchangeable, which is why the scope is an argument and not a constant —
+ * see `LoadDeferredAddonGrantsInput.servedDomains`.
  *
  * Never throws: a failed lookup answers empty with `degraded: true`.
  *
- * @param input - The QZPay customer id to resolve.
+ * @param input - The customer to resolve, the caller's served verticals, and the
+ *   caller's name for reporting.
  * @returns What those add-ons still grant; empty when there are none.
  *
  * @example
  * ```ts
- * const grants = await loadDeferredAddonGrants({ customerId });
+ * const grants = await loadDeferredAddonGrants({
+ *     customerId,
+ *     servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS,
+ *     reporter: 'deferred-addon-grants'
+ * });
  * const merged = mergeDeferredAddonGrants({ grants, entitlements, limits });
  * ```
  */
 export async function loadDeferredAddonGrants(
     input: LoadDeferredAddonGrantsInput
 ): Promise<DeferredAddonGrants> {
-    const { customerId } = input;
+    const { customerId, servedDomains, reporter } = input;
 
     try {
         const rows = await getDb()
@@ -157,23 +199,38 @@ export async function loadDeferredAddonGrants(
         const limitIncrements = new Map<LimitKey, number>();
         const purchaseIds: string[] = [];
 
-        const skippedByDomain: Array<{ purchaseId: string; addonSlug: string }> = [];
+        const dropped: AddonGrantDomainResidue[] = [];
+        const admittedUnplaceable: AddonGrantDomainResidue[] = [];
 
         for (const row of rows) {
             const parseContext = { purchaseId: row.id, addonSlug: row.addonSlug };
 
             // HOS-1303: the same vertical gate the customer-level merge applies,
-            // at the second site that reaches the same grants. This module's ONLY
-            // caller is `withDeferredAddonGrants` in `middlewares/entitlement.ts`,
-            // the consumer-side loader — so a deferred GASTRONOMY boost folded
-            // `featured_listing` into a host's accommodation draft defaults, on
-            // the exact branch (`!activeSubscription`) where the customer-level
-            // merge that now filters it never runs. A commerce resolver must not
-            // start calling this without deciding its own domain scope first;
-            // `CONSUMER_SIDE_PRODUCT_DOMAINS` is what this answer is scoped to.
-            if (!admitsConsumerAddonGrant({ addonSlug: row.addonSlug })) {
-                skippedByDomain.push({ purchaseId: row.id, addonSlug: row.addonSlug });
+            // at the site that reaches the same grants on the OTHER branch — the
+            // `!activeSubscription` cut, where that merge never runs. A deferred
+            // GASTRONOMY boost folded `featured_listing` into a host's
+            // accommodation draft defaults there, and into the owner-side set
+            // through this module's two `owner-entitlement.ts` callers.
+            //
+            // The scope is the CALLER'S (`servedDomains`), never this file's: the
+            // owner side serves accommodation alone and the consumer side also
+            // serves tourist.
+            const verdict = classifyAddonGrantDomain({
+                addonSlug: row.addonSlug,
+                servedDomains
+            });
+
+            if (verdict.kind === 'foreign') {
+                dropped.push({
+                    purchaseId: row.id,
+                    addonSlug: row.addonSlug,
+                    addonDomain: verdict.domain
+                });
                 continue;
+            }
+
+            if (verdict.kind === 'unplaceable') {
+                admittedUnplaceable.push({ purchaseId: row.id, addonSlug: row.addonSlug });
             }
 
             purchaseIds.push(row.id);
@@ -204,12 +261,24 @@ export async function loadDeferredAddonGrants(
             {
                 customerId,
                 purchaseIds,
-                skippedByDomain,
                 entitlements: Array.from(entitlements),
                 limitIncrements: Object.fromEntries(limitIncrements)
             },
             'HOS-847: deferred add-ons still granting after the plan ended'
         );
+
+        // At `info`, and only when there is something to say — the line above
+        // stays at `debug` because it fires for every deferred add-on, healthy
+        // ones included. What has to survive the production log level is the gate
+        // having refused something, or having admitted something it could not
+        // place (HOS-1303).
+        reportAddonGrantDomainOutcome({
+            resolver: reporter,
+            customerId,
+            servedDomains,
+            dropped,
+            admittedUnplaceable
+        });
 
         return { entitlements, limitIncrements, purchaseIds, degraded: false };
     } catch (error) {

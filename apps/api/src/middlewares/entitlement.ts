@@ -40,10 +40,12 @@ import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { captureBillingError } from '../lib/sentry';
 import {
+    type AddonGrantDomainResidue,
     CONSUMER_SIDE_PRODUCT_DOMAINS,
-    classifyConsumerAddonGrant,
+    classifyAddonGrantDomain,
+    reportAddonGrantDomainOutcome,
     resolveAddonPurchaseSlugs
-} from '../services/billing/consumer-addon-grant-domain';
+} from '../services/billing/addon-grant-domain';
 import { selectAccommodationSubscription } from '../services/billing/plan-domain-guard';
 import {
     loadDeferredAddonGrants,
@@ -404,7 +406,14 @@ async function withDeferredAddonGrants(
     customerId: string,
     base: LoadEntitlementsResult
 ): Promise<LoadEntitlementsResult> {
-    const grants = await loadDeferredAddonGrants({ customerId });
+    // HOS-1303: this loader serves accommodation OR tourist, so that is the scope
+    // a deferred add-on has to fall inside. The owner-side resolver passes a
+    // narrower set from its own call sites.
+    const grants = await loadDeferredAddonGrants({
+        customerId,
+        servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS,
+        reporter: 'consumer-entitlements'
+    });
 
     if (grants.degraded) {
         // Never cache an under-grant: the next request must retry rather than
@@ -828,35 +837,67 @@ async function loadEntitlements(
                     .map((ce) => ce.sourceId as string)
             });
 
+            const dropped: AddonGrantDomainResidue[] = [];
+            const admittedUnplaceable: AddonGrantDomainResidue[] = [];
+
             for (const ce of customerEntitlements) {
                 if (!isEntitlementKey(ce.entitlementKey)) {
                     continue;
                 }
 
-                const addonSlug =
-                    ce.source === 'addon' && ce.sourceId !== null
-                        ? addonSlugByPurchaseId.get(ce.sourceId)
-                        : undefined;
+                const isAddonSourced = ce.source === 'addon' && ce.sourceId !== null;
+                const addonSlug = isAddonSourced
+                    ? addonSlugByPurchaseId.get(ce.sourceId as string)
+                    : undefined;
 
-                if (addonSlug !== undefined) {
-                    const verdict = classifyConsumerAddonGrant({ addonSlug });
+                if (isAddonSourced && addonSlug === undefined) {
+                    // The purchase behind the grant did not come back. Admitted —
+                    // refusing would strip a paid feature on the strength of a row
+                    // we failed to read — but recorded, because a steady stream of
+                    // these means the gate has gone no-op.
+                    admittedUnplaceable.push({
+                        entitlementKey: ce.entitlementKey,
+                        purchaseId: ce.sourceId ?? undefined
+                    });
+                } else if (addonSlug !== undefined) {
+                    const verdict = classifyAddonGrantDomain({
+                        addonSlug,
+                        servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS
+                    });
+
                     if (verdict.kind === 'foreign') {
-                        apiLogger.debug(
-                            {
-                                customerId,
-                                entitlementKey: ce.entitlementKey,
-                                addonSlug,
-                                addonDomain: verdict.domain,
-                                servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS
-                            },
-                            'HOS-1303: customer entitlement skipped — the add-on that granted it belongs to another vertical'
-                        );
+                        dropped.push({
+                            entitlementKey: ce.entitlementKey,
+                            purchaseId: ce.sourceId ?? undefined,
+                            addonSlug,
+                            addonDomain: verdict.domain
+                        });
                         continue;
+                    }
+
+                    if (verdict.kind === 'unplaceable') {
+                        admittedUnplaceable.push({
+                            entitlementKey: ce.entitlementKey,
+                            purchaseId: ce.sourceId ?? undefined,
+                            addonSlug
+                        });
                     }
                 }
 
                 entitlements.add(ce.entitlementKey);
             }
+
+            // One `info` line, only when the gate did something. The per-grant
+            // `debug` this replaced was never emitted outside local dev:
+            // `LOG_LEVEL` defaults to `info` (`packages/config/src/env.ts`), so a
+            // host reporting "my featuring disappeared" left no trace at all.
+            reportAddonGrantDomainOutcome({
+                resolver: 'consumer-entitlements',
+                customerId,
+                servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS,
+                dropped,
+                admittedUnplaceable
+            });
 
             // Fetch customer-level limits and override plan-level values (customer takes precedence).
             // QZPay returns QZPayCustomerLimit where limitKey is string — filter to known keys.

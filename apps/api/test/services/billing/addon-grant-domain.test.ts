@@ -15,21 +15,34 @@
  * was written after (a defense that reads as installed and never executes), so
  * the two files are a pair, not alternatives.
  *
- * @module test/services/billing/consumer-addon-grant-domain
+ * @module test/services/billing/addon-grant-domain
  */
 
 import { ALL_ADDONS } from '@repo/billing';
+import { getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
-import { describe, expect, it } from 'vitest';
+import * as Sentry from '@sentry/node';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    admitsConsumerAddonGrant,
+    admitsAddonGrant,
     CONSUMER_SIDE_PRODUCT_DOMAINS,
-    classifyConsumerAddonGrant
-} from '../../../src/services/billing/consumer-addon-grant-domain';
+    classifyAddonGrantDomain,
+    OWNER_SIDE_PRODUCT_DOMAINS,
+    resolveAddonPurchaseSlugs
+} from '../../../src/services/billing/addon-grant-domain';
 
-describe('classifyConsumerAddonGrant — the five verticals of the billing axis', () => {
+vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
+
+vi.mock('../../../src/utils/logger', () => ({
+    apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
+
+/** The consumer-side pair, spelled once instead of at every call. */
+const CONSUMER = { servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS } as const;
+
+describe('classifyAddonGrantDomain — the five verticals of the billing axis', () => {
     it('serves an ACCOMMODATION add-on', () => {
-        expect(classifyConsumerAddonGrant({ addonSlug: 'visibility-boost-7d' })).toEqual({
+        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-7d' })).toEqual({
             kind: 'served',
             domain: ProductDomainEnum.ACCOMMODATION
         });
@@ -45,7 +58,7 @@ describe('classifyConsumerAddonGrant — the five verticals of the billing axis'
             'extra-properties-5',
             'ai-support-monthly'
         ]) {
-            expect(classifyConsumerAddonGrant({ addonSlug: slug })).toEqual({
+            expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: slug })).toEqual({
                 kind: 'served',
                 domain: ProductDomainEnum.ACCOMMODATION
             });
@@ -56,13 +69,13 @@ describe('classifyConsumerAddonGrant — the five verticals of the billing axis'
         // `visibility-boost-gastronomy-7d` grants EntitlementKey.FEATURED_LISTING,
         // the same key the accommodation boost grants. The key cannot tell them
         // apart; only the add-on's declared domain can.
-        expect(classifyConsumerAddonGrant({ addonSlug: 'visibility-boost-gastronomy-7d' })).toEqual(
+        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-gastronomy-7d' })).toEqual(
             {
                 kind: 'foreign',
                 domain: ProductDomainEnum.GASTRONOMY
             }
         );
-        expect(classifyConsumerAddonGrant({ addonSlug: 'extra-gastronomies-1' })).toEqual({
+        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'extra-gastronomies-1' })).toEqual({
             kind: 'foreign',
             domain: ProductDomainEnum.GASTRONOMY
         });
@@ -70,21 +83,51 @@ describe('classifyConsumerAddonGrant — the five verticals of the billing axis'
 
     it('refuses an EXPERIENCE add-on', () => {
         expect(
-            classifyConsumerAddonGrant({ addonSlug: 'visibility-boost-experience-30d' })
+            classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-experience-30d' })
         ).toEqual({
             kind: 'foreign',
             domain: ProductDomainEnum.EXPERIENCE
         });
-        expect(classifyConsumerAddonGrant({ addonSlug: 'private-galleries-5' })).toEqual({
+        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'private-galleries-5' })).toEqual({
             kind: 'foreign',
             domain: ProductDomainEnum.EXPERIENCE
         });
     });
 
-    it('serves TOURIST, the fifth vertical, which shares this loader with accommodation', () => {
+    it('serves TOURIST for the consumer scope, which shares that loader with accommodation', () => {
         expect(CONSUMER_SIDE_PRODUCT_DOMAINS).toContain(ProductDomainEnum.TOURIST);
         expect(CONSUMER_SIDE_PRODUCT_DOMAINS).toContain(ProductDomainEnum.ACCOMMODATION);
         expect(CONSUMER_SIDE_PRODUCT_DOMAINS).toHaveLength(2);
+    });
+
+    it('does NOT serve tourist for the OWNER scope — the two are not interchangeable', () => {
+        // HOS-1303 review F1. The owner-side resolver selects
+        // `isAccommodationSubscription` alone, so handing it the consumer pair
+        // (as the first revision of this module did, on a comment claiming
+        // `loadDeferredAddonGrants` had one caller) would admit a
+        // `tourist`-domain add-on into an OWNER's entitlement set. That is the
+        // cross-vertical contamination this gate exists to stop, arriving through
+        // the gate itself.
+        expect(OWNER_SIDE_PRODUCT_DOMAINS).toEqual([ProductDomainEnum.ACCOMMODATION]);
+        expect(OWNER_SIDE_PRODUCT_DOMAINS).not.toContain(ProductDomainEnum.TOURIST);
+    });
+
+    it('answers differently for the two real scopes when handed the same slug', () => {
+        // Proves `servedDomains` reaches the predicate rather than decorating the
+        // signature. No catalogue add-on declares `tourist` yet, so the
+        // observable difference is demonstrated with an explicit tourist scope —
+        // whose accommodation answer must flip to foreign.
+        const touristOnly = { servedDomains: [ProductDomainEnum.TOURIST] } as const;
+
+        expect(
+            classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'visibility-boost-7d' }).kind
+        ).toBe('served');
+        expect(
+            classifyAddonGrantDomain({
+                ...touristOnly,
+                addonSlug: 'visibility-boost-7d'
+            })
+        ).toEqual({ kind: 'foreign', domain: ProductDomainEnum.ACCOMMODATION });
     });
 
     it('has no PARTNER add-on to classify today — and says so by inventory, not by silence', () => {
@@ -106,16 +149,20 @@ describe('classifyConsumerAddonGrant — the five verticals of the billing axis'
         // hold for all of them; it fails if the catalogue and the classifier
         // ever disagree about what a domain is.
         for (const addon of ALL_ADDONS) {
-            const verdict = classifyConsumerAddonGrant({ addonSlug: addon.slug });
+            const verdict = classifyAddonGrantDomain({ ...CONSUMER, addonSlug: addon.slug });
             expect(verdict.kind).not.toBe('unplaceable');
             expect(verdict).toMatchObject({ domain: addon.productDomain });
         }
     });
 });
 
-describe('classifyConsumerAddonGrant — unplaceable is ADMITTED, never refused', () => {
+describe('classifyAddonGrantDomain — unplaceable is ADMITTED, never refused', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('answers unplaceable for a slug outside the catalogue', () => {
-        expect(classifyConsumerAddonGrant({ addonSlug: 'operator-invented' })).toEqual({
+        expect(classifyAddonGrantDomain({ ...CONSUMER, addonSlug: 'operator-invented' })).toEqual({
             kind: 'unplaceable',
             reason: 'unknown-slug'
         });
@@ -125,8 +172,39 @@ describe('classifyConsumerAddonGrant — unplaceable is ADMITTED, never refused'
         // The posture inversion versus HOS-1279, asserted rather than only
         // documented: there, refusing means "leave the cap alone"; here it means
         // "take the feature away".
-        expect(admitsConsumerAddonGrant({ addonSlug: 'operator-invented' })).toBe(true);
-        expect(admitsConsumerAddonGrant({ addonSlug: '' })).toBe(true);
+        expect(admitsAddonGrant({ ...CONSUMER, addonSlug: 'operator-invented' })).toBe(true);
+        expect(admitsAddonGrant({ ...CONSUMER, addonSlug: '' })).toBe(true);
+    });
+
+    it('sends a FAILED purchase lookup to Sentry, not only to a log line', async () => {
+        // HOS-1303 review F2. An empty map is indistinguishable from "this
+        // customer holds no add-on grants", so a permanently failing read turns
+        // the whole gate into a no-op that looks exactly like a clean customer.
+        // Its sibling degradation in `loadEntitlements` captures; this one did
+        // not, and a `warn` with nobody tailing it is not a signal.
+        vi.mocked(getDb).mockImplementationOnce(() => {
+            throw new Error('connection reset');
+        });
+
+        const slugs = await resolveAddonPurchaseSlugs({ purchaseIds: ['p1'] });
+
+        expect(slugs.size).toBe(0);
+        expect(Sentry.captureException).toHaveBeenCalledWith(
+            expect.any(Error),
+            expect.objectContaining({
+                tags: expect.objectContaining({ action: 'resolve-addon-grant-domain' })
+            })
+        );
+    });
+
+    it('does not query at all for an empty id list', async () => {
+        // The early return. Without it every entitlement load of a customer with
+        // no add-on grants would pay for a round-trip.
+        const slugs = await resolveAddonPurchaseSlugs({ purchaseIds: [] });
+
+        expect(slugs.size).toBe(0);
+        expect(getDb).not.toHaveBeenCalled();
+        expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 
     it('admits every served add-on and refuses every foreign one', () => {
@@ -138,7 +216,7 @@ describe('classifyConsumerAddonGrant — unplaceable is ADMITTED, never refused'
             // unplaceable, and unplaceable is admitted.
             const domain = addon.productDomain;
             const served = domain === undefined || CONSUMER_SIDE_PRODUCT_DOMAINS.includes(domain);
-            expect(admitsConsumerAddonGrant({ addonSlug: addon.slug })).toBe(served);
+            expect(admitsAddonGrant({ ...CONSUMER, addonSlug: addon.slug })).toBe(served);
         }
     });
 });

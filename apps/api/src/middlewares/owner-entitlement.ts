@@ -52,6 +52,7 @@ import {
 import * as Sentry from '@sentry/node';
 import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
+import { OWNER_SIDE_PRODUCT_DOMAINS } from '../services/billing/addon-grant-domain';
 import {
     loadDeferredAddonGrants,
     mergeDeferredAddonGrants
@@ -253,7 +254,18 @@ async function loadCustomerEntitlements(customerId: string): Promise<Set<Entitle
             // deferred may still be inside the period it was charged for. This
             // early return is one of the two cuts that made PR 7a's deferral
             // deliver nothing — the customer-level merge lives past it.
-            const grants = await loadDeferredAddonGrants({ customerId });
+            // HOS-1303: accommodation ALONE, because the selection twelve lines
+            // up is `isAccommodationSubscription` alone. A deferred add-on of any
+            // other vertical — `tourist` included, the domain this epic created —
+            // grants nothing about an owner's listings, so it must not reach this
+            // set. The scope is passed rather than defaulted: the consumer-side
+            // loader serves a WIDER pair, and a shared default is how this call
+            // site silently inherited it.
+            const grants = await loadDeferredAddonGrants({
+                customerId,
+                servedDomains: OWNER_SIDE_PRODUCT_DOMAINS,
+                reporter: 'owner-entitlements'
+            });
             return mergeDeferredAddonGrants({
                 grants,
                 entitlements,
@@ -817,7 +829,15 @@ export async function resolveOwnerLimitsForOwnerId(
     // baseline was the whole answer and a deferred add-on raised nothing.
     if (result.limits.size === 0 && !result.shouldCache) {
         const fallbackLimits = await buildOwnerBasicoFallbackLimits();
-        const grants = await loadDeferredAddonGrants({ customerId });
+        // HOS-1303: accommodation alone, the same scope as the entitlement cut
+        // above and for the same reason. A deferred `extra-gastronomies-1` raised
+        // `max_gastronomies` inside the OWNER limits map before this — a cap the
+        // accommodation enforcement has no business carrying.
+        const grants = await loadDeferredAddonGrants({
+            customerId,
+            servedDomains: OWNER_SIDE_PRODUCT_DOMAINS,
+            reporter: 'owner-entitlements'
+        });
         return mergeDeferredAddonGrants({
             grants,
             entitlements: new Set<EntitlementKey>(),
