@@ -901,8 +901,17 @@ async function loadEntitlements(
         // would be the whole answer for someone who also runs a paid restaurant.
         // `mergeTouristVipGift` moves a limit only when the gift is more
         // generous, so a plan that raises a VIP key above the gift keeps its own
-        // value — the same precedence `mergeLimits(TOURIST_VIP_LIMITS, [...])`
-        // states for the declaration in `plans.config.ts`.
+        // value.
+        //
+        // **That is NOT the rule `plans.config.ts` uses for the declaration, and
+        // this comment claimed it was until HOS-1323.** `mergeLimits`
+        // (`plans.config.ts:42-56`) is LAST-WINS — its own doc says "the
+        // `override` list wins on key clash", upward or downward — while this is
+        // a MAX. No shipped plan narrows a `TOURIST_VIP_LIMITS` key, so the two
+        // agree on every plan that exists today; they diverge on the first one
+        // that does, where the declaration would keep the smaller value and this
+        // would publish the larger. See `tourist-vip-inheritance.ts`'s module
+        // docblock, which states the same divergence at the other end.
         //
         // `entitlements` and `limits` are freshly built locals here, so merging
         // in place is safe (unlike the fallback branch — see

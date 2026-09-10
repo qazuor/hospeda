@@ -49,8 +49,8 @@
  * doc):
  *
  * - **entitlements are a `'capability'` field — config wins, the database
- *   follows.** So the row is UNIONED onto the constant. A row that lags behind
- *   a deploy, or that an operator emptied, can never subtract a capability the
+ *   follows.** The row is UNIONED onto the constant, so a row that lags behind a
+ *   deploy, or that an operator emptied, can never subtract a capability the
  *   catalogue declares.
  * - **limits are a `'commercial'` field — the database wins.** So a numeric
  *   value on the row REPLACES the constant's. An operator raising a cap in the
@@ -59,6 +59,15 @@
  * Both halves are filtered through an allowlist derived from the plan itself —
  * see {@link GIFTABLE_ENTITLEMENT_KEYS}. The row supplies VALUES for keys the
  * catalogue declares giftable; it does not get to name new ones.
+ *
+ * **The two halves are therefore not symmetric in what the row can achieve**,
+ * and it is worth being blunt about it rather than leaving "UNIONED" to imply
+ * more than it delivers: the allowlist is exactly the config floor, so on the
+ * ENTITLEMENT side the row can only ever be refused or ignored — every key it is
+ * allowed to contribute is already in the gift. Only the LIMIT side carries real
+ * information from the database, because there the row supplies a VALUE for a
+ * key that is already present. So "the database follows" is literal for
+ * capabilities and load-bearing for caps.
  *
  * **A cap LOWERED on the row mostly does not reach anybody**, and that is a
  * property of the merge rather than of this resolution — see the FLOOR section
@@ -420,10 +429,23 @@ export async function resolveTouristVipGift(): Promise<TouristVipGift> {
 
             const refused: string[] = [];
 
-            // Capability half: UNION, restricted to the allowlist. Config wins
-            // and the database follows, so a lagging or emptied row can only
-            // ever add — and it can only add a key the catalogue already
-            // declares giftable. See GIFTABLE_ENTITLEMENT_KEYS.
+            // Capability half: UNION, restricted to the allowlist.
+            //
+            // **Since the allowlist landed, this loop cannot ADD anything, and
+            // saying otherwise would be the third false docblock in this file.**
+            // `gift.entitlements` starts as `TOURIST_VIP_PLAN.entitlements` and
+            // `GIFTABLE_ENTITLEMENT_KEYS` is that same set, so every key that
+            // survives the filter is already present and `.add` is a no-op by
+            // construction. What the loop still does is REFUSE — the branch
+            // below feeds `refused`, and that branch is live, reachable from one
+            // admin edit, and covered.
+            //
+            // It is kept as a union rather than collapsed into a refusal scan
+            // because the two sets are derived from the same plan TODAY and
+            // nothing enforces that they stay that way: if a future change gives
+            // the gift a floor that is narrower than the allowlist, this is the
+            // line that would carry the difference, and it would carry it in the
+            // safe direction (config wins, the database follows).
             for (const key of result.data.entitlements) {
                 if (!isEntitlementKey(key)) {
                     continue;
@@ -451,10 +473,26 @@ export async function resolveTouristVipGift(): Promise<TouristVipGift> {
                 gift.limits.set(key, value);
             }
 
-            // One line, only when the gate actually refused something. Silence
-            // here would make "the allowlist is holding" and "the allowlist has
-            // gone no-op" look identical — the failure mode this whole file is
-            // written around.
+            // One line, only when the gate actually refused something.
+            //
+            // **This does NOT distinguish a holding allowlist from a no-op one**,
+            // and an earlier version of this comment claimed it did. It only
+            // separates "there was something to refuse" from "there was not". In
+            // the ordinary steady state — a seeded row equal to the constant —
+            // there is nothing to refuse and the log is silent whether the gate
+            // works or has been widened to everything.
+            //
+            // What catches a no-op is the suite, asymmetrically:
+            // `GIFTABLE_LIMIT_KEYS` is pinned in both directions (a foreign cap
+            // is refused; an allowlisted cap raised on the row still arrives),
+            // while `GIFTABLE_ENTITLEMENT_KEYS` is pinned only against widening
+            // — narrowing it is unobservable for the same reason the union above
+            // cannot add: the config floor already carries every key it would
+            // have let through.
+            //
+            // The line earns its place as OPERATIONAL evidence rather than as a
+            // guard: it is how an operator learns that an edit they just made to
+            // the `tourist-vip` row went nowhere.
             if (refused.length > 0) {
                 apiLogger.warn(
                     { slug: TOURIST_VIP_PLAN.slug, refused },
