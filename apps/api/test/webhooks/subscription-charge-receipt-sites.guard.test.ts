@@ -12,12 +12,25 @@
  * gap covered every paying subscriber on the platform — measured over four real
  * staging charges, all four silent.
  *
- * It was not one forgotten line. There are TWO settlement sites — the live
- * handler and the dead-letter retry cron, which re-settles exactly the charges
- * whose live delivery failed, i.e. the ones most likely to have left a debited
- * customer uninformed. The repo's recurring failure mode is a correct gate in one
- * of N places, so the property worth freezing is not "the handler sends a
+ * It was not one forgotten line. There are THREE settlement sites: the live
+ * handler; the dead-letter retry cron, which re-settles exactly the charges whose
+ * live delivery failed; and `backfillPayment`, whose whole subject is a charge the
+ * webhooks acknowledged so MercadoPago never retried. Each of the last two is, by
+ * construction, more likely than the first to be handling a customer who was
+ * debited and never told. The repo's recurring failure mode is a correct gate in
+ * one of N places, so the property worth freezing is not "the handler sends a
  * receipt" but "every settler does".
+ *
+ * ## What this guard checks, stated no wider than its predicate
+ *
+ * It checks the three files named in `CHECKED_SITES` — two DISCOVERED by the anchor
+ * below, one LISTED explicitly because the anchor cannot see it. It does not, and
+ * cannot, prove that no fourth settler exists anywhere in the repo; an earlier
+ * version of this header claimed to freeze "every site that settles a
+ * subscription_authorized_payment", which asserted more than the predicate proves.
+ * What the anchor does buy is that a new site of the COMMON shape — one that routes
+ * add-ons, which any authorized-payment settler must — is discovered automatically
+ * and fails the exactness check until it is added deliberately.
  *
  * ## Why `routeAddonAuthorizedPayment` is the anchor
  *
@@ -55,6 +68,23 @@ const RECEIPT_DISPATCHER = 'dispatchSubscriptionChargeReceipt';
 const ADDON_ROUTING_CALL = /\brouteAddonAuthorizedPayment\s*\(/;
 
 /**
+ * A settler the anchor CANNOT discover, listed explicitly.
+ *
+ * `backfillPayment` (HOS-765) reconstructs a `billing_payments` row for a charge the
+ * webhooks acknowledged and MercadoPago therefore never retried — so its typical
+ * subject is an orphaned recurring charge, with the customer debited and never told.
+ * It routes no add-ons, so the anchor is blind to it, and the original version of
+ * this guard claimed to freeze "every site that settles a
+ * subscription_authorized_payment" while its predicate could not see this one: it
+ * asserted more than it proved.
+ *
+ * Listing it matters beyond tidiness, because writing that row SUPPRESSES the only
+ * other dispatch — the dead-letter cron checks `paymentAlreadyRecorded` before its
+ * own receipt and then resolves the event silently.
+ */
+const EXPLICIT_SETTLERS = ['services/billing/payment-reconcile.service.ts'] as const;
+
+/**
  * Every `.ts` file under `apps/api/src`, as repo-relative paths.
  *
  * @param dir - Directory to walk.
@@ -85,36 +115,64 @@ function stripComments(source: string): string {
 }
 
 describe('HOS-1238 guard: every authorized-payment settler dispatches its receipt', () => {
-    const settlementSites = collectTsFiles(API_SRC)
-        .map((absolute) => ({
-            path: relative(API_SRC, absolute).split('\\').join('/'),
-            code: stripComments(readFileSync(absolute, 'utf-8'))
-        }))
-        .filter(
-            (file) => file.path !== ADDON_ROUTER_DEFINITION && ADDON_ROUTING_CALL.test(file.code)
-        );
+    const allFiles = collectTsFiles(API_SRC).map((absolute) => ({
+        path: relative(API_SRC, absolute).split('\\').join('/'),
+        code: stripComments(readFileSync(absolute, 'utf-8'))
+    }));
+
+    /** Discovered by the anchor: anything that routes add-ons settles plan charges too. */
+    const discoveredSites = allFiles.filter(
+        (file) => file.path !== ADDON_ROUTER_DEFINITION && ADDON_ROUTING_CALL.test(file.code)
+    );
+
+    /** Everything the guard checks: the discovered sites plus the listed one. */
+    const settlementSites = [
+        ...discoveredSites,
+        ...EXPLICIT_SETTLERS.map((path) => {
+            const file = allFiles.find((f) => f.path === path);
+            if (!file) {
+                throw new Error(
+                    `${path} is listed in EXPLICIT_SETTLERS but no longer exists under ` +
+                        'apps/api/src. If it was renamed, update the list; if it was deleted, ' +
+                        'remove the entry — leaving it stale makes every assertion about it ' +
+                        'match nothing (HOS-1238).'
+                );
+            }
+            return file;
+        })
+    ];
+
+    /** The three sites the assertions below run over, as `it.each` rows. */
+    const CHECKED_SITES = [
+        'cron/jobs/webhook-retry.job.ts',
+        'routes/webhooks/mercadopago/subscription-payment-handler.ts',
+        'services/billing/payment-reconcile.service.ts'
+    ] as const;
 
     // Without this the guard could pass vacuously: a rename of the anchor would
     // leave zero sites to check and every assertion below would be satisfied by an
-    // empty list. Two sites exist today (the live handler and the dead-letter retry
-    // cron); a third is allowed, zero is not.
+    // empty list.
+    //
+    // The list is EXACT, so a newly-added settler fails here first and has to be
+    // added to the three assertions below deliberately. That is the intent — an
+    // approximate "at least one" would let a third site ship unchecked — but it does
+    // mean this test is the one that tells you a site appeared, not that the site is
+    // wrong.
     it('finds the settlement sites it is meant to check', () => {
         expect(
-            settlementSites.map((f) => f.path).sort(),
-            'No file under apps/api/src calls routeAddonAuthorizedPayment() any more, so ' +
-                'this guard has nothing to check and would pass on a codebase that sends no ' +
-                'receipts at all. The anchor was renamed or the add-on routing was removed — ' +
-                'either way, re-point the guard deliberately rather than leaving it vacuous.'
+            discoveredSites.map((f) => f.path).sort(),
+            'No file under apps/api/src calls routeAddonAuthorizedPayment() any more, so the ' +
+                'anchor discovers nothing and the assertions below would be satisfied by an ' +
+                'empty list. The anchor was renamed or the add-on routing was removed — either ' +
+                'way, re-point the guard deliberately rather than leaving it vacuous.'
         ).toEqual([
             'cron/jobs/webhook-retry.job.ts',
             'routes/webhooks/mercadopago/subscription-payment-handler.ts'
         ]);
+        expect(settlementSites.map((f) => f.path).sort()).toEqual([...CHECKED_SITES].sort());
     });
 
-    it.each([
-        'cron/jobs/webhook-retry.job.ts',
-        'routes/webhooks/mercadopago/subscription-payment-handler.ts'
-    ])('%s dispatches the charge receipt', (path) => {
+    it.each(CHECKED_SITES)('%s dispatches the charge receipt', (path) => {
         const file = settlementSites.find((f) => f.path === path);
         expect(file, `${path} is no longer a settlement site — update this guard`).toBeDefined();
         expect(
@@ -128,15 +186,38 @@ describe('HOS-1238 guard: every authorized-payment settler dispatches its receip
         ).toMatch(new RegExp(`\\b${RECEIPT_DISPATCHER}\\s*\\(`));
     });
 
+    // The gate inside `dispatchSubscriptionChargeReceipt` can only protect a caller
+    // that hands it the truth, and the dead-letter cron did not: it passed the
+    // LITERAL `'succeeded'`, reasoning that a re-settled authorized payment must have
+    // cleared because it carries a `payment.id`. A REJECTED charge carries one too,
+    // and the only early return on that path is `if (!details.paymentId)`. The result
+    // was the thing the dispatcher's own docblock calls impossible — a receipt for
+    // money that never arrived — mailed while dunning sent the failure notice for the
+    // same charge.
+    //
+    // A unit test per site cannot close this class: the next site gets written
+    // without one. So the property is frozen statically. The status is MAPPED, never
+    // asserted.
+    it.each(CHECKED_SITES)('%s passes a derived charge status, never a literal', (path) => {
+        const file = settlementSites.find((f) => f.path === path);
+        expect(file, `${path} is no longer a settlement site — update this guard`).toBeDefined();
+        const literals = [...(file?.code ?? '').matchAll(/chargeStatus:\s*(['"`])/g)];
+        expect(
+            literals.map((m) => m[0]),
+            `${path} hands \`chargeStatus\` a string LITERAL. The dispatcher's cleared-charge ` +
+                'gate is the only thing between a rejected charge and a receipt saying the money ' +
+                'arrived, and it reads whatever the caller passes — so a literal defeats it from ' +
+                'the outside while leaving the gate itself looking intact. Pass ' +
+                '`mapMpStatusToQZPayStatus(details)`, or a binding already derived from it.'
+        ).toEqual([]);
+    });
+
     // The dispatcher must stay the single place the receipt decision is made. A
     // second direct call to the sender from a settlement site would bypass the
     // cleared-status gate and the cross-path idempotency lookup at once — which is
     // how a correct gate in one file comes to coexist with a broken one two files
     // over.
-    it.each([
-        'cron/jobs/webhook-retry.job.ts',
-        'routes/webhooks/mercadopago/subscription-payment-handler.ts'
-    ])("%s does not reach the sender behind the dispatcher's back", (path) => {
+    it.each(CHECKED_SITES)("%s does not reach the sender behind the dispatcher's back", (path) => {
         const file = settlementSites.find((f) => f.path === path);
         expect(
             file?.code,

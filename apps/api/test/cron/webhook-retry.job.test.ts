@@ -831,13 +831,17 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
     // with nothing.
     // -------------------------------------------------------------------------
     /**
-     * Arrange a dead-lettered authorized payment that re-settles cleanly.
+     * Arrange a dead-lettered authorized payment that re-settles.
      *
      * @param overrides.record - The `billing.payments.record` spy to install.
+     * @param overrides.paymentStatus - MercadoPago's inner `payment.status`.
+     *   Defaults to `'approved'`. Note that `paymentId` stays populated whatever
+     *   this is: a rejected charge has a payment id too, which is the whole point
+     *   of the status tests below.
      * @returns The record spy, for assertions.
      */
     function arrangeResettledCharge(
-        overrides: { record?: ReturnType<typeof vi.fn> } = {}
+        overrides: { record?: ReturnType<typeof vi.fn>; paymentStatus?: string } = {}
     ): ReturnType<typeof vi.fn> {
         const event = makeDeadLetterEvent({
             type: 'subscription_authorized_payment.created',
@@ -862,7 +866,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 transactionAmount: 18_000,
                 currencyId: 'ARS',
                 status: 'processed',
-                paymentStatus: 'approved',
+                paymentStatus: overrides.paymentStatus ?? 'approved',
                 debitDate: '2026-09-08',
                 couponAmount: null,
                 campaignId: null
@@ -906,6 +910,67 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
         // The label that distinguishes this site from the live handler in the log
         // and in the idempotency diagnostics.
         expect(arg.source).toBe('webhook-retry-dead-letter');
+    });
+
+    // The blocker this PR's review caught. The cron ASSERTED `'succeeded'` instead
+    // of mapping, on the reasoning that a re-settled authorized payment must have
+    // cleared because it carries a `payment.id`. A REJECTED charge carries one too,
+    // and the only early return on this path is `if (!details.paymentId)`.
+    //
+    // Both directions are pinned here. The rejected row alone would be satisfied by
+    // a mapper that answered `'failed'` for everything — which would silence every
+    // receipt this PR exists to send — so the cleared rows assert the positive.
+    it.each([
+        ['approved', 'succeeded', true],
+        ['processed', 'succeeded', true],
+        ['rejected', 'failed', false],
+        ['cancelled', 'canceled', false],
+        ['in_process', 'processing', false]
+    ])('HOS-1238: a %s charge is booked as %s, and dispatches a receipt only if it cleared', async (paymentStatus, expectedLedgerStatus, shouldDispatch) => {
+        const record = vi.fn().mockResolvedValue({ id: 'payment-record-r1' });
+        arrangeResettledCharge({ record, paymentStatus: paymentStatus as string });
+
+        await webhookRetryJob.handler(makeCronContext());
+
+        // The ledger books the provider's real disposition. The same asserted
+        // literal was wrong one level down too: a rejected charge recorded as
+        // succeeded is revenue that never arrived.
+        expect(record).toHaveBeenCalledOnce();
+        expect((record.mock.calls[0]?.[0] as Record<string, unknown>).status).toBe(
+            expectedLedgerStatus
+        );
+
+        // The dispatcher is reached either way — by design, the cleared-charge
+        // gate lives INSIDE it rather than being replicated at each call site.
+        // So what this site owes is the TRUTH about the charge, and that is what
+        // is asserted: the mapped status, never an asserted one. That `'failed'`
+        // then yields no email is the dispatcher's own contract, proven against
+        // the real implementation in `subscription-charge-receipt.test.ts`, and
+        // `subscription-charge-receipt-sites.guard.test.ts` makes passing a
+        // literal here a CI failure rather than a thing a test happens to catch.
+        expect(mockDispatchSubscriptionChargeReceipt).toHaveBeenCalledTimes(1);
+        const arg = mockDispatchSubscriptionChargeReceipt.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(arg.chargeStatus).toBe(expectedLedgerStatus);
+        expect(arg.chargeStatus === 'succeeded').toBe(shouldDispatch);
+    });
+
+    // A charge the provider rejected is not an error on our side: nothing is queued
+    // as an orphan, and the ledger row books the rejection rather than revenue.
+    it('HOS-1238: a rejected re-settled charge books the rejection and queues nothing', async () => {
+        const record = vi.fn().mockResolvedValue({ id: 'payment-record-r1' });
+        arrangeResettledCharge({ record, paymentStatus: 'rejected' });
+
+        await webhookRetryJob.handler(makeCronContext());
+
+        expect((record.mock.calls[0]?.[0] as Record<string, unknown>).status).toBe('failed');
+        expect(
+            (mockDispatchSubscriptionChargeReceipt.mock.calls[0]?.[0] as Record<string, unknown>)
+                .chargeStatus
+        ).toBe('failed');
+        expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
     });
 
     it('HOS-1238: sends no receipt when the retry finds the charge already recorded', async () => {

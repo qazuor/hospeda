@@ -69,6 +69,10 @@ import { recordOrphanPayment } from '../../services/billing/orphan-payment-queue
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchAuthorizedPaymentDetails } from '../../utils/mp-authorized-payment.js';
+// HOS-1238: the same status mapper the live handler uses. It is a leaf module for
+// exactly this reason — more than one consumer must reach one mapping rather than
+// each assuming a disposition.
+import { mapMpStatusToQZPayStatus } from '../../utils/mp-payment-status.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
@@ -429,16 +433,35 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         return true;
     }
 
+    // HOS-1238: the provider's OWN disposition for this charge, mapped through the
+    // same leaf the live handler uses.
+    //
+    // Both this and the receipt below used to assert the literal `'succeeded'`, on
+    // the reasoning that a dead-lettered authorized payment is only re-settled once
+    // it carries a real `payment.id`. That confuses "has a payment id" with "the
+    // charge cleared": a REJECTED charge carries one too (`paymentStatus:
+    // 'rejected'` leaves `paymentId` populated), and the only early return on this
+    // path is `if (!details.paymentId)` — nothing anywhere filters on status.
+    //
+    // So a restaurant owner's REJECTED ARS 18.000 renewal, whose live handler
+    // dead-lettered on a DB hiccup in the add-on routing read (which fails closed on
+    // purpose), was booked as revenue here and — once the receipt landed — also told
+    // "we received your payment", while dunning mailed them the failure notice for
+    // the same charge. The live handler does not dispatch in that case, so the two
+    // settlement sites had begun to disagree, in the direction of the customer.
+    const chargeStatus = mapMpStatusToQZPayStatus(details);
+
     try {
-        // Record the payment via the billing facade, mirroring the live handler exactly:
-        // real customerId and subscriptionId from the resolved local subscription row.
+        // Record the payment via the billing facade, mirroring the live handler
+        // exactly: real customerId and subscriptionId from the resolved local
+        // subscription row, and the provider's real status rather than an assumed one.
         await billing.payments.record({
             id: crypto.randomUUID(),
             customerId: sub.customerId,
             subscriptionId: sub.id,
             amount: Math.round(details.transactionAmount * 100),
             currency: (details.currencyId as 'ARS') || 'ARS',
-            status: 'succeeded',
+            status: chargeStatus,
             provider: 'mercadopago',
             providerPaymentId: details.paymentId,
             metadata: {
@@ -464,9 +487,9 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         // dispatcher and its per-`paymentId` idempotency key, so whichever of the
         // two gets there first, exactly one receipt goes out.
         //
-        // `chargeStatus` is the same hardcoded `'succeeded'` this function records
-        // with — a dead-lettered authorized payment is only re-settled once it
-        // carries a real `payment.id`. Never throws.
+        // `chargeStatus` is the MAPPED provider status — see the binding above for
+        // what asserting it cost. The dispatcher's own cleared-charge gate can only
+        // protect a caller that hands it the truth. Never throws.
         await dispatchSubscriptionChargeReceipt({
             customerId: sub.customerId,
             planId: sub.planId,
@@ -475,7 +498,7 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
             // `Math.round(x * 100)` above converts for the ledger.
             amountMajor: asMajor(details.transactionAmount),
             currency: details.currencyId || 'ARS',
-            chargeStatus: 'succeeded',
+            chargeStatus,
             billing,
             localSubscriptionId: sub.id,
             source: 'webhook-retry-dead-letter'
