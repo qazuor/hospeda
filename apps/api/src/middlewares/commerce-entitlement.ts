@@ -5,10 +5,15 @@
  * WHY A SECOND LOADER INSTEAD OF A FLAG ON `entitlementMiddleware`
  *
  * `entitlementMiddleware()` is mounted GLOBALLY (`utils/create-app.ts`) and
- * resolves the ACCOMMODATION domain: `loadEntitlements` filters subscriptions
- * through `isAccommodationSubscription`, so on a commerce route `userLimits`
- * carries the accommodation plan's keys — which never include
- * `max_gastronomies`. SPEC-239 built that isolation deliberately, and §6.8 says
+ * resolves the CONSUMER domains: `loadEntitlements` picks the customer's own
+ * plan through `selectAccommodationSubscription` — accommodation first, tourist
+ * as an ordered fallback, commerce never (HOS-1233/HOS-1303; this said
+ * `isAccommodationSubscription` until then, and the predicate no longer exists
+ * on that path). So on a commerce route `userLimits` carries the accommodation
+ * plan's keys — which never include `max_gastronomies`. Since HOS-1323 it also
+ * carries the tourist-VIP gift when the caller holds a subscription in one of
+ * the three gifted verticals, which is additive and changes nothing about the
+ * isolation below. SPEC-239 built that isolation deliberately, and §6.8 says
  * to **parameterise the predicate by domain rather than remove it**: a commerce
  * route loads the commerce subscription's limits into the same context keys, an
  * accommodation route keeps loading accommodation's, and the two sets are never
@@ -109,6 +114,10 @@ import {
 import type { ProductDomainValue } from '@repo/schemas';
 import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
+import {
+    mergeTouristVipGift,
+    resolveTouristVipGift
+} from '../services/billing/tourist-vip-inheritance';
 import {
     CommercePlanNotConfiguredError,
     resolveCommercePlanSlug
@@ -484,6 +493,24 @@ export async function resolveCommerceVerticalGrants(input: {
                     entitlements.add(key);
                 }
             }
+
+            // HOS-1323 — the tourist-VIP gift, by reference to the tourist-VIP
+            // plan rather than by trusting this row's copy of it.
+            //
+            // The row DOES carry the block today: `commerceVerticalTier` spreads
+            // `TOURIST_VIP_ENTITLEMENTS` / `TOURIST_VIP_LIMITS` into all six
+            // tiers (`plans.config.ts:765`, `:777`), and the loop above would
+            // therefore admit it. What that copy cannot follow is a change made
+            // to the tourist-VIP ROW — `PUT /admin/billing/plans/{id}` writes
+            // `entitlements` and `limits` straight onto one plan and re-derives
+            // nothing. Resolving the gift is what keeps the owner's rule ("a
+            // change to tourist-VIP also applies to what we gift the verticals")
+            // true in both directions, and it is the SAME resolution the global
+            // loader uses — one mechanism, two consumers.
+            mergeTouristVipGift({
+                grants: { entitlements, limits },
+                gift: await resolveTouristVipGift()
+            });
         }
     } catch (error) {
         apiLogger.warn(
@@ -593,6 +620,12 @@ export function commerceVerticalEntitlementMiddleware(
         // four separate keys exist to prevent (HOS-1074). This vertical's set
         // — now every `LimitKey` its plan declares, not one — is the whole
         // answer for the rest of the request.
+        //
+        // HOS-1323: the tourist-VIP gift the global loader publishes is
+        // therefore dropped here along with everything else — and re-added by
+        // `resolveCommerceVerticalGrants`, from the tourist-VIP plan, for a
+        // caller who holds a live subscription in THIS vertical. The replace
+        // stays wholesale; what it replaces the set with now includes the gift.
         c.set('userEntitlements', entitlements);
         c.set('userLimits', limits);
         c.set('billingLoadFailed', false);
