@@ -286,19 +286,31 @@ export async function resolveEditEligibility(input: {
         }
 
         const hasLive = domainSubscriptions.some(
-            (sub: { status: string; trialEnd?: Date | null; currentPeriodEnd?: Date | null }) => {
+            (sub: {
+                status: string;
+                trialEnd?: Date | null;
+                currentPeriodEnd?: Date | null;
+                cancelAtPeriodEnd?: boolean | null;
+            }) => {
                 const status = sub.status as string;
                 return (
                     isLiveSubscriptionStatus(status) ||
                     EDIT_ELIGIBLE_EXTRA_STATUSES.has(status) ||
-                    // The soft-cancel arm. See the module docblock: this is the
+                    // The paid-through arm. See the module docblock: this is the
                     // one status where a date decides, and delegating it to the
                     // repo's existing date-aware predicate is what keeps a third
                     // liveness rule from being written here.
                     isSubscriptionLive({
                         status,
                         trialEnd: sub.trialEnd,
-                        currentPeriodEnd: sub.currentPeriodEnd
+                        currentPeriodEnd: sub.currentPeriodEnd,
+                        // HOS-1310: passed so a REAL soft-cancel keeps its
+                        // editing rights. The predicate now requires this flag
+                        // for the cancelled branch, so omitting it here would
+                        // quietly take editing away from every owner who
+                        // cancelled mid-period — the exact lockout this module
+                        // exists to prevent.
+                        cancelAtPeriodEnd: sub.cancelAtPeriodEnd
                     })
                 );
             }

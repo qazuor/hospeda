@@ -153,7 +153,17 @@ export function buildAccommodationPublishDeps(
                 isSubscriptionLive({
                     status: s.status,
                     trialEnd: s.trialEnd,
-                    currentPeriodEnd: s.currentPeriodEnd
+                    currentPeriodEnd: s.currentPeriodEnd,
+                    // HOS-1310: REQUIRED by the cancelled branch, and THIS is the
+                    // gate it protects. qzpay stamps `currentPeriodEnd` at INSERT
+                    // as `now + 30 days`, before any payment, and the
+                    // MercadoPago webhook refreshes rather than clears it when a
+                    // never-authorized checkout is reported cancelled. On the
+                    // date alone such a row answered `has_active_sub` here — a
+                    // month of publishing without paying, AND the loss of the
+                    // owner's local trial, because this branch returns before
+                    // `resolveTrialEligibility` below ever runs.
+                    cancelAtPeriodEnd: s.cancelAtPeriodEnd
                 })
             );
             // SPEC-239 T-034 / commerce-listing quirk: `commerce-listing` and

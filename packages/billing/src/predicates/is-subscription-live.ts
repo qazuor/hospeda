@@ -25,8 +25,14 @@ export interface IsSubscriptionLiveInput {
     /**
      * Timestamp at which the current billing period ends.
      * Meaningful when `status === 'active'` (cron-lag grace applies) or
-     * `status === 'cancelled'` (soft-cancel grace: live until period end, no extra grace).
+     * `status === 'cancelled'` (paid-through grace: live until period end, no
+     * extra grace — and only together with {@link cancelAtPeriodEnd}).
      * `null` or `undefined` → treated as live (fail-open).
+     *
+     * **Do not read this field as evidence of payment.** qzpay stamps it at
+     * INSERT as `now + 30 days`, before any charge
+     * (`packages/drizzle/src/adapter/drizzle-storage.adapter.ts`), so a row that
+     * never completed a checkout carries a period end a month in the future.
      */
     readonly currentPeriodEnd?: Date | null;
     /**
@@ -36,6 +42,24 @@ export interface IsSubscriptionLiveInput {
      * every other date on this input.
      */
     readonly courtesyEndsAt?: Date | null;
+    /**
+     * Whether the owner asked to stop at the end of a period they had already
+     * paid for (`billing_subscriptions.cancel_at_period_end`).
+     *
+     * Only meaningful when `status === 'cancelled'`, and there it is REQUIRED to
+     * be `true` for the paid-through grace to apply — see that branch and the
+     * "a cancelled row is not evidence of payment" section of this module's
+     * docblock.
+     *
+     * **This is the one field on this input that does NOT fail open**, and the
+     * asymmetry is deliberate. Absent, `null` and `false` all mean the same
+     * thing: no evidence this owner ever paid for the period the date claims.
+     * Every other field here says WHEN something ends, where absence honestly
+     * means "nothing to expire against"; this one says WHETHER anything was
+     * bought, and guessing `true` is how a never-paid row reads as a paying
+     * customer.
+     */
+    readonly cancelAtPeriodEnd?: boolean | null;
     /**
      * Current time as a Unix epoch in milliseconds.
      * Defaults to `Date.now()` at call time when omitted.
@@ -63,16 +87,52 @@ export interface IsSubscriptionLiveInput {
  *   has not exceeded the cron-lag grace window (default 6 h).
  * - `'trialing'`: live iff `trialEnd` is absent/null **or** the trial has not
  *   exceeded the cron-lag grace window.
- * - `'cancelled'` (paid-through grace): live iff `currentPeriodEnd` is
- *   absent/null **or** `currentPeriodEnd > now`. No extra grace window applies;
- *   access is valid exactly until the period the host already paid for ends.
- *   Commonly called the "soft-cancel" grace, which is misleading: an in-app soft
- *   cancel does NOT write this status (it writes `cancelAtPeriodEnd` and leaves
- *   the status alone — see `services/subscription-cancel.service.ts`). The rows
- *   that actually reach this branch mid-period come from the MercadoPago webhook
- *   (a provider `canceled`, mapped by `QZPAY_TO_HOSPEDA_STATUS`) and from
- *   qzpay-core's hard cancel. `finalize-cancelled-subs` only writes it once the
- *   effective end date has passed, so its rows answer `false` here.
+ * - `'cancelled'` (paid-through grace): live iff `cancelAtPeriodEnd === true`
+ *   **and** (`currentPeriodEnd` is absent/null **or** `currentPeriodEnd > now`).
+ *   No extra grace window applies; access is valid exactly until the period the
+ *   owner already paid for ends. Commonly called the "soft-cancel" grace, which
+ *   is misleading: an in-app soft cancel does NOT write this status (it writes
+ *   `cancelAtPeriodEnd` and leaves the status alone — see
+ *   `services/subscription-cancel.service.ts`). The rows that reach this branch
+ *   mid-period come from the MercadoPago webhook (a provider `canceled`, mapped
+ *   by `QZPAY_TO_HOSPEDA_STATUS`) and from qzpay-core's hard cancel.
+ *   `finalize-cancelled-subs` only writes it once the effective end date has
+ *   passed, so its rows answer `false` here on the date alone.
+ *
+ * ## A cancelled row is not evidence of payment (HOS-1310)
+ *
+ * The `cancelAtPeriodEnd` requirement above is the whole point of this section,
+ * because the date it guards is a placeholder:
+ *
+ * 1. qzpay stamps `currentPeriodEnd = now + 30 days` in the INSERT, next to
+ *    `status = 'incomplete'`, BEFORE the owner has authorized anything
+ *    (`packages/drizzle/src/adapter/drizzle-storage.adapter.ts`).
+ * 2. The owner abandons MercadoPago's page, or their card is refused.
+ * 3. MercadoPago reports the preapproval cancelled. The webhook maps that to
+ *    `CANCELLED` — a transition its own table documents as routine for the
+ *    redirect checkout (`subscription-status-transitions.ts`) — and, on exactly
+ *    the `pending_provider` → cancelled edge, it REWRITES `currentPeriodEnd`
+ *    from `date_created + 1 month` rather than clearing it
+ *    (`routes/webhooks/mercadopago/subscription-logic.ts`, and the adapter's
+ *    `calculatePeriodEnd`). The phantom date is refreshed, not removed. The same
+ *    path is reachable without a webhook through `subscription-poll.job.ts`.
+ * 4. Nothing reaps that row: the abandoned-pending reaper only selects
+ *    `incomplete`/`pending_provider`, and `finalize-cancelled-subs` only
+ *    `active`/`past_due`/`trialing`. It ages out on its own, ~30 days later.
+ *
+ * On the date alone this predicate called that row live, so
+ * `accommodation-publish-deps.ts`'s `checkEligibility` answered
+ * `has_active_sub` — which both let the owner publish for a month without
+ * paying AND short-circuited `resolveTrialEligibility`, costing them the local
+ * trial they still had. `cancelAtPeriodEnd` is the one column that tells the two
+ * populations apart, and it is not set on the phantom row.
+ *
+ * **Unverified, and it decides the size of the window, not the correctness of
+ * this guard:** if MercadoPago omits `auto_recurring` on a cancelled
+ * preapproval, `calculatePeriodEnd` returns its `startDate` unchanged, so
+ * `currentPeriodEnd` lands in the past and the exposure was always zero. If MP
+ * returns it, the window is 30 days. That cannot be measured without the real
+ * provider — it is what a smoke of this change should look at.
  * - `'courtesy'` (HOS-180): live iff `courtesyEndsAt` is absent/null **or**
  *   the window has not exceeded the cron-lag grace, mirroring `'active'`.
  * - All other statuses (`past_due`, `paused`, `expired`, etc.) → `false`.
@@ -137,6 +197,7 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         trialEnd,
         currentPeriodEnd,
         courtesyEndsAt,
+        cancelAtPeriodEnd,
         nowMs = Date.now(),
         graceHours = BILLING_CRON_LAG_GRACE_HOURS
     } = input;
@@ -169,12 +230,23 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
     }
 
     if (status === SubscriptionStatusEnum.CANCELLED) {
-        // Soft-cancel grace: the host paid through currentPeriodEnd — grant access
-        // until that moment, but no extra cron-lag window beyond it.
+        // Paid-through grace: the owner paid through currentPeriodEnd — grant
+        // access until that moment, but no extra cron-lag window beyond it.
+        //
+        // `cancelAtPeriodEnd === true` is REQUIRED, not decorative: it is the
+        // only column that separates an owner who paid and then asked to stop
+        // from a row that never completed a checkout at all. The date cannot,
+        // because qzpay stamps `currentPeriodEnd = now + 30 days` at INSERT,
+        // before any charge. See the module docblock.
         //
         // Reached by qzpay's American `canceled` too, since HOS-1310 normalizes
-        // the input — see the module docblock for why that is a fix and not a
-        // widening.
+        // the input. Both halves are needed and neither is sufficient: without
+        // normalization a legitimate soft-cancel that came through qzpay's
+        // spelling is denied its paid period; without this flag a never-paid row
+        // is granted one.
+        if (cancelAtPeriodEnd !== true) {
+            return false;
+        }
         return isWithinGrace({ date: currentPeriodEnd, nowMs, graceLimitMs: 0 });
     }
 
