@@ -36,6 +36,16 @@ import { normalizeStoredSubscriptionStatus } from './subscription-status-normali
  * A second copy of that arithmetic sitting inside an unrelated gate would be a
  * decision made twice, in two places, that can disagree.
  *
+ * **That delegation only holds because the middleware reads the same vocabulary
+ * this predicate does (HOS-1310).** It used to select with qzpay's
+ * `sub.isPastDue()`, which compares the RAW status against `'past_due'` and is
+ * therefore blind to `unpaid`. With `unpaid` accepted here and invisible there,
+ * such a row would pass the gates this set guards and never reach the 402 that is
+ * the only exit from the state — live forever, by omission. The middleware
+ * normalizes now. If anyone narrows it back to the raw spelling, the paragraph
+ * above stops being true while still reading perfectly reasonable, which is the
+ * most dangerous shape a comment can take in this repo.
+ *
  * ## Known: `past_due` is unreachable in production today (HOS-1302)
  *
  * No writer in this repo puts `past_due` into `billing_subscriptions.status`
