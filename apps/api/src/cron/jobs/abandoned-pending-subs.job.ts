@@ -52,9 +52,14 @@
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { createMercadoPagoAdapter, PENDING_PROVIDER_STORED_STATUSES } from '@repo/billing';
 import {
+    and,
     billingPendingCheckoutModel,
     billingSubscriptions,
+    eq,
     getDb,
+    inArray,
+    isNull,
+    lt,
     sql,
     withTransaction
 } from '@repo/db';
@@ -62,11 +67,11 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { checkSubscriptionStatusTransition, excludeAddonDomainCondition } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { CONFIRMED_TERMINAL_STATUSES } from '../../services/billing/reactivation-supersession-complete.js';
+import { hasNoLinkedPreapprovalCondition } from '../../services/billing/unlinked-preapproval-condition.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
 import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
@@ -316,10 +321,16 @@ async function reapPendingCandidate(params: {
     //     a no-op `already-reaped` rather than a wrong abandon);
     //   - cancel+verify branch → require the mp id is unchanged from the snapshot
     //     (a drift means the row was re-linked; do not abandon it).
+    //
+    // The mp-null branch matches `NULL` **or** `''`: a 2xx preapproval with no
+    // `id` is persisted as the EMPTY STRING, not NULL, while every JS-side read
+    // reports it as absent (see {@link hasNoLinkedPreapprovalCondition}). An
+    // `IS NULL`-only guard therefore matched zero rows for exactly the checkout
+    // this reaper exists to close, every hour, forever.
     const mpGuard =
         mpSubscriptionId && candidate.mpSubscriptionId
             ? eq(billingSubscriptions.mpSubscriptionId, candidate.mpSubscriptionId)
-            : isNull(billingSubscriptions.mpSubscriptionId);
+            : hasNoLinkedPreapprovalCondition();
     const [row] = await db
         .update(billingSubscriptions)
         .set({ status: ABANDONED_STATUS, updatedAt: new Date() })

@@ -18,6 +18,7 @@ import { ProductDomainEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPaidSubscription } from '../../../src/services/billing/paid-subscription-create';
 import { SubscriptionCheckoutError } from '../../../src/services/billing/subscription-checkout-error';
+import { matchesCondition } from '../../helpers/drizzle-condition';
 import { mockPlanDomainRead, mockPlanDomainReadMissing } from '../../helpers/plan-domain-read';
 
 const CUSTOMER_ID = 'cust_owner';
@@ -78,7 +79,16 @@ function createBillingMock(opts: BillingMockOpts = {}) {
 function makeCleanupDbMock(
     initial: { status: string; mpSubscriptionId: string | null } = {
         status: 'incomplete',
-        mpSubscriptionId: null
+        // HOS-1326 follow-up: `''`, NOT `null`, is what the column actually holds
+        // on the only path that reaches this cleanup. MercadoPago answers 2xx with
+        // no `id`; `mapToProviderSubscription` maps that to `id: preapproval.id ?? ''`;
+        // qzpay-drizzle's `toUpdate` writes any non-undefined value through, so the
+        // EMPTY STRING lands in `mp_subscription_id`. Its `toDomain` then hides it
+        // again behind a truthiness check, which is why the caller's guard reads
+        // `undefined` and fires. Defaulting this fixture to `null` was injecting
+        // the consumer's view of the value instead of what the producer persisted —
+        // and it certified an `IS NULL`-only WHERE as healthy.
+        mpSubscriptionId: ''
     }
 ) {
     const row = { ...initial };
@@ -102,7 +112,14 @@ function makeCleanupDbMock(
                             // correctly after the guard was deleted from the
                             // query — which is how a guard test ends up
                             // asserting the mock rather than the code.
-                            if (!matchesCondition(condition, row)) {
+                            if (
+                                !matchesCondition(condition, {
+                                    id: LOCAL_SUB_ID,
+                                    status: row.status,
+                                    mp_subscription_id: row.mpSubscriptionId,
+                                    deleted_at: null
+                                })
+                            ) {
                                 return [];
                             }
                             if (typeof patch.status === 'string') {
@@ -129,60 +146,6 @@ function makeCleanupDbMock(
     }));
 
     return { db: { select, update } as never, row, update, writes, conditions };
-}
-
-/** The row shape {@link matchesCondition} evaluates a WHERE against. */
-type CleanupRow = { status: string; mpSubscriptionId: string | null };
-
-/** Maps a Drizzle column reference (a string, under the suite-wide mock). */
-const COLUMN_VALUE: Record<string, (row: CleanupRow) => unknown> = {
-    id: () => LOCAL_SUB_ID,
-    status: (row) => row.status,
-    mp_subscription_id: (row) => row.mpSubscriptionId,
-    deleted_at: () => null
-};
-
-/**
- * Evaluates the condition tree an UPDATE's `.where(...)` was handed against a
- * row, so a test can observe what the REAL query would have matched.
- *
- * `apps/api/test/setup.ts` mocks `@repo/db` so `and`/`eq`/`inArray`/`isNull`
- * return plain descriptor objects and every column is its own snake_case name.
- * That makes the query inspectable, which is the only way a guard clause living
- * in a WHERE can be tested without a database — the alternative, restating the
- * rule inside the mock, keeps passing after the clause is deleted.
- *
- * Unknown operators throw rather than defaulting to `true`: a silently-permissive
- * evaluator is the same fail-open this file exists to catch.
- */
-function matchesCondition(condition: unknown, row: CleanupRow): boolean {
-    const node = condition as { type?: string; column?: string; conditions?: unknown[] } & Record<
-        string,
-        unknown
-    >;
-
-    const read = (column: string): unknown => {
-        const reader = COLUMN_VALUE[column];
-        if (!reader) {
-            throw new Error(`matchesCondition: unmapped column '${column}'`);
-        }
-        return reader(row);
-    };
-
-    switch (node.type) {
-        case 'and':
-            return (node.conditions ?? []).every((child) => matchesCondition(child, row));
-        case 'or':
-            return (node.conditions ?? []).some((child) => matchesCondition(child, row));
-        case 'eq':
-            return read(node.left as string) === node.right;
-        case 'inArray':
-            return (node.values as readonly unknown[]).includes(read(node.column as string));
-        case 'isNull':
-            return read(node.column as string) === null;
-        default:
-            throw new Error(`matchesCondition: unsupported condition type '${String(node.type)}'`);
-    }
 }
 
 describe('createPaidSubscription', () => {
@@ -485,6 +448,49 @@ describe('createPaidSubscription', () => {
     // These assertions are therefore about the ROW's terminal status, not about
     // a call having been made: an abandoned checkout is `abandoned`, and the
     // provider-cancel call must be absent because there is nothing to cancel.
+
+    // Driven over BOTH spellings the column can actually hold. `''` is what the
+    // qzpay chain persists on this path and is therefore the case that matters
+    // (see `makeCleanupDbMock`); `null` is the shape every JS-side read reports,
+    // and is what the first version of this WHERE tested for — exclusively, which
+    // is how an `IS NULL` predicate that matches nothing was certified healthy.
+    // Neither is hypothetical, so neither gets to be the only one asserted.
+    it.each([
+        ['an empty string (what the column really holds)', ''],
+        ['null (a row whose link write never ran)', null]
+    ])('throws MISSING_PROVIDER_SUBSCRIPTION_ID and ABANDONS the row when mp_subscription_id is %s', async (_label, storedMpId) => {
+        const billing = createBillingMock({
+            subscription: {
+                id: LOCAL_SUB_ID,
+                providerInitPoint: 'https://mp.test/checkout/abc',
+                providerSubscriptionIds: { mercadopago: '' }
+            }
+        });
+        const cleanup = makeCleanupDbMock({
+            status: 'incomplete',
+            mpSubscriptionId: storedMpId
+        });
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl,
+                db: cleanup.db
+            })
+        ).rejects.toMatchObject({
+            name: 'SubscriptionCheckoutError',
+            code: 'MISSING_PROVIDER_SUBSCRIPTION_ID'
+        });
+
+        expect(cleanup.row.status).toBe('abandoned');
+        expect(cleanup.writes[0]?.status).not.toBe('canceled');
+        expect(cleanup.writes[0]?.status).not.toBe('cancelled');
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
+    });
 
     it('throws MISSING_PROVIDER_SUBSCRIPTION_ID and ABANDONS the row when the provider id is an empty string', async () => {
         const billing = createBillingMock({

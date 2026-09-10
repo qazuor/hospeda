@@ -45,6 +45,7 @@ import {
     _internals,
     abandonedPendingSubsJob
 } from '../../src/cron/jobs/abandoned-pending-subs.job';
+import { matchesCondition } from '../helpers/drizzle-condition';
 
 // ─── Hoisted mocks (must be before vi.mock calls) ─────────────────────────────
 
@@ -114,6 +115,22 @@ vi.mock('@repo/db', async (importOriginal) => {
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
             _sql: { strings, values }
         }),
+        // HOS-1326 follow-up: the job builds its WHERE from these, and this file
+        // replaces the @repo/db mock wholesale, so without these overrides the
+        // REAL drizzle operators run over the string column stubs above and the
+        // resulting SQL objects are opaque to a test. Rendered as plain
+        // descriptors, `makeSubscriptionStore` can evaluate the actual tree
+        // instead of re-declaring the precondition in its own body.
+        and: (...conditions: unknown[]) => ({ type: 'and', conditions }),
+        or: (...conditions: unknown[]) => ({ type: 'or', conditions }),
+        eq: (left: string, right: unknown) => ({ type: 'eq', left, right }),
+        inArray: (column: string, values: readonly unknown[]) => ({
+            type: 'inArray',
+            column,
+            values
+        }),
+        isNull: (column: string) => ({ type: 'isNull', column }),
+        lt: (column: string, value: unknown) => ({ type: 'lt', column, value }),
         getDb: mockGetDb,
         withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
         billingPendingCheckoutModel: {
@@ -231,27 +248,48 @@ function makeSubscriptionStore(initial: {
     /** Every `.set(...)` payload the code under test issued, in order. */
     const writes: Array<Record<string, unknown>> = [];
 
+    /** Every condition object the abandon UPDATE's `.where(...)` was handed. */
+    const conditions: unknown[] = [];
+
     const update = vi.fn().mockImplementation(() => ({
         set: (patch: Record<string, unknown>) => {
             writes.push(patch);
             return {
-                where: () => ({
-                    returning: async () => {
-                        // The real WHERE: the row must STILL be pending.
-                        if (!_internals.PENDING_STATUSES.includes(row.status)) {
-                            return [];
+                where: (condition: unknown) => {
+                    conditions.push(condition);
+                    return {
+                        returning: async () => {
+                            // Evaluate the ACTUAL condition tree the job built —
+                            // not a restatement of it. The first version of this
+                            // store checked `PENDING_STATUSES.includes(row.status)`
+                            // in its own body, which meant deleting
+                            // `inArray(status, PENDING_STATUSES)` from the job left
+                            // every test in this block green: the mock was applying
+                            // a precondition the code no longer applied. Same trap
+                            // the `paid-subscription-create` suite documents, and
+                            // the same fix.
+                            if (
+                                !matchesCondition(condition, {
+                                    ID: row.id,
+                                    STATUS: row.status,
+                                    MP_SUBSCRIPTION_ID: row.mpSubscriptionId,
+                                    DELETED_AT: null
+                                })
+                            ) {
+                                return [];
+                            }
+                            if (typeof patch.status === 'string') {
+                                row.status = patch.status;
+                            }
+                            return [{ id: row.id, customerId: row.customerId, planId: row.planId }];
                         }
-                        if (typeof patch.status === 'string') {
-                            row.status = patch.status;
-                        }
-                        return [{ id: row.id, customerId: row.customerId, planId: row.planId }];
-                    }
-                })
+                    };
+                }
             };
         }
     }));
 
-    return { db: { update }, row, update, writes };
+    return { db: { update }, row, update, writes, conditions };
 }
 
 const ABANDONED_ROW = { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' };
@@ -679,6 +717,43 @@ describe('reapPendingCandidate (HOS-1326: the reaped row lands in `abandoned`)',
             expect(write.status).not.toBe('canceled');
             expect(write.status).not.toBe('cancelled');
         }
+    });
+
+    // The case the `IS NULL`-only guard could not see. MercadoPago answered 2xx
+    // with no `id`, so the COLUMN holds `''` while `candidate.mpSubscriptionId`
+    // reads as absent — `?.trim()` makes it falsy, so the reaper correctly takes
+    // the "nothing to cancel" branch and then, before the fix, wrote a WHERE that
+    // matched zero rows. The row stayed `incomplete` and was re-selected every
+    // hour forever, since the candidate SELECT has no upper age bound.
+    it.each([
+        ['an empty string (a 2xx preapproval with no id)', ''],
+        ['null (no link write ever ran)', null]
+    ])('abandons an unlinked candidate whose column holds %s', async (_label, storedMpId) => {
+        const store = makeSubscriptionStore({
+            id: 'sub-unlinked',
+            customerId: 'cust-1',
+            planId: 'plan-1',
+            status: 'incomplete',
+            mpSubscriptionId: storedMpId
+        });
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-unlinked',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: storedMpId
+            },
+            paymentAdapter: paymentAdapter as any,
+            db: store.db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome.abandoned).toBe(true);
+        expect(store.row.status).toBe('abandoned');
+        // Nothing to cancel at the provider on either spelling.
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
     });
 
     it('a candidate with NO preapproval ends on `abandoned` too', async () => {

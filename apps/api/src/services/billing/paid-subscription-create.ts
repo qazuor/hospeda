@@ -49,6 +49,7 @@ import {
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
+import { hasNoLinkedPreapprovalCondition } from './unlinked-preapproval-condition.js';
 
 /**
  * Input for {@link createPaidSubscription}.
@@ -314,7 +315,10 @@ async function abandonUnlinkableSubscription(input: {
                 and(
                     eq(billingSubscriptions.id, subscriptionId),
                     inArray(billingSubscriptions.status, [...PENDING_PROVIDER_STORED_STATUSES]),
-                    isNull(billingSubscriptions.mpSubscriptionId),
+                    // NOT `isNull(...)`: the column holds `''` here, not NULL.
+                    // See {@link hasNoLinkedPreapprovalCondition} for the chain
+                    // that puts it there and why an IS NULL test matched nothing.
+                    hasNoLinkedPreapprovalCondition(),
                     isNull(billingSubscriptions.deletedAt)
                 )
             )
@@ -328,9 +332,31 @@ async function abandonUnlinkableSubscription(input: {
             return;
         }
 
+        // Re-read to say WHICH precondition refused, not merely that one did. A
+        // no-op here has two very different causes — a concurrent path already
+        // moved the row (benign) versus a preapproval linked mid-flight (a live
+        // authorization we must not strand) — and the first version of this line
+        // named neither, which left the only symptom of a mismatched WHERE
+        // indistinguishable from healthy contention.
+        const [current] = await writeClient
+            .select({
+                status: billingSubscriptions.status,
+                mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
+                deletedAt: billingSubscriptions.deletedAt
+            })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, subscriptionId))
+            .limit(1);
+
         apiLogger.warn(
-            { subscriptionId },
-            'HOS-1326: the unlinkable subscription was no longer pending-and-unlinked when the abandon write ran — left untouched, abandoned-pending cron will re-evaluate it'
+            {
+                subscriptionId,
+                observedStatus: current?.status ?? null,
+                observedMpSubscriptionId: current?.mpSubscriptionId ?? null,
+                observedDeleted: current?.deletedAt != null,
+                rowFound: current !== undefined
+            },
+            'HOS-1326: the abandon write matched no row — the subscription is no longer pending-and-unlinked. The abandoned-pending cron re-evaluates it hourly ONLY while it is still pending; a row that left the pending statuses needs a human.'
         );
     } catch (abandonErr) {
         apiLogger.error(
