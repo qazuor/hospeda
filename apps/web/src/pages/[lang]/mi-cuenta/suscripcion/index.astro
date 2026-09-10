@@ -20,8 +20,8 @@ import { toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { userApi } from '@/lib/api/endpoints-protected';
 import {
 	type AccommodationSubscriptionReading,
-	CHANGE_PLAN_RESOLVABLE_STATUSES,
 	planChangeWouldResolveAnotherSubscription,
+	resolveAccommodationSubscriptionReading,
 	resolveActiveSubscriptionDomain,
 	resolveDashboardPlanSource,
 	SUBSCRIPTION_DASHBOARD_DOMAINS,
@@ -87,20 +87,23 @@ const productDomain = resolveActiveSubscriptionDomain({ rawDomain, heldDomains }
  * as "they have no accommodation subscription" there, or the guard is re-opened
  * by the failure mode of its own input.
  *
- * `'absent'` is narrower than "no subscription": `change-plan` filters to the
- * statuses in `CHANGE_PLAN_RESOLVABLE_STATUSES` before selecting, so a paused
- * or past-due accommodation subscription is invisible to it and cannot be the
+ * `'absent'` is narrower than "no subscription": `change-plan` filters to
+ * `active | trialing` before selecting, so a paused, past-due, courtesy or
+ * complimentary accommodation subscription is invisible to it and cannot be the
  * row it mutates — withholding for one would be withholding for nothing.
+ *
+ * The classification lives in `resolveAccommodationSubscriptionReading`, not
+ * inline here: a `comp` subscription reaches this layer spelled `'active'`
+ * (`QZPAY_STATUS_MAP`), so a status check written by hand reads it as held.
  */
 const accommodationResult =
 	domainSubscriptionResults[SUBSCRIPTION_DASHBOARD_DOMAINS.indexOf('accommodation')];
-const accommodationSubscription: AccommodationSubscriptionReading = !accommodationResult?.ok
-	? 'unknown'
-	: accommodationResult.data.subscription === null
-		? 'absent'
-		: CHANGE_PLAN_RESOLVABLE_STATUSES.includes(accommodationResult.data.subscription.status)
-			? 'held'
-			: 'absent';
+const accommodationSubscription: AccommodationSubscriptionReading =
+	resolveAccommodationSubscriptionReading({
+		// `undefined` when the read FAILED — the distinction the three-state
+		// reading exists to carry; `null` when it reported no subscription.
+		subscription: accommodationResult?.ok ? accommodationResult.data.subscription : undefined
+	});
 
 /**
  * HOS-937 step 4: `?retryCheckoutId=<localSubscriptionId>` is the card-

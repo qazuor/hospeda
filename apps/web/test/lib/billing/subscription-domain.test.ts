@@ -9,6 +9,7 @@ import {
     CHANGE_PLAN_RESOLVABLE_STATUSES,
     isSubscriptionDashboardDomain,
     planChangeWouldResolveAnotherSubscription,
+    resolveAccommodationSubscriptionReading,
     resolveActiveSubscriptionDomain,
     resolveDashboardPlanSource,
     SUBSCRIPTION_DASHBOARD_DOMAINS
@@ -324,10 +325,17 @@ describe('CHANGE_PLAN_RESOLVABLE_STATUSES', () => {
         expect(CHANGE_PLAN_RESOLVABLE_STATUSES).toEqual(['active', 'trial']);
     });
 
+    // The statuses this ENDPOINT can actually report — `SUBSCRIPTION_STATUSES`
+    // in `routes/user/protected/subscription.ts`. Deliberately not the stored
+    // vocabulary: `'comp'` is absent from this list because the endpoint maps it
+    // to `'active'` on the way out, and `'trialing'` because it is reported as
+    // `'trial'`. An earlier version of this test asserted
+    // `not.toContain('comp')`, which passes forever — that string never travels
+    // this wire, so the assertion described nothing. A test of absence has to be
+    // written over the vocabulary the layer actually receives.
     it.each([
         'paused',
         'past_due',
-        'comp',
         'courtesy',
         'cancelled',
         'expired',
@@ -335,5 +343,95 @@ describe('CHANGE_PLAN_RESOLVABLE_STATUSES', () => {
     ])('does not include %s — change-plan cannot resolve it', (status) => {
         // Arrange & Act & Assert
         expect(CHANGE_PLAN_RESOLVABLE_STATUSES).not.toContain(status);
+    });
+
+    it('does not carry a stored-only spelling the endpoint never emits', () => {
+        // Arrange & Act & Assert — the flip side. `trialing` and `comp` are the
+        // STORED spellings; putting either here would be a value this list is
+        // compared against and never matches, which is a silent no-op rather
+        // than a visible mistake.
+        expect(CHANGE_PLAN_RESOLVABLE_STATUSES).not.toContain('trialing');
+        expect(CHANGE_PLAN_RESOLVABLE_STATUSES).not.toContain('comp');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// resolveAccommodationSubscriptionReading
+// ---------------------------------------------------------------------------
+
+describe('resolveAccommodationSubscriptionReading', () => {
+    it('reads a failed accommodation fetch as unknown, never as absent', () => {
+        // Arrange & Act — `undefined` is how the page spells "the read did not
+        // come back": a 500 (`ok: false`), the client's 10s timeout (408) or a
+        // dead network (status 0) all arrive here the same way.
+        const result = resolveAccommodationSubscriptionReading({ subscription: undefined });
+
+        // Assert
+        expect(result).toBe('unknown');
+    });
+
+    it('reads "no subscription" as absent', () => {
+        // Arrange & Act
+        const result = resolveAccommodationSubscriptionReading({ subscription: null });
+
+        // Assert
+        expect(result).toBe('absent');
+    });
+
+    it.each(['active', 'trial'])('reads a %s subscription as held', (status) => {
+        // Arrange & Act — the two the plan-change route really selects on.
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status, isComplimentary: false }
+        });
+
+        // Assert
+        expect(result).toBe('held');
+    });
+
+    it.each([
+        'paused',
+        'past_due',
+        'courtesy',
+        'cancelled',
+        'expired',
+        'pending'
+    ])('reads a %s subscription as absent — change-plan cannot resolve it', (status) => {
+        // Arrange & Act
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status, isComplimentary: false }
+        });
+
+        // Assert
+        expect(result).toBe('absent');
+    });
+
+    it('HOS-1321: a COMP subscription is absent, even though it arrives spelled "active"', () => {
+        // Arrange — the case the old `not.toContain('comp')` test could not
+        // reach. `QZPAY_STATUS_MAP` maps `comp → 'active'`, so `'comp'` never
+        // travels this wire and a status check alone reads a complimentary
+        // accommodation subscription as HELD. The effect was a holder of a comp
+        // accommodation plan plus a live `tourist-vip` being denied a tourist
+        // plan change that was perfectly safe — `plan-change.ts` selects on the
+        // STORED status and would never have resolved that row.
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status: 'active', isComplimentary: true }
+        });
+
+        // Assert
+        expect(result).toBe('absent');
+    });
+
+    it('treats a missing isComplimentary as not complimentary', () => {
+        // Arrange & Act — the flag is required on the wire, so its absence
+        // means the payload is not what we think it is. Reading it as "comp"
+        // would withhold from every ordinary subscriber; reading it as "not
+        // comp" degrades to the plain status check, which is this function's
+        // behaviour before the flag existed.
+        const result = resolveAccommodationSubscriptionReading({
+            subscription: { status: 'active' }
+        });
+
+        // Assert
+        expect(result).toBe('held');
     });
 });

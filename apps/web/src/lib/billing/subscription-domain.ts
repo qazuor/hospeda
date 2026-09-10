@@ -194,7 +194,9 @@ export function resolveDashboardPlanSource({
  * would resolve", which is narrower than "no subscription at all": that route
  * filters to `active | trialing` before selecting, so a `paused`, `past_due`,
  * `comp` or `courtesy` accommodation subscription is invisible to it and cannot
- * be the row it mutates.
+ * be the row it mutates. Derive it with
+ * {@link resolveAccommodationSubscriptionReading} rather than by hand — `comp`
+ * reaches this layer spelled `'active'`, so a status check alone gets it wrong.
  */
 export type AccommodationSubscriptionReading = 'held' | 'absent' | 'unknown';
 
@@ -208,6 +210,57 @@ export type AccommodationSubscriptionReading = 'held' | 'absent' | 'unknown';
  * in danger.
  */
 export const CHANGE_PLAN_RESOLVABLE_STATUSES: readonly string[] = ['active', 'trial'] as const;
+
+/**
+ * Turns the accommodation-scoped read into an
+ * {@link AccommodationSubscriptionReading}.
+ *
+ * ## `comp` arrives disguised as `'active'`, and that is the whole reason this
+ * function exists rather than a bare status check
+ *
+ * The two layers speak different vocabularies. `plan-change.ts` selects on the
+ * STORED status and never sees a `comp` row; the account endpoint maps
+ * `comp → 'active'` on the way out (`QZPAY_STATUS_MAP`), so `'comp'` never
+ * travels this wire at all. A status check alone therefore reads a
+ * complimentary accommodation subscription as `'held'` and withholds the
+ * tourist tab's plan change from somebody whose change was perfectly safe —
+ * the conservative direction, but withholding for nothing, which is exactly
+ * what {@link CHANGE_PLAN_RESOLVABLE_STATUSES} exists to avoid.
+ *
+ * `isComplimentary` is the flag the endpoint ships for precisely this: it is
+ * how every other surface tells a real `active` from a comp, whose actions the
+ * backend refuses because there is no MercadoPago preapproval to mutate.
+ *
+ * Every other status the endpoint can report — `courtesy`, `paused`,
+ * `past_due`, `cancelled`, `expired`, `pending` — is spelled the same on both
+ * sides, so the status check settles them.
+ *
+ * @param params.subscription - What the accommodation-scoped read returned:
+ *   the subscription, `null` when it reported none, or `undefined` when the
+ *   read FAILED (a 500, a timeout, a dead network). The last one is the
+ *   distinction the whole three-state type exists to carry.
+ * @returns Whether an accommodation subscription `change-plan` would resolve is
+ *   held, absent, or could not be established.
+ */
+export function resolveAccommodationSubscriptionReading({
+    subscription
+}: {
+    readonly subscription:
+        | { readonly status: string; readonly isComplimentary?: boolean }
+        | null
+        | undefined;
+}): AccommodationSubscriptionReading {
+    if (subscription === undefined) {
+        return 'unknown';
+    }
+    if (subscription === null) {
+        return 'absent';
+    }
+    if (subscription.isComplimentary === true) {
+        return 'absent';
+    }
+    return CHANGE_PLAN_RESOLVABLE_STATUSES.includes(subscription.status) ? 'held' : 'absent';
+}
 
 /**
  * Whether this tab's "Cambiar plan" would mutate a DIFFERENT subscription than
