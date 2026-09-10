@@ -125,10 +125,19 @@ async function loadOwnerCustomerId(ownerId: string): Promise<string | null> {
 /**
  * Resolve the plan entitlements for a given billing customer ID.
  *
- * Shares the SUBSCRIPTION SELECTION contract with `loadEntitlements`
- * (entitlement.ts): entitlement-granting status (`active | trialing | comp`,
- * HOS-291) AND accommodation product domain (SPEC-239 T-034). It is a
- * deliberately reduced re-implementation of the rest: it does NOT carry the
+ * Selects on entitlement-granting status (`active | trialing | comp`, HOS-291)
+ * AND accommodation product domain (SPEC-239 T-034).
+ *
+ * This used to be documented as SHARING the subscription-selection contract with
+ * `loadEntitlements` (entitlement.ts). It no longer does, and saying so hid a
+ * real divergence (HOS-1303): since HOS-1233 that loader resolves the
+ * accommodation subscription OR the tourist one, through the ordered
+ * `selectAccommodationSubscription`. This one is accommodation-only and
+ * unordered — correctly, because the surfaces it gates are an owner's listings,
+ * which a tourist plan grants nothing about. Two different questions, and the
+ * word "shares" invited the next reader to keep them in step by copying.
+ *
+ * It is a deliberately reduced re-implementation of the rest: it does NOT carry the
  * viewer-only concerns (caller-keyed cache, staff bypass, actor-role defaults),
  * NOR the HOS-217 HOST tourist-plan discard, NOR the customer-level entitlement
  * merge (`billing.entitlements.getByCustomerId`) that the consumer-side loader
