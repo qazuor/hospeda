@@ -64,7 +64,9 @@ function makePlan(activeSubscriptionCount: number): ParsedPlanRecord {
         activeSubscriptionCount,
         // HOS-1062 F1: required on ParsedPlanRecord. These dialogs never read it,
         // so vitest stayed green without it — only `tsc` saw the gap.
-        publicListing: 'listed'
+        publicListing: 'listed',
+        // HOS-1314: required on ParsedPlanRecord, same reason as publicListing.
+        productDomain: 'accommodation'
     };
 }
 

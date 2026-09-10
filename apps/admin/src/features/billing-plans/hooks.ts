@@ -81,7 +81,10 @@ function transformPlanRecord(record: unknown): ParsedPlanRecord {
         // invisible to the only people who set it: an operator marking a plan by
         // hand had no way to tell a correct `'unlisted'` from a typo'd one, since
         // both withhold the plan and neither says so anywhere.
-        publicListing: p.publicListing
+        publicListing: p.publicListing,
+        // HOS-1314: needed by the grant-comp plan selector to group plans by
+        // vertical.
+        productDomain: p.productDomain
     };
 }
 

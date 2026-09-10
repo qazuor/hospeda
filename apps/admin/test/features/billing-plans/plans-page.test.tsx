@@ -43,7 +43,9 @@ const existingPlan: ParsedPlanRecord = {
     activeSubscriptionCount: 0,
     // HOS-1062 F1: required on ParsedPlanRecord. The dialog never reads it, so
     // vitest stayed green without it — only `tsc` saw the gap.
-    publicListing: 'listed'
+    publicListing: 'listed',
+    // HOS-1314: required on ParsedPlanRecord, same reason as publicListing.
+    productDomain: 'accommodation'
 };
 
 describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {

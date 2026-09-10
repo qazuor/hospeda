@@ -7,7 +7,7 @@ import {
     formatCentsToArs,
     formatShortDate as formatShortDateHelper
 } from '@/lib/format-helpers';
-import type { SubscriptionStatus } from './types';
+import type { Subscription, SubscriptionStatus } from './types';
 
 /**
  * Format a date string as short date (DD/MM/YYYY). Returns "—" for
@@ -204,4 +204,37 @@ export function getChangePlanOptions(input: {
             plan.slug !== currentSlug &&
             plan.isActive
     );
+}
+
+/**
+ * Builds the `POST /api/v1/admin/billing/subscriptions/grant-comp` request
+ * body from the dialog's confirmed selection (HOS-1314).
+ *
+ * Extracted as its own pure function specifically so this mapping is
+ * directly unit-testable: `subscription.customerId` (a `billing_customers.id`)
+ * and `subscription.user?.id` (a Hospeda `users.id`) are both UUIDs sitting
+ * on the same row, and confusing the two is exactly the class of bug this
+ * whole feature exists to prevent — the grant would silently target the
+ * customer's LOGIN identity instead of their BILLING identity, which the
+ * `grant-comp` endpoint would 404 on for anyone whose two ids don't happen
+ * to collide, or worse, comp the wrong billing customer if they ever did.
+ *
+ * @param input.subscription - The subscription the dialog was opened from
+ *   (used only to resolve the target customer).
+ * @param input.planId - The plan UUID chosen in the dialog's selector.
+ * @param input.interval - The billing interval chosen in the dialog (audit
+ *   only — a comp is never charged either way).
+ * @returns The exact body `useGrantCompMutation` sends.
+ */
+export function buildGrantCompPayload(input: {
+    readonly subscription: Subscription;
+    readonly planId: string;
+    readonly interval: 'monthly' | 'annual';
+}): { customerId: string; planId: string; interval: 'monthly' | 'annual' } {
+    const { subscription, planId, interval } = input;
+    return {
+        customerId: subscription.customerId,
+        planId,
+        interval
+    };
 }

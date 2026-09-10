@@ -64,6 +64,8 @@ function makePlan(overrides: Partial<ParsedPlanRecord>): ParsedPlanRecord {
         // HOS-1062 F1: every plan in production carries 'listed'. The badge is
         // the exception, so the ordinary case is the default here.
         publicListing: 'listed',
+        // HOS-1314: required on ParsedPlanRecord.
+        productDomain: 'accommodation',
         ...overrides
     };
 }

@@ -134,6 +134,7 @@ function makePlanRow(
         metadata: Record<string, unknown>;
         entitlements: string[];
         limits: Record<string, number>;
+        productDomain: string | null;
     }> = {}
 ): Record<string, unknown> {
     return {
@@ -143,6 +144,9 @@ function makePlanRow(
         active: overrides.active ?? true,
         deletedAt: overrides.deletedAt ?? null,
         livemode: overrides.livemode ?? false,
+        // HOS-1314: defaults to 'accommodation' like every pre-HOS-1233 row —
+        // override to exercise the admin grant-comp plan selector's grouping.
+        productDomain: overrides.productDomain ?? 'accommodation',
         metadata: overrides.metadata ?? {
             displayName: 'Básico',
             category: 'owner',
@@ -534,6 +538,51 @@ describe('plan.crud', () => {
             expect(result.success).toBe(true);
             if (!result.success) return;
             expect(result.data.items[0]?.activeSubscriptionCount).toBe(5);
+        });
+
+        // HOS-1314: the admin grant-comp plan selector groups the list by
+        // vertical — without this field the caller cannot tell a gastronomy
+        // plan from an accommodation one.
+        it('carries productDomain on each item (HOS-1314)', async () => {
+            // Arrange
+            const planRow = makePlanRow({ productDomain: 'gastronomy' });
+            const priceRow = makePriceRow();
+            const db = buildMockDb([
+                [{ value: 1 }],
+                [planRow],
+                [priceRow],
+                [{ planId: 'plan-uuid-1', value: 0 }]
+            ]);
+            mockGetDb.mockReturnValue(db);
+
+            // Act
+            const result = await listPlans({});
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.items[0]?.productDomain).toBe('gastronomy');
+        });
+
+        it('reads a NULL productDomain as accommodation, like createCompSubscription does (HOS-1314)', async () => {
+            // Arrange
+            const planRow = makePlanRow({ productDomain: null });
+            const priceRow = makePriceRow();
+            const db = buildMockDb([
+                [{ value: 1 }],
+                [planRow],
+                [priceRow],
+                [{ planId: 'plan-uuid-1', value: 0 }]
+            ]);
+            mockGetDb.mockReturnValue(db);
+
+            // Act
+            const result = await listPlans({});
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.items[0]?.productDomain).toBe('accommodation');
         });
 
         it('should filter the subscription-count query by the canonical ENTITLEMENT_GRANTING_STATUSES set, including comp (HOS-736)', async () => {

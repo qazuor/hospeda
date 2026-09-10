@@ -196,6 +196,18 @@ export type AdminPaymentView = z.infer<typeof AdminPaymentViewSchema>;
 export const AdminSubscriptionViewSchema = z.object({
     /** `billing_subscriptions.id` */
     id: z.string().uuid(),
+    /**
+     * `billing_subscriptions.customer_id` — the qzpay billing customer id.
+     *
+     * Added for HOS-1314: the admin "grant comp subscription" action
+     * (`POST /admin/billing/subscriptions/grant-comp`) takes a
+     * `billing_customers.id`, never a Hospeda `users.id` (the `user.id` field
+     * below). Without this, granting a comp from a subscription row required
+     * an operator to already know the qzpay customer UUID by heart — exactly
+     * the API-only gap this issue closes. Admin-only DTO, so exposing an
+     * internal identifier here carries no public surface.
+     */
+    customerId: z.string().uuid(),
     /** Normalised subscription status. See {@link AdminSubscriptionViewStatusSchema}. */
     status: AdminSubscriptionViewStatusSchema,
     /**

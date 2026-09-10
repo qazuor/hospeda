@@ -1236,7 +1236,8 @@
             "cancelSubscriptionButton": "Cancel subscription",
             "pauseButton": "Pause",
             "resumeButton": "Resume",
-            "grantCourtesyButton": "Gift cycles"
+            "grantCourtesyButton": "Gift cycles",
+            "grantCompButton": "Grant comp"
         },
         "paymentHistory": {
             "title": "Payment History",
@@ -1327,7 +1328,10 @@
             "pauseError": "Error pausing subscription:",
             "resumeError": "Error resuming subscription:",
             "courtesyGranted": "Cycles gifted",
-            "courtesyError": "Could not gift cycles:"
+            "courtesyError": "Could not gift cycles:",
+            "compGranted": "Comp granted:",
+            "compError": "Could not grant the comp:",
+            "plansTruncated": "Could not load every plan for granting a comp, showing"
         },
         "unknownUser": "Unknown user",
         "unknownPlan": "Unknown plan",
@@ -1351,6 +1355,19 @@
             "leadTimeWarning": "If the next charge is under 3 days away the grant is refused: pausing that close may not stop it, and they would be charged for exactly the cycle being gifted.",
             "confirmButton": "Gift",
             "backButton": "Back"
+        },
+        "compDialog": {
+            "title": "Grant permanent comp",
+            "description": "Choose a plan from any vertical for",
+            "planLabel": "Plan to grant",
+            "selectPlan": "Select a plan…",
+            "noPlans": "No active plans available.",
+            "perMonth": "/mo",
+            "intervalLabel": "Interval (audit only — a comp is never charged)",
+            "intervalMonthly": "Monthly",
+            "intervalAnnual": "Annual",
+            "permanentWarning": "This comp is permanent and carries no MercadoPago preapproval: it is never charged, and it does not return to full price on its own. It cannot be \"undone\" with a plan change — only by cancelling the resulting subscription.",
+            "confirmButton": "Grant comp"
         }
     },
     "exchangeRates": {
