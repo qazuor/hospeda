@@ -9,11 +9,17 @@
  * That is a NEGATION, and `isCommerceVertical('tourist')` is `false`, so the
  * fourth domain walked straight through it: a `tourist-vip` holder was offered
  * "Pausar suscripción" and a confirm modal reading «tus alojamientos se ocultan
- * del sitio y no podrás editarlos» — about accommodation they do not have. The
- * backend is already right (`subscription-pause.ts` fails closed for a
- * non-accommodation domain and reports `accommodationsUpdated: 0`), which makes
- * it worse rather than better: the modal described an effect that would not
- * happen.
+ * del sitio y no podrás editarlos» — about accommodation they do not have.
+ *
+ * The backend is NOT a backstop, and this file previously claimed it was.
+ * `POST /billing/subscriptions/pause` has two dimensions and gates one:
+ * `billing.subscriptions.pause` (`subscription-pause.ts:258`) pauses the
+ * MercadoPago preapproval for EVERY domain, ungated, while only
+ * `setOwnerServiceSuspension` sits behind `isAccommodationDomainSubscription`
+ * (`:414`) — which is what makes `accommodationsUpdated` come back `0`. A
+ * tourist pause really would have stopped their charges; the hidden-accommodation
+ * promise was the only impossible half. "Fails closed" on a two-dimension route
+ * has to be read one dimension at a time.
  *
  * Owner ruling, 2026-09-10: a traveller should not be pausing, and no new copy
  * is to be written for them — close the gate. So these assert the ABSENCE of

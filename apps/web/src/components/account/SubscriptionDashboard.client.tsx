@@ -128,10 +128,36 @@ function isCommerceVertical(domain: ProductDomainScope | undefined): domain is C
  * straight through it: `isCommerceVertical('tourist')` is `false`, so a
  * `tourist-vip` holder was offered "Pausar" and a modal reading "tus
  * alojamientos se ocultan del sitio y no podrás editarlos", about accommodation
- * they do not have. The backend is already right — `subscription-pause.ts`
- * fails closed for a non-accommodation domain and reports
- * `accommodationsUpdated: 0` — which makes it worse, not better: the modal
- * describes an effect that will not happen.
+ * they do not have.
+ *
+ * ## The backend is NOT a backstop here — read that route per DIMENSION
+ *
+ * `POST /billing/subscriptions/pause` does two separable things and gates only
+ * one of them:
+ *
+ * - **Billing dimension** — `billing.subscriptions.pause(target.id)`
+ *   (`subscription-pause.ts:258`) pauses the MercadoPago preapproval and flips
+ *   the local status. It runs for EVERY domain, ungated.
+ * - **Service dimension** — `setOwnerServiceSuspension`, which hides the
+ *   owner's accommodations, is the only part wrapped in
+ *   `isAccommodationDomainSubscription` (`:414`), and that is what makes
+ *   `accommodationsUpdated` come back `0`.
+ *
+ * So a tourist pause was never impossible server-side: it really would have
+ * stopped their charges, and the modal's promise about hidden accommodation was
+ * the only part that could not happen. An earlier version of this comment said
+ * the route "fails closed for a non-accommodation domain", which is false —
+ * "fails closed" on a two-dimension route has to be read one dimension at a
+ * time.
+ *
+ * Known consequence, NOT introduced here: a `tourist-vip` who paused before
+ * HOS-1233 reclassified their row (while the accommodation dashboard still
+ * showed them a Pausar button) now lands on the tourist tab with
+ * `status: 'paused'`, where `canResume` is `false` and `canCancel` excludes
+ * `paused` — a paused subscription with no action on it. Strictly better than
+ * the "Sin suscripción activa" they saw before this spec, and commerce has
+ * carried the same gap since HOS-1278, so it is left alone rather than grown
+ * into this change.
  *
  * An INCLUSION list, so a fifth domain is excluded until somebody decides what
  * pausing means for it and writes copy that is true.
