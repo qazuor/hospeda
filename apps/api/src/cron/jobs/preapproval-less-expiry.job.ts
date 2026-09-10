@@ -55,6 +55,25 @@
  * that still reads `active` would be an expiry done half way — a worse state
  * than the bug being fixed. The call is a no-op for the non-commerce majority.
  *
+ * ## Partners: deliberately NOT reconciled here (HOS-1306)
+ *
+ * There is a SECOND bridge — `reconcilePartnerForSubscription`, writing
+ * `partner_subscriptions` and `partners.subscriptionStatus` — which the one
+ * above never calls. This job does not call it, and that is a measured
+ * decision rather than the oversight it looks like: a partner subscription
+ * cannot hold this job's target shape (`active`/`trialing` with a NULL
+ * preapproval), so the call would be an invocation nothing ever exercises.
+ *
+ * The evidence, and the CAVEAT that it rests on the absence of a producing
+ * write rather than on a structural invariant, live in `BRIDGE_ONLY_SITES` in
+ * `test/services/subscription-linked-entities-bridge.guard.test.ts` — which
+ * fails if this file is neither wired for partners nor listed there. Do not
+ * restate the reasoning here; a second copy is what rots.
+ *
+ * If you are landing HOS-1062 (activating a partner without MercadoPago), you
+ * are creating that population: wire the partner reconciler here in the same
+ * change.
+ *
  * @module cron/jobs/preapproval-less-expiry
  */
 

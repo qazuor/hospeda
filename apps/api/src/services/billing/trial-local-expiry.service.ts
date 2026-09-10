@@ -162,6 +162,19 @@ export async function unpublishListingsForExpiredTrial(input: {
         //   for them; the bridge call below is harmless and keeps the branch
         //   free of a domain-by-domain special case.
         //
+        // A PARTNER row would also land in this branch — the predicate is
+        // `!isAccommodationSubscription`, not a commerce/tourist allowlist — and
+        // the bridge below does nothing for it, since partners live in
+        // `partner_subscriptions`. That is not a gap: a partner subscription can
+        // never be `trialing`, so it cannot reach this function at all (all
+        // three partner plans are trialDays: 0, and `createTrialSubscription`'s
+        // only two call sites are accommodation and commerce). HOS-1306 measured
+        // it and recorded the evidence in `BRIDGE_ONLY_SITES` in
+        // `test/services/subscription-linked-entities-bridge.guard.test.ts`,
+        // which fails if this file is neither wired for partners nor listed
+        // there. If partner ever gains a trial, that guard entry is the thing to
+        // revisit before this comment.
+        //
         // The status is passed explicitly because this runs BEFORE the row is
         // flipped (D-3's ordering, preserved). The bridge is non-throwing by
         // contract, so unlike the accommodation branch there is no failure to
