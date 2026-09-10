@@ -14,6 +14,7 @@
  * @module test/services/billing/paid-subscription-create
  */
 
+import { getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPaidSubscription } from '../../../src/services/billing/paid-subscription-create';
@@ -425,6 +426,92 @@ describe('createPaidSubscription', () => {
         ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
 
         expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+    });
+
+    // ── HOS-1310: the cleanup must land on a status the liveness predicates
+    // refuse. qzpay's cancel() leaves `canceled`, and qzpay stamped
+    // `current_period_end = now + 30 days` at INSERT before any payment — so a
+    // `canceled` row from a never-authorized checkout reads as LIVE to
+    // `isSubscriptionLive` (its `cancelled` branch grants access while the
+    // period end is in the future) and short-circuits the owner's local trial.
+
+    /**
+     * Arms `getDb()` with a capturing `update().set().where()` chain, merged onto
+     * whatever the suite already armed (the plan-domain read) rather than
+     * replacing it — the same merge discipline `mockPlanDomainRead` documents.
+     */
+    function captureTerminalStatusWrite() {
+        const where = vi.fn().mockResolvedValue(undefined);
+        const set = vi.fn((_values: Record<string, unknown>) => ({ where }));
+        const update = vi.fn((_table: unknown) => ({ set }));
+        const existing = (vi.mocked(getDb).getMockImplementation()?.() ?? {}) as Record<
+            string,
+            unknown
+        >;
+        vi.mocked(getDb).mockReturnValue({ ...existing, update } as never);
+        return { update, set, where };
+    }
+
+    it('writes the terminal abandoned status after the cleanup cancel (HOS-1310)', async () => {
+        const billing = createBillingMock({
+            subscription: {
+                id: LOCAL_SUB_ID,
+                providerInitPoint: 'https://mp.test/checkout/abc',
+                providerSubscriptionIds: { mercadopago: '' }
+            }
+        });
+        const { update, set } = captureTerminalStatusWrite();
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
+
+        // Asserted, not assumed: the write sits inside a try/catch that only
+        // logs, so a chain that threw would leave this test green without it.
+        expect(update).toHaveBeenCalledOnce();
+        expect(set).toHaveBeenCalledOnce();
+        const written = set.mock.calls[0]?.[0] ?? {};
+        expect(written.status).toBe('abandoned');
+        // NOT qzpay's spelling, and not the British one either: both reach
+        // `isSubscriptionLive`'s paid-through branch, which is the bug.
+        expect(written.status).not.toBe('canceled');
+        expect(written.status).not.toBe('cancelled');
+    });
+
+    it('still writes the terminal status when the cleanup cancel itself failed (HOS-1310)', async () => {
+        // The ordering that matters: a cancel that threw must not skip the
+        // terminal write, or the row keeps whatever status it had (`incomplete`)
+        // with a 30-day period end and waits on the cron.
+        const billing = createBillingMock({
+            subscription: {
+                id: LOCAL_SUB_ID,
+                providerInitPoint: 'https://mp.test/checkout/abc',
+                providerSubscriptionIds: { mercadopago: '' }
+            }
+        });
+        billing.subscriptions.cancel.mockRejectedValueOnce(new Error('MP unreachable'));
+        const { set } = captureTerminalStatusWrite();
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
+
+        expect(set).toHaveBeenCalledOnce();
+        expect(set.mock.calls[0]?.[0]?.status).toBe('abandoned');
     });
 
     it('does NOT reach the provider-id guard when the checkout URL is missing (MISSING_INIT_POINT wins first)', async () => {

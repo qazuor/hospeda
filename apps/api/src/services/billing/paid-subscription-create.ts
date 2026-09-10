@@ -36,8 +36,8 @@
 
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { applyTestControl } from '@repo/billing';
-import { billingPlans, type DrizzleClient, eq, getDb } from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
+import { billingPlans, billingSubscriptions, type DrizzleClient, eq, getDb } from '@repo/db';
+import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
@@ -392,10 +392,37 @@ export async function createPaidSubscription(
     // unrecoverable — the webhook lookup keys on `mpSubscriptionId`, so a row
     // persisted with an empty id can never activate and its preapproval can
     // never be located to cancel. Fail loudly instead of leaving an orphan.
-    // Clean up the just-created local row best-effort first (mirrors the
-    // `cancelSubscriptionFailClosed` fail-closed pattern in
-    // subscription-checkout.service.ts); the abandoned-pending cron is the
-    // backstop if the cancel does not take effect.
+    // Clean up the just-created local row best-effort first; the
+    // abandoned-pending cron is the backstop if neither write lands.
+    //
+    // (This used to claim it mirrored a `cancelSubscriptionFailClosed` pattern
+    // in `subscription-checkout.service.ts`. Neither that helper nor that file
+    // exists any more — corrected with the rest of this block, HOS-1310.)
+    //
+    // ## Why the cancel is followed by an explicit `abandoned` write (HOS-1310)
+    //
+    // `billing.subscriptions.cancel()` with no options leaves the row on
+    // qzpay's `status = 'canceled'` — it writes a status only when
+    // `cancelAtPeriodEnd` is falsy (`packages/core/src/billing.ts`). That is the
+    // wrong terminal state here, and not harmlessly so: qzpay stamped
+    // `current_period_end = now + 30 days` at INSERT, before any payment
+    // (`packages/drizzle/src/adapter/drizzle-storage.adapter.ts`), and cancel()
+    // does not clear it. The accommodation publish gate reads every non-deleted
+    // subscription with NO status filter and asks `isSubscriptionLive`, whose
+    // `cancelled` branch grants access while `currentPeriodEnd` is in the
+    // future. So a row from a checkout that was never even authorized would read
+    // as a live subscription for a month — and worse, `has_active_sub`
+    // short-circuits before `resolveTrialEligibility`, costing the owner the
+    // local trial they still had.
+    //
+    // `abandoned` is refused by all three liveness predicates and is the enum's
+    // own name for "created, never confirmed by the provider". Do not drop this
+    // write and lean on the cron instead: the cron is the backstop, not the
+    // mechanism.
+    //
+    // Both writes are best-effort and logged separately, because the failure
+    // that matters is the SECOND one — a cancel that succeeded with a terminal
+    // write that did not leaves exactly the `canceled` row described above.
     const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
     if (!mpSubscriptionId) {
         try {
@@ -411,6 +438,26 @@ export async function createPaidSubscription(
                     error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr)
                 },
                 'HOS-151 Bug C: FAILED to cancel subscription created with an empty provider id — abandoned-pending cron will reap it'
+            );
+        }
+        try {
+            // Written through Drizzle, not `billing.subscriptions.update()`:
+            // `abandoned` is a Hospeda-only status and qzpay's
+            // `QZPaySubscriptionStatus` union does not contain it, so that path
+            // needs a cast to compile. The abandoned-pending cron writes the same
+            // status the same way for the same reason — following it keeps one
+            // pattern instead of adding a cast.
+            await getDb()
+                .update(billingSubscriptions)
+                .set({ status: SubscriptionStatusEnum.ABANDONED, updatedAt: new Date() })
+                .where(eq(billingSubscriptions.id, subscription.id));
+        } catch (terminalErr) {
+            apiLogger.error(
+                {
+                    subscriptionId: subscription.id,
+                    error: terminalErr instanceof Error ? terminalErr.message : String(terminalErr)
+                },
+                'HOS-1310: FAILED to write the terminal abandoned status on a provider-id-less subscription — it may read as a live subscription until the abandoned-pending cron reaps it'
             );
         }
         throw new SubscriptionCheckoutError(
