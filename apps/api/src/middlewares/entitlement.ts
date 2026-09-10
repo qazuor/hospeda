@@ -899,19 +899,19 @@ async function loadEntitlements(
         // a commerce one resolves their consumer plan here, and that plan can be
         // the FREE tier: without this, `tourist-free`'s small `max_favorites`
         // would be the whole answer for someone who also runs a paid restaurant.
-        // `mergeTouristVipGift` moves a limit only when the gift is more
-        // generous, so a plan that raises a VIP key above the gift keeps its own
-        // value.
+        // `mergeTouristVipGift` REPLACES on the tourist axis and touches no
+        // other key: the gift's seven limit keys are disjoint from every
+        // vertical's own (frozen by `tourist-vip-axis-disjointness.test.ts`), so
+        // the only value it can overwrite is a TOURIST one the caller already
+        // resolved — `tourist-free`'s three, or the same block inherited on an
+        // owner plan. Both are the same axis at a lower or equal tier, and the
+        // paid tier supersedes them.
         //
-        // **That is NOT the rule `plans.config.ts` uses for the declaration, and
-        // this comment claimed it was until HOS-1323.** `mergeLimits`
-        // (`plans.config.ts:42-56`) is LAST-WINS — its own doc says "the
-        // `override` list wins on key clash", upward or downward — while this is
-        // a MAX. No shipped plan narrows a `TOURIST_VIP_LIMITS` key, so the two
-        // agree on every plan that exists today; they diverge on the first one
-        // that does, where the declaration would keep the smaller value and this
-        // would publish the larger. See `tourist-vip-inheritance.ts`'s module
-        // docblock, which states the same divergence at the other end.
+        // This replaced a `Math.max` (owner redesign, 2026-09-10). MAX agreed
+        // with replacement on every value in today's catalogue and would have
+        // diverged the first time a VIP key was LOWERED: it would have returned
+        // `tourist-free`'s number and left a gastronomy owner holding MORE than
+        // a tourist who pays for VIP.
         //
         // `entitlements` and `limits` are freshly built locals here, so merging
         // in place is safe (unlike the fallback branch — see

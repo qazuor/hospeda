@@ -69,71 +69,69 @@
  * key that is already present. So "the database follows" is literal for
  * capabilities and load-bearing for caps.
  *
- * **A cap LOWERED on the row mostly does not reach anybody**, and that is a
- * property of the merge rather than of this resolution — see the FLOOR section
- * below for the exact boundary. Said here because the sentence above would
- * otherwise read as "the admin UI controls this cap in both directions".
- *
  * ---
- * FLOOR, NOT MIRROR — owner decision, 2026-09-10
+ * THE MERGE IS A UNION OF DISJOINT AXES — owner decision, 2026-09-10
  *
- * The gift can RAISE what a vertical already holds and can never LOWER it. The
- * owner chose that with its three consequences in view, so each is DESIGN and
- * none is to be "fixed" without going back to them. They are stated here because
- * a reader will otherwise assume the mirror and read each one as a bug:
+ * The model, in the owner's words: **a user holds the keys of their vertical
+ * UNION the keys of tourist**, where the tourist half is the VIP tier if they
+ * have the gift and the free tier if they do not.
  *
- * 1. **Lowering a cap on the `tourist-vip` row does not reduce a vertical** on
- *    any key that vertical's own resolution already declares — `Math.max` wins.
- *    **Measured boundary:** on a key it does NOT declare, the row's value lands
- *    as-is (`moreGenerousLimit(undefined, x)` is `x`). `tourist-free`, the
- *    fallback a commerce-only owner lands on, declares three of the seven VIP
- *    limit keys (`plans.config.ts:455-459`), so the other four take the row's
- *    number. That is tighter than the absence it replaces, which every layer
- *    under `getRemainingLimit` reads as UNLIMITED — the same argument
- *    `plans.config.ts:769-776` makes for shipping `TOURIST_VIP_LIMITS` at all.
- * 2. **Removing an entitlement from that row does not reach the verticals** —
- *    the union starts from the config floor, so the row can only add. That
- *    includes `VIP_SUPPORT`, which `plans.config.ts:604-606` calls out as the
- *    one inherited key with a real bill behind it: switch it off on the row and
- *    tourists lose it while the verticals keep it until the next deploy.
- * 3. **The accommodation asymmetry is deliberate**: an admin edit to that row
+ * The two halves do not compete, because **the two key sets are disjoint**
+ * (measured on `origin/staging`, and now frozen by
+ * `tourist-vip-axis-disjointness.test.ts`):
+ *
+ * | Axis | Limit keys |
+ * | --- | --- |
+ * | tourist | the seven of `TOURIST_VIP_LIMITS` |
+ * | gastronomy / experience | `max_gastronomies` / `max_experiences`, the vertical's own AI-chat quota (which is NOT `max_ai_chat_consumer_per_month`), `max_active_private_galleries` |
+ * | accommodation | `max_accommodations`, photos, promotions, its own AI quotas |
+ *
+ * Intersection: empty, in all three directions. A gastronomy plan declares no
+ * tourist key of its own, and no shipped plan declares a tourist key at a value
+ * other than the VIP tier's (measured: zero divergences across all eight).
+ *
+ * **So the gift REPLACES on its own axis, and touches nothing else.** There is
+ * no "more generous of the two" question to answer, because there are never two
+ * values for the same thing coming from different products.
+ *
+ * ## The one real collision, and why `Math.max` was the wrong answer to it
+ *
+ * An earlier version of this file merged with a MAX, on the theory that the gift
+ * is a floor. The collision that motivated it is real but it is **not** vertical
+ * vs tourist — it is `tourist-free` vs `tourist-vip`: two tiers of the SAME
+ * product, which of course share keys. `TOURIST_FREE_PLAN.limits`
+ * (`plans.config.ts:455-459`) declares three of the seven, all tourist keys.
+ *
+ * On that axis the right operator is **replacement, not max**: the paid tier
+ * supersedes the free one. `Math.max` happens to agree today only because the
+ * VIP is more generous in all three (`-1 > 5`, `200 > 10`, `200 > 10`). The day
+ * a VIP key is lowered — for abuse, for cost — MAX would return the FREE value
+ * and hand a gastronomy owner **more than a tourist who pays for VIP**. That
+ * absurdity is pinned as a regression test.
+ *
+ * ## What this means for a key the caller does not declare
+ *
+ * It is set. `tourist-free` carries three of the seven, so the other four arrive
+ * from the gift where the caller had nothing — and publishing a number there is
+ * the point, not a side effect: an absent limit key resolves to UNLIMITED
+ * through every layer under `getRemainingLimit`, which is the same argument
+ * `plans.config.ts:769-776` makes for shipping `TOURIST_VIP_LIMITS` at all.
+ *
+ * ## The consequences that survive the redesign
+ *
+ * 1. **Removing an entitlement from the `tourist-vip` row does not reach the
+ *    verticals** — the entitlement union starts from the config floor, so the
+ *    row can only add, and (see above) it cannot even do that. Includes
+ *    `VIP_SUPPORT`, which `plans.config.ts:604-606` calls out as the one
+ *    inherited key with a real bill behind it.
+ * 2. **The accommodation asymmetry is deliberate**: an admin edit to that row
  *    reaches gastronomy and experience, and NOT accommodation, which resolves
  *    the same block from its own plan row. See {@link RUNTIME_GIFTED_DOMAINS}.
  *
- * All three are pinned as EXPECTED in
+ * Both are pinned as EXPECTED in
  * `apps/api/test/middlewares/tourist-vip-vertical-inheritance.test.ts`, so
- * changing any of them lands as a red test somebody has to justify rather than
- * as a quiet improvement.
- *
- * ---
- * HOW THE GIFT MERGES INTO A RESOLVED PLAN
- *
- * {@link mergeTouristVipGift} applies it as a **floor, never as a ceiling**:
- * entitlements are unioned, and a limit is only moved when the gift is MORE
- * generous than what the caller already resolved (`-1` being unlimited — see
- * {@link moreGenerousLimit}).
- *
- * That one rule is correct in both directions the two call sites need, which is
- * why there is one rule and not a precedence flag:
- *
- * - A commerce owner with no accommodation/tourist subscription lands on the
- *   tourist-FREE defaults, whose `max_favorites` is a small number. The gift's
- *   `-1` must win, or the gift is not a VIP tier.
- * - A host on `owner-premium` already carries the VIP block from their own plan
- *   row, and any key their plan raises above it (today none, tomorrow maybe)
- *   must stay raised.
- *
- * **This is NOT the precedence `plans.config.ts` uses, and an earlier version of
- * this docblock claimed it was.** `mergeLimits` (`plans.config.ts:42-56`) is
- * LAST-WINS — its own doc says "the `override` list wins on key clash", upward
- * or downward — so a plan declaring a SMALLER value than the tourist-VIP tier
- * would keep the smaller one there and keep the larger one here. Nothing in the
- * shipped catalogue exercises the difference (no plan overrides a
- * `TOURIST_VIP_LIMITS` key at all — the commerce overrides are the vertical's
- * own cap, AI-chat cap and gallery cap, all disjoint from the seven), so the two
- * agree today on every plan that exists. They would not agree on the first plan
- * that narrows one, and whoever writes that plan needs to know which rule is
- * which.
+ * changing either lands as a red test somebody has to justify rather than as a
+ * quiet improvement.
  *
  * @module services/billing/tourist-vip-inheritance
  */
@@ -287,35 +285,24 @@ export async function selectGiftBearingSubscription<
 }
 
 /**
- * The more generous of two limit values, with `-1` meaning unlimited.
- *
- * `-1` is not "less than 4": every layer under `getRemainingLimit` reads it as
- * unlimited, so a plain `Math.max` would let a `4` silently demote an uncapped
- * key. An ABSENT current value is likewise unlimited downstream — but the gift
- * still fills it in, because publishing the VIP number is what stops a key from
- * reading as uncapped further along (the HOS-975 D-A argument in
- * `plans.config.ts:769`, which is about OMITTING the VIP limits, not about
- * narrowing them).
- *
- * @param current - The value already resolved, or `undefined` when absent.
- * @param gift - The tourist-VIP value.
- * @returns The value to publish.
- */
-function moreGenerousLimit(current: number | undefined, gift: number): number {
-    if (current === undefined) {
-        return gift;
-    }
-    if (current === -1 || gift === -1) {
-        return -1;
-    }
-    return Math.max(current, gift);
-}
-
-/**
  * Merges the gift into an already-resolved grant pair, IN PLACE.
  *
- * Entitlements union; limits move only when the gift is more generous. See the
- * module docblock for why one rule serves both call sites.
+ * **The gift owns the tourist axis and REPLACES on it.** Entitlements union;
+ * limits are set outright. There is no comparison with what the caller already
+ * resolved, and that is the whole point of the redesign — see the module
+ * docblock's "union of disjoint axes":
+ *
+ * - A key on the caller's OWN axis is never in `gift.limits` at all (the two
+ *   sets are disjoint, frozen by `tourist-vip-axis-disjointness.test.ts`), so
+ *   replacement cannot reach a vertical's own cap.
+ * - A key on the TOURIST axis that the caller already holds is there because
+ *   they resolved a tourist tier — `tourist-free` for a commerce-only owner, or
+ *   the inherited block on an owner plan. Both are the same axis at a lower or
+ *   equal tier, and the paid tier supersedes it.
+ *
+ * The `Math.max` this replaced would, the day a VIP key is lowered, return the
+ * FREE value on those three shared keys and hand a gastronomy owner more than a
+ * tourist paying for VIP. Pinned as a regression test.
  *
  * @param input.grants - The caller's resolved entitlements and limits, mutated.
  * @param input.gift - The resolved tourist-VIP gift.
@@ -331,13 +318,13 @@ export function mergeTouristVipGift(input: {
         grants.entitlements.add(key);
     }
     for (const [key, value] of gift.limits) {
-        grants.limits.set(key, moreGenerousLimit(grants.limits.get(key), value));
+        grants.limits.set(key, value);
     }
 
     return grants;
 }
 
-/** The gift as the CODE catalogue declares it — the floor, never skipped. */
+/** The gift as the CODE catalogue declares it — the baseline, never skipped. */
 function giftFromConfig(): { entitlements: Set<EntitlementKey>; limits: Map<LimitKey, number> } {
     return {
         entitlements: new Set<EntitlementKey>(TOURIST_VIP_PLAN.entitlements),
@@ -354,9 +341,16 @@ function giftFromConfig(): { entitlements: Set<EntitlementKey>; limits: Map<Limi
  *
  * ## Why the row is filtered at all
  *
- * Without this, the gift carries **whatever the `tourist-vip` row happens to
- * hold**, and the row is editable through `PUT /admin/billing/plans/{id}` with
- * no deploy and no review. Two measured consequences, both silent:
+ * **This is what makes "the gift is the tourist axis" true at RUNTIME rather
+ * than by convention.** The disjointness the model rests on is a property of the
+ * CATALOGUE — the constants in `plans.config.ts`, frozen by
+ * `tourist-vip-axis-disjointness.test.ts`. The `tourist-vip` ROW is not covered
+ * by that test and never can be: it is editable through
+ * `PUT /admin/billing/plans/{id}` with no deploy and no review. Without this
+ * filter, one such edit puts a foreign key into the gift, and the merge — which
+ * REPLACES on every key it carries — applies it to the vertical's own axis.
+ *
+ * Two measured consequences, both silent:
  *
  * - `max_gastronomies: 50` on that row — a copy-paste, or a tourist promo —
  *   reaches `resolveCommerceVerticalGrants`, whose merge runs BEFORE
@@ -370,6 +364,11 @@ function giftFromConfig(): { entitlements: Set<EntitlementKey>; limits: Map<Limi
  * before it, editing the `tourist-vip` row moved tourist-VIP subscribers and
  * nobody else; after it, that row is read on behalf of three populations. A
  * gift that can hand out another vertical's cap is not a gift, it is a hole.
+ *
+ * **The 2026-09-10 redesign did not retire this, it promoted it.** Under the
+ * earlier `Math.max` merge the filter was a defensive extra; under replacement
+ * it is the invariant's enforcement, because a foreign key that reaches the gift
+ * no longer merely competes with the vertical's own cap — it overwrites it.
  *
  * ## What it costs, stated plainly
  *
@@ -458,10 +457,12 @@ export async function resolveTouristVipGift(): Promise<TouristVipGift> {
             }
 
             // Commercial half: the row REPLACES the catalogue's VALUE for a key
-            // the catalogue already declares. An operator RAISING a VIP cap in
-            // the admin UI takes effect without a deploy; a LOWERED one is
-            // carried here but does not survive `mergeTouristVipGift`, which
-            // only ever moves a limit upward — see `moreGenerousLimit`.
+            // the catalogue already declares. An operator moving a VIP cap in
+            // the admin UI takes effect without a deploy, **in either
+            // direction** — since the merge became a replacement on the tourist
+            // axis, a LOWERED value reaches the gifted verticals too, which is
+            // the point: they hold the VIP tier, so lowering the tier lowers
+            // what they hold. `Math.max` used to swallow that and is gone.
             for (const [key, value] of Object.entries(result.data.limits)) {
                 if (!isLimitKey(key) || typeof value !== 'number') {
                     continue;

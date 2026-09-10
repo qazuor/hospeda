@@ -624,63 +624,150 @@ describe('HOS-1323 — the row supplies VALUES, never new KEYS', () => {
     });
 });
 
-describe('HOS-1323 — the gift is a floor, never a ceiling', () => {
+describe('HOS-1323 — the gift owns the tourist axis and replaces on it', () => {
     /**
-     * `mergeTouristVipGift` moves a limit only when the gift is MORE generous,
-     * with `-1` read as unlimited rather than as "less than 5". Without that
-     * reading, a gift of `max_compare_items: 5` would demote a plan that
-     * declares the key uncapped, and every layer under `getRemainingLimit`
-     * would treat 5 as the real ceiling.
+     * The gift's keys and a vertical's own keys are DISJOINT — frozen by
+     * `packages/billing/test/tourist-vip-axis-disjointness.test.ts` — so a
+     * wholesale replacement on the gift's keys cannot reach a vertical's cap.
+     *
+     * This is the property that made `Math.max` unnecessary: there is never a
+     * second value for the same thing arriving from a different product.
      */
-    it('does not demote a plan limit that is more generous than the gift', async () => {
-        // Exercised on the DUAL owner, which is the only shape where both
-        // sources are live at once: the gastronomy subscription triggers the
-        // gift, and the accommodation subscription is the one whose plan row
-        // the loader actually reads. A gastronomy-ONLY owner would prove
-        // nothing here — the selector never asks for their plan, so there is no
-        // plan value for the gift to demote (see the sibling test below).
-        const generous = planRow(OWNER_BASICO_PLAN);
-        generous.limits.max_compare_items = -1;
-        const giftValue = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_compare_items')?.value;
-        expect(giftValue).toBeGreaterThan(0);
+    it('replacing on the tourist axis leaves the vertical cap untouched', async () => {
+        const cap = GASTRONOMY_BASICO_PLAN.limits.find((l) => l.key === 'max_gastronomies');
+        expect(cap?.value).toBe(1);
 
-        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
-            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' },
-            { id: 'sub-accom', planId: 'plan-owner-basico', status: 'active' }
-        ]);
-        hydrateAs([
-            { id: 'sub-gastro', productDomain: 'gastronomy' },
-            { id: 'sub-accom', productDomain: 'accommodation' }
-        ]);
-        mockBilling.plans.get.mockResolvedValue(generous);
-
-        const { limits } = await loadThroughMiddleware();
-
-        expect(limits.max_compare_items).toBe(-1);
-    });
-
-    /**
-     * The other direction, and the one that made the fallback branch worth
-     * covering separately: an owner with no accommodation/tourist subscription
-     * lands on the tourist-FREE defaults, whose favourites cap is a small
-     * number. The gift is a VIP tier or it is nothing.
-     */
-    it('raises the tourist-free fallback cap to the VIP one', async () => {
         mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
             { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
         ]);
         hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
-        // No plan row for the commerce subscription: the selector never asks
-        // for one, so this is the shape of the real fallback branch.
-        mockBilling.plans.get.mockResolvedValue(null);
+        mockBilling.plans.get.mockResolvedValue(planRow(GASTRONOMY_BASICO_PLAN));
 
-        const freeFavourites = TOURIST_FREE_PLAN.limits.find((l) => l.key === 'max_favorites');
-        const vipFavourites = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_favorites');
-        expect(freeFavourites?.value).not.toBe(vipFavourites?.value);
+        const app = new Hono<AppBindings>();
+        app.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', CUSTOMER_ID);
+            return next();
+        });
+        app.use(entitlementMiddleware());
+        app.get('/gastro', commerceVerticalEntitlementMiddleware('gastronomy'), (c) =>
+            c.json({ limits: Object.fromEntries(c.get('userLimits')) })
+        );
+
+        const res = await app.request('/gastro');
+        const { limits } = (await res.json()) as { limits: Record<string, number> };
+
+        expect(limits.max_gastronomies).toBe(1);
+        // …and the tourist axis arrived alongside it, not instead of it.
+        for (const [key, value] of VIP_LIMITS) {
+            expect(limits[key]).toBe(value);
+        }
+    });
+
+    /**
+     * **THE ABSURD CASE — the reason `Math.max` had to go.**
+     *
+     * The one real collision in the catalogue is `tourist-free` vs
+     * `tourist-vip`: two tiers of the SAME product, which of course share keys.
+     * A commerce-only owner lands on the free tier's defaults, so on those three
+     * keys the gift meets a value.
+     *
+     * `Math.max` picked the larger. That agreed with the tier ordering only
+     * because the VIP is more generous in all three today (`-1 > 5`,
+     * `200 > 10`, `200 > 10`). Lower a VIP key — for abuse, for cost — and MAX
+     * returns the FREE number, leaving a gastronomy owner holding **more than a
+     * tourist who pays for VIP**.
+     *
+     * Replacement gets it right for the reason the tiers exist: the paid tier
+     * supersedes the free one on its own axis.
+     */
+    it('a VIP key lowered BELOW tourist-free still wins — the paid tier supersedes', async () => {
+        const free = TOURIST_FREE_PLAN.limits.find((l) => l.key === 'max_favorites');
+        const vip = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_favorites');
+        // The premise of the absurdity: free meters this key, and the shipped
+        // VIP is the more generous of the two.
+        expect(free?.value).toBe(5);
+        expect(vip?.value).toBe(-1);
+
+        // The owner lowers the VIP tier to below the free tier.
+        stubTouristVipRow({ limits: { max_favorites: 2 } });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(null);
 
         const { limits } = await loadThroughMiddleware();
 
-        expect(limits.max_favorites).toBe(vipFavourites?.value);
+        // `Math.max(5, 2)` would answer 5 — the FREE value — and hand this owner
+        // more than a paying tourist-VIP, who holds 2.
+        expect(limits.max_favorites).toBe(2);
+    });
+
+    /**
+     * The same lowering, seen from the commerce middleware, which resolves the
+     * gift independently of the global loader.
+     */
+    it('the same lowered key wins on a gastronomy ROUTE', async () => {
+        const gastroRow = planRow(GASTRONOMY_BASICO_PLAN);
+        const vipRow = planRow(TOURIST_VIP_PLAN);
+        vi.spyOn(PlanService.prototype, 'getBySlug').mockImplementation(async (slug: string) => {
+            if (slug === TOURIST_VIP_PLAN.slug) {
+                return {
+                    success: true,
+                    data: { ...vipRow, limits: { ...vipRow.limits, max_favorites: 2 } }
+                } as never;
+            }
+            return { success: true, data: gastroRow } as never;
+        });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(gastroRow);
+
+        const app = new Hono<AppBindings>();
+        app.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', CUSTOMER_ID);
+            return next();
+        });
+        app.use(entitlementMiddleware());
+        app.get('/gastro', commerceVerticalEntitlementMiddleware('gastronomy'), (c) =>
+            c.json({ limits: Object.fromEntries(c.get('userLimits')) })
+        );
+
+        const res = await app.request('/gastro');
+        const { limits } = (await res.json()) as { limits: Record<string, number> };
+
+        expect(limits.max_favorites).toBe(2);
+    });
+
+    /**
+     * The upgrade direction, which is the ordinary one: a commerce-only owner
+     * lands on tourist-FREE and must come out holding the VIP tier's numbers on
+     * every one of the seven, including the three the free tier meters lower.
+     */
+    it('a commerce-only owner holds the VIP tier, not the free one', async () => {
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(null);
+
+        const { limits } = await loadThroughMiddleware();
+
+        for (const [key, value] of VIP_LIMITS) {
+            expect(limits[key]).toBe(value);
+        }
+        // Decisive on the shared keys: the free tier's numbers are gone.
+        for (const freeLimit of TOURIST_FREE_PLAN.limits) {
+            const vipValue = TOURIST_VIP_PLAN.limits.find((l) => l.key === freeLimit.key)?.value;
+            expect(limits[freeLimit.key]).toBe(vipValue);
+            expect(limits[freeLimit.key]).not.toBe(freeLimit.value);
+        }
     });
 });
 
@@ -761,12 +848,15 @@ describe('HOS-1323 — the commerce middleware republishes the gift', () => {
 });
 
 /**
- * The consequences of FLOOR semantics, pinned as DESIGN.
+ * The consequences of the gift's design that survive the 2026-09-10 redesign,
+ * pinned as DESIGN rather than left as gaps.
  *
- * **Owner decision, 2026-09-10.** The gift is a FLOOR, not a MIRROR: the
- * tourist-VIP tier can raise what a vertical already holds and can never lower
- * it. The owner chose that with the consequences below in view, so none of them
- * is a defect and none is to be "fixed" without going back to them.
+ * **Owner model:** a user holds *(the keys of their vertical) ∪ (the keys of
+ * tourist)*, where the tourist half is the VIP tier if they have the gift and
+ * the free tier if not. The two halves are disjoint, so the gift replaces on its
+ * own axis and touches nothing else. The merge semantics themselves are covered
+ * above; what is pinned here is what that model IMPLIES, and would otherwise be
+ * discovered later and mistaken for a bug.
  *
  * ## Why this block exists at all
  *
@@ -786,15 +876,17 @@ describe('HOS-1323 — the commerce middleware republishes the gift', () => {
  *    reaches gastronomy and experience and NOT accommodation, because
  *    accommodation resolves the same block from its own plan row (code), never
  *    from the runtime gift. See `RUNTIME_GIFTED_DOMAINS`.
- * 2. **A LOWERED cap cannot reduce a key the caller already declares** — plus
- *    the measured boundary of that sentence, which is narrower than it sounds.
- * 3. **A key REMOVED from the row still reaches the verticals** — the union
- *    starts from the config floor, so the row can only add. Including
- *    `VIP_SUPPORT`, which `plans.config.ts:604-606` calls out as the one
- *    inherited key that costs real money: switched off on the row, tourists lose
- *    it and the verticals keep it until the next deploy.
+ * 2. **A key REMOVED from the row still reaches the verticals** — the
+ *    entitlement union starts from the config floor, so the row can only add.
+ *    Including `VIP_SUPPORT`, which `plans.config.ts:604-606` calls out as the
+ *    one inherited key that costs real money: switched off on the row, tourists
+ *    lose it and the verticals keep it until the next deploy.
+ *
+ * The third item this block used to carry — "a lowered cap cannot reduce a key
+ * the caller declares" — was a consequence of the `Math.max` merge and is now
+ * FALSE by design. Its replacement lives above, as the absurd case.
  */
-describe('HOS-1323 — the consequences of FLOOR, pinned as design (owner, 2026-09-10)', () => {
+describe('HOS-1323 — consequences pinned as design (owner, 2026-09-10)', () => {
     /** The catalogue's own value, used by the asymmetry pair. */
     const VIP_COLLECTIONS = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_collections')?.value;
 
@@ -841,45 +933,13 @@ describe('HOS-1323 — the consequences of FLOOR, pinned as design (owner, 2026-
     });
 
     /**
-     * FLOOR, downward. `max_favorites` is the decisive key: the tourist-FREE
-     * fallback a gastronomy-only owner lands on declares it at 5, so a row that
-     * lowers the VIP value below that has something to lose against. Without
-     * `moreGenerousLimit`'s MAX the answer would be the row's 2.
+     * A tourist key the caller does not declare at all. `tourist-free` meters
+     * three of the seven, so the other four arrive where the caller had nothing
+     * — and publishing a number there is the point rather than a side effect: an
+     * absent limit key resolves to UNLIMITED through every layer under
+     * `getRemainingLimit`, so any number is strictly tighter than the absence.
      */
-    it('DESIGN: a cap LOWERED on the row cannot reduce a key the caller declares', async () => {
-        const freeFavourites = TOURIST_FREE_PLAN.limits.find((l) => l.key === 'max_favorites');
-        expect(freeFavourites?.value).toBe(5);
-
-        stubTouristVipRow({ limits: { max_favorites: 2 } });
-
-        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
-            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
-        ]);
-        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
-        mockBilling.plans.get.mockResolvedValue(null);
-
-        const { limits } = await loadThroughMiddleware();
-
-        expect(limits.max_favorites).toBe(5);
-    });
-
-    /**
-     * **The boundary of the sentence above, measured rather than assumed.**
-     *
-     * "A lowered cap does not reach the verticals" holds only where the caller
-     * already declares that key. `tourist-free` declares three of the seven VIP
-     * limit keys (`max_favorites`, `max_ai_search_per_month`,
-     * `max_ai_chat_consumer_per_month` — `plans.config.ts:455-459`); for the
-     * other four the caller has NOTHING, so `moreGenerousLimit(undefined, x)`
-     * returns `x` and a lowered row value lands as-is.
-     *
-     * That is the correct answer rather than a leak, and the direction is why:
-     * an absent limit key resolves to UNLIMITED through every layer under
-     * `getRemainingLimit`, so publishing the row's number — even a small one —
-     * is strictly tighter than publishing nothing. It is the same argument
-     * `plans.config.ts:769-776` makes for shipping `TOURIST_VIP_LIMITS` at all.
-     */
-    it('DESIGN: on a key the caller does NOT declare, the row value lands as-is', async () => {
+    it('DESIGN: a tourist key the caller never declared is published, not left absent', async () => {
         expect(TOURIST_FREE_PLAN.limits.map((l) => l.key)).not.toContain('max_collections');
 
         stubTouristVipRow({ limits: { max_collections: 3 } });
@@ -892,15 +952,13 @@ describe('HOS-1323 — the consequences of FLOOR, pinned as design (owner, 2026-
 
         const { limits } = await loadThroughMiddleware();
 
-        // Lower than the catalogue's 25, and still tighter than the absence it
-        // replaces, which every layer beneath reads as unlimited.
         expect(limits.max_collections).toBe(3);
     });
 
     /**
-     * The entitlement half of FLOOR: the union starts from the config floor, so
-     * a key switched OFF on the row still reaches the verticals until the next
-     * deploy. `VIP_SUPPORT` is the case with a real bill attached
+     * The entitlement half: the union starts from the config floor, so a key
+     * switched OFF on the row still reaches the verticals until the next deploy.
+     * `VIP_SUPPORT` is the case with a real bill attached
      * (`plans.config.ts:604-606`), which is exactly why it is the fixture.
      */
     it('DESIGN: an entitlement REMOVED from the row still reaches the verticals', async () => {
