@@ -16,12 +16,26 @@
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { getDb } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    CONSUMER_SIDE_PRODUCT_DOMAINS,
+    OWNER_SIDE_PRODUCT_DOMAINS
+} from '../../src/services/billing/addon-grant-domain.js';
 import {
     type DeferredAddonGrants,
     loadDeferredAddonGrants,
     mergeDeferredAddonGrants
 } from '../../src/services/deferred-addon-grants.service.js';
+
+/**
+ * The consumer-side scope, for the cases that predate HOS-1303's parameter and
+ * must keep answering exactly as they did.
+ */
+const CONSUMER_SCOPE = {
+    servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS,
+    reporter: 'consumer-entitlements'
+} as const;
 
 /**
  * Builds a grants object without going through the DB.
@@ -149,7 +163,7 @@ describe('loadDeferredAddonGrants', () => {
             })
         } as any);
 
-        const result = await loadDeferredAddonGrants({ customerId: 'cus_1' });
+        const result = await loadDeferredAddonGrants({ customerId: 'cus_1', ...CONSUMER_SCOPE });
 
         expect(result.limitIncrements.get(LimitKey.MAX_FAVORITES)).toBe(17);
         expect(result.entitlements).toEqual(new Set([EntitlementKey.FEATURED_LISTING]));
@@ -182,7 +196,7 @@ describe('loadDeferredAddonGrants', () => {
             })
         } as any);
 
-        const result = await loadDeferredAddonGrants({ customerId: 'cus_1' });
+        const result = await loadDeferredAddonGrants({ customerId: 'cus_1', ...CONSUMER_SCOPE });
 
         expect(result.limitIncrements.size).toBe(0);
         expect(result.entitlements.size).toBe(0);
@@ -206,9 +220,64 @@ describe('loadDeferredAddonGrants', () => {
             })
         } as any);
 
-        const result = await loadDeferredAddonGrants({ customerId: 'cus_1' });
+        const result = await loadDeferredAddonGrants({ customerId: 'cus_1', ...CONSUMER_SCOPE });
 
         expect(result.entitlements.size).toBe(0);
+    });
+
+    it("honours the CALLER's served domains, not a set of its own (HOS-1303)", async () => {
+        // The parameter has to reach the predicate, not just sit in the signature.
+        // Today accommodation is served by both real scopes and gastronomy by
+        // neither, so the only way to prove the argument is load-bearing is to
+        // hand it a scope no call site uses: with gastronomy-only, the gastronomy
+        // boost is kept and the ACCOMMODATION one is dropped — the exact inverse
+        // of every other case in this file.
+        const rows = [
+            {
+                id: 'p-acc',
+                addonSlug: 'visibility-boost-7d',
+                limitAdjustments: [],
+                entitlementAdjustments: [{ entitlementKey: 'featured_listing', granted: true }]
+            },
+            {
+                id: 'p-gas',
+                addonSlug: 'visibility-boost-gastronomy-7d',
+                limitAdjustments: [],
+                entitlementAdjustments: [{ entitlementKey: 'featured_listing', granted: true }]
+            }
+        ];
+        vi.mocked(getDb).mockReturnValue({
+            select: () => ({ from: () => ({ where: async () => rows }) })
+        } as any);
+
+        const gastronomyOnly = await loadDeferredAddonGrants({
+            customerId: 'cus_1',
+            servedDomains: [ProductDomainEnum.GASTRONOMY],
+            reporter: 'deferred-addon-grants'
+        });
+        expect(gastronomyOnly.purchaseIds).toEqual(['p-gas']);
+
+        const consumer = await loadDeferredAddonGrants({ customerId: 'cus_1', ...CONSUMER_SCOPE });
+        expect(consumer.purchaseIds).toEqual(['p-acc']);
+
+        const owner = await loadDeferredAddonGrants({
+            customerId: 'cus_1',
+            servedDomains: OWNER_SIDE_PRODUCT_DOMAINS,
+            reporter: 'owner-entitlements'
+        });
+        expect(owner.purchaseIds).toEqual(['p-acc']);
+    });
+
+    it('keeps a TOURIST add-on for the consumer scope and refuses it for the owner one', async () => {
+        // The latent hole the first revision of HOS-1303 left open: the owner-side
+        // resolver selects `isAccommodationSubscription` alone, and a hard-coded
+        // consumer pair would have let a `tourist`-domain add-on into an OWNER's
+        // set. No `AddonDefinition` declares `tourist` yet, so the scopes are
+        // passed explicitly to stand the day one does — and this case is what
+        // fails if somebody collapses the two sets back into one.
+        expect(CONSUMER_SIDE_PRODUCT_DOMAINS).toContain(ProductDomainEnum.TOURIST);
+        expect(OWNER_SIDE_PRODUCT_DOMAINS).not.toContain(ProductDomainEnum.TOURIST);
+        expect(OWNER_SIDE_PRODUCT_DOMAINS).toEqual([ProductDomainEnum.ACCOMMODATION]);
     });
 
     it('answers empty and DEGRADED when the lookup throws', async () => {
@@ -219,7 +288,7 @@ describe('loadDeferredAddonGrants', () => {
             throw new Error('connection reset');
         });
 
-        const result = await loadDeferredAddonGrants({ customerId: 'cus_1' });
+        const result = await loadDeferredAddonGrants({ customerId: 'cus_1', ...CONSUMER_SCOPE });
 
         expect(result.degraded).toBe(true);
         expect(result.entitlements.size).toBe(0);

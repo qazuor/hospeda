@@ -176,4 +176,86 @@ describe('owner-entitlement — deferred add-on grants reach the owner fallbacks
             expect(entitlements).toEqual([]);
         });
     });
+
+    // ─── HOS-1303: the owner side serves ACCOMMODATION alone ─────────────────
+    //
+    // These two cut at the resolver, not at the classifier, because the defect
+    // being closed was a WIRING one: the gate existed and the owner call sites
+    // were handed the consumer-side scope. A unit test of the classifier cannot
+    // see which set a call site passes.
+    describe('the vertical of the deferred add-on (HOS-1303)', () => {
+        it('does NOT grant a deferred GASTRONOMY boost to an owner', async () => {
+            // `visibility-boost-gastronomy-30d` grants the same
+            // `featured_listing` key the accommodation boost grants, so before
+            // the gate a cancelled RESTAURANT boost featured the owner's
+            // accommodations. This is the behaviour change HOS-1303 declares on
+            // the owner side.
+            mockBilling.customers.getByExternalId.mockResolvedValue({
+                id: 'cus-owner-ents-gastronomy'
+            });
+            stubDb(
+                new Map([
+                    [
+                        billingAddonPurchases,
+                        [
+                            {
+                                id: 'purchase-gastronomy-boost',
+                                addonSlug: 'visibility-boost-gastronomy-30d',
+                                limitAdjustments: [],
+                                entitlementAdjustments: [
+                                    {
+                                        entitlementKey: EntitlementKey.FEATURED_LISTING,
+                                        granted: true
+                                    }
+                                ]
+                            }
+                        ]
+                    ]
+                ])
+            );
+
+            const entitlements = await resolveOwnerEntitlementsForOwnerId('owner-ents-gastronomy');
+
+            expect(entitlements).not.toContain(EntitlementKey.FEATURED_LISTING);
+        });
+
+        it('does NOT raise an owner LIMIT from a deferred GASTRONOMY add-on', async () => {
+            // The limits half of the same cut. `extra-gastronomies-1` raised
+            // `max_gastronomies` inside the OWNER limits map — a cap the
+            // accommodation enforcement has no business carrying — while leaving
+            // the accommodation baseline where it was.
+            mockBilling.customers.getByExternalId.mockResolvedValue({
+                id: 'cus-owner-limits-gastronomy'
+            });
+            stubDb(
+                new Map([
+                    [
+                        billingAddonPurchases,
+                        [
+                            {
+                                id: 'purchase-extra-gastronomies',
+                                addonSlug: 'extra-gastronomies-1',
+                                limitAdjustments: [
+                                    {
+                                        limitKey: LimitKey.MAX_GASTRONOMIES,
+                                        increase: 1,
+                                        previousValue: 5,
+                                        newValue: 6
+                                    }
+                                ],
+                                entitlementAdjustments: []
+                            }
+                        ]
+                    ]
+                ])
+            );
+
+            const limits = await resolveOwnerLimitsForOwnerId('owner-limits-gastronomy');
+
+            expect(limits.has(LimitKey.MAX_GASTRONOMIES)).toBe(false);
+            // And the accommodation baseline is untouched: the gate drops one row,
+            // it does not degrade the fallback.
+            expect(limits.get(LimitKey.MAX_ACCOMMODATIONS)).toBe(1);
+        });
+    });
 });
