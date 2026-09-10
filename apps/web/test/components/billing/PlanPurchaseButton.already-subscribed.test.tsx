@@ -243,4 +243,32 @@ describe('PlanPurchaseButton — a refused checkout says what to do (HOS-1321)',
             expect(screen.getByText(GENERIC_CHECKOUT_ERROR)).toBeInTheDocument();
         });
     });
+
+    it('never surfaces the raw English message of a rejection that names nothing', async () => {
+        // Arrange — a raw upstream failure, a body with no `error` envelope or
+        // a network error all reach the client with a `message` and NO
+        // machine-readable identifier. `translateApiError`'s last step is
+        // `apiMessage || fallback`, so sending those through the chain would
+        // put English on screen where a localized sentence used to be. They
+        // must keep taking the generic one.
+        const RAW_ENGLISH = 'API request failed with status 502';
+        mockAuthenticated();
+        vi.stubGlobal('fetch', buildFetchMock({ message: RAW_ENGLISH }));
+        const user = userEvent.setup();
+        render(
+            <PlanPurchaseButton
+                {...baseProps}
+                audience="owner"
+            />
+        );
+
+        // Act
+        await user.click(screen.getByTestId('plan-cta-button'));
+
+        // Assert
+        await waitFor(() => {
+            expect(screen.getByText(GENERIC_CHECKOUT_ERROR)).toBeInTheDocument();
+        });
+        expect(screen.queryByText(RAW_ENGLISH)).not.toBeInTheDocument();
+    });
 });
