@@ -21,7 +21,14 @@
 import type { PlanDefinition } from '@repo/billing';
 import { type AdminSubscriptionViewStatus, ProductDomainEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { getChangePlanOptions, getPlanBySlug, getStatusLabel, getStatusVariant } from '../utils';
+import type { Subscription } from '../types';
+import {
+    buildGrantCompPayload,
+    getChangePlanOptions,
+    getPlanBySlug,
+    getStatusLabel,
+    getStatusVariant
+} from '../utils';
 
 /** Every status value the contract actually declares (AdminSubscriptionViewStatusSchema). */
 const ALL_SUBSCRIPTION_STATUSES: AdminSubscriptionViewStatus[] = [
@@ -255,5 +262,67 @@ describe('getChangePlanOptions — a tourist subscription keeps its destinations
 
         expect(options).toEqual([]);
         expect(options.some((plan) => plan.slug === 'partner-gold')).toBe(false);
+    });
+});
+
+describe('buildGrantCompPayload (HOS-1314)', () => {
+    /**
+     * `customerId` (a `billing_customers.id`) and `user.id` (a Hospeda
+     * `users.id`) are deliberately DIFFERENT uuids in this fixture — the same
+     * pattern `admin-billing-view.service.test.ts` uses on the API side —
+     * so a mix-up between the two fails loudly instead of passing by
+     * coincidence.
+     */
+    const subscription: Subscription = {
+        id: '11111111-1111-4111-8111-111111111111',
+        customerId: '55555555-5555-4555-8555-555555555555',
+        status: 'active',
+        rawStatus: 'active',
+        user: {
+            id: '22222222-2222-4222-8222-222222222222',
+            displayName: 'Julieta Ferreyra',
+            email: 'julieta@local.test'
+        },
+        plan: null,
+        recurringAmountInCents: null,
+        billingInterval: 'month',
+        currentPeriodStart: '2026-01-01T00:00:00.000Z',
+        currentPeriodEnd: '2026-02-01T00:00:00.000Z',
+        trialEnd: null,
+        cancelAtPeriodEnd: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        productDomain: 'accommodation'
+    };
+
+    // HOS-1314 review: the mutation this test exists to catch is
+    // `customerId: subscription.user?.id ?? ''` — the exact "billing
+    // customer vs. login user" mix-up this whole feature was built to close.
+    // That mutation stays GREEN against `not.toBe(subscription.user.id)`
+    // alone if both ids happened to collide, so the payload's customerId is
+    // also pinned to the LITERAL billing-customer uuid, not merely asserted
+    // "different from something else".
+    it('targets the billing customerId, never the Hospeda user id', () => {
+        const payload = buildGrantCompPayload({
+            subscription,
+            planId: '33333333-3333-4333-8333-333333333333',
+            interval: 'monthly'
+        });
+
+        expect(payload.customerId).toBe('55555555-5555-4555-8555-555555555555');
+        expect(payload.customerId).not.toBe(subscription.user?.id);
+    });
+
+    it('passes the planId and interval through unchanged', () => {
+        const payload = buildGrantCompPayload({
+            subscription,
+            planId: '33333333-3333-4333-8333-333333333333',
+            interval: 'annual'
+        });
+
+        expect(payload).toEqual({
+            customerId: '55555555-5555-4555-8555-555555555555',
+            planId: '33333333-3333-4333-8333-333333333333',
+            interval: 'annual'
+        });
     });
 });

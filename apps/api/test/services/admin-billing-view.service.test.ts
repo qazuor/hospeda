@@ -133,6 +133,9 @@ function mockDbReturning(params: { total: number; rows: readonly unknown[] }): v
 
 const SUBSCRIPTION_ROW = {
     id: '11111111-1111-4111-8111-111111111111',
+    // HOS-1314: the billing customer behind the row, distinct from `userId`
+    // below (a Hospeda `users.id`) — see AdminSubscriptionViewSchema's JSDoc.
+    customerId: '55555555-5555-4555-8555-555555555555',
     rawStatus: 'canceled',
     billingInterval: 'month',
     currentPeriodStart: new Date('2026-07-01T00:00:00.000Z'),
@@ -245,6 +248,19 @@ describe('listSubscriptions — row mapping', () => {
         expect(items[0]?.user?.displayName).toBe('Julieta Ferreyra');
         expect(items[0]?.plan?.slug).toBe('owner-basico');
         expect(items[0]?.recurringAmountInCents).toBe(1_500_000);
+    });
+
+    // HOS-1314: the admin grant-comp dialog needs the qzpay billing customer
+    // id, which is distinct from `user.id` (a Hospeda `users.id`). Regression
+    // test for the gap that made granting a comp from a subscription row
+    // require an operator to already know the qzpay customer UUID.
+    it('carries the billing customerId, distinct from the Hospeda user id', async () => {
+        mockDbReturning({ total: 1, rows: [SUBSCRIPTION_ROW] });
+
+        const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+        expect(items[0]?.customerId).toBe('55555555-5555-4555-8555-555555555555');
+        expect(items[0]?.customerId).not.toBe(items[0]?.user?.id);
     });
 
     it('leaves recurringAmountInCents null — not 0 — when the plan is gone', async () => {

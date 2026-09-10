@@ -35,7 +35,7 @@ import type {
     BillingPlanResponse,
     PlanPriceChangeEffect
 } from '@repo/schemas';
-import { resolvePlanPublicListing, ServiceErrorCode } from '@repo/schemas';
+import { ProductDomainEnum, resolvePlanPublicListing, ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 import { findCapabilityFieldViolation } from './plan.types.js';
@@ -248,7 +248,27 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
             return {
                 ...base,
                 isDeleted: row.deletedAt != null,
-                activeSubscriptionCount: subCountByPlanId.get(row.id) ?? 0
+                activeSubscriptionCount: subCountByPlanId.get(row.id) ?? 0,
+                // HOS-1314: the admin grant-comp plan selector groups plans by
+                // vertical, so the field travels on the admin-only DTO (never
+                // on `mapDbToPlan`'s base shape, shared with the public
+                // endpoint).
+                //
+                // The `??` fallback is NOT the same asymmetry
+                // `createCompSubscription`/`subscriptionMatchesDomain` apply to
+                // `billing_subscriptions.product_domain` — that column really
+                // can hold NULL on a legacy row. `billing_plans.product_domain`
+                // cannot: it is `varchar(32) DEFAULT 'accommodation' NOT NULL`
+                // (`packages/db/src/migrations/0044_adorable_longshot.sql:16`),
+                // so every row, old or new, already has a value and this branch
+                // is unreachable against any real DB row today. Kept only as a
+                // defensive fallback for a hand-built row (e.g. a test fixture)
+                // that omits the field — do not read it as "some plans have no
+                // domain yet".
+                // The column is an untyped varchar (like `category` above), so
+                // the cast mirrors `mapDbToPlan`'s own `category` mapping.
+                productDomain: (row.productDomain ??
+                    ProductDomainEnum.ACCOMMODATION) as AdminBillingPlanResponse['productDomain']
             };
         });
 

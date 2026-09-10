@@ -266,6 +266,56 @@ export const useGrantCourtesyMutation = () => {
 };
 
 /**
+ * Grant a permanently-complimentary (`status='comp'`) subscription (HOS-1314).
+ *
+ * Unlike every other mutation in this file, the target is the CUSTOMER
+ * (`billing_customers.id`), not the subscription being viewed — a comp grant
+ * creates its own subscription row and retires whatever the customer already
+ * has in that plan's vertical, it does not modify the row it was opened from.
+ * See `apps/api/src/routes/billing/admin/subscription-comp.ts` for the full
+ * contract: 404 unknown customer/plan, 409 already comped in that vertical,
+ * 502 on a MercadoPago refusal while retiring a prior paid subscription.
+ */
+async function grantComp(payload: {
+    customerId: string;
+    planId: string;
+    interval: 'monthly' | 'annual';
+}) {
+    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        path: '/api/v1/admin/billing/subscriptions/grant-comp',
+        method: 'POST',
+        body: {
+            customerId: payload.customerId,
+            planId: payload.planId,
+            interval: payload.interval
+        }
+    });
+    return result.data.data;
+}
+
+/**
+ * Hook to grant a permanently-complimentary subscription to a customer
+ * (HOS-1314). See {@link grantComp} for why this targets a customer rather
+ * than the subscription the dialog was opened from.
+ */
+export const useGrantCompMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: {
+            customerId: string;
+            planId: string;
+            interval: 'monthly' | 'annual';
+        }) => grantComp(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: subscriptionQueryKeys.subscriptions.lists()
+            });
+        }
+    });
+};
+
+/**
  * Extend a trial subscription via the admin tier endpoint (qzpay-hono v1.3).
  */
 async function extendTrial(payload: { subscriptionId: string; additionalDays: number }) {

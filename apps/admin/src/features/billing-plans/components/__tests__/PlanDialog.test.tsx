@@ -45,6 +45,8 @@ function basePlan(overrides: Partial<ParsedPlanRecord> = {}): ParsedPlanRecord {
         // annotate their type directly were caught by the compiler; this one had
         // to be found by reading.
         publicListing: 'listed',
+        // HOS-1314: required on ParsedPlanRecord, same trap as publicListing above.
+        productDomain: 'accommodation',
         ...overrides
     } as ParsedPlanRecord;
 }

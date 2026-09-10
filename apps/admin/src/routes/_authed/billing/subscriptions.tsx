@@ -1,16 +1,19 @@
+import type { TranslationKey } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { useToast } from '@/components/ui/ToastProvider';
 import { usePlansQuery } from '@/features/billing-plans/hooks';
 import { CancelSubscriptionDialog } from '@/features/billing-subscriptions/CancelSubscriptionDialog';
 import { ChangePlanDialog } from '@/features/billing-subscriptions/ChangePlanDialog';
 import { ExtendTrialDialog } from '@/features/billing-subscriptions/ExtendTrialDialog';
+import { GrantCompDialog } from '@/features/billing-subscriptions/GrantCompDialog';
 import { GrantCourtesyDialog } from '@/features/billing-subscriptions/GrantCourtesyDialog';
 import {
     useCancelSubscriptionMutation,
     useChangePlanMutation,
     useExtendTrialMutation,
+    useGrantCompMutation,
     useGrantCourtesyMutation,
     usePauseSubscriptionMutation,
     useResumeSubscriptionMutation,
@@ -22,6 +25,7 @@ import { SubscriptionDetailsDialog } from '@/features/billing-subscriptions/Subs
 import { SubscriptionFilters } from '@/features/billing-subscriptions/SubscriptionFilters';
 import { SubscriptionsTable } from '@/features/billing-subscriptions/SubscriptionsTable';
 import type { Subscription, SubscriptionStatus } from '@/features/billing-subscriptions/types';
+import { buildGrantCompPayload } from '@/features/billing-subscriptions/utils';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 
@@ -53,6 +57,7 @@ function BillingSubscriptionsPage() {
     const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
     const [courtesyDialogOpen, setCourtesyDialogOpen] = useState(false);
     const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
+    const [compDialogOpen, setCompDialogOpen] = useState(false);
 
     // Data fetching
     const {
@@ -82,8 +87,43 @@ function BillingSubscriptionsPage() {
     const subscriptions = subscriptionsData?.items ?? [];
 
     // Plans query — needed to resolve plan slug -> UUID for the qzpay
-    // change-plan endpoint, which only accepts UUIDs.
-    const { data: plansData } = usePlansQuery();
+    // change-plan endpoint (UUIDs only) and to feed the grant-comp plan
+    // selector (HOS-1314), which needs EVERY comped-able plan across every
+    // vertical, not just the first page.
+    //
+    // `pageSize: 100` is the server's own hard ceiling
+    // (`BillingPlanSearchSchema.pageSize.max` in
+    // `packages/schemas/src/api/billing/billing-plan.schema.ts`) — the most a
+    // single request can ever return, so there is no larger fixed value to
+    // ask for. The unqualified default (20) undercounted today's own seed:
+    // ALL_PLANS (5) + 3 trial + 3 gastronomy + 3 experience + 3 partner +
+    // owner-test-daily is ~18 non-deleted rows already, two short of the
+    // default page. The truncation guard below is what stops a FUTURE
+    // overflow (e.g. a HOS-1062 negotiated plan pushing past 100) from
+    // silently dropping a plan out of the selector with no signal at all.
+    const { data: plansData } = usePlansQuery({ pageSize: 100 });
+
+    // HOS-1314 review: a plan the operator cannot see in the selector is a
+    // plan nobody can grant a comp for, with no error anywhere — the exact
+    // "fails silently" this guard exists to close. Fires at most once per
+    // mount (not once per render/refetch) so it cannot spam the toast queue.
+    const plansTruncationWarned = useRef(false);
+    useEffect(() => {
+        if (!plansData) return;
+        const total = plansData.pagination.total;
+        const totalCount = typeof total === 'number' ? total : Number(total);
+        if (
+            !plansTruncationWarned.current &&
+            Number.isFinite(totalCount) &&
+            totalCount > plansData.items.length
+        ) {
+            plansTruncationWarned.current = true;
+            addToast({
+                message: `${t('admin-billing.subscriptions.toasts.plansTruncated')} ${plansData.items.length}/${totalCount}`,
+                variant: 'warning'
+            });
+        }
+    }, [plansData, addToast, t]);
 
     // Mutations
     const cancelMutation = useCancelSubscriptionMutation();
@@ -92,6 +132,7 @@ function BillingSubscriptionsPage() {
     const pauseMutation = usePauseSubscriptionMutation();
     const grantCourtesyMutation = useGrantCourtesyMutation();
     const resumeMutation = useResumeSubscriptionMutation();
+    const grantCompMutation = useGrantCompMutation();
 
     // Handlers: navigation between dialogs
     const handleViewDetails = (subscription: Subscription) => {
@@ -123,6 +164,12 @@ function BillingSubscriptionsPage() {
         setDetailsDialogOpen(false);
     };
 
+    const handleGrantCompClick = (subscription: Subscription) => {
+        setSelectedSubscription(subscription);
+        setCompDialogOpen(true);
+        setDetailsDialogOpen(false);
+    };
+
     /**
      * Confirms a courtesy grant.
      *
@@ -147,6 +194,54 @@ function BillingSubscriptionsPage() {
                 onError: (error) => {
                     addToast({
                         message: `${t('admin-billing.subscriptions.toasts.courtesyError')} ${error.message}`,
+                        variant: 'error'
+                    });
+                }
+            }
+        );
+    };
+
+    /**
+     * Confirms a comp grant (HOS-1314).
+     *
+     * The success toast names the VERTICAL that got comped, not just "listo" —
+     * the issue's own T-3 requirement, because an operator who picked the
+     * wrong plan otherwise has no confirmation of which entitlements the
+     * customer actually received. The domain is resolved from the SAME
+     * `plansData` the dialog's own selector reads from, mirroring how
+     * `handleConfirmChangePlan` resolves `newPlanName` below.
+     */
+    const handleConfirmGrantComp = (payload: {
+        planId: string;
+        interval: 'monthly' | 'annual';
+    }) => {
+        if (!selectedSubscription) return;
+
+        const planRow = plansData?.items?.find((p) => p.id === payload.planId);
+        const domainLabel = planRow
+            ? t(
+                  `admin-billing.subscriptions.productDomainLabels.${planRow.productDomain}` as TranslationKey
+              )
+            : payload.planId;
+
+        grantCompMutation.mutate(
+            buildGrantCompPayload({
+                subscription: selectedSubscription,
+                planId: payload.planId,
+                interval: payload.interval
+            }),
+            {
+                onSuccess: () => {
+                    addToast({
+                        message: `${t('admin-billing.subscriptions.toasts.compGranted')} ${domainLabel}`,
+                        variant: 'success'
+                    });
+                    setCompDialogOpen(false);
+                    setSelectedSubscription(null);
+                },
+                onError: (error) => {
+                    addToast({
+                        message: `${t('admin-billing.subscriptions.toasts.compError')} ${error.message}`,
                         variant: 'error'
                     });
                 }
@@ -348,6 +443,7 @@ function BillingSubscriptionsPage() {
                 onPause={handlePauseClick}
                 onGrantCourtesy={handleGrantCourtesyClick}
                 onResume={handleResumeClick}
+                onGrantComp={handleGrantCompClick}
             />
 
             {selectedSubscription && (
@@ -379,6 +475,15 @@ function BillingSubscriptionsPage() {
                         isOpen={courtesyDialogOpen}
                         onClose={() => setCourtesyDialogOpen(false)}
                         onConfirm={handleConfirmGrantCourtesy}
+                    />
+
+                    <GrantCompDialog
+                        subscription={selectedSubscription}
+                        plans={plansData?.items ?? []}
+                        isOpen={compDialogOpen}
+                        onClose={() => setCompDialogOpen(false)}
+                        onConfirm={handleConfirmGrantComp}
+                        isPending={grantCompMutation.isPending}
                     />
 
                     <PauseSubscriptionDialog

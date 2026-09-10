@@ -50,6 +50,14 @@ export interface ParsedPlanRecord {
      * table is where those two stop looking the same.
      */
     readonly publicListing: BillingPlanPublicListing;
+    /**
+     * Which vertical the plan belongs to (`billing_plans.product_domain`).
+     *
+     * Added for HOS-1314: the admin "grant comp subscription" dialog groups
+     * this list by vertical so an operator cannot mistake a gastronomy plan
+     * for an accommodation one.
+     */
+    readonly productDomain: ProductDomainValue;
 }
 
 /**
