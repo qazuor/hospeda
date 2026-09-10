@@ -89,6 +89,33 @@ const HOSPEDA_STATUS_VALUES: ReadonlySet<string> = new Set<string>(
 );
 
 /**
+ * Every spelling `billing_subscriptions.status` can hold for a subscription that
+ * exists locally but has NOT been confirmed by the payment provider yet — i.e.
+ * every stored value that {@link normalizeStoredSubscriptionStatus} resolves to
+ * {@link SubscriptionStatusEnum.PENDING_PROVIDER}.
+ *
+ * Today that is `'incomplete'` (what qzpay-core's `mode: 'paid'` create inserts)
+ * and `'pending_provider'` (what every direct Hospeda writer uses). It is
+ * **DERIVED from {@link QZPAY_STORED_STATUS_ALIASES}**, not typed out, so a third
+ * alias added to that map joins this set on its own. A hand-written pair is the
+ * exact shape that goes blind the day a spelling is added, which is the failure
+ * this column keeps producing (HOS-108, HOS-282, HOS-1310).
+ *
+ * Use it as the `WHERE status IN (...)` precondition of any write that means
+ * "this checkout never started" — the abandoned-pending-subs reaper and the
+ * unlinkable-preapproval cleanup in `paid-subscription-create` both do (HOS-1326).
+ * Do NOT extend it with a cancellation spelling: `canceled`/`cancelled` mean a
+ * relationship that existed and ended, and admitting them here would let a real
+ * cancellation be rewritten as an abandonment.
+ */
+export const PENDING_PROVIDER_STORED_STATUSES: readonly string[] = Object.freeze([
+    ...Object.keys(QZPAY_STORED_STATUS_ALIASES).filter(
+        (alias) => QZPAY_STORED_STATUS_ALIASES[alias] === SubscriptionStatusEnum.PENDING_PROVIDER
+    ),
+    SubscriptionStatusEnum.PENDING_PROVIDER as string
+]);
+
+/**
  * Normalize a raw stored subscription status into Hospeda's
  * {@link SubscriptionStatusEnum} vocabulary.
  *
