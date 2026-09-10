@@ -33,6 +33,7 @@
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { billingAddonPurchases, billingSubscriptions, getDb } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import { isOwnerCategorySubscription, PlanService, RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,6 +44,7 @@ import {
     entitlementMiddleware
 } from '../../src/middlewares/entitlement';
 import type { AppBindings } from '../../src/types';
+import { apiLogger } from '../../src/utils/logger';
 
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
@@ -374,6 +376,78 @@ describe('HOS-1303 — the consumer loader and other verticals', () => {
             const data = await run('cus-manual-grant');
 
             expect(data.entitlements).toContain(EntitlementKey.FEATURED_LISTING);
+        });
+
+        it('reports the drop at INFO, the level production actually emits', async () => {
+            // HOS-1303 review F2. The first revision logged the drop at `debug`
+            // and claimed in a docblock that every admitted case was logged too.
+            // `LOG_LEVEL` defaults to `info` (`packages/config/src/env.ts`), so an
+            // owner reporting "my featuring disappeared after the deploy" left no
+            // line at all in staging or prod. Asserting the LEVEL, not merely that
+            // something was logged, is the point: a `debug` call satisfies "it
+            // logs" and still reaches nobody.
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([
+                {
+                    entitlementKey: EntitlementKey.FEATURED_LISTING,
+                    source: 'addon',
+                    sourceId: 'purchase-gastronomy-boost'
+                },
+                {
+                    entitlementKey: EntitlementKey.AI_SUPPORT,
+                    source: 'addon',
+                    sourceId: 'purchase-vanished'
+                }
+            ]);
+            stubDb(
+                new Map<unknown, readonly unknown[]>([
+                    [
+                        billingAddonPurchases,
+                        [
+                            {
+                                id: 'purchase-gastronomy-boost',
+                                addonSlug: 'visibility-boost-gastronomy-7d'
+                            }
+                        ]
+                    ]
+                ])
+            );
+
+            await run('cus-reports-at-info');
+
+            expect(apiLogger.info).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    resolver: 'consumer-entitlements',
+                    dropped: [
+                        expect.objectContaining({
+                            entitlementKey: EntitlementKey.FEATURED_LISTING,
+                            addonSlug: 'visibility-boost-gastronomy-7d',
+                            addonDomain: ProductDomainEnum.GASTRONOMY
+                        })
+                    ],
+                    // The fail-open firing, which the docblock claimed was logged
+                    // and was not. A steady stream of these is the signature of the
+                    // gate having gone no-op.
+                    admittedUnplaceable: [
+                        expect.objectContaining({
+                            entitlementKey: EntitlementKey.AI_SUPPORT,
+                            purchaseId: 'purchase-vanished'
+                        })
+                    ]
+                }),
+                expect.stringContaining('add-on grant domain gate')
+            );
+        });
+
+        it('stays silent when the gate did nothing — no info line per request', async () => {
+            // The control for the case above. An unconditional `info` on a path
+            // that runs on every entitlement-cache miss would be noise, and noise
+            // is how a real signal stops being read.
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            stubDb(new Map());
+
+            await run('cus-nothing-to-report');
+
+            expect(apiLogger.info).not.toHaveBeenCalled();
         });
 
         it('keeps a grant whose purchase row cannot be found — unplaceable is not foreign', async () => {
