@@ -109,10 +109,20 @@ const HOSPEDA_STATUS_VALUES: ReadonlySet<string> = new Set<string>(
  * cancellation be rewritten as an abandonment.
  */
 export const PENDING_PROVIDER_STORED_STATUSES: readonly string[] = Object.freeze([
-    ...Object.keys(QZPAY_STORED_STATUS_ALIASES).filter(
-        (alias) => QZPAY_STORED_STATUS_ALIASES[alias] === SubscriptionStatusEnum.PENDING_PROVIDER
-    ),
-    SubscriptionStatusEnum.PENDING_PROVIDER as string
+    // Deduplicated through a Set rather than appended blindly. The alias map's
+    // own docblock says it carries "only qzpay-vocabulary keys that DIFFER from
+    // Hospeda's vocabulary", so `pending_provider` is not expected to be in it —
+    // but nothing enforces that, and the day someone adds it as a pass-through
+    // the array form would list the spelling twice. Harmless inside an
+    // `IN (...)`, misleading in a log line or a length assertion, and free to
+    // prevent here.
+    ...new Set<string>([
+        ...Object.keys(QZPAY_STORED_STATUS_ALIASES).filter(
+            (alias) =>
+                QZPAY_STORED_STATUS_ALIASES[alias] === SubscriptionStatusEnum.PENDING_PROVIDER
+        ),
+        SubscriptionStatusEnum.PENDING_PROVIDER
+    ])
 ]);
 
 /**

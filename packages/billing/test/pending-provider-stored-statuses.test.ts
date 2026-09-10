@@ -76,4 +76,15 @@ describe('PENDING_PROVIDER_STORED_STATUSES', () => {
     it('is frozen, so a consumer cannot widen the shared precondition in place', () => {
         expect(Object.isFrozen(PENDING_PROVIDER_STORED_STATUSES)).toBe(true);
     });
+
+    // The alias map is documented as holding only spellings that DIFFER from
+    // Hospeda's, so `pending_provider` should not appear in it — but that is a
+    // convention, not a constraint, and the first shape of this constant appended
+    // the Hospeda spelling unconditionally. A duplicate is harmless inside an
+    // `IN (...)` and misleading in a log line or a length assertion.
+    it('contains no duplicates, whatever the alias map happens to hold', () => {
+        expect(new Set(PENDING_PROVIDER_STORED_STATUSES).size).toBe(
+            PENDING_PROVIDER_STORED_STATUSES.length
+        );
+    });
 });
