@@ -607,12 +607,19 @@ describe('PlanChangeFlow', () => {
         onDismiss.mockClear();
     });
 
-    function renderFlow({ currentSlug = 'owner-pro' } = {}) {
+    function renderFlow({
+        currentSlug = 'owner-pro',
+        plansHref
+    }: {
+        currentSlug?: string;
+        plansHref?: string;
+    } = {}) {
         return render(
             <PlanChangeFlow
                 plans={PLANS}
                 currentPlanSlug={currentSlug}
                 locale="es"
+                {...(plansHref === undefined ? {} : { plansHref })}
                 onChanged={onChanged}
                 onDismiss={onDismiss}
             />
@@ -819,6 +826,89 @@ describe('PlanChangeFlow', () => {
         // …and because a 409 is non-transitory, there is NO "Reintentar" — the
         // banner offers "Cerrar" instead (retrying would always fail).
         expect(screen.queryByRole('button', { name: /reintentar/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /cerrar/i })).toBeInTheDocument();
+    });
+
+    // ── HOS-1236 — a trial has nothing to change and nothing to retry ────────
+    //
+    // The measured symptom (staging, 08/09/2026, `host-trial@local.test`) was a
+    // red banner reading "No pudimos conectar con el servidor. Probá de nuevo."
+    // over a "Reintentar" link, for a 502 raised by a purely local precondition.
+    // The API now answers 409 with `reason: 'TRIAL_REQUIRES_CHECKOUT'`; these
+    // tests pin what the host is shown and, more importantly, where they can go.
+
+    const TRIAL_REFUSAL = {
+        ok: false as const,
+        error: {
+            status: 409,
+            code: 'ALREADY_EXISTS',
+            reason: 'TRIAL_REQUIRES_CHECKOUT',
+            message: 'This subscription is a Hospeda trial with no MercadoPago subscription.'
+        }
+    };
+
+    it('a trial refusal offers a link to the plans page, not a retry (HOS-1236)', async () => {
+        mockChangePlan.mockResolvedValue(TRIAL_REFUSAL);
+
+        renderFlow({ currentSlug: 'owner-basico', plansHref: '/es/planes/anfitriones/precios/' });
+        fireEvent.click(screen.getByRole('button', { name: /mensual/i }));
+
+        // The reason resolves to the trial-specific copy — never the network
+        // apology, and never the API's raw English message.
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(/prueba gratis/i);
+        });
+        expect(screen.getByRole('alert')).not.toHaveTextContent(/no pudimos conectar/i);
+
+        // The action is a real destination, not a dead end.
+        const link = screen.getByRole('link', { name: /ver planes/i });
+        expect(link).toHaveAttribute('href', '/es/planes/anfitriones/precios/');
+        expect(screen.queryByRole('button', { name: /reintentar/i })).not.toBeInTheDocument();
+        // And NOT the bare "Cerrar" the generic 4xx branch would have rendered —
+        // that branch is still correct for other 409s, so the two must be
+        // distinguishable or this test proves nothing about the routing.
+        expect(screen.queryByRole('button', { name: /cerrar/i })).not.toBeInTheDocument();
+    });
+
+    it('without a plansHref the trial refusal degrades to Cerrar, never to a broken link', async () => {
+        // `PlanChangeFlow` serves the accommodation AND the tourist dashboard,
+        // which have different pricing pages, so the destination is supplied by
+        // the caller. Absent one, the banner must not invent a URL — the message
+        // alone still tells the host what to do.
+        mockChangePlan.mockResolvedValue(TRIAL_REFUSAL);
+
+        renderFlow({ currentSlug: 'owner-basico' });
+        fireEvent.click(screen.getByRole('button', { name: /mensual/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(/prueba gratis/i);
+        });
+        expect(screen.queryByRole('link', { name: /ver planes/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /cerrar/i })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /reintentar/i })).not.toBeInTheDocument();
+    });
+
+    it('an UNRELATED 409 still gets Cerrar, not the plans link', async () => {
+        // The pair that keeps the assertions above honest: routing on the reason
+        // must not become routing on the status. A cancel-pending 409 has a real
+        // remedy of its own (un-cancel) and must not be sent to the checkout.
+        mockChangePlan.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 409,
+                code: 'ALREADY_EXISTS',
+                reason: 'SUBSCRIPTION_CANCEL_PENDING',
+                message: 'Subscription is scheduled to cancel at period end.'
+            }
+        });
+
+        renderFlow({ currentSlug: 'owner-basico', plansHref: '/es/planes/anfitriones/precios/' });
+        fireEvent.click(screen.getByRole('button', { name: /mensual/i }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(/programada para cancelarse/i);
+        });
+        expect(screen.queryByRole('link', { name: /ver planes/i })).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: /cerrar/i })).toBeInTheDocument();
     });
 
