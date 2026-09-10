@@ -83,22 +83,35 @@ function makeCleanupDbMock(
 ) {
     const row = { ...initial };
     const writes: Array<Record<string, unknown>> = [];
+    /** Every condition object the write's `.where(...)` was handed, in order. */
+    const conditions: unknown[] = [];
     const update = vi.fn(() => ({
         set: (patch: Record<string, unknown>) => {
             writes.push(patch);
             return {
-                where: () => ({
-                    returning: async () => {
-                        const pending = ['incomplete', 'pending_provider'].includes(row.status);
-                        if (!pending || row.mpSubscriptionId !== null) {
-                            return [];
+                where: (condition: unknown) => {
+                    conditions.push(condition);
+                    return {
+                        returning: async () => {
+                            // The precondition is read off the ACTUAL condition
+                            // tree the code built, not re-declared here: the
+                            // suite-wide `@repo/db` mock renders `and`/`inArray`/
+                            // `isNull` as plain objects, so the row can be
+                            // matched against the real WHERE. A mock that
+                            // hard-coded the rule instead would keep answering
+                            // correctly after the guard was deleted from the
+                            // query — which is how a guard test ends up
+                            // asserting the mock rather than the code.
+                            if (!matchesCondition(condition, row)) {
+                                return [];
+                            }
+                            if (typeof patch.status === 'string') {
+                                row.status = patch.status;
+                            }
+                            return [{ id: LOCAL_SUB_ID }];
                         }
-                        if (typeof patch.status === 'string') {
-                            row.status = patch.status;
-                        }
-                        return [{ id: LOCAL_SUB_ID }];
-                    }
-                })
+                    };
+                }
             };
         }
     }));
@@ -115,7 +128,61 @@ function makeCleanupDbMock(
         }))
     }));
 
-    return { db: { select, update } as never, row, update, writes };
+    return { db: { select, update } as never, row, update, writes, conditions };
+}
+
+/** The row shape {@link matchesCondition} evaluates a WHERE against. */
+type CleanupRow = { status: string; mpSubscriptionId: string | null };
+
+/** Maps a Drizzle column reference (a string, under the suite-wide mock). */
+const COLUMN_VALUE: Record<string, (row: CleanupRow) => unknown> = {
+    id: () => LOCAL_SUB_ID,
+    status: (row) => row.status,
+    mp_subscription_id: (row) => row.mpSubscriptionId,
+    deleted_at: () => null
+};
+
+/**
+ * Evaluates the condition tree an UPDATE's `.where(...)` was handed against a
+ * row, so a test can observe what the REAL query would have matched.
+ *
+ * `apps/api/test/setup.ts` mocks `@repo/db` so `and`/`eq`/`inArray`/`isNull`
+ * return plain descriptor objects and every column is its own snake_case name.
+ * That makes the query inspectable, which is the only way a guard clause living
+ * in a WHERE can be tested without a database — the alternative, restating the
+ * rule inside the mock, keeps passing after the clause is deleted.
+ *
+ * Unknown operators throw rather than defaulting to `true`: a silently-permissive
+ * evaluator is the same fail-open this file exists to catch.
+ */
+function matchesCondition(condition: unknown, row: CleanupRow): boolean {
+    const node = condition as { type?: string; column?: string; conditions?: unknown[] } & Record<
+        string,
+        unknown
+    >;
+
+    const read = (column: string): unknown => {
+        const reader = COLUMN_VALUE[column];
+        if (!reader) {
+            throw new Error(`matchesCondition: unmapped column '${column}'`);
+        }
+        return reader(row);
+    };
+
+    switch (node.type) {
+        case 'and':
+            return (node.conditions ?? []).every((child) => matchesCondition(child, row));
+        case 'or':
+            return (node.conditions ?? []).some((child) => matchesCondition(child, row));
+        case 'eq':
+            return read(node.left as string) === node.right;
+        case 'inArray':
+            return (node.values as readonly unknown[]).includes(read(node.column as string));
+        case 'isNull':
+            return read(node.column as string) === null;
+        default:
+            throw new Error(`matchesCondition: unsupported condition type '${String(node.type)}'`);
+    }
 }
 
 describe('createPaidSubscription', () => {
