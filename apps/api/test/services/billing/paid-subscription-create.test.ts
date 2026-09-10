@@ -14,12 +14,16 @@
  * @module test/services/billing/paid-subscription-create
  */
 
-import { ProductDomainEnum } from '@repo/schemas';
+import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPaidSubscription } from '../../../src/services/billing/paid-subscription-create';
 import { SubscriptionCheckoutError } from '../../../src/services/billing/subscription-checkout-error';
 import { matchesCondition } from '../../helpers/drizzle-condition';
-import { mockPlanDomainRead, mockPlanDomainReadMissing } from '../../helpers/plan-domain-read';
+import {
+    mockExistingSubscriptionsRead,
+    mockPlanDomainRead,
+    mockPlanDomainReadMissing
+} from '../../helpers/plan-domain-read';
 
 const CUSTOMER_ID = 'cust_owner';
 const PLAN_ID = '00000000-0000-4000-8000-0000000000aa';
@@ -141,7 +145,20 @@ function makeCleanupDbMock(
     );
     const select = vi.fn(() => ({
         from: vi.fn(() => ({
-            where: vi.fn(() => ({ limit, orderBy: vi.fn(() => ({ limit })) }))
+            where: vi.fn(() => ({
+                limit,
+                orderBy: vi.fn(() => ({ limit })),
+                // HOS-1322: the duplicate guard's scan awaits `.where()` with no
+                // `.limit()` after it, so this client has to be awaitable too.
+                // It resolves to NO existing subscription: this fixture is about
+                // the Bug C cleanup write, and a customer who already held one
+                // would be refused long before reaching it.
+                // biome-ignore lint/suspicious/noThenProperty: imitating an awaitable query builder is exactly the point.
+                then: (
+                    onFulfilled?: ((value: unknown[]) => unknown) | null,
+                    onRejected?: ((reason: unknown) => unknown) | null
+                ) => Promise.resolve([]).then(onFulfilled, onRejected)
+            }))
         }))
     }));
 
@@ -152,7 +169,135 @@ describe('createPaidSubscription', () => {
     beforeEach(() => {
         // HOS-1233 T-032: the helper reads the plan's own product_domain before
         // creating the preapproval, and fails closed when it finds no plan.
+        // It also resets HOS-1322's existing-subscription rows to empty.
         mockPlanDomainRead();
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1322 — the duplicate guard, inside the primitive
+    // -----------------------------------------------------------------------
+    describe('the duplicate guard (HOS-1322)', () => {
+        function callWith(planDomain: ProductDomainValue) {
+            const billing = createBillingMock();
+            mockPlanDomainRead(planDomain);
+            return { billing };
+        }
+
+        it('refuses a second preapproval when a live subscription exists in the SAME domain', async () => {
+            const { billing } = callWith(ProductDomainEnum.ACCOMMODATION);
+            mockExistingSubscriptionsRead([
+                { id: 'sub_live', status: 'active', productDomain: 'accommodation' }
+            ]);
+
+            await expect(
+                createPaidSubscription({
+                    // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
+                    billing: billing as any,
+                    customerId: CUSTOMER_ID,
+                    planId: PLAN_ID,
+                    priceId: PRICE_ID,
+                    paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                    notificationUrl: URLS.notificationUrl
+                })
+            ).rejects.toThrow(/already have a live 'accommodation' subscription/);
+
+            // The whole point: MercadoPago is never asked for a second preapproval.
+            expect(billing.subscriptions.create).not.toHaveBeenCalled();
+        });
+
+        it('still creates it when the live subscription is in ANOTHER domain (the dual owner)', async () => {
+            // A host who already pays for accommodation, buying gastronomy.
+            // Without this pair the case above passes just as well with a
+            // customer-wide check that refuses a legitimate purchase.
+            const { billing } = callWith(ProductDomainEnum.GASTRONOMY);
+            mockExistingSubscriptionsRead([
+                { id: 'sub_accommodation', status: 'active', productDomain: 'accommodation' }
+            ]);
+
+            await createPaidSubscription({
+                // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl
+            });
+
+            expect(billing.subscriptions.create).toHaveBeenCalledWith(
+                expect.objectContaining({ productDomain: ProductDomainEnum.GASTRONOMY })
+            );
+        });
+
+        it('exempts the named superseded subscription, and only it', async () => {
+            // The trial → paid conversion: the trialing row stays live until the
+            // webhook confirms the new preapproval, so naming it is what keeps
+            // the conversion working.
+            const { billing } = callWith(ProductDomainEnum.ACCOMMODATION);
+            mockExistingSubscriptionsRead([
+                { id: 'sub_trial', status: 'trialing', productDomain: 'accommodation' }
+            ]);
+
+            await createPaidSubscription({
+                // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl,
+                supersedesSubscriptionIds: ['sub_trial']
+            });
+
+            expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+        });
+
+        it('still refuses a live row that is NOT the named superseded one', async () => {
+            // The exemption is a list of ids, not an off switch.
+            const { billing } = callWith(ProductDomainEnum.ACCOMMODATION);
+            mockExistingSubscriptionsRead([
+                { id: 'sub_trial', status: 'trialing', productDomain: 'accommodation' },
+                { id: 'sub_other', status: 'active', productDomain: 'accommodation' }
+            ]);
+
+            await expect(
+                createPaidSubscription({
+                    // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
+                    billing: billing as any,
+                    customerId: CUSTOMER_ID,
+                    planId: PLAN_ID,
+                    priceId: PRICE_ID,
+                    paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                    notificationUrl: URLS.notificationUrl,
+                    supersedesSubscriptionIds: ['sub_trial']
+                })
+            ).rejects.toThrow(/already have a live 'accommodation' subscription/);
+        });
+
+        it('exempts the ADDON domain — an owner legitimately holds several recurring add-ons', async () => {
+            // The add-on borrows the OWNER's plan row for its price, so the
+            // plan-resolved domain here is `accommodation` while the row it
+            // writes is `addon`. Without both halves of the exemption every
+            // add-on purchase by a subscribed host would be refused.
+            const { billing } = callWith(ProductDomainEnum.ACCOMMODATION);
+            mockExistingSubscriptionsRead([
+                { id: 'sub_plan', status: 'active', productDomain: 'accommodation' },
+                { id: 'sub_addon_1', status: 'active', productDomain: 'addon' }
+            ]);
+
+            await createPaidSubscription({
+                // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl,
+                subscriptionProductDomain: ProductDomainEnum.ADDON
+            });
+
+            expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+        });
     });
 
     // The two assertions AC-15e is actually about. They are written as a PAIR
