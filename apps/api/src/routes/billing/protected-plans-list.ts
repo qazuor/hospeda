@@ -11,10 +11,20 @@
  *
  * This module is mounted (see `routes/billing/index.ts`) BEFORE the qzpay
  * wrapper — Hono first-match routing means it wins for the EXACT `GET /plans`
- * path. `POST /plans`, `GET /plans/:id`, `PUT /plans/:id`, `DELETE /plans/:id`
- * are NOT registered here, so they fall through unchanged to the qzpay
- * wrapper. Same ordering precedent as the soft-cancel / downgrade-preview /
+ * path. Same ordering precedent as the soft-cancel / downgrade-preview /
  * promo-codes overrides in `routes/billing/index.ts`.
+ *
+ * There is no plan WRITE to fall through to, and this file claimed there was:
+ * `createBillingRoutes`' `if (plans)` block registers three GETs (`/plans`,
+ * `/plans/:id`, `/plans/:id/prices`) and nothing else, so `POST /plans`,
+ * `PUT /plans/:id` and `DELETE /plans/:id` answer 404 at this tier for want of a
+ * handler. Plan writes live under `/api/v1/admin/billing/plans`.
+ *
+ * The two single-plan READS — `GET /plans/:id` and `GET /plans/:id/prices` — are
+ * not registered here either, and reached qzpay unfiltered because of it: the
+ * whole row, `metadata` and `prices[]` included, to any authenticated caller
+ * (HOS-1186). They are now shadowed by `protected-plan-by-id.ts`, which asks
+ * {@link isServablePlan} the same question this file's branches do.
  *
  * HOS-1062 F1 widened what this override withholds. The endpoint answers ANY
  * authenticated user — an ordinary tourist account included — with full prices,
@@ -85,6 +95,23 @@ export function isPubliclyListedStoragePlan(plan: {
 }
 
 /**
+ * Whether ONE raw storage plan may be handed to an ordinary authenticated user:
+ * neither a testing tool nor a plan withheld from the catalogue.
+ *
+ * The single place the two marks are conjoined, so every door at this tier
+ * withholds the same set. {@link servablePlans} filters a page through it, and
+ * `protected-plan-by-id.ts` asks it about one plan — HOS-1186, where the
+ * single-plan reads were found falling through to qzpay unfiltered while both
+ * listings were covered.
+ *
+ * @param plan - A raw storage plan as qzpay returned it
+ * @returns `true` when the plan may be served at the protected tier
+ */
+export function isServablePlan(plan: { readonly metadata?: Record<string, unknown> }): boolean {
+    return !isTestPlan(plan) && isPubliclyListedStoragePlan(plan);
+}
+
+/**
  * The plans this endpoint may hand to an ordinary authenticated user: neither a
  * testing tool nor a plan withheld from the catalogue.
  *
@@ -98,7 +125,7 @@ export function isPubliclyListedStoragePlan(plan: {
 export function servablePlans<T extends { readonly metadata?: Record<string, unknown> }>(
     plans: readonly T[]
 ): T[] {
-    return plans.filter((plan) => !isTestPlan(plan) && isPubliclyListedStoragePlan(plan));
+    return plans.filter((plan) => isServablePlan(plan));
 }
 
 /**

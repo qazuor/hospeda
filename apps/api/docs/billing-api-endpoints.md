@@ -149,7 +149,20 @@ Get details of a specific plan.
 
 **Response:** Single plan object (same structure as list)
 
-**Status:** ✅ Fully implemented (QZPay pre-built)
+**Visibility (HOS-1186):** a plan this tier withholds — `metadata.testPlan`, or
+`metadata.publicListing: 'unlisted'` (a negotiated price) — answers **404
+`NOT_FOUND`**, with the same body a plan that does not exist gets, for every actor
+including an admin; a distinguishable answer would still confirm the id exists.
+The same rule covers `GET /plans/:id/prices`, which is a second door to the same
+amount rather than a necessary second step: the Drizzle adapter attaches prices
+inside `findById`, so they travel in this response too.
+
+Admin plan reads are unaffected — `GET /api/v1/admin/billing/plans/:id`
+(`BILLING_READ_ALL`) serves every plan in full, and is the endpoint the admin
+panel calls.
+
+**Status:** ✅ Fully implemented (Hospeda override in
+`routes/billing/protected-plan-by-id.ts`, shadowing the QZPay pre-built handler)
 
 ---
 
