@@ -44,13 +44,18 @@ const H = vi.hoisted(() => {
         readonly vals?: unknown[];
     }
 
+    // A column the code under test selects and this stub omits resolves to
+    // `undefined`, so `project()` reads `row[undefined]` and the field comes back
+    // empty — a missing key here looks like a missing VALUE, not a missing mock. Add
+    // the marker whenever the service's projection grows (HOS-1238 added `planId`).
     const TBL = {
         billingSubscriptions: {
             id: 'id',
             customerId: 'customerId',
             status: 'status',
             mpSubscriptionId: 'mpSubscriptionId',
-            livemode: 'livemode'
+            livemode: 'livemode',
+            planId: 'planId'
         },
         billingPayments: { id: 'id', providerPaymentIds: 'providerPaymentIds' }
     };
@@ -153,6 +158,28 @@ vi.mock('../../../src/utils/audit-logger.js', () => ({
 vi.mock('../../../src/utils/audit-logger', () => ({
     AuditEventType: { BILLING_MUTATION: 'billing.mutation' },
     auditLog: (...args: unknown[]) => H.auditLogMock(...args)
+}));
+
+// HOS-1238: the backfill is the THIRD site that settles a recurring charge, and the
+// one whose whole subject is a charge the customer was never told about — the
+// webhooks answered 200, so MercadoPago never retried. It must dispatch the receipt
+// here, because writing the ledger row SUPPRESSES the only other dispatch (the
+// dead-letter cron checks `paymentAlreadyRecorded` before its own receipt and then
+// resolves the event silently).
+//
+// Mocked so the wiring can be asserted without the real dispatcher's
+// notification-log lookup reaching this file's `@repo/db` mock. Both the `.js` and
+// extensionless specifiers are registered, matching the pattern every other mock in
+// this file already follows for the same reason.
+const { dispatchReceiptMock } = vi.hoisted(() => ({
+    dispatchReceiptMock: vi.fn().mockResolvedValue({ dispatched: true })
+}));
+
+vi.mock('../../../src/routes/webhooks/mercadopago/subscription-charge-receipt.js', () => ({
+    dispatchSubscriptionChargeReceipt: (...args: unknown[]) => dispatchReceiptMock(...args)
+}));
+vi.mock('../../../src/routes/webhooks/mercadopago/subscription-charge-receipt', () => ({
+    dispatchSubscriptionChargeReceipt: (...args: unknown[]) => dispatchReceiptMock(...args)
 }));
 
 vi.mock('@repo/db', () => ({
@@ -259,6 +286,11 @@ function makeSubscription(overrides: Record<string, unknown> = {}): Record<strin
         status: SubscriptionStatusEnum.ABANDONED,
         mpSubscriptionId: null,
         livemode: false,
+        // HOS-1238: the plan the backfill's receipt must name. A commerce vertical on
+        // purpose — one account holds several subscriptions at once, so a receipt that
+        // resolved the plan from the CUSTOMER rather than from THIS subscription would
+        // name a plan they were not charged for.
+        planId: 'plan-gastronomy-1',
         ...overrides
     };
 }
@@ -272,6 +304,8 @@ beforeEach(() => {
     H.auditLogMock.mockReset();
     H.findByLocalSubscriptionIdMock.mockResolvedValue(null);
     H.markLinkedMock.mockResolvedValue(undefined);
+    dispatchReceiptMock.mockReset();
+    dispatchReceiptMock.mockResolvedValue({ dispatched: true });
 });
 
 // ---------------------------------------------------------------------------
@@ -524,6 +558,75 @@ describe('backfillPayment', () => {
         });
     });
 
+    // HOS-1238. Without this the full sequence mails the customer nothing, ever:
+    // the recurring charge is orphaned (webhooks answered 200, so MercadoPago never
+    // retried), the operator rescues it with this backfill, and the dead-letter entry
+    // for the same event then resolves silently because the ledger row now exists.
+    it('HOS-1238: dispatches the customer receipt for the charge it reconstructs', async () => {
+        H.store.subscriptions.push(
+            makeSubscription({ id: 'sub-1', customerId: 'cust-dual', planId: 'plan-gastronomy-1' })
+        );
+        const { billing } = makeBillingMock();
+        const client = makeMpClient({
+            payments: {
+                'pay-1': makeMpPayment({ id: 'pay-1', transaction_amount: 180, status: 'approved' })
+            }
+        });
+
+        await backfillPayment({
+            mpPaymentId: 'pay-1',
+            localSubscriptionId: 'sub-1',
+            actorId: 'staff-42',
+            reason: 'Orphaned recurring charge rescued by hand',
+            billing,
+            client,
+            db: H.fakeDb as never
+        });
+
+        expect(dispatchReceiptMock).toHaveBeenCalledTimes(1);
+        const arg = dispatchReceiptMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(arg.customerId).toBe('cust-dual');
+        expect(arg.localSubscriptionId).toBe('sub-1');
+        // The plan of THIS subscription, not the customer's first.
+        expect(arg.planId).toBe('plan-gastronomy-1');
+        expect(arg.providerPaymentId).toBe('pay-1');
+        // MAJOR units — MercadoPago's own `transaction_amount`. The ledger row holds
+        // 18000 centavos for the same charge (HOS-713).
+        expect(arg.amountMajor).toBe(180);
+        expect(arg.amountMajor).not.toBe(18_000);
+        expect(arg.currency).toBe('ARS');
+        // DERIVED from the provider's field, not asserted. The 422 guard above has
+        // already refused anything but `approved`, so a literal would be true today
+        // and silently wrong the day that guard is relaxed.
+        expect(arg.chargeStatus).toBe('succeeded');
+        expect(arg.source).toBe('hos-765-admin-backfill');
+    });
+
+    // The receipt is best-effort and the dispatcher never throws, so a notification
+    // problem must not turn a completed rescue into a failed one: the ledger row and
+    // the audit entry are already committed by then.
+    it('HOS-1238: still reports "recorded" when the receipt could not be delivered', async () => {
+        H.store.subscriptions.push(makeSubscription({ id: 'sub-1' }));
+        const { billing } = makeBillingMock();
+        const client = makeMpClient({
+            payments: { 'pay-1': makeMpPayment({ id: 'pay-1', status: 'approved' }) }
+        });
+        dispatchReceiptMock.mockResolvedValue({ dispatched: false, reason: 'not-delivered' });
+
+        const result = await backfillPayment({
+            mpPaymentId: 'pay-1',
+            localSubscriptionId: 'sub-1',
+            actorId: 'staff-42',
+            reason: 'Orphaned recurring charge rescued by hand',
+            billing,
+            client,
+            db: H.fakeDb as never
+        });
+
+        expect(result.outcome).toBe('recorded');
+        expect(H.auditLogMock).toHaveBeenCalledTimes(1);
+    });
+
     it('idempotency: a payment already recorded returns "already-recorded" and does NOT call billing.payments.record', async () => {
         H.store.subscriptions.push(makeSubscription({ id: 'sub-1' }));
         H.store.paymentLookupResult.push({ id: 'bp-existing' });
@@ -546,6 +649,36 @@ describe('backfillPayment', () => {
         expect(result.billingPaymentId).toBe('bp-existing');
         expect(record).not.toHaveBeenCalled();
         expect(H.auditLogMock).toHaveBeenCalledTimes(1);
+        // HOS-1238: re-running the rescue must not mail a second receipt. The ledger
+        // already holds this payment, so there is nothing new to acknowledge — and the
+        // dispatcher's own per-paymentId lookup would catch it anyway, which is why
+        // this returns before reaching it rather than relying on that second line.
+        expect(dispatchReceiptMock).not.toHaveBeenCalled();
+    });
+
+    // The cleared-charge gate the derived `chargeStatus` depends on. A non-approved
+    // payment never reaches the dispatch at all, so the derivation is belt to the
+    // 422's braces rather than the only thing standing there.
+    it('HOS-1238: a refused (non-approved) backfill mails nothing', async () => {
+        H.store.subscriptions.push(makeSubscription({ id: 'sub-1' }));
+        const { billing } = makeBillingMock();
+        const client = makeMpClient({
+            payments: { 'pay-1': makeMpPayment({ id: 'pay-1', status: 'rejected' }) }
+        });
+
+        await expect(
+            backfillPayment({
+                mpPaymentId: 'pay-1',
+                localSubscriptionId: 'sub-1',
+                actorId: 'staff-42',
+                reason: 'Attempting to backfill a rejected charge',
+                billing,
+                client,
+                db: H.fakeDb as never
+            })
+        ).rejects.toBeInstanceOf(HTTPException);
+
+        expect(dispatchReceiptMock).not.toHaveBeenCalled();
     });
 
     it('refuses 422 on a non-approved payment (pending)', async () => {

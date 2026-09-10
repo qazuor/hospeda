@@ -57,6 +57,10 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
+// HOS-1238: the backfill is the third site that settles a recurring charge, and the
+// one whose subject is by definition a charge the customer was never told about.
+// Same dispatcher, same per-paymentId key as the webhook and the dead-letter cron.
+import { dispatchSubscriptionChargeReceipt } from '../../routes/webhooks/mercadopago/subscription-charge-receipt.js';
 import { AuditEventType, auditLog } from '../../utils/audit-logger.js';
 import { apiLogger } from '../../utils/logger.js';
 import {
@@ -107,6 +111,12 @@ async function requireLocalSubscription(params: {
     readonly status: string;
     readonly mpSubscriptionId: string | null;
     readonly livemode: boolean | null;
+    /**
+     * HOS-1238: additive, so the backfill's receipt can name the plan of the
+     * subscription this charge actually belongs to rather than the customer's first.
+     * The other caller (`linkPreapproval`) ignores the extra field.
+     */
+    readonly planId: string | null;
 }> {
     const [row] = await params.db
         .select({
@@ -114,7 +124,8 @@ async function requireLocalSubscription(params: {
             customerId: billingSubscriptions.customerId,
             status: billingSubscriptions.status,
             mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
-            livemode: billingSubscriptions.livemode
+            livemode: billingSubscriptions.livemode,
+            planId: billingSubscriptions.planId
         })
         .from(billingSubscriptions)
         .where(eq(billingSubscriptions.id, params.localSubscriptionId))
@@ -444,6 +455,43 @@ export async function backfillPayment(
         { actorId, mpPaymentId, localSubscriptionId, amountInCents, billingPaymentId: recorded.id },
         'HOS-765 backfill: billing_payments row reconstructed by operator'
     );
+
+    // HOS-1238: the THIRD site that settles a recurring charge, and the one where the
+    // customer is most certainly owed a receipt — this path exists precisely because
+    // "the webhooks already answered 200, so MercadoPago never retried", i.e. its
+    // typical subject IS an orphaned recurring charge with the customer debited and
+    // never told.
+    //
+    // It must dispatch HERE rather than relying on any other site, because writing
+    // this row SUPPRESSES the only other dispatch: the dead-letter retry checks
+    // `paymentAlreadyRecorded` before its own receipt and resolves the event
+    // silently. Without this call the full sequence — charge orphaned, operator
+    // backfills it, dead-letter entry resolves quietly — mails the customer nothing,
+    // ever.
+    //
+    // `chargeStatus` is DERIVED from the provider's own field, not asserted as a
+    // literal — even though the 422 guard at the top of this function has already
+    // refused anything but an `approved` payment, so `'succeeded'` would be true
+    // today. Asserting it is exactly the mistake the dead-letter cron made: a literal
+    // defeats the dispatcher's cleared-charge gate from the outside while leaving the
+    // gate looking intact, and it survives the day someone relaxes the check it was
+    // silently depending on. Derived, the two can never disagree.
+    //
+    // Never throws, so an operator's backfill cannot fail on a notification — the
+    // ledger row is committed and the audit entry written by this point.
+    await dispatchSubscriptionChargeReceipt({
+        customerId: target.customerId,
+        planId: target.planId,
+        providerPaymentId: mpPaymentId,
+        // `transactionAmount` is MercadoPago's own MAJOR-unit field — the same value
+        // `toCentavos` converted for `amountInCents` above (HOS-713).
+        amountMajor: payment.transactionAmount as Major,
+        currency: payment.currencyId,
+        chargeStatus: payment.status === 'approved' ? 'succeeded' : payment.status,
+        billing,
+        localSubscriptionId,
+        source: 'hos-765-admin-backfill'
+    });
 
     return {
         outcome: 'recorded',
