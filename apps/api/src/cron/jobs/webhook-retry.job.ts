@@ -56,6 +56,9 @@ import {
 } from '../../routes/webhooks/mercadopago/dead-letter.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
+// HOS-1238: a re-settled recurring charge owes the same receipt the live handler
+// sends, keyed the same way so only one of the two ever goes out.
+import { dispatchSubscriptionChargeReceipt } from '../../routes/webhooks/mercadopago/subscription-charge-receipt.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
 import {
     findLocalSubscriptionByPreapprovalId,
@@ -453,6 +456,30 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
             },
             'Subscription authorized payment recorded during dead-letter retry'
         );
+
+        // HOS-1238: the second site that settles a recurring charge, and so the
+        // second that owes the customer a receipt. This retry only runs when the
+        // live handler failed, which is precisely when a customer is most likely
+        // to have been charged and told nothing. Shares the live handler's
+        // dispatcher and its per-`paymentId` idempotency key, so whichever of the
+        // two gets there first, exactly one receipt goes out.
+        //
+        // `chargeStatus` is the same hardcoded `'succeeded'` this function records
+        // with — a dead-lettered authorized payment is only re-settled once it
+        // carries a real `payment.id`. Never throws.
+        await dispatchSubscriptionChargeReceipt({
+            customerId: sub.customerId,
+            planId: sub.planId,
+            providerPaymentId: details.paymentId,
+            // MAJOR units, as MercadoPago reports it — the same value the
+            // `Math.round(x * 100)` above converts for the ledger.
+            amountMajor: asMajor(details.transactionAmount),
+            currency: details.currencyId || 'ARS',
+            chargeStatus: 'succeeded',
+            billing,
+            localSubscriptionId: sub.id,
+            source: 'webhook-retry-dead-letter'
+        });
 
         return true;
     } catch (error) {

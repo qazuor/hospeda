@@ -15,7 +15,6 @@ import { asMajor, createMercadoPagoAdapter, type Major, toCentavos } from '@repo
 import {
     and,
     billingAddonPurchases,
-    billingNotificationLog,
     billingPayments,
     billingSubscriptions,
     eq,
@@ -23,7 +22,6 @@ import {
     isNull,
     sql
 } from '@repo/db';
-import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
@@ -52,6 +50,10 @@ import { clearPendingScheduledPlanChange } from '../../../services/subscription-
 import { resolveOwnerUserId } from '../../../services/subscription-pause.service';
 import { apiLogger } from '../../../utils/logger';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
+import {
+    paymentSuccessIdempotencyKey,
+    wasPaymentSuccessAlreadyDispatched
+} from './subscription-charge-receipt';
 import { completeReactivationSupersession } from './subscription-logic';
 import type { PaymentInfo } from './types';
 import {
@@ -1386,129 +1388,20 @@ async function recordConfirmedPayerEmail(input: {
     );
 }
 
-/**
- * The idempotency key identifying "the payment-success receipt for THIS
- * MercadoPago payment".
+/*
+ * MOVED, HOS-1238: `paymentSuccessIdempotencyKey` and
+ * `wasPaymentSuccessAlreadyDispatched` now live in
+ * `./subscription-charge-receipt`, imported above.
  *
- * Keyed on the PAYMENT, deliberately — not on the notification. See
- * {@link wasPaymentSuccessAlreadyDispatched} for why that distinction is the
- * whole point.
- *
- * @param providerPaymentId - MercadoPago `payment.id`.
- * @returns The key written into `billing_notification_log.metadata`.
+ * They were private to this module while this module held the only dispatch. A
+ * recurring subscription charge never reaches here — it arrives as
+ * `subscription_authorized_payment` and, since HOS-171, that is the ONLY way a
+ * subscription is charged at all. Its handler needs the SAME key, because the key
+ * names the payment rather than the path, which is what makes the two paths
+ * dedupe against each other. A second copy of the gate two files over is how this
+ * repo's recurring failure mode starts, so the gate moved instead of being
+ * duplicated.
  */
-function paymentSuccessIdempotencyKey(providerPaymentId: string): string {
-    return `payment-success:mercadopago:${providerPaymentId}`;
-}
-
-/**
- * Has the payment-success receipt for this MercadoPago payment already been
- * delivered?
- *
- * ## Why a payment-scoped check exists at all (HOS-757)
- *
- * HOS-763 turned the success notification on. One settled charge can reach that
- * dispatch more than once, from two independent producers, and NEITHER is
- * covered by the webhook-event idempotency upstream:
- *
- * - **Two provider notifications for the same payment.** The
- *   `billing_webhook_events` guard in `event-handler.ts` dedupes on
- *   `providerEventId`, and in `@qazuor/qzpay-mercadopago` `mapToQZPayEvent` sets
- *   `id: String(mpEvent.id)` — the id of the NOTIFICATION, not of the payment.
- *   Two `payment.updated` notifications about one charge therefore carry two
- *   distinct `providerEventId`s, both pass that guard, and both reach the
- *   dispatch. That guard stops a REDELIVERY of one notification; it cannot stop
- *   two notifications about one payment.
- * - **The polling cron.** `subscription-poll.job.ts` re-enters
- *   `processPaymentUpdated` with a synthetic payload for a charge the webhook
- *   may already have processed, and it writes no `billing_webhook_events` row at
- *   all, so the upstream guard never even looks at it.
- *
- * The add-on flow has a second, narrower defence (the
- * `billing_addon_purchases.paymentId` lookup further down), but a SUBSCRIPTION
- * charge — annual, plan upgrade, or a plain renewal — has none: it carries no
- * add-on metadata, so nothing downstream of the dispatch would have suppressed
- * a repeat. That path is the hole this closes, and it is live and unguarded
- * between HOS-763 landing and this change.
- *
- * ## Why `billing_notification_log`
- *
- * It is the repo's existing durable answer to "was this notification already
- * sent?", and the pattern is already load-bearing in `addon-expiry.job.ts`:
- * write an `idempotencyKey` into `metadata`, query it back before sending. It
- * survives a process restart and is shared across instances, unlike the
- * Redis-with-in-memory-fallback scheme in `notification-schedule.job.ts`, whose
- * fallback is per-process and would not hold for a multi-instance webhook.
- *
- * Note the division of labour, which `propagate-plan-price-changes.job.ts`
- * states explicitly for the same mechanism: passing `idempotencyKey` to the
- * sender only RECORDS the key — it does not prevent a second delivery. This
- * pre-send lookup is the gate.
- *
- * The query filters `status = 'sent'`, a deliberate deviation from
- * `addon-expiry.job.ts`, which matches any logged row. A row logged `failed`
- * means the customer did NOT receive the email, so treating it as "already sent"
- * would convert a delivery failure into a permanently missing payment receipt.
- * Excluding it still prevents every real duplicate, because only a delivered
- * notification can be duplicated.
- *
- * FAIL-OPEN on error, matching that precedent verbatim ("allowing send to avoid
- * missing notifications"): a lookup that cannot run must not silence a receipt
- * the customer is owed. The worst case in this direction is the duplicate it is
- * trying to prevent; the worst case in the other is a paying customer told
- * nothing.
- *
- * @param params.customerId - Billing customer id, which narrows the query onto
- *   the existing `(customer_id, type)` index.
- * @param params.providerPaymentId - MercadoPago `payment.id`.
- * @param params.source - Caller label, for the diagnostic log only.
- * @returns `true` only when a DELIVERED payment-success notification is already
- *   on record for this payment; `false` when none is, and `false` when the
- *   lookup itself failed.
- */
-async function wasPaymentSuccessAlreadyDispatched(params: {
-    readonly customerId: string;
-    readonly providerPaymentId: string;
-    readonly source: string;
-}): Promise<boolean> {
-    const { customerId, providerPaymentId, source } = params;
-    const idempotencyKey = paymentSuccessIdempotencyKey(providerPaymentId);
-
-    try {
-        const [existing] = await getDb()
-            .select({ id: billingNotificationLog.id })
-            .from(billingNotificationLog)
-            .where(
-                and(
-                    eq(billingNotificationLog.type, NotificationType.PAYMENT_SUCCESS),
-                    eq(billingNotificationLog.customerId, customerId),
-                    eq(billingNotificationLog.status, 'sent'),
-                    eq(sql`${billingNotificationLog.metadata}->>'idempotencyKey'`, idempotencyKey)
-                )
-            )
-            .limit(1);
-
-        if (existing) {
-            apiLogger.info(
-                { customerId, providerPaymentId, source },
-                'Payment-success notification already delivered for this payment — skipping (idempotent)'
-            );
-            return true;
-        }
-        return false;
-    } catch (lookupError) {
-        apiLogger.warn(
-            {
-                customerId,
-                providerPaymentId,
-                source,
-                error: lookupError instanceof Error ? lookupError.message : String(lookupError)
-            },
-            'Payment-success idempotency check failed — proceeding as not-yet-sent'
-        );
-        return false;
-    }
-}
 
 /**
  * Process a payment.updated event's business logic.
@@ -1601,10 +1494,17 @@ export async function processPaymentUpdated({
         // HOS-756 left them deliberately unrepaired while it fixed the three
         // dispatch gates further down: an approved charge arrives from the live
         // webhook spelled `'succeeded'`, so `status === 'approved'` was false
-        // for every payment the webhook ever confirmed, and
-        // `sendPaymentSuccessNotification` has exactly one call site — this one.
+        // for every payment the webhook ever confirmed, and at the time
+        // `sendPaymentSuccessNotification` had exactly one call site — this one.
         // Its sibling was blind the same way (`rejected → failed`,
         // `cancelled → canceled`). Neither email was ever sent, to anyone.
+        //
+        // HOS-1238 added the SECOND call site, in
+        // `subscription-charge-receipt.ts`: repairing this gate only ever lit up
+        // the preference/add-on path, and a recurring subscription charge does
+        // not come through here at all. Nothing below changes — the note is
+        // corrected because "exactly one call site" stopped being true, and a
+        // stale reason under a correct conclusion is the kind nobody re-checks.
         //
         // The scope note HOS-756 left here said the repair "starts sending
         // customer-facing emails for every payment the webhook confirms, which

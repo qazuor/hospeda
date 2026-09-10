@@ -17,6 +17,10 @@
  *
  * - Converts a card-first trial the moment its day-N charge settles
  *   (HOS-171). This is the PRIMARY conversion path — see below.
+ * - Mails the customer their receipt for the charge (HOS-1238), via
+ *   `subscription-charge-receipt.ts`. Since HOS-171 this is the only path a
+ *   subscription is ever charged on, so it is the only place that receipt can
+ *   come from.
  *
  * What this handler does NOT do:
  * - Recover a `past_due` subscription back to `active` when a retry
@@ -45,6 +49,7 @@
 
 import type { QZPayCurrency } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
+import { asMajor } from '@repo/billing';
 import {
     and,
     billingPayments,
@@ -95,6 +100,10 @@ import { mapMpStatusToQZPayStatus } from '../../../utils/mp-payment-status.js';
 // the router's handler map.
 import { routeAddonAuthorizedPayment } from './addon-recurring-handler.js';
 import { cleanupRequestProviderEventId } from './event-handler.js';
+// HOS-1238: the customer-facing receipt for a recurring charge. A leaf module so
+// BOTH settlement sites (this handler and the dead-letter retry cron) share one
+// dispatch with one idempotency key, rather than each growing its own.
+import { dispatchSubscriptionChargeReceipt } from './subscription-charge-receipt.js';
 import {
     getWebhookDependencies,
     markEventFailedByProviderId,
@@ -1162,6 +1171,42 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
                 billing,
                 eventId: event.id,
                 requestId
+            });
+
+            // HOS-1238: tell the customer they were charged. Until this, a
+            // recurring charge was recorded and acknowledged to MercadoPago
+            // without ever reaching the customer — measured on four real staging
+            // charges, which produced no notification row and no log line either
+            // way. Since HOS-171 this is the ONLY path a subscription is ever
+            // charged on, for all five product domains.
+            //
+            // Hung on THIS settled charge — a `providerPaymentId` plus a cleared
+            // status — and never on a status transition. HOS-914's
+            // `subscription-drift-reconcile` cron delegates its writes to
+            // `processSubscriptionUpdated`, so a receipt hung on a transition
+            // would be mailed every time a reconciliation sweep corrected a row.
+            //
+            // Placed AFTER the trial conversion so a slow mail never delays the
+            // write that stops the trial middleware from 402-ing a paid-up
+            // customer, and awaited like its sibling in `payment-logic.ts` so the
+            // notification-log row lands before this handler acknowledges — which
+            // is what makes the cross-path dedupe see it. Never throws.
+            await dispatchSubscriptionChargeReceipt({
+                customerId: sub.customerId,
+                // The plan of the subscription THIS charge settled, never the
+                // customer's first — one account holds several subscriptions at
+                // once across the five domains.
+                planId: sub.planId,
+                providerPaymentId: details.paymentId,
+                // MercadoPago's own `transaction_amount`, already in MAJOR units.
+                // `amountInCentavos` is the ledger figure and would mail a
+                // hundredfold overstatement (HOS-713).
+                amountMajor: asMajor(details.transactionAmount),
+                currency,
+                chargeStatus: status,
+                billing,
+                localSubscriptionId: sub.id,
+                source: 'subscription-authorized-payment-webhook'
             });
         }
     } catch (recordErr) {

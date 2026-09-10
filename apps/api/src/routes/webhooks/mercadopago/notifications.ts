@@ -13,14 +13,30 @@ import type { getQZPayBilling } from '../../../middlewares/billing';
 import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
-import { sendNotification } from '../../../utils/notification-helper';
+import {
+    type NotificationSendOutcome,
+    sendNotification,
+    trySendNotification
+} from '../../../utils/notification-helper';
 import { sanitizeErrorForNotification } from './utils';
 
 /**
- * Send payment success notification (best-effort, awaitable).
+ * Send payment success notification (best-effort, awaitable) and REPORT whether
+ * it was delivered.
  *
  * Looks up customer and plan data, then sends a PAYMENT_SUCCESS notification.
- * Failures are logged at debug level and do not propagate.
+ * Never throws.
+ *
+ * This is the single producer of `PAYMENT_SUCCESS` — every docblock in
+ * `@repo/notifications` that calls it "the only producer" of a {@link Major}
+ * amount depends on that staying true, which is why HOS-1238 added a second
+ * CALL SITE here rather than a second producer.
+ *
+ * HOS-1238 made it return a {@link NotificationSendOutcome} instead of `void`.
+ * It previously reported a failure at `debug`, which production never emits
+ * (`LOG_LEVEL` defaults to `info`), so a receipt that never went out left no
+ * trace anywhere — and a caller had no way to notice either. The outcome is what
+ * lets {@link dispatchSubscriptionChargeReceipt} escalate that silence.
  *
  * @param customerId - Billing customer ID
  * @param amount - Payment amount in MAJOR units (ARS pesos) — the unit the
@@ -38,6 +54,16 @@ import { sanitizeErrorForNotification } from './utils';
  *   Passing it does NOT itself prevent a second delivery — it only records the
  *   key; the caller's pre-send lookup is the gate, exactly as in
  *   `addon-expiry.job.ts`.
+ * @param planId - Optional `billing_plans.id` of the subscription this payment
+ *   actually belongs to (HOS-1238). When given, the plan label is resolved from
+ *   IT; otherwise the customer's first subscription supplies it. That fallback is
+ *   a guess: an account legitimately holds several subscriptions at once across
+ *   the five product domains, so on a gastronomy or partner charge
+ *   `getByCustomerId()[0]` names a plan the customer was not charged for. Any
+ *   caller that knows which subscription was charged must pass this.
+ * @returns `{ delivered: true }` only when the notification service reported a
+ *   successful send; `{ delivered: false }` when the customer could not be
+ *   resolved, the send was not delivered, or anything threw.
  */
 export async function sendPaymentSuccessNotification(
     customerId: string,
@@ -45,60 +71,72 @@ export async function sendPaymentSuccessNotification(
     currency: string,
     paymentMethod: string | null,
     billing: ReturnType<typeof getQZPayBilling>,
-    idempotencyKey?: string
-): Promise<void> {
-    if (!billing) return;
+    idempotencyKey?: string,
+    planId?: string | null
+): Promise<NotificationSendOutcome> {
+    if (!billing) return { delivered: false };
 
     try {
         const customer = await billing.customers.get(customerId);
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-        const subscription = subscriptions?.[0];
 
-        if (customer) {
-            const customerName =
-                typeof customer.metadata?.name === 'string'
-                    ? customer.metadata.name
-                    : customer.email;
-            const userId =
-                typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
-
-            // HOS-231: `plan.name` is the SLUG; resolve the display name so the
-            // payment-success email shows a human label (falls back to generic).
-            let planName = 'Subscription';
-            if (subscription?.planId) {
-                planName =
-                    (await resolvePlanDisplayName({ planId: subscription.planId })) ?? planName;
-            }
-
-            await sendNotification({
-                type: NotificationType.PAYMENT_SUCCESS,
-                recipientEmail: customer.email,
-                recipientName: customerName,
-                userId,
-                customerId: customer.id,
-                planName,
-                amount,
-                currency,
-                paymentMethod: paymentMethod || undefined,
-                ...(idempotencyKey === undefined ? {} : { idempotencyKey })
-            }).catch((error) => {
-                apiLogger.debug(
-                    {
-                        customerId,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    'Payment success notification failed (will retry)'
-                );
-            });
+        if (!customer) {
+            // Previously returned in total silence. A customer that cannot be
+            // resolved is a receipt nobody will ever send, so it is reported at a
+            // level production emits — matching the failure sibling below, which
+            // has always warned on this exact case.
+            apiLogger.warn(
+                { customerId },
+                'Customer not found for payment success notification — no receipt sent'
+            );
+            return { delivered: false };
         }
+
+        const customerName =
+            typeof customer.metadata?.name === 'string' ? customer.metadata.name : customer.email;
+        const userId =
+            typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
+
+        // HOS-1238: prefer the plan of the subscription that was actually
+        // charged. Only fall back to the customer's first subscription when the
+        // caller could not say — see the `planId` parameter docs.
+        let resolvedPlanId: string | null = planId ?? null;
+        if (resolvedPlanId === null) {
+            const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+            resolvedPlanId = subscriptions?.[0]?.planId ?? null;
+        }
+
+        // HOS-231: `plan.name` is the SLUG; resolve the display name so the
+        // payment-success email shows a human label (falls back to generic).
+        let planName = 'Subscription';
+        if (resolvedPlanId) {
+            planName = (await resolvePlanDisplayName({ planId: resolvedPlanId })) ?? planName;
+        }
+
+        return await trySendNotification({
+            type: NotificationType.PAYMENT_SUCCESS,
+            recipientEmail: customer.email,
+            recipientName: customerName,
+            userId,
+            customerId: customer.id,
+            planName,
+            amount,
+            currency,
+            paymentMethod: paymentMethod || undefined,
+            ...(idempotencyKey === undefined ? {} : { idempotencyKey })
+        });
     } catch (error) {
-        apiLogger.debug(
+        // Raised at `error` from `debug` (HOS-1238): a paying customer left
+        // without a receipt is not a diagnostic detail, and at `debug` it was
+        // never emitted in production at all.
+        apiLogger.error(
             {
                 customerId,
                 error: error instanceof Error ? error.message : String(error)
             },
-            'Failed to prepare payment success notification'
+            'Failed to prepare payment success notification — no receipt sent',
+            { capture: true }
         );
+        return { delivered: false };
     }
 }
 
