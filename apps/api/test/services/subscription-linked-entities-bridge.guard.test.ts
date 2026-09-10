@@ -409,7 +409,22 @@ describe('HOS-1280 guard: reconcileSubscriptionLinkedEntities call sites are pin
         const partnerFiles = new Set(PARTNER_CALL_SITES.map((s) => s.file));
         const excludedFiles = new Set(BRIDGE_ONLY_SITES.map((s) => s.file));
 
-        const unclassified = BRIDGE_CALL_SITES.map((s) => s.file).filter(
+        // Scanned from the source tree, NOT read off BRIDGE_CALL_SITES. Reading
+        // the pinned table would make this test blind to exactly the case it
+        // exists for: a BRAND-NEW file that starts calling the bridge is, by
+        // definition, absent from that table, so a table-driven pairing check
+        // passes it silently and leaves only the count tripwire — which says
+        // "add a table entry", not "you forgot the partner reconciler".
+        // Measured, not assumed: the table-driven version of this test stayed
+        // GREEN when an unpaired bridge call was mutated into a new file.
+        const DEFINITION_FILE = 'services/subscription-linked-entities.service.ts';
+        const bridgeFiles = collectSourceFiles(SRC_ROOT, SRC_ROOT).filter(
+            (f) =>
+                f !== DEFINITION_FILE &&
+                countCalls(readFileSync(resolve(SRC_ROOT, f), 'utf-8'), BRIDGE_CALL) > 0
+        );
+
+        const unclassified = bridgeFiles.filter(
             (file) => !partnerFiles.has(file) && !excludedFiles.has(file)
         );
 
