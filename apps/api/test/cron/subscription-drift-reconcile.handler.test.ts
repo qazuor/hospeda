@@ -605,6 +605,33 @@ describe('subscription-drift-reconcile — the cursor is what makes the bounded 
         expect(result.details?.cursorAfterId).toBe('sub-49');
     });
 
+    it('advances past a row the in-memory predicate DROPPED, not just past the ones it processed', async () => {
+        // Arrange — a full page whose LAST row is soft-deleted, so the predicate
+        // filters it out. The cursor must still land on that row's id: advancing
+        // from the FILTERED list would leave it at sub-48, and the dropped row would
+        // head every subsequent page for ever — the same starvation the cursor
+        // exists to prevent, just caused by a filter instead of a failure.
+        //
+        // Added because a mutation that advanced the cursor from `candidates`
+        // instead of `selection.rows` SURVIVED the first version of these tests:
+        // every fixture was a valid candidate, so the two lists were identical.
+        selectedRows = Array.from({ length: 50 }, (_, i) =>
+            row({ id: `sub-${String(i).padStart(2, '0')}`, mpSubscriptionId: `pa-${i}` })
+        );
+        selectedRows[49] = row({
+            id: 'sub-49',
+            mpSubscriptionId: 'pa-49',
+            deletedAt: new Date(NOW.getTime() - 60 * 1000)
+        });
+
+        // Act
+        const result = await subscriptionDriftReconcileJob.handler(buildContext());
+
+        // Assert — 49 reconciled, 50 selected, cursor past the dropped one
+        expect(processSubscriptionUpdatedMock).toHaveBeenCalledTimes(49);
+        expect(result.details?.cursorAfterId).toBe('sub-49');
+    });
+
     it('a DRY RUN leaves the cursor untouched', async () => {
         // Arrange — the cursor is module state, so first drive a real short page to
         // put it at a known value (null), rather than depending on test order.
