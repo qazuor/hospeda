@@ -10,8 +10,31 @@
  *   preapproval is cancelled (cancel + verify via retrieve); a failed/unconfirmed
  *   cancel leaves the row pending and is captured to Sentry; rows with no
  *   preapproval id are abandoned directly.
+ * - HOS-1326: the row ACTUALLY LANDS in `abandoned` — see
+ *   {@link makeSubscriptionStore} and the "lands in abandoned" describe block.
  * - Handler orchestration: advisory-lock skip, transition-guard skip, dry-run
  *   count, billing-unavailable skip, and best-effort user notifications.
+ *
+ * ---
+ * WHY THE HARNESS LOOKS LIKE THIS (HOS-1326)
+ *
+ * Until HOS-1326 this file could not see its own subject's central bug, for two
+ * independent reasons, and fixing the cron without fixing both would have left
+ * a green that still meant nothing:
+ *
+ * 1. it mocked `billing.subscriptions.cancel` to a no-op. The real call also
+ *    writes `status: 'canceled'` on the LOCAL row (qzpay-core 7.0.0), and that
+ *    write was the whole bug — mocked away, the effect under test never
+ *    happened in the test;
+ * 2. `makeDbMock` returned its rows regardless of the `where(...)` it was
+ *    handed, so an UPDATE whose WHERE matched NOTHING still "returned" a row.
+ *    That is precisely the observation the bug hinges on.
+ *
+ * {@link makeSubscriptionStore} fixes both: it holds a real mutable status and
+ * refuses the abandon UPDATE when that status has left {@link
+ * _internals.PENDING_STATUSES}, exactly as the SQL does. `makeDbMock` is kept for
+ * the tests that assert *whether* the write was attempted (concurrency guards),
+ * where the row-echo is the point.
  *
  * @module test/cron/abandoned-pending-subs
  */
@@ -30,6 +53,7 @@ const {
     mockBillingPlansGet,
     mockBillingSubscriptionsCancel,
     mockSendNotification,
+    mockAdapterCancel,
     mockAdapterRetrieve,
     mockCreateMercadoPagoAdapter,
     mockSentryCapture,
@@ -41,6 +65,7 @@ const {
     mockBillingPlansGet: vi.fn(),
     mockBillingSubscriptionsCancel: vi.fn().mockResolvedValue(undefined),
     mockSendNotification: vi.fn().mockResolvedValue(undefined),
+    mockAdapterCancel: vi.fn().mockResolvedValue(undefined),
     mockAdapterRetrieve: vi.fn(),
     mockCreateMercadoPagoAdapter: vi.fn(),
     mockSentryCapture: vi.fn(),
@@ -171,6 +196,64 @@ function makeDbMock(returningRows: unknown[]) {
     return { db: { update }, update, set, where, returning };
 }
 
+/**
+ * A `db` mock that holds ONE mutable `billing_subscriptions` row and honours the
+ * abandon UPDATE's status precondition instead of echoing rows unconditionally
+ * (HOS-1326).
+ *
+ * `makeDbMock` above answers "was an UPDATE attempted?"; this answers "what
+ * status did the row END UP in?", which is a different and, for this job, the
+ * load-bearing question. The reaper's write is
+ * `UPDATE ... SET status = 'abandoned' WHERE id = ? AND status IN (pending) AND
+ * <mp guard> AND deleted_at IS NULL RETURNING ...`, so a row whose status has
+ * already left the pending set is a NO-OP that returns zero rows. This mock
+ * reproduces exactly that: every `.set({ status })` applies only while the
+ * CURRENT status is in `_internals.PENDING_STATUSES`, and it reads that set from
+ * the module under test rather than re-typing the spellings, so widening the
+ * real precondition widens the mock with it.
+ *
+ * Every write the reaper performs — including any it should NOT be performing —
+ * goes through this one chain, which is what lets a test assert that nothing
+ * knocked the row out of the pending set on the way to `abandoned`.
+ *
+ * @param initial - The row as the Phase-1 SELECT would have found it.
+ * @returns The `db` stand-in, the live row (read it after the call), and the
+ *   spies.
+ */
+function makeSubscriptionStore(initial: {
+    readonly id: string;
+    readonly customerId: string;
+    readonly planId: string;
+    readonly status: string;
+    readonly mpSubscriptionId: string | null;
+}) {
+    const row = { ...initial };
+    /** Every `.set(...)` payload the code under test issued, in order. */
+    const writes: Array<Record<string, unknown>> = [];
+
+    const update = vi.fn().mockImplementation(() => ({
+        set: (patch: Record<string, unknown>) => {
+            writes.push(patch);
+            return {
+                where: () => ({
+                    returning: async () => {
+                        // The real WHERE: the row must STILL be pending.
+                        if (!_internals.PENDING_STATUSES.includes(row.status)) {
+                            return [];
+                        }
+                        if (typeof patch.status === 'string') {
+                            row.status = patch.status;
+                        }
+                        return [{ id: row.id, customerId: row.customerId, planId: row.planId }];
+                    }
+                })
+            };
+        }
+    }));
+
+    return { db: { update }, row, update, writes };
+}
+
 const ABANDONED_ROW = { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' };
 
 // ─── Constants + definition ───────────────────────────────────────────────────
@@ -216,15 +299,13 @@ describe('abandonedPendingSubsJob definition', () => {
 // ─── reapPendingCandidate — HOS-151 Bug B core ────────────────────────────────
 
 describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)', () => {
-    const billing = {
-        subscriptions: { cancel: mockBillingSubscriptionsCancel }
-    };
     const paymentAdapter = {
-        subscriptions: { retrieve: mockAdapterRetrieve }
+        subscriptions: { cancel: mockAdapterCancel, retrieve: mockAdapterRetrieve }
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockAdapterCancel.mockResolvedValue(undefined);
         mockBillingSubscriptionsCancel.mockResolvedValue(undefined);
         // HOS-276: no reconcile_assisted correlation row by default — tests that
         // exercise it override this explicitly.
@@ -241,7 +322,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: null
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -249,6 +329,7 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
 
         expect(outcome).toEqual({ abandoned: true, info: ABANDONED_ROW });
         // No preapproval → never cancels or verifies against MP.
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockAdapterRetrieve).not.toHaveBeenCalled();
         expect(update).toHaveBeenCalledOnce();
@@ -265,13 +346,13 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: ''
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
         });
 
         expect(outcome.abandoned).toBe(true);
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockAdapterRetrieve).not.toHaveBeenCalled();
     });
@@ -294,7 +375,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: null
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -303,6 +383,7 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
         expect(outcome).toEqual({ abandoned: false, reason: 'checkout-in-progress' });
         // Row is left pending — no abandon write, no MP calls.
         expect(update).not.toHaveBeenCalled();
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
     });
 
@@ -322,7 +403,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: null
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -343,7 +423,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: null
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -373,7 +452,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: null
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -381,6 +459,7 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
 
         expect(outcome).toEqual({ abandoned: false, reason: 'reconcile-assisted-manual' });
         expect(update).not.toHaveBeenCalled();
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
     });
 
@@ -395,13 +474,17 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: 'mp-pre-123'
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
         });
 
-        expect(mockBillingSubscriptionsCancel).toHaveBeenCalledWith('sub-1');
+        // HOS-1326: the cancel goes to the PROVIDER, addressed by the
+        // preapproval id and with `false` (irreversible), never to
+        // `billing.subscriptions.cancel(localRowId)` — which would also write a
+        // local status and is asserted absent for that reason.
+        expect(mockAdapterCancel).toHaveBeenCalledWith('mp-pre-123', false);
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockAdapterRetrieve).toHaveBeenCalledWith('mp-pre-123');
         expect(update).toHaveBeenCalledOnce();
         expect(outcome).toEqual({ abandoned: true, info: ABANDONED_ROW });
@@ -420,7 +503,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: 'mp-pre-123'
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -433,7 +515,7 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
     });
 
     it('still abandons when the cancel call throws but retrieve confirms cancelled', async () => {
-        mockBillingSubscriptionsCancel.mockRejectedValueOnce(new Error('MP 500'));
+        mockAdapterCancel.mockRejectedValueOnce(new Error('MP 500'));
         mockAdapterRetrieve.mockResolvedValue({ status: 'canceled' });
         const { db, update } = makeDbMock([ABANDONED_ROW]);
 
@@ -444,7 +526,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: 'mp-pre-123'
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -466,7 +547,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: 'mp-pre-123'
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -487,7 +567,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: null
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -514,7 +593,6 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
                 planId: 'plan-1',
                 mpSubscriptionId: null
             },
-            billing: billing as any,
             paymentAdapter: paymentAdapter as any,
             db: db as any,
             logger: makeLogger()
@@ -526,8 +604,137 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
         expect(returning).toHaveBeenCalledOnce();
         expect(outcome).toEqual({ abandoned: false, reason: 'already-reaped' });
         // No MP calls for an mp-null candidate.
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockAdapterRetrieve).not.toHaveBeenCalled();
+    });
+});
+
+// ─── HOS-1326: the row actually LANDS in `abandoned` ──────────────────────────
+
+describe('reapPendingCandidate (HOS-1326: the reaped row lands in `abandoned`)', () => {
+    const paymentAdapter = {
+        subscriptions: { cancel: mockAdapterCancel, retrieve: mockAdapterRetrieve }
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockAdapterCancel.mockResolvedValue(undefined);
+        mockBillingSubscriptionsCancel.mockResolvedValue(undefined);
+        mockFindByLocalSubscriptionId.mockResolvedValue(null);
+        mockFindUnlinkedChargeByLocalSubscriptionId.mockResolvedValue(null);
+    });
+
+    // THE regression test for HOS-1326.
+    //
+    // Every other test in this file about the preapproval-holding path asserts
+    // the OUTCOME OBJECT the function returns, over a db mock that echoes a row
+    // no matter what the WHERE says. This one asserts the STATUS THE ROW ENDS UP
+    // WITH, over a store that applies the same precondition the SQL does — so a
+    // write that knocks the row out of the pending set before the abandon UPDATE
+    // is observable here and nowhere else.
+    //
+    // Pre-fix, `billing.subscriptions.cancel(candidate.id)` wrote
+    // `status: 'canceled'` on this very row (qzpay-core 7.0.0) between the two
+    // steps, the abandon UPDATE matched nothing, and the candidate came back
+    // `already-reaped` with the row stuck on the qzpay spelling of a word that
+    // was wrong anyway. Production agreed: the only `abandoned` rows there were
+    // the ones that never had a preapproval to cancel.
+    it('a candidate WITH a preapproval ends on `abandoned`, not on a cancellation spelling', async () => {
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+        const store = makeSubscriptionStore({
+            id: 'sub-mp',
+            customerId: 'cust-1',
+            planId: 'plan-1',
+            status: 'incomplete', // as qzpay-core's mode:'paid' insert leaves it
+            mpSubscriptionId: 'mp-pre-123'
+        });
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-mp',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-pre-123'
+            },
+            paymentAdapter: paymentAdapter as any,
+            db: store.db as any,
+            logger: makeLogger()
+        });
+
+        // The whole point: the ROW, not just the return value.
+        expect(store.row.status).toBe('abandoned');
+        expect(outcome).toEqual({
+            abandoned: true,
+            info: { id: 'sub-mp', customerId: 'cust-1', planId: 'plan-1' }
+        });
+
+        // Exactly ONE local write happened, and it wrote the terminal status.
+        // Nothing wrote a cancellation on the way — in either spelling, which is
+        // asserted explicitly because the two vocabularies live in this one
+        // column and `canceled` is the one that looks like a typo (HOS-1329).
+        expect(store.writes).toHaveLength(1);
+        expect(store.writes[0]?.status).toBe('abandoned');
+        for (const write of store.writes) {
+            expect(write.status).not.toBe('canceled');
+            expect(write.status).not.toBe('cancelled');
+        }
+    });
+
+    it('a candidate with NO preapproval ends on `abandoned` too', async () => {
+        const store = makeSubscriptionStore({
+            id: 'sub-null',
+            customerId: 'cust-1',
+            planId: 'plan-1',
+            status: 'pending_provider',
+            mpSubscriptionId: null
+        });
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-null',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            paymentAdapter: paymentAdapter as any,
+            db: store.db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome.abandoned).toBe(true);
+        expect(store.row.status).toBe('abandoned');
+    });
+
+    // The store is only a useful witness if it can actually say NO. Drive it
+    // from a row that is already terminal and confirm the abandon UPDATE
+    // no-ops — the same shape the pre-fix bug produced, reached here by data
+    // instead of by a code path, so the mock cannot silently degrade into the
+    // unconditional row-echo it replaced.
+    it('the store refuses the abandon UPDATE on a row that already left the pending set', async () => {
+        mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
+        const store = makeSubscriptionStore({
+            id: 'sub-gone',
+            customerId: 'cust-1',
+            planId: 'plan-1',
+            status: 'canceled', // what the pre-fix cancel left behind
+            mpSubscriptionId: 'mp-pre-123'
+        });
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-gone',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-pre-123'
+            },
+            paymentAdapter: paymentAdapter as any,
+            db: store.db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: false, reason: 'already-reaped' });
+        expect(store.row.status).toBe('canceled');
     });
 });
 
@@ -545,8 +752,9 @@ describe('abandonedPendingSubsJob handler', () => {
         });
         // Adapter constructs fine by default.
         mockCreateMercadoPagoAdapter.mockReturnValue({
-            subscriptions: { retrieve: mockAdapterRetrieve }
+            subscriptions: { cancel: mockAdapterCancel, retrieve: mockAdapterRetrieve }
         });
+        mockAdapterCancel.mockResolvedValue(undefined);
         mockBillingSubscriptionsCancel.mockResolvedValue(undefined);
         mockBillingCustomersGet.mockResolvedValue({
             id: 'cust-1',
@@ -612,6 +820,7 @@ describe('abandonedPendingSubsJob handler', () => {
         expect(result.success).toBe(true);
         expect(result.processed).toBe(2);
         expect(mockCreateMercadoPagoAdapter).not.toHaveBeenCalled();
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockSendNotification).not.toHaveBeenCalled();
     });
@@ -649,6 +858,7 @@ describe('abandonedPendingSubsJob handler', () => {
 
         expect(result.success).toBe(true);
         expect(result.processed).toBe(1);
+        expect(mockAdapterCancel).not.toHaveBeenCalled();
         expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockSendNotification).toHaveBeenCalledOnce();
         expect(mockSendNotification).toHaveBeenCalledWith(
@@ -675,7 +885,11 @@ describe('abandonedPendingSubsJob handler', () => {
         const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
 
         expect(result.processed).toBe(1);
-        expect(mockBillingSubscriptionsCancel).toHaveBeenCalledWith('sub-mp');
+        // HOS-1326: the whole sweep holds a `billing` client (it needs it for the
+        // notification loop) and must still never route a cancel through it —
+        // `billing.subscriptions.cancel` writes a local status, which is the bug.
+        expect(mockAdapterCancel).toHaveBeenCalledWith('mp-pre-9', false);
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockAdapterRetrieve).toHaveBeenCalledWith('mp-pre-9');
         expect(result.errors).toBe(0);
     });
@@ -857,7 +1071,8 @@ describe('abandonedPendingSubsJob handler', () => {
         const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
 
         expect(result.processed).toBe(1);
-        expect(mockBillingSubscriptionsCancel).toHaveBeenCalledWith(newPendingId);
+        expect(mockAdapterCancel).toHaveBeenCalledWith('mp-annual-pre', false);
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
         expect(mockAdapterRetrieve).toHaveBeenCalledWith('mp-annual-pre');
         expect(mockSendNotification).toHaveBeenCalledWith(
             expect.objectContaining({ idempotencyKey: `abandoned-sub-${newPendingId}` })
@@ -865,6 +1080,7 @@ describe('abandonedPendingSubsJob handler', () => {
 
         // The superseded old id never appears anywhere in this run.
         const allCalls = JSON.stringify([
+            ...mockAdapterCancel.mock.calls,
             ...mockBillingSubscriptionsCancel.mock.calls,
             ...mockAdapterRetrieve.mock.calls,
             ...mockBillingCustomersGet.mock.calls,
