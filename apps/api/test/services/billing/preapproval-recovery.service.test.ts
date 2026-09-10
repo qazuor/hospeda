@@ -53,6 +53,7 @@ function makeAdapter(status: string) {
 function makeBilling(
     overrides: { planPrices?: unknown[]; planMetadata?: Record<string, unknown> } = {}
 ) {
+    const adapterCancel = vi.fn().mockResolvedValue(undefined);
     return {
         plans: {
             get: vi.fn().mockResolvedValue({
@@ -76,7 +77,17 @@ function makeBilling(
                 providerSubscriptionIds: { mercadopago: 'mp_preapproval_new' }
             }),
             cancel: vi.fn().mockResolvedValue(undefined)
-        }
+        },
+        // HOS-1326: the HOS-937 compensating cancel goes through the PAYMENT
+        // ADAPTER now, so this double has to expose one. `subscriptions.cancel`
+        // stays only so the assertions can prove it is NEVER reached — it is the
+        // call that used to stamp `status: 'canceled'` on the local row along
+        // with the provider cancel.
+        getPaymentAdapter: vi.fn(() => ({
+            provider: 'mercadopago',
+            subscriptions: { cancel: adapterCancel }
+        })),
+        __adapterCancel: adapterCancel
     };
 }
 
@@ -1015,8 +1026,11 @@ describe('mintRetryPreapprovalAttempt — domain carry-forward (HOS-1287)', () =
         // provider call) — the compensating cancel (HOS-937 "Hueco A") must
         // fire so S3 does not survive as an untracked orphan.
         expect(transaction).toHaveBeenCalledTimes(1);
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
-        expect(billing.subscriptions.cancel).toHaveBeenCalledWith(NEW_LOCAL_SUB_ID);
+        expect(billing.__adapterCancel).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
+        // Addressed by the PREAPPROVAL id, not the local row id, and with
+        // `false` (irreversible) — the whole point of HOS-1326's change here.
+        expect(billing.__adapterCancel).toHaveBeenCalledWith('mp_preapproval_new', false);
     });
 
     it('REGRESSION (partner, end-to-end): refuses the retry when the bridge row is held by a LIVE later subscription', async () => {
@@ -1043,7 +1057,8 @@ describe('mintRetryPreapprovalAttempt — domain carry-forward (HOS-1287)', () =
 
         expect(insert).not.toHaveBeenCalled();
         expect(onConflictDoUpdate).not.toHaveBeenCalled();
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+        expect(billing.__adapterCancel).toHaveBeenCalledTimes(1);
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
     });
 
     it('TOO-WIDE GUARD (end-to-end): still mints and re-points when the bridge row is held by a DEAD (cancelled) prior subscription', async () => {

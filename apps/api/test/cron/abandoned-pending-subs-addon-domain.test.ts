@@ -47,8 +47,22 @@ vi.mock('@repo/db', () => ({
     eq: marker('_eq'),
     inArray: marker('_inArray'),
     isNull: marker('_isNull'),
+    // HOS-1326: the job's operators all come from '@repo/db' now (the repo's own
+    // convention, and what makes its WHERE inspectable) — including `lt`, which
+    // the candidate SELECT's `created_at <` cutoff needs. A missing entry here
+    // does not fail loudly: vitest throws on the absent export, the handler's
+    // own try/catch swallows it into a "failed run" result, and the SELECT this
+    // file inspects is simply never reached.
+    lt: marker('_lt'),
     ne: marker('_ne'),
     or: marker('_or'),
+    // HOS-1326: the job now asks @repo/db whether a row has a linked
+    // preapproval (NULL or '' — see `billing-subscription-conditions.ts`).
+    // This mock replaces @repo/db wholesale, so without an entry here vitest
+    // throws "No 'hasNoLinkedPreapprovalCondition' export is defined on the
+    // @repo/db mock" and the handler reports a failed run instead of building
+    // the WHERE this file exists to inspect.
+    hasNoLinkedPreapprovalCondition: marker('_hasNoLinkedPreapproval'),
     getDb: mockGetDb,
     withTransaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
         const tx = {

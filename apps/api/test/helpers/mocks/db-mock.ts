@@ -442,6 +442,28 @@ export function createDbMock() {
         lt: vi.fn((a: string, b: unknown) => ({ type: 'lt', left: a, right: b })),
         lte: vi.fn((a: string, b: unknown) => ({ type: 'lte', left: a, right: b })),
         isNull: vi.fn((a: string) => ({ type: 'isNull', column: a })),
+        // HOS-1326: the shared `mp_subscription_id` predicates. Rendered as the
+        // same plain descriptors as the operators around them so a test can
+        // evaluate the condition tree a query actually built (see
+        // `test/helpers/drizzle-condition.ts`). Their REAL emitted SQL is pinned
+        // by `packages/db/test/billing-subscription-conditions.test.ts`, which is
+        // what stops these stubs from drifting away from the thing they stand in
+        // for — the column can hold `''` as well as NULL, and a stub that forgot
+        // the second half would re-certify exactly the bug they exist to prevent.
+        hasNoLinkedPreapprovalCondition: vi.fn(() => ({
+            type: 'or',
+            conditions: [
+                { type: 'isNull', column: 'mp_subscription_id' },
+                { type: 'eq', left: 'mp_subscription_id', right: '' }
+            ]
+        })),
+        hasLinkedPreapprovalCondition: vi.fn(() => ({
+            type: 'and',
+            conditions: [
+                { type: 'isNotNull', column: 'mp_subscription_id' },
+                { type: 'ne', left: 'mp_subscription_id', right: '' }
+            ]
+        })),
         isNotNull: vi.fn((a: string) => ({ type: 'isNotNull', column: a })),
         // HOS-934: hydrateSubscriptionProductDomains() batches its recovery
         // query with `inArray(billingSubscriptions.id, ids)`. Without this

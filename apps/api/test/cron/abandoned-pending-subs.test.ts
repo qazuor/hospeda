@@ -131,6 +131,21 @@ vi.mock('@repo/db', async (importOriginal) => {
         }),
         isNull: (column: string) => ({ type: 'isNull', column }),
         lt: (column: string, value: unknown) => ({ type: 'lt', column, value }),
+        // Mirrors the real predicate's shape (packages/db
+        // `billing-subscription-conditions.ts`), rendered as descriptors so the
+        // store can evaluate it. The real one builds actual drizzle SQL, which
+        // is opaque here; its own SQL is pinned by
+        // `packages/db/test/billing-subscription-conditions.test.ts`, so this
+        // stub cannot drift from it unnoticed. Swapping the job back to a bare
+        // `isNull` still fails the empty-string case, because THAT operator is
+        // stubbed separately and matches only null.
+        hasNoLinkedPreapprovalCondition: () => ({
+            type: 'or',
+            conditions: [
+                { type: 'isNull', column: 'MP_SUBSCRIPTION_ID' },
+                { type: 'eq', left: 'MP_SUBSCRIPTION_ID', right: '' }
+            ]
+        }),
         getDb: mockGetDb,
         withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
         billingPendingCheckoutModel: {

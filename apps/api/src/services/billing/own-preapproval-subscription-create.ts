@@ -81,6 +81,7 @@
 import { billingSubscriptions, type DrizzleClient, eq, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { apiLogger } from '../../utils/logger.js';
+import { abandonNeverConfirmedSubscription } from './abandon-never-confirmed-subscription.js';
 import type {
     CreatePaidSubscriptionInput,
     CreatePaidSubscriptionResult
@@ -90,6 +91,7 @@ import type {
     PendingCheckoutDiscount,
     PendingTrialExtension
 } from './pending-provider-subscription-create.js';
+import { hardCancelPreapprovalBestEffort } from './preapproval-hard-cancel.js';
 
 /**
  * Metadata key the row's own `metadata` carries a JSON-serialized
@@ -419,22 +421,50 @@ export async function createOwnPreapprovalSubscription(
         // returned successfully), but the local write(s) that are supposed to
         // track it just failed. Cancel it best-effort so it does not survive
         // as an untracked, unreconcilable orphan.
-        try {
-            await input.billing.subscriptions.cancel(localSubscriptionId);
+        // HOS-1326: the two halves are now explicit and separately reported,
+        // because they answer different questions and only one of them used to be
+        // right.
+        //
+        // Half 1 — the PROVIDER. A real preapproval exists here (the create
+        // succeeded; it is the local write that failed), so it genuinely has to be
+        // closed or it becomes the untracked orphan HOS-937 exists to prevent.
+        // Through the payment adapter, per `preapproval-hard-cancel.ts`.
+        //
+        // Half 2 — the LOCAL ROW. This used to ride along inside
+        // `billing.subscriptions.cancel()`, which wrote `status: 'canceled'`. On
+        // this row that is the same lie the sibling path one frame down was fixed
+        // for: the buyer authorized nothing, so the row is `abandoned`, not
+        // cancelled — and certainly not in qzpay's spelling of a word that would
+        // put a checkout that never happened into the churn numerator for thirty
+        // days.
+        const cancelOutcome = await hardCancelPreapprovalBestEffort({
+            subscriptionId: localSubscriptionId,
+            mpSubscriptionId: mpSubscriptionId ?? null,
+            billing: input.billing,
+            source: 'own-preapproval-create-compensation'
+        });
+
+        if (cancelOutcome.kind === 'cancelled') {
             apiLogger.warn(
                 { localSubscriptionId, mpSubscriptionId },
                 'HOS-937: cancelled MP preapproval after the local pending_provider status-normalize write failed (fail-closed)'
             );
-        } catch (cancelError) {
+        } else {
             apiLogger.error(
-                {
-                    localSubscriptionId,
-                    mpSubscriptionId,
-                    error: cancelError instanceof Error ? cancelError.message : String(cancelError)
-                },
+                { localSubscriptionId, mpSubscriptionId, outcome: cancelOutcome },
                 'HOS-937: FAILED to cancel MP preapproval after the local pending_provider status-normalize write failed — needs manual reconciliation, this is exactly the orphan class HOS-937 targets'
             );
         }
+
+        // Guarded on the exact preapproval id we observed: if something linked a
+        // DIFFERENT one in between, this no-ops rather than putting a terminal
+        // status over a live authorization.
+        await abandonNeverConfirmedSubscription({
+            subscriptionId: localSubscriptionId,
+            expectedMpSubscriptionId: mpSubscriptionId ?? null,
+            source: 'own-preapproval-create-local-write-failed'
+        });
+
         throw updateError;
     }
 

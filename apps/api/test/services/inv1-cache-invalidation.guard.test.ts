@@ -405,9 +405,9 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Marks a PENDING/never-activated subscription as abandoned. The row never granted entitlements, so there is nothing cached to invalidate.'
     },
     {
-        file: 'services/billing/paid-subscription-create.ts',
+        file: 'services/billing/abandon-never-confirmed-subscription.ts',
         requiresCacheClear: false,
-        reason: 'HOS-1326: became a writer when the HOS-151 Bug C cleanup stopped delegating to `billing.subscriptions.cancel()` (which wrote `canceled` — the wrong word for a checkout that never started, in the qzpay spelling) and began writing `abandoned` itself. Same verdict as the abandoned-pending-subs reaper next door, and for the same reason: the row is seconds old, still `incomplete`, has no provider subscription id, and never granted an entitlement to anyone. Its WHERE admits only the pending statuses, so it can never touch an entitlement-bearing row even by accident.'
+        reason: 'HOS-1326: the single write that closes a subscription whose checkout never completed, shared by the `paid-subscription-create` missing-provider-id path and the `own-preapproval-create` compensating path. Both used to delegate to `billing.subscriptions.cancel()`, which wrote `canceled` — the wrong word for a checkout that never started, in the qzpay spelling. No cache clear: its WHERE admits ONLY the pending statuses (`PENDING_PROVIDER_STORED_STATUSES`), so by construction it can only ever touch a row that never granted an entitlement to anyone, and `writeDomainLinkRow` runs after `createPaidSubscription` so there is no `entity_subscriptions` row to invalidate either.'
     },
     {
         file: 'cron/jobs/finalize-cancelled-subs.ts',

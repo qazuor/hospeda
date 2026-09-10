@@ -35,21 +35,11 @@
  */
 
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
-import { applyTestControl, PENDING_PROVIDER_STORED_STATUSES } from '@repo/billing';
-import {
-    and,
-    billingPlans,
-    billingSubscriptions,
-    type DrizzleClient,
-    eq,
-    getDb,
-    inArray,
-    isNull
-} from '@repo/db';
-import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
-import { apiLogger } from '../../utils/logger.js';
+import { applyTestControl } from '@repo/billing';
+import { billingPlans, type DrizzleClient, eq, getDb } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
+import { abandonNeverConfirmedSubscription } from './abandon-never-confirmed-subscription.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
-import { hasNoLinkedPreapprovalCondition } from './unlinked-preapproval-condition.js';
 
 /**
  * Input for {@link createPaidSubscription}.
@@ -260,116 +250,6 @@ export async function resolvePlanProductDomain(input: {
 }
 
 /**
- * Close a just-created local subscription row that can never be linked to a
- * preapproval, by writing its own terminal status: `abandoned` (HOS-1326).
- *
- * ## Why this is not `billing.subscriptions.cancel()`
- *
- * That is what it used to be, and it was wrong twice over.
- *
- * The row this runs on is **seconds old and has no provider subscription id** —
- * that is the entire condition that gets us here. So qzpay-core's cancel had no
- * provider work to do: it resolves the preapproval from
- * `providerSubscriptionIds[provider]`, finds nothing, and skips the adapter call
- * entirely. Everything it actually did was the local write it performs on the way
- * out: `status: 'canceled'` + `canceledAt` (qzpay-core 7.0.0 `billing.ts`,
- * whenever `cancelAtPeriodEnd` is falsy — and no caller here passes options).
- *
- * That write is a lie in both halves. **`canceled` is the wrong word**: a
- * checkout that never obtained a provider id is not a relationship the customer
- * ended, it is one that never started, and `abandoned` is the state this repo
- * already has for exactly that (`SubscriptionStatusEnum.ABANDONED`, terminal,
- * written by the abandoned-pending-subs reaper). And **`canceled` is the wrong
- * spelling**: every direct Hospeda writer spells it `cancelled`, so the row also
- * landed on the qzpay side of a two-vocabulary column, where it was counted as
- * churn by anything reading cancellations.
- *
- * ## The WHERE
- *
- * Guarded on {@link PENDING_PROVIDER_STORED_STATUSES} (the row is `incomplete`
- * here — qzpay's `mode: 'paid'` insert — and becomes `pending_provider` only
- * later, in the caller's normalize step) and on the mp id STILL being null. The
- * second guard is not theoretical: if a linker attached a preapproval between the
- * read above and this write, the row now holds a live chargeable authorization
- * and must not be given a terminal status. A no-op here is the correct outcome —
- * the hourly reaper re-evaluates it with the provider in the loop.
- *
- * Best-effort by contract: never throws. The caller raises
- * `MISSING_PROVIDER_SUBSCRIPTION_ID` regardless, and a failure to close the row
- * only means the reaper closes it an hour later.
- *
- * @param input.subscriptionId - The local row to abandon.
- * @param input.db - Optional client override (tests, or an open transaction).
- */
-async function abandonUnlinkableSubscription(input: {
-    readonly subscriptionId: string;
-    readonly db?: DrizzleClient;
-}): Promise<void> {
-    const { subscriptionId } = input;
-    try {
-        const writeClient = input.db ?? getDb();
-        const [row] = await writeClient
-            .update(billingSubscriptions)
-            .set({ status: SubscriptionStatusEnum.ABANDONED, updatedAt: new Date() })
-            .where(
-                and(
-                    eq(billingSubscriptions.id, subscriptionId),
-                    inArray(billingSubscriptions.status, [...PENDING_PROVIDER_STORED_STATUSES]),
-                    // NOT `isNull(...)`: the column holds `''` here, not NULL.
-                    // See {@link hasNoLinkedPreapprovalCondition} for the chain
-                    // that puts it there and why an IS NULL test matched nothing.
-                    hasNoLinkedPreapprovalCondition(),
-                    isNull(billingSubscriptions.deletedAt)
-                )
-            )
-            .returning({ id: billingSubscriptions.id });
-
-        if (row) {
-            apiLogger.warn(
-                { subscriptionId },
-                'HOS-151 Bug C: abandoned the subscription created with an empty provider id (fail-closed)'
-            );
-            return;
-        }
-
-        // Re-read to say WHICH precondition refused, not merely that one did. A
-        // no-op here has two very different causes — a concurrent path already
-        // moved the row (benign) versus a preapproval linked mid-flight (a live
-        // authorization we must not strand) — and the first version of this line
-        // named neither, which left the only symptom of a mismatched WHERE
-        // indistinguishable from healthy contention.
-        const [current] = await writeClient
-            .select({
-                status: billingSubscriptions.status,
-                mpSubscriptionId: billingSubscriptions.mpSubscriptionId,
-                deletedAt: billingSubscriptions.deletedAt
-            })
-            .from(billingSubscriptions)
-            .where(eq(billingSubscriptions.id, subscriptionId))
-            .limit(1);
-
-        apiLogger.warn(
-            {
-                subscriptionId,
-                observedStatus: current?.status ?? null,
-                observedMpSubscriptionId: current?.mpSubscriptionId ?? null,
-                observedDeleted: current?.deletedAt != null,
-                rowFound: current !== undefined
-            },
-            'HOS-1326: the abandon write matched no row — the subscription is no longer pending-and-unlinked. The abandoned-pending cron re-evaluates it hourly ONLY while it is still pending; a row that left the pending statuses needs a human.'
-        );
-    } catch (abandonErr) {
-        apiLogger.error(
-            {
-                subscriptionId,
-                error: abandonErr instanceof Error ? abandonErr.message : String(abandonErr)
-            },
-            'HOS-151 Bug C: FAILED to abandon the subscription created with an empty provider id — abandoned-pending cron will reap it'
-        );
-    }
-}
-
-/**
  * Create a `mode: 'paid'` qzpay subscription (a real MercadoPago
  * preapproval) and resolve its checkout URL.
  *
@@ -516,8 +396,17 @@ export async function createPaidSubscription(
     // is the backstop if that write does not take effect.
     const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
     if (!mpSubscriptionId) {
-        await abandonUnlinkableSubscription({
+        // The row has NO provider id — that is the condition that got us here —
+        // so there is nothing to cancel at MercadoPago and the only work left is
+        // the local terminal status. Deliberately NOT
+        // `billing.subscriptions.cancel()`: on this row that call does no
+        // provider work at all (qzpay resolves the preapproval from
+        // `providerSubscriptionIds`, finds none, skips) and its entire effect was
+        // a local `canceled` write — the wrong word, in the wrong spelling.
+        await abandonNeverConfirmedSubscription({
             subscriptionId: subscription.id,
+            expectedMpSubscriptionId: null,
+            source: 'paid-subscription-create-missing-provider-id',
             db: input.db
         });
         throw new SubscriptionCheckoutError(

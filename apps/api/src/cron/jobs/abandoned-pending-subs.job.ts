@@ -57,6 +57,7 @@ import {
     billingSubscriptions,
     eq,
     getDb,
+    hasNoLinkedPreapprovalCondition,
     inArray,
     isNull,
     lt,
@@ -71,7 +72,6 @@ import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { CONFIRMED_TERMINAL_STATUSES } from '../../services/billing/reactivation-supersession-complete.js';
-import { hasNoLinkedPreapprovalCondition } from '../../services/billing/unlinked-preapproval-condition.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
 import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
