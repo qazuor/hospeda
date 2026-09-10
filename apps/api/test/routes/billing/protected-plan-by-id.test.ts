@@ -199,6 +199,29 @@ const TEST_PLAN = {
     prices: [{ id: 'price-test', unitAmount: 1_000, currency: 'ARS' }]
 };
 
+/**
+ * The most common plan in production: never marked at all. Two spellings of it,
+ * because this is the fixture whose failure turns a bug into "the whole
+ * catalogue went dark" rather than "one plan leaked" — and the mark resolves to
+ * `'listed'` for an ABSENT key but to `'unlisted'` for an unreadable one, so the
+ * difference between "no metadata" and "bad metadata" is the difference between
+ * serving every plan and serving none.
+ */
+const UNMARKED_PLAN_NO_METADATA = {
+    id: '55555555-5555-4555-8555-555555555555',
+    name: 'owner-basico',
+    active: true,
+    prices: [{ id: 'price-basico', unitAmount: 500_000, currency: 'ARS' }]
+};
+
+const UNMARKED_PLAN_NULL_METADATA = {
+    id: '66666666-6666-4666-8666-666666666666',
+    name: 'owner-gratis',
+    active: true,
+    metadata: null,
+    prices: []
+};
+
 const NON_ADMIN_ACTOR: Actor = {
     id: '00000000-0000-4000-8000-000000000099',
     roles: ['USER' as RoleEnum],
@@ -262,6 +285,40 @@ describe('GET /plans/:id at the protected tier withholds a plan the catalogue wi
             // Assert.
             expect(res.status).toBe(200);
             expect(body).toHaveProperty('route', 'qzpay-get-customer');
+        });
+
+        it('an UNMARKED plan answers 200 — with no metadata key at all', async () => {
+            // Arrange: the case every plan in production is in. The resolver
+            // reads an ABSENT mark as 'listed' and an unreadable one as
+            // 'unlisted', so getting this wrong does not leak one plan — it
+            // takes the whole catalogue dark behind a 404.
+            serveFixture(UNMARKED_PLAN_NO_METADATA);
+            const app = buildTestApp(NON_ADMIN_ACTOR);
+
+            // Act.
+            const res = await app.request(`${BILLING_BASE}/plans/${UNMARKED_PLAN_NO_METADATA.id}`);
+            const body = (await res.json()) as Record<string, unknown>;
+
+            // Assert.
+            expect(res.status).toBe(200);
+            expect(body).toEqual({ success: true, data: UNMARKED_PLAN_NO_METADATA });
+        });
+
+        it('an UNMARKED plan answers 200 — with metadata explicitly null', async () => {
+            // Arrange: the shape `mapDbToPlan` tolerates, and a second spelling
+            // of the same "never marked" state.
+            serveFixture(UNMARKED_PLAN_NULL_METADATA);
+            const app = buildTestApp(NON_ADMIN_ACTOR);
+
+            // Act.
+            const res = await app.request(
+                `${BILLING_BASE}/plans/${UNMARKED_PLAN_NULL_METADATA.id}`
+            );
+            const body = (await res.json()) as Record<string, unknown>;
+
+            // Assert.
+            expect(res.status).toBe(200);
+            expect(body).toEqual({ success: true, data: UNMARKED_PLAN_NULL_METADATA });
         });
 
         it('a LISTED plan still answers 200, and from the shadow rather than qzpay', async () => {
@@ -402,6 +459,73 @@ describe('GET /plans/:id at the protected tier withholds a plan the catalogue wi
             // Assert.
             expect(res.status).toBe(503);
             expect(raw).not.toContain('partner-municipalidad-cdu');
+        });
+    });
+
+    describe('a malformed id is rejected before the database sees it (H-68)', () => {
+        it('answers 400 VALIDATION_ERROR for a non-UUID id, and never reads the catalogue', async () => {
+            // Arrange: `billing_plans.id` is a `uuid` column compared without a
+            // cast, so handing this to the storage layer raises a DRIVER error,
+            // not a miss — which `app.onError` turns into 500 INTERNAL_ERROR
+            // with a stack and a Sentry event. The contract puts shape at step 3
+            // and forbids a 4xx from being INTERNAL_ERROR, so the check has to
+            // run here, before the read.
+            const app = buildTestApp(NON_ADMIN_ACTOR);
+
+            // Act.
+            const res = await app.request(`${BILLING_BASE}/plans/not-a-uuid`);
+            const body = (await res.json()) as { error?: { code?: string } };
+
+            // Assert — and the second half is the load-bearing one: the DB is
+            // never reached, which is what makes the 500 impossible rather than
+            // merely relabelled.
+            expect(res.status).toBe(400);
+            expect(body.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockPlanGet).not.toHaveBeenCalled();
+        });
+
+        it('answers 400 for the literal `undefined` a client builds from an empty variable', async () => {
+            // Arrange: the request nobody has to craft — the exact shape named
+            // in `apps/api/docs/error-contract.md` as how H-68 was found across
+            // 19 protected routes.
+            const app = buildTestApp(NON_ADMIN_ACTOR);
+
+            // Act.
+            const res = await app.request(`${BILLING_BASE}/plans/undefined`);
+
+            // Assert.
+            expect(res.status).toBe(400);
+            expect(mockPlanGet).not.toHaveBeenCalled();
+        });
+
+        it('rejects a malformed id on the prices sub-route too', async () => {
+            // Arrange: same `uuid` column, same driver error, same 500 — the
+            // sub-route needed the check on its own, not by proximity.
+            const app = buildTestApp(NON_ADMIN_ACTOR);
+
+            // Act.
+            const res = await app.request(`${BILLING_BASE}/plans/not-a-uuid/prices`);
+            const body = (await res.json()) as { error?: { code?: string } };
+
+            // Assert.
+            expect(res.status).toBe(400);
+            expect(body.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockPlanGet).not.toHaveBeenCalled();
+            expect(mockPlanGetPrices).not.toHaveBeenCalled();
+        });
+
+        it('does not echo the offending value back', async () => {
+            // Arrange: the caller already knows what it sent; reflecting a path
+            // segment only sends it onward into logs and payloads.
+            const app = buildTestApp(NON_ADMIN_ACTOR);
+
+            // Act.
+            const raw = await (
+                await app.request(`${BILLING_BASE}/plans/whatever-they-typed`)
+            ).text();
+
+            // Assert.
+            expect(raw).not.toContain('whatever-they-typed');
         });
     });
 
