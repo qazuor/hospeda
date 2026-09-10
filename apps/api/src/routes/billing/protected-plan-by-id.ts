@@ -51,6 +51,15 @@
  * resolves by first match, the same ordering rule the `GET /plans`,
  * promo-codes, downgrade-preview and soft-cancel overrides rely on.
  *
+ * ONE THING TO KNOW BEFORE ADDING A `/plans/<word>` ROUTE
+ * ------------------------------------------------------
+ * `GET /:id` matches any single segment, so a future literal route —
+ * `GET /plans/featured`, say — registered AFTER this router would never be
+ * reached: this handler would look up a plan with the id `"featured"`, find
+ * none, and answer 404. Register such a route BEFORE this one, exactly as
+ * `downgrade-preview` is registered ahead of qzpay's `GET /subscriptions/:id`
+ * for the same reason.
+ *
  * @module routes/billing/protected-plan-by-id
  */
 
