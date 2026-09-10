@@ -117,6 +117,21 @@ vi.mock('../../src/services/billing/payer-email', () => ({
     persistMpPayerEmailBestEffort: (...args: unknown[]) => mockPersistMpPayerEmail(...args)
 }));
 
+// HOS-1238: the customer-facing receipt for the charge. Mocked because the real
+// dispatcher runs its own `getDb().select()` for the notification-log dedupe,
+// which would consume a slot in the ordered `nextSelectCall` sequence every other
+// test in this file depends on. Its own behaviour — the cleared-status gate, the
+// cross-path idempotency key, the MAJOR amount and the loud non-delivery report —
+// is covered against a DB mock in `subscription-charge-receipt.test.ts`.
+const { mockDispatchSubscriptionChargeReceipt } = vi.hoisted(() => ({
+    mockDispatchSubscriptionChargeReceipt: vi.fn().mockResolvedValue({ dispatched: true })
+}));
+
+vi.mock('../../src/routes/webhooks/mercadopago/subscription-charge-receipt', () => ({
+    dispatchSubscriptionChargeReceipt: (...args: unknown[]) =>
+        mockDispatchSubscriptionChargeReceipt(...args)
+}));
+
 /**
  * Drain the microtask queue so a `void`-dispatched recording finishes.
  *
@@ -1129,6 +1144,284 @@ describe('handleSubscriptionAuthorizedPayment', () => {
             ).resolves.toBeUndefined();
             expect(markEventProcessedByProviderId).toHaveBeenCalled();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1238 — the receipt for a recurring charge.
+//
+// The defect: this handler recorded the charge and acknowledged MercadoPago
+// without ever dispatching a receipt. Measured in staging on 2026-09-08 over four
+// real subscription charges — zero rows in `billing_notification_log`, and not one
+// API log line about a notification either way.
+//
+// These tests assert the WIRING (is the dispatcher reached, with what, and — the
+// half that matters more — when is it NOT reached). The dispatcher's own gates are
+// in `subscription-charge-receipt.test.ts`.
+// ---------------------------------------------------------------------------
+
+describe('HOS-1238: the recurring charge receipt', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        resetState();
+        vi.mocked(markEventProcessedByProviderId).mockResolvedValue(undefined);
+        vi.mocked(markEventFailedByProviderId).mockResolvedValue(undefined);
+        mockDispatchSubscriptionChargeReceipt.mockResolvedValue({ dispatched: true });
+    });
+
+    /** The single argument object the handler hands the dispatcher. */
+    function receiptArg(): Record<string, unknown> {
+        return mockDispatchSubscriptionChargeReceipt.mock.calls[0]?.[0] as Record<string, unknown>;
+    }
+
+    it('dispatches exactly one receipt for a settled charge', async () => {
+        subLookupResult.rows = [
+            { id: 'local-sub-1', customerId: 'cust-1', planId: 'plan-accommodation' }
+        ];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        expect(mockDispatchSubscriptionChargeReceipt).toHaveBeenCalledTimes(1);
+    });
+
+    // Every field is asserted individually rather than through
+    // `expect.objectContaining`, which is blind to a field that went missing.
+    it('hands the dispatcher the charged amount in MAJOR units, not the ledger centavos', async () => {
+        subLookupResult.rows = [
+            { id: 'local-sub-1', customerId: 'cust-1', planId: 'plan-accommodation' }
+        ];
+        dedupeResult.rows = [];
+        // 999.50 pesos. The ledger row stores 99950; mailing that figure is
+        // HOS-713, a $150.00 charge announced as $15.000,00.
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        const arg = receiptArg();
+        expect(arg.amountMajor).toBe(999.5);
+        expect(arg.amountMajor).not.toBe(99950);
+        expect(arg.currency).toBe('ARS');
+        expect(arg.providerPaymentId).toBe('mp-pay-99');
+        expect(arg.customerId).toBe('cust-1');
+        expect(arg.localSubscriptionId).toBe('local-sub-1');
+        expect(arg.chargeStatus).toBe('succeeded');
+        expect(arg.source).toBe('subscription-authorized-payment-webhook');
+    });
+
+    // Eje 1 / the five product domains. The handler resolves the subscription by
+    // `mp_subscription_id` with no domain filter, so all five land here
+    // identically — what differs is the plan the receipt must name. Passing the
+    // CHARGED subscription's plan id is what stops a gastronomy renewal from
+    // printing the owner's accommodation plan.
+    it.each([
+        ['accommodation', 'plan-owner-basico'],
+        ['gastronomy', 'plan-gastronomy-1'],
+        ['experience', 'plan-experience-3'],
+        ['partner', 'plan-partner-gold'],
+        ['tourist', 'plan-tourist-plus']
+    ])('names the plan of the %s subscription that was actually charged', async (_domain, planId) => {
+        subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1', planId }];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        expect(receiptArg().planId).toBe(planId);
+    });
+
+    // `host-provider@local.test` is seeded precisely because one account can hold
+    // several subscriptions at once. The handler must pass the plan of the row it
+    // resolved from THIS preapproval, never let the dispatcher pick one.
+    it('a dual-role account gets the plan behind this preapproval, not its first subscription', async () => {
+        subLookupResult.rows = [
+            { id: 'sub-gastronomy', customerId: 'cust-dual', planId: 'plan-gastronomy-1' }
+        ];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+            fetchOk(makeDetails({ preapprovalId: 'pa-gastronomy' }))
+        );
+        setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        const arg = receiptArg();
+        expect(arg.planId).toBe('plan-gastronomy-1');
+        expect(arg.localSubscriptionId).toBe('sub-gastronomy');
+    });
+
+    it('carries a null planId through rather than substituting another plan', async () => {
+        subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1', planId: null }];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        expect(receiptArg().planId).toBeNull();
+    });
+
+    // THE DUPLICATE. MercadoPago redelivers one logical charge — its own retry, or
+    // the IPN sibling of a v2 delivery — and each delivery carries a DIFFERENT
+    // `providerEventId`, so the webhook-event guard upstream passes both. What
+    // stops the second receipt is that the ledger row already exists, and the
+    // dispatch sits AFTER that check. Measured on the real event: the 18:00:09
+    // redelivery of the 17:59:08 charge took this branch.
+    it('a redelivered event sends NO second receipt (the payment is already recorded)', async () => {
+        subLookupResult.rows = [
+            { id: 'local-sub-1', customerId: 'cust-1', planId: 'plan-accommodation' }
+        ];
+        dedupeResult.rows = [{ id: 'existing-payment-row' }];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        const { record } = setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        expect(record).not.toHaveBeenCalled();
+        expect(mockDispatchSubscriptionChargeReceipt).not.toHaveBeenCalled();
+    });
+
+    // Two deliveries in sequence, the way MercadoPago actually sends them: the
+    // first settles and mails, the second finds the ledger row and stays quiet.
+    // One receipt across both, which is the property — a test that only asserts
+    // the second call is silent would pass on a handler that never mails at all.
+    it('across two deliveries of one charge, exactly one receipt goes out', async () => {
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+
+        subLookupResult.rows = [
+            { id: 'local-sub-1', customerId: 'cust-1', planId: 'plan-accommodation' }
+        ];
+        dedupeResult.rows = [];
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        // Second delivery: a different notification id for the same payment, and
+        // the ledger row now exists.
+        nextSelectCall = 0;
+        dedupeResult.rows = [{ id: 'existing-payment-row' }];
+        await handleSubscriptionAuthorizedPayment(
+            makeMockContext() as never,
+            makeEvent({ id: 'mp-event-auth-pay-2' })
+        );
+
+        expect(mockDispatchSubscriptionChargeReceipt).toHaveBeenCalledTimes(1);
+    });
+
+    // The too-wide direction. A charge that did not clear, a pre-settlement
+    // notification, an unresolvable subscription and an add-on's own preapproval
+    // must all stay silent — a receipt for money that never arrived is worse than
+    // none, and these are the four ways a broader fix leaks one.
+    it('does NOT dispatch for a charge that did not clear', async () => {
+        subLookupResult.rows = [
+            { id: 'local-sub-1', customerId: 'cust-1', planId: 'plan-accommodation' }
+        ];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+            fetchOk(makeDetails({ paymentStatus: 'rejected', status: 'recycling' }))
+        );
+        const { record } = setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        // The ledger row is still written — a failed charge is a fact worth
+        // booking. Only the receipt is withheld.
+        expect(record).toHaveBeenCalledOnce();
+        expect(mockDispatchSubscriptionChargeReceipt).not.toHaveBeenCalled();
+    });
+
+    it('does NOT dispatch for a pre-settlement notification with no payment id', async () => {
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+            fetchOk(makeDetails({ paymentId: null, status: 'scheduled' }))
+        );
+        setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        expect(mockDispatchSubscriptionChargeReceipt).not.toHaveBeenCalled();
+    });
+
+    it('does NOT dispatch when the charge cannot be attributed to any subscription', async () => {
+        subLookupResult.rows = [];
+        dedupeResult.rows = [];
+        vi.mocked(linkPreapprovalToLocalSub).mockResolvedValue({ outcome: 'not_found' });
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+
+        // HOS-276: this path deliberately throws so MercadoPago retries.
+        await expect(
+            handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+        ).rejects.toThrow(/HOS-276/);
+
+        expect(mockDispatchSubscriptionChargeReceipt).not.toHaveBeenCalled();
+    });
+
+    it('does NOT dispatch when the ledger write itself fails', async () => {
+        subLookupResult.rows = [
+            { id: 'local-sub-1', customerId: 'cust-1', planId: 'plan-accommodation' }
+        ];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        vi.mocked(getWebhookDependencies).mockReturnValue({
+            billing: { payments: { record: vi.fn().mockRejectedValue(new Error('db down')) } },
+            paymentAdapter: {}
+        } as never);
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        expect(mockDispatchSubscriptionChargeReceipt).not.toHaveBeenCalled();
+        expect(markEventFailedByProviderId).toHaveBeenCalled();
+    });
+
+    // A failed receipt must never turn a settled charge into a failed webhook:
+    // MercadoPago would redeliver a charge that is already on record.
+    it('a receipt that could not be delivered still acknowledges the event', async () => {
+        subLookupResult.rows = [
+            { id: 'local-sub-1', customerId: 'cust-1', planId: 'plan-accommodation' }
+        ];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+        mockDispatchSubscriptionChargeReceipt.mockResolvedValue({
+            dispatched: false,
+            reason: 'not-delivered'
+        });
+
+        await expect(
+            handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+        ).resolves.toBeUndefined();
+        expect(markEventProcessedByProviderId).toHaveBeenCalledOnce();
+        expect(markEventFailedByProviderId).not.toHaveBeenCalled();
+    });
+
+    // A trial that converts on its first real charge is still a charge, so the
+    // receipt goes out — and it goes out AFTER the conversion, so a slow mail
+    // never delays the write that stops the trial middleware 402-ing a customer
+    // who has just paid.
+    it('a converting trial gets its receipt, after the conversion write', async () => {
+        subLookupResult.rows = [
+            {
+                id: 'local-sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-owner-basico',
+                status: 'trialing',
+                trialEnd: new Date('2026-06-01T00:00:00.000Z')
+            }
+        ];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+
+        await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+        expect(mockTxUpdateChain.where).toHaveBeenCalled();
+        expect(mockDispatchSubscriptionChargeReceipt).toHaveBeenCalledTimes(1);
+        const conversionOrder = mockTxUpdateChain.where.mock.invocationCallOrder[0] ?? 0;
+        const receiptOrder = mockDispatchSubscriptionChargeReceipt.mock.invocationCallOrder[0] ?? 0;
+        expect(receiptOrder).toBeGreaterThan(conversionOrder);
     });
 });
 

@@ -135,6 +135,20 @@ vi.mock('../../src/routes/webhooks/mercadopago/subscription-payment-handler', ()
     paymentAlreadyRecorded: mockPaymentAlreadyRecorded
 }));
 
+// HOS-1238: the customer receipt for a re-settled recurring charge. Mocked so the
+// cron's wiring can be asserted without the dispatcher's own notification-log
+// lookup reaching this file's `@repo/db` mock (which carries no
+// `billingNotificationLog`). Its gates are covered in
+// `test/webhooks/subscription-charge-receipt.test.ts`.
+const { mockDispatchSubscriptionChargeReceipt } = vi.hoisted(() => ({
+    mockDispatchSubscriptionChargeReceipt: vi.fn().mockResolvedValue({ dispatched: true })
+}));
+
+vi.mock('../../src/routes/webhooks/mercadopago/subscription-charge-receipt', () => ({
+    dispatchSubscriptionChargeReceipt: (...args: unknown[]) =>
+        mockDispatchSubscriptionChargeReceipt(...args)
+}));
+
 vi.mock('../../src/services/billing/link-preapproval.service', () => ({
     linkPreapprovalToLocalSub: mockLinkPreapprovalToLocalSub
 }));
@@ -808,6 +822,129 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
 
         // HOS-1001: nothing to queue when the ledger write succeeded.
         expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-1238: the dead-letter retry is the SECOND site that settles a recurring
+    // charge, so it owes the same receipt. It runs precisely when the live webhook
+    // failed — i.e. on the charges most likely to have left a debited customer
+    // with nothing.
+    // -------------------------------------------------------------------------
+    /**
+     * Arrange a dead-lettered authorized payment that re-settles cleanly.
+     *
+     * @param overrides.record - The `billing.payments.record` spy to install.
+     * @returns The record spy, for assertions.
+     */
+    function arrangeResettledCharge(
+        overrides: { record?: ReturnType<typeof vi.fn> } = {}
+    ): ReturnType<typeof vi.fn> {
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-receipt',
+            payload: { data: { id: 'authorized-payment-receipt' } }
+        });
+        arrangeDb([event]);
+
+        const paymentsRecord =
+            overrides.record ?? vi.fn().mockResolvedValue({ id: 'payment-record-r1' });
+        vi.mocked(getQZPayBilling).mockReturnValue({
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            payments: { record: paymentsRecord }
+        } as unknown as ReturnType<typeof getQZPayBilling>);
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'ok',
+            details: {
+                authorizedPaymentId: 'authorized-payment-receipt',
+                preapprovalId: 'preapproval-receipt',
+                paymentId: 'mp-payment-receipt',
+                transactionAmount: 18_000,
+                currencyId: 'ARS',
+                status: 'processed',
+                paymentStatus: 'approved',
+                debitDate: '2026-09-08',
+                couponAmount: null,
+                campaignId: null
+            }
+        });
+
+        vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
+            id: 'sub-gastronomy-1',
+            customerId: 'cust-receipt',
+            planId: 'plan-gastronomy-1',
+            status: 'active',
+            trialEnd: null,
+            billingInterval: 'month'
+        });
+        vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
+
+        return paymentsRecord;
+    }
+
+    it('HOS-1238: dispatches the charge receipt after re-settling a dead-lettered charge', async () => {
+        arrangeResettledCharge();
+
+        await webhookRetryJob.handler(makeCronContext());
+
+        expect(mockDispatchSubscriptionChargeReceipt).toHaveBeenCalledTimes(1);
+        const arg = mockDispatchSubscriptionChargeReceipt.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(arg.customerId).toBe('cust-receipt');
+        expect(arg.localSubscriptionId).toBe('sub-gastronomy-1');
+        // The plan of the subscription THIS charge settled — a commerce vertical
+        // here on purpose: one account holds several subscriptions at once.
+        expect(arg.planId).toBe('plan-gastronomy-1');
+        expect(arg.providerPaymentId).toBe('mp-payment-receipt');
+        // MAJOR units, as MercadoPago reports it. The ledger row holds 1800000.
+        expect(arg.amountMajor).toBe(18_000);
+        expect(arg.amountMajor).not.toBe(1_800_000);
+        expect(arg.currency).toBe('ARS');
+        expect(arg.chargeStatus).toBe('succeeded');
+        // The label that distinguishes this site from the live handler in the log
+        // and in the idempotency diagnostics.
+        expect(arg.source).toBe('webhook-retry-dead-letter');
+    });
+
+    it('HOS-1238: sends no receipt when the retry finds the charge already recorded', async () => {
+        arrangeResettledCharge();
+        vi.mocked(paymentAlreadyRecorded).mockResolvedValue(true);
+
+        await webhookRetryJob.handler(makeCronContext());
+
+        expect(mockDispatchSubscriptionChargeReceipt).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1238: sends no receipt when the ledger write itself failed', async () => {
+        arrangeResettledCharge({
+            record: vi.fn().mockRejectedValue(new Error('ledger write blew up'))
+        });
+
+        await webhookRetryJob.handler(makeCronContext());
+
+        expect(mockDispatchSubscriptionChargeReceipt).not.toHaveBeenCalled();
+        expect(mockRecordOrphanPayment).toHaveBeenCalledOnce();
+    });
+
+    // The dispatch sits inside the try whose catch enqueues an ORPHAN PAYMENT, so
+    // an undelivered receipt must not be mistaken for a failed ledger write. A
+    // false "the charge was never booked" alert about a row that was written
+    // perfectly is exactly the kind of noise that trains operators to ignore the
+    // queue.
+    it('HOS-1238: an undelivered receipt does NOT queue a false orphan payment', async () => {
+        arrangeResettledCharge();
+        mockDispatchSubscriptionChargeReceipt.mockResolvedValue({
+            dispatched: false,
+            reason: 'not-delivered'
+        });
+
+        const result = await webhookRetryJob.handler(makeCronContext());
+
+        expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
     });
 
     // -------------------------------------------------------------------------
