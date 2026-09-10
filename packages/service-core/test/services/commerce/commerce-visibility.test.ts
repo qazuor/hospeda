@@ -35,9 +35,16 @@ function makeModel(
         moderationState?: string | null;
     } | null
 ): CommerceEntityModel {
+    // `slug`/`destinationId` defaults: the widened `CommerceEntityModel`
+    // read (HOS-1337) supplies the purge payload. No existing test asserts
+    // on them, so a fixed value is enough here — the purge itself has its
+    // own suite (commerce-visibility-revalidation.test.ts).
+    const row = existingEntity
+        ? { slug: 'entity-slug', destinationId: null, ...existingEntity }
+        : null;
     return {
-        findById: vi.fn().mockResolvedValue(existingEntity),
-        update: vi.fn().mockResolvedValue(existingEntity)
+        findById: vi.fn().mockResolvedValue(row),
+        update: vi.fn().mockResolvedValue(row)
     };
 }
 

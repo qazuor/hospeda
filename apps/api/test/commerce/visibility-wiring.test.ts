@@ -23,6 +23,33 @@ vi.mock('../../src/utils/logger', () => ({
     apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
+// ── HOS-1337: capture the edge-purge scheduling fired by the REAL reconciler
+// running inside the bridge. `@repo/service-core` resolves to its src (see
+// apps/api/vitest.config.ts), so this relative path and the reconciler's own
+// `./commerce-revalidation.js` import land on the same module and the mock
+// intercepts it. Only the side-effecting pieces are stubbed: the real
+// `isCommerceListingPubliclyVisible` (kept via importOriginal) is what the
+// reconciler's unpublish direction depends on.
+const { mockSchedulePurge, mockResolveDestinationSlug } = vi.hoisted(() => ({
+    mockSchedulePurge: vi.fn(),
+    mockResolveDestinationSlug: vi.fn()
+}));
+
+vi.mock(
+    '../../../../packages/service-core/src/services/commerce/commerce-revalidation.js',
+    async (importOriginal) => {
+        const actual =
+            await importOriginal<
+                typeof import('../../../../packages/service-core/src/services/commerce/commerce-revalidation.js')
+            >();
+        return {
+            ...actual,
+            scheduleCommerceListingRevalidation: mockSchedulePurge,
+            resolveCommerceDestinationSlug: mockResolveDestinationSlug
+        };
+    }
+);
+
 // ── @repo/db stub: link lookup + denormalized status update ────────────────
 const linkRows: Array<{ entityType: string; entityId: string }> = [];
 const selectWhere = vi.fn(() => Promise.resolve(linkRows));
@@ -54,6 +81,7 @@ interface FakeEntityRow {
     name?: string;
     summary?: string;
     description?: string;
+    slug?: string;
     destinationId?: string;
     ownerId?: string;
     type?: string;
@@ -86,6 +114,9 @@ function makeCompleteGastronomyRow(base: {
     return {
         ...base,
         name: 'La Parrilla del Puerto',
+        // HOS-1337: the purge payload the reconciler builds after its write
+        // reads `slug` off this row.
+        slug: 'la-parrilla-del-puerto',
         summary: 'A riverside parrilla with fresh grilled fish and steak.',
         description:
             'La Parrilla del Puerto has served the waterfront for over a decade, specializing in grilled fish and classic asado.',
@@ -124,6 +155,7 @@ function makeCompleteExperienceRow(base: {
     return {
         ...base,
         name: 'Kayak tour on the Uruguay river',
+        slug: 'kayak-uruguay-river',
         summary: 'A guided two-hour kayak tour along the riverside.',
         description:
             'Explore the Uruguay river coastline by kayak with a certified local guide, including all safety equipment.',
@@ -614,5 +646,192 @@ describe('completeness reads media from the relational tables (H-154)', () => {
             visibility: 'PRIVATE',
             lifecycleState: 'INACTIVE'
         });
+    });
+});
+
+// ── HOS-1337 ───────────────────────────────────────────────────────────────
+//
+// The bridge is the BILLING entry point of the visibility reconciler — the MP
+// webhook and the dunning/finalize crons. Until HOS-1337 the reconciler wrote
+// `visibility` without ever scheduling `scheduleCommerceListingRevalidation`,
+// so a listing its owner had just paid for stayed out of the public index
+// (/{lang}/gastronomia, /{lang}/experiencias — cache class `catalog`,
+// s-maxage 3600) for up to an hour. The service-core suite pins the
+// reconciler's own purge decision; these tests pin that the BILLING path
+// still reaches it, in both directions and for both verticals.
+
+describe('reconcileCommerceListingForSubscription — edge-cache purge (HOS-1337)', () => {
+    beforeEach(() => {
+        linkRows.length = 0;
+        entityStore.clear();
+        mediaStore.clear();
+        dbSelect.mockClear();
+        dbUpdate.mockClear();
+        updateSet.mockClear();
+        mockSchedulePurge.mockClear();
+        mockResolveDestinationSlug.mockClear();
+    });
+
+    it('purges when the webhook publishes a gastronomy listing', async () => {
+        // Arrange: complete paid listing, still hidden — the reported scenario.
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        // Assert: the DB write happened AND the purge was scheduled with the
+        // post-write PUBLIC row.
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+        expect(mockSchedulePurge).toHaveBeenCalledTimes(1);
+        expect(mockSchedulePurge).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entityType: 'gastronomy',
+                entity: expect.objectContaining({
+                    id: ENTITY_ID,
+                    slug: 'la-parrilla-del-puerto',
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE'
+                })
+            })
+        );
+    });
+
+    it('purges when the webhook publishes an experience listing', async () => {
+        linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteExperienceRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+        expect(mockSchedulePurge).toHaveBeenCalledTimes(1);
+        expect(mockSchedulePurge).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entityType: 'experience',
+                entity: expect.objectContaining({
+                    id: ENTITY_ID,
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE'
+                })
+            })
+        );
+    });
+
+    it('purges when a falling subscription unpublishes a gastronomy listing', async () => {
+        // The inverse direction: a listing nobody is paying for that stays on
+        // the public index is worse than the reported bug. The purge payload
+        // is the PRE-write PUBLIC row — the footprint that must be evicted.
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PUBLIC',
+                lifecycleState: 'ACTIVE'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'cancelled',
+            source: 'dunning-cron'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE'
+        });
+        expect(mockSchedulePurge).toHaveBeenCalledTimes(1);
+        expect(mockSchedulePurge).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entityType: 'gastronomy',
+                entity: expect.objectContaining({
+                    id: ENTITY_ID,
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE'
+                })
+            })
+        );
+    });
+
+    it('purges when a falling subscription unpublishes an experience listing', async () => {
+        linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteExperienceRow({
+                id: ENTITY_ID,
+                visibility: 'PUBLIC',
+                lifecycleState: 'ACTIVE'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'cancelled',
+            source: 'finalize-cancelled-cron'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE'
+        });
+        expect(mockSchedulePurge).toHaveBeenCalledTimes(1);
+        expect(mockSchedulePurge).toHaveBeenCalledWith(
+            expect.objectContaining({
+                entityType: 'experience',
+                entity: expect.objectContaining({
+                    id: ENTITY_ID,
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE'
+                })
+            })
+        );
+    });
+
+    it('does not purge when the reconcile is a no-op (nothing changed)', async () => {
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PUBLIC',
+                lifecycleState: 'ACTIVE'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'subscription-poll'
+        });
+
+        expect(mockSchedulePurge).not.toHaveBeenCalled();
     });
 });
