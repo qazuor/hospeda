@@ -193,6 +193,54 @@ describe('abandoned-pending-subs internals', () => {
     it('writes canonical abandoned (Hospeda enum) as the terminal status', () => {
         expect(_internals.ABANDONED_STATUS).toBe('abandoned');
     });
+
+    describe('HOS-1310: the terminal UPDATE accepts the status our own cancel wrote', () => {
+        /*
+         * The reaper cancels the preapproval and THEN flips the row to
+         * `abandoned`. qzpay-core's cancel() writes `status = 'canceled'`
+         * whenever `cancelAtPeriodEnd` is falsy, and this cron passes no
+         * options — so by the time the UPDATE runs, the row has already left
+         * the pending set. With a pending-only precondition the UPDATE matched
+         * nothing and every preapproval-holding candidate reported
+         * `already-reaped`, leaving the row `canceled` forever.
+         *
+         * The suite below cannot catch that: `billing.subscriptions.cancel` is
+         * a bare mock, so the status write never happens, and `makeDbMock`
+         * returns its rows regardless of the WHERE. These cases assert the
+         * constant the WHERE is built from instead — the honest claim for a
+         * mocked query builder.
+         */
+        it('still accepts both pending spellings', () => {
+            for (const status of _internals.PENDING_STATUSES) {
+                expect(_internals.REAPABLE_PRE_ABANDON_STATUSES).toContain(status);
+            }
+        });
+
+        it("accepts qzpay's `canceled` — the status its own cancel() leaves behind", () => {
+            expect(_internals.REAPABLE_PRE_ABANDON_STATUSES).toContain('canceled');
+        });
+
+        it('accepts the British `cancelled` too, so migration 035 cannot strand a row', () => {
+            // extras/035 folds canceled -> cancelled on every deploy. A row
+            // caught mid-fold must still be reapable, or the fix works only
+            // between deploys.
+            expect(_internals.REAPABLE_PRE_ABANDON_STATUSES).toContain('cancelled');
+        });
+
+        it('does NOT accept abandoned — that is what keeps the write idempotent', () => {
+            // The whole point of re-asserting a precondition is that a row a
+            // concurrent run already reaped no-ops into `already-reaped`.
+            expect(_internals.REAPABLE_PRE_ABANDON_STATUSES).not.toContain('abandoned');
+        });
+
+        it('does NOT accept active, trialing, comp or courtesy — a paid row is never reaped', () => {
+            // The widening is about one transition inside one function, not a
+            // licence to abandon live subscriptions.
+            for (const status of ['active', 'trialing', 'comp', 'courtesy']) {
+                expect(_internals.REAPABLE_PRE_ABANDON_STATUSES).not.toContain(status);
+            }
+        });
+    });
 });
 
 describe('abandonedPendingSubsJob definition', () => {
