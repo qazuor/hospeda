@@ -64,6 +64,7 @@
  */
 
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { billingAuthMiddleware } from '../../middlewares/billing-auth.middleware';
 import { createRouter } from '../../utils/create-app';
@@ -77,6 +78,26 @@ import { isServablePlan } from './protected-plans-list';
 interface StoragePlanShape {
     readonly metadata?: Record<string, unknown>;
 }
+
+/**
+ * `billing_plans.id` is a Postgres `uuid` column and `findById` compares against
+ * it with no cast, so a malformed id is not a miss — it is a **driver error**
+ * (`invalid input syntax for type uuid`) raised below this handler.
+ *
+ * That is H-68, named in `apps/api/docs/error-contract.md`: the request nobody
+ * has to craft is `/plans/undefined`, built by a client from an empty variable.
+ * Reaching the database with it answers `500 INTERNAL_ERROR` with a stack and a
+ * Sentry event, where the contract's step 3 says **400 `VALIDATION_ERROR`** — and
+ * a 4xx is never `INTERNAL_ERROR`. The prebuilt qzpay handler happened to answer
+ * 422 because its catch-all matches the driver's message text against `/invalid/i`;
+ * that is an accident of wording, not a validation, and shadowing the route means
+ * this module owns the answer now.
+ *
+ * Validated BEFORE the billing-availability check so the 4xx ladder stays in
+ * contract order (shape at step 3, existence at step 4) whatever the subsystem
+ * is doing.
+ */
+const PlanIdSchema = z.string().uuid();
 
 /**
  * Answers the plan this tier may serve, or `null` when it may not.
@@ -136,6 +157,29 @@ function planNotFound(c: Context): Response {
 }
 
 /**
+ * The 400 both handlers answer for an id that is not a UUID.
+ *
+ * Written once, like {@link planNotFound}, and deliberately does NOT echo the
+ * value back: the caller already knows what it sent, and a reflected path
+ * segment is one more thing travelling into logs and error payloads.
+ *
+ * @param c - Hono context
+ * @returns A 400 response carrying the contract's `VALIDATION_ERROR`
+ */
+function invalidPlanId(c: Context): Response {
+    return c.json(
+        {
+            success: false,
+            error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Plan ID must be a valid UUID'
+            }
+        },
+        400
+    );
+}
+
+/**
  * The 503 answered when billing is not configured.
  *
  * Deliberately NOT a fall-through to the prebuilt route: a handler that cannot
@@ -169,19 +213,19 @@ function billingUnavailable(c: Context): Response {
  * @returns The plan, or the shared 404
  */
 export async function handleProtectedPlanById(c: Context): Promise<Response> {
+    // Step 3 of the error contract, and it runs before anything touches the
+    // database — see {@link PlanIdSchema}.
+    const planId = PlanIdSchema.safeParse(c.req.param('id'));
+    if (!planId.success) {
+        return invalidPlanId(c);
+    }
+
     const billing = getQZPayBilling();
     if (!billing) {
         return billingUnavailable(c);
     }
 
-    // The route cannot match without an `:id`, but the param is typed as
-    // optional. Withhold rather than read the catalogue with `undefined`.
-    const planId = c.req.param('id');
-    if (!planId) {
-        return planNotFound(c);
-    }
-
-    const raw = await billing.plans.get(planId);
+    const raw = await billing.plans.get(planId.data);
     const { plan: servablePlan } = resolveServablePlan({ plan: raw });
 
     if (!servablePlan) {
@@ -202,25 +246,26 @@ export async function handleProtectedPlanById(c: Context): Promise<Response> {
  * @returns The plan's prices, or the shared 404
  */
 export async function handleProtectedPlanPrices(c: Context): Promise<Response> {
+    // Same order as the sibling handler, and for the same reason: this route
+    // reaches the same `uuid` column, so it had the same 500 (H-68).
+    const planId = PlanIdSchema.safeParse(c.req.param('id'));
+    if (!planId.success) {
+        return invalidPlanId(c);
+    }
+
     const billing = getQZPayBilling();
     if (!billing) {
         return billingUnavailable(c);
     }
 
-    // See the sibling handler: an absent param withholds rather than reads.
-    const planId = c.req.param('id');
-    if (!planId) {
-        return planNotFound(c);
-    }
-
-    const raw = await billing.plans.get(planId);
+    const raw = await billing.plans.get(planId.data);
     const { plan: servablePlan } = resolveServablePlan({ plan: raw });
 
     if (!servablePlan) {
         return planNotFound(c);
     }
 
-    const servablePrices = await billing.plans.getPrices(planId);
+    const servablePrices = await billing.plans.getPrices(planId.data);
     return c.json({ success: true, data: servablePrices });
 }
 
