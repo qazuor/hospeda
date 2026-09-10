@@ -47,7 +47,7 @@
         "@tiptap/react": "^3.29.2",
         "@tiptap/starter-kit": "^3.29.2",
         "@vercel/og": "^1.0.1",
-        "astro": "^7.1.6",
+        "astro": "^7.2.8",
         "better-auth": "^1.6.23",
         "clsx": "^2.1.1",
         "dompurify": "^3.4.13",
