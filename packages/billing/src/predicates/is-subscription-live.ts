@@ -63,9 +63,16 @@ export interface IsSubscriptionLiveInput {
  *   has not exceeded the cron-lag grace window (default 6 h).
  * - `'trialing'`: live iff `trialEnd` is absent/null **or** the trial has not
  *   exceeded the cron-lag grace window.
- * - `'cancelled'` (soft-cancel grace): live iff `currentPeriodEnd` is
+ * - `'cancelled'` (paid-through grace): live iff `currentPeriodEnd` is
  *   absent/null **or** `currentPeriodEnd > now`. No extra grace window applies;
  *   access is valid exactly until the period the host already paid for ends.
+ *   Commonly called the "soft-cancel" grace, which is misleading: an in-app soft
+ *   cancel does NOT write this status (it writes `cancelAtPeriodEnd` and leaves
+ *   the status alone — see `services/subscription-cancel.service.ts`). The rows
+ *   that actually reach this branch mid-period come from the MercadoPago webhook
+ *   (a provider `canceled`, mapped by `QZPAY_TO_HOSPEDA_STATUS`) and from
+ *   qzpay-core's hard cancel. `finalize-cancelled-subs` only writes it once the
+ *   effective end date has passed, so its rows answer `false` here.
  * - `'courtesy'` (HOS-180): live iff `courtesyEndsAt` is absent/null **or**
  *   the window has not exceeded the cron-lag grace, mirroring `'active'`.
  * - All other statuses (`past_due`, `paused`, `expired`, etc.) → `false`.
