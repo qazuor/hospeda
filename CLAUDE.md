@@ -395,25 +395,35 @@ accommodation entitlement engine:
     live resolution. Only a row that is present AND wrong can lie, which is what
     the write-through path and the reconcile cron defend.
 - **TWO reconcilers, and the second one is partners.** `reconcileSubscriptionLinkedEntities`
-  (`apps/api/src/services/subscription-linked-entities.service.ts:57`) drives commerce
-  visibility AND the accommodation `entity_subscriptions` cache, from **nine**
-  invocation sites: the MP webhook (`subscription-logic.ts:1341`), dunning (both
-  branches), `finalize-cancelled-subs`, `abandoned-pending-subs`,
-  `preapproval-less-expiry`, the commerce attach path, `subscription-comp-grant`
-  and `trial-local-expiry`. It does **not** touch partners.
-  `reconcilePartnerForSubscription`
-  (`apps/api/src/services/partner-reconcile.service.ts:150`) is a separate bridge
+  (`apps/api/src/services/subscription-linked-entities.service.ts`) drives commerce
+  visibility AND the accommodation `entity_subscriptions` cache. It does **not**
+  touch partners: `reconcilePartnerForSubscription`
+  (`apps/api/src/services/partner-reconcile.service.ts`) is a separate bridge
   writing its own `partner_subscriptions` table (partners are NOT in
-  `entity_subscriptions`), and it is wired at only **five** of those nine — the MP
-  webhook, dunning (both branches), `finalize-cancelled-subs`,
-  `abandoned-pending-subs`. The other four — commerce attach, `subscription-comp-grant`,
-  `trial-local-expiry` and `preapproval-less-expiry` — leave partner rows untouched.
-  So "did every site get wired?" has TWO answers, and an audit that reads only the
-  first reconciler skips the partner vertical entirely. (NOT VERIFIED: whether those
-  four gaps matter in practice. The daily `partner-expiry` cron only archives
-  partners whose `endsAt` has passed while still ACTIVE — it is not a general
-  backstop for the four unwired paths, and nobody has checked whether a partner
-  subscription can reach them.) The accommodation half ignores
+  `entity_subscriptions`), and neither reconciler calls the other. So "did every
+  site get wired?" has TWO answers, and an audit that reads only the first
+  reconciler skips the partner vertical entirely.
+  **Do not look for the count here** — this bullet twice carried a number that was
+  wrong by the time it was read ("six sites", then "nine ... wired at five").
+  `apps/api/test/services/subscription-linked-entities-bridge.guard.test.ts` holds
+  the live tally, and since HOS-1306 it also enforces the pairing: every file
+  calling the entity bridge must either call the partner reconciler too, or appear
+  in `BRIDGE_ONLY_SITES` with the measured reason a partner cannot reach it. A new
+  call site cannot be born with the gap silently.
+  HOS-1306 measured the four then-unwired sites and found **zero real gaps** —
+  `subscription-comp-grant` had already been wired by HOS-1160, and a partner
+  subscription cannot reach the other three (the commerce attach path is closed by
+  `CommerceVertical = 'gastronomy' | 'experience'` plus `subscriptionMatchesDomain`'s
+  fail-closed; `trial-local-expiry` because no partner plan has a trial;
+  `preapproval-less-expiry` because no writer produces an `active` partner row with
+  a null preapproval). That last one is the fragile one: it holds by the ABSENCE of
+  a producing write, not by an invariant, and **HOS-1062 (activating a partner
+  without MercadoPago) is building the population that breaks it** — that change
+  must wire the partner reconciler into `preapproval-less-expiry` in the same PR.
+  Note also that the daily `partner-expiry` cron only archives partners whose
+  `endsAt` has passed while still ACTIVE, and nothing outside the admin edit form
+  ever writes `partners.endsAt` — it is NOT a general backstop for a missed partner
+  reconcile. The accommodation half ignores
   the status it was handed and **re-derives** the owner's current subscription
   from the DB, so a late webhook for a superseded subscription cannot un-publish
   the one they are paying for. Backstop: the 6-hourly

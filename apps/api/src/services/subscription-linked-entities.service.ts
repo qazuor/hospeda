@@ -1,5 +1,6 @@
 /**
- * The ONE reconciler every billing-lifecycle site calls (HOS-1084).
+ * The reconciler for the three LISTING verticals (HOS-1084). NOT the only
+ * reconciler — see the partner caveat below.
  *
  * Before this module there was one bridge from the billing lifecycle to the
  * rest of the platform — `reconcileCommerceListingForSubscription` — and it
@@ -8,8 +9,27 @@
  * render.
  *
  * The owner's decision for HOS-1084 was explicit: **one table for the three
- * verticals, one reconciler**. This is that reconciler. Every site that moves a
- * subscription's status is meant to call it and nothing else.
+ * verticals, one reconciler**. This is that reconciler, and its scope is
+ * exactly those three: accommodation, gastronomy, experience.
+ *
+ * ## Partners are NOT one of them (HOS-1306)
+ *
+ * This docblock used to open with "The ONE reconciler every billing-lifecycle
+ * site calls" and close that paragraph with "Every site that moves a
+ * subscription's status is meant to call it and nothing else". Both halves were
+ * false, and the root `CLAUDE.md` repeated them, so an audit asking "who
+ * reconciles domain X?" skipped the partner vertical entirely.
+ *
+ * Partners live in `partner_subscriptions`, not `entity_subscriptions`, and are
+ * reconciled by `reconcilePartnerForSubscription`
+ * (`services/partner-reconcile.service.ts`) — a SECOND, independent bridge this
+ * module never calls and which never calls this one. A site that moves the
+ * status of a subscription a partner can hold must call BOTH.
+ *
+ * The pair is pinned by `test/services/subscription-linked-entities-bridge.guard.test.ts`,
+ * which since HOS-1306 requires every file calling this reconciler to either
+ * also call the partner one or appear on an explicit, reasoned exclusion list.
+ * Do not add a new call site here without settling which of the two it is.
  *
  * HOS-1280: an earlier version of this docblock enumerated "six call sites"
  * by name. That list rotted the moment a seventh one was added and nobody

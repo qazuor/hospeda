@@ -724,9 +724,13 @@ export async function grantCompSubscription(input: {
     });
 
     // 6b. The alliance half of the same INV-1 argument (HOS-1160). A partner
-    //     comp reaches `partners.subscriptionStatus` through nothing else: the
-    //     reconciler's other nine call sites are all downstream of a MercadoPago
-    //     webhook or a billing cron, and a comp fires neither. Without this call
+    //     comp reaches `partners.subscriptionStatus` through nothing else: every
+    //     other call site of that reconciler is downstream of a MercadoPago
+    //     webhook, a billing cron, or an explicit admin/self-serve lifecycle
+    //     action on an existing subscription, and a comp fires none of them.
+    //     (HOS-1306 removed a count from this sentence — it said "nine" and was
+    //     wrong by the time it was read. `test/services/subscription-linked-entities-bridge.guard.test.ts`
+    //     holds the live tally.) Without this call
     //     `mapBillingStatusToPartnerState` is never invoked for the grant, the
     //     partner stays on whatever state their last real subscription left, and
     //     the courtesy HOS-278 §6.3 promised buys them nothing.
