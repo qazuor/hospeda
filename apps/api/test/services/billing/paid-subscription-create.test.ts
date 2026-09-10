@@ -191,7 +191,6 @@ describe('createPaidSubscription', () => {
 
             await expect(
                 createPaidSubscription({
-                    // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
                     billing: billing as any,
                     customerId: CUSTOMER_ID,
                     planId: PLAN_ID,
@@ -215,7 +214,6 @@ describe('createPaidSubscription', () => {
             ]);
 
             await createPaidSubscription({
-                // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
                 billing: billing as any,
                 customerId: CUSTOMER_ID,
                 planId: PLAN_ID,
@@ -239,7 +237,6 @@ describe('createPaidSubscription', () => {
             ]);
 
             await createPaidSubscription({
-                // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
                 billing: billing as any,
                 customerId: CUSTOMER_ID,
                 planId: PLAN_ID,
@@ -262,7 +259,6 @@ describe('createPaidSubscription', () => {
 
             await expect(
                 createPaidSubscription({
-                    // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
                     billing: billing as any,
                     customerId: CUSTOMER_ID,
                     planId: PLAN_ID,
@@ -286,7 +282,6 @@ describe('createPaidSubscription', () => {
             ]);
 
             await createPaidSubscription({
-                // biome-ignore lint/suspicious/noExplicitAny: the billing mock stands in for QZPayBilling.
                 billing: billing as any,
                 customerId: CUSTOMER_ID,
                 planId: PLAN_ID,
