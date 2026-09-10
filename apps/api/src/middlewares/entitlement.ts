@@ -829,7 +829,7 @@ async function loadEntitlements(
             // The provenance the row DOES carry is `source`/`sourceId`; for an
             // add-on grant that resolves to a purchase, a slug, and the
             // catalogue's declared `productDomain`. Only a PROVABLY foreign one
-            // is dropped — see `consumer-addon-grant-domain.ts` for why this
+            // is dropped — see `addon-grant-domain.ts` for why this
             // fails open where its HOS-1279 sibling fails closed.
             const addonSlugByPurchaseId = await resolveAddonPurchaseSlugs({
                 purchaseIds: customerEntitlements
