@@ -78,17 +78,24 @@ export const PLAN_PUBLIC_LISTING_METADATA_KEY = 'publicListing';
  *
  * - `'listed'` — ordinary catalogue plan. The default for every plan that has
  *   never been marked, which is every plan that exists today.
- * - `'unlisted'` — never ENUMERATED by an endpoint that lists plans: neither
- *   `GET /api/v1/public/plans` nor `GET /api/v1/protected/plans`.
+ * - `'unlisted'` — never served by a public or user-facing plan endpoint: neither
+ *   the two that ENUMERATE (`GET /api/v1/public/plans`,
+ *   `GET /api/v1/protected/billing/plans`) nor the two single-plan READS
+ *   (`GET /api/v1/protected/billing/plans/:id` and its `/prices` sub-route,
+ *   closed by HOS-1186 — they answer the same 404 a missing plan gets, for every
+ *   actor).
  *
- * What `'unlisted'` does NOT mean today, written down because a promise stated
- * more strongly than the code is what stops anyone from checking again: the plan
- * stays reachable BY ID. Checkout resolves a plan by UUID on purpose
- * (`subscription-checkout.service.ts`) — that is what makes an exclusive plan
- * payable at all — and `GET /api/v1/protected/billing/plans/:id` answers one in
- * full to any authenticated caller. That single-plan read is a known gap,
- * deliberately left outside HOS-1062 F1 and tracked in its own issue. This mark
- * does not close it.
+ * What `'unlisted'` still does NOT mean, written down because a promise stated
+ * more strongly than the code is what stops anyone from checking again:
+ *
+ * - **It is not an authorisation check.** Checkout resolves a plan by UUID on
+ *   purpose (`subscription-checkout.service.ts`) — that is what makes an
+ *   exclusive plan payable at all — so whoever holds the UUID can still BUY the
+ *   plan. What they can no longer do is read it back, or learn its price, through
+ *   the public or protected tier.
+ * - **It does not apply to the admin tier.**
+ *   `GET /api/v1/admin/billing/plans/:id` (`BILLING_READ_ALL`) serves every plan
+ *   in full, which is the point: those are the plans an operator administers.
  */
 export const BillingPlanPublicListingSchema = z.enum(['listed', 'unlisted']);
 
