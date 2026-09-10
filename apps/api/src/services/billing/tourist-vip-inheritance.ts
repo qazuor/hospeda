@@ -19,20 +19,21 @@
  * WHY THIS READS THE CATALOGUE AND NOT ONLY THE CONSTANT
  *
  * `plans.config.ts` already spreads `TOURIST_VIP_ENTITLEMENTS` /
- * `TOURIST_VIP_LIMITS` into all twelve plan definitions (`:130`/`:146` for
- * `owner-basico`, `:765`/`:777` for every commerce tier, `:499`/`:500` for
- * `tourist-vip` itself), so a key added to those constants reaches every
- * definition on its own. That covers a change made **in code** and nothing
- * else.
+ * `TOURIST_VIP_LIMITS` into every plan that carries the block — the six
+ * owner/complex tiers (`:130`/`:146` for `owner-basico`, five siblings after
+ * it), all six commerce tiers through one factory (`:765`/`:777`), and
+ * `tourist-vip` itself (`:499`/`:500`) — so a key added to those constants
+ * reaches every definition on its own. That covers a change made **in code**
+ * and nothing else.
  *
  * A plan is also changed in the OTHER direction: `PUT /api/v1/admin/billing/
  * plans/{id}` (`routes/billing/admin/plans.ts:243`) accepts
  * `entitlements?: string[]` and `limits?: Record<string, number>` and writes
  * them straight onto the `billing_plans` row, with no deploy. A key added to
  * the tourist-VIP ROW that way reaches no vertical plan row at all — the
- * constant is not consulted at runtime, and nothing re-derives the eleven
- * neighbours from it. Resolving the gift from the catalogue on every cache miss
- * is what makes BOTH directions propagate for the verticals served here.
+ * constant is not consulted at runtime, and nothing re-derives its neighbour
+ * rows from it. Resolving the gift from the catalogue on every cache miss is
+ * what makes BOTH directions propagate for the verticals served here.
  *
  * **Say the limit of that out loud**, because a docblock claiming more than the
  * code does is how this epic's bugs survive review: the runtime resolution
