@@ -50,7 +50,7 @@ import { selectAccommodationSubscription } from '../services/billing/plan-domain
 import {
     mergeTouristVipGift,
     resolveTouristVipGift,
-    subscriptionNeedsTouristVipGift,
+    selectGiftBearingSubscription,
     type TouristVipGift
 } from '../services/billing/tourist-vip-inheritance';
 import {
@@ -706,7 +706,7 @@ async function loadEntitlements(
         // commerce would put a gastronomy plan back where an accommodation plan
         // belongs, which is the HOS-1213 ambiguity in a third set of clothes. The
         // gift is a separate, additive question with a separate answer.
-        const giftedSubscription = grantingSubscriptions.find(subscriptionNeedsTouristVipGift);
+        const giftedSubscription = await selectGiftBearingSubscription(grantingSubscriptions);
         const touristVipGift = giftedSubscription ? await resolveTouristVipGift() : null;
 
         // HOS-1303: this used to be a single `find` matching

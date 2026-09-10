@@ -86,7 +86,7 @@ import {
     TOURIST_VIP_PLAN
 } from '@repo/billing';
 import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
-import { subscriptionMatchesDomain } from '@repo/service-core';
+import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger';
 import { PlanService } from '../plan.service';
 import { CONSUMER_SIDE_PRODUCT_DOMAINS } from './addon-grant-domain';
@@ -180,20 +180,50 @@ export type MergeableGrants = {
  * gifted domain — there is no union helper and deliberately is not one
  * (HOS-1081 deleted `isCommerceSubscription()` for lack of a consumer).
  *
- * **Hydrate before calling.** `getByCustomerId()` does not populate
- * `productDomain` (HOS-934/HOS-1104), and `subscriptionMatchesDomain` reads
- * asymmetrically: a missing column fails OPEN to accommodation and fails CLOSED
- * for every other domain. Over un-hydrated rows this therefore answers `true`
- * for everything, partners included.
+ * **It hydrates rather than trusting the caller to have done it**, on the same
+ * terms as `selectAccommodationSubscription`: `getByCustomerId()` never
+ * populates `productDomain` (HOS-934/HOS-1104), and `subscriptionMatchesDomain`
+ * reads asymmetrically — a missing column fails OPEN to accommodation and fails
+ * CLOSED for every other domain. Over un-hydrated rows every gifted vertical
+ * would therefore answer `false`, no gift would be resolved, and nothing would
+ * raise: the failure would look exactly like the bug this file fixes. Hydrating
+ * here costs nothing when the caller already did it —
+ * `hydrateSubscriptionProductDomains` short-circuits rows whose domain is
+ * already defined — and `scripts/check-subscription-domain-hydration.sh`
+ * (HOS-1176) is what makes the omission a CI failure rather than a silent one.
  *
- * @param subscription - A subscription row with its `productDomain` hydrated.
- * @returns `true` when the row belongs to a vertical whose gift must be resolved
- *   at runtime.
+ * A hydration failure degrades to the un-hydrated rows rather than throwing, so
+ * a transient DB error costs the gift for one request instead of failing the
+ * whole entitlement load.
+ *
+ * @param subscriptions - The customer's entitlement-granting subscriptions.
+ * @returns The first row belonging to a vertical whose gift must be resolved at
+ *   runtime, or `undefined` when the customer holds none.
  */
-export function subscriptionNeedsTouristVipGift(subscription: {
-    productDomain?: string | null;
-}): boolean {
-    return RUNTIME_GIFTED_DOMAINS.some((domain) => subscriptionMatchesDomain(subscription, domain));
+export async function selectGiftBearingSubscription<
+    T extends { id: string; productDomain?: string | null }
+>(subscriptions: readonly T[]): Promise<T | undefined> {
+    if (subscriptions.length === 0) {
+        return undefined;
+    }
+
+    let resolved: readonly T[] = subscriptions;
+    try {
+        resolved = await hydrateSubscriptionProductDomains(subscriptions);
+    } catch (error) {
+        apiLogger.warn(
+            {
+                subscriptionIds: subscriptions.map((sub) => sub.id),
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'product-domain hydration failed — the tourist-VIP gift is not resolved for this request'
+        );
+        return undefined;
+    }
+
+    return resolved.find((sub) =>
+        RUNTIME_GIFTED_DOMAINS.some((domain) => subscriptionMatchesDomain(sub, domain))
+    );
 }
 
 /**
