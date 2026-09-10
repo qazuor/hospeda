@@ -104,9 +104,12 @@
  *
  * - **the MercadoPago webhook.** `QZPAY_TO_HOSPEDA_STATUS`
  *   (`@repo/service-core`'s `subscription-status-provider.ts`) maps a provider
- *   `canceled` to `CANCELLED`, so an owner who cancels from MercadoPago's own
- *   site or app — or a preapproval MP finishes — lands a `cancelled` row
- *   mid-period.
+ *   `canceled` to `CANCELLED`, so an owner who cancels the preapproval from
+ *   MercadoPago's own site or app lands a `cancelled` row mid-period. (A
+ *   preapproval MP *finishes* is a different case — that map sends `finished` to
+ *   `EXPIRED`, which this branch does not accept.) This is also the state the
+ *   E2E above manufactures by hand, which is why its fixture was realistic even
+ *   though the story told about it was not.
  * - **qzpay-core's hard cancel**, which writes the American `canceled`; since
  *   HOS-1310 the predicate normalizes that spelling, so it reaches the same
  *   branch.
