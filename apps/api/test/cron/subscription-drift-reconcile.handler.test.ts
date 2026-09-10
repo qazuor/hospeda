@@ -46,7 +46,14 @@ vi.mock('../../src/lib/qzpay-logger.js', () => ({
     qzpayLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-vi.mock('@repo/billing', () => ({
+// Partial mocks, both of them: a whole-module object literal leaves every other
+// export `undefined`, and when the missing one is called inside a try/catch the
+// phase silently does nothing while every assertion still passes (HOS-702).
+// `billing-mock-must-be-partial.guard.test.ts` enforces this for @repo/billing;
+// @repo/service-core is spread for the same reason rather than because a guard
+// made us.
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: () => ({
         subscriptions: {
             // Neither may ever be called by this job. Spied so the assertion is
@@ -57,7 +64,8 @@ vi.mock('@repo/billing', () => ({
     })
 }));
 
-vi.mock('@repo/service-core', () => ({
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
     excludeAddonDomainCondition: () => 'exclude-addon'
 }));
 
