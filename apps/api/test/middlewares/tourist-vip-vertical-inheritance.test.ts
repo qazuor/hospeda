@@ -759,3 +759,166 @@ describe('HOS-1323 — the commerce middleware republishes the gift', () => {
         }
     });
 });
+
+/**
+ * The consequences of FLOOR semantics, pinned as DESIGN.
+ *
+ * **Owner decision, 2026-09-10.** The gift is a FLOOR, not a MIRROR: the
+ * tourist-VIP tier can raise what a vertical already holds and can never lower
+ * it. The owner chose that with the consequences below in view, so none of them
+ * is a defect and none is to be "fixed" without going back to them.
+ *
+ * ## Why this block exists at all
+ *
+ * Until it did, the suite encoded these SILENTLY. The `VERTICALS` table above
+ * includes accommodation, but the only by-reference case is gastronomy — because
+ * an accommodation one would fail. Nothing said why, so the natural reading six
+ * months from now is "somebody forgot accommodation", and the natural next move
+ * is to add it. That would change a product decision by way of a test edit.
+ *
+ * Modelled on `packages/billing/test/liveness-predicate-divergence.test.ts`
+ * (HOS-1310), whose whole job is likewise to pin a disagreement as deliberate so
+ * that changing it lands as a diff somebody has to justify.
+ *
+ * ## What is pinned
+ *
+ * 1. **The accommodation asymmetry.** An admin edit to the `tourist-vip` row
+ *    reaches gastronomy and experience and NOT accommodation, because
+ *    accommodation resolves the same block from its own plan row (code), never
+ *    from the runtime gift. See `RUNTIME_GIFTED_DOMAINS`.
+ * 2. **A LOWERED cap cannot reduce a key the caller already declares** — plus
+ *    the measured boundary of that sentence, which is narrower than it sounds.
+ * 3. **A key REMOVED from the row still reaches the verticals** — the union
+ *    starts from the config floor, so the row can only add. Including
+ *    `VIP_SUPPORT`, which `plans.config.ts:604-606` calls out as the one
+ *    inherited key that costs real money: switched off on the row, tourists lose
+ *    it and the verticals keep it until the next deploy.
+ */
+describe('HOS-1323 — the consequences of FLOOR, pinned as design (owner, 2026-09-10)', () => {
+    /** The catalogue's own value, used by the asymmetry pair. */
+    const VIP_COLLECTIONS = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_collections')?.value;
+
+    it('DESIGN: a row-only raise reaches gastronomy', async () => {
+        expect(VIP_COLLECTIONS).toBeGreaterThan(0);
+        stubTouristVipRow({ limits: { max_collections: 999 } });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(planRow(GASTRONOMY_BASICO_PLAN));
+
+        const { limits } = await loadThroughMiddleware();
+
+        expect(limits.max_collections).toBe(999);
+    });
+
+    /**
+     * The other half, and the one easiest to mistake for a bug.
+     *
+     * An accommodation owner's VIP block comes from THEIR OWN plan row, which
+     * `plans.config.ts` builds from the same constants — so the runtime gift is
+     * never resolved for them and a row-only edit does not reach them. Turning
+     * this green by adding `ACCOMMODATION` to the gifted domains would change a
+     * product decision, and this case is what makes that land as a red test
+     * rather than as a quiet improvement.
+     */
+    it('DESIGN: the same row-only raise does NOT reach accommodation', async () => {
+        stubTouristVipRow({ limits: { max_collections: 999 } });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-accom', planId: 'plan-owner-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-accom', productDomain: 'accommodation' }]);
+        mockBilling.plans.get.mockResolvedValue(planRow(OWNER_BASICO_PLAN));
+
+        const { limits } = await loadThroughMiddleware();
+
+        // The catalogue's value, not the row's — accommodation reads the block
+        // from its own plan, resolved from code.
+        expect(limits.max_collections).toBe(VIP_COLLECTIONS);
+        expect(limits.max_collections).not.toBe(999);
+    });
+
+    /**
+     * FLOOR, downward. `max_favorites` is the decisive key: the tourist-FREE
+     * fallback a gastronomy-only owner lands on declares it at 5, so a row that
+     * lowers the VIP value below that has something to lose against. Without
+     * `moreGenerousLimit`'s MAX the answer would be the row's 2.
+     */
+    it('DESIGN: a cap LOWERED on the row cannot reduce a key the caller declares', async () => {
+        const freeFavourites = TOURIST_FREE_PLAN.limits.find((l) => l.key === 'max_favorites');
+        expect(freeFavourites?.value).toBe(5);
+
+        stubTouristVipRow({ limits: { max_favorites: 2 } });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(null);
+
+        const { limits } = await loadThroughMiddleware();
+
+        expect(limits.max_favorites).toBe(5);
+    });
+
+    /**
+     * **The boundary of the sentence above, measured rather than assumed.**
+     *
+     * "A lowered cap does not reach the verticals" holds only where the caller
+     * already declares that key. `tourist-free` declares three of the seven VIP
+     * limit keys (`max_favorites`, `max_ai_search_per_month`,
+     * `max_ai_chat_consumer_per_month` — `plans.config.ts:455-459`); for the
+     * other four the caller has NOTHING, so `moreGenerousLimit(undefined, x)`
+     * returns `x` and a lowered row value lands as-is.
+     *
+     * That is the correct answer rather than a leak, and the direction is why:
+     * an absent limit key resolves to UNLIMITED through every layer under
+     * `getRemainingLimit`, so publishing the row's number — even a small one —
+     * is strictly tighter than publishing nothing. It is the same argument
+     * `plans.config.ts:769-776` makes for shipping `TOURIST_VIP_LIMITS` at all.
+     */
+    it('DESIGN: on a key the caller does NOT declare, the row value lands as-is', async () => {
+        expect(TOURIST_FREE_PLAN.limits.map((l) => l.key)).not.toContain('max_collections');
+
+        stubTouristVipRow({ limits: { max_collections: 3 } });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(null);
+
+        const { limits } = await loadThroughMiddleware();
+
+        // Lower than the catalogue's 25, and still tighter than the absence it
+        // replaces, which every layer beneath reads as unlimited.
+        expect(limits.max_collections).toBe(3);
+    });
+
+    /**
+     * The entitlement half of FLOOR: the union starts from the config floor, so
+     * a key switched OFF on the row still reaches the verticals until the next
+     * deploy. `VIP_SUPPORT` is the case with a real bill attached
+     * (`plans.config.ts:604-606`), which is exactly why it is the fixture.
+     */
+    it('DESIGN: an entitlement REMOVED from the row still reaches the verticals', async () => {
+        const vipRow = planRow(TOURIST_VIP_PLAN);
+        expect(vipRow.entitlements).toContain(EntitlementKey.VIP_SUPPORT);
+
+        stubTouristVipRow({
+            entitlements: vipRow.entitlements.filter((k) => k !== EntitlementKey.VIP_SUPPORT)
+        });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(planRow(GASTRONOMY_BASICO_PLAN));
+
+        const { entitlements } = await loadThroughMiddleware();
+
+        expect(entitlements).toContain(EntitlementKey.VIP_SUPPORT);
+    });
+});

@@ -60,10 +60,41 @@
  * see {@link GIFTABLE_ENTITLEMENT_KEYS}. The row supplies VALUES for keys the
  * catalogue declares giftable; it does not get to name new ones.
  *
- * **A cap LOWERED on the row does not reach anybody**, and that is a property of
- * the merge, not of this resolution: {@link moreGenerousLimit} only ever moves a
- * limit upward. Said here because the sentence above would otherwise read as
- * "the admin UI controls this cap in both directions", which is false.
+ * **A cap LOWERED on the row mostly does not reach anybody**, and that is a
+ * property of the merge rather than of this resolution — see the FLOOR section
+ * below for the exact boundary. Said here because the sentence above would
+ * otherwise read as "the admin UI controls this cap in both directions".
+ *
+ * ---
+ * FLOOR, NOT MIRROR — owner decision, 2026-09-10
+ *
+ * The gift can RAISE what a vertical already holds and can never LOWER it. The
+ * owner chose that with its three consequences in view, so each is DESIGN and
+ * none is to be "fixed" without going back to them. They are stated here because
+ * a reader will otherwise assume the mirror and read each one as a bug:
+ *
+ * 1. **Lowering a cap on the `tourist-vip` row does not reduce a vertical** on
+ *    any key that vertical's own resolution already declares — `Math.max` wins.
+ *    **Measured boundary:** on a key it does NOT declare, the row's value lands
+ *    as-is (`moreGenerousLimit(undefined, x)` is `x`). `tourist-free`, the
+ *    fallback a commerce-only owner lands on, declares three of the seven VIP
+ *    limit keys (`plans.config.ts:455-459`), so the other four take the row's
+ *    number. That is tighter than the absence it replaces, which every layer
+ *    under `getRemainingLimit` reads as UNLIMITED — the same argument
+ *    `plans.config.ts:769-776` makes for shipping `TOURIST_VIP_LIMITS` at all.
+ * 2. **Removing an entitlement from that row does not reach the verticals** —
+ *    the union starts from the config floor, so the row can only add. That
+ *    includes `VIP_SUPPORT`, which `plans.config.ts:604-606` calls out as the
+ *    one inherited key with a real bill behind it: switch it off on the row and
+ *    tourists lose it while the verticals keep it until the next deploy.
+ * 3. **The accommodation asymmetry is deliberate**: an admin edit to that row
+ *    reaches gastronomy and experience, and NOT accommodation, which resolves
+ *    the same block from its own plan row. See {@link RUNTIME_GIFTED_DOMAINS}.
+ *
+ * All three are pinned as EXPECTED in
+ * `apps/api/test/middlewares/tourist-vip-vertical-inheritance.test.ts`, so
+ * changing any of them lands as a red test somebody has to justify rather than
+ * as a quiet improvement.
  *
  * ---
  * HOW THE GIFT MERGES INTO A RESOLVED PLAN
