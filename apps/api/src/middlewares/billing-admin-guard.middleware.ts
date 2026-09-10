@@ -5,7 +5,11 @@
  * ADMIN or SUPER_ADMIN roles. Regular users can only read their own resources.
  *
  * Admin-only operations (blocked for non-admin users):
- * - Plan management: POST/PUT/DELETE /plans
+ * - Plan management: POST/PUT/DELETE /plans — PREVENTIVE. `createBillingRoutes`
+ *   registers no plan write at this tier (its `if (plans)` block is three GETs),
+ *   so today this rule gates requests that would answer 404 for want of a
+ *   handler. It stays for the qzpay version that adds them; the real plan writes
+ *   are `/api/v1/admin/billing/plans`, behind `BILLING_MANAGE`.
  * - Customer creation/deletion: POST/DELETE /customers
  * - Subscription creation/modification: POST/PUT/DELETE /subscriptions
  * - Invoice creation/voiding: POST /invoices, POST /invoices/:id/void
