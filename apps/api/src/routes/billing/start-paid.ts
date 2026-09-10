@@ -38,6 +38,7 @@ import {
 } from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
+    ProductDomainEnum,
     ServiceErrorCode,
     StartPaidSubscriptionRequestSchema,
     StartPaidSubscriptionResponseSchema
@@ -45,7 +46,8 @@ import {
 import {
     hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
-    ServiceError
+    ServiceError,
+    subscriptionMatchesDomain
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -86,6 +88,88 @@ import {
 // cancel. Pending payments today fall back to the cancel URL until the
 // service is extended to thread the pending URL through to MP's
 // `back_urls.pending`. Tracked as a follow-up.
+
+/**
+ * Whether `sub` belongs to one of the two product domains THIS endpoint sells
+ * (HOS-1260).
+ *
+ * ## The guard's domain set must equal the endpoint's domain set
+ *
+ * `assertAccommodationOrTouristPlanDomain` (subscription-checkout.service.ts,
+ * HOS-1271) lets `/start-paid` sell exactly two domains: ACCOMMODATION and
+ * TOURIST — `ALL_PLANS` holds the owner tiers and the tourist tiers together and
+ * there is no second checkout for tourists. The already-subscribed guards below
+ * must therefore look at the same two domains. Asking only about accommodation
+ * left the endpoint able to sell a second subscription to a customer it would
+ * refuse to sell a first one to, which is the hole this closes.
+ *
+ * ## Nothing here changed behaviour — the DATA underneath it did
+ *
+ * Until HOS-1233 the tourist plans carried no domain of their own and fell to
+ * `billing_subscriptions.product_domain`'s `'accommodation'` default, so
+ * `isAccommodationSubscription` counted a live `tourist-vip` and both guards
+ * below caught it. HOS-1233 gave tourist a real enum member, which
+ * `subscriptionMatchesDomain` fails CLOSED on like every non-accommodation
+ * domain — so the guards went blind to `tourist-vip` without a line of their own
+ * changing. A `grep` for `tourist` over this file returned nothing, which is
+ * precisely why the regression was invisible.
+ *
+ * The consequence, measured against the catalogue rather than inferred: every
+ * `owner-*` and `complex-*` plan spreads `TOURIST_VIP_ENTITLEMENTS` and
+ * `TOURIST_VIP_LIMITS` whole (`plans.config.ts`), so a customer paying
+ * `tourist-vip` who then checked out an owner plan was charged twice for one set
+ * of 15 entitlements. The owner's 2026-09-09 ruling is that the second
+ * subscription REPLACES the first, and that the checkout must offer a plan
+ * change rather than stack a second row — restoring the symmetry that already
+ * held in reverse (a host buying `tourist-vip` has always been refused here).
+ *
+ * ## Why `ALREADY_SUBSCRIBED` and not an automatic cancellation
+ *
+ * The replacement itself already exists and is NOT built here:
+ * `selectAccommodationSubscription` (HOS-1233) reaches a `tourist-vip`
+ * subscription as its tourist fallback, and `assertAccommodationPlanChangeTarget`
+ * accepts an accommodation target, so `POST /billing/subscriptions/change-plan`
+ * moves `tourist-vip → owner-basico` by MUTATING the one row it already has.
+ * That is the whole point of refusing here rather than cancelling-then-charging:
+ * one preapproval is mutated in place, so there is no ordering to get wrong and
+ * no window in which the customer holds two live charges or none. A checkout
+ * abandoned at MercadoPago leaves the paying customer's VIP exactly as it was.
+ *
+ * ## `tourist-free` cannot be caught by this, and that matters
+ *
+ * Widening to TOURIST would be a catastrophic over-block if the free tier had a
+ * row: every logged-in user would be refused every checkout. It does not.
+ * `tourist-free` is the IMPLICIT default — `buildDefaultEntitlementsResult()`
+ * resolves it when no subscription is found at all — it is never seeded as a
+ * subscription (`packages/seed/CLAUDE.md` files `tourist-free@local.test` as
+ * "free tier / default entitlements", with no plan row), and
+ * `subscription-checkout.service.ts` (HOS-917) refuses a checkout onto a free
+ * plan outright. `tourist-vip` is the only paid tourist tier since HOS-1224
+ * retired `tourist-plus`, so TOURIST here means `tourist-vip` and nothing else.
+ *
+ * ## Written as two calls, not a union helper
+ *
+ * Identical idiom and identical reasoning to `entitlement.ts`'s loader, which
+ * pairs the same two predicates for the same reason. The asymmetry is load
+ * bearing and must survive: accommodation fails OPEN (a `null`/`undefined`
+ * column is a legacy row and still counts), tourist fails CLOSED. Inverting
+ * either would take the whole SPEC-239 isolation with it, so
+ * `subscriptionMatchesDomain` is called rather than reimplemented. This is now
+ * the SECOND consumer of the pair; a third is the moment to name the concept in
+ * `@repo/service-core` (HOS-1081 deleted `isCommerceSubscription()` for having
+ * none at all).
+ *
+ * Callers MUST pass subscriptions already run through
+ * `hydrateSubscriptionProductDomains` — `getByCustomerId()` never populates
+ * `productDomain` (HOS-934), and un-hydrated input makes the TOURIST disjunct a
+ * silent no-op. `scripts/check-subscription-domain-hydration.sh` fails CI on a
+ * file that compares a non-accommodation domain without hydrating.
+ *
+ * @param sub - A hydrated subscription from `getByCustomerId()`.
+ * @returns `true` when the subscription is an accommodation or tourist one.
+ */
+const isSubscriptionInASellableDomain = (sub: unknown): boolean =>
+    isAccommodationSubscription(sub) || subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST);
 
 /**
  * Handler for the start-paid endpoint.
@@ -195,15 +279,15 @@ export const handleStartPaidSubscription = async (
             await hydrateSubscriptionProductDomains(rawExistingSubscriptions);
 
         // SPEC-262 H2: block checkout when the customer already has ANY live
-        // ACCOMMODATION subscription (active, trialing, comp, OR past_due).
-        // Creating a second subscription on top of an existing one causes
-        // ambiguous entitlements — two subs for the same customer, neither
-        // clearly dominant.
+        // subscription in a domain THIS endpoint sells (active, trialing, comp,
+        // OR past_due). Creating a second subscription on top of an existing one
+        // causes ambiguous entitlements — two subs for the same customer,
+        // neither clearly dominant.
         // Comp subs are perpetual (100-year far-future) so the user cannot "wait
         // them out" like a soft-cancel; they should contact support.
-        // SPEC-239 isolation: filter to accommodation-domain subs FIRST using the
-        // same predicate as the entitlement middleware, so a customer with an active
-        // COMMERCE subscription is never wrongly blocked here.
+        // SPEC-239 isolation: filter by domain FIRST using the same predicate as
+        // the entitlement middleware, so a customer with an active COMMERCE
+        // subscription is never wrongly blocked here.
         // HOS-1273: past_due is included via `isLiveSubscriptionStatus`, not the
         // narrower `isEntitlementGrantingStatus`. A past-due preapproval is
         // mid-dunning at the provider, not gone — without this the commerce route
@@ -212,8 +296,8 @@ export const handleStartPaidSubscription = async (
         // moroso host could open a SECOND preapproval on top of the one they
         // already owe. Unifying on the same widened predicate is the fix; see
         // that module's docblock (HOS-1275) for why the two sets differ.
-        const hasLiveAccommodationSub = existingSubscriptions.some((sub) => {
-            if (!isAccommodationSubscription(sub)) return false;
+        const hasLiveSellableDomainSub = existingSubscriptions.some((sub) => {
+            if (!isSubscriptionInASellableDomain(sub)) return false;
             // A soft-cancelled sub (cancelAtPeriodEnd=true) is intentionally NOT
             // caught here — the dedicated SPEC-147 guard below handles it with the
             // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
@@ -223,7 +307,7 @@ export const handleStartPaidSubscription = async (
             // 'comp', hence the widening cast.
             return isLiveSubscriptionStatus(sub.status as string);
         });
-        if (hasLiveAccommodationSub) {
+        if (hasLiveSellableDomainSub) {
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'You already have an active subscription. To change your plan, use the plan-change endpoint.',
@@ -233,19 +317,27 @@ export const handleStartPaidSubscription = async (
         }
 
         // SPEC-147 T-008 / Q7 guard: the cancel wins.
-        // If the customer has an existing ACCOMMODATION subscription with
-        // cancelAtPeriodEnd=true, block re-subscription until the cancellation
-        // finalises. Creating a second subscription while a soft-cancel is winding
-        // down causes an ambiguous overlap. The user must wait for the finalization
-        // cron to flip the soft-cancelled sub to 'cancelled'.
-        // SPEC-239 isolation: filter to accommodation-domain subs — a soft-cancelled
-        // commerce sub must never block an accommodation checkout.
+        // If the customer has an existing subscription in a domain this endpoint
+        // sells with cancelAtPeriodEnd=true, block re-subscription until the
+        // cancellation finalises. Creating a second subscription while a
+        // soft-cancel is winding down causes an ambiguous overlap. The user must
+        // wait for the finalization cron to flip the soft-cancelled sub to
+        // 'cancelled'.
+        // SPEC-239 isolation: filter by domain — a soft-cancelled commerce sub
+        // must never block a checkout here.
         // HOS-702: "still live" is the canonical entitlement-granting set, the same
         // one the guard 20 lines above already uses — a hand-rolled
         // active/trialing pair here would have disagreed with it on `comp`.
+        // HOS-1260: widened to the same accommodation-OR-tourist pair as the guard
+        // above, and for the same reason — a soft-cancelled `tourist-vip` is a LIVE
+        // preapproval until `currentPeriodEnd`, so letting an owner checkout past
+        // it would put two live preapprovals on one customer. Closing only the
+        // guard above and leaving this one narrow is the repo's own recurring
+        // failure shape: a correct gate upstairs next to the same gate still
+        // broken twenty lines down.
         const hasSoftCancelledSub = existingSubscriptions.some(
             (sub) =>
-                isAccommodationSubscription(sub) &&
+                isSubscriptionInASellableDomain(sub) &&
                 isEntitlementGrantingStatus(sub.status as string) &&
                 sub.cancelAtPeriodEnd === true
         );

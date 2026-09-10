@@ -299,9 +299,26 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         //
         // The opposite direction — a COMMERCE subscription being handed an
         // accommodation plan, which is what HOS-1213 actually reported — is
-        // closed by the domain-scoped subscription lookup in step 1, not here:
-        // `tourist-free` is itself an accommodation plan, so no assertion about
-        // the target could have caught it.
+        // closed by the domain-scoped subscription lookup in step 1, not here.
+        //
+        // HOS-1260 corrects the reason this comment used to give. It said
+        // "`tourist-free` is itself an accommodation plan", which now reads as a
+        // claim about the plan's DECLARED domain, and that claim is false:
+        // HOS-1233 made `productDomain` required on `PlanDefinition` and both
+        // tourist tiers declare `ProductDomainEnum.TOURIST`. The conclusion
+        // survives because the assertion does NOT read the declared domain — it
+        // reads `productDomainForPlanSlug`, whose `ALL_PLANS` branch files every
+        // slug in that catalogue, tourist tiers included, as `'accommodation'`.
+        // That divergence is deliberate and load-bearing (HOS-1279 documents it in
+        // `plan-domains.config.ts`'s header): this route governs the accommodation
+        // AND the tourist subscription, so making that branch read
+        // `plan.productDomain` would refuse every tourist plan change outright.
+        //
+        // Which is exactly what makes a refusal the right answer at
+        // `/start-paid` (HOS-1260): a `tourist-vip` holder buying an owner plan is
+        // sent HERE, and this route moves them by mutating the ONE subscription
+        // they already have — so the replacement needs no cancel-then-charge and
+        // has no window with two live preapprovals, or none.
         assertAccommodationPlanChangeTarget(targetPlan.name as string);
 
         // 3. Reject one_time billing interval (uses a separate payment flow)

@@ -424,7 +424,24 @@ describe('handleStartPaidSubscription — SPEC-239 commerce isolation in H2 guar
         expect((err as ServiceError).reason ?? '').toBe('ALREADY_SUBSCRIBED');
     });
 
-    it('CORRECTED: the same row filed as tourist lets them become a host', async () => {
+    // HOS-1260 REVERSES the assertion this test used to make.
+    //
+    // HOS-1233 read the correctly-filed tourist row as "a tourist can become a
+    // host" and asserted the checkout goes through. The owner ruled otherwise on
+    // 2026-09-09: the second subscription REPLACES the first, because every
+    // `owner-*` and `complex-*` plan spreads `TOURIST_VIP_ENTITLEMENTS` and
+    // `TOURIST_VIP_LIMITS` whole — so letting the checkout through charges one
+    // customer twice for ONE set of 15 entitlements.
+    //
+    // The outcome HOS-1233 wanted survives, through a different door: a tourist
+    // still becomes a host, via `POST /billing/subscriptions/change-plan`, which
+    // `selectAccommodationSubscription` (HOS-1233 itself) taught to reach a
+    // `tourist-vip` row as its tourist fallback. That route MUTATES the one
+    // subscription rather than minting a second, so there is no cancel/charge
+    // ordering to get wrong and no window holding two live preapprovals — or
+    // none. What this test pins now is that the STACKING door is shut, not that
+    // the journey is.
+    it('HOS-1260: a correctly-filed tourist row BLOCKS the host checkout and is sent to plan-change', async () => {
         const billing = makeBillingMock([{ id: 'sub-tourist-vip', status: 'active' }]);
         mockHydrationRows.mockResolvedValueOnce([
             { id: 'sub-tourist-vip', productDomain: 'tourist' }
@@ -437,7 +454,12 @@ describe('handleStartPaidSubscription — SPEC-239 commerce isolation in H2 guar
             billingInterval: 'monthly'
         }).catch((e: unknown) => e);
 
-        expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+        expect(err).toBeInstanceOf(ServiceError);
+        expect((err as ServiceError).code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+        // The message must name the remedy that actually exists for this pair.
+        expect((err as ServiceError).message).toContain('plan-change');
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
 
     it('and a REAL accommodation sub still blocks (the fix is not a blanket unblock)', async () => {
@@ -544,5 +566,253 @@ describe('handleStartPaidSubscription — SPEC-239 commerce isolation in H2 guar
 
         expect((err as ServiceError).reason ?? '').not.toBe('SUBSCRIPTION_CANCEL_PENDING');
         expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — HOS-1260: a live tourist-vip is REPLACED, never stacked.
+//
+// The owner ruled on 2026-09-09 that a customer already paying `tourist-vip`
+// who then buys a host plan must be offered a PLAN CHANGE, not sold a second
+// subscription — every `owner-*`/`complex-*` plan and all six commerce tiers
+// spread `TOURIST_VIP_ENTITLEMENTS` whole (`plans.config.ts`), so two live rows
+// charge one customer twice for one set of 15 entitlements.
+//
+// Nothing in `start-paid.ts` had regressed in CODE. HOS-1233 gave the tourist
+// plans a real `ProductDomainEnum.TOURIST`, which `subscriptionMatchesDomain`
+// fails CLOSED on — so `isAccommodationSubscription` stopped seeing a live
+// `tourist-vip` and BOTH guards in that handler went blind at once, without a
+// line of their own changing. A `grep` for `tourist` over the handler returned
+// nothing, which is exactly why it was invisible.
+//
+// Two directions are exercised throughout, because only the pair is meaningful:
+// toward the bug (a live tourist sub must now block) and toward an over-wide fix
+// (every OTHER domain, and every non-live status, must still pass).
+// ---------------------------------------------------------------------------
+
+describe('handleStartPaidSubscription — HOS-1260 tourist-vip is replaced, not stacked', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockHydrationRows.mockResolvedValue([]);
+    });
+
+    /**
+     * Builds the REAL `getByCustomerId()` shape — no `productDomain` on the
+     * fixture — and arms the hydration SELECT that recovers it, so each test
+     * exercises `hydrateSubscriptionProductDomains` rather than assuming it. A
+     * fixture carrying `productDomain` inline would be an already-hydrated
+     * object, the shape HOS-847 documented as masking this class of bug.
+     */
+    function armHydratedSubs(
+        subs: {
+            id: string;
+            status: string;
+            productDomain: string | null;
+            cancelAtPeriodEnd?: boolean;
+        }[]
+    ) {
+        const billing = makeBillingMock(
+            subs.map(({ id, status, cancelAtPeriodEnd }) => ({ id, status, cancelAtPeriodEnd }))
+        );
+        mockHydrationRows.mockResolvedValueOnce(
+            subs.map(({ id, productDomain }) => ({ id, productDomain }))
+        );
+        mockBillingWith(billing);
+        return billing;
+    }
+
+    // ── Toward the bug: every live status on a tourist sub must block ────────
+    //
+    // The list is the whole of `LIVE_SUBSCRIPTION_STATUSES`
+    // (`packages/billing/src/predicates/is-live-subscription-status.ts:58` —
+    // `ENTITLEMENT_GRANTING_STATUSES` plus `past_due`), not a sample of it. A
+    // subset would leave whichever member it omitted as the one status through
+    // which the stacking hole survives.
+
+    for (const status of ['active', 'trialing', 'comp', 'courtesy', 'past_due'] as const) {
+        it(`blocks the host checkout on a ${status} tourist-vip subscription`, async () => {
+            const billing = armHydratedSubs([{ id: 'sub-vip', status, productDomain: 'tourist' }]);
+            const ctx = makeContext();
+
+            const err = await handleStartPaidSubscription(ctx as never, {
+                planSlug: PLAN_SLUG,
+                billingInterval: 'monthly'
+            }).catch((e: unknown) => e);
+
+            expect(err).toBeInstanceOf(ServiceError);
+            expect((err as ServiceError).code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+            expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+            // The money assertion: no preapproval is ever opened. A guard that
+            // threw only AFTER calling the provider would leave the second
+            // charge live and still satisfy the assertions above.
+            expect(billing.subscriptions.create).not.toHaveBeenCalled();
+        });
+    }
+
+    it('blocks the ANNUAL branch too — both intervals share the guard', async () => {
+        const billing = armHydratedSubs([
+            { id: 'sub-vip', status: 'active', productDomain: 'tourist' }
+        ]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'annual'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('blocks re-buying tourist-vip ON TOP of a live tourist-vip (same-domain stacking)', async () => {
+        // The other half of what HOS-1233 opened, and the half the issue does not
+        // mention: with the guard accommodation-only, a tourist-vip holder could
+        // stack a SECOND tourist-vip preapproval on themselves. The guard runs
+        // before the plan is ever resolved, so it covers this by construction —
+        // asserted rather than assumed.
+        const billing = armHydratedSubs([
+            { id: 'sub-vip', status: 'active', productDomain: 'tourist' }
+        ]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'tourist-vip',
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('a SOFT-CANCELLED tourist-vip hits the cancel-pending guard, not a second preapproval', async () => {
+        // The second guard, widened for the same reason as the first. A
+        // soft-cancelled `tourist-vip` is a LIVE preapproval until
+        // `currentPeriodEnd`: fixing only the guard above would have left this
+        // one minting the duplicate it refuses twenty lines higher — the repo's
+        // own recurring shape of a correct gate beside a still-broken twin.
+        const billing = armHydratedSubs([
+            {
+                id: 'sub-vip',
+                status: 'active',
+                cancelAtPeriodEnd: true,
+                productDomain: 'tourist'
+            }
+        ]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe('SUBSCRIPTION_CANCEL_PENDING');
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    // ── Toward an over-wide fix: the other four domains must still pass ──────
+    //
+    // `start-paid` sells ACCOMMODATION and TOURIST only
+    // (`assertAccommodationOrTouristPlanDomain`, HOS-1271). Every other domain a
+    // customer can legitimately hold at the same time must stay invisible to
+    // this guard, or a restaurant owner loses the ability to buy a host plan.
+
+    for (const productDomain of ['gastronomy', 'experience', 'partner', 'addon'] as const) {
+        it(`does NOT block when the customer's only live sub is ${productDomain}`, async () => {
+            armHydratedSubs([{ id: `sub-${productDomain}`, status: 'active', productDomain }]);
+            const ctx = makeContext();
+
+            const err = await handleStartPaidSubscription(ctx as never, {
+                planSlug: PLAN_SLUG,
+                billingInterval: 'monthly'
+            }).catch((e: unknown) => e);
+
+            expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+            expect((err as ServiceError).reason ?? '').not.toBe('SUBSCRIPTION_CANCEL_PENDING');
+        });
+    }
+
+    it('does NOT block a gastronomy owner whose tourist sub is CANCELLED', async () => {
+        // Status and domain are independent axes: widening the domain set must
+        // not widen the status set. `cancelled` was never live and still is not.
+        armHydratedSubs([
+            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' },
+            { id: 'sub-vip', status: 'cancelled', productDomain: 'tourist' }
+        ]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+    });
+
+    it('does NOT block on a PAUSED tourist sub — a pause already cuts access', async () => {
+        armHydratedSubs([{ id: 'sub-vip', status: 'paused', productDomain: 'tourist' }]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason ?? '').not.toBe('ALREADY_SUBSCRIBED');
+    });
+
+    // ── The dual-role owner, and the symmetry that already worked ────────────
+
+    it('dual owner (host-provider@local.test): a live gastronomy sub does not hide the tourist one', async () => {
+        // The fixture the repo seeds for exactly this shape. The gastronomy row
+        // must not block, the tourist row must — and the tourist row must be
+        // found even though it is SECOND in the list, so the guard cannot be
+        // satisfied by whichever row the storage adapter happens to return first.
+        const billing = armHydratedSubs([
+            { id: 'sub-gastro', status: 'active', productDomain: 'gastronomy' },
+            { id: 'sub-vip', status: 'active', productDomain: 'tourist' }
+        ]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('SYMMETRY PRESERVED: a host buying tourist-vip still gets ALREADY_SUBSCRIBED', async () => {
+        // The direction that has always worked, and the one HOS-1260 exists to
+        // mirror. If widening the guard broke this, the fix destroyed something
+        // that was already correct.
+        const billing = armHydratedSubs([
+            { id: 'sub-owner', status: 'active', productDomain: 'accommodation' }
+        ]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'tourist-vip',
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
+        expect(billing.subscriptions.create).not.toHaveBeenCalled();
+    });
+
+    it('a LEGACY row with a NULL product_domain still blocks (accommodation fails OPEN)', async () => {
+        // The asymmetry `subscriptionMatchesDomain` documents must survive the
+        // widening: a row predating the column counts as accommodation, so it
+        // keeps blocking. Reading it as "unknown, therefore let through" would
+        // un-guard every pre-column subscription in production.
+        armHydratedSubs([{ id: 'sub-legacy', status: 'active', productDomain: null }]);
+        const ctx = makeContext();
+
+        const err = await handleStartPaidSubscription(ctx as never, {
+            planSlug: PLAN_SLUG,
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
     });
 });
