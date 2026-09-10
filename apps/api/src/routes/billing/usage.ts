@@ -22,6 +22,7 @@ import {
 } from '../../schemas/product-domain-query.schema';
 import { UsageTrackingService } from '../../services/usage-tracking.service';
 import { createRouter } from '../../utils/create-app';
+import { productDomainForLimitKey } from '../../utils/limit-key-product-domain';
 import { apiLogger } from '../../utils/logger';
 import { createProtectedRoute } from '../../utils/route-factory';
 
@@ -190,7 +191,6 @@ export const getUsageForLimitRoute = createProtectedRoute({
     responseSchema: limitUsageSchema,
     handler: async (c, params, _body, query) => {
         const { productDomain } = (query || {}) as { productDomain?: ProductDomainScope };
-        const resolvedProductDomain: ProductDomainScope = productDomain ?? 'accommodation';
         const billingEnabled = c.get('billingEnabled');
 
         if (!billingEnabled) {
@@ -219,6 +219,16 @@ export const getUsageForLimitRoute = createProtectedRoute({
 
         // Validate limit key from params
         const { limitKey } = params;
+
+        // HOS-1247 — which domain's subscription supplies THIS cap is a property
+        // of the key, not of the caller. `max_gastronomies` cannot be answered
+        // by an accommodation plan: read against one it resolved to `0` for a
+        // dual owner, and to a 404 for a commerce-only owner who has no
+        // accommodation subscription at all. So the key's own domain wins, and
+        // `?productDomain=` only decides the keys no single vertical owns —
+        // where the previous `?? 'accommodation'` still applies unchanged.
+        const resolvedProductDomain: ProductDomainScope =
+            productDomainForLimitKey(limitKey as string) ?? productDomain ?? 'accommodation';
 
         // Create usage tracking service
         const usageTrackingService = new UsageTrackingService(billing);
