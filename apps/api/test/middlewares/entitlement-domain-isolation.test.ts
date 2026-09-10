@@ -17,7 +17,7 @@
  *      merged onto in the first place.
  *
  * A unit test of the classifier proves none of that: it stays green with every
- * call site deleted. `test/services/billing/consumer-addon-grant-domain.test.ts`
+ * call site deleted. `test/services/billing/addon-grant-domain.test.ts`
  * carries the five-vertical classification; this file carries the wiring.
  *
  * ## What is mocked
