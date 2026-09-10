@@ -72,6 +72,15 @@ describe('isDriftReconcileCandidate — the population this sweep re-reads', () 
         expect(candidate(buildRow({ status: 'past_due' }))).toBe(true);
     });
 
+    it("selects qzpay's `unpaid` spelling of past_due too", () => {
+        // Arrange — the column holds BOTH vocabularies (admin-billing-view.status
+        // documents the live `canceled`/`cancelled` split for the same reason).
+        // Matching only the Hospeda spelling is the HOS-108 bug class: the row is
+        // never selected and nothing says so.
+        // Act & Assert
+        expect(candidate(buildRow({ status: 'unpaid' }))).toBe(true);
+    });
+
     it('selects a trialing subscription whose trial has NOT elapsed', () => {
         // Arrange — a live trial is the half trial-reconcile never looks at.
         const row = buildRow({

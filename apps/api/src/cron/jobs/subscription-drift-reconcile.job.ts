@@ -140,6 +140,21 @@ const DRIFTABLE_STATUSES = [
     SubscriptionStatusEnum.TRIALING
 ] as const;
 
+/**
+ * The same population as {@link DRIFTABLE_STATUSES}, plus the qzpay spelling the
+ * column can physically hold for one of them.
+ *
+ * `billing_subscriptions.status` is written by two layers and holds both
+ * vocabularies (see `services/admin-billing-view.status.ts`): `unpaid` is
+ * qzpay's spelling of `past_due`, and `normalizeStoredSubscriptionStatus` maps it
+ * accordingly. Matching only the Hospeda spelling is the HOS-108 bug class — a
+ * row stored in the other vocabulary is simply never selected, and nothing says
+ * so. The other aliases are deliberately absent: `incomplete` normalizes to
+ * `pending_provider` and `incomplete_expired`/`canceled` are terminal, so all
+ * three are outside this population in either spelling.
+ */
+const DRIFTABLE_STORED_STATUSES = [...DRIFTABLE_STATUSES, 'unpaid'] as const;
+
 const MINUTE_MS = 60 * 1000;
 
 /** The shape this job needs off a subscription row. */
@@ -189,7 +204,7 @@ export function isDriftReconcileCandidate(input: {
     if (row.mpSubscriptionId === null || row.mpSubscriptionId.trim() === '') {
         return false;
     }
-    if (!(DRIFTABLE_STATUSES as readonly string[]).includes(row.status)) {
+    if (!(DRIFTABLE_STORED_STATUSES as readonly string[]).includes(row.status)) {
         return false;
     }
     // A pending soft-cancel is owned by finalize-cancelled-subs for its whole
@@ -359,7 +374,7 @@ export const subscriptionDriftReconcileJob: CronJobDefinition = {
                 .from(billingSubscriptions)
                 .where(
                     and(
-                        inArray(billingSubscriptions.status, [...DRIFTABLE_STATUSES]),
+                        inArray(billingSubscriptions.status, [...DRIFTABLE_STORED_STATUSES]),
                         isNotNull(billingSubscriptions.mpSubscriptionId),
                         isNull(billingSubscriptions.deletedAt),
                         eq(billingSubscriptions.cancelAtPeriodEnd, false),
