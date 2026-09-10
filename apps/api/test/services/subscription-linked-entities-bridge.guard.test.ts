@@ -211,6 +211,12 @@ const BRIDGE_CALL_SITES: ReadonlyArray<{
         minCalls: 3,
         hos1280Fix: true,
         note: 'HOS-1280: admin hard-cancel, admin pause, admin resume — all three previously uncalled.'
+    },
+    {
+        file: 'services/commerce-trial-start.service.ts',
+        minCalls: 1,
+        hos1280Fix: false,
+        note: 'HOS-1338: commerce trial grant — reconciles after the tx commits, because the entity_subscriptions upsert moved inside createTrialSubscription.'
     }
 ] as const;
 
@@ -336,6 +342,16 @@ const BRIDGE_ONLY_SITES: ReadonlyArray<{ readonly file: string; readonly reason:
             "'experience', and whose .find() requires subscriptionMatchesDomain(sub, domain) — " +
             'which fails CLOSED for every non-accommodation domain. A partner subscription ' +
             'satisfies neither vertical, so it cannot be the subscription a listing is attached to.'
+    },
+    {
+        file: 'services/commerce-trial-start.service.ts',
+        reason:
+            'Type-level + domain predicate. startCommerceListingTrial is only ever called with ' +
+            "a CommerceVertical ('gastronomy' | 'experience'), which maps via " +
+            'commerceVerticalToProductDomain to productDomain ∈ {gastronomy, experience}. ' +
+            "createTrialSubscription rejects when the plan's product_domain disagrees with the " +
+            "requested one. Partner plans carry product_domain='partner' and trialDays: 0, so " +
+            'a partner subscription can never satisfy the domain check nor reach status=trialing.'
     }
 ] as const;
 
