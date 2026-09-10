@@ -48,6 +48,7 @@ vi.mock('@repo/db', async () => {
             mpPreapprovalPlanId: 'mp_preapproval_plan_id',
             nonce: 'nonce',
             status: 'status',
+            createdAt: 'created_at',
             expiresAt: 'expires_at',
             pendingDiscount: 'pending_discount',
             pendingTrialExtension: 'pending_trial_extension'

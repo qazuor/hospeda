@@ -24,6 +24,23 @@
  * one pure, side-effect-free place, so every refusal reason is independently
  * testable and no branch can be reached only through a live database.
  *
+ * ## HOS-867: "in flight" is a freshness question, not a TTL question
+ *
+ * Until HOS-867 the ONLY time gate was the correlation row's 3-hour
+ * `expiresAt`, so a buyer whose card was rejected at MercadoPago's hosted
+ * checkout was handed the SAME (now dead) share link for up to three hours.
+ * A rejected hosted checkout produces NO MercadoPago object (HOS-937 spec
+ * §8.3, measured: "no new object and no payment are created") and therefore
+ * no webhook — there is no signal to invalidate on, and with no
+ * `mp_subscription_id` there is no per-checkout object to ask MercadoPago
+ * about either. The one signal that reliably distinguishes a retry after a
+ * failed attempt from a double click is the AGE of the in-flight checkout:
+ * no buyer can load MercadoPago's hosted page, attempt a payment, be
+ * rejected, and navigate back in under {@link CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS},
+ * while a double click lands well under two seconds. Past that window, reuse
+ * is refused and a fresh checkout is minted (superseding the old correlation
+ * row, exactly as every other refusal already does).
+ *
  * ## Deliberately NOT done here
  *
  * Nothing is cancelled, paused, or refunded — in MercadoPago or locally. A
@@ -35,6 +52,39 @@
  */
 
 import { SubscriptionStatusEnum } from '@repo/schemas';
+
+/**
+ * The maximum age (ms) at which an in-flight checkout may be handed back
+ * verbatim instead of minting a fresh one (HOS-867).
+ *
+ * This window's ONLY job is double-click idempotency — the same job the
+ * 3-hour TTL was doing until HOS-867, minus the hours. A mechanical double
+ * click lands well under two seconds; a buyer who actually completed a
+ * MercadoPago hosted round-trip (load the page, attempt a payment, be
+ * rejected, navigate back) cannot return in under ~15 seconds even with a
+ * saved card. Ten seconds sits between the two, with margin on both sides.
+ *
+ * Past the window, reuse is REFUSED even though the checkout may still be
+ * technically alive, because the failure modes are not symmetric:
+ *
+ * - wrongly REUSING hands a buyer whose payment failed a dead link for up to
+ *   three hours (the bug this closes — measured by the 25/08 smoke, H-31);
+ * - wrongly MINTING leaves a superseded pending row that the
+ *   `abandoned-pending-subs` cron already reaps, and a second live link that
+ *   only becomes a second charge if the buyer deliberately completes BOTH
+ *   checkouts — the alternative outcome the staging smoke checklist's D5
+ *   (browser-back during checkout) already documents as acceptable.
+ *
+ * A buyer who retries within the window and still receives a stale link
+ * crosses it on their very next attempt seconds later — the worst case is
+ * one extra click, never a lockout.
+ *
+ * Note this is deliberately NOT the 3-hour `PENDING_CHECKOUT_TTL_MS`
+ * (`pending-provider-subscription-create.ts`): that TTL governs how long the
+ * correlation row can still be LINKED by a slow returning buyer or a webhook
+ * and must stay long; reuse itself is the only thing that lapses here.
+ */
+export const CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS = 10_000;
 
 /**
  * The domain bridge row that ties an entity (commerce listing / partner) to its
@@ -66,6 +116,16 @@ export interface PendingCheckoutSnapshot {
     readonly nonce: string;
     /** Correlation lifecycle: `pending` | `linked` | `reconcile_assisted`. */
     readonly status: string;
+    /**
+     * When the checkout this row describes was opened (`created_at`) — the
+     * same instant the `pending_provider` subscription was created, since
+     * both rows are written in one transaction. Drives the
+     * {@link CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS} freshness gate: a
+     * checkout old enough that the buyer must have already been to
+     * MercadoPago and back is no longer assumed to be the same buyer
+     * gesture (HOS-867).
+     */
+    readonly createdAt: Date;
     /** When this correlation row stops resolving. */
     readonly expiresAt: Date;
     /**
@@ -83,6 +143,7 @@ export type CheckoutReuseRefusal =
     | 'no-correlation-row'
     | 'correlation-not-pending'
     | 'correlation-expired'
+    | 'double-click-window-elapsed'
     | 'customer-changed'
     | 'plan-changed'
     | 'mp-plan-changed'
@@ -127,14 +188,23 @@ export type CheckoutReuseDecision =
  * 4. **The correlation row has not expired** — an abandoned checkout must never
  *    wedge the entity. Past `expiresAt`, a NEW checkout is the correct answer,
  *    which is precisely why widening the 409 to `pending_provider` was rejected.
- * 5. **The billing customer is unchanged** — a listing that changed owners must
+ * 5. **The checkout is younger than {@link CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS}**
+ *    (HOS-867) — the window's only job is double-click idempotency. Past it,
+ *    the buyer has had time to reach MercadoPago, fail there, and come back;
+ *    MercadoPago reports nothing for a rejected hosted checkout (no
+ *    preapproval, no webhook), so age is the only signal that separates a
+ *    retry after a failed attempt from a double click. Refusing reuse mints a
+ *    fresh checkout and supersedes the old correlation row, leaving the
+ *    superseded subscription to the `abandoned-pending-subs` cron — the same
+ *    disposal every other refusal already uses.
+ * 6. **The billing customer is unchanged** — a listing that changed owners must
  *    not be paid for on the previous owner's checkout.
- * 6. **The commercial plan is unchanged** — an admin re-sending a partner link
+ * 7. **The commercial plan is unchanged** — an admin re-sending a partner link
  *    after switching plans must get the new plan.
- * 7. **The MercadoPago plan is unchanged** — `resolveOrProvisionMpPlan`
+ * 8. **The MercadoPago plan is unchanged** — `resolveOrProvisionMpPlan`
  *    re-provisions on price drift, so a different `preapproval_plan` id means
  *    the stored link would charge the OLD price. Never serve it.
- * 8. **No promo snapshot on the stored row** — commerce and partner checkouts
+ * 9. **No promo snapshot on the stored row** — commerce and partner checkouts
  *    accept no promo code today, so this cannot fire yet; it is a forward fence.
  *    A promo lives on the correlation row, and the code supplied on the second
  *    click is not necessarily the one snapshotted on the first, so reusing the
@@ -163,6 +233,18 @@ export function decideCheckoutReuse(input: DecideCheckoutReuseInput): CheckoutRe
     }
     if (pendingCheckout.expiresAt.getTime() <= now.getTime()) {
         return { reuse: false, reason: 'correlation-expired' };
+    }
+    // HOS-867: freshness gate, deliberately AFTER the expiry check so a row
+    // past its 3-hour TTL still reports `correlation-expired` (the vocabulary
+    // ops already reads for that case) and the new reason only ever covers
+    // the 10s..3h band where the bug lived. The boundary is inclusive-refuse,
+    // matching the expiry boundary above: exactly-at-the-window is a refusal,
+    // one millisecond inside is a reuse.
+    if (
+        now.getTime() - pendingCheckout.createdAt.getTime() >=
+        CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS
+    ) {
+        return { reuse: false, reason: 'double-click-window-elapsed' };
     }
     if (pendingCheckout.customerId !== customerId) {
         return { reuse: false, reason: 'customer-changed' };

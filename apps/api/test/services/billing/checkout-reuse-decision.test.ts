@@ -19,7 +19,10 @@ import type {
     CheckoutBridgeSnapshot,
     PendingCheckoutSnapshot
 } from '../../../src/services/billing/checkout-reuse-decision';
-import { decideCheckoutReuse } from '../../../src/services/billing/checkout-reuse-decision';
+import {
+    CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS,
+    decideCheckoutReuse
+} from '../../../src/services/billing/checkout-reuse-decision';
 
 const NOW = new Date('2026-08-16T12:00:00.000Z');
 const CUSTOMER_ID = 'cust_owner';
@@ -38,6 +41,7 @@ const PENDING: PendingCheckoutSnapshot = {
     mpPreapprovalPlanId: MP_PLAN_ID,
     nonce: 'nonce-1',
     status: 'pending',
+    createdAt: NOW,
     expiresAt: new Date(NOW.getTime() + 60 * 60 * 1000),
     hasPromoSnapshot: false
 };
@@ -127,6 +131,69 @@ describe('decideCheckoutReuse', () => {
             decide({ pendingCheckout: { ...PENDING, expiresAt: new Date(NOW.getTime() + 1) } })
                 .reuse
         ).toBe(true);
+    });
+
+    // ── HOS-867: the double-click window ───────────────────────────────────
+    // A rejected hosted checkout leaves no MercadoPago object and fires no
+    // webhook, so the AGE of the in-flight checkout is the only signal that
+    // separates a retry after a failed attempt from a double click. These
+    // four cases pin the gate from both sides: the buyer MUST get a fresh
+    // checkout once a real MercadoPago round-trip has had time to happen, and
+    // a double click MUST still collapse into the one in-flight checkout.
+    it('refuses when the checkout is older than the double-click window — a failed attempt must not poison retries (HOS-867)', () => {
+        // The buyer went to MercadoPago, the card was rejected, and they came
+        // straight back: minutes at human speed, comfortably past the window.
+        const decision = decide({
+            pendingCheckout: { ...PENDING, createdAt: new Date(NOW.getTime() - 60_000) }
+        });
+
+        expect(decision).toEqual({ reuse: false, reason: 'double-click-window-elapsed' });
+    });
+
+    it('reuses a checkout still inside the double-click window — the window is what keeps a double click idempotent', () => {
+        // Two clicks a couple of seconds apart are one buyer gesture that
+        // never left the site: the second must receive the SAME link, not
+        // mint a second independently payable one (HOS-1322's exact concern).
+        const decision = decide({
+            pendingCheckout: { ...PENDING, createdAt: new Date(NOW.getTime() - 2_000) }
+        });
+
+        expect(decision.reuse).toBe(true);
+    });
+
+    it('treats the double-click window boundary as inclusive: exactly at the window refuses, 1ms inside reuses', () => {
+        expect(
+            decide({
+                pendingCheckout: {
+                    ...PENDING,
+                    createdAt: new Date(NOW.getTime() - CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS)
+                }
+            })
+        ).toEqual({ reuse: false, reason: 'double-click-window-elapsed' });
+        expect(
+            decide({
+                pendingCheckout: {
+                    ...PENDING,
+                    createdAt: new Date(NOW.getTime() - CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS + 1)
+                }
+            }).reuse
+        ).toBe(true);
+    });
+
+    it('still reports the correlation TTL for a row past its 3h expiresAt, not the double-click window', () => {
+        // Ordering: the expiry check keeps precedence so a row past its TTL
+        // reports the vocabulary ops already reads for that case. Without
+        // this pin, reordering the two gates would silently change every
+        // refusal log line for expired rows.
+        const decision = decide({
+            pendingCheckout: {
+                ...PENDING,
+                createdAt: new Date(NOW.getTime() - 4 * 60 * 60 * 1000),
+                expiresAt: new Date(NOW.getTime() - 1)
+            }
+        });
+
+        expect(decision).toEqual({ reuse: false, reason: 'correlation-expired' });
     });
 
     it('refuses when the billing customer changed (listing changed owner)', () => {

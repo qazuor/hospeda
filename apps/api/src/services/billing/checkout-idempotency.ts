@@ -8,6 +8,18 @@
  * the pure {@link decideCheckoutReuse}, and, when reuse is allowed, rebuilds the
  * ORIGINAL MercadoPago share link instead of minting a second one.
  *
+ * ## HOS-867: "in flight" now means FRESH, not merely unexpired
+ *
+ * The 3-hour correlation TTL used to double as the reuse window, so a buyer
+ * whose card was rejected at MercadoPago's hosted checkout was handed the
+ * same (dead) share link for up to three hours. A rejected hosted checkout
+ * leaves no MercadoPago object to query and fires no webhook, so the reuse
+ * decision now lapses after
+ * {@link CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS} instead — long enough that a
+ * double click still receives the SAME link, short enough that a buyer back
+ * from a failed attempt receives a FRESH one. See
+ * `checkout-reuse-decision.ts` for the full rationale.
+ *
  * ## HOS-1272: accommodation has no bridge table, so the CUSTOMER is the bridge
  *
  * Commerce and partner have a dedicated bridge table because a listing/partner
@@ -68,7 +80,12 @@ export interface ReusableCheckout {
     readonly checkoutUrl: string;
     /** The `pending_provider` subscription opened by the first click. */
     readonly localSubscriptionId: string;
-    /** When the correlation row — and therefore this reuse window — expires. */
+    /**
+     * When the correlation row stops resolving (`PENDING_CHECKOUT_TTL_MS`,
+     * 3h). NOT the reuse gate — since HOS-867 reuse itself lapses after
+     * `CHECKOUT_REUSE_DOUBLE_CLICK_WINDOW_MS`; this value only states how
+     * long the row can still be linked by a returning buyer or a webhook.
+     */
     readonly expiresAt: string;
 }
 
@@ -244,6 +261,7 @@ async function loadCorrelationRow(input: {
             mpPreapprovalPlanId: billingPendingCheckouts.mpPreapprovalPlanId,
             nonce: billingPendingCheckouts.nonce,
             status: billingPendingCheckouts.status,
+            createdAt: billingPendingCheckouts.createdAt,
             expiresAt: billingPendingCheckouts.expiresAt,
             pendingDiscount: billingPendingCheckouts.pendingDiscount,
             pendingTrialExtension: billingPendingCheckouts.pendingTrialExtension
@@ -263,6 +281,7 @@ async function loadCorrelationRow(input: {
         mpPreapprovalPlanId: row.mpPreapprovalPlanId,
         nonce: row.nonce,
         status: row.status,
+        createdAt: row.createdAt,
         expiresAt: row.expiresAt,
         hasPromoSnapshot:
             (row.pendingDiscount ?? null) !== null || (row.pendingTrialExtension ?? null) !== null
