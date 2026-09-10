@@ -1,4 +1,5 @@
 import { ENTITLEMENT_GRANTING_STATUSES } from './is-entitlement-granting-status.js';
+import { normalizeStoredSubscriptionStatus } from './subscription-status-normalize.js';
 
 /**
  * Subscription statuses under which the customer still has a REAL, unfinished
@@ -46,14 +47,33 @@ import { ENTITLEMENT_GRANTING_STATUSES } from './is-entitlement-granting-status.
  * here is therefore design, not live population — and it must stay, because the
  * day the write is re-enabled is not the day anyone will remember to add it.
  *
+ * ## `unpaid` is `past_due` wearing qzpay's spelling (HOS-1310)
+ *
+ * The set is Hospeda vocabulary, but the column it is compared against also
+ * holds qzpay's. `unpaid` is qzpay's name for the same state
+ * (`subscription-status-normalize.ts` maps it to `PAST_DUE`, and Hospeda models
+ * no separate unpaid state), so before the normalization below
+ * `isLiveSubscriptionStatus('unpaid')` was `false` while
+ * `isLiveSubscriptionStatus('past_due')` was `true` — one state, two answers,
+ * which is the HOS-108 mechanism. The membership of `past_due` above is the
+ * whole design of this set, so losing it to a spelling defeated the module.
+ *
  * ## What is deliberately OUT
  *
  * `cancelled`, `expired`, `abandoned` and `paused`. Those are terminal or
- * inactive enough that starting over is the correct next step. Note that a
- * SOFT-cancel is not among them: a subscription the owner cancelled but has
- * already paid through keeps `status = 'active'` until the
- * `finalize-cancelled-subs` cron flips it after `currentPeriodEnd`, so it is
- * covered by `active` and needs no entry of its own.
+ * inactive enough that starting over is the correct next step.
+ *
+ * A SOFT-cancel is not among them, and the reason is NOT that this set covers
+ * it: `softCancelSubscription` (`apps/api/src/services/subscription-cancel.service.ts`)
+ * writes only `cancelAtPeriodEnd = true` and leaves `status` untouched, and
+ * qzpay-core's `subscriptions.cancel()` writes `status` only when
+ * `cancelAtPeriodEnd` is falsy (`packages/core/src/billing.ts` — verified
+ * against the source, 2026-09-10). So a soft-cancelled row keeps whatever
+ * status it had (`active`/`trialing`/`courtesy`) and is matched by THAT entry,
+ * not by a cancelled one. The distinction matters because callers must not read
+ * membership here as "a soft-cancel is live": a soft-cancel is live because its
+ * status never changed, and `cancelAtPeriodEnd` is a separate flag that
+ * `start-paid.ts` checks on its own for exactly that reason.
  */
 export const LIVE_SUBSCRIPTION_STATUSES: ReadonlySet<string> = new Set<string>([
     ...ENTITLEMENT_GRANTING_STATUSES,
@@ -68,9 +88,11 @@ export const LIVE_SUBSCRIPTION_STATUSES: ReadonlySet<string> = new Set<string>([
  * {@link import('./is-entitlement-granting-status.js').isEntitlementGrantingStatus}
  * for that, and read this module's docblock for why the two differ on `past_due`.
  *
- * @param status - The billing subscription status string.
- * @returns `true` for `'active'`, `'trialing'`, `'comp'`, `'courtesy'` or
- *   `'past_due'`; `false` otherwise.
+ * @param status - The billing subscription status string, in either the Hospeda
+ *   or the qzpay vocabulary. qzpay's `unpaid` is accepted as `past_due`; see the
+ *   set's docblock.
+ * @returns `true` for `'active'`, `'trialing'`, `'comp'`, `'courtesy'`,
+ *   `'past_due'` or `'unpaid'`; `false` otherwise.
  *
  * @example
  * ```ts
@@ -81,5 +103,9 @@ export const LIVE_SUBSCRIPTION_STATUSES: ReadonlySet<string> = new Set<string>([
  * ```
  */
 export function isLiveSubscriptionStatus(status: string): boolean {
-    return LIVE_SUBSCRIPTION_STATUSES.has(status);
+    const normalized = normalizeStoredSubscriptionStatus(status);
+    if (normalized === null) {
+        return false;
+    }
+    return LIVE_SUBSCRIPTION_STATUSES.has(normalized);
 }

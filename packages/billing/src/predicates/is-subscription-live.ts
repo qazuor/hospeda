@@ -1,4 +1,6 @@
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { BILLING_CRON_LAG_GRACE_HOURS } from '../constants/billing.constants.js';
+import { normalizeStoredSubscriptionStatus } from './subscription-status-normalize.js';
 
 /**
  * Input shape for `isSubscriptionLive`.
@@ -8,7 +10,11 @@ import { BILLING_CRON_LAG_GRACE_HOURS } from '../constants/billing.constants.js'
  * `checkEligibility` gate which does not inspect dates at all.
  */
 export interface IsSubscriptionLiveInput {
-    /** Billing subscription status string (e.g. 'active', 'trialing', 'cancelled'). */
+    /**
+     * Billing subscription status string (e.g. 'active', 'trialing', 'cancelled'),
+     * in either the Hospeda or the qzpay vocabulary — it is normalized before any
+     * branch is taken (HOS-1310).
+     */
     readonly status: string;
     /**
      * Timestamp at which the trial period ends.
@@ -70,6 +76,20 @@ export interface IsSubscriptionLiveInput {
  * - The grace window uses `<=` at the boundary: a subscription overdue by
  *   exactly `graceHours` is still considered live (cron-lag semantics).
  *
+ * ## The status is normalized first (HOS-1310)
+ *
+ * `input.status` is read straight off `billing_subscriptions.status`, which holds
+ * two vocabularies, so it goes through {@link normalizeStoredSubscriptionStatus}
+ * before any branch is taken. The spelling that mattered is qzpay's American
+ * `canceled` (1 L), which qzpay-core writes on a hard cancel while Hospeda's own
+ * writers use the British `cancelled`: the `'cancelled'` branch below could not
+ * see it, so such a row answered `false` no matter how far in the future
+ * `currentPeriodEnd` sat. The repo already treats the two as one state — the
+ * state machine normalizes them on read, and
+ * `extras/035-canceled-spelling-normalize` folds the column on every deploy — so
+ * the answer for such a row used to depend on whether a deploy had run since
+ * qzpay wrote it. Normalizing here makes it depend on the row instead.
+ *
  * @param input - Subscription fields required for the liveness check.
  * @returns `true` when the subscription grants access; `false` otherwise.
  *
@@ -106,7 +126,7 @@ export interface IsSubscriptionLiveInput {
  */
 export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
     const {
-        status,
+        status: rawStatus,
         trialEnd,
         currentPeriodEnd,
         courtesyEndsAt,
@@ -114,7 +134,12 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         graceHours = BILLING_CRON_LAG_GRACE_HOURS
     } = input;
 
-    if (status === 'comp') {
+    // HOS-1310: the column holds qzpay's vocabulary as well as Hospeda's. An
+    // unknown status keeps the pre-normalization answer (it matched no branch
+    // and fell through to `false`), so this narrows nothing.
+    const status = normalizeStoredSubscriptionStatus(rawStatus);
+
+    if (status === SubscriptionStatusEnum.COMP) {
         // HOS-239: a permanently-complimentary subscription (SPEC-262) grants its
         // plan's entitlements forever — it is never charged and has no period/trial
         // end to expire against, so it is unconditionally live. Aligns the
@@ -126,23 +151,27 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         return true;
     }
 
-    if (status === 'trialing') {
+    if (status === SubscriptionStatusEnum.TRIALING) {
         const graceLimitMs = graceHours * 3_600_000;
         return isWithinGrace({ date: trialEnd, nowMs, graceLimitMs });
     }
 
-    if (status === 'active') {
+    if (status === SubscriptionStatusEnum.ACTIVE) {
         const graceLimitMs = graceHours * 3_600_000;
         return isWithinGrace({ date: currentPeriodEnd, nowMs, graceLimitMs });
     }
 
-    if (status === 'cancelled') {
+    if (status === SubscriptionStatusEnum.CANCELLED) {
         // Soft-cancel grace: the host paid through currentPeriodEnd — grant access
         // until that moment, but no extra cron-lag window beyond it.
+        //
+        // Reached by qzpay's American `canceled` too, since HOS-1310 normalizes
+        // the input — see the module docblock for why that is a fix and not a
+        // widening.
         return isWithinGrace({ date: currentPeriodEnd, nowMs, graceLimitMs: 0 });
     }
 
-    if (status === 'courtesy') {
+    if (status === SubscriptionStatusEnum.COURTESY) {
         // HOS-180: gifted cycles grant the full plan. The cron-lag grace applies
         // for the same reason it does to 'active' — the job that resumes the
         // preapproval runs on a schedule, and cutting a subscriber off in the gap
@@ -152,7 +181,11 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         return isWithinGrace({ date: courtesyEndsAt, nowMs, graceLimitMs });
     }
 
-    // All other statuses (past_due, paused, expired, unpaid, etc.) are not live.
+    // All other statuses are not live: past_due, paused, expired,
+    // pending_provider, abandoned — and, via normalization, qzpay's `unpaid`
+    // (→ past_due), `incomplete` (→ pending_provider) and `incomplete_expired`
+    // (→ abandoned). An unrecognized status arrives here as `null` and is
+    // likewise not live.
     return false;
 }
 
