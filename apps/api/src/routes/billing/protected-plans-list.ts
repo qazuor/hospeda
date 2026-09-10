@@ -11,10 +11,14 @@
  *
  * This module is mounted (see `routes/billing/index.ts`) BEFORE the qzpay
  * wrapper — Hono first-match routing means it wins for the EXACT `GET /plans`
- * path. `POST /plans`, `PUT /plans/:id`, `DELETE /plans/:id` are NOT registered
- * here, so they fall through unchanged to the qzpay wrapper. Same ordering
- * precedent as the soft-cancel / downgrade-preview / promo-codes overrides in
- * `routes/billing/index.ts`.
+ * path. Same ordering precedent as the soft-cancel / downgrade-preview /
+ * promo-codes overrides in `routes/billing/index.ts`.
+ *
+ * There is no plan WRITE to fall through to, and this file claimed there was:
+ * `createBillingRoutes`' `if (plans)` block registers three GETs (`/plans`,
+ * `/plans/:id`, `/plans/:id/prices`) and nothing else, so `POST /plans`,
+ * `PUT /plans/:id` and `DELETE /plans/:id` answer 404 at this tier for want of a
+ * handler. Plan writes live under `/api/v1/admin/billing/plans`.
  *
  * The two single-plan READS — `GET /plans/:id` and `GET /plans/:id/prices` — are
  * not registered here either, and reached qzpay unfiltered because of it: the
