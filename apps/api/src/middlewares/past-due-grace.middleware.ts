@@ -16,8 +16,8 @@
  */
 
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
-import { PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
-import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
+import { normalizeStoredSubscriptionStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import type { AppMiddleware } from '../types';
@@ -235,7 +235,28 @@ async function findPastDueSubscription(
         subscriptionMatchesDomain(sub, domain)
     );
 
-    const pastDueSubs = domainSubscriptions.filter((sub) => sub.isPastDue());
+    // HOS-1310: normalized, NOT `sub.isPastDue()`. That qzpay helper compares the
+    // RAW status against `'past_due'`, so it is blind to qzpay's own `unpaid` —
+    // a value the repo's alias map calls the same state, and one
+    // `isLiveSubscriptionStatus` now accepts as live.
+    //
+    // Leaving this side on the raw spelling is the asymmetry that bites: an
+    // `unpaid` row would pass the content-editing gate (`edit-eligibility`) and
+    // block a second checkout (`start-paid`) FOREVER, because the 7-day
+    // `GRACE_PERIOD_EXPIRED` this middleware owns is the only thing that ever
+    // ends that state, and it would never fire. The side that grants and the side
+    // that revokes have to read the same vocabulary, or the grace has no exit.
+    //
+    // No writer produces `unpaid` today — which is exactly the argument for
+    // keeping `past_due` in the live set in the first place: the day the write
+    // appears is not the day anyone remembers to add it here.
+    //
+    // The `deletedAt === null` half of `isPastDue()` is preserved explicitly.
+    const pastDueSubs = domainSubscriptions.filter(
+        (sub) =>
+            normalizeStoredSubscriptionStatus(sub.status) === SubscriptionStatusEnum.PAST_DUE &&
+            sub.deletedAt === null
+    );
     if (pastDueSubs.length === 0) return null;
     if (pastDueSubs.length === 1) return pastDueSubs[0] ?? null;
 

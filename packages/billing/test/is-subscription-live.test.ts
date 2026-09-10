@@ -53,17 +53,30 @@ describe('isSubscriptionLive', () => {
     // -------------------------------------------------------------------------
     // 'cancelled' status — soft-cancel grace (live until currentPeriodEnd, no grace window)
     // -------------------------------------------------------------------------
-    describe("status 'cancelled' (soft-cancel grace)", () => {
-        it('should return false when no currentPeriodEnd is provided (absent = fail-open → true)', () => {
+    describe("status 'cancelled' (paid-through grace)", () => {
+        /*
+         * Every LIVE case below carries `cancelAtPeriodEnd: true` (HOS-1310).
+         * The flag is not decoration: it is the only column separating an owner
+         * who paid and then asked to stop from a row that never completed a
+         * checkout, because `currentPeriodEnd` is stamped by qzpay at INSERT as
+         * `now + 30 days`, before any charge. The dedicated describe block at the
+         * end of this file is the pair of cases that proves it.
+         */
+        it('should return true when no currentPeriodEnd is provided (absent = fail-open)', () => {
             // Absent currentPeriodEnd → fail-open → true
-            const input = { status: 'cancelled', nowMs: NOW_MS };
+            const input = { status: 'cancelled', cancelAtPeriodEnd: true, nowMs: NOW_MS };
             expect(isSubscriptionLive(input)).toBe(true);
         });
 
-        it('should return true when currentPeriodEnd is in the future (host paid through)', () => {
+        it('should return true when currentPeriodEnd is in the future (owner paid through)', () => {
             // Arrange — period_end is 5 days in the future
             const futureEnd = new Date(NOW_MS + 5 * 24 * HOURS_MS);
-            const input = { status: 'cancelled', currentPeriodEnd: futureEnd, nowMs: NOW_MS };
+            const input = {
+                status: 'cancelled',
+                cancelAtPeriodEnd: true,
+                currentPeriodEnd: futureEnd,
+                nowMs: NOW_MS
+            };
             expect(isSubscriptionLive(input)).toBe(true);
         });
 
@@ -84,12 +97,22 @@ describe('isSubscriptionLive', () => {
         it('should return true when currentPeriodEnd is exactly now (boundary — overdueMs = 0 ≤ 0)', () => {
             // Arrange — exactly at now: overdueMs = 0, graceLimitMs = 0 → 0 ≤ 0 = true
             const exactlyNow = new Date(NOW_MS);
-            const input = { status: 'cancelled', currentPeriodEnd: exactlyNow, nowMs: NOW_MS };
+            const input = {
+                status: 'cancelled',
+                cancelAtPeriodEnd: true,
+                currentPeriodEnd: exactlyNow,
+                nowMs: NOW_MS
+            };
             expect(isSubscriptionLive(input)).toBe(true);
         });
 
         it('should return true when currentPeriodEnd is null (fail-open)', () => {
-            const input = { status: 'cancelled', currentPeriodEnd: null, nowMs: NOW_MS };
+            const input = {
+                status: 'cancelled',
+                cancelAtPeriodEnd: true,
+                currentPeriodEnd: null,
+                nowMs: NOW_MS
+            };
             expect(isSubscriptionLive(input)).toBe(true);
         });
 
@@ -394,5 +417,135 @@ describe('isSubscriptionLive — courtesy (HOS-180)', () => {
                 nowMs: NOW
             })
         ).toBe(false);
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOS-1310: a cancelled row is not evidence of payment
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('HOS-1310: the paid-through grace requires cancelAtPeriodEnd, not just a date', () => {
+    const NOW = Date.UTC(2026, 8, 10, 12, 0, 0);
+    /** A period end a month out — exactly what qzpay stamps at INSERT. */
+    const THIRTY_DAYS_OUT = new Date(NOW + 30 * 24 * 3_600_000);
+
+    /*
+     * The two cases in tension. They differ in ONE field, and that field is the
+     * whole fix: the date is identical and identically useless, because qzpay
+     * writes `currentPeriodEnd = now + 30 days` in the INSERT next to
+     * `status = 'incomplete'`, before the owner has authorized anything.
+     *
+     * A test with only the first case would pass on a predicate that refused
+     * EVERY cancelled row — silently taking the paid period away from every
+     * owner who cancelled mid-cycle. The second case is what kills that.
+     */
+    it('a never-paid phantom row (cancelAtPeriodEnd false) is NOT live', () => {
+        // The webhook path: checkout abandoned or card refused -> MP reports the
+        // preapproval cancelled -> the row is written `cancelled` and its
+        // placeholder period end is REFRESHED, not cleared. Nothing reaps it.
+        expect(
+            isSubscriptionLive({
+                status: 'cancelled',
+                cancelAtPeriodEnd: false,
+                currentPeriodEnd: THIRTY_DAYS_OUT,
+                nowMs: NOW
+            })
+        ).toBe(false);
+    });
+
+    it('the REAL staging row, shape for shape, is not live (measured 2026-09-10)', () => {
+        /*
+         * Not a hypothetical. A cancelled, never-charged preapproval in staging
+         * (`summarized.charged_quantity = null`, `last_charged_date = null`) whose
+         * `current_period_end` is MercadoPago's `date_created` plus one month —
+         * written by the adapter through the webhook, not by the local insert, as
+         * the millisecond tail proves. MercadoPago returns `auto_recurring`
+         * intact on a cancelled preapproval (frequency 1 month,
+         * transaction_amount 35000, no end_date), so `calculatePeriodEnd` adds
+         * the month and the window is ~30 days rather than zero.
+         *
+         * This exact shape answered `true` before the fix, and that row was still
+         * reading live fifteen days after it died.
+         */
+        const dateCreated = Date.UTC(2026, 7, 25, 9, 10, 37, 767);
+        const oneMonthAfterCreation = new Date(Date.UTC(2026, 8, 25, 9, 10, 37, 767));
+        expect(
+            isSubscriptionLive({
+                status: 'cancelled',
+                cancelAtPeriodEnd: false,
+                currentPeriodEnd: oneMonthAfterCreation,
+                // Fifteen days into the phantom window.
+                nowMs: dateCreated + 15 * 24 * 3_600_000
+            })
+        ).toBe(false);
+    });
+
+    it('a real soft-cancel (cancelAtPeriodEnd true) with the SAME date IS live', () => {
+        expect(
+            isSubscriptionLive({
+                status: 'cancelled',
+                cancelAtPeriodEnd: true,
+                currentPeriodEnd: THIRTY_DAYS_OUT,
+                nowMs: NOW
+            })
+        ).toBe(true);
+    });
+
+    it.each([
+        ['absent', undefined],
+        ['null', null],
+        ['false', false]
+    ])('treats a %s cancelAtPeriodEnd as "no evidence of payment" — this field does NOT fail open', (_label, flag) => {
+        // The deliberate asymmetry against every date on this input. Absence
+        // of a date honestly means "nothing to expire against"; absence of
+        // this flag means "we do not know that anyone paid", and guessing
+        // `true` is the bug.
+        expect(
+            isSubscriptionLive({
+                status: 'cancelled',
+                cancelAtPeriodEnd: flag,
+                currentPeriodEnd: THIRTY_DAYS_OUT,
+                nowMs: NOW
+            })
+        ).toBe(false);
+    });
+
+    it("applies to qzpay's `canceled` spelling too — normalization and the flag are BOTH needed", () => {
+        // Neither half is sufficient. Without normalization a legitimate
+        // soft-cancel that came through qzpay's spelling is denied its paid
+        // period; without the flag a never-paid row is granted one.
+        expect(
+            isSubscriptionLive({
+                status: 'canceled',
+                cancelAtPeriodEnd: false,
+                currentPeriodEnd: THIRTY_DAYS_OUT,
+                nowMs: NOW
+            })
+        ).toBe(false);
+        expect(
+            isSubscriptionLive({
+                status: 'canceled',
+                cancelAtPeriodEnd: true,
+                currentPeriodEnd: THIRTY_DAYS_OUT,
+                nowMs: NOW
+            })
+        ).toBe(true);
+    });
+
+    it('and the flag is IGNORED by every other status — it gates one branch, not the predicate', () => {
+        // A guard that leaked into the other branches would revoke access from
+        // every paying customer, which is the over-wide direction of this fix.
+        for (const status of ['active', 'trialing', 'courtesy', 'comp']) {
+            expect(
+                isSubscriptionLive({
+                    status,
+                    cancelAtPeriodEnd: false,
+                    currentPeriodEnd: THIRTY_DAYS_OUT,
+                    trialEnd: THIRTY_DAYS_OUT,
+                    courtesyEndsAt: THIRTY_DAYS_OUT,
+                    nowMs: NOW
+                })
+            ).toBe(true);
+        }
     });
 });
