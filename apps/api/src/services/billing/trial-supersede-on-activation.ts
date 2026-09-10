@@ -50,6 +50,7 @@ import {
     billingSubscriptions,
     type DrizzleClient,
     eq,
+    hasNoLinkedPreapprovalCondition,
     isNull,
     ne,
     or
@@ -167,7 +168,16 @@ export async function supersedeLocalTrialsOnActivation(
                 // scope.
                 ne(billingSubscriptions.id, activatedSubscriptionId),
                 eq(billingSubscriptions.status, SubscriptionStatusEnum.TRIALING),
-                isNull(billingSubscriptions.mpSubscriptionId),
+                // HOS-1335: `IS NULL` alone was not the same question the rest of
+                // the platform asks. `mp_subscription_id` can hold the EMPTY
+                // STRING (HOS-1326), and qzpay's row→domain mapper hides that
+                // behind a truthiness check — so every JS-side reader, including
+                // the `/start-paid` guard that now lets such a row's owner check
+                // out, sees "no preapproval", while this sweep skipped it.
+                // A trial the checkout treats as convertible and this transaction
+                // declines to supersede is precisely the two-live-rows state the
+                // module exists to prevent, and it commits silently.
+                hasNoLinkedPreapprovalCondition(),
                 isNull(billingSubscriptions.deletedAt),
                 domainMatches
             )
