@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     isSubscriptionDashboardDomain,
+    planChangeWouldResolveAnotherSubscription,
     resolveActiveSubscriptionDomain,
     resolveDashboardPlanSource,
     SUBSCRIPTION_DASHBOARD_DOMAINS
@@ -213,5 +214,68 @@ describe('resolveDashboardPlanSource', () => {
         for (const domain of SUBSCRIPTION_DASHBOARD_DOMAINS) {
             expect(resolveDashboardPlanSource({ domain })).toBeDefined();
         }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// planChangeWouldResolveAnotherSubscription
+// ---------------------------------------------------------------------------
+
+describe('planChangeWouldResolveAnotherSubscription', () => {
+    it('HOS-1321: the DUAL host+tourist holder gets no plan change on their tourist tab', () => {
+        // Arrange & Act — `POST /billing/subscriptions/change-plan` takes no
+        // domain and resolves accommodation FIRST, so this tab's tourist tiers
+        // would be applied to the OWNER subscription: a paid host plan silently
+        // downgraded onto a tourist tier, with no error anywhere.
+        const result = planChangeWouldResolveAnotherSubscription({
+            domain: 'tourist',
+            heldDomains: ['accommodation', 'tourist']
+        });
+
+        // Assert
+        expect(result).toBe(true);
+    });
+
+    it('HOS-1321: a tourist-ONLY holder keeps their plan change — the fallback resolves their row', () => {
+        // Arrange & Act — with no accommodation subscription the route's
+        // ordered pair falls through to the tourist one, which is the row this
+        // tab is showing. Withholding here would strand the audience the tab
+        // was built for.
+        const result = planChangeWouldResolveAnotherSubscription({
+            domain: 'tourist',
+            heldDomains: ['tourist']
+        });
+
+        // Assert
+        expect(result).toBe(false);
+    });
+
+    it('HOS-1321: a commerce owner who is also a tourist keeps their tourist plan change', () => {
+        // Arrange & Act — gastronomy and experience subscriptions are invisible
+        // to `selectAccommodationSubscription` (it fails closed on every
+        // non-accommodation domain), so they cannot be reached by mistake.
+        const result = planChangeWouldResolveAnotherSubscription({
+            domain: 'tourist',
+            heldDomains: ['gastronomy', 'experience', 'tourist']
+        });
+
+        // Assert
+        expect(result).toBe(false);
+    });
+
+    it.each([
+        'accommodation',
+        'gastronomy',
+        'experience'
+    ] as const)('never withholds the plan change on the %s tab', (domain) => {
+        // Arrange & Act — every other tab either IS the row the route
+        // resolves, or has its own per-vertical change route.
+        const result = planChangeWouldResolveAnotherSubscription({
+            domain,
+            heldDomains: ['accommodation', 'gastronomy', 'experience', 'tourist']
+        });
+
+        // Assert
+        expect(result).toBe(false);
     });
 });

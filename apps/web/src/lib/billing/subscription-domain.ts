@@ -145,3 +145,46 @@ export function resolveDashboardPlanSource({
     };
     return BY_DOMAIN[domain];
 }
+
+/**
+ * Whether this tab's "Cambiar plan" would mutate a DIFFERENT subscription than
+ * the one it is showing (HOS-1321).
+ *
+ * `POST /billing/subscriptions/change-plan` does not take a domain. It resolves
+ * the subscription to mutate with `selectAccommodationSubscription`, which is
+ * an ORDERED pair: accommodation first, tourist only as a fallback. That is
+ * correct for the route's own purpose and it is exactly what makes the tourist
+ * tab's plan change unsafe for one account shape — a holder of BOTH an
+ * accommodation and a tourist subscription. Their tourist tab would offer
+ * `tourist-free`/`tourist-vip`, the route would resolve their OWNER
+ * subscription, and `assertAccommodationPlanChangeTarget` would wave a tourist
+ * slug through (`plan-domains.config.ts` files the tourist tiers as
+ * accommodation, knowingly — HOS-1279). The result is a paid host plan silently
+ * downgraded onto a tourist tier: a write, on the wrong row, with no error.
+ *
+ * That account can hold both without doing anything unusual — host-onboarding
+ * auto-promotes a traveller to `HOST` without touching their tourist
+ * subscription, which is why the repo seeds `host-provider@local.test`.
+ *
+ * So the tab withholds its plan CHANGE and nothing else. It still shows the
+ * subscription, still cancels and pauses it — those act on the subscription id
+ * this tab already read, so they cannot reach the wrong row — and the
+ * "Ver planes disponibles" link takes over, which is where the owner's
+ * 2026-09-10 ruling puts a move between audiences anyway.
+ *
+ * The narrow fix would be a domain-scoped plan-change route; that is backend
+ * work, and until it exists this is the boundary that keeps the write honest.
+ *
+ * @param params.domain - The resolved dashboard domain.
+ * @param params.heldDomains - Domains the caller holds a subscription in.
+ * @returns `true` when this tab must NOT offer a plan change.
+ */
+export function planChangeWouldResolveAnotherSubscription({
+    domain,
+    heldDomains
+}: {
+    readonly domain: SubscriptionDashboardDomain;
+    readonly heldDomains: readonly SubscriptionDashboardDomain[];
+}): boolean {
+    return domain === 'tourist' && heldDomains.includes('accommodation');
+}
