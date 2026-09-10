@@ -57,6 +57,67 @@ function createBillingMock(opts: BillingMockOpts = {}) {
     };
 }
 
+/**
+ * A `db` stand-in for the HOS-151 Bug C cleanup write, holding ONE mutable
+ * `billing_subscriptions` row (HOS-1326).
+ *
+ * The cleanup's UPDATE is guarded on the row still being pending AND still
+ * unlinked, so a mock that echoed a row unconditionally could not tell "wrote
+ * the terminal status" from "matched nothing and moved on". This one applies the
+ * same precondition the SQL does and exposes the status the row ends up with —
+ * the assertion that separates `abandoned` (right) from the `canceled` that
+ * `billing.subscriptions.cancel()` used to leave here: the wrong word for a
+ * checkout that never started, in the qzpay spelling of it.
+ *
+ * Passed explicitly as `input.db` rather than leaning on the suite-wide `getDb`
+ * mock, so the assertion is about this write and not about what some other
+ * helper happened to arm.
+ *
+ * @param initial - The row as qzpay-core's `mode: 'paid'` insert leaves it.
+ */
+function makeCleanupDbMock(
+    initial: { status: string; mpSubscriptionId: string | null } = {
+        status: 'incomplete',
+        mpSubscriptionId: null
+    }
+) {
+    const row = { ...initial };
+    const writes: Array<Record<string, unknown>> = [];
+    const update = vi.fn(() => ({
+        set: (patch: Record<string, unknown>) => {
+            writes.push(patch);
+            return {
+                where: () => ({
+                    returning: async () => {
+                        const pending = ['incomplete', 'pending_provider'].includes(row.status);
+                        if (!pending || row.mpSubscriptionId !== null) {
+                            return [];
+                        }
+                        if (typeof patch.status === 'string') {
+                            row.status = patch.status;
+                        }
+                        return [{ id: LOCAL_SUB_ID }];
+                    }
+                })
+            };
+        }
+    }));
+
+    // `input.db` is the ONE client this helper uses, so it must also answer the
+    // plan-domain SELECT that runs before the preapproval is created — otherwise
+    // the call fails closed on PLAN_NOT_FOUND and never reaches the cleanup.
+    const limit = vi.fn(() =>
+        Promise.resolve([{ productDomain: ProductDomainEnum.ACCOMMODATION, createdAt: new Date() }])
+    );
+    const select = vi.fn(() => ({
+        from: vi.fn(() => ({
+            where: vi.fn(() => ({ limit, orderBy: vi.fn(() => ({ limit })) }))
+        }))
+    }));
+
+    return { db: { select, update } as never, row, update, writes };
+}
+
 describe('createPaidSubscription', () => {
     beforeEach(() => {
         // HOS-1233 T-032: the helper reads the plan's own product_domain before
@@ -348,8 +409,17 @@ describe('createPaidSubscription', () => {
     // ''` that could never activate (webhook lookup keys on the id) and whose
     // preapproval could never be located to cancel. The helper must now fail
     // loudly with MISSING_PROVIDER_SUBSCRIPTION_ID after cleaning up the row.
+    //
+    // HOS-1326 changed WHAT that cleanup writes. It used to call
+    // `billing.subscriptions.cancel(row.id)`, which — on a row with no provider
+    // id, which is the only row that reaches here — does no provider work at all
+    // (qzpay resolves the preapproval from `providerSubscriptionIds` and finds
+    // nothing) and whose entire effect is a local `status: 'canceled'` write.
+    // These assertions are therefore about the ROW's terminal status, not about
+    // a call having been made: an abandoned checkout is `abandoned`, and the
+    // provider-cancel call must be absent because there is nothing to cancel.
 
-    it('throws MISSING_PROVIDER_SUBSCRIPTION_ID and cancels the row when the provider id is an empty string', async () => {
+    it('throws MISSING_PROVIDER_SUBSCRIPTION_ID and ABANDONS the row when the provider id is an empty string', async () => {
         const billing = createBillingMock({
             subscription: {
                 id: LOCAL_SUB_ID,
@@ -357,6 +427,7 @@ describe('createPaidSubscription', () => {
                 providerSubscriptionIds: { mercadopago: '' }
             }
         });
+        const cleanup = makeCleanupDbMock();
 
         await expect(
             createPaidSubscription({
@@ -365,17 +436,24 @@ describe('createPaidSubscription', () => {
                 planId: PLAN_ID,
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
-                notificationUrl: URLS.notificationUrl
+                notificationUrl: URLS.notificationUrl,
+                db: cleanup.db
             })
         ).rejects.toMatchObject({
             name: 'SubscriptionCheckoutError',
             code: 'MISSING_PROVIDER_SUBSCRIPTION_ID'
         });
 
-        // The just-created local row is cancelled (fail-closed) so no unlinkable
-        // `incomplete` row survives.
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
-        expect(billing.subscriptions.cancel).toHaveBeenCalledWith(LOCAL_SUB_ID);
+        // The just-created local row gets its own terminal status so no
+        // unlinkable `incomplete` row survives...
+        expect(cleanup.row.status).toBe('abandoned');
+        expect(cleanup.writes).toHaveLength(1);
+        // ...and it is NOT filed as a cancellation, in either spelling.
+        expect(cleanup.writes[0]?.status).not.toBe('canceled');
+        expect(cleanup.writes[0]?.status).not.toBe('cancelled');
+        // Nothing is cancelled at the provider: there is no preapproval id, which
+        // is the very condition that got us here.
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
     });
 
     it('throws MISSING_PROVIDER_SUBSCRIPTION_ID when providerSubscriptionIds is entirely absent', async () => {
@@ -386,6 +464,7 @@ describe('createPaidSubscription', () => {
                 // no providerSubscriptionIds at all
             }
         });
+        const cleanup = makeCleanupDbMock();
 
         await expect(
             createPaidSubscription({
@@ -394,14 +473,16 @@ describe('createPaidSubscription', () => {
                 planId: PLAN_ID,
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
-                notificationUrl: URLS.notificationUrl
+                notificationUrl: URLS.notificationUrl,
+                db: cleanup.db
             })
         ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
 
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+        expect(cleanup.row.status).toBe('abandoned');
+        expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
     });
 
-    it('still throws MISSING_PROVIDER_SUBSCRIPTION_ID when the best-effort cleanup cancel itself fails', async () => {
+    it('still throws MISSING_PROVIDER_SUBSCRIPTION_ID when the best-effort cleanup write itself fails', async () => {
         const billing = createBillingMock({
             subscription: {
                 id: LOCAL_SUB_ID,
@@ -409,9 +490,12 @@ describe('createPaidSubscription', () => {
                 providerSubscriptionIds: { mercadopago: '' }
             }
         });
-        // The cleanup cancel fails — the abandoned-pending cron is the backstop;
-        // the original id-less error must still surface (cleanup is best-effort).
-        billing.subscriptions.cancel.mockRejectedValueOnce(new Error('MP unreachable'));
+        // The cleanup write blows up — the abandoned-pending cron is the
+        // backstop; the original id-less error must still surface.
+        const cleanup = makeCleanupDbMock();
+        cleanup.update.mockImplementationOnce(() => {
+            throw new Error('DB unreachable');
+        });
 
         await expect(
             createPaidSubscription({
@@ -420,11 +504,47 @@ describe('createPaidSubscription', () => {
                 planId: PLAN_ID,
                 priceId: PRICE_ID,
                 paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
-                notificationUrl: URLS.notificationUrl
+                notificationUrl: URLS.notificationUrl,
+                db: cleanup.db
             })
         ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
 
-        expect(billing.subscriptions.cancel).toHaveBeenCalledTimes(1);
+        expect(cleanup.update).toHaveBeenCalledTimes(1);
+        expect(cleanup.row.status).toBe('incomplete');
+    });
+
+    it('HOS-1326: leaves the row ALONE if a preapproval got linked to it between the read and the cleanup write', async () => {
+        // A linker attaching an `mp_subscription_id` mid-flight turns this row
+        // into one that holds a LIVE chargeable authorization. Writing a terminal
+        // status on it would strand that preapproval with nothing local
+        // explaining it — the split-brain the hourly reaper exists to avoid. The
+        // guarded WHERE makes the write a no-op instead, and the reaper
+        // re-evaluates the row with the provider in the loop.
+        const billing = createBillingMock({
+            subscription: {
+                id: LOCAL_SUB_ID,
+                providerInitPoint: 'https://mp.test/checkout/abc',
+                providerSubscriptionIds: { mercadopago: '' }
+            }
+        });
+        const cleanup = makeCleanupDbMock({
+            status: 'incomplete',
+            mpSubscriptionId: 'mp_linked_mid_flight'
+        });
+
+        await expect(
+            createPaidSubscription({
+                billing: billing as any,
+                customerId: CUSTOMER_ID,
+                planId: PLAN_ID,
+                priceId: PRICE_ID,
+                paymentMethodReturnUrl: URLS.paymentMethodReturnUrl,
+                notificationUrl: URLS.notificationUrl,
+                db: cleanup.db
+            })
+        ).rejects.toMatchObject({ code: 'MISSING_PROVIDER_SUBSCRIPTION_ID' });
+
+        expect(cleanup.row.status).toBe('incomplete');
     });
 
     it('does NOT reach the provider-id guard when the checkout URL is missing (MISSING_INIT_POINT wins first)', async () => {
