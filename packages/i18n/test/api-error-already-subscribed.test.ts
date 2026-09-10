@@ -68,4 +68,40 @@ describe('common.apiError.ALREADY_SUBSCRIBED (HOS-1321)', () => {
             expect(trans[locale]?.[REASON_KEY]).toContain(EXPECTED_LANDMARK[locale]);
         }
     });
+
+    it('offers the escape that works when the plan change cannot help', () => {
+        // Arrange — HOS-1321 review. The first draft said «usá "Cambiar plan"»,
+        // which is a promise the surface does not always keep: a `tourist-vip`
+        // holder who clicked a HOST plan is sent to their tourist tab, whose
+        // plan change offers tourist tiers ONLY (owner ruling, 2026-09-10). The
+        // instruction was true for a host switching host tiers and false for
+        // exactly the audience this key exists for.
+        //
+        // A copy that instructs an action is a verifiable promise, so it now
+        // names the escape that is always available and does reach a different
+        // audience: cancelling. Asserted per locale, because a translation that
+        // drops the clause quietly restores the dead end.
+        const EXPECTED_ESCAPE: Record<(typeof LOCALES)[number], RegExp> = {
+            es: /darla de baja/i,
+            en: /cancel it/i,
+            pt: /cancel[aá]-la/i
+        };
+
+        // Act & Assert
+        for (const locale of LOCALES) {
+            expect(trans[locale]?.[REASON_KEY]).toMatch(EXPECTED_ESCAPE[locale]);
+        }
+    });
+
+    it('does not quote a button label that is not always rendered', () => {
+        // Arrange & Act & Assert — the specific regression: naming the
+        // «Cambiar plan» / "Change plan" control as a quoted string promises a
+        // button the reader may not find. Describing where to go survives a
+        // relabelled button; quoting one does not.
+        for (const locale of LOCALES) {
+            expect(trans[locale]?.[REASON_KEY]).not.toMatch(/[«"“][^»"”]*[Cc]ambiar plan/);
+            expect(trans[locale]?.[REASON_KEY]).not.toMatch(/[«"“][^»"”]*[Cc]hange plan/);
+            expect(trans[locale]?.[REASON_KEY]).not.toMatch(/[«"“][^»"”]*[Mm]udar plano/);
+        }
+    });
 });

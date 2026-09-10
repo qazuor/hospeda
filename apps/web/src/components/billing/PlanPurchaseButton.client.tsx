@@ -1547,26 +1547,33 @@ export function PlanPurchaseButton({
                 // key away and an unmapped reason falls through to exactly the
                 // string this line used to hardcode.
                 //
-                // Only a rejection that actually NAMES itself goes through the
-                // chain. Its last step is `apiMessage || fallback`, and
-                // `apiMessage` is the API's ENGLISH text — reachable exactly
-                // when the response carried no machine-readable identifier at
-                // all (a raw upstream 502, a body with no `error` envelope, a
-                // network failure the client turns into
-                // `API request failed with status N`). Sending those through
-                // would replace one localized sentence with an English one.
-                // With a `code` present there is no such risk:
-                // `api-error-key-coverage.test.ts` fails CI unless EVERY
-                // `ServiceErrorCode` has copy in es/en/pt, so that branch can
-                // only ever resolve to a translation.
+                // The rejection is handed over WITHOUT its `message`, and that
+                // is the whole of the safety here. `translateApiError`'s last
+                // step is `apiMessage || fallback`, and `apiMessage` is the
+                // API's ENGLISH text — reachable exactly when the response
+                // carried no machine-readable identifier at all (a raw upstream
+                // 502, a body with no `error` envelope, a network failure the
+                // client turns into `API request failed with status N`).
+                // Dropping the field makes that term empty, so every one of
+                // those falls to `checkoutError`: the same localized sentence
+                // this line used to hardcode, and English can never surface.
+                //
+                // Preferred over gating the call on `reason || code`, which was
+                // the first attempt: that also skipped the STATUS branch, so a
+                // 429 or a client-side timeout lost the specific copy
+                // (`RATE_LIMIT_EXCEEDED`, `TIMEOUT`) that already ships in all
+                // three locales. Stripping one field keeps every mapped branch
+                // and closes the only unmapped one.
                 //
                 // `result.ok` with a missing `checkoutUrl` carries no error
                 // object at all, and takes the same generic sentence.
                 const rejection = result.ok ? undefined : result.error;
                 setError(
-                    rejection?.reason || rejection?.code
-                        ? translateApiError({ error: rejection, t, fallback: checkoutError })
-                        : checkoutError
+                    translateApiError({
+                        error: rejection ? { ...rejection, message: undefined } : undefined,
+                        t,
+                        fallback: checkoutError
+                    })
                 );
                 return;
             }

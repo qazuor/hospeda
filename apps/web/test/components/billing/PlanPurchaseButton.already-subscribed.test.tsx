@@ -39,8 +39,9 @@ import { PlanPurchaseButton } from '../../../src/components/billing/PlanPurchase
  * against the catalogue, in
  * `packages/i18n/test/api-error-already-subscribed.test.ts`.
  */
-const { ALREADY_SUBSCRIBED_COPY } = vi.hoisted(() => ({
-    ALREADY_SUBSCRIBED_COPY: 'Ya tenés una suscripción activa. Entrá en Mi cuenta → Suscripción.'
+const { ALREADY_SUBSCRIBED_COPY, RATE_LIMIT_COPY } = vi.hoisted(() => ({
+    ALREADY_SUBSCRIBED_COPY: 'Ya tenés una suscripción activa. Entrá en Mi cuenta → Suscripción.',
+    RATE_LIMIT_COPY: 'Demasiadas solicitudes. Esperá unos segundos.'
 }));
 
 /** The sentence the button hardcoded for every failure before this fix. */
@@ -62,7 +63,8 @@ vi.mock('../../../src/lib/auth-client', () => ({
 // could not tell the fix from the bug.
 vi.mock('../../../src/lib/i18n', () => {
     const CATALOG: Record<string, string> = {
-        'common.apiError.ALREADY_SUBSCRIBED': ALREADY_SUBSCRIBED_COPY
+        'common.apiError.ALREADY_SUBSCRIBED': ALREADY_SUBSCRIBED_COPY,
+        'common.apiError.RATE_LIMIT_EXCEEDED': RATE_LIMIT_COPY
     };
     const t = (key: string, fallback?: string) => CATALOG[key] ?? fallback ?? key;
     return {
@@ -136,8 +138,9 @@ function mockAuthenticated() {
  * actually reaches `/start-paid`. Only the checkout itself fails.
  *
  * @param startPaidError - The `error` object `/start-paid` answers with.
+ * @param status - The HTTP status it answers with (409 unless stated).
  */
-function buildFetchMock(startPaidError: Record<string, unknown>) {
+function buildFetchMock(startPaidError: Record<string, unknown>, status = 409) {
     return vi.fn().mockImplementation((url: string) => {
         if (url.includes('/billing/payer-email-known')) {
             return Promise.resolve({
@@ -149,8 +152,14 @@ function buildFetchMock(startPaidError: Record<string, unknown>) {
         if (url.includes('/billing/subscriptions/start-paid')) {
             return Promise.resolve({
                 ok: false,
-                status: 409,
-                json: () => Promise.resolve({ error: startPaidError })
+                status,
+                // An empty `error` object stands for a body the client could not
+                // read a code out of — `parseError` then leaves `code`/`reason`
+                // undefined and only the status survives.
+                json: () =>
+                    Promise.resolve(
+                        Object.keys(startPaidError).length > 0 ? { error: startPaidError } : {}
+                    )
             });
         }
         return Promise.resolve({
@@ -222,10 +231,20 @@ describe('PlanPurchaseButton — a refused checkout says what to do (HOS-1321)',
         // Arrange — the fall-through the fix must preserve: an unmapped
         // failure has to read exactly as it did before, never as a raw
         // English API message and never as a dotted key.
+        //
+        // `message` is present ON PURPOSE. It is the only field that can
+        // produce the English leak this branch exists to prevent
+        // (`translateApiErrorWithT` ends at `apiMessage || fallback`), so a
+        // fixture that omitted it asserted nothing about the risk — which is
+        // what the first draft of this test did.
         mockAuthenticated();
         vi.stubGlobal(
             'fetch',
-            buildFetchMock({ code: 'SOME_UNMAPPED_CODE', reason: 'SOME_UNMAPPED_REASON' })
+            buildFetchMock({
+                code: 'SOME_UNMAPPED_CODE',
+                reason: 'SOME_UNMAPPED_REASON',
+                message: 'Some unmapped English text straight from the API'
+            })
         );
         const user = userEvent.setup();
         render(
@@ -242,6 +261,35 @@ describe('PlanPurchaseButton — a refused checkout says what to do (HOS-1321)',
         await waitFor(() => {
             expect(screen.getByText(GENERIC_CHECKOUT_ERROR)).toBeInTheDocument();
         });
+        expect(
+            screen.queryByText('Some unmapped English text straight from the API')
+        ).not.toBeInTheDocument();
+    });
+
+    it('keeps the specific copy of a failure that only carries an HTTP status', async () => {
+        // Arrange — a raw 429 arrives with no `code` and no `reason`; the only
+        // handle on it is the status, and `common.apiError.RATE_LIMIT_EXCEEDED`
+        // already ships in all three locales. The first draft of this fix gated
+        // the whole chain on `reason || code`, which silently skipped that
+        // branch and threw the copy away. Stripping `message` instead keeps it.
+        mockAuthenticated();
+        vi.stubGlobal('fetch', buildFetchMock({}, 429));
+        const user = userEvent.setup();
+        render(
+            <PlanPurchaseButton
+                {...baseProps}
+                audience="owner"
+            />
+        );
+
+        // Act
+        await user.click(screen.getByTestId('plan-cta-button'));
+
+        // Assert
+        await waitFor(() => {
+            expect(screen.getByText(RATE_LIMIT_COPY)).toBeInTheDocument();
+        });
+        expect(screen.queryByText(GENERIC_CHECKOUT_ERROR)).not.toBeInTheDocument();
     });
 
     it('never surfaces the raw English message of a rejection that names nothing', async () => {
