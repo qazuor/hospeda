@@ -695,10 +695,12 @@ async function loadEntitlements(
         // one subscription selected below. That is the entire fix: a gastronomy
         // owner's subscription is invisible to `selectAccommodationSubscription`
         // (commerce never matches, by design — SPEC-239 isolation), so before
-        // this they fell through to the tourist-FREE defaults and the twelve VIP
-        // keys their own plan row declares reached nothing. `price-alert/
-        // protected/create.ts` gates on `PRICE_ALERTS` and answered 403 to an
-        // owner whose plan grants it.
+        // this they fell through to the tourist-FREE defaults: of the FIFTEEN VIP
+        // keys their own plan row declares, twelve reached nothing (the other
+        // three — save/write/read reviews — happen to be in the free baseline
+        // too, which is why the shortfall is twelve and the block is fifteen).
+        // `price-alert/protected/create.ts` gates on `PRICE_ALERTS` and answered
+        // 403 to an owner whose plan grants it.
         //
         // The selection below is deliberately left alone. It answers "which plan
         // is this customer's own consumer plan" — accommodation first, tourist as

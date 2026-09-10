@@ -272,16 +272,30 @@ describe('HOS-1323 — who does NOT inherit', () => {
      *
      * `vip_support` is decisive because it is in `TOURIST_VIP_ENTITLEMENTS` and
      * NOT in the tourist-free baseline, so its absence cannot be explained by
-     * the fallback happening to grant it.
+     * the fallback happening to grant it. Adding `partner` to the gifted domains
+     * turns this case red, which is the mutation it exists to catch.
+     *
+     * **The plan row below is inert, and the assertion does not rest on it.** An
+     * earlier version of this comment claimed the row carries a VIP key "so the
+     * assertion cannot pass for the unrelated reason that the fixture grants
+     * nothing" — that reasoning is wrong here: a `partner` subscription matches
+     * neither branch of `selectAccommodationSubscription`, so `activeSubscription`
+     * is `undefined`, the loader takes the no-subscription fallback, and
+     * `billing.plans.get` is never called at all. The row is kept only so the
+     * fixture reads like a real partner, and the `expect` below records that it
+     * is never consulted.
+     *
+     * That is itself a finding worth leaving here: **a partner's plan
+     * entitlements are resolved by no path in this loader.** They eat the
+     * tourist-free baseline whatever their plan declares. Pre-existing, not
+     * introduced here, and out of scope for HOS-1323 — but it means "partners do
+     * not inherit the gift" is true today for a broader reason than the gift.
      */
     it('a partner subscription grants no tourist-VIP key', async () => {
         mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
             { id: 'sub-partner', planId: 'plan-partner-gold', status: 'active' }
         ]);
         hydrateAs([{ id: 'sub-partner', productDomain: 'partner' }]);
-        // The partner plan row deliberately DOES carry a VIP key: without this
-        // the assertion would pass for the unrelated reason that the fixture
-        // grants nothing.
         mockBilling.plans.get.mockResolvedValue({
             id: 'plan-partner-gold',
             name: 'partner-gold',
@@ -292,6 +306,8 @@ describe('HOS-1323 — who does NOT inherit', () => {
         const { entitlements } = await loadThroughMiddleware();
 
         expect(entitlements).not.toContain(EntitlementKey.VIP_SUPPORT);
+        // Documents the paragraph above rather than defending the assertion.
+        expect(mockBilling.plans.get).not.toHaveBeenCalled();
     });
 
     /**
@@ -418,40 +434,180 @@ describe('HOS-1323 — the dual owner', () => {
     });
 });
 
+/**
+ * Stubs `PlanService.getBySlug` so the `tourist-vip` row differs from the code
+ * constant, and answers NOT_FOUND for every other slug.
+ *
+ * The row is built by mutating a copy of the catalogue's own — never typed out —
+ * so it stays a real tourist-VIP row with one deliberate difference.
+ */
+function stubTouristVipRow(patch: {
+    entitlements?: string[];
+    limits?: Record<string, number>;
+}): void {
+    const vipRow = planRow(TOURIST_VIP_PLAN);
+    vi.spyOn(PlanService.prototype, 'getBySlug').mockImplementation(async (slug: string) => {
+        if (slug !== TOURIST_VIP_PLAN.slug) {
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Plan not found: ${slug}` }
+            } as never;
+        }
+        return {
+            success: true,
+            data: {
+                ...vipRow,
+                slug: TOURIST_VIP_PLAN.slug,
+                entitlements: patch.entitlements ?? vipRow.entitlements,
+                limits: { ...vipRow.limits, ...(patch.limits ?? {}) }
+            }
+        } as never;
+    });
+}
+
 describe('HOS-1323 — by REFERENCE, not by copy', () => {
     /**
      * The criterion that decides between two implementations which look
-     * equivalent today.
+     * equivalent today, exercised on the half the owner named FIRST — *"si
+     * mañana le cambiamos un límite"*.
      *
      * A plan is changed in this repo through TWO doors: `plans.config.ts` (the
      * constants every definition spreads) and `PUT /api/v1/admin/billing/
      * plans/{id}`, which writes `entitlements` / `limits` straight onto the
      * `billing_plans` row with no deploy (`routes/billing/admin/plans.ts:243`).
+     * A limit is a `'commercial'` field: the row is authoritative for its VALUE.
      *
-     * An implementation that delivered the commerce plan ROW's own copy of the
-     * VIP block would pass every other test in this file and fail this one:
-     * the gastronomy row below does NOT carry `AI_SUPPORT`, the tourist-VIP row
-     * does, and only a runtime read of the tourist-VIP plan can bridge that.
+     * **This is the case that covers the row-reading LOOP.** Until it existed,
+     * every `getBySlug` stub in this file returned limits identical to the
+     * constant, so deleting the limits loop from `resolveTouristVipGift` left
+     * all 76 cases green — measured. An implementation that returned the
+     * constant and never read the row passed everything.
      */
-    it('a key added to the tourist-VIP ROW reaches a gastronomy owner', async () => {
+    it('a limit RAISED on the tourist-VIP row reaches a gastronomy owner', async () => {
+        const configured = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_collections');
+        expect(configured?.value).toBeGreaterThan(0);
+        const raised = (configured?.value ?? 0) + 900;
+
+        stubTouristVipRow({ limits: { max_collections: raised } });
+
+        // The gastronomy plan row carries the CONSTANT's value, so the raised
+        // one can only have come from the tourist-VIP row.
+        expect(planRow(GASTRONOMY_BASICO_PLAN).limits.max_collections).toBe(configured?.value);
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(planRow(GASTRONOMY_BASICO_PLAN));
+
+        const { limits } = await loadThroughMiddleware();
+
+        expect(limits.max_collections).toBe(raised);
+    });
+
+    /**
+     * The same read, on the commerce middleware's own path. It resolves the gift
+     * independently of the global loader (its wholesale replace drops whatever
+     * the loader published), so the row-reading loop has to be covered on both.
+     */
+    it('a limit RAISED on the tourist-VIP row reaches a gastronomy ROUTE', async () => {
+        const configured = TOURIST_VIP_PLAN.limits.find((l) => l.key === 'max_collections');
+        const raised = (configured?.value ?? 0) + 900;
+
+        const gastroRow = planRow(GASTRONOMY_BASICO_PLAN);
         const vipRow = planRow(TOURIST_VIP_PLAN);
-        vi.spyOn(PlanService.prototype, 'getBySlug').mockImplementation(
-            async (slug: string) =>
-                ({
-                    success: slug === TOURIST_VIP_PLAN.slug,
-                    data: {
-                        ...vipRow,
-                        slug: TOURIST_VIP_PLAN.slug,
-                        entitlements: [...vipRow.entitlements, EntitlementKey.AI_SUPPORT],
-                        limits: vipRow.limits
-                    },
-                    error: { code: 'NOT_FOUND', message: `Plan not found: ${slug}` }
-                }) as never
+        vi.spyOn(PlanService.prototype, 'getBySlug').mockImplementation(async (slug: string) => {
+            if (slug === TOURIST_VIP_PLAN.slug) {
+                return {
+                    success: true,
+                    data: { ...vipRow, limits: { ...vipRow.limits, max_collections: raised } }
+                } as never;
+            }
+            return { success: true, data: gastroRow } as never;
+        });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(gastroRow);
+
+        const app = new Hono<AppBindings>();
+        app.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', CUSTOMER_ID);
+            return next();
+        });
+        app.use(entitlementMiddleware());
+        app.get('/gastro', commerceVerticalEntitlementMiddleware('gastronomy'), (c) =>
+            c.json({ limits: Object.fromEntries(c.get('userLimits')) })
         );
 
-        // The gastronomy plan row is the catalogue's own — it does NOT grant
-        // AI_SUPPORT, so the key can only have come from the tourist-VIP plan.
-        expect(GASTRONOMY_BASICO_PLAN.entitlements).not.toContain(EntitlementKey.AI_SUPPORT);
+        const res = await app.request('/gastro');
+        const { limits } = (await res.json()) as { limits: Record<string, number> };
+
+        expect(limits.max_collections).toBe(raised);
+    });
+});
+
+describe('HOS-1323 — the row supplies VALUES, never new KEYS', () => {
+    /**
+     * The blast radius this file's change created, and the allowlist that closes
+     * it.
+     *
+     * Before HOS-1323, editing the `tourist-vip` row moved tourist-VIP
+     * subscribers and nobody else. After it, that row is read on behalf of every
+     * gifted vertical — so an unfiltered gift would let one admin edit, made
+     * with no deploy and no review, hand out another vertical's entitlements and
+     * caps.
+     *
+     * `max_gastronomies` is the decisive one and not a hypothetical: the
+     * commerce middleware merges the gift BEFORE `resolveCommerceVerticalCap`
+     * reads `limits.get('max_gastronomies')`, so an unfiltered `50` on the
+     * tourist-vip row would let every `gastronomy-basico` owner — paying for ONE
+     * listing — publish fifty. Silently: an oversized cap raises nothing.
+     */
+    it('refuses a foreign LIMIT on the tourist-VIP row (the vertical cap holds)', async () => {
+        const cap = GASTRONOMY_BASICO_PLAN.limits.find((l) => l.key === 'max_gastronomies');
+        expect(cap?.value).toBe(1);
+
+        stubTouristVipRow({ limits: { max_gastronomies: 50 } });
+
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
+        ]);
+        hydrateAs([{ id: 'sub-gastro', productDomain: 'gastronomy' }]);
+        mockBilling.plans.get.mockResolvedValue(planRow(GASTRONOMY_BASICO_PLAN));
+
+        const app = new Hono<AppBindings>();
+        app.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', CUSTOMER_ID);
+            return next();
+        });
+        app.use(entitlementMiddleware());
+        app.get('/gastro', commerceVerticalEntitlementMiddleware('gastronomy'), (c) =>
+            c.json({ limits: Object.fromEntries(c.get('userLimits')) })
+        );
+
+        const res = await app.request('/gastro');
+        const { limits } = (await res.json()) as { limits: Record<string, number> };
+
+        expect(limits.max_gastronomies).toBe(1);
+    });
+
+    /**
+     * The entitlement half of the same boundary: an owner-side key on the
+     * tourist-VIP row must not reach the GLOBAL set of a gastronomy owner who
+     * holds no accommodation subscription at all.
+     */
+    it('refuses a foreign ENTITLEMENT on the tourist-VIP row', async () => {
+        const vipRow = planRow(TOURIST_VIP_PLAN);
+        expect(vipRow.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+
+        stubTouristVipRow({
+            entitlements: [...vipRow.entitlements, EntitlementKey.PUBLISH_ACCOMMODATIONS]
+        });
 
         mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
             { id: 'sub-gastro', planId: 'plan-gastronomy-basico', status: 'active' }
@@ -461,7 +617,10 @@ describe('HOS-1323 — by REFERENCE, not by copy', () => {
 
         const { entitlements } = await loadThroughMiddleware();
 
-        expect(entitlements).toContain(EntitlementKey.AI_SUPPORT);
+        expect(entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        // The gift itself still arrives — the allowlist refuses the foreign key,
+        // it does not refuse the row.
+        expect(entitlements).toContain(EntitlementKey.PRICE_ALERTS);
     });
 });
 

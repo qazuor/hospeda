@@ -53,7 +53,16 @@
  *   catalogue declares.
  * - **limits are a `'commercial'` field — the database wins.** So a numeric
  *   value on the row REPLACES the constant's. An operator raising a cap in the
- *   admin UI must take effect without a deploy.
+ *   admin UI takes effect without a deploy.
+ *
+ * Both halves are filtered through an allowlist derived from the plan itself —
+ * see {@link GIFTABLE_ENTITLEMENT_KEYS}. The row supplies VALUES for keys the
+ * catalogue declares giftable; it does not get to name new ones.
+ *
+ * **A cap LOWERED on the row does not reach anybody**, and that is a property of
+ * the merge, not of this resolution: {@link moreGenerousLimit} only ever moves a
+ * limit upward. Said here because the sentence above would otherwise read as
+ * "the admin UI controls this cap in both directions", which is false.
  *
  * ---
  * HOW THE GIFT MERGES INTO A RESOLVED PLAN
@@ -71,9 +80,19 @@
  *   `-1` must win, or the gift is not a VIP tier.
  * - A host on `owner-premium` already carries the VIP block from their own plan
  *   row, and any key their plan raises above it (today none, tomorrow maybe)
- *   must stay raised. `mergeLimits(TOURIST_VIP_LIMITS, [...own])` in
- *   `plans.config.ts` states the same precedence for the declaration; this
- *   states it for the runtime.
+ *   must stay raised.
+ *
+ * **This is NOT the precedence `plans.config.ts` uses, and an earlier version of
+ * this docblock claimed it was.** `mergeLimits` (`plans.config.ts:42-56`) is
+ * LAST-WINS — its own doc says "the `override` list wins on key clash", upward
+ * or downward — so a plan declaring a SMALLER value than the tourist-VIP tier
+ * would keep the smaller one there and keep the larger one here. Nothing in the
+ * shipped catalogue exercises the difference (no plan overrides a
+ * `TOURIST_VIP_LIMITS` key at all — the commerce overrides are the vertical's
+ * own cap, AI-chat cap and gallery cap, all disjoint from the seven), so the two
+ * agree today on every plan that exists. They would not agree on the first plan
+ * that narrows one, and whoever writes that plan needs to know which rule is
+ * which.
  *
  * @module services/billing/tourist-vip-inheritance
  */
@@ -286,6 +305,54 @@ function giftFromConfig(): { entitlements: Set<EntitlementKey>; limits: Map<Limi
 }
 
 /**
+ * The keys the gift may ever carry — **derived from {@link TOURIST_VIP_PLAN},
+ * not written out**, so adding a key to `TOURIST_VIP_ENTITLEMENTS` or
+ * `TOURIST_VIP_LIMITS` widens the allowlist in the same edit that adds the key.
+ * A second hand-maintained list is another thing that drifts, and this epic
+ * exists because those drift.
+ *
+ * ## Why the row is filtered at all
+ *
+ * Without this, the gift carries **whatever the `tourist-vip` row happens to
+ * hold**, and the row is editable through `PUT /admin/billing/plans/{id}` with
+ * no deploy and no review. Two measured consequences, both silent:
+ *
+ * - `max_gastronomies: 50` on that row — a copy-paste, or a tourist promo —
+ *   reaches `resolveCommerceVerticalGrants`, whose merge runs BEFORE
+ *   `resolveCommerceVerticalCap` reads `limits.get('max_gastronomies')`. Every
+ *   `gastronomy-basico` owner, paying for ONE listing, would publish fifty.
+ * - `publish_accommodations` on that row would land in the GLOBAL entitlement
+ *   set of a gastronomy owner who has no accommodation subscription at all.
+ *
+ * Neither is hypothetical about the plumbing: it is exactly the union and
+ * replace below, unfiltered. And the blast radius is what this file changed —
+ * before it, editing the `tourist-vip` row moved tourist-VIP subscribers and
+ * nobody else; after it, that row is read on behalf of three populations. A
+ * gift that can hand out another vertical's cap is not a gift, it is a hole.
+ *
+ * ## What it costs, stated plainly
+ *
+ * It fails CLOSED, and that has a price worth naming rather than burying: a key
+ * added to the tourist-VIP **ROW alone** is dropped, so the "add an entitlement"
+ * half of the owner's rule propagates through `plans.config.ts` (where a
+ * `'capability'` is supposed to change — config wins, the database follows) and
+ * not through the admin UI. The "change a limit" half — the owner's own first
+ * example, and the `'commercial'` field where the database IS authoritative —
+ * propagates from the row unchanged, because the KEY is already allowlisted and
+ * only its VALUE moves.
+ *
+ * Failing closed rather than denying a list of known-foreign keys is deliberate:
+ * a denylist admits every key nobody has classified yet, which is how the next
+ * vertical's cap would leak the day it is added.
+ */
+const GIFTABLE_ENTITLEMENT_KEYS: ReadonlySet<EntitlementKey> = new Set<EntitlementKey>(
+    TOURIST_VIP_PLAN.entitlements
+);
+const GIFTABLE_LIMIT_KEYS: ReadonlySet<LimitKey> = new Set<LimitKey>(
+    TOURIST_VIP_PLAN.limits.map((l) => l.key)
+);
+
+/**
  * Resolves the tourist-VIP gift: the constant, raised by the `tourist-vip` row.
  *
  * Never rejects and never returns an empty gift — a database that cannot be
@@ -319,20 +386,48 @@ export async function resolveTouristVipGift(): Promise<TouristVipGift> {
                 return gift;
             }
 
-            // Capability half: UNION. Config wins and the database follows, so a
-            // lagging or emptied row can only ever add.
+            const refused: string[] = [];
+
+            // Capability half: UNION, restricted to the allowlist. Config wins
+            // and the database follows, so a lagging or emptied row can only
+            // ever add — and it can only add a key the catalogue already
+            // declares giftable. See GIFTABLE_ENTITLEMENT_KEYS.
             for (const key of result.data.entitlements) {
-                if (isEntitlementKey(key)) {
-                    gift.entitlements.add(key);
+                if (!isEntitlementKey(key)) {
+                    continue;
                 }
+                if (!GIFTABLE_ENTITLEMENT_KEYS.has(key)) {
+                    refused.push(key);
+                    continue;
+                }
+                gift.entitlements.add(key);
             }
 
-            // Commercial half: the row REPLACES. An operator raising (or
-            // lowering) a VIP cap in the admin UI takes effect without a deploy.
+            // Commercial half: the row REPLACES the catalogue's VALUE for a key
+            // the catalogue already declares. An operator RAISING a VIP cap in
+            // the admin UI takes effect without a deploy; a LOWERED one is
+            // carried here but does not survive `mergeTouristVipGift`, which
+            // only ever moves a limit upward — see `moreGenerousLimit`.
             for (const [key, value] of Object.entries(result.data.limits)) {
-                if (isLimitKey(key) && typeof value === 'number') {
-                    gift.limits.set(key, value);
+                if (!isLimitKey(key) || typeof value !== 'number') {
+                    continue;
                 }
+                if (!GIFTABLE_LIMIT_KEYS.has(key)) {
+                    refused.push(key);
+                    continue;
+                }
+                gift.limits.set(key, value);
+            }
+
+            // One line, only when the gate actually refused something. Silence
+            // here would make "the allowlist is holding" and "the allowlist has
+            // gone no-op" look identical — the failure mode this whole file is
+            // written around.
+            if (refused.length > 0) {
+                apiLogger.warn(
+                    { slug: TOURIST_VIP_PLAN.slug, refused },
+                    'the tourist-vip row declares keys the catalogue does not gift — refused rather than inherited'
+                );
             }
 
             return gift;
