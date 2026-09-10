@@ -129,6 +129,10 @@ function makeBillingMock(
         status: string;
         cancelAtPeriodEnd?: boolean;
         productDomain?: string;
+        // HOS-1335: a `trialing` row is only a duplicate when something is
+        // actually linked at MercadoPago, so the fixtures that mean "a live
+        // trial" have to say so.
+        providerSubscriptionIds?: Record<string, string>;
     }[]
 ) {
     const plan = {
@@ -177,8 +181,17 @@ describe('handleStartPaidSubscription — ALREADY_SUBSCRIBED guard (SPEC-262 H2)
         expect((err as ServiceError).reason).toBe('ALREADY_SUBSCRIBED');
     });
 
-    it('throws ALREADY_EXISTS when customer has a trialing sub', async () => {
-        mockBillingWith(makeBillingMock([{ status: 'trialing' }]));
+    // HOS-1335 narrowed what `trialing` means here. A trial with a LIVE
+    // MercadoPago preapproval — the pre-HOS-1012 card-first shape, still present
+    // on legacy rows — is a real duplicate and keeps blocking, which is what this
+    // test now pins. A trial WITHOUT one is Hospeda's own and is exempt; that
+    // half lives in `start-paid-trial-conversion.test.ts`, both directions.
+    it('throws ALREADY_EXISTS when customer has a trialing sub with a live preapproval', async () => {
+        mockBillingWith(
+            makeBillingMock([
+                { status: 'trialing', providerSubscriptionIds: { mercadopago: 'mp-live-1' } }
+            ])
+        );
         const ctx = makeContext();
 
         const err = await handleStartPaidSubscription(ctx as never, {
@@ -609,10 +622,16 @@ describe('handleStartPaidSubscription — HOS-1260 tourist-vip is replaced, not 
             status: string;
             productDomain: string | null;
             cancelAtPeriodEnd?: boolean;
+            providerSubscriptionIds?: Record<string, string>;
         }[]
     ) {
         const billing = makeBillingMock(
-            subs.map(({ id, status, cancelAtPeriodEnd }) => ({ id, status, cancelAtPeriodEnd }))
+            subs.map(({ id, status, cancelAtPeriodEnd, providerSubscriptionIds }) => ({
+                id,
+                status,
+                cancelAtPeriodEnd,
+                providerSubscriptionIds
+            }))
         );
         mockHydrationRows.mockResolvedValueOnce(
             subs.map(({ id, productDomain }) => ({ id, productDomain }))
@@ -629,9 +648,24 @@ describe('handleStartPaidSubscription — HOS-1260 tourist-vip is replaced, not 
     // subset would leave whichever member it omitted as the one status through
     // which the stacking hole survives.
 
+    // HOS-1335: `trialing` carries a preapproval here on purpose. A tourist-vip
+    // trial WITH a live MercadoPago preapproval is the duplicate this guard
+    // exists to refuse; a preapproval-less one is a Hospeda trial and is exempt
+    // (covered, both directions, in `start-paid-trial-conversion.test.ts`).
+    // Every other status in the set blocks regardless of a preapproval — `comp`
+    // in particular never has one.
     for (const status of ['active', 'trialing', 'comp', 'courtesy', 'past_due'] as const) {
         it(`blocks the host checkout on a ${status} tourist-vip subscription`, async () => {
-            const billing = armHydratedSubs([{ id: 'sub-vip', status, productDomain: 'tourist' }]);
+            const billing = armHydratedSubs([
+                {
+                    id: 'sub-vip',
+                    status,
+                    productDomain: 'tourist',
+                    ...(status === 'trialing'
+                        ? { providerSubscriptionIds: { mercadopago: 'mp-live-vip' } }
+                        : {})
+                }
+            ]);
             const ctx = makeContext();
 
             const err = await handleStartPaidSubscription(ctx as never, {

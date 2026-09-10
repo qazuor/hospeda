@@ -34,6 +34,7 @@ import { AnalyticsEvents } from '@repo/analytics';
 import {
     isEntitlementGrantingStatus,
     isLiveSubscriptionStatus,
+    normalizeStoredSubscriptionStatus,
     TEST_DAILY_PLAN
 } from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
@@ -41,7 +42,8 @@ import {
     ProductDomainEnum,
     ServiceErrorCode,
     StartPaidSubscriptionRequestSchema,
-    StartPaidSubscriptionResponseSchema
+    StartPaidSubscriptionResponseSchema,
+    SubscriptionStatusEnum
 } from '@repo/schemas';
 import {
     hydrateSubscriptionProductDomains,
@@ -172,6 +174,68 @@ const isSubscriptionInASellableDomain = (sub: unknown): boolean =>
     isAccommodationSubscription(sub) || subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST);
 
 /**
+ * Whether `sub` is a HOSPEDA-OWNED trial — `trialing`, with nothing linked at
+ * MercadoPago (HOS-1335).
+ *
+ * ## Why this row must not read as a duplicate
+ *
+ * Since HOS-1012 the free trial is Hospeda's own: a local `billing_subscriptions`
+ * row minted at the owner's first publish, `mp_subscription_id = NULL` by
+ * construction (`subscription-trial-create.service.ts`). MercadoPago is never
+ * told it exists, so when it lapses **nothing charges**. The only way that
+ * customer becomes a paying one is for them to come here and buy — which is
+ * precisely the gesture the already-subscribed guards below were refusing with
+ * `409 ALREADY_SUBSCRIBED`, for the whole ~30 days of the trial, on the three
+ * verticals that publish.
+ *
+ * Neither guard was wrong, and `isLiveSubscriptionStatus` is not what to change:
+ * `trialing` IS live for entitlements and for dunning, and narrowing that set
+ * would silently un-guard both. What changed is what sits on the other side of a
+ * trialing row. So the exemption is stated HERE, at the two call sites whose
+ * question is "would a second checkout duplicate a live MercadoPago object?" —
+ * and for a preapproval-less trial the answer is no.
+ *
+ * ## The preapproval half is load-bearing, not belt-and-braces
+ *
+ * Card-first trials (pre-HOS-1012) DO carry a live preapproval that charges on
+ * its own at trial end, and those rows still exist in production. Selling a
+ * second subscription over one is a genuine double charge, so `trialing` alone
+ * must never be the test. Equally, the status half is load-bearing in the other
+ * direction: `comp` subscriptions are inserted with `mp_subscription_id = NULL`
+ * too (`subscription-comp-create.service.ts`), so a preapproval-blind exemption
+ * would sell a CHARGED subscription to a complimentary customer — HOS-702's
+ * failure, re-opened.
+ *
+ * ## Reading the id off the mapped object is correct, and covers `''`
+ *
+ * `@qazuor/qzpay-drizzle`'s row→domain mapper hides an empty-string provider id
+ * behind a truthiness check, so `providerSubscriptionIds` comes back `{}` for
+ * BOTH `NULL` and `''` (see `@repo/db`'s `billing-subscription-conditions.ts`,
+ * HOS-1326). A JS-side truthiness test therefore matches exactly the rows that
+ * have nothing usable linked — the two-branch `IS NULL OR = ''` shape is only
+ * needed when the question is asked in SQL.
+ *
+ * ## No second row can survive this
+ *
+ * Letting the checkout through does not leave the customer holding two
+ * subscriptions: `supersedeLocalTrialsOnActivation`
+ * (`services/billing/trial-supersede-on-activation.ts`) ends every
+ * preapproval-less trial in the activated row's product domain **inside the
+ * activation's own transaction**, so the paid row and the dead trial commit
+ * together or not at all. That mechanism pre-dates this change and is what makes
+ * it safe; it is not a reconciler running later.
+ *
+ * @param sub - A subscription from `getByCustomerId()`.
+ * @returns `true` when the row is a trial Hospeda owns outright.
+ */
+const isHospedaOwnedLocalTrial = (sub: {
+    status?: unknown;
+    providerSubscriptionIds?: { mercadopago?: string } | null;
+}): boolean =>
+    normalizeStoredSubscriptionStatus(String(sub.status)) === SubscriptionStatusEnum.TRIALING &&
+    !sub.providerSubscriptionIds?.mercadopago;
+
+/**
  * Handler for the start-paid endpoint.
  *
  * Errors:
@@ -296,8 +360,13 @@ export const handleStartPaidSubscription = async (
         // moroso host could open a SECOND preapproval on top of the one they
         // already owe. Unifying on the same widened predicate is the fix; see
         // that module's docblock (HOS-1275) for why the two sets differ.
+        // HOS-1335: a Hospeda-owned trial (trialing, nothing linked at
+        // MercadoPago) is NOT a duplicate — this checkout is how it converts.
+        // See `isHospedaOwnedLocalTrial` for the full reasoning and for why
+        // `LIVE_SUBSCRIPTION_STATUSES` is deliberately left alone.
         const hasLiveSellableDomainSub = existingSubscriptions.some((sub) => {
             if (!isSubscriptionInASellableDomain(sub)) return false;
+            if (isHospedaOwnedLocalTrial(sub)) return false;
             // A soft-cancelled sub (cancelAtPeriodEnd=true) is intentionally NOT
             // caught here — the dedicated SPEC-147 guard below handles it with the
             // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
@@ -335,9 +404,20 @@ export const handleStartPaidSubscription = async (
         // guard above and leaving this one narrow is the repo's own recurring
         // failure shape: a correct gate upstairs next to the same gate still
         // broken twenty lines down.
+        // HOS-1335: exempted on the same terms as the guard above, and for a
+        // reason specific to THIS guard rather than by symmetry. Its whole
+        // justification is that a soft-cancelled row is "a LIVE preapproval until
+        // currentPeriodEnd", so a second checkout would put two live preapprovals
+        // on one customer — and a Hospeda-owned trial has none, so neither the
+        // hazard nor the remedy applies: the un-cancel this error tells the caller
+        // to perform would restore a trial that still cannot charge anything.
+        // Leaving it out would have reproduced the exact shape this file's own
+        // HOS-1260 note warns about — a correct gate beside the same gate still
+        // broken twenty lines down.
         const hasSoftCancelledSub = existingSubscriptions.some(
             (sub) =>
                 isSubscriptionInASellableDomain(sub) &&
+                !isHospedaOwnedLocalTrial(sub) &&
                 isEntitlementGrantingStatus(sub.status as string) &&
                 sub.cancelAtPeriodEnd === true
         );
