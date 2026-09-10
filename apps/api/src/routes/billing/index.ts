@@ -42,6 +42,7 @@ import { linkPreapprovalRouter } from './link-preapproval';
 import { payerEmailKnownRouter } from './payer-email-known';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
+import { protectedPlanByIdRouter } from './protected-plan-by-id';
 import { protectedPlansListRouter } from './protected-plans-list';
 import { replacePaymentMethodRouter } from './replace-payment-method';
 import { startPaidRouter } from './start-paid';
@@ -223,10 +224,20 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // qzpay-hono's prebuilt `GET /plans` exposes every storage plan —
     // including the hidden daily test plan — to any authenticated user.
     // Hono first-match routing means this exact `GET /plans` registration
-    // wins; `POST /plans`, `GET /plans/:id`, etc. are untouched and fall
+    // wins; `POST /plans`, `PUT /plans/:id`, etc. are untouched and fall
     // through to the qzpay wrapper below. Same ordering rule the
     // soft-cancel / downgrade-preview / promo-codes overrides above rely on.
     router.route('/plans', protectedPlansListRouter);
+
+    // Mount the single-plan READ overrides — `GET /plans/:id` and
+    // `GET /plans/:id/prices` (`protected-plan-by-id.ts`) — BEFORE the qzpay
+    // wrapper, for the same reason and by the same rule (HOS-1186).
+    // Filtering the two LISTINGS left these two open: qzpay's prebuilt
+    // single-plan read answers the whole storage row — `metadata` and the
+    // attached `prices[]` included — to any authenticated caller, so a
+    // negotiated plan was published by id while both catalogues withheld it.
+    // They apply the same `isServablePlan` verdict the listing above does.
+    router.route('/plans', protectedPlanByIdRouter);
 
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing
