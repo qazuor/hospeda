@@ -15,9 +15,12 @@
  * **The roots are derived, not listed.** The scan reads this directory, so a
  * fourth predicate added next door is covered the moment the file lands — the
  * failure mode of a hand-typed file list is precisely what HOS-1311 is about, and
- * it is not worth reproducing here in miniature. Membership is derived too: a
- * module counts if it exports an `is…Status`-shaped function or a
- * `…STATUSES`-shaped const, so the author cannot opt out by not updating a list.
+ * it is not worth reproducing here in miniature. Every module is in scope; the two
+ * that legitimately compare nothing are named in {@link EXEMPT_MODULES} with the
+ * reason, and two further cases assert that list has not rotted. Deciding
+ * membership from the export's NAME instead would look like a derivation and be a
+ * hole: a predicate called `isOwnerPaying` would match no name pattern and be
+ * skipped with the guard reporting a pass.
  *
  * ## Part 2 — the two gates HOS-1310 names still disagree, visibly
  *
@@ -57,36 +60,40 @@ const REPO_ROOT = resolve(__dirname, '../../..');
 const NORMALIZER = 'normalizeStoredSubscriptionStatus';
 
 /**
- * The module that DEFINES the normalizer, and the barrel, are exempt from
- * Part 1 — one because it is the thing being required, the other because it only
- * re-exports. Derived from their filenames, which are the only two that can
- * legitimately be here without being predicates.
+ * The only two modules in this directory exempt from Part 1, each with the reason.
+ *
+ * **This list is the guard's sole escape hatch, and it is deliberately a list and
+ * not a rule.** An earlier cut of this file decided membership from the export's
+ * NAME instead — `/export function is…(Status|Live)/` — which reads like a
+ * derivation and is really a hole: a fourth predicate called `isOwnerPaying` or
+ * `subscriptionCounts` matches nothing, skips the assertion, and the guard
+ * reports a pass. Requiring every module and naming the exceptions puts the
+ * burden on whoever adds the next file, which is where it belongs.
  */
-const NOT_A_PREDICATE_MODULE = new Set(['index.ts', 'subscription-status-normalize.ts']);
+const EXEMPT_MODULES: ReadonlyArray<{ readonly file: string; readonly why: string }> = [
+    {
+        file: 'index.ts',
+        why: 'The barrel. It only re-exports; it compares no status and has nothing to normalize.'
+    },
+    {
+        file: 'subscription-status-normalize.ts',
+        why: 'It IS the normalizer. Requiring it to call itself is circular.'
+    }
+];
+
+const EXEMPT_FILE_NAMES: ReadonlySet<string> = new Set(EXEMPT_MODULES.map((entry) => entry.file));
 
 /** Strip comments so a docblock that merely MENTIONS the normalizer cannot satisfy the guard. */
 function stripComments(source: string): string {
     return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }
 
-/** Every non-barrel, non-normalizer `.ts` module in `src/predicates`. */
+/** Every `.ts` module in `src/predicates` that is not explicitly exempt. */
 function predicateModules(): readonly string[] {
     return readdirSync(PREDICATES_DIR)
         .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
-        .filter((name) => !NOT_A_PREDICATE_MODULE.has(name))
+        .filter((name) => !EXEMPT_FILE_NAMES.has(name))
         .sort();
-}
-
-/**
- * Whether a module exports something shaped like a status predicate or a status
- * set. Derived from the export's NAME, so a new predicate is in scope without
- * anyone adding it anywhere.
- */
-function declaresAStatusPredicate(liveCode: string): boolean {
-    return (
-        /export\s+function\s+is[A-Za-z]*(Status|Live)\b/.test(liveCode) ||
-        /export\s+const\s+[A-Z_]*STATUSES\b/.test(liveCode)
-    );
 }
 
 describe('HOS-1310 Part 1: every liveness predicate normalizes the stored status', () => {
@@ -100,16 +107,37 @@ describe('HOS-1310 Part 1: every liveness predicate normalizes the stored status
         expect(modules).toContain('is-subscription-live.ts');
     });
 
+    it('every exempt module still exists — a rename must not blindfold the scan', () => {
+        /*
+         * An exemption list rots in two directions. Rename `index.ts` and its entry
+         * silently stops matching anything; worse, rename a PREDICATE to a name the
+         * list happens to carry and it is exempted for free. Both end with a guard
+         * that checks less than it claims.
+         */
+        const present = new Set(readdirSync(PREDICATES_DIR));
+        const missing = EXEMPT_MODULES.filter((entry) => !present.has(entry.file)).map(
+            (entry) => entry.file
+        );
+        expect(
+            missing,
+            `These files are exempt from the normalization requirement but no longer exist:\n${missing
+                .map((f) => `  - ${f}`)
+                .join('\n')}\nRemove the entry so the scan covers whatever replaced them.`
+        ).toEqual([]);
+    });
+
+    it('no exemption is undocumented', () => {
+        const unexplained = EXEMPT_MODULES.filter((entry) => entry.why.trim().length < 40).map(
+            (entry) => entry.file
+        );
+        expect(
+            unexplained,
+            `Every exemption needs a real reason, not a placeholder: ${unexplained.join(', ')}`
+        ).toEqual([]);
+    });
+
     it.each(predicateModules())('%s routes its status through the normalizer', (moduleName) => {
         const liveCode = stripComments(readFileSync(resolve(PREDICATES_DIR, moduleName), 'utf-8'));
-
-        if (!declaresAStatusPredicate(liveCode)) {
-            // A module here that is not a status predicate has nothing to
-            // normalize. Asserted rather than skipped so the case is not silently
-            // absent from the report.
-            expect(liveCode).not.toMatch(/\bstatus\b\s*[:)]/);
-            return;
-        }
 
         expect(
             liveCode,
@@ -118,7 +146,8 @@ describe('HOS-1310 Part 1: every liveness predicate normalizes the stored status
                 '(`canceled`, `unpaid`, `incomplete`, `incomplete_expired`), so a raw comparison ' +
                 'is blind to whichever spelling the last writer used — and it fails silently, ' +
                 'returning false for a state that is live. That is the HOS-108 mechanism; ' +
-                'HOS-1310 closed it for the three predicates that existed. Normalize first.'
+                'HOS-1310 closed it for the three predicates that existed. Normalize first, ' +
+                'or add the module to EXEMPT_MODULES with the reason it compares no status.'
         ).toMatch(new RegExp(`\\b${NORMALIZER}\\s*\\(`));
     });
 
