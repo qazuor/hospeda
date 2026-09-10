@@ -131,7 +131,13 @@ describe('classifyConsumerAddonGrant — unplaceable is ADMITTED, never refused'
 
     it('admits every served add-on and refuses every foreign one', () => {
         for (const addon of ALL_ADDONS) {
-            const served = CONSUMER_SIDE_PRODUCT_DOMAINS.includes(addon.productDomain);
+            // `AddonDefinition.productDomain` is a required KEY with a nullable
+            // VALUE (`mapRowToAddonDefinition` builds the same shape from a
+            // `billing_addons` row an operator may have created off-catalogue).
+            // Every static entry declares one; an `undefined` here would be
+            // unplaceable, and unplaceable is admitted.
+            const domain = addon.productDomain;
+            const served = domain === undefined || CONSUMER_SIDE_PRODUCT_DOMAINS.includes(domain);
             expect(admitsConsumerAddonGrant({ addonSlug: addon.slug })).toBe(served);
         }
     });

@@ -118,8 +118,10 @@ export type ConsumerAddonGrantVerdict =
  * over: that function is the comparator for a SUBSCRIPTION ROW, and it fails
  * OPEN for accommodation because `billing_subscriptions.product_domain`
  * post-dates most rows. An add-on has no such history — `productDomain` is a
- * REQUIRED property of `AddonDefinition`, so every catalogue entry declares one
- * and a missing answer means "not an add-on we know", not "an old accommodation
+ * required KEY on `AddonDefinition` (its VALUE is nullable only so
+ * `mapRowToAddonDefinition` can build the same shape from a `billing_addons` row
+ * an operator created off-catalogue), so every static entry declares one and a
+ * missing answer means "not an add-on we know", not "an old accommodation
  * add-on".
  *
  * @param input.addonSlug - `billing_addon_purchases.addon_slug`.

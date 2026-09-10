@@ -525,6 +525,12 @@ describe('HOS-1303 — the consumer loader and other verticals', () => {
             // The third direction: gastronomy fails CLOSED, so a restaurant
             // owner with no accommodation and no tourist plan lands on the
             // fallback rather than borrowing their commerce tier's grants.
+            //
+            // Run as a non-HOST deliberately. With the HOST hat on, the HOS-217
+            // discard would throw a wrongly-selected commerce subscription away
+            // for its own reason (not owner-category) and hide the selection
+            // defect behind a correct-looking answer — the `plans.get` assertion
+            // below would then hold even for a selector that picked it.
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
                 {
                     id: 'sub-gastronomy',
@@ -535,9 +541,11 @@ describe('HOS-1303 — the consumer loader and other verticals', () => {
             ]);
             stubDb(new Map<unknown, readonly unknown[]>([[billingSubscriptions, []]]));
 
-            const data = await run('cus-commerce-only');
+            const data = await run('cus-commerce-only', [RoleEnum.USER]);
 
-            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+            // Tourist-free defaults, not the gastronomy tier's grants.
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
             expect(mockBilling.plans.get).not.toHaveBeenCalled();
         });
     });
