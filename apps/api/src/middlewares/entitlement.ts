@@ -29,18 +29,22 @@ import {
     readTrialComposition,
     type TrialGrantSource
 } from '@repo/billing';
-import { ProductDomainEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import {
     hydrateSubscriptionProductDomains,
-    isAccommodationSubscription,
     isOwnerCategorySubscription,
     RoleEnum,
-    ServiceError,
-    subscriptionMatchesDomain
+    ServiceError
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { captureBillingError } from '../lib/sentry';
+import {
+    CONSUMER_SIDE_PRODUCT_DOMAINS,
+    classifyConsumerAddonGrant,
+    resolveAddonPurchaseSlugs
+} from '../services/billing/consumer-addon-grant-domain';
+import { selectAccommodationSubscription } from '../services/billing/plan-domain-guard';
 import {
     loadDeferredAddonGrants,
     mergeDeferredAddonGrants
@@ -68,6 +72,33 @@ interface EntitlementCacheEntry {
  * In-memory FIFO cache for user entitlements
  * Key: billingCustomerId
  * Value: EntitlementCacheEntry
+ *
+ * ## Why the key carries no product domain (HOS-1303)
+ *
+ * The issue asked for one, on the reading that a single key serving "all
+ * requests of that customer" must be serving several verticals. Measured, it is
+ * not, and adding the component would be worse than a no-op:
+ *
+ * - this cache has exactly ONE writer, {@link entitlementMiddleware}, which
+ *   resolves the consumer-side pair and nothing else. `commerce-entitlement.ts`
+ *   and `owner-entitlement.ts` keep their own separate caches
+ *   (`baseLimitsCache`, `ownerLimitsCache`), so no commerce-scoped value can
+ *   collide here;
+ * - the resolved domain is DERIVED from the customer's own rows, so for a given
+ *   customer at a given moment it has one value. A key of
+ *   `${customerId}::${domain}` would therefore never vary, and the middleware
+ *   cannot know the domain before the load it is trying to avoid anyway;
+ * - {@link EntitlementCache.invalidate} is an exact-key delete, and
+ *   `clearEntitlementCache(customerId)` is called from ~15 sites across the
+ *   billing lifecycle. Any composite key silently stops matching all of them —
+ *   turning a documented invalidation contract into a 5-minute stale window,
+ *   which is the failure this cache is most dangerous for.
+ *
+ * The dimension the value DOES depend on and the key does not carry is the
+ * actor's HOST role (it selects the fallback plan and arms the HOS-217
+ * discard). A user promoted to HOST mid-TTL is served their pre-promotion set
+ * for up to five minutes. That is a real, separate bug; closing it needs
+ * prefix-aware invalidation first, and it is not a product-domain problem.
  */
 class EntitlementCache {
     private cache: Map<string, EntitlementCacheEntry> = new Map();
@@ -589,42 +620,43 @@ async function loadEntitlements(
         // SPEC-239 T-034 exclusion below a documented no-op.
         const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
-        // Find active accommodation subscription (there should only be one).
-        // SPEC-239 T-034: exclude commerce-domain subscriptions so a customer
-        // with BOTH an accommodation sub and a commerce sub always resolves
-        // accommodation entitlements from the correct sub. Treats null/undefined
-        // productDomain as 'accommodation' (legacy rows and the column default).
-        let activeSubscription = subscriptions.find(
-            (sub: { status: string }) =>
-                // HOS-239: single source of truth for the "entitlement-granting
-                // status" set (active | trialing | comp). SPEC-262 T-012 P2:
-                // 'comp' (free-forever) is an ACTIVE entitlement state — a comped
-                // subscriber retains the full entitlements of the plan they were
-                // comped on (see SubscriptionStatusEnum.COMP doc).
-                isEntitlementGrantingStatus(sub.status) &&
-                // HOS-1233: accommodation OR tourist. Both are the customer's own
-                // consumer plan — `ALL_PLANS` holds the owner tiers and the
-                // tourist tiers together, and this `find` is looking for "the
-                // plan this person pays for", not "an accommodation plan".
-                //
-                // Until this spec the distinction did not exist: tourist plans
-                // were filed as `accommodation` (F-4b), so `tourist-vip` matched
-                // here by accident and its entitlements resolved correctly for
-                // the wrong reason. Reclassified, `isAccommodationSubscription`
-                // returns false for that row, no active subscription is found,
-                // and the branch below hands a PAYING tourist-VIP subscriber the
-                // tourist-FREE defaults — measured: a plan granting `vip_support`
-                // resolved to `[save_favorites, write_reviews, read_reviews]`.
-                //
-                // Written as two explicit calls rather than a union helper:
-                // HOS-1081 deleted `isCommerceSubscription()` for having no
-                // callers, and one consumer does not yet justify reintroducing
-                // that shape. The asymmetry survives — accommodation still fails
-                // OPEN for the legacy rows that predate the column, tourist still
-                // fails CLOSED like every other named domain.
-                (isAccommodationSubscription(sub) ||
-                    subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST))
+        // Narrow to the statuses that grant anything, then pick the consumer-side
+        // subscription through the repo's ONE selector for that pair.
+        //
+        // HOS-239: single source of truth for the "entitlement-granting status"
+        // set (active | trialing | comp). SPEC-262 T-012 P2: 'comp'
+        // (free-forever) is an ACTIVE entitlement state — a comped subscriber
+        // retains the full entitlements of the plan they were comped on (see
+        // SubscriptionStatusEnum.COMP doc).
+        const grantingSubscriptions = subscriptions.filter((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
+
+        // HOS-1303: this used to be a single `find` matching
+        // `isAccommodationSubscription(sub) || subscriptionMatchesDomain(sub,
+        // TOURIST)` — one pass, one OR, so whichever row the storage adapter
+        // yielded FIRST won.
+        //
+        // That is the unordered match HOS-1213 was written to close, wearing a
+        // new domain. A host auto-promoted by host-onboarding (HOS-217) holds
+        // BOTH an accommodation subscription and the tourist one they signed up
+        // with, and both satisfy the OR. When the tourist row came back first,
+        // a paying `owner-pro` host resolved their TOURIST plan here — and the
+        // HOS-217 discard twenty lines below, seeing a non-owner-category plan,
+        // then threw it away and served them `owner-basico` DRAFT defaults. A
+        // paid accommodation plan silently reduced to the free baseline, decided
+        // by row order.
+        //
+        // `selectAccommodationSubscription` is the ordered pair the plan-change
+        // route already uses for exactly this ambiguity: accommodation FIRST,
+        // tourist only as a fallback, commerce never. Reusing it rather than
+        // ordering the OR by hand is deliberate — a second implementation of the
+        // same precedence is a second thing to keep in step, and this epic exists
+        // because those drift. It hydrates internally too, which is free here:
+        // `hydrateSubscriptionProductDomains` short-circuits any row whose
+        // `productDomain` is already defined, and the call above defined all of
+        // them.
+        let activeSubscription = await selectAccommodationSubscription(grantingSubscriptions);
 
         // HOS-217: a HOST actor can reach role=HOST without ever subscribing to
         // an owner plan (auto-promoted by the host-onboarding flow). If the
@@ -782,10 +814,48 @@ async function loadEntitlements(
             // QZPay returns QZPayCustomerEntitlement where entitlementKey is string —
             // filter to known keys; unknown keys are silently dropped.
             const customerEntitlements = await billing.entitlements.getByCustomerId(customerId);
+
+            // HOS-1303: a customer-level grant carries no vertical, so this union
+            // handed a host every entitlement any of their verticals had bought.
+            // The provenance the row DOES carry is `source`/`sourceId`; for an
+            // add-on grant that resolves to a purchase, a slug, and the
+            // catalogue's declared `productDomain`. Only a PROVABLY foreign one
+            // is dropped — see `consumer-addon-grant-domain.ts` for why this
+            // fails open where its HOS-1279 sibling fails closed.
+            const addonSlugByPurchaseId = await resolveAddonPurchaseSlugs({
+                purchaseIds: customerEntitlements
+                    .filter((ce) => ce.source === 'addon' && ce.sourceId !== null)
+                    .map((ce) => ce.sourceId as string)
+            });
+
             for (const ce of customerEntitlements) {
-                if (isEntitlementKey(ce.entitlementKey)) {
-                    entitlements.add(ce.entitlementKey);
+                if (!isEntitlementKey(ce.entitlementKey)) {
+                    continue;
                 }
+
+                const addonSlug =
+                    ce.source === 'addon' && ce.sourceId !== null
+                        ? addonSlugByPurchaseId.get(ce.sourceId)
+                        : undefined;
+
+                if (addonSlug !== undefined) {
+                    const verdict = classifyConsumerAddonGrant({ addonSlug });
+                    if (verdict.kind === 'foreign') {
+                        apiLogger.debug(
+                            {
+                                customerId,
+                                entitlementKey: ce.entitlementKey,
+                                addonSlug,
+                                addonDomain: verdict.domain,
+                                servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS
+                            },
+                            'HOS-1303: customer entitlement skipped — the add-on that granted it belongs to another vertical'
+                        );
+                        continue;
+                    }
+                }
+
+                entitlements.add(ce.entitlementKey);
             }
 
             // Fetch customer-level limits and override plan-level values (customer takes precedence).

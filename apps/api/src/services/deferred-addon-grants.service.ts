@@ -56,6 +56,7 @@ import { type EntitlementKey, isEntitlementKey, isLimitKey, type LimitKey } from
 import { and, billingAddonPurchases, eq, getDb, gt, isNull } from '@repo/db';
 import { parseEntitlementAdjustments, parseLimitAdjustments } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
+import { admitsConsumerAddonGrant } from './billing/consumer-addon-grant-domain';
 
 /**
  * The entitlements and limit deltas contributed by a customer's still-running
@@ -109,6 +110,10 @@ export interface LoadDeferredAddonGrantsInput {
  *   cron's job, not a grant.
  * - `deleted_at IS NULL` — soft-delete, as everywhere.
  *
+ * A fifth predicate runs in TypeScript rather than SQL, because it reads the
+ * static add-on catalogue and not a column: the add-on must belong to a vertical
+ * this answer is scoped to (`CONSUMER_SIDE_PRODUCT_DOMAINS` — HOS-1303).
+ *
  * Never throws: a failed lookup answers empty with `degraded: true`.
  *
  * @param input - The QZPay customer id to resolve.
@@ -152,8 +157,25 @@ export async function loadDeferredAddonGrants(
         const limitIncrements = new Map<LimitKey, number>();
         const purchaseIds: string[] = [];
 
+        const skippedByDomain: Array<{ purchaseId: string; addonSlug: string }> = [];
+
         for (const row of rows) {
             const parseContext = { purchaseId: row.id, addonSlug: row.addonSlug };
+
+            // HOS-1303: the same vertical gate the customer-level merge applies,
+            // at the second site that reaches the same grants. This module's ONLY
+            // caller is `withDeferredAddonGrants` in `middlewares/entitlement.ts`,
+            // the consumer-side loader — so a deferred GASTRONOMY boost folded
+            // `featured_listing` into a host's accommodation draft defaults, on
+            // the exact branch (`!activeSubscription`) where the customer-level
+            // merge that now filters it never runs. A commerce resolver must not
+            // start calling this without deciding its own domain scope first;
+            // `CONSUMER_SIDE_PRODUCT_DOMAINS` is what this answer is scoped to.
+            if (!admitsConsumerAddonGrant({ addonSlug: row.addonSlug })) {
+                skippedByDomain.push({ purchaseId: row.id, addonSlug: row.addonSlug });
+                continue;
+            }
+
             purchaseIds.push(row.id);
 
             for (const adjustment of parseEntitlementAdjustments(
@@ -182,6 +204,7 @@ export async function loadDeferredAddonGrants(
             {
                 customerId,
                 purchaseIds,
+                skippedByDomain,
                 entitlements: Array.from(entitlements),
                 limitIncrements: Object.fromEntries(limitIncrements)
             },
