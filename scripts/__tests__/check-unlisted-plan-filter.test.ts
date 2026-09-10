@@ -9,12 +9,18 @@
  * at fixtures that REMOVE the protection and asserts it exits 1, and at
  * near-miss fixtures and asserts it does not.
  *
- * The script exposes three test-injection env vars for exactly this, mirroring
+ * The script exposes five test-injection env vars for exactly this, mirroring
  * `SCAN_FILES_OVERRIDE` in check-no-trial-to-mercadopago.sh:
  *
- *   - `HANDLER_FILE_OVERRIDE`   — the file checks 1-3 read instead of the public route.
- *   - `PREDICATE_FILE_OVERRIDE` — the file check 4 reads instead of the schema.
- *   - `PROTECTED_FILE_OVERRIDE` — the file checks 6-8 read instead of the protected route.
+ *   - `HANDLER_FILE_OVERRIDE`    — the file checks 1-3 read instead of the public route.
+ *   - `PREDICATE_FILE_OVERRIDE`  — the file check 4 reads instead of the schema.
+ *   - `PROTECTED_FILE_OVERRIDE`  — the file checks 6-9 read instead of the protected route.
+ *   - `PLAN_BY_ID_FILE_OVERRIDE` — the file checks 10-14 read instead of the single-plan
+ *                                  shadow (HOS-1186).
+ *   - `MOUNT_FILE_OVERRIDE`      — the file check 14 reads for the mount ORDER. That check
+ *                                  earns its place: a shadow mounted after the qzpay
+ *                                  wrapper never runs, and every unit test of its own
+ *                                  handlers stays green while it doesn't.
  *
  * Each test spawns the real script as a subprocess and asserts its exit code and
  * stdout, since the artifact under test is bash rather than a TS module.
@@ -113,14 +119,58 @@ const GOOD_PROTECTED = [
 ];
 
 /**
- * Runs the guard with all three files overridden, so a fixture exercises exactly
- * one check and the other two files stay valid.
+ * The single-plan shadow as it stands (HOS-1186): the gate delegates to the
+ * shared predicate and has a withholding exit, both payloads come out of the
+ * gate, the prices sub-route asks the gate, and both paths are registered.
+ */
+const GOOD_PLAN_BY_ID = [
+    'export function resolveServablePlan<T>(input: { readonly plan: T | null }) {',
+    '    const { plan } = input;',
+    '    if (!plan) {',
+    '        return { plan: null };',
+    '    }',
+    '    return { plan: isServablePlan(plan) ? plan : null };',
+    '}',
+    'export async function handleProtectedPlanById(c: Context): Promise<Response> {',
+    '    const raw = await billing.plans.get(planId);',
+    '    const { plan: servablePlan } = resolveServablePlan({ plan: raw });',
+    '    if (!servablePlan) {',
+    '        return planNotFound(c);',
+    '    }',
+    '    return c.json({ success: true, data: servablePlan });',
+    '}',
+    'export async function handleProtectedPlanPrices(c: Context): Promise<Response> {',
+    '    const raw = await billing.plans.get(planId);',
+    '    const { plan: servablePlan } = resolveServablePlan({ plan: raw });',
+    '    if (!servablePlan) {',
+    '        return planNotFound(c);',
+    '    }',
+    '    const servablePrices = await billing.plans.getPrices(planId);',
+    '    return c.json({ success: true, data: servablePrices });',
+    '}',
+    "protectedPlanByIdRouter.get('/:id', billingAuthMiddleware, handleProtectedPlanById);",
+    "protectedPlanByIdRouter.get('/:id/prices', billingAuthMiddleware, handleProtectedPlanPrices);"
+];
+
+/** The billing mount as it stands: the shadow is registered before the wrapper. */
+const GOOD_MOUNT = [
+    "    router.route('/plans', protectedPlansListRouter);",
+    "    router.route('/plans', protectedPlanByIdRouter);",
+    "    router.route('/', qzpayWrapper);"
+];
+
+/**
+ * Runs the guard with every watched file overridden, so a fixture exercises
+ * exactly one check and the others stay valid.
  */
 function runWithFixtures(overrides: {
     handler?: readonly string[];
     predicate?: readonly string[];
     protectedHandler?: readonly string[];
+    planById?: readonly string[];
+    mount?: readonly string[];
     handlerPath?: string;
+    planByIdPath?: string;
 }): RunResult {
     const id = Math.random().toString(36).slice(2, 8);
     return runGuard({
@@ -133,7 +183,11 @@ function runWithFixtures(overrides: {
         PROTECTED_FILE_OVERRIDE: fixture(
             `protected-${id}.ts`,
             overrides.protectedHandler ?? GOOD_PROTECTED
-        )
+        ),
+        PLAN_BY_ID_FILE_OVERRIDE:
+            overrides.planByIdPath ??
+            fixture(`plan-by-id-${id}.ts`, overrides.planById ?? GOOD_PLAN_BY_ID),
+        MOUNT_FILE_OVERRIDE: fixture(`mount-${id}.ts`, overrides.mount ?? GOOD_MOUNT)
     });
 }
 
@@ -560,9 +614,129 @@ describe('check-unlisted-plan-filter.sh — the second door (protected /plans)',
     });
 });
 
+describe('check-unlisted-plan-filter.sh — the single-plan read (HOS-1186)', () => {
+    it('rejects a gate that stopped asking the shared predicate', () => {
+        // The leak this door was written to close, with a gate-shaped function
+        // still standing in front of it.
+        const result = runWithFixtures({
+            planById: GOOD_PLAN_BY_ID.map((line) =>
+                line.includes('isServablePlan(plan) ? plan : null') ? '    return { plan };' : line
+            )
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('no longer asks the shared predicate');
+    });
+
+    it('rejects a gate with no withholding exit', () => {
+        const result = runWithFixtures({
+            planById: [
+                'export function resolveServablePlan<T>(input: { readonly plan: T | null }) {',
+                '    const { plan } = input;',
+                '    return { plan: isServablePlan(plan) ? plan : plan };',
+                '}',
+                ...GOOD_PLAN_BY_ID.slice(7)
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('no withholding exit');
+    });
+
+    it('rejects a payload that did not come out of the gate', () => {
+        // An allowlist, not a deny-list: `raw` is the storage row, and any OTHER
+        // new name fails the same way without the check predicting it.
+        const result = runWithFixtures({
+            planById: GOOD_PLAN_BY_ID.map((line) =>
+                line.includes('data: servablePlan }')
+                    ? '    return c.json({ success: true, data: raw });'
+                    : line
+            )
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('did not come from the gate');
+    });
+
+    it('rejects a prices sub-route that skips the gate', () => {
+        // The second door to the same amount. The issue that reported the leak
+        // believed the price needed a separate call; the adapter had been
+        // attaching prices to the single read all along.
+        const result = runWithFixtures({
+            planById: [
+                ...GOOD_PLAN_BY_ID.slice(0, 16),
+                'export async function handleProtectedPlanPrices(c: Context): Promise<Response> {',
+                '    const servablePrices = await billing.plans.getPrices(planId);',
+                '    return c.json({ success: true, data: servablePrices });',
+                '}',
+                ...GOOD_PLAN_BY_ID.slice(-2)
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('no longer runs the single-plan gate');
+    });
+
+    it('rejects a shadow that registers the plan read but not its prices', () => {
+        const result = runWithFixtures({
+            planById: GOOD_PLAN_BY_ID.filter((line) => !line.includes("'/:id/prices'"))
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain("no longer registers '/:id/prices'");
+    });
+
+    it('rejects a shadow that is not mounted at all', () => {
+        const result = runWithFixtures({
+            mount: GOOD_MOUNT.filter((line) => !line.includes('protectedPlanByIdRouter'))
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('is not mounted');
+    });
+
+    it('rejects a shadow mounted AFTER the qzpay wrapper', () => {
+        // Hono resolves by first match, so this order is a shadow that never
+        // runs — with every unit test of its handlers still green.
+        const result = runWithFixtures({
+            mount: [
+                "    router.route('/plans', protectedPlansListRouter);",
+                "    router.route('/', qzpayWrapper);",
+                "    router.route('/plans', protectedPlanByIdRouter);"
+            ]
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('mounted AFTER the qzpay wrapper');
+    });
+
+    it('rejects a deleted shadow', () => {
+        const result = runWithFixtures({
+            planByIdPath: path.join(workDir, 'no-plan-by-id-shadow.ts')
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('is missing');
+    });
+});
+
 describe('check-unlisted-plan-filter.sh — it does not cry wolf', () => {
     it('passes the protected handler as it stands', () => {
         expect(runWithFixtures({}).exitCode).toBe(0);
+    });
+
+    it('passes the single-plan shadow as it stands, prose and all', () => {
+        // Its docblocks have to name `data: servablePlan` and the paths in prose.
+        // A guard that flagged those is a guard somebody turns off.
+        const result = runWithFixtures({
+            planById: [
+                ' * Reproduces qzpay: `data: rawPlan` is what this no longer answers.',
+                "// get('/:id/prices') is the second door.",
+                ...GOOD_PLAN_BY_ID
+            ]
+        });
+
+        expect(result.exitCode).toBe(0);
     });
 
     it('does not mistake prose about raw qzpay data for a return of it', () => {

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # check-unlisted-plan-filter.sh
 #
-# HOS-1062 F1 / AC-14 — no plan-listing endpoint may enumerate a plan marked as
-# unlisted. There are TWO such endpoints, and this guard watches both.
+# HOS-1062 F1 / AC-14 + HOS-1186 — no plan endpoint at the public or protected
+# tier may serve a plan marked as unlisted. There are THREE such doors, and this
+# guard watches all three.
 #
 # WHY IT MATTERS
 #   `GET /api/v1/public/plans` is `skipAuth: true` and answers with full prices.
@@ -15,8 +16,17 @@
 #   meant to. The defence is a filter in each handler, which is exactly the kind
 #   of line a refactor removes without anyone noticing.
 #
-#   Watching only one of the two doors would be worse than watching neither: it
-#   would report as covered what is not.
+#   The THIRD door is the single-plan read, `GET /api/v1/protected/billing/plans/:id`
+#   and its `/prices` sub-route. Filtering only the two that ENUMERATE is exactly
+#   what HOS-1062 F1 did, and it left the row reachable by id: the prebuilt qzpay
+#   handlers answer it whole, `metadata` and the attached `prices[]` included
+#   (HOS-1186). `protected-plan-by-id.ts` shadows both, and checks 10-14 below are
+#   what stop that shadow from being deleted, unmounted, or left ungated.
+#
+#   Watching only some of the doors would be worse than watching none: it would
+#   report as covered what is not. That is not hypothetical — the version of this
+#   guard that shipped with HOS-1062 said so about `/plans/:id` in its own
+#   "WHAT IT DOES NOT PROVE" section, and the hole stayed open for four days.
 #
 # WHAT IT CHECKS, and which kind each one is
 #   A check that asserts "the safe form is present" can be walked around by
@@ -52,13 +62,22 @@
 #   8b.[FORBID] The protected loader never returns its raw accumulator.
 #   9. [present] The protected adapter DELEGATES the verdict rather than
 #      restating it. No test can cover this one — see the comment at that check.
+#   10.[exists] The single-plan shadow is still there (HOS-1186).
+#   11.[present] Its gate DELEGATES to the shared `isServablePlan`, and still has
+#      a withholding exit. Read from the function's body, like checks 4 and 9.
+#   12.[FORBID] Every `data:` payload in the shadow is one of two gated forms —
+#      an allowlist, so a third unfiltered name fails without being predicted.
+#   13.[present] The prices sub-route asks the same gate. It is a SECOND door to
+#      the same amount, and the one a reader forgets.
+#   14.[present] Both single-plan paths are registered, and the router is mounted
+#      AHEAD of the qzpay wrapper. Hono resolves by first match, so a shadow
+#      mounted after it is a shadow that never runs — and nothing else notices.
 #
 # WHAT IT DOES NOT PROVE — stated so a green run is not read as more than it is
-#   - **It covers endpoints that ENUMERATE plans, not single-plan reads.**
-#     `GET /api/v1/protected/billing/plans/:id` answers an unlisted plan in full
-#     to any authenticated caller, and this guard does not look at it. That is a
-#     known, deliberately deferred gap, tracked in its own issue — not something
-#     a green run here says anything about.
+#   - **It says nothing about the ADMIN tier, on purpose.**
+#     `GET /api/v1/admin/billing/plans/:id` serves every plan unfiltered behind
+#     `BILLING_READ_ALL`; that is the door the admin panel calls, and withholding
+#     there would hide from the operator the very plans they administer.
 #   - **AN INTERMEDIATE VARIABLE CROSSES IT.** This is the ceiling of the whole
 #     approach and it is not a bug to be fixed by one more regex. Every check
 #     here matches SYNTACTIC FORMS, one line at a time, so a value moved through
@@ -88,14 +107,16 @@
 #     data problem, not a source one.
 #   - It says nothing about `pagination.total`, nor about the size of the page
 #     either endpoint reads. Those are asserted by the routes' own tests.
-#   - It knows about these two endpoints by path. A third listing endpoint would
-#     need a line added here; nothing detects one automatically.
+#   - It knows about these three doors by path. A FOURTH plan endpoint would need
+#     a line added here; nothing detects one automatically.
 #
 # TEST INJECTION (used by scripts/__tests__/check-unlisted-plan-filter.test.ts)
-#   - HANDLER_FILE_OVERRIDE   — path checked by checks 1-3b instead of the public route.
-#   - PREDICATE_FILE_OVERRIDE — path checked by checks 4/4b instead of the schema.
-#   - PROTECTED_FILE_OVERRIDE — path checked by checks 6-9 instead of the protected route.
-#   - KEY_SCAN_EXTRA_ROOT     — an ADDITIONAL directory for check 5 to scan.
+#   - HANDLER_FILE_OVERRIDE    — path checked by checks 1-3b instead of the public route.
+#   - PREDICATE_FILE_OVERRIDE  — path checked by checks 4/4b instead of the schema.
+#   - PROTECTED_FILE_OVERRIDE  — path checked by checks 6-9 instead of the protected route.
+#   - PLAN_BY_ID_FILE_OVERRIDE — path checked by checks 10-14 instead of the single-plan shadow.
+#   - MOUNT_FILE_OVERRIDE      — path checked by check 14's ordering assertion.
+#   - KEY_SCAN_EXTRA_ROOT      — an ADDITIONAL directory for check 5 to scan.
 #   Check 5 always scans `apps` and `packages` regardless, so no override run can
 #   make it pass by pointing it at an empty tree.
 #
@@ -110,6 +131,8 @@ echo ""
 HANDLER="${HANDLER_FILE_OVERRIDE:-apps/api/src/routes/billing/public/listPlans.ts}"
 PREDICATE="${PREDICATE_FILE_OVERRIDE:-packages/schemas/src/api/billing/billing-plan.schema.ts}"
 PROTECTED="${PROTECTED_FILE_OVERRIDE:-apps/api/src/routes/billing/protected-plans-list.ts}"
+PLAN_BY_ID="${PLAN_BY_ID_FILE_OVERRIDE:-apps/api/src/routes/billing/protected-plan-by-id.ts}"
+MOUNT="${MOUNT_FILE_OVERRIDE:-apps/api/src/routes/billing/index.ts}"
 KEY_DEFINITION_FILE='packages/schemas/src/api/billing/billing-plan.schema.ts'
 
 FAILED=0
@@ -167,8 +190,25 @@ if [ ! -f "$PROTECTED" ]; then
     exit 1
 fi
 
+if [ ! -f "$PLAN_BY_ID" ]; then
+    echo "ERROR: $PLAN_BY_ID is missing."
+    echo "  The single-plan shadow is the THIRD door (HOS-1186). Without it,"
+    echo "  GET /plans/:id and /plans/:id/prices fall through to qzpay-hono, which"
+    echo "  answers the whole row — metadata and prices — to any authenticated user."
+    exit 1
+fi
+
+if [ ! -f "$MOUNT" ]; then
+    echo "ERROR: $MOUNT is missing."
+    echo "  Check 14 reads the billing mount to verify the single-plan shadow is"
+    echo "  registered AHEAD of the qzpay wrapper. Re-anchor it if the file moved."
+    exit 1
+fi
+
 echo "  Public handler:    $HANDLER"
 echo "  Protected handler: $PROTECTED"
+echo "  Single-plan read:  $PLAN_BY_ID"
+echo "  Billing mount:     $MOUNT"
 echo "  Predicate:         $PREDICATE"
 echo ""
 
@@ -582,6 +622,150 @@ if [ -n "$PROTECTED_DATA_PAYLOADS" ]; then
     FAILED=1
 fi
 
+# --- 10/11. The single-plan shadow delegates the verdict ---------------------
+# The THIRD door (HOS-1186). Its gate must ask the SHARED predicate, for the same
+# reason check 9 exists on the listing side: a comparison restated here would be
+# a second decision site, free to drift, and — since the resolver is total over
+# two values — one no mutation can tell from its own inverse.
+#
+# Read from the FUNCTION'S BODY, so a decoy line naming `isServablePlan` in a
+# comment cannot stand in for the call.
+GATE_BODY=$(function_body_code "$PLAN_BY_ID" 'function resolveServablePlan')
+
+if [ -z "$GATE_BODY" ]; then
+    echo "ERROR: could not read resolveServablePlan's body in $PLAN_BY_ID."
+    echo "  This check slices 'function resolveServablePlan' to its closing brace."
+    echo "  If the gate was renamed, re-anchor this guard — do not drop it, or the"
+    echo "  single-plan read goes back to being unwatched."
+    echo ""
+    FAILED=1
+fi
+
+if ! printf '%s\n' "$GATE_BODY" | grep -q -E 'isServablePlan\('; then
+    echo "ERROR: the single-plan gate no longer asks the shared predicate."
+    echo ""
+    echo "  Expected:  return { plan: isServablePlan(plan) ? plan : null };"
+    echo ""
+    echo "  isServablePlan is where the two marks are conjoined for every door at"
+    echo "  this tier. A gate that decides for itself is a gate that can disagree"
+    echo "  with the listing about what is withheld."
+    echo ""
+    FAILED=1
+fi
+
+# Without a withholding exit the gate answers the plan on every path, which is
+# the pre-HOS-1186 behaviour with a gate-shaped function in front of it.
+if ! printf '%s\n' "$GATE_BODY" | grep -q -E 'plan:[[:space:]]*null'; then
+    echo "ERROR: the single-plan gate has no withholding exit."
+    echo ""
+    echo "  Expected at least one 'plan: null' — the answer for a plan that is"
+    echo "  absent AND for one this tier withholds. Without it every plan is served."
+    echo ""
+    FAILED=1
+fi
+
+# --- 12. Every `data:` the shadow answers is a GATED form --------------------
+# An allowlist, like check 8: `servablePlan` and `servablePrices` are the two
+# bindings that came out of the gate. A new name — a re-fetch, an alias, the raw
+# storage row — fails without this check having to predict its spelling.
+PLAN_BY_ID_PAYLOADS=$(grep -nE '[[:space:]]data:[[:space:]]' "$PLAN_BY_ID" \
+    | grep -vE '^[0-9]+:[[:space:]]*(//|\*|/\*)' \
+    | grep -vE 'data:[[:space:]]*(servablePlan|servablePrices)[[:space:]]*\}' \
+    || true)
+
+if [ -n "$PLAN_BY_ID_PAYLOADS" ]; then
+    echo "ERROR: the single-plan shadow answers a payload that did not come from the gate:"
+    echo ""
+    echo "$PLAN_BY_ID_PAYLOADS"
+    echo ""
+    echo "  Allowed forms, and nothing else:"
+    echo "      data: servablePlan      (GET /plans/:id)"
+    echo "      data: servablePrices    (GET /plans/:id/prices)"
+    echo ""
+    echo "  qzpay's row carries raw metadata and the negotiated amount. A new name"
+    echo "  here is a new way to answer one."
+    echo ""
+    FAILED=1
+fi
+
+# --- 13. The prices sub-route asks the same gate -----------------------------
+# It is a SECOND door to the same number and the one a reader forgets: the issue
+# that reported this leak described the price as needing a separate call, when the
+# adapter had been attaching prices to the single read all along. Whichever way a
+# caller reaches for the amount, the gate runs first.
+PRICES_HANDLER_BODY=$(function_body_code "$PLAN_BY_ID" 'function handleProtectedPlanPrices')
+
+if [ -z "$PRICES_HANDLER_BODY" ]; then
+    echo "ERROR: could not read handleProtectedPlanPrices' body in $PLAN_BY_ID."
+    echo "  This check slices 'function handleProtectedPlanPrices' to its closing"
+    echo "  brace. Re-anchor it if the handler was renamed — do not drop it."
+    echo ""
+    FAILED=1
+elif ! printf '%s\n' "$PRICES_HANDLER_BODY" | grep -q -E 'resolveServablePlan\('; then
+    echo "ERROR: the prices sub-route no longer runs the single-plan gate."
+    echo ""
+    echo "  Expected it to resolve the PLAN through resolveServablePlan() before"
+    echo "  reading any price. Prices are the agreement itself; a handler that loads"
+    echo "  them first is one edit away from answering with them."
+    echo ""
+    FAILED=1
+fi
+
+# --- 14. Both paths registered, and mounted AHEAD of the qzpay wrapper -------
+# Registration alone is not enough. Hono resolves by first match, so the same two
+# lines mounted AFTER `qzpayWrapper` are two lines that never run — the prebuilt
+# handlers answer first, the shadow sits there looking correct, and no test of the
+# shadow's own functions notices.
+for plan_path in "'/:id'" "'/:id/prices'"; do
+    if ! grep -qF "get($plan_path" "$PLAN_BY_ID"; then
+        echo "ERROR: the single-plan shadow no longer registers $plan_path."
+        echo ""
+        echo "  Both GET $plan_path and its sibling must be registered: whichever one"
+        echo "  is missing falls through to qzpay-hono unfiltered."
+        echo ""
+        FAILED=1
+    fi
+done
+
+# The `|| true` on both is load-bearing under `set -euo pipefail`, for the same
+# reason `function_body_code` carries one: a grep that finds nothing exits 1, and
+# the assignment would then kill the script mid-run — the two errors below would
+# never print and the run would LOOK like a pass that only forgot to say so.
+# Measured: without it, the "shadow is not mounted" case exited 1 with the header
+# and nothing else, which reads as a crash rather than as the finding it is.
+SHADOW_MOUNT_LINE=$(grep -nF "router.route('/plans', protectedPlanByIdRouter)" "$MOUNT" \
+    | head -1 | cut -d: -f1 || true)
+QZPAY_MOUNT_LINE=$(grep -nF "router.route('/', qzpayWrapper)" "$MOUNT" \
+    | head -1 | cut -d: -f1 || true)
+
+if [ -z "$SHADOW_MOUNT_LINE" ]; then
+    echo "ERROR: protectedPlanByIdRouter is not mounted in $MOUNT."
+    echo ""
+    echo "  Expected:  router.route('/plans', protectedPlanByIdRouter);"
+    echo ""
+    echo "  An unmounted shadow is a deleted shadow with its tests still passing:"
+    echo "  every unit test of its handlers stays green while the route it was"
+    echo "  written to close answers from qzpay again."
+    echo ""
+    FAILED=1
+elif [ -z "$QZPAY_MOUNT_LINE" ]; then
+    echo "ERROR: could not find the qzpay wrapper mount in $MOUNT."
+    echo "  Check 14 compares the two mount positions. Re-anchor it rather than"
+    echo "  dropping it, which would leave the ordering unwatched."
+    echo ""
+    FAILED=1
+elif [ "$SHADOW_MOUNT_LINE" -ge "$QZPAY_MOUNT_LINE" ]; then
+    echo "ERROR: the single-plan shadow is mounted AFTER the qzpay wrapper."
+    echo ""
+    echo "  Shadow at line $SHADOW_MOUNT_LINE, qzpay wrapper at line $QZPAY_MOUNT_LINE."
+    echo ""
+    echo "  Hono resolves by first match, so in that order the prebuilt handlers"
+    echo "  answer and the shadow never runs. Nothing else reports this: the route"
+    echo "  exists, its tests pass, and the leak is back."
+    echo ""
+    FAILED=1
+fi
+
 if [ "$FAILED" -eq 1 ]; then
     exit 1
 fi
@@ -590,6 +774,7 @@ echo "  OK - the public handler filters unlisted plans on every return path."
 echo "  OK - the predicate withholds on doubt."
 echo "  OK - the metadata key has one production site."
 echo "  OK - the protected handler filters both branches through servablePlans()."
+echo "  OK - the single-plan read and its prices sub-route are gated and mounted first."
 echo ""
 echo "All checks passed."
 exit 0
