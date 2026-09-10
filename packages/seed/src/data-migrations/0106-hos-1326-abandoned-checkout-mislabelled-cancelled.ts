@@ -149,6 +149,28 @@
  * conditions 1 and 2 but were held back by condition 3 — that number is what says
  * whether the criterion is doing its job or is mis-set in either direction.
  *
+ * ## What it does NOT do: reconcile the link tables
+ *
+ * The reaper, on the same status write, also calls
+ * `reconcileSubscriptionLinkedEntities` and `reconcilePartnerForSubscription`
+ * (`abandoned-pending-subs.job.ts`) so `entity_subscriptions` /
+ * `partner_subscriptions` learn the terminal status. This migration deliberately
+ * does not, and the rows it touches are exactly the ones whose link rows the bug
+ * left stale — so the gap is real, not hypothetical.
+ *
+ * It is left to the existing backstop rather than reimplemented here for two
+ * reasons: the 6-hourly `entity-subscription-cache-reconcile` cron re-derives
+ * every accommodation row and prunes orphans, so the caches converge on their own
+ * within one cycle; and a seed migration reaching into `apps/api` service code to
+ * drive provider-adjacent reconciliation would put a second copy of that bridge
+ * behind a different entry point — the exact "one reconciler, six sites"
+ * invariant the API side is built around.
+ *
+ * **Operationally**: after this runs on an environment where it actually
+ * relabelled rows, a commerce/partner listing bound to one of those ids may read
+ * its pre-abandon status for up to six hours. The ids are in the summary, so the
+ * check is targeted rather than a sweep.
+ *
  * ## Dual-write
  *
  * Not applicable. This touches live transactional billing rows, not seed catalogue
