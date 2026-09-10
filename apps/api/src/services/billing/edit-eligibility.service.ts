@@ -45,15 +45,21 @@
  *
  * ## Which liveness predicate this uses, and why (HOS-1275 D-4)
  *
- * The repo has **two** liveness predicates and they are not interchangeable:
+ * The repo has **three** liveness predicates and they are not interchangeable.
+ * The table of which question each answers lives in
+ * `packages/billing/src/predicates/index.ts`; in short:
  *
  * - {@link isEntitlementGrantingStatus} — status-only (`active` | `trialing` |
  *   `comp` | `courtesy`). Used by the commerce visibility reconciler
  *   (`packages/service-core/src/services/commerce/commerce-visibility.ts`),
  *   i.e. by the thing that decides whether a COMMERCE listing is public.
- * - `isSubscriptionLive` — the same statuses PLUS date arithmetic (6 h cron-lag
- *   grace, soft-cancel until `currentPeriodEnd`). Used by the ACCOMMODATION
- *   publish gate (`services/accommodation-publish-deps.ts`'s
+ * - {@link isLiveSubscriptionStatus} — those four **plus `past_due`**, still
+ *   status-only. Answers "is this unfinished at the provider", not "does it
+ *   grant anything".
+ * - `isSubscriptionLive` — date arithmetic (6 h cron-lag grace, soft-cancel
+ *   until `currentPeriodEnd`). It is **not** a superset of either: it refuses
+ *   `past_due` and it is the only one that accepts `cancelled`. Used by the
+ *   ACCOMMODATION publish gate (`services/accommodation-publish-deps.ts`'s
  *   `checkEligibility`).
  *
  * **This module uses BOTH, OR-ed together**, and neither half is optional:
@@ -68,33 +74,68 @@
  * - {@link isSubscriptionLive} is OR-ed on top for exactly one status it answers
  *   better: **`cancelled`**, which it treats as live while `currentPeriodEnd` is
  *   still in the future, with no extra grace beyond it. For every other status
- *   it is a strict subset of the status-only answer, so the OR adds nothing
- *   else.
+ *   its answer is implied by the status-only one here, so the OR adds nothing
+ *   else. (It is not a subset of the predicate in general — it refuses
+ *   `past_due`, which the base accepts — but the OR makes that irrelevant.)
  *
- * ### The first cut of this module got that wrong, and CI caught it
+ * ### The first cut of this module was status-only, and CI caught it
  *
- * It was status-only, on the stated assumption that a soft-cancel keeps
- * `status = 'active'` until `finalize-cancelled-subs` flips it after the period
- * ends. **That assumption was false.** Cancelling writes `status = 'cancelled'`
- * and `cancel_at_period_end = true` IMMEDIATELY, while `current_period_end` is
- * still up to a month away — as the pre-existing E2E
- * `apps/e2e/tests/host/host-04-cancellation-grace.spec.ts` demonstrates by
- * doing precisely that UPDATE and then asserting the write still succeeds. The
- * status-only read answered 402 to a host who had paid through the period.
+ * It refused a `cancelled` row whose `current_period_end` was still in the
+ * future, answering 402 to somebody who had paid through the period.
  *
- * **The composition is the fix, and it is not a style choice — do NOT collapse
- * it back into a single `Set` of statuses.** That is exactly what the first cut
- * was, and it 402'd a paying host. The date comparison is mandatory here because
- * `cancelled` is a status whose meaning changes over time: the same row is
- * "still paid through" on Monday and "out" a month later, and no set of strings
- * can tell those apart.
+ * **Corrected 2026-09-10 (HOS-1310): this section used to explain that with a
+ * claim that is measurably false.** It said cancelling writes
+ * `status = 'cancelled'` IMMEDIATELY, citing
+ * `apps/e2e/tests/host/host-04-cancellation-grace.spec.ts`. That E2E performs
+ * the `UPDATE ... SET status = 'cancelled'` **itself**, as a fixture — it
+ * manufactures the state it then asserts on, so it is not evidence about any
+ * write path. And the write path says the opposite:
+ * `softCancelSubscription` (`services/subscription-cancel.service.ts`) sets only
+ * `cancelAtPeriodEnd = true` and leaves `status` untouched, and qzpay-core's
+ * `subscriptions.cancel()` writes a status **only** when `cancelAtPeriodEnd` is
+ * falsy (`packages/core/src/billing.ts`, read against the source). An in-app
+ * soft-cancel therefore keeps `active`/`trialing`/`courtesy`, exactly as the
+ * first cut assumed.
  *
- * The underlying problem — that this repo carries two divergent liveness
- * predicates at all — stopped being theoretical the moment CI caught it, and is
- * tracked as **HOS-1310**. It is NOT resolved here: reconciling them touches the
- * accommodation publish gate. Composing the two that exist is what kept a THIRD
- * set of date arithmetic from being written in this file, which is the defect
- * this epic exists to close.
+ * **The composition is still required, for a different and real reason — do NOT
+ * collapse it back into a single `Set` of statuses.** Two writers do produce a
+ * cancelled row while `current_period_end` is still in the future, and neither
+ * is the in-app cancel:
+ *
+ * - **the MercadoPago webhook.** `QZPAY_TO_HOSPEDA_STATUS`
+ *   (`@repo/service-core`'s `subscription-status-provider.ts`) maps a provider
+ *   `canceled` to `CANCELLED`, so an owner who cancels the preapproval from
+ *   MercadoPago's own site or app lands a `cancelled` row mid-period. (A
+ *   preapproval MP *finishes* is a different case — that map sends `finished` to
+ *   `EXPIRED`, which this branch does not accept.) This is also the state the
+ *   E2E above manufactures by hand, which is why its fixture was realistic even
+ *   though the story told about it was not.
+ * - **qzpay-core's hard cancel**, which writes the American `canceled`; since
+ *   HOS-1310 the predicate normalizes that spelling, so it reaches the same
+ *   branch.
+ *
+ * `finalize-cancelled-subs` is NOT one of them: it only flips rows whose
+ * effective end date has already passed, so the date comparison answers `false`
+ * for its output anyway.
+ *
+ * The date comparison is mandatory here because `cancelled` is a status whose
+ * meaning changes over time: the same row is "still paid through" on Monday and
+ * "out" a month later, and no set of strings can tell those apart.
+ *
+ * The underlying problem — that this repo carries divergent liveness predicates
+ * at all — stopped being theoretical the moment CI caught it, and is tracked as
+ * **HOS-1310**. Composing the ones that exist is what kept a THIRD set of date
+ * arithmetic from being written in this file, which is the defect this epic
+ * exists to close.
+ *
+ * HOS-1310 closed one half of that: all three predicates now normalize the
+ * stored status, so qzpay's spellings reach the same answer as the states they
+ * mean. The half still OPEN is the one that needs a product decision, and this
+ * module does not pre-empt it: `isEntitlementGrantingStatus` and
+ * `isSubscriptionLive` both claim to answer "does this grant access" and
+ * disagree once a period has elapsed, so commerce keeps a listing public where
+ * accommodation refuses a publish. Reconciling that changes the accommodation
+ * publish gate's behaviour, which is not a refactor.
  *
  * One inherited consequence, on record rather than by accident: a `cancelled`
  * row with a NULL or unparseable `currentPeriodEnd` fails OPEN, because that is
@@ -245,19 +286,31 @@ export async function resolveEditEligibility(input: {
         }
 
         const hasLive = domainSubscriptions.some(
-            (sub: { status: string; trialEnd?: Date | null; currentPeriodEnd?: Date | null }) => {
+            (sub: {
+                status: string;
+                trialEnd?: Date | null;
+                currentPeriodEnd?: Date | null;
+                cancelAtPeriodEnd?: boolean | null;
+            }) => {
                 const status = sub.status as string;
                 return (
                     isLiveSubscriptionStatus(status) ||
                     EDIT_ELIGIBLE_EXTRA_STATUSES.has(status) ||
-                    // The soft-cancel arm. See the module docblock: this is the
+                    // The paid-through arm. See the module docblock: this is the
                     // one status where a date decides, and delegating it to the
                     // repo's existing date-aware predicate is what keeps a third
                     // liveness rule from being written here.
                     isSubscriptionLive({
                         status,
                         trialEnd: sub.trialEnd,
-                        currentPeriodEnd: sub.currentPeriodEnd
+                        currentPeriodEnd: sub.currentPeriodEnd,
+                        // HOS-1310: passed so a REAL soft-cancel keeps its
+                        // editing rights. The predicate now requires this flag
+                        // for the cancelled branch, so omitting it here would
+                        // quietly take editing away from every owner who
+                        // cancelled mid-period — the exact lockout this module
+                        // exists to prevent.
+                        cancelAtPeriodEnd: sub.cancelAtPeriodEnd
                     })
                 );
             }

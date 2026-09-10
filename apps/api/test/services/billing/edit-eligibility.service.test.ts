@@ -75,8 +75,13 @@ const CUSTOMER_ID = 'cus-1';
  * one status — `cancelled`, where it separates a soft-cancel still inside its
  * paid period from a subscription that has actually run out.
  */
-function row(id: string, status: string, currentPeriodEnd?: Date) {
-    return currentPeriodEnd === undefined ? { id, status } : { id, status, currentPeriodEnd };
+function row(id: string, status: string, currentPeriodEnd?: Date, cancelAtPeriodEnd?: boolean) {
+    return {
+        id,
+        status,
+        ...(currentPeriodEnd === undefined ? {} : { currentPeriodEnd }),
+        ...(cancelAtPeriodEnd === undefined ? {} : { cancelAtPeriodEnd })
+    };
 }
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -424,24 +429,43 @@ describe('resolveEditEligibility — SOFT-CANCEL keeps editing until the period 
         vi.clearAllMocks();
     });
 
-    // REGRESSION (HOS-1275). The first cut of this gate was status-only, on the
-    // stated assumption that a soft-cancel keeps `status = 'active'` until
-    // `finalize-cancelled-subs` flips it. That assumption was wrong, and the
-    // pre-existing E2E `host-04-cancellation-grace.spec.ts` proved it in CI:
-    // cancelling writes `status = 'cancelled'` + `cancel_at_period_end = true`
-    // IMMEDIATELY, while `current_period_end` is still a month away. The
-    // status-only read refused that host — a 402 to somebody who has paid
-    // through the period, which is the exact incident this gate must not cause.
+    // REGRESSION (HOS-1275). The first cut of this gate was status-only and
+    // refused a `cancelled` row whose `current_period_end` was still in the
+    // future — a 402 to somebody who had paid through the period, the exact
+    // incident this gate must not cause.
     //
-    // The fix composes the repo's OTHER liveness predicate rather than inventing
-    // date arithmetic here: `isSubscriptionLive` already answers `cancelled`
-    // correctly (live iff `currentPeriodEnd > now`, with no extra grace beyond
-    // it) and is what the accommodation publish gate uses.
+    // CORRECTED 2026-09-10 (HOS-1310): this comment used to say cancelling writes
+    // `status = 'cancelled'` IMMEDIATELY, citing the E2E
+    // `host-04-cancellation-grace.spec.ts`. That E2E performs the UPDATE itself,
+    // as a fixture, and the real write path does the opposite — an in-app soft
+    // cancel sets only `cancel_at_period_end` and leaves the status alone. The
+    // rows that DO reach this branch mid-period come from the MercadoPago webhook
+    // and from qzpay's hard cancel. The other half of the old claim turned out to
+    // be the load-bearing one: `cancel_at_period_end = true` is what a genuine
+    // soft-cancel carries, and it is now REQUIRED by `isSubscriptionLive` —
+    // `current_period_end` alone is a placeholder qzpay stamps at INSERT before
+    // any payment, so on its own it cannot tell a paying owner from a checkout
+    // nobody ever completed.
+    //
+    // So every fixture below carries the flag explicitly, and the phantom
+    // counterpart (same date, flag false) is asserted right after each one.
     for (const { label, domain } of VERTICALS) {
         it(`answers 'live' in ${label} for a cancelled sub still inside its paid period`, async () => {
-            given([row('s1', SubscriptionStatusEnum.CANCELLED, future())], { s1: domain });
+            given([row('s1', SubscriptionStatusEnum.CANCELLED, future(), true)], { s1: domain });
 
             expect(await resolveEditEligibility({ customerId: CUSTOMER_ID, domain })).toBe('live');
+        });
+
+        it(`answers 'lapsed' in ${label} for a NEVER-PAID row with the same future date (HOS-1310)`, async () => {
+            // The pair that matters. Identical status, identical date; the only
+            // difference is the payment evidence. A predicate that refused every
+            // cancelled row would pass this case and fail the one above — which
+            // is why both are here.
+            given([row('s1', SubscriptionStatusEnum.CANCELLED, future(), false)], { s1: domain });
+
+            expect(await resolveEditEligibility({ customerId: CUSTOMER_ID, domain })).toBe(
+                'lapsed'
+            );
         });
 
         it(`answers 'lapsed' in ${label} once that period has passed`, async () => {
@@ -460,7 +484,7 @@ describe('resolveEditEligibility — SOFT-CANCEL keeps editing until the period 
         // is cancelled with no period at all is a data anomaly, not a signal to
         // withhold someone's own content. Asserted so the inheritance is a
         // decision on record instead of an accident.
-        given([row('s1', SubscriptionStatusEnum.CANCELLED)], {
+        given([row('s1', SubscriptionStatusEnum.CANCELLED, undefined, true)], {
             s1: ProductDomainEnum.ACCOMMODATION
         });
 

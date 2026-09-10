@@ -1,3 +1,5 @@
+import { normalizeStoredSubscriptionStatus } from './subscription-status-normalize.js';
+
 /**
  * Canonical set of subscription statuses that grant a plan's entitlements
  * *right now*, independent of any date/grace-window consideration.
@@ -47,7 +49,14 @@ export const ENTITLEMENT_GRANTING_STATUSES = ['active', 'trialing', 'comp', 'cou
  * Whether a subscription status grants its plan's entitlements right now
  * (status-only, date-agnostic). See {@link ENTITLEMENT_GRANTING_STATUSES}.
  *
- * @param status - The billing subscription status string.
+ * The argument is normalized through {@link normalizeStoredSubscriptionStatus}
+ * before the comparison, because `billing_subscriptions.status` holds two
+ * vocabularies (HOS-1310). No qzpay alias maps into the granting set today, so
+ * this changes no answer — it is here so that the day one does, this predicate
+ * is not the one place that missed it.
+ *
+ * @param status - The billing subscription status string, in either the Hospeda
+ *   or the qzpay vocabulary.
  * @returns `true` for `'active'`, `'trialing'`, `'comp'`, or `'courtesy'`;
  *   `false` otherwise.
  *
@@ -59,6 +68,12 @@ export const ENTITLEMENT_GRANTING_STATUSES = ['active', 'trialing', 'comp', 'cou
  * ```
  */
 export function isEntitlementGrantingStatus(status: string): boolean {
+    const normalized = normalizeStoredSubscriptionStatus(status);
+    if (normalized === null) {
+        // Unknown vocabulary — fail closed, exactly as an unmatched literal did
+        // before normalization existed.
+        return false;
+    }
     // Derive from the const set so the two can never drift out of sync.
-    return (ENTITLEMENT_GRANTING_STATUSES as readonly string[]).includes(status);
+    return (ENTITLEMENT_GRANTING_STATUSES as readonly string[]).includes(normalized);
 }

@@ -109,6 +109,8 @@ import { pastDueGraceMiddleware } from '../../src/middlewares/past-due-grace.mid
 interface MockSubscription {
     id: string;
     isPastDue: Mock;
+    status?: string;
+    deletedAt?: Date | null;
     isInGracePeriod: Mock;
     daysRemainingInGrace: Mock;
     currentPeriodEnd?: Date;
@@ -166,6 +168,18 @@ function createMockSubscription(
         daysRemainingInGrace?: number | null;
         currentPeriodEnd?: Date;
         productDomain?: string | null;
+        /**
+         * Stored status. Defaults to the spelling `isPastDue` implies, so every
+         * pre-existing fixture keeps meaning exactly what it meant.
+         *
+         * It exists as an override because HOS-1310 moved the selection off
+         * qzpay's `sub.isPastDue()` — which compares the RAW status and is blind
+         * to `unpaid` — and onto the normalized column. Overriding it is how a
+         * test can state a qzpay-vocabulary row, which is the case that used to
+         * be unreachable by this middleware.
+         */
+        status?: string;
+        deletedAt?: Date | null;
     } = {}
 ): MockSubscription {
     const {
@@ -174,7 +188,9 @@ function createMockSubscription(
         isInGracePeriod = false,
         daysRemainingInGrace = null,
         currentPeriodEnd,
-        productDomain
+        productDomain,
+        status = isPastDue ? 'past_due' : 'active',
+        deletedAt = null
     } = overrides;
 
     return {
@@ -183,7 +199,9 @@ function createMockSubscription(
         isInGracePeriod: vi.fn().mockReturnValue(isInGracePeriod),
         daysRemainingInGrace: vi.fn().mockReturnValue(daysRemainingInGrace),
         currentPeriodEnd,
-        productDomain
+        productDomain,
+        status,
+        deletedAt
     };
 }
 
@@ -297,6 +315,89 @@ describe('pastDueGraceMiddleware', () => {
             expect(ctx.header).not.toHaveBeenCalled();
             expect(ctx.json).not.toHaveBeenCalled();
             expect(activeSub.isInGracePeriod).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1310: the revoke side reads the same vocabulary as the grant side
+    // -----------------------------------------------------------------------
+
+    describe("HOS-1310: qzpay's `unpaid` spelling reaches this gate", () => {
+        /*
+         * `isLiveSubscriptionStatus` accepts `unpaid` as live, because the repo's
+         * alias map calls it the same state as `past_due`. This middleware is the
+         * ONLY thing that ever ends that state — a 402 once the 7-day window
+         * elapses. It used to select with qzpay's `sub.isPastDue()`, which
+         * compares the RAW status and so could not see `unpaid` at all.
+         *
+         * An `unpaid` row therefore passed the gates the live set guards and
+         * never reached the 402: live forever, by omission. The grant side and
+         * the revoke side have to read one vocabulary.
+         */
+        it('blocks with 402 once the window has elapsed, exactly as `past_due` does', async () => {
+            const unpaidSub = createMockSubscription({
+                // The qzpay spelling. `isPastDue()` returns FALSE for it, which is
+                // the whole point — the decision no longer comes from that helper.
+                status: 'unpaid',
+                isPastDue: false,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -1,
+                currentPeriodEnd: periodEndForOverdue(1)
+            });
+            setupBillingWith([unpaidSub]);
+            const ctx = createMockContext();
+            const middleware = pastDueGraceMiddleware();
+
+            // Thrown, not `c.json`-ed, so the shared error formatter builds the
+            // body (HOS-283) — same contract as the `past_due` case above.
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+            expect((thrown as HTTPException).cause).toEqual(
+                expect.objectContaining({ code: 'GRACE_PERIOD_EXPIRED' })
+            );
+            expect(next).not.toHaveBeenCalled();
+        });
+
+        it('and is let through, with the header, while still inside the window', async () => {
+            // The other direction: normalizing must not turn the grace into an
+            // immediate block. An `unpaid` row inside its window behaves like any
+            // past-due one.
+            const unpaidSub = createMockSubscription({
+                status: 'unpaid',
+                isPastDue: false,
+                isInGracePeriod: true,
+                daysRemainingInGrace: 4
+            });
+            setupBillingWith([unpaidSub]);
+            const ctx = createMockContext();
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.header).toHaveBeenCalledWith('X-Grace-Period-Days-Remaining', '4');
+        });
+
+        it('a soft-DELETED past-due row is still ignored — the deletedAt half is preserved', async () => {
+            // `sub.isPastDue()` was `status === 'past_due' && deletedAt === null`.
+            // Replacing it had to carry BOTH halves; dropping the second would
+            // start 402-ing on deleted rows.
+            const deletedPastDue = createMockSubscription({
+                status: 'past_due',
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: 0,
+                deletedAt: new Date('2026-01-01T00:00:00Z')
+            });
+            setupBillingWith([deletedPastDue]);
+            const ctx = createMockContext();
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
         });
     });
 
