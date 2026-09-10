@@ -1,16 +1,26 @@
 /**
  * Tests for the shared `mp_subscription_id` predicates (HOS-1326).
  *
- * These pin the generated SQL, not a mock's idea of it. Two suites in `apps/api`
- * stub `hasNoLinkedPreapprovalCondition` because they replace `@repo/db`
- * wholesale and cannot run real drizzle over their string column markers — so
- * this file is what stops the real predicate from drifting away from those stubs
- * unnoticed. Without it, "the predicate is correct" would rest on the same mock
- * that consumes it, which is the failure mode HOS-1326 was filed for twice.
+ * These pin the SQL these functions EMIT, operator included — not a silhouette of
+ * it. Two `apps/api` suites stub these predicates (they replace `@repo/db`
+ * wholesale) and one `packages/seed` migration consumes them against live billing
+ * rows, so this file is the only place their real behaviour is checked. The first
+ * version of it was blind in exactly the way it existed to prevent:
  *
- * The assertion is on the SQL text because that is the artifact that reaches
- * Postgres: the bug being prevented is a WHERE that reads `IS NULL` on a column
- * holding `''`, and only the emitted SQL can show whether both are covered.
+ * | mutation | real effect | old assertions |
+ * | -- | -- | -- |
+ * | `ne(mp,'')` → `eq(mp,'')` in {@link hasLinkedPreapprovalCondition} | matches ONLY `''`, so the data-migration selects nothing and reports success | passed |
+ * | `eq(mp,'')` → `ne(mp,'')` in {@link hasNoLinkedPreapprovalCondition} | matches EVERY row with a real preapproval — fails OPEN | passed |
+ *
+ * The second is the dangerous direction: with the operator inverted the reaper's
+ * `mpGuard` stops guarding, and a terminal status can land on a row whose
+ * preapproval was linked between the read and the write — the split-brain the
+ * cron's own comment says it is preventing.
+ *
+ * Both survived because the assertions asked whether the SQL *contained* `is
+ * null` / `or` / an empty-string param. All of that stays true under either
+ * mutation. Pinning the whole statement is what makes an operator swap fail: a
+ * predicate IS its operators, and a test that reads around them tests nothing.
  *
  * @module test/billing-subscription-conditions
  */
@@ -25,61 +35,99 @@ import {
 const dialect = new PgDialect();
 
 /**
- * Renders a drizzle condition to the SQL text Postgres would receive.
+ * Renders a drizzle condition to the exact SQL Postgres would receive.
  *
- * Uses the real Postgres dialect rather than poking at the condition object, so
- * the assertions below are about the emitted statement — the only artifact that
- * can actually show whether both the null and the empty-string spelling are
- * covered. Literals arrive as `$n` placeholders, so the parameter list is
- * returned alongside.
+ * Literals arrive as `$n` placeholders, so the bound parameters come back
+ * alongside — the empty string this module is about is a PARAM, not inline text,
+ * and a statement-only assertion would never see which value is compared.
  */
 function renderSql(condition: unknown): { text: string; params: readonly unknown[] } {
     // biome-ignore lint/suspicious/noExplicitAny: dialect takes a drizzle SQL node
     const query = dialect.sqlToQuery(condition as any);
-    return { text: query.sql.toLowerCase(), params: query.params };
+    return { text: query.sql, params: query.params };
 }
 
+const COLUMN = '"billing_subscriptions"."mp_subscription_id"';
+
 describe('hasNoLinkedPreapprovalCondition', () => {
-    it('covers BOTH the null and the empty-string spelling', () => {
+    // Whole-statement equality, deliberately. Any operator swap, any column
+    // change, any lost half fails here — which is the entire point of the file.
+    it('emits exactly `mp IS NULL OR mp = <empty>`', () => {
         const { text, params } = renderSql(hasNoLinkedPreapprovalCondition());
 
-        // The whole point: an `IS NULL`-only predicate matched zero rows for the
-        // checkout it was written to close, because qzpay persists a missing
-        // preapproval id as ''.
-        expect(text).toContain('is null');
-        expect(text).toContain(' or ');
-        // The empty string is compared as a bound parameter, so it shows up here
-        // rather than inline. Asserting it is what makes this test fail if the
-        // second half is ever dropped.
-        expect(params).toContain('');
+        expect(text).toBe(`(${COLUMN} is null or ${COLUMN} = $1)`);
+        expect(params).toEqual(['']);
     });
 
-    it('is an OR, not an AND — the two spellings are alternatives', () => {
+    it('compares the empty string with EQUALITY, never with `<>`', () => {
         const { text } = renderSql(hasNoLinkedPreapprovalCondition());
+
+        // The fail-OPEN direction: `<>` here would match every row that HAS a
+        // preapproval, letting a terminal status land on a live authorization.
+        expect(text).toContain(`${COLUMN} = $1`);
+        expect(text).not.toContain('<>');
+        expect(text).not.toContain('is not null');
+    });
+
+    it('is an OR — the two spellings are alternatives, not both required', () => {
+        const { text } = renderSql(hasNoLinkedPreapprovalCondition());
+
+        expect(text).toContain(' or ');
         expect(text).not.toContain(' and ');
     });
 });
 
 describe('hasLinkedPreapprovalCondition', () => {
-    it('is not satisfied by "not null" alone — it also excludes the empty string', () => {
+    it('emits exactly `mp IS NOT NULL AND mp <> <empty>`', () => {
         const { text, params } = renderSql(hasLinkedPreapprovalCondition());
 
-        expect(text).toContain('is not null');
-        // The `<>` half is what makes this the true complement. A hand-rolled
-        // `IS NOT NULL` would admit the `''` rows that mean "no preapproval",
-        // which on the data-migration side would relabel a row it must not touch.
-        expect(text).toContain(' and ');
-        expect(params).toContain('');
+        expect(text).toBe(`(${COLUMN} is not null and ${COLUMN} <> $1)`);
+        expect(params).toEqual(['']);
     });
 
-    it('and its complement name the same column', () => {
-        const positive = renderSql(hasLinkedPreapprovalCondition()).text;
-        const negative = renderSql(hasNoLinkedPreapprovalCondition()).text;
+    it('compares the empty string with INEQUALITY, never with `=`', () => {
+        const { text } = renderSql(hasLinkedPreapprovalCondition());
 
-        // Both must be about `mp_subscription_id` and nothing else — a pair that
-        // silently drifted onto different columns would still "pass" every
-        // shape-only assertion above.
-        expect(positive).toContain('mp_subscription_id');
-        expect(negative).toContain('mp_subscription_id');
+        // Swapping this to `=` makes the predicate match ONLY the empty string —
+        // the exact rows it exists to exclude — so the data-migration would
+        // quietly select nothing and report success.
+        expect(text).toContain(`${COLUMN} <> $1`);
+        expect(text).not.toContain(`${COLUMN} = $1`);
+    });
+
+    it('is an AND — both halves are required', () => {
+        const { text } = renderSql(hasLinkedPreapprovalCondition());
+
+        expect(text).toContain(' and ');
+        expect(text).not.toContain(' or ');
+    });
+});
+
+describe('the pair', () => {
+    // Documented as exact complements. If one drifted onto another column every
+    // shape-level assertion above would still pass.
+    it('addresses the same column from both directions', () => {
+        expect(renderSql(hasNoLinkedPreapprovalCondition()).text).toContain(COLUMN);
+        expect(renderSql(hasLinkedPreapprovalCondition()).text).toContain(COLUMN);
+    });
+
+    it('negates each other operator for operator', () => {
+        const negative = renderSql(hasNoLinkedPreapprovalCondition()).text;
+        const positive = renderSql(hasLinkedPreapprovalCondition()).text;
+
+        // `is null`↔`is not null`, `=`↔`<>`, `or`↔`and`, all three at once.
+        // Asserted as a pair so a half-applied edit — flipping one operator and
+        // not its twin — is caught even if each statement still reads sensibly on
+        // its own.
+        const normalisedNegative = negative
+            .replace('is null', '<NULLNESS>')
+            .replace(' or ', ' <JOIN> ')
+            .replace('= $1', '<EQUALITY> $1');
+        const normalisedPositive = positive
+            .replace('is not null', '<NULLNESS>')
+            .replace(' and ', ' <JOIN> ')
+            .replace('<> $1', '<EQUALITY> $1');
+
+        expect(normalisedNegative).toBe(normalisedPositive);
     });
 });
