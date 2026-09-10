@@ -158,17 +158,27 @@ const SUCCESS_RESULT = { data: {}, error: undefined } as never;
 /**
  * Sets the customer's subscription state for the next request.
  *
- * @param rows - `[id, status, real productDomain]` triples. The domain is
- *   applied by the hydration mock, never injected into the row itself.
+ * @param rows - `[id, status, real productDomain, currentPeriodEnd?,
+ *   cancelAtPeriodEnd?]` tuples. The domain is applied by the hydration mock,
+ *   never injected into the row itself.
+ *
+ *   `cancelAtPeriodEnd` matters only for `cancelled` rows, and there it decides
+ *   the answer (HOS-1310): `isSubscriptionLive` requires it, because
+ *   `currentPeriodEnd` is stamped by qzpay at INSERT before any payment and so
+ *   cannot tell a paid-through owner from a checkout nobody completed.
  */
 function given(
-    rows: ReadonlyArray<readonly [string, string, string | null, (Date | undefined)?]>
+    rows: ReadonlyArray<
+        readonly [string, string, string | null, (Date | undefined)?, (boolean | undefined)?]
+    >
 ): void {
-    fakeSubscriptions = rows.map(([id, status, , currentPeriodEnd]) =>
-        currentPeriodEnd === undefined
-            ? { id, status, planId: 'plan-1' }
-            : { id, status, planId: 'plan-1', currentPeriodEnd }
-    );
+    fakeSubscriptions = rows.map(([id, status, , currentPeriodEnd, cancelAtPeriodEnd]) => ({
+        id,
+        status,
+        planId: 'plan-1',
+        ...(currentPeriodEnd === undefined ? {} : { currentPeriodEnd }),
+        ...(cancelAtPeriodEnd === undefined ? {} : { cancelAtPeriodEnd })
+    }));
     fakeDomains = Object.fromEntries(rows.map(([id, , domain]) => [id, domain]));
     clearEntitlementCache(CUSTOMER_ID);
 }
@@ -378,13 +388,18 @@ describe('the content-editing subscription gate — REFUSES a lapsed owner (HOS-
         ]
     ] as const)('SOFT-CANCEL: %s keeps editing while the paid period runs', async (_label, domain, path) => {
         // REGRESSION (HOS-1275). The first cut of this gate was status-only
-        // and 402'd here. Cancelling writes `status = 'cancelled'` and
-        // `cancel_at_period_end = true` IMMEDIATELY, a month before the
-        // period ends — see `apps/e2e/tests/host/host-04-cancellation-grace.spec.ts`,
-        // which is the suite that caught it in CI because none of THESE
-        // covered it. This is that scenario, on the wire, in all three
-        // verticals rather than only the one the e2e exercises.
-        given([['sub-soft', SubscriptionStatusEnum.CANCELLED, domain, future()]]);
+        // and 402'd here, on the wire, in all three verticals rather than only
+        // the one `apps/e2e/tests/host/host-04-cancellation-grace.spec.ts`
+        // exercises.
+        //
+        // CORRECTED (HOS-1310): this comment used to say cancelling writes
+        // `status = 'cancelled'` IMMEDIATELY, citing that E2E. The E2E performs
+        // the UPDATE itself as a fixture; the in-app soft cancel sets only
+        // `cancel_at_period_end` and leaves the status alone. But that flag is
+        // exactly what makes this row a real soft-cancel, and `isSubscriptionLive`
+        // now requires it — so the fixture states it instead of leaning on a date
+        // qzpay stamps before anybody pays.
+        given([['sub-soft', SubscriptionStatusEnum.CANCELLED, domain, future(), true]]);
 
         const res = await app.request(path, {
             method: 'POST',
@@ -416,7 +431,44 @@ describe('the content-editing subscription gate — REFUSES a lapsed owner (HOS-
         // "cancel keeps grace -> period_end past blocks writes". Without
         // this case the fix above could be widened to "cancelled always
         // passes" with everything still green.
-        given([['sub-spent', SubscriptionStatusEnum.CANCELLED, domain, past()]]);
+        given([['sub-spent', SubscriptionStatusEnum.CANCELLED, domain, past(), true]]);
+
+        const res = await app.request(path, {
+            method: 'POST',
+            headers: ownerHeaders,
+            body: FAQ_BODY
+        });
+
+        expect(res.status).toBe(402);
+    });
+
+    it.each([
+        [
+            'accommodation',
+            ProductDomainEnum.ACCOMMODATION,
+            `/api/v1/protected/accommodations/${LISTING_ID}/faqs`
+        ],
+        [
+            'gastronomy',
+            ProductDomainEnum.GASTRONOMY,
+            `/api/v1/protected/gastronomies/${LISTING_ID}/faqs`
+        ],
+        [
+            'experience',
+            ProductDomainEnum.EXPERIENCE,
+            `/api/v1/protected/experiences/${LISTING_ID}/faqs`
+        ]
+    ] as const)('NEVER-PAID: %s is refused despite a future period end (HOS-1310)', async (_label, domain, path) => {
+        // The phantom row, on the wire, in all three verticals. Identical
+        // status and identical future date to the passing case above; the
+        // only difference is `cancelAtPeriodEnd`.
+        //
+        // Produced by the MercadoPago webhook when a checkout is abandoned or
+        // a card refused: qzpay had already stamped `current_period_end =
+        // now + 30 days` at INSERT, and the webhook rewrites rather than
+        // clears it. Nothing reaps the row, so on the date alone it bought a
+        // month of editing nobody paid for.
+        given([['sub-phantom', SubscriptionStatusEnum.CANCELLED, domain, future(), false]]);
 
         const res = await app.request(path, {
             method: 'POST',

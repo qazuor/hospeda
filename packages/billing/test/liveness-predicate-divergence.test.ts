@@ -56,12 +56,28 @@ function datesAt(ms: number | null) {
     return { trialEnd: date, currentPeriodEnd: date, courtesyEndsAt: date };
 }
 
-/** The three answers for one status under one clock. */
-function answersFor(status: string, dateMs: number | null) {
+/**
+ * The three answers for one status under one clock.
+ *
+ * `cancelAtPeriodEnd` defaults to `true` because this file is about how the
+ * three predicates diverge on STATUS and DATE, and `true` is the one value that
+ * lets the `cancelled` branch be reached at all (HOS-1310 made it a requirement:
+ * a cancelled row is not evidence of payment). Holding it at `false` would make
+ * the `cancelled` row of every table below read `false` for a reason that has
+ * nothing to do with the divergence being measured. The `false` side is covered
+ * on purpose in `is-subscription-live.test.ts`'s dedicated block and in the
+ * explicit case at the bottom of this file.
+ */
+function answersFor(status: string, dateMs: number | null, cancelAtPeriodEnd = true) {
     return {
         granting: isEntitlementGrantingStatus(status),
         liveStatus: isLiveSubscriptionStatus(status),
-        dateAware: isSubscriptionLive({ status, ...datesAt(dateMs), nowMs: NOW_MS })
+        dateAware: isSubscriptionLive({
+            status,
+            ...datesAt(dateMs),
+            cancelAtPeriodEnd,
+            nowMs: NOW_MS
+        })
     };
 }
 
@@ -195,14 +211,16 @@ describe('HOS-1310: all three agree across the qzpay vocabulary', () => {
         });
     });
 
-    it("REGRESSION: 'canceled' gets the soft-cancel grace the British spelling gets", () => {
-        // A period still in the future: live for the date-aware predicate, for
-        // both spellings. Before the fix the American one answered false here,
-        // so the answer depended on whether a deploy had folded the column.
+    it("REGRESSION: 'canceled' gets the paid-through grace the British spelling gets", () => {
+        // A period still in the future AND a real soft-cancel: live for the
+        // date-aware predicate, for both spellings. Before the fix the American
+        // one answered false here, so the answer depended on whether a deploy had
+        // folded the column.
         const future = NOW_MS + 10 * 24 * HOUR_MS;
         expect(
             isSubscriptionLive({
                 status: 'canceled',
+                cancelAtPeriodEnd: true,
                 currentPeriodEnd: new Date(future),
                 nowMs: NOW_MS
             })
@@ -210,10 +228,28 @@ describe('HOS-1310: all three agree across the qzpay vocabulary', () => {
         expect(
             isSubscriptionLive({
                 status: SubscriptionStatusEnum.CANCELLED,
+                cancelAtPeriodEnd: true,
                 currentPeriodEnd: new Date(future),
                 nowMs: NOW_MS
             })
         ).toBe(true);
+    });
+
+    it('and NEITHER spelling is live without the payment evidence (HOS-1310)', () => {
+        // The half that matters: normalizing the spelling must not hand the paid
+        // period to a row that never paid. Both spellings, so the fix cannot be
+        // correct for one and not the other.
+        const future = NOW_MS + 10 * 24 * HOUR_MS;
+        for (const status of ['canceled', SubscriptionStatusEnum.CANCELLED]) {
+            expect(
+                isSubscriptionLive({
+                    status,
+                    cancelAtPeriodEnd: false,
+                    currentPeriodEnd: new Date(future),
+                    nowMs: NOW_MS
+                })
+            ).toBe(false);
+        }
     });
 
     it('and an unknown spelling still fails closed in all three', () => {
