@@ -764,7 +764,9 @@
             "uncancelSuccess": "Cancellation discarded. Your subscription stays active.",
             "uncancelError": "Could not discard the cancellation.",
             "replacePaymentMethodButton": "Update payment method",
-            "replacePaymentMethodError": "Could not start the payment method update.",
+            "replacePaymentMethodError": "We could not start updating your payment method. Please try again; if it keeps failing, write to support.",
+            "replacePaymentMethodContactSupport": "Write to support",
+            "replacePaymentMethodEmailSubject": "I cannot update my payment method",
             "trialExtension": {
                 "title": "Extend your free trial",
                 "help": "If you have a promo code, apply it now to add days to your trial.",

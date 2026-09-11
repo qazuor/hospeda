@@ -764,7 +764,9 @@
             "uncancelSuccess": "Cancelamento descartado. Sua assinatura continua ativa.",
             "uncancelError": "Não foi possível descartar o cancelamento.",
             "replacePaymentMethodButton": "Atualizar método de pagamento",
-            "replacePaymentMethodError": "Não foi possível iniciar a atualização do método de pagamento.",
+            "replacePaymentMethodError": "Não conseguimos iniciar a atualização do seu método de pagamento. Tente novamente; se continuar falhando, escreva ao suporte.",
+            "replacePaymentMethodContactSupport": "Escrever ao suporte",
+            "replacePaymentMethodEmailSubject": "Não consigo atualizar meu método de pagamento",
             "trialExtension": {
                 "title": "Estender seu período de teste grátis",
                 "help": "Se você tem um código promocional, aplique agora e some dias ao seu teste.",
