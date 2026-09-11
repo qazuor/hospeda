@@ -23,6 +23,9 @@ import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
+// HOS-1252: the module is vi.mock'ed above, so this handle is the mock —
+// used to assert the ops/refund log lines the domain-gate rejections emit.
+import { apiLogger } from '../../src/utils/logger';
 
 // ---------------------------------------------------------------------------
 // Hoisted mock setup
@@ -535,6 +538,29 @@ describe('confirmAddonPurchase', () => {
                         grantsEntitlement: 'featured_listing',
                         // SPEC-309 T-006/T-007: this addon requires an accommodationId target.
                         requiresAccommodationTarget: true
+                    }
+                };
+            }
+            // HOS-1252: the commerce-side fixture whose purchase exposed the
+            // wrong-domain attachment on staging. Mirrors
+            // EXTRA_GASTRONOMIES_ADDON (packages/billing/src/config/addons.config.ts).
+            if (slug === 'extra-gastronomies-1') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-gastronomies-1',
+                        name: 'Extra Gastronomy Listing (+1)',
+                        description: 'Adds 1 additional gastronomy listing to your plan.',
+                        billingType: 'recurring' as const,
+                        priceArs: 1500000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        productDomain: ProductDomainEnum.GASTRONOMY,
+                        sortOrder: 7,
+                        affectsLimitKey: 'max_gastronomies',
+                        limitIncrease: 1,
+                        grantsEntitlement: null
                     }
                 };
             }
@@ -1757,6 +1783,293 @@ describe('confirmAddonPurchase', () => {
             expect(result.success).toBe(true);
             expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
             expect(mockEntitlementService.applyAddonEntitlements).toHaveBeenCalledOnce();
+        });
+    });
+
+    // =========================================================================
+    // HOS-1252: the confirmation resolves the subscription of the ADD-ON's own
+    // domain — never "any live subscription".
+    //
+    // Measured on staging 2026-09-08: a customer holding TWO live
+    // subscriptions (accommodation + gastronomy) bought
+    // `extra-gastronomies-1` and the confirmation attached the purchase to the
+    // ACCOMMODATION subscription, because the `.find()` had no domain filter
+    // and simply took the first live non-add-on row. Two consequences: the
+    // gastronomy cap hung off the wrong lifecycle, and its limit baseline was
+    // read from the accommodation plan, which declares no `max_gastronomies`
+    // (`previousValue: 0`) — the owner paid ARS 15.000 and the cap never moved.
+    // The checkout gate (HOS-1178) already resolves the add-on's own domain;
+    // these tests pin that the confirmation cannot be more lax than the sale.
+    // =========================================================================
+
+    describe('product-domain selection at confirmation (HOS-1252)', () => {
+        /**
+         * The dual-subscription fixture that reproduces the staging incident:
+         * an owner holding BOTH an accommodation and a gastronomy
+         * subscription. The accommodation row comes FIRST on purpose — with
+         * the pre-HOS-1252 `.find()` this ordering alone decided which
+         * subscription won, and it is the row `getByCustomerId` happened to
+         * return first on staging.
+         */
+        const dualSubscriptions = [
+            {
+                id: 'sub_accommodation',
+                status: 'active',
+                planId: 'owner-basico',
+                productDomain: 'accommodation'
+            },
+            {
+                id: 'sub_gastronomy',
+                status: 'active',
+                planId: 'gastronomy-basico',
+                productDomain: 'gastronomy'
+            }
+        ];
+
+        /** The gastronomy add-on's confirmation input. */
+        function gastronomyInput(): ConfirmPurchaseInput {
+            return {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-gastronomies-1',
+                paymentId: 'pay_gastro'
+            };
+        }
+
+        /**
+         * PlanService stub for the two plans the dual fixture carries,
+         * slug-sensitive on purpose: `gastronomy-basico` has
+         * `max_gastronomies: 1` (packages/billing plans.config.ts), while
+         * `owner-basico` — the accommodation plan — declares no such key, so
+         * the purchase's `previousValue` must be 1, not the 0 the
+         * accommodation plan's absent key produced on staging. A
+         * slug-insensitive stub would hand the gastronomy plan to the
+         * accommodation planId too and let a wrong-subscription selection pass
+         * the `previousValue` assertion.
+         */
+        function mockGastronomyPlan(): void {
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+            mockPlanServiceGetBySlug.mockImplementation(async (slug: string) => {
+                if (slug === 'gastronomy-basico') {
+                    return {
+                        success: true,
+                        data: {
+                            id: 'plan-gastro-uuid',
+                            slug: 'gastronomy-basico',
+                            category: 'owner',
+                            limits: { max_gastronomies: 1 }
+                        }
+                    };
+                }
+                return {
+                    success: true,
+                    data: {
+                        id: 'plan-owner-uuid',
+                        slug: 'owner-basico',
+                        category: 'owner',
+                        limits: { max_accommodations: 1 }
+                    }
+                };
+            });
+        }
+
+        it('attaches the purchase to the gastronomy subscription for a dual subscriber (regression)', async () => {
+            // Arrange — the poisoned shape: two live subscriptions, the
+            // wrong-domain one first. Pre-fix, the find took sub_accommodation.
+            mockBilling = createMockBilling(dualSubscriptions);
+            mockGastronomyPlan();
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                gastronomyInput()
+            );
+
+            // Assert — the purchase must be attached to the GASTRONOMY
+            // subscription, and its limit baseline read from the GASTRONOMY
+            // plan (previousValue 1 → newValue 2), never from the
+            // accommodation plan's absent `max_gastronomies` (previousValue 0).
+            expect(result.success).toBe(true);
+            expect(mockDbInsertValues).toHaveBeenCalledOnce();
+            const inserted = mockDbInsertValues.mock.calls[0]?.[0] as {
+                subscriptionId: string;
+                limitAdjustments: Array<{
+                    limitKey: string;
+                    increase: number;
+                    previousValue: number;
+                    newValue: number;
+                }>;
+            };
+            expect(inserted.subscriptionId).toBe('sub_gastronomy');
+            expect(inserted.limitAdjustments).toHaveLength(1);
+            expect(inserted.limitAdjustments[0]).toMatchObject({
+                limitKey: 'max_gastronomies',
+                increase: 1,
+                previousValue: 1,
+                newValue: 2
+            });
+        });
+
+        it('still attaches correctly for a gastronomy-only subscriber (the pre-fix passing case)', async () => {
+            // The discriminant half of the staging pair: the SAME add-on
+            // bought by a customer with a SINGLE (gastronomy) subscription was
+            // correctly attached even before the fix — the only variable in
+            // the incident was the second, accommodation subscription. It must
+            // keep working.
+            mockBilling = createMockBilling([
+                {
+                    id: 'sub_gastronomy',
+                    status: 'active',
+                    planId: 'gastronomy-basico',
+                    productDomain: 'gastronomy'
+                }
+            ]);
+            mockGastronomyPlan();
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                gastronomyInput()
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            const inserted = mockDbInsertValues.mock.calls[0]?.[0] as {
+                subscriptionId: string;
+            };
+            expect(inserted.subscriptionId).toBe('sub_gastronomy');
+        });
+
+        it('rejects with ADDON_NOT_AVAILABLE_FOR_DOMAIN when no domain subscription exists — never attaches to another domain', async () => {
+            // The edge case: the customer has a live subscription in ANOTHER
+            // domain only. Falling back to "any live subscription" is exactly
+            // the HOS-1252 bug, so the confirmation refuses and leaves the
+            // purchase unrecorded — the money was collected, which is why the
+            // refusal must be loud for ops to refund.
+            mockBilling = createMockBilling([
+                {
+                    id: 'sub_accommodation',
+                    status: 'active',
+                    planId: 'owner-basico',
+                    productDomain: 'accommodation'
+                }
+            ]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                gastronomyInput()
+            );
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('ADDON_NOT_AVAILABLE_FOR_DOMAIN');
+            expect(mockDbTransaction).not.toHaveBeenCalled();
+            expect(apiLogger.error).toHaveBeenCalledWith(
+                expect.objectContaining({ productDomain: 'gastronomy' }),
+                expect.stringContaining('refund'),
+                { capture: true }
+            );
+        });
+
+        it('rejects with SUBSCRIPTION_CANCELLED when the domain subscription dies between the selection and the re-verify', async () => {
+            // The re-verify half of the fix: the gastronomy subscription is
+            // live at the first read and cancelled at the second. A re-verify
+            // that accepts ANY live subscription (the pre-fix predicate)
+            // would wave the still-live accommodation row through and insert
+            // anyway — the wrong-domain row re-admitted through the back door
+            // the front gate just closed.
+            const billingWithDeadDomainRecheck = {
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValueOnce(dualSubscriptions)
+                        .mockResolvedValueOnce([
+                            {
+                                id: 'sub_accommodation',
+                                status: 'active',
+                                planId: 'owner-basico',
+                                productDomain: 'accommodation'
+                            },
+                            {
+                                id: 'sub_gastronomy',
+                                status: 'canceled',
+                                planId: 'gastronomy-basico',
+                                productDomain: 'gastronomy'
+                            }
+                        ])
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ id: 'plan_basico' })
+                }
+            } as unknown as QZPayBilling;
+            mockGastronomyPlan();
+
+            // Act
+            const result = await confirmAddonPurchase(
+                billingWithDeadDomainRecheck,
+                mockEntitlementService,
+                gastronomyInput()
+            );
+
+            // Assert — rejected before the DB insert even runs, and loud
+            // about the collected charge for ops.
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('SUBSCRIPTION_CANCELLED');
+            expect(mockDbTransaction).not.toHaveBeenCalled();
+            expect(mockEntitlementService.applyAddonEntitlements).not.toHaveBeenCalled();
+            expect(apiLogger.error).toHaveBeenCalledWith(
+                expect.objectContaining({ productDomain: 'gastronomy' }),
+                expect.stringContaining('refund'),
+                { capture: true }
+            );
+        });
+
+        it('rejects with ADDON_DOMAIN_UNKNOWN when the add-on declares no product domain (fail closed)', async () => {
+            // Mirror of checkout's own gate (HOS-1178) and of the entitlement
+            // grant's (HOS-1270): an add-on the catalogue cannot classify must
+            // not fall back to accommodation at confirmation either. Checkout
+            // refuses to sell such an add-on, so the only ways here are a
+            // catalog edit mid-flight or a purchase that predates the gate.
+            mockAddonCatalogGetBySlug.mockImplementation(async () => ({
+                success: true,
+                data: {
+                    slug: 'mystery-addon',
+                    name: 'Mystery Addon',
+                    description: 'An add-on with no declared vertical',
+                    billingType: 'recurring' as const,
+                    priceArs: 1000,
+                    durationDays: null,
+                    isActive: true,
+                    targetCategories: ['owner'] as const,
+                    productDomain: undefined,
+                    sortOrder: 99,
+                    affectsLimitKey: null,
+                    limitIncrease: null,
+                    grantsEntitlement: null
+                }
+            }));
+
+            // Act
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'mystery-addon'
+            });
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('ADDON_DOMAIN_UNKNOWN');
+            expect(mockDbTransaction).not.toHaveBeenCalled();
+            expect(apiLogger.error).toHaveBeenCalledWith(
+                expect.objectContaining({ addonSlug: 'mystery-addon' }),
+                expect.stringContaining('refund'),
+                { capture: true }
+            );
         });
     });
 });
