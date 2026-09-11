@@ -256,6 +256,16 @@ const CHECKOUT_RESULT = {
  * pay) while leaving the suite green. So an exempted request must be shown to
  * reach the checkout and come back with its URL.
  *
+ * HOS-1335 + HOS-1322: reaching the checkout is no longer enough on its own —
+ * the duplicate guard inside `createPaidSubscription` /
+ * `createPendingProviderSubscription` scans again and refuses the conversion
+ * unless the route NAMED the exempted trial in `supersedesSubscriptionIds`. A
+ * route that forgets to pass them would still satisfy every assertion above,
+ * because this suite stubs the checkout service. So the stub's INPUT is
+ * asserted too: the exempted row's id must travel. Every caller of this helper
+ * arms exactly one accommodation LOCAL_TRIAL, which is what makes the
+ * expectation uniform.
+ *
  * @param result - Whatever `callStartPaid` returned.
  * @param interval - Which branch was expected to run.
  */
@@ -273,6 +283,9 @@ function expectCheckoutProceeded(
     expect(result).toMatchObject({ checkoutUrl: CHECKOUT_RESULT.checkoutUrl });
     const called = interval === 'annual' ? mockInitiateAnnual : mockInitiateMonthly;
     expect(called).toHaveBeenCalledTimes(1);
+    expect(called).toHaveBeenCalledWith(
+        expect.objectContaining({ supersedesSubscriptionIds: [LOCAL_TRIAL.id] })
+    );
     expect(interval === 'annual' ? mockInitiateMonthly : mockInitiateAnnual).not.toHaveBeenCalled();
 }
 
