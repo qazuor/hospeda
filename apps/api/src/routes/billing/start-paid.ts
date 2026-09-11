@@ -451,6 +451,18 @@ export const handleStartPaidSubscription = async (
         // Resolved once, from the static catalogue, before either guard runs: a
         // pure array lookup with no I/O, and both guards must agree on it.
         const purchaseDomain = declaredDomainForPlanSlug(body.planSlug);
+        // HOS-1335: the exempted rows, named for the duplicate guard INSIDE
+        // the creation primitives (HOS-1322). These route-level guards let a
+        // Hospeda-owned trial through, but `createPaidSubscription` /
+        // `createPendingProviderSubscription` scan again and would refuse the
+        // same conversion with ALREADY_SUBSCRIBED one gate deeper. Naming the
+        // ids is not a boolean bypass: a live row outside this list still
+        // refuses there, and the activation of the new row sweeps these
+        // (`trial-supersede-on-activation.ts`), so the exemption is the exact
+        // statement of what this purchase replaces.
+        const supersededLocalTrialIds = existingSubscriptions
+            .filter((sub) => isHospedaOwnedLocalTrial(sub, purchaseDomain))
+            .map((sub) => sub.id);
         const hasLiveSellableDomainSub = existingSubscriptions.some((sub) => {
             if (!isSubscriptionInASellableDomain(sub)) return false;
             if (isHospedaOwnedLocalTrial(sub, purchaseDomain)) return false;
@@ -624,8 +636,14 @@ export const handleStartPaidSubscription = async (
                       // this replaced did. Monthly never set one either.
                       promoCode: body.promoCode,
                       // HOS-937 step 2: the email the user typed on the
-                      // pre-redirect screen, if any (spec §8.1/§6.3).
-                      payerEmail: body.payerEmail
+                      // pre-redirect screen, if any (spec §8.1).
+                      payerEmail: body.payerEmail,
+                      // HOS-1335: the exempted trial rows, named so the
+                      // duplicate guard inside the primitives lets this
+                      // conversion through (see the resolution above).
+                      ...(supersededLocalTrialIds.length > 0
+                          ? { supersedesSubscriptionIds: supersededLocalTrialIds }
+                          : {})
                   })
                 : await initiatePaidMonthlySubscription({
                       customerId: billingCustomerId,
@@ -639,8 +657,12 @@ export const handleStartPaidSubscription = async (
                       },
                       promoCode: body.promoCode,
                       // HOS-937 step 2: the email the user typed on the
-                      // pre-redirect screen, if any (spec §8.1/§6.3).
-                      payerEmail: body.payerEmail
+                      // pre-redirect screen, if any (spec §8.1).
+                      payerEmail: body.payerEmail,
+                      // HOS-1335: identical forwarding to the monthly branch.
+                      ...(supersededLocalTrialIds.length > 0
+                          ? { supersedesSubscriptionIds: supersededLocalTrialIds }
+                          : {})
                   });
 
         apiLogger.info(
