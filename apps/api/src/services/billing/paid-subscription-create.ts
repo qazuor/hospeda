@@ -39,6 +39,7 @@ import { applyTestControl } from '@repo/billing';
 import { billingPlans, type DrizzleClient, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { abandonNeverConfirmedSubscription } from './abandon-never-confirmed-subscription.js';
+import { assertNoLiveSubscriptionForDomain } from './duplicate-subscription-guard.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 /**
@@ -182,6 +183,39 @@ export interface CreatePaidSubscriptionInput {
      * own uncommitted plan row rather than a stale one.
      */
     readonly db?: DrizzleClient;
+    /**
+     * The domain the RESULTING SUBSCRIPTION ROW belongs to, when it differs from
+     * the domain of the plan whose price is being charged (HOS-1322).
+     *
+     * There is exactly one such caller and it is not a corner case: a recurring
+     * add-on BORROWS the owner's own plan row to satisfy qzpay's plan+price
+     * requirement (`addon.checkout.recurring-resolve.ts`), then stamps the row
+     * `product_domain = 'addon'`. Its plan-resolved domain is therefore the
+     * owner's vertical while the row's own domain is `addon` — and it is the
+     * ROW's domain the duplicate guard must reason about, or every add-on
+     * purchase by a subscribed host is refused as a duplicate of the plan it
+     * borrowed the price from.
+     *
+     * Omitted (every plan checkout), the plan's own resolved domain is used,
+     * which for those callers IS the row's domain.
+     *
+     * This does NOT change what is stated on the preapproval — that stays the
+     * plan's domain, resolved from the database by
+     * {@link resolvePlanProductDomain}. It only tells the duplicate guard which
+     * bucket this creation lands in.
+     */
+    readonly subscriptionProductDomain?: string;
+    /**
+     * The subscriptions this creation REPLACES, exempted from the duplicate guard.
+     *
+     * Passed by the three flows that legitimately mint a preapproval while a live
+     * row exists in the same domain: trial → paid reactivation
+     * (`trial.service.ts`), the past-due payment-method replacement, and the
+     * HOS-937 preapproval retry. It exempts THOSE ROWS and nothing else — a live
+     * subscription that is not on the list still refuses — which is why it is a
+     * list of ids and not a boolean.
+     */
+    readonly supersedesSubscriptionIds?: readonly string[];
 }
 
 /**
@@ -324,6 +358,31 @@ export async function createPaidSubscription(
     // does not cover admin-created negotiated plans, HOS-1062) or duplicating
     // the query.
     const productDomain = await resolvePlanProductDomain({ planId, db: input.db });
+
+    // HOS-1322 — the duplicate guard, INSIDE the primitive.
+    //
+    // This is the call every `mode: 'paid'` preapproval funnels through, and
+    // until now not one of the four creation primitives refused a duplicate on
+    // its own: every guard lived in a caller, so the seven paths that had no
+    // caller-side guard (`reactivateFromTrial`, the admin commerce
+    // start-subscription, `partners/{id}/send-link`, ...) minted a SECOND live
+    // preapproval on top of the one the customer was already paying, and
+    // answered 201 doing it.
+    //
+    // Scoped by the ROW's domain, not by customer alone: a host who also runs a
+    // restaurant holds two live subscriptions legitimately, and a
+    // customer-wide check would refuse their gastronomy checkout. See the
+    // guard's module docblock for the add-on exemption, which is why
+    // `subscriptionProductDomain` exists.
+    await assertNoLiveSubscriptionForDomain({
+        customerId,
+        productDomain: input.subscriptionProductDomain ?? productDomain,
+        ...(input.supersedesSubscriptionIds === undefined
+            ? {}
+            : { supersedesSubscriptionIds: input.supersedesSubscriptionIds }),
+        ...(input.db === undefined ? {} : { db: input.db }),
+        source: 'createPaidSubscription'
+    });
 
     // The preapproval create is wrapped in the E2E test-control seam so the
     // resilience suite can force the provider to be down or time out at exactly

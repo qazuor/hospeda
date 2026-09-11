@@ -1250,6 +1250,63 @@ export abstract class BaseCommerceListingService<
     }
 
     /**
+     * Counts every non-deleted commerce listing owned by the given actor.
+     *
+     * The counting twin of {@link listOwn}, and it exists for the same reason
+     * that method does: **the public `count()` inherited from `BaseCrudRead`
+     * cannot answer this question.** Both verticals' `_executeCount` mirror
+     * their `_executeSearch` and force `visibility: PUBLIC` +
+     * `lifecycleState: ACTIVE` (`gastronomy.service.ts` / `experience.service.ts`),
+     * because a public-search total has to match the page it paginates. A
+     * listing created through the owner self-service route starts
+     * `PRIVATE`/`DRAFT` by construction (`commerce/protected/create.ts` D-3), so
+     * `count(actor, { ownerId })` reports ZERO for exactly the listings a quota
+     * has to count — which is HOS-1247: three listings created on a plan of one,
+     * every gate reading a count of zero and raising nothing.
+     *
+     * Accommodation never had this hole: its `_executeCount` drops `activeOnly`
+     * when `params.ownerId === actor.id` (`accommodation.service.ts`), so its cap
+     * always counted drafts. This method gives the two commerce verticals the
+     * same guarantee WITHOUT touching either vertical's public search/count
+     * pair — those still agree with each other, exactly as their own tests
+     * require.
+     *
+     * Ownership IS the gate, as in {@link listOwn}: the query is hard-scoped to
+     * `ownerId = actor.id`, so no permission is required and no actor can count
+     * anybody else's listings.
+     *
+     * @param actor - The authenticated actor whose listings to count.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns `ServiceOutput<{ count: number }>` with the owner's listing count.
+     */
+    public async countOwn(
+        actor: Actor,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ count: number }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'countOwn requires an authenticated actor'
+                    )
+                };
+            }
+
+            const count = await this.model.count({ ownerId: actor.id, deletedAt: null }, { tx });
+
+            return { data: { count } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to count own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    /**
      * Soft-deletes ONE of the actor's own DRAFT listings.
      *
      * The owner-tier counterpart to `softDelete()`, which is staff-only:

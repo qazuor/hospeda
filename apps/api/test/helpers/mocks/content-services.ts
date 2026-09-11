@@ -21,6 +21,17 @@ import { ServiceError } from './service-error';
  * direction that matters: this copy declared only `(code, message)`, so `reason`
  * — the discriminator the web routes on — was swallowed on every throw inside an
  * apps/api test. One definition now, in the file that says so.
+ *
+ * **`details` and `reason` on that one definition are not decoration
+ * (HOS-1247).** The real class takes four arguments and emits both of the last
+ * two to clients: `reason` unconditionally, and `details` on every
+ * `LIMIT_REACHED` / `ENTITLEMENT_REQUIRED` response (`PUBLIC_DETAILS_ERROR_CODES`
+ * in `utils/response-helpers.ts`). A mock that silently drops them makes EVERY
+ * `error.details` in the api suite read `undefined` — so no test can assert the
+ * payload the web app's `buildLimitReachedPayload` needs in order to resolve
+ * at-limit copy and link the right add-on, and a route that stopped sending it
+ * would go on passing. `mocks/service-error.ts` carries the full 4-argument
+ * signature; keep it in step with `packages/service-core/src/types/index.ts`.
  */
 export { ServiceError };
 

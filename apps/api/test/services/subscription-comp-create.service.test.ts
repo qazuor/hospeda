@@ -57,12 +57,44 @@ const withTransactionMock = vi.fn(
 const selectLimitMock = vi.fn();
 const selectWhereMock = vi.fn(() => ({ limit: selectLimitMock }));
 const selectFromMock = vi.fn(() => ({ where: selectWhereMock }));
-const selectMock = vi.fn(() => ({ from: selectFromMock }));
+
+/**
+ * The customer's existing `billing_subscriptions` rows, as the HOS-1322
+ * duplicate guard reads them. Mutable so a test can seed a live subscription
+ * (or one in another vertical) before granting the comp.
+ */
+let existingSubscriptionRows: Array<Record<string, unknown>> = [];
+
+/**
+ * TWO selects share this stub since HOS-1322, told apart by the columns they
+ * project rather than by call order: the plan-domain lookup projects
+ * `{ productDomain }` and ends in `.limit(1)`; the duplicate guard's scan
+ * projects `status` too and ends at `.where()`.
+ */
+const selectMock = vi.fn((columns?: Record<string, unknown>) => {
+    if (columns !== undefined && 'status' in columns) {
+        return {
+            from: vi.fn(() => ({
+                where: vi.fn(() => Promise.resolve(existingSubscriptionRows))
+            }))
+        };
+    }
+    return { from: selectFromMock };
+});
 
 vi.mock('@repo/db', () => ({
-    billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
+    billingSubscriptions: {
+        __table: 'billing_subscriptions',
+        id: 'id',
+        customerId: 'customer_id',
+        status: 'status',
+        productDomain: 'product_domain',
+        deletedAt: 'deleted_at'
+    },
     billingPlans: { id: 'id', productDomain: 'product_domain' },
+    and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
     getDb: vi.fn(() => ({ select: selectMock })),
     withTransaction: (...args: unknown[]) =>
         (withTransactionMock as (...a: unknown[]) => unknown)(...args)
@@ -72,7 +104,15 @@ vi.mock('@repo/db', () => ({
 // arrived with HOS-1233 and `addon` with HOS-847; a mock frozen at four would
 // let a comparison against either of them read `undefined` on both sides and
 // compare equal.
-vi.mock('@repo/schemas', () => ({
+// HOS-1322: spreads the real module now. It used to be a full replacement
+// exporting `SubscriptionStatusEnum: { COMP: 'comp' }`, and a one-member enum
+// silently defeats `normalizeStoredSubscriptionStatus` — which maps the stored
+// status string through it — so `isLiveSubscriptionStatus('active')` answered
+// FALSE and the duplicate guard found no conflict in any row. Every guard case
+// would have passed while blocking nothing. `ServiceErrorCode` is needed for the
+// same reason: the refusal names one.
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     ProductDomainEnum: {
         ACCOMMODATION: 'accommodation',
         GASTRONOMY: 'gastronomy',
@@ -80,8 +120,7 @@ vi.mock('@repo/schemas', () => ({
         PARTNER: 'partner',
         TOURIST: 'tourist',
         ADDON: 'addon'
-    },
-    SubscriptionStatusEnum: { COMP: 'comp' }
+    }
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -89,7 +128,12 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 const redeemAndRecordUsageMock = vi.fn();
-vi.mock('@repo/service-core', () => ({
+// HOS-1322: spreads the real module. It used to export `redeemAndRecordUsage`
+// alone, which left the duplicate guard's `subscriptionMatchesDomain` and
+// `ServiceError` imports `undefined` — the guard would have thrown a TypeError
+// instead of a refusal, on every call.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
     redeemAndRecordUsage: (...args: unknown[]) => redeemAndRecordUsageMock(...args)
 }));
 
@@ -108,6 +152,61 @@ describe('createCompSubscription', () => {
         redeemAndRecordUsageMock.mockResolvedValue({ success: true, data: {} });
         // Default: plan exists with NULL productDomain (accommodation by historical default).
         selectLimitMock.mockResolvedValue([{ productDomain: null }]);
+        // Default: the customer holds no subscription at all (HOS-1322).
+        existingSubscriptionRows = [];
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1322 — the duplicate guard, inside the primitive
+    // -----------------------------------------------------------------------
+    describe('the duplicate guard (HOS-1322)', () => {
+        function grant(productDomain: 'accommodation' | 'gastronomy') {
+            return createCompSubscription({
+                customerId: 'cust-1',
+                planId: 'plan-uuid-1',
+                interval: 'monthly',
+                productDomain,
+                livemode: true
+            });
+        }
+
+        it('refuses a comp when the customer already holds a live subscription in the SAME domain', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_live', status: 'active', productDomain: 'accommodation' }
+            ];
+
+            await expect(grant('accommodation')).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+            expect(insertValuesMock).not.toHaveBeenCalled();
+        });
+
+        it('refuses on an EXISTING COMP too — a perpetual row has no period end to wait out', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_comp', status: 'comp', productDomain: 'accommodation' }
+            ];
+
+            await expect(grant('accommodation')).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+        });
+
+        it('still grants when the live subscription is in ANOTHER domain (the dual owner)', async () => {
+            // The host who already pays for accommodation and is being comped on
+            // gastronomy. Without this pair the case above passes just as well
+            // with a customer-wide check that refuses a legitimate grant.
+            existingSubscriptionRows = [
+                { id: 'sub_accommodation', status: 'active', productDomain: 'accommodation' }
+            ];
+            selectLimitMock.mockResolvedValue([{ productDomain: 'gastronomy' }]);
+
+            await grant('gastronomy');
+
+            expect(insertValuesMock).toHaveBeenCalledTimes(1);
+            expect(
+                (insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>).productDomain
+            ).toBe('gastronomy');
+        });
     });
 
     it('inserts a comp row (no mp id, far-future period, accommodation domain) + records redemption atomically', async () => {
