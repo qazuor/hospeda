@@ -1212,11 +1212,11 @@ describe('SubscriptionDashboard — replace payment method (HOS-348 Part B)', ()
         });
     });
 
-    it('shows an error toast and does NOT redirect when the API call fails', async () => {
+    it('shows a PERSISTENT error toast with a support action and does NOT redirect when the API call fails', async () => {
         mockSubscriptionSuccess(PAST_DUE_SUBSCRIPTION);
         mockReplacePaymentMethod.mockResolvedValue({
             ok: false,
-            error: { code: 'INTERNAL_ERROR', message: 'nope' }
+            error: { code: 'FORBIDDEN', message: 'nope' }
         });
         renderDashboard();
 
@@ -1230,8 +1230,20 @@ describe('SubscriptionDashboard — replace payment method (HOS-348 Part B)', ()
             fireEvent.click(screen.getByRole('button', { name: /actualizar medio de pago/i }));
         });
 
+        // HOS-1244: a 4xx on this screen must not be a silent failure. The
+        // toast must persist (duration 0 — a 5s auto-dismiss re-creates the
+        // "nothing happened" bug for anyone reading slowly) and must tell the
+        // user what to do: retry, or write to support via a mailto action.
         await waitFor(() => {
-            expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'error',
+                    duration: 0,
+                    action: expect.objectContaining({
+                        href: expect.stringContaining('mailto:')
+                    })
+                })
+            );
         });
         expect(window.location.href).toBe('');
     });

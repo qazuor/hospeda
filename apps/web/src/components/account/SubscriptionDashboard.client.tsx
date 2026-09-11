@@ -936,6 +936,35 @@ export function SubscriptionDashboard({
     // The old preapproval is cancelled server-side only once that new one
     // confirms authorized (see `past-due-payment-method-replacement.service.ts`)
     // — this call itself never cancels or charges anything.
+    //
+    // HOS-1244: on failure the toast must NOT be transient. A past-due
+    // customer reading a 5s toast that vanishes is exactly the silent
+    // failure this issue exists to kill — the message says what happened
+    // and what to do (retry, or write to support), and stays on screen
+    // until dismissed.
+    const showReplacePaymentMethodError = () => {
+        addToast({
+            type: 'error',
+            message: t(
+                'account.pages.subscription.replacePaymentMethodError',
+                'No pudimos iniciar la actualización de tu medio de pago. Volvé a intentarlo; si sigue fallando, escribinos a soporte.'
+            ),
+            duration: 0,
+            action: {
+                label: t(
+                    'account.pages.subscription.replacePaymentMethodContactSupport',
+                    'Escribir a soporte'
+                ),
+                href: `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+                    t(
+                        'account.pages.subscription.replacePaymentMethodEmailSubject',
+                        'No puedo actualizar mi medio de pago'
+                    )
+                )}`
+            }
+        });
+    };
+
     async function handleReplacePaymentMethod() {
         if (!subscription) return;
         setIsReplacingPaymentMethod(true);
@@ -944,13 +973,7 @@ export function SubscriptionDashboard({
                 localId: subscription.id
             });
             if (!result.ok || !result.data.checkoutUrl) {
-                addToast({
-                    type: 'error',
-                    message: t(
-                        'account.pages.subscription.replacePaymentMethodError',
-                        'No se pudo iniciar la actualización del medio de pago.'
-                    )
-                });
+                showReplacePaymentMethodError();
                 setIsReplacingPaymentMethod(false);
                 return;
             }
@@ -959,13 +982,7 @@ export function SubscriptionDashboard({
             // the new preapproval, so no `finally` reset before navigating away.
             window.location.href = result.data.checkoutUrl;
         } catch {
-            addToast({
-                type: 'error',
-                message: t(
-                    'account.pages.subscription.replacePaymentMethodError',
-                    'No se pudo iniciar la actualización del medio de pago.'
-                )
-            });
+            showReplacePaymentMethodError();
             setIsReplacingPaymentMethod(false);
         }
     }
