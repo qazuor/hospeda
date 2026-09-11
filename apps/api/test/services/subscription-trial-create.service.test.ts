@@ -23,11 +23,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mocks
 // ---------------------------------------------------------------------------
 
-const insertValuesMock = vi.fn();
+const onConflictDoUpdateMock = vi.fn();
+const insertValuesMock = vi.fn(() => ({ onConflictDoUpdate: onConflictDoUpdateMock }));
+
+/** Records which table each insert() was called on, in call order. */
+const insertTargets: unknown[] = [];
 
 /** The client handed to the withTransaction callback. */
 const txStub = {
-    insert: vi.fn(() => ({ values: insertValuesMock }))
+    insert: vi.fn((table: unknown) => {
+        insertTargets.push(table);
+        return { values: insertValuesMock };
+    })
 };
 
 /** Records (callback, existingTx) so a test can assert the tx was threaded. */
@@ -76,6 +83,11 @@ vi.mock('@repo/db', () => ({
         deletedAt: 'deleted_at'
     },
     billingPlans: { id: 'id', productDomain: 'product_domain' },
+    entitySubscriptions: {
+        __table: 'entity_subscriptions',
+        entityType: 'entity_type',
+        entityId: 'entity_id'
+    },
     and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
     isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
@@ -139,13 +151,17 @@ function makeCallerTx() {
     return {
         marker: 'caller-tx',
         select: selectMock,
-        insert: vi.fn(() => ({ values: insertValuesMock }))
+        insert: vi.fn((table: unknown) => {
+            insertTargets.push(table);
+            return { values: insertValuesMock };
+        })
     } as never;
 }
 
 /** The row handed to `insert().values()` on the most recent call. */
 function insertedRow(): Record<string, unknown> {
-    return insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+    const calls = insertValuesMock.mock.calls as unknown[][];
+    return calls[0]?.[0] as Record<string, unknown>;
 }
 
 function baseInput() {
@@ -161,6 +177,7 @@ function baseInput() {
 describe('createTrialSubscription', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        insertTargets.length = 0;
         // Default: an accommodation plan exists.
         selectLimitMock.mockResolvedValue([{ productDomain: 'accommodation' }]);
         // Default: the customer holds no subscription at all (HOS-1322).
@@ -389,6 +406,56 @@ describe('createTrialSubscription', () => {
                 /positive integer/
             );
             expect(insertValuesMock).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('entity attachment inside the transaction (HOS-1338)', () => {
+        it('upserts entity_subscriptions inside the SAME transaction as the subscription insert', async () => {
+            selectLimitMock.mockResolvedValue([{ productDomain: 'gastronomy' }]);
+
+            await createTrialSubscription({
+                ...baseInput(),
+                productDomain: 'gastronomy' as never,
+                attachEntity: { entityType: 'gastronomy', entityId: 'listing-42' }
+            });
+
+            // Two inserts inside the same transaction: billingSubscriptions first,
+            // entitySubscriptions second. If the second fails, the first rolls back.
+            expect(insertTargets).toHaveLength(2);
+            expect(insertTargets[0]).toHaveProperty('__table', 'billing_subscriptions');
+            expect(insertTargets[1]).toHaveProperty('__table', 'entity_subscriptions');
+
+            // The second call's values carry the entity coordinates.
+            const calls = insertValuesMock.mock.calls as unknown[][];
+            const entityRow = calls[1]?.[0] as Record<string, unknown>;
+            expect(entityRow.subscriptionId).toBeDefined();
+            expect(entityRow.entityType).toBe('gastronomy');
+            expect(entityRow.entityId).toBe('listing-42');
+            expect(entityRow.status).toBe('trialing');
+            expect(entityRow.productDomain).toBe('gastronomy');
+        });
+
+        it('does NOT upsert entity_subscriptions when attachEntity is absent', async () => {
+            await createTrialSubscription(baseInput());
+
+            expect(insertTargets).toHaveLength(1);
+            expect(insertTargets[0]).toHaveProperty('__table', 'billing_subscriptions');
+        });
+
+        it('upserts entity_subscriptions for the EXPERIENCE vertical too', async () => {
+            selectLimitMock.mockResolvedValue([{ productDomain: 'experience' }]);
+
+            await createTrialSubscription({
+                ...baseInput(),
+                productDomain: 'experience' as never,
+                attachEntity: { entityType: 'experience', entityId: 'exp-1' }
+            });
+
+            expect(insertTargets).toHaveLength(2);
+            const calls2 = insertValuesMock.mock.calls as unknown[][];
+            const entityRow = calls2[1]?.[0] as Record<string, unknown>;
+            expect(entityRow.entityType).toBe('experience');
+            expect(entityRow.entityId).toBe('exp-1');
         });
     });
 });
