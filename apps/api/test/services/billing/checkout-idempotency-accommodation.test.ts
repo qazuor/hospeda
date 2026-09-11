@@ -57,6 +57,7 @@ const H = vi.hoisted(() => {
         mpPreapprovalPlanId: string;
         nonce: string;
         status: string;
+        createdAt: Date;
         expiresAt: Date;
         pendingDiscount: unknown;
         pendingTrialExtension: unknown;
@@ -76,6 +77,12 @@ const H = vi.hoisted(() => {
     const knobs = {
         mpPlanId: 'mp_plan_test',
         pendingTtlMs: 3 * 60 * 60 * 1000,
+        /**
+         * Age stamped on newly written correlation rows (ms). Positive ⇒ born
+         * past HOS-867's double-click window, simulating a checkout whose
+         * buyer already had time to reach MercadoPago and come back.
+         */
+        pendingAgeMs: 0,
         subCounter: 0
     };
 
@@ -98,6 +105,7 @@ const H = vi.hoisted(() => {
         mpPreapprovalPlanId: 'mpPreapprovalPlanId',
         nonce: 'nonce',
         status: 'status',
+        createdAt: 'createdAt',
         expiresAt: 'expiresAt',
         pendingDiscount: 'pendingDiscount',
         pendingTrialExtension: 'pendingTrialExtension'
@@ -194,7 +202,7 @@ const H = vi.hoisted(() => {
             const localSubscriptionId = `sub-${knobs.subCounter}`;
             const nonce = `nonce-${knobs.subCounter}`;
             const expiresAt = new Date(Date.now() + knobs.pendingTtlMs);
-            const createdAt = new Date(Date.now() + knobs.subCounter); // monotonic, distinct per row
+            const createdAt = new Date(Date.now() + knobs.subCounter - knobs.pendingAgeMs); // monotonic, distinct per row
             store.subscriptions.push({
                 id: localSubscriptionId,
                 customerId: input.customerId,
@@ -212,6 +220,7 @@ const H = vi.hoisted(() => {
                 mpPreapprovalPlanId: input.mpPreapprovalPlanId,
                 nonce,
                 status: 'pending',
+                createdAt,
                 expiresAt,
                 pendingDiscount: null,
                 pendingTrialExtension: null
@@ -392,6 +401,7 @@ beforeEach(() => {
     H.knobs.subCounter = 0;
     H.knobs.mpPlanId = 'mp_plan_test';
     H.knobs.pendingTtlMs = 3 * 60 * 60 * 1000;
+    H.knobs.pendingAgeMs = 0;
 });
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -432,6 +442,26 @@ describe('initiatePaidMonthlySubscription — idempotent per customer (HOS-1272)
         const first = await initiatePaidMonthlySubscription({ ...MONTHLY_INPUT, billing });
 
         H.knobs.pendingTtlMs = 3 * 60 * 60 * 1000;
+        const second = await initiatePaidMonthlySubscription({ ...MONTHLY_INPUT, billing });
+
+        expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
+        expect(second.localSubscriptionId).not.toBe(first.localSubscriptionId);
+        expect(H.createPendingProviderSubscription).toHaveBeenCalledTimes(2);
+    });
+
+    it('creates a NEW checkout when the in-flight one is older than the double-click window (HOS-867)', async () => {
+        const { billing } = createBillingMock();
+
+        // The host went to MercadoPago, the card was rejected, and they came
+        // straight back. MercadoPago reports nothing for a rejected hosted
+        // checkout — no preapproval, no webhook — so the correlation row's
+        // AGE is the only signal that separates this from a double click.
+        // Before HOS-867 the same-link window was the full 3h TTL and this
+        // host was locked out of paying until it elapsed on its own.
+        H.knobs.pendingAgeMs = 60_000;
+        const first = await initiatePaidMonthlySubscription({ ...MONTHLY_INPUT, billing });
+
+        H.knobs.pendingAgeMs = 0;
         const second = await initiatePaidMonthlySubscription({ ...MONTHLY_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
@@ -564,6 +594,23 @@ describe('initiatePaidAnnualSubscription — idempotent per customer (HOS-1272)'
         const second = await initiatePaidAnnualSubscription({ ...ANNUAL_INPUT, billing });
 
         expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
+        expect(H.createPendingProviderSubscription).toHaveBeenCalledTimes(2);
+    });
+
+    it('creates a NEW checkout when the in-flight one is older than the double-click window (HOS-867)', async () => {
+        const { billing } = createBillingMock();
+
+        // Same scenario as the monthly case above — the annual flow shares the
+        // same decision function, so a host back from a rejected payment must
+        // get a fresh link here too, not the 3h lockout.
+        H.knobs.pendingAgeMs = 60_000;
+        const first = await initiatePaidAnnualSubscription({ ...ANNUAL_INPUT, billing });
+
+        H.knobs.pendingAgeMs = 0;
+        const second = await initiatePaidAnnualSubscription({ ...ANNUAL_INPUT, billing });
+
+        expect(second.checkoutUrl).not.toBe(first.checkoutUrl);
+        expect(second.localSubscriptionId).not.toBe(first.localSubscriptionId);
         expect(H.createPendingProviderSubscription).toHaveBeenCalledTimes(2);
     });
 });

@@ -285,6 +285,7 @@ vi.mock('@repo/db', () => {
             mpPreapprovalPlanId: '__mp_preapproval_plan_id',
             nonce: '__nonce',
             status: '__status',
+            createdAt: '__created_at',
             expiresAt: '__expires_at',
             pendingDiscount: '__pending_discount',
             pendingTrialExtension: '__pending_trial_extension'
