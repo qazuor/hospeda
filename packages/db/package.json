@@ -78,7 +78,7 @@
         "tsx": "^4.23.11",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "peerDependencies": {
         "pg": "^8.22.0"
