@@ -31,6 +31,7 @@
  * @module test/routes/billing/start-paid-trial-conversion
  */
 
+import { TEST_DAILY_PLAN } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -99,6 +100,29 @@ vi.mock('../../../src/utils/env', () => ({
 const { mockHydrationRows } = vi.hoisted(() => ({
     mockHydrationRows: vi.fn().mockResolvedValue([])
 }));
+
+// The checkout itself is stubbed so an exempted request has an OBSERVABLE
+// success to assert. Without it the only available assertion is "the error was
+// not ALREADY_SUBSCRIBED", which any unrelated downstream failure satisfies —
+// so a future gate added upstream could reinstate the HOS-1335 bug with every
+// test in this file still green. `importOriginal` keeps
+// `SubscriptionCheckoutError` real, or the handler's `instanceof` in the catch
+// chain would silently never match.
+const { mockInitiateMonthly, mockInitiateAnnual } = vi.hoisted(() => ({
+    mockInitiateMonthly: vi.fn(),
+    mockInitiateAnnual: vi.fn()
+}));
+vi.mock('../../../src/services/subscription-checkout.service', async (importOriginal) => {
+    const actual =
+        await importOriginal<
+            typeof import('../../../src/services/subscription-checkout.service')
+        >();
+    return {
+        ...actual,
+        initiatePaidMonthlySubscription: mockInitiateMonthly,
+        initiatePaidAnnualSubscription: mockInitiateAnnual
+    };
+});
 
 vi.mock('@repo/db', () => {
     const insertChain = { values: vi.fn().mockResolvedValue(undefined) };
@@ -200,7 +224,7 @@ function armSubs(subs: readonly (SubFixture & { productDomain: string | null })[
     return billing;
 }
 
-/** Runs the handler and returns whatever it threw (or `undefined` on success). */
+/** Runs the handler and returns its result, or whatever it threw. */
 async function callStartPaid(
     billingInterval: 'monthly' | 'annual' = 'monthly',
     planSlug: string = PLAN_SLUG
@@ -215,6 +239,43 @@ async function callStartPaid(
 const reasonOf = (err: unknown): string =>
     err instanceof ServiceError ? (err.reason ?? '') : ((err as { reason?: string })?.reason ?? '');
 
+/** What the stubbed checkout hands back when the guards let a request through. */
+const CHECKOUT_RESULT = {
+    checkoutUrl: 'https://mp.test/checkout/abc',
+    localSubscriptionId: 'sub-new-paid',
+    expiresAt: '2026-09-10T12:00:00.000Z',
+    payerEmail: 'test@test.com'
+} as const;
+
+/**
+ * The POSITIVE assertion, and the one the negative form cannot make.
+ *
+ * `expect(reason).not.toBe('ALREADY_SUBSCRIBED')` is satisfied by ANY other
+ * failure — a gate added upstream tomorrow, a downstream throw, a typo in a
+ * fixture. Every one of those would reinstate HOS-1335 (the host still cannot
+ * pay) while leaving the suite green. So an exempted request must be shown to
+ * reach the checkout and come back with its URL.
+ *
+ * @param result - Whatever `callStartPaid` returned.
+ * @param interval - Which branch was expected to run.
+ */
+function expectCheckoutProceeded(
+    result: unknown,
+    interval: 'monthly' | 'annual' = 'monthly'
+): void {
+    // Surfaces the real error in the failure message instead of a bare
+    // "expected undefined to be defined" when a guard does refuse.
+    if (result instanceof Error) {
+        throw new Error(
+            `expected the checkout to proceed, but it threw: ${result.name}: ${result.message}`
+        );
+    }
+    expect(result).toMatchObject({ checkoutUrl: CHECKOUT_RESULT.checkoutUrl });
+    const called = interval === 'annual' ? mockInitiateAnnual : mockInitiateMonthly;
+    expect(called).toHaveBeenCalledTimes(1);
+    expect(interval === 'annual' ? mockInitiateMonthly : mockInitiateAnnual).not.toHaveBeenCalled();
+}
+
 // ---------------------------------------------------------------------------
 // The bug — a local trial must not read as a duplicate
 // ---------------------------------------------------------------------------
@@ -223,15 +284,14 @@ describe('handleStartPaidSubscription — HOS-1335 a local trial can convert to 
     beforeEach(() => {
         vi.clearAllMocks();
         mockHydrationRows.mockResolvedValue([]);
+        mockInitiateMonthly.mockResolvedValue(CHECKOUT_RESULT);
+        mockInitiateAnnual.mockResolvedValue(CHECKOUT_RESULT);
     });
 
-    it('ACCOMMODATION: a trial with NO preapproval no longer answers ALREADY_SUBSCRIBED', async () => {
+    it('ACCOMMODATION: a trial with NO preapproval REACHES the checkout', async () => {
         armSubs([{ ...LOCAL_TRIAL, productDomain: 'accommodation' }]);
 
-        const err = await callStartPaid();
-
-        expect(reasonOf(err)).not.toBe('ALREADY_SUBSCRIBED');
-        expect(reasonOf(err)).not.toBe('SUBSCRIPTION_CANCEL_PENDING');
+        expectCheckoutProceeded(await callStartPaid());
     });
 
     it('ACCOMMODATION: a LEGACY trial that DOES carry a preapproval still blocks', async () => {
@@ -257,10 +317,44 @@ describe('handleStartPaidSubscription — HOS-1335 a local trial can convert to 
         expect(reasonOf(await callStartPaid())).toBe('ALREADY_SUBSCRIBED');
     });
 
-    it('TOURIST: a trial with NO preapproval no longer blocks the host checkout', async () => {
+    it('CROSS-DOMAIN: a TOURIST trial does NOT exempt an accommodation purchase', async () => {
+        // The exemption is only sound when the purchase's activation will sweep
+        // the trial it exempted, and `supersedeLocalTrialsOnActivation` sweeps
+        // the ACTIVATED row's domain with an exact comparison. An accommodation
+        // purchase never reaches a tourist-domain trial, so exempting one here
+        // would leave two granting rows for the rest of the trial — the precise
+        // state that module exists to make impossible.
+        //
+        // Unreachable in production (`ALL_TRIAL_PLANS` has no tourist entry, so
+        // no tourist-domain trial row can be minted), which is why the assertion
+        // is about the RULE rather than about a live scenario.
         armSubs([{ ...LOCAL_TRIAL, productDomain: 'tourist' }]);
 
-        expect(reasonOf(await callStartPaid())).not.toBe('ALREADY_SUBSCRIBED');
+        expect(reasonOf(await callStartPaid())).toBe('ALREADY_SUBSCRIBED');
+        expect(mockInitiateMonthly).not.toHaveBeenCalled();
+    });
+
+    it('CROSS-DOMAIN, inverted: an ACCOMMODATION trial does NOT exempt a tourist purchase', async () => {
+        // The direction the reviewer found, and the one that was live in the
+        // first cut: `isSubscriptionInASellableDomain` is accommodation OR
+        // tourist, so an accommodation trial used to be exempted for a
+        // `tourist-vip` checkout — whose activation then swept domain `tourist`
+        // and left the accommodation trial granting for ~30 days.
+        armSubs([{ ...LOCAL_TRIAL, productDomain: 'accommodation' }]);
+
+        expect(reasonOf(await callStartPaid('monthly', 'tourist-vip'))).toBe('ALREADY_SUBSCRIBED');
+        expect(mockInitiateMonthly).not.toHaveBeenCalled();
+    });
+
+    it('an UNKNOWN plan slug exempts nothing — the guard falls back to pre-HOS-1335 behaviour', async () => {
+        // Fail closed: with no declared domain to compare against there is no
+        // way to know the activation would sweep this trial, so the safe answer
+        // is the refusal that predates the exemption.
+        armSubs([{ ...LOCAL_TRIAL, productDomain: 'accommodation' }]);
+
+        expect(reasonOf(await callStartPaid('monthly', 'owner-basicoo'))).toBe(
+            'ALREADY_SUBSCRIBED'
+        );
     });
 
     it('TOURIST: a live tourist-vip WITH a preapproval still blocks (HOS-1260 unbroken)', async () => {
@@ -269,10 +363,19 @@ describe('handleStartPaidSubscription — HOS-1335 a local trial can convert to 
         expect(reasonOf(await callStartPaid())).toBe('ALREADY_SUBSCRIBED');
     });
 
-    it('the ANNUAL branch is exempted too — both intervals share the guard', async () => {
+    it('the ANNUAL branch is exempted too and REACHES the annual checkout', async () => {
         armSubs([{ ...LOCAL_TRIAL, productDomain: 'accommodation' }]);
 
-        expect(reasonOf(await callStartPaid('annual'))).not.toBe('ALREADY_SUBSCRIBED');
+        expectCheckoutProceeded(await callStartPaid('annual'), 'annual');
+    });
+
+    it('the hidden daily QA plan is convertible too (it is outside ALL_PLANS by design)', async () => {
+        // `TEST_DAILY_PLAN` is kept out of `ALL_PLANS` to hide it from the public
+        // catalogue, so a catalogue-only domain lookup would make it the ONE plan
+        // a trialing host could not convert onto — silently, and only in QA.
+        armSubs([{ ...LOCAL_TRIAL, productDomain: 'accommodation' }]);
+
+        expectCheckoutProceeded(await callStartPaid('monthly', TEST_DAILY_PLAN.slug));
     });
 
     it('the exemption is the TRIAL shape, not a blanket unblock: active without a preapproval still blocks', async () => {
@@ -311,9 +414,11 @@ describe('handleStartPaidSubscription — HOS-1335 the soft-cancel guard is exem
     beforeEach(() => {
         vi.clearAllMocks();
         mockHydrationRows.mockResolvedValue([]);
+        mockInitiateMonthly.mockResolvedValue(CHECKOUT_RESULT);
+        mockInitiateAnnual.mockResolvedValue(CHECKOUT_RESULT);
     });
 
-    it('a SOFT-CANCELLED local trial can still convert to paid', async () => {
+    it('a SOFT-CANCELLED local trial REACHES the checkout', async () => {
         // `SUBSCRIPTION_CANCEL_PENDING` tells the caller to un-cancel instead of
         // starting over, and its stated reason is that a second checkout would
         // mint a duplicate LIVE preapproval. A preapproval-less trial has none,
@@ -321,10 +426,7 @@ describe('handleStartPaidSubscription — HOS-1335 the soft-cancel guard is exem
         // trial that still cannot charge anything.
         armSubs([{ ...LOCAL_TRIAL, cancelAtPeriodEnd: true, productDomain: 'accommodation' }]);
 
-        const err = await callStartPaid();
-
-        expect(reasonOf(err)).not.toBe('SUBSCRIPTION_CANCEL_PENDING');
-        expect(reasonOf(err)).not.toBe('ALREADY_SUBSCRIBED');
+        expectCheckoutProceeded(await callStartPaid());
     });
 
     it('a SOFT-CANCELLED trial WITH a preapproval still hits SUBSCRIPTION_CANCEL_PENDING', async () => {
