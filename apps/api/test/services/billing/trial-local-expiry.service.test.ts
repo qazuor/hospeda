@@ -20,7 +20,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const insertValuesMock = vi.fn();
-const updateWhereMock = vi.fn();
+// HOS-1335 B2: the seal is a compare-and-swap — `.where().returning()` is what
+// tells the winner of the race apart from a row that moved on.
+const updateReturningMock = vi.fn();
+const updateWhereMock = vi.fn(() => ({ returning: updateReturningMock }));
 const updateSetMock = vi.fn((_row: Record<string, unknown>) => ({ where: updateWhereMock }));
 
 /** The tx handed to the withServiceTransaction callback. */
@@ -67,6 +70,13 @@ const selectFromMock = vi.fn((_table: unknown) => ({ where: selectWhereMock }));
 const subscriptionRowLimitMock = vi.fn();
 
 /**
+ * Resolves the `{ status }` row of the HOS-1335 B2 LIVE re-read — the one
+ * status this function may act on. Told apart from the productDomain read by
+ * its PROJECTION, never by call order.
+ */
+const liveStatusLimitMock = vi.fn();
+
+/**
  * Every `.from(table)` of the run, so a test can assert which tables were NOT
  * touched. `vi.clearAllMocks()` resets its call log between tests, which is why
  * this is a mock rather than a plain array.
@@ -78,7 +88,18 @@ const fromTableMock = vi.fn((table: unknown) => {
     return selectFromMock(table);
 });
 
-const selectMock = vi.fn(() => ({ from: fromTableMock }));
+const selectMock = vi.fn((projection?: Record<string, unknown>) => {
+    // HOS-1335 B2: the live-status re-read is the one billing_subscriptions
+    // select this suite must tell apart from the productDomain read, and it is
+    // told apart by its PROJECTION — order is not a property a test may rely on
+    // (the dedup vs listing queries already learned that in HOS-1184).
+    if (projection !== undefined && 'status' in projection) {
+        return {
+            from: vi.fn(() => ({ where: vi.fn(() => ({ limit: liveStatusLimitMock })) }))
+        };
+    }
+    return { from: fromTableMock };
+});
 
 /**
  * The accommodation lookup and the dedup lookup both go through `db.select()`.
@@ -90,6 +111,7 @@ const listingSelectWhereMock = vi.fn();
 vi.mock('@repo/db', () => ({
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    inArray: vi.fn((col: unknown, values: unknown[]) => ({ op: 'inArray', col, values })),
     isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
     accommodations: accommodationsTable,
     billingSubscriptions: billingSubscriptionsTable,
@@ -186,8 +208,12 @@ beforeEach(() => {
 describe('expireLocalTrial', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Default: no prior TRIAL_EXPIRED event.
+        // Default: no prior TRIAL_EXPIRED / TRIAL_SUPERSEDED_BY_PAID event.
         selectLimitMock.mockResolvedValue([]);
+        // Default: the LIVE row is still trialing (the HOS-1335 B2 re-read).
+        liveStatusLimitMock.mockResolvedValue([{ status: 'trialing' }]);
+        // Default: the compare-and-swap seal wins the race.
+        updateReturningMock.mockResolvedValue([{ id: 'sub-local-1' }]);
         // Default: one ACTIVE listing owned by the customer, and it comes down.
         resolveOwnerUserIdMock.mockResolvedValue('owner-1');
         listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }]);
@@ -297,6 +323,60 @@ describe('expireLocalTrial', () => {
 
             expect(result.outcome).toBe('illegal-transition');
             expect(withServiceTransactionMock).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('the payment race (HOS-1335 B2)', () => {
+        // The measured shape: cron claims 02:00:00 → the payment webhook
+        // supersedes the trial 02:00:05 (inside the activation's own tx, with
+        // its own event) → the cron processes its claimed snapshot 02:00:20.
+        // Every guard below must fire BEFORE the unpublish, because D-3's
+        // ordering makes that step irreversible.
+
+        it('refuses a trial superseded by a payment — the dedup sees TRIAL_SUPERSEDED_BY_PAID', async () => {
+            // The dedup used to know only TRIAL_EXPIRED, so the supersede event
+            // was invisible: the expiry proceeded and unpublished the whole
+            // portfolio of a host who had just paid.
+            selectLimitMock.mockResolvedValue([
+                { id: 'existing-event', eventType: 'TRIAL_SUPERSEDED_BY_PAID' }
+            ]);
+
+            const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+            expect(result.outcome).toBe('superseded');
+            expect(unpublishMock).not.toHaveBeenCalled();
+            expect(withServiceTransactionMock).not.toHaveBeenCalled();
+        });
+
+        it('refuses when the LIVE row is no longer trialing, whatever took it', async () => {
+            // The event dedup can only see transitions that write an event this
+            // function knows. The LIVE status is the stronger signal: the claimed
+            // snapshot stays `trialing` — stale by construction — while the row
+            // itself says otherwise.
+            liveStatusLimitMock.mockResolvedValue([{ status: 'superseded' }]);
+
+            const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+            expect(result.outcome).toBe('row-moved-on');
+            expect(unpublishMock).not.toHaveBeenCalled();
+            expect(withServiceTransactionMock).not.toHaveBeenCalled();
+        });
+
+        it('does not seal when the row moves on between the live check and the seal', async () => {
+            // The unpublish loop is the one long window between the two guards —
+            // a payment confirming inside it must not come back to an
+            // `expired`-overwritten row. The listings already came down (D-3
+            // makes that irreversible); what must NOT happen is the seal.
+            updateReturningMock.mockResolvedValue([]);
+
+            const result = await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+            expect(result.outcome).toBe('row-moved-on');
+            // Already down — irreversible, and the winning transition's own
+            // bridge re-publishes for it.
+            expect(unpublishMock).toHaveBeenCalledOnce();
+            // No TRIAL_EXPIRED event: the row belongs to the other transition.
+            expect(insertValuesMock).not.toHaveBeenCalled();
         });
     });
 
