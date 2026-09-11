@@ -186,6 +186,39 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // admin guard is needed here.
     router.route('/subscriptions', linkPreapprovalRouter);
 
+    // Mount the past-due payment-method-replacement recovery route (HOS-348
+    // Part B) immediately after link-preapproval and for the SAME measured
+    // reason: `cancelWrapper`/`qzpayWrapper` below apply
+    // `billingAdminGuardMiddleware` via `.use('*')`, which Hono composes for
+    // ANY request under the mount prefix — and the guard's `allowedSubPaths`
+    // for the `subscriptions` segment does not list `replace-payment-method`.
+    // While this router sat below those wrappers, every non-admin POST to
+    // `/subscriptions/:id/replace-payment-method` answered 403 "Billing admin
+    // guard" before the handler ever ran (measured in staging, HOS-1244): the
+    // exact past-due customer the route exists for could not reach it.
+    // `allowedSubPaths` is NOT the remedy here: past the guard, the request
+    // would next hit `qzpayWrapper`'s `billingOwnershipMiddleware`, which
+    // answers 403 for a row owned by someone else — while this route's
+    // contract (error-contract doc + endpoint gate matrix) is 404, never 403,
+    // because a 403 confirms the id exists. Ownership is enforced by the
+    // handler itself (`row.customerId !== billingCustomerId` → 404), so no
+    // wrapper middleware is needed. The router stays exempt from
+    // `pastDueGraceMiddleware` (GRACE_EXEMPT_PATH_SUFFIXES) regardless of
+    // mount position — it IS the customer's own recovery path. Regression
+    // coverage: `test/routes/billing/replace-payment-method-routing.test.ts`.
+    router.route('/subscriptions', replacePaymentMethodRouter);
+
+    // Mount the checkout-retry recovery route (HOS-937 step 3) immediately
+    // after replace-payment-method, for the IDENTICAL measured reason: the
+    // composed `billingAdminGuardMiddleware` below rejects every non-admin
+    // POST to `/subscriptions/:id/checkout-retry` with 403 (measured by the
+    // HOS-1244 probe in `replace-payment-method-routing.test.ts`). This is a
+    // user-facing recovery path a cancelled-checkout customer hits when
+    // returning from MercadoPago, so it must be reachable without admin.
+    // Ownership is enforced by the handler (`row.customerId !==
+    // billingCustomerId` → 404), so it mounts BEFORE both guard wrappers.
+    router.route('/subscriptions', checkoutRetryRouter);
+
     // Mount user self-service soft-cancel route (SPEC-147 T-006) BEFORE the
     // qzpay wrapper. qzpay-hono's prebuilt routes include
     // `POST /subscriptions/:id/cancel`; since Hono uses first-match routing,
@@ -286,17 +319,6 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // operate on local subscription rows; Hono routes by exact path so there
     // is no conflict between the two routers.
     router.route('/subscriptions', subscriptionStatusRouter);
-
-    // Mount the checkout-retry recovery route (HOS-937 step 3). Same
-    // `/subscriptions` prefix, same reasoning as the status router above.
-    router.route('/subscriptions', checkoutRetryRouter);
-
-    // Mount the past-due payment-method-replacement recovery route
-    // (HOS-348 Part B). Same `/subscriptions` prefix, same reasoning as the
-    // status/checkout-retry routers above — this one is exempted from
-    // `pastDueGraceMiddleware` above (see GRACE_EXEMPT_PATH_SUFFIXES) since
-    // it IS the customer's own recovery path.
-    router.route('/subscriptions', replacePaymentMethodRouter);
 
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
