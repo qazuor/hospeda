@@ -31,7 +31,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * PATCH /api/v1/admin/experiences/:id/media/reorder
  * Reorder experience listing gallery photos — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `reorderExperienceMedia` enforces the same gate via `checkExperienceCanEditMedia`.
  */
 export const adminReorderExperienceMediaRoute = createAdminRoute({
@@ -41,9 +41,9 @@ export const adminReorderExperienceMediaRoute = createAdminRoute({
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires COMMERCE_EDIT_ALL.',
+        'exactly. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Experience', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

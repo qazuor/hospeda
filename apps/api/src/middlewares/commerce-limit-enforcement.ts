@@ -12,20 +12,27 @@
  * `requireEntitlement(PUBLISH_ACCOMMODATIONS)` and *then* the limit check, in
  * that order and for a stated reason (SPEC-145 T-004). §6.8 records that
  * **neither commerce vertical grants any entitlement today** — visibility is
- * driven by the subscription status through `commerce_listing_subscriptions`
+ * driven by the subscription status through `entity_subscriptions`
  * and the reconciler, not by the entitlement engine — so there is nothing to
  * put in the first half of that pattern. Copying the shape anyway would leave a
  * hole where its first gate was.
  *
  * ## 2. A count failure REFUSES, it does not wave the request through
  *
- * `enforceAccommodationLimit` logs and calls `next()` when the count fails
- * ("don't block on count failure"). For commerce that would be handing out the
- * product: the cap is the entire commercial substance of the plan, this
+ * `enforceAccommodationLimit` used to log and call `next()` when the count
+ * failed ("don't block on count failure"). For commerce that would be handing
+ * out the product: the cap is the entire commercial substance of the plan, this
  * middleware is the ONLY gate on the create path, and an uncapped creation is
  * indistinguishable from a working one until somebody counts rows. So a count
  * failure answers 503 — loud, honest, and retryable — rather than silently
  * allowing the listing.
+ *
+ * HOS-1078 closed the same hole on the accommodation side, so this divergence
+ * is now a shared rule instead: both verticals answer a count failure with 503
+ * and the same {@link LIMIT_COUNT_UNAVAILABLE_MESSAGE}. It is recorded here as
+ * a divergence anyway, because that is what it was when it was written and it
+ * is the reason a faithful copy of the accommodation middleware would have been
+ * wrong.
  *
  * The 403 body carries the same `LIMIT_REACHED` shape every other limit uses,
  * so `buildLimitReachedPayload` on the web side resolves the vertical's
@@ -40,51 +47,33 @@ import {
     type LimitKey
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
-import { type Actor, ExperienceService, GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
+import { countOwnListings } from '../services/publish-listing-reads';
 import type { AppMiddleware } from '../types';
 import { getActorFromContext } from '../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
-import { buildLimitReachedDetails } from './limit-enforcement';
-
-const gastronomyService = new GastronomyService({ logger: apiLogger });
-const experienceService = new ExperienceService({ logger: apiLogger });
+import { buildLimitReachedDetails, LIMIT_COUNT_UNAVAILABLE_MESSAGE } from './limit-enforcement';
 
 /**
- * Counts the listings one owner holds in one vertical.
+ * `countOwnListings` used to live here, private to this module. HOS-1156 moved it
+ * to `services/publish-listing-reads` because the publish precheck needs the SAME
+ * number to decide whether to show a form or an upgrade panel.
  *
- * `ownerId` is a declared filter on both `GastronomySearchSchema` and
- * `ExperienceSearchSchema` — checked rather than assumed, because a search
- * schema that silently drops an undeclared filter would count every listing on
- * the platform and cap the first owner who tried to create one.
+ * Two counts would have been two answers: the precheck telling an owner "you have
+ * room" and this middleware answering 403 one screen later — a divergence neither
+ * side's tests could catch, since each would be self-consistent.
  *
- * @param input.vertical - Which vertical to count.
- * @param input.actor - The authenticated actor (also the owner).
- * @returns The count, or `null` when the count could not be resolved.
+ * What did NOT move is the failure policy. This middleware still fails CLOSED
+ * (503 below) because it is the only gate on the create path; the precheck fails
+ * OPEN, because this gate is still behind it. The shared function returns `null`
+ * precisely so each caller keeps its own answer to that question.
+ *
+ * HOS-1122's note on PLAN_RESTRICTED listings counting toward the cap travelled
+ * WITH the function, to `services/publish-listing-reads`: it describes what the
+ * count does, and the count is no longer here.
  */
-async function countOwnListings(input: {
-    vertical: CommerceVertical;
-    actor: Actor;
-}): Promise<number | null> {
-    const { vertical, actor } = input;
-    const service = vertical === 'gastronomy' ? gastronomyService : experienceService;
-
-    // Type assertion mirrors `enforceAccommodationLimit`: BaseCrudService.count()
-    // takes z.infer<TSearchSchema> and TypeScript cannot narrow the generic at
-    // the call site without importing the concrete schema type.
-    const result = await service.count(actor, { ownerId: actor.id } as never);
-
-    if (result.error) {
-        apiLogger.error(
-            { vertical, ownerId: actor.id, error: result.error.message },
-            'failed to count commerce listings for the limit check'
-        );
-        return null;
-    }
-
-    return result.data?.count ?? 0;
-}
 
 /**
  * Builds the limit-enforcement middleware for one commerce vertical.
@@ -121,10 +110,7 @@ function enforceCommerceListingLimit(vertical: CommerceVertical): AppMiddleware 
         if (currentCount === null) {
             // See the module docblock: refusing beats silently granting an
             // uncapped listing.
-            throw new HTTPException(503, {
-                message:
-                    'No pudimos verificar tu plan en este momento. Volvé a intentarlo en unos segundos.'
-            });
+            throw new HTTPException(503, { message: LIMIT_COUNT_UNAVAILABLE_MESSAGE });
         }
 
         const limitCheck = checkLimit({ context: c, limitKey, currentCount });

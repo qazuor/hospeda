@@ -51,7 +51,7 @@ export function WhatsNewModal({ locale, open, onOpenChange }: WhatsNewModalProps
 
     return (
         <dialog
-            className={styles.overlay}
+            className={`${styles.overlay} dialog-viewport`}
             aria-label={t('account.whatsNewModal.title', 'Novedades')}
             onClick={(event) => {
                 if (event.target === event.currentTarget) {
@@ -64,7 +64,7 @@ export function WhatsNewModal({ locale, open, onOpenChange }: WhatsNewModalProps
                 }
             }}
         >
-            <div className={styles.modalCard}>
+            <div className={`${styles.modalCard} dialog-panel`}>
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>
                         {t('account.whatsNewModal.title', 'Novedades')}
@@ -79,7 +79,7 @@ export function WhatsNewModal({ locale, open, onOpenChange }: WhatsNewModalProps
                     </button>
                 </div>
 
-                <div className={styles.modalBody}>
+                <div className={`${styles.modalBody} dialog-panel-scroll`}>
                     {displayedEntries.length === 0 ? (
                         <p className={styles.emptyState}>
                             {t('account.whatsNewModal.noUnread', 'No hay novedades sin leer')}

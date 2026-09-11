@@ -25,6 +25,7 @@ import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { foldForRanking } from '@/lib/rank-city-suggestions';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -101,14 +102,18 @@ export type SearchableSelectProps<T extends SelectableItem> = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Case-insensitive substring filter used in local mode. */
+/**
+ * Diacritic-insensitive substring filter used in local mode (HOS-979).
+ * Folds both sides with `foldForRanking` so a query typed without accents
+ * (the norm on a phone keyboard) still matches an accented label.
+ */
 function filterLocalItems<T extends SelectableItem>(
     items: ReadonlyArray<T>,
     query: string
 ): ReadonlyArray<T> {
-    const needle = query.trim().toLowerCase();
+    const needle = foldForRanking(query);
     if (needle.length === 0) return items;
-    return items.filter((item) => item.label.toLowerCase().includes(needle));
+    return items.filter((item) => foldForRanking(item.label).includes(needle));
 }
 
 // ---------------------------------------------------------------------------

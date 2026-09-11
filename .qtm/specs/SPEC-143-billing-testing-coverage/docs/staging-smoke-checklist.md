@@ -1633,6 +1633,79 @@ Sign-off — PR #<N>, executed sections <list>
 Failed smokes block merge. Notes-only passes can merge but the note must
 be filed as a follow-up task in `state.json` or as a new engram bug entry.
 
+### Filed sign-offs
+
+```text
+Sign-off — PR #3051, HOS-854 renewal-reminder expiry guard + qzpay 5.0 bump
+- Date: 2026-08-28
+- Executor: qazuor
+- Branch tested: fix/hos-854-renewal-reminder-spam
+- Staging commit: 01a7407b3
+- Result: PASS
+- Notes:
+  Cron-driven change, so the flow exercised is `notification-schedule`, not a
+  checkout section. Run via POST /api/v1/admin/cron/notification-schedule with
+  dryRun=true passed explicitly in the query string (not the admin toggle, whose
+  state could not be confirmed from the accessibility tree).
+
+  Negative control — 16 lapsed non-active subscriptions present in staging
+  (9 pending_provider + 7 abandoned, 0 lapsed among the 15 active):
+      "would send renewal reminders", count: 0
+
+  Positive control — one active subscription (host-basico@local.test) moved to
+  current_period_end = now() + 3 days, putting it inside the 7/3/1 window:
+      "would send renewal reminders", count: 1
+  Value restored afterwards to its exact original (2026-09-23 03:00:34.904+00),
+  confirmed by the UPDATE's own RETURNING clause.
+
+  Same code, same run, the only variable being the data. The positive control is
+  load-bearing: staging holds no lapsed `active` subscription, so a zero on its
+  own would not distinguish a working guard from a job that did nothing.
+
+  Pre-fix baseline was not lost. The 08:00 UTC scheduled run that morning
+  predated the redeploy and sent 6 reminders (26/08: 4, 27/08: 4, 28/08: 6),
+  every one of them triggered by a lapsed non-active subscription.
+
+  No mail was dispatched: billing_notification_log recorded zero new rows across
+  all three dry runs.
+
+  Read the count from `details.renewalsSent` in the API response, NOT from the
+  admin panel's "Procesados" figure — `processed` accumulates trials only
+  (notification-schedule.job.ts:492), so it reads 0 whether renewals worked,
+  found nothing, or failed entirely.
+```
+
+```text
+Sign-off — PR #3051, dry-run safety audit of the three billing crons
+- Date: 2026-08-28
+- Executor: qazuor
+- Staging commit: 01a7407b3
+- Result: PASS
+- Notes:
+  Prerequisite for running these jobs against production. Audited by code and
+  then by measurement, because a job that ignores the flag looks identical to
+  one that honours it until it writes.
+
+  notification-schedule — 3 guards (trials :349, renewals :502, retries :697);
+    all five write sites (2 sends, 1 insert, 1 update, 1 retry send) sit on the
+    correct side of them. The trials guard returns before the send loop.
+  trial-reconcile — early return at :75 with the count; the dry branch reads only.
+  dunning — returns at :559. Its single write (recordDunningAttempt, :555) sits
+    ABOVE the guard in the file but is a lifecycle-event callback, so it only
+    fires if the provider emits a retry event, which the early return prevents.
+    Protection is indirect rather than an explicit guard; the second belt is
+    DUNNING_MUTATIONS_ENABLED = false (HOS-191 F5).
+
+  Measured: row counts AND max modification timestamps on billing_dunning_attempts,
+  billing_subscription_events, billing_notification_log and billing_subscriptions
+  were byte-identical before and after the runs, so a silent UPDATE would also
+  have shown.
+
+  Collateral confirmation of the bump: trial-reconcile reported
+  totalSubscriptions: 2 against a table of 34, matching the 2 trialing rows
+  exactly — the status filter reaches SQL.
+```
+
 ---
 
 ## Cross-references

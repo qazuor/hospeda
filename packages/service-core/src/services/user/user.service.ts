@@ -1179,12 +1179,15 @@ export class UserService extends BaseCrudService<
      * Completes the post-signup profile for an authenticated user.
      *
      * Persists the supplied form fields (displayName, firstName, phone, locale,
-     * newsletterOptIn) to the user row and flips `profileCompleted = true`.
+     * theme, newsletterOptIn) to the user row and flips `profileCompleted = true`.
      * The caller MUST be acting on their own account — this method verifies
      * `actor.id === input.userId` and throws FORBIDDEN otherwise.
      *
      * Phone is stored in `contactInfo.mobilePhone`.
      * Locale is stored in `settings.languageWeb`.
+     * Theme is stored in `settings.themeWeb` (HOS-313) — both are optional and
+     * shallow-merged into existing settings so omitting one never clobbers the
+     * other or any other settings key.
      * `newsletterOptIn` is intentionally NOT persisted here — the route layer
      * delegates newsletter subscription to `NewsletterSubscriberService` before
      * calling this method.
@@ -1215,6 +1218,7 @@ export class UserService extends BaseCrudService<
                     imageUrl,
                     phone,
                     locale,
+                    theme,
                     bio,
                     website,
                     occupation,
@@ -1248,11 +1252,15 @@ export class UserService extends BaseCrudService<
                     ? { ...existingContactInfo, mobilePhone: phone }
                     : existingContactInfo;
 
-                // Merge locale into existing settings (shallow merge).
+                // Merge locale/theme into existing settings (shallow merge).
+                // Both are optional (HOS-313): omitting either leaves the
+                // existing/default value untouched instead of overwriting it.
                 const existingSettings = (existing.settings as Record<string, unknown>) ?? {};
-                const settings = locale
-                    ? { ...existingSettings, languageWeb: locale }
-                    : existingSettings;
+                const settings = {
+                    ...existingSettings,
+                    ...(locale !== undefined && { languageWeb: locale }),
+                    ...(theme !== undefined && { themeWeb: theme })
+                };
 
                 // Merge bio/website/occupation into existing profile JSONB (shallow merge).
                 const existingProfile = (existing.profile as Record<string, unknown>) ?? {};

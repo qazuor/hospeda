@@ -19,6 +19,16 @@ import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import type { DataTableColumn } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -62,6 +72,12 @@ function BillingAddonCatalogPage() {
     const [editingAddon, setEditingAddon] = useState<ParsedAddonRecord | null>(null);
     const [addonToSoftDelete, setAddonToSoftDelete] = useState<ParsedAddonRecord | null>(null);
     const [addonToHardDelete, setAddonToHardDelete] = useState<ParsedAddonRecord | null>(null);
+    // Pending active-state toggle, captured at click time so a second click on
+    // another row before this dialog closes can't apply the wrong `isActive`.
+    const [pendingToggleActive, setPendingToggleActive] = useState<{
+        id: string;
+        isActive: boolean;
+    } | null>(null);
 
     // Fetch catalog from the DB-backed API endpoint
     const { data, isLoading, error } = useAddonCatalogQuery({
@@ -123,14 +139,21 @@ function BillingAddonCatalogPage() {
     };
 
     /**
-     * Toggles active state for an addon by UUID.
+     * Opens the activate/deactivate confirmation dialog for an addon by UUID.
+     * The mutation itself runs from {@link confirmToggleActive} once the admin
+     * confirms.
      */
     const handleToggleActive = (id: string, isActive: boolean) => {
-        // Use a simple confirmation message (no i18n required for confirm dialog)
-        const message = isActive ? 'Activate this add-on?' : 'Deactivate this add-on?';
-        if (confirm(message)) {
-            toggleActiveMutation.mutate({ id, isActive });
-        }
+        setPendingToggleActive({ id, isActive });
+    };
+
+    /**
+     * Confirms the pending active-state toggle.
+     */
+    const confirmToggleActive = () => {
+        if (!pendingToggleActive) return;
+        toggleActiveMutation.mutate(pendingToggleActive);
+        setPendingToggleActive(null);
     };
 
     /**
@@ -337,6 +360,38 @@ function BillingAddonCatalogPage() {
                     onConfirm={confirmHardDelete}
                     t={t as (key: string) => string}
                 />
+
+                <AlertDialog
+                    open={pendingToggleActive != null}
+                    onOpenChange={(open) => {
+                        if (!open) setPendingToggleActive(null);
+                    }}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                {pendingToggleActive?.isActive
+                                    ? t('admin-billing.addons.actionActivate')
+                                    : t('admin-billing.addons.actionDeactivate')}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {pendingToggleActive?.isActive
+                                    ? t('admin-billing.addons.confirmToggleActivate')
+                                    : t('admin-billing.addons.confirmToggleDeactivate')}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setPendingToggleActive(null)}>
+                                {t('admin-billing.common.cancel')}
+                            </AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmToggleActive}>
+                                {pendingToggleActive?.isActive
+                                    ? t('admin-billing.addons.actionActivate')
+                                    : t('admin-billing.addons.actionDeactivate')}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </SidebarPageLayout>
     );

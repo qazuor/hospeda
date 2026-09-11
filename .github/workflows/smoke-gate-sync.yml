@@ -70,11 +70,28 @@ jobs:
 
           SMOKE_LABELS="status-needs-smoke-local status-needs-smoke-staging status-needs-smoke-prod"
 
+          # Issues this run could not synchronise. Reported, and failed on, at
+          # the end — never mid-loop, so one unreachable issue cannot stop the
+          # others from being moved.
+          UNSYNCED=""
+
           gql() {
-            curl -sS https://api.linear.app/graphql \
+            # --max-time so a hanging Linear API cannot eat the job's whole
+            # timeout budget; no --retry, because this same helper sends the
+            # issueUpdate mutation and a retried mutation is not idempotent.
+            curl -sS --max-time 30 https://api.linear.app/graphql \
               -H "Authorization: $LINEAR_API_KEY" \
               -H "Content-Type: application/json" \
               -d "$1"
+          }
+
+          # A degraded Linear API answers 5xx with an HTML body, and `curl -sS`
+          # reports that as success. Feeding it straight to `jq` aborts the whole
+          # script under `set -euo pipefail` — killing it BEFORE the "could not
+          # resolve" branch below it can run. Validate first so those branches
+          # are reachable at all.
+          is_json() {
+            printf '%s' "$1" | jq -e . >/dev/null 2>&1
           }
 
           for ISSUE_ID in $ISSUE_IDS; do
@@ -84,11 +101,19 @@ jobs:
               query: "query($id: String!) { issue(id: $id) { id identifier team { id } labels { nodes { name } } state { name } } }",
               variables: { id: $id }
             }')
-            RESPONSE="$(gql "$QUERY")"
+            RESPONSE="$(gql "$QUERY" || true)"
+
+            if ! is_json "$RESPONSE"; then
+              echo "$ISSUE_ID: the Linear API did not answer JSON (degraded or timed out). Response: $RESPONSE"
+              UNSYNCED="$UNSYNCED $ISSUE_ID"
+              echo "::endgroup::"
+              continue
+            fi
 
             ISSUE_UUID="$(echo "$RESPONSE" | jq -r '.data.issue.id // empty')"
             if [ -z "$ISSUE_UUID" ]; then
               echo "Could not resolve $ISSUE_ID via Linear API — skipping. Response: $RESPONSE"
+              UNSYNCED="$UNSYNCED $ISSUE_ID"
               echo "::endgroup::"
               continue
             fi
@@ -120,11 +145,20 @@ jobs:
               query: "query($teamId: String!) { team(id: $teamId) { states(filter: { name: { eq: \"In Review\" } }) { nodes { id name } } } }",
               variables: { teamId: $teamId }
             }')
-            STATE_RESPONSE="$(gql "$STATE_QUERY")"
+            STATE_RESPONSE="$(gql "$STATE_QUERY" || true)"
+
+            if ! is_json "$STATE_RESPONSE"; then
+              echo "$ISSUE_ID: the Linear API did not answer JSON while resolving the 'In Review' state. Response: $STATE_RESPONSE"
+              UNSYNCED="$UNSYNCED $ISSUE_ID"
+              echo "::endgroup::"
+              continue
+            fi
+
             REVIEW_STATE_ID="$(echo "$STATE_RESPONSE" | jq -r '.data.team.states.nodes[0].id // empty')"
 
             if [ -z "$REVIEW_STATE_ID" ]; then
               echo "$ISSUE_ID: could not resolve an 'In Review' state for this team — skipping. Response: $STATE_RESPONSE"
+              UNSYNCED="$UNSYNCED $ISSUE_ID"
               echo "::endgroup::"
               continue
             fi
@@ -133,14 +167,29 @@ jobs:
               query: "mutation($issueId: String!, $stateId: String!) { issueUpdate(id: $issueId, input: { stateId: $stateId }) { success } }",
               variables: { issueId: $issueId, stateId: $stateId }
             }')
-            MUTATION_RESPONSE="$(gql "$MUTATION")"
-            SUCCESS="$(echo "$MUTATION_RESPONSE" | jq -r '.data.issueUpdate.success // false')"
+            MUTATION_RESPONSE="$(gql "$MUTATION" || true)"
+
+            if is_json "$MUTATION_RESPONSE"; then
+              SUCCESS="$(echo "$MUTATION_RESPONSE" | jq -r '.data.issueUpdate.success // false')"
+            else
+              SUCCESS="false"
+            fi
 
             if [ "$SUCCESS" = "true" ]; then
               echo "$ISSUE_ID: moved $CURRENT_STATE -> In Review (outstanding: $(echo "$LABEL_NAMES" | grep -Fx -f <(printf '%s\n' $SMOKE_LABELS) | tr '\n' ',' ))."
             else
               echo "$ISSUE_ID: failed to update state. Response: $MUTATION_RESPONSE"
+              UNSYNCED="$UNSYNCED $ISSUE_ID"
             fi
 
             echo "::endgroup::"
           done
+
+          # An issue left in its pre-merge state while a smoke label is still on
+          # it is invisible from Linear's side — it simply looks untouched. The
+          # only place that can raise a hand is this job, so it must go red and
+          # name the issue, never pass quietly after skipping one.
+          if [ -n "$UNSYNCED" ]; then
+            echo "::error::Could not move to In Review:$UNSYNCED. These issues still carry a status-needs-smoke-* label and were left in their previous state — move them by hand, or re-run this job once the Linear API recovers."
+            exit 1
+          fi

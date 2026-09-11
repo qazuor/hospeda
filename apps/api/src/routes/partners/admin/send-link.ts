@@ -18,17 +18,13 @@ import {
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
 import { getActorFromContext } from '../../../utils/actor';
-import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 import {
+    buildNotificationUrl,
     buildPartnerCheckoutReturnUrl,
     DEFAULT_RETURN_URL_LOCALE
 } from '../../billing/checkout-return-urls';
-
-function buildNotificationUrl(): string {
-    return `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`;
-}
 
 /**
  * Where MercadoPago sends the buyer once the payment is authorised.
@@ -152,6 +148,12 @@ export const sendPartnerPaymentLinkHandler = async (
             billing,
             urls: {
                 paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
+                // HOS-1281: the SHARED builder, so the `?source_news=webhooks`
+                // marker travels. This route used to own a private copy that
+                // returned the same URL without it, and the webhook router
+                // drops an unmarked delivery as a legacy IPN duplicate —
+                // answering 200, so MercadoPago never retried and nothing
+                // logged an error. See `buildNotificationUrl`'s own JSDoc.
                 notificationUrl: buildNotificationUrl()
             }
         });

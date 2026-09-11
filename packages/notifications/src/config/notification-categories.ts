@@ -11,12 +11,35 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.PAYMENT_FAILURE]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PLAN_CHANGE_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.ADDON_RENEWAL_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
+    // HOS-847 PR 5: transactional and NOT opt-out-able. It is the only notice
+    // that a card will be charged again, and on what date.
+    [NotificationType.ADDON_SUBSCRIPTION_STARTED]: NotificationCategory.TRANSACTIONAL,
 
     // Reminders - Can be opted out
     [NotificationType.RENEWAL_REMINDER]: NotificationCategory.REMINDER,
     [NotificationType.ADDON_EXPIRATION_WARNING]: NotificationCategory.REMINDER,
     [NotificationType.ADDON_EXPIRED]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_REMINDER]: NotificationCategory.REMINDER,
+
+    // HOS-1012 — the nine sends of the Hospeda-owned trial series.
+    // The warnings and the win-backs are opt-out-able reminders.
+    [NotificationType.TRIAL_ENDING_10D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_5D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_1D]: NotificationCategory.REMINDER,
+    /**
+     * TRANSACTIONAL, unlike its eight siblings: this one reports that the
+     * listing HAS left the site. Someone who opted out of reminders and then
+     * finds their listing gone with no notice reads it as the platform having
+     * deleted it silently — that is operational information about their own
+     * account, not a nudge. `ADDON_EXPIRED` is a REMINDER because losing an
+     * add-on costs a feature; losing publication costs the whole point.
+     */
+    [NotificationType.TRIAL_EXPIRED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.TRIAL_WIN_BACK_1D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_5D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_10D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_30D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_60D]: NotificationCategory.REMINDER,
 
     // Admin - Sent to admin email list only
     [NotificationType.ADMIN_PAYMENT_FAILURE]: NotificationCategory.ADMIN,
@@ -27,6 +50,12 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // alert that reached nobody.
     [NotificationType.ADMIN_LEAD_RECEIVED]: NotificationCategory.ADMIN,
 
+    // Partner with no recorded payment (HOS-1299) - ops list, never the partner,
+    // and not opt-out-able for the same reason as the lead alert above: this is
+    // the only signal that a manual-payment partner needs a decision at all, and
+    // an operator who muted it would be muting the decision, not a notification.
+    [NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW]: NotificationCategory.ADMIN,
+
     // Feedback - Sent to admin notification list, not end-user
     [NotificationType.FEEDBACK_REPORT]: NotificationCategory.ADMIN,
 
@@ -36,6 +65,16 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Subscription lifecycle - Transactional, always sent
     [NotificationType.SUBSCRIPTION_CANCELLED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.SUBSCRIPTION_PAUSED]: NotificationCategory.TRANSACTIONAL,
+    // Transactional, not marketing: all three tell the subscriber something
+    // about what they will or will not be charged, so none may be opted out of.
+    [NotificationType.COURTESY_GRANTED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.COURTESY_STARTED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.COURTESY_ENDED]: NotificationCategory.TRANSACTIONAL,
+    // HOS-1171. Transactional for a sharper reason than its courtesy siblings:
+    // this may be the only notice a paying customer gets that the preapproval
+    // on their card was hard-cancelled. An opt-out would let someone stop being
+    // charged without ever being told.
+    [NotificationType.COMP_GRANTED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.SUBSCRIPTION_REACTIVATED]: NotificationCategory.TRANSACTIONAL,
 
     // Plan management - Transactional

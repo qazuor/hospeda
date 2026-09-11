@@ -8,13 +8,23 @@ Promo codes provide percentage-based discounts on plan subscriptions. They are d
 
 | Code | Discount | Duration | Max Uses | Restriction | Active |
 |------|----------|----------|----------|-------------|--------|
-| `HOSPEDA_FREE` | 100% | Permanent | Unlimited | None | Yes |
 | `LANZAMIENTO50` | 50% | 3 months | 100 | New users only | Yes |
 | `BIENVENIDO30` | 30% | 1 month | 500 | New users only | Yes |
 
-### HOSPEDA_FREE
+### HOSPEDA_FREE — RETIRED (HOS-1171)
 
-Internal-use code that grants 100% permanent discount. Used for platform team accounts and special partnerships.
+The only `comp` code that ever existed. Permanent, uncapped and — because
+`getPromoCodeByCode` matches on the code alone — unscoped by `livemode`, so
+anyone who learned the string could redeem it at the self-serve checkout for a
+never-billed subscription. It is out of this baseline and deactivated in every
+seeded environment (seed data-migration `0099-hos-1171-retire-hospeda-free`);
+the row is deactivated rather than deleted because two production comp
+subscriptions reference it and it is the only record of why they are free.
+
+Nothing redeems a `comp` code now: `/promo-codes/apply` answers 403 and the
+self-serve checkout answers `invalid`. A complimentary subscription is an admin
+action — `POST /api/v1/admin/billing/subscriptions/grant-comp` (`BILLING_MANAGE`),
+sibling to `grant-courtesy`. Do not add a `type: 'comp'` code back here.
 
 ### LANZAMIENTO50
 
@@ -57,11 +67,7 @@ const codes = DEFAULT_PROMO_CODES;
 ### Import specific codes
 
 ```typescript
-import {
-    HOSPEDA_FREE_CODE,
-    LANZAMIENTO_50_CODE,
-    BIENVENIDO_30_CODE
-} from '@repo/billing';
+import { LANZAMIENTO_50_CODE, BIENVENIDO_30_CODE } from '@repo/billing';
 ```
 
 ## Promo Code Rules

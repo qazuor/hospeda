@@ -35,7 +35,7 @@
  * @see SPEC-249 spec.md § Owner self-service web area
  * @see SPEC-252 spec.md § T-003 positive commerce-owner E2E
  * @see apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro
- * @see apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro
+ * @see apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
  * @see apps/web/src/components/commerce/CommerceListingEditor.client.tsx
  */
 
@@ -43,6 +43,7 @@ import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import {
+    commerceEditorUrl,
     saveCommerceEditor,
     setRichDescription,
     waitForCommerceEditorHydration
@@ -221,10 +222,20 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         // stays clean (dirty.size===0 → button disabled → click times out).
         // Astro is configured with trailingSlash:'always'. Without a trailing slash
         // the SSR middleware returns a 404 page (not a redirect) pointing to the
-        // slash version. Always include the trailing slash in goto() calls.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
-            waitUntil: 'load'
-        });
+        // slash version. `commerceEditorUrl` always emits one.
+        //
+        // HOS-1080: `menuUrl` is a PRICE field, and the editor is one page per
+        // section now — `…/editar/` is the hub, which lists the sections and
+        // renders no form. Opening `precio` is what puts `#ce-menuUrl` on screen.
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'gastronomy',
+                listingId: gastronomyId,
+                section: 'precio'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for React hydration to complete.
         //
@@ -283,10 +294,18 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
 
         // Same waitUntil:'load' rationale as the gastronomy step above — ensures
         // the Astro bundle has executed and React has hydrated before we interact.
-        // Trailing slash required — same Astro trailingSlash:'always' constraint.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/experience/${experienceId}/editar/`, {
-            waitUntil: 'load'
-        });
+        //
+        // HOS-1080: `richDescription` lives in the basic-info section, so this
+        // opens `datos` rather than the hub.
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'experience',
+                listingId: experienceId,
+                section: 'datos'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for editor island hydration.
         await waitForCommerceEditorHydration({ page });

@@ -10,11 +10,14 @@ import {
     AccommodationUpdateHttpSchema,
     type AccommodationUpdateInput,
     httpToDomainAccommodationUpdate,
-    PermissionEnum
+    PermissionEnum,
+    ProductDomainEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getQZPayBilling } from '../../../middlewares/billing';
 import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
@@ -26,7 +29,7 @@ const accommodationService = new AccommodationService(
     undefined,
     null,
     undefined,
-    buildAccommodationPublishDeps()
+    buildAccommodationPublishDeps(() => getQZPayBilling())
 );
 
 /**
@@ -88,6 +91,9 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
     options: {
         // SPEC-145 T-004: full-replace mutation requires EDIT_ACCOMMODATION_INFO
         // (granted on all owner/complex plans). Runs before the handler.
-        middlewares: [requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO)]
+        middlewares: [
+            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
+            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
+        ]
     }
 });

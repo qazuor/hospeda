@@ -1,0 +1,126 @@
+/* PayerEmailConfirmDialog.module.css
+ * Content-specific styles for the payer-email confirmation dialog (HOS-937
+ * step 2). Outer chrome (overlay, panel, header, scroll lock, ESC, focus
+ * management) lives in the shared <Dialog> component
+ * (`@/components/shared/ui/Dialog.client`). Field styles mirror
+ * `ContactForm.module.css`'s `.field`/`.label`/`.input`/`.errorMsg` so the
+ * one-off email field looks consistent with every other native form input on
+ * the site. All values reference design tokens from global.css — no
+ * hardcoded colours. */
+
+.body {
+    margin: 0 0 var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--core-foreground);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.input {
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+}
+
+.input::placeholder {
+    color: var(--core-muted-foreground);
+    opacity: 0.7;
+}
+
+.input:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-a20);
+}
+
+.input.inputError {
+    border-color: var(--destructive, oklch(0.6 0.22 25));
+}
+
+.input.inputError:focus-visible {
+    box-shadow: 0 0 0 3px var(--destructive-a18);
+}
+
+.errorMsg {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--destructive, oklch(0.6 0.22 25));
+    margin: 0;
+}
+
+/* ── Footer buttons ──────────────────────────────────────────────────────── */
+
+.cancelButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    background-color: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        border-color var(--duration-normal, 0.4s) ease;
+    min-height: 44px;
+}
+
+.cancelButton:hover {
+    background-color: var(--surface-warm);
+}
+
+.cancelButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.confirmButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color var(--duration-normal, 0.4s) ease,
+        transform 0.15s ease;
+    min-height: 44px;
+}
+
+.confirmButton:hover {
+    background-color: var(--brand-accent-lm06);
+}
+
+.confirmButton:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}

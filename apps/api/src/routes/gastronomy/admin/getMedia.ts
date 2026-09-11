@@ -24,7 +24,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * GET /api/v1/admin/gastronomies/:id/media
  * List gastronomy listing gallery photos — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission (mirrors the internal
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission (mirrors the internal
  * `checkGastronomyCanEditMedia` gate — media management has no separate
  * broader view-only permission). The service helper `getGastronomyMedia`
  * enforces the same gate.
@@ -35,9 +35,9 @@ export const adminGetGastronomyMediaRoute = createAdminRoute({
     summary: 'List gastronomy listing gallery photos (admin)',
     description:
         'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
-        'Supports an optional `state` query filter (default: visible). Requires COMMERCE_EDIT_ALL.',
+        'Supports an optional `state` query filter (default: visible). Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

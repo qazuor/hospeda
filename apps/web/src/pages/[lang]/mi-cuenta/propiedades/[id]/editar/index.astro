@@ -14,8 +14,12 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
-import { FeaturedToggleSection } from '@/components/host/editor/FeaturedToggleSection.client';
+import FeaturedAddonOffer from '@/components/host/editor/FeaturedAddonOffer.astro';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import {
+	ACCOMMODATION_EDITOR_REGISTRY,
+	buildAccommodationEditorVisibility,
+} from '@/lib/editor/accommodation-editor-sections';
 import { resolveEditorSectionStatuses } from '@/lib/editor/editor-hub-status-model';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -75,23 +79,23 @@ const statuses = resolveEditorSectionStatuses({
 >
 	<EditorHub
 		locale={locale}
-		accommodationId={accommodationId}
-		hasTranslations={data.translations !== null}
+		registry={ACCOMMODATION_EDITOR_REGISTRY}
+		entityId={accommodationId}
+		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
 	/>
 
 	{/*
-	 * HOS-318 D-10: the featured toggle gets no nav item and no hub row.
-	 * Rendered here at the foot, where it costs the hub nothing.
-	 *
-	 * HOS-728 changed what it renders, not where: an owner WITHOUT the
-	 * entitlement now sees the two visibility add-ons offered here instead of
-	 * nothing — this is the only surface in the product that names what
-	 * featuring a listing is. It still renders nothing while the entitlement
-	 * check is in flight, so the foot of the page never jumps.
+	 * HOS-318 D-10 / HOS-929: no nav item and no hub row — rendered here at
+	 * the foot, where it costs the hub nothing. Self-hides once the listing
+	 * is featured from either source (see the component header).
 	 */}
 	<div class="editor-hub-page__extra">
-		<FeaturedToggleSection locale={locale} accommodationId={accommodationId} client:visible />
+		<FeaturedAddonOffer
+			locale={locale}
+			isFeatured={accommodation.isFeatured}
+			featuredByEntitlement={accommodation.featuredByEntitlement}
+		/>
 	</div>
 </EditorSectionLayout>
 

@@ -1,4 +1,12 @@
-export * from './accommodation/accommodation.featured-toggle';
+// HOS-963: pure media-composition helper reused by raw-query public routes
+// (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
+// never hit `_afterSearch`, the chokepoint that normally composes `media` from
+// the relational `accommodation_media` table. Mirrors commerce's
+// `composeCommerceMedia` export below.
+export {
+    type ComposeAccommodationMediaInput,
+    composeAccommodationMedia
+} from './accommodation/accommodation.media-compose';
 export * from './accommodation/accommodation.occupancy';
 export * from './accommodation/accommodation.poi-proximity.helper';
 export * from './accommodation/accommodation.service';
@@ -8,7 +16,18 @@ export type {
     AccommodationHookState,
     AccommodationPublishDeps,
     HostOnboardingResult,
-    PublishEligibility
+    PublishEligibility,
+    PublishEligibilityVerdict,
+    PublishTransactionContext,
+    StartLocalTrialResult
+} from './accommodation/accommodation.types';
+// HOS-1183: the publish/deny rule, stated once. The API's
+// `GET /publish-eligibility` route needs the same predicate `publish()` uses,
+// so it is a value export rather than joining the type-only block above.
+export {
+    PUBLISH_ELIGIBILITY_VALUES,
+    publishEligibilityAllowsPublish,
+    publishEligibilityStartsLocalTrial
 } from './accommodation/accommodation.types';
 export * from './accommodation/featured-entitlement.resolver';
 export * from './accommodation-external-reputation/index.js';
@@ -64,6 +83,7 @@ export * from './hostTrade/host-trade.service';
 // unreachable from `@repo/service-core`, so no API route can construct one —
 // which is exactly how they shipped invisible until T-030 needed them.
 export * from './hostTrade/host-trade-aggregates';
+export * from './hostTrade/host-trade-qr';
 export * from './hostTrade/host-trade-review.permissions';
 export * from './hostTrade/host-trade-review.service';
 export * from './hostTrade/host-trade-review-reply.service';
@@ -73,12 +93,19 @@ export * from './media';
 export * from './moderation';
 export * from './newsletter';
 export * from './owner-promotion';
+// Listed as a FILE, like every other partner module here: this barrel does not
+// re-export the `./partner` folder index, so an export added there alone never
+// reaches the package root (HOS-1299).
+export * from './partner/partner.payment-review';
 export * from './partner/partner.service';
 export * from './partner/partner-mention.service';
+// Partner in-platform statistics (HOS-1063)
+export * from './partner/partner-stats.service';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './platformSettings/index.js';
 export * from './poi-category/point-of-interest-category.service';
+export * from './point-of-interest/point-of-interest.nearby-relevance';
 export * from './point-of-interest/point-of-interest.service';
 export * from './post/post.media';
 export * from './post/post.media-read';
@@ -86,6 +113,7 @@ export * from './post/post.service';
 export type { PostHookState } from './post/post.types';
 export * from './postSponsor/postSponsor.service';
 export * from './postSponsorship/postSponsorship.service';
+export * from './qr-code';
 export * from './recommendation';
 export * from './social';
 export * from './sponsorship';

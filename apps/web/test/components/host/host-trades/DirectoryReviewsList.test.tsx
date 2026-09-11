@@ -94,9 +94,7 @@ function buildRow(overrides: {
         reply: overrides.reply
             ? {
                   id: `reply-${overrides.id}`,
-                  reviewId: overrides.id,
                   content: overrides.reply.content,
-                  moderationState: 'APPROVED',
                   reviewEditedAfterReply: overrides.reply.reviewEditedAfterReply ?? false,
                   createdAt: '2026-08-02T10:00:00Z',
                   updatedAt: '2026-08-02T10:00:00Z'

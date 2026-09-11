@@ -11,6 +11,7 @@ import {
     type UpdateAddon,
     UpdateAddonSchema
 } from '../../../src/api/billing/addon.schema.js';
+import { ProductDomainEnum } from '../../../src/enums/product-domain.enum.js';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,9 @@ const validAdminAddonResponse: AdminAddonResponse = {
     isActive: true,
     sortOrder: 1,
     requiresAccommodationTarget: false,
+    // HOS-1178 — the domain now travels on the wire, and `null` is its
+    // "the catalogue does not know this slug" answer, never a guess.
+    productDomain: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-02T00:00:00.000Z',
     deletedAt: null
@@ -470,7 +474,10 @@ const validAddonResponse: AddonResponse = {
     targetCategories: ['owner', 'complex'],
     isActive: true,
     sortOrder: 1,
-    requiresAccommodationTarget: true
+    requiresAccommodationTarget: true,
+    // HOS-1178 — `visibility-boost-7d` is an accommodation add-on, and the
+    // response declares it rather than leaving it to be derived.
+    productDomain: ProductDomainEnum.ACCOMMODATION
 };
 
 describe('AddonResponseSchema (HOS-224)', () => {

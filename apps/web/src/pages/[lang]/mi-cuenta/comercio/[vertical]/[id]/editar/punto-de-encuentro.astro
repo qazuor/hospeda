@@ -1,0 +1,52 @@
+---
+/**
+ * @file punto-de-encuentro.astro
+ * @description Meeting-point section of the commerce editor (HOS-1048, routed in
+ * HOS-1080).
+ *
+ * EXPERIENCE ONLY, and the gate is the SHAPE of the schema rather than an
+ * entitlement: `meetingPoint` lives on `ExperienceOwnerUpdateInputSchema` and
+ * not on the gastronomy one. `buildCommerceEditorSections` leaves this section
+ * out of a gastronomy registry entirely, so the shared resolver's unknown-slug
+ * branch sends a restaurant here straight back to its hub.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/punto-de-encuentro/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({
+	astro: Astro,
+	sectionSlug: 'punto-de-encuentro',
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="punto-de-encuentro"
+	title={t('commerce.owner.editor.sectionNav.meetingPoint', 'Punto de encuentro')}
+>
+	<CommerceListingEditor
+		client:load
+		sectionId="meetingPoint"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+	/>
+</CommerceEditorSectionLayout>

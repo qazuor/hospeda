@@ -15,15 +15,15 @@ own `worktree_*` database inside the shared Postgres container.
 bash ~/.claude/skills/worktree/scripts/wt-create.sh feat my-feature
 
 # from INSIDE the worktree — bring everything up
-pnpm cli wt:up          # or: bash ~/.claude/skills/worktree/scripts/wt-up.sh
+hops servers-up         # or: bash ~/.claude/skills/worktree/scripts/wt-up.sh
 
 # ...work, test in the browser at the printed URLs...
 
-# from INSIDE the worktree — stop the servers (DB + worktree kept; wt:up restarts instantly)
-pnpm cli wt:down        # or: bash ~/.claude/skills/worktree/scripts/wt-down.sh
+# from INSIDE the worktree — stop the servers (DB + worktree kept; servers-up restarts instantly)
+hops servers-down       # or: bash ~/.claude/skills/worktree/scripts/wt-down.sh
 
 # when fully done — tear EVERYTHING down (servers + DB + worktree + branch)
-pnpm cli wt:remove      # or: bash ~/.claude/skills/worktree/scripts/wt-remove.sh
+hops wt-clean           # or: bash ~/.claude/skills/worktree/scripts/wt-remove.sh
 ```
 
 ## Two pairs of commands
@@ -39,17 +39,17 @@ The lifecycle splits into two symmetric axes — don't conflate them:
 The orchestrator scripts (`wt-up.sh`, `wt-down.sh`, `wt-db.sh`, …) live in the
 **global worktree skill** at `~/.claude/skills/worktree/scripts/`, driven by this
 repo's `.claude/project.config.json`. The repo only ships the CLI entry points
-(`wt:up` / `wt:down` / `wt:remove` / `wt:create` under `pnpm cli`) and that config.
-This is why the scripts are not under `scripts/` in the repo.
+(`servers-up` / `servers-down` / `wt-clean` under `hops`) and that config. This
+is why the scripts are not under `scripts/` in the repo.
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
-| `pnpm cli wt:up` | Idempotent bring-up. Discovers free ports → ensures the DB is ready → rewrites env → builds shared packages → starts the 3 servers → waits for health → prints the URLs + test logins. |
-| `pnpm cli wt:down` | Stops the servers **only**. The DB and the worktree are preserved, so `wt:up` restarts instantly with no re-provisioning. |
-| `pnpm cli wt:remove` | Tears **everything** down: stops servers, drops the DB, removes the worktree, and deletes the branch. The opposite of `wt:create`. Works from inside the worktree (it cd's to the main repo for the git removal — see [Removing](#removing-a-worktree)). |
-| `pnpm cli wt:create` | Prints usage. The interactive CLI cannot pass `<type> <slug>` args, so run the script directly (see below). |
+| `hops servers-up` | Idempotent bring-up. Discovers free ports → ensures the DB is ready → rewrites env → builds shared packages → starts the 3 servers → waits for health → prints the URLs + test logins. |
+| `hops servers-down` | Stops the servers **only**. The DB and the worktree are preserved, so `servers-up` restarts instantly with no re-provisioning. |
+| `hops wt-clean` | Interactive teardown. Tears **everything** down for the worktrees you pick: stops servers, drops the DB, removes the worktree, and deletes the branch. Works from inside a worktree (it cd's to the main repo for the git removal — see [Removing](#removing-a-worktree)). |
+| `wt-create.sh <type> <slug>` | Creating a worktree takes arguments, so it is run directly (see below). `hops start-issue HOS-N` wraps it for a Linear issue. |
 
 Run `wt-up` / `wt-down` / `wt-remove` from **inside** the worktree directory.
 

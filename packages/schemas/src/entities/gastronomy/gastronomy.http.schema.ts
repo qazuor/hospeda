@@ -29,6 +29,47 @@ export const GastronomySearchHttpSchema = BaseHttpSearchSchema.extend({
     maxRating: z.coerce.number().min(0).max(5).optional(),
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
+    /**
+     * Filter by required amenity UUIDs (the listing must carry ALL of them).
+     * Accepts repeated query params (?amenities=uuid1&amenities=uuid2) or
+     * comma-separated values (?amenities=uuid1,uuid2) — the same shape the
+     * accommodations listing uses, so the two surfaces stay interchangeable.
+     */
+    amenities: z
+        .union([
+            z.array(z.string().uuid()),
+            z
+                .string()
+                .transform((val) =>
+                    val
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                )
+                .pipe(z.array(z.string().uuid()))
+        ])
+        .optional(),
+    /**
+     * Filter by required feature UUIDs (the listing must carry ALL of them).
+     *
+     * This is what backs the "apto" filter (HOS-1054): sin TACC, vegano,
+     * vegetariano, sin lactosa and sin frutos secos are `features` catalog rows
+     * scoped to the `gastronomy` vertical, not columns of their own.
+     */
+    features: z
+        .union([
+            z.array(z.string().uuid()),
+            z
+                .string()
+                .transform((val) =>
+                    val
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                )
+                .pipe(z.array(z.string().uuid()))
+        ])
+        .optional(),
     /** Opt-in projection: include amenities per result. */
     includeAmenities: createBooleanQueryParam('Include gastronomy amenities in response'),
     /** Opt-in projection: include features per result. */
@@ -167,9 +208,16 @@ export const httpToDomainGastronomySearch = (
     minRating: httpParams.minRating,
     maxRating: httpParams.maxRating,
     includeAmenities: httpParams.includeAmenities,
-    includeFeatures: httpParams.includeFeatures
-    // Note: amenities, features, createdAfter, createdBefore exist in domain
-    // but not in HTTP schema, so they are not mapped here.
+    includeFeatures: httpParams.includeFeatures,
+    // Catalog-membership filters (HOS-1054). These used to be domain-only:
+    // `GastronomySearchSchema` declared them, the HTTP schema did not accept
+    // them, and the service destructured them away — so a caller who asked for
+    // `?features=<sin-TACC>` got a 200 carrying an UNFILTERED page. They are now
+    // accepted, mapped, and applied end to end.
+    amenities: httpParams.amenities,
+    features: httpParams.features
+    // Note: createdAfter / createdBefore exist in the domain schema but not in
+    // the HTTP schema, so they are still not mapped here.
 });
 
 /**

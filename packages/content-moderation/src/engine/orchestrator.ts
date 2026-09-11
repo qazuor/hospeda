@@ -163,6 +163,10 @@ export class ModerationOrchestrator {
                 categories: { ...createZeroCategories() },
                 matchedTerms: []
             }),
+            // The score above is a placeholder, not a measurement. This flag is
+            // what consumers must branch on — it survives `moderateText()`,
+            // where `source` does not (HOS-1069).
+            degraded: true,
             source: 'degraded' as const,
             note: error.message
         };

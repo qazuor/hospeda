@@ -34,6 +34,7 @@ import {
     PHONE_COUNTRIES,
     type PhoneCountry
 } from '@/lib/phone-countries';
+import { foldForRanking } from '@/lib/rank-city-suggestions';
 import styles from './CountryCodeCombobox.module.css';
 
 /** Props for {@link CountryCodeCombobox}. */
@@ -76,14 +77,18 @@ function computePosition(triggerEl: HTMLButtonElement): PopoverPosition {
     return { top: rect.bottom + TRIGGER_GAP, left, width };
 }
 
-/** Case-insensitive filter by country name or dial code (with or without `+`). */
+/**
+ * Diacritic-insensitive filter by country name or dial code (with or without
+ * `+`) — HOS-979. The name side folds accents (e.g. `Mexico` matches
+ * `México`); the dial-code side is numeric and needs no folding.
+ */
 function filterCountries(query: string): readonly PhoneCountry[] {
-    const needle = query.trim().toLowerCase();
+    const needle = foldForRanking(query);
     if (!needle) return PHONE_COUNTRIES;
     return PHONE_COUNTRIES.filter((country) => {
         const dial = country.dialCode.toLowerCase();
         return (
-            country.name.toLowerCase().includes(needle) ||
+            foldForRanking(country.name).includes(needle) ||
             dial.includes(needle) ||
             dial.replace('+', '').includes(needle)
         );

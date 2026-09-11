@@ -1,0 +1,434 @@
+name: What's New promotion gate
+
+# HOS-1214 §6.2 — every PR reaching `main` (a staging->main promotion, a
+# hotfix, or a Dependabot security update) must carry a recorded What's New
+# novelty decision, and no already-due machine translation may reach a user.
+#
+# =============================================================================
+# DESIGN DECISION (made here, 2026-09-07): (A) invoke the shared logic,
+# never reimplement it — for the PR-decision-label audit
+# =============================================================================
+# The spec calls `hops whats-new audit` (scripts/client-tools/src/commands/
+# whats-new/) the "local mirror" of this workflow, which invites writing a
+# second implementation of "enumerate first-parent commits, resolve each to
+# its PR via the GitHub API (cross-checked against the merge-subject parse),
+# apply the cutoff, classify". That is real, non-trivial, already-tested logic
+# (range.ts + audit-core.ts + classify.ts + cutoff.ts, ~500 lines, unit-tested
+# in scripts/client-tools/test/whats-new-*.test.ts) — not the kind of tiny,
+# stable duplication this repo already tolerates elsewhere (e.g.
+# validate-pr-title.yml's 2-line bot-author check). Two implementations of
+# "which PR is unevaluated" WILL diverge the day either one changes without
+# the other, and the failure reads as "the tool is broken", not "someone
+# forgot the twin" — the exact class of risk this repo already paid for once
+# with the smoke-gate cutoff SHA (hence scripts/whats-new-gate-cutoff.txt
+# existing as a single shared file in the first place).
+#
+# So, for the staging->main promotion mode, this workflow sets up bun (same
+# runtime `ci.yml` already provisions for `scripts/server-tools` AND this same
+# `scripts/client-tools` package — see its "Set up bun" step, ~0.5s to
+# install) and runs the SAME `hops whats-new audit` binary an operator runs
+# locally. One implementation, one behavior, one place to fix a bug.
+#
+# The single-PR mode (hotfix / Dependabot security PR straight into `main`,
+# see "TWO MODES" below) does NOT call into `hops whats-new audit` — that
+# command only knows how to audit the fixed `origin/main..origin/staging`
+# range (`RANGE` in range.ts). There is no local-mirror duplication risk here
+# to guard against, because there is no enumeration/resolution algorithm to
+# duplicate: the current PR is already fully known from its own webhook
+# payload (author, labels), so this mode is a direct 4-line classification —
+# structurally identical to validate-pr-title.yml's own bot-author `if:`,
+# which this repo already writes straight into a workflow. If
+# `whats-new-none` / `whats-new-done` (labels.ts) or the bot-author set
+# (labels.ts's EXEMPT_BOT_AUTHORS) ever change, update BOTH that file and the
+# "Audit this PR's own labels" step below.
+#
+# =============================================================================
+# GOTCHA — labeling ANOTHER PR does not retrigger THIS workflow
+# =============================================================================
+# `hops whats-new audit --fix` (or a plain `gh pr edit --add-label`) labels
+# the PR the report NAMED — an already-merged PR whose base was `staging`,
+# never `main`. That label write is a real `labeled` webhook event, but it
+# does not match this workflow's `branches: [main]` filter, so it fires no
+# run here at all. The PROMOTION PR's check (the one actually gating the
+# merge) is left stuck on its last, now-stale, failing result. `labeled`/
+# `unlabeled` are in the trigger list only for the rare case someone labels
+# the PROMOTION PR itself; `workflow_dispatch` is the real remedy for the
+# common case — re-run this workflow by hand once the underlying PRs are
+# labeled. Same class of gotcha `sync-main-to-staging.yml` documents about
+# `SYNC_PAT`: an external write elsewhere does not imply THIS workflow reruns.
+#
+# `workflow_dispatch` carries no `pull_request` payload, so it always runs in
+# the full-range mode below — there is no "current PR" to audit standalone.
+#
+# =============================================================================
+# TWO MODES, DECIDED BY THE HEAD REF
+# =============================================================================
+# - head is `staging` (the promotion PR), or `workflow_dispatch` -> audit the
+#   WHOLE `origin/main..origin/staging` range via `hops whats-new audit`.
+# - any other head targeting `main` (hotfix, Dependabot security update) ->
+#   audit only THIS PR's own author/labels, from the event payload.
+#
+# =============================================================================
+# `GH_TOKEN` VS `GITHUB_TOKEN` — a second, sharper gotcha
+# =============================================================================
+# `scripts/client-tools/src/lib/github.ts`'s `gh()` helper deliberately CLEARS
+# `GITHUB_TOKEN` before every `gh` call (a stale token in a dev's shell used
+# to outrank `gh`'s own stored login and every call answered 401 — see that
+# file's own docblock). CI has no stored login, so the token that survives
+# MUST be named `GH_TOKEN`, never `GITHUB_TOKEN` — naming it `GITHUB_TOKEN`
+# in this workflow would get silently cleared and every `gh api` call inside
+# `hops whats-new audit` would run unauthenticated. AC-13 turns that into
+# exit 3 rather than a false "PR unevaluated", so it fails safely rather than
+# lying — but it would never actually gate anything, silently. Verified
+# locally 2026-09-07 against the real range: authenticating via `GH_TOKEN`
+# resolves the repo slug and every commit's PR correctly; leaving a stale
+# `GITHUB_TOKEN` in the environment instead reproduces exactly this failure.
+#
+# =============================================================================
+# CUTOFF — derived, not configured (D-6)
+# =============================================================================
+# `hops whats-new audit` derives it: the commit that added THIS FILE, via
+# `git log --diff-filter=A`. That is exactly the semantics wanted — "since the
+# rule exists" — with nothing to write down and nothing to forget. This
+# workflow never hardcodes a SHA and no longer needs anyone to paste one after
+# it merges. scripts/whats-new-gate-cutoff.txt survives as an OPTIONAL
+# override: a SHA on its first non-comment line wins.
+#
+# The derivation needs full history, which `fetch-depth: 0` below already
+# provides. If someone renames or moves this file, the derivation finds
+# nothing — and that is reported as exit 3 ("could not determine"), never as a
+# silent "no cutoff", which would put every PR ever merged back in scope.
+#
+# =============================================================================
+# THE REVIEW (D-3', 2026-09-08) — this workflow is where the owner reviews
+# =============================================================================
+# The sign-off no longer asks whether a change is a novelty: it WRITES the
+# entry, always, unpublished. The review happens here, on the promotion, over
+# all of them at once. So the listing below is not a nicety — it is the review
+# surface. It prints each pending entry IN FULL (id, audience, title, body) so
+# reviewing is reading this log, and names the one command that withdraws the
+# ones the owner does not want (`hops whats-new drop <id>...`).
+#
+# It is deliberately INFORMATIVE: it never fails the job on its own. An entry
+# nobody wants costs nothing until the promotion publishes it, so there is
+# nothing here to block on.
+#
+# =============================================================================
+# THE CATALOG SCAN (AC-10 translation review) — INLINE, and why it is not the
+# same reader as the review listing
+# =============================================================================
+# Two steps read the same file and that is deliberate, not drift: the shell
+# scan below answers a per-FIELD question (is this due entry's translation
+# still 'machine'?) that `grep` answers exactly, while the review listing runs
+# `hops whats-new pending`, which needs whole entries — including body.es,
+# free Spanish prose whose apostrophes and braces defeat a positional read.
+# They share an extraction TECHNIQUE, never a decision: nothing the listing
+# prints can fail the job, and nothing the scan checks is re-checked there.
+#
+# Reading `apps/api/src/data/whats-new/whats-new.ts` for its entries has no
+# existing shared implementation to invoke: it is plain TypeScript (not
+# JSON), and there is no `hops whats-new` sub-command for it — the "local
+# mirror" the spec asks for covers the PR-decision-label audit only (see
+# `hops whats-new audit`'s own --help). The same file already has one
+# battle-tested extraction technique, `scripts/check-whats-new-catalog.sh`
+# (AC-11): strip full-line comments, then read fields positionally out of the
+# `export const whatsNewEntries` block. This scan reuses that same technique
+# but groups fields PER ENTRY (splitting on each `id: '...'` boundary) rather
+# than positionally, because the field it additionally needs —
+# `translations` — is OPTIONAL, and a missing optional field would shift
+# every later entry's fields out of position under a purely positional read.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: whats-new-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gate:
+    name: Audit What's New novelty decisions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Full history, all branches — needed so `origin/main` and
+          # `origin/staging` are both resolvable local refs for `hops
+          # whats-new audit`'s `git log --first-parent origin/main..
+          # origin/staging`. Same pattern as sync-main-to-staging.yml, which
+          # runs the equivalent `git log origin/staging..origin/main` with no
+          # extra fetch step beyond this.
+          fetch-depth: 0
+
+      - name: Reset accumulated failure log
+        run: |
+          set -euo pipefail
+          rm -f /tmp/whats-new-gate-failures.log /tmp/whats-new-gate-unknown.log
+
+      # `hops` is set up unconditionally, not only for the promotion mode: the
+      # review listing below runs in BOTH modes, because a hotfix straight into
+      # `main` can carry an unpublished entry too, and the owner reviewing it
+      # there needs to see the same text.
+      - name: Set up bun (for hops whats-new)
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install client-tools dependencies
+        working-directory: scripts/client-tools
+        run: bun install --frozen-lockfile
+
+      # ---------------------------------------------------------------------
+      # Catalog scan — always runs, in both modes (a hotfix CAN touch
+      # whats-new.ts too). Never fails the job by itself; it only appends to
+      # the shared failure/unknown logs the final step reads.
+      # ---------------------------------------------------------------------
+      - name: Scan the catalog (on-promotion count + AC-10 translation review)
+        run: |
+          set -euo pipefail
+
+          FILE="apps/api/src/data/whats-new/whats-new.ts"
+
+          if [[ ! -f "${FILE}" ]]; then
+            echo "UNKNOWN: catalog file not found: ${FILE}" | tee -a /tmp/whats-new-gate-unknown.log
+            exit 0
+          fi
+
+          # Strip full-line comments so JSDoc prose (and the module
+          # docblock's commented-out example) is never read as live data —
+          # identical first step to check-whats-new-catalog.sh.
+          CLEANED="$(grep -vE '^[[:space:]]*(//|\*|/\*)' "${FILE}")"
+          ENTRIES_BLOCK="$(printf '%s\n' "${CLEANED}" | awk '
+              /export const whatsNewEntries/ { capture=1 }
+              capture { print }
+          ')"
+
+          if [[ -z "${ENTRIES_BLOCK}" ]]; then
+            echo "UNKNOWN: could not find 'export const whatsNewEntries' in ${FILE}. The scan's extraction is anchored on that declaration — if it was renamed, update this workflow." | tee -a /tmp/whats-new-gate-unknown.log
+            exit 0
+          fi
+
+          # Split into per-entry blocks on each `id: '...'` line. Safe as a
+          # boundary because this schema places `id` only at an entry's top
+          # level — `translations` (the one nested object here) has no `id`
+          # field, so this cannot mistake a nested field for a new entry.
+          RS_CHAR=$'\x1e'
+          ENTRY_BLOCKS="$(printf '%s\n' "${ENTRIES_BLOCK}" | awk -v rs="${RS_CHAR}" '
+              /id: *'"'"'/ { if (buf != "") { printf "%s%s", buf, rs }; buf = "" }
+              { buf = buf $0 "\n" }
+              END { if (buf != "") printf "%s%s", buf, rs }
+          ')"
+
+          NOW_EPOCH="$(date -u +%s)"
+          ON_PROMOTION_COUNT=0
+          FAILURE_COUNT=0
+
+          while IFS= read -r -d $'\x1e' BLOCK; do
+              [[ -z "${BLOCK//[$'\n\t ']/}" ]] && continue
+
+              ID="$(printf '%s' "${BLOCK}" | grep -oE "id: *'[^']+'" | head -1 | grep -oE "'[^']+'" | tr -d "'" || true)"
+              PUBLISHED_AT="$(printf '%s' "${BLOCK}" | grep -oE "publishedAt: *'[^']+'" | head -1 | grep -oE "'[^']+'" | tr -d "'" || true)"
+
+              [[ -z "${ID}" ]] && continue
+
+              if [[ "${PUBLISHED_AT}" == "on-promotion" ]]; then
+                  ON_PROMOTION_COUNT=$((ON_PROMOTION_COUNT + 1))
+                  continue
+              fi
+              [[ -z "${PUBLISHED_AT}" ]] && continue
+
+              EPOCH="$(date -d "${PUBLISHED_AT}" +%s 2>/dev/null || echo "")"
+              [[ -z "${EPOCH}" ]] && continue
+
+              # AC-10 is a "due" check, not a "past" one: an entry dated
+              # further in the future than the promotion is not yet due and
+              # never blocks, regardless of its translation marks.
+              if (( EPOCH > NOW_EPOCH )); then
+                  continue
+              fi
+
+              # `en:`/`pt:` with one of these three enum values only ever
+              # appears nested under `translations:` — nothing else in this
+              # schema uses that shape, so a direct grep on the entry's block
+              # is safe without tracking brace depth.
+              EN_STATE="$(printf '%s' "${BLOCK}" | grep -oE "en: *'(machine|reviewed|declared)'" | grep -oE "'[a-z]+'" | tr -d "'" || true)"
+              PT_STATE="$(printf '%s' "${BLOCK}" | grep -oE "pt: *'(machine|reviewed|declared)'" | grep -oE "'[a-z]+'" | tr -d "'" || true)"
+
+              if [[ "${EN_STATE}" == "machine" ]]; then
+                  echo "FAIL: entry '${ID}' — translations.en is still 'machine' and publishedAt (${PUBLISHED_AT}) is on or before the promotion date." | tee -a /tmp/whats-new-gate-failures.log
+                  FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              fi
+              if [[ "${PT_STATE}" == "machine" ]]; then
+                  echo "FAIL: entry '${ID}' — translations.pt is still 'machine' and publishedAt (${PUBLISHED_AT}) is on or before the promotion date." | tee -a /tmp/whats-new-gate-failures.log
+                  FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              fi
+          done <<<"${ENTRY_BLOCKS}"
+
+          echo ""
+          echo "on-promotion entries (unresolved marker, never blocks): ${ON_PROMOTION_COUNT} — listed in full by the next step."
+          if [[ "${FAILURE_COUNT}" -eq 0 ]]; then
+              echo "OK — no live entry has an overdue machine translation."
+          else
+              echo "Review the translation (or mark it 'reviewed'/'declared') in ${FILE}."
+          fi
+
+      # ---------------------------------------------------------------------
+      # THE REVIEW — every entry awaiting the owner, printed in full.
+      #
+      # Informative by design: `hops whats-new pending` answers 0 when it could
+      # read the catalog (whatever it found) and 3 when it could NOT, and only
+      # the 3 reaches the unknown log. Nothing here can block a promotion,
+      # because an unwanted entry costs nothing until this promotion publishes
+      # it — the owner withdraws it with `hops whats-new drop` and re-runs.
+      # ---------------------------------------------------------------------
+      - name: List the entries awaiting review (hops whats-new pending)
+        working-directory: scripts/client-tools
+        run: |
+          set -o pipefail
+          bun run bin/hops-whats-new pending 2>&1 | tee /tmp/whats-new-gate-pending.txt
+          rc="${PIPESTATUS[0]}"
+          if [[ "${rc}" -eq 3 ]]; then
+              cat /tmp/whats-new-gate-pending.txt >> /tmp/whats-new-gate-unknown.log
+          elif [[ "${rc}" -ne 0 ]]; then
+              echo "UNKNOWN: hops whats-new pending exited with an unexpected code ${rc}." | tee -a /tmp/whats-new-gate-unknown.log
+          fi
+
+      # ---------------------------------------------------------------------
+      # Mode 1 — staging -> main promotion (or a manual workflow_dispatch):
+      # audit the WHOLE range via the shared `hops whats-new audit` binary.
+      # ---------------------------------------------------------------------
+      - name: Audit the staging -> main range (hops whats-new audit)
+        if: github.event_name == 'workflow_dispatch' || github.head_ref == 'staging'
+        working-directory: scripts/client-tools
+        env:
+          # See the "GH_TOKEN vs GITHUB_TOKEN" header note above — this name
+          # is load-bearing.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          bun run bin/hops-whats-new audit 2>&1 | tee /tmp/whats-new-gate-range-output.txt
+          rc="${PIPESTATUS[0]}"
+          echo ""
+          echo "hops whats-new audit exit code: ${rc}"
+          case "${rc}" in
+              0) : ;;
+              1) cat /tmp/whats-new-gate-range-output.txt >> /tmp/whats-new-gate-failures.log ;;
+              3) cat /tmp/whats-new-gate-range-output.txt >> /tmp/whats-new-gate-unknown.log ;;
+              *) echo "UNKNOWN: hops whats-new audit exited with an unexpected code ${rc}." | tee -a /tmp/whats-new-gate-unknown.log ;;
+          esac
+
+      # ---------------------------------------------------------------------
+      # Mode 2 — hotfix / Dependabot security PR straight into `main`: audit
+      # only THIS PR's own author/labels. No enumeration, no `hops` needed —
+      # see the header's design-decision note for why.
+      # ---------------------------------------------------------------------
+      - name: Audit this PR's own labels (hotfix / Dependabot security PR)
+        if: github.event_name == 'pull_request' && github.head_ref != 'staging'
+        env:
+          # Read via env, never inline `${{ }}` interpolation, so an
+          # attacker-controlled PR title/author cannot be interpreted as
+          # shell syntax.
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
+        run: |
+          set -euo pipefail
+
+          # Bot exemption mirrors validate-pr-title.yml's own `if:` check and
+          # scripts/client-tools/src/commands/whats-new/labels.ts's
+          # EXEMPT_BOT_AUTHORS. Keep all three in sync if this set changes.
+          if [[ "${PR_AUTHOR}" == "dependabot[bot]" || "${PR_AUTHOR}" == "github-actions[bot]" ]]; then
+              echo "OK — #${PR_NUMBER} is bot-authored (${PR_AUTHOR}) — exempt from the novelty decision."
+              exit 0
+          fi
+
+          # Validate before jq — an attacker cannot control this (it comes
+          # from the GitHub Actions expression engine, not a raw HTTP
+          # response), but the house rule is to never skip this check under
+          # set -euo pipefail regardless of the source.
+          if ! printf '%s' "${PR_LABELS_JSON}" | jq -e . >/dev/null 2>&1; then
+              echo "UNKNOWN: PR_LABELS_JSON did not parse as JSON." | tee -a /tmp/whats-new-gate-unknown.log
+              exit 0
+          fi
+
+          HAS_NONE="$(printf '%s' "${PR_LABELS_JSON}" | jq -r '[.[] | select(.name == "whats-new-none")] | length')"
+          HAS_DONE="$(printf '%s' "${PR_LABELS_JSON}" | jq -r '[.[] | select(.name == "whats-new-done")] | length')"
+
+          if [[ "${HAS_NONE}" -gt 0 && "${HAS_DONE}" -gt 0 ]]; then
+              {
+                  echo "Promotion blocked: #${PR_NUMBER}  ${PR_TITLE}"
+                  echo "carries BOTH whats-new-none and whats-new-done at once (mutually exclusive — remove one)."
+              } | tee -a /tmp/whats-new-gate-failures.log
+              exit 0
+          fi
+
+          if [[ "${HAS_NONE}" -eq 0 && "${HAS_DONE}" -eq 0 ]]; then
+              {
+                  echo "Promotion blocked: 1 PR into main was never evaluated for What's New."
+                  echo ""
+                  echo "  #${PR_NUMBER}  ${PR_TITLE}"
+                  echo ""
+                  echo "Decide, then label this PR directly (it never merged into staging,"
+                  echo "so 'hops whats-new audit --fix' — which only walks the"
+                  echo "origin/main..origin/staging range — cannot reach it):"
+                  echo "  gh pr edit ${PR_NUMBER} --add-label whats-new-none"
+                  echo "  gh pr edit ${PR_NUMBER} --add-label whats-new-done   # once its catalog entry exists"
+              } | tee -a /tmp/whats-new-gate-failures.log
+              exit 0
+          fi
+
+          echo "OK — #${PR_NUMBER} carries a novelty decision."
+
+      # ---------------------------------------------------------------------
+      # Combine and report. This is the ONLY step whose exit code decides the
+      # check's pass/fail — every step above always exits 0 and instead
+      # appends to the shared logs, so one early failure never hides a later
+      # one (house rule: accumulate, report all at the end).
+      # ---------------------------------------------------------------------
+      - name: Combine and report
+        if: always()
+        run: |
+          set -euo pipefail
+
+          FAILED=0
+          UNKNOWN=0
+          [[ -s /tmp/whats-new-gate-failures.log ]] && FAILED=1
+          [[ -s /tmp/whats-new-gate-unknown.log ]] && UNKNOWN=1
+
+          if [[ "${FAILED}" -eq 1 ]]; then
+              echo "::error::Promotion blocked — see the failures below."
+              echo ""
+              echo "=== BLOCKED ==="
+              cat /tmp/whats-new-gate-failures.log
+          fi
+
+          if [[ "${UNKNOWN}" -eq 1 ]]; then
+              echo ""
+              echo "=== COULD NOT DETERMINE (AC-13) ==="
+              echo "This is NOT a report of an unevaluated PR — it means the range or the"
+              echo "GitHub API could not be read (e.g. a transient outage or an auth"
+              echo "problem). Re-run this workflow (workflow_dispatch) once resolved."
+              cat /tmp/whats-new-gate-unknown.log
+          fi
+
+          if [[ "${FAILED}" -eq 0 && "${UNKNOWN}" -eq 0 ]]; then
+              echo "OK — every check passed."
+              exit 0
+          fi
+
+          # A real, known failure (FAILED=1) always fails the check, even
+          # alongside an unrelated UNKNOWN — a known problem must never be
+          # masked by a separate outage. An UNKNOWN with no known failure
+          # still fails the check too: this promotion gate fails CLOSED on an
+          # outage (blocking a promotion during a transient GitHub outage is
+          # recoverable by re-running; silently letting an actual unevaluated
+          # PR through because the API happened to be down is not).
+          exit 1

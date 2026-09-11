@@ -40,6 +40,9 @@ import {
     type AccommodationFaqSingleOutput,
     type AccommodationFaqUpdateInput,
     AccommodationFaqUpdateInputSchema,
+    type AccommodationFeaturedMediaAddInput,
+    AccommodationFeaturedMediaAddInputSchema,
+    type AccommodationFeaturedMediaAddOutput,
     type AccommodationIaDataAddInput,
     AccommodationIaDataAddInputSchema,
     type AccommodationIaDataListInput,
@@ -128,13 +131,16 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
-import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
+import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
+import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
+import { NEARBY_POI_DEFAULT_LIMIT } from '../point-of-interest/point-of-interest.nearby-relevance';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
 import {
@@ -167,10 +173,7 @@ import {
     checkCanVerify,
     checkCanView
 } from './accommodation.permissions';
-import {
-    DEFAULT_POI_PROXIMITY_RADIUS_KM,
-    resolvePoiToCoordinates
-} from './accommodation.poi-proximity.helper';
+import { resolvePoiToCoordinates } from './accommodation.poi-proximity.helper';
 import {
     applyAccommodationLocationPrivacy,
     applyAccommodationLocationPrivacyList,
@@ -183,18 +186,18 @@ import {
 import type {
     AccommodationHookState,
     AccommodationPublishDeps,
-    HostOnboardingResult
+    HostOnboardingResult,
+    PublishEligibilityVerdict,
+    PublishTransactionContext,
+    StartLocalTrialResult
+} from './accommodation.types';
+import {
+    publishEligibilityAllowsPublish,
+    publishEligibilityStartsLocalTrial
 } from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
 type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
-
-/**
- * Default number of points of interest returned by
- * {@link AccommodationService.getNearbyPois} when the caller does not supply
- * an explicit `limit` (HOS-145 T-004).
- */
-const NEARBY_POI_DEFAULT_LIMIT = 12;
 
 /**
  * Input schema for {@link AccommodationService.getNearbyPois} (HOS-145 T-004).
@@ -1162,18 +1165,25 @@ export class AccommodationService extends BaseCrudService<
 
                 if (
                     current &&
-                    shouldRegenerateSlugOnRename({
+                    shouldRegenerateSlugOnListingChange({
                         currentLifecycleState: current.lifecycleState,
                         currentName: current.name,
                         nextName: data.name,
+                        currentType: current.type,
+                        nextType: typeof data.type === 'string' ? data.type : undefined,
                         slugWasProvided,
                         refreshSlugFromName: data.refreshSlugFromName
                     })
                 ) {
+                    // HOS-879: compose the slug from whichever of name/type actually
+                    // changed and the CURRENT value of the one that did not — a
+                    // type-only change must not fall back to `data.name` (undefined
+                    // on a partial update that never touched the name field).
                     const nextType = typeof data.type === 'string' ? data.type : current.type;
+                    const nextName = typeof data.name === 'string' ? data.name : current.name;
                     ctx.hookState.regeneratedSlug = await generateSlug(
                         nextType,
-                        data.name as string,
+                        nextName as string,
                         current.id
                     );
                 }
@@ -1667,7 +1677,7 @@ export class AccommodationService extends BaseCrudService<
                         current.ownerId,
                         resolvedCtx
                     );
-                    if (eligibility === 'subscription_required') {
+                    if (!publishEligibilityAllowsPublish(eligibility)) {
                         return {
                             error: new ServiceError(
                                 ServiceErrorCode.FORBIDDEN,
@@ -1740,6 +1750,84 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Answers, without writing anything, what {@link AccommodationService.publish}
+     * would decide for this owner right now (HOS-1183 D-1).
+     *
+     * ## Why this exists at all
+     *
+     * Until now the verdict was unreadable. `checkEligibility` is a closure
+     * inside the deps object `publish()` holds, so the only way to learn the
+     * answer was to POST `/publish` and take the 403 — which is why the card's
+     * button gated on a plan-shaped boolean instead, and hid itself from exactly
+     * the owner holding an intact trial.
+     *
+     * ## It reproduces publish()'s decision, it does not restate it
+     *
+     * Both steps are the same ones `publish()` runs, in the same order:
+     *
+     *  1. Platform staff (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) bypass billing, so
+     *     they publish regardless of the verdict — and start no trial, because
+     *     no trial is ever inserted for them.
+     *  2. Everyone else is decided by
+     *     {@link publishEligibilityAllowsPublish} over the verdict
+     *     `checkEligibility` returned.
+     *
+     * Step 1 is why `canPublish` is not simply the predicate applied to
+     * `eligibility`: staff publish on an `subscription_required` verdict. The
+     * verdict is still reported verbatim rather than rewritten to something
+     * flattering, so a caller that wants "what does billing think" gets the
+     * truth and a caller that wants "will this work" gets `canPublish`.
+     *
+     * Owner-level by construction: it answers for the ACTOR's portfolio, not for
+     * one listing, so a page rendering N cards resolves billing once rather than
+     * N times. Per-listing completeness (photos, bathrooms, …) is a separate
+     * gate that `publish()` enforces afterwards and this method deliberately
+     * does not predict.
+     *
+     * @param actor - The owner asking about their own publish eligibility.
+     * @param ctx - Optional service context, threaded to the billing read.
+     * @returns The billing verdict plus whether publishing is allowed and would
+     *   start a trial, or a `ServiceError` with `CONFIGURATION_ERROR` when the
+     *   service was built without billing dependencies.
+     */
+    public async getPublishEligibility(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PublishEligibilityVerdict>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPublishEligibility',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_, validatedActor, execCtx) => {
+                if (!this._publishDeps) {
+                    throw new ServiceError(
+                        ServiceErrorCode.CONFIGURATION_ERROR,
+                        'Publish eligibility requires billing dependencies; AccommodationService was instantiated without publishDeps'
+                    );
+                }
+
+                const eligibility = await this._publishDeps.checkEligibility(
+                    validatedActor.id,
+                    execCtx
+                );
+                // Mirrors publish()'s fast path: when the actor IS the owner,
+                // the hats come straight off the actor rather than a second
+                // read of user_role.
+                const isBillingExempt = AccommodationService.holdsBillingExemptRole(
+                    validatedActor.roles
+                );
+
+                return {
+                    eligibility,
+                    canPublish: isBillingExempt || publishEligibilityAllowsPublish(eligibility),
+                    startsTrial: !isBillingExempt && publishEligibilityStartsLocalTrial(eligibility)
+                };
+            }
+        });
+    }
+
+    /**
      * Atomically transitions an accommodation to `ACTIVE` (the "publish" flow),
      * orchestrating billing trial creation when the owner is publishing for the
      * first time.
@@ -1750,30 +1838,37 @@ export class AccommodationService extends BaseCrudService<
      * complete the listing — not for admin panel access, which HOST does not
      * have. By the time `publish` runs, the owner is already HOST (or higher).
      *
-     * Flow (Option C "external first, then short tx" pattern):
+     * Flow:
      *
      *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
      *     `ACCOMMODATION_UPDATE_ANY`.
      *  2. If already `ACTIVE`, return it idempotently.
-     *  3. Capacity-completeness guard (HOS-152): validate `extraInfo` against
+     *  3. Resolve the owner's roles. If the owner is billing-exempt (ADMIN/
+     *     SUPER_ADMIN/CLIENT_MANAGER), skip the eligibility check entirely.
+     *  4. Otherwise (regular HOST), ask the billing layer for the owner's
+     *     publish eligibility (`first_publish` / `has_active_sub` /
+     *     `subscription_required`). `subscription_required` rejects with
+     *     FORBIDDEN here — deliberately BEFORE the completeness guard (H-99): a
+     *     missing subscription is the one rejection a host cannot resolve by
+     *     editing, so they should meet it first rather than after filling in
+     *     `bathrooms`.
+     *  5. Capacity-completeness guard (HOS-152): validate `extraInfo` against
      *     `AccommodationExtraInfoRequiredForPublishSchema`. If `capacity`/
      *     `minNights`/`bedrooms`/`bathrooms` are missing, reject with
-     *     `VALIDATION_ERROR` before touching billing or the owner at all.
-     *  4. Resolve the owner. If the owner is billing-exempt (ADMIN/SUPER_ADMIN/
-     *     CLIENT_MANAGER), skip the eligibility check entirely and just flip
-     *     lifecycleState to ACTIVE.
-     *  5. Otherwise (regular HOST), ask the billing layer for the owner's
-     *     publish eligibility (`first_publish` / `has_active_sub` /
-     *     `subscription_required`).
-     *  6. `subscription_required` AND `first_publish` -> reject with FORBIDDEN.
-     *     Only `has_active_sub` may publish (HOS-171): a trial is now a
-     *     MercadoPago preapproval, so it cannot exist until someone authorizes a
-     *     card, and `first_publish` therefore goes to the plans page rather than
-     *     being granted a trial here. This step used to call `startTrial` outside
-     *     the transaction and compensate with `cancelTrial` if the tx then failed;
-     *     publish no longer touches billing at all, so both are gone.
-     *  7. Open a short transaction:
-     *      - update accommodation lifecycleState to ACTIVE
+     *     `VALIDATION_ERROR`.
+     *  6. Open a short transaction (HOS-1012 G-2) containing BOTH writes:
+     *      - when eligibility was `first_publish`, insert the Hospeda-owned,
+     *        no-card trial subscription (`startLocalTrial`) — the clock starts
+     *        at publish, not at signup (D-1);
+     *      - update accommodation lifecycleState to ACTIVE.
+     *     They commit together or not at all. Nothing external is called inside
+     *     the boundary, which is what makes that possible: the trial is a local
+     *     row with `mp_subscription_id = NULL`, so unlike the pre-HOS-171
+     *     MercadoPago trial it needs no saga, no timeout and no compensating
+     *     cancel.
+     *  7. After the commit, clear the owner's entitlement cache
+     *     (`onTrialStarted`, INV-1) — best effort, a failure here never fails a
+     *     publish that already landed.
      *  8. Schedule revalidation as a best-effort side effect (never rolls back
      *     the publish on revalidation errors).
      *
@@ -1849,6 +1944,12 @@ export class AccommodationService extends BaseCrudService<
                 const ownerIsBillingExempt =
                     AccommodationService.holdsBillingExemptRole(ownerRoles);
 
+                // Set only by the `first_publish` branch below. A billing-exempt
+                // owner (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) never starts a trial:
+                // they bypass billing entirely, so there is no clock to start
+                // and nothing to expire.
+                let startsLocalTrial = false;
+
                 if (!ownerIsBillingExempt) {
                     if (!this._publishDeps) {
                         throw new ServiceError(
@@ -1860,23 +1961,17 @@ export class AccommodationService extends BaseCrudService<
                         accommodation.ownerId,
                         execCtx
                     );
-                    // Publishing requires a live subscription — and that now
-                    // includes the owner's very first publish (HOS-171).
-                    //
-                    // `first_publish` used to grant a no-card trial right here,
-                    // mid-publish, so the owner went live without ever seeing a
-                    // checkout. Card-first has no such thing: a trial IS a
-                    // MercadoPago preapproval, so the payer must authorize a card
-                    // before any free days exist. Both states therefore reject to
-                    // the plans page, where the card is collected and the trial
-                    // starts. Creating the accommodation stays free — it simply
-                    // stays a draft until then.
-                    if (
-                        eligibility === 'subscription_required' ||
-                        eligibility === 'first_publish'
-                    ) {
+                    // An owner with no live subscription and no trial left in
+                    // this vertical goes to the plans page. `first_publish` is
+                    // the other branch: they still have their accommodation
+                    // trial, so publishing GRANTS it (HOS-1012 D-1 — the clock
+                    // starts when the listing goes live, not at signup) and the
+                    // insert happens below, inside the same transaction as the
+                    // lifecycle flip.
+                    if (!publishEligibilityAllowsPublish(eligibility)) {
                         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
                     }
+                    startsLocalTrial = publishEligibilityStartsLocalTrial(eligibility);
                 }
 
                 // Publish-completeness guard (HOS-152, rewritten for H-101/H-94).
@@ -1947,33 +2042,104 @@ export class AccommodationService extends BaseCrudService<
                     !opts?.callerSetVisibility &&
                     accommodation.visibility === VisibilityEnum.PRIVATE;
 
-                // No compensation wrapper any more: publish no longer creates a
-                // trial subscription before this write, so there is no external
-                // side effect left to undo if the transaction fails (HOS-171).
-                const updated: Accommodation = await withServiceTransaction(
-                    async (txCtx) => {
-                        const next = await this.model.update(
-                            { id },
-                            {
-                                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                                ...(shouldPromoteVisibility
-                                    ? { visibility: VisibilityEnum.PUBLIC }
-                                    : {}),
-                                updatedById: validatedActor.id
-                            },
-                            txCtx.tx
-                        );
-                        if (!next) {
-                            throw new ServiceError(
-                                ServiceErrorCode.INTERNAL_ERROR,
-                                'Failed to flip accommodation lifecycleState to ACTIVE'
+                // HOS-1012 G-2: the trial insert and the lifecycle flip commit
+                // together or neither does. A publish that succeeds while the
+                // trial insert fails leaves a live listing with no clock —
+                // permanently free. A trial that starts while the publish fails
+                // burns days for nothing.
+                //
+                // Still no compensation wrapper, and deliberately so: the trial
+                // is a local row, not a MercadoPago preapproval, so the database
+                // rolls it back. Nothing external is touched in here (ADR-019),
+                // which is exactly what lets both writes share one boundary.
+                //
+                // The trial goes FIRST: `startLocalTrial` returning null means
+                // the owner cannot be given a clock, and that must reject before
+                // the listing is written to at all.
+                const {
+                    updated,
+                    trial
+                }: { updated: Accommodation; trial: StartLocalTrialResult | null } =
+                    await withServiceTransaction(
+                        async (txCtx) => {
+                            let startedTrial: StartLocalTrialResult | null = null;
+                            if (startsLocalTrial) {
+                                // Narrowed here rather than at the top: `_publishDeps`
+                                // is only guaranteed non-null on the non-exempt path,
+                                // which is the only path that can set the flag.
+                                startedTrial =
+                                    (await this._publishDeps?.startLocalTrial({
+                                        ownerId: accommodation.ownerId,
+                                        ctx: txCtx as PublishTransactionContext
+                                    })) ?? null;
+                                if (!startedTrial) {
+                                    // No customer row, no trial plan, or billing is
+                                    // off. Publishing anyway would hand out an
+                                    // unbounded free listing.
+                                    throw new ServiceError(
+                                        ServiceErrorCode.FORBIDDEN,
+                                        'subscription_required'
+                                    );
+                                }
+                            }
+                            const next = await this.model.update(
+                                { id },
+                                {
+                                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    // HOS-1181: cleared in the SAME write as the
+                                    // lifecycle flip — never a follow-up update.
+                                    // A marker that could outlive its publish (a
+                                    // crash between two writes) would later
+                                    // republish a listing its owner has since
+                                    // deliberately unpublished. Cleared on EVERY
+                                    // publish, not just the win-back republish,
+                                    // because "live" is what makes the marker
+                                    // meaningless, no matter who published.
+                                    billingUnpublishedAt: null,
+                                    ...(shouldPromoteVisibility
+                                        ? { visibility: VisibilityEnum.PUBLIC }
+                                        : {}),
+                                    updatedById: validatedActor.id
+                                },
+                                txCtx.tx
                             );
-                        }
-                        return next;
-                    },
-                    undefined,
-                    { timeoutMs: 5000 }
-                );
+                            if (!next) {
+                                throw new ServiceError(
+                                    ServiceErrorCode.INTERNAL_ERROR,
+                                    'Failed to flip accommodation lifecycleState to ACTIVE'
+                                );
+                            }
+                            return { updated: next, trial: startedTrial };
+                        },
+                        undefined,
+                        { timeoutMs: 5000 }
+                    );
+
+                // INV-1, and only reachable once the transaction above has
+                // COMMITTED. A local trial has no preapproval and therefore no
+                // webhook, so this is the only thing that will ever drop the
+                // owner's cached (empty) entitlement set — without it they are
+                // told they are live and still gated for up to 5 minutes. The
+                // API-side hook also re-points the SHARED entity_subscriptions
+                // cache through the reconcile bridge (HOS-1336): without that
+                // half, every owner-gated read keeps answering "no entitlements"
+                // for up to the 6-hour reconcile-cron interval.
+                if (trial) {
+                    try {
+                        await this._publishDeps?.onTrialStarted(trial);
+                    } catch (error) {
+                        // The publish is already committed and the trial row is
+                        // durable. Failing the request now would tell the owner
+                        // their listing did not go live when it did; the caches
+                        // self-heal on their own timers (the in-memory
+                        // entitlement cache within its TTL, entity_subscriptions
+                        // at the next reconcile-cron tick).
+                        this.logger.error(
+                            { error, ...trial },
+                            '[accommodation.publish] trial post-commit hook failed (non-blocking; caches self-heal on their own timers)'
+                        );
+                    }
+                }
 
                 await this._scheduleAccommodationRevalidation(updated, '[accommodation.publish] ');
 
@@ -2056,9 +2222,21 @@ export class AccommodationService extends BaseCrudService<
      *   `ACCOMMODATION_UPDATE_ANY`.
      * - Owner-suspended accommodations are also blocked by `checkCanUpdate`.
      *
+     * HOS-1181: `opts.billingUnpublish` marks this unpublish as BILLING-initiated
+     * by stamping `billingUnpublishedAt` in the SAME write that flips
+     * `lifecycleState` to INACTIVE. Only the accommodation trial-expiry cron
+     * passes it today. An owner's own unpublish from the panel does not — the
+     * two write the same row shape otherwise, and the marker is what lets a
+     * later win-back republish (when the owner pays) tell them apart. The
+     * marker is cleared by the next `publish()`, in its own transactional
+     * write, so it never survives as a stale flag on a live row.
+     *
      * @param actor - The actor performing the unpublish action.
      * @param id    - The accommodation ID to unpublish.
      * @param ctx   - Optional service context (transaction / hookState).
+     * @param opts  - Optional unpublish options.
+     * @param opts.billingUnpublish - Set `billingUnpublishedAt` alongside the
+     *   lifecycle flip (billing-initiated unpublish, HOS-1181).
      * @returns A `ServiceOutput` containing the updated accommodation, or a
      *   `ServiceError` on permission / state / update failure.
      *
@@ -2070,7 +2248,8 @@ export class AccommodationService extends BaseCrudService<
     public async unpublish(
         actor: Actor,
         id: string,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        opts?: { readonly billingUnpublish?: boolean }
     ): Promise<ServiceOutput<Accommodation>> {
         return this.runWithLoggingAndValidation({
             methodName: `unpublish(id=${id})`,
@@ -2101,6 +2280,12 @@ export class AccommodationService extends BaseCrudService<
                     { id },
                     {
                         lifecycleState: LifecycleStatusEnum.INACTIVE,
+                        // HOS-1181: same write, not a second one — a marker that
+                        // could land after a failed follow-up update would republish
+                        // a listing whose lifecycle flip rolled back, and a lifecycle
+                        // flip without the marker would silently drop the listing
+                        // from every future win-back republish.
+                        ...(opts?.billingUnpublish ? { billingUnpublishedAt: new Date() } : {}),
                         updatedById: validatedActor.id
                     },
                     execCtx?.tx
@@ -2972,16 +3157,30 @@ export class AccommodationService extends BaseCrudService<
      * an error result so it surfaces as a 5xx instead of masquerading as "no
      * POIs nearby" (judgment-day round 2 #4).
      *
+     * ## Selection (HOS-327)
+     *
+     * POIs are selected by RELEVANCE, not by proximity alone: every POI is
+     * eligible only within a radius derived from its own editorial weight,
+     * and the survivors are ordered by a gravity-style score. See
+     * `point-of-interest.nearby-relevance.ts` and
+     * {@link PointOfInterestService.getNearbyRanked}.
+     *
+     * `radiusKm` therefore changed MEANING (not validity): it is now a
+     * CEILING on each POI's elastic radius, never the radius itself. Passing
+     * `radiusKm: 3` still narrows the section to POIs within 3km; omitting it
+     * no longer means "5km", it means "let each POI's weight decide", bounded
+     * by {@link NEARBY_POI_ABSOLUTE_MAX_RADIUS_KM}.
+     *
      * @param params - `slug` (required), plus optional `radiusKm`/`limit`
-     *   overrides. Defaults: `radiusKm` = {@link DEFAULT_POI_PROXIMITY_RADIUS_KM}
-     *   (5km), `limit` = {@link NEARBY_POI_DEFAULT_LIMIT} (12).
+     *   overrides. Defaults: `radiusKm` = no extra ceiling (each POI's own
+     *   elastic radius applies), `limit` = {@link NEARBY_POI_DEFAULT_LIMIT} (8).
      * @param actor - The actor performing the search (forwarded to both the
-     *   visibility gate and `PointOfInterestService.getNearby` for its own
-     *   permission checks).
+     *   visibility gate and `PointOfInterestService.getNearbyRanked` for its
+     *   own permission checks).
      * @param ctx - Optional service context for transaction propagation.
-     * @returns The nearby points of interest, nearest-first. Never includes
-     *   the accommodation's own coordinates (real or approximate) or any
-     *   other accommodation field.
+     * @returns The nearby points of interest, most relevant first. Never
+     *   includes the accommodation's own coordinates (real or approximate) or
+     *   any other accommodation field.
      */
     public async getNearbyPois(
         params: { slug: string; radiusKm?: number; limit?: number },
@@ -3047,15 +3246,17 @@ export class AccommodationService extends BaseCrudService<
                     return [];
                 }
 
-                const radiusKm = validatedParams.radiusKm ?? DEFAULT_POI_PROXIMITY_RADIUS_KM;
                 const limit = validatedParams.limit ?? NEARBY_POI_DEFAULT_LIMIT;
 
-                const result = await this.pointOfInterestService.getNearby(
+                const result = await this.pointOfInterestService.getNearbyRanked(
                     {
                         lat: approximateLocation.lat,
                         long: approximateLocation.lng,
-                        radiusKm,
-                        limit
+                        limit,
+                        // HOS-327: `radiusKm` is a CEILING now, not the search
+                        // radius. Omitted means "let each POI's own elastic
+                        // radius decide"; supplied, it can only narrow.
+                        radiusCapKm: validatedParams.radiusKm
                     },
                     validatedActor,
                     execCtx
@@ -3888,6 +4089,95 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Registers a photo that is the accommodation's cover from the moment it
+     * exists, replacing the previous cover in the same transaction (HOS-803).
+     *
+     * ## Why this is not `addMedia` plus `setFeaturedMedia`
+     *
+     * That is exactly what it used to be, and it could not run when it was most
+     * needed. `addMedia` enforces the gallery cap, and since HOS-791 that cap
+     * counts the gallery ALONE because a cover is not a gallery item — so a host
+     * sitting exactly at the cap was refused at step 1 and never reached the
+     * promotion in step 2. The one action declared free of gallery quota was the
+     * only one they could not perform.
+     *
+     * ## Why the cap can safely be waived here
+     *
+     * Because the outcome is guaranteed rather than promised. A client-supplied
+     * "treat this upload as the cover" flag on `addMedia` would be unverifiable —
+     * nothing obliges the caller to send the follow-up promotion — so a caller
+     * that set it on every upload would have no gallery cap at all. Here the row
+     * is created featured inside a transaction, and
+     * `uq_accommodation_media_single_featured` permits exactly one such row, so
+     * quota-exempt rows cannot accumulate.
+     *
+     * No cap is waived either, because none is spent: the previous cover is
+     * SOFT-DELETED in the same transaction, so one row enters the featured slot,
+     * one leaves the table, and the visible gallery is untouched. The swap is
+     * quota-neutral by construction rather than by exception. See
+     * `services/media/add-featured-media.ts` for the rule in full, including why
+     * promotion of an existing gallery photo still demotes instead of deleting.
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as `addMedia`).
+     * 2. Soft-delete the previous cover and insert the new one, in ONE transaction.
+     * 3. Schedule ISR revalidation — the cover is the first image a visitor and
+     *    every social preview sees, so a stale one is the loudest kind.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Accommodation id, photo payload, and the SERVER-RESOLVED
+     *   plan cap. `planGalleryCap` must come from the route's entitlement
+     *   context and never from a request body.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The created row plus what became of the cover it replaced.
+     */
+    public async addFeaturedMedia(
+        actor: Actor,
+        data: AccommodationFeaturedMediaAddInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationFeaturedMediaAddOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addFeaturedMedia',
+            input: { ...data, actor },
+            schema: AccommodationFeaturedMediaAddInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+
+                const { media, previousFeatured } = await addFeaturedMediaRow({
+                    port: buildOwnedMediaFeaturedPort({
+                        mediaModel,
+                        ownerKey: 'accommodationId',
+                        ownerId: validated.accommodationId,
+                        media: validated.media,
+                        findFeatured: (tx) =>
+                            mediaModel.findFeatured({
+                                accommodationId: validated.accommodationId,
+                                tx
+                            }),
+                        deletedById: actor.id
+                    }),
+                    planGalleryCap: validated.planGalleryCap,
+                    tx: ctx?.tx
+                });
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. Loudest
+                // case: the cover is what every social preview renders.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
+                return { media, previousFeatured };
+            }
+        });
+    }
+
+    /**
      * Removes a single photo from an accommodation gallery (SPEC-204 T-018).
      *
      * Steps:
@@ -4178,7 +4468,18 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
                 const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                // `deletedAt` is checked here for the same reason `updateMedia` has
+                // always checked it: `findById` does NOT filter soft-deletes, so
+                // without this a deleted row is a promotable target. That is half of
+                // HOS-803 C-1 — `softDelete` leaves `is_featured` set and the partial
+                // unique index ignores deleted rows, so re-featuring one demotes the
+                // LIVE cover into the gallery to make room for a row that no longer
+                // exists: gallery +1 per cycle, uncapped.
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'Media not found for this accommodation'

@@ -27,9 +27,9 @@ export const adminBatchGastronomiesRoute = createAdminRoute({
     path: '/batch',
     summary: 'Get multiple gastronomy listings by IDs (admin)',
     description:
-        'Retrieves multiple gastronomy listings by their IDs for entity select components. Requires COMMERCE_VIEW_ALL.',
+        'Retrieves multiple gastronomy listings by their IDs for entity select components. Requires GASTRONOMY_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL).',
     tags: ['Gastronomy'],
-    requiredPermissions: [PermissionEnum.COMMERCE_VIEW_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL]],
     requestBody: GastronomyBatchRequestSchema,
     responseSchema: GastronomyBatchResponseSchema,
     handler: async (

@@ -25,12 +25,24 @@ vi.mock('@repo/db/schemas', () => ({
     billingAddonPurchases: {
         status: 'status',
         expiresAt: 'expiresAt',
-        deletedAt: 'deletedAt'
+        deletedAt: 'deletedAt',
+        // HOS-847 PR 6: the soft-cancel window's two columns.
+        cancelAtPeriodEnd: 'cancelAtPeriodEnd',
+        currentPeriodEnd: 'currentPeriodEnd'
     }
 }));
 
+// These stubs are opaque on purpose — this suite is about ctx routing and error
+// handling, not about what the predicate MEANS. The semantics of the WHERE
+// clause live in `addon-expiration.soft-cancel-window.test.ts`, which keeps the
+// real operators and renders the SQL, because a stubbed `and`/`or` cannot tell a
+// correct predicate from a catastrophic one.
 vi.mock('drizzle-orm', () => ({
     and: vi.fn((...args: unknown[]) => args),
+    // HOS-847 PR 6: `findExpiredAddons` unions two windows. Omitting `or` here
+    // would not weaken an assertion — it throws inside the query and turns every
+    // test in this file red.
+    or: vi.fn((...args: unknown[]) => ({ or: args })),
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
     gte: vi.fn((col: unknown, val: unknown) => ({ col, val, op: 'gte' })),
     isNotNull: vi.fn((col: unknown) => ({ col, isNotNull: true })),

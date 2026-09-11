@@ -1,0 +1,134 @@
+---
+/**
+ * @file PublishSignupCta.astro
+ * @description What a signed-out visitor sees where the create form goes
+ * (HOS-1156 T-018, D-1, AC-5).
+ *
+ * ## Why this exists rather than a redirect
+ *
+ * The two form pages this replaces called `buildLoginRedirect` in their
+ * frontmatter, so a cold visitor arriving from the header's "Publicar" button —
+ * a PUBLIC button — landed on a login screen before reading a word about what
+ * they were being asked to sign up for. That is the failure D-1 names: the page
+ * keeps its argument, and only the form is swapped for an offer to create an
+ * account.
+ *
+ * The `returnUrl` comes back to THIS page, so a visitor who signs up lands on
+ * the form they asked for rather than on the account dashboard (AC-19). Both
+ * URLs are built by `resolvePublishPageSlot`, which is the one place that knows
+ * this page's own path.
+ *
+ * Copy is shared across the three verticals by deliberate key reuse (AC-15):
+ * "create an account to publish" says the same thing on all three, and three
+ * translations of one sentence is three places for it to drift.
+ */
+
+import { ArrowRightIcon } from '@repo/icons';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** Sign-up URL carrying a `returnUrl` back to this page. */
+    readonly signupUrl: string;
+    /** Sign-in URL carrying the same `returnUrl`, for a visitor who already has an account. */
+    readonly signinUrl: string;
+}
+
+const { locale, signupUrl, signinUrl } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<div class="publish-signup-cta" data-testid="publish-signup-cta">
+    <p class="publish-signup-cta__tagline">
+        {t('publish.signedOut.tagline', 'Primer paso')}
+    </p>
+    <h2 class="publish-signup-cta__title">
+        {t('publish.signedOut.title', 'Creá tu cuenta y publicá')}
+    </h2>
+    <p class="publish-signup-cta__body">
+        {t(
+            'publish.signedOut.body',
+            'Para cargar tu ficha necesitás una cuenta. La creás en menos de dos minutos y volvés a esta misma página para completarla.'
+        )}
+    </p>
+
+    <GradientButton
+        href={signupUrl}
+        label={t('publish.signedOut.signupCta', 'Crear mi cuenta')}
+        variant="accent"
+        icon="true"
+    />
+
+    <p class="publish-signup-cta__signin">
+        {t('publish.signedOut.signinPrompt', '¿Ya tenés cuenta?')}
+        <a href={signinUrl} class="publish-signup-cta__signin-link">
+            {t('publish.signedOut.signinCta', 'Iniciar sesión')}
+            <span aria-hidden="true">
+                <ArrowRightIcon size={14} weight="bold" />
+            </span>
+        </a>
+    </p>
+</div>
+
+<style>
+    .publish-signup-cta {
+        max-width: 560px;
+        margin: 0 auto;
+        background-color: var(--core-card);
+        border: 1px solid var(--brand-accent-a30);
+        border-radius: var(--radius-card);
+        padding: var(--space-8) var(--space-6);
+        text-align: center;
+        box-shadow: var(--shadow-card);
+    }
+
+    .publish-signup-cta__tagline {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: var(--text-tagline);
+        color: var(--brand-accent);
+        margin: 0 0 var(--space-2);
+    }
+
+    .publish-signup-cta__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-3);
+        text-wrap: balance;
+    }
+
+    .publish-signup-cta__body {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        max-width: 46ch;
+        margin: 0 auto var(--space-6);
+    }
+
+    .publish-signup-cta__signin {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        margin: var(--space-4) 0 0;
+    }
+
+    .publish-signup-cta__signin-link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        color: var(--brand-primary);
+        text-decoration: none;
+        font-weight: 600;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .publish-signup-cta__signin-link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+</style>

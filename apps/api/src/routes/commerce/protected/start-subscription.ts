@@ -46,16 +46,18 @@
  */
 import {
     type CommerceVertical,
-    ENTITLEMENT_GRANTING_STATUSES,
+    isLiveSubscriptionStatus,
     LIMIT_KEY_BY_COMMERCE_VERTICAL
 } from '@repo/billing';
 import { experienceModel, gastronomyModel } from '@repo/db';
 import type {
     CommerceEntityType,
     CommerceListingCompletenessListing,
+    StartPaidBillingInterval,
     StartPaidSubscriptionResponse
 } from '@repo/schemas';
 import {
+    CommerceStartSubscriptionRequestSchema,
     PermissionEnum,
     resolveListingCompleteness,
     ServiceErrorCode,
@@ -75,6 +77,7 @@ import { BillingCustomerSyncService } from '../../../services/billing-customer-s
 import { loadCommerceListingMedia } from '../../../services/commerce-listing-media';
 import {
     CommercePlanNotConfiguredError,
+    CommercePlanNotForVerticalError,
     resolveCommercePlanSlug
 } from '../../../services/commerce-plan-resolver';
 import {
@@ -82,8 +85,9 @@ import {
     countAttachedListings,
     findOwnerVerticalSubscription
 } from '../../../services/commerce-subscription-attach.service';
+import { startCommerceListingTrial } from '../../../services/commerce-trial-start.service';
 import {
-    initiateCommerceMonthlySubscription,
+    initiateCommerceSubscription,
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
 import { getActorFromContext } from '../../../utils/actor';
@@ -110,27 +114,16 @@ const StartSubscriptionParamsSchema = {
     entityId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 };
 
-/**
- * Subscription statuses (`commerce_listing_subscriptions.status`, mirroring
- * `billing_subscriptions.status` — see `SubscriptionStatusEnum`) that
- * indicate the listing already has a LIVE-ish subscription and must block a
- * new checkout (AC-16 / HOS-166 judgment-day W1).
- *
- * `past_due` is included alongside `active`/`trialing`: a dunning
- * subscription is still a real MercadoPago preapproval mid-retry, not a dead
- * one, so letting the owner start a SECOND checkout here would create a
- * second concurrent preapproval for the same listing rather than resolving
- * the first one (the dunning flow — grace period, retries, eventual
- * cancel/reactivate — is the correct path back to `active`). Deliberately
- * excludes `cancelled`, `expired`, `abandoned`, and `paused` — those ARE
- * terminal/inactive enough that a fresh checkout is the correct next step.
- *
- * HOS-702: built as the canonical `ENTITLEMENT_GRANTING_STATUSES` PLUS
- * `past_due`, never as a hand-rolled list. The hand-rolled version omitted
- * `comp`, so an owner whose listing already carried a complimentary
- * subscription could start a second, real, CHARGED checkout for it.
+/*
+ * The "this listing already has a live-ish subscription, block a new checkout"
+ * set (AC-16 / HOS-166 judgment-day W1) used to be declared here as a local
+ * `new Set([...ENTITLEMENT_GRANTING_STATUSES, 'past_due'])`. HOS-1275 promoted
+ * it to `@repo/billing`'s `LIVE_SUBSCRIPTION_STATUSES` / the
+ * `isLiveSubscriptionStatus` predicate, because the edit gate that issue builds
+ * needs the SAME set for the same reason (a past-due owner has not walked away)
+ * and a second local copy is how HOS-702's `comp` omission happened in the
+ * first place. Its full rationale now lives in that module's docblock.
  */
-const LIVE_SUBSCRIPTION_STATUSES = new Set<string>([...ENTITLEMENT_GRANTING_STATUSES, 'past_due']);
 
 /**
  * Subset of the raw `gastronomies`/`experiences` row this route reads —
@@ -173,7 +166,25 @@ async function loadRawListing(
     entityType: CommerceEntityType,
     entityId: string
 ): Promise<RawCommerceListingRow> {
-    const model = entityType === 'gastronomy' ? gastronomyModel : experienceModel;
+    // HOS-1079: an exhaustive switch, not a binary ternary — see the module
+    // docblock's note on the resolved entityType always being the schema-
+    // validated enum. The `default` throw is defense-in-depth, not a reachable
+    // path today.
+    let model: typeof gastronomyModel | typeof experienceModel;
+    switch (entityType) {
+        case 'gastronomy':
+            model = gastronomyModel;
+            break;
+        case 'experience':
+            model = experienceModel;
+            break;
+        default: {
+            const exhaustiveCheck: never = entityType;
+            throw new HTTPException(400, {
+                message: `Unsupported commerce entityType: ${exhaustiveCheck}`
+            });
+        }
+    }
     const entity = await model.findById(entityId);
     if (!entity) {
         throw commerceListingNotFound();
@@ -198,9 +209,45 @@ async function loadRawListing(
  */
 export async function handleCommerceStartSubscription(
     ctx: Context,
-    input: { entityType: CommerceEntityType; entityId: string }
+    input: {
+        entityType: CommerceEntityType;
+        entityId: string;
+        /**
+         * HOS-1008: the email the owner confirmed on the pre-redirect screen.
+         * `undefined` when they accepted the pre-filled default, or whenever
+         * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` is off — in which case the
+         * front never shows the screen and this route behaves exactly as it
+         * did before.
+         */
+        requestedPayerEmail?: string;
+        /**
+         * HOS-1119: the tier the owner picked in the plan selector.
+         * `undefined` when they were offered no choice (a vertical with a
+         * single sellable tier) — in which case this route behaves exactly as
+         * it did before.
+         */
+        requestedPlanSlug?: string;
+        /**
+         * HOS-1285: the cadence the owner picked. `undefined` means monthly —
+         * the pre-HOS-1285 behaviour, and what every bodyless caller still
+         * gets.
+         *
+         * Only reaches the CHECKOUT branch. The attach branch and the trial
+         * branch below open no MercadoPago resource at all, so there is no
+         * cadence for them to honour: an owner attaching a second listing joins
+         * whatever cadence they already pay, and a trial has no charge to
+         * schedule.
+         */
+        requestedBillingInterval?: StartPaidBillingInterval;
+    }
 ): Promise<StartPaidSubscriptionResponse | Response> {
-    const { entityType, entityId } = input;
+    const {
+        entityType,
+        entityId,
+        requestedPayerEmail,
+        requestedPlanSlug,
+        requestedBillingInterval
+    } = input;
     const actor = getActorFromContext(ctx);
 
     // ── Ownership check (AC-2) — the entire security boundary. ─────────────
@@ -218,12 +265,27 @@ export async function handleCommerceStartSubscription(
 
     // ── Plan slug (D-7) — resolved before touching billing so an unset
     // HOSPEDA_COMMERCE_PLAN_ID 503s uniformly for both verticals. ──────────
+    //
+    // HOS-1119: `requestedPlanSlug` is forwarded, never interpreted here. The
+    // resolver is still the ONE place a vertical becomes a plan slug (AC-35);
+    // what changed is that it now takes the buyer's pick as an argument and
+    // refuses one that is not a tier of THIS vertical, which is what keeps the
+    // two verticals on separate MercadoPago preapproval plans.
     let planSlug: string;
     try {
-        planSlug = resolveCommercePlanSlug({ entityType });
+        planSlug = resolveCommercePlanSlug({
+            entityType,
+            ...(requestedPlanSlug === undefined ? {} : { requestedPlanSlug })
+        });
     } catch (error) {
         if (error instanceof CommercePlanNotConfiguredError) {
             throw new HTTPException(503, { message: error.message });
+        }
+        // A caller-supplied slug that names no tier of this vertical is a bad
+        // request body, not an operator misconfiguration — 400, per the error
+        // contract's input-shape tier, and never the 503 above.
+        if (error instanceof CommercePlanNotForVerticalError) {
+            throw new HTTPException(400, { message: error.message });
         }
         throw error;
     }
@@ -273,7 +335,7 @@ export async function handleCommerceStartSubscription(
         entityType,
         entityId
     });
-    if (existingStatus !== null && LIVE_SUBSCRIPTION_STATUSES.has(existingStatus)) {
+    if (existingStatus !== null && isLiveSubscriptionStatus(existingStatus)) {
         throw new HTTPException(409, {
             message: 'This listing already has an active subscription.'
         });
@@ -336,6 +398,27 @@ export async function handleCommerceStartSubscription(
     });
 
     if (ownerSubscription) {
+        // HOS-1119 — the tier request cannot be silently dropped here.
+        //
+        // Branch 2 attaches the listing to the subscription the owner ALREADY
+        // pays for, and opens no checkout. If they picked a tier on the way in,
+        // that pick has nowhere to go: attaching would answer 201 while leaving
+        // them on the tier they were already on, which reads from the outside
+        // exactly like a successful upgrade. Refuse instead, and name the route
+        // that does change tiers.
+        //
+        // Only a MISMATCH refuses. Re-picking the tier they are already on is a
+        // no-op request, not an error, and still attaches.
+        if (requestedPlanSlug !== undefined) {
+            const currentPlan = await billing.plans.get(ownerSubscription.planId);
+            if (currentPlan?.name !== planSlug) {
+                throw new HTTPException(409, {
+                    message:
+                        'You already have a subscription for this vertical on a different plan. Change your plan first, then publish this listing.'
+                });
+            }
+        }
+
         const [attached, cap] = await Promise.all([
             countAttachedListings({ subscriptionId: ownerSubscription.id }),
             resolveCommerceVerticalCap({
@@ -385,13 +468,61 @@ export async function handleCommerceStartSubscription(
         };
     }
 
-    // Branch 1 — no subscription for this vertical yet. Today's behaviour.
+    // ── Branch 1a — no subscription yet, and this vertical's trial is intact
+    // (HOS-1184) ────────────────────────────────────────────────────────────
+    //
+    // The branch that restores the promise the public pages already make. It is
+    // placed BEFORE the checkout rather than inside it because a trial is not a
+    // variety of checkout: nothing is charged, no card is collected, and
+    // MercadoPago is never told the subscription exists. The listing is
+    // published by the attach, exactly the way branch 2 publishes one.
+    //
+    // `startCommerceListingTrial` re-checks eligibility itself and answers
+    // `null` when the trial is spent or the vertical's trial plan cannot be
+    // resolved, so this reads as "trial if we can, checkout otherwise" and the
+    // fall-through below is the whole of the not-eligible path.
+    const startedTrial = await startCommerceListingTrial({
+        billing,
+        customerId: billingCustomerId,
+        vertical: entityType as CommerceVertical,
+        entityId
+    });
+
+    if (startedTrial) {
+        apiLogger.info(
+            {
+                localSubscriptionId: startedTrial.localSubscriptionId,
+                customerId: billingCustomerId,
+                entityType,
+                entityId,
+                trialEnd: startedTrial.trialEnd.toISOString()
+            },
+            'Commerce listing published on a local trial — no checkout opened, no card collected'
+        );
+
+        return {
+            // The same in-app sentinel branch 2 and the `comp` path return:
+            // there is no payment page to send the owner to, because there is
+            // no charge. Sending them to MercadoPago here is precisely the bug.
+            checkoutUrl: buildPaymentMethodReturnUrl(locale),
+            localSubscriptionId: startedTrial.localSubscriptionId,
+            expiresAt: startedTrial.trialEnd.toISOString(),
+            appliedEffect: 'trial' as const
+        };
+    }
+
+    // Branch 1 — no subscription for this vertical yet, and no trial to grant.
+    // Today's behaviour.
     try {
-        const result = await initiateCommerceMonthlySubscription({
+        const result = await initiateCommerceSubscription({
             customerId: billingCustomerId,
             planSlug,
-            entityType,
+            entityType: entityType as CommerceVertical,
             entityId,
+            ...(requestedPayerEmail === undefined ? {} : { requestedPayerEmail }),
+            ...(requestedBillingInterval === undefined
+                ? {}
+                : { billingInterval: requestedBillingInterval }),
             billing,
             urls: {
                 paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
@@ -442,6 +573,65 @@ export async function handleCommerceStartSubscription(
  * middleware, rather than via `createProtectedRoute`'s bundling — see that
  * router's docstring for why the ordering matters here.
  */
+/**
+ * Read the two optional choices the owner may have made before being sent to
+ * MercadoPago: the payer email they confirmed on the pre-redirect screen
+ * (HOS-1008) and the tier they picked in the plan selector (HOS-1119).
+ *
+ * Returns `{}` — not `{ requestedPayerEmail: undefined }` — for anything the
+ * caller did not send, so the result can be spread under
+ * `exactOptionalPropertyTypes`.
+ *
+ * **An absent body is not an error.** This endpoint shipped with no request
+ * body at all, and both the web client (whenever
+ * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` is off, which is production today)
+ * and several existing tests still call it that way. A missing, empty or
+ * unparseable body therefore means "the owner confirmed no alternative address
+ * and picked no tier" and the checkout proceeds exactly as it did before.
+ *
+ * A body that IS present but malformed is a different case and answers 400:
+ * the caller tried to bind an address MercadoPago cannot accept, or named a
+ * plan in a shape no plan uses, and silently ignoring either would send them
+ * to a checkout that is not the one they asked for.
+ *
+ * Note this validates SHAPE only. Whether the slug names a tier of the
+ * listing's vertical is `resolveCommercePlanSlug`'s call and no one else's
+ * (AC-35) — see the handler, which maps that refusal to its own 400.
+ *
+ * @param ctx - The Hono request context.
+ * @returns The subset of `{ requestedPayerEmail, requestedPlanSlug }` actually
+ *   supplied; `{}` when neither was.
+ * @throws HTTPException 400 when a present body carries an invalid field.
+ *
+ * Exported for its own unit test: the "absent body is not an error" contract
+ * is the risky half of HOS-1008 (every pre-existing caller relies on it) and
+ * route-level tests in this app do not reliably reach the handler.
+ */
+export async function readCommerceCheckoutOptions(ctx: Context): Promise<{
+    requestedPayerEmail?: string;
+    requestedPlanSlug?: string;
+    requestedBillingInterval?: StartPaidBillingInterval;
+}> {
+    const raw: unknown = await ctx.req.json().catch(() => undefined);
+    if (raw === undefined || raw === null) {
+        return {};
+    }
+
+    const parsed = CommerceStartSubscriptionRequestSchema.safeParse(raw);
+    if (!parsed.success) {
+        throw new HTTPException(400, {
+            message: 'Invalid payerEmail, planSlug or billingInterval in request body.'
+        });
+    }
+
+    const { payerEmail, planSlug, billingInterval } = parsed.data;
+    return {
+        ...(payerEmail === undefined ? {} : { requestedPayerEmail: payerEmail }),
+        ...(planSlug === undefined ? {} : { requestedPlanSlug: planSlug }),
+        ...(billingInterval === undefined ? {} : { requestedBillingInterval: billingInterval })
+    };
+}
+
 export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
     method: 'post',
     path: '/listings/{entityType}/{entityId}/start-subscription',
@@ -450,12 +640,21 @@ export const protectedStartCommerceSubscriptionRoute = createCRUDRoute({
         "Starts a MercadoPago subscription for the caller's OWN commerce listing. Requires COMMERCE_EDIT_OWN and ownership of the target listing; the listing must be complete (422 otherwise).",
     tags: ['Protected - Commerce', 'Billing'],
     requestParams: StartSubscriptionParamsSchema,
+    // HOS-1008 deliberately does NOT declare `requestBody` here; HOS-1119 and
+    // HOS-1285 keep it that way. The factory only calls `ctx.req.valid('json')` when
+    // one is declared, and this endpoint has always been called with NO body at
+    // all — by the web client and by several existing tests. Declaring a schema
+    // would make every one of those bodyless POSTs parse a body that is not
+    // there. The body is therefore read and validated by hand in
+    // `readCommerceCheckoutOptions`, which treats "absent" and "empty" as the
+    // same thing: the pre-HOS-1008 behavior.
     responseSchema: StartPaidSubscriptionResponseSchema,
     successStatusCode: 201,
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleCommerceStartSubscription(ctx, {
             entityType: params.entityType as CommerceEntityType,
-            entityId: params.entityId as string
+            entityId: params.entityId as string,
+            ...(await readCommerceCheckoutOptions(ctx))
         })
 });
 

@@ -61,7 +61,6 @@ src/
     media.ts           # Image/media URL extraction helpers
     middleware-helpers.ts  # Locale, auth, route detection helpers
     page-helpers.ts    # Shared page-level data fetching helpers
-    pricing-fallbacks.ts   # Hardcoded pricing fallback data
     pricing-plans.ts       # Pricing plan fetching + mapping logic
     routes.ts          # Route constants (protected paths, auth paths, static paths)
     sanitize-html.ts   # HTML sanitization for user content
@@ -188,9 +187,23 @@ API Response (raw)  →  transforms.ts  →  Component Props (clean)
 - Components NEVER import from `@repo/schemas` directly.. they receive pre-transformed props
 - When adding a new entity, ALWAYS add its transform function
 
-### Pricing Exception
+### Pricing pages
 
-The pricing page (`/suscriptores/planes/*`) is the **only page with hardcoded fallback data**. If the billing API fails, it renders `pricing-fallbacks.ts` instead of showing an error. This is intentional.. a pricing page must never be empty as it's critical for conversion.
+**There is no hardcoded pricing fallback any more.** `pricing-fallbacks.ts` does
+not exist anywhere under `src/` — this section used to say the pricing page was
+"the only page with hardcoded fallback data" and rendered that file when the
+billing API failed. Both halves are dead. `pricing-plans.ts` (the fetch + mapping
+layer) is still there and is the real entry point.
+
+The URLs moved too (HOS-1032): pricing now lives at
+`/{lang}/planes/<vertical>/precios/` for the five verticals — `anfitriones`,
+`turistas`, `gastronomia`, `experiencias`, `aliados`. The old
+`/{lang}/suscriptores/planes/*` pages survive only as SSR 301 redirects to the
+new locations.
+
+NOT VERIFIED: what these pages actually render when the billing API fails.
+Nobody has measured it since the fallback was removed — do not assume they
+degrade gracefully.
 
 All other pages depend entirely on the API. If the API fails, they show an error or redirect to 404.
 
@@ -287,6 +300,69 @@ export function MyComponent({ className }: Props) {
 - Use CSS custom properties for ALL values
 - Use `cn()` (from `@/lib/cn`) for conditional class joining
 
+### Dialogs — never declare `max-height` yourself (HOS-958)
+
+A dialog's height is decided in exactly one place: the `.dialog-panel` class in
+`src/styles/components.css`. Compose it onto the surface, the same way
+`.overlay-surface` is composed:
+
+```tsx
+<dialog className={`${styles.dialog} dialog-panel`}>
+```
+
+Three classes, and the markup tells you which you need:
+
+| Class | Put it on |
+|---|---|
+| `dialog-panel` | The surface holding the content. Caps the height and scrolls itself. **The default** — a dialog with one flow of content needs only this. |
+| `dialog-panel-scroll` | The region that scrolls _inside_ a panel keeping a fixed header/footer, so the header does not scroll away with the body. **Its parent must be `display: flex` or `grid`** — see below. |
+| `dialog-viewport` | A `<dialog>` that is not the panel: a full-viewport overlay wrapping a centred card, or an edge-anchored drawer. Its use is count-pinned by the guard. |
+
+For React modals prefer `shared/ui/Dialog.client.tsx`, which already composes
+all of this (plus portal, focus trap, scroll lock and back-button handling).
+Reach for a raw `<dialog>` only when you specifically want the browser's native
+focus trap — and then it must carry one of the classes above.
+
+Need a different cap for one panel? Set `--dialog-max-height` on it. Do **not**
+re-declare `max-height`: a second declaration of the same property races the
+shared class on source order (identical specificity), and five modules each
+holding their own opinion is exactly how six dialogs ended up with no cap at
+all.
+
+The same goes for the scroll region: `dialog-panel-scroll` owns the
+`overflow-y`, and a module re-declaring `overflow` on that element breaks the
+body's scrolling while the panel still obeys its cap — which reaches the user
+as the identical bug, buttons unreachable at the bottom.
+
+`pnpm check:dialog-panel` enforces both halves in CI: it fails on a `<dialog>`
+carrying none of the three markers, **and** on a CSS Module that declares
+`max-height` / `max-block-size` / `overflow` / `overflow-y` on a class applied
+to an element carrying `dialog-panel`, `dialog-viewport` or
+`dialog-panel-scroll`. Only those classes are inspected — a `max-height` on a
+popover, a drawer or a thumbnail is never looked at — and `--dialog-max-height`
+stays legal, because tuning the cap is the point and competing with it is not.
+A `className` expression it cannot resolve without guessing (a conditional, or
+more than one `styles.X`) is skipped **and counted** in the guard's success
+line, so the size of that blind spot is always on screen.
+
+**`dialog-panel-scroll` needs a flex parent.** `.dialog-panel` deliberately does
+not declare `display` — forcing `flex` on fifteen already-shipped dialogs would
+move layout — so a `<dialog>` stays `block` unless its own module says
+otherwise, and `flex: 1 1 auto` on a child of a block parent does nothing at
+all. The region silently stops scrolling, the whole panel scrolls instead, and
+the header the arrangement exists to pin goes with it. The guard resolves each
+region's real JSX parent and requires that class to be `display: flex` (or
+grid), so the dependency fails in CI instead of degrading in a browser.
+
+**Dialogs from workspace packages.** `@repo/feedback` renders a `<dialog>` on
+every page, and a shared package cannot use these classes — they live in this
+app's global stylesheet and would not exist in another host. The guard still
+covers it, with a weaker rule that needs no shared vocabulary: the dialog must
+be bounded to the viewport (a `max-height` that is not `none`, or a
+viewport-relative `height`) and the package stylesheet must declare an
+`overflow-y: auto|scroll` somewhere. A floor, not a proof — but it will not
+accept a dialog bounded by nothing.
+
 ### Adding a New Theme
 
 Adding a theme is just a new CSS block. No code changes needed:
@@ -363,8 +439,13 @@ All other routes (including `/suscriptores/*`) are public.
 experience listings under `/[lang]/mi-cuenta/comercio`. Identity/core fields
 (name, slug, type, destination, lifecycle/visibility) are read-only and
 server-stripped — owners only maintain content (description, contact, hours,
-media, amenities, price). Admins create the listing and provision the owner; the
-owner maintains it. Full reference:
+media, amenities, price). **Owners create their own listings** since HOS-166 §7.2:
+`POST /api/v1/protected/commerce/listings/{gastronomy,experience}`
+(`apps/api/src/routes/commerce/protected/create.ts`) declares NO
+`requiredPermissions` (HOS-687), creates the listing for `actor.id`, and grants
+`COMMERCE_OWNER` in the same transaction via `createForOwner`. The admin
+create/provision path still exists in parallel — it is no longer the only way in.
+Full reference:
 [docs/commerce-owner-self-service.md](docs/commerce-owner-self-service.md).
 
 ### Auth UI
@@ -1045,12 +1126,16 @@ Four things a future reader would otherwise re-derive wrongly:
 
 - **The gate is three-state, not boolean.** `PartnerService.getPublicBySlug`
   returns `found` / `gone` / `notFound`, and the route maps them to 200 / 410 /
-  404. `gone` means a gold partner that fails the visibility check (`ACTIVE` +
-  `active` subscription): it WAS published, so 410 tells crawlers to deindex it.
-  `notFound` means not gold, or no row — that URL was never served. Collapsing
-  the two renders identically in a browser and silently costs the deindex
-  signal. A gold partner downgraded to silver therefore 404s, deliberately: no
-  "was published" flag is stored, and the URL leaves the sitemap either way.
+  404. **`gone` keys off `partner.revokedAt` and nothing else** (HOS-562 —
+  `packages/service-core/src/services/partner/partner.service.ts:608`): a
+  revocation is a deliberate act, so 410 tells crawlers to deindex it. EVERY
+  other non-visible state answers 404, **including a gold partner that fails the
+  visibility check** (`ACTIVE` + `active` subscription) — i.e. one who simply
+  stopped paying. That is deliberate: "they stopped paying" is not the claim
+  "this is permanently gone", and a lapsed partner can come back. `notFound`
+  also covers not-gold and no-row. Collapsing the two renders identically in a
+  browser and silently costs the deindex signal. A gold partner downgraded to
+  silver 404s for the same reason.
 - **`noindex` is never a literal.** `evaluatePartnerIndexability`
   (`src/lib/seo/partner-indexable.ts`) is the ONE predicate, shared by the page
   and `sitemap-dynamic.xml.ts`, so the sitemap cannot advertise a URL the page
@@ -1073,6 +1158,53 @@ shape). Consequently `partner` has an entity cache tag but no collection tag; a
 partner write purges its own tag plus `home`, because the home carousel is the
 only surface that lists partners.
 
+### Publishing: one page per vertical (HOS-1156)
+
+`/{lang}/publicar/`, `/{lang}/publicar/gastronomia/` and
+`/{lang}/publicar/experiencias/` are the three pages the header's "Publicar"
+menu opens. Each one carries the funnel AND the create form — there is no
+funnel/form pair any more, and no vertical picker. Four rules a future reader
+would otherwise re-derive wrongly:
+
+- **The form slot has three states, and ONE place resolves them.**
+  `resolvePublishPageSlot` (`src/lib/publish/publish-page-slot.ts`) returns
+  `signup_cta` / `form` / `precheck_panel` plus every URL that state needs;
+  `PublishFormSlot.astro` renders it. A page passes its own create island as the
+  slot's children and branches on nothing. The two rules that live in the
+  resolver are the ones three pages must not disagree about: the precheck
+  **fails OPEN** (any error → the form, because the real cap is enforced by the
+  create endpoint's 403 and failing closed would tell somebody with quota they
+  are at their limit), and a signed-out visitor is **never redirected to login**
+  (these are reached from a PUBLIC navbar button; both pages this replaced
+  called `buildLoginRedirect` in their frontmatter).
+- **Every publish path lives exactly once**, in
+  `src/lib/publish/publish-page-paths.ts`, read by the pages, the header's
+  `PUBLISH_CTA_OPTIONS`, the footer, the five 301s and `buildCommerceStartUrl`.
+  This exists because the issue was CAUSED by a stale link: HOS-1032 repointed
+  eighteen call sites at a 301 whose target had changed meaning, and one of them
+  was the "Publicar" button. **A link to a redirect is a link whose destination
+  somebody else can move** — `test/static-guards/no-links-to-superseded-publish-urls.guard.test.ts`
+  fails CI on a new one.
+- **The pages read the session, so they can never be edge-cached.** They live
+  under the `publicar` segment, which is in `SESSION_OPTIONAL_SEGMENTS` and must
+  stay off every cacheable list; a personalised response in a shared cache would
+  serve one owner's draft names and quota to the next visitor
+  (`test/pages/publish-pages-are-not-cacheable.guard.test.ts`).
+- **`PUBLIC_REDIRECT_PATHS` is a hole in the `/mi-cuenta` login gate, and it is
+  only safe while the pages behind it hold nothing.** The two retired
+  `/mi-cuenta/comercio/nuevo/` URLs are 301s to public pages, so gating them
+  would make an old bookmark demand an account in order to learn its destination
+  no longer needs one. The danger is a page that is a redirect today and grows a
+  body later, under a path whose prefix makes every reader assume it is
+  protected — `test/lib/public-redirect-paths.guard.test.ts` is what fails then.
+
+The per-vertical cap, the six-cell decision matrix and the delete-draft action
+are shared with the API: see `LIMIT_KEY_BY_PUBLISH_VERTICAL` (`@repo/billing`),
+`GET /api/v1/protected/publish/precheck/{vertical}` and
+`DELETE /api/v1/protected/commerce/listings/{vertical}/{id}`. Accommodation keeps
+its own delete (`DELETE /protected/accommodations/{id}`), which already accepted
+its owner; `publishApi.deleteDraft` owns that branch so the island does not.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`
@@ -1085,6 +1217,35 @@ only surface that lists partners.
 - **Uniform radius**: Cards and images use `var(--radius-card)`. Do NOT use `--radius-organic*` (deprecated)
 - **Auth in islands**: Pass `Astro.locals.user` as props. Islands cannot read server locals
 - **Image optimization**: `<Image>` from `astro:assets` for local images; `<img loading="lazy">` for remote
+- **Tests here are NEVER typechecked** — see below before trusting a green suite
+
+## `test/**` is outside the typecheck (measured 2026-09-02)
+
+The `include` of `apps/web/tsconfig.json` is:
+
+```
+['.astro/types.d.ts', 'src/**/*.ts', 'src/**/*.tsx', 'src/**/*.astro', 'integrations/**/*.ts']
+```
+
+**`test/**` is not in it.** Vitest does not typecheck either. So a fixture in this
+app can carry extra fields, missing fields, or fields of the wrong type and
+**nothing sees it** — not `pnpm typecheck`, not CI, not the pre-commit hook.
+
+How it surfaced: narrowing `DirectoryReviewReply` from 7 fields to 5 (HOS-1067)
+left two fixtures still constructing `reviewId` and `moderationState`. All 25 tests
+stayed green. Pointing a temporary tsconfig at one of those files makes `tsc` emit
+`TS2322: Object literal may only specify known properties, and 'reviewId' does not
+exist in type 'DirectoryReviewReply'`.
+
+This is a whole class of false green: when you change an interface or a payload
+type consumed by `apps/web`, the typecheck confirms `src` is fine and says
+**nothing** about the tests. A stale fixture keeps running and keeps passing while
+asserting a shape the app no longer produces.
+
+**How to apply**: when narrowing or changing a type consumed here, grep its fixtures
+by hand for the fields you removed instead of trusting the typecheck. This does not
+apply the same way in `apps/api`, whose tsconfig does reach its tests — compare
+before assuming.
 
 ## Accepted production-build warnings (`pnpm build`)
 
@@ -1125,7 +1286,6 @@ Files in `src/lib/` come from the previous web app iteration with varying levels
 - `logger.ts` - Same prefix `[HOSPEDA-WEB]`
 - `i18n.ts` - Verify namespace imports match `@repo/i18n`
 - `colors.ts` - Expanded from `category-colors.ts` to include accommodation types, post categories, event categories, tags
-- `pricing-fallbacks.ts` - Updated plan data
 - `pricing-plans.ts` - Adjusted field mapping if billing API structure changes
 - `auth-client.ts` - Unified error types to use `ApiResult<T>` instead of custom `AuthApiResult`
 

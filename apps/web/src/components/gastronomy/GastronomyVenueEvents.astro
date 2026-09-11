@@ -1,0 +1,211 @@
+---
+/**
+ * @file GastronomyVenueEvents.astro
+ * @description Renders a gastronomy listing's OWN agenda on the public detail
+ * page (HOS-1042) — live music night, happy hour, dinner show, the Tuesday
+ * deal. Things that happen AT the venue, on a schedule the venue sets.
+ *
+ * ## Not the same thing as `GastronomyEventsCta`
+ *
+ * `GastronomyEventsCta.astro` (HOS-1055) means the OPPOSITE: "we host YOUR
+ * birthday/wedding/corporate event", a toggle plus a contact button, no
+ * schedule at all. This component is the venue's OWN recurring or one-off
+ * agenda — a diner reads it to know WHEN to show up, not to ask the venue to
+ * host something. The section title ("Agenda del local") and the absence of
+ * any contact CTA here are what keep the two from reading as duplicates on
+ * the rendered page.
+ *
+ * ## Purely presentational, trusts pre-filtered props
+ *
+ * Same stance `GastronomyMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
+ * by the API (`gastronomy/public/events-projection.ts`) — withheld entirely
+ * when the owner's CURRENT plan does not grant `manage_gastronomy_events`, and
+ * with `isActive: false` entries already dropped. This component has no gate
+ * of its own to apply and does not re-derive either filter.
+ *
+ * ## Recurrence rendering
+ *
+ * Two shapes only (mirrors `GastronomyEventRecurrenceSchema`):
+ *  - `weekly` — "Todos los jueves, 18:00 a 20:00" (weekday name from the
+ *    shared `gastronomy.detail.openingHours.<day>` keys, NOT a duplicated set
+ *    — `OpeningHoursSection` already owns those translations).
+ *  - `once` — the formatted calendar day, e.g. "12 de septiembre, 18:00 a
+ *    20:00".
+ *
+ * `date` is a plain `YYYY-MM-DD` string and is parsed by hand
+ * (`new Date(year, month - 1, day)`) rather than passed to `new Date(string)`.
+ * Feeding the raw string to the `Date` constructor parses it as UTC midnight,
+ * which renders as the PREVIOUS calendar day in any negative-offset timezone —
+ * a repo incident this file is written to not repeat.
+ */
+
+import type { GastronomyVenueEvent } from '@/data/types';
+import { formatDate } from '@/lib/format-utils';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly venueEvents?: readonly GastronomyVenueEvent[];
+    readonly locale: SupportedLocale;
+}
+
+const { venueEvents = [], locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (venueEvents.length === 0) {
+    // Nothing to render — either the venue has no agenda, or the API already
+    // withheld it for a plan that does not carry `manage_gastronomy_events`.
+    return;
+}
+
+/** `Date#getDay()` order: `0` = Sunday … `6` = Saturday, matching the schema. */
+const WEEKDAY_I18N_KEYS = [
+    'sunday',
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday'
+] as const;
+
+/**
+ * Builds the "when" phrase for one agenda entry: the localized weekday name
+ * for a `weekly` entry, or the formatted calendar day for a `once` one.
+ *
+ * @param event - The agenda entry.
+ * @returns A human-readable "when" fragment, in the active locale.
+ */
+function resolveWhen(event: GastronomyVenueEvent): string {
+    if (event.recurrence === 'weekly' && event.weekday !== null) {
+        const dayKey = WEEKDAY_I18N_KEYS[event.weekday] ?? 'monday';
+        const weekdayLabel = t(`gastronomy.detail.openingHours.${dayKey}`, dayKey);
+        return t('gastronomy.detail.venueEvents.weekly', 'Todos los {{weekday}}', {
+            weekday: weekdayLabel
+        });
+    }
+
+    if (event.date) {
+        const [yearStr, monthStr, dayStr] = event.date.split('-');
+        const year = Number(yearStr);
+        const month = Number(monthStr);
+        const day = Number(dayStr);
+        // Explicit y/m/d constructor — never `new Date(event.date)`, which
+        // parses as UTC midnight and can render as the previous calendar day.
+        const localDate = new Date(year, month - 1, day);
+        return formatDate({ date: localDate, locale, options: { day: 'numeric', month: 'long' } });
+    }
+
+    return '';
+}
+
+/**
+ * Builds the full schedule line for one entry: the "when" phrase plus the
+ * time range, or "desde las HH:MM" when the venue did not set an end time.
+ *
+ * @param event - The agenda entry.
+ * @returns The full "cuándo" line rendered under the entry title.
+ */
+function resolveSchedule(event: GastronomyVenueEvent): string {
+    const when = resolveWhen(event);
+    if (event.endTime) {
+        return t('gastronomy.detail.venueEvents.range', '{{when}}, {{start}} a {{end}}', {
+            when,
+            start: event.startTime,
+            end: event.endTime
+        });
+    }
+    return t('gastronomy.detail.venueEvents.fromOnly', '{{when}}, desde las {{start}}', {
+        when,
+        start: event.startTime
+    });
+}
+
+const title = t('gastronomy.detail.venueEvents.title', 'Agenda del local');
+const entries = venueEvents.map((event) => ({
+    event,
+    schedule: resolveSchedule(event)
+}));
+---
+
+<section class="gastro-venue-events" id="gastro-venue-events">
+    <h2 class="gastro-venue-events__title">{title}</h2>
+
+    <ul class="gastro-venue-events__list">
+        {entries.map(({ event, schedule }) => (
+            <li class="gastro-venue-events__item">
+                <div class="gastro-venue-events__item-main">
+                    <span class="gastro-venue-events__item-title">{event.title}</span>
+                    <span class="gastro-venue-events__item-schedule">{schedule}</span>
+                </div>
+                {event.description && (
+                    <p class="gastro-venue-events__item-description">{event.description}</p>
+                )}
+            </li>
+        ))}
+    </ul>
+</section>
+
+<style>
+    .gastro-venue-events {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .gastro-venue-events__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-venue-events__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .gastro-venue-events__item {
+        border-bottom: 1px dashed var(--border);
+        padding-bottom: var(--space-3, 12px);
+    }
+
+    .gastro-venue-events__item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .gastro-venue-events__item-main {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--space-3, 12px);
+        font-family: var(--font-sans);
+    }
+
+    .gastro-venue-events__item-title {
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .gastro-venue-events__item-schedule {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--brand-primary);
+        white-space: nowrap;
+    }
+
+    .gastro-venue-events__item-description {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+        margin: 4px 0 0;
+    }
+</style>

@@ -31,13 +31,29 @@
         "step": "Passo {{current}} de {{total}}",
         "restart": "Ver tour",
         "running": "Tour em andamento...",
+        "greetingTourist": {
+            "title": "Bem-vindo à Hospeda",
+            "body": "Este é o painel da sua conta. Aqui você encontra rapidamente seus favoritos, alertas de preço e consultas com anfitriões."
+        },
+        "favorites": {
+            "title": "Seus favoritos",
+            "body": "Salve as acomodações que você gosta para encontrá-las facilmente depois."
+        },
+        "alerts": {
+            "title": "Alertas de preço",
+            "body": "Ative alertas para saber quando o preço de uma acomodação que te interessa baixar."
+        },
+        "reviews": {
+            "title": "Suas avaliações",
+            "body": "Revise as avaliações que você deixou sobre suas estadias."
+        },
+        "inbox": {
+            "title": "Suas consultas",
+            "body": "Acompanhe as conversas que você tem com os anfitriões."
+        },
         "greetingHost": {
             "title": "Bem-vindo ao seu painel de hospedagem",
             "body": "Daqui você pode gerenciar sua conta, seus imóveis e a atividade da sua acomodação."
-        },
-        "greetingCommerce": {
-            "title": "Bem-vindo ao seu painel comercial",
-            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu negócio."
         },
         "properties": {
             "title": "Seus imóveis",
@@ -62,6 +78,48 @@
         "commerce": {
             "title": "Seu negócio",
             "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
+        },
+        "greetingGastronomy": {
+            "title": "Bem-vindo ao seu painel de gastronomia",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento gastronômico."
+        },
+        "commerceGastronomy": {
+            "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento gastronômico."
+        },
+        "commerceListings": {
+            "title": "Seus negócios",
+            "body": "Revise o status de cada um dos seus negócios e edite-os."
+        },
+        "gastronomyQr": {
+            "title": "QR do seu cardápio",
+            "body": "Gere o código QR do seu cardápio e veja quantas vezes seus clientes o escanearam."
+        },
+        "commerceViews": {
+            "title": "Visitas à sua ficha",
+            "body": "Acompanhe quantas pessoas visualizaram a ficha pública do seu negócio."
+        },
+        "greetingExperience": {
+            "title": "Bem-vindo ao seu painel de experiências",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público da sua experiência."
+        },
+        "commerceExperience": {
+            "body": "Edite a descrição, os horários e os dados visíveis da sua experiência."
+        },
+        "greetingEditor": {
+            "title": "Bem-vindo ao seu painel de editor",
+            "body": "Daqui você pode publicar e gerenciar suas publicações e eventos na Hospeda."
+        },
+        "myPosts": {
+            "title": "Suas publicações",
+            "body": "Crie, edite e revise o status das suas publicações."
+        },
+        "myEvents": {
+            "title": "Seus eventos",
+            "body": "Crie, edite e revise o status dos seus eventos."
+        },
+        "greetingSponsor": {
+            "title": "Bem-vindo à Hospeda",
+            "body": "Você é parceiro patrocinador da Hospeda. Sua equipe de contato na Hospeda gerencia seus patrocínios; escreva para nós se precisar alterar algo."
         }
     },
     "navigation": "Navegação da conta",
@@ -108,8 +166,8 @@
                 },
                 "gastronomy": {
                     "title": "Gastronomia",
-                    "description": "Some seu restaurante, bar ou café ao Hospeda. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
-                    "cta": "Publique seu restaurante"
+                    "description": "Some seu local gastronômico ao Hospeda: restaurante, churrascaria, padaria, café ou food truck. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "cta": "Publique seu local gastronômico"
                 },
                 "experience": {
                     "title": "Experiências",
@@ -155,16 +213,18 @@
         }
     },
     "avatar": {
-        "hint": "Apenas JPEG, PNG e WebP · Máx. {{maxSize}} MB",
+        "hint": "Apenas JPEG, PNG, WebP e HEIC · Máx. {{maxSize}} MB",
         "actions": {
             "change": "Alterar avatar",
-            "uploading": "Enviando..."
+            "uploading": "Enviando...",
+            "processing": "Otimizando…"
         },
         "alt": "Avatar",
         "success": "Avatar atualizado com sucesso",
         "errors": {
-            "invalidType": "Apenas JPEG, PNG e WebP são aceitos",
+            "invalidType": "Apenas JPEG, PNG, WebP e HEIC são aceitos",
             "fileTooLarge": "Arquivo muito grande (máx. {{maxSize}} MB)",
+            "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}} MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
             "uploadFailed": "Erro ao enviar a imagem",
             "updateFailed": "Erro ao atualizar o perfil",
             "unexpectedResponse": "Resposta inesperada do servidor"
@@ -449,6 +509,8 @@
             "removing": "Removendo...",
             "removeError": "Erro ao remover favorito da coleção",
             "removeConfirm": "Remover este favorito da coleção? Continuará salvo nos seus favoritos.",
+            "removeConfirmTitle": "Remover da coleção",
+            "removeConfirmButton": "Remover",
             "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
             "errorTitle": "Não conseguimos carregar a coleção",
             "backToList": "Voltar para meus favoritos",
@@ -467,6 +529,9 @@
             "deleting": "Excluindo…",
             "deleteSuccess": "Coleção excluída com sucesso",
             "deleteError": "Não foi possível excluir a coleção. Tente novamente.",
+            "createSuccess": "Coleção \"{{name}}\" criada",
+            "deleteDialogTitle": "Excluir coleção",
+            "deleteConfirmButton": "Excluir coleção",
             "fields": {
                 "colorNone": "Sin color",
                 "iconNone": "Sin ícono",
@@ -479,7 +544,12 @@
             },
             "assignFailed": "No se pudo asignar a la colección",
             "assignPrompt": "Asignar a una colección",
-            "assignSuccess": "Movido a {{name}}"
+            "assignSuccess": "Movido a {{name}}",
+            "upgrade": {
+                "title": "Coleções",
+                "message": "As coleções estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+                "cta": "Ver planos"
+            }
         },
         "filter": {
             "all": "Todos",
@@ -611,10 +681,14 @@
                 "trialStatus": "Período de avaliação",
                 "freeStatus": "Plano Gratuito",
                 "compStatus": "Bonificado",
+                "multipleSubscriptions_one": "{{count}} assinatura ativa",
+                "multipleSubscriptions_other": "{{count}} assinaturas ativas",
                 "properties": "Meus imóveis",
                 "propertiesDesc": "Acomodações publicadas",
                 "messages": "Mensagens não lidas",
-                "messagesDesc": "Consultas de hóspedes"
+                "messagesDesc": "Consultas de hóspedes",
+                "listings": "Minhas fichas",
+                "listingsDesc": "Fichas publicadas"
             },
             "sectionsLabel": "Secciones"
         },
@@ -689,6 +763,21 @@
             "uncancelButton": "Descartar cancelamento",
             "uncancelSuccess": "Cancelamento descartado. Sua assinatura continua ativa.",
             "uncancelError": "Não foi possível descartar o cancelamento.",
+            "replacePaymentMethodButton": "Atualizar método de pagamento",
+            "replacePaymentMethodError": "Não conseguimos iniciar a atualização do seu método de pagamento. Tente novamente; se continuar falhando, escreva ao suporte.",
+            "replacePaymentMethodContactSupport": "Escrever ao suporte",
+            "replacePaymentMethodEmailSubject": "Não consigo atualizar meu método de pagamento",
+            "trialExtension": {
+                "title": "Estender seu período de teste grátis",
+                "help": "Se você tem um código promocional, aplique agora e some dias ao seu teste.",
+                "label": "Código promocional",
+                "placeholder": "Digite seu código",
+                "apply": "Aplicar",
+                "applying": "Aplicando...",
+                "success": "Pronto. Estendemos seu período de teste grátis.",
+                "successWithDate": "Pronto. Seu período de teste grátis termina em {{date}}.",
+                "errorGeneric": "Não foi possível aplicar o código. Verifique e tente de novo."
+            },
             "status": {
                 "active": "Ativa",
                 "trial": "Teste",
@@ -697,7 +786,8 @@
                 "expired": "Expirada",
                 "past_due": "Vencida",
                 "pending": "Pendente",
-                "paused": "Pausada"
+                "paused": "Pausada",
+                "courtesy": "De presente"
             },
             "cancelScheduled": {
                 "title": "Assinatura cancelada",
@@ -712,7 +802,7 @@
             "cancelModal": {
                 "title": "Cancelar assinatura",
                 "emailSubject": "Cancelamento de assinatura",
-                "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
+                "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com.ar e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
                 "contactSupport": "Contatar suporte",
                 "confirm": "Sim, cancelar assinatura",
                 "description": "Ao cancelar sua assinatura você mantém o acesso ao seu plano até o final do período atual. Nenhuma cobrança adicional será feita.",
@@ -773,16 +863,20 @@
                 "activeBody": "Seu plano foi alterado com sucesso.",
                 "redirecting": "Redirecionando para pagamento...",
                 "previewError": "Não foi possível obter a prévia da mudança. Tente novamente.",
-                "changeError": "Não foi possível mudar o plano. Tente novamente."
+                "changeError": "Não foi possível mudar o plano. Tente novamente.",
+                "goToPlans": "Ver planos e assinar"
             },
             "titleGastronomy": "Assinatura de gastronomia",
             "titleExperience": "Assinatura de experiências",
+            "titleTourist": "Assinatura de turista",
             "domainSwitcher": {
                 "label": "Escolha qual assinatura ver",
                 "accommodation": "Hospedagem",
                 "gastronomy": "Gastronomia",
-                "experience": "Experiências"
-            }
+                "experience": "Experiências",
+                "tourist": "Turista"
+            },
+            "courtesyUntilLabel": "Sem cobrança até"
         },
         "whatsNew": {
             "title": "Novidades",
@@ -807,6 +901,25 @@
         "addons": {
             "title": "Complementos",
             "description": "Amplie as funções da sua conta com complementos adicionais no Hospeda"
+        },
+        "redeem": {
+            "title": "Resgatar um código",
+            "description": "Digite um código promocional e aplique-o na hora à sua conta.",
+            "help": "Escreva o código exatamente como o enviamos e aplicamos na hora.",
+            "dashboardLink": "Tem um código promocional?",
+            "backToSubscription": "Voltar para minha assinatura",
+            "plansCta": "Ver planos",
+            "errorNotFound": "Não encontramos esse código. Confira se está escrito corretamente.",
+            "errorInactive": "Este código não está mais ativo.",
+            "errorExpired": "Este código já venceu.",
+            "errorMaxUses": "Este código atingiu o limite de usos.",
+            "errorMaxUsesPerUser": "Você já usou este código o número máximo de vezes.",
+            "errorPlanRestriction": "Este código não é válido para o seu plano.",
+            "errorNewUsersOnly": "Este código é apenas para clientes novos.",
+            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código.",
+            "discountNotice": "Este é um código de desconto. Não o usamos — você poderá aplicá-lo ao contratar um plano.",
+            "compNotice": "Este código não pode ser resgatado. Fale com a gente se prometeram uma assinatura de cortesia a você.",
+            "successDiscount": "Pronto. Aplicamos o desconto à sua assinatura."
         }
     },
     "newsletter": {
@@ -860,10 +973,12 @@
             "errors": {
                 "fileTooLarge": "La imagen no puede superar los {{maxSize}} MB.",
                 "invalidType": "El archivo debe ser una imagen JPG, PNG o WebP.",
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}} MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
                 "unexpectedResponse": "Respuesta inesperada del servidor.",
                 "uploadFailed": "No pudimos subir la imagen. Probá de nuevo."
             },
-            "uploading": "Subiendo..."
+            "uploading": "Subiendo...",
+            "processing": "Otimizando…"
         },
         "fields": {
             "firstName": "Nome",
@@ -883,6 +998,11 @@
             "localeEs": "Español",
             "localeEn": "English",
             "localePt": "Português",
+            "theme": "Tema preferido",
+            "themeSystem": "Sistema",
+            "themeLight": "Claro",
+            "themeDark": "Escuro",
+            "themeHint": "Opcional. Aplicado ao salvar o perfil.",
             "newsletter": "Quero receber novidades e promoções por email",
             "terms": "Aceito os",
             "termsLink": "termos e condições",
@@ -1110,6 +1230,7 @@
             }
         },
         "featuredOffer": {
+            "notFeaturedNotice": "Sua hospedagem não está em destaque. Com este complemento ela fica em destaque automaticamente, sem nenhum passo extra.",
             "title": "Destaque esta hospedagem",
             "body": "Um impulso de visibilidade faz esta hospedagem aparecer em destaque nas listagens e nos resultados de busca enquanto durar o complemento.",
             "scope": "Atenção: o impulso vale somente para esta ficha. Se você tem mais de uma hospedagem, cada uma precisa do seu próprio complemento.",
@@ -1119,6 +1240,7 @@
             "one_time": "Pagamento único",
             "recurring": "Mensal"
         },
+        "recurringNotice": "É uma assinatura: renova sozinha e é cobrada todos os meses enquanto estiver ativa.",
         "duration_one": "{{count}} dia",
         "duration_other": "{{count}} dias",
         "priceLabel": "Preço",
@@ -1126,10 +1248,22 @@
         "buyingButton": "Processando...",
         "owned": "Ativo",
         "accommodationSelect": {
-            "label": "Hospedagem",
-            "placeholder": "Escolha uma hospedagem",
+            "label": {
+                "accommodation": "Hospedagem",
+                "gastronomy": "Restaurante",
+                "experience": "Experiência"
+            },
+            "placeholder": {
+                "accommodation": "Escolha uma hospedagem",
+                "gastronomy": "Escolha um restaurante",
+                "experience": "Escolha uma experiência"
+            },
             "required": "Escolha uma hospedagem para continuar",
-            "empty": "Você precisa de uma hospedagem primeiro"
+            "empty": {
+                "accommodation": "Você precisa de uma hospedagem primeiro",
+                "gastronomy": "Você precisa de um restaurante publicado primeiro",
+                "experience": "Você precisa de uma experiência publicada primeiro"
+            }
         },
         "gate": {
             "title": "Você precisa de uma assinatura ativa",
@@ -1152,6 +1286,22 @@
             "visibility-boost-30d": {
                 "name": "Impulso de visibilidade (30 dias)",
                 "description": "Sua hospedagem aparece em destaque nos resultados de busca por 30 dias."
+            },
+            "visibility-boost-gastronomy-7d": {
+                "name": "Impulso de visibilidade — Restaurante (7 dias)",
+                "description": "Seu restaurante aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-gastronomy-30d": {
+                "name": "Impulso de visibilidade — Restaurante (30 dias)",
+                "description": "Seu restaurante aparece em destaque nos resultados de busca por 30 dias."
+            },
+            "visibility-boost-experience-7d": {
+                "name": "Impulso de visibilidade — Experiência (7 dias)",
+                "description": "Sua experiência aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-experience-30d": {
+                "name": "Impulso de visibilidade — Experiência (30 dias)",
+                "description": "Sua experiência aparece em destaque nos resultados de busca por 30 dias."
             },
             "extra-photos-20": {
                 "name": "Pacote de fotos extra (+20 fotos)",
@@ -1176,6 +1326,18 @@
             "extra-experiences-1": {
                 "name": "Experiência extra (+1)",
                 "description": "Adiciona 1 experiência adicional ao seu plano. Renova mensalmente."
+            },
+            "private-galleries-5": {
+                "name": "Pacote de galerias privadas (+5)",
+                "description": "Adiciona 5 galerias privadas ativas para suas experiências, e habilita as galerias privadas nos planos que não as incluem. Renova mensalmente."
+            },
+            "private-galleries-10": {
+                "name": "Pacote de galerias privadas (+10)",
+                "description": "Adiciona 10 galerias privadas ativas para suas experiências, e habilita as galerias privadas nos planos que não as incluem. Renova mensalmente."
+            },
+            "private-galleries-20": {
+                "name": "Pacote de galerias privadas (+20)",
+                "description": "Adiciona 20 galerias privadas ativas para suas experiências, e habilita as galerias privadas nos planos que não as incluem. Renova mensalmente."
             }
         }
     },
@@ -1299,7 +1461,8 @@
                 "uploadTimeout": "O envio demorou demais. Tente novamente.",
                 "persistFailed": "Não foi possível salvar a imagem no banco de dados",
                 "featuredFailed": "Não foi possível definir a imagem como principal",
-                "removeFailed": "Não foi possível remover a imagem"
+                "removeFailed": "Não foi possível remover a imagem",
+                "metadataSaveFailed": "Não foi possível salvar os dados da foto"
             }
         },
         "events": {
@@ -1484,8 +1647,7 @@
             "empty": "Sua candidatura foi aprovada. Preencha seu logo e seus textos para que um admin os revise. Você ainda não está publicado.",
             "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
             "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
-            "approved": "Seu conteúdo está aprovado. Já pode ativar sua assinatura para aparecer publicado.",
-            "approvedCta": "Ir para o pagamento",
+            "approved": "Seu conteúdo está aprovado. Nossa equipe vai te enviar o link de pagamento para ativar sua assinatura.",
             "revoked": "Sua ficha de parceiro foi dada de baixa e não aparece mais no site.",
             "revokedContact": "Se quiser mais informação, fale com a gente e explicamos os detalhes."
         },
@@ -1528,6 +1690,24 @@
                 "youtube": "YouTube"
             }
         }
+    },
+    "partnerStats": {
+        "title": "Seus números",
+        "subtitle": "O que aconteceu com a sua ficha dentro da Hospeda.",
+        "views": {
+            "label": "Visitas à sua página",
+            "help": "Pessoas que entraram na sua página de parceiro.",
+            "notApplicable": "O seu logo leva direto ao seu site, então não há visitas a uma página no Hospeda para contar. Se o seu plano passar a incluir uma, as visitas aparecem aqui."
+        },
+        "clicks": {
+            "label": "Cliques no seu logo",
+            "help": "Vezes que alguém entrou pelo seu logo na página inicial."
+        },
+        "windows": {
+            "last30": "nos últimos 30 dias",
+            "last7": "nos últimos 7 dias"
+        },
+        "scopeNote": "Todas as estatísticas que mostramos são do que acontece dentro da Hospeda — as nossas páginas e a nossa newsletter. Do que publicamos fora damos registro, não medição."
     },
     "partnerMentions": {
         "title": "Registro de menções",

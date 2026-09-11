@@ -12,11 +12,14 @@
  * Coverage:
  * - Authentication: unauthenticated requests return 401/403
  * - Happy path: calls `AccommodationService.publish(actor, id)` with the
- *   correct actor and accommodation id (the decisive regression guard). Note
- *   that publishing does NOT start a trial: since card-first (HOS-171) the
- *   trial is created at checkout, and `first_publish` is rejected here
+ *   correct actor and accommodation id (the decisive regression guard). Since
+ *   HOS-1012 publishing DOES start the free trial when the owner still has one
+ *   in this vertical — a local row, no MercadoPago object — but that happens
+ *   inside `AccommodationService.publish()`, which this file mocks wholesale;
+ *   the trial itself is covered in `accommodation-publish-deps-trial.test.ts`
+ *   and `publish.trial-atomicity.test.ts`
  * - Error: `subscription_required` (403 FORBIDDEN) is passed through
- *   unmodified — the one-per-life-trial-consumed case (W3)
+ *   unmodified — the trial-already-consumed-in-this-vertical case
  * - Error: accommodation not found returns 4xx
  * - Route registration: path does not return 404
  *

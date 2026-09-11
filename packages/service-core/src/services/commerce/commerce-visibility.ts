@@ -4,13 +4,14 @@
  * Visibility reconciler for commerce listing entities (SPEC-239 T-032,
  * predicate widened HOS-166 §6.5).
  *
- * `reconcileCommerceListingVisibility` reads the `commerce_listing_subscriptions`
+ * `reconcileCommerceListingVisibility` reads the `entity_subscriptions`
  * link table to find the associated entity, then flips its `visibility` and
  * `lifecycleState` based on the subscription status **and** (HOS-166 G-3) the
  * listing's publish-readiness ("complete") and moderation state:
  *
  * ```
- * shouldBePublic = subscriptionActive AND listingComplete AND NOT moderationRejected
+ * shouldBePublic = subscriptionActive AND NOT planRestricted
+ *                  AND listingComplete AND NOT moderationRejected
  * ```
  *
  * This is the LAST line of defense against a paid-but-empty listing reaching
@@ -23,12 +24,16 @@
  * here.  This function is generic over `entityType` so both gastronomy and
  * experience entities are reconciled with the same code.
  *
+ * After its write the reconciler also schedules the edge-cache purge
+ * (`scheduleCommerceListingRevalidation`, HOS-1337), in BOTH directions of the
+ * transition — see the block after the `model.update` call.
+ *
  * @module commerce-visibility
  */
 
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { and, commerceListingSubscriptions, eq, getDb, inArray } from '@repo/db';
+import { and, entitySubscriptions, eq, getDb, inArray } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { createLogger } from '@repo/logger';
 import {
@@ -38,6 +43,13 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import { ServiceError } from '../../types';
+import type { RevalidatableCommerceListing } from './commerce-revalidation.js';
+import {
+    isCommerceListingPubliclyVisible,
+    resolveCommerceDestinationSlug,
+    scheduleCommerceListingRevalidation,
+    standaloneCommerceRevalidationLogger
+} from './commerce-revalidation.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,19 +61,45 @@ import { ServiceError } from '../../types';
 export interface ReconcileCommerceListingVisibilityInput {
     /**
      * Commerce entity discriminator.
-     * Current values: `'gastronomy'`.  Extended without a schema change.
+     * Current values: `'gastronomy'` and `'experience'`.  Extended without a
+     * schema change.
+     *
+     * The edge-cache purge scheduled after a write (HOS-1337) only fires for
+     * these two values — they are the verticals with cached public pages
+     * (see `CommerceRevalidationEntityType` in
+     * `commerce-revalidation.ts`).  A value outside the pair is reconciled
+     * but never purged, matching the cache-tag mapper, which emits no tags
+     * for an unknown commerce type.
      */
     readonly entityType: string;
     /** UUID of the commerce entity row (gastronomies.id, etc.). */
     readonly entityId: string;
     /**
-     * Current subscription status from `commerce_listing_subscriptions.status`
+     * Current subscription status from `entity_subscriptions.status`
      * (mirroring `billing_subscriptions.status`).
      *
      * An entitlement-granting status (see `isEntitlementGrantingStatus`) →
      * visible + ACTIVE lifecycle. All other values → hidden + PRIVATE lifecycle.
      */
     readonly subscriptionStatus: string;
+    /**
+     * `entity_subscriptions.plan_restricted` for THIS listing (HOS-1122).
+     *
+     * `true` means the owner's subscription is healthy but its tier's listing
+     * cap no longer covers this particular listing — a commerce downgrade
+     * applied and this one fell outside the keep set. It must stay PRIVATE for
+     * exactly as long as the flag stands, which is why the reconciler has to
+     * read it: without it, the next lifecycle event (a renewal webhook, a
+     * dunning recovery, a manual reconcile) would find `subscriptionStatus:
+     * 'active'` and publish the listing straight back.
+     *
+     * Optional, defaulting to `false`, so callers that never restrict — the
+     * accommodation half, and every existing test — are unchanged. That default
+     * is the permissive one, so it is deliberately NOT where the guarantee
+     * lives: the guarantee is that `reconcileCommerceListingForSubscription`
+     * selects the column, and a static guard fails if it stops.
+     */
+    readonly planRestricted?: boolean;
     /** Optional Drizzle transaction client to enlist this write. */
     readonly tx?: DrizzleClient;
 }
@@ -92,6 +130,12 @@ export interface ReconcileCommerceListingVisibilityResult {
  * widening this narrow read-only field costs every implementer nothing.
  * Contrast with completeness (see {@link ResolveCommerceListingCompleteness}),
  * which is business logic and stays a SEPARATE injected resolver on purpose.
+ *
+ * `slug` and `destinationId` are included for the same reason (HOS-1337):
+ * plain data on the same row, needed by the edge-cache purge the reconciler
+ * schedules after its write (`scheduleCommerceListingRevalidation` builds its
+ * purge payload from them).  Both columns exist on every commerce entity table
+ * (`gastronomies.slug` is `NOT NULL UNIQUE`, `destinationId` is nullable).
  */
 export interface CommerceEntityModel {
     findById: (
@@ -99,6 +143,8 @@ export interface CommerceEntityModel {
         tx?: DrizzleClient
     ) => Promise<{
         id: string;
+        slug: string;
+        destinationId?: string | null;
         visibility: string;
         lifecycleState: string;
         moderationState?: string | null;
@@ -137,9 +183,10 @@ const logger: ILogger = createLogger('commerce-visibility');
  * Reconciles a commerce listing's `visibility` and `lifecycleState` against the
  * current billing subscription status, publish-readiness, and moderation state.
  *
- * **Predicate (HOS-166 G-3, §6.5):**
+ * **Predicate (HOS-166 G-3, §6.5; `planRestricted` term added by HOS-1122):**
  * ```
- * shouldBePublic = subscriptionActive AND listingComplete AND NOT moderationRejected
+ * shouldBePublic = subscriptionActive AND NOT planRestricted
+ *                  AND listingComplete AND NOT moderationRejected
  * ```
  *
  * **Transition table:**
@@ -157,7 +204,9 @@ const logger: ILogger = createLogger('commerce-visibility');
  *    from the extra query).
  * 3. Computes the desired `visibility` and `lifecycleState` from the predicate.
  * 4. Writes only when the current state differs (idempotent).
- * 5. Returns a typed result describing what happened.
+ * 5. Schedules an edge-cache purge for the listing's public surfaces when the
+ *    write crossed the public boundary in either direction (HOS-1337).
+ * 6. Returns a typed result describing what happened.
  *
  * **Incomplete + paid stays PRIVATE and logs loudly** (AC-6): a paid
  * subscription on an incomplete listing is a money-taken-nothing-delivered
@@ -192,7 +241,7 @@ export async function reconcileCommerceListingVisibility(
     model: CommerceEntityModel,
     resolveCompleteness: ResolveCommerceListingCompleteness
 ): Promise<ReconcileCommerceListingVisibilityResult> {
-    const { entityType, entityId, subscriptionStatus, tx } = input;
+    const { entityType, entityId, subscriptionStatus, planRestricted = false, tx } = input;
 
     // HOS-702: the canonical entitlement-granting set, not a local
     // `new Set(['active', 'trialing'])`. That hand-rolled set excluded `comp`,
@@ -211,18 +260,29 @@ export async function reconcileCommerceListingVisibility(
 
     const moderationRejected = entity.moderationState === ModerationStatusEnum.REJECTED;
 
-    // Only resolve completeness when the subscription is active — when it is
-    // not, the desired state is PRIVATE regardless of completeness, so the
-    // extra query buys nothing.
+    // "Is this listing covered by what its owner is paying for?" — ONE
+    // expression, used both to skip the completeness read and to decide the
+    // outcome (HOS-1122).
+    //
+    // Spelling the same condition out twice would make the second copy dead:
+    // skipping the read leaves `complete` false, so a `shouldBePublic` that
+    // repeated `!planRestricted` could have that term deleted with every test
+    // still green. Naming it once means there is exactly one place a mutation
+    // can land, and it lands on both effects.
+    const planCoversListing = subscriptionActive && !planRestricted;
+
+    // The read is skipped when the listing is not covered because the desired
+    // state is PRIVATE whatever the answer would be — an optimisation, not the
+    // guard.
     let complete = false;
     let missing: readonly string[] = [];
-    if (subscriptionActive) {
+    if (planCoversListing) {
         const completeness = await resolveCompleteness(entityId, tx);
         complete = completeness.complete;
         missing = completeness.missing;
     }
 
-    const shouldBePublic = subscriptionActive && complete && !moderationRejected;
+    const shouldBePublic = planCoversListing && complete && !moderationRejected;
     const desiredVisibility: VisibilityEnum = shouldBePublic
         ? VisibilityEnum.PUBLIC
         : VisibilityEnum.PRIVATE;
@@ -233,7 +293,13 @@ export async function reconcileCommerceListingVisibility(
     // HOS-166 AC-6: a paid-but-incomplete listing is money-taken-nothing-
     // delivered — log loudly (not silently) every time the reconciler observes
     // this state, whether or not a write happens.
-    if (subscriptionActive && !complete) {
+    //
+    // Keyed on `planCoversListing`, not on `subscriptionActive`: a restricted
+    // listing skips the completeness read above, so `complete` is `false` for it
+    // by construction. Alarming on that would report every plan-restricted
+    // listing as paid-but-incomplete on every reconcile — a loud, permanent and
+    // entirely false alarm about the one state the flag exists to describe.
+    if (planCoversListing && !complete) {
         logger.warn(
             { entityType, entityId, subscriptionStatus, missing },
             'Commerce listing has an active subscription but is not complete — staying PRIVATE'
@@ -272,6 +338,56 @@ export async function reconcileCommerceListingVisibility(
         'Commerce listing visibility reconciled'
     );
 
+    // HOS-1337: purge the edge cache for the listing that just flipped.
+    //
+    // The write above is invisible to the public site until the `catalog`
+    // cache class expires (`s-maxage 3600` on /{lang}/gastronomia and
+    // /{lang}/experiencias), so a paid owner stares at a listing the index
+    // refuses to show for up to an hour.  Create, update and media already
+    // schedule this purge after their writes — the billing lifecycle is the
+    // fourth writer of `visibility` and must not be the only one that leaves
+    // the cache stale.
+    //
+    // The purge decision lives HERE, not inside the primitive, because this
+    // reconciler owns BOTH directions of the transition and they need
+    // different rows (the same rule the accommodation service applies, where
+    // `_afterUpdate` "also revalidates when it WAS public before"):
+    //
+    // - publish: pass the post-write PUBLIC row — the state the primitive's
+    //   public-visibility guard requires, and the one the index is about to
+    //   serve.
+    // - unpublish: pass the PRE-write row.  The post-write row is PRIVATE and
+    //   the guard would skip it, but the cached PUBLIC detail page and index
+    //   entry are exactly what must be evicted — a listing that stopped being
+    //   paid and stays on the public index is worse than the inverse.
+    //
+    // A listing with no public footprint on either side of the write is not
+    // purged: nothing cached ever showed it (the HOS-203 spurious-404 case).
+    const hadPublicFootprint = isCommerceListingPubliclyVisible(entity);
+    const purgeEntity: RevalidatableCommerceListing | undefined = shouldBePublic
+        ? {
+              id: entityId,
+              slug: entity.slug,
+              destinationId: entity.destinationId,
+              visibility: desiredVisibility,
+              lifecycleState: desiredLifecycleState
+          }
+        : hadPublicFootprint
+          ? entity
+          : undefined;
+
+    if (purgeEntity && (entityType === 'gastronomy' || entityType === 'experience')) {
+        // Fire-and-forget, exactly like the featured-sync path: the primitive
+        // swallows its own failures, and a purge must never break the
+        // webhook/cron callers this reconciler serves.
+        void scheduleCommerceListingRevalidation({
+            entityType,
+            entity: purgeEntity,
+            resolveDestinationSlug: resolveCommerceDestinationSlug,
+            logger: standaloneCommerceRevalidationLogger
+        });
+    }
+
     return { updated: true, visibility: desiredVisibility, lifecycleState: desiredLifecycleState };
 }
 
@@ -281,7 +397,7 @@ export async function reconcileCommerceListingVisibility(
 
 /**
  * Resolves a commerce entity's current subscription status from the
- * `commerce_listing_subscriptions` link table.
+ * `entity_subscriptions` link table.
  *
  * Returns `null` when no link row exists for the given entity.  This is a
  * pure read with no side effects and is suitable for use in scheduled jobs
@@ -297,16 +413,16 @@ export async function getCommerceListingSubscriptionStatus(
 ): Promise<string | null> {
     const db = tx ?? getDb();
     const rows = await db
-        .select({ status: commerceListingSubscriptions.status })
-        .from(commerceListingSubscriptions)
+        .select({ status: entitySubscriptions.status })
+        .from(entitySubscriptions)
         // The link table's unique index is (entity_type, entity_id) — filtering
         // on entityId alone would match a different entityType's row that
         // happens to reuse the same UUID (a real risk since gastronomy and
         // experience ids are drawn from independent primary key spaces).
         .where(
             and(
-                eq(commerceListingSubscriptions.entityType, input.entityType),
-                eq(commerceListingSubscriptions.entityId, input.entityId)
+                eq(entitySubscriptions.entityType, input.entityType),
+                eq(entitySubscriptions.entityId, input.entityId)
             )
         )
         .limit(1);
@@ -322,7 +438,7 @@ export async function getCommerceListingSubscriptionStatus(
  * dunning/suspended state on the owner's listing index without an N+1 query
  * per listing).
  *
- * The `commerce_listing_subscriptions` link table only ever links commerce
+ * The `entity_subscriptions` link table only ever links commerce
  * entities (its rows are always `product_domain = 'commerce'` by
  * construction — see the table's own doc comment), so this naturally never
  * leaks accommodation or partner billing state.
@@ -349,14 +465,14 @@ export async function getCommerceListingSubscriptionStatuses(
     const db = tx ?? getDb();
     const rows = await db
         .select({
-            entityId: commerceListingSubscriptions.entityId,
-            status: commerceListingSubscriptions.status
+            entityId: entitySubscriptions.entityId,
+            status: entitySubscriptions.status
         })
-        .from(commerceListingSubscriptions)
+        .from(entitySubscriptions)
         .where(
             and(
-                eq(commerceListingSubscriptions.entityType, entityType),
-                inArray(commerceListingSubscriptions.entityId, [...entityIds])
+                eq(entitySubscriptions.entityType, entityType),
+                inArray(entitySubscriptions.entityId, [...entityIds])
             )
         );
 

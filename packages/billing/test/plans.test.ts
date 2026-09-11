@@ -12,7 +12,6 @@ import {
     OWNER_PRO_PLAN,
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
-    TOURIST_PLUS_PLAN,
     TOURIST_VIP_PLAN
 } from '../src/config/plans.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
@@ -22,8 +21,10 @@ describe('Plan Configuration', () => {
     describe('ALL_PLANS', () => {
         // HOS-692 (spec §6.9): the 3 complex-* plans were removed from
         // ALL_PLANS (zero live subscriptions, vertical never built) — 9 - 3 = 6.
-        it('should export 6 plans', () => {
-            expect(ALL_PLANS).toHaveLength(6);
+        // HOS-1224: tourist-plus removed too (cancelled as a product by
+        // HOS-301 D1, zero subscriptions in production) — 6 - 1 = 5.
+        it('should export 5 plans', () => {
+            expect(ALL_PLANS).toHaveLength(5);
         });
 
         it('should have 3 owner plans', () => {
@@ -36,9 +37,29 @@ describe('Plan Configuration', () => {
             expect(complexPlans).toHaveLength(0);
         });
 
-        it('should have 3 tourist plans', () => {
+        it('should have 2 tourist plans (HOS-1224: tourist-plus retired)', () => {
             const touristPlans = ALL_PLANS.filter((p) => p.category === 'tourist');
-            expect(touristPlans).toHaveLength(3);
+            expect(touristPlans).toHaveLength(2);
+        });
+
+        // HOS-1224. `ALL_PLANS` drives the seed loop, so a slug that reappears
+        // here is a slug the next `--reset` re-seed writes back into
+        // `billing_plans` — which is exactly how staging resurrected
+        // `tourist-plus` after `0066` had soft-deleted it. Asserting the
+        // COUNT alone would not catch it (a swap keeps the count), and
+        // asserting the surviving slugs alone would not either (an extra one
+        // still passes a "contains" check), so this pins the retired set
+        // by name.
+        it('never re-admits a retired plan slug', () => {
+            const retired = ['tourist-plus', 'complex-basico', 'complex-pro', 'complex-premium'];
+            const present = ALL_PLANS.map((p) => p.slug);
+            for (const slug of retired) {
+                expect(present, `retired plan "${slug}" is back in ALL_PLANS`).not.toContain(slug);
+                expect(
+                    getPlanBySlug(slug),
+                    `getPlanBySlug resolves retired "${slug}"`
+                ).toBeUndefined();
+            }
         });
     });
 
@@ -46,7 +67,7 @@ describe('Plan Configuration', () => {
         it('should group plans correctly', () => {
             expect(PLANS_BY_CATEGORY.owner).toHaveLength(3);
             expect(PLANS_BY_CATEGORY.complex).toHaveLength(0);
-            expect(PLANS_BY_CATEGORY.tourist).toHaveLength(3);
+            expect(PLANS_BY_CATEGORY.tourist).toHaveLength(2);
         });
     });
 
@@ -329,13 +350,6 @@ describe('Plan Configuration', () => {
             expect(compareItems(TOURIST_FREE_PLAN)).toBeUndefined();
         });
 
-        it('tourist-plus grants compare with MAX_COMPARE_ITEMS = 3 (HOS-16: was 2)', () => {
-            expect(TOURIST_PLUS_PLAN.entitlements).toContain(
-                EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
-            );
-            expect(compareItems(TOURIST_PLUS_PLAN)?.value).toBe(3);
-        });
-
         it('tourist-vip grants compare with MAX_COMPARE_ITEMS = 5 (HOS-16: was 4)', () => {
             expect(TOURIST_VIP_PLAN.entitlements).toContain(
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
@@ -377,8 +391,8 @@ describe('Plan Configuration', () => {
             expect(favoritesLimit(TOURIST_FREE_PLAN)?.value).toBe(5);
         });
 
-        it('tourist-plus MAX_FAVORITES = 25 (was 20)', () => {
-            expect(favoritesLimit(TOURIST_PLUS_PLAN)?.value).toBe(25);
+        it('tourist-vip MAX_FAVORITES is unlimited (-1)', () => {
+            expect(favoritesLimit(TOURIST_VIP_PLAN)?.value).toBe(-1);
         });
     });
 
@@ -493,8 +507,10 @@ describe('Plan Configuration', () => {
             );
         });
 
-        it('tourist-plus grants CAN_VIEW_RECOMMENDATIONS (moved free->plus)', () => {
-            expect(TOURIST_PLUS_PLAN.entitlements).toContain(
+        // HOS-16 moved the key free->plus; HOS-1224 retired plus, so tourist-vip
+        // is now the lowest tier that carries it.
+        it('tourist-vip grants CAN_VIEW_RECOMMENDATIONS (moved off tourist-free)', () => {
+            expect(TOURIST_VIP_PLAN.entitlements).toContain(
                 EntitlementKey.CAN_VIEW_RECOMMENDATIONS
             );
         });

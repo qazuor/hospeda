@@ -16,13 +16,14 @@
  * ## What this guard proves, and what it does not
  *
  * It reads LITERAL weights only: `weight="thin"`, `weight={'thin'}`,
- * `weight: 'thin'`. It CANNOT resolve `weight={expression}`. There are 14 such
+ * `weight: 'thin'`. It CANNOT resolve `weight={expression}`. There are 15 such
  * call sites in `apps/web/src` today (star ratings in six card/header
  * components, the compare and favorite toggles, the toast viewport, the
- * destinations island); every one of them is a ternary between `'fill'` and
- * `'regular'`, both shipped. If one is ever changed to produce `thin` or
- * `light`, this guard will NOT catch it — it will keep passing while that icon
- * quietly renders inline.
+ * destinations island, and the host photo gallery's promote-to-portada
+ * toggle); every one of them is a ternary between `'fill'` and `'regular'`,
+ * both shipped. If one is ever changed to produce `thin` or `light`, this
+ * guard will NOT catch it — it will keep passing while that icon quietly
+ * renders inline.
  */
 
 import fs from 'node:fs';
@@ -124,6 +125,6 @@ describe('what this guard cannot see', () => {
         expect(
             dynamic,
             "the number of unresolvable `weight={…}` call sites changed — re-read them and update this guard's docstring, which currently claims they are all fill/regular ternaries"
-        ).toBe(14);
+        ).toBe(15);
     });
 });

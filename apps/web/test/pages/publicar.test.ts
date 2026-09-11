@@ -1,176 +1,102 @@
 /**
  * @file publicar.test.ts
- * @description Source-reading tests for the host-onboarding landing page. The
- * Astro page cannot be rendered in Vitest, so we assert on the source text to
- * lock in the conditional eyebrow rendered when a tourist arrives from the
- * admin (`?from=admin`).
+ * @description Source-reading checks for the accommodation publish page
+ * (HOS-1156 T-019). The Astro page cannot be rendered in Vitest, so what is
+ * asserted here is what the source can honestly prove: which imports and calls
+ * are present, and — the load-bearing half — which are GONE.
+ *
+ * Every assertion below is about a removal (D-3, R-3) or a wiring the page
+ * cannot get right by accident. The page's actual OUTPUT is proven by the live
+ * `curl` sweep (AC-2), because a page that typechecks can still answer 500:
+ * `astro check` does not see frontmatter behind an early return.
+ *
+ * The previous version of this file existed to lock IN the existing-host
+ * redirect. That redirect is what D-3 removed, so the tests that guarded it are
+ * gone with it, and the ones below guard the opposite.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const src = readFileSync(resolve(__dirname, '../../src/pages/[lang]/publicar/index.astro'), 'utf8');
+const raw = readFileSync(resolve(__dirname, '../../src/pages/[lang]/publicar/index.astro'), 'utf8');
 
-describe('publicar/index.astro — from-admin eyebrow', () => {
-    describe('SSR detection', () => {
-        it('reads ?from=admin from Astro.url server-side', () => {
-            expect(src).toContain("Astro.url.searchParams.get('from') === 'admin'");
-            expect(src).toContain('const cameFromAdmin');
-        });
+/**
+ * The page with its block comments removed.
+ *
+ * Every "this is gone" assertion below runs against this, not the raw file. The
+ * page's docblock EXPLAINS the removals by name — that is the most useful thing
+ * it can say to the next reader — and a naive `not.toContain` would read the
+ * explanation as the thing itself and fail. Worse in the other direction: a
+ * presence check satisfied by a comment would pass while the code was missing.
+ */
+const src = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '');
 
-        it('has no prerender = true (SSR is required to read query params)', () => {
-            expect(src).not.toMatch(/export\s+const\s+prerender\s*=\s*true/);
-        });
+describe('publicar/index.astro — the existing-host redirect is gone (D-3, AC-7)', () => {
+    it('never redirects to the properties list', () => {
+        // The exact call this page used to make. An owner with ≥1 accommodation
+        // reaching /publicar/ from the navbar must now get the page, not a bounce
+        // to a list — otherwise they cannot create a second property from the
+        // menu at all, which is what this whole issue is about.
+        expect(src).not.toContain("path: 'mi-cuenta/propiedades' })");
+        expect(src).not.toContain('Astro.redirect');
     });
 
-    describe('eyebrow placement and structure', () => {
-        it('renders the eyebrow inline inside the hero text block (not as a separate banner)', () => {
-            // The eyebrow must appear before the hero tagline inside the same
-            // .publicar-hero__text container. We assert ordering by index.
-            const heroTextOpenIdx = src.indexOf('class="publicar-hero__text"');
-            const eyebrowIdx = src.indexOf('publicar-hero__from-admin');
-            const taglineIdx = src.indexOf('publicar-hero__tagline');
-
-            expect(heroTextOpenIdx).toBeGreaterThan(-1);
-            expect(eyebrowIdx).toBeGreaterThan(heroTextOpenIdx);
-            expect(eyebrowIdx).toBeLessThan(taglineIdx);
-        });
-
-        it('only renders when cameFromAdmin is true', () => {
-            expect(src).toMatch(/\{cameFromAdmin\s*&&\s*\(/);
-        });
-
-        it('exposes a data-testid hook for integration tests', () => {
-            expect(src).toContain('data-testid="from-admin-eyebrow"');
-        });
+    it('no longer fetches the owned-accommodation count (R-3)', () => {
+        // The count fed the redirect and nothing else; the precheck already
+        // returns `currentCount`. Leaving the fetch would be a third SSR round
+        // trip answering a question nobody asks.
+        expect(src).not.toContain('/api/v1/protected/accommodations?page=1&pageSize=1');
+        expect(src).not.toContain('pagination?.total');
     });
 
-    describe('accessibility', () => {
-        it('uses role="status" so screen readers announce the contextual hint', () => {
-            const eyebrowBlock = src.slice(src.indexOf('publicar-hero__from-admin'));
-            expect(eyebrowBlock).toContain('role="status"');
-        });
+    it('does not send a signed-out visitor to a login screen (D-1)', () => {
+        // This is reached from a PUBLIC navbar button. `buildLoginRedirect` in
+        // the frontmatter is exactly what the signup CTA replaces.
+        expect(src).not.toContain('buildLoginRedirect');
+    });
+});
 
-        it('sets aria-live="polite" to avoid interrupting screen readers', () => {
-            const eyebrowBlock = src.slice(src.indexOf('publicar-hero__from-admin'));
-            expect(eyebrowBlock).toContain('aria-live="polite"');
-        });
-
-        it('marks the icon as decorative with aria-hidden="true"', () => {
-            const eyebrowBlock = src.slice(src.indexOf('publicar-hero__from-admin'));
-            const iconBlock = eyebrowBlock.slice(0, eyebrowBlock.indexOf('</p>'));
-            expect(iconBlock).toContain('aria-hidden="true"');
-        });
+describe('publicar/index.astro — the form is on this page now (T-019)', () => {
+    it('resolves the form slot through the shared resolver', () => {
+        expect(src).toContain('resolvePublishPageSlot');
+        expect(src).toContain('<PublishFormSlot');
     });
 
-    describe('icon usage — Phosphor via @repo/icons, no emoji', () => {
-        it('imports InfoIcon from @repo/icons', () => {
-            // Commit c42235bcb merged the single-line import into a multi-line destructure,
-            // so we assert InfoIcon is imported somewhere from @repo/icons (not the exact line form).
-            expect(src).toContain('InfoIcon');
-            expect(src).toContain("from '@repo/icons'");
-        });
-
-        it('uses InfoIcon inside the eyebrow (not an inline emoji)', () => {
-            const eyebrowBlock = src.slice(src.indexOf('publicar-hero__from-admin'));
-            const block = eyebrowBlock.slice(0, eyebrowBlock.indexOf('</p>'));
-            expect(block).toContain('<InfoIcon');
-            // Earlier banner used the ℹ️ emoji — assert it is gone.
-            expect(block).not.toContain('ℹ');
-        });
+    it('declares the accommodation vertical, not a default', () => {
+        expect(src).toMatch(/const VERTICAL = 'accommodation' as const;/);
+        expect(src).toContain('vertical: VERTICAL');
     });
 
-    describe('i18n wiring', () => {
-        it('renders the host.fromAdminBanner.eyebrow translation key with a fallback', () => {
-            expect(src).toContain("t('host.fromAdminBanner.eyebrow'");
-        });
+    it('mounts the create form inside the slot', () => {
+        expect(src).toContain('<CreatePropertyMiniForm');
+        const slotStart = src.indexOf('<PublishFormSlot');
+        const slotEnd = src.indexOf('</PublishFormSlot>');
+        expect(slotStart).toBeGreaterThan(-1);
+        expect(slotEnd).toBeGreaterThan(slotStart);
+        expect(src.slice(slotStart, slotEnd)).toContain('<CreatePropertyMiniForm');
     });
 
-    describe('existing-host redirect (marketing landing only)', () => {
-        it('only runs the redirect check for authenticated users', () => {
-            // The owned-count fetch is gated behind isAuthenticated so guests always
-            // see the landing.
-            const redirectIdx = src.indexOf('owned-accommodations fetch returned non-ok');
-            const authGateIdx = src.lastIndexOf('if (isAuthenticated) {', redirectIdx);
-            expect(authGateIdx).toBeGreaterThan(-1);
-            expect(authGateIdx).toBeLessThan(redirectIdx);
-        });
-
-        it('fetches the owned-accommodation count via the pageSize=1 endpoint', () => {
-            expect(src).toContain('/api/v1/protected/accommodations?page=1&pageSize=1');
-            expect(src).toContain('data?.pagination?.total');
-        });
-
-        it('redirects to mi-cuenta/propiedades only when owned count > 0 (NOT by role)', () => {
-            expect(src).toMatch(/total\s*>\s*0/);
-            expect(src).toContain(
-                "Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/propiedades' }))"
-            );
-            // Criterion must be owned-count, not a role check.
-            const redirectBlock = src.slice(
-                src.indexOf('Redirect existing hosts'),
-                src.indexOf("path: 'mi-cuenta/propiedades' }))") + 40
-            );
-            expect(redirectBlock).not.toContain('role ===');
-        });
-
-        // HOS-311: this redirect is exactly why `HostLandingCta`'s host branch
-        // must NOT point at the properties list. Every authenticated actor with
-        // >=1 owned accommodation is bounced there server-side, so the only
-        // host who reaches the island's CTA has ZERO properties — an empty list
-        // would be a dead click before the wizard.
-        it('makes the properties list the SSR destination for a host who already has listings', () => {
-            const redirectBlock = src.slice(
-                src.indexOf('Redirect existing hosts'),
-                src.indexOf('const isTrialExpired')
-            );
-            expect(redirectBlock).toMatch(/total\s*>\s*0/);
-            expect(redirectBlock).toContain("path: 'mi-cuenta/propiedades' })");
-        });
-
-        // The island is `client:only="react"`, so there is NO server-rendered
-        // markup and Better Auth's session always starts pending on this page —
-        // which is what the component's own JSDoc documents. Pinned so the
-        // directive and the doc cannot silently diverge again.
-        it('hydrates the CTA island with client:only="react" (no SSR role hint)', () => {
-            expect(src).toMatch(/<HostLandingCta\s+client:only="react"/);
-        });
-
-        it('wraps the fetch in try/catch so it is non-fatal (renders landing on error)', () => {
-            const block = src.slice(
-                src.indexOf('Redirect existing hosts'),
-                src.indexOf('const isTrialExpired')
-            );
-            expect(block).toContain('try {');
-            expect(block).toContain('catch (error)');
-            expect(block).toContain('logger.warn');
-        });
+    it('drops the CTA island whose only job was linking to the absorbed form', () => {
+        expect(src).not.toContain('HostLandingCta');
     });
 
-    describe('styling — tokens, no hardcoded values', () => {
-        it('does not bring back the deprecated banner border-left + warm surface combo', () => {
-            // The original guard was file-wide, but commit 85cce1b2d legitimately added
-            // border-left: 4px solid var(--brand-accent) for the trial callout block.
-            // Narrow the check to the from-admin eyebrow CSS block only.
-            const eyebrowCssIdx = src.indexOf('.publicar-hero__from-admin {');
-            const eyebrowCssBlock =
-                eyebrowCssIdx === -1
-                    ? ''
-                    : src.slice(eyebrowCssIdx, src.indexOf('}', eyebrowCssIdx) + 1);
-            expect(eyebrowCssBlock).not.toContain('border-left: 4px solid var(--brand-accent)');
-            // The deprecated wrapper class must never reappear.
-            expect(src).not.toContain('publicar-from-admin-wrap');
-        });
+    it('reads the trial length from the live plans, once, for both consumers', () => {
+        expect(src).toContain('resolveGenericOwnerTrialDays');
+        // Twice would mean the callout and the form island each fetched it, which
+        // is what merging the two pages was supposed to stop.
+        expect(src.match(/await resolveGenericOwnerTrialDays\(\)/g)).toHaveLength(1);
+        expect(src).toContain('trialDays={genericTrialDays}');
+    });
 
-        it('uses --core-muted-foreground for the eyebrow color', () => {
-            const cssBlock = src.slice(src.indexOf('.publicar-hero__from-admin {'));
-            expect(cssBlock).toContain('var(--core-muted-foreground)');
-        });
+    it('renders all four sections of §6', () => {
+        expect(src).toContain('<PublishHero');
+        expect(src).toContain('<PublishFormSlot');
+        expect(src).toContain('<PublishHowItWorks');
+        expect(src).toContain('<PublishPlanLinks');
+    });
 
-        it('uses --brand-primary for the icon tint', () => {
-            const cssBlock = src.slice(src.indexOf('.publicar-hero__from-admin svg {'));
-            expect(cssBlock).toContain('var(--brand-primary)');
-        });
+    it('stays SSR, because it reads the session (AC-8)', () => {
+        expect(src).toContain('export const prerender = false;');
     });
 });

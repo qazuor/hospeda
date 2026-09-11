@@ -1,8 +1,7 @@
 /**
  * @file start-url.ts
  * @description Destination of the "Empezar ahora" CTA on the two commerce
- * vertical landings (`/publicar-restaurante/`, `/publicar-experiencia/`) —
- * HOS-810.
+ * sales pages (`/planes/gastronomia/`, `/planes/experiencias/`) — HOS-810.
  *
  * ## The loop this closes
  *
@@ -34,31 +33,42 @@
  * - **Signed out** → signup renders its form, exactly as it did before. The
  *   top-of-funnel behaviour the landing was built around is untouched.
  *
- * ## Known gap (deliberately NOT closed here)
+ * ## Brand-new registrations (closed by HOS-838)
  *
- * The return destination does not survive a brand-new REGISTRATION. Signing up
- * creates no session — the API requires e-mail verification first — so the flow
- * goes signup → verify-email-sent → (inbox) → signin → `/mi-cuenta/`, and the
- * `returnUrl` is lost at the verification hop. Carrying it through would mean
- * threading state across the verification e-mail, which is a different piece of
- * work. What this module guarantees is that a visitor WITH a session (including
- * one who just verified and signed in, then clicked the CTA again) lands on the
- * form. The "already have an account" link on signup does forward the param, so
- * the existing-user path keeps its destination end to end.
+ * A brand-new registration used to lose the destination: signing up creates no
+ * session — the API requires e-mail verification first — so the flow went
+ * signup → verify-email-sent → (inbox) → signin → `/mi-cuenta/`, dropping the
+ * `returnUrl` at the verification hop. Two things now carry it across:
+ *
+ * 1. The destination travels inside the verification e-mail itself, as the
+ *    link's `callbackURL`. It cannot ride along in the browser, because the
+ *    inbox may well be opened on a different device.
+ * 2. Every onboarding gate that fires afterwards — complete-profile,
+ *    set-password, change-password — forwards it as `returnUrl` instead of
+ *    hard-coding `/mi-cuenta/`. Without that second half the first is useless:
+ *    a new account always hits at least one of those gates.
+ *
+ * The "already have an account" link on signup forwards the param too, so the
+ * existing-user path keeps its destination end to end as it always did.
  */
 
 import type { SupportedLocale } from '../i18n';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '../publish/publish-page-paths';
 import { buildUrl } from '../urls';
 import type { CommerceVertical } from './owner-listings';
 
 /**
- * Path of the owner self-service create form for one vertical, locale-prefixed.
+ * The vertical's publish page, locale-prefixed.
  *
- * This is the page HOS-687 unlocked; it requires a session and nothing else.
+ * HOS-1156 moved this off `/mi-cuenta/comercio/nuevo/{vertical}/`, which is now
+ * a 301 to the same destination. The value this returns travels through sign-up
+ * as a `returnUrl` (see below), and a `returnUrl` that points at a redirect is a
+ * destination somebody else can move — the exact mechanism that produced
+ * HOS-1156 in the first place.
  *
  * @param params.locale - Locale prefix.
  * @param params.vertical - `gastronomy` or `experience`.
- * @returns e.g. `/es/mi-cuenta/comercio/nuevo/experience/`.
+ * @returns e.g. `/es/publicar/experiencias/`.
  */
 export function buildCommerceCreateUrl({
     locale,
@@ -67,7 +77,7 @@ export function buildCommerceCreateUrl({
     readonly locale: SupportedLocale;
     readonly vertical: CommerceVertical;
 }): string {
-    return buildUrl({ locale, path: `mi-cuenta/comercio/nuevo/${vertical}` });
+    return buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL[vertical] });
 }
 
 /**
@@ -80,8 +90,7 @@ export function buildCommerceCreateUrl({
  *
  * @param params.locale - Locale prefix.
  * @param params.vertical - `gastronomy` or `experience`.
- * @returns e.g.
- *   `/es/auth/signup/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercio%2Fnuevo%2Fexperience%2F`.
+ * @returns e.g. `/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F`.
  */
 export function buildCommerceStartUrl({
     locale,

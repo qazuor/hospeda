@@ -28,17 +28,58 @@ const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
     // pastDueGraceMiddleware — mounted on /api/v1/protected/*. Distinct remedy:
     // the customer updates their payment method, they do not buy a plan.
     'GRACE_PERIOD_EXPIRED',
-    // requireActiveSubscription() — NOT mounted anywhere today (it exists only
-    // in its own JSDoc example). Whitelisted so the day it is mounted the copy
-    // already resolves, but treat these two as dormant, not live.
+    // `NO_ACTIVE_SUBSCRIPTION` is LIVE, emitted by the add-on paths
+    // (addon-entitlement.service.ts, addon.checkout.ts) when the customer has a
+    // subscription row that is not active or trialing. It used to be attributed
+    // here to `requireActiveSubscription()`, a middleware that was mounted
+    // nowhere and was deleted by HOS-1012 T-028 — the attribution was wrong
+    // even before the deletion.
     'NO_ACTIVE_SUBSCRIPTION',
+    // `NO_BILLING_ACCOUNT` has NO emitter since that middleware was deleted.
+    // Kept whitelisted rather than removed: its i18n copy still exists and the
+    // web client still branches on it, so a route that starts emitting it lands
+    // on resolving copy instead of a dropped cause.
     'NO_BILLING_ACCOUNT',
     // addon purchase route (routes/billing/addons.ts, HOS-602) — the
     // customer has zero subscription rows at all, distinct from having one
     // that just isn't active/trialing (NO_ACTIVE_SUBSCRIPTION above). Both
     // resolve to the same client-side "you need an active subscription"
     // gate copy, so they share the whitelist here.
-    'NO_SUBSCRIPTION'
+    'NO_SUBSCRIPTION',
+    // addon purchase route (HOS-1178) — the product-domain gate's two
+    // refusals. Whitelisted for the same reason the four above are: a 422's
+    // status-derived `error.code` collapses every rejection into
+    // `VALIDATION_ERROR`, so without a forwarded reason the buyer is told
+    // "the data you sent is invalid" for a purchase whose data was fine.
+    //
+    // They are two DIFFERENT remedies and must not be merged:
+    //   ADDON_NOT_AVAILABLE_FOR_DOMAIN — you need a subscription in this
+    //     add-on's vertical. The buyer can act on that.
+    //   ADDON_DOMAIN_UNKNOWN — the add-on declares no vertical at all. Nothing
+    //     the buyer does fixes it; it is an operator's catalogue row to correct.
+    // Collapsing them would send someone to buy a subscription that would not
+    // help. It is also what makes the two paths distinguishable in a test,
+    // where both answer 422.
+    'ADDON_NOT_AVAILABLE_FOR_DOMAIN',
+    'ADDON_DOMAIN_UNKNOWN',
+    // promo-code apply route (HOS-1171 / HOS-1195) — the two refusals the
+    // self-service redeem surface has to tell apart. Whitelisted for the same
+    // reason as the add-on pair above: their statuses (403 and 422) both derive
+    // a single generic `error.code`, so without a forwarded reason a customer
+    // whose code was perfectly good is told "the data you sent is invalid".
+    //
+    //   PROMO_CODE_COMP_NOT_SELF_SERVICE — a `comp` code. Not redeemable from
+    //     any user-facing surface: a complimentary subscription is an operator's
+    //     grant (`POST /admin/billing/subscriptions/grant-comp`). The code is
+    //     NOT spent by the refusal.
+    //   NO_ACTIVE_TRIAL — a trial-extension code with no trial to extend. The
+    //     code IS the right kind and IS still valid; the account state is what
+    //     does not fit, and the code stays usable once a trial exists.
+    //
+    // `discount` is deliberately absent: it is redeemable from the web by a
+    // subscribed customer, so there is no refusal to name.
+    'PROMO_CODE_COMP_NOT_SELF_SERVICE',
+    'NO_ACTIVE_TRIAL'
 ]);
 
 /** The client-safe projection of an entitlement cause. */

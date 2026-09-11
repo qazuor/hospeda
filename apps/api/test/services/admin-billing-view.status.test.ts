@@ -120,6 +120,18 @@ describe('normalizeSubscriptionStatusForView', () => {
         expect(normalizeSubscriptionStatusForView({ rawStatus: 'comp' })).toBe('comp');
     });
 
+    it('HOS-1245: passes courtesy through unchanged instead of returning null', () => {
+        // Regression: `courtesy` (HOS-180) is a real, valid member of
+        // `SubscriptionStatusEnum` and passes the canonical normaliser
+        // (`normalizeStoredSubscriptionStatus`) fine — it never returned null
+        // there. The defect was one layer up: `AdminSubscriptionViewStatusSchema`
+        // (the admin UI's OWN mirror of the vocabulary) had no `courtesy`
+        // member, so `safeParse` rejected it and this function returned null,
+        // which `assertKnownStatus` then turned into a throw that killed the
+        // entire admin subscriptions list (HOS-1245).
+        expect(normalizeSubscriptionStatusForView({ rawStatus: 'courtesy' })).toBe('courtesy');
+    });
+
     it('maps the qzpay creation-time vocabulary onto Hospeda states', () => {
         expect(normalizeSubscriptionStatusForView({ rawStatus: 'incomplete' })).toBe(
             'pending_provider'

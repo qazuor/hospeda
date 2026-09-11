@@ -19,6 +19,7 @@ import { formatPhotoCredit } from '@/lib/photo-credit';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
+import VideoSection from '@/components/accommodation/VideoSection.astro';
 import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
@@ -51,8 +52,14 @@ import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardPr
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translateAmenityName } from '@/lib/catalog-names';
-import { buildLodgingAmenityNames, buildLodgingGeo, buildLodgingTelephone } from '@/lib/seo/lodging-jsonld';
+import {
+	buildLodgingAmenityNames,
+	buildLodgingGeo,
+	buildLodgingPriceRange,
+	buildLodgingTelephone
+} from '@/lib/seo/lodging-jsonld';
 import { pickLocalizedSeo } from '@/lib/seo';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -346,7 +353,7 @@ if (bookmarkCountResult.status === 'fulfilled') {
 // CAN_CONTACT_WHATSAPP_DISPLAY is a tourist entitlement every owner plan already
 // inherits, so the WhatsApp upsell audience is always a free-tier tourist — point
 // at the tourist pricing page, not the owner one (BETA-201).
-const whatsappPlansHref = buildUrl({ locale, path: 'suscriptores/turistas' });
+const whatsappPlansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
 // --- Gallery images for ImageGallery island ---
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
@@ -467,6 +474,11 @@ const lodgingAggregateRating =
 const lodgingNumberOfRooms =
     accommodation.extraInfo?.bedrooms != null ? accommodation.extraInfo.bedrooms : undefined;
 
+// HOS-878: point price formatted as "<currency> <amount>" (e.g. "ARS 15000"),
+// see buildLodgingPriceRange for why this isn't a $/$$/$$$ indicator or a
+// real min-max range.
+const lodgingPriceRange = buildLodgingPriceRange({ price: accommodation.price });
+
 // HOS-557: publish the LOCALIZED amenity label, not the catalog slug —
 // see `buildLodgingAmenityNames` for why.
 const lodgingAmenities = buildLodgingAmenityNames({
@@ -522,6 +534,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         aggregateRating={lodgingAggregateRating}
         numberOfRooms={lodgingNumberOfRooms}
         amenities={lodgingAmenities}
+        priceRange={lodgingPriceRange}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
@@ -568,6 +581,12 @@ const faqSections = accommodation.faqs.map((faq) => ({
         ) : (
             <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
         )}
+
+        <!-- Videos (HOS-1022): its own section, deliberately separate from the
+             photo mosaic above — mixing videos into ImageGallery/`/fotos` is
+             exactly where they went unnoticed before this ticket. Renders
+             nothing when there are no APPROVED, provider-recognized videos. -->
+        <VideoSection videos={accommodation.media.videos} locale={locale} />
 
         <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram
              the host filled in via the editor's contact form, previously captured
@@ -666,7 +685,8 @@ const faqSections = accommodation.faqs.map((faq) => ({
          position:fixed, so appearing after hydration shifts nothing. -->
     <AiChatWidget
         client:idle
-        accommodationId={accommodation.id}
+        entityType="accommodation"
+        entityId={accommodation.id}
         locale={locale}
         apiUrl={getApiUrl()}
     />

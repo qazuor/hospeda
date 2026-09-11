@@ -46,14 +46,68 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     { path: '/', changefreq: 'daily', priority: 1.0 },
 
     // Conversion funnel: plans and publishing.
+    //
+    // HOS-942 turned `/suscriptores/planes/` into the five-audience INDEX and
+    // moved the two pricing pages under it. HOS-1032 then moved every pricing
+    // page again, into the `/planes/` namespace HOS-941 D-8 settled on, so the
+    // family is now three levels deep and each level is listed here once:
+    //
+    //   /suscriptores/planes/       index      (H8 moves it to `/planes/`)
+    //   /planes/<audiencia>/        sales      (level 2, HOS-985)
+    //   /planes/<audiencia>/precios/  pricing  (level 3, HOS-1032)
+    //
+    // The URLs that used to serve pricing — `/suscriptores/planes/anfitriones/`,
+    // `/suscriptores/planes/turistas/`, both `/comparar/` pages, and the two
+    // `/publicar-*` landings — are 301s now and LEFT this list, because a
+    // sitemap advertising a redirect asks a crawler to spend a request learning
+    // the URL moved. They are classified below in the exclusion map instead,
+    // which is what keeps the guard from flagging them as unclassified pages.
     { path: '/suscriptores/planes/', changefreq: 'weekly', priority: 0.8 },
-    { path: '/suscriptores/planes/comparar/', changefreq: 'monthly', priority: 0.7 },
-    { path: '/suscriptores/propietarios/', changefreq: 'monthly', priority: 0.8 },
-    { path: '/suscriptores/turistas/', changefreq: 'monthly', priority: 0.8 },
-    { path: '/suscriptores/turistas/comparar/', changefreq: 'monthly', priority: 0.7 },
     { path: '/publicar/', changefreq: 'monthly', priority: 0.8 },
-    { path: '/publicar-restaurante/', changefreq: 'monthly', priority: 0.7 },
-    { path: '/publicar-experiencia/', changefreq: 'monthly', priority: 0.7 },
+    // HOS-1156: one publish page per vertical. All three are public, indexable
+    // and carry their own copy, so all three belong here — they are the pages a
+    // restaurant owner searching "publicar mi restaurante" should land on, and
+    // until now that search had nowhere to land at all inside this namespace.
+    { path: '/publicar/gastronomia/', changefreq: 'monthly', priority: 0.8 },
+    { path: '/publicar/experiencias/', changefreq: 'monthly', priority: 0.8 },
+    // HOS-985: level 2 of the three-level structure (HOS-941 D-7) — the sales
+    // page for a vertical, with its prices one level below at
+    // `/planes/<audiencia>/precios/`. `gastronomia`, not `restaurantes`: D-9,
+    // because HOS-986 is open over "restaurante" reading as excluding food
+    // trucks, rotiserías and parrillas, and a URL is the most expensive place
+    // to carry that word.
+    { path: '/planes/gastronomia/', changefreq: 'monthly', priority: 0.7 },
+    // HOS-985: the experience vertical's own level-2 sales page, alongside
+    // gastronomy's above.
+    { path: '/planes/experiencias/', changefreq: 'monthly', priority: 0.7 },
+    // HOS-985: the host-audience level-2 sales page. It inherits the priority
+    // the retired `/suscriptores/propietarios/` landing carried, since it is
+    // the page that URL now 301s to.
+    { path: '/planes/anfitriones/', changefreq: 'monthly', priority: 0.8 },
+    // HOS-985: the traveller audience's level-2 sales page. It is the only one
+    // of the five that had NO landing before, so it is a genuinely new
+    // indexable URL rather than a relocation.
+    { path: '/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
+    // HOS-985: the partner audience's level-2 sales page. `/sumate/partner/`
+    // below still answers 200 and keeps its entry: it holds the lead form both
+    // partner pages send people to, and cannot 301 into this family until that
+    // form has a home inside it.
+    { path: '/planes/aliados/', changefreq: 'monthly', priority: 0.8 },
+
+    // HOS-1032: level 3 — the five pricing pages. They carry the priority the
+    // URLs they replace had, because they are the same content at a new
+    // address, and each is the page that answers "cuánto cuesta …" for its
+    // audience, which is a search intent distinct from its sales page's.
+    //
+    // The three verticals' entries are NEW rather than relocated: no pricing URL
+    // ever existed for gastronomy, experiences or aliados. Their price moved
+    // DOWN out of a landing that keeps serving, rather than ACROSS from a page
+    // that stopped — which is also why no redirect points at them.
+    { path: '/planes/anfitriones/precios/', changefreq: 'weekly', priority: 0.8 },
+    { path: '/planes/turistas/precios/', changefreq: 'monthly', priority: 0.8 },
+    { path: '/planes/gastronomia/precios/', changefreq: 'monthly', priority: 0.7 },
+    { path: '/planes/experiencias/precios/', changefreq: 'monthly', priority: 0.7 },
+    { path: '/planes/aliados/precios/', changefreq: 'monthly', priority: 0.7 },
 
     // Partner / collaborator acquisition.
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },
@@ -102,9 +156,15 @@ export type StaticSitemapExclusionReason =
  * in {@link STATIC_SITEMAP_PAGES}.
  *
  * Pages under the `SITEMAP_EXCLUDED_PATHS` prefixes (`/auth/`,
- * `/mi-cuenta/`, `/feedback/`) are absent by construction — they are also
- * `Disallow`ed in robots.txt — so the guard filters them before consulting
- * this map.
+ * `/mi-cuenta/`, `/feedback/`, `/presentacion/`) are absent by construction —
+ * they are also `Disallow`ed in robots.txt — so the guard filters them before
+ * consulting this map.
+ *
+ * That is why HOS-978's six commercial presentations are not listed
+ * individually below: adding `/presentacion/` to the shared prefix list covers
+ * all six at once, in the one place that also drives the robots.txt
+ * `Disallow`. Listing them here as well would be redundant, and the guard
+ * would never reach the entries.
  */
 export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExclusionReason>> = {
     // Listing pages: emitted with fresh `lastmod` by the dynamic sitemap.
@@ -116,6 +176,10 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/publicaciones/': 'in-dynamic-sitemap',
 
     // Utility views that declare `noindex={true}`.
+    // HOS-609: the admin redirects here when an authenticated user lacks
+    // ACCESS_PANEL_ADMIN. Nobody navigates to it on purpose and it says
+    // nothing to a crawler.
+    '/acceso-denegado/': 'noindex',
     '/alojamientos/comparar/': 'noindex',
     '/alojamientos/mapa/': 'noindex',
     '/destinos/mapa/': 'noindex',
@@ -125,8 +189,46 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/newsletter/desuscripto/': 'noindex',
     '/newsletter/error/': 'noindex',
 
-    // Host-only draft creation form; redirects anonymous visitors to login.
-    '/publicar/nueva/': 'auth-guarded',
+    // Redirect-only since HOS-1156: the draft-creation form was absorbed into
+    // `/publicar/`, which now carries it directly, so this URL 301s there. It
+    // was classified `auth-guarded` while it existed as a page — that is no
+    // longer what it is.
+    '/publicar/nueva/': 'transactional',
+
+    // Redirect-only since HOS-942, retargeted by HOS-1032: the tourist pricing
+    // page went to `/suscriptores/planes/turistas/` and then on to
+    // `/planes/turistas/precios/`, and this URL now 301s straight to the latter
+    // rather than chaining through the former. It must stay out of the sitemap
+    // — one that keeps advertising it would be handing crawlers a URL that
+    // never serves content again.
+    '/suscriptores/turistas/': 'transactional',
+
+    // Redirect-only since HOS-1032. The five pricing URLs the `/planes/`
+    // namespace replaced (HOS-941 D-8), plus the two comparison pages whose
+    // table moved onto the pricing page itself (D-11) and the two commerce
+    // landings whose price block moved down a level (D-9 for the slug).
+    //
+    // All seven leave the sitemap in the SAME change that turns them into
+    // redirects. Their successors are listed above; a sitemap naming both would
+    // be advertising two URLs for one page and spending a crawl request to
+    // learn that one of them moved.
+    '/suscriptores/planes/anfitriones/': 'transactional',
+    '/suscriptores/planes/turistas/': 'transactional',
+    '/suscriptores/planes/comparar/': 'transactional',
+    '/suscriptores/turistas/comparar/': 'transactional',
+    // HOS-1156 retargeted these two: their 301 now points at the vertical's
+    // PUBLISH page rather than its sales page, overriding HOS-941 D-8. The URL's
+    // own name said *publicar*, and it finally leads there. Still redirect-only,
+    // so still excluded.
+    '/publicar-restaurante/': 'transactional',
+    '/publicar-experiencia/': 'transactional',
+
+    // Redirect-only since HOS-985: the owner landing was retired (HOS-941
+    // D-12 — it was `/publicar/` minus the auth-aware parts, reading the same
+    // `owners.*` copy) and this URL 301s to `/planes/anfitriones/`. Same rule
+    // as the entry above: it leaves the sitemap in the change that turns it
+    // into a redirect.
+    '/suscriptores/propietarios/': 'transactional',
 
     // MercadoPago return targets and the redirect-only checkout root.
     '/suscriptores/checkout/': 'transactional',

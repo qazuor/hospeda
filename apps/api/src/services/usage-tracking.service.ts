@@ -29,6 +29,7 @@ import {
     determineOverallThreshold,
     ExperienceService,
     GastronomyService,
+    hydrateSubscriptionProductDomains,
     type LimitUsage,
     OwnerPromotionService,
     SearchHistoryService,
@@ -77,6 +78,11 @@ const AI_FEATURE_BY_LIMIT_KEY: Readonly<Record<string, string | undefined>> = {
     [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 'text_improve',
     [LimitKey.MAX_AI_CHAT_PER_MONTH]: 'chat',
     [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: 'chat',
+    // HOS-400 — each commerce vertical meters under its OWN AiFeature, which is
+    // what keeps the counts from pooling. Mapping either of these to 'chat'
+    // would report an owner's accommodation usage against their gastronomy cap.
+    [LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]: 'chat_gastronomy',
+    [LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH]: 'chat_experience',
     [LimitKey.MAX_AI_SEARCH_PER_MONTH]: 'search',
     [LimitKey.MAX_AI_SUPPORT_PER_MONTH]: 'support',
     [LimitKey.MAX_AI_TRANSLATE_PER_MONTH]: 'translate',
@@ -136,9 +142,26 @@ const USAGE_KIND_BY_LIMIT_KEY: Readonly<Record<string, UsageKindValue>> = {
     [LimitKey.MAX_COMPARE_ITEMS]: UsageKind.PER_OPERATION,
     [LimitKey.MAX_PROPERTIES]: UsageKind.UNBUILT,
     [LimitKey.MAX_STAFF_ACCOUNTS]: UsageKind.UNBUILT,
+    // HOS-1060 — UNBUILT in phase 1, and spelled out rather than left to
+    // `usageKindForLimit`'s `?? UNBUILT` fallback, because the guard test
+    // demands every key be classified once and explicitly. The cap is declared
+    // on all six commerce plan rows (an absent key would read as UNLIMITED),
+    // but nothing creates, stores or expires a gallery yet: there is no counter
+    // and nothing to advertise, so `shouldDisplayLimit` hides the row.
+    //
+    // The phase that ships the creation route MUST move this to STOCK and add
+    // its counter arm to `getCurrentUsage`. Left here, it would report a
+    // permanent `0 / 20` to a provider who is actually at their cap.
+    [LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES]: UsageKind.UNBUILT,
     [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_CHAT_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: UsageKind.MONTHLY,
+    // HOS-400 — MEASURED, not unbuilt. `usageKindForLimit` defaults an unmapped
+    // key to UNBUILT, so leaving these out would hide a commerce owner's real
+    // chat consumption from their own subscription page forever, with nothing
+    // failing anywhere.
+    [LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_SEARCH_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_SUPPORT_PER_MONTH]: UsageKind.MONTHLY,
     [LimitKey.MAX_AI_TRANSLATE_PER_MONTH]: UsageKind.MONTHLY,
@@ -244,9 +267,9 @@ export class UsageTrackingService {
 
         try {
             // Get customer's active subscription
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (!rawSubscriptions || rawSubscriptions.length === 0) {
                 return {
                     success: false,
                     error: {
@@ -255,6 +278,12 @@ export class UsageTrackingService {
                     }
                 };
             }
+
+            // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
+            // `hydrateSubscriptionProductDomains`'s doc) — without this,
+            // `findActiveSubscriptionForDomain`'s domain scoping is a no-op: every
+            // subscription reaches it with `productDomain = undefined`.
+            const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
             const activeSubscription = findActiveSubscriptionForDomain({
                 subscriptions,
@@ -458,14 +487,20 @@ export class UsageTrackingService {
 
         try {
             // Get customer's active subscription
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (!rawSubscriptions || rawSubscriptions.length === 0) {
                 return {
                     success: true,
                     data: null
                 };
             }
+
+            // HOS-1104: `getByCustomerId()` never populates `productDomain` (see
+            // `hydrateSubscriptionProductDomains`'s doc) — without this,
+            // `findActiveSubscriptionForDomain`'s domain scoping is a no-op: every
+            // subscription reaches it with `productDomain = undefined`.
+            const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
 
             const activeSubscription = findActiveSubscriptionForDomain({
                 subscriptions,
@@ -693,23 +728,26 @@ export class UsageTrackingService {
                 }
 
                 case LimitKey.MAX_GASTRONOMIES: {
-                    // Counted exactly the way MAX_ACCOMMODATIONS is, and for the
-                    // same reason: the cap is per OWNER, so the owner's listing
-                    // count IS the usage. `ownerId` is a declared filter on
-                    // GastronomySearchSchema — a search schema that silently
-                    // dropped it would count every listing on the platform.
+                    // Per OWNER, like MAX_ACCOMMODATIONS — but NOT through
+                    // `count()`, which is where this used to read (HOS-1247 /
+                    // HOS-933). `GastronomyService._executeCount` forces
+                    // `visibility: PUBLIC` + `lifecycleState: ACTIVE` so a public
+                    // search's total matches its page, and every owner-created
+                    // listing starts PRIVATE/DRAFT — so this reported 0 for an
+                    // owner sitting on a full quota, and the "at cap" account
+                    // never reached its cap. `countOwn` is hard-scoped to
+                    // `ownerId = actor.id` across every visibility and lifecycle
+                    // state; `actor` here is the system actor with the owner's id
+                    // (see above), which is exactly that scope.
                     const gastronomyService = new GastronomyService({ logger: apiLogger });
-                    const result = await gastronomyService.count(actor, {
-                        ownerId: userId
-                    } as never);
+                    const result = await gastronomyService.countOwn(actor);
                     return result.data?.count || 0;
                 }
 
                 case LimitKey.MAX_EXPERIENCES: {
+                    // Same reasoning as MAX_GASTRONOMIES above.
                     const experienceService = new ExperienceService({ logger: apiLogger });
-                    const result = await experienceService.count(actor, {
-                        ownerId: userId
-                    } as never);
+                    const result = await experienceService.countOwn(actor);
                     return result.data?.count || 0;
                 }
 

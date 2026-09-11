@@ -31,14 +31,27 @@
  */
 
 import { AnalyticsEvents } from '@repo/analytics';
-import { isEntitlementGrantingStatus, TEST_DAILY_PLAN } from '@repo/billing';
+import {
+    ALL_PLANS,
+    isEntitlementGrantingStatus,
+    isLiveSubscriptionStatus,
+    normalizeStoredSubscriptionStatus,
+    TEST_DAILY_PLAN
+} from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
+    ProductDomainEnum,
     ServiceErrorCode,
     StartPaidSubscriptionRequestSchema,
-    StartPaidSubscriptionResponseSchema
+    StartPaidSubscriptionResponseSchema,
+    SubscriptionStatusEnum
 } from '@repo/schemas';
-import { isAccommodationSubscription, ServiceError } from '@repo/service-core';
+import {
+    hydrateSubscriptionProductDomains,
+    isAccommodationSubscription,
+    ServiceError,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -80,6 +93,230 @@ import {
 // `back_urls.pending`. Tracked as a follow-up.
 
 /**
+ * Whether `sub` belongs to one of the two product domains THIS endpoint sells
+ * (HOS-1260).
+ *
+ * ## The guard's domain set must equal the endpoint's domain set
+ *
+ * `assertAccommodationOrTouristPlanDomain` (subscription-checkout.service.ts,
+ * HOS-1271) lets `/start-paid` sell exactly two domains: ACCOMMODATION and
+ * TOURIST — `ALL_PLANS` holds the owner tiers and the tourist tiers together and
+ * there is no second checkout for tourists. The already-subscribed guards below
+ * must therefore look at the same two domains. Asking only about accommodation
+ * left the endpoint able to sell a second subscription to a customer it would
+ * refuse to sell a first one to, which is the hole this closes.
+ *
+ * ## Nothing here changed behaviour — the DATA underneath it did
+ *
+ * Until HOS-1233 the tourist plans carried no domain of their own and fell to
+ * `billing_subscriptions.product_domain`'s `'accommodation'` default, so
+ * `isAccommodationSubscription` counted a live `tourist-vip` and both guards
+ * below caught it. HOS-1233 gave tourist a real enum member, which
+ * `subscriptionMatchesDomain` fails CLOSED on like every non-accommodation
+ * domain — so the guards went blind to `tourist-vip` without a line of their own
+ * changing. A `grep` for `tourist` over this file returned nothing, which is
+ * precisely why the regression was invisible.
+ *
+ * The consequence, measured against the catalogue rather than inferred: every
+ * `owner-*` and `complex-*` plan spreads `TOURIST_VIP_ENTITLEMENTS` and
+ * `TOURIST_VIP_LIMITS` whole (`plans.config.ts`), so a customer paying
+ * `tourist-vip` who then checked out an owner plan was charged twice for one set
+ * of 15 entitlements. The owner's 2026-09-09 ruling is that the second
+ * subscription REPLACES the first, and that the checkout must offer a plan
+ * change rather than stack a second row — restoring the symmetry that already
+ * held in reverse (a host buying `tourist-vip` has always been refused here).
+ *
+ * ## Why `ALREADY_SUBSCRIBED` and not an automatic cancellation
+ *
+ * The replacement itself already exists and is NOT built here:
+ * `selectAccommodationSubscription` (HOS-1233) reaches a `tourist-vip`
+ * subscription as its tourist fallback, and `assertAccommodationPlanChangeTarget`
+ * accepts an accommodation target, so `POST /billing/subscriptions/change-plan`
+ * moves `tourist-vip → owner-basico` by MUTATING the one row it already has.
+ * That is the whole point of refusing here rather than cancelling-then-charging:
+ * one preapproval is mutated in place, so there is no ordering to get wrong and
+ * no window in which the customer holds two live charges or none. A checkout
+ * abandoned at MercadoPago leaves the paying customer's VIP exactly as it was.
+ *
+ * ## `tourist-free` cannot be caught by this, and that matters
+ *
+ * Widening to TOURIST would be a catastrophic over-block if the free tier had a
+ * row: every logged-in user would be refused every checkout. It does not.
+ * `tourist-free` is the IMPLICIT default — `buildDefaultEntitlementsResult()`
+ * resolves it when no subscription is found at all — it is never seeded as a
+ * subscription (`packages/seed/CLAUDE.md` files `tourist-free@local.test` as
+ * "free tier / default entitlements", with no plan row), and
+ * `subscription-checkout.service.ts` (HOS-917) refuses a checkout onto a free
+ * plan outright. `tourist-vip` is the only paid tourist tier since HOS-1224
+ * retired `tourist-plus`, so TOURIST here means `tourist-vip` and nothing else.
+ *
+ * ## Written as two calls, not a union helper
+ *
+ * Identical idiom and identical reasoning to `entitlement.ts`'s loader, which
+ * pairs the same two predicates for the same reason. The asymmetry is load
+ * bearing and must survive: accommodation fails OPEN (a `null`/`undefined`
+ * column is a legacy row and still counts), tourist fails CLOSED. Inverting
+ * either would take the whole SPEC-239 isolation with it, so
+ * `subscriptionMatchesDomain` is called rather than reimplemented. This is now
+ * the SECOND consumer of the pair; a third is the moment to name the concept in
+ * `@repo/service-core` (HOS-1081 deleted `isCommerceSubscription()` for having
+ * none at all).
+ *
+ * Callers MUST pass subscriptions already run through
+ * `hydrateSubscriptionProductDomains` — `getByCustomerId()` never populates
+ * `productDomain` (HOS-934), and un-hydrated input makes the TOURIST disjunct a
+ * silent no-op. `scripts/check-subscription-domain-hydration.sh` fails CI on a
+ * file that compares a non-accommodation domain without hydrating.
+ *
+ * @param sub - A hydrated subscription from `getByCustomerId()`.
+ * @returns `true` when the subscription is an accommodation or tourist one.
+ */
+const isSubscriptionInASellableDomain = (sub: unknown): boolean =>
+    isAccommodationSubscription(sub) || subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST);
+
+/**
+ * The DECLARED product domain of the plan this checkout is about to sell, or
+ * `undefined` when the slug names no plan this endpoint knows (HOS-1335).
+ *
+ * ## Why not `productDomainForPlanSlug`
+ *
+ * That helper files every `ALL_PLANS` slug — the tourist tiers included — as
+ * `'accommodation'` (`plan-domains.config.ts`'s `buildProductDomainByPlanSlug`,
+ * a knowing divergence kept for the plan-change guards, HOS-1279). It therefore
+ * cannot answer the one question asked here, which is whether the row this
+ * checkout is about to mint will be `'accommodation'` or `'tourist'`. The plan's
+ * own `productDomain` field is the declared value, and the one the subscription
+ * ultimately carries.
+ *
+ * `TEST_DAILY_PLAN` is resolved explicitly because it is deliberately kept OUT
+ * of `ALL_PLANS` (that is what hides it from the public catalogue) while
+ * remaining a real, subscribable accommodation plan behind
+ * `HOSPEDA_SHOW_TEST_BILLING_PLAN`. Without this branch the QA fast-cycle plan
+ * would be the one plan a trialing host could not convert onto.
+ *
+ * An unknown slug yields `undefined`, which grants NO exemption — the guard then
+ * behaves exactly as it did before HOS-1335. Fail closed.
+ *
+ * @param planSlug - The requested catalogue slug.
+ * @returns The declared product domain, or `undefined` for an unknown slug.
+ */
+const declaredDomainForPlanSlug = (planSlug: string): ProductDomainEnum | undefined => {
+    if (planSlug === TEST_DAILY_PLAN.slug) {
+        return TEST_DAILY_PLAN.productDomain as ProductDomainEnum;
+    }
+    // `ALL_PLANS` types `productDomain` as `ProductDomainValue` (the enum's
+    // template literal), which is not assignable to the enum itself — same
+    // conversion precedent as `paid-subscription-create.ts`. The vocabulary is
+    // CI-guarded (`check-product-domain-vocabulary.sh`), so the cast cannot
+    // smuggle a retired value.
+    return ALL_PLANS.find((plan) => plan.slug === planSlug)?.productDomain as
+        | ProductDomainEnum
+        | undefined;
+};
+
+/**
+ * Whether `sub` is a HOSPEDA-OWNED trial that THIS purchase will supersede —
+ * `trialing`, nothing linked at MercadoPago, and in the same product domain as
+ * the plan being bought (HOS-1335).
+ *
+ * ## Why this row must not read as a duplicate
+ *
+ * Since HOS-1012 the free trial is Hospeda's own: a local `billing_subscriptions`
+ * row minted at the owner's first publish, `mp_subscription_id = NULL` by
+ * construction (`subscription-trial-create.service.ts`). MercadoPago is never
+ * told it exists, so when it lapses **nothing charges**. The only way that
+ * customer becomes a paying one is for them to come here and buy — which is
+ * precisely the gesture the already-subscribed guards below were refusing with
+ * `409 ALREADY_SUBSCRIBED`, for the whole ~30 days of the trial.
+ *
+ * Scope, stated exactly: this endpoint sells ACCOMMODATION and TOURIST, so what
+ * it unblocks is the ACCOMMODATION trial. A gastronomy or experience trial was
+ * never caught by these guards in the first place (`subscriptionMatchesDomain`
+ * fails closed for them), and converting one runs through
+ * `POST /protected/commerce/listings/:type/:id/start-subscription`, which has
+ * refusals of its own that this change does not touch — measured, and filed as
+ * follow-up work rather than claimed as fixed here.
+ *
+ * Neither guard was wrong, and `isLiveSubscriptionStatus` is not what to change:
+ * `trialing` IS live for entitlements and for dunning, and narrowing that set
+ * would silently un-guard both. What changed is what sits on the other side of a
+ * trialing row. So the exemption is stated HERE, at the two call sites whose
+ * question is "would a second checkout duplicate a live MercadoPago object?" —
+ * and for a preapproval-less trial the answer is no.
+ *
+ * ## The preapproval half is load-bearing, not belt-and-braces
+ *
+ * Card-first trials (pre-HOS-1012) DO carry a live preapproval that charges on
+ * its own at trial end, and those rows still exist in production. Selling a
+ * second subscription over one is a genuine double charge, so `trialing` alone
+ * must never be the test. Equally, the status half is load-bearing in the other
+ * direction: `comp` subscriptions are inserted with `mp_subscription_id = NULL`
+ * too (`subscription-comp-create.service.ts`), so a preapproval-blind exemption
+ * would sell a CHARGED subscription to a complimentary customer — HOS-702's
+ * failure, re-opened.
+ *
+ * ## Reading the id off the mapped object is correct, and covers `''`
+ *
+ * `@qazuor/qzpay-drizzle`'s row→domain mapper hides an empty-string provider id
+ * behind a truthiness check, so `providerSubscriptionIds` comes back `{}` for
+ * BOTH `NULL` and `''` (see `@repo/db`'s `billing-subscription-conditions.ts`,
+ * HOS-1326). A JS-side truthiness test therefore matches exactly the rows that
+ * have nothing usable linked — the two-branch `IS NULL OR = ''` shape is only
+ * needed when the question is asked in SQL.
+ *
+ * ## The domain test is what makes the supersede a guarantee
+ *
+ * Letting the checkout through must not leave the customer holding two granting
+ * rows, and what prevents that is `supersedeLocalTrialsOnActivation`
+ * (`services/billing/trial-supersede-on-activation.ts`), which ends every
+ * preapproval-less trial **inside the activation's own transaction** — so the
+ * paid row and the dead trial commit together or not at all.
+ *
+ * That sweep is scoped to the ACTIVATED row's product domain, and it compares
+ * exactly (only accommodation fails open, on a NULL column). So an exemption
+ * granted across domains would hand out a checkout whose activation cannot reach
+ * the trial it exempted: an accommodation trial exempted for a TOURIST purchase
+ * survives the tourist row's activation and goes on granting for the rest of its
+ * ~30 days, which is precisely the two-granting-rows state this is supposed to
+ * make impossible.
+ *
+ * Hence the third condition. It is not defensive symmetry — it is the exact
+ * precondition under which the paragraph above is true. Whenever the domains
+ * differ the correct answer is the one the guard already gives:
+ * `ALREADY_SUBSCRIBED`, pointing at plan-change, which mutates the single row
+ * rather than minting a second (HOS-1260).
+ *
+ * Not reachable in production today — `ALL_TRIAL_PLANS`
+ * (`packages/billing/src/config/trial-plans.config.ts`) holds exactly three
+ * entries, ACCOMMODATION / GASTRONOMY / EXPERIENCE, so no TOURIST-domain trial
+ * row can be minted by any path in this repo, and the owner has shelved
+ * `tourist-vip` besides. The condition is cheap and closes the whole class
+ * rather than today's one instance of it.
+ *
+ * `subscriptionMatchesDomain` is called rather than reimplemented so the
+ * asymmetry survives: a legacy trial row with a NULL `product_domain` still
+ * counts as accommodation (fail OPEN) and is exempted by an accommodation
+ * purchase, while every other domain fails CLOSED.
+ *
+ * @param sub - A subscription from `getByCustomerId()`, already hydrated.
+ * @param purchaseDomain - The declared domain of the plan being bought;
+ *   `undefined` (an unknown slug) exempts nothing.
+ * @returns `true` when the row is a trial Hospeda owns outright AND this
+ *   purchase's activation will supersede it.
+ */
+const isHospedaOwnedLocalTrial = (
+    sub: {
+        status?: unknown;
+        providerSubscriptionIds?: { mercadopago?: string } | null;
+    },
+    purchaseDomain: ProductDomainEnum | undefined
+): boolean =>
+    purchaseDomain !== undefined &&
+    normalizeStoredSubscriptionStatus(String(sub.status)) === SubscriptionStatusEnum.TRIALING &&
+    !sub.providerSubscriptionIds?.mercadopago &&
+    subscriptionMatchesDomain(sub, purchaseDomain);
+
+/**
  * Handler for the start-paid endpoint.
  *
  * Errors:
@@ -106,6 +343,7 @@ export const handleStartPaidSubscription = async (
         planSlug: string;
         billingInterval: 'monthly' | 'annual';
         promoCode?: string;
+        payerEmail?: string;
     }
 ): Promise<StartPaidSubscriptionResponse> => {
     const billingEnabled = c.get('billingEnabled');
@@ -172,31 +410,72 @@ export const handleStartPaidSubscription = async (
     const locale = resolveReturnUrlLocale(c);
 
     try {
-        const existingSubscriptions =
+        const rawExistingSubscriptions =
             await billing.subscriptions.getByCustomerId(billingCustomerId);
+        // HOS-847: getByCustomerId()'s qzpay-core mapper never populates
+        // productDomain (HOS-934) — without hydration the SPEC-239 isolation
+        // filter below is a silent no-op, so a customer with ONLY an active
+        // gastronomy/experience/partner subscription falls into the
+        // accommodation fail-open and is wrongly blocked here with
+        // ALREADY_SUBSCRIBED. This is a live bug independent of add-ons;
+        // HOS-847 just closes it while touching every getByCustomerId() call
+        // site in the codebase.
+        const existingSubscriptions =
+            await hydrateSubscriptionProductDomains(rawExistingSubscriptions);
 
-        // SPEC-262 H2: block checkout when the customer already has ANY active
-        // ACCOMMODATION subscription (active, trialing, OR comp). Creating a second
-        // subscription on top of an existing one causes ambiguous entitlements —
-        // two subs for the same customer, neither clearly dominant.
+        // SPEC-262 H2: block checkout when the customer already has ANY live
+        // subscription in a domain THIS endpoint sells (active, trialing, comp,
+        // OR past_due). Creating a second subscription on top of an existing one
+        // causes ambiguous entitlements — two subs for the same customer,
+        // neither clearly dominant.
         // Comp subs are perpetual (100-year far-future) so the user cannot "wait
         // them out" like a soft-cancel; they should contact support.
-        // SPEC-239 isolation: filter to accommodation-domain subs FIRST using the
-        // same predicate as the entitlement middleware, so a customer with an active
-        // COMMERCE subscription is never wrongly blocked here.
-        const hasActiveAccommodationSub = existingSubscriptions.some((sub) => {
-            if (!isAccommodationSubscription(sub)) return false;
+        // SPEC-239 isolation: filter by domain FIRST using the same predicate as
+        // the entitlement middleware, so a customer with an active COMMERCE
+        // subscription is never wrongly blocked here.
+        // HOS-1273: past_due is included via `isLiveSubscriptionStatus`, not the
+        // narrower `isEntitlementGrantingStatus`. A past-due preapproval is
+        // mid-dunning at the provider, not gone — without this the commerce route
+        // (`routes/commerce/protected/start-subscription.ts`) already refused a
+        // second checkout for a past-due listing while this one did not, so a
+        // moroso host could open a SECOND preapproval on top of the one they
+        // already owe. Unifying on the same widened predicate is the fix; see
+        // that module's docblock (HOS-1275) for why the two sets differ.
+        // HOS-1335: a Hospeda-owned trial (trialing, nothing linked at
+        // MercadoPago) in the domain THIS purchase will supersede is NOT a
+        // duplicate — this checkout is how it converts. See
+        // `isHospedaOwnedLocalTrial` for the full reasoning, for why the domain
+        // test is load-bearing rather than defensive, and for why
+        // `LIVE_SUBSCRIPTION_STATUSES` is deliberately left alone.
+        //
+        // Resolved once, from the static catalogue, before either guard runs: a
+        // pure array lookup with no I/O, and both guards must agree on it.
+        const purchaseDomain = declaredDomainForPlanSlug(body.planSlug);
+        // HOS-1335: the exempted rows, named for the duplicate guard INSIDE
+        // the creation primitives (HOS-1322). These route-level guards let a
+        // Hospeda-owned trial through, but `createPaidSubscription` /
+        // `createPendingProviderSubscription` scan again and would refuse the
+        // same conversion with ALREADY_SUBSCRIBED one gate deeper. Naming the
+        // ids is not a boolean bypass: a live row outside this list still
+        // refuses there, and the activation of the new row sweeps these
+        // (`trial-supersede-on-activation.ts`), so the exemption is the exact
+        // statement of what this purchase replaces.
+        const supersededLocalTrialIds = existingSubscriptions
+            .filter((sub) => isHospedaOwnedLocalTrial(sub, purchaseDomain))
+            .map((sub) => sub.id);
+        const hasLiveSellableDomainSub = existingSubscriptions.some((sub) => {
+            if (!isSubscriptionInASellableDomain(sub)) return false;
+            if (isHospedaOwnedLocalTrial(sub, purchaseDomain)) return false;
             // A soft-cancelled sub (cancelAtPeriodEnd=true) is intentionally NOT
             // caught here — the dedicated SPEC-147 guard below handles it with the
             // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
             // perpetual (no cancelAtPeriodEnd) so they still match.
             if (sub.cancelAtPeriodEnd === true) return false;
-            // HOS-239: canonical entitlement-granting status set (active |
-            // trialing | comp). Takes a string; QZPay's union excludes the
-            // Hospeda-specific 'comp', hence the widening cast.
-            return isEntitlementGrantingStatus(sub.status as string);
+            // Takes a string; QZPay's union excludes the Hospeda-specific
+            // 'comp', hence the widening cast.
+            return isLiveSubscriptionStatus(sub.status as string);
         });
-        if (hasActiveAccommodationSub) {
+        if (hasLiveSellableDomainSub) {
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'You already have an active subscription. To change your plan, use the plan-change endpoint.',
@@ -206,19 +485,38 @@ export const handleStartPaidSubscription = async (
         }
 
         // SPEC-147 T-008 / Q7 guard: the cancel wins.
-        // If the customer has an existing ACCOMMODATION subscription with
-        // cancelAtPeriodEnd=true, block re-subscription until the cancellation
-        // finalises. Creating a second subscription while a soft-cancel is winding
-        // down causes an ambiguous overlap. The user must wait for the finalization
-        // cron to flip the soft-cancelled sub to 'cancelled'.
-        // SPEC-239 isolation: filter to accommodation-domain subs — a soft-cancelled
-        // commerce sub must never block an accommodation checkout.
+        // If the customer has an existing subscription in a domain this endpoint
+        // sells with cancelAtPeriodEnd=true, block re-subscription until the
+        // cancellation finalises. Creating a second subscription while a
+        // soft-cancel is winding down causes an ambiguous overlap. The user must
+        // wait for the finalization cron to flip the soft-cancelled sub to
+        // 'cancelled'.
+        // SPEC-239 isolation: filter by domain — a soft-cancelled commerce sub
+        // must never block a checkout here.
         // HOS-702: "still live" is the canonical entitlement-granting set, the same
         // one the guard 20 lines above already uses — a hand-rolled
         // active/trialing pair here would have disagreed with it on `comp`.
+        // HOS-1260: widened to the same accommodation-OR-tourist pair as the guard
+        // above, and for the same reason — a soft-cancelled `tourist-vip` is a LIVE
+        // preapproval until `currentPeriodEnd`, so letting an owner checkout past
+        // it would put two live preapprovals on one customer. Closing only the
+        // guard above and leaving this one narrow is the repo's own recurring
+        // failure shape: a correct gate upstairs next to the same gate still
+        // broken twenty lines down.
+        // HOS-1335: exempted on the same terms as the guard above, and for a
+        // reason specific to THIS guard rather than by symmetry. Its whole
+        // justification is that a soft-cancelled row is "a LIVE preapproval until
+        // currentPeriodEnd", so a second checkout would put two live preapprovals
+        // on one customer — and a Hospeda-owned trial has none, so neither the
+        // hazard nor the remedy applies: the un-cancel this error tells the caller
+        // to perform would restore a trial that still cannot charge anything.
+        // Leaving it out would have reproduced the exact shape this file's own
+        // HOS-1260 note warns about — a correct gate beside the same gate still
+        // broken twenty lines down.
         const hasSoftCancelledSub = existingSubscriptions.some(
             (sub) =>
-                isAccommodationSubscription(sub) &&
+                isSubscriptionInASellableDomain(sub) &&
+                !isHospedaOwnedLocalTrial(sub, purchaseDomain) &&
                 isEntitlementGrantingStatus(sub.status as string) &&
                 sub.cancelAtPeriodEnd === true
         );
@@ -336,7 +634,16 @@ export const handleStartPaidSubscription = async (
                       // (HOS-171 §7.2) and MercadoPago preapprovals have no
                       // statement-descriptor field — only the hosted checkout
                       // this replaced did. Monthly never set one either.
-                      promoCode: body.promoCode
+                      promoCode: body.promoCode,
+                      // HOS-937 step 2: the email the user typed on the
+                      // pre-redirect screen, if any (spec §8.1).
+                      payerEmail: body.payerEmail,
+                      // HOS-1335: the exempted trial rows, named so the
+                      // duplicate guard inside the primitives lets this
+                      // conversion through (see the resolution above).
+                      ...(supersededLocalTrialIds.length > 0
+                          ? { supersedesSubscriptionIds: supersededLocalTrialIds }
+                          : {})
                   })
                 : await initiatePaidMonthlySubscription({
                       customerId: billingCustomerId,
@@ -348,7 +655,14 @@ export const handleStartPaidSubscription = async (
                           paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
-                      promoCode: body.promoCode
+                      promoCode: body.promoCode,
+                      // HOS-937 step 2: the email the user typed on the
+                      // pre-redirect screen, if any (spec §8.1).
+                      payerEmail: body.payerEmail,
+                      // HOS-1335: identical forwarding to the monthly branch.
+                      ...(supersededLocalTrialIds.length > 0
+                          ? { supersedesSubscriptionIds: supersededLocalTrialIds }
+                          : {})
                   });
 
         apiLogger.info(
@@ -372,13 +686,13 @@ export const handleStartPaidSubscription = async (
         // is emitted when `initiatePaid*Subscription` throws (the outer catch
         // handles that path).
         try {
-            // `trialGranted` is checked BEFORE falling back to 'paid': a card-first
-            // trial has no appliedEffect (it is an ordinary MP redirect), so without
-            // this the funnel would report every trial signup as a plain paid one and
-            // trial→paid conversion (HOS-130) would have nothing to measure.
-            // `comp`/`discount` still win — they describe what the money did, which is
-            // the more specific fact when both are true.
-            const outcome = result.appliedEffect ?? (result.trialGranted ? 'trial' : 'paid');
+            // HOS-1012: there is no `trialGranted` term here any more. A checkout
+            // cannot produce a trial — it is the paid path and nothing else — so
+            // the outcome is `comp` / `discount` when an effect applied, and
+            // `paid` otherwise. Trial→paid conversion (HOS-130) has to be
+            // measured off the LOCAL trial row's own lifecycle now, not off a
+            // checkout event, because the trial no longer starts at checkout.
+            const outcome = result.appliedEffect ?? 'paid';
             captureServerAnalyticsEvent({
                 distinctId: actor.id,
                 name: AnalyticsEvents.subscriptionCreated,
@@ -388,17 +702,12 @@ export const handleStartPaidSubscription = async (
                     billing_period: body.billingInterval === 'annual' ? 'annual' : 'monthly',
                     checkout_outcome: outcome,
                     /**
-                     * Whether MercadoPago will defer the first charge, as its OWN
-                     * dimension rather than folded into `outcome`.
-                     *
-                     * `outcome` is a single scalar, so when a checkout is both a
-                     * trial and a discount it has to pick one — and it picks the
-                     * money (`'discount'`), which would silently drop the trial
-                     * from the funnel for exactly the customers most worth
-                     * tracking. Since HOS-171 a trial COEXISTS with a discount, so
-                     * that combination is normal, not an edge case.
+                     * HOS-1012: a constant `false`, and honestly so — no checkout
+                     * grants a trial any more. The property is kept rather than
+                     * dropped so the funnel's schema stays stable across the
+                     * cutover and a historical `true` still means what it meant.
                      */
-                    trial_granted: result.trialGranted ?? false,
+                    trial_granted: false,
                     promotion_code: body.promoCode ?? null,
                     promotion_code_ignored: result.promoCodeIgnored ?? false,
                     amount: amountMajor,
@@ -508,7 +817,8 @@ export const startPaidSubscriptionRoute = createCRUDRoute({
         handleStartPaidSubscription(c, {
             planSlug: body.planSlug as string,
             billingInterval: body.billingInterval as 'monthly' | 'annual',
-            promoCode: body.promoCode as string | undefined
+            promoCode: body.promoCode as string | undefined,
+            payerEmail: body.payerEmail as string | undefined
         })
 });
 

@@ -538,4 +538,108 @@ describe('Authorization Middleware', () => {
             );
         });
     });
+    // -----------------------------------------------------------------------
+    // HOS-1077 — anyOfPermissions (OR-groups)
+    //
+    // `requiredPermissions` is `hasAllPermissions`, strictly AND. The vertical
+    // commerce split needs "the new permission OR the legacy one" at the route
+    // gate, which that field cannot express. These assertions cover the three
+    // properties the migration window depends on, at the HTTP boundary rather
+    // than against a hand-built context.
+    // -----------------------------------------------------------------------
+    describe('anyOfPermissions OR-groups', () => {
+        const GATE = [
+            [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]
+        ] as const;
+
+        const requestWith = async (permissions: PermissionEnum[]) => {
+            mockGetActorFromContext.mockReturnValue(createAdminActor(permissions));
+            mockIsGuestActor.mockReturnValue(false);
+            app.use(authorizationMiddleware({ level: 'admin', anyOfPermissions: GATE }));
+            app.get('/test', (c) => c.json({ success: true }));
+            return app.request('/test');
+        };
+
+        it('admits an actor holding only the LEGACY permission (dual-read)', async () => {
+            const res = await requestWith([PermissionEnum.COMMERCE_EDIT_ALL]);
+            expect(res.status).toBe(200);
+        });
+
+        it('admits an actor holding only the VERTICAL permission', async () => {
+            const res = await requestWith([PermissionEnum.GASTRONOMY_EDIT_ALL]);
+            expect(res.status).toBe(200);
+        });
+
+        it("refuses an actor holding only the OTHER vertical's permission", async () => {
+            // The bug HOS-1077 fixes, stated at the gate: an experience editor
+            // must not pass a gastronomy route.
+            const res = await requestWith([PermissionEnum.EXPERIENCE_EDIT_ALL]);
+            expect(res.status).toBe(403);
+        });
+
+        it('refuses an actor holding neither', async () => {
+            const res = await requestWith([]);
+            expect(res.status).toBe(403);
+        });
+
+        it('ANDs the groups with each other', async () => {
+            // Two groups, actor satisfies only the first.
+            mockGetActorFromContext.mockReturnValue(
+                createAdminActor([PermissionEnum.GASTRONOMY_EDIT_ALL])
+            );
+            mockIsGuestActor.mockReturnValue(false);
+            app.use(
+                authorizationMiddleware({
+                    level: 'admin',
+                    anyOfPermissions: [
+                        [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL],
+                        [
+                            PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
+                            PermissionEnum.COMMERCE_MODERATE_REVIEW
+                        ]
+                    ]
+                })
+            );
+            app.get('/test', (c) => c.json({ success: true }));
+
+            expect((await app.request('/test')).status).toBe(403);
+        });
+
+        it('ANDs the groups with requiredPermissions', async () => {
+            mockGetActorFromContext.mockReturnValue(
+                createAdminActor([PermissionEnum.GASTRONOMY_EDIT_ALL])
+            );
+            mockIsGuestActor.mockReturnValue(false);
+            app.use(
+                authorizationMiddleware({
+                    level: 'admin',
+                    requiredPermissions: [PermissionEnum.USER_HARD_DELETE],
+                    anyOfPermissions: GATE
+                })
+            );
+            app.get('/test', (c) => c.json({ success: true }));
+
+            expect((await app.request('/test')).status).toBe(403);
+        });
+
+        it('ignores an empty group instead of failing closed on it', async () => {
+            mockGetActorFromContext.mockReturnValue(createAdminActor([]));
+            mockIsGuestActor.mockReturnValue(false);
+            app.use(authorizationMiddleware({ level: 'admin', anyOfPermissions: [[]] }));
+            app.get('/test', (c) => c.json({ success: true }));
+
+            expect((await app.request('/test')).status).toBe(200);
+        });
+
+        it('applies on the protected tier too, not just admin', async () => {
+            mockGetActorFromContext.mockReturnValue(
+                createUserActor([PermissionEnum.EXPERIENCE_EDIT_ALL])
+            );
+            mockIsGuestActor.mockReturnValue(false);
+            app.use(authorizationMiddleware({ level: 'protected', anyOfPermissions: GATE }));
+            app.get('/test', (c) => c.json({ success: true }));
+
+            expect((await app.request('/test')).status).toBe(403);
+        });
+    });
 });

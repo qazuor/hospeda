@@ -22,7 +22,8 @@ import type {
     PointOfInterestPublic,
     PostListItem,
     PostPublic,
-    PostSummary
+    PostSummary,
+    QrCodeResolution
 } from '@repo/schemas';
 import { apiClient } from './client';
 import { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
@@ -385,8 +386,13 @@ export const accommodationsApi = {
      * Always resolves `{ items: [] }` for an unknown slug or an
      * accommodation without coordinates — never a 404.
      *
-     * @param params - Accommodation slug, optional radius (km) and limit
-     * @returns Nearby points of interest, nearest-first, each with `distanceKm`
+     * @param params - Accommodation slug, plus an optional `radius` and
+     *   `limit`. HOS-327: `radius` is a CEILING on each POI's own elastic
+     *   radius, not the search radius — omit it to let each POI's editorial
+     *   weight decide how far it reaches.
+     * @returns Nearby points of interest ordered by RELEVANCE (editorial
+     *   weight decayed by distance, HOS-327), each with `distanceKm`. Consume
+     *   the order as given; re-sorting by distance discards the ranking.
      *
      * @example
      * ```ts
@@ -1639,6 +1645,15 @@ export const gastronomyApi = {
         readonly maxRating?: number;
         readonly sortBy?: string;
         readonly sortOrder?: 'asc' | 'desc';
+        /** Comma-separated amenity UUIDs the listing must ALL carry. */
+        readonly amenities?: string;
+        /**
+         * Comma-separated feature UUIDs the listing must ALL carry. This is the
+         * "apto" filter (HOS-1054): sin TACC, vegano, vegetariano, sin lactosa
+         * and sin frutos secos are gastronomy-scoped `features` catalog rows,
+         * not columns of their own.
+         */
+        readonly features?: string;
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<GastronomyPublic>>> {
@@ -1890,5 +1905,67 @@ export const partnerApi = {
      */
     getBySlug(slug: string): Promise<ApiResult<PartnerPublic>> {
         return apiClient.get({ path: `${BASE}/partners/${encodeURIComponent(slug)}` });
+    }
+};
+
+// --- QR codes (HOS-981) ---
+
+/** Public QR-code API endpoints. */
+export const qrApi = {
+    /**
+     * Resolve a printed slug to its current target, recording the scan.
+     *
+     * GET /api/v1/public/qr/{slug}
+     *
+     * Deliberately NOT opted into the SSR cache (`cacheTtlMs` is never passed):
+     * the call has a side effect — it is what counts the scan — and the target
+     * it returns is editable at any moment, which is the entire reason a printed
+     * code points at a slug instead of at the destination.
+     *
+     * Every reason a slug does not resolve — unknown, retired, soft-deleted or
+     * malformed — comes back as the same 404. The caller has nothing to
+     * distinguish and must not try to.
+     *
+     * ## Why this one forwards headers (HOS-1141)
+     *
+     * The scan row records what the SCANNER's client is, and this call is made
+     * server-to-server: without forwarding, the only user agent the API would
+     * ever see is the web server's own `fetch`, and every scan in the table
+     * would describe the same machine. The three headers below are the whole
+     * "where from" the row can honestly carry:
+     *
+     * - `user-agent` and `accept-language` become the device, OS and language.
+     * - `cookie` is what lets the API resolve a signed-in scanner into
+     *   `user_id`. It is forwarded rather than the caller passing a user id,
+     *   because an id supplied over the wire is a claim; a cookie the API
+     *   validates itself is a fact.
+     *
+     * Passing a cookie also keeps the call out of the SSR cache by a SECOND,
+     * independent mechanism (`request()`'s `cacheable` guard excludes any
+     * request carrying one) — belt and braces over the missing `cacheTtlMs`,
+     * because a cached resolution is a scan that was never counted.
+     *
+     * @param input - Options object (RO-RO).
+     * @param input.slug - The slug read off the printed code.
+     * @param input.userAgent - The scanner's `User-Agent`, when the caller has
+     *   one. Omitted rather than faked when it does not.
+     * @param input.acceptLanguage - The scanner's `Accept-Language`.
+     * @param input.cookieHeader - The scanner's raw `Cookie` header.
+     */
+    resolve(input: {
+        slug: string;
+        userAgent?: string | null;
+        acceptLanguage?: string | null;
+        cookieHeader?: string | null;
+    }): Promise<ApiResult<QrCodeResolution>> {
+        const headers: Record<string, string> = {};
+        if (input.userAgent) headers['user-agent'] = input.userAgent;
+        if (input.acceptLanguage) headers['accept-language'] = input.acceptLanguage;
+
+        return apiClient.get({
+            path: `${BASE}/qr/${encodeURIComponent(input.slug)}`,
+            headers,
+            cookieHeader: input.cookieHeader ?? undefined
+        });
     }
 };

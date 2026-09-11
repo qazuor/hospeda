@@ -3,13 +3,17 @@
  *
  * Unit tests for the publish flow on AccommodationService.
  *
- * Publishing used to CREATE billing state: it started a no-card trial outside the
- * transaction, then flipped lifecycleState inside it, compensating via cancelTrial
- * if that tx failed. HOS-171 made the trial card-first, so publishing no longer
- * touches billing at all — it resolves eligibility and either flips the row or
- * rejects with `subscription_required`. `AccommodationPublishDeps` is down to
- * `checkEligibility`, and the trial-creation, QZPay-fault and compensation suites
- * went with the mechanism they covered.
+ * Publishing creates billing state again (HOS-1012), but by a different
+ * mechanism than the one HOS-171 deleted. The old trial was a MercadoPago
+ * preapproval: an external call outside the transaction, an 8s timeout, and a
+ * compensating `cancelTrial` when the local write then failed. The new one is a
+ * local row with `mp_subscription_id = NULL` created INSIDE the publish
+ * transaction, so none of that saga returns — which is why the QZPay-fault and
+ * compensation suites that once lived here did not come back with it.
+ *
+ * This file covers the publish flow's branches. The atomicity of the two writes
+ * — spec guard G-2 — needs a transaction stub that can actually roll back, and
+ * lives in `publish.trial-atomicity.test.ts`.
  */
 
 import type { AccommodationModel, UserModel } from '@repo/db';
@@ -55,11 +59,20 @@ function createPublishDeps(
     overrides: Partial<AccommodationPublishDeps> = {}
 ): AccommodationPublishDeps {
     return {
-        // 'has_active_sub' is the only eligibility that still permits publishing.
-        // This default used to be 'first_publish', back when that meant "grant a
-        // no-card trial and go live"; card-first rejects it to the plans page just
-        // like 'subscription_required', so it is no longer a publishable owner.
+        // 'has_active_sub' publishes without touching billing — the quiet
+        // default that keeps every unrelated suite below focused on what it
+        // actually tests. ('first_publish' publishes TOO since HOS-1012, but it
+        // starts a trial on the way, which most of these tests do not care
+        // about.)
         checkEligibility: vi.fn().mockResolvedValue('has_active_sub'),
+        // Stubbed so the interface is satisfied; only the HOS-1012 suites drive
+        // it, and they override it.
+        startLocalTrial: vi.fn().mockResolvedValue({
+            subscriptionId: 'sub-trial-default',
+            customerId: 'cust-default',
+            trialEnd: new Date('2026-10-01T00:00:00.000Z')
+        }),
+        onTrialStarted: vi.fn().mockResolvedValue(undefined),
         ...overrides
     };
 }
@@ -293,13 +306,19 @@ describe('AccommodationService.publish', () => {
             expect(accommodationModel.update).not.toHaveBeenCalled();
         });
 
-        it('rejects first_publish too — the first publish also needs a card (HOS-171)', async () => {
-            // THE card-first behaviour at this layer. `first_publish` used to be the
-            // happy path: it granted a no-card trial mid-publish and the owner went
-            // live without ever seeing a checkout. Now a trial IS a MercadoPago
-            // preapproval, so it cannot exist before someone authorizes a card, and
-            // this rejects to the plans page exactly like `subscription_required`.
-            // Creating the accommodation stays free — it just stays a draft.
+        it('PUBLISHES on first_publish and starts the trial (HOS-1012 reverses HOS-171)', async () => {
+            // This assertion has now flipped twice, so it is worth stating what
+            // each version meant. Originally `first_publish` granted a no-card
+            // trial mid-publish. HOS-171 made a trial a MercadoPago preapproval,
+            // which cannot exist before a card is authorized, so this test
+            // asserted a FORBIDDEN rejection to the plans page. HOS-1012 takes
+            // the trial off MercadoPago entirely — it is a local row with
+            // `mp_subscription_id = NULL` — so the owner publishes and the clock
+            // starts here again (D-1: the window begins when they get real
+            // value, not at signup).
+            //
+            // Atomicity of the two writes is G-2's job and lives in
+            // `publish.trial-atomicity.test.ts`; this only pins the branch.
             const deps = createPublishDeps({
                 checkEligibility: vi.fn().mockResolvedValue('first_publish')
             });
@@ -313,9 +332,40 @@ describe('AccommodationService.publish', () => {
             asMock(userModel.findById as Mock).mockResolvedValue({
                 id: 'user-008'
             });
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
 
             const actor = createActor({ id: 'user-008' });
             const result = await service.publish(actor, 'acc-008');
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+            expect(deps.startLocalTrial).toHaveBeenCalledWith(
+                expect.objectContaining({ ownerId: 'user-008' })
+            );
+        });
+
+        it('rejects first_publish when the trial cannot be created (no customer / no plan / billing off)', async () => {
+            // `startLocalTrial` answering null is the one way a `first_publish`
+            // owner still does not publish. Going live anyway would hand out an
+            // unbounded free listing.
+            const deps = createPublishDeps({
+                checkEligibility: vi.fn().mockResolvedValue('first_publish'),
+                startLocalTrial: vi.fn().mockResolvedValue(null)
+            });
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-008b',
+                ownerId: 'user-008b',
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'user-008b' });
+
+            const actor = createActor({ id: 'user-008b' });
+            const result = await service.publish(actor, 'acc-008b');
 
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
             expect(result.error?.message).toMatch(/subscription_required/);

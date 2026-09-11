@@ -27,7 +27,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * PUT /api/v1/admin/experiences/:id/media/:mediaId/featured
  * Set featured photo for experience listing gallery — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `setFeaturedExperienceMedia` enforces the same gate via `checkExperienceCanEditMedia`.
  */
 export const adminSetFeaturedExperienceMediaRoute = createAdminRoute({
@@ -37,10 +37,10 @@ export const adminSetFeaturedExperienceMediaRoute = createAdminRoute({
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires COMMERCE_EDIT_ALL. No request body — ids ' +
+        'photo to visible first. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL). No request body — ids ' +
         'come from URL params.',
     tags: ['Experience', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

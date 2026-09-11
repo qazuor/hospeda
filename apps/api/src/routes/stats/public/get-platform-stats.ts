@@ -15,7 +15,7 @@ import {
     StatsService
 } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor, getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -52,6 +52,17 @@ export const publicGetPlatformStatsRoute = createPublicRoute({
 
         const baseParams = { page: 1, pageSize: 1 } as const;
 
+        // HOS-352: AccommodationService derives `excludeOwnerSuspended` /
+        // `excludePlanRestricted` / `activeOnly` from the actor's VIP/staff
+        // entitlements (`_executeCount`). This endpoint's cache key is
+        // `public:${path}` (PUBLIC_CACHE_ENDPOINTS) — shared by EVERY caller,
+        // not segmented by actor at all — so if a VIP/staff visitor happens to
+        // trigger the cache-refreshing request, the inflated count (including
+        // DRAFT/suspended/plan-restricted rows) would be replayed to every
+        // anonymous visitor for the full 1h TTL. The other five `count()` calls
+        // below have no actor-dependent visibility branch (verified: only
+        // `AccommodationService` derives filters from the actor), so they are
+        // left on the real actor.
         const [
             accommodationResult,
             destinationResult,
@@ -62,7 +73,7 @@ export const publicGetPlatformStatsRoute = createPublicRoute({
             averageRating,
             recentReviewerAvatars
         ] = await Promise.all([
-            accommodationService.count(actor, baseParams),
+            accommodationService.count(createGuestActor(), baseParams),
             destinationService.count(actor, baseParams),
             eventService.count(actor, baseParams),
             postService.count(actor, baseParams),

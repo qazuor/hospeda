@@ -1,14 +1,13 @@
 /**
  * Accommodation occupancy calendar service (HOS-43 Phase 1 — manual).
  *
- * Structural precedent: mirrors `accommodation.featured-toggle.ts` — fetch the
- * accommodation via the model, 404 if missing/soft-deleted, enforce
- * ownership (`hasPermission(actor, ...ANY)` OR `..._OWN`-equivalent +
- * `actor.id === accommodation.ownerId`) inline (no declarative `ownership:`
- * route config), throw `ServiceError` on denial. Functions return plain
- * values/arrays (not the service-core `Result<T>` envelope) — same
- * convention as `setAccommodationFeaturedToggle`/`getAccommodationFeaturedEntitlement`,
- * which this module is the direct sibling of.
+ * Structural precedent: fetch the accommodation via the model, 404 if
+ * missing/soft-deleted, enforce ownership (`hasPermission(actor, ...ANY)` OR
+ * `..._OWN`-equivalent + `actor.id === accommodation.ownerId`) inline (no
+ * declarative `ownership:` route config), throw `ServiceError` on denial.
+ * Functions return plain values/arrays (not the service-core `Result<T>`
+ * envelope). (Formerly mirrored the now-retired
+ * `accommodation.featured-toggle.ts`, removed HOS-929.)
  *
  * **Permission model (spec section 4.4 / 6):**
  * - Reads (owner or admin) require ONLY ownership / `ACCOMMODATION_OCCUPANCY_VIEW`
@@ -65,13 +64,13 @@ export interface PublicOccupancyEntry {
 
 /**
  * Fetches an accommodation by id, throwing `NOT_FOUND` when missing or
- * soft-deleted. Mirrors the guard in `setAccommodationFeaturedToggle`.
+ * soft-deleted.
  *
  * The model is instantiated inside the function (not at module scope) so that
  * importing this module — e.g. via the service-core barrel — never touches the
  * `@repo/db` `AccommodationModel` export at load time. A top-level
  * `new AccommodationModel()` breaks collection of any test that partially mocks
- * `@repo/db` without that export. Matches `accommodation.featured-toggle.ts`.
+ * `@repo/db` without that export.
  */
 async function getAccommodationOrThrow(accommodationId: string): Promise<Accommodation> {
     const accommodationModel = new AccommodationModel();

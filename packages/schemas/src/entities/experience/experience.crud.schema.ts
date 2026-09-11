@@ -91,7 +91,12 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // HOS-1286: server-managed billing flag. Written ONLY by the
+    // featured-by-entitlement sync primitives — never from a request body, not
+    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
+    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
+    featuredByEntitlement: true
 }).extend({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
@@ -208,6 +213,15 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `media`           — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
  * - `isPriceOnRequest`— price-on-request toggle (gated by `COMMERCE_EDIT_OWN`)
  * - `richDescription` — rich-text description (gated by `COMMERCE_EDIT_OWN`)
+ * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
+ *   experience starts (HOS-1048; ficha data, no entitlement)
+ * - `meetingPointDirections` — how to GET there (HOS-1049). Accepted by the
+ *   shape, refused at runtime by the route unless the caller's plan grants
+ *   `manage_experience_directions`. The one field here that is not free.
+ * - `durationMinutes` — how long it lasts (HOS-898; ficha data, no entitlement)
+ * - `whatToBring` / `requirements` — the two practical checklists (HOS-1046)
+ * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
+ * - `acceptsPrivateGroups` — the group-enquiry toggle (HOS-1056)
  * - `amenityIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
  * - `featureIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
  *
@@ -238,6 +252,33 @@ export const ExperienceOwnerUpdateInputSchema = z
                 isPriceOnRequest: true,
                 priceFrom: true,
                 priceUnit: true,
+                // HOS-1048: the meeting point is the owner's to declare — they
+                // are the only one who knows where their group gathers. It is
+                // ficha data with no entitlement attached, so it sits with the
+                // other operational fields rather than behind a gate.
+                meetingPoint: true,
+                meetingPointLat: true,
+                meetingPointLong: true,
+                // HOS-1049: how to GET there. Accepted by the SHAPE here, and
+                // refused at RUNTIME by the route when the caller's plan does
+                // not grant `manage_experience_directions` — a field gate rather
+                // than a route gate, because everything else this schema carries
+                // is free on the basic tier and gating the whole PATCH would
+                // lock a `-basico` provider out of their own listing.
+                //
+                // The gate lives on the route and not in this shape on purpose:
+                // an entitlement is a fact about a subscription at request time,
+                // and a Zod schema is compiled once at module load.
+                meetingPointDirections: true,
+                // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056: the four practical
+                // ficha fields. Owner-declared, like the meeting point, and
+                // like it carrying NO entitlement — they sit with the other
+                // operational fields rather than behind a gate.
+                durationMinutes: true,
+                whatToBring: true,
+                requirements: true,
+                cancellationPolicy: true,
+                acceptsPrivateGroups: true,
                 richDescription: true,
                 nameI18n: true,
                 summaryI18n: true,
@@ -303,12 +344,48 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     lifecycleState: true,
     visibility: true,
     isFeatured: true,
+    // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
+    // primitives, never through create/update — the same treatment
+    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
+    // which admin still controls manually.
+    featuredByEntitlement: true,
     moderationState: true,
     hasActiveSubscription: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
     averageRating: true,
-    rating: true
+    rating: true,
+    // HOS-1113 — the same three the gastronomy owner-create schema omits, for
+    // the same reason: a `.omit()` schema accepts every base field it does not
+    // name, and the owner PATCH (`ExperienceOwnerUpdateInputSchema`) already
+    // refuses all three. The route handler spreads this body verbatim into
+    // `ExperienceAdminCreateInputCheckedSchema.parse(...)` and inserts it, so
+    // "accepted here" means "written to the row".
+    //
+    // - `adminInfo` — the `admin_info` jsonb column: internal staff notes plus a
+    //   `favorite` flag, with its own permission-gated write path
+    //   (`BaseCrudAdminService.setAdminInfo`) and stripped from public
+    //   projections. Not owner input.
+    // - `translationMeta` — SPEC-212 curation metadata written by the AI
+    //   translation pipeline, "exposed on admin responses only". No
+    //   `translation_meta` column on `experiences` today; omitted so it cannot
+    //   become live the day one lands.
+    // - `media` — no `media` column on `experiences`; photos live in
+    //   `experience_media` (HOS-372). Every other experience write schema omits
+    //   it already.
+    // - `meetingPointDirections` — HOS-1049. The ONE entitlement-gated field on
+    //   this entity, and create is the one write path that cannot check the
+    //   entitlement honestly: a listing is created `PRIVATE`/`DRAFT` BEFORE the
+    //   owner has any subscription at all (the normal mid-funnel state
+    //   `commerce-entitlement.ts` is written around), so a gate here would
+    //   refuse every legitimate provider, while no gate at all would let an
+    //   unentitled one write the field through this schema's `.omit()`
+    //   inheritance, in silence. Omitting removes the dilemma: the field is
+    //   written through the owner PATCH, which IS gated, and nowhere else.
+    adminInfo: true,
+    translationMeta: true,
+    media: true,
+    meetingPointDirections: true
 }).extend({
     /** Optional at create — publish-readiness is checked separately (§6.6). */
     destinationId: DestinationIdSchema.optional(),
@@ -384,6 +461,16 @@ export const ExperienceUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
+                // Server-managed (HOS-1286): written ONLY by the
+                // featured-by-entitlement sync primitives, the addon checkout
+                // confirmation and the reconcile cron — never through the generic
+                // PATCH path. Omitted here because these schemas are built with
+                // `.omit(...)`, so a field is accepted unless it is named: leaving
+                // it in would let an owner send `featuredByEntitlement: true` in
+                // their own update and feature their listing without buying the
+                // add-on, which is the exact product HOS-1286 exists to sell.
+                // `isFeatured`, the admin-curated flag beside it, stays writable.
+                featuredByEntitlement: true,
                 // Server-managed: ownership change requires a dedicated admin action.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.

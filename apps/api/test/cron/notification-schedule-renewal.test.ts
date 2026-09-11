@@ -25,7 +25,7 @@ import {
 import type { CronJobContext } from '../../src/cron/types';
 
 // withTransaction mock must be hoisted so it is available inside vi.mock() factory.
-const { mockDbWithTransactionRenewal } = vi.hoisted(() => {
+const { mockDbWithTransactionRenewal, mockHydrationRows } = vi.hoisted(() => {
     const tx = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
         update: vi.fn().mockReturnThis(),
@@ -33,19 +33,98 @@ const { mockDbWithTransactionRenewal } = vi.hoisted(() => {
         where: vi.fn().mockResolvedValue(undefined)
     };
     const withTx = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => callback(tx));
-    return { mockDbWithTransactionRenewal: withTx };
+    // HOS-847: what makeDbChain()'s thenable resolves to — backs
+    // hydrateSubscriptionProductDomains's recovery SELECT (called for real
+    // from @repo/service-core, unmocked, by loadActiveNonAddonSubscriptions).
+    // Defaults to `[]`: every pre-existing fixture in this file lacks a
+    // productDomain, so an unmatched id hydrates to `null` (accommodation
+    // fail-open, unchanged prior behavior).
+    const hydrationRows: { current: unknown[] } = { current: [] };
+    return { mockDbWithTransactionRenewal: withTx, mockHydrationRows: hydrationRows };
 });
 
 // Mock @repo/db — required for pg_try_advisory_xact_lock concurrency guard (GAP-034).
 // withTransaction is required because the job now wraps all work in a transaction.
-vi.mock('@repo/db', () => ({
-    getDb: vi.fn().mockReturnValue({
+/**
+ * A drizzle-shaped chain: every builder call answers with itself, and awaiting
+ * it yields an empty result set.
+ *
+ * HOS-1012 widened what this job touches — it now also drives
+ * `trial-series-dispatch`, which reaches `billing_subscriptions` and
+ * `billing_subscription_events` through `select/from/innerJoin/where` and
+ * `insert/values`. The previous stub stopped at `update/set/where`, so the
+ * handler threw and EVERY test in this file failed on `result.success`, which
+ * reads like a renewal-reminder regression and is not one.
+ *
+ * Empty is the correct answer: this file asserts renewal reminders, whose
+ * subscriptions come from the mocked billing client and never from the
+ * database. An empty cohort keeps the trial series inert instead of letting it
+ * interfere with what these tests actually measure.
+ */
+const makeDbChain = () => {
+    const chain: Record<string, unknown> = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
-        update: vi.fn().mockReturnThis(),
-        set: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue(undefined)
-    }),
+        // biome-ignore lint/suspicious/noThenProperty: deliberately thenable — a drizzle query builder IS awaited directly, and the stub has to answer `await db.select()...where()` the same way.
+        then: (resolve: (rows: unknown[]) => unknown) =>
+            Promise.resolve(mockHydrationRows.current).then(resolve)
+    };
+    for (const method of [
+        'select',
+        'from',
+        'innerJoin',
+        'leftJoin',
+        'where',
+        'orderBy',
+        'limit',
+        'groupBy',
+        'insert',
+        'values',
+        'update',
+        'set',
+        'onConflictDoNothing',
+        'returning'
+    ]) {
+        chain[method] = vi.fn(() => chain);
+    }
+    return chain;
+};
+
+vi.mock('@repo/db', () => ({
+    getDb: vi.fn(() => makeDbChain()),
     withTransaction: mockDbWithTransactionRenewal,
+    // Imported by `trial-series-dispatch` and `trial-series-cohort`; absent from
+    // a whole-module mock they read as undefined and blow up at the first call.
+    and: vi.fn((...conditions: unknown[]) => ({ __and: conditions })),
+    gte: vi.fn((_col: unknown, _val: unknown) => ({ __gte: true })),
+    lte: vi.fn((_col: unknown, _val: unknown) => ({ __lte: true })),
+    isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
+    isNotNull: vi.fn((_col: unknown) => ({ __isNotNull: true })),
+    // HOS-847: backs hydrateSubscriptionProductDomains's recovery SELECT
+    // (called for real from @repo/service-core, unmocked, by
+    // loadActiveNonAddonSubscriptions). makeDbChain()'s `.where(...)` already
+    // resolves `[]` by default via its shared thenable `then` — every fixture
+    // in this file lacks a productDomain, so an unmatched id hydrates to
+    // `null` (accommodation fail-open, unchanged prior behavior).
+    inArray: vi.fn((_col: unknown, values: unknown[]) => ({ __inArray: values })),
+    billingSubscriptions: {
+        id: 'id',
+        customerId: 'customer_id',
+        planId: 'plan_id',
+        status: 'status',
+        trialEnd: 'trial_end',
+        mpSubscriptionId: 'mp_subscription_id',
+        productDomain: 'product_domain',
+        currentPeriodEnd: 'current_period_end',
+        deletedAt: 'deleted_at'
+    },
+    billingSubscriptionEvents: {
+        id: 'id',
+        subscriptionId: 'subscription_id',
+        eventType: 'event_type',
+        previousStatus: 'previous_status',
+        newStatus: 'new_status',
+        createdAt: 'created_at'
+    },
     billingNotificationLog: {
         customerId: 'customer_id',
         type: 'type',
@@ -164,6 +243,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
         resetSentNotificationsFallback();
         process.env.HOSPEDA_SITE_URL = 'https://hospeda.com';
         subscriptionCounter = 0; // Reset counter for each test
+        mockHydrationRows.current = [];
     });
 
     describe('Renewal Reminder Sending', () => {
@@ -226,6 +306,76 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
                     customerId: expect.stringContaining('cust-'),
                     planName: 'Plan Owner Básico'
                 })
+            );
+        });
+
+        // HOS-847: a recurring add-on's own MercadoPago preapproval reaching
+        // `active` must never get "your subscription renews in N days" — its
+        // planId doesn't resolve to a real billing_plans row (would read
+        // "Unknown Plan"), and wasNotificationSent dedupes by customerId ALONE
+        // (no subscriptionId), so sending it here could consume the same
+        // customer's real-plan reminder slot for the same window.
+        it("excludes a recurring add-on's own row from renewal reminders", async () => {
+            // Arrange — one real accommodation subscription and one add-on's
+            // own preapproval row, both renewing in 3 days, for DIFFERENT
+            // customers so a leak is unambiguous.
+            const ctx = createMockContext();
+            const realSub = createMockSubscription(3);
+            const addonSub = createMockSubscription(3);
+            const mockSubscriptions = [realSub, addonSub];
+
+            // The hydration recovery SELECT resolves each row's real domain.
+            mockHydrationRows.current = [
+                { id: realSub.id, productDomain: 'accommodation' },
+                { id: addonSub.id, productDomain: 'addon' }
+            ];
+
+            const mockBilling = {
+                subscriptions: {
+                    listAll: vi.fn().mockResolvedValue(mockSubscriptions)
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
+                }
+            };
+
+            const mockTrialService = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-123'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert — only the real subscription's reminder is sent.
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: realSub.customerId })
+            );
+            expect(sendNotification).not.toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: addonSub.customerId })
             );
         });
 
@@ -1025,11 +1175,25 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             const result = await notificationScheduleJob.handler(ctx);
 
             // Assert
+            // HOS-1012 replaced the two trial-reminder counters with the
+            // nine-offset series' own report. `trialsEndingPrimary` /
+            // `trialsEnding1Day` described the old two-send reminder that no
+            // longer exists; `trialSeries` reports per-offset cohort sizes plus
+            // every skip reason, so a run that sent nothing can still say
+            // whether nobody was due or everything was skipped.
             expect(result.details).toMatchObject({
                 renewalsSent: 2,
-                trialsEndingPrimary: 0,
-                trialsEnding1Day: 0
+                trialSeries: {
+                    sent: 0,
+                    deduped: 0,
+                    converted: 0,
+                    noCustomer: 0
+                }
             });
+            // `toMatchObject` is blind to a key that is simply gone, so pin the
+            // retirement explicitly.
+            expect(result.details).not.toHaveProperty('trialsEndingPrimary');
+            expect(result.details).not.toHaveProperty('trialsEnding1Day');
         });
     });
 

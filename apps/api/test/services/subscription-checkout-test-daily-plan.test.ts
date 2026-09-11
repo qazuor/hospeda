@@ -20,6 +20,38 @@
 
 import { TEST_DAILY_PLAN } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// HOS-937 step 2: `initiatePaidMonthlySubscription` now reads
+// `billing_customers.mp_payer_email` via raw SQL (`getMpPayerEmail`,
+// `db.execute(sql\`...\`)`) before resolving the checkout. The GLOBAL
+// `@repo/db` mock's `execute()` resolves to a bare `[]` (not `{ rows: [] }`),
+// which breaks that new read. Not what this suite tests — override locally
+// with the real shape.
+vi.mock('@repo/db', async () => {
+    const actual = await vi.importActual<typeof import('@repo/db')>('@repo/db');
+    return {
+        ...actual,
+        // HOS-1272: see the identical fallback in
+        // `subscription-checkout.service.test.ts` — `@repo/db`'s root barrel
+        // resolves to the package's built dist, and `billingPendingCheckouts`
+        // (now read by `resolveReusableAccommodationCheckout`) is absent from
+        // a dist that has not been rebuilt since this table's schema landed.
+        billingPendingCheckouts: actual.billingPendingCheckouts ?? {
+            localSubscriptionId: 'local_subscription_id',
+            customerId: 'customer_id',
+            planId: 'plan_id',
+            mpPreapprovalPlanId: 'mp_preapproval_plan_id',
+            nonce: 'nonce',
+            status: 'status',
+            expiresAt: 'expires_at',
+            pendingDiscount: 'pending_discount',
+            pendingTrialExtension: 'pending_trial_extension'
+        },
+        getDb: vi.fn(() => ({ execute: vi.fn().mockResolvedValue({ rows: [] }) }))
+    };
+});
+
+import { ProductDomainEnum } from '@repo/schemas';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
 import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
 import {
@@ -28,6 +60,7 @@ import {
     SubscriptionCheckoutError
 } from '../../src/services/subscription-checkout.service';
 import { env } from '../../src/utils/env';
+import { mockPlanDomainRead } from '../helpers/plan-domain-read';
 
 // HOS-191: the real Initiate* flows now resolve/provision a MercadoPago
 // preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
@@ -113,6 +146,10 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
     beforeEach(() => {
         originalFlag = env.HOSPEDA_SHOW_TEST_BILLING_PLAN;
         vi.clearAllMocks();
+        // HOS-1271: `resolvePlanProductDomain`'s `.select()` chain —
+        // `owner-test-daily` is seeded ACCOMMODATION
+        // (`packages/seed/src/data-migrations/0004-test-daily-plan.ts`).
+        mockPlanDomainRead(ProductDomainEnum.ACCOMMODATION);
         vi.mocked(createPendingProviderSubscription).mockResolvedValue({
             localSubscriptionId: LOCAL_SUB_ID,
             nonce: 'nonce-test',

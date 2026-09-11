@@ -227,7 +227,11 @@ describe('Limit Enforcement Middleware', () => {
             expect(mockNext).toHaveBeenCalled();
         });
 
-        it('should continue when count fails', async () => {
+        it('refuses with 503 when the count fails (HOS-1078)', async () => {
+            // This assertion used to be its own opposite — "should continue when
+            // count fails" — which is how the fail-open branch survived a green
+            // suite. The same statement is asserted against the three real
+            // routes in `test/middlewares/accommodation-limit-fail-closed.e2e.test.ts`.
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
             const mockCount = vi.fn().mockResolvedValue({
@@ -241,9 +245,17 @@ describe('Limit Enforcement Middleware', () => {
             });
 
             const middleware = enforceAccommodationLimit();
-            await middleware(mockContext, mockNext);
 
-            expect(mockNext).toHaveBeenCalled();
+            let thrown: unknown;
+            try {
+                await middleware(mockContext, mockNext);
+            } catch (err) {
+                thrown = err;
+            }
+
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(503);
+            expect(mockNext).not.toHaveBeenCalled();
         });
 
         it('should allow unlimited when limit is -1', async () => {
@@ -304,10 +316,12 @@ describe('Limit Enforcement Middleware', () => {
             expect((thrown as ServiceError).message).toBe('Accommodation limit reached');
         });
 
-        it('should call next() and log with String() when a non-Error is thrown in the catch block (line 185)', async () => {
-            // Coverage target: limit-enforcement.ts line 185.
-            // `error instanceof Error ? error.message : String(error)` — the String(error)
-            // branch fires when someone throws a non-Error value (e.g. a plain string).
+        it('refuses with 503 and logs with String() when a non-Error is thrown (HOS-1078)', async () => {
+            // Coverage target: the catch block's
+            // `error instanceof Error ? error.message : String(error)` — the
+            // String(error) branch fires when someone throws a non-Error value.
+            // The refusal is the point: a plain-string throw means the cap was
+            // never evaluated, and this used to call next() anyway.
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
 
             // Make count throw a plain string (NOT an Error instance)
@@ -322,10 +336,17 @@ describe('Limit Enforcement Middleware', () => {
             });
 
             const middleware = enforceAccommodationLimit();
-            await middleware(mockContext, mockNext);
 
-            // Plain-string throw must NOT block the request
-            expect(mockNext).toHaveBeenCalled();
+            let thrown: unknown;
+            try {
+                await middleware(mockContext, mockNext);
+            } catch (err) {
+                thrown = err;
+            }
+
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(503);
+            expect(mockNext).not.toHaveBeenCalled();
         });
 
         it('always runs a single total-count query and blocks at limit (BETA-197: no draft-exists bypass)', async () => {
@@ -868,7 +889,7 @@ describe('Limit Enforcement Middleware', () => {
                 });
             });
 
-            it('should continue on service error to avoid blocking users', async () => {
+            it('answers 503 on a service error instead of creating anyway (HOS-1078)', async () => {
                 // Arrange
                 const app = new Hono<AppBindings>();
                 attachTestErrorHandler(app);
@@ -890,8 +911,9 @@ describe('Limit Enforcement Middleware', () => {
                     } as unknown as AccommodationService;
                 });
 
+                const handler = vi.fn((c: Context) => c.json({ success: true, id: 'new-456' }));
                 app.use('/*', enforceAccommodationLimit());
-                app.post('/accommodations', (c) => c.json({ success: true, id: 'new-456' }));
+                app.post('/accommodations', handler);
 
                 // Act
                 const res = await app.request('/accommodations', {
@@ -899,10 +921,9 @@ describe('Limit Enforcement Middleware', () => {
                     headers: { 'Content-Type': 'application/json' }
                 });
 
-                // Assert - should pass through despite error
-                expect(res.status).toBe(200);
-                const data = await res.json();
-                expect(data).toEqual({ success: true, id: 'new-456' });
+                // Assert — the cap could not be evaluated, so nothing is created.
+                expect(handler).not.toHaveBeenCalled();
+                expect(res.status).toBe(503);
             });
         });
 
@@ -982,7 +1003,7 @@ describe('Limit Enforcement Middleware', () => {
                 expect(mockNext).toHaveBeenCalled();
             });
 
-            it('should handle service throwing unexpected errors gracefully', async () => {
+            it('refuses with 503 when the service throws unexpectedly (HOS-1078)', async () => {
                 // Arrange
                 const mockActor: Actor = {
                     id: 'user-123',
@@ -1000,10 +1021,17 @@ describe('Limit Enforcement Middleware', () => {
                 });
 
                 const middleware = enforceAccommodationLimit();
-                await middleware(mockContext, mockNext);
 
-                // Should continue despite error
-                expect(mockNext).toHaveBeenCalled();
+                let thrown: unknown;
+                try {
+                    await middleware(mockContext, mockNext);
+                } catch (err) {
+                    thrown = err;
+                }
+
+                expect(thrown).toBeInstanceOf(HTTPException);
+                expect((thrown as HTTPException).status).toBe(503);
+                expect(mockNext).not.toHaveBeenCalled();
             });
         });
 

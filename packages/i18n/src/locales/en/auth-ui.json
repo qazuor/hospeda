@@ -169,11 +169,11 @@
             "description": "Verifying your email address on Hospeda"
         },
         "verifyEmailSent": {
-            "body": "Te enviamos un correo con un enlace para verificar tu cuenta. Hacé clic en el enlace para activar tu acceso. Si no lo ves en la bandeja de entrada, revisá la carpeta de spam o promociones.",
-            "description": "Te enviamos un correo para verificar tu cuenta",
-            "heading": "Casi listo",
-            "signInLink": "Ir a iniciar sesión",
-            "title": "Revisá tu correo"
+            "body": "We sent you an email with a link to verify your account. Click the link to activate your access. If you do not see it in your inbox, check your spam or promotions folder.",
+            "description": "We sent you an email to verify your account",
+            "heading": "Almost there",
+            "signInLink": "Go to sign in",
+            "title": "Check your email"
         }
     },
     "loading": "Loading form"

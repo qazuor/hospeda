@@ -75,6 +75,8 @@
         "REVIEW_ALREADY_EXISTS": "Ya valoraste a este proveedor. Podés editar tu valoración.",
         "PROVIDER_REVOKED": "Este proveedor ya no forma parte del directorio.",
         "ALREADY_EXISTS": "Ese recurso ya existe.",
+        "ALREADY_SUBSCRIBED": "Ya tenés una suscripción activa. En Mi cuenta → Suscripción podés cambiar de plan dentro de la que tenés, o darla de baja para contratar una distinta.",
+        "TRIAL_REQUIRES_CHECKOUT": "Estás en tu prueba gratis, así que todavía no hay una suscripción que cambiar. Elegí el plan que quieras y activá tu suscripción: tu prueba se cierra sola cuando se confirma el pago.",
         "INTERNAL_ERROR": "Algo salió mal del lado nuestro. Intentá de nuevo en un momento.",
         "NETWORK_ERROR": "No pudimos conectar con el servidor. Probá de nuevo.",
         "TIMEOUT": "La solicitud tardó demasiado. Probá de nuevo.",
@@ -104,7 +106,9 @@
         "PROVIDER_RATE_LIMITED": "El servicio de pago está ocupado. Esperá unos segundos y volvé a intentar.",
         "PROVIDER_TIMEOUT": "El servicio de pago tardó demasiado en responder. Intentá de nuevo.",
         "PLAN_DISABLED": "El plan seleccionado ya no está disponible. Elegí otro plan para continuar.",
-        "SUBSCRIPTION_CANCEL_PENDING": "Tu suscripción está programada para cancelarse al fin del período. No podés cambiar de plan hasta que termine el período actual."
+        "SUBSCRIPTION_CANCEL_PENDING": "Tu suscripción está programada para cancelarse al fin del período. No podés cambiar de plan hasta que termine el período actual.",
+        "NO_ACTIVE_TRIAL": "No tenés una prueba gratis en curso, así que no hay nada para extender. El código no se usó: guardalo.",
+        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "Este código no se puede canjear. Una suscripción de cortesía la otorga el equipo: escribinos si te prometieron una."
     },
     "filters": "Filtros",
     "filterChips": {
@@ -144,6 +148,15 @@
     "pagination": "Paginación",
     "noImage": "Sin imagen",
     "removing": "Eliminando...",
+    "richText": {
+        "linkDialog": {
+            "title": "Enlace",
+            "label": "URL del enlace",
+            "hint": "Dejá el campo vacío para quitar el enlace.",
+            "placeholder": "https://ejemplo.com",
+            "submit": "Aplicar"
+        }
+    },
     "retry": "Reintentar",
     "saving": "Guardando...",
     "untitled": "Sin título",
@@ -203,6 +216,14 @@
             "title": "Cambios sin guardar",
             "confirm": "Sí, descartar",
             "cancel": "Seguir editando"
+        },
+        "unsavedChangesAndPhotoAlt": {
+            "title": "Cambios sin guardar y fotos sin texto alternativo",
+            "message": "Tenés cambios sin guardar en esta página: si salís ahora se pierden. Además, {{count}} foto sigue sin texto alternativo, el que los lectores de pantalla leen en voz alta y los buscadores usan para entender tus imágenes. ¿Querés salir igual?",
+            "message_one": "Tenés cambios sin guardar en esta página: si salís ahora se pierden. Además, {{count}} foto sigue sin texto alternativo, el que los lectores de pantalla leen en voz alta y los buscadores usan para entender tus imágenes. ¿Querés salir igual?",
+            "message_other": "Tenés cambios sin guardar en esta página: si salís ahora se pierden. Además, {{count}} fotos siguen sin texto alternativo, el que los lectores de pantalla leen en voz alta y los buscadores usan para entender tus imágenes. ¿Querés salir igual?",
+            "confirm": "Salir y descartar los cambios",
+            "cancel": "Seguir editando"
         }
     },
     "modal": {
@@ -211,5 +232,23 @@
     "back": "Volver",
     "close": "Cerrar",
     "deleting": "Eliminando...",
-    "anonymous": "Usuario"
+    "anonymous": "Usuario",
+    "qrSheet": {
+        "headline": "Escaneá el código",
+        "invite": "Apuntá la cámara de tu teléfono al código para ver la ficha completa: fotos, contacto y cómo llegar.",
+        "brandTagline": "Alojamientos, gastronomía y experiencias del Litoral",
+        "help": "Una hoja A4 con el código de tu ficha, para imprimir y pegar en la puerta o dejar en el mostrador.",
+        "download": "Descargar la hoja QR (PDF)",
+        "working": "Generando la hoja…",
+        "ready": "Listo, descargamos tu hoja QR.",
+        "unpublished": "Vas a poder descargar la hoja QR cuando tu ficha esté publicada.",
+        "errorNotFound": "No pudimos generar la hoja. Revisá que tu ficha siga publicada.",
+        "errorRateLimited": "Pediste la hoja varias veces seguidas. Esperá un minuto y probá de nuevo.",
+        "errorSignedOut": "Se cerró tu sesión. Volvé a entrar para descargar la hoja.",
+        "error": "No pudimos generar la hoja. Probá de nuevo en un momento.",
+        "codeAlt": "Código QR de tu ficha",
+        "codeLoading": "Cargando el código…",
+        "codeError": "No pudimos mostrar el código acá, pero podés descargar la hoja igual.",
+        "encodes": "El código lleva a: {{url}}"
+    }
 }

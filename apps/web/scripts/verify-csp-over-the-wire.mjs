@@ -52,7 +52,13 @@ const MUST_HAVE_CSP = [
     '/es/colaborar/reportar/',
     '/es/colaborar/fotos/',
     '/es/beneficios/',
-    '/es/suscriptores/propietarios/',
+    // HOS-985: was `/es/suscriptores/propietarios/`, which is now a 301 (HOS-941
+    // D-12). This list is fetched with `redirect: 'manual'`, so a redirect
+    // arrives as a 301 with no HTML body and therefore no CSP header — the entry
+    // could not stay. Its CONTENT moved here, so the coverage moves with it
+    // rather than being dropped: the owner marketing copy is still served by a
+    // route that has to carry the header.
+    '/es/planes/anfitriones/',
     '/es/guest/messages/verify-expired/'
 ];
 

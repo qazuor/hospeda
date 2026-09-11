@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "106-feature-fusion_cuisine",
+    "slug": "fusion_cuisine",
+    "description": {
+        "es": "Cocina de fusión: combina técnicas y sabores de distintas tradiciones",
+        "en": "Fusion cuisine: combines techniques and flavors from different traditions",
+        "pt": "Cozinha de fusão: combina técnicas e sabores de diferentes tradições"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "GlobeIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 58,
+    "lifecycleState": "ACTIVE"
+}

@@ -11,7 +11,7 @@
 import type { QueryContext } from '@repo/db';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import { and, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
+import { and, eq, gte, isNotNull, isNull, lte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import type { ServiceResult } from './addon.types.js';
 
@@ -151,14 +151,37 @@ export function parseEntitlementAdjustments(
 // ─── Query functions ──────────────────────────────────────────────────────────
 
 /**
- * Queries `billing_addon_purchases` for records where:
- * - `status = 'active'`
- * - `expires_at <= now()`
- * - `expires_at IS NOT NULL`
- * - `deleted_at IS NULL`
+ * Queries `billing_addon_purchases` for records that are due to be revoked:
+ * `status = 'active'`, `deleted_at IS NULL`, and EITHER
+ *
+ * - `expires_at IS NOT NULL AND expires_at <= now()` — a one-time add-on that
+ *   ran out; or
+ * - `cancel_at_period_end = true AND current_period_end IS NOT NULL AND
+ *   current_period_end <= now()` — a RECURRING add-on the customer cancelled,
+ *   whose already-paid period has now ended (HOS-847 PR 6).
+ *
+ * ### `cancel_at_period_end` is load-bearing, not decoration
+ *
+ * Expiring a row REVOKES the customer's entitlement and limit. A live recurring
+ * add-on that is still being charged legitimately has a `current_period_end` in
+ * the past whenever its renewal webhook is late — the charge lands, then the
+ * period advances. Matching on the date ALONE would therefore revoke a paying
+ * customer's add-on every time MercadoPago was slow. Only a row whose owner
+ * asked for the cancellation may be swept, which is exactly what the flag says.
+ *
+ * A recurring row is never both: `expires_at` stays null on it, so the two
+ * branches of the OR are disjoint in practice and a row is returned once.
  *
  * Limited to {@link BATCH_SIZE} rows per call (GAP-043-015). The cron job runs
  * again on the next tick to continue processing remaining rows.
+ *
+ * @remarks
+ * **Obligation for PR 7's reconciler**: an `active` row with
+ * `cancel_at_period_end = true` whose `current_period_end` is well past is a
+ * benefit nobody is paying for. Its preapproval was already hard-cancelled at
+ * cancellation time, so no charge will ever arrive to correct it, and this query
+ * is the ONLY thing that looks at that pair. If the cron stops running, nothing
+ * else notices.
  *
  * @param ctx - Optional query context. When `ctx.tx` is present, the query runs
  *   inside that transaction; otherwise the default connection is used.
@@ -189,9 +212,22 @@ export async function findExpiredAddons(
             .where(
                 and(
                     eq(billingAddonPurchases.status, 'active'),
-                    isNotNull(billingAddonPurchases.expiresAt),
-                    lte(billingAddonPurchases.expiresAt, now),
-                    isNull(billingAddonPurchases.deletedAt)
+                    isNull(billingAddonPurchases.deletedAt),
+                    or(
+                        // One-time add-on that ran out.
+                        and(
+                            isNotNull(billingAddonPurchases.expiresAt),
+                            lte(billingAddonPurchases.expiresAt, now)
+                        ),
+                        // HOS-847 PR 6: recurring add-on the customer cancelled,
+                        // now past the period they paid for. The flag is what
+                        // keeps a merely-late renewal out of this sweep.
+                        and(
+                            eq(billingAddonPurchases.cancelAtPeriodEnd, true),
+                            isNotNull(billingAddonPurchases.currentPeriodEnd),
+                            lte(billingAddonPurchases.currentPeriodEnd, now)
+                        )
+                    )
                 )
             );
 
@@ -201,7 +237,12 @@ export async function findExpiredAddons(
         const expiredPurchases = rawResults.slice(0, BATCH_SIZE);
 
         const expiredAddons: ExpiredAddon[] = expiredPurchases.map((purchase) => {
-            const expiresAt = purchase.expiresAt ?? new Date();
+            // HOS-847 PR 6: a soft-cancelled recurring row has a null
+            // `expires_at`; its end date is `current_period_end`, which the WHERE
+            // clause above guarantees is non-null on exactly those rows. The
+            // final `new Date()` is unreachable for anything this query returns
+            // and is kept only so the field stays non-nullable for consumers.
+            const expiresAt = purchase.expiresAt ?? purchase.currentPeriodEnd ?? new Date();
             const parseContext = { purchaseId: purchase.id, addonSlug: purchase.addonSlug };
 
             return {

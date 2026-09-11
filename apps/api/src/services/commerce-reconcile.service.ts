@@ -3,8 +3,16 @@
  *
  * Bridges the billing lifecycle (MP webhook + dunning / finalize crons) to the
  * commerce visibility reconciler. When a subscription's status changes, any
- * commerce listing linked to it must flip visibility (active/trialing → PUBLIC,
- * everything else → PRIVATE).
+ * commerce listing linked to it must flip visibility.
+ *
+ * HOS-1160: the parenthetical here used to say "active/trialing → PUBLIC,
+ * everything else → PRIVATE". That was never the predicate this module applies.
+ * Both gates below call {@link isPublishingSubscriptionStatus}, which delegates
+ * to the canonical `isEntitlementGrantingStatus` — `active`, `trialing`,
+ * **`comp`** and **`courtesy`**. The distinction is load-bearing now that a
+ * commerce listing can be comped: read literally, the old sentence says a
+ * complimentary gastronomy or experience listing must go dark, which is the
+ * opposite of what the code does and of what the courtesy is for.
  *
  * The reconciler (`reconcileCommerceListingVisibility` in `@repo/service-core`)
  * is generic over `entityType` and needs a {@link CommerceEntityModel}. This
@@ -19,17 +27,11 @@
  * @module services/commerce-reconcile.service
  */
 
+import { commerceVerticalToProductDomain, parseCommerceVertical } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import {
-    and,
-    commerceListingSubscriptions,
-    eq,
-    experienceModel,
-    gastronomyModel,
-    getDb
-} from '@repo/db';
+import { and, entitySubscriptions, eq, experienceModel, gastronomyModel, getDb } from '@repo/db';
 import type { CommerceEntityType } from '@repo/schemas';
-import { ProductDomainEnum, resolveListingCompleteness } from '@repo/schemas';
+import { resolveListingCompleteness } from '@repo/schemas';
 import {
     type CommerceEntityModel,
     type ResolveCommerceListingCompleteness,
@@ -140,10 +142,19 @@ export async function resolveCommerceListingCompleteness(
  * fixed `entityType`, matching the shape `reconcileCommerceListingVisibility`
  * expects (`(entityId, tx?) => Promise<{complete, missing}>`).
  *
+ * Exported since HOS-1122 so the commerce downgrade remediation reconciles a
+ * listing through the SAME completeness resolver the billing lifecycle uses.
+ * A second resolver there would be a second definition of "publishable", and
+ * the two would diverge the first time one of them learned a new required
+ * field — which is exactly how this path once kept every paid listing PRIVATE
+ * (H-154 / HOS-494).
+ *
  * @param entityType - Commerce entity discriminator for this reconcile call.
  * @returns A resolver closed over `entityType`.
  */
-function bindCompletenessResolver(entityType: string): ResolveCommerceListingCompleteness {
+export function bindCommerceCompletenessResolver(
+    entityType: string
+): ResolveCommerceListingCompleteness {
     return (entityId, tx) => resolveCommerceListingCompleteness(entityType, entityId, tx);
 }
 
@@ -153,6 +164,14 @@ function bindCompletenessResolver(entityType: string): ResolveCommerceListingCom
 interface CommerceLink {
     readonly entityType: string;
     readonly entityId: string;
+    /**
+     * `entity_subscriptions.plan_restricted` for this listing (HOS-1122).
+     *
+     * Carried on the link, not re-read per listing: the reconciler needs it to
+     * refuse publishing a listing the owner's downgraded tier no longer covers,
+     * and this row is where the flag lives.
+     */
+    readonly planRestricted: boolean;
 }
 
 /**
@@ -160,7 +179,7 @@ interface CommerceLink {
  * coordinates the checkout stamped on the subscription itself.
  *
  * Path C creates one subscription per checkout CLICK while
- * `commerce_listing_subscriptions` is UPSERTED per ENTITY, so a second click
+ * `entity_subscriptions` is UPSERTED per ENTITY, so a second click
  * re-points the row and orphans the first subscription — whose share link stays
  * valid on MercadoPago. Completing that first link used to end the reconcile in
  * an early return: an unpublished listing with a live charge.
@@ -203,14 +222,14 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
     const db = getDb();
     const [incumbent] = await db
         .select({
-            subscriptionId: commerceListingSubscriptions.subscriptionId,
-            status: commerceListingSubscriptions.status
+            subscriptionId: entitySubscriptions.subscriptionId,
+            status: entitySubscriptions.status
         })
-        .from(commerceListingSubscriptions)
+        .from(entitySubscriptions)
         .where(
             and(
-                eq(commerceListingSubscriptions.entityType, entityType),
-                eq(commerceListingSubscriptions.entityId, entityId)
+                eq(entitySubscriptions.entityType, entityType),
+                eq(entitySubscriptions.entityId, entityId)
             )
         )
         .limit(1);
@@ -232,14 +251,25 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
 
     // HOS-692: the recovered link row's own `entityType` is the vertical —
     // stamp `productDomain` from it instead of the pre-HOS-685 hardcoded
-    // 'commerce', matching the ternary `commerce-subscription-attach.service.ts`
-    // already uses for the same two-value collision (CommerceEntityTypeEnum
-    // and ProductDomainEnum share 'gastronomy'/'experience' on purpose).
-    const productDomain =
-        entityType === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    // 'commerce'.
+    //
+    // HOS-1079: `entityType` here is a raw string read back off the
+    // subscription's JSONB `metadata` column (`readSubscriptionDomainMetadata`
+    // types it as `string | undefined`, not a closed union), so it cannot be
+    // narrowed by the compiler the way `commerce-subscription-attach.service.ts`'s
+    // `CommerceVertical`-typed callers can. `parseCommerceVertical` is the
+    // runtime guard that used to be missing here: it throws — caught by this
+    // function's own non-throwing contract below — instead of quietly
+    // treating any non-gastronomy metadata value (including a foreign
+    // 'accommodation' or corrupted data) as 'experience'.
+    const vertical = parseCommerceVertical(
+        entityType,
+        'commerce-reconcile.recoverCommerceLinkFromSubscriptionMetadata'
+    );
+    const productDomain = commerceVerticalToProductDomain(vertical);
 
     await db
-        .insert(commerceListingSubscriptions)
+        .insert(entitySubscriptions)
         .values({
             subscriptionId,
             productDomain,
@@ -248,11 +278,17 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
             status: subscriptionStatus
         })
         .onConflictDoUpdate({
-            target: [
-                commerceListingSubscriptions.entityType,
-                commerceListingSubscriptions.entityId
-            ],
-            set: { subscriptionId, status: subscriptionStatus, updatedAt: new Date() }
+            target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
+            // HOS-1122: `planRestricted: false` is what makes the value this
+            // function RETURNS true rather than aspirational — the recovery
+            // re-points the row at a different subscription, so the previous
+            // one's restriction does not come with it.
+            set: {
+                subscriptionId,
+                status: subscriptionStatus,
+                planRestricted: false,
+                updatedAt: new Date()
+            }
         });
 
     apiLogger.warn(
@@ -267,7 +303,13 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
         'Recovered a paid commerce subscription no link row pointed at (superseded by a later checkout click) — link row re-pointed'
     );
 
-    return [{ entityType, entityId }];
+    // Not restricted — and true because the upsert above WROTE it, not because
+    // the situation guarantees it. The original claim here was that a recovered
+    // row is unrestricted "by construction"; it was not. A row restricted under
+    // an earlier subscription and then re-pointed at this one would have kept
+    // `plan_restricted = true` in the database while this function reported
+    // `false`, and the next reconcile would have read the database.
+    return [{ entityType, entityId, planRestricted: false }];
 }
 
 /**
@@ -294,11 +336,16 @@ export async function reconcileCommerceListingForSubscription(input: {
         const db = getDb();
         const linkedRows = await db
             .select({
-                entityType: commerceListingSubscriptions.entityType,
-                entityId: commerceListingSubscriptions.entityId
+                entityType: entitySubscriptions.entityType,
+                entityId: entitySubscriptions.entityId,
+                // HOS-1122: without this column the next lifecycle event would
+                // publish a listing a commerce downgrade had just restricted —
+                // the subscription is `active`, so every other term of the
+                // reconciler's predicate says PUBLIC.
+                planRestricted: entitySubscriptions.planRestricted
             })
-            .from(commerceListingSubscriptions)
-            .where(eq(commerceListingSubscriptions.subscriptionId, subscriptionId));
+            .from(entitySubscriptions)
+            .where(eq(entitySubscriptions.subscriptionId, subscriptionId));
 
         // No link row can mean two very different things: an accommodation
         // subscription (the overwhelmingly common path, nothing to do) or a
@@ -322,9 +369,9 @@ export async function reconcileCommerceListingForSubscription(input: {
             // and the reconciler agree on the current status. Skipped on the
             // recovery path, whose upsert already wrote the same status.
             await db
-                .update(commerceListingSubscriptions)
+                .update(entitySubscriptions)
                 .set({ status: subscriptionStatus, updatedAt: new Date() })
-                .where(eq(commerceListingSubscriptions.subscriptionId, subscriptionId));
+                .where(eq(entitySubscriptions.subscriptionId, subscriptionId));
         }
 
         for (const link of links) {
@@ -334,10 +381,11 @@ export async function reconcileCommerceListingForSubscription(input: {
                     {
                         entityType: link.entityType,
                         entityId: link.entityId,
-                        subscriptionStatus
+                        subscriptionStatus,
+                        planRestricted: link.planRestricted
                     },
                     model,
-                    bindCompletenessResolver(link.entityType)
+                    bindCommerceCompletenessResolver(link.entityType)
                 );
                 apiLogger.info(
                     {
@@ -345,6 +393,7 @@ export async function reconcileCommerceListingForSubscription(input: {
                         entityType: link.entityType,
                         entityId: link.entityId,
                         subscriptionStatus,
+                        planRestricted: link.planRestricted,
                         updated: result.updated,
                         visibility: result.visibility,
                         lifecycleState: result.lifecycleState,

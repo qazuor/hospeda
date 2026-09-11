@@ -190,16 +190,44 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
 
             if (!result.ok) {
                 setOutcomes(null);
-                // The outcome is unknown, not empty: this budget times out on runs
-                // the server finishes. Withholding the refresh here strands the
-                // host on stale rows with a live button and a 90-second retry.
-                setMayBeStale(true);
+
+                // HOS-865: the backend now answers a TOTAL translation failure
+                // (every field x locale call failed) with a non-2xx
+                // `TRANSLATION_FAILED` instead of a fabricated 200, so this
+                // branch is the one that now also catches that case. Keying
+                // off `error.code` rather than `error.status` because this
+                // route's genuine network/timeout failures never carry this
+                // code, so the check cannot misfire on those.
+                const isKnownTotalFailure = result.error.code === 'TRANSLATION_FAILED';
+
+                // A known total failure means nothing was translated and
+                // nothing was written — there is no "the server may have kept
+                // going without us" case to hedge against, unlike a real
+                // timeout. Setting `mayBeStale` here would offer a refresh
+                // that finds nothing new, which is exactly the offer the
+                // pre-fix `ok: true` + all-`success:false` path (see
+                // `summarizeOutcomes` below) never made either — so this
+                // keeps parity with it rather than inheriting the timeout
+                // branch's more pessimistic assumption.
+                if (!isKnownTotalFailure) {
+                    // The outcome is unknown, not empty: this budget times out
+                    // on runs the server finishes. Withholding the refresh here
+                    // strands the host on stale rows with a live button and a
+                    // 90-second retry.
+                    setMayBeStale(true);
+                }
+
                 setErrorMessage(
-                    result.error.message ||
-                        t(
-                            'host.properties.editor.translation.errorGeneric',
-                            'No se pudieron generar las traducciones. Intentá de nuevo.'
-                        )
+                    isKnownTotalFailure
+                        ? t(
+                              'host.properties.editor.translation.allFailed',
+                              'No se pudo generar ninguna traducción. Revisá el detalle por campo e intentá de nuevo.'
+                          )
+                        : result.error.message ||
+                              t(
+                                  'host.properties.editor.translation.errorGeneric',
+                                  'No se pudieron generar las traducciones. Intentá de nuevo.'
+                              )
                 );
                 return;
             }

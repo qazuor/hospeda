@@ -2,8 +2,15 @@
 /**
  * @file ExperienceInfo.astro
  * @description Info block for an experience detail page (SPEC-240 T-027).
- * Renders opening hours, social networks, amenities/features, and contact info.
- * Mirrors GastronomyDescription + OpeningHoursSection pattern.
+ * Renders summary, description, opening hours, amenities/features, and social
+ * networks. Mirrors GastronomyDescription + OpeningHoursSection pattern.
+ *
+ * The amenities/features half of that sentence was a promise this file made and
+ * did not keep until HOS-1072: the word appeared in this docstring and nowhere
+ * else in the file, while the provider ticked "incluye transporte", "el guía
+ * habla inglés" and the rest and none of it reached a reader. Contact info is
+ * NOT rendered here — `ExperienceContactBlock` owns it (HOS-815) — so it is no
+ * longer claimed above.
  */
 
 import { renderContent } from '@/lib/render-content';
@@ -13,6 +20,12 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ExperienceDetailData, ExperienceOpeningHoursEntry } from '@/data/types';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
+// Reused, not duplicated (HOS-1072): experiences read the SAME `amenities` /
+// `features` catalog as accommodations, so they share the i18n namespace
+// (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
+// commerce copy would fork that contract for no gain.
+import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
+import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import type { GastronomyOpeningHoursEntry } from '@/data/types';
 
 interface Props {
@@ -65,10 +78,16 @@ const openingHours =
     />
 )}
 
+<!-- Amenities and features the provider ticked (HOS-1072). Both grids
+     self-hide on an empty list, so no guard is needed here. `smokingAllowed`
+     is an accommodation-only column and is passed as null. -->
+<FeaturesGrid features={experience.features} smokingAllowed={null} lang={locale} />
+<AmenitiesGrid amenities={experience.amenities} lang={locale} />
+
 <!-- Social networks. No longer the page's only contact affordance: HOS-815
      added `ExperienceContactBlock`, which publishes the phone / email /
-     website the provider filled in. `ExperienceContactCTA` stays dormant —
-     `contactInfo.whatsapp` is still not on the public tier (HOS-19). -->
+     website the provider filled in — and HOS-924 made one of those channels a
+     publish requirement, so a live experience always has one. -->
 {experience.socialNetworks && Object.values(experience.socialNetworks).some(Boolean) && (
     <section class="exp-info__social">
         <h3 class="exp-info__social-title">{t('experience.detail.social', 'Redes sociales')}</h3>

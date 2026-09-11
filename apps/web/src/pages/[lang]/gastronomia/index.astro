@@ -26,7 +26,7 @@ import {
     DEFAULT_GASTRONOMY_TYPES,
     DEFAULT_PRICE_RANGES
 } from '@/lib/commerce-listing-summary';
-import { gastronomyApi, destinationsApi } from '@/lib/api/endpoints';
+import { gastronomyApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toGastronomyCardProps } from '@/lib/api/transforms';
 import { getGastronomyTypeIcon } from '@/lib/gastronomy-type-icons';
 import { createTranslations } from '@/lib/i18n';
@@ -53,9 +53,10 @@ applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	// This listing accepts `q`, `type`, `destinationId`, `isFeatured`,
-	// `minRating`, `sortBy` and `priceRange` — all read in the frontmatter, all
-	// changing the SSR HTML. Anything beyond pagination makes the render an
-	// arbitrary slice and stays private.
+	// `minRating`, `sortBy`, `priceRange` and `features` (the apto filter,
+	// HOS-1054) — all read in the frontmatter, all changing the SSR HTML.
+	// Anything beyond pagination makes the render an arbitrary slice and stays
+	// private.
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
 	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.gastronomy]
@@ -78,6 +79,21 @@ const minRating = url.searchParams.get('minRating')
     : undefined;
 
 /**
+ * The "apto" filter (HOS-1054): a comma-separated list of feature UUIDs the
+ * listing must ALL carry.
+ *
+ * Aptos are not columns. «Sin TACC», «vegano», «vegetariano», «sin lactosa» and
+ * «sin frutos secos» are rows of the shared `features` catalog scoped to the
+ * `gastronomy` vertical, so filtering by apto is filtering by feature — and the
+ * day a sixth apto appears it is one more catalog row, not a migration.
+ *
+ * Forwarded to the API as the raw comma-separated string, exactly as
+ * `alojamientos/index.astro` does: the HTTP schema splits and validates each
+ * UUID, and an invalid one is a 400 rather than a silently-ignored filter.
+ */
+const featuresParam = url.searchParams.get('features') ?? undefined;
+
+/**
  * Maps the URL's user-friendly sort key (matching the `sortOptions` below) to
  * the backend `(sortBy, sortOrder)` pair. BETA-119: previously the actual API
  * call ignored `sortBy` entirely (always sorted `isFeatured desc`), while the
@@ -96,23 +112,38 @@ const DEFAULT_SORT_KEY = 'featured';
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-// --- Fetch destinations (CITY) for filter dropdown ---
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
-const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+// --- Fetch destinations (CITY), the gastronomy feature catalog, and the listings ---
+// The catalog read is scoped with `applicableVertical: 'gastronomy'` so the
+// sidebar only ever offers aptos and other gastronomy characteristics — the
+// shared `features` table also holds ~80 accommodation and experience rows that
+// would be meaningless on a restaurant. Its TTL is the fixed-catalog one: the
+// catalog is identical on every render, unlike the listing query itself.
+const [destinationsResult, featuresResult, result] = await Promise.all([
+    destinationsApi.list({ destinationType: 'CITY', pageSize: 100 }),
+    featuresApi.list({
+        pageSize: 100,
+        applicableVertical: 'gastronomy',
+        sortBy: 'displayWeight',
+        sortOrder: 'desc',
+        cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+    }),
+    gastronomyApi.list({
+        page,
+        pageSize,
+        q,
+        destinationId,
+        type,
+        priceRange,
+        isFeatured,
+        minRating,
+        features: featuresParam,
+        sortBy: sortResolved.sortBy,
+        sortOrder: sortResolved.sortOrder
+    })
+]);
 
-// --- Fetch gastronomy listings ---
-const result = await gastronomyApi.list({
-    page,
-    pageSize,
-    q,
-    destinationId,
-    type,
-    priceRange,
-    isFeatured,
-    minRating,
-    sortBy: sortResolved.sortBy,
-    sortOrder: sortResolved.sortOrder
-});
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+const featureCatalog = featuresResult.ok ? featuresResult.data.items : [];
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -139,6 +170,7 @@ const hasActiveFilters = hasActiveGastronomyListingFilters({
 	priceRange,
 	isFeatured,
 	minRating,
+	features: featuresParam,
 });
 
 // --- Gastronomy types for filter (from the confirmed enum) ---
@@ -198,6 +230,30 @@ const filterGroups: FilterGroup[] = [
         label: t('gastronomy.listing.featured'),
         type: 'toggle'
     },
+    // The aptos group (HOS-1054). Rendered only when the catalog read
+    // succeeded and returned rows: an empty `icon-chips` group is a header over
+    // nothing, which reads as a broken filter rather than as an absent one.
+    //
+    // Labels come from `@repo/i18n` keyed by SLUG, never from the row — the
+    // catalog has no `name` column (SPEC-266) and the slug IS the i18n key.
+    ...(featureCatalog.length > 0
+        ? ([
+              {
+                  id: 'features',
+                  label: t('gastronomy.listing.features'),
+                  type: 'icon-chips',
+                  options: featureCatalog.map((f) => ({
+                      value: f.id,
+                      label: t(
+                          `accommodations.featureNames.${f.slug ?? ''}`,
+                          f.slug ?? undefined
+                      ),
+                      icon: f.icon ?? undefined
+                  })),
+                  maxVisible: 10
+              }
+          ] satisfies FilterGroup[])
+        : []),
     {
         id: 'minRating',
         label: t('gastronomy.listing.minRating'),
@@ -223,6 +279,7 @@ if (type) initialParams.type = type;
 if (priceRange) initialParams.priceRange = priceRange;
 if (isFeatured) initialParams.isFeatured = 'true';
 if (minRating !== undefined) initialParams.minRating = String(minRating);
+if (featuresParam) initialParams.features = featuresParam;
 initialParams.sortBy = sortKey;
 
 /**

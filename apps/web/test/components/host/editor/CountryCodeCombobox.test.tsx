@@ -112,6 +112,18 @@ describe('CountryCodeCombobox', () => {
         expect(options[0]).toHaveTextContent('Uruguay');
     });
 
+    it('finds "México" when the visitor types "Mexico" without the accent (HOS-979)', () => {
+        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
+
+        const searchInput = screen.getByRole('combobox');
+        fireEvent.change(searchInput, { target: { value: 'Mexico' } });
+
+        const options = screen.getAllByRole('option');
+        expect(options).toHaveLength(1);
+        expect(options[0]).toHaveTextContent('México');
+    });
+
     it('shows a "no results" message when nothing matches', () => {
         render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));

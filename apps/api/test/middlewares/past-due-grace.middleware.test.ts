@@ -63,6 +63,24 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: mockGetQZPayBilling
 }));
 
+// `hydrateSubscriptionProductDomains` is mocked (not the real DB-backed
+// implementation) so these unit tests never touch a database; it mirrors what
+// the real function does for objects that already carry (or lack)
+// `productDomain` — a fixture that sets it keeps its value, one that omits it
+// reads `null` (the fail-open legacy-row case), same as the real hydration.
+// `subscriptionMatchesDomain` is left REAL (from `@repo/service-core`): it is
+// the predicate HOS-1277 relies on, and mocking it would only ever confirm
+// the mock.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        hydrateSubscriptionProductDomains: vi.fn(async (subs: readonly Record<string, unknown>[]) =>
+            subs.map((sub) => ({ ...sub, productDomain: (sub.productDomain as string) ?? null }))
+        )
+    };
+});
+
 // The api logger is provided by @repo/logger which is already mocked in
 // test/setup.ts via vi.mock('@repo/logger'). The logger module re-exports
 // the mocked logger, so no additional mock is needed here.
@@ -91,9 +109,12 @@ import { pastDueGraceMiddleware } from '../../src/middlewares/past-due-grace.mid
 interface MockSubscription {
     id: string;
     isPastDue: Mock;
+    status?: string;
+    deletedAt?: Date | null;
     isInGracePeriod: Mock;
     daysRemainingInGrace: Mock;
     currentPeriodEnd?: Date;
+    productDomain?: string | null;
 }
 
 /**
@@ -141,25 +162,46 @@ function createMockContext(options: MockContextOptions = {}) {
  */
 function createMockSubscription(
     overrides: {
+        id?: string;
         isPastDue?: boolean;
         isInGracePeriod?: boolean;
         daysRemainingInGrace?: number | null;
         currentPeriodEnd?: Date;
+        productDomain?: string | null;
+        /**
+         * Stored status. Defaults to the spelling `isPastDue` implies, so every
+         * pre-existing fixture keeps meaning exactly what it meant.
+         *
+         * It exists as an override because HOS-1310 moved the selection off
+         * qzpay's `sub.isPastDue()` — which compares the RAW status and is blind
+         * to `unpaid` — and onto the normalized column. Overriding it is how a
+         * test can state a qzpay-vocabulary row, which is the case that used to
+         * be unreachable by this middleware.
+         */
+        status?: string;
+        deletedAt?: Date | null;
     } = {}
 ): MockSubscription {
     const {
+        id = 'sub_abc123',
         isPastDue = false,
         isInGracePeriod = false,
         daysRemainingInGrace = null,
-        currentPeriodEnd
+        currentPeriodEnd,
+        productDomain,
+        status = isPastDue ? 'past_due' : 'active',
+        deletedAt = null
     } = overrides;
 
     return {
-        id: 'sub_abc123',
+        id,
         isPastDue: vi.fn().mockReturnValue(isPastDue),
         isInGracePeriod: vi.fn().mockReturnValue(isInGracePeriod),
         daysRemainingInGrace: vi.fn().mockReturnValue(daysRemainingInGrace),
-        currentPeriodEnd
+        currentPeriodEnd,
+        productDomain,
+        status,
+        deletedAt
     };
 }
 
@@ -273,6 +315,89 @@ describe('pastDueGraceMiddleware', () => {
             expect(ctx.header).not.toHaveBeenCalled();
             expect(ctx.json).not.toHaveBeenCalled();
             expect(activeSub.isInGracePeriod).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1310: the revoke side reads the same vocabulary as the grant side
+    // -----------------------------------------------------------------------
+
+    describe("HOS-1310: qzpay's `unpaid` spelling reaches this gate", () => {
+        /*
+         * `isLiveSubscriptionStatus` accepts `unpaid` as live, because the repo's
+         * alias map calls it the same state as `past_due`. This middleware is the
+         * ONLY thing that ever ends that state — a 402 once the 7-day window
+         * elapses. It used to select with qzpay's `sub.isPastDue()`, which
+         * compares the RAW status and so could not see `unpaid` at all.
+         *
+         * An `unpaid` row therefore passed the gates the live set guards and
+         * never reached the 402: live forever, by omission. The grant side and
+         * the revoke side have to read one vocabulary.
+         */
+        it('blocks with 402 once the window has elapsed, exactly as `past_due` does', async () => {
+            const unpaidSub = createMockSubscription({
+                // The qzpay spelling. `isPastDue()` returns FALSE for it, which is
+                // the whole point — the decision no longer comes from that helper.
+                status: 'unpaid',
+                isPastDue: false,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -1,
+                currentPeriodEnd: periodEndForOverdue(1)
+            });
+            setupBillingWith([unpaidSub]);
+            const ctx = createMockContext();
+            const middleware = pastDueGraceMiddleware();
+
+            // Thrown, not `c.json`-ed, so the shared error formatter builds the
+            // body (HOS-283) — same contract as the `past_due` case above.
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+            expect((thrown as HTTPException).cause).toEqual(
+                expect.objectContaining({ code: 'GRACE_PERIOD_EXPIRED' })
+            );
+            expect(next).not.toHaveBeenCalled();
+        });
+
+        it('and is let through, with the header, while still inside the window', async () => {
+            // The other direction: normalizing must not turn the grace into an
+            // immediate block. An `unpaid` row inside its window behaves like any
+            // past-due one.
+            const unpaidSub = createMockSubscription({
+                status: 'unpaid',
+                isPastDue: false,
+                isInGracePeriod: true,
+                daysRemainingInGrace: 4
+            });
+            setupBillingWith([unpaidSub]);
+            const ctx = createMockContext();
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.header).toHaveBeenCalledWith('X-Grace-Period-Days-Remaining', '4');
+        });
+
+        it('a soft-DELETED past-due row is still ignored — the deletedAt half is preserved', async () => {
+            // `sub.isPastDue()` was `status === 'past_due' && deletedAt === null`.
+            // Replacing it had to carry BOTH halves; dropping the second would
+            // start 402-ing on deleted rows.
+            const deletedPastDue = createMockSubscription({
+                status: 'past_due',
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: 0,
+                deletedAt: new Date('2026-01-01T00:00:00Z')
+            });
+            setupBillingWith([deletedPastDue]);
+            const ctx = createMockContext();
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
         });
     });
 
@@ -679,6 +804,81 @@ describe('pastDueGraceMiddleware', () => {
             expect(ctx.json).not.toHaveBeenCalled();
         });
 
+        it('should call next() for GET /users/me/subscription even with expired grace (HOS-348)', async () => {
+            // Arrange — this is the ONLY endpoint the account subscription
+            // page reads on mount. Before the fix, a past-due customer whose
+            // grace period expired got a 402 here too, so the one screen
+            // that could show them their own billing status (and let them
+            // act on it) was itself behind the same gate — the page's
+            // "Reintentar" button just re-triggered the same 402 forever.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -4
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/users/me/subscription'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            await middleware(ctx as never, next);
+
+            // Assert
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should call next() for the replace-payment-method recovery path even with expired grace (HOS-348 Part B)', async () => {
+            // Arrange — this IS the payment path the gate is meant to funnel
+            // a past-due customer toward, so it must stay reachable even
+            // after the grace period has fully expired.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -6
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath:
+                    '/api/v1/protected/billing/subscriptions/11111111-1111-1111-1111-111111111111/replace-payment-method'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            await middleware(ctx as never, next);
+
+            // Assert
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should still block a mutating billing path that merely CONTAINS "subscription" (HOS-348)', async () => {
+            // Arrange — the exemption above is a suffix match on
+            // `/me/subscription`; it must not accidentally widen to any path
+            // that happens to mention "subscription". A cancel/pause/etc.
+            // mutation must stay gated.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -2
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_123/cancel'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            // Assert
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+        });
+
         it('should call next() for the alliance protected tier even with expired grace (HOS-278)', async () => {
             // Arrange — dual-persona user: the ACCOMMODATION subscription is
             // past-due and grace-expired, but they are asking whether their
@@ -841,6 +1041,129 @@ describe('pastDueGraceMiddleware', () => {
                 code: 'GRACE_PERIOD_EXPIRED',
                 daysOverdue: 3 // ceil(10d) - 7d grace = 3
             });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Domain isolation (HOS-1277): a past-due subscription in ONE vertical
+    // must not gate a request that belongs to a different vertical.
+    // -----------------------------------------------------------------------
+
+    describe('domain isolation (HOS-1277)', () => {
+        it('REGRESSION: a dual-owner is NOT blocked on an accommodation route by a past-due gastronomy subscription', async () => {
+            // The dual-owner case named in the issue: accommodation is paid up,
+            // gastronomy is past-due and grace-expired. Before the fix, a
+            // domain-blind "most urgent past-due" scan picked the gastronomy row
+            // and 402'd every /protected/* request, including this one.
+            const gastronomyPastDue = createMockSubscription({
+                id: 'sub-gastronomy',
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -10,
+                productDomain: 'gastronomy'
+            });
+            setupBillingWith([gastronomyPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/accommodations/acc-1' });
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.header).not.toHaveBeenCalled();
+        });
+
+        it('blocks the SAME dual-owner on a gastronomy route with the same past-due subscription', async () => {
+            const gastronomyPastDue = createMockSubscription({
+                id: 'sub-gastronomy',
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -10,
+                productDomain: 'gastronomy'
+            });
+            setupBillingWith([gastronomyPastDue]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/gastronomies/gas-1/menu'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+        });
+
+        it('a legacy subscription with no productDomain still gates the default (accommodation) route', async () => {
+            // Fail-open, same as `subscriptionMatchesDomain`: a row predating the
+            // column must not silently escape grace enforcement.
+            const legacyPastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -1,
+                productDomain: undefined
+            });
+            setupBillingWith([legacyPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/host' });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+        });
+
+        it('a past-due PARTNER subscription does not gate an accommodation route', async () => {
+            // Widening past-due gating to another vertical must not widen it to
+            // EVERY vertical — partner stays excluded exactly like gastronomy.
+            const partnerPastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -5,
+                productDomain: 'partner'
+            });
+            setupBillingWith([partnerPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/accommodations/acc-1' });
+            const middleware = pastDueGraceMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+        });
+
+        it('blocks a past-due PARTNER subscription on its own partner route', async () => {
+            const partnerPastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -5,
+                productDomain: 'partner'
+            });
+            setupBillingWith([partnerPastDue]);
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/partners/mine' });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+        });
+
+        it('scopes the commerce checkout surface by its :entityType path segment', async () => {
+            const experiencePastDue = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -2,
+                productDomain: 'experience'
+            });
+            setupBillingWith([experiencePastDue]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/commerce/subscriptions/experience/change-plan'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
         });
     });
 });

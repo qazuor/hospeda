@@ -1,0 +1,78 @@
+---
+/**
+ * @file ExperienceCancellationPolicy.astro
+ * @description What happens when the experience does not run (HOS-1047).
+ *
+ * ## Why this is specific to the region, not boilerplate
+ *
+ * A cabin is not cancelled by the weather. An excursion in the Litoral is, and
+ * often: half the fishing and boating season depends on the state of the river.
+ * It is the question everybody has before booking an outing, and the ficha had
+ * nowhere to answer it.
+ *
+ * ## Free text, rendered as plain text
+ *
+ * The column is prose, not a (deadline + outcome) structure — a structured
+ * policy only earns its complexity once money has changed hands and something
+ * must be computed from it, which is HOS-1050 and deferred. It is rendered as
+ * TEXT, never as HTML: this is owner-authored and published with no review in
+ * between, and `set:html` here would be a stored-XSS hole for the sake of a
+ * bold word. `white-space: pre-line` preserves the owner's line breaks without
+ * letting any markup through.
+ *
+ * Renders nothing when there is no policy: `toExperienceDetailPageProps`
+ * collapses an empty or whitespace-only string to `null`, so the single presence
+ * check below is the whole gate.
+ *
+ * Not entitlement-gated — ficha data from the basic tier (owner decision,
+ * 2026-09-01).
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** The owner's policy text, or `null` when none was declared. */
+    readonly cancellationPolicy: string | null;
+    readonly locale: SupportedLocale;
+}
+
+const { cancellationPolicy, locale } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+{cancellationPolicy && (
+    <section class="exp-cancel">
+        <h3 class="exp-cancel__title">
+            {t('experience.detail.cancellationPolicy.title', 'Si la salida no sale')}
+        </h3>
+        <p class="exp-cancel__body">{cancellationPolicy}</p>
+    </section>
+)}
+
+<style>
+    .exp-cancel {
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-card, 24px);
+        padding: var(--space-5, 20px);
+    }
+
+    .exp-cancel__title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2, 8px);
+    }
+
+    .exp-cancel__body {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+        /* Keeps the owner's own line breaks without letting markup through —
+           the text is interpolated, never `set:html`. */
+        white-space: pre-line;
+    }
+</style>

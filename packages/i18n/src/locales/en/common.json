@@ -75,6 +75,8 @@
         "REVIEW_ALREADY_EXISTS": "You already reviewed this provider. You can edit your review.",
         "PROVIDER_REVOKED": "This provider is no longer part of the directory.",
         "ALREADY_EXISTS": "That resource already exists.",
+        "ALREADY_SUBSCRIBED": "You already have an active subscription. In My account → Subscription you can switch tiers within it, or cancel it to take out a different one.",
+        "TRIAL_REQUIRES_CHECKOUT": "You're on your free trial, so there is no subscription to change yet. Pick the plan you want and activate your subscription: your trial closes on its own once the payment is confirmed.",
         "INTERNAL_ERROR": "Something went wrong on our side. Please try again in a moment.",
         "NETWORK_ERROR": "We couldn't reach the server. Please try again.",
         "TIMEOUT": "The request took too long. Please try again.",
@@ -104,7 +106,9 @@
         "PROVIDER_RATE_LIMITED": "The payment service is busy. Please wait a few seconds and try again.",
         "PROVIDER_TIMEOUT": "The payment service took too long to respond. Please try again.",
         "PLAN_DISABLED": "The selected plan is no longer available. Please choose a different plan to continue.",
-        "SUBSCRIPTION_CANCEL_PENDING": "Your subscription is scheduled to cancel at the end of the period. You can't change plans until the current period ends."
+        "SUBSCRIPTION_CANCEL_PENDING": "Your subscription is scheduled to cancel at the end of the period. You can't change plans until the current period ends.",
+        "NO_ACTIVE_TRIAL": "You have no free trial running, so there is nothing to extend. The code was not used — keep it.",
+        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "This code cannot be redeemed. A complimentary subscription is granted by the team — get in touch if you were promised one."
     },
     "filters": "Filters",
     "filterChips": {
@@ -144,6 +148,15 @@
     "pagination": "Pagination",
     "noImage": "No image",
     "removing": "Removing...",
+    "richText": {
+        "linkDialog": {
+            "title": "Link",
+            "label": "Link URL",
+            "hint": "Leave the field empty to remove the link.",
+            "placeholder": "https://example.com",
+            "submit": "Apply"
+        }
+    },
     "retry": "Retry",
     "saving": "Saving...",
     "untitled": "Untitled",
@@ -203,13 +216,39 @@
             "title": "Unsaved changes",
             "confirm": "Yes, discard",
             "cancel": "Keep editing"
+        },
+        "unsavedChangesAndPhotoAlt": {
+            "title": "Unsaved changes and photos without alt text",
+            "message": "You have unsaved changes on this page: leaving now discards them. On top of that, {{count}} photo still has no alt text, the text screen readers read out loud and search engines use to understand your images. Leave anyway?",
+            "message_one": "You have unsaved changes on this page: leaving now discards them. On top of that, {{count}} photo still has no alt text, the text screen readers read out loud and search engines use to understand your images. Leave anyway?",
+            "message_other": "You have unsaved changes on this page: leaving now discards them. On top of that, {{count}} photos still have no alt text, the text screen readers read out loud and search engines use to understand your images. Leave anyway?",
+            "confirm": "Leave and discard the changes",
+            "cancel": "Keep editing"
         }
     },
     "modal": {
-        "close": "Cerrar"
+        "close": "Close"
     },
-    "back": "Volver",
-    "close": "Cerrar",
-    "deleting": "Eliminando...",
-    "anonymous": "Usuario"
+    "back": "Back",
+    "close": "Close",
+    "deleting": "Deleting...",
+    "anonymous": "User",
+    "qrSheet": {
+        "headline": "Scan the code",
+        "invite": "Point your phone camera at the code to see the full listing: photos, contact details and directions.",
+        "brandTagline": "Places to stay, eat and explore across the Litoral",
+        "help": "An A4 sheet carrying your listing's code, ready to print and tape to the door or leave on the counter.",
+        "download": "Download the QR sheet (PDF)",
+        "working": "Generating the sheet…",
+        "ready": "Done, your QR sheet was downloaded.",
+        "unpublished": "You'll be able to download the QR sheet once your listing is published.",
+        "errorNotFound": "We couldn't generate the sheet. Check that your listing is still published.",
+        "errorRateLimited": "You asked for the sheet several times in a row. Wait a minute and try again.",
+        "errorSignedOut": "Your session expired. Sign in again to download the sheet.",
+        "error": "We couldn't generate the sheet. Please try again in a moment.",
+        "codeAlt": "QR code of your listing",
+        "codeLoading": "Loading the code…",
+        "codeError": "We couldn't show the code here, but you can still download the sheet.",
+        "encodes": "The code leads to: {{url}}"
+    }
 }

@@ -121,4 +121,16 @@ describe('gastronomia/[slug].astro', () => {
             expect(src).toContain('gastronomy.faqs.length > 0');
         });
     });
+
+    describe('view tracking (HOS-734)', () => {
+        it('mounts EntityViewTracker with entityType GASTRONOMY, client:idle', () => {
+            expect(src).toContain(
+                "import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';"
+            );
+            expect(src).toContain('<EntityViewTracker');
+            expect(src).toContain('client:idle');
+            expect(src).toContain('entityType="GASTRONOMY"');
+            expect(src).toContain('entityId={gastronomy.id}');
+        });
+    });
 });

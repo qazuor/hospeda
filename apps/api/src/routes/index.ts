@@ -58,6 +58,7 @@ import { publicAuthorRoutes } from './author/public/index.js';
 import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
+import { publicGetCheckoutConfigRoute } from './billing/public/getCheckoutConfig.js';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
 import { adminCommerceRoutes, protectedCommerceRoutes, publicCommerceRoutes } from './commerce';
 import { contactRoutes } from './contact';
@@ -128,6 +129,7 @@ import {
     protectedOwnerPromotionRoutes,
     publicOwnerPromotionRoutes
 } from './owner-promotion';
+import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
     adminCreatePartnerMentionsRoute,
     adminCreatePartnerRoute,
@@ -139,6 +141,7 @@ import {
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminReviewPartnerContentRoute,
+    adminReviewPartnerPaymentRoute,
     adminRevokePartnerRoute,
     adminSendPaymentLinkRoute,
     adminUpdatePartnerMentionRoute,
@@ -157,6 +160,9 @@ import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import { adminPostSponsorRoutes } from './postSponsor';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
+import { protectedPublishRoutes } from './publish';
+// Redirectable QR codes (HOS-981): public resolution + admin CRUD
+import { adminQrCodeRoutes, publicQrCodeRoutes } from './qr-code';
 import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { robotsRoute } from './robots';
@@ -357,12 +363,24 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
+        // Redirectable QR codes (HOS-981): resolves a printed slug to its
+        // current target and records the scan in the same call. Deliberately
+        // uncached — the response both counts a scan and carries an
+        // operator-editable target.
+        app.route('/api/v1/public/qr', publicQrCodeRoutes);
+
         // Exchange rates (public read-only — consumed by the web frontend
         // for USD/ARS price conversion).
         app.route('/api/v1/public/exchange-rates', publicExchangeRateRoutes);
 
         // Other public routes (read-only)
         app.route('/api/v1/public/plans', publicBillingRoutes);
+        // HOS-937 review fix: read-only checkout-behavior flags (currently just
+        // `ownPreapprovalEnabled`) the web pricing pages need to decide
+        // whether to render the payer-email confirm dialog. Mounted separately
+        // from `/api/v1/public/plans` rather than nested under it — the flag is
+        // a checkout-behavior concern, not plan data.
+        app.route('/api/v1/public/billing/checkout-config', publicGetCheckoutConfigRoute);
         app.route('/api/v1/public', contactRoutes);
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
@@ -401,6 +419,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Cross-entity view tracking capture (SPEC-159 T-008)
         // Fire-and-forget; always 202. No auth required.
         app.route('/api/v1/public', viewsRoutes);
+
+        // Partner logo click capture (HOS-1063 A-3)
+        // The sibling of the view beacon: fire-and-forget, always 202, no auth.
+        // A separate endpoint and a separate table because a click written into
+        // `entity_views` would be indistinguishable from a page view of the same
+        // partner and would inflate the views card (OQ-2).
+        app.route('/api/v1/public', partnerLogoClickRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
@@ -480,6 +505,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Partner self-service: the caller's OWN listing (HOS-278 D3).
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
+        // HOS-1156: the vertical-parameterised publish precheck, which
+        // generalises /host-onboarding/precheck to gastronomy and experiences.
+        app.route('/api/v1/protected/publish', protectedPublishRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
         app.route('/api/v1/protected/posts', protectedPostRoutes);
@@ -555,6 +583,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
+        app.route('/api/v1/admin/partners', adminReviewPartnerPaymentRoute);
         app.route('/api/v1/admin/partners', adminRevokePartnerRoute);
         // Partner mentions log (HOS-377) — sub-resource of a partner, so it mounts
         // on the same prefix and takes the partner from its own path segment.
@@ -689,6 +718,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
         app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
+
+        // Redirectable QR codes admin (HOS-981): CRUD plus the rendered
+        // download. Gated on SETTINGS_MANAGE — a borrowed gate, kept until a
+        // dedicated QR_CODE_* family is worth the role_permission migration.
+        app.route('/api/v1/admin/qr-codes', adminQrCodeRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);

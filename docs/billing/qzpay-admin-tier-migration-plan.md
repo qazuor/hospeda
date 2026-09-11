@@ -4,6 +4,13 @@
 > **Authored**: 2026-05-20
 > **Context**: Outcome of the Phase 3 deep-dive that started as a "compliance migration" (move 10 admin hooks from `/protected/` → `/admin/`) and ended as a "do it properly" rewrite using qzpay-hono v1.3 with lifecycle hooks.
 > **Replaces**: Phase 3 of `ui-audit-2026.md` (still valid for Phase 1/2/4).
+> **Drift (HOS-1302, 2026-09-09)**: a 2026-05-20 plan; the shipped shape moved
+> past it. Hospeda is on `@qazuor/qzpay-hono` `^2.0.0`
+> (`apps/api/package.json:39`), not `^1.3.0`. `QZPayAdminLifecycleHooks` now
+> carries **11** hooks, not the 7 listed here (pause/resume were added) — see
+> `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts`. And they live in that
+> ONE file, not the eight separate files under `admin/hooks/` this plan proposed;
+> that directory does not exist.
 
 ---
 

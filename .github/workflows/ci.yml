@@ -241,6 +241,10 @@ jobs:
         run: bash scripts/check-cloudinary-isolation.sh
       - name: Check bare Cloudinary <img>
         run: bash scripts/check-bare-cloudinary-img.sh
+      # Its own step on purpose: being listed in `pnpm check:guards` is NOT what
+      # makes a guard run in this job (see the note further down).
+      - name: Check CI serves local media placeholders (HOS-1144)
+        run: bash scripts/check-local-media-placeholders.sh
       - name: Check 'as unknown as' type-cast count (SPEC-039)
         run: bash scripts/check-type-casts.sh
       - name: Check service getById test pattern (SPEC-083)
@@ -262,10 +266,109 @@ jobs:
         run: bash scripts/check-product-domain-vocabulary.sh
       - name: Check raw-SQL/seed-file product_domain is not hardcoded to 'commerce' (HOS-692 AC-33)
         run: bash scripts/check-product-domain-raw-sql.sh
+      # Its own step, like every guard here. The third of the product-domain
+      # family and the only one that polices an ABSENCE: the two above ask what
+      # a write says, this one asks whether it says anything at all. The column
+      # is NOT NULL with a default, so an omitted create does not fail — it
+      # files the row under the default's vertical, which is how every tourist
+      # plan came to report `accommodation` in prod and staging alike without a
+      # single line of code being wrong (HOS-1233 F-4b).
+      - name: Check every billing plan/subscription create states its domain (HOS-1233 AC-15d)
+        run: pnpm check:product-domain-on-writes
       - name: Check commerce plan resolution stays single-sited (HOS-688 AC-35)
         run: bash scripts/check-commerce-plan-resolution.sh
+      - name: Check subscription domain comparisons are hydrated (HOS-1176)
+        run: bash scripts/check-subscription-domain-hydration.sh
       - name: Check locale resolution has a single source of truth (HOS-605 / HOS-609 / HOS-617)
         run: pnpm check:locale-resolution-single-source
+      # HOS-936's read-direction guard (the trial window must not be derived
+      # from `free_trial`) was retired with the module it protected — HOS-1012
+      # T-026. Not believing a reported trial stopped mattering once we stopped
+      # asking for one; the guard below is what enforces that.
+      - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
+        run: bash scripts/check-no-trial-to-mercadopago.sh
+      # Its own step for the same reason as every guard in this job. The sibling
+      # of G-1: that one bans a trial in the preapproval payload, this one bans
+      # the `preapproval_plan_id` that made MercadoPago answer "card_token_id is
+      # required" and turned every own-preapproval checkout into a 500.
+      - name: Check no plan id reaches an own-preapproval create (HOS-1221 G-2)
+        run: bash scripts/check-no-plan-id-to-own-preapproval.sh
+      # The third of this family, and its own step for the same reason. The two
+      # above police what LEAVES for MercadoPago; this one polices what arrives
+      # in OUR subscription row through the back door: qzpay-core inherits
+      # `billing_prices.trial_days` whenever a caller omits `trialDays`, which is
+      # how a PAID subscription was born marked `trialing` for 30 days with the
+      # customer already charged (HOS-1221 bug D3). HOS-1221 states `trialDays: 0`
+      # at the call sites; this stops the column that feeds them from holding a
+      # value at all, so a future call site that forgets inherits nothing.
+      - name: Check billing_prices.trial_days is never written a value (HOS-1224 G-2)
+        run: pnpm check:no-price-trial-days
+      - name: Check no binary vertical ternary remains (HOS-1079)
+        run: bash scripts/check-no-binary-vertical-ternary.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above).
+      - name: Check the add-on purchase route reads the declared domain (HOS-1178)
+        run: bash scripts/check-addon-product-domain.sh
+      # Its own step for the same reason as every guard in this job. This one
+      # enumerates by EVENT rather than by symbol, which is the whole point:
+      # enumerating the callers of one function is how a second implementation
+      # of the authorized-payment handler went unrouted in the first place.
+      - name: Check every authorized-payment processor routes add-ons first (HOS-847)
+        run: bash scripts/check-addon-webhook-routing.sh
+      - name: Check server code does no local-timezone date math (HOS-1010)
+        run: bash scripts/check-local-date-math.sh
+      - name: Check the qzpay wave converges on one core (HOS-232)
+        run: bash scripts/check-qzpay-wave-convergence.sh
+      - name: Check published contact addresses use hospeda.com.ar (HOS-928)
+        run: bash scripts/check-hospeda-email-domain.sh
+      # Not redundant with `pnpm check:guards`: this job runs each guard as its
+      # own step (see the note above), so a guard listed only in that npm script
+      # never executes here.
+      - name: Check 'qrcode' has exactly one importer (HOS-1129)
+        run: bash scripts/check-qrcode-engine-isolation.sh
+      # Its own step for the same reason as the two above: `pnpm check:guards`
+      # listing it is not what makes it run here. A guard that only lived in that
+      # npm script would never execute in CI, and this one watches both doors
+      # between a negotiated price and the people who may not see it — the public
+      # plans endpoint and the protected one.
+      - name: Check unlisted plans cannot reach either plan listing (HOS-1062 AC-14)
+        run: bash scripts/check-unlisted-plan-filter.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above).
+      - name: Check every contact_info column declares mergeableJsonbColumns
+        run: pnpm check:mergeable-contact-info
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes it run in this job (see the note above). This one
+      # watches the banner that told a user their save had failed after it
+      # actually succeeded (HOS-816). Two anchors: the 11 forms on the shared
+      # `useZodForm` hook, whose `handleApiError` only ever SETS the banner, and
+      # the 46 hand-rolled ones, matched by the SHAPE of an inline
+      # `role="alert"` banner rather than by any variable name.
+      - name: Check every form-level error banner can be retired (HOS-837)
+        run: pnpm check:form-error-cleared
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above). This one
+      # fails on a <dialog> in apps/web that carries no height cap — the state
+      # six of them were in, which looks fine with a test account and puts the
+      # confirm button off-screen with a real one.
+      - name: Check every web dialog has a height cap and scroll (HOS-958)
+        run: pnpm check:dialog-panel
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above). This one
+      # fails on `confirm()` / `alert()` / `prompt()` anywhere apps/web ships to
+      # the browser — the five call sites HOS-957 replaced, each of which showed
+      # the bare domain and paired a hard-coded Spanish question with buttons
+      # labelled in the BROWSER's language. It scans the workspace packages the
+      # app depends on too, which is the blind spot HOS-958's guard had.
+      - name: Check apps/web raises no native browser dialog (HOS-957)
+        run: pnpm check:no-native-dialogs
+      # Its own step, like every guard here: being listed in `pnpm check:guards`
+      # is NOT what makes a guard run in this job (see the note above, F-6).
+      # Fails naming the id on a duplicate live id, a live id that reuses a
+      # RETIRED_WHATS_NEW_IDS entry, or a catalog not declared newest-first
+      # (HOS-1214 AC-11).
+      - name: Check What's New catalog integrity (HOS-1214 AC-11)
+        run: pnpm check:whats-new-catalog
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
@@ -332,8 +435,6 @@ jobs:
       # nothing reported it.
       - name: Test scripts/ tooling and guards
         run: pnpm test:scripts
-      - name: Test the interactive CLI (scripts/cli)
-        run: pnpm test:cli
       # `hops` (scripts/server-tools) is the third suite that ran nowhere, and
       # the one that matters most: it is the tool operators point at
       # PRODUCTION. It needs its own runtime because the package is
@@ -355,6 +456,15 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Test the hops CLI (scripts/server-tools)
         working-directory: scripts/server-tools
+        run: bun test
+      # scripts/client-tools is the local twin of server-tools: same shape, same
+      # runtime, same reason to live outside the pnpm workspace. The bun setup
+      # above is shared, so this only costs its own install + run.
+      - name: Install client-tools dependencies
+        working-directory: scripts/client-tools
+        run: bun install --frozen-lockfile
+      - name: Test the local hops CLI (scripts/client-tools)
+        working-directory: scripts/client-tools
         run: bun test
 
   # ------------------------------------------------------------------

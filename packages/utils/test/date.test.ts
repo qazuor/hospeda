@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    addDaysToDate,
-    addMonthsToDate,
-    addYearsToDate,
     areDatesEqual,
     formatDate,
     formatDateDistance,
@@ -116,35 +113,6 @@ describe('Date Utilities', () => {
             const date1 = new Date('2024-01-15T12:30:00');
             const date2 = new Date('2024-01-15T12:00:00');
             expect(getMinutesDifference(date1, date2)).toBe(30);
-        });
-    });
-
-    describe('addDaysToDate', () => {
-        it('adds days to a date', () => {
-            const date = new Date('2024-01-15T12:00:00Z');
-            const result = addDaysToDate(date, 5);
-            expect(result.getUTCDate()).toBe(20);
-        });
-
-        it('handles string input', () => {
-            const result = addDaysToDate('2024-01-15', 5);
-            expect(result.getUTCDate()).toBe(20);
-        });
-    });
-
-    describe('addMonthsToDate', () => {
-        it('adds months to a date', () => {
-            const date = new Date('2024-01-15T12:00:00Z');
-            const result = addMonthsToDate(date, 2);
-            expect(result.getUTCMonth()).toBe(2); // March
-        });
-    });
-
-    describe('addYearsToDate', () => {
-        it('adds years to a date', () => {
-            const date = new Date('2024-01-15T12:00:00Z');
-            const result = addYearsToDate(date, 1);
-            expect(result.getUTCFullYear()).toBe(2025);
         });
     });
 });

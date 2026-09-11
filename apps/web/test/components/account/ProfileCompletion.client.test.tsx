@@ -45,6 +45,7 @@ vi.mock('@repo/schemas', () => {
                 .regex(/^\+[1-9]\d{1,14}(?:\s\d{1,15})*$/)
                 .optional(),
             locale: z.enum(SUPPORTED_LOCALES).optional(),
+            theme: z.enum(['system', 'light', 'dark']).optional(),
             newsletterOptIn: z.boolean().optional(),
             bio: z.string().min(10).max(300).optional(),
             website: z.string().url().optional(),
@@ -74,11 +75,19 @@ vi.mock('@repo/schemas', () => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function renderForm() {
+function renderForm({
+    returnUrl = '/es/mi-cuenta/',
+    setPasswordUrl = '/es/mi-cuenta/agregar-contrasena/'
+}: {
+    returnUrl?: string;
+    setPasswordUrl?: string;
+} = {}) {
     return render(
         <ProfileCompletion
             locale="es"
             apiUrl="http://localhost:3001"
+            returnUrl={returnUrl}
+            setPasswordUrl={setPasswordUrl}
         />
     );
 }
@@ -228,14 +237,177 @@ describe('ProfileCompletion (HOS-190 slice 3 — useZodForm migration)', () => {
                 'firstName',
                 'lastName',
                 'locale',
+                'theme',
                 'newsletterOptIn'
             ].sort()
         );
+        // Defaults to 'system' when the user never touches the theme select.
+        expect(body.theme).toBe('system');
 
         await waitFor(() => {
             expect(hrefAssignSpy).toHaveBeenCalledWith('/es/mi-cuenta/');
         });
 
         window.location = originalLocation;
+    });
+});
+
+describe('ProfileCompletion — HOS-838: the destination survives the gate', () => {
+    /**
+     * Replaces `window.location` with a proxy that records `href` assignments,
+     * so a redirect is observable without a real jsdom navigation.
+     */
+    function spyOnHrefAssignment(): ReturnType<typeof vi.fn> {
+        const hrefAssignSpy = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            writable: true,
+            value: {
+                ...originalLocation,
+                set href(v: string) {
+                    hrefAssignSpy(v);
+                }
+            } as Location
+        });
+        return hrefAssignSpy;
+    }
+
+    /** Mocks the completion endpoint with the given `requiresSetPassword`. */
+    function mockCompleteResponse({ requiresSetPassword }: { requiresSetPassword: boolean }): void {
+        globalThis.fetch = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({ data: { profileCompleted: true, requiresSetPassword } }),
+                {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            )
+        );
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('lands on the interrupted destination when no further gate applies', async () => {
+        // Arrange
+        mockCompleteResponse({ requiresSetPassword: false });
+        const hrefAssignSpy = spyOnHrefAssignment();
+        renderForm({ returnUrl: '/es/mi-cuenta/comercios/nuevo/' });
+        fillRequiredFields();
+
+        // Act
+        submit();
+
+        // Assert
+        await waitFor(() => {
+            expect(hrefAssignSpy).toHaveBeenCalledWith('/es/mi-cuenta/comercios/nuevo/');
+        });
+    });
+
+    it('hands off to the set-password step, which carries the destination on', async () => {
+        // Arrange
+        mockCompleteResponse({ requiresSetPassword: true });
+        const hrefAssignSpy = spyOnHrefAssignment();
+        renderForm({
+            returnUrl: '/es/mi-cuenta/comercios/nuevo/',
+            setPasswordUrl:
+                '/es/mi-cuenta/agregar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+        });
+        fillRequiredFields();
+
+        // Act
+        submit();
+
+        // Assert — the island navigates to the URL the server built; it must
+        // never assemble that URL itself.
+        await waitFor(() => {
+            expect(hrefAssignSpy).toHaveBeenCalledWith(
+                '/es/mi-cuenta/agregar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+        expect(hrefAssignSpy).not.toHaveBeenCalledWith('/es/mi-cuenta/');
+    });
+});
+
+/**
+ * HOS-313: theme selector must NOT apply live. Selecting a value only
+ * updates local form state; `document.documentElement`'s `data-theme` is
+ * touched ONLY after a successful save, never on `onChange` and never on a
+ * failed save.
+ */
+describe('ProfileCompletion — HOS-313: theme applies only after a successful save', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        document.documentElement.removeAttribute('data-theme');
+        try {
+            localStorage.removeItem('theme');
+        } catch {
+            // ignore — not relevant to these assertions
+        }
+    });
+
+    it('does not touch data-theme when the select changes (no live apply)', () => {
+        renderForm();
+
+        const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
+        fireEvent.change(themeSelect, { target: { value: 'dark' } });
+
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    });
+
+    it('applies the selected theme to data-theme only after a successful submit', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    data: { profileCompleted: true, requiresSetPassword: false }
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            )
+        );
+
+        renderForm();
+        fillRequiredFields();
+
+        const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
+        fireEvent.change(themeSelect, { target: { value: 'dark' } });
+
+        // Not applied yet — still local state.
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+
+        submit();
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+
+        // Applied only after the POST resolved successfully.
+        await waitFor(() => {
+            expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        });
+    });
+
+    it('does not apply the theme when the submit fails', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue(
+            new Response(JSON.stringify({ error: { message: 'boom' } }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            })
+        );
+
+        renderForm();
+        fillRequiredFields();
+
+        const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
+        fireEvent.change(themeSelect, { target: { value: 'dark' } });
+
+        submit();
+
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
     });
 });

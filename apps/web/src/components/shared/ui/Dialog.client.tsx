@@ -141,11 +141,21 @@ export function Dialog({
         };
     }, [isOpen, mounted]);
 
+    // Back button closes the dialog instead of leaving the page (HOS-310).
+    // Gated on `mounted` so the entry is only claimed once the portal is real.
+    const { isTopmost } = useDialogHistoryBack({
+        isOpen: isOpen && mounted && claimHistoryEntry,
+        onClose
+    });
+
     // Keyboard handling: Esc + focus trap.
     useEffect(() => {
         if (!isOpen || !mounted) return;
         const handleKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'Escape' && closeOnEscape) {
+            // `isTopmost` (HOS-350): when a second overlay opens above this
+            // one (e.g. the feedback modal via Ctrl+Shift+F), only the
+            // outermost surface may close on a single Escape press.
+            if (event.key === 'Escape' && closeOnEscape && isTopmost) {
                 event.preventDefault();
                 onClose();
                 return;
@@ -156,11 +166,7 @@ export function Dialog({
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, mounted, onClose, closeOnEscape]);
-
-    // Back button closes the dialog instead of leaving the page (HOS-310).
-    // Gated on `mounted` so the entry is only claimed once the portal is real.
-    useDialogHistoryBack({ isOpen: isOpen && mounted && claimHistoryEntry, onClose });
+    }, [isOpen, mounted, onClose, closeOnEscape, isTopmost]);
 
     const handleOverlayClick = useCallback(
         (event: React.MouseEvent<HTMLDivElement>): void => {
@@ -182,7 +188,7 @@ export function Dialog({
         >
             <div
                 ref={panelRef}
-                className={cn(styles.panel, className)}
+                className={cn(styles.panel, 'dialog-panel', className)}
                 data-size={size}
                 data-variant={variant}
                 role="dialog"
@@ -267,7 +273,16 @@ interface DialogBodyProps {
  * panel max-height, the body is the scroll container.
  */
 export function DialogBody({ children, bare = false, className }: DialogBodyProps): JSX.Element {
-    return <div className={cn(bare ? styles.bodyBare : styles.body, className)}>{children}</div>;
+    return (
+        <div
+            className={cn(
+                bare ? styles.bodyBare : cn(styles.body, 'dialog-panel-scroll'),
+                className
+            )}
+        >
+            {children}
+        </div>
+    );
 }
 
 interface DialogFooterProps {

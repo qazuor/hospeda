@@ -2,7 +2,13 @@
 
 > **Context**: post SPEC-143 close, audit ran to decide UI work before the smoke gate (T-143-21/23/37/46). Output of four exploration agents over `apps/web` + `apps/admin`.
 > **Owner**: handoff doc for the next session. Self-contained.
-> **Status**: Audit complete, remediation plan defined (4 phases), implementation not started.
+> **Status**: HISTORICAL — "implementation not started" is no longer true
+> (HOS-1302, 2026-09-09). At least Phase 1 and Phase 3 have shipped:
+> `PlanPurchaseButton.client.tsx` now goes through `planSlug` + `/start-paid`
+> (so the "legacy `/billing/checkout`" and "non-existent self-cancel DELETE"
+> findings below are fixed), and the admin hooks all call `/admin/*`. Treat the
+> whole findings list as a 2026-05-20 snapshot and re-check any item against the
+> code before acting on it.
 
 ---
 

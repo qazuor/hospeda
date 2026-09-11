@@ -9,15 +9,17 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { ACCOMMODATION_EDITOR_REGISTRY } from '@/lib/editor/accommodation-editor-sections';
 import { buildEditorBreadcrumbItems } from '@/lib/editor/editor-breadcrumbs-model';
 
 /** Builds a trail with defaults for the case under test. */
 function build(currentSectionSlug: string | null, sectionLabel = 'Fotos') {
     return buildEditorBreadcrumbItems({
-        accommodationId: 'acc-uuid',
-        accommodationName: 'Casa del Sol',
+        registry: ACCOMMODATION_EDITOR_REGISTRY,
+        entityId: 'acc-uuid',
+        entityName: 'Casa del Sol',
         currentSectionSlug,
-        propertiesLabel: 'Mis propiedades',
+        indexLabel: 'Mis propiedades',
         sectionLabel
     });
 }

@@ -8,6 +8,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
@@ -56,7 +57,14 @@ const getByDestinationHandler = async (c: Context) => {
     // change.
     const data = result.data ?? { accommodations: [] };
     const strippedAccommodations = Array.isArray(data.accommodations)
-        ? data.accommodations.map(stripRichDescriptionFields)
+        ? data.accommodations.map((accommodation) => ({
+              ...stripRichDescriptionFields(accommodation),
+              // HOS-929: public read treats holding either the admin-curated
+              // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
+              // flag as featured. `featuredByEntitlement` itself is stripped by
+              // `AccommodationPublicSchema` (never in its pick).
+              isFeatured: resolvePublicIsFeatured(accommodation)
+          }))
         : [];
 
     // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.

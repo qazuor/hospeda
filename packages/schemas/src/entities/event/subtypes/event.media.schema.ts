@@ -3,9 +3,11 @@ import {
     BaseContentMediaSchema,
     ContentMediaAddPayloadSchema,
     ContentMediaReorderPayloadSchema,
-    ContentMediaStateSchema
+    ContentMediaStateSchema,
+    ContentMediaUpdatePayloadSchema
 } from '../../../common/content-media.schema.js';
 import { EventIdSchema, EventMediaIdSchema } from '../../../common/id.schema.js';
+import { hasAtLeastOneMediaTextField } from '../../../common/media.schema.js';
 
 /**
  * Zod schema for a single row in the `event_media` table (HOS-390).
@@ -134,3 +136,35 @@ export const EventMediaListOutputSchema = z.object({
 });
 /** Inferred type for a media list response. */
 export type EventMediaListOutput = z.infer<typeof EventMediaListOutputSchema>;
+
+// ----------------------------------------------------------------------------
+// Update Text Metadata (HOS-1036 — PATCH /events/:id/media/:mediaId)
+// ----------------------------------------------------------------------------
+
+/** HTTP payload for `PATCH /events/:id/media/:mediaId`. Alias of the shared content payload. */
+export const EventMediaUpdatePayloadSchema = ContentMediaUpdatePayloadSchema;
+/** Inferred type for the update-media HTTP payload. */
+export type EventMediaUpdatePayload = z.infer<typeof EventMediaUpdatePayloadSchema>;
+
+/**
+ * Service input for `updateEventMedia`.
+ *
+ * Combines the URL params (`eventId`, `mediaId`) with the four payload fields
+ * spread from {@link EventMediaUpdatePayloadSchema}'s shape, then adds the
+ * cross-field rule the flat payload cannot express: at least one editable field
+ * must be present. An all-omitted body is a no-op PATCH and is rejected as
+ * `VALIDATION_ERROR` rather than silently answering 200.
+ */
+export const EventMediaUpdateInputSchema = z
+    .object({
+        /** UUID of the parent event (from URL param `/:id`). */
+        eventId: EventIdSchema,
+        /** UUID of the media row to update (from URL param `/:mediaId`). */
+        mediaId: EventMediaIdSchema,
+        ...EventMediaUpdatePayloadSchema.shape
+    })
+    .refine(hasAtLeastOneMediaTextField, {
+        message: 'zodError.common.contentMedia.update.atLeastOneField'
+    });
+/** Inferred type for the update-media service input. */
+export type EventMediaUpdateInput = z.infer<typeof EventMediaUpdateInputSchema>;

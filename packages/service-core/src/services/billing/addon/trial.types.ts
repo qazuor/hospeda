@@ -385,6 +385,29 @@ export interface CheckoutFreeTrialDays {
 /**
  * Decides, in ONE place, how many free days a checkout grants (HOS-171 §7.4).
  *
+ * ## NO CALLERS IN CHECKOUT SINCE HOS-1012 — read this before wiring it back
+ *
+ * `apps/api/src/services/subscription-checkout.service.ts` called this from all
+ * three of its trial-bearing paths (accommodation monthly, commerce monthly,
+ * accommodation annual) and passed the result to MercadoPago as
+ * `auto_recurring.free_trial`. It calls none of them now, and the function is
+ * left with no production caller on purpose.
+ *
+ * The reason is measured, not stylistic: MercadoPago grants a preapproval's
+ * free trial once per `(payer, preapproval_plan)`, and reports a trial it has
+ * already spent byte-identically to a live one. In production that charged a
+ * customer ARS 18.000 one hundred and eighteen seconds after promising fourteen
+ * free days (HOS-522). Hospeda's trial is its own now — a local
+ * `status='trialing'` row with `mp_subscription_id = NULL`, opened at the
+ * owner's first publish, with no card and no provider object behind it.
+ *
+ * The function survives because its RULES are still the product's rules (the
+ * kill-switch, plans that declare no trial, one trial per customer for life,
+ * base + extension as one number) and re-deriving them at a new call site is how
+ * they drift. But whatever consumes it next must apply the days to the LOCAL
+ * trial row. Passing this number to a preapproval create is banned outright and
+ * `scripts/check-no-trial-to-mercadopago.sh` (guard G-1) fails CI on it.
+ *
  * ## Why this exists
  *
  * The free trial used to be granted at two different moments: a no-card trial

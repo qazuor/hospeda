@@ -2,13 +2,14 @@
  * GET /api/v1/public/accommodations/:id/similar
  * Returns accommodations similar to the given one, matched by type or destination.
  */
-import { accommodations, getDb } from '@repo/db';
+import { accommodationMediaModel, accommodations, getDb } from '@repo/db';
 import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { composeAccommodationMedia, ServiceError } from '@repo/service-core';
 import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
     filterAccommodationListByOwnerEntitlements,
@@ -148,6 +149,12 @@ export const publicGetSimilarRoute = createPublicRoute({
                 description: true,
                 type: true,
                 isFeatured: true,
+                // HOS-929: the billing-derived sibling of `isFeatured` (SPEC-292,
+                // renamed SPEC-309 OQ-3). This raw query bypasses the service/model
+                // layer entirely, so nothing else selects it for this route — it
+                // must be explicit here or the public OR silently degrades to
+                // `isFeatured` alone.
+                featuredByEntitlement: true,
                 // SPEC-291 Phase 3b: select isVerified so the badge gate can read the
                 // real DB value. Previously omitted → defaulted to false by stripWithSchema
                 // regardless of the actual DB value. Now selected so the gate can surface
@@ -155,7 +162,14 @@ export const publicGetSimilarRoute = createPublicRoute({
                 isVerified: true,
                 averageRating: true,
                 reviewsCount: true,
-                media: true,
+                // HOS-963: the `media` JSONB column was dropped in HOS-372 — `media`
+                // is now a relation (`many(accommodationMedia)`), not a selectable
+                // column, so `media: true` here silently selected nothing and every
+                // similar-card served a placeholder. Photos are composed below from
+                // the relational `accommodation_media` table instead; `videos` (a
+                // real column, never migrated — see `accommodation.media-compose.ts`)
+                // is selected so `composeAccommodationMedia` can fold it back in.
+                videos: true,
                 price: true,
                 location: true,
                 seo: true,
@@ -206,6 +220,17 @@ export const publicGetSimilarRoute = createPublicRoute({
             limit
         });
 
+        // HOS-963: this route runs a raw relational query on `getDb()` (see the
+        // @remarks above), so it never reaches `AccommodationService._afterSearch` —
+        // the chokepoint that normally composes `media` from the relational
+        // `accommodation_media` table (SPEC-204). Load the media rows for this page
+        // in ONE batch query and compose them explicitly, the same way
+        // `SocialPublicDataService.fetchAccommodations` does for its own raw-query
+        // bypass (see `accommodation.media-read.ts` module doc, "Direct consumers").
+        const mediaByAccommodationId = await accommodationMediaModel.findByAccommodations({
+            accommodationIds: rows.map((row) => row.id)
+        });
+
         // Project the loaded `destination` relation as `cityDestination` to
         // match the public API response shape used by listByOwner / list.
         // The Web transform's `deriveCityFields()` reads `cityDestination`
@@ -223,7 +248,15 @@ export const publicGetSimilarRoute = createPublicRoute({
             const { destination, ...rest } = stripRichDescriptionFields(
                 row as Record<string, unknown> & { destination?: unknown }
             );
-            return destination ? { ...rest, cityDestination: destination } : rest;
+            const media = composeAccommodationMedia({
+                rows: mediaByAccommodationId.get(row.id) ?? [],
+                videos: row.videos
+            });
+            // HOS-929: public read treats holding either source flag as
+            // featured. `featuredByEntitlement` itself is stripped by
+            // `AccommodationPublicSchema` (never in its pick).
+            const withMedia = { ...rest, media, isFeatured: resolvePublicIsFeatured(row) };
+            return destination ? { ...withMedia, cityDestination: destination } : withMedia;
         });
 
         // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
@@ -239,7 +272,11 @@ export const publicGetSimilarRoute = createPublicRoute({
         ];
         const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
         return filterAccommodationListByOwnerEntitlements(
-            mappedRows as AccommodationData[],
+            // TYPE-WORKAROUND: HOS-929's explicit `isFeatured` override above narrows
+            // this object literal enough that TS no longer sees "sufficient overlap"
+            // with `AccommodationData` for a direct `as` cast — go through `unknown`
+            // first, same as other raw-query mappings in this codebase.
+            mappedRows as unknown as AccommodationData[],
             ownerEntitlementsMap
         );
     },

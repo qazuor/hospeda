@@ -140,6 +140,22 @@
 #         future fixture that truly re-randomizes. No such case exists today;
 #         the bare word "non-deterministic" with no described, diff-visible
 #         mechanism is NOT an acceptable reason (that was v1's false premise).
+#      c) "additive-code-only: <what was added>" — the diff adds CODE to a
+#         guarded file and modifies NO seeded definition. This category exists
+#         because BILLING_CONFIG_FILES is file-granular over files that MIX data
+#         with code: plans.config.ts is 1235 lines and already holds ten helpers
+#         alongside the plan rows, so a derived index or a pure lookup added
+#         next to them trips a guard that has nothing to back-fill. The
+#         declaration must NAME what was added, and REVIEW must confirm the diff
+#         touches no PlanDefinition field — a changed price, entitlement, limit,
+#         slug or isActive is NOT this category however additive it looks.
+#         Extracting the helper to an unwatched file is NOT the preferred exit:
+#         it shrinks the guard's coverage to make a false positive disappear.
+#         Added by HOS-1119 (PR #3177), the marker's first use in this repo,
+#         for COMMERCE_PLANS_BY_VERTICAL + findCommercePlanForVertical. The
+#         predicate did not change with it — only this list of reasons review
+#         will accept, which until then did not describe a case the guard
+#         structurally produces.
 #
 #    False-positive profile: a genuinely-safe additive data change without the
 #    marker fails loudly — the marker unblocks it with an explicit, reviewable
@@ -254,6 +270,12 @@ EXTERNAL_BASELINE_FILES=(
 # precedent).
 BILLING_CONFIG_FILES=(
     'packages/billing/src/config/plans.config.ts'
+    # HOS-1012 D-5: the three composed trial plans live in their own file (the
+    # 500-line rule; plans.config.ts is already well past it). Their rows are
+    # seeded exactly like every other plan's, so leaving this path off the list
+    # would reproduce the HOS-789 shape — a baseline edit that moves nothing in
+    # the guarded surface while staging and prod keep the old rows.
+    'packages/billing/src/config/trial-plans.config.ts'
     'packages/billing/src/config/limits.config.ts'
     'packages/billing/src/config/entitlements.config.ts'
     'packages/billing/src/config/addons.config.ts'

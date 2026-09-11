@@ -10,6 +10,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 const { mockImportFromUrl, mockUseImportStatus } = vi.hoisted(() => ({
     mockImportFromUrl: vi.fn(),
@@ -805,7 +806,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/planes');
+        expect(cta.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
     });
 
     it('targets the tourist plans page when the server says so', async () => {
@@ -819,7 +820,7 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/turistas');
+        expect(cta.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.tourist);
     });
 
     it('falls back to the owner plans page when the audience is missing', async () => {
@@ -828,13 +829,14 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
 
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
-        expect(cta.getAttribute('href')).toContain('suscriptores/planes');
+        expect(cta.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
     });
 
-    it('renders NO CTA for an overdue payment', async () => {
-        // Arrange / Act — the only page that could resolve it sits behind this
-        // same gate and no update-card flow exists, so a button would be a dead
-        // end. The message alone is the deliverable here (HOS-348).
+    it('renders an update-payment-method CTA pointing at the account subscription page for an overdue payment (HOS-348 Part C)', async () => {
+        // Arrange / Act — HOS-348 Part B built a real destination (the account
+        // subscription page can mint a replacement preapproval), so this now
+        // gets its OWN CTA with copy that says what it does — never the
+        // generic "Ver planes" (a past-due customer isn't shopping for a plan).
         await submitWithError({
             status: 402,
             code: 'ENTITLEMENT_REQUIRED',
@@ -843,8 +845,8 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
         });
 
         // Assert
-        await screen.findByRole('alert');
-        expect(screen.queryByRole('link')).toBeNull();
+        const cta = await screen.findByRole('link', { name: /actualizar medio de pago/i });
+        expect(cta.getAttribute('href')).toContain('mi-cuenta/suscripcion');
     });
 
     it('shows the overdue-payment copy, not the plan copy', async () => {

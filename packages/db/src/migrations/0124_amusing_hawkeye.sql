@@ -1,0 +1,1 @@
+ALTER TABLE "accommodations" ADD COLUMN "billing_unpublished_at" timestamp with time zone;

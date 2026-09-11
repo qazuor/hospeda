@@ -1,8 +1,15 @@
 import { z } from 'zod';
+import {
+    CommerceListingAmenityPublicSchema,
+    CommerceListingFeaturePublicSchema
+} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { GastronomySchema } from './gastronomy.schema.js';
+import { GastronomyDailySpecialPublicSchema } from './subtypes/gastronomy.daily-special.schema.js';
+import { GastronomyEventPublicSchema } from './subtypes/gastronomy.event.schema.js';
+import { GastronomyMenuSectionPublicSchema } from './subtypes/gastronomy.menu.schema.js';
 
 /**
  * Gastronomy Access Schemas — Three-Tier Response Projection
@@ -49,6 +56,19 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     // Gastronomy-specific public fields
     priceRange: true,
     menuUrl: true,
+    // HOS-895 PR2 — the uploaded photo/PDF alternative is now a `-pro`/
+    // `-premium` capability (owner decision, 2026-09-02; PR1 shipped it
+    // ungated). The COLUMN stays picked here — it is still owner-writable data
+    // — but the public `getBySlug` route nulls both fields out live, before
+    // this schema is reached, when the owner's CURRENT plan does not grant
+    // `MANAGE_GASTRONOMY_MENU` (see `resolveOwnerGrantsGastronomyMenuManagement`
+    // in `@repo/service-core`). Schema presence is safe for the same reason
+    // `richDescription`'s entitlement-by-omission gate is: the service strips
+    // it server-side before `stripWithSchema`, so a not-entitled owner's row
+    // never carries a truthy value out. `menuFilePublicId` stays out: it is the
+    // provider handle used to delete the asset, not content.
+    menuFileUrl: true,
+    menuFileKind: true,
 
     // Destination reference
     destinationId: true,
@@ -132,7 +152,70 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
             name: z.string(),
             slug: z.string()
         })
-        .nullish()
+        .nullish(),
+    /**
+     * Amenities the owner ticked, joined with the shared catalog (HOS-1072).
+     *
+     * Populated by the public `getBySlug` route only, which is why this is
+     * `.optional()` rather than defaulted: a list payload that never ran the
+     * join must say "not loaded", not "this venue has none". Absent and empty
+     * are different facts and the card grid renders nothing for either.
+     */
+    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    /** Features the owner ticked, joined with the shared catalog (HOS-1072). */
+    features: z.array(CommerceListingFeaturePublicSchema).optional(),
+    /**
+     * The structured carta's sections and dishes (HOS-895 PR2), joined from
+     * `gastronomy_menu_sections` / `gastronomy_menu_items`.
+     *
+     * Populated by the public `getBySlug` route only — same reason `amenities`
+     * / `features` are `.optional()` rather than defaulted: a payload that
+     * never ran the join must say "not loaded", not "this venue has none".
+     *
+     * Empty (not omitted) when the owner's current plan does not grant
+     * `MANAGE_GASTRONOMY_MENU` — a downgraded owner's previously-typed carta is
+     * withheld the same way `menuFileUrl` is (see the field's comment above),
+     * even though the ROWS are not deleted.
+     *
+     * Each section/item's `nameI18n`/`descriptionI18n` (HOS-1043) are withheld
+     * INDEPENDENTLY, on the narrower `MULTILINGUAL_GASTRONOMY_MENU` key —
+     * `null` on both when the plan does not grant it, the same live-read
+     * mechanism `photoUrl` uses for `MENU_ITEM_PHOTOS`. See
+     * `gastronomy.menu.schema.ts` for the full mechanism.
+     */
+    menuSections: z.array(GastronomyMenuSectionPublicSchema).optional(),
+    /**
+     * The menú del día (HOS-1041), joined from `gastronomy_daily_specials`.
+     *
+     * Populated by the public `getBySlug` route only, and — unlike every other
+     * joined array on this schema — **already filtered by the validity window**
+     * before it gets here. The route asks for the specials valid on TODAY (in
+     * the AR market timezone), so a consumer never has to know a window exists:
+     * what arrives is what is on offer right now, and an elapsed special is
+     * indistinguishable from one that was never written.
+     *
+     * Empty (not omitted) when the owner's current plan does not grant
+     * `MANAGE_GASTRONOMY_DAILY_SPECIAL` — withheld live, exactly like
+     * `menuSections`, without the rows being deleted.
+     */
+    dailySpecials: z.array(GastronomyDailySpecialPublicSchema).optional(),
+    /**
+     * The venue's own agenda (HOS-1042), read from `gastronomy_events`.
+     *
+     * `.optional()` on exactly the terms `menuSections` is, and withheld on
+     * exactly the terms it is: absent when the payload never ran the read,
+     * absent when the owner's CURRENT plan does not grant
+     * `MANAGE_GASTRONOMY_EVENTS`. A downgraded owner's already-typed agenda
+     * stays in the database and stops being published — the rows are not
+     * deleted (see `resolveOwnerGastronomyPlanEntitlements` in
+     * `@repo/service-core`).
+     *
+     * Named `venueEvents` and not `events` deliberately. `events` is the
+     * platform's DESTINATION agenda — a festival, a popular fiesta — and a
+     * gastronomy payload carrying a field by that name would read, to every
+     * consumer that already knows the other one, as the wrong thing.
+     */
+    venueEvents: z.array(GastronomyEventPublicSchema).optional()
 });
 
 /** TypeScript type for {@link GastronomyPublicSchema}. */
@@ -164,6 +247,10 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     descriptionI18n: true,
     richDescriptionI18n: true,
     isFeatured: true,
+    // HOS-1286: the owner's own editor sees both featuring sources separately,
+    // like the accommodation protected tier. Never added to the PUBLIC pick —
+    // public reads get the OR under `isFeatured` and nothing else.
+    featuredByEntitlement: true,
     destinationId: true,
     media: true,
     videos: true,
@@ -175,6 +262,8 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     tags: true,
     priceRange: true,
     menuUrl: true,
+    menuFileUrl: true,
+    menuFileKind: true,
     openingHours: true,
 
     // Protected: ownership

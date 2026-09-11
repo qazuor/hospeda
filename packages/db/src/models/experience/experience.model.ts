@@ -44,6 +44,29 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
         'faqs'
     ] as const;
 
+    /**
+     * Grouped JSONB columns shallow-merged (PostgreSQL `||`) on update rather
+     * than replaced wholesale, following the `accommodations` / `users` /
+     * `partners` precedent (HOS-278 D3).
+     *
+     * `contactInfo` was NOT declared here until now — every model with a
+     * `contact_info` JSONB column defaults to full replacement unless it
+     * opts in, so a PATCH that sent only one contact field (e.g. a phone
+     * number) silently deleted every other stored contact field. The table
+     * held ZERO rows in production when this shipped — soft-deleted ones
+     * included — so there was nothing to backfill (owner's measurement,
+     * 2026-09-05, HOS-1190). That is a dated observation, not a standing
+     * property of the table: re-measure before reusing it to justify skipping
+     * a migration.
+     *
+     * `socialNetworks`, `openingHours`, `videos`, `seo`, `rating` and
+     * `adminInfo` (also JSONB on this table) are deliberately NOT added
+     * here — that is a separate decision left to the table owner, same as
+     * `partners.socialNetworks` was excluded for a documented reason (see
+     * `PartnerModel`).
+     */
+    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+
     protected getTableName(): string {
         return 'experiences';
     }
@@ -116,6 +139,37 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'search', ctx, err);
             throw new DbError(this.entityName, 'search', ctx, err.message);
+        }
+    }
+
+    /**
+     * Returns the IDs of every non-deleted experience listing owned by the
+     * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
+     * `EntityViewService.getStatsForOwnCommerceListings` /
+     * `getDailySeriesForOwnCommerceListings` (HOS-734) to resolve which
+     * `entity_views` rows belong to the caller without accepting an ownerId
+     * param at the route layer (anti-peeking).
+     *
+     * @param ownerId - The owner's user id.
+     * @param tx - Optional transaction client.
+     * @returns Array of experience listing IDs (may be empty).
+     */
+    async findIdsByOwnerId(ownerId: string, tx?: DrizzleClient): Promise<string[]> {
+        const db = this.getClient(tx);
+        const ctx = { ownerId };
+        try {
+            const rows = await db
+                .select({ id: experiences.id })
+                .from(experiences)
+                .where(and(eq(experiences.ownerId, ownerId), isNull(experiences.deletedAt)));
+
+            const ids = rows.map((r) => r.id);
+            logQuery(this.entityName, 'findIdsByOwnerId', ctx, { count: ids.length });
+            return ids;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findIdsByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'findIdsByOwnerId', ctx, err.message);
         }
     }
 }

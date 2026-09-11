@@ -40,7 +40,7 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
         expect(source).toContain('client:load');
     });
 
-    it('forwards locale, addons, ownedAddonSlugs, and accommodations to the island', () => {
+    it('forwards locale, addons, ownedAddonSlugs, and per-vertical target listings to the island', () => {
         expect(source).toMatch(/locale={locale}/);
         // HOS-689 item 2: the island receives `visibleAddons` (the catalog
         // filtered per-domain), never the raw `availableAddons` — a
@@ -48,7 +48,21 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
         // (and vice versa).
         expect(source).toMatch(/addons={visibleAddons}/);
         expect(source).toMatch(/ownedAddonSlugs={ownedAddonSlugs}/);
-        expect(source).toMatch(/accommodations={accommodations}/);
+        // HOS-1286: the flat `accommodations` prop was replaced by
+        // `targetListingsByDomain`, one listing array PER VERTICAL — a
+        // restaurant/experience owner needs their own listings offered as
+        // per-accommodation addon targets, not just accommodation hosts.
+        expect(source).not.toMatch(/\baccommodations=\{accommodations\}/);
+        expect(source).toContain('targetListingsByDomain={{');
+        expect(source).toMatch(
+            /targetListingsByDomain=\{\{[\s\S]*?accommodation:\s*accommodations/
+        );
+        expect(source).toMatch(
+            /targetListingsByDomain=\{\{[\s\S]*?gastronomy:\s*commerceListings\.gastronomy/
+        );
+        expect(source).toMatch(
+            /targetListingsByDomain=\{\{[\s\S]*?experience:\s*commerceListings\.experience/
+        );
     });
 
     it('reads the ?status= and ?addon= query params for the result banner', () => {

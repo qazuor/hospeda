@@ -52,11 +52,30 @@ const {
     const withSvcTx = vi.fn(async <T>(callback: (ctx: { tx: typeof tx }) => Promise<T>) =>
         callback({ tx })
     );
+    // HOS-847: `hydrateSubscriptionProductDomains` is REAL here (this file
+    // imports @repo/service-core with importActual) and awaits the WHERE
+    // directly, with no `.limit()`, then `.map()`s the result. A `where` that
+    // merely returns the chain resolves to the chain object itself, and every
+    // trial test dies on "rows.map is not a function".
+    //
+    // So the WHERE returns a genuine Promise with `.limit` hung off it: awaiting
+    // it yields rows, and the chains that continue into `.limit()` are
+    // unaffected. A hand-written `then` property would do the same thing and is
+    // rejected by biome's `noThenProperty` — correctly, since this is exactly
+    // the accidental-thenable hazard that rule is about.
+    //
+    // Resolving to `[]` leaves every subscription's `productDomain` `undefined`,
+    // which `subscriptionMatchesDomain` reads as a legacy accommodation row —
+    // the right default for a file about plan subscriptions. A fixture meant to
+    // BE an add-on row carries `productDomain: 'addon'` on itself, which skips
+    // hydration entirely.
+    const limitFn = vi.fn().mockResolvedValue([]);
+    const whereResult = Object.assign(Promise.resolve([] as unknown[]), { limit: limitFn });
     const dbMock = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]),
+        where: vi.fn(() => whereResult),
+        limit: limitFn,
         insert: vi.fn().mockReturnThis(),
         values: vi.fn().mockResolvedValue(undefined),
         update: vi.fn().mockReturnThis(),
@@ -102,6 +121,21 @@ vi.mock('drizzle-orm', async () => {
         isNotNull: (a: unknown) => ({ type: 'isNotNull', a }),
         isNull: (a: unknown) => ({ type: 'isNull', a }),
         lt: (a: unknown, b: unknown) => ({ type: 'lt', a, b }),
+        // HOS-847: excludeAddonDomainCondition() (called for real from
+        // @repo/service-core) needs ne()/or() too — markers keep the resulting
+        // condition an inspectable POJO, consistent with the siblings above.
+        ne: (a: unknown, b: unknown) => ({ type: 'ne', a, b }),
+        or: (...args: unknown[]) => ({ type: 'or', args }),
+        // HOS-337 (caught in review): `hydrateTrialConverted` (this file's own
+        // service) calls `inArray` to scope its query to the candidate ids.
+        // `mockDbForTrial.where` itself ignores whatever it is called with, so
+        // without this marker a mutation that deletes the `inArray(...)` scope
+        // entirely (fetching the whole table instead) would be invisible to
+        // any assertion here — only the mock's incidental `from().mockReturnThis()`
+        // shape (which breaks for an unrelated reason without a trailing
+        // `.where()`) would happen to fail it. The marker makes the SCOPE
+        // itself — which ids were asked for — directly inspectable.
+        inArray: (a: unknown, b: unknown) => ({ type: 'inArray', a, b }),
         sql: Object.assign(
             (strings: TemplateStringsArray, ..._values: unknown[]) => ({ type: 'sql', strings }),
             { raw: (s: string) => ({ type: 'sql_raw', value: s }) }
@@ -120,6 +154,11 @@ vi.mock('../../src/middlewares/entitlement', () => ({
 }));
 
 // Mock apiLogger
+const expireLocalTrialMock = vi.fn();
+vi.mock('../../src/services/billing/trial-local-expiry.service', () => ({
+    expireLocalTrial: (...args: unknown[]) => expireLocalTrialMock(...args)
+}));
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
         debug: vi.fn(),
@@ -129,6 +168,7 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+import { billingSubscriptions } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { buildTrialUpgradeUrl, TrialService } from '../../src/services/trial.service';
@@ -171,6 +211,24 @@ describe('TrialService', () => {
     beforeEach(() => {
         mockBilling = createMockBilling();
         trialService = new TrialService(mockBilling);
+
+        // HOS-1233 T-032: `createPaidSubscription` — which both reactivation
+        // paths go through — resolves the plan's own `product_domain` before
+        // creating the preapproval, via `select().from().where().limit(1)`, and
+        // fails CLOSED when it finds no plan.
+        //
+        // It is armed HERE, per test, rather than as the module default,
+        // because `mockDbForTrial` is module-scoped: the trial-reconcile
+        // describe's own `beforeEach` sets `limit` to `[]`, and a
+        // `mockResolvedValue` survives every test that runs after it. A default
+        // set once at construction would be silently stomped for every
+        // reactivation test that happens to run later in the file. This outer
+        // hook runs BEFORE each nested one, so a describe that needs `[]` still
+        // gets it.
+        //
+        // The hydration recovery is unaffected either way: it awaits `where()`
+        // directly (the thenable), never `.limit()`.
+        mockDbForTrial.limit.mockResolvedValue([{ productDomain: 'accommodation' }]);
     });
 
     describe('getTrialStatus', () => {
@@ -208,6 +266,61 @@ describe('TrialService', () => {
             expect(result.isExpired).toBe(false);
             expect(result.daysRemaining).toBeGreaterThan(6);
             expect(result.daysRemaining).toBeLessThanOrEqual(7);
+            expect(result.planSlug).toBe('owner-basico');
+        });
+
+        it("HOS-847: an ACTIVE recurring add-on row never outranks the customer's own trial", async () => {
+            // Arrange: a host in a real accommodation trial that has ALREADY
+            // expired, who also bought a recurring add-on. PR 5 is the first
+            // thing that ever moves an `product_domain = 'addon'` row to
+            // `active`, and `LIVE_STATUS_PRECEDENCE` ranks `active` (1) above
+            // `trialing` (2) — deterministically, not by row order. Unfiltered,
+            // the add-on row wins, `getTrialStatus` answers "not on trial, not
+            // expired", and `trialMiddleware` — mounted globally — stops
+            // answering 402 to every write. The host keeps publishing on a paid
+            // platform for free for as long as the add-on lives.
+            const customerId = 'customer-addon-trial';
+            const now = new Date();
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - 3);
+
+            const planSubscription = {
+                id: 'sub-plan-1',
+                customerId,
+                planId: 'plan-owner-basico',
+                status: 'trialing',
+                productDomain: 'accommodation',
+                trialStart: new Date(now.getTime() - 17 * 86_400_000).toISOString(),
+                trialEnd: trialEnd.toISOString()
+            };
+            const addonSubscription = {
+                id: 'sub-addon-1',
+                customerId,
+                planId: 'addon-extra-accommodations-5',
+                status: 'active',
+                productDomain: 'addon',
+                trialStart: null,
+                trialEnd: null
+            };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                // Add-on FIRST, so a fix that accidentally depends on array order
+                // rather than on the domain filter cannot pass.
+                addonSubscription,
+                planSubscription
+            ] as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-owner-basico',
+                name: 'owner-basico'
+            } as never);
+
+            // Act
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert: the paywall verdict is the plan row's, and it is the
+            // elapsed trial.
+            expect(result.isOnTrial).toBe(true);
+            expect(result.isExpired).toBe(true);
             expect(result.planSlug).toBe('owner-basico');
         });
 
@@ -957,6 +1070,452 @@ describe('TrialService', () => {
                 expect(result.intendedInterval).toBeNull();
             });
         });
+
+        describe('HOS-1282 — expired-vs-canceled mismatch and domain scoping', () => {
+            it("REGRESSION: a locally-expired trial (status 'expired') is recognized as an expired trial, not 'never had a trial'", async () => {
+                // Arrange — the exact HOS-1282 defect 1 shape: no live subscription
+                // (the trial never converted), and the only subscription on file is
+                // the one `trial-local-expiry.service.ts`'s `expireLocalTrial` (and
+                // `trial-supersede-on-activation.ts`'s SUPERSEDED_TRIAL_STATUS) write
+                // on a lapsed Hospeda-owned trial: status EXPIRED, never 'canceled'.
+                // Before this fix the historical-trial filter checked only
+                // `status === 'canceled'`, so this row was invisible and the method
+                // answered "you never had a trial" to a host whose trial the SYSTEM
+                // ITSELF had already marked expired.
+                const customerId = 'customer-locally-expired-trial';
+                const now = new Date();
+                const trialStart = new Date(now);
+                trialStart.setDate(trialStart.getDate() - 20);
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 6);
+
+                const expiredLocalTrialSub = {
+                    id: 'sub-expired-local-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'expired' as const,
+                    trialStart: trialStart.toISOString(),
+                    trialEnd: trialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    expiredLocalTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — recognized as an expired trial, never "never had a trial".
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.expiresAt).toBe(trialEnd.toISOString());
+                expect(result.planSlug).toBe('owner-basico');
+            });
+
+            it("still recognizes the legacy 1-L 'canceled' historical trial (unchanged by this fix)", async () => {
+                // Arrange — the pre-HOS-1012 shape this branch already handled must
+                // keep working: this fix ADDS `expired` recognition, it does not
+                // replace the existing 'canceled' one.
+                const customerId = 'customer-legacy-canceled-trial';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 3);
+
+                const canceledTrialSub = {
+                    id: 'sub-legacy-canceled-trial',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'canceled' as const,
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledTrialSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+            });
+
+            it('REGRESSION: an omitted productDomain stays domain-BLIND (default behaviour is unchanged)', async () => {
+                // Arrange — the exact HOS-1282 defect 2 dual-role shape: a live
+                // GASTRONOMY `active` subscription outranks a `trialing`
+                // ACCOMMODATION one on `LIVE_STATUS_PRECEDENCE` regardless of which
+                // one has actually elapsed. This is the paywall's own, deliberately
+                // domain-blind, default resolution (see the inline "DELIBERATELY
+                // NOT domain-filtered BY DEFAULT" comment) and must NOT change when
+                // `productDomain` is simply never passed — every existing caller
+                // (both `trialMiddleware` call sites, this route with no query
+                // param) relies on exactly this.
+                const customerId = 'customer-dual-role-domain-blind';
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 10);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-accommodation-trialing-elapsed',
+                        customerId,
+                        planId: 'plan-owner-basico',
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString(),
+                        productDomain: 'accommodation'
+                    },
+                    {
+                        id: 'sub-gastronomy-active',
+                        customerId,
+                        planId: 'gastronomy-pro',
+                        status: 'active',
+                        trialStart: null,
+                        trialEnd: null,
+                        productDomain: 'gastronomy'
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'gastronomy-pro',
+                    name: 'gastronomy-pro'
+                } as never);
+
+                // Act — no productDomain at all.
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — the live gastronomy sub wins, masking the elapsed
+                // accommodation trial. This is the pre-existing, documented hole
+                // (HOS-337) that stays open by design for the domain-blind default.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBe('gastronomy-pro');
+            });
+
+            it('REGRESSION: scoped to productDomain, a live GASTRONOMY subscription no longer masks an elapsed ACCOMMODATION trial', async () => {
+                // Arrange — identical dual-role fixture to the test above; only the
+                // call changes.
+                const customerId = 'customer-dual-role-domain-scoped';
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 10);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-accommodation-trialing-elapsed',
+                        customerId,
+                        planId: 'plan-owner-basico',
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString(),
+                        productDomain: 'accommodation'
+                    },
+                    {
+                        id: 'sub-gastronomy-active',
+                        customerId,
+                        planId: 'gastronomy-pro',
+                        status: 'active',
+                        trialStart: null,
+                        trialEnd: null,
+                        productDomain: 'gastronomy'
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico'
+                } as never);
+
+                // Act — explicitly scoped to the accommodation domain.
+                const result = await trialService.getTrialStatus({
+                    customerId,
+                    productDomain: 'accommodation'
+                });
+
+                // Assert — the gastronomy row is filtered out before resolution, so
+                // the elapsed accommodation trial is the one found and reported.
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(true);
+                expect(result.planSlug).toBe('owner-basico');
+            });
+
+            it.each([
+                { domain: 'gastronomy' as const, otherDomain: 'accommodation' as const },
+                { domain: 'experience' as const, otherDomain: 'accommodation' as const }
+            ])('REGRESSION: scoped to productDomain=$domain, a live ACCOMMODATION subscription does not mask an elapsed $domain trial', async ({
+                domain,
+                otherDomain
+            }) => {
+                // Arrange — the other two verticals that hold a local trial
+                // (`createTrialSubscription` has exactly two call sites:
+                // accommodation and commerce). Unlike accommodation,
+                // `subscriptionMatchesDomain` fails CLOSED for these, so this
+                // also proves the domain filter does not accidentally admit an
+                // unrelated row for a non-accommodation query.
+                const customerId = `customer-dual-role-${domain}-scoped`;
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 10);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: `sub-${domain}-trialing-elapsed`,
+                        customerId,
+                        planId: `plan-${domain}-basico`,
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString(),
+                        productDomain: domain
+                    },
+                    {
+                        id: `sub-${otherDomain}-active`,
+                        customerId,
+                        planId: 'plan-owner-pro',
+                        status: 'active',
+                        trialStart: null,
+                        trialEnd: null,
+                        productDomain: otherDomain
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: `plan-${domain}-basico`,
+                    name: `${domain}-basico`
+                } as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({
+                    customerId,
+                    productDomain: domain
+                });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(true);
+                expect(result.planSlug).toBe(`${domain}-basico`);
+            });
+        });
+
+        describe('HOS-337 — dominant cancellation paths (2-L `cancelled`) now recognized', () => {
+            it.each([
+                'canceled',
+                'cancelled'
+            ] as const)("REGRESSION: an owner-category trial cancelled via status '%s' that never converted is recognized as expired (was invisible before this fix for 'cancelled')", async (statusSpelling) => {
+                // Arrange — the exact HOS-337 headline bug: no live subscription
+                // (never converted), only a historical row cancelled through one
+                // of the DOMINANT paths (the MercadoPago webhook via
+                // `QZPAY_TO_HOSPEDA_STATUS`, `finalize-cancelled-subs`,
+                // `refund-lifecycle.service.ts`), all of which write the 2-L
+                // `'cancelled'`. Before this fix, only the 1-L `'canceled'` that
+                // qzpay-core writes directly was recognized here — every one of
+                // those DIRECT Hospeda writers fell through to "never had a
+                // trial" and kept full write access forever.
+                const customerId = `customer-hos337-${statusSpelling}`;
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 5);
+
+                const cancelledOwnerTrial = {
+                    id: `sub-hos337-${statusSpelling}`,
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: statusSpelling,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    cancelledOwnerTrial
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+                // isOwnerCategorySubscription's billing_plans lookup: the
+                // beforeEach default (`[{ productDomain: 'accommodation' }]`,
+                // no `category`) already falls back to `'owner'` — spelled out
+                // here so the test does not depend silently on that default.
+                mockDbForTrial.limit.mockResolvedValueOnce([{ category: 'owner' }]);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBe('owner-basico');
+
+                // Assert — hydrateTrialConverted scopes its query to the
+                // candidate id(s) via `inArray`, not the whole table. A
+                // mutation that deletes that scope (fetches every row) would
+                // leave `b` empty/undefined here even though the paywall
+                // verdict above stays correct by accident.
+                expect(mockDbForTrial.where).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: 'inArray',
+                        a: billingSubscriptions.id,
+                        b: [`sub-hos337-${statusSpelling}`]
+                    })
+                );
+            });
+
+            it("does NOT paywall a cancelled TOURIST trial ('cancelled', 2-L): tourist-vip carries its own 30-day trial and this is a global gate", async () => {
+                // Arrange — HOS-337 point 1: widening the match to 'cancelled'
+                // without owner/complex scoping would 402 a tourist's
+                // favourites/reviews/profile writes with a "your trial expired,
+                // upgradeAudience: 'host'" message, contradicting the entitlement
+                // middleware immediately before this one (which already resolved
+                // them to the free tier). CORRECTED: `TOURIST_TRIAL_DAYS === 30`,
+                // not 14 (`packages/billing/src/constants/billing.constants.ts`),
+                // and `tourist-plus` was retired by HOS-1224 — the only two
+                // tourist tiers left are `tourist-free` and `tourist-vip`.
+                const customerId = 'customer-hos337-tourist-cancelled';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 5);
+
+                const cancelledTouristTrial = {
+                    id: 'sub-hos337-tourist-cancelled',
+                    customerId,
+                    planId: 'plan-tourist-vip',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'tourist'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    cancelledTouristTrial
+                ] as never);
+                // The plan lookup for `isOwnerCategorySubscription` reports the
+                // tourist category — NOT owner/complex.
+                mockDbForTrial.limit.mockResolvedValueOnce([{ category: 'tourist' }]);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — falls all the way through to "never had a trial"
+                // defaults, exactly as if this row did not exist.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBeNull();
+            });
+
+            it('does NOT report "trial expired" for an owner subscription that DID convert before being cancelled (`trial_converted: true`)', async () => {
+                // Arrange — a subscription that converted to paid
+                // (`trial-supersede-on-activation.ts` /
+                // `subscription-payment-handler.ts` both stamp
+                // `trial_converted: true`) and was cancelled long after: this is
+                // "a paid plan the customer cancelled", not "a trial that expired
+                // without paying". `trial_converted` defaults to `false`, so this
+                // exclusion cannot suppress the dominant never-converted case —
+                // only a row that positively recorded a conversion is skipped.
+                const customerId = 'customer-hos337-converted-then-cancelled';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 200); // long-ago trial window
+
+                const convertedThenCancelled = {
+                    id: 'sub-hos337-converted-cancelled',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    convertedThenCancelled
+                ] as never);
+                // hydrateTrialConverted's lookup reports this row as converted.
+                mockDbForTrial.where.mockReturnValueOnce(
+                    Object.assign(
+                        Promise.resolve([
+                            { id: 'sub-hos337-converted-cancelled', trialConverted: true }
+                        ]),
+                        { limit: mockDbForTrial.limit }
+                    )
+                );
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — excluded from the historical-trial bucket entirely.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBeNull();
+            });
+
+            it('a newer cancelled TOURIST row does not mask an older cancelled OWNER trial (scoping applies while selecting candidates, not to the sort winner)', async () => {
+                // Arrange — mirrors the dual-role shape this whole epic keeps
+                // seeding `host-provider@local.test` for for: the customer holds
+                // both an owner-category row (older trialEnd) and a tourist row
+                // (newer trialEnd). A naive "most recent trialEnd wins" sort with
+                // the category check applied only to the winner would let the
+                // newer tourist row win the sort FIRST and then either wrongly
+                // paywall on tourist grounds or wrongly discard the real owner
+                // trial. The scope has to narrow the candidate SET before the
+                // sort ever runs.
+                const customerId = 'customer-hos337-dual-role-cancelled';
+                const now = new Date();
+                const olderOwnerTrialEnd = new Date(now);
+                olderOwnerTrialEnd.setDate(olderOwnerTrialEnd.getDate() - 10);
+                const newerTouristTrialEnd = new Date(now);
+                newerTouristTrialEnd.setDate(newerTouristTrialEnd.getDate() - 2);
+
+                const ownerCancelled = {
+                    id: 'sub-hos337-dual-owner',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: olderOwnerTrialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+                const touristCancelled = {
+                    id: 'sub-hos337-dual-tourist',
+                    customerId,
+                    planId: 'plan-tourist-vip',
+                    status: 'cancelled' as const,
+                    trialStart: null,
+                    trialEnd: newerTouristTrialEnd.toISOString(),
+                    productDomain: 'tourist'
+                };
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    ownerCancelled,
+                    touristCancelled
+                ] as never);
+                // Argument-aware, NOT a single fixed `mockResolvedValue`: a mock
+                // that returns the same plan regardless of which id was asked for
+                // would make `planSlug` pass even if the TOURIST row won the sort
+                // (measured — an earlier version of this test did exactly that and
+                // stayed green under a mutation that deleted the owner-category
+                // scope entirely).
+                vi.spyOn(mockBilling.plans, 'get').mockImplementation(async (planId: string) =>
+                    planId === 'plan-tourist-vip'
+                        ? ({ id: 'plan-tourist-vip', name: 'tourist-vip' } as never)
+                        : ({ id: 'plan-owner-basico', name: 'owner-basico' } as never)
+                );
+                // Candidates are queued in fixture order: owner first, tourist
+                // second.
+                mockDbForTrial.limit
+                    .mockResolvedValueOnce([{ category: 'owner' }])
+                    .mockResolvedValueOnce([{ category: 'tourist' }]);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — the owner row wins despite being the OLDER one, because
+                // the tourist row was never a candidate at all. `expiresAt` pins
+                // WHICH row's trialEnd was reported — independent of the
+                // `plans.get` mock — so this fails if the newer tourist row wins.
+                expect(result.isExpired).toBe(true);
+                expect(result.expiresAt).toBe(olderOwnerTrialEnd.toISOString());
+                expect(result.planSlug).toBe('owner-basico');
+            });
+        });
     });
 
     describe('checkTrialExpiry', () => {
@@ -1072,6 +1631,7 @@ describe('TrialService', () => {
             mockTxUpdateChain.where.mockClear();
             mockTxInsertChain.values.mockClear();
             mockTx.execute.mockClear();
+            expireLocalTrialMock.mockReset();
             vi.mocked(clearEntitlementCache).mockClear();
             vi.mocked(Sentry.captureException).mockClear();
 
@@ -1080,6 +1640,29 @@ describe('TrialService', () => {
             mockDbForTrial.limit.mockResolvedValue([]);
             mockTxSelectChain.limit.mockResolvedValue([]);
             mockPaymentAdapter.subscriptions.retrieve.mockReset();
+        });
+
+        // HOS-847: a recurring add-on's own preapproval row should never
+        // legitimately be 'trialing' (add-on provisioning always bakes
+        // trialDays: 0), but this claim query must not depend on that staying
+        // true — verifies the WHERE clause itself excludes it.
+        it('includes the addon-domain exclusion in the claim-phase WHERE clause (HOS-847)', async () => {
+            givenClaimedRows([]);
+
+            await trialService.reconcileExpiredTrials(adapterInput());
+
+            expect(mockTxSelectChain.where).toHaveBeenCalledOnce();
+            const condition = mockTxSelectChain.where.mock.calls[0]?.[0] as {
+                type: 'and';
+                args: Array<{ type?: string; args?: unknown[] }>;
+            };
+            const excludeAddon = condition.args.find((c) => c.type === 'or');
+
+            expect(excludeAddon).toBeDefined();
+            expect(excludeAddon?.args).toContainEqual(expect.objectContaining({ type: 'isNull' }));
+            expect(excludeAddon?.args).toContainEqual(
+                expect.objectContaining({ type: 'ne', b: 'addon' })
+            );
         });
 
         // ── AC-6 — THE regression guard ──────────────────────────────────────
@@ -1248,18 +1831,50 @@ describe('TrialService', () => {
             expect(Sentry.captureException).toHaveBeenCalled();
         });
 
-        it('skips and alerts when a trialing row has no provider id', async () => {
-            // Arrange — cannot ask the provider, so cannot decide
+        it('HOS-1012: expires a trialing row with no provider id locally instead of alerting', async () => {
+            // Arrange — a row with no preapproval used to be an anomaly worth a
+            // Sentry alert: under card-first every trial WAS a preapproval, so a
+            // missing provider id meant something had gone wrong. It is now the
+            // normal shape of a Hospeda-owned trial, and our clock is the only
+            // clock there is.
             givenClaimedRows([makeClaimedRow({ mpSubscriptionId: null })]);
+            expireLocalTrialMock.mockResolvedValue({ outcome: 'expired' });
 
             // Act
             const result = await trialService.reconcileExpiredTrials(adapterInput());
 
-            // Assert — never guess an outcome; guessing means cancelling a payer
-            // or comping a freeloader
-            expect(result).toBe(0);
+            // Assert — expired locally, and MercadoPago is never consulted about
+            // a trial it does not know exists.
+            expect(expireLocalTrialMock).toHaveBeenCalledOnce();
+            expect(result).toBe(1);
             expect(mockPaymentAdapter.subscriptions.retrieve).not.toHaveBeenCalled();
-            expect(Sentry.captureException).toHaveBeenCalled();
+            expect(Sentry.captureException).not.toHaveBeenCalled();
+        });
+
+        it('HOS-1012: does not count a local trial the expiry refused to touch', async () => {
+            // A run that counts refusals as successes cannot tell "nothing to do"
+            // from "everything was rejected".
+            givenClaimedRows([makeClaimedRow({ mpSubscriptionId: null })]);
+            expireLocalTrialMock.mockResolvedValue({ outcome: 'already-expired' });
+
+            const result = await trialService.reconcileExpiredTrials(adapterInput());
+
+            expect(expireLocalTrialMock).toHaveBeenCalledOnce();
+            expect(result).toBe(0);
+        });
+
+        it('HOS-1012: still reconciles a row that DOES carry a provider id', async () => {
+            // The two kinds of row coexist until the legacy ones are converted
+            // (T-032), and staging keeps minting new ones meanwhile. The branch
+            // must not swallow the legacy path.
+            givenClaimedRows([makeClaimedRow({ mpSubscriptionId: 'mp-preapproval-1' })]);
+
+            await trialService.reconcileExpiredTrials(adapterInput());
+
+            expect(expireLocalTrialMock).not.toHaveBeenCalled();
+            expect(mockPaymentAdapter.subscriptions.retrieve).toHaveBeenCalledWith(
+                'mp-preapproval-1'
+            );
         });
 
         it('leaves the row untouched when the provider call fails', async () => {
@@ -1364,7 +1979,7 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'annual'
             });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=annual');
+            expect(url).toBe('https://example.test/es/planes/anfitriones/precios/?interval=annual');
         });
 
         it('appends ?interval=monthly for a valid monthly intent', () => {
@@ -1372,12 +1987,14 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'monthly'
             });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/?interval=monthly');
+            expect(url).toBe(
+                'https://example.test/es/planes/anfitriones/precios/?interval=monthly'
+            );
         });
 
         it('omits the query param when intendedInterval is undefined', () => {
             const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+            expect(url).toBe('https://example.test/es/planes/anfitriones/precios/');
         });
 
         it('omits the query param for an unrecognized value (defensive against malformed metadata)', () => {
@@ -1385,13 +2002,97 @@ describe('TrialService', () => {
                 siteUrl: 'https://example.test',
                 intendedInterval: 'weekly'
             });
-            expect(url).toBe('https://example.test/es/suscriptores/planes/');
+            expect(url).toBe('https://example.test/es/planes/anfitriones/precios/');
         });
 
         it('points at the owner pricing page, not /mi-cuenta/suscripcion (which has no toggle)', () => {
             const url = buildTrialUpgradeUrl({ siteUrl: 'https://example.test' });
             expect(url).not.toContain('/mi-cuenta/suscripcion');
-            expect(url).toContain('/suscriptores/planes/');
+            expect(url).toContain('/planes/anfitriones/precios/');
+        });
+
+        it('does NOT point at a URL that redirects (HOS-1032)', () => {
+            // The nudge is the ONE live consumer of `?interval=`, and every
+            // retired pricing URL drops the query string on its 301 — so a stale
+            // path here would not 404, it would silently show monthly prices to
+            // a customer who chose annual. That is the whole reason this URL had
+            // to move rather than be left to redirect.
+            const url = buildTrialUpgradeUrl({
+                siteUrl: 'https://example.test',
+                intendedInterval: 'annual'
+            });
+            expect(url).not.toContain('/suscriptores/');
+            expect(url).toContain('?interval=annual');
+        });
+
+        describe('productDomain (HOS-1283)', () => {
+            // Regression: before HOS-1283 this function always pointed at the
+            // ANFITRIONES (host) pricing page regardless of which vertical the
+            // trial actually belonged to — a gastronomy or experience owner's
+            // nudge email sent them to buy a HOST plan.
+            it('points a gastronomy trial at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'gastronomy'
+                });
+                expect(url).toBe('https://example.test/es/planes/gastronomia/precios/');
+            });
+
+            it('points an experience trial at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'experience'
+                });
+                expect(url).toBe('https://example.test/es/planes/experiencias/precios/');
+            });
+
+            it('points a tourist plan at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'tourist'
+                });
+                expect(url).toBe('https://example.test/es/planes/turistas/precios/');
+            });
+
+            it('points a partner plan at its own pricing page', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'partner'
+                });
+                expect(url).toBe('https://example.test/es/planes/aliados/precios/');
+            });
+
+            it('fails OPEN to the accommodation page for null, undefined, or an unrecognized value', () => {
+                // Matches `subscriptionMatchesDomain`'s standing convention: a
+                // missing/unrecognized domain must not regress the majority
+                // (accommodation) case, which was already correct.
+                expect(
+                    buildTrialUpgradeUrl({ siteUrl: 'https://example.test', productDomain: null })
+                ).toBe('https://example.test/es/planes/anfitriones/precios/');
+                expect(
+                    buildTrialUpgradeUrl({
+                        siteUrl: 'https://example.test',
+                        productDomain: undefined
+                    })
+                ).toBe('https://example.test/es/planes/anfitriones/precios/');
+                expect(
+                    buildTrialUpgradeUrl({
+                        siteUrl: 'https://example.test',
+                        productDomain: 'addon'
+                    })
+                ).toBe('https://example.test/es/planes/anfitriones/precios/');
+            });
+
+            it('composes with the interval query param', () => {
+                const url = buildTrialUpgradeUrl({
+                    siteUrl: 'https://example.test',
+                    productDomain: 'gastronomy',
+                    intendedInterval: 'annual'
+                });
+                expect(url).toBe(
+                    'https://example.test/es/planes/gastronomia/precios/?interval=annual'
+                );
+            });
         });
     });
 
@@ -2017,6 +2718,46 @@ describe('TrialService', () => {
             });
         });
 
+        it('HOS-847: a live recurring add-on does not block reactivating the cancelled plan', async () => {
+            // Arrange: the customer cancelled their plan and kept a recurring
+            // add-on. The add-on's own `billing_subscriptions` row is `active`,
+            // so unfiltered it trips ACTIVE_SUBSCRIPTION_EXISTS (409) — and the
+            // 409's own advice ("use plan-change instead") does not apply
+            // either, because there is no plan to change. The customer would
+            // have no route back at all.
+            const customerId = 'customer-addon-only';
+            vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([paidMonthlyPlan()] as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                {
+                    id: 'sub-addon-1',
+                    customerId,
+                    status: 'active',
+                    planId: 'addon-extra-accommodations-5',
+                    productDomain: 'addon'
+                },
+                {
+                    id: 'sub-canceled',
+                    customerId,
+                    status: 'canceled',
+                    planId: 'plan-old',
+                    productDomain: 'accommodation'
+                }
+            ] as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: customerId,
+                email: 'host@example.com'
+            } as never);
+
+            // Act
+            await trialService
+                .reactivateSubscription({ customerId, planId: PAID_PLAN_ID, urls: URLS })
+                .catch(() => undefined);
+
+            // Assert: it got past the live-subscription rejection and reached
+            // the checkout it exists to perform.
+            expect(mockBilling.subscriptions.create).toHaveBeenCalled();
+        });
+
         it('should reject when no canceled subscription exists, and create no subscription', async () => {
             // Arrange
             const customerId = 'customer-no-canceled';
@@ -2133,6 +2874,188 @@ describe('TrialService', () => {
             ).rejects.toMatchObject({
                 name: 'SubscriptionCheckoutError',
                 code: 'MISSING_INIT_POINT'
+            });
+        });
+
+        // ── HOS-1277: reactivation's "any subscription is live" / "find a
+        // canceled subscription" checks used to scan EVERY vertical at once.
+        // A dual-owner (accommodation + gastronomy) could get a bogus 409 off
+        // an unrelated live subscription in the OTHER domain, or have the
+        // wrong vertical's canceled row picked to reactivate from.
+        describe('domain isolation (HOS-1277)', () => {
+            it('REGRESSION: a live GASTRONOMY subscription does not block reactivating the ACCOMMODATION plan', async () => {
+                // Arrange — outer beforeEach already resolves the target plan's
+                // domain to 'accommodation' (mockDbForTrial.limit default).
+                const customerId = 'customer-dual-owner-1';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-gastronomy-active',
+                        customerId,
+                        status: 'active',
+                        planId: 'gastronomy-pro',
+                        productDomain: 'gastronomy'
+                    },
+                    {
+                        id: 'sub-accommodation-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'plan-old',
+                        productDomain: 'accommodation'
+                    }
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                // Act
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — no 409, and the ACCOMMODATION canceled row is the one
+                // superseded, never the live gastronomy one.
+                expect(result.success).toBe(true);
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-accommodation-canceled'
+                        })
+                    })
+                );
+            });
+
+            it('picks the ACCOMMODATION canceled row over a gastronomy one held at the same time', async () => {
+                const customerId = 'customer-dual-owner-2';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-gastronomy-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'gastronomy-basico',
+                        productDomain: 'gastronomy'
+                    },
+                    {
+                        id: 'sub-accommodation-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'plan-old',
+                        productDomain: 'accommodation'
+                    }
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-accommodation-canceled',
+                            previousPlanId: 'plan-old'
+                        })
+                    })
+                );
+            });
+
+            it('a live ACCOMMODATION subscription does not block reactivating a GASTRONOMY plan', async () => {
+                // Arrange — the target plan resolves to a DIFFERENT domain this
+                // time: override the shared plan-domain DB stub.
+                mockDbForTrial.limit.mockResolvedValue([{ productDomain: 'gastronomy' }]);
+                const customerId = 'customer-dual-owner-3';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan({ id: 'plan-gastronomy-pro', name: 'gastronomy-pro' })
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-accommodation-active',
+                        customerId,
+                        status: 'active',
+                        planId: PAID_PLAN_ID,
+                        productDomain: 'accommodation'
+                    },
+                    {
+                        id: 'sub-gastronomy-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'gastronomy-old',
+                        productDomain: 'gastronomy'
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                    id: customerId,
+                    email: 'owner@example.com'
+                } as never);
+                vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                    id: 'sub-gastronomy-reactivated',
+                    customerId,
+                    planId: 'plan-gastronomy-pro',
+                    status: 'incomplete',
+                    providerInitPoint: 'https://mp.test/checkout/reactivate-gastronomy',
+                    providerSubscriptionIds: { mercadopago: 'mp_preapproval_gastronomy' }
+                } as never);
+
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: 'plan-gastronomy-pro',
+                    urls: URLS
+                });
+
+                expect(result.success).toBe(true);
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-gastronomy-canceled'
+                        })
+                    })
+                );
+            });
+
+            it('a PARTNER subscription is excluded from an accommodation reactivation exactly like gastronomy', async () => {
+                const customerId = 'customer-dual-owner-4';
+                vi.spyOn(mockBilling.plans, 'listAll').mockResolvedValue([
+                    paidMonthlyPlan()
+                ] as never);
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-partner-active',
+                        customerId,
+                        status: 'active',
+                        planId: 'partner-gold',
+                        productDomain: 'partner'
+                    },
+                    {
+                        id: 'sub-accommodation-canceled',
+                        customerId,
+                        status: 'canceled',
+                        planId: 'plan-old',
+                        productDomain: 'accommodation'
+                    }
+                ] as never);
+                mockPaidCreateHappyPath(customerId);
+
+                const result = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                expect(result.success).toBe(true);
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: 'sub-accommodation-canceled'
+                        })
+                    })
+                );
             });
         });
 
@@ -2344,6 +3267,68 @@ describe('TrialService', () => {
                 expect(mockBilling.subscriptions.create).not.toHaveBeenCalled();
             });
         });
+
+        describe('HOS-337 (caught in review) — the paywall that now fires on a 2-L `cancelled` row must not lock the customer out of reactivating it', () => {
+            // Arrange/Act/Assert combined across BOTH methods on purpose: the
+            // bug this closes is a CYCLE, not a single call. `getTrialStatus`
+            // paywalling a `'cancelled'` (2-L) row and `reactivateSubscription`
+            // finding that SAME row are two different code paths in this file
+            // that used to disagree on which spellings count — a unit test on
+            // either one alone would never show the customer getting locked out
+            // between them.
+            it.each([
+                'canceled',
+                'cancelled'
+            ] as const)("REGRESSION: a subscription cancelled via status '%s' both trips the trial paywall AND is found by reactivateSubscription (was a 404 NO_CANCELED_SUBSCRIPTION dead end for 'cancelled')", async (statusSpelling) => {
+                const customerId = `customer-hos337-cycle-${statusSpelling}`;
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 5);
+
+                const cancelledSub = {
+                    id: `sub-hos337-cycle-${statusSpelling}`,
+                    customerId,
+                    planId: 'plan-old',
+                    status: statusSpelling,
+                    trialStart: null,
+                    trialEnd: trialEnd.toISOString(),
+                    productDomain: 'accommodation'
+                };
+
+                // Step 1 — the paywall sees it and fires.
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    cancelledSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-old',
+                    name: 'owner-basico'
+                } as never);
+
+                const trialStatus = await trialService.getTrialStatus({ customerId });
+                expect(trialStatus.isExpired).toBe(true);
+
+                // Step 2 — the SAME customer, with the SAME row still the only
+                // one on file, tries to exit through reactivation.
+                mockPaidCreateHappyPath(customerId);
+
+                const reactivateResult = await trialService.reactivateSubscription({
+                    customerId,
+                    planId: PAID_PLAN_ID,
+                    urls: URLS
+                });
+
+                // Assert — found and reactivated, not a 404 dead end.
+                expect(reactivateResult.success).toBe(true);
+                expect(reactivateResult.previousPlanId).toBe('plan-old');
+                expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        metadata: expect.objectContaining({
+                            supersedesSubscriptionId: cancelledSub.id
+                        })
+                    })
+                );
+            });
+        });
     });
 
     describe('reconcileDuplicateSubscriptions', () => {
@@ -2470,6 +3455,43 @@ describe('TrialService', () => {
             expect(result.cancelledCount).toBe(0);
             expect(result.cancelledIds).toHaveLength(0);
             expect(result.keptId).toBeNull();
+        });
+
+        it('HOS-847: never reaps a recurring add-on row, nor the plan it is the newest sibling of', async () => {
+            // Arrange: this reaper cancels every live subscription but the
+            // newest, and a recurring add-on's own row is created at the moment
+            // of purchase — so it is usually the newest of all. Unfiltered,
+            // buying an add-on cancels the very plan it extends.
+            const customerId = 'customer-with-addon';
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                {
+                    id: 'sub-plan',
+                    customerId,
+                    status: 'active',
+                    productDomain: 'accommodation',
+                    createdAt: '2026-01-01T00:00:00.000Z'
+                },
+                {
+                    id: 'sub-addon',
+                    customerId,
+                    status: 'active',
+                    productDomain: 'addon',
+                    createdAt: '2026-05-01T00:00:00.000Z'
+                }
+            ] as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+
+            // Act
+            const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+
+            // Assert: one live PLAN row, so there is nothing duplicate here at
+            // all — and the add-on is neither kept nor cancelled by this reaper,
+            // because it is not its subject.
+            expect(result.cancelledCount).toBe(0);
+            expect(result.cancelledIds).toEqual([]);
+            expect(result.keptId).toBe('sub-plan');
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
         });
 
         it('should continue cancelling remaining duplicates if one cancel call fails', async () => {

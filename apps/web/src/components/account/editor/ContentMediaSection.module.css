@@ -90,3 +90,19 @@
 .mediaFileInput {
     display: none;
 }
+
+/**
+ * Wrapper around one photo: the thumbnail plus the text-metadata toggle that
+ * expands below it (HOS-1036).
+ *
+ * The toggle CANNOT live inside `.mediaThumb` — that box is `overflow: hidden`
+ * so the image can be cropped to 4/3, which would clip the expanded panel to
+ * the size of the thumbnail. `position: relative` is what the panel's own
+ * floating variant anchors to.
+ */
+.mediaItem {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}

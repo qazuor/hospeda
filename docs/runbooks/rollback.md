@@ -2,7 +2,15 @@
 
 ## Overview
 
-This runbook provides procedures for safely rolling back deployments when issues are detected in production. It covers frontend (Vercel), backend (Vercel serverless), and database migration rollbacks.
+This runbook covers rolling back a deployment when something breaks in
+production. All three apps (api, web, admin) run as Coolify-managed Docker
+containers on the VPS, so **they all roll back the same way** — there is no
+separate frontend and backend procedure. Database migration rollback is a
+different problem and has its own section below.
+
+For a wider incident (VPS down, Postgres corrupt, Coolify itself broken) this is
+the wrong document — go to
+[`docs/migration/disaster-recovery.md`](../migration/disaster-recovery.md).
 
 **When to Use**:
 
@@ -30,23 +38,23 @@ This runbook provides procedures for safely rolling back deployments when issues
 
 ### Required Access
 
-- [ ] Vercel Admin access (frontend rollback)
-- [ ] Vercel Admin access (backend rollback via Vercel dashboard)
+- [ ] SSH to the VPS (`ssh -p 2222 qazuor@216.238.103.219`)
+- [ ] Coolify dashboard (<https://coolify.hospeda.com.ar>)
 - [ ] GitHub repository write access
-- [ ] Production database access (for migration rollback)
 - [ ] Team communication channels
 
 ### Required Tools
 
-- [ ] Browser (for Vercel Dashboard)
-- [ ] Terminal with CLI tools (vercel, gh, psql)
+- [ ] `hops` on the VPS — see [`scripts/server-tools/README.md`](../../scripts/server-tools/README.md)
+- [ ] Browser, for the Coolify dashboard
 - [ ] Git configured with repository access
-- [ ] VPN/secure connection (for database access)
+
+Database access does not need its own credentials or a VPN: `hops psql` reaches
+Postgres from inside the VPS.
 
 ### Knowledge Requirements
 
 - Understanding of deployment architecture
-- Familiarity with Vercel dashboard
 - Basic Git operations
 - Database migration concepts
 - Understanding of service dependencies
@@ -153,347 +161,105 @@ ETA: [estimated time]
 Assigned: @[username]
 ```
 
-## Frontend Rollback (Vercel)
+## Rolling Back an App
 
-Rollback frontend applications (web, admin) deployed on Vercel.
+The same procedure for `api`, `web` and `admin`. Estimated 2-5 minutes.
 
-### Step 1: Access Vercel Dashboard
+### Step 1: Confirm it is a deploy, not something else
 
-1. Navigate to <https://vercel.com/[team>]
-2. Select project (e.g., `hospeda-web` or `hospeda-admin`)
-3. Go to **Deployments** tab
-
-**Expected**: List of recent deployments with timestamps
-
-### Step 2: Identify Rollback Target
-
-**Find last known good deployment**:
-
-1. Look for deployments **before** the problematic one
-2. Verify deployment was successful (green checkmark)
-3. Check timestamp (when was it deployed?)
-4. Note deployment URL (e.g., `hospeda-web-abc123.vercel.app`)
-
-**Verification questions**:
-
-- Was this deployment working correctly?
-- Did it pass all checks?
-- What features were different from current?
-
-**Example**:
-
-```text
-Current (broken): hospeda-web-xyz789.vercel.app [2024-11-06 14:30]
-Target (working): hospeda-web-abc123.vercel.app [2024-11-06 12:00]
-```
-
-### Step 3: Test Rollback Target
-
-**Before promoting**, test the deployment:
-
-1. Click on target deployment
-2. Click "Visit" to open deployment URL
-3. Test critical functionality:
-   - Home page loads
-   - Search works
-   - Accommodation pages load
-   - Booking flow works (if applicable)
-4. Check browser console for errors
-
-**If target deployment has issues**:
-
-- Try previous deployment
-- Identify last truly working version
-- May need to go back further
-
-### Step 4: Promote to Production
-
-**Via Vercel Dashboard**:
-
-1. On target deployment page, click **"⋯"** (three dots)
-2. Select **"Promote to Production"**
-3. Confirm promotion
-
-**Via Vercel CLI** (alternative):
+A rollback only helps if a deploy caused the problem. Check that the failure
+started when the deploy landed:
 
 ```bash
-# List deployments
-vercel list
-
-# Rollback to specific deployment
-vercel rollback [deployment-url]
-
-# Or rollback to previous deployment
-vercel rollback
+hops health prod                 # which apps are actually down
+hops logs api -n 200             # or web / admin
 ```
 
-**Expected**: Deployment promoted, traffic routing to rollback version
+Read the **FIRST** error trace, not the last. The last is usually a downstream
+effect of the first.
 
-### Step 5: Verify Rollback
+If the cause is a missing or wrong env var rather than code, rolling back the
+image will not fix it — go to [Forward Fix](#forward-fix-when-rollback-not-possible)
+and use `hops env-set <kind> KEY VALUE` followed by `hops redeploy <kind>`.
 
-**Immediately after promotion** (< 2 minutes):
+### Step 2: Pick the target deploy
+
+Open <https://coolify.hospeda.com.ar> → the app's resource → **Deployments**.
+The list is chronological with the commit each one built. Pick the most recent
+one that was green **before** the incident started.
+
+There are no deployment URLs to compare: every deploy serves the same domain.
+The commit SHA is what identifies a build.
+
+### Step 3: Redeploy it
+
+Press **Redeploy** on that entry. Coolify rebuilds and swaps the container.
+
+If the app is merely wedged rather than running bad code — stuck process,
+exhausted connection pool — a restart is cheaper than a rebuild and keeps the
+current image:
 
 ```bash
-# Check production URL
-curl -sI https://hospeda.com | grep "HTTP"
-# Expected: HTTP/2 200
-
-# Check for errors
-curl https://hospeda.com 2>&1 | grep -i error
-# Expected: No errors (or minimal expected errors)
+hops --target=prod app-restart api
 ```
 
-**In browser**:
-
-1. Navigate to production URL (<https://hospeda.com> or <https://admin.hospeda.com>)
-2. **Hard refresh** (Ctrl+Shift+R or Cmd+Shift+R) to bypass cache
-3. Verify critical functionality works
-4. Check browser console for errors
-
-**Expected**:
-
-- Site loads correctly
-- Critical features functional
-- No major JavaScript errors
-- Acceptable performance
-
-### Step 6: Monitor for 15 Minutes
-
-**Watch for**:
-
-- Error rate (should drop to < 0.1%)
-- Response times (should normalize)
-- User reports (should stop)
-- Vercel analytics (traffic should be healthy)
-
-**Monitoring checklist**:
-
-- [ ] Error rate normalized
-- [ ] Response times acceptable
-- [ ] No new user reports
-- [ ] Analytics show healthy traffic
-- [ ] No alerts triggered
-
-**If issues persist**:
-
-- Verify correct deployment promoted
-- Check if issue is frontend-related
-- Consider backend or database issue
-- May need additional rollback
-
-### Step 7: Update Team
-
-```text
-✅ FRONTEND ROLLBACK COMPLETE: [PROJECT]
-
-Rolled back from: [broken-deployment]
-Rolled back to: [working-deployment]
-Status: Monitoring
-Verification: Site functional, errors dropped
-Next steps: [post-rollback tasks]
-```
-
-### Frontend Rollback Checklist
-
-- [ ] Accessed Vercel Dashboard
-- [ ] Identified last known good deployment
-- [ ] Tested rollback target deployment
-- [ ] Promoted deployment to production
-- [ ] Verified site functionality
-- [ ] Monitored for 15 minutes
-- [ ] Confirmed error rate normalized
-- [ ] Updated team on completion
-
-## Backend Rollback (Vercel)
-
-Rollback backend API deployed on Vercel serverless.
-
-### Step 1: Identify Current Deployment
+Use a full redeploy when you need a different commit:
 
 ```bash
-# List recent deployments for the API project
-vercel ls hospeda-api
-
-# Or view in the Vercel dashboard
-# https://vercel.com/dashboard > hospeda-api > Deployments
+hops --target=prod redeploy api
 ```
 
-**Expected output**:
+`--target=` is mandatory on writes and goes BEFORE the subcommand.
 
-```text
-Age    Deployment                                    Status
-2m     https://hospeda-api-abc123.vercel.app         READY (broken)
-2h     https://hospeda-api-xyz789.vercel.app         READY  <- Target
-1d     https://hospeda-api-def456.vercel.app         READY
-```
-
-### Step 2: Verify Database Compatibility
-
-**Critical**: Before rolling back backend, verify database compatibility.
-
-**Questions to answer**:
-
-1. Did the broken deployment include database migrations?
-2. Are migrations reversible?
-3. Will rolled-back code work with current database schema?
-
-**Check recent migrations**:
+### Step 4: Watch the first 60 seconds
 
 ```bash
-# In repository
-git log --oneline --since="2.days.ago" packages/db/migrations/
-
-# Check for migration files
-ls -lt packages/db/migrations/ | head -5
+hops --target=prod logs api -f
 ```
 
-**If migrations were applied**:
+If it crashes again with the same error, the diagnosis in Step 1 was wrong — the
+deploy was not the cause. Stop rolling back and go back to reading logs.
 
-- See [Database Migration Rollback](#database-migration-rollback)
-- May need to rollback database first
-- Or migrations may need to stay (if additive)
-
-**Decision matrix**:
-
-| Migration Type | Backend Rollback Safe? | Action |
-|---------------|----------------------|---------|
-| Added column | Yes (if nullable) | Rollback backend, keep migration |
-| Added table | Yes (if not used by old code) | Rollback backend, keep migration |
-| Modified column | Maybe | Check if old code compatible |
-| Dropped column | No | Must rollback migration first |
-| Dropped table | No | Must rollback migration first |
-
-### Step 3: Promote Previous Deployment
-
-**Via Vercel Dashboard**:
-
-1. Open the Vercel dashboard for `hospeda-api`
-2. Go to the **Deployments** tab
-3. Find the last known-good deployment
-4. Click `...` > **Promote to Production**
-
-**Via Vercel CLI**:
+### Step 5: Verify
 
 ```bash
-# Promote a specific deployment URL to production
-vercel promote https://hospeda-api-xyz789.vercel.app --scope <team>
+hops health prod                 # all three apps green
+hops free-mem                    # restart count stopped incrementing
 ```
 
-**Expected**: Production traffic switches to the promoted deployment instantly.
-
-### Step 4: Verify Deployment
+Then, from outside the VPS:
 
 ```bash
-# Check API health
-curl https://api.hospeda.com.ar/health
-
-# View function logs
-vercel logs --prod
+curl -sS -o /dev/null -w '%{http_code}\n' https://api.hospeda.com.ar/health/live
+curl -sS -o /dev/null -w '%{http_code}\n' https://hospeda.com.ar/es/
 ```
 
-**Look for**:
+Confirm in Sentry that no new error spike is coming from the app, and give it 10
+minutes before declaring the incident over.
 
-- Successful health check response
-- No error spikes in Sentry
-- Expected response times in Vercel Analytics
+### When the previous deploy is not in the list
 
-**Expected health response**:
-
-```text
-[info] Starting application...
-[info] Database connected
-[info] Server listening on port 3001
-[info] Health check passed
-```
-
-### Step 5: Verify API Functionality
-
-**Health check**:
+Coolify keeps a bounded history. If the last good build has aged out but you
+know its SHA from `git log`, push that SHA and redeploy:
 
 ```bash
-# Check API health endpoint
-curl -f https://api.hospeda.com/health
-
-# Expected: {"status":"ok","version":"..."}
+git push origin <sha>:main --force
+hops --target=prod redeploy api
 ```
 
-**Test critical endpoints**:
+This rewrites the production branch — do it only during an incident, and tell
+the team, because everyone else's `main` diverges the moment you do.
 
-```bash
-# Test public endpoint
-curl https://api.hospeda.com/api/accommodations | jq '.success'
-# Expected: true
+### Rollback Checklist
 
-# Test authenticated endpoint (with valid token)
-curl https://api.hospeda.com/api/bookings \
-  -H "Authorization: Bearer $AUTH_TOKEN" | jq '.success'
-# Expected: true
-```
-
-**Check error rates**:
-
-```bash
-# Via Vercel logs
-vercel logs --prod | grep -E '"status":(4|5)[0-9]{2}' | wc -l
-# Expected: < 5 (< 5% error rate)
-```
-
-### Step 6: Verify Database Connection
-
-```bash
-# Check database connectivity
-psql $HOSPEDA_DATABASE_URL -c "SELECT count(*) FROM accommodations"
-
-# Check for connection errors in Vercel logs
-vercel logs --prod | grep -i "database\|connection" | tail -20
-```
-
-**Expected**:
-
-- Database queries successful
-- No connection pool exhaustion
-- No timeout errors
-
-### Step 7: Monitor Performance
-
-**Watch for** (15 minutes):
-
-- Response times (should be < 200ms p95)
-- Error rate (should be < 0.1%)
-- Database query times (should be < 50ms p95)
-- Memory usage (should be stable)
-
-**Monitoring locations**:
-
-- Vercel dashboard → Functions tab (duration, errors)
-- Neon Console → Monitoring
-- Sentry → Issues and Performance
-
-### Step 8: Update Team
-
-```text
-✅ BACKEND ROLLBACK COMPLETE: API
-
-Rolled back from: v12 (commit 2a3b4c5)
-Rolled back to: v11 (commit 1a2b3c4)
-Database: No migration changes / Migrations compatible
-Status: Monitoring
-Verification: API functional, errors dropped, performance normal
-Next steps: [post-rollback tasks]
-```
-
-### Backend Rollback Checklist
-
-- [ ] Identified current and target versions
-- [ ] Verified database compatibility
-- [ ] Deployed previous version
-- [ ] Monitored deployment progress
-- [ ] Verified API health endpoint
-- [ ] Tested critical endpoints
-- [ ] Verified database connection
-- [ ] Monitored performance for 15 minutes
-- [ ] Confirmed error rate normalized
-- [ ] Updated team on completion
+- [ ] Confirmed the failure correlates with a deploy, not a config change
+- [ ] Identified the target commit in Coolify → Deployments
+- [ ] Redeployed it (or restarted, if the image was fine)
+- [ ] Watched the first 60 seconds of logs
+- [ ] `hops health prod` green
+- [ ] Public endpoints answering 200 from outside the VPS
+- [ ] Sentry quiet for 10 minutes
+- [ ] Team updated
 
 ## Database Migration Rollback
 
@@ -1033,16 +799,16 @@ git push
 
 ## Common Rollback Scenarios
 
-### Scenario 1: Bad Frontend Deployment
+### Scenario 1: Bad Web Deployment
 
-**Issue**: JavaScript error breaking site
+**Issue**: JavaScript error breaking the site
 
 **Rollback**:
 
-1. Vercel Dashboard → Select project
-2. Find last working deployment (< 2 hours ago)
-3. Promote to production
-4. Verify site loads
+1. Coolify → `hospeda-web-prod` → Deployments
+2. Find the last green deploy from before the incident
+3. Redeploy it
+4. `hops health prod`, then load the site
 
 **Time**: ~5 minutes
 
@@ -1052,10 +818,11 @@ git push
 
 **Rollback**:
 
-1. Identify backend version before regression
-2. Check database compatibility
-3. Rollback backend via Vercel dashboard (promote previous deployment)
-4. Monitor performance recovery
+1. Identify the commit before the regression in Coolify → Deployments
+2. Check database compatibility — a rolled-back API against a migrated
+   database is its own outage
+3. Redeploy that commit
+4. Watch `hops logs api -f` and confirm response times recover
 
 **Time**: ~15 minutes
 

@@ -22,6 +22,7 @@ import { adminRestorePostRoute } from './restore';
 import { adminSetFeaturedPostMediaRoute } from './setFeaturedMedia';
 import { adminPostTrendRoute } from './trend';
 import { adminUpdatePostRoute } from './update';
+import { adminUpdatePostMediaRoute } from './updateMedia';
 import { adminUpdatePostSeoRoute } from './updateSeo';
 
 const app = createRouter();
@@ -91,5 +92,9 @@ app.route('/', adminSetFeaturedPostMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery.
 app.route('/', adminRemovePostMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', adminUpdatePostMediaRoute);
 
 export { app as adminPostRoutes };

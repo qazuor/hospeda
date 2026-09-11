@@ -86,6 +86,14 @@ vi.mock('../../src/services/plan-downgrade-remediation.service', () => ({
     })
 }));
 
+// HOS-1122: mock the COMMERCE downgrade remediation. The cron dispatches
+// between this and the accommodation one on the target plan's own domain.
+vi.mock('../../src/services/commerce-downgrade-remediation.service', () => ({
+    applyCommerceDowngradeRestrictions: vi
+        .fn()
+        .mockResolvedValue({ restricted: [], keptBySelection: [], cap: 1 })
+}));
+
 // SPEC-167 T-013: mock resolveOwnerUserId (subscription-pause service).
 vi.mock('../../src/services/subscription-pause.service', () => ({
     resolveOwnerUserId: vi.fn().mockResolvedValue('user-1')
@@ -164,6 +172,7 @@ import {
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../src/services/addon-plan-change.service';
+import { applyCommerceDowngradeRestrictions } from '../../src/services/commerce-downgrade-remediation.service';
 import { applyDowngradeRestrictions } from '../../src/services/plan-downgrade-remediation.service';
 import { getKeepSelectionsForChange } from '../../src/services/subscription-downgrade.service';
 import { PlanCatalogMissError } from '../../src/services/subscription-downgrade-excess.service';
@@ -215,6 +224,12 @@ function makeRow(
     overrides: Partial<{
         mpSubscriptionId: string | null;
         scheduledPlanChange: QZPayScheduledPlanChange;
+        /**
+         * The subscription's status as the cron reads it (HOS-1122). Forwarded
+         * to the commerce restriction so a downgrade applying on a lapsed
+         * subscription cannot republish the listings it keeps.
+         */
+        status: string;
     }> = {}
 ) {
     return {
@@ -223,6 +238,7 @@ function makeRow(
         currentPlanId: OLD_PLAN_ID,
         mpSubscriptionId:
             overrides.mpSubscriptionId === undefined ? MP_SUB_ID : overrides.mpSubscriptionId,
+        status: overrides.status ?? 'active',
         scheduledPlanChange: overrides.scheduledPlanChange ?? makeScheduled()
     };
 }
@@ -1595,5 +1611,128 @@ describe('SPEC-167 T-017: PLAN_CHANGE_CONFIRMATION notification at apply time (a
         expect(confirmCalls.length).toBe(0);
         // Warn logged (soft-fail)
         expect(vi.mocked(logger.warn)).toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1122: the downgrade is dispatched on its TARGET PLAN's product domain.
+// ---------------------------------------------------------------------------
+
+describe('HOS-1122: commerce vs accommodation downgrade dispatch (applyOne)', () => {
+    beforeEach(() => {
+        sendNotificationMock.mockReset().mockResolvedValue(undefined);
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(applyCommerceDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({ restricted: [], keptBySelection: [], cap: 1 });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(resolveOwnerPlanGrantsFeatured).mockReset().mockResolvedValue(false);
+        vi.mocked(syncFeaturedByEntitlementForOwner)
+            .mockReset()
+            .mockResolvedValue({ updated: 0, rows: [] });
+    });
+
+    it('sends a GASTRONOMY target to the commerce remediation, never the accommodation one', async () => {
+        // The bug this whole issue is about, at the point it would have bitten:
+        // `applyDowngradeRestrictions` restricts accommodations and promotions
+        // against caps a gastronomy tier does not declare.
+        const { billing } = makeBilling({ planSlug: 'gastronomy-basico' });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
+        expect(applyCommerceDowngradeRestrictions).toHaveBeenCalledWith(
+            expect.objectContaining({
+                subscriptionId: SUB_ID,
+                vertical: 'gastronomy',
+                targetPlanSlug: 'gastronomy-basico'
+            })
+        );
+    });
+
+    it('resolves the vertical from the target plan — an EXPERIENCE tier is not gastronomy', async () => {
+        // Without this, "dispatches to commerce" could be satisfied by a
+        // hardcoded vertical, which would point every experience downgrade at
+        // the owner's restaurants and restrict nothing.
+        const { billing } = makeBilling({ planSlug: 'experience-pro' });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(applyCommerceDowngradeRestrictions).toHaveBeenCalledWith(
+            expect.objectContaining({ vertical: 'experience' })
+        );
+    });
+
+    it('forwards the subscription status it READ, not a hardcoded "active"', async () => {
+        const { billing } = makeBilling({ planSlug: 'gastronomy-basico' });
+        const row = makeRow({
+            status: 'past_due',
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(applyCommerceDowngradeRestrictions).toHaveBeenCalledWith(
+            expect.objectContaining({ subscriptionStatus: 'past_due' })
+        );
+    });
+
+    it('forwards the owner’s keepSelections to the commerce path too', async () => {
+        const keepSels = { listingIds: ['11111111-1111-4111-8111-111111111111'] };
+        vi.mocked(getKeepSelectionsForChange).mockReturnValue(keepSels);
+        const { billing } = makeBilling({ planSlug: 'gastronomy-basico' });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(applyCommerceDowngradeRestrictions).toHaveBeenCalledWith(
+            expect.objectContaining({ keepSelections: keepSels })
+        );
+    });
+
+    it('never resolves an owner userId for a commerce downgrade — it works off link rows', async () => {
+        // Not cosmetic: `resolveOwnerUserId` is a DB round-trip whose result the
+        // commerce path has no use for, and a version that required it would
+        // skip the restriction entirely for any owner it could not resolve.
+        const { billing } = makeBilling({ planSlug: 'gastronomy-basico' });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(resolveOwnerUserId).not.toHaveBeenCalled();
+    });
+
+    it('keeps sending an ACCOMMODATION target to the accommodation remediation', async () => {
+        // The other direction of the same dispatch. A guard that refused
+        // everything would satisfy every assertion above.
+        const { billing } = makeBilling({ planSlug: NEW_PLAN_SLUG });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(applyCommerceDowngradeRestrictions).not.toHaveBeenCalled();
+        expect(applyDowngradeRestrictions).toHaveBeenCalledOnce();
+    });
+
+    it('skips BOTH when the target plan slug cannot be resolved', async () => {
+        const { billing } = makeBilling({ planSlug: null });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(applyCommerceDowngradeRestrictions).not.toHaveBeenCalled();
+        expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
     });
 });

@@ -108,7 +108,7 @@ vi.mock('@repo/db', () => ({
     and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
     billingPendingCheckouts: { __table: 'billing_pending_checkouts' },
-    commerceListingSubscriptions: { entityType: 'entity_type', entityId: 'entity_id' },
+    entitySubscriptions: { entityType: 'entity_type', entityId: 'entity_id' },
     partnerSubscriptions: { partnerId: 'partner_id' }
 }));
 
@@ -256,7 +256,11 @@ describe('initiatePartnerMonthlySubscription (HOS-191 Path C)', () => {
         expect(arg.priceId).toBe(PRICE_ID);
         expect(arg.billingInterval).toBe('monthly');
         expect(arg.mpPreapprovalPlanId).toBe('mp_plan_test');
-        expect(arg.trialGranted).toBe(false);
+        // HOS-1012: the field is gone from the helper's contract, not merely
+        // false. Partner was always no-trial, so this path's BEHAVIOR is
+        // unchanged — only the way it says so.
+        expect(Object.hasOwn(arg, 'trialGranted')).toBe(false);
+        expect(Object.hasOwn(arg, 'freeTrialDays')).toBe(false);
         expect(arg.livemode).toBe(true);
     });
 

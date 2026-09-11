@@ -37,6 +37,7 @@
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { buildEntityCacheTags, CACHE_TAG_ALL } from '@repo/cache-tags';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { partnerApi } from '@/lib/api/endpoints';
 import { toPartnerDetailProps } from '@/lib/api/transforms';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -80,10 +81,12 @@ const { isIndexable } = evaluatePartnerIndexability({
 // partners have no listing page, so there is no `list-partner` to purge (see
 // `CACHE_TAG_COLLECTIONS`). A write to THIS partner evicts THIS page, and the
 // home carousel is evicted by the `home` tag the API schedules alongside it.
+const partnerId = String(raw.id ?? '');
+
 const entityCacheTags = buildEntityCacheTags({
     entity: 'partner',
     slug,
-    id: String(raw.id ?? '')
+    id: partnerId
 });
 const [primaryCacheTag, ...extraCacheTags] = entityCacheTags;
 
@@ -203,6 +206,36 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
                     ))}
                 </ul>
             </section>
+        )}
+
+        <!--
+          Analytics tracker (headless, HOS-1063 A-2) — feeds the "visitas a tu
+          página" number in the partner's own panel.
+
+          `client:idle`, i.e. AFTER this page has rendered, and that is the whole
+          trick rather than a performance preference: this response is stored in
+          a SHARED edge bucket with `cacheClass: 'detail'` (s-maxage 3600). A
+          count taken in the frontmatter would count cache MISSES instead of
+          visitors, and would have to disable the cache to be correct. The server
+          never participates in the count, so the page stays cacheable.
+
+          Note it is handed `partnerId`, not `slug`: `entity_views.entity_id` is
+          a uuid column.
+
+          Rendered ONLY when `partnerId` is non-empty (M-2): the tracker does
+          not validate its `entityId` prop, so an empty string would still fire
+          a beacon — one the API rejects with 400 — for a raw payload with no
+          `id`. Not rendering it at all is cheaper than teaching the tracker
+          to skip an empty id.
+        -->
+        {partnerId && (
+        <EntityViewTracker
+            client:idle
+            entityType="PARTNER"
+            slug={slug}
+            entityId={partnerId}
+            locale={locale}
+        />
         )}
     </article>
 </DefaultLayout>

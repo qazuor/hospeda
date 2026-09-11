@@ -454,7 +454,7 @@ Es el video de ejemplo desarrollado arriba. **Prioridad 1, corto, 22 s.**
 - **Objetivo**: la prueba gratis, sin mentir sobre la tarjeta.
 - **Voz en off**: "Empezá a usar Hospeda gratis, sin que se te cobre nada. Entrás, elegís tu plan, publicás tu alojamiento y antes del primer cobro siempre te avisamos."
 - **Texto en pantalla**: **"Empezá gratis"** como elemento principal.
-- **⚠️ Nunca decir "sin tarjeta"**: se pide al registrarse. Lo que no se cobra es la prueba.
+- **✅ Se puede decir "sin tarjeta"** (HOS-1012, 01/09/2026): la prueba no pide medio de pago y arranca sola al publicar. Regla invertida — hasta esa fecha la tarjeta se pedía al registrarse y la frase estaba prohibida.
 - **⚠️ Sin cantidad de días** (regla 10 del plan de contenido): el plazo puede cambiar y no va ni en pantalla ni en la voz. Lo que lo reemplaza es el aviso previo al cobro, que existe y sale automático tres días antes y otra vez un día antes.
 - **CTA**: Empezá en hospeda.com.ar
 

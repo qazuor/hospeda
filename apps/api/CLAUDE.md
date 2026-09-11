@@ -558,11 +558,16 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 Every protected route runs middleware in this order:
 
 ```
-auth → actor → billing → billingCustomer → trial → [options.middlewares]
+auth → actor → billing → billingCustomer → entitlement → trial → [options.middlewares]
 ```
 
 `options.middlewares` is where entitlement and limit gates live. Gate the
 route there — never inside the handler body.
+
+The `entitlement` step is `entitlementMiddleware()`
+(`src/utils/create-app.ts:176`), the LOADER that populates `userEntitlements` /
+`userLimits` on the context. It is NOT the gate, and it runs before `trial`.
+This diagram used to omit it entirely.
 
 ### Ordering invariants
 
@@ -611,6 +616,15 @@ drops the call.
 but the route it protects has not been built yet. Do not delete these;
 do not build the route without a spec. The snapshot guard excepts them.
 
+**An unmounted gate helper does NOT prove the feature is unprotected.** A route
+may call the generic `requireEntitlement` directly instead of the named helper,
+leaving the helper stale while the gate stays real and enforced. Measured
+2026-08-31: of the four helpers marked `PHANTOM-GATE`, two were false positives —
+`CAN_USE_CALENDAR` is required by **4** routes and `CAN_SYNC_EXTERNAL_CALENDAR` by
+**3**, both through the generic call. The real phantoms were `RESPOND_REVIEWS`,
+`CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING`, with **0** routes each. So count
+the routes that require the entitlement KEY, never the call sites of the helper.
+
 `// RESERVED-LIMIT`: a `LimitKey` is wired via `requireLimit` but the
 `currentCount` implementation is a hardcoded `0` stub (the counter service
 does not exist yet). See the "Reserved — Limit Stubs" section in
@@ -648,6 +662,108 @@ POST /api/v1/protected/billing/addons/{id}/cancel
 Never `DELETE` with a body expecting it to be parsed — the body is silently
 discarded.
 
+## SUPER_ADMIN bypasses `role_permission` entirely
+
+`src/middlewares/actor.ts:273` gives any actor wearing the SUPER_ADMIN hat
+`permissions: Object.values(PermissionEnum)` — **every value in the enum, without
+reading the database**. `role_permission` does not participate in that decision.
+
+Two things state the opposite and both are wrong:
+
+- **A stale comment.** `packages/service-core/src/services/user/user.permissions.ts:12`
+  says *"SUPER_ADMIN always passes because they have all permissions assigned"*. It
+  is out of date. The comment that actually documents the bypass lives in the seed
+  (`packages/seed/src/required/rolePermissions.seed.ts`, ~line 322).
+- **Counting the table manufactures a finding.** Production holds 328
+  `role_permission` rows for SUPER_ADMIN against 693 enum values. That reads as
+  "365 permissions are missing, the super admin cannot do everything" and is false —
+  the column never applies. The table has no `deleted_at`, so the 328 is real; the
+  mistake is assuming that number governs anything.
+
+Corollaries verified in the same code:
+
+- Roles are **additive** since HOS-296 (`user_role`, PK `(userId, role)`). Adding
+  SUPER_ADMIN to an account that already has `HOST, USER` removes nothing.
+- **No `user_permission` deny stops a super admin**: the short-circuit returns
+  before the branch that applies `(⋃ perms ∪ grants) \ denies`.
+- **There is no role cache.** `actor.ts:218` documents that a 60s cache was tried
+  and removed, so a grant takes effect on the next request with no re-login.
+- The audit row (`user_role_audit`) is written by `grantRole` in the same
+  transaction — **there is no trigger**. A hand-written `INSERT` into `user_role`
+  works just as well and leaves a super admin in production with no record of who
+  granted it.
+
+## Testing gotchas — three ways a green test here proves nothing
+
+This app has three distinct traps that make a passing test vacuous. All three were
+measured, not inferred.
+
+### 1. `test/setup.ts` mocks `@repo/db` wholesale
+
+`test/setup.ts` carries a **global** `vi.mock('@repo/db')` that replaces the module
+with `createDbMock()`. Its tables are plain string maps — `accommodations` is
+`{ id: 'id', ownerId: 'owner_id', deletedAt: 'deleted_at', ... }` and does not even
+have `slug`, `visibility` or `lifecycleState`.
+
+So **any test that inspects a Drizzle condition is describing the stub, not the
+code**. It goes green and asserts nothing. Measured in HOS-585: a guard over
+`isEntityPubliclyVisible` (6 near-identical lookups) stayed green after deleting
+`lifecycleState` and `visibility` from the accommodation lookup.
+
+When the realistic defect is "one of N near-identical blocks lost a line", the
+idiom here is a **static guard over the source**, not a runtime assertion. Slice one
+block per key (from ``SOURCE.indexOf(`\n    ${key}: async`)`` to the next) and assert
+each condition inside *that* slice — asserting over the whole file passes as long as
+*some* block still has it, which is exactly the bug. Add a test proving the slicing
+actually cuts (`expect(block).not.toContain('otherTable.slug')`).
+
+If you do write a local `vi.mock`, put the holder in `vi.hoisted()`: the factory is
+hoisted above the module body, so a `let` declared above it does not exist yet when
+the factory closes over it. The capture never happens, and it reads exactly like
+"the query does not request columns".
+
+### 2. Route-handler tests in `test/routes/*` often never reach the handler
+
+Several hide it behind a conditional assertion:
+
+```ts
+if (res.status === 201) { /* real asserts */ }
+else { expect(res.status).not.toBe(404); }  // ← the branch that always runs
+```
+
+Measured in `accommodation-protected-add-media.test.ts` (HOS-791): adding
+`expect(res.status).toBe(201)` returned **400 `MISSING_REQUIRED_HEADER`** —
+`validation-config.ts` requires `user-agent` by default and no test in the file
+sends it. With the header set it became **500 `INTERNAL_ERROR`**: the middleware
+chain does not complete under test either. No mock was ever reached
+(`mockFindByAccommodation.mock.calls` → `[]`, `addMedia` → 0 calls).
+
+Before writing a behavioural test there, check whether the neighbours use the
+conditional form — if they do, the handler is not reachable. Prove it by asserting
+`mock.calls` on something the handler invokes, not the status code.
+
+### 3. `CI=true` is safe for unit tests here, and only here
+
+`test/setup.ts:68` explicitly `delete`s the `CI` variable from the process, because
+several guards read `env.CI !== 'true'` to refuse mock actors on a real pipeline.
+That `delete` neutralises it for the default config — measured, 331 tests green with
+no spurious 401.
+
+But the app has **three** vitest configs and the protection is one line in one setup
+file:
+
+| Config | `setupFiles` | deletes `CI`? |
+| --- | --- | --- |
+| `vitest.config.ts` (default/unit) | `./test/setup.ts` | **yes** |
+| `vitest.config.e2e.ts` | `./test/e2e/setup/env-setup.ts` + `test-database.ts` | **no** |
+| `vitest.config.integration.ts` | the same two | **no** |
+
+With `vitest.config.e2e.ts` and `CI=true`, **every request returns 401 GUEST** — the
+`HOSPEDA_ALLOW_MOCK_ACTOR` path stops honouring the `x-mock-actor-*` headers.
+Without it, the same 17 tests pass. So: `CI=true` for unit runs, never for e2e or
+integration. If you see mass 401s, check which config you are running before
+anything else.
+
 ## Common Gotchas
 
 - `createAdminListRoute` auto-merges `PaginationQuerySchema` and uses `page`+`pageSize` (NOT `limit`)
@@ -664,7 +780,37 @@ Routes live in `src/routes/billing/`: `start-paid.ts`, `plan-change.ts`,
 Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
 `finalize-cancelled-subs.ts`, `trial-expiry.ts`, `addon-expiry.job.ts`,
 `apply-scheduled-plan-changes.ts`, `subscription-poll.job.ts`,
-`abandoned-pending-subs.job.ts`, `exchange-rate-fetch.job.ts`.
+`abandoned-pending-subs.job.ts`, `exchange-rate-fetch.job.ts`,
+`preapproval-less-expiry.job.ts`, `entity-subscription-cache-reconcile.job.ts`,
+`addon-subscription-reconcile.job.ts`, `courtesy-expiry.job.ts`,
+`propagate-plan-price-changes.job.ts`,
+`reactivation-supersession-reconcile.job.ts`,
+`subscription-drift-reconcile.job.ts`, `partner-expiry.job.ts` and
+`partner-unpaid-reaper.job.ts`.
+
+**Which of those re-reads MercadoPago, and when** — worth knowing before adding a
+sweep, because the answer used to be "almost none of them". Every job above
+except one is keyed on a LOCAL trigger: an enqueued polling job
+(`subscription-poll`), an elapsed `trial_end` (`trial-reconcile`), a
+`cancel_at_period_end` flag (`finalize-cancelled-subs`), a 30-minute TTL
+(`abandoned-pending-subs`), a missing preapproval (`preapproval-less-expiry`).
+A row that diverged from the provider with none of those markers set was
+invisible to all of them, permanently — measured in HOS-913 at over three hours
+for one `paused` row. `subscription-drift-reconcile` (HOS-914) is the only sweep
+whose trigger is the PROVIDER: it re-reads every non-terminal row that holds a
+preapproval and re-applies the verdict through `processSubscriptionUpdated`.
+Two rules it follows and a new one must too: a failed read is never a verdict
+(a preapproval MercadoPago cannot resolve is reported, never cancelled — a
+cash-paid partner has no counterpart at all, HOS-1062), and a correction goes
+through the webhook transition rather than a second state machine.
+
+Two traps in that list. **A job's registered NAME is not its filename** —
+`trial-expiry.ts` registers as `trial-reconcile`, and that string is what
+`hops cron-trigger` and the admin cron UI expect; `src/cron/schedules.manifest.ts`
+is the authoritative name → schedule mapping. And the last two belong to the
+**partner** vertical, which does not go through
+`reconcileSubscriptionLinkedEntities` at all — its bridge is
+`services/partner-reconcile.service.ts`.
 
 For MP sandbox setup and operator procedures:
 [`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md)

@@ -2,6 +2,10 @@
  * Experience Subtypes — specialized schemas for experience-specific sub-entities.
  */
 
+// Certificate schemas (HOS-1057 — what a provider issues to whoever did the
+// experience)
+export * from './experience.certificate.schema.js';
+
 // FAQ schemas
 export * from './experience.faq.schema.js';
 

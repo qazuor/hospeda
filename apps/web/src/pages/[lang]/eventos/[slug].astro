@@ -278,7 +278,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			entityType="EVENT"
 			entityId={eventId}
 			locale={locale}
-			currentUrl={Astro.url.href}
+			currentUrl={`${Astro.url.pathname}${Astro.url.search}`}
 		/>
 
 		<!-- Tags row (only when tags exist) -->

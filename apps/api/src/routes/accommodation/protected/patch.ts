@@ -9,7 +9,8 @@ import {
     AccommodationProtectedSchema,
     AccommodationUpdateHttpSchema,
     httpToDomainAccommodationUpdate,
-    PermissionEnum
+    PermissionEnum,
+    ProductDomainEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -17,7 +18,9 @@ import {
     gateRichDescription,
     gateVideoEmbed
 } from '../../../middlewares/accommodation-entitlements';
+import { getQZPayBilling } from '../../../middlewares/billing';
 import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
@@ -29,7 +32,7 @@ const accommodationService = new AccommodationService(
     undefined,
     null,
     undefined,
-    buildAccommodationPublishDeps()
+    buildAccommodationPublishDeps(() => getQZPayBilling())
 );
 
 /**
@@ -125,7 +128,8 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         middlewares: [
             requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
             gateRichDescription(),
-            gateVideoEmbed()
+            gateVideoEmbed(),
+            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
         ]
     }
 });

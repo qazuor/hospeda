@@ -1,6 +1,10 @@
 /**
  * @file SignUp.test.ts
  * @description Unit tests for SignUp auth component.
+ *
+ * HOS-959: the OAuth block (Google/Facebook buttons, `handleOauth`, icons)
+ * moved OUT of this component and into `AuthTabs.client.tsx` — see
+ * `test/components/auth/AuthTabs.client.test.tsx` for that coverage now.
  */
 
 import { readFileSync } from 'node:fs';
@@ -26,6 +30,36 @@ describe('SignUp.client.tsx', () => {
 
         it('should accept redirectTo prop', () => {
             expect(src).toContain('redirectTo');
+        });
+
+        // HOS-959: email is now a controlled value owned by AuthTabs (so it
+        // survives a tab switch), not local state.
+        it('should accept email and onEmailChange as controlled props', () => {
+            expect(src).toMatch(/readonly email: string/);
+            expect(src).toMatch(/readonly onEmailChange: \(value: string\) => void/);
+        });
+
+        it('should no longer own a local email useState (HOS-959 — controlled by AuthTabs)', () => {
+            expect(src).not.toMatch(/const\s+\[\s*email\s*,\s*setEmail\s*\]\s*=\s*useState/);
+        });
+
+        it('should no longer declare showOAuth or oauthRedirectTo (HOS-959 — OAuth moved to AuthTabs)', () => {
+            expect(src).not.toContain('showOAuth');
+            expect(src).not.toContain('oauthRedirectTo');
+        });
+    });
+
+    // HOS-959: this component no longer renders or knows about OAuth at all
+    // — no button, no handler, no icons. Assert the negative so a future
+    // edit that re-introduces a second copy trips this guard immediately.
+    describe('no OAuth surface left (HOS-959)', () => {
+        it('does not call signIn.social', () => {
+            expect(src).not.toContain('signIn.social');
+        });
+
+        it('does not render an OAuth button or icon component', () => {
+            expect(src).not.toContain('GoogleIcon');
+            expect(src).not.toContain('FacebookIcon');
         });
     });
 
@@ -131,7 +165,19 @@ describe('SignUp.client.tsx', () => {
         });
 
         it('sends the trimmed email to signUp.email', () => {
-            expect(src).toContain('signUp.email({ email: trimmedEmail, password, ');
+            // Matched by shape rather than by an exact one-line literal: the
+            // call is formatted by Biome, and a reformat must not read as a
+            // behaviour regression. The distance bound keeps this from
+            // matching an unrelated `trimmedEmail` elsewhere in the file.
+            expect(src).toMatch(/signUp\.email\(\{[\s\S]{0,120}?email:\s*trimmedEmail\b/);
+        });
+
+        it('tells the API where the verification link should land (HOS-838)', () => {
+            // The destination cannot travel in the browser — the inbox may be
+            // opened on another device — so it has to reach Better Auth here.
+            expect(src).toMatch(
+                /signUp\.email\(\{[\s\S]{0,200}?callbackURL:\s*verificationCallbackUrl\b/
+            );
         });
     });
 });

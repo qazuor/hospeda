@@ -28,7 +28,6 @@ export interface BillingSettings {
     /** Send a reminder before a trial expires. */
     sendTrialExpiryReminder: boolean;
     /** Days before trial expiry to send the reminder. */
-    trialExpiryReminderDays: number;
     /** Notify the customer when a payment fails. */
     sendPaymentFailedNotification: boolean;
     /** Notify the customer when a subscription is cancelled. */

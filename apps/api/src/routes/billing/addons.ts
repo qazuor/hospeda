@@ -15,9 +15,9 @@
  */
 
 import {
-    AddonResponseSchema,
     CancelAddonSchema,
     ListAddonsQuerySchema,
+    PurchasableAddonResponseSchema,
     PurchaseAddonResponseSchema,
     PurchaseAddonSchema,
     UserAddonResponseSchema
@@ -30,6 +30,10 @@ import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import { AddonService } from '../../services/addon.service';
+import {
+    annotateRecurringCharging,
+    annotateRecurringChargingAll
+} from '../../services/addon-recurring-charging';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
@@ -52,7 +56,7 @@ export const listAddonsRoute = createProtectedRoute({
     description: 'Returns a list of available add-ons for purchase. Requires authentication.',
     tags: ['Billing - Add-ons'],
     requestQuery: ListAddonsQuerySchema.shape,
-    responseSchema: z.array(AddonResponseSchema),
+    responseSchema: z.array(PurchasableAddonResponseSchema),
     handler: async (_c, _params, _body, query) => {
         const billing = getQZPayBilling();
         const service = new AddonService(billing);
@@ -90,7 +94,11 @@ export const listAddonsRoute = createProtectedRoute({
             });
         }
 
-        return result.data;
+        // HOS-847: say how each row will actually be CHARGED, not just how the
+        // catalog labels it. The buyer-facing warning about a monthly charge
+        // hangs off this; deriving it client-side from `billingType` announced a
+        // subscription for a purchase the server would charge once.
+        return await annotateRecurringChargingAll(result.data);
     }
 });
 
@@ -108,7 +116,7 @@ export const getAddonRoute = createProtectedRoute({
     requestParams: {
         slug: z.string().min(1, 'Add-on slug is required')
     },
-    responseSchema: AddonResponseSchema,
+    responseSchema: PurchasableAddonResponseSchema,
     handler: async (_c, params) => {
         const billing = getQZPayBilling();
         const service = new AddonService(billing);
@@ -142,7 +150,10 @@ export const getAddonRoute = createProtectedRoute({
             });
         }
 
-        return result.data;
+        // Annotated for the same reason the listing is: this is the other route
+        // a buyer reads, and a shape that answered here and not there would be
+        // the drift the shared schema exists to prevent.
+        return await annotateRecurringCharging(result.data);
     }
 });
 
@@ -197,6 +208,11 @@ export const purchaseAddonRoute = createProtectedRoute({
             addonSlug: params.slug as string,
             promoCode: body.promoCode as string | undefined,
             userId: actor.id,
+            // HOS-1286: `entityId` is canonical; `accommodationId` is the
+            // deprecated alias a pre-change client still sends. Both are
+            // forwarded and `resolveAddonTargetId` picks the winner, so the
+            // fallback lives in one place rather than at each reader.
+            entityId: body.entityId as string | undefined,
             accommodationId: body.accommodationId as string | undefined,
             successUrl: buildAddonSuccessUrl(locale, params.slug as string),
             cancelUrl: buildAddonCancelUrl(locale, params.slug as string),
@@ -214,16 +230,70 @@ export const purchaseAddonRoute = createProtectedRoute({
                 NO_SUBSCRIPTION: 422,
                 NO_ACTIVE_SUBSCRIPTION: 422,
                 ADDON_INACTIVE: 422,
+                // "Well-formed but unprocessable" — the 422 row of
+                // `docs/error-contract.md`. All three are business rules (step 5
+                // of the order), reached only once auth, shape and existence
+                // have passed, so none is a 400 or a 404. And none is a 403:
+                // this is not a plan or limit GATE on a capability the caller
+                // holds, it is an add-on that is not sold to them at all.
+                //
+                // `ADDON_NOT_AVAILABLE_FOR_PLAN` was MISSING from this map
+                // (found by HOS-1178 while adding its two siblings): it fell
+                // through to the `?? 500` below, so a plain plan-category
+                // mismatch answered `500 INTERNAL_ERROR` — a 4xx labelled as
+                // our fault, which is what R1 of the contract forbids.
+                ADDON_NOT_AVAILABLE_FOR_PLAN: 422,
+                ADDON_NOT_AVAILABLE_FOR_DOMAIN: 422,
+                ADDON_DOMAIN_UNKNOWN: 422,
+                // HOS-847 PR 4: a recurring add-on is charged through its own
+                // MercadoPago preapproval, whose plan carries no discount
+                // dimension — so a promo code is REFUSED rather than accepted
+                // and silently ignored (which would authorize a recurring
+                // charge at an amount the buyer was never shown). Same 422
+                // family as the three above: well-formed, allowed to exist,
+                // just not processable in this combination.
+                RECURRING_ADDON_PROMO_UNSUPPORTED: 422,
+                // HOS-847 PR 4: the same 422 family, for the two ways a
+                // recurring sale can be impossible for reasons that are neither
+                // transient nor our runtime failing. Both used to answer
+                // `CHECKOUT_ERROR` → 500 `INTERNAL_ERROR`, which paged on-call
+                // for a data condition and hid the cause from the operator —
+                // exactly what rule R1 of `docs/error-contract.md` forbids: a
+                // 4xx is never `INTERNAL_ERROR`.
+                //
+                //  - NOT_SELLABLE: the catalog row carries no primary key, so
+                //    no `billing_mp_addon_plans` entry can be keyed for it.
+                //  - PLAN_UNRESOLVED: the customer's own subscription does not
+                //    resolve to a plan + price, which is what qzpay requires to
+                //    open a preapproval at all.
+                RECURRING_ADDON_NOT_SELLABLE: 422,
+                RECURRING_ADDON_PLAN_UNRESOLVED: 422,
+                // The resolved MercadoPago payer email cannot be used (it
+                // contains a `+`, which MP rejects outright). A caller-side
+                // input problem they can act on, mapped 400 exactly as
+                // `PAYER_EMAIL_UNSUPPORTED_CHARACTER` is on the plan checkout.
+                ADDON_PAYER_EMAIL_UNSUPPORTED: 400,
+                // A previous checkout for the same add-on is still in flight and
+                // could not be settled. Transient and retryable — and the
+                // alternative to answering it is opening a SECOND chargeable
+                // preapproval on top of the first.
+                ADDON_CHECKOUT_IN_FLIGHT: 409,
                 CUSTOMER_NOT_FOUND: 404,
                 INVALID_PROMO_CODE: 422,
                 ADDON_ALREADY_ACTIVE: 409,
                 PAYMENT_NOT_CONFIGURED: 503,
+                // HOS-847 PR 4: MercadoPago (or its plan registry) refused the
+                // recurring set-up. An upstream failure, not ours and not the
+                // caller's — 502, matching how `mapSubscriptionCheckoutErrorToHttp`
+                // maps `MP_PLAN_PROVISIONING_FAILED` for the plan checkout, and
+                // retryable.
+                ADDON_PROVIDER_ERROR: 502,
                 CHECKOUT_ERROR: 500,
                 SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 503, {
+            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 502 | 503, {
                 message: result.error?.message ?? 'Unknown error',
                 // HOS-602: the status-derived `error.code` the client receives
                 // for a 422 collapses NO_SUBSCRIPTION / NO_ACTIVE_SUBSCRIPTION /
@@ -310,19 +380,36 @@ export const getUserAddonsRoute = createProtectedRoute({
 });
 
 /**
- * Cancel recurring add-on (authenticated)
+ * Cancel an add-on (authenticated)
  *
  * POST /api/v1/protected/billing/addons/:id/cancel
  *
  * Ownership is verified in the handler before calling the service,
  * matching the defense-in-depth pattern used by other billing routes.
+ *
+ * ## The copy described a flow that did not exist (HOS-847 PR 6)
+ *
+ * The description promised the add-on "will remain active until the end of the
+ * current billing period" while `cancelUserAddon` revoked it immediately, and
+ * the `cancel_at_period_end` column existed with nothing reading it.
+ *
+ * The owner's decision closed the gap from the other side: a RECURRING add-on
+ * now really is kept until `current_period_end`, matching the soft-cancel grace
+ * the plan-side already gives (`docs/billing/grace-period-source-of-truth.md`).
+ * Charging still stops in the same instant — the MercadoPago preapproval is
+ * hard-cancelled before anything local is written — so "keep it" costs nothing
+ * beyond the period the customer had already paid for.
+ *
+ * A ONE-TIME add-on has no period and no preapproval, and is still revoked
+ * immediately. Hence "an add-on" rather than "a recurring add-on" in the summary:
+ * the endpoint serves both, and they end differently.
  */
 export const cancelAddonRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/cancel',
-    summary: 'Cancel recurring add-on',
+    summary: 'Cancel an add-on',
     description:
-        'Cancels a recurring add-on subscription. The add-on will remain active until the end of the current billing period.',
+        'Cancels an add-on. For a recurring add-on: the MercadoPago subscription is cancelled right away, so you are never charged again, and you keep using the add-on until the end of the period you already paid for; nothing is refunded because nothing further is charged. If the payment provider cannot be reached the request fails with 503 and nothing is changed. A one-time add-on has no billing period and its benefits are removed immediately.',
     tags: ['Billing - Add-ons'],
     requestParams: {
         id: z.string().uuid('Invalid add-on ID')

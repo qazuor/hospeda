@@ -6,7 +6,12 @@
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
 import { ExperienceProtectedSchema, PermissionEnum } from '@repo/schemas';
-import { ExperienceService, entityNotFoundError, ServiceError } from '@repo/service-core';
+import {
+    ExperienceService,
+    entityNotFoundError,
+    resolveOwnerGrantsExperienceDirections,
+    ServiceError
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -65,7 +70,20 @@ export const protectedGetExperienceByIdRoute = createProtectedRoute({
         // Seed the owner editor's amenity/feature multi-select: the protected
         // schema carries these read-back IDs, which the entity projection does
         // not include (junction relations live in separate tables).
-        const { amenityIds, featureIds } = await experienceService.loadJunctionIds(entity.id);
-        return { ...entity, amenityIds, featureIds };
+        // HOS-1049: the owner editor needs to know whether it may OFFER the
+        // how-to-get-there field, and the stored value alone cannot say — it
+        // records what was written, not whether it may still be. Resolved live
+        // off the CURRENT subscription, same call the public routes make.
+        //
+        // The stored `meetingPointDirections` itself is NOT withheld here even
+        // when this is false: a downgraded provider must still see what they
+        // typed, or the form re-opens blank and the next save erases it. The
+        // PUBLIC tier is where the value is withheld; this tier is the owner
+        // reading their own row.
+        const [{ amenityIds, featureIds }, meetingPointDirectionsEnabled] = await Promise.all([
+            experienceService.loadJunctionIds(entity.id),
+            resolveOwnerGrantsExperienceDirections({ ownerId: entity.ownerId })
+        ]);
+        return { ...entity, amenityIds, featureIds, meetingPointDirectionsEnabled };
     }
 });

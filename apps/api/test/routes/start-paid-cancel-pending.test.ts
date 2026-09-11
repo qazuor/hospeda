@@ -89,9 +89,20 @@ vi.mock('@repo/db', () => {
     };
     return {
         getDb: vi.fn(() => ({
-            insert: vi.fn(() => insertChain)
+            insert: vi.fn(() => insertChain),
+            // HOS-847: hasActiveAccommodationSub/hasSoftCancelledSub hydrate
+            // via hydrateSubscriptionProductDomains (from @repo/service-core,
+            // unmocked) before filtering. Resolving `[]` is the safe default
+            // (unmatched id hydrates to `productDomain: null` — accommodation
+            // fail-open, unchanged behavior for every fixture in this file).
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: vi.fn().mockResolvedValue([])
+                }))
+            }))
         })),
-        billingSubscriptions: { __table: 'billing_subscriptions' },
+        billingSubscriptions: { id: 'ID', productDomain: 'PRODUCT_DOMAIN' },
+        inArray: (column: unknown, values: unknown[]) => ({ inArray: column, values }),
         // Required by role-permissions-cache.ts (loaded via the actor middleware at
         // module load, staging fix 05bc14a9e). This test never resolves permissions,
         // so empty findAll stubs suffice.

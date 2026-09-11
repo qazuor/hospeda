@@ -1,0 +1,228 @@
+---
+/**
+ * @file VideoSection.astro
+ * @description "Videos" section for the accommodation detail page (HOS-1022).
+ * Renders host-authored YouTube/Vimeo/Dailymotion links as a lazy facade —
+ * a static poster/placeholder plus a play button — and swaps in the real
+ * `<iframe>` only on click, so the ~1MB+ of embed JS never loads for a
+ * visitor who never presses play (HOS-369 kept this page's TBT low; an
+ * always-present iframe would regress it).
+ *
+ * Deliberately its OWN section with its own heading, not mixed into the
+ * photo mosaic (`ImageGallery`) or the `/fotos` sub-page grid — both of
+ * those already proved to be where a video goes unnoticed (see the ticket:
+ * `/fotos` opens videos through GLightbox, which never injects the
+ * `<iframe>` until a click either, so a raw HTML scan of that page finds
+ * zero iframes just like the main detail page did).
+ *
+ * Security: the raw host-authored URL is NEVER used as an `<iframe src>`.
+ * `resolveVideoEmbed()` (`@/lib/video-embed`) extracts a provider-native id,
+ * validates its shape, and rebuilds the embed URL from a fixed per-provider
+ * template. A video whose URL does not match a known provider (or whose id
+ * fails validation) resolves to `null` and is silently excluded — never
+ * rendered "just in case", never linked out raw.
+ *
+ * Moderation: the caller (`toAccommodationDetailPageProps`) has already
+ * filtered to `moderationState === 'APPROVED'` videos only (HOS-1022) — this
+ * component does not re-check moderation state, it only has to handle the
+ * embed-URL derivation and the lazy-facade interaction.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { resolveVideoEmbed, type VideoProvider } from '@/lib/video-embed';
+
+interface Props {
+	readonly videos: ReadonlyArray<{
+		readonly url: string;
+		readonly caption?: string;
+		readonly description?: string;
+	}>;
+	readonly locale: SupportedLocale;
+}
+
+const { videos, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+/** Short, human-facing label per provider — shown on the facade badge. */
+const PROVIDER_LABELS: Record<VideoProvider, string> = {
+	youtube: 'YouTube',
+	vimeo: 'Vimeo',
+	dailymotion: 'Dailymotion'
+};
+
+const resolvedVideos = (videos ?? [])
+	.map((video) => {
+		const embed = resolveVideoEmbed({ url: video.url });
+		if (!embed) return null;
+		return {
+			...embed,
+			caption: video.caption,
+			description: video.description
+		};
+	})
+	.filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+if (resolvedVideos.length === 0) return;
+---
+
+<section class="video-section" aria-labelledby="video-section-title">
+	<h2 class="video-section__title" id="video-section-title">
+		{t('accommodations.detail.videos.title', 'Videos')}
+	</h2>
+
+	<div class="video-section__grid">
+		{resolvedVideos.map((video) => {
+			const playLabel = video.caption
+				? t('accommodations.detail.videos.playNamed', 'Reproducir video: {{caption}}', {
+						caption: video.caption
+					})
+				: t('accommodations.detail.videos.play', 'Reproducir video');
+			return (
+				<div
+					class="video-section__item"
+					data-video-facade
+					data-video-embed-url={video.embedUrl}
+					data-video-title={video.caption ?? PROVIDER_LABELS[video.provider]}
+				>
+					<button type="button" class="video-section__play" data-video-play aria-label={playLabel}>
+						<span class="video-section__play-icon" aria-hidden="true">&#9654;</span>
+						<span class="video-section__provider-badge">{PROVIDER_LABELS[video.provider]}</span>
+					</button>
+					{video.caption && <p class="video-section__caption">{video.caption}</p>}
+				</div>
+			);
+		})}
+	</div>
+</section>
+
+<script>
+	// Facade lazy-load: the iframe is created and attached ONLY on click, never
+	// present in the initial HTML. `{ once: true }` matches "one click starts
+	// exactly one embed" — a second click on the same facade cannot happen
+	// because the button is gone once the iframe replaces it.
+	document.querySelectorAll<HTMLElement>('[data-video-facade]').forEach((facade) => {
+		const button = facade.querySelector<HTMLButtonElement>('[data-video-play]');
+		const embedUrl = facade.dataset.videoEmbedUrl;
+		if (!button || !embedUrl) return;
+
+		button.addEventListener(
+			'click',
+			() => {
+				const iframe = document.createElement('iframe');
+				iframe.src = embedUrl;
+				iframe.title = facade.dataset.videoTitle ?? 'video';
+				iframe.loading = 'lazy';
+				iframe.allow =
+					'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+				iframe.allowFullscreen = true;
+				iframe.className = 'video-section__iframe';
+				button.replaceWith(iframe);
+			},
+			{ once: true }
+		);
+	});
+</script>
+
+<style>
+	.video-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4, 16px);
+	}
+
+	.video-section__title {
+		font-family: var(--font-heading);
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0;
+	}
+
+	.video-section__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-4, 16px);
+	}
+
+	@media (min-width: 640px) {
+		.video-section__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	.video-section__item {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 8px);
+	}
+
+	/* Facade: a fixed-ratio placeholder standing in for the iframe until the
+	   visitor presses play. Deliberately NOT a fetched thumbnail — Vimeo and
+	   Dailymotion have no free, predictable static-thumbnail URL (only an
+	   oEmbed API round-trip would give one), and a YouTube-only real poster
+	   next to two generic placeholders would look inconsistent. */
+	.video-section__play {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2, 8px);
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		border: none;
+		border-radius: var(--radius-card, 24px);
+		background: linear-gradient(135deg, var(--core-foreground) 0%, var(--brand-primary) 150%);
+		color: white;
+		cursor: pointer;
+		padding: 0;
+	}
+
+	.video-section__play:hover .video-section__play-icon,
+	.video-section__play:focus-visible .video-section__play-icon {
+		transform: scale(1.08);
+	}
+
+	.video-section__play:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 3px;
+	}
+
+	.video-section__play-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 3.5rem;
+		height: 3.5rem;
+		border-radius: 50%;
+		background-color: oklch(1 0 0 / 0.9);
+		color: var(--brand-primary);
+		font-size: 1.25rem;
+		transition: transform var(--duration-fast, 0.2s) ease;
+	}
+
+	.video-section__provider-badge {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		background-color: oklch(0 0 0 / 0.35);
+		border-radius: var(--radius-pill);
+		padding: 0.25rem 0.75rem;
+	}
+
+	.video-section__caption {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
+	}
+
+	.video-section__iframe {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+		border: none;
+		border-radius: var(--radius-card, 24px);
+	}
+</style>

@@ -53,11 +53,18 @@ function createPublishDeps(
     overrides: Partial<AccommodationPublishDeps> = {}
 ): AccommodationPublishDeps {
     return {
-        // 'has_active_sub' is the only eligibility that still permits publishing.
-        // This default used to be 'first_publish', back when that meant "grant a
-        // no-card trial and go live"; card-first rejects it to the plans page just
-        // like 'subscription_required', so it is no longer a publishable owner.
+        // 'has_active_sub' publishes without touching billing. These tests are
+        // about ROUTING (does an ACTIVE transition reach `publish()` at all),
+        // so the eligibility that involves the fewest moving parts is the right
+        // default here.
         checkEligibility: vi.fn().mockResolvedValue('has_active_sub'),
+        // Stubbed to satisfy the interface — no routing test drives a trial.
+        startLocalTrial: vi.fn().mockResolvedValue({
+            subscriptionId: 'sub-trial-default',
+            customerId: 'cust-default',
+            trialEnd: new Date('2026-10-01T00:00:00.000Z')
+        }),
+        onTrialStarted: vi.fn().mockResolvedValue(undefined),
         ...overrides
     };
 }

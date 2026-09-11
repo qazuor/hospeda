@@ -1,0 +1,167 @@
+# Resolves unresolved What's New `publishedAt: 'on-promotion'` markers after
+# they actually reach `main` (HOS-1214 §6.2, "Resolving the markers", AC-14).
+#
+# =============================================================================
+# WHY THE TRIGGER IS `push: [main]` AND NOTHING EARLIER
+# =============================================================================
+# The sign-off flow (§6.1) writes an entry with the literal marker
+# `'on-promotion'` instead of a date — the writer never guesses a promotion
+# date (D-1). Resolving that marker happens BECAUSE the promotion actually
+# reached production, so this workflow only ever fires on a real `push` to
+# `main`, never on a promotion PR being opened, labeled, or even approved.
+#
+# This is what makes the second half of AC-14 true BY CONSTRUCTION, not by
+# care: "Given the promotion PR is closed without merging, then no marker is
+# resolved." A closed-without-merging PR produces no push to `main` — there is
+# nothing for this workflow to react to. It cannot resolve a marker for a
+# release that never happened, because a marker is only ever resolved as a
+# side effect of a merge event that already occurred. There is no code path
+# here that could resolve a marker "early" by mistake.
+#
+# =============================================================================
+# NEVER PUSHES TO A PROTECTED BRANCH DIRECTLY
+# =============================================================================
+# This workflow writes to a throwaway branch (`whats-new/resolve-dates-<sha>`)
+# and opens a PR from it to `staging`. It never pushes to `main` (already past
+# — the merge already happened) or to `staging` directly. The resolved dates
+# reach `staging` only through the normal PR review path, exactly like
+# `sync-main-to-staging.yml`'s back-merge.
+#
+# =============================================================================
+# CI NOTE — inherited verbatim from `sync-main-to-staging.yml`
+# =============================================================================
+# The default `GITHUB_TOKEN` does NOT trigger other workflows, and a PR opened
+# by it starts WITHOUT CI checks unless a fine-grained PAT is provided via the
+# `SYNC_PAT` secret (Contents: read/write + Pull requests: read/write, scoped
+# to this repo). Without it, the PR still opens — CI must be re-triggered by
+# hand (a trivial push, or close/reopen). This is the exact same caveat
+# `sync-main-to-staging.yml` documents; both workflows share the fallback
+# `secrets.SYNC_PAT || secrets.GITHUB_TOKEN` for that reason.
+#
+# =============================================================================
+# WHERE THE ACTUAL REWRITE LOGIC LIVES
+# =============================================================================
+# The decision of WHICH markers get WHICH date is NOT written in this YAML —
+# it lives in the pure, unit-tested `resolvePublishedAtMarkers` function
+# (scripts/client-tools/src/commands/whats-new/resolve-dates.ts), exercised by
+# scripts/client-tools/test/whats-new-resolve-dates.test.ts. This workflow
+# only supplies the merge timestamp and runs the thin I/O wrapper
+# (resolve-dates-cli.ts) that reads the file, calls that function, and writes
+# the result back. Same "invoke the shared logic, never reimplement it in
+# bash" principle whats-new-gate.yml documents for the PR-decision audit.
+name: Resolve What's New promotion dates
+
+on:
+  push:
+    branches: [main]
+  # Lets a failed run be retried without a new push to main — same rationale
+  # sync-main-to-staging.yml documents for its own workflow_dispatch trigger.
+  # On workflow_dispatch there is no `head_commit` payload, so MERGED_AT falls
+  # back to `main`'s current HEAD commit timestamp (see "Determine merge
+  # timestamp" below).
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve-dates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Determine merge timestamp
+        id: merged-at
+        env:
+          # Read via env, never inline `${{ }}` interpolation inside the
+          # script body, per house rule.
+          HEAD_COMMIT_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${HEAD_COMMIT_TIMESTAMP}" ]]; then
+            MERGED_AT="${HEAD_COMMIT_TIMESTAMP}"
+          else
+            # workflow_dispatch (or any trigger with no head_commit payload):
+            # fall back to the currently checked-out main HEAD's own commit
+            # timestamp.
+            MERGED_AT="$(git log -1 --format=%cI HEAD)"
+          fi
+
+          echo "merged_at=${MERGED_AT}" >> "${GITHUB_OUTPUT}"
+          echo "Resolving markers against merge timestamp: ${MERGED_AT}"
+
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install client-tools dependencies
+        working-directory: scripts/client-tools
+        run: bun install --frozen-lockfile
+
+      - name: Resolve on-promotion markers
+        id: resolve
+        working-directory: scripts/client-tools
+        env:
+          MERGED_AT: ${{ steps.merged-at.outputs.merged_at }}
+        run: bun run src/commands/whats-new/resolve-dates-cli.ts
+
+      - name: Report when there is nothing to resolve
+        if: steps.resolve.outputs.resolved_count == '0'
+        run: echo "No 'on-promotion' markers found. Nothing to resolve; not opening a PR."
+
+      # -----------------------------------------------------------------------
+      # Only reached when at least one marker was actually resolved (and the
+      # file on disk was rewritten by the previous step).
+      # -----------------------------------------------------------------------
+      - name: Commit resolved dates to a throwaway branch
+        if: steps.resolve.outputs.resolved_count != '0'
+        id: commit
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+          RESOLVED_COUNT: ${{ steps.resolve.outputs.resolved_count }}
+          RESOLVED_IDS: ${{ steps.resolve.outputs.resolved_ids }}
+          MERGED_AT: ${{ steps.merged-at.outputs.merged_at }}
+        run: |
+          set -euo pipefail
+
+          BRANCH="whats-new/resolve-dates-${GITHUB_SHA}"
+          FILE="apps/api/src/data/whats-new/whats-new.ts"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "${BRANCH}"
+          git add "${FILE}"
+          git commit -m "chore(whats-new): resolve on-promotion markers to ${MERGED_AT}"
+
+          # Safe on a throwaway branch we exclusively own (never main/staging):
+          # makes a workflow_dispatch retry idempotent instead of failing on a
+          # non-fast-forward push.
+          git push --force-with-lease origin "${BRANCH}"
+
+          echo "branch=${BRANCH}" >> "${GITHUB_OUTPUT}"
+
+          BODY="Auto-resolved ${RESOLVED_COUNT} \`publishedAt: 'on-promotion'\` marker(s) in \`${FILE}\` to the merge timestamp \`${MERGED_AT}\` (HOS-1214 AC-14).
+
+          Resolved entry id(s): ${RESOLVED_IDS}
+
+          Opened after a merge to \`main\` — never before. See the What's New promotion gate's header comment (\`.github/workflows/whats-new-resolve-dates.yml\`) for why an abandoned promotion PR can never reach this step."
+
+          # Idempotent, mirroring sync-main-to-staging.yml: reuse an
+          # already-open PR from this branch instead of duplicating it.
+          existing="$(gh pr list --head "${BRANCH}" --base staging --state open \
+            --json number --jq '.[0].number // empty')"
+          if [[ -n "${existing}" ]]; then
+            echo "PR #${existing} already open for ${BRANCH}; leaving it as-is."
+            exit 0
+          fi
+
+          gh pr create --base staging --head "${BRANCH}" \
+            --title "chore(whats-new): resolve on-promotion markers (${MERGED_AT})" \
+            --body "${BODY}"

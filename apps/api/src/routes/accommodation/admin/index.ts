@@ -5,6 +5,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { adminAccommodationReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddFaqRoute } from './addFaq';
+import { adminAddFeaturedMediaRoute } from './addFeaturedMedia';
 import { adminAddMediaRoute } from './addMedia';
 import { adminArchiveMediaRoute } from './archiveMedia';
 import { adminBatchAccommodationsRoute } from './batch';
@@ -108,6 +109,11 @@ app.route('/', adminGetMediaRoute);
 // NOTE: Fixed-suffix routes like /:id/media/reorder MUST be registered BEFORE
 // /:id/media/:mediaId to prevent Hono matching "reorder" as a UUID param.
 // This comment block is the ordering anchor for future media endpoints.
+// POST /:id/media/featured - Upload straight to cover (HOS-803).
+// Registered before POST /:id/media so "featured" resolves as the fixed
+// suffix rather than being absorbed by the collection route.
+app.route('/', adminAddFeaturedMediaRoute);
+
 app.route('/', adminAddMediaRoute);
 
 // PUT /:id/media/:mediaId/featured - Promote a photo as the featured image

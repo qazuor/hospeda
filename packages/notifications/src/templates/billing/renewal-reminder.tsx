@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { resolveRenewalReminderFooter } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
@@ -18,6 +19,18 @@ export interface RenewalReminderProps {
     /** Currency code (e.g. 'ARS'). Omitted when amount is not available. */
     currency?: string;
     renewalDate?: string;
+    /**
+     * The subscription's billing vertical (HOS-1283) — the raw
+     * `billing_subscriptions.product_domain` string, or `null`/`undefined` on
+     * a pre-domain row. `RENEWAL_REMINDER` fires for an active subscription in
+     * ANY vertical (`notification-schedule.job.ts` does not scope its sweep to
+     * accommodation), so the closing line below used to tell every gastronomy,
+     * experience, tourist and partner subscriber "gracias por confiar en
+     * Hospeda para tus necesidades de alojamiento turístico" — see
+     * `resolveRenewalReminderFooter`. Omitted or unrecognized fails open to
+     * that original accommodation sentence.
+     */
+    productDomain?: string | null;
 }
 
 /**
@@ -32,13 +45,15 @@ export function RenewalReminder({
     baseUrl,
     amount,
     currency,
-    renewalDate
+    renewalDate,
+    productDomain
 }: RenewalReminderProps) {
     const formattedAmount =
         amount !== undefined && currency ? formatCurrency({ amount, currency }) : undefined;
     const formattedRenewalDate = renewalDate
         ? formatDate({ dateString: renewalDate })
         : 'próximamente';
+    const footerLine = resolveRenewalReminderFooter(productDomain);
 
     return (
         <EmailLayout
@@ -76,12 +91,10 @@ export function RenewalReminder({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Gestionar suscripción</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Gestionar suscripción</Button>
             </Section>
 
-            <Text style={styles.footerNote}>
-                Gracias por confiar en Hospeda para tus necesidades de alojamiento turístico.
-            </Text>
+            <Text style={styles.footerNote}>{footerLine}</Text>
         </EmailLayout>
     );
 }

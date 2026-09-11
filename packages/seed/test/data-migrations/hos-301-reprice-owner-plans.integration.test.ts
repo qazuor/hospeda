@@ -192,6 +192,10 @@ async function ensureOwnerPlanFixture(
         const inserted = await tx
             .insert(billingPlans)
             .values({
+                // HOS-1233: derived from the slug, never hardcoded — several of these
+                // fixtures seed TOURIST plans, and stamping 'accommodation' would
+                // reproduce the misfiling the migration tests exist to check.
+                productDomain: input.slug.startsWith('tourist') ? 'tourist' : 'accommodation',
                 name: input.slug,
                 description: `Test fixture plan for ${input.slug}`,
                 active: true,

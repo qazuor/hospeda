@@ -547,10 +547,20 @@ export class ExperienceService extends BaseCommerceListingService<
      * 1. **Schema validation**: payload is validated with
      *    `ExperienceOwnerUpdateInputSchema`, which ONLY permits operational
      *    sections (`openingHours`, `contactInfo`, `socialNetworks`, `media`,
-     *    `isPriceOnRequest`, `richDescription`, `amenityIds`, `featureIds`).
+     *    `isPriceOnRequest`, `richDescription`, `amenityIds`, `featureIds`,
+     *    the `meetingPoint*` trio, and the practical ficha fields
+     *    `durationMinutes` / `whatToBring` / `requirements` /
+     *    `cancellationPolicy` / `acceptsPrivateGroups`).
      *    Identity fields (`name`, `slug`, `type`, `priceFrom`, `priceUnit`,
      *    `destinationId`) are absent from the schema — any forged keys in the
      *    HTTP body are silently stripped.
+     *
+     *    That is also why adding a ficha field needs NO change here: the
+     *    permitted set IS the schema, not a list maintained in this method. The
+     *    corollary is the trap — a field left out of
+     *    `ExperienceOwnerUpdateInputSchema` is stripped in silence and this
+     *    method still answers 200, so the schema is the only place to look when
+     *    an owner reports that an edit "does not save".
      * 2. **Ownership check**: a non-owner receives `NOT_FOUND` to prevent
      *    existence leakage (same pattern as SPEC-169 for accommodations).
      *    Staff holding `COMMERCE_EDIT_ALL` bypass the ownership check.

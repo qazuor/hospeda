@@ -47,15 +47,39 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
  * Mapping to `@repo/billing` entitlement gates (Q2, §5.7):
  * - `text_improve`         → `ai_text_improve`
  * - `chat`                 → `ai_chat`
+ * - `chat_gastronomy`      → `ai_chat` (read from the GASTRONOMY subscription)
+ * - `chat_experience`      → `ai_chat` (read from the EXPERIENCE subscription)
  * - `search`               → `ai_search`
  * - `support`              → `ai_support`
  * - `translate`            → `ai_translate`
  * - `accommodation_import` → `ai_accommodation_import`
  * - `post_generate`        → n/a (admin-only; permission-gated via PermissionEnum.POST_CREATE)
+ *
+ * ## Why the chat has three features and one entitlement (HOS-400)
+ *
+ * `chat`, `chat_gastronomy` and `chat_experience` are the SAME product gated by
+ * the SAME entitlement key (`ai_chat`). They are separate `AiFeature` values for
+ * one reason: this enum is the metering axis. Monthly quota is enforced by
+ * counting `ai_usage` rows keyed by `(userId, feature)`, so two verticals
+ * sharing a feature value share a counter no matter how many distinct
+ * `LimitKey`s point at them — and a per-vertical cap over a pooled count is two
+ * numbers reading the same bucket.
+ *
+ * That matters because an owner can hold several domains at once: someone who
+ * is a host AND a restaurateur would otherwise spend their accommodation chat
+ * budget on gastronomy traffic, which is precisely the cross-domain leak
+ * SPEC-239 isolates against. One feature per vertical is what makes
+ * `MAX_AI_CHAT_GASTRONOMY_PER_MONTH` count only gastronomy chats.
+ *
+ * Splitting by ENTITLEMENT instead was rejected: `ai_chat` is one capability
+ * that different subscriptions grant, and duplicating it per vertical would put
+ * the same product in three places in the catalogue for a bookkeeping reason.
  */
 export const AiFeatureSchema = z.enum([
     'text_improve',
     'chat',
+    'chat_gastronomy',
+    'chat_experience',
     'search',
     'support',
     'translate',

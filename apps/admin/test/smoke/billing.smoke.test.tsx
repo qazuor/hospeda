@@ -150,13 +150,27 @@ vi.mock('@/features/billing-subscriptions/hooks', () => ({
     useExtendTrialMutation: () => ({ mutate: vi.fn(), isPending: false }),
     // Added in commit 3bcc5d786 ("feat(admin): subscription pause/resume UI")
     usePauseSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false }),
-    useResumeSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false })
+    useResumeSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false }),
+    // Added by HOS-180 ("feat(admin): courtesy grant action")
+    useGrantCourtesyMutation: () => ({ mutate: vi.fn(), isPending: false }),
+    // Added by HOS-1314 ("feat(admin): grant comp subscription action") — a
+    // whole-module vi.mock leaves an unlisted export `undefined`, and the
+    // route calls this one unconditionally on every render
+    // (`const grantCompMutation = useGrantCompMutation();`), so omitting it
+    // crashes the smoke render rather than merely producing a missing button.
+    useGrantCompMutation: () => ({ mutate: vi.fn(), isPending: false })
 }));
 
 vi.mock('@/features/billing-subscriptions/types', () => ({}));
 
 vi.mock('@/features/billing-subscriptions/utils', () => ({
-    getPlanBySlug: () => null
+    getPlanBySlug: () => null,
+    // Added by HOS-1314. Not invoked during a mount-only smoke render (it
+    // only runs inside the grant-comp dialog's confirm handler), but this is
+    // a whole-module mock and the route file imports this symbol, so it is
+    // added defensively rather than waiting for a future functional test to
+    // hit the same "no export defined on the mock" crash.
+    buildGrantCompPayload: () => ({ customerId: '', planId: '', interval: 'monthly' })
 }));
 
 vi.mock('@/features/billing-subscriptions/CancelSubscriptionDialog', () => ({

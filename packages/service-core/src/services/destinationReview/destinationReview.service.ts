@@ -177,7 +177,8 @@ export class DestinationReviewService extends BaseCrudService<
         const [moderationResult, thresholds] = await Promise.all([
             reviewText
                 ? moderateText({ text: reviewText, context: 'review' })
-                : Promise.resolve({ score: 0 }),
+                : // No text is not a failed verdict: there is nothing to judge.
+                  Promise.resolve({ score: 0, degraded: false }),
             getThresholdForContext({ context: 'review' })
         ]);
 
@@ -185,7 +186,8 @@ export class DestinationReviewService extends BaseCrudService<
             entityType: 'destination',
             verificationLevel: 'none',
             moderationScore: moderationResult.score,
-            pendingThreshold: thresholds.pending
+            pendingThreshold: thresholds.pending,
+            degraded: moderationResult.degraded
         });
 
         return { ...data, moderationState };

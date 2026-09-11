@@ -1,4 +1,49 @@
 {
+    "qrCode": {
+        "description": {
+            "max": "The description must not exceed {{max}} characters"
+        },
+        "entityRef": {
+            "forbiddenForManual": "A manual code cannot be attached to an entity",
+            "requiredForGenerated": "A generated code must name the entity it came from"
+        },
+        "label": {
+            "max": "The QR code name must not exceed {{max}} characters",
+            "min": "The QR code name is required"
+        },
+        "renderOptions": {
+            "centerLogo": {
+                "levelRequiredWithLogo": "Turning the centre logo on must also state the error-correction level, because the stored one is not visible from here",
+                "logoRequiredWithLevel": "Lowering the error-correction level must also state whether the code carries a centre logo, because the stored one is not visible from here",
+                "requiresErrorCorrection": "A centre logo needs a higher error-correction level (Q or H): the logo covers part of the symbol, and only error correction makes it readable again"
+            },
+            "color": {
+                "invalid": "The colour must be hexadecimal, in #rgb, #rrggbb or #rrggbbaa form"
+            },
+            "margin": {
+                "max": "The margin must not exceed {{max}} modules",
+                "min": "The margin must not be smaller than {{min}} modules"
+            },
+            "size": {
+                "max": "The size must not exceed {{max}} pixels",
+                "min": "The size must be at least {{min}} pixels for a camera to read the code"
+            }
+        },
+        "scan": {
+            "window": {
+                "invalid": "Time window must be 7d or 30d"
+            }
+        },
+        "slug": {
+            "invalidPattern": "The code may only use unambiguous characters: no 0, O, 1, l or I",
+            "max": "The code must not exceed {{max}} characters",
+            "min": "The code must be at least {{min}} characters"
+        },
+        "targetUrl": {
+            "invalidUrl": "The destination must be a valid URL",
+            "max": "The destination must not exceed {{max}} characters"
+        }
+    },
     "reviewMarkedFields": "Check the highlighted fields.",
     "accommodation": {
         "address": {
@@ -54,11 +99,6 @@
                 "required": "La cantidad mínima de noches es obligatoria",
                 "min": "La cantidad mínima de noches no puede ser menor a {{min}}",
                 "max": "La cantidad mínima de noches no puede superar los {{max}}"
-            }
-        },
-        "featuredToggle": {
-            "isFeatured": {
-                "required": "El destacado es obligatorio"
             }
         },
         "featureFlag": {
@@ -522,6 +562,24 @@
             }
         }
     },
+    "ai": {
+        "chat": {
+            "accommodationId": {
+                "invalidUuid": "The accommodation ID must be a valid UUID",
+                "notAllowedForEntityType": "accommodationId cannot be sent when the question is about a gastronomy or experience listing"
+            },
+            "entityId": {
+                "conflictsWithAccommodationId": "entityId and accommodationId point to different listings",
+                "invalidUuid": "The listing ID must be a valid UUID",
+                "required": "The ID of the listing being asked about is missing"
+            }
+        },
+        "textImprove": {
+            "entityId": {
+                "invalidUuid": "The entity ID must be a valid UUID"
+            }
+        }
+    },
     "allianceLead": {
         "adminList": {
             "page": {
@@ -763,6 +821,11 @@
         }
     },
     "billing": {
+        "checkoutRetry": {
+            "recovery": {
+                "invalid": "The recovery status is not valid"
+            }
+        },
         "addon": {
             "cancel": {
                 "reason": {
@@ -944,6 +1007,11 @@
                 "invalidType": "El new plan id tiene un tipo de dato inválido",
                 "max": "El new plan id no puede superar los {{max}} caracteres",
                 "min": "El new plan id debe tener al menos {{min}} caracteres"
+            },
+            "planSlug": {
+                "invalid": "Plan slug is not in a valid format",
+                "invalidType": "Plan slug has an invalid data type",
+                "max": "Plan slug cannot exceed {{max}} characters"
             },
             "previousPlanId": {
                 "invalidType": "El previous plan id tiene un tipo de dato inválido",
@@ -1179,7 +1247,13 @@
                 "invalid": "Local subscription ID is not valid",
                 "invalidType": "Local subscription ID has an invalid data type"
             },
+            "payerEmail": {
+                "invalid": "The payment email is not valid",
+                "invalidType": "The payment email has an invalid data type",
+                "max": "The payment email cannot exceed {{max}} characters"
+            },
             "planSlug": {
+                "invalid": "Plan slug is not in a valid format",
                 "invalidType": "Plan slug has an invalid data type",
                 "max": "Plan slug cannot exceed {{max}} characters",
                 "min": "Plan slug must be at least {{min}} characters"
@@ -1246,6 +1320,15 @@
             "triggerSource": {
                 "invalidType": "El trigger source tiene un tipo de dato inválido",
                 "max": "El trigger source no puede superar los {{max}} caracteres"
+            }
+        },
+        "payerEmail": {
+            "known": {
+                "response": {
+                    "hasKnownPayerEmail": {
+                        "invalidType": "El indicador de email de pago conocido debe ser un booleano"
+                    }
+                }
             }
         },
         "trial": {
@@ -1458,6 +1541,9 @@
             "state": {
                 "invalid": "Media state must be 'visible' or 'archived'"
             },
+            "update": {
+                "atLeastOneField": "You must fill in at least one field: caption, description, alt text or attribution"
+            },
             "url": {
                 "invalid": "The URL is not valid"
             }
@@ -1534,6 +1620,9 @@
             },
             "state": {
                 "invalid": "Media state must be 'visible' or 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "You must fill in at least one field: caption, description, alt text or attribution"
             },
             "url": {
                 "invalid": "The URL is not valid"
@@ -1763,6 +1852,14 @@
             "tooLow": "El max rating es demasiado bajo"
         },
         "media": {
+            "featured": {
+                "planCap": {
+                    "int": "The plan photo limit must be an integer"
+                },
+                "previousId": {
+                    "invalid": "The previous cover image identifier is not valid"
+                }
+            },
             "image": {
                 "alt": {
                     "max": "El texto alternativo no puede superar los {{max}} caracteres",
@@ -1845,6 +1942,9 @@
             "invalid": "El non_negative_int no es válido"
         },
         "openingHours": {
+            "day": {
+                "notOpenOrClosed": "Mark the day as closed or add at least one shift"
+            },
             "shift": {
                 "invalidTime": "The time format is not valid",
                 "sameOpenAndClose": "The closing time cannot be the same as the opening time"
@@ -2399,6 +2499,27 @@
         "productType": {
             "invalid": "El product type no es válido"
         },
+        "qrCodeCenterLogo": {
+            "invalid": "The QR code centre logo is not valid"
+        },
+        "qrCodeErrorCorrectionLevel": {
+            "invalid": "Invalid error correction level"
+        },
+        "qrCodeFormat": {
+            "invalid": "Invalid QR code format"
+        },
+        "qrCodePurpose": {
+            "invalid": "Invalid QR code purpose"
+        },
+        "qrCodeSource": {
+            "invalid": "Invalid QR code source"
+        },
+        "qrScanDeviceType": {
+            "invalid": "Invalid QR scan device type"
+        },
+        "qrScanOs": {
+            "invalid": "Invalid QR scan operating system"
+        },
         "recurrenceType": {
             "invalid": "El recurrence type no es válido"
         },
@@ -2465,6 +2586,9 @@
         },
         "visibility": {
             "invalid": "El visibility no es válido"
+        },
+        "partnerLogoClickDestination": {
+            "invalid": "The logo click destination is not valid"
         }
     },
     "event": {
@@ -2795,6 +2919,9 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "cancellationPolicy": {
+            "max": "The cancellation policy cannot exceed {{max}} characters"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -2805,6 +2932,13 @@
             "success": {
                 "required": "El resultado exitoso es obligatorio"
             }
+        },
+        "durationMinutes": {
+            "int": "The duration must be a whole number of minutes",
+            "max": "The duration cannot exceed {{max}} minutes",
+            "max_one": "The duration cannot exceed {{max}} minute",
+            "max_other": "The duration cannot exceed {{max}} minutes",
+            "min": "The duration must be at least {{min}} minute"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
@@ -2817,11 +2951,38 @@
                 }
             }
         },
+        "meetingPoint": {
+            "max": "The meeting point cannot exceed {{max}} characters"
+        },
+        "meetingPointDirections": {
+            "item": {
+                "max": "Each how-to-get-there instruction cannot exceed {{max}} characters",
+                "min": "How-to-get-there instructions cannot be empty"
+            },
+            "max": "You cannot add more than {{max}} how-to-get-there instructions",
+            "max_one": "You cannot add more than {{max}} how-to-get-there instruction",
+            "max_other": "You cannot add more than {{max}} how-to-get-there instructions"
+        },
+        "meetingPointLat": {
+            "max": "The meeting point latitude cannot exceed {{max}}",
+            "min": "The meeting point latitude must be at least {{min}}"
+        },
+        "meetingPointLong": {
+            "max": "The meeting point longitude cannot exceed {{max}}",
+            "min": "The meeting point longitude must be at least {{min}}"
+        },
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
         },
         "priceUnit": {
             "requiredUnlessOnRequest": "Choose a price unit (per day, per hour, per person or per group). If the experience has no fixed price, tick \"Price on request\"."
+        },
+        "requirements": {
+            "item": {
+                "max": "Each requirement cannot exceed {{max}} characters",
+                "min": "Requirements cannot be empty"
+            },
+            "max": "You cannot add more than {{max}} requirements"
         },
         "review": {
             "content": {
@@ -2837,6 +2998,25 @@
                 "max": "El título de la reseña no puede superar los {{max}} caracteres",
                 "min": "El título de la reseña debe tener al menos {{min}} caracteres"
             }
+        },
+        "whatToBring": {
+            "item": {
+                "max": "Each what-to-bring item cannot exceed {{max}} characters",
+                "min": "What-to-bring items cannot be empty"
+            },
+            "max": "You cannot add more than {{max}} what-to-bring items",
+            "max_one": "You cannot add more than {{max}} what-to-bring item",
+            "max_other": "You cannot add more than {{max}} what-to-bring items"
+        }
+    },
+    "experienceCertificate": {
+        "recipientName": {
+            "required": "Enter the name of the person who did the experience",
+            "tooLong": "The name cannot exceed 120 characters",
+            "invalidCharacters": "The name cannot contain control characters"
+        },
+        "completedAt": {
+            "format": "The date must use the YYYY-MM-DD format"
         }
     },
     "experienceFeature": {
@@ -3045,6 +3225,36 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "dailySpecial": {
+            "title": {
+                "min": "The daily special name is required",
+                "max": "The daily special name cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The daily special description cannot exceed {{max}} characters"
+            },
+            "priceCents": {
+                "int": "The daily special price must be a whole number of cents",
+                "min": "The daily special price cannot be negative",
+                "max": "The daily special price exceeds the maximum allowed"
+            },
+            "validFrom": {
+                "invalid": "The start date must be a valid date in YYYY-MM-DD format"
+            },
+            "validOn": {
+                "invalid": "The lookup date must be a valid date in YYYY-MM-DD format"
+            },
+            "validUntil": {
+                "invalid": "The end date must be a valid date in YYYY-MM-DD format",
+                "beforeValidFrom": "The end date cannot be earlier than the start date",
+                "windowTooLong": "A daily special cannot run for more than {{max}} days",
+                "windowTooLong_one": "A daily special cannot run for more than {{max}} day",
+                "windowTooLong_other": "A daily special cannot run for more than {{max}} days"
+            }
+        },
+        "dailySpecials": {
+            "max": "Today's menu cannot have more than {{max}} dishes"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -3056,6 +3266,38 @@
                 "required": "El resultado exitoso es obligatorio"
             }
         },
+        "event": {
+            "title": {
+                "min": "The event title is required",
+                "max": "The event title cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The event description cannot exceed {{max}} characters"
+            },
+            "dateRequiredForOnce": "A one-off event needs a date",
+            "dateForbiddenForWeekly": "A weekly event takes no date: it repeats every week",
+            "weekdayRequiredForWeekly": "A weekly event needs a day of the week",
+            "weekdayForbiddenForOnce": "A one-off event takes no day of the week",
+            "endTimeEqualsStart": "The end time cannot be the same as the start time"
+        },
+        "eventDate": {
+            "invalid": "The event date is not valid (YYYY-MM-DD format)"
+        },
+        "eventRecurrence": {
+            "invalid": "The event recurrence is not valid"
+        },
+        "eventTime": {
+            "invalid": "The event time is not valid (HH:MM format)"
+        },
+        "eventWeekday": {
+            "int": "The day of the week must be a whole number",
+            "range": "The day of the week must be between 0 (Sunday) and 6 (Saturday)"
+        },
+        "events": {
+            "max": "The schedule cannot have more than {{max}} events",
+            "max_one": "The schedule cannot have more than {{max}} event",
+            "max_other": "The schedule cannot have more than {{max}} events"
+        },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
         },
@@ -3065,6 +3307,54 @@
                     "invalid": "The ordered list must be an array of valid UUIDs",
                     "min": "The ordered list must contain at least {{min}} item"
                 }
+            }
+        },
+        "menu": {
+            "sections": {
+                "max": "The menu cannot have more than {{max}} sections"
+            }
+        },
+        "menuFileKind": {
+            "invalid": "The menu file type is not valid"
+        },
+        "menuFileUrl": {
+            "invalid": "The menu file URL is not valid"
+        },
+        "menuItem": {
+            "name": {
+                "min": "The dish name is required",
+                "max": "The dish name cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The dish description cannot exceed {{max}} characters"
+            },
+            "priceCents": {
+                "int": "The dish price must be a whole number of cents",
+                "min": "The dish price cannot be negative",
+                "max": "The dish price exceeds the maximum allowed"
+            }
+        },
+        "menuItemPhoto": {
+            "url": {
+                "invalid": "The dish photo URL is not valid"
+            },
+            "publicId": {
+                "max": "The dish photo identifier cannot exceed {{max}} characters"
+            },
+            "alt": {
+                "max": "The dish photo description cannot exceed {{max}} characters"
+            }
+        },
+        "menuSection": {
+            "name": {
+                "min": "The section name is required",
+                "max": "The section name cannot exceed {{max}} characters"
+            },
+            "description": {
+                "max": "The section description cannot exceed {{max}} characters"
+            },
+            "items": {
+                "max": "A section cannot have more than {{max}} dishes"
             }
         },
         "menuUrl": {
@@ -4792,5 +5082,16 @@
             "failed": "La validación del esquema ha fallado"
         }
     },
-    "formHasErrors": "Revisá los campos marcados"
+    "formHasErrors": "Revisá los campos marcados",
+    "partnerLogoClick": {
+        "partnerId": {
+            "invalidUuid": "Partner ID must be a valid UUID",
+            "required": "Partner ID is required"
+        }
+    },
+    "partnerStats": {
+        "windowDays": {
+            "unsupported": "The requested day window is not available"
+        }
+    }
 }

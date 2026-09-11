@@ -1,0 +1,85 @@
+-- =============================================================================
+-- 041-hos847-addon-purchases-mp-id-unique.index.sql
+-- Partial UNIQUE index enforcing "at most one add-on purchase per MercadoPago
+-- preapproval id" (HOS-847 PR 7c).
+--
+-- Why this file exists:
+--   `findRecurringAddonPurchaseByPreapprovalId`
+--   (apps/api/src/services/addon-recurring-period.ts) is how the MercadoPago
+--   webhook decides whether an incoming `subscription_authorized_payment` is an
+--   ADD-ON charge or a PLAN renewal. It resolves the preapproval id against
+--   `billing_addon_purchases.mp_subscription_id` and takes `limit(1)` with no
+--   ordering, on the stated invariant that a preapproval id belongs to at most
+--   one purchase row.
+--
+--   Its own @remarks say that invariant had no enforcement: "Nothing at the
+--   DATABASE level enforces that — there is no unique index on
+--   `mp_subscription_id`. Adding one, or detecting a violation, is left to
+--   PR 7's reconciler". This is that index.
+--
+--   Two paths write the column, and both rely on the invariant rather than
+--   proving it: `insertPendingRecurringPurchase` inserts a row carrying a fresh
+--   preapproval id, and `resolveRecurringAddonCheckoutIdempotency` either hands
+--   the SAME preapproval back (writing no new row) or cancels the stale one and
+--   closes its row before opening another. A bug, a race, or a hand-written
+--   repair in either could put one preapproval id on two rows — and then a
+--   `limit(1)` with no ordering silently picks one of them, so a real charge
+--   lands on an arbitrary purchase and the other row's benefit is applied or
+--   revoked against the wrong customer.
+--
+--   The index MUST be partial (`WHERE mp_subscription_id IS NOT NULL`): the
+--   column is NULL on every one-time add-on (paid by Preference, never a
+--   preapproval) and on any recurring purchase whose checkout has not created
+--   the preapproval yet, and a plain UNIQUE would collapse every one of those
+--   rows into a single NULL collision. Drizzle cannot express a partial unique
+--   index for this table, so per the Carril 2 golden rule
+--   (packages/db/CLAUDE.md "Migrations") it lives here.
+--
+--   Soft-deleted rows are deliberately INSIDE the index (no
+--   `AND deleted_at IS NULL`). A preapproval id is provider-unique forever;
+--   letting a soft-deleted row release its id would allow exactly the duplicate
+--   this index exists to forbid.
+--
+-- No auto-dedup:
+--   Like 031 (and unlike the audit-table indexes 029/030), this file deletes
+--   NOTHING first. A duplicate here means two purchase rows claim one real
+--   MercadoPago preapproval — a money-affecting anomaly that a human must read
+--   before anything is touched, since either row may be the one whose
+--   entitlement the customer is actually using. If a duplicate exists, this
+--   CREATE fails loudly and the extras run aborts. That is the intended
+--   behaviour, not a defect to smooth over: resolving it by dropping a row
+--   would destroy the evidence of which charge belongs to whom.
+--
+-- The plain index stays (for now):
+--   `idx_addon_purchases_mp_subscription_id` (the non-unique Drizzle index on
+--   the same column) is redundant for READS — every query on this column in the
+--   codebase is `mp_subscription_id = $1`, which implies the partial predicate,
+--   so the planner can use this index for all of them; nothing queries
+--   `mp_subscription_id IS NULL`. It is NOT dropped in the same release, on the
+--   repo's own expand/contract rule (HOS-433): structural migrations run BEFORE
+--   extras (`db:migrate` → `db:apply-extras`), so a same-release DROP would
+--   remove the old index and then, if this CREATE aborted on a live duplicate,
+--   leave the column with NO index at all — in precisely the state where a
+--   human is investigating a money-affecting anomaly. Dropping it is a safe
+--   follow-up once this index is confirmed present in every environment.
+--
+-- Idempotency:
+--   CREATE UNIQUE INDEX IF NOT EXISTS is idempotent. NOT created CONCURRENTLY,
+--   and NOT because it could not be: the runner
+--   (packages/db/scripts/apply-postgres-extras.mjs) issues one `client.query()`
+--   per FILE, so a single-statement file like this one is not inside any
+--   explicit transaction block and CONCURRENTLY would be accepted. The reason
+--   is cost: `billing_addon_purchases` is small, so the ACCESS EXCLUSIVE lock
+--   this CREATE takes lasts milliseconds, while CONCURRENTLY doubles the table
+--   scans and can leave an INVALID index behind on failure — a worse thing to
+--   hand a human than a fast, atomic failure.
+--
+--   One caveat if this file ever grows a second statement: Postgres wraps a
+--   multi-statement simple query in an IMPLICIT transaction block, and
+--   CONCURRENTLY genuinely cannot run there. Then the "could not" would be
+--   true — it just is not true today.
+-- =============================================================================
+
+CREATE UNIQUE INDEX IF NOT EXISTS billing_addon_purchases_mp_id_uniq
+    ON billing_addon_purchases (mp_subscription_id)
+    WHERE mp_subscription_id IS NOT NULL;

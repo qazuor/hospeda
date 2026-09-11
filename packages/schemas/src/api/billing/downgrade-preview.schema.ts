@@ -233,6 +233,57 @@ export const DowngradePreviewSchema = z.object({
 export type DowngradePreview = z.infer<typeof DowngradePreviewSchema>;
 
 // ---------------------------------------------------------------------------
+// Commerce downgrade preview (HOS-1122)
+// ---------------------------------------------------------------------------
+
+/**
+ * The excess preview for a COMMERCE downgrade — one vertical, one dimension.
+ *
+ * A separate shape from {@link DowngradePreviewSchema} rather than a widening
+ * of it, and the split is deliberate. That preview's four dimensions are
+ * accommodations, promotions, per-accommodation photos and grandfather content
+ * flags; a gastronomy or experience subscription has none of them. Reusing it
+ * would mean shipping `accommodations: { cap: -1, activeCount: 0, … }` on every
+ * commerce response — a zero that says "this owner has no accommodations"
+ * when the truth is "this question was never asked". The limit engine already
+ * resolves an undeclared cap to *unlimited* through five layers without raising
+ * (HOS-1078); a preview that spells that same silence out as data is how it
+ * reaches a UI.
+ *
+ * Commerce has exactly one restrictable dimension: the vertical's listing cap
+ * (`MAX_GASTRONOMIES` / `MAX_EXPERIENCES`), which since HOS-975 genuinely
+ * differs between tiers — gastronomy 1/3/5, experiences 1/5/10.
+ */
+export const CommerceDowngradePreviewSchema = z.object({
+    /** The vertical this preview is about (`'gastronomy'` | `'experience'`). */
+    vertical: z.enum(['gastronomy', 'experience']),
+    /**
+     * The target tier's listing cap.
+     *
+     * NEVER `-1` in practice: every commerce tier declares its vertical's
+     * listing limit through `commerceVerticalTier`, and the producer REFUSES to
+     * build a preview for a tier that does not (rather than treating the absent
+     * key as unlimited, which is the fail-open this whole flow has to avoid).
+     * The sentinel stays representable only because {@link PlanCapSchema} is
+     * shared.
+     */
+    cap: PlanCapSchema,
+    /** Listings currently linked to the subscription and not already restricted. */
+    activeCount: z.number().int().nonnegative(),
+    /** How many of them the target tier no longer covers (`activeCount − cap`). */
+    excessCount: z.number().int().nonnegative(),
+    /**
+     * Every currently-covered listing, ordered by default-keep priority
+     * (most-recently-updated first). The first `cap` entries carry
+     * `keepByDefault: true`. Empty when there is no excess.
+     */
+    items: z.array(DowngradeExcessItemSchema),
+    /** Convenience flag: `excessCount > 0`. */
+    hasExcess: z.boolean()
+});
+export type CommerceDowngradePreview = z.infer<typeof CommerceDowngradePreviewSchema>;
+
+// ---------------------------------------------------------------------------
 // HTTP query schema — GET /subscriptions/downgrade-preview
 // ---------------------------------------------------------------------------
 
@@ -328,56 +379,92 @@ export type ComputeDowngradeExcessInput = z.infer<typeof ComputeDowngradeExcessI
  *
  * @module api/billing/downgrade-preview
  */
-export const KeepSelectionsSchema = z
-    .object({
-        /**
-         * Accommodation UUIDs the host explicitly wants to KEEP active after
-         * the downgrade applies. All other active accommodations exceeding the
-         * cap will be plan-restricted (unpublished / `planRestricted` flag).
-         *
-         * The list is intersected with the actual set of active accommodations
-         * owned by the host at apply time — stale UUIDs are silently ignored.
-         *
-         * Capped at 100 entries: any host exceeding this has a data or client
-         * bug; the server rejects the payload rather than silently truncating.
-         */
-        accommodationIds: z.array(z.string().uuid()).max(100).optional(),
-        /**
-         * Promotion UUIDs the host explicitly wants to KEEP active after
-         * the downgrade applies. All other active promotions exceeding the
-         * cap will be deactivated.
-         *
-         * Stale UUIDs (promotions that no longer exist or are already inactive)
-         * are silently ignored at apply time.
-         *
-         * Capped at 100 entries (mirrors accommodationIds cap).
-         */
-        promotionIds: z.array(z.string().uuid()).max(100).optional(),
-        /**
-         * Per-accommodation map of photo URLs the host wants to keep in the
-         * visible `gallery`. Key = accommodation UUID (must be a valid UUID).
-         * Value = array of photo URL strings to keep visible.
-         *
-         * Photos currently in `gallery` that are NOT listed here and exceed
-         * the per-accommodation cap are moved to `archivedGallery` (JSONB
-         * field on `accommodations.media`). Photo identity = URL string
-         * (T-009 decision).
-         *
-         * Stale URLs (not present in the accommodation's current gallery at
-         * apply time) are silently ignored.
-         *
-         * Each per-accommodation URL array is capped at 100 entries. The map
-         * itself is capped at 100 keys (accommodations).
-         */
-        photoKeepMap: z.record(z.string().uuid(), z.array(z.string().url()).max(100)).optional()
-    })
-    .refine(
-        (val) => val.photoKeepMap === undefined || Object.keys(val.photoKeepMap).length <= 100,
-        {
-            message: 'photoKeepMap must not exceed 100 accommodation entries',
-            path: ['photoKeepMap']
-        }
-    );
+const KeepSelectionsObjectSchema = z.object({
+    /**
+     * Accommodation UUIDs the host explicitly wants to KEEP active after
+     * the downgrade applies. All other active accommodations exceeding the
+     * cap will be plan-restricted (unpublished / `planRestricted` flag).
+     *
+     * The list is intersected with the actual set of active accommodations
+     * owned by the host at apply time — stale UUIDs are silently ignored.
+     *
+     * Capped at 100 entries: any host exceeding this has a data or client
+     * bug; the server rejects the payload rather than silently truncating.
+     */
+    accommodationIds: z.array(z.string().uuid()).max(100).optional(),
+    /**
+     * Promotion UUIDs the host explicitly wants to KEEP active after
+     * the downgrade applies. All other active promotions exceeding the
+     * cap will be deactivated.
+     *
+     * Stale UUIDs (promotions that no longer exist or are already inactive)
+     * are silently ignored at apply time.
+     *
+     * Capped at 100 entries (mirrors accommodationIds cap).
+     */
+    promotionIds: z.array(z.string().uuid()).max(100).optional(),
+    /**
+     * Commerce LISTING UUIDs (gastronomies / experiences) the owner wants
+     * kept public after a commerce downgrade applies (HOS-1122). Every other
+     * listing the target tier's cap no longer covers is plan-restricted.
+     *
+     * ONE field for both verticals, not one per vertical: a commerce
+     * subscription belongs to exactly one vertical (HOS-688), so the ids in
+     * any single scheduled change are always of one kind. The apply step
+     * intersects them with the listings actually linked to THAT
+     * subscription, so an id from the other vertical matches nothing and is
+     * dropped — the same treatment a stale accommodation id already gets.
+     *
+     * Capped at 100 entries (mirrors accommodationIds).
+     */
+    listingIds: z.array(z.string().uuid()).max(100).optional(),
+    /**
+     * Per-accommodation map of photo URLs the host wants to keep in the
+     * visible `gallery`. Key = accommodation UUID (must be a valid UUID).
+     * Value = array of photo URL strings to keep visible.
+     *
+     * Photos currently in `gallery` that are NOT listed here and exceed
+     * the per-accommodation cap are moved to `archivedGallery` (JSONB
+     * field on `accommodations.media`). Photo identity = URL string
+     * (T-009 decision).
+     *
+     * Stale URLs (not present in the accommodation's current gallery at
+     * apply time) are silently ignored.
+     *
+     * Each per-accommodation URL array is capped at 100 entries. The map
+     * itself is capped at 100 keys (accommodations).
+     */
+    photoKeepMap: z.record(z.string().uuid(), z.array(z.string().url()).max(100)).optional()
+});
+
+export const KeepSelectionsSchema = KeepSelectionsObjectSchema.refine(
+    (val) => val.photoKeepMap === undefined || Object.keys(val.photoKeepMap).length <= 100,
+    {
+        message: 'photoKeepMap must not exceed 100 accommodation entries',
+        path: ['photoKeepMap']
+    }
+);
 
 /** TypeScript type inferred from {@link KeepSelectionsSchema}. */
 export type KeepSelections = z.infer<typeof KeepSelectionsSchema>;
+
+/**
+ * The commerce-facing subset of {@link KeepSelectionsSchema} (HOS-1122).
+ *
+ * A commerce vertical has exactly one restrictable dimension — its listings —
+ * so this is the whole of what a commerce downgrade request may choose between.
+ * Derived with `.pick()` off the same object rather than re-declared, so
+ * `listingIds` has ONE definition: the wire contract and the persisted metadata
+ * shape cannot drift apart into two caps or two element types.
+ *
+ * The persisted shape stays the FULL {@link KeepSelectionsSchema} — the
+ * scheduled-change metadata carries one JSON blob that
+ * `getKeepSelectionsForChange` reads back for both flows, and forking it would
+ * fork that reader too.
+ */
+export const CommerceKeepSelectionsSchema = KeepSelectionsObjectSchema.pick({
+    listingIds: true
+});
+
+/** TypeScript type inferred from {@link CommerceKeepSelectionsSchema}. */
+export type CommerceKeepSelections = z.infer<typeof CommerceKeepSelectionsSchema>;

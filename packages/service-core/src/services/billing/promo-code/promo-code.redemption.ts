@@ -28,7 +28,10 @@ import {
     SubscriptionStatusEnum,
     ValueKindEnum
 } from '@repo/schemas';
-import { calculatePromoCodeEffect } from './effect-reducer.js';
+import {
+    calculatePromoCodeEffect,
+    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE
+} from './effect-reducer.js';
 import { getPromoCodeByCode } from './promo-code.crud.js';
 import type { PromoCode } from './promo-code.service.js';
 
@@ -899,6 +902,39 @@ export async function applyPromoCode(
             remainingCycles: rawRemainingCycles,
             roundingDelta
         } = discountMutation;
+
+        // HOS-996: refuse a discount that takes the price to zero, BEFORE the
+        // redemption transaction below.
+        //
+        // This is the third and last path that can act on a zero `finalAmount`,
+        // and the only one where the order matters for real. The other two —
+        // checkout signup and the apply-to-existing-subscription seam — are
+        // fail-closed by accident: MercadoPago rejects a zero-amount preapproval,
+        // so they could only ever fail, badly explained. This path never talks to
+        // MercadoPago. It redeems first (`redeemAndRecordInTx` increments
+        // `used_count` and writes a usage row) and answers 200 with
+        // `finalAmount: 0` — so the customer spends their code on a request that
+        // grants nothing, and `/start-paid` then refuses the same code with 422.
+        //
+        // Placing the guard here, above `withTransaction`, is the whole point: a
+        // rejection after the transaction would still burn the redemption.
+        // `effectiveAmount > 0` is load-bearing, not defensive. `amount` is
+        // OPTIONAL on this function (`const effectiveAmount = amount ?? 0`) and
+        // the preview path — validating a code before a price is known — omits
+        // it. With no amount, EVERY discount computes to `finalAmount: 0`, so a
+        // bare `finalAmount === 0` would reject every code the preview ever
+        // checked, and report "this reduces the price to zero" about a price
+        // nobody supplied. Zero out of zero is not a discount to zero; there has
+        // to be a price for the code to have taken it away.
+        if (effectiveAmount > 0 && finalAmount === 0) {
+            return {
+                success: false as const,
+                error: {
+                    code: 'INVALID_PROMO_CODE',
+                    message: DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE
+                }
+            };
+        }
 
         // For subscriptionId context, remainingCycles is the value from the reducer.
         // When no subscriptionId is provided, we keep it undefined (preview path).

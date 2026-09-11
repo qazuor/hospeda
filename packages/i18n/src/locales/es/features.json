@@ -64,7 +64,7 @@
             },
             "sumarNegocio": {
                 "title": "Sumar tu negocio",
-                "description": "Restaurantes, experiencias, auspiciantes y marcas: un lugar en el mapa turístico de la región, con ficha propia, reseñas y visibilidad."
+                "description": "Locales gastronómicos, experiencias, auspiciantes y marcas: un lugar en el mapa turístico de la región, con ficha propia, reseñas y visibilidad."
             }
         }
     },
@@ -171,7 +171,7 @@
         "banner": {
             "title_one": "{{trialDays}} día gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
             "title_other": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
-            "description": "Empezás a probar todo hoy mismo: elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba de tu primera suscripción. Tus datos quedan guardados aunque decidas esperar."
+            "description": "Empezás a probar todo hoy mismo, sin tarjeta: armás tu propiedad, la publicás y ahí arranca tu prueba gratis, que es una sola para alojamientos. Tus datos quedan guardados aunque decidas esperar."
         },
         "list": {
             "aiImport": {
@@ -289,7 +289,7 @@
         }
     },
     "gastro": {
-        "who": "Para tu restaurante o experiencia",
+        "who": "Para tu local gastronómico o experiencia",
         "eyebrow": "tu negocio, en el mapa turístico",
         "title": "Gastronomía y experiencias, donde la gente planea su viaje.",
         "description": "Un restaurante, una bodega, un paseo en kayak o una cata: tu negocio tiene ficha propia dentro de Hospeda, visible para todos los que están armando su escapada por el Litoral. Vos mantenés el contenido; nosotros lo ponemos en la vidriera.",
@@ -297,6 +297,10 @@
             "ownProfile": {
                 "title": "Ficha pública propia",
                 "description": "Con fotos, descripción rica, horarios, contacto, redes y menú o precios. Aparecés en listados y búsquedas."
+            },
+            "venueEvents": {
+                "title": "La agenda de tu local",
+                "description": "Noche de música en vivo, happy hour, cena show, la promo de los martes. Con fecha, o todas las semanas el mismo día — se cargan una vez y quedan publicadas en tu ficha. Va desde el escalón Profesional."
             },
             "reviewsFaqs": {
                 "title": "Reseñas y FAQs",
@@ -306,9 +310,17 @@
                 "title": "Vos editás el contenido",
                 "description": "Actualizás horarios, contacto, media y menú cuando quieras, desde tu panel. Sin depender de nadie."
             },
+            "dailySpecials": {
+                "title": "Menú del día que se vence solo",
+                "description": "Publicá el plato del día o la sugerencia del chef con la fecha hasta la que vale. Cuando pasa, deja de mostrarse solo: nunca te queda en la ficha el menú de la semana pasada. Va desde el plan Profesional."
+            },
             "seo": {
                 "title": "Buen SEO incluido",
                 "description": "Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción."
+            },
+            "certificates": {
+                "title": "Certificados para quien hizo la salida",
+                "description": "En experiencias, emitile un certificado a la persona que la hizo: su nombre, la salida y la fecha, en un PDF para imprimir o mandarle. Lleva un QR que vuelve a tu página."
             }
         },
         "note": "Mientras tu suscripción está activa, tu ficha es pública. ¿Querés sumarte? Se hace desde «sumar mi negocio» y nuestro equipo te da el alta."
@@ -395,8 +407,8 @@
     "cta": {
         "tagline": "¿arrancamos?",
         "title": "Sumá tu alojamiento o tu negocio a Hospeda.",
-        "description_one": "Probá {{trialDays}} día gratis en tu primera suscripción si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
-        "description_other": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_one": "Probá {{trialDays}} día gratis en tu primera suscripción si alquilás, o escribinos para poner tu local gastronómico, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_other": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu local gastronómico, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
         "button": "Conocer Hospeda"
     },
     "footer": {

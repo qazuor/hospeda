@@ -26,6 +26,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@repo/ai-core', () => ({
     readAiSettings: vi.fn(),
     writeAiSettings: vi.fn(),
+    // HOS-1220: reads are fail-open per feature now, so the seed asks whether the
+    // blob configures every AiFeature before attempting a write the full-record
+    // write schema would reject. Defaults to "complete" so the pre-existing
+    // scenarios below are unaffected; the skip scenario overrides it.
+    findUnconfiguredFeatures: vi.fn(() => []),
     DEFAULT_COST_CEILINGS: {
         globalMonthlyMicroUsd: 100_000_000,
         perFeatureMonthlyMicroUsd: {
@@ -57,9 +62,11 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 import * as aiCore from '@repo/ai-core';
 import { seedAiSettings } from '../../src/required/aiSettings.seed.js';
+import { logger } from '../../src/utils/logger.js';
 
 const mockReadAiSettings = aiCore.readAiSettings as ReturnType<typeof vi.fn>;
 const mockWriteAiSettings = aiCore.writeAiSettings as ReturnType<typeof vi.fn>;
+const mockFindUnconfiguredFeatures = aiCore.findUnconfiguredFeatures as ReturnType<typeof vi.fn>;
 
 const SYSTEM_USER_ID = 'a0000000-0000-4000-8000-000000000001';
 const DEFAULT_COST_CEILINGS = aiCore.DEFAULT_COST_CEILINGS;
@@ -82,8 +89,12 @@ function makeExistingBlob(overrides: Record<string, unknown> = {}): Record<strin
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
+    // `resetAllMocks` clears implementations, not just calls — every default the
+    // mock factory declared has to be restored here, or it comes back as a
+    // `vi.fn()` returning `undefined`.
     vi.resetAllMocks();
     mockWriteAiSettings.mockResolvedValue({});
+    mockFindUnconfiguredFeatures.mockReturnValue([]);
 });
 
 // ---------------------------------------------------------------------------
@@ -213,6 +224,56 @@ describe('seedAiSettings (SPEC-211 T-002)', () => {
                 makeExistingBlob({ costCeilings: DEFAULT_COST_CEILINGS })
             );
             await seedAiSettings();
+            expect(mockWriteAiSettings).toHaveBeenCalledOnce();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // 5. Blob that does not configure every AI feature (HOS-1220)
+    // -------------------------------------------------------------------------
+
+    describe('when the blob does not configure every AI feature', () => {
+        /**
+         * Reads became fail-open per feature in HOS-1220, so this seed can now
+         * receive a blob it could not previously see — reads used to throw on it.
+         * Writes did NOT become fail-open: `writeAiSettings` validates against the
+         * full-record schema and would throw, aborting the entire seed run over a
+         * configuration gap this seed has no business filling.
+         */
+        it('should NOT attempt a write it knows the write schema would reject', async () => {
+            // Arrange
+            mockReadAiSettings.mockResolvedValue(makeExistingBlob());
+            mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy', 'chat_experience']);
+
+            // Act
+            await seedAiSettings();
+
+            // Assert
+            expect(mockWriteAiSettings).not.toHaveBeenCalled();
+        });
+
+        it('should say which features are missing, so the gap is not silent', async () => {
+            // Arrange
+            mockReadAiSettings.mockResolvedValue(makeExistingBlob());
+            mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy']);
+
+            // Act
+            await seedAiSettings();
+
+            // Assert — skipping quietly is how a gap survives a deploy.
+            const logged = JSON.stringify(vi.mocked(logger.info).mock.calls);
+            expect(logged).toContain('chat_gastronomy');
+        });
+
+        it('should still write when every feature IS configured', async () => {
+            // Arrange — the guard must not block the normal path.
+            mockReadAiSettings.mockResolvedValue(makeExistingBlob());
+            mockFindUnconfiguredFeatures.mockReturnValue([]);
+
+            // Act
+            await seedAiSettings();
+
+            // Assert
             expect(mockWriteAiSettings).toHaveBeenCalledOnce();
         });
     });

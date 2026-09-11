@@ -257,8 +257,31 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * search-engine change notification with. Optional because an unset key IS the
  * feature's hard kill switch: with no key the emitter cannot run, whatever the
  * admin toggle says. 276 + 1 = 277.
+ *
+ * +1 = HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED (HOS-937, billing category,
+ * optional, api only) — feature flag for the own-preapproval accommodation-
+ * monthly checkout, ships dark (default false). 277 + 1 = 278.
+ *
+ * +1 = HOSPEDA_BRAND_PHONE (HOS-364, core category, optional, web only) —
+ * single source of truth for the Hospeda brand contact phone number, in
+ * call/display form (no AR mobile 9); apps/web/src/lib/brand-phone.ts
+ * derives the tel:/wa.me forms from it. Ships with a production-safe
+ * default so it is not strictly required. 278 + 1 = 279.
+ *
+ * +1 = HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED (HOS-847, billing category,
+ * optional, api only) — feature flag for recurring add-on charging via a
+ * dedicated MercadoPago preapproval per add-on, ships dark (default false)
+ * until the full PR chain lands. 279 + 1 = 280.
+ *
+ * +1 = HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS (HOS-1144, testing category,
+ * optional, web only) — resolves every remote media URL to a local
+ * placeholder so CI never downloads an image from Cloudinary. Default off,
+ * set only by the workflows that build or serve apps/web. Landed on staging
+ * independently, off the same 279 base as HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED
+ * above — both merge in together, so the combined total is 279 + 2 = 281, not
+ * 280 (the value each side would compute alone against the shared base).
  */
-const EXPECTED_VAR_COUNT = 277;
+const EXPECTED_VAR_COUNT = 281;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

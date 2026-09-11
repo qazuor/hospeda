@@ -96,28 +96,36 @@ Full guard-path list, exemption rationale, and the run order
 (`db:migrate` → `db:apply-extras` → `db:seed:migrate`, schema before data) are in the
 [author guide](../../docs/guides/seed-data-migrations.md).
 
+**The run order covers columns being ADDED, not columns being REMOVED (HOS-433).** A
+backfill that reads a column the same release drops finds it already gone — `db:migrate`
+applies the whole pending batch first — so it moves zero rows and the ledger records it
+applied, permanently. Split the release (backfill in N, `DROP COLUMN` in N+1, the same
+expand/contract rule the structural carril already follows) and declare
+`meta.requiresColumns` so the runner refuses instead of succeeding emptily.
+
 ## Test Users for Billing (SPEC-143 Block 1)
 
-A separate `--test-users` seed group creates 18 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
+A separate `--test-users` seed group creates 42 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration. 17 pre-date HOS-1268; the other 25 close the gap that issue exists for — see [Billing-state matrix](#billing-state-matrix-hos-1268) below.
 
 The group is **intentionally not part of `--required` or `--example`** — that way `pnpm db:seed` (production-shaped: `--reset --required --example`) never creates these accounts. Only the local-dev shortcut `pnpm db:fresh-dev` chains `pnpm db:seed:test-users` after the main seed completes.
+
+> **That separation is a convention, not a guard, and it has already been crossed.** `runTestUserSeeds` documents that these fixtures "must NEVER run against staging or production databases" and enforces nothing: staging carried 22 `@local.test` accounts on 2026-09-07, created 2026-08-24 02:59-03:00 alongside a full re-seed, all sharing the hard-coded `Password123!`. Production carried zero. Measured during HOS-1224; an environment guard on this command is proposed there and NOT implemented, because refusing a seed by environment is an ops decision with real blast radius (it would also block a deliberate staging fixture refresh).
 
 | Email | Role | Plan | Limits highlight |
 |-------|------|------|------------------|
 | `editor@local.test` | EDITOR | — | content moderator |
 | `sponsor@local.test` | SPONSOR | — | sponsorship flows |
 | `tourist-free@local.test` | USER | (free tier) | default entitlements |
-| `tourist-plus@local.test` | USER | `tourist-plus` | mid tourist tier |
-| `tourist-vip@local.test` | USER | `tourist-vip` | top tourist tier |
+| `tourist-vip@local.test` | USER | `tourist-vip` | the only paid tourist tier (HOS-1224 retired `tourist-plus@local.test` with its plan) |
 | `host-basico@local.test` | HOST | `owner-basico` | MAX_ACCOMMODATIONS=1, MAX_PHOTOS=15 |
 | `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=30 |
 | `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=50, MAX_ACTIVE_PROMOTIONS=unlimited |
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
-| `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
+| `host-trial@local.test` | HOST | `owner-trial` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c). Plan fixed HOS-1268 — was `owner-basico`, stale since HOS-1012 D-5 introduced the dedicated trial plan |
 | `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
-| `commerce-gastronomy@local.test` | COMMERCE_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694 |
-| `commerce-experience@local.test` | COMMERCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694 |
-| `commerce-gastronomy-at-cap@local.test` | COMMERCE_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30 |
+| `commerce-gastronomy@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
+| `commerce-experience@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
+| `commerce-gastronomy-at-cap@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30; vertical role added HOS-964 |
 | `host-commerce@local.test` | HOST | `owner-basico` | **Dual role**: also holds COMMERCE_OWNER directly (no backing listing). HOS-694 AC-3/AC-12 |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
@@ -144,11 +152,18 @@ fixtures close that gap:
 
 - `commerce-gastronomy@local.test` / `commerce-experience@local.test` — one
   owner per vertical, subscribed and **under** their cap (0 listings owned).
-  `subscriptionProductDomain` stamps `billing_subscriptions.product_domain`
-  with the exact vertical (`'gastronomy'` / `'experience'`, not the legacy
-  `'commerce'` umbrella) — `subscriptionMatchesDomain` requires an exact match
-  for those two domains, so an unstamped subscription (defaulting to
-  `'accommodation'`) would be invisible to the commerce entitlement loader.
+  Their subscriptions carry the exact vertical in
+  `billing_subscriptions.product_domain` (`'gastronomy'` / `'experience'`, not
+  the legacy `'commerce'` umbrella) — `subscriptionMatchesDomain` requires an
+  exact match for those two domains, so an unstamped subscription (defaulting
+  to `'accommodation'`) would be invisible to the commerce entitlement loader.
+  Since HOS-1233 T-035 that value is **derived from the plan's own row**, not
+  declared per fixture: `subscriptionProductDomain` survives only as an
+  override for a fixture that wants a domain its plan does not name. The old
+  rule — declare it for commerce, omit it everywhere else "because the
+  `'accommodation'` default is already correct" — is what filed every tourist
+  fixture as an accommodation subscriber, reproducing locally the
+  misclassification measured in prod and staging.
 - `commerce-gastronomy-at-cap@local.test` — subscribed AND already owning one
   gastronomy listing, so it sits exactly `AT` its `MAX_GASTRONOMIES: 1` cap.
   The listing is seeded via `GastronomyService.create()` (mirrors
@@ -159,7 +174,32 @@ fixtures close that gap:
   and `COMMERCE_OWNER` is granted as an `extraRole`, with **no backing
   listing** — role possession alone is what the web nav gate
   (`ROLES_WITH_COMMERCE_NAV`) and the header's three-option publish control
-  read, so a listing isn't needed to exercise AC-3 / AC-12 locally.
+  read, so a listing isn't needed to exercise AC-3 / AC-12 locally. Unlike the
+  three fixtures above, this one deliberately does NOT also hold a vertical
+  role — it has no backing listing of either vertical, so there is nothing
+  real for `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` to represent here.
+
+**HOS-964 follow-up (2026-09-07 smoke finding)**: the three commerce-owner
+fixtures WITH a real vertical (`commerce-gastronomy`, `commerce-experience`,
+`commerce-gastronomy-at-cap`) now also hold the matching vertical role
+(`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`) via `extraRoles`, granted alongside
+the legacy `COMMERCE_OWNER` in [`testUsers.seed.ts`](src/test-users/testUsers.seed.ts)
+— and the three `gastro-owner-*@local.test` fixtures in
+[`example/gastronomies.seed.ts`](src/example/gastronomies.seed.ts) now get
+`GASTRONOMY_OWNER` the same way. This matches what production's
+`createForOwner` (`packages/service-core/src/services/commerce/base-commerce-listing.service.ts`)
+actually grants — BOTH the legacy and the vertical role, in the SAME
+transaction as the listing (HOS-1077) — which these fixtures had drifted from:
+they only ever held the retiring `COMMERCE_OWNER`, so any audience targeting
+gated on the vertical role (the What's New audience enum, the HOS-788 web
+welcome-tour split) silently never reached a single seeded commerce owner.
+Known residual gap, NOT fixed here (reported, not actioned, per the "report
+don't act on cleanup" convention): `example/experiences.seed.ts` reuses
+`gastro-owner-julieta@local.test` as the owner of its experience fixtures via
+a raw SQL insert that never calls `grantRole` at all, so Julieta owns
+experience listings locally without ever holding `EXPERIENCE_OWNER` — a
+second, independent drift from what `createForOwner` would have granted her
+in production, in a file this follow-up did not touch.
 
 `TestUserSpec.extraRoles` (a new, optional field) is what makes the dual-role
 fixture possible without splitting `TEST_USERS` into a second array —
@@ -168,12 +208,63 @@ target role SET, same mechanism HOS-296 already uses to heal role drift.
 
 All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
 
+### Billing-state matrix (HOS-1268)
+
+Before HOS-1268, `TestUserSpec.subStatus` only admitted `'active' | 'trialing'`
+— mora, pausa, cancelación, cortesía and comp could not be seeded in **any**
+vertical, which blocked a regression test for any bug living in one of those
+states. `ensureSubscription` (`src/test-users/testUsers.seed.ts`) now accepts
+every `SubscriptionStatusEnum` member and populates the columns each one
+needs: `trialStart`/`trialEnd` for `TRIALING`, `currentPeriodEnd` anchored 3
+days in the past for `PAST_DUE` (inside the 7-day grace window —
+`past_due` is otherwise unreachable through any local code path, per
+`dunning.job.ts`'s own docblock), `canceledAt`/`cancelAtPeriodEnd` for
+`CANCELLED`, and `courtesyStartsAt`/`courtesyEndsAt`/`courtesyCyclesGranted`
+for `COURTESY`. `PAUSED` and `COMP` write no extra columns.
+
+`buildBillingStateFixtures` generates one fixture per state
+(`past-due`/`cancelled`/`paused`/`comp`/`courtesy`) for each of the four
+verticals, rather than 20 fixtures hand-written with the same shape repeated:
+
+| Email prefix | Role | Plan |
+|---|---|---|
+| `host-<state>@local.test` | HOST | `owner-basico` |
+| `commerce-gastronomy-<state>@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` |
+| `commerce-experience-<state>@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` |
+| `tourist-<state>@local.test` | USER | `tourist-vip` |
+
+(`<state>` is one of `past-due`, `cancelled`, `paused`, `comp`, `courtesy` —
+e.g. `host-past-due@local.test`, `tourist-courtesy@local.test`.)
+
+None of these declare `subscriptionProductDomain` — it derives from the plan
+row, same as every other fixture since HOS-1233 T-035.
+
+The gastronomy/experience matrix also gained the fixtures accommodation
+already had (HOS-1268 closes a parity gap, not just adds new states):
+
+| Email | Role | Plan | Notes |
+|---|---|---|---|
+| `commerce-gastronomy-trial@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-trial` (status=`trialing`, `COMMERCE_TRIAL_DAYS`) | Mirrors `host-trial@local.test` |
+| `commerce-experience-trial@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-trial` (status=`trialing`) | ditto |
+| `commerce-gastronomy-plus-addon@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` + `extra-gastronomies-1` addon | Mirrors `host-pro-plus-addon@local.test` |
+| `commerce-experience-plus-addon@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` + `extra-experiences-1` addon | ditto |
+| `commerce-experience-at-cap@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico`, `ownsExperienceAtCap: true` | Experiences had no at-cap fixture at all before this; mirrors `commerce-gastronomy-at-cap@local.test` via `ensureExperienceAtCapListing` in `src/test-users/commerceListing.ts` |
+
+Fixing this also surfaced a real bug in the seed's own addon helper:
+`ensureAddonPurchase` resolved its base plan against `ALL_PLANS`, which only
+ever held the accommodation + tourist tiers — a gastronomy/experience addon
+fixture would have thrown `Plan "gastronomy-basico" not found in ALL_PLANS
+catalog`. Fixed by resolving against `ALL_PLANS` + `ALL_GASTRONOMY_PLANS` +
+`ALL_EXPERIENCE_PLANS` combined (`ALL_SEED_ADDON_BASE_PLANS`).
+
 ### HOST accommodation fixture (HOS-30)
 
-Every HOST-role user in the matrix above (`host-basico`, `host-pro`, `host-premium`,
-`host-pro-plus-addon`, `host-trial`) also gets **exactly one fully-featured accommodation
-they own**, created directly (no `--example` JSON fixture involved). This unblocks staging
-crawl/smoke testing of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
+Every HOST-role user in the matrix — `host-basico`, `host-pro`, `host-premium`,
+`host-pro-plus-addon`, `host-trial`, `host-provider`, `host-commerce`, and (since
+HOS-1268) the five `host-<state>@local.test` billing-state fixtures — also gets
+**exactly one fully-featured accommodation they own**, created directly (no
+`--example` JSON fixture involved). This unblocks staging crawl/smoke testing
+of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
 gallery) without depending on the `--example` seed group.
 
 Each fixture accommodation has: every catalog amenity/feature applicable to the
@@ -378,6 +469,78 @@ URLs from a curated type-specific pool, NOT from arbitrary stock photos:
 - Documentation: [`docs/image-pool.md`](docs/image-pool.md) — rotation conventions, how to add a URL, how to remove one.
 - Lint script: `pnpm lint:image-pool` — verifies every URL in every accommodation JSON belongs to its type pool. Run before committing changes to accommodation seeds.
 - Refresh script: `scripts/refresh-accommodation-images.ts` — deterministic per-accommodation assignment (featured cyclic by id position, gallery random subset 5-24 photos). Re-runnable without drift.
+
+### The Cloudinary image pipeline (HOS-1143)
+
+How a fixture image becomes a URL in the database, why there are two copies of
+every photo, and what the CI-safe flag does. None of this was written down until
+an incident cost 70,66 GB of bandwidth and 312.099 transformations in 30 days.
+
+#### The circuit
+
+1. A fixture names a source URL (`media.featuredImage.url`, `gallery[n].url`).
+2. `uploadSeedImage` (`src/utils/cloudinary-upload.ts`) downloads it and uploads
+   it to `hospeda/{env}/seed/{entityType}/{entityId}/{role}`, where `env` is a
+   free-form label — `dev`, `test`, `preview`, `prod`.
+3. The **uploaded copy's** URL is what lands in the database and what the site
+   serves. Production really does serve
+   `hospeda/prod/seed/destinations/002-destination-colon/featured.webp`.
+4. The result is recorded in `.cloudinary-cache.json` so a re-run skips it.
+
+Every seeded photo therefore exists at least **twice** in the account: the source
+the fixture points at, and one copy per environment that has been seeded.
+
+#### Where the fixture images come from
+
+`ALLOWED_SEED_HOSTNAMES` permits three hosts, and the split matters:
+
+| origin | count | note |
+|---|---|---|
+| `images.pexels.com` | 1.636 | third-party stock; pulling it in is the whole point |
+| `images.unsplash.com` | 138 | idem |
+| `res.cloudinary.com` | 468 | **already ours** — see the `TODO(HOS-1163)` in `cloudinary-upload.ts` |
+
+Those 468 are the **22 destination photo sets** (17-36 photos each, plus one
+`user/required` avatar). They are curated `required` content that ships to
+production, not demo data. Their source lives under
+`hospeda/seed/required/destinations/<NNN>-destination-<slug>/`.
+
+#### Adding or replacing a destination photo
+
+Upload it under `hospeda/seed/required/destinations/<NNN>-destination-<slug>/`
+and point the fixture at that URL. The next seed copies it into the target
+environment. Editing `required` media is covered by the dual-write rule, so the
+change needs a data-migration in the same PR.
+
+#### The cache is gitignored, and that is the whole story of the incident
+
+`.cloudinary-cache.json` is listed in `packages/seed/.gitignore`. It works
+wherever a checkout persists — a developer machine pays the download once — and
+is **absent on every CI runner**, which starts clean with no `actions/cache` step
+restoring it. That made a cache MISS on 100% of images, on every run, of
+workflows that run on every PR.
+
+Do not "fix" that by caching the file in CI without reading HOS-1163 first: the
+`cloudinary-e2e-cleanup` cron (`0 2 * * 0`) wipes the entire `hospeda/e2e/`
+prefix, so a restored cache outlives the assets it points at.
+
+#### `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS` (HOS-1144)
+
+When set, `uploadSeedImage` returns immediately — **before** the cache lookup,
+the SSRF allowlist, the download and the upload — so it performs no network call
+at all, and the tally reports `skippedPlaceholder=N`.
+
+It returns the **original URL unchanged** and deliberately does not rewrite the
+`media` block: `seedFactory` validates that block against `MediaSchema`
+(`z.url({ protocol: /^https?$/ })` for `mediaAssetUrl`) immediately afterwards, so
+a root-relative placeholder aborts the seed outright. Keeping those URLs from
+being fetched is the render layer's job, which is why
+`scripts/check-local-media-placeholders.sh` covers `<Image>` from `astro:assets`
+as well as `getImage()`.
+
+Default off. Set only by the four workflows that build or serve `apps/web`, and
+never on a deployment — it is registered with `stage: 'runtime'` precisely so
+deploy tooling does not offer it as a build argument.
 
 ### Accommodation Pricing Tiers (SPEC-119)
 

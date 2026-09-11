@@ -4,62 +4,6 @@
     "issue": "HOS-619",
     "entries": [
         {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.pickCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.title"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.upgradeCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.pickDraftOrCreate.body"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.pickDraftOrCreate.createCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.pickDraftOrCreate.pickCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.pickDraftOrCreate.title"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.resumeCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.title"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.upgradeCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.resumeOrCreate.body"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.resumeOrCreate.createCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.resumeOrCreate.resumeCta"
-        },
-        {
-            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
-            "key": "host.pages.nueva.precheck.resumeOrCreate.title"
-        },
-        {
             "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
             "key": "privacy.section1.content"
         },

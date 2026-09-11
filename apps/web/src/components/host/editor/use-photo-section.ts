@@ -14,18 +14,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem, ApiError, MediaImage } from '@/lib/api/types';
-import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
+import {
+    buildLimitReachedPayloadFromDetails,
+    type LimitReachedToastPayload
+} from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
 import {
     buildCapExceededOnSelectMessage,
+    buildCompressionUnsupportedTooLargeMessage,
+    MAX_PHOTOS_LIMIT_KEY,
     mediaRowToItem,
     type PhotoMetadataUpdateBody,
     splitMediaRows,
-    validatePhotoFile
+    validatePhotoFileSize,
+    validatePhotoFileType
 } from './photo-section-helpers';
 import { usePhotoGalleryMutations } from './use-photo-gallery-mutations';
 
@@ -40,6 +47,16 @@ function legacyToDisplay(img: MediaImage, isFeatured: boolean): AccommodationMed
         id: '',
         url: img.url,
         publicId: img.publicId,
+        // Spelled out rather than omitted: the four text keys are REQUIRED on
+        // `AccommodationMediaItem` precisely so a mapper cannot forget one (see
+        // `PhotoMetadataEditableItem`). `MediaImage` — the SSR-only legacy
+        // shape — carries none of them, so `undefined` is the honest answer
+        // here, and the empty `id` keeps the panel shut until the real rows
+        // arrive with the real text.
+        caption: undefined,
+        description: undefined,
+        alt: undefined,
+        attribution: undefined,
         isFeatured
     };
 }
@@ -81,12 +98,26 @@ export interface UsePhotoSectionResult {
     readonly featuredItem: AccommodationMediaItem | null;
     readonly galleryItems: readonly AccommodationMediaItem[];
     readonly isUploading: boolean;
+    /**
+     * Whether a selected file is currently being resized/recompressed
+     * client-side (HOS-332), BEFORE the upload itself starts. Surfaced
+     * separately from `isUploading` so the UI can show "optimizing image…"
+     * instead of a progress bar stuck at 0% while nothing has left the
+     * browser yet.
+     */
+    readonly isCompressing: boolean;
     readonly uploadProgress: number | null;
     readonly uploadBatch: UploadBatchProgress | null;
     readonly error: string | null;
     readonly isDragOverFeatured: boolean;
     readonly isDragOverGallery: boolean;
     readonly isGalleryFull: boolean;
+    /**
+     * Sober "at the plan cap" upsell payload (HOS-1024) — `null` unless
+     * {@link UsePhotoSectionResult.isGalleryFull} is `true`. See the
+     * assignment site for why it reuses `buildLimitReachedPayloadFromDetails`.
+     */
+    readonly capUpsell: LimitReachedToastPayload | null;
     readonly opsReady: boolean;
     readonly anyOpInFlight: boolean;
     readonly featuredInputRef: React.RefObject<HTMLInputElement | null>;
@@ -135,6 +166,7 @@ export function usePhotoSection({
 
     const [isHydrated, setIsHydrated] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [uploadBatch, setUploadBatch] = useState<UploadBatchProgress | null>(null);
     const [opLoading, setOpLoading] = useState(false);
@@ -143,6 +175,33 @@ export function usePhotoSection({
     const [isDragOverGallery, setIsDragOverGallery] = useState(false);
 
     const isGalleryFull = galleryItems.length >= galleryCap;
+
+    /**
+     * Sober "at the plan cap" upsell payload (HOS-1024). Reuses the exact
+     * copy/CTA builder the failed-upload path already uses below
+     * (`reportAddMediaError`), so the passive "gallery is full" state and the
+     * active "upload rejected" state never show different copy or a
+     * different CTA for the same limit — one source, two moments it renders
+     * at.
+     *
+     * `null` whenever the gallery is not full — including the entire "plan
+     * cap not yet known" window, since the caller
+     * (`PhotoSection.client.tsx`) passes a placeholder `galleryCap` large
+     * enough that `isGalleryFull` cannot be `true` until the real,
+     * plan-derived cap has resolved.
+     */
+    const capUpsell: LimitReachedToastPayload | null = isGalleryFull
+        ? buildLimitReachedPayloadFromDetails({
+              details: {
+                  limitKey: MAX_PHOTOS_LIMIT_KEY,
+                  currentCount: galleryItems.length,
+                  maxAllowed: galleryCap,
+                  usagePercent: 100,
+                  upgradeAudience: 'host'
+              },
+              locale
+          })
+        : null;
 
     // --- Hydrate from API on mount ---
 
@@ -241,24 +300,51 @@ export function usePhotoSection({
 
     const processFeaturedFile = useCallback(
         async (file: File) => {
-            const validationError = validatePhotoFile(file, t);
-            if (validationError) {
-                reportUploadError(validationError);
+            const typeError = validatePhotoFileType(file, t);
+            if (typeError) {
+                reportUploadError(typeError);
                 return;
             }
 
             setError(null);
+
+            // HOS-332: resize/recompress before the size cap is checked, so a
+            // heavy original that shrinks under the cap is accepted. Any
+            // failure to compress (unsupported format, no canvas support)
+            // falls back to the original file — never blocks the upload by
+            // itself.
+            setIsCompressing(true);
+            const compression = await compressImageForUpload({ file });
+            setIsCompressing(false);
+
+            const uploadFile = compression.file;
+            const sizeError = validatePhotoFileSize(uploadFile, t);
+            if (sizeError) {
+                reportUploadError(
+                    isCompressionUnavailable(compression)
+                        ? buildCompressionUnsupportedTooLargeMessage(t)
+                        : sizeError
+                );
+                return;
+            }
+
             setIsUploading(true);
             setUploadProgress(0);
 
             try {
                 const uploaded = await uploadEntityImage({
-                    file,
+                    file: uploadFile,
                     accommodationId,
                     onProgress: setUploadProgress
                 });
 
-                const addResult = await accommodationMediaApi.addMedia({
+                // HOS-803: ONE request, not two. The old pair — register a
+                // gallery row, then promote it — was refused at the first step
+                // whenever the gallery sat at the plan cap, so an owner at the
+                // cap could never change their cover. This endpoint creates the
+                // row already featured and disposes of the previous cover in
+                // the same transaction.
+                const addResult = await accommodationMediaApi.addFeaturedMedia({
                     id: accommodationId,
                     body: {
                         url: uploaded.url,
@@ -272,30 +358,14 @@ export function usePhotoSection({
                     return;
                 }
 
-                const newRow = addResult.data.media;
-                const featuredResult = await accommodationMediaApi.setFeaturedMedia({
-                    id: accommodationId,
-                    mediaId: newRow.id
-                });
+                const { media: newRow } = addResult.data;
 
-                if (!featuredResult.ok) {
-                    reportUploadError(
-                        featuredResult.error.message ??
-                            t(
-                                'host.properties.editor.photo.featuredFailed',
-                                'No se pudo marcar la imagen como portada'
-                            )
-                    );
-                    return;
-                }
-
-                setGalleryItems((prev) => {
-                    const base = featuredItem
-                        ? [...prev, { ...featuredItem, isFeatured: false }]
-                        : [...prev];
-                    return base;
-                });
-                setFeaturedItem(mediaRowToItem(featuredResult.data.media));
+                // The replaced cover is NOT added to the gallery. Uploading a
+                // new cover deletes the old one server-side, so appending it
+                // here would leave a photo on screen that no longer exists —
+                // and it is that demotion, on this path, that used to grow the
+                // gallery by one on every replacement.
+                setFeaturedItem(mediaRowToItem(newRow));
             } catch (err) {
                 reportUploadError(
                     err instanceof Error
@@ -310,7 +380,9 @@ export function usePhotoSection({
                 }
             }
         },
-        [accommodationId, featuredItem, t, reportUploadError, reportAddMediaError]
+        // `featuredItem` is no longer read here: the replaced cover is deleted
+        // server-side rather than appended to the gallery (HOS-803).
+        [accommodationId, t, reportUploadError, reportAddMediaError]
     );
 
     const handleFeaturedSelect = useCallback(
@@ -326,12 +398,12 @@ export function usePhotoSection({
         (e: React.DragEvent<HTMLButtonElement>) => {
             e.preventDefault();
             setIsDragOverFeatured(false);
-            if (isUploading || opLoading) return;
+            if (isUploading || isCompressing || opLoading) return;
             const file = e.dataTransfer.files?.[0];
             if (!file) return;
             void processFeaturedFile(file);
         },
-        [processFeaturedFile, isUploading, opLoading]
+        [processFeaturedFile, isUploading, isCompressing, opLoading]
     );
 
     const handleFeaturedDragOver = useCallback((e: React.DragEvent<HTMLButtonElement>) => {
@@ -362,18 +434,42 @@ export function usePhotoSection({
             }
 
             for (const file of files) {
-                const validationError = validatePhotoFile(file, t);
-                if (validationError) {
-                    reportUploadError(validationError);
+                const typeError = validatePhotoFileType(file, t);
+                if (typeError) {
+                    reportUploadError(typeError);
                     return;
                 }
             }
 
             setError(null);
+
+            // HOS-332: resize/recompress the whole batch BEFORE checking the
+            // size cap, so a heavy original that shrinks under the cap is
+            // accepted — mirrors `processFeaturedFile`. Run concurrently
+            // (decode/encode is CPU-bound, not I/O-bound) so the batch is not
+            // gated behind N sequential compressions before any upload starts.
+            setIsCompressing(true);
+            const compressions = await Promise.all(
+                files.map((file) => compressImageForUpload({ file }))
+            );
+            setIsCompressing(false);
+
+            for (const compression of compressions) {
+                const sizeError = validatePhotoFileSize(compression.file, t);
+                if (sizeError) {
+                    reportUploadError(
+                        isCompressionUnavailable(compression)
+                            ? buildCompressionUnsupportedTooLargeMessage(t)
+                            : sizeError
+                    );
+                    return;
+                }
+            }
+
             setIsUploading(true);
 
-            for (let index = 0; index < files.length; index += 1) {
-                const file = files[index];
+            for (let index = 0; index < compressions.length; index += 1) {
+                const file = compressions[index]?.file;
                 if (!file) continue;
                 setUploadProgress(0);
                 setUploadBatch(
@@ -451,11 +547,11 @@ export function usePhotoSection({
         (e: React.DragEvent<HTMLButtonElement>) => {
             e.preventDefault();
             setIsDragOverGallery(false);
-            if (isUploading || opLoading) return;
+            if (isUploading || isCompressing || opLoading) return;
             const files = Array.from(e.dataTransfer.files ?? []);
             void processGalleryFiles(files);
         },
-        [processGalleryFiles, isUploading, opLoading]
+        [processGalleryFiles, isUploading, isCompressing, opLoading]
     );
 
     const handleGalleryDragOver = useCallback((e: React.DragEvent<HTMLButtonElement>) => {
@@ -485,19 +581,21 @@ export function usePhotoSection({
         reportUploadError
     });
 
-    const anyOpInFlight = isUploading || opLoading;
+    const anyOpInFlight = isUploading || isCompressing || opLoading;
     const opsReady = isHydrated;
 
     return {
         featuredItem,
         galleryItems,
         isUploading,
+        isCompressing,
         uploadProgress,
         uploadBatch,
         error,
         isDragOverFeatured,
         isDragOverGallery,
         isGalleryFull,
+        capUpsell,
         opsReady,
         anyOpInFlight,
         featuredInputRef,

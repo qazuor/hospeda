@@ -9,10 +9,17 @@
  */
 
 import { billingPlans, getDb, ne } from '@repo/db';
-import { ProductDomainEnumSchema, type ProductDomainValue, ServiceErrorCode } from '@repo/schemas';
+import {
+    type AdminBillingPlanResponse,
+    isPubliclyListedPlan,
+    ProductDomainEnumSchema,
+    type ProductDomainValue,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { PlanService } from '../../../services/plan.service';
+import { collectCatalogPages } from '../../../utils/collect-catalog-pages';
 import { apiLogger } from '../../../utils/logger';
 import { createSimpleRoute } from '../../../utils/route-factory.js';
 import { z } from '../../../utils/zod';
@@ -87,6 +94,11 @@ function resolveRequestedDomain(ctx: Context): ProductDomainValue {
  * Intentionally matches the previous ALL_PLANS shape so existing web client
  * code does not need changes. The `id` field is added for completeness but
  * the web client can ignore it.
+ *
+ * `publicListing` (HOS-1062 F1) is deliberately ABSENT: `stripWithSchema` drops
+ * every key this schema does not declare, so the mark that decides what the
+ * public sees never travels to the public itself. Every plan that survives the
+ * filter is listed, which makes the field redundant here anyway.
  */
 const PlanPublicSchema = z.object({
     id: z.string().uuid().openapi({ description: 'Plan UUID' }),
@@ -131,6 +143,68 @@ const PlansListResponseSchema = z.array(PlanPublicSchema);
 const planService = new PlanService();
 
 /**
+ * Loads every ACTIVE plan the public may see, filtering the visibility mark
+ * BEFORE any window is applied (HOS-1062).
+ *
+ * The bug this replaces: the handler called `planService.list({ active: true })`
+ * with no `pageSize`, so it read `listPlans`' default page of TWENTY rows and
+ * filtered those in memory. Harmless while the catalogue was a fixed set of six
+ * — and no longer harmless as of this very spec, whose premise is one plan row
+ * per negotiated agreement. Past twenty active plans the public list would start
+ * dropping ordinary catalogue plans it never saw, with no error and no log line.
+ * Ordering does not save it: `createPlan` never writes `metadata.sortOrder`, so
+ * an admin-created plan sorts in the NULL block (last in Postgres' ASC) — until
+ * the day an admin sets one.
+ *
+ * Same treatment `loadServableCatalog` gives the protected endpoint, through the
+ * same walk (`collectCatalogPages`), so there is one implementation of "see the
+ * whole catalogue, then filter" in the repo rather than two that can drift.
+ *
+ * @returns Every active, publicly-listed plan, or `null` if the catalogue could
+ *   not be read in full — the caller then serves nothing rather than a list it
+ *   cannot vouch for.
+ */
+async function loadPubliclyListedPlans(): Promise<AdminBillingPlanResponse[] | null> {
+    const collected = await collectCatalogPages<AdminBillingPlanResponse>({
+        fetchPage: async ({ pageIndex, pageSize }) => {
+            const result = await planService.list({
+                active: true,
+                page: pageIndex + 1,
+                pageSize
+            });
+
+            if (!result.success || !result.data) {
+                apiLogger.error(
+                    { error: result.error, page: pageIndex + 1 },
+                    'Failed to load active plans from DB for public endpoint'
+                );
+                return null;
+            }
+
+            const { page, totalPages, total } = result.data.pagination;
+            // `total` is handed over so the walk can CHECK this `hasMore`
+            // against the row count instead of taking it on faith.
+            return { items: result.data.items, hasMore: page < totalPages, total };
+        },
+        onTruncated: ({ fetched, maxPages, expected }) => {
+            apiLogger.error(
+                { fetched, maxPages, expected },
+                'Public /plans read a short billing catalogue — the response is truncated'
+            );
+        }
+    });
+
+    if (collected === null) {
+        return null;
+    }
+
+    // ONE exit, and it filters. `isPubliclyListedPlan` tests positively
+    // (`=== 'listed'`), so a plan whose mark went missing on the way here is
+    // withheld rather than served.
+    return collected.filter(isPubliclyListedPlan);
+}
+
+/**
  * GET /api/v1/public/plans
  * List all active billing plans — Public endpoint.
  *
@@ -151,14 +225,22 @@ export const publicListPlansRoute = createSimpleRoute({
         const domain = resolveRequestedDomain(ctx);
         apiLogger.debug({ domain }, 'Public listing active billing plans from DB');
 
-        const result = await planService.list({ active: true });
+        // HOS-1062 F1 — the visibility mark is applied inside the loader, over
+        // the WHOLE catalogue, before any window or domain logic. Every return
+        // below is built from this one array.
+        //
+        // Filtering here rather than inside a branch is what makes the mark fail
+        // CLOSED on every path the handler can take, including the domain-query
+        // failure right below, which fails OPEN for `accommodation` by deliberate
+        // design. That asymmetry belongs to the DOMAIN filter alone — a plan from
+        // another vertical leaking for one request is a cosmetic wrong; a
+        // negotiated price on the pricing page is not, and nobody files a ticket
+        // to report having seen one.
+        const publiclyListedPlans = await loadPubliclyListedPlans();
 
-        if (!result.success || !result.data) {
-            apiLogger.error(
-                { error: result.error },
-                'Failed to load active plans from DB for public endpoint'
-            );
-            // Return empty list on failure rather than crashing; web can fall back gracefully
+        if (publiclyListedPlans === null) {
+            // The catalogue could not be read in full. Serve nothing rather than
+            // a list we cannot vouch for; the web falls back gracefully.
             return [];
         }
 
@@ -176,13 +258,17 @@ export const publicListPlansRoute = createSimpleRoute({
             // briefly leak. Every other domain fails CLOSED — an empty vertical
             // catalogue is recoverable, a response that mixes domains is the one
             // outcome AC-22 forbids.
-            return domain === DEFAULT_DOMAIN ? result.data.items : [];
+            //
+            // Both arms answer from `publiclyListedPlans`: the fail-open half of
+            // this asymmetry serves an UNFILTERED-BY-DOMAIN list, never an
+            // unfiltered-by-visibility one.
+            return domain === DEFAULT_DOMAIN ? publiclyListedPlans : [];
         }
 
         if (excludedSlugs.size === 0) {
-            return result.data.items;
+            return publiclyListedPlans;
         }
-        return result.data.items.filter((plan) => !excludedSlugs.has(plan.slug));
+        return publiclyListedPlans.filter((plan) => !excludedSlugs.has(plan.slug));
     },
     options: {
         skipAuth: true,

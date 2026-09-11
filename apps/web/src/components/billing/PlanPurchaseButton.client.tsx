@@ -11,16 +11,26 @@
  * Hydration: client:load — checkout CTAs are interactive immediately.
  */
 
-import { TagIcon } from '@repo/icons';
 import type { EffectPreview } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { billingApi, userApi } from '../../lib/api/endpoints-protected';
+import { translateApiError } from '../../lib/api-errors';
 import { useSession } from '../../lib/auth-client';
 import { storePendingCheckoutSubId } from '../../lib/billing/checkout-pending';
+import { resolvePublishPathForPricingAudience } from '../../lib/billing/pricing-audience-publish-vertical';
+import { fetchHoldsTouristVipBenefits } from '../../lib/billing/tourist-vip-status';
+import { fetchTrialClock } from '../../lib/billing/trial-clock';
+import type { TrialClockReading, TrialStartBranch } from '../../lib/billing/trial-start-branch';
+import {
+    resolveTrialScopeForAudience,
+    resolveTrialStartBranch
+} from '../../lib/billing/trial-start-branch';
+import type { PricingAudience } from '../../lib/billing-i18n';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
-import { buildUrl } from '../../lib/urls';
+import { buildUrl, buildUrlWithParams } from '../../lib/urls';
+import { PayerEmailConfirmDialog } from './PayerEmailConfirmDialog.client';
 import styles from './PlanPurchaseButton.module.css';
 import { TrialWarningDialog } from './TrialWarningDialog.client';
 
@@ -70,17 +80,60 @@ export interface PlanPurchaseButtonProps {
      */
     readonly showPromo?: boolean;
     /**
-     * Trial length in days this plan offers, or `0` when the plan has no
-     * trial at all. Drives the trial-warning confirmation dialog (owner
-     * decision, real-money incident): MercadoPago grants its free trial once
-     * per (MercadoPago account, plan) pair, a rule Hospeda's own
-     * `billingApi.getTrialEligibility()` check cannot see. When this is `> 0`
-     * and the user has not already been marked ineligible, clicking the CTA
-     * opens {@link TrialWarningDialog} instead of going straight to checkout.
-     * Defaults to `0` (no dialog) so existing callers that do not pass it
-     * keep today's direct-checkout behaviour.
+     * Locale-agnostic path an unauthenticated visitor returns to after signing
+     * in — i.e. the pricing surface this button is mounted on.
+     *
+     * Added by HOS-942 because there is no longer a single "the pricing page"
+     * to fall back on: `/suscriptores/planes/` is now the five-audience index
+     * and the catalogues live one level below it. It also fixes a pre-existing
+     * mismatch that the split made unignorable — the path used to be hardcoded
+     * to the owner page, so a tourist who signed in from the tourist page came
+     * back on the wrong catalogue.
+     *
+     * Required rather than defaulted: every mount point (both grids, both
+     * comparison tables) knows its own audience, and a default here could only
+     * be a guess that is wrong half the time.
      */
-    readonly trialDays?: number;
+    readonly plansPath: string;
+    /**
+     * Whether the own-preapproval checkout path
+     * (HOS-937 step 4, `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` server-side)
+     * is active. Resolved server-side (SSR) by the pricing pages' shared
+     * grid/table components via `fetchCheckoutConfig()` — the web app has no
+     * way to read that api-only env var directly.
+     *
+     * Gates {@link PayerEmailConfirmDialog}: the dialog only has an effect
+     * when this is `true`, regardless of `billingInterval` — since HOS-937
+     * step 4 the SAME flag gates the own-preapproval path for BOTH
+     * accommodation checkouts this button renders (monthly and annual), not
+     * monthly alone (the field was renamed from
+     * `ownPreapprovalMonthlyEnabled` to stop implying otherwise). Defaults
+     * to `false` so any caller that omits it — and any SSR fetch failure —
+     * renders the pre-HOS-937 checkout flow byte for byte (fail-closed,
+     * matches the flag's own dark-by-default posture).
+     *
+     * HOS-1234: when this is `true`, the dialog is further skipped (without
+     * changing this prop) whenever a payer email is already known for the
+     * customer — see `payerEmailKnown` / `proceedPastPayerEmailStep`.
+     */
+    readonly ownPreapprovalEnabled?: boolean;
+    /**
+     * The audience of the pricing surface this button was mounted on
+     * (HOS-1233). Two independent decisions read it, and neither can be
+     * derived from `planSlug` — a slug names a tier, not the page a visitor is
+     * standing on:
+     *
+     * - WHICH vertical's trial clock is consulted before charging
+     *   (`resolveTrialScopeForAudience`). A host's trial must never gate a
+     *   traveller's purchase, and `aliados` has no clock to read at all.
+     * - Where the "trial not started" branch navigates to
+     *   (`resolvePublishPathForPricingAudience`).
+     *
+     * Required rather than defaulted, for the same reason `plansPath` is: every
+     * mount point knows its own audience, and a default here could only be a
+     * guess that is wrong on some page.
+     */
+    readonly audience: PricingAudience;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,6 +153,32 @@ export interface PlanPurchaseButtonProps {
  */
 let subscriptionPromise: Promise<string | null> | null = null;
 
+/**
+ * Reads "which plan does this visitor pay for today", for `isCurrentPlan` and
+ * `isPlanChange` below.
+ *
+ * ## The call is UNQUALIFIED on purpose — naming a domain here is a regression
+ *
+ * `GET /protected/users/me/subscription` treats "no `?productDomain=`" and
+ * "`?productDomain=accommodation`" as two different questions (HOS-1233). Only
+ * the unqualified one resolves accommodation FIRST and then falls back to
+ * tourist; naming a domain makes the read strict, and a `tourist-vip` holder
+ * would come back `null` — read here as "no subscription", so their card would
+ * offer a fresh "Contratar", fire `/start-paid`, and be refused with the 409
+ * `runCheckout` now translates. That is the exact dead end HOS-1321 exists to
+ * close, so passing `{ productDomain }` here would reopen it while looking like
+ * a fix. `test/components/billing/PlanPurchaseButton.subscription-lookup.test.tsx`
+ * fails if the param ever appears.
+ *
+ * The fallback is ORDERED, not an "either" match, which is what makes one
+ * unqualified read correct for every audience this component is mounted on: a
+ * host who ALSO holds a tourist subscription (host-onboarding auto-promotes a
+ * traveller to HOST without touching it) gets the OWNER plan back, never the
+ * tourist one. The audience-scoped question — "do they already hold the VIP
+ * benefits this tourist card sells?" — is a different read with a different
+ * failure direction, and it lives in `./tourist-vip-status.ts`, which names
+ * every one of its domains for exactly that reason.
+ */
 function fetchCurrentPlanSlug(): Promise<string | null> {
     if (subscriptionPromise) return subscriptionPromise;
     subscriptionPromise = userApi
@@ -132,6 +211,29 @@ function fetchTrialEligible(): Promise<boolean | null> {
         .then((result) => (result.ok ? result.data.eligible : null))
         .catch(() => null);
     return trialEligibilityPromise;
+}
+
+/**
+ * Module-level promise that fetches whether the current user already has a
+ * known MercadoPago payer email on file (HOS-1234). Same sharing rationale
+ * as {@link fetchTrialEligible}: the answer is customer-scoped, so every
+ * <PlanPurchaseButton> island on the page shares one request.
+ *
+ * Resolves to `false` on any failure, when unauthenticated, or when the
+ * lookup genuinely found nothing — there is no separate "unknown" state here
+ * (unlike {@link fetchTrialEligible}'s `null`), because the caller
+ * (`proceedPastPayerEmailStep`) must FAIL OPEN toward showing the confirm
+ * dialog, and `false` already means exactly that.
+ */
+let payerEmailKnownPromise: Promise<boolean> | null = null;
+
+function fetchPayerEmailKnown(): Promise<boolean> {
+    if (payerEmailKnownPromise) return payerEmailKnownPromise;
+    payerEmailKnownPromise = billingApi
+        .getPayerEmailKnown()
+        .then((result) => (result.ok ? result.data.hasKnownPayerEmail : false))
+        .catch(() => false);
+    return payerEmailKnownPromise;
 }
 
 // ---------------------------------------------------------------------------
@@ -184,16 +286,64 @@ function appendQueryParam(url: string, key: string, value: string): string {
     return parsed.toString();
 }
 
+/**
+ * Query params carrying a promo code deferred to registration (HOS-984).
+ * `promo` is the raw code and `promoPlan` scopes it to the card that typed it
+ * — validating a code is plan-specific (the endpoint takes an `amount`), so a
+ * code typed on one card must not silently auto-apply on another.
+ */
+const PENDING_PROMO_CODE_PARAM = 'promo';
+const PENDING_PROMO_PLAN_PARAM = 'promoPlan';
+
+/**
+ * Read a `?promo=&promoPlan=` pair off the current URL (HOS-984). Present
+ * when this visitor typed a code before registering and just landed back on
+ * the pricing page — see {@link buildPromoAwareAuthReturnPath}, which is what
+ * puts it there.
+ *
+ * @returns The pair when BOTH are present, otherwise `null` — a half-filled
+ *   pair (e.g. a manually edited URL) is not something to act on.
+ */
+function readPendingPromoFromUrl(): { readonly code: string; readonly planSlug: string } | null {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get(PENDING_PROMO_CODE_PARAM);
+    const planSlug = params.get(PENDING_PROMO_PLAN_PARAM);
+    if (!code || !planSlug) return null;
+    return { code, planSlug };
+}
+
+/**
+ * Removes the pending-promo params from the address bar without a
+ * navigation, once the matching card has consumed them (HOS-984). Mirrors
+ * the same `history.replaceState` pattern used elsewhere in this app (e.g.
+ * `AllianceClaimBanner.client.tsx`) for stripping a one-shot URL token after
+ * it has been read.
+ */
+function stripPendingPromoFromUrl(): void {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete(PENDING_PROMO_CODE_PARAM);
+    url.searchParams.delete(PENDING_PROMO_PLAN_PARAM);
+    window.history.replaceState({}, '', url.toString());
+}
+
 // ---------------------------------------------------------------------------
 // Promo state types
 // ---------------------------------------------------------------------------
 
-/** State machine for the promo code field */
-type PromoStatus = 'idle' | 'applying' | 'valid' | 'error';
+/**
+ * State machine for the promo code field.
+ *
+ * `pending-auth` (HOS-984) is reached instead of `applying`/`valid` when an
+ * UNAUTHENTICATED visitor submits a code: there is no `userId` to validate
+ * against (the endpoint requires one), so the code is not sent to the API at
+ * all — it is only remembered locally and offered to travel to registration
+ * (see {@link buildPromoAwareAuthReturnPath}).
+ */
+type PromoStatus = 'idle' | 'applying' | 'valid' | 'error' | 'pending-auth';
 
 interface PromoState {
-    /** Whether the promo code section is expanded */
-    readonly expanded: boolean;
     /** Raw code string typed by the user */
     readonly code: string;
     /** Current status of the promo apply flow */
@@ -202,7 +352,10 @@ interface PromoState {
     readonly preview: EffectPreview | null;
     /** Error message to show (set when status === 'error') */
     readonly errorMsg: string | null;
-    /** The successfully applied code forwarded to checkout (set when status === 'valid') */
+    /**
+     * The code forwarded to checkout (status === 'valid') or carried to
+     * registration (status === 'pending-auth').
+     */
     readonly appliedCode: string | null;
 }
 
@@ -214,7 +367,8 @@ interface PromoState {
  * PlanPurchaseButton — interactive CTA island for initiating plan checkout.
  *
  * Behaviour:
- * - **Unauthenticated**: navigates to `/auth/signin?redirect=/suscriptores/planes`
+ * - **Unauthenticated**: navigates to `/auth/signin?redirect=<plansPath>` — the
+ *   pricing surface this button was mounted on, passed in by the caller
  * - **Authenticated (idle)**: displays `ctaText` + formatted `price`
  * - **Authenticated (loading)**: disables button, shows processing spinner + text
  * - **Authenticated (error)**: re-enables button, renders inline error below
@@ -223,9 +377,11 @@ interface PromoState {
  * double-submission. The `aria-label` is updated to the processing label
  * during loading so assistive technology announces the state change.
  *
- * A collapsible promo-code section is shown when the user is authenticated
- * and the plan is available. Validating a code previews the effect; a valid
- * code is forwarded to `createCheckout` on submit.
+ * A promo-code section is shown whenever the plan is otherwise purchasable
+ * (HOS-984: no longer gated on being authenticated, and no longer collapsed
+ * behind a toggle). An authenticated visitor's code is validated live and
+ * forwarded to `createCheckout` on submit; an unauthenticated visitor's code
+ * is deferred — see `handleApplyPromo` and `buildPromoAwareAuthReturnPath`.
  *
  * For `comp` promo codes, `checkoutUrl` is an in-app success sentinel URL
  * (no MercadoPago redirect) — `window.location.href = checkoutUrl` is still
@@ -251,19 +407,66 @@ export function PlanPurchaseButton({
     currency,
     ctaText,
     locale,
+    plansPath,
+    audience,
     showPromo = true,
-    trialDays = 0
+    ownPreapprovalEnabled = false
 }: PlanPurchaseButtonProps): JSX.Element {
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
-    // Controls the MercadoPago trial-warning dialog (see `promisesTrial` below).
-    const [showTrialWarning, setShowTrialWarning] = useState(false);
+    // HOS-937 step 2: controls the pre-redirect payer-email confirmation
+    // dialog (spec §8.1) — shown right before `runCheckout` fires, after any
+    // trial warning has already been accepted (or skipped).
+    const [showPayerEmailConfirm, setShowPayerEmailConfirm] = useState(false);
     // HOS-226: `null` = unknown (unauthenticated, still loading, or the lookup
     // failed) — the SSR "N days free" badge stays untouched in that case.
     // `false` is the only value that triggers badge suppression below.
     const [trialEligible, setTrialEligible] = useState<boolean | null>(null);
+    // HOS-1234: whether a MercadoPago payer email is already known for this
+    // customer (`billing_customers.mp_payer_email`). Starts `false` — the
+    // fail-open default — so the confirm dialog still shows for an
+    // unauthenticated visitor, while the lookup is still in flight, or if it
+    // fails. Only flips to `true` on a confirmed, successful lookup.
+    const [payerEmailKnown, setPayerEmailKnown] = useState(false);
+    // HOS-1233: the trial clock for THIS page's vertical. `null` is the
+    // UNKNOWN state — unauthenticated, still in flight, the read failed, or
+    // this audience has no trial scope — and `resolveTrialStartBranch` turns it
+    // into the warning branch (AC-9). It must never be seeded with a fabricated
+    // `{ isOnTrial: false }`, which would read as "no trial to protect" and
+    // land the visitor in the silent charge this spec exists to stop.
+    const [trialClock, setTrialClock] = useState<TrialClockReading | null>(null);
+    // HOS-1233: whether the read above has SETTLED. `trialClock` alone cannot
+    // say — `null` is both "still in flight" and "resolved to unknown", and the
+    // two must do different things: an in-flight read defers the click, a
+    // resolved unknown warns (AC-9). Collapsing them is a measured bug, not a
+    // hypothetical: this button is SSR-rendered and interactive from
+    // `client:load`, so a click can land one RTT before
+    // `GET /billing/trial/status` answers, and reading that pending state as a
+    // resolved `null` showed `pricing.trialWarning.bodyUnknown` ("puede que
+    // tengas una prueba gratis en curso") to the exact account AC-3 exists for
+    // — one whose trial is fully intact and never started. Confirming that
+    // dialog charges them and burns every untouched day.
+    //
+    // Starts `false` only for a visitor who will actually be asked: the effect
+    // below sets it `true` immediately for an anonymous visitor and for an
+    // audience with no trial scope, so neither is ever left waiting.
+    const [trialClockSettled, setTrialClockSettled] = useState(false);
+    // A click that arrived before the clock did. The button keeps its label and
+    // stays on screen, but is non-actionable until the read lands — so the
+    // deferred click cannot be queued a second time, and no branch is
+    // dispatched off a reading nobody has yet.
+    const [awaitingTrialClock, setAwaitingTrialClock] = useState(false);
+    // HOS-1233 T-016 / AC-4: the warn-and-confirm dialog in front of a checkout
+    // that would destroy a running trial.
+    const [showTrialWarning, setShowTrialWarning] = useState(false);
+    // HOS-1233 D-4 / AC-16: whether a live subscription in accommodation,
+    // gastronomy or experiences already grants every tourist-VIP entitlement.
+    // Starts `false` — R-7's direction: an unknown answer leaves the button
+    // ENABLED, because claiming a benefit the visitor does not hold is
+    // invisible in testing and costs a sale.
+    const [touristVipHeld, setTouristVipHeld] = useState(false);
     // The toggle lives outside this island (vanilla JS in PricingCardsGrid).
     // The island observes the closest `data-billing` ancestor for changes so
     // the displayed price + the checkout payload stay in sync with the
@@ -276,8 +479,14 @@ export function PlanPurchaseButton({
     // Promo code state
     // ---------------------------------------------------------------------------
 
+    // HOS-984: no longer collapsed behind a "¿Tenés un código de descuento?"
+    // toggle. That toggle — combined with sitting below the CTA and being
+    // gated on a session — was the third of three ways the field was
+    // effectively invisible to a visitor holding a code. A single input+
+    // button row under the CTA is not loud enough to need hiding to protect
+    // the CTA's prominence, so the field is now always rendered directly
+    // when `showPromoSection` is true (see the render below).
     const [promo, setPromo] = useState<PromoState>({
-        expanded: false,
         code: '',
         status: 'idle',
         preview: null,
@@ -293,13 +502,37 @@ export function PlanPurchaseButton({
     const { t, tPlural } = createTranslations(locale);
 
     const isAuthenticated = !sessionPending && Boolean(session?.user);
+    // HOS-1233. `null` means "this audience has no trial to read" (aliados) and
+    // never "the read failed" — the two degrade in opposite directions, so they
+    // must not collapse into one value here either.
+    const trialScope = resolveTrialScopeForAudience({ audience });
+    // Where D-2's first branch navigates. `null` for an audience that creates
+    // no listing — see `resolvePublishPathForPricingAudience`.
+    const publishPath = resolvePublishPathForPricingAudience({ audience });
+    // AC-16 applies to the tourist cards and nowhere else: it is the tourist
+    // purchase that sells an empty delta to somebody already subscribed
+    // elsewhere, not the other way round.
+    const isTouristAudience = audience === 'tourist';
     const hasAnnual = annualPrice !== null && annualPrice > 0;
-    const isAnnualUnavailable = billingInterval === 'annual' && !hasAnnual;
     // Convert cents to major units for the display formatter (the formatter
     // takes a number that it prefixes with the currency symbol; passing
     // cents would render "$ 12000000" for a $120000 plan).
     const displayPriceCents =
         billingInterval === 'annual' && hasAnnual ? (annualPrice as number) : monthlyPrice;
+    // HOS-917: a plan whose EFFECTIVE price for the currently active interval
+    // is 0 is never purchasable — `createCheckout` would send
+    // `transaction_amount: 0` to MercadoPago's start-paid, which rejects it
+    // with a 502 (the real-money incident this fixes). Deliberately reads
+    // `displayPriceCents` (pre-promo) — a promo has no semantics against an
+    // already-$0 price and the promo section is already hidden for it below.
+    const isFreePlan = displayPriceCents === 0;
+    // A free plan has no "this plan has no annual price" state to render:
+    // price and billing cadence are orthogonal once price is already 0 in
+    // every interval (today's only $0 plan, tourist-free, has no annual
+    // price at all — `hasAnnual` is always false for it — so without this
+    // exclusion the annual toggle would show "Solo plan mensual" instead of
+    // the free-plan states below).
+    const isAnnualUnavailable = billingInterval === 'annual' && !hasAnnual && !isFreePlan;
     const formattedPrice = formatPrice({
         amount: displayPriceCents / 100,
         currency
@@ -349,12 +582,20 @@ export function PlanPurchaseButton({
         'Este es tu plan actual'
     );
     const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
+    // HOS-917: a $0 plan is never purchased — an anonymous visitor gets the
+    // registration-funnel CTA (their click still redirects through the same
+    // sign-in path every other unauthenticated click uses); an authenticated
+    // visitor (with or without a subscription row) already has it by default,
+    // so the card shows a legend instead of a clickable checkout button.
+    const freeRegisterCtaLabel = t('billing.checkout.button.freeRegisterCta', 'Registrate gratis');
+    const freePlanLegendLabel = t('billing.checkout.button.freePlanLegend', 'Ya tenés este plan');
+    // HOS-1233 AC-16. No hardcoded fallback: `resolve()` serves a fallback
+    // verbatim under /en and /pt, so one here would render Spanish on an
+    // English page — `check:i18n-keys` fails on exactly that for a new key.
+    const touristVipHeldLabel = t('pricing.touristVipHeld.cta');
+    const touristVipHeldNote = t('pricing.touristVipHeld.note');
 
     // Promo i18n strings
-    const promoToggleLabel = t(
-        'billing.checkout.promoApply.toggle',
-        '¿Tenés un código de descuento?'
-    );
     const promoLabel = t('billing.checkout.promoApply.label', 'Código de descuento');
     const promoPlaceholder = t('billing.checkout.promoApply.inputPlaceholder', 'Ingresá tu código');
     const promoApplyButton = t('billing.checkout.promoApply.applyButton', 'Aplicar');
@@ -364,6 +605,14 @@ export function PlanPurchaseButton({
         'billing.checkout.promoApply.errorGeneric',
         'No pudimos verificar el código. Intentá de nuevo.'
     );
+    // HOS-984: shown instead of a live preview when the code was submitted
+    // without a session — `{{code}}` is interpolated manually, mirroring the
+    // `buildPreviewText` pattern elsewhere in this file.
+    const promoPendingAuthMessageTemplate = t(
+        'billing.checkout.promoApply.pendingAuthMessage',
+        'Vas a poder aplicar el código {{code}} en cuanto termines de registrarte.'
+    );
+    const promoRegisterCtaLabel = t('billing.checkout.promoApply.registerCta', 'Registrarme');
 
     /**
      * Map a server `errorCode` from the validate endpoint to a localized,
@@ -444,6 +693,40 @@ export function PlanPurchaseButton({
         };
     }, [isAuthenticated]);
 
+    // HOS-984: re-apply a promo code carried back from registration. When an
+    // unauthenticated visitor submitted a code on THIS card, `handleClick`'s
+    // unauthenticated branch (or the "Registrarme" link built by
+    // `buildRegisterWithPromoHref`) sent them to sign-up with
+    // `?promo=&promoPlan=` riding on the return path
+    // (`buildPromoAwareAuthReturnPath`). Once they
+    // land back here authenticated, this fulfils the promise the pending-auth
+    // message made ("se va a aplicar cuando te registres") by running the
+    // exact same validate call `handleApplyPromo` runs from a manual click —
+    // no new endpoint behaviour, just triggered programmatically once instead
+    // of waiting for a second click.
+    //
+    // Only the card whose `planSlug` matches `promoPlan` acts — validating is
+    // plan-specific (the endpoint takes an `amount`), so a code typed for one
+    // tier must not silently re-apply against a different tier's price. Every
+    // OTHER card's effect reads the same `window.location.search` and finds a
+    // mismatch, so it returns without touching the URL — no race between the
+    // N cards on the page, because only the one match ever calls
+    // `stripPendingPromoFromUrl`.
+    //
+    // Deliberately only depends on the two values that decide WHETHER to run
+    // — `handleApplyPromo` reads `displayPriceCents`/`session` fresh at call
+    // time, and re-running this effect on every one of their changes (or on
+    // every render, since it is a new function reference each time) would
+    // fight the URL-stripping single-shot guarantee above.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above — intentional one-shot effect.
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        const pending = readPendingPromoFromUrl();
+        if (!pending || pending.planSlug !== planSlug) return;
+        stripPendingPromoFromUrl();
+        void handleApplyPromo(pending.code);
+    }, [isAuthenticated, planSlug]);
+
     // HOS-226: fetch the user's trial eligibility once they're authenticated,
     // shared across every PlanPurchaseButton island via trialEligibilityPromise
     // (same one-request-per-page-load rationale as the subscription fetch
@@ -461,6 +744,86 @@ export function PlanPurchaseButton({
             cancelled = true;
         };
     }, [isAuthenticated]);
+
+    // HOS-1234: fetch whether a payer email is already known, once
+    // authenticated AND on the own-preapproval path — the only path that
+    // ever shows the confirm dialog this feeds. Gating on `ownPreapprovalEnabled`
+    // avoids a wasted request on every other checkout path (the flag's own
+    // dark-by-default posture, still production today for some flows).
+    // Fails open to `false` (dialog shown) on any error, timing, or
+    // unauthenticated state — see `fetchPayerEmailKnown`.
+    useEffect(() => {
+        if (!isAuthenticated || !ownPreapprovalEnabled) {
+            setPayerEmailKnown(false);
+            return;
+        }
+        let cancelled = false;
+        fetchPayerEmailKnown().then((known) => {
+            if (!cancelled) setPayerEmailKnown(known);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, ownPreapprovalEnabled]);
+
+    // HOS-1233: read this vertical's trial clock once the visitor is
+    // authenticated, shared across every island on the page by
+    // `fetchTrialClock`'s module cache (one request, not one per card).
+    //
+    // Skipped entirely when the audience has no trial scope: `partner` is not a
+    // member of the API's `ProductDomainScopeEnumSchema`, so asking for it is a
+    // 400 rather than an empty answer. Skipped for an anonymous visitor too —
+    // their click is answered by the sign-in redirect long before any trial
+    // question arises, and the endpoint is protected.
+    useEffect(() => {
+        if (!isAuthenticated || trialScope === null) {
+            setTrialClock(null);
+            // Settled without asking anything. An anonymous visitor's click is
+            // answered by the sign-in redirect long before a trial question
+            // arises, and an audience with no trial scope has no clock to read
+            // — neither may leave the button waiting on a read that will never
+            // happen.
+            setTrialClockSettled(true);
+            return;
+        }
+        let cancelled = false;
+        setTrialClockSettled(false);
+        fetchTrialClock({ productDomain: trialScope })
+            .then((clock) => {
+                if (cancelled) return;
+                setTrialClock(clock);
+                setTrialClockSettled(true);
+            })
+            .catch(() => {
+                // `fetchTrialClock` resolves its own failures to `null`, so
+                // this is belt-and-braces against a rejection parking the
+                // button in "waiting" forever. `null` + settled is AC-9's
+                // warning branch, which is where an unresolvable read belongs.
+                if (cancelled) return;
+                setTrialClock(null);
+                setTrialClockSettled(true);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, trialScope]);
+
+    // HOS-1233 D-4 / AC-16: only the tourist cards ask this, and only for an
+    // authenticated visitor. Three reads (one per blocking vertical), shared
+    // across the page by `fetchHoldsTouristVipBenefits`' module cache.
+    useEffect(() => {
+        if (!isAuthenticated || !isTouristAudience) {
+            setTouristVipHeld(false);
+            return;
+        }
+        let cancelled = false;
+        fetchHoldsTouristVipBenefits().then((held) => {
+            if (!cancelled) setTouristVipHeld(held);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, isTouristAudience]);
 
     // HOS-226: correct the SSR-rendered "N days free" badge for an
     // authenticated, non-eligible visitor. The badge itself comes from the
@@ -529,6 +892,31 @@ export function PlanPurchaseButton({
 
     const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
 
+    // HOS-917: for a $0 plan, whether this specific card's slug matches
+    // `currentPlanSlug` is irrelevant — every authenticated account already
+    // has free-tier access by default (with or without a `billing_subscriptions`
+    // row for it), so the card must never offer a checkout button regardless
+    // of `currentPlanSlug`. This deliberately takes priority over `isCurrentPlan`
+    // and `isPlanChange` below in the render/aria-label logic. The previous bug:
+    // `currentPlanSlug === null` (no subscription row at all) made `isCurrentPlan`
+    // false, so an authenticated user with no subscription history saw a live
+    // "Empezar — $ 0" button that fired `createCheckout` and 502'd against MP.
+    const isFreePlanUnpurchasable = isFreePlan && isAuthenticated;
+    // Anonymous visitor on a $0 plan: the button is the registration funnel,
+    // not a checkout trigger — `handleClick`'s existing unauthenticated branch
+    // already redirects to sign-in, so this only changes the label shown.
+    const isFreePlanRegisterCta = isFreePlan && !isAuthenticated;
+
+    // HOS-1233 D-4 / AC-16: this visitor's live subscription in another
+    // vertical already spreads `TOURIST_VIP_ENTITLEMENTS` whole, so the tourist
+    // purchase sells nothing they do not have. Reads a subscription STATUS and
+    // nothing else (AC-18) — never a role, never the mere presence of a plan.
+    //
+    // `touristVipHeld` is `false` for an anonymous visitor and while the lookup
+    // is in flight, so the card is never born disabled: it is the R-7 direction
+    // — an unknown answer keeps the button usable.
+    const isTouristVipAlreadyHeld = isTouristAudience && touristVipHeld;
+
     // BETA-195: the user already has an active subscription on a DIFFERENT plan.
     // There is one subscription per customer, so firing start-paid for a second
     // plan is rejected by the backend with a non-transitory 409 ("You already
@@ -539,26 +927,29 @@ export function PlanPurchaseButton({
     const isPlanChange =
         isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
 
-    // Whether this checkout actually promises a trial to the user right now.
-    // `trialDays > 0` is the plan-level offer; `trialEligible !== false` mirrors
-    // the badge-suppression effect above — `null` (unauthenticated, still
-    // loading, or the lookup failed) leaves the SSR-promised trial standing, so
-    // the warning must show for it too. Only a confirmed `false` skips it.
-    const promisesTrial = trialDays > 0 && trialEligible !== false;
-
-    // Show the promo section only when the user can interact with checkout
+    // Show the promo section whenever there is a live checkout to apply it to
     // (never in the plan-change case — promo codes apply at checkout, not here).
     // HOS-451/H-90: never on a free ($0) plan — a promo code has no semantics
     // against a price that is already zero, and the validate endpoint rejects
     // amount=0 outright (`ValidatePromoCodeSchema.amount` is `.positive()`), so
     // offering the field here only produces a guaranteed error. A user who
     // wants a `comp` grant applies it on a paid plan, where it works.
+    //
+    // HOS-984: deliberately NOT gated on `isAuthenticated` any more. A promo
+    // code is an acquisition tool handed to people who do not have an account
+    // yet — gating the field on a session hid it from exactly the visitor it
+    // is for. An unauthenticated visitor still cannot validate against the
+    // protected endpoint (see `handleApplyPromo`), so the field defers to
+    // registration instead of calling it.
+    //
+    // HOS-1233: never on a card whose purchase is blocked because the VIP
+    // benefits are already held — there is no checkout for a code to reach.
     const showPromoSection =
         showPromo &&
-        isAuthenticated &&
         !isCurrentPlan &&
         !isAnnualUnavailable &&
         !isPlanChange &&
+        !isTouristVipAlreadyHeld &&
         displayPriceCents > 0;
 
     // HOS-452/H-82: the payer-email notice that used to live here (BETA-183)
@@ -637,13 +1028,41 @@ export function PlanPurchaseButton({
 
     /**
      * Handle "Aplicar" click on the promo code section.
-     * Calls the validate endpoint and updates promo state accordingly.
+     *
+     * Authenticated: calls the validate endpoint and updates promo state
+     * accordingly (unchanged behaviour).
+     *
+     * HOS-984, unauthenticated: the validate endpoint is protected and
+     * requires `userId` (see `apps/api/src/routes/billing/promo-codes.ts`),
+     * which an anonymous visitor does not have — so this deliberately never
+     * calls it for them. The code is only remembered locally, as
+     * `status: 'pending-auth'`, and the render below offers a CTA to
+     * registration carrying it (`buildPromoAwareAuthReturnPath`).
+     *
+     * @param codeOverride - HOS-984: the code to apply, when it did not come
+     *   from the input the user is looking at — used by the mount-time
+     *   effect that re-applies a code carried back from registration, where
+     *   reading `promo.code` from state would race the `setPromo` that just
+     *   set it. Defaults to the current input value.
      */
-    async function handleApplyPromo(): Promise<void> {
-        const code = promo.code.trim();
-        if (!code || !session?.user) return;
+    async function handleApplyPromo(codeOverride?: string): Promise<void> {
+        const code = (codeOverride ?? promo.code).trim();
+        if (!code) return;
 
-        setPromo((prev) => ({ ...prev, status: 'applying', errorMsg: null }));
+        if (!isAuthenticated) {
+            setPromo((prev) => ({
+                ...prev,
+                code,
+                status: 'pending-auth',
+                errorMsg: null,
+                appliedCode: code
+            }));
+            return;
+        }
+
+        if (!session?.user) return;
+
+        setPromo((prev) => ({ ...prev, code, status: 'applying', errorMsg: null }));
 
         try {
             const result = await billingApi.validatePromoCode({
@@ -684,6 +1103,27 @@ export function PlanPurchaseButton({
                 return;
             }
 
+            // HOS-1171: `/validate` still reports the effect of a legacy `comp`
+            // code, because it describes what the code IS, and `/start-paid`
+            // refuses it. Without this branch the card struck out its own price,
+            // announced "Gratis para siempre", and then the purchase failed —
+            // we promised free access and took it back one click later. A
+            // complimentary subscription is an operator's grant now, so the code
+            // is refused HERE, at the same moment as any other unusable one, and
+            // no preview is ever built from it.
+            if (effectPreview.effectKind === 'comp') {
+                setPromo((prev) => ({
+                    ...prev,
+                    status: 'error',
+                    errorMsg: t(
+                        'billing.checkout.promoApply.compNotRedeemable',
+                        'Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.'
+                    ),
+                    appliedCode: null
+                }));
+                return;
+            }
+
             setPromo((prev) => ({
                 ...prev,
                 status: 'valid',
@@ -702,7 +1142,9 @@ export function PlanPurchaseButton({
     }
 
     /**
-     * Remove the applied promo code and reset the section to idle.
+     * Remove the applied (or deferred) promo code and reset the section to
+     * idle. Used both from the `valid` state's "Quitar" and the `pending-auth`
+     * state's "Quitar" (HOS-984) — same reset either way.
      */
     function handleRemovePromo(): void {
         setPromo((prev) => ({
@@ -713,6 +1155,63 @@ export function PlanPurchaseButton({
             errorMsg: null,
             appliedCode: null
         }));
+    }
+
+    /**
+     * Builds the same-app relative path an unauthenticated visitor should
+     * land on after signing up, carrying a pending promo code so it survives
+     * the trip (HOS-984).
+     *
+     * Reuses the exact query-param mechanism `resolveSafeReturnPath` /
+     * `buildLoginRedirect` already use for `returnUrl` — the code just rides
+     * as extra query params ON that same relative path, so it needs no
+     * changes to the open-redirect guard, `signin.astro`, or `signup.astro`:
+     * `resolveSafeReturnPath` only checks the leading slashes, and a query
+     * string does not change those. This also means the code survives the
+     * password-registration path (which lands on `/auth/verify-email-sent/`
+     * and only reaches this destination via the verification email's
+     * `verificationCallbackUrl`, HOS-838), not just the immediate-session
+     * OAuth path — both ultimately resolve `authenticatedTargetHref` from
+     * this same `returnPath`.
+     *
+     * `promoPlan` scopes the code to THIS card's plan: validating a code is
+     * plan-specific (the endpoint takes an `amount`), so only the card whose
+     * slug matches consumes it on return — see the mount-time effect below.
+     *
+     * @param pendingCode - The code to carry, or `undefined` for a plain
+     *   return with no code attached.
+     * @returns A same-app relative path, safe to hand to `resolveSafeReturnPath`.
+     */
+    function buildPromoAwareAuthReturnPath(pendingCode: string | undefined): string {
+        if (!pendingCode) {
+            return buildUrl({ locale, path: plansPath });
+        }
+        return buildUrlWithParams({
+            locale,
+            path: plansPath,
+            params: {
+                [PENDING_PROMO_CODE_PARAM]: pendingCode,
+                [PENDING_PROMO_PLAN_PARAM]: planSlug
+            }
+        });
+    }
+
+    /**
+     * `href` for the "Registrarme" CTA inside the `pending-auth` promo state
+     * (HOS-984) — a plain link, not a click handler, so it works with no
+     * JavaScript and supports the ordinary link affordances (ctrl/cmd-click,
+     * "copy link address"), matching how `signup.astro` already builds its own
+     * "already have an account?" link. Sends the visitor to sign-up carrying
+     * the deferred code — targets `/auth/signup` specifically ("el CTA lo
+     * lleva al registro"), not `/auth/signin` (the main CTA's unauthenticated
+     * target in `handleClick`, unchanged).
+     *
+     * @param pendingCode - The code to carry (`promo.appliedCode` at the call
+     *   site), or `null` when none is pending.
+     */
+    function buildRegisterWithPromoHref(pendingCode: string | null): string {
+        const returnUrl = buildPromoAwareAuthReturnPath(pendingCode ?? undefined);
+        return `${buildUrl({ locale, path: 'auth/signup' })}?returnUrl=${encodeURIComponent(returnUrl)}`;
     }
 
     // ---------------------------------------------------------------------------
@@ -800,9 +1299,8 @@ export function PlanPurchaseButton({
 
     /**
      * Handle button click.
-     * Redirects unauthenticated users to sign-in; opens the trial-warning
-     * dialog when this checkout promises a trial (see `promisesTrial`);
-     * otherwise fires the checkout POST directly for authenticated users.
+     * Redirects unauthenticated users to sign-in; otherwise fires the checkout
+     * POST for authenticated users.
      */
     async function handleClick(): Promise<void> {
         // Clear any previous error on each attempt.
@@ -816,9 +1314,34 @@ export function PlanPurchaseButton({
             return;
         }
 
+        // HOS-917: an authenticated visitor already has any $0 plan by
+        // default. The button renders no clickable state for this case (see
+        // `buttonDisabled` below), but guard here too — belt-and-suspenders
+        // against `createCheckout` ever firing with a $0 plan, which is
+        // exactly the real-money incident this fixes (MercadoPago's
+        // start-paid rejects `transaction_amount: 0` with a 502).
+        if (isFreePlanUnpurchasable) {
+            return;
+        }
+
+        // HOS-1233 AC-16: the card renders no clickable state for this, but
+        // guard here too — the same belt-and-suspenders the $0 branch above
+        // takes, against a disabled state bypassed by assistive tech.
+        if (isTouristVipAlreadyHeld) {
+            return;
+        }
+
         if (!isAuthenticated) {
-            const plansPath = buildUrl({ locale, path: 'suscriptores/planes' });
-            const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(plansPath)}`;
+            // HOS-984: if this card's promo widget already has a code
+            // deferred (`pending-auth` — the visitor clicked "Aplicar"
+            // without a session), carry it along even when they click the
+            // main CTA instead of the widget's own "Registrarme" link. Not
+            // just a convenience: the widget promised "se va a aplicar
+            // cuando te registres", and dropping the code here because they
+            // clicked the wrong button would break that promise silently.
+            const pendingCode = promo.status === 'pending-auth' ? promo.appliedCode : null;
+            const returnUrl = buildPromoAwareAuthReturnPath(pendingCode ?? undefined);
+            const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(returnUrl)}`;
             window.location.href = signinPath;
             return;
         }
@@ -832,36 +1355,173 @@ export function PlanPurchaseButton({
             return;
         }
 
-        // Prevent double-submission.
-        if (loading) {
+        // Prevent double-submission. `awaitingTrialClock` is the same guard for
+        // a click already parked on the trial read (HOS-1233): the button
+        // renders non-actionable in both states, and this is the
+        // belt-and-suspenders behind that.
+        if (loading || awaitingTrialClock) {
             return;
         }
 
-        // MercadoPago-vs-Hospeda trial-eligibility mismatch (real-money incident
-        // in prod): stop here and require explicit confirmation instead of
-        // going straight to MercadoPago. `handleTrialWarningConfirm` re-invokes
-        // `runCheckout` directly once the user accepts.
-        if (promisesTrial) {
-            setShowTrialWarning(true);
+        // HOS-1233 T-017: the trial gate, and the last thing between this
+        // click and real money. Everything above it answers "can this person
+        // buy this plan at all"; this answers "should they be buying it right
+        // now, or do they already have it free for another N days".
+        await startTrialAwareCheckout();
+    }
+
+    /**
+     * Dispatches D-2's three branches for this page's vertical (HOS-1233
+     * T-017 / AC-3 / AC-4 / AC-5).
+     *
+     * **The dispatch is an exhaustive record, not a `switch`, and that is
+     * load-bearing.** `test/lib/billing/trial-start-branch-canonical.guard.test.ts`
+     * (AC-11 / F-6) fails CI on any branch literal sitting next to a decision
+     * construct anywhere in `apps/web/src` outside the canonical module — a
+     * `switch` or an `===` here is precisely the second derivation R-1 names as
+     * this spec's own risk. A `Record<TrialStartBranch, …>` keyed by unquoted
+     * property names carries the same exhaustiveness (a fourth branch fails to
+     * compile) while deciding nothing: `resolveTrialStartBranch` decides, this
+     * only looks up what it decided.
+     *
+     * Two escapes, both of which resolve to today's behaviour rather than to a
+     * dead button:
+     *
+     * - **No trial scope** (`aliados`). Nothing to consult, so the click goes
+     *   straight to checkout as it always has. This is not a fail-safe, it is
+     *   the absence of a question — and it must not be confused with a failed
+     *   read, which warns.
+     * - **No create form** (`turistas`). D-2's first branch says "step 1 of
+     *   that vertical's create form"; a traveller has no listing to create, so
+     *   there is no step 1 to send them to. Falling through to checkout is what
+     *   the page already did, promises nothing, and keeps the button alive. It
+     *   is deliberately NOT a warning: that branch is reached only when no
+     *   trial ever started, so there are no days to lose and no figure that
+     *   could be stated honestly.
+     *
+     * **A click that beats the clock is DEFERRED, never answered.** The button
+     * is interactive from `client:load` while the read is one RTT behind, and
+     * `resolveTrialStartBranch` cannot tell a pending read from a failed one —
+     * both reach it as `null`, and it correctly warns. Warning is right for a
+     * failed read (AC-9 / R-2: an unresolved read must never become a silent
+     * charge) and wrong for a pending one, whose real answer may well be AC-3's
+     * navigation to the create form. So a click arriving early awaits the SAME
+     * module-cached promise the mount effect started — no second request — and
+     * dispatches on the reading that actually comes back.
+     */
+    async function startTrialAwareCheckout(): Promise<void> {
+        if (trialScope === null) {
+            // HOS-937 step 2 (spec §8.1): show the payer-email confirm dialog
+            // right before actually creating the MercadoPago preapproval.
+            proceedPastPayerEmailStep();
             return;
         }
 
-        await runCheckout();
+        const branchActions: Record<TrialStartBranch, () => void> = {
+            trial_create_form: () => {
+                if (publishPath === null) {
+                    proceedPastPayerEmailStep();
+                    return;
+                }
+                // AC-3: no payer-email dialog on this path. Starting a trial is
+                // what the create form does; charging first sells what they can
+                // have free.
+                window.location.href = buildUrl({ locale, path: publishPath });
+            },
+            trial_warn_then_checkout: () => {
+                setShowTrialWarning(true);
+            },
+            trial_checkout: () => {
+                proceedPastPayerEmailStep();
+            }
+        };
+
+        let reading = trialClock;
+        if (!trialClockSettled) {
+            setAwaitingTrialClock(true);
+            try {
+                reading = await fetchTrialClock({ productDomain: trialScope });
+            } catch {
+                // Same direction as the mount effect's own catch: an
+                // unresolvable read is `null`, which warns.
+                reading = null;
+            } finally {
+                setAwaitingTrialClock(false);
+            }
+        }
+
+        branchActions[resolveTrialStartBranch({ reading })]();
+    }
+
+    /**
+     * Gate for the payer-email confirm dialog (HOS-937 review fix, widened
+     * in step 4). The dialog only has an effect on the own-preapproval
+     * checkout path — with the flag off (production today) BOTH intervals
+     * this button renders redirect to MercadoPago's hosted share-link
+     * checkout, which silently discards `payer_email`. Showing the dialog
+     * there would be a real extra click in a flow that bills, with zero
+     * effect — so skip straight to `runCheckout` with the session's own
+     * email (the same value the dialog would have pre-filled) whenever the
+     * flag is off.
+     *
+     * No longer conditioned on `billingInterval === 'monthly'`: HOS-937 step
+     * 4 extended the own-preapproval path to accommodation ANNUAL too (same
+     * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` flag), so restricting the
+     * gate to monthly left an annual checkout binding a payer_email the user
+     * never got to see or edit. Commerce and partner checkouts do not go
+     * through this component (see `CommerceListingActions.client.tsx` and
+     * `apps/api/src/routes/partners/admin/send-link.ts` respectively), so
+     * they are unaffected by this gate either way.
+     *
+     * Reached from `handleClick`, the only checkout path this component has
+     * since HOS-1012 T-027 removed the trial-warning dialog that used to sit
+     * in front of it.
+     *
+     * HOS-1234: even on the own-preapproval path, the dialog is skipped when
+     * `payerEmailKnown` is `true` — a prior charge already confirmed an
+     * address MercadoPago accepted (`billing_customers.mp_payer_email`), so
+     * asking again is pure friction with no new information gained.
+     * `runCheckout('')` passes an empty string here on purpose:
+     * `billingApi.createCheckout` only adds `payerEmail` to the request body
+     * when it is truthy, so an empty string means the field is OMITTED and
+     * `/start-paid` resolves it server-side via `resolvePayerEmail`'s own
+     * precedence — which is exactly the cached address this branch is
+     * skipping the dialog because of. Sending the session email here instead
+     * would silently override that cache with a value that may not be the
+     * one MercadoPago actually expects (HOS-971's whole point).
+     */
+    function proceedPastPayerEmailStep(): void {
+        if (!ownPreapprovalEnabled) {
+            void runCheckout(session?.user?.email ?? '');
+            return;
+        }
+        if (payerEmailKnown) {
+            void runCheckout('');
+            return;
+        }
+        setShowPayerEmailConfirm(true);
     }
 
     /**
      * Fires the actual checkout POST and follows the returned URL. Split out
      * of `handleClick` so the trial-warning dialog's "continue" action can
      * invoke it directly, without re-running the trial-warning gate.
+     *
+     * @param payerEmail - HOS-937 step 2: the email confirmed (or edited) on
+     *   the pre-redirect dialog (or, when the payer-email step is gated off,
+     *   the session's own email — see `proceedPastPayerEmailStep`). Forwarded
+     *   to `/start-paid` so it wins over the server's own default resolution
+     *   (spec §6.3).
      */
-    async function runCheckout(): Promise<void> {
+    async function runCheckout(payerEmail: string): Promise<void> {
         setLoading(true);
 
         try {
             const result = await billingApi.createCheckout({
                 planSlug,
                 billingInterval,
-                ...(promo.appliedCode ? { promoCode: promo.appliedCode } : {})
+                ...(promo.appliedCode ? { promoCode: promo.appliedCode } : {}),
+                payerEmail
             });
 
             if (!result.ok || !result.data.checkoutUrl) {
@@ -874,7 +1534,47 @@ export function PlanPurchaseButton({
                     'billing.checkout.button.error',
                     'No pudimos iniciar el pago. Intenta de nuevo.'
                 );
-                setError(checkoutError);
+                // HOS-1321: read the rejection instead of flattening every one
+                // of them into "No pudimos iniciar el pago". `/start-paid`
+                // refuses a second live subscription with a 409 carrying
+                // `reason: 'ALREADY_SUBSCRIBED'` (HOS-1260 widened that guard
+                // to catch a live `tourist-vip`), and that generic sentence is
+                // what turned the refusal into a dead end: it reads as a
+                // transient payment failure, so the only thing it suggests is
+                // clicking again — which is deterministically refused again.
+                // `translateApiError` is the repo's own reason → code → status
+                // chain, so the specific copy is one `common.apiError.<REASON>`
+                // key away and an unmapped reason falls through to exactly the
+                // string this line used to hardcode.
+                //
+                // The rejection is handed over WITHOUT its `message`, and that
+                // is the whole of the safety here. `translateApiError`'s last
+                // step is `apiMessage || fallback`, and `apiMessage` is the
+                // API's ENGLISH text — reachable exactly when the response
+                // carried no machine-readable identifier at all (a raw upstream
+                // 502, a body with no `error` envelope, a network failure the
+                // client turns into `API request failed with status N`).
+                // Dropping the field makes that term empty, so every one of
+                // those falls to `checkoutError`: the same localized sentence
+                // this line used to hardcode, and English can never surface.
+                //
+                // Preferred over gating the call on `reason || code`, which was
+                // the first attempt: that also skipped the STATUS branch, so a
+                // 429 or a client-side timeout lost the specific copy
+                // (`RATE_LIMIT_EXCEEDED`, `TIMEOUT`) that already ships in all
+                // three locales. Stripping one field keeps every mapped branch
+                // and closes the only unmapped one.
+                //
+                // `result.ok` with a missing `checkoutUrl` carries no error
+                // object at all, and takes the same generic sentence.
+                const rejection = result.ok ? undefined : result.error;
+                setError(
+                    translateApiError({
+                        error: rejection ? { ...rejection, message: undefined } : undefined,
+                        t,
+                        fallback: checkoutError
+                    })
+                );
                 return;
             }
 
@@ -920,33 +1620,78 @@ export function PlanPurchaseButton({
     }
 
     /**
-     * User accepted the trial-warning dialog — close it and proceed to the
-     * checkout that was held back.
+     * User confirmed (or edited) the payer email — close the dialog and fire
+     * the actual checkout with that email (HOS-937 step 2).
      */
-    function handleTrialWarningConfirm(): void {
-        setShowTrialWarning(false);
-        void runCheckout();
+    function handlePayerEmailConfirm(confirmedEmail: string): void {
+        setShowPayerEmailConfirm(false);
+        void runCheckout(confirmedEmail);
     }
 
     /**
-     * User dismissed the trial-warning dialog (Cancel, Escape, or overlay
-     * click) — close it without starting a checkout.
+     * User dismissed the payer-email confirm dialog (Cancel, Escape, or
+     * overlay click) — close it without starting a checkout.
+     */
+    function handlePayerEmailCancel(): void {
+        setShowPayerEmailConfirm(false);
+    }
+
+    /**
+     * The visitor accepted losing the remaining trial days (HOS-1233 AC-4).
+     * Closes the warning and continues into the ordinary checkout path — which
+     * is the payer-email step, exactly as an unwarned click would have taken.
+     */
+    function handleTrialWarningConfirm(): void {
+        setShowTrialWarning(false);
+        proceedPastPayerEmailStep();
+    }
+
+    /**
+     * The visitor cancelled the warning (button, `Escape` or overlay click).
+     *
+     * AC-4: this performs NO checkout and leaves the subscription untouched —
+     * closing the dialog is the whole of it. Nothing here may call
+     * `runCheckout`, `proceedPastPayerEmailStep`, or navigate.
      */
     function handleTrialWarningCancel(): void {
         setShowTrialWarning(false);
     }
 
-    const buttonAriaLabel = isCurrentPlan
-        ? currentPlanAriaLabel
-        : isPlanChange
-          ? changePlanCtaLabel
-          : isAnnualUnavailable
-            ? monthlyOnlyLabel
-            : loading
-              ? processingAriaLabel
-              : `${ctaText} — ${formattedPrice}`;
+    // `undefined` for the VIP-held state, so the accessible name falls back to
+    // the button's own visible label. Naming it with `touristVipHeldNote`
+    // instead put an accessible name ("Tu suscripción activa ya incluye…")
+    // that shares no word with the visible one ("Ya tenés estos beneficios")
+    // — WCAG 2.5.3 Label in Name, which breaks voice control: nobody can say
+    // the sentence they cannot see. The note is not lost, it is the `<p>`
+    // rendered below the button, which is also why announcing it here made a
+    // screen reader read it twice.
+    const buttonAriaLabel: string | undefined = isFreePlanUnpurchasable
+        ? freePlanLegendLabel
+        : isFreePlanRegisterCta
+          ? freeRegisterCtaLabel
+          : isTouristVipAlreadyHeld
+            ? undefined
+            : isCurrentPlan
+              ? currentPlanAriaLabel
+              : isPlanChange
+                ? changePlanCtaLabel
+                : isAnnualUnavailable
+                  ? monthlyOnlyLabel
+                  : loading
+                    ? processingAriaLabel
+                    : `${ctaText} — ${formattedPrice}`;
 
-    const buttonDisabled = loading || isCurrentPlan || isAnnualUnavailable;
+    // `awaitingTrialClock` sits with `loading` and not with the states below it:
+    // it is transient (one RTT) and says nothing about whether this plan can be
+    // bought, so it stays out of `aria-disabled`, which describes the permanent
+    // refusals. HOS-1233.
+    const buttonDisabled =
+        loading ||
+        awaitingTrialClock ||
+        isCurrentPlan ||
+        isAnnualUnavailable ||
+        isFreePlanUnpurchasable ||
+        isTouristVipAlreadyHeld;
 
     return (
         <div className={styles.wrapper}>
@@ -956,12 +1701,17 @@ export function PlanPurchaseButton({
                 data-testid="plan-cta-button"
                 disabled={buttonDisabled}
                 aria-label={buttonAriaLabel}
-                aria-busy={loading}
-                aria-disabled={isCurrentPlan || isAnnualUnavailable}
+                aria-busy={loading || awaitingTrialClock}
+                aria-disabled={
+                    isCurrentPlan ||
+                    isAnnualUnavailable ||
+                    isFreePlanUnpurchasable ||
+                    isTouristVipAlreadyHeld
+                }
                 onClick={buttonDisabled ? undefined : () => void handleClick()}
-                className={`${styles.button}${isCurrentPlan ? ` ${styles.buttonCurrent}` : ''}`}
+                className={`${styles.button}${isCurrentPlan || isFreePlanUnpurchasable || isTouristVipAlreadyHeld ? ` ${styles.buttonCurrent}` : ''}`}
             >
-                {isCurrentPlan ? (
+                {isCurrentPlan || isFreePlanUnpurchasable || isTouristVipAlreadyHeld ? (
                     <span className={styles.currentContent}>
                         <svg
                             className={styles.currentIcon}
@@ -980,7 +1730,13 @@ export function PlanPurchaseButton({
                                 stroke-linejoin="round"
                             />
                         </svg>
-                        <span>{currentPlanLabel}</span>
+                        <span>
+                            {isFreePlanUnpurchasable
+                                ? freePlanLegendLabel
+                                : isTouristVipAlreadyHeld
+                                  ? touristVipHeldLabel
+                                  : currentPlanLabel}
+                        </span>
                     </span>
                 ) : loading ? (
                     <span className={styles.loadingContent}>
@@ -997,6 +1753,10 @@ export function PlanPurchaseButton({
                 ) : isPlanChange ? (
                     <span className={styles.idleContent}>
                         <span className={styles.ctaText}>{changePlanCtaLabel}</span>
+                    </span>
+                ) : isFreePlanRegisterCta ? (
+                    <span className={styles.idleContent}>
+                        <span className={styles.ctaText}>{freeRegisterCtaLabel}</span>
                     </span>
                 ) : (
                     <span className={styles.idleContent}>
@@ -1022,18 +1782,59 @@ export function PlanPurchaseButton({
                 </p>
             )}
 
-            {/* Promo code section — only shown when the user can actually checkout */}
+            {/* HOS-1233 AC-16: the button label alone says the purchase is
+                blocked; this says WHY, which is the part that keeps it from
+                reading as a bug. Only ever rendered off a live subscription
+                status (AC-18). */}
+            {isTouristVipAlreadyHeld && (
+                <p
+                    className={styles.touristVipHeldNote}
+                    data-testid="tourist-vip-already-held-note"
+                >
+                    {touristVipHeldNote}
+                </p>
+            )}
+
+            {/* Promo code section — HOS-984: rendered directly (no collapsed
+                toggle) whenever there is a live checkout to apply it to,
+                authenticated or not. */}
             {showPromoSection && (
                 <div className={styles.promoSection}>
-                    {promo.expanded ? (
-                        <div className={styles.promoField}>
-                            {promo.status === 'valid' ? (
-                                /* Valid code — show preview */
-                                <div className={styles.promoSuccess}>
-                                    {/* <output> carries an implicit role="status" */}
-                                    <output className={styles.promoPreviewText}>
-                                        {promo.preview ? buildPreviewText(promo.preview) : ''}
-                                    </output>
+                    <div className={styles.promoField}>
+                        {promo.status === 'valid' ? (
+                            /* Authenticated, validated — show the live preview */
+                            <div className={styles.promoSuccess}>
+                                {/* <output> carries an implicit role="status" */}
+                                <output className={styles.promoPreviewText}>
+                                    {promo.preview ? buildPreviewText(promo.preview) : ''}
+                                </output>
+                                <button
+                                    type="button"
+                                    className={styles.promoRemoveButton}
+                                    onClick={handleRemovePromo}
+                                >
+                                    {promoRemoveButton}
+                                </button>
+                            </div>
+                        ) : promo.status === 'pending-auth' ? (
+                            /* HOS-984: submitted without a session — never sent to the
+                               protected validate endpoint. Names the code, promises it
+                               will apply on registration, and links straight to
+                               sign-up carrying it. */
+                            <div className={styles.promoPendingAuth}>
+                                <p className={styles.promoPendingAuthText}>
+                                    {promoPendingAuthMessageTemplate.replace(
+                                        '{{code}}',
+                                        promo.appliedCode ?? ''
+                                    )}
+                                </p>
+                                <div className={styles.promoPendingAuthActions}>
+                                    <a
+                                        href={buildRegisterWithPromoHref(promo.appliedCode)}
+                                        className={styles.promoRegisterButton}
+                                    >
+                                        {promoRegisterCtaLabel}
+                                    </a>
                                     <button
                                         type="button"
                                         className={styles.promoRemoveButton}
@@ -1042,90 +1843,87 @@ export function PlanPurchaseButton({
                                         {promoRemoveButton}
                                     </button>
                                 </div>
-                            ) : (
-                                <>
-                                    <label
-                                        htmlFor={promoInputId}
-                                        className={styles.promoLabel}
+                            </div>
+                        ) : (
+                            <>
+                                <label
+                                    htmlFor={promoInputId}
+                                    className={styles.promoLabel}
+                                >
+                                    {promoLabel}
+                                </label>
+                                <div className={styles.promoInputRow}>
+                                    <input
+                                        id={promoInputId}
+                                        type="text"
+                                        className={styles.promoInput}
+                                        placeholder={promoPlaceholder}
+                                        value={promo.code}
+                                        onChange={(e) =>
+                                            setPromo((prev) => ({
+                                                ...prev,
+                                                code: e.target.value,
+                                                status: 'idle',
+                                                errorMsg: null
+                                            }))
+                                        }
+                                        onKeyDown={(e) => {
+                                            if (
+                                                e.key === 'Enter' &&
+                                                promo.code.trim() &&
+                                                promo.status !== 'applying'
+                                            ) {
+                                                void handleApplyPromo();
+                                            }
+                                        }}
+                                        disabled={promo.status === 'applying'}
+                                        aria-label={promoLabel}
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.promoApplyButton}
+                                        onClick={() => void handleApplyPromo()}
+                                        disabled={!promo.code.trim() || promo.status === 'applying'}
+                                        aria-busy={promo.status === 'applying'}
                                     >
-                                        {promoLabel}
-                                    </label>
-                                    <div className={styles.promoInputRow}>
-                                        <input
-                                            id={promoInputId}
-                                            type="text"
-                                            className={styles.promoInput}
-                                            placeholder={promoPlaceholder}
-                                            value={promo.code}
-                                            onChange={(e) =>
-                                                setPromo((prev) => ({
-                                                    ...prev,
-                                                    code: e.target.value,
-                                                    status: 'idle',
-                                                    errorMsg: null
-                                                }))
-                                            }
-                                            onKeyDown={(e) => {
-                                                if (
-                                                    e.key === 'Enter' &&
-                                                    promo.code.trim() &&
-                                                    promo.status !== 'applying'
-                                                ) {
-                                                    void handleApplyPromo();
-                                                }
-                                            }}
-                                            disabled={promo.status === 'applying'}
-                                            aria-label={promoLabel}
-                                            autoComplete="off"
-                                            spellCheck={false}
-                                        />
-                                        <button
-                                            type="button"
-                                            className={styles.promoApplyButton}
-                                            onClick={() => void handleApplyPromo()}
-                                            disabled={
-                                                !promo.code.trim() || promo.status === 'applying'
-                                            }
-                                            aria-busy={promo.status === 'applying'}
-                                        >
-                                            {promo.status === 'applying'
-                                                ? promoApplying
-                                                : promoApplyButton}
-                                        </button>
-                                    </div>
-                                    {promo.status === 'error' && promo.errorMsg && (
-                                        <p
-                                            role="alert"
-                                            className={styles.promoErrorMessage}
-                                        >
-                                            {promo.errorMsg}
-                                        </p>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            className={styles.promoToggle}
-                            onClick={() => setPromo((prev) => ({ ...prev, expanded: true }))}
-                        >
-                            <TagIcon
-                                size={16}
-                                weight="regular"
-                                aria-hidden="true"
-                            />
-                            <span>{promoToggleLabel}</span>
-                        </button>
-                    )}
+                                        {promo.status === 'applying'
+                                            ? promoApplying
+                                            : promoApplyButton}
+                                    </button>
+                                </div>
+                                {promo.status === 'error' && promo.errorMsg && (
+                                    <p
+                                        role="alert"
+                                        className={styles.promoErrorMessage}
+                                    >
+                                        {promo.errorMsg}
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
 
+            {/* HOS-1233 T-016 / AC-4. Sits IN FRONT of the payer-email dialog,
+                not beside it: the question "do you accept losing N free days"
+                has to be answered before the one about which email pays. */}
             <TrialWarningDialog
                 isOpen={showTrialWarning}
                 locale={locale}
+                daysRemaining={trialClock?.daysRemaining ?? null}
                 onCancel={handleTrialWarningCancel}
                 onConfirm={handleTrialWarningConfirm}
+            />
+
+            <PayerEmailConfirmDialog
+                isOpen={showPayerEmailConfirm}
+                locale={locale}
+                defaultEmail={session?.user?.email ?? ''}
+                onCancel={handlePayerEmailCancel}
+                onConfirm={handlePayerEmailConfirm}
             />
         </div>
     );

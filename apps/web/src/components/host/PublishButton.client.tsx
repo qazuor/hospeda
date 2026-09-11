@@ -21,16 +21,16 @@
  *               names the fields the server reported).
  *  6. No (cancel) → returns to step 1.
  *
- * ## Without a plan there is no step 1 at all (H-99)
+ * ## When the server would refuse, there is no step 1 at all (H-99)
  *
- * When `hasActivePlan` is false the button is never rendered: the plan link
- * takes its place. Publishing used to be offered with the same prominence as
- * Edit and Delete to an owner with no subscription at all, opening a dialog
- * that promised "va a aparecer en el sitio, visible para los turistas" —
- * something that could not happen — and failing only on confirm. Worse, the
- * failure cited missing bathrooms rather than the missing plan, because the
- * server checked completeness first. Both halves are fixed: the guard order
- * flipped server-side, and this button no longer offers what it cannot deliver.
+ * When `canPublish` is false the button is never rendered: the plan link takes
+ * its place. Publishing used to be offered with the same prominence as Edit and
+ * Delete to an owner with no subscription at all, opening a dialog that promised
+ * "va a aparecer en el sitio, visible para los turistas" — something that could
+ * not happen — and failing only on confirm. Worse, the failure cited missing
+ * bathrooms rather than the missing plan, because the server checked
+ * completeness first. Both halves are fixed: the guard order flipped
+ * server-side, and this button no longer offers what it cannot deliver.
  *
  * ## The rejection names real fields (H-94)
  *
@@ -42,16 +42,25 @@
  * the server's `reason`, resolved through the same shared requirement list the
  * gate rejects from.
  *
- * ## Publishing does NOT start a trial (HOS-171)
+ * ## Publishing starts the trial again, and the button reads the verdict (HOS-1183)
  *
- * It used to: publishing granted a no-card trial via `TrialService.startTrial()`,
- * and the confirmation step existed to announce it ("14 días gratis al publicar.
- * Sin tarjeta, sin compromiso"). Card-first moved the trial onto the MercadoPago
- * preapproval the CHECKOUT creates, so publishing now requires an active
- * subscription and rejects without one. The confirm copy no longer promises
- * anything about billing, and `subscriptionRequired` went from an edge case (only
- * an owner who had burnt their one trial) to the normal first-publish outcome for
- * any owner without a plan — so its copy must not claim they already used a trial.
+ * This has flipped twice. Originally publishing granted a no-card trial and the
+ * confirm step announced it. HOS-171 (card-first) moved the trial onto the
+ * MercadoPago preapproval the CHECKOUT creates, so publishing required an active
+ * subscription, rejected without one, and every billing promise was stripped from
+ * the confirm copy. HOS-1012 moved the trial back off MercadoPago — a local row
+ * with `mp_subscription_id = NULL`, inserted in the same transaction as the
+ * lifecycle flip — so publishing grants it once more.
+ *
+ * The server followed; this button did not, and that is the bug HOS-1183 fixed.
+ * It gated on `hasActivePlan` (`entitlements.plan != null`), which is the
+ * server's `has_active_sub` verdict alone, while the server publishes on
+ * `first_publish` too. The two publishable verdicts collapsed into one `false`
+ * and the button vanished for exactly the owner holding an intact trial.
+ *
+ * So the props are now the server's own answer (`canPublish` / `startsTrial`,
+ * from `GET /protected/accommodations/publish-eligibility`), and the trial line
+ * is back — in the one branch where it is true.
  *
  * Mirrors UnpublishButton.client.tsx / DeleteButton.client.tsx (same
  * inline-confirm UX), but uses a positive (green) accent for the confirm
@@ -73,7 +82,9 @@
  *   subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
  *   missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', '...')}
  *   missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
- *   hasActivePlan={hasOwnerPlan}
+ *   canPublish={publishEligibility.canPublish}
+ *   startsTrial={publishEligibility.startsTrial}
+ *   confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', trialDays, { trialDays })}
  *   choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
  * />
  * ```
@@ -87,6 +98,7 @@ import {
 import { type JSX, useState } from 'react';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishButton.module.css';
 
@@ -149,15 +161,44 @@ export interface PublishButtonProps {
     /** Label for the link to the editor in that same case (already-translated). */
     readonly missingRequirementsCta: string;
     /**
-     * Whether the owner has a live host plan. When `false` the button does not
-     * offer to publish at all: it offers the plan instead (H-99).
+     * Whether the server would accept a publish for this owner right now, read
+     * from `GET /protected/accommodations/publish-eligibility`. When `false`
+     * the button does not offer to publish at all: it offers the plan instead
+     * (H-99).
      *
-     * The page already knows this — it renders a "necesitás un plan de anfitrión
-     * activo" banner above the very same grid — but the button ignored it, so
-     * publishing was offered with the same prominence as Edit and Delete, opened
-     * a dialog promising "va a aparecer en el sitio", and only then failed.
+     * ## It replaced a boolean that meant something narrower (HOS-1183)
+     *
+     * This prop used to be `hasActivePlan`, fed by `entitlements.plan != null`
+     * — which is the server's `has_active_sub` verdict and nothing else. The
+     * server publishes on TWO verdicts: `has_active_sub` and `first_publish`,
+     * the latter starting a local trial in the same transaction. So the button
+     * hid itself from precisely the owner whose trial was intact, and offered
+     * them a plans page they did not need.
+     *
+     * Do NOT re-derive this from `startsTrial` or from any verdict comparison.
+     * One side owns the rule now, and it is the server.
      */
-    readonly hasActivePlan: boolean;
+    readonly canPublish: boolean;
+    /**
+     * Whether publishing would start the owner's free trial, from the same
+     * read. Adds one line to the confirm step and nothing else.
+     *
+     * Separate from `canPublish` because they are separate questions: a paying
+     * owner publishes and starts nothing, and platform staff publish while
+     * being granted nothing. Announcing a trial to either would promise a clock
+     * that never starts.
+     */
+    readonly startsTrial: boolean;
+    /**
+     * The trial line for the confirm step (already-translated, with the day
+     * count interpolated). Rendered ONLY when `startsTrial` is true.
+     *
+     * It may say "sin tarjeta", because in that branch it is true: HOS-1012's
+     * trial is a local row with no MercadoPago preapproval, and signup collects
+     * no card. It must never appear in the `subscription_required` branch,
+     * where the trial is already spent and a free-run promise would be a lie.
+     */
+    readonly confirmTrialNote: string;
     /** Label for the "choose a plan" action shown in place of Publish. */
     readonly choosePlanLabel: string;
 }
@@ -188,7 +229,9 @@ export function PublishButton({
     subscriptionRequiredCta,
     missingRequirementsMessage,
     missingRequirementsCta,
-    hasActivePlan,
+    canPublish,
+    startsTrial,
+    confirmTrialNote,
     choosePlanLabel
 }: PublishButtonProps): JSX.Element {
     const [state, setState] = useState<PublishState>('idle');
@@ -253,15 +296,19 @@ export function PublishButton({
         window.location.reload();
     }
 
-    // ── No plan ───────────────────────────────────────────────────────────
+    // ── The server would refuse ───────────────────────────────────────────
     // Offering "Publicar" here would open a dialog promising the listing goes
     // live, and then fail — and until the guard order was flipped it failed
-    // citing bathrooms, never the plan. The page already knows the plan is
-    // missing; the button just never asked (H-99).
-    if (!hasActivePlan) {
+    // citing bathrooms, never the plan (H-99).
+    //
+    // The branch survives HOS-1183; what changed is who it catches. It used to
+    // fire on "no plan loaded", which swept up every owner with an intact
+    // trial. It now fires only when the server itself would refuse. Deleting
+    // the branch instead of narrowing it would bring H-99 straight back.
+    if (!canPublish) {
         return (
             <a
-                href={buildUrl({ locale, path: 'suscriptores/planes' })}
+                href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
                 className={`${styles.action} ${styles.primary}`}
             >
                 {choosePlanLabel}
@@ -301,7 +348,7 @@ export function PublishButton({
     // Publish failed because the owner has no active plan. Show a banner
     // pointing to the plans page instead of a retryable error.
     if (state === 'subscriptionRequired') {
-        const plansUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+        const plansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
         return (
             <span
                 role="alert"
@@ -395,6 +442,18 @@ export function PublishButton({
             >
                 <p className={styles.calloutTitle}>{confirmTitle}</p>
                 <p className={styles.calloutNote}>{confirmNote}</p>
+                {/*
+                 * HOS-1183 D-2: publishing starts a 30-day clock by the owner's
+                 * own action, so it says so. HOS-171 stripped every billing
+                 * promise from this step because the trial had moved onto the
+                 * MercadoPago preapproval and publishing granted nothing; HOS-1012
+                 * moved it back, and the copy had not followed.
+                 *
+                 * Only in this branch. A paying owner sees the same two lines as
+                 * before (byte-identical, AC-13), and an owner whose trial is
+                 * spent never reaches the confirm step at all.
+                 */}
+                {startsTrial && <p className={styles.calloutNote}>{confirmTrialNote}</p>}
                 <button
                     type="button"
                     className={`${styles.action} ${styles.primary}`}

@@ -236,10 +236,11 @@
             "unauthCta": "Iniciá sesión para contratar",
             "currentPlan": "Plan actual",
             "currentPlanAriaLabel": "Este es tu plan actual",
-            "changePlan": "Cambiar a este plan"
+            "changePlan": "Cambiar a este plan",
+            "freeRegisterCta": "Registrate gratis",
+            "freePlanLegend": "Ya tenés este plan"
         },
         "promoApply": {
-            "toggle": "¿Tenés un código de descuento?",
             "label": "Código de descuento",
             "inputPlaceholder": "Ingresá tu código",
             "applyButton": "Aplicar",
@@ -254,6 +255,7 @@
             "trialExtension_one": "{{days}} día de prueba gratis adicional",
             "trialExtension_other": "{{days}} días de prueba gratis adicionales",
             "comp": "Gratis para siempre",
+            "compNotRedeemable": "Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.",
             "errorInvalid": "El código ingresado no es válido. Revisalo e intentá de nuevo.",
             "errorAnnualOutsideTrial": "Este código de descuento no aplica a planes anuales fuera del período de prueba.",
             "errorGeneric": "No pudimos verificar el código. Intentá de nuevo.",
@@ -264,14 +266,34 @@
             "errorMaxUsesPerUser": "Ya usaste este código la cantidad máxima de veces.",
             "errorPlanRestriction": "Este código no es válido para el plan seleccionado.",
             "errorNewUsersOnly": "Este código es solo para clientes nuevos.",
-            "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código."
+            "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código.",
+            "pendingAuthMessage": "Vas a poder aplicar el código {{code}} en cuanto termines de registrarte.",
+            "registerCta": "Registrarme"
         },
-        "trialWarning": {
-            "title": "La prueba gratis la otorga Mercado Pago",
-            "body": "Mercado Pago otorga el período de prueba una sola vez por cuenta y por plan. Si ya usaste una prueba de este plan con la misma cuenta de Mercado Pago, Mercado Pago va a cobrar el primer período al momento en lugar de aplicarte la prueba.",
-            "confirm": "Entendido, continuar",
+        "payerEmailConfirm": {
+            "title": "Con qué email vas a poder pagar",
+            "body": "Mercado Pago solo te va a dejar pagar con este email exacto. Si querés usar otra cuenta de Mercado Pago, cambialo antes de continuar.",
+            "label": "Email de pago",
+            "invalidError": "Ingresá un email válido",
+            "plusError": "Mercado Pago no acepta emails con «+». Escribí otra dirección para poder pagar.",
+            "confirm": "Continuar",
             "cancel": "Cancelar"
         }
+    },
+    "checkoutRetry": {
+        "checkingTitle": "Verificando tu pago...",
+        "checkingBody": "Estamos revisando el estado de tu suscripción.",
+        "redirectingTitle": "Te estamos redirigiendo a Mercado Pago...",
+        "redirectingBody": "Un momento, te llevamos a completar el pago.",
+        "activeTitle": "Tu suscripción ya está activa",
+        "activeBody": "No hace falta que vuelvas a pagar: tu plan ya está funcionando.",
+        "confirmingTitle": "Estamos confirmando tu pago",
+        "confirmingBody": "Puede que ya lo estemos resolviendo desde otra pestaña. Esperá un momento.",
+        "confirmingTimedOutTitle": "Todavía estamos confirmando tu pago",
+        "confirmingTimedOutBody": "Esto está tardando más de lo esperado. Podés intentarlo de nuevo en un momento.",
+        "errorTitle": "No pudimos verificar tu pago",
+        "errorBody": "Volvé a intentarlo o escribinos si el problema sigue.",
+        "retryButton": "Reintentar"
     },
     "limit": {
         "max_favorites": {
@@ -297,13 +319,27 @@
             "title": "Llegaste al límite de gastronomías",
             "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomía en tu plan. Actualizalo para publicar más.",
             "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomías en tu plan. Actualizalo para publicar más.",
-            "cta": "Ver mi suscripción"
+            "cta": "Ver mi suscripción",
+            "atLimitPanel": {
+                "title": "Llegaste al límite de tu plan",
+                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} ficha de gastronomía. Para publicar otra, actualizá tu plan.",
+                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} fichas de gastronomía. Para publicar otra, actualizá tu plan.",
+                "primaryCta": "Ver mi suscripción",
+                "secondaryCta": "Ver mis fichas"
+            }
         },
         "max_experiences": {
             "title": "Llegaste al límite de experiencias",
             "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} experiencia en tu plan. Actualizalo para publicar más.",
             "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} experiencias en tu plan. Actualizalo para publicar más.",
-            "cta": "Ver mi suscripción"
+            "cta": "Ver mi suscripción",
+            "atLimitPanel": {
+                "title": "Llegaste al límite de tu plan",
+                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} experiencia. Para publicar otra, actualizá tu plan.",
+                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} experiencias. Para publicar otra, actualizá tu plan.",
+                "primaryCta": "Ver mi suscripción",
+                "secondaryCta": "Ver mis experiencias"
+            }
         },
         "max_photos_per_accommodation": {
             "title": "Llegaste al límite de fotos",
@@ -329,29 +365,52 @@
             "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} cuentas de staff en tu plan. Actualizalo para agregar más.",
             "cta": "Ver mi suscripción"
         },
-        "max_active_alerts": { "title": "Llegaste al límite de alertas de precio" },
-        "max_compare_items": { "title": "Llegaste al límite de alojamientos para comparar" },
+        "max_active_alerts": {
+            "title": "Llegaste al límite de alertas de precio"
+        },
+        "max_compare_items": {
+            "title": "Llegaste al límite de alojamientos para comparar"
+        },
         "max_ai_text_improve_per_month": {
             "title": "Llegaste al límite de mejoras de texto con IA"
         },
-        "max_ai_chat_per_month": { "title": "Llegaste al límite de consultas al chat de IA" },
+        "max_ai_chat_per_month": {
+            "title": "Llegaste al límite de consultas al chat de IA"
+        },
         "max_ai_chat_consumer_per_month": {
             "title": "Llegaste al límite de consultas al asistente de IA"
         },
-        "max_ai_search_per_month": { "title": "Llegaste al límite de búsquedas con IA" },
+        "max_ai_chat_gastronomy_per_month": {
+            "title": "Llegaste al límite de consultas al chat de IA de tu gastronomía"
+        },
+        "max_ai_chat_experience_per_month": {
+            "title": "Llegaste al límite de consultas al chat de IA de tu experiencia"
+        },
+        "max_ai_search_per_month": {
+            "title": "Llegaste al límite de búsquedas con IA"
+        },
         "max_ai_support_per_month": {
             "title": "Llegaste al límite de consultas al soporte con IA"
         },
-        "max_ai_translate_per_month": { "title": "Llegaste al límite de traducciones con IA" },
+        "max_ai_translate_per_month": {
+            "title": "Llegaste al límite de traducciones con IA"
+        },
         "max_ai_accommodation_import_per_month": {
             "title": "Llegaste al límite de importaciones de alojamientos con IA"
         },
-        "max_search_history_entries": { "title": "Llegaste al límite de historial de búsquedas" },
-        "max_collections": { "title": "Llegaste al límite de colecciones de favoritos" },
+        "max_search_history_entries": {
+            "title": "Llegaste al límite de historial de búsquedas"
+        },
+        "max_collections": {
+            "title": "Llegaste al límite de colecciones de favoritos"
+        },
         "generic": {
             "title": "Límite del plan alcanzado",
             "message": "Alcanzaste el límite de tu plan. Actualizalo para continuar.",
             "cta": "Ver mi suscripción"
+        },
+        "max_active_private_galleries": {
+            "title": "Llegaste al límite de galerías privadas activas"
         }
     },
     "limits": {
@@ -435,18 +494,56 @@
             "name": "Gratis",
             "description": "Guardá favoritos, leé reseñas y planificá tu próximo viaje sin costo."
         },
-        "tourist-plus": {
-            "name": "Plus",
-            "description": "Alertas de precio, ofertas exclusivas, comparador de alojamientos e historial de búsquedas."
-        },
         "tourist-vip": {
             "name": "VIP",
             "description": "Soporte VIP, promociones exclusivas y contacto directo por WhatsApp con los alojamientos."
+        },
+        "gastronomy-basico": {
+            "name": "Básico",
+            "description": "Publicá tu local con sus fotos, horarios y contacto. Lo necesario para que te encuentren."
+        },
+        "gastronomy-pro": {
+            "name": "Profesional",
+            "description": "Sumá la carta cargada en Hospeda, el menú del día y los eventos del local."
+        },
+        "gastronomy-premium": {
+            "name": "Premium",
+            "description": "Todo lo anterior con fotos por plato, carta en varios idiomas, ficha en PDF y chat con IA."
+        },
+        "experience-basico": {
+            "name": "Básico",
+            "description": "Publicá tu salida con sus fotos, horarios y contacto. Lo necesario para que te encuentren."
+        },
+        "experience-pro": {
+            "name": "Profesional",
+            "description": "Sumá las instrucciones de cómo llegar al punto de encuentro y el certificado para quien la hizo."
+        },
+        "experience-premium": {
+            "name": "Premium",
+            "description": "Todo lo anterior con la ficha descargable en PDF y el chat con IA."
+        },
+        "partner-silver": {
+            "name": "Silver",
+            "description": "Tu logo en el carrusel de aliados y presencia en las campañas de redes y newsletter."
+        },
+        "partner-gold": {
+            "name": "Gold",
+            "description": "Todo lo del nivel anterior más tu propia página dentro de Hospeda, con prioridad en las campañas."
         }
     },
     "entitlement": {
         "publish_accommodations": "Publicar alojamientos",
         "edit_accommodation_info": "Editar información del alojamiento",
+        "edit_gastronomy_info": "Editar información del comercio gastronómico",
+        "publish_gastronomy": "Publicar comercios gastronómicos",
+        "edit_experience_info": "Editar información de la experiencia",
+        "publish_experience": "Publicar experiencias",
+        "download_listing_pdf": "Ficha en PDF para imprimir",
+        "issue_experience_certificate": "Certificados de experiencia",
+        "manage_gastronomy_menu": "Carta con secciones y platos",
+        "menu_item_photos": "Foto por plato en la carta",
+        "manage_experience_directions": "Mapa del punto de encuentro y cómo llegar",
+        "manage_gastronomy_daily_special": "Plato del día con vigencia propia",
         "view_basic_stats": "Estadísticas básicas",
         "view_advanced_stats": "Estadísticas avanzadas",
         "respond_reviews": "Responder reseñas",
@@ -483,7 +580,11 @@
         "vip_promotions_access": "Acceso a promociones VIP",
         "ai_support": "Asistente de soporte con IA",
         "ai_translate": "Traducción de contenido con IA",
-        "ai_accommodation_import": "Importación de alojamientos con IA"
+        "ai_accommodation_import": "Importación de alojamientos con IA",
+        "manage_gastronomy_events": "Eventos del local, con fecha o semanales",
+        "multilingual_gastronomy_menu": "Carta en varios idiomas",
+        "menu_qr_scan_metrics": "QR de la carta con panel de escaneos",
+        "manage_experience_private_galleries": "Galerías privadas para tus clientes"
     },
     "comparison": {
         "unlimited": "Ilimitado",
@@ -502,7 +603,12 @@
             "experience": "Tu experiencia",
             "asTourist": "Como turista (incluido)",
             "asOwner": "Como propietario",
-            "aiBusiness": "IA para tu negocio"
+            "aiBusiness": "IA para tu negocio",
+            "gastronomyListing": "Tu local en Hospeda",
+            "gastronomyMenu": "La carta",
+            "experienceListing": "Tu experiencia en Hospeda",
+            "experienceService": "Antes y después de la salida",
+            "commerceExtras": "Herramientas extra"
         },
         "row": {
             "favorites": "Favoritos",
@@ -535,7 +641,23 @@
             "aiTranslate": "Traducciones con IA por mes",
             "aiImport": "Importaciones con IA por mes",
             "aiChatOwner": "Consultas con IA por mes",
-            "aiSupport": "Asistente IA de soporte"
+            "aiSupport": "Asistente IA de soporte",
+            "maxGastronomies": "Locales que podés publicar",
+            "publishGastronomy": "Publicar tu local",
+            "editGastronomyInfo": "Editar la información del local",
+            "gastronomyMenu": "Carta cargada en Hospeda",
+            "gastronomyDailySpecial": "Menú del día",
+            "gastronomyEvents": "Eventos del local",
+            "menuItemPhotos": "Fotos por plato",
+            "multilingualMenu": "Carta en varios idiomas",
+            "menuQrScanMetrics": "QR de la carta con panel de escaneos",
+            "maxExperiences": "Experiencias que podés publicar",
+            "publishExperience": "Publicar tu experiencia",
+            "editExperienceInfo": "Editar la información de la experiencia",
+            "experienceDirections": "Cómo llegar al punto de encuentro",
+            "experienceCertificate": "Certificado para quien la hizo",
+            "listingPdf": "Ficha descargable en PDF",
+            "aiChatCommerce": "Consultas por chat con IA al mes"
         },
         "rowDesc": {
             "favorites": "Guardá los alojamientos que te interesan para consultarlos después.",
@@ -568,7 +690,8 @@
             "aiTranslate": "Traducciones automáticas con IA que podés solicitar por mes para tu contenido.",
             "aiImport": "Cantidad de importaciones con IA desde otras plataformas disponibles por mes.",
             "aiChatOwner": "Cantidad de consultas mensuales a la IA disponibles para propietarios.",
-            "aiSupport": "Asistente con IA para resolver dudas sobre la plataforma en tiempo real."
+            "aiSupport": "Asistente con IA para resolver dudas sobre la plataforma en tiempo real.",
+            "menuQrScanMetrics": "Un QR para la mesa que abre tu carta, con un panel de escaneos: total, por día, y por dispositivo e idioma."
         },
         "note": {
             "aiSearch": "Para usuarios registrados",
@@ -591,12 +714,39 @@
             "max_ai_text_improve_per_month": "Mejoras de texto con IA por mes",
             "max_ai_chat_per_month": "Consultas con IA por mes",
             "max_ai_chat_consumer_per_month": "Consultas al asistente de IA por mes",
+            "max_ai_chat_gastronomy_per_month": "Consultas al chat de IA (gastronomía) por mes",
+            "max_ai_chat_experience_per_month": "Consultas al chat de IA (experiencias) por mes",
             "max_ai_search_per_month": "Búsquedas con IA por mes",
             "max_ai_support_per_month": "Consultas al soporte con IA por mes",
             "max_ai_translate_per_month": "Traducciones con IA por mes",
             "max_ai_accommodation_import_per_month": "Importaciones con IA por mes",
             "max_search_history_entries": "Entradas de historial de búsquedas",
-            "max_collections": "Colecciones de favoritos"
+            "max_collections": "Colecciones de favoritos",
+            "max_active_private_galleries": "Galerías privadas activas"
         }
+    },
+    "limitHelp": {
+        "max_accommodations": "Cuántos alojamientos podés tener publicados al mismo tiempo. Al llegar al tope necesitás despublicar uno o pasar a un plan mayor para sumar otro.",
+        "max_photos_per_accommodation": "Cuántas fotos podés subir a cada alojamiento. Al llegar al tope tenés que borrar una para subir otra.",
+        "max_active_promotions": "Cuántas promociones podés tener activas a la vez. Al llegar al tope necesitás finalizar una para lanzar otra.",
+        "max_favorites": "Cuántos alojamientos podés guardar como favoritos. Al llegar al tope tenés que quitar uno para guardar otro.",
+        "max_properties": "Cuántas propiedades podés administrar dentro de un complejo. Al llegar al tope necesitás un plan mayor para sumar otra.",
+        "max_staff_accounts": "Cuántas cuentas de tu equipo pueden administrar el complejo. Al llegar al tope tenés que dar de baja una para invitar a otra persona.",
+        "max_active_alerts": "Cuántas alertas de precio podés tener activas a la vez. Al llegar al tope tenés que desactivar una para crear otra.",
+        "max_compare_items": "Cuántos alojamientos podés comparar en una misma pantalla. Al llegar al tope tenés que sacar uno para agregar otro.",
+        "max_ai_text_improve_per_month": "Cuántas veces por mes podés pedirle a la IA que mejore tus textos. La cuota se renueva al empezar cada mes.",
+        "max_ai_chat_per_month": "Cuántas consultas por mes puede responder la IA sobre tus alojamientos. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_chat_consumer_per_month": "Cuántas consultas podés hacerle por mes al asistente de IA. Al agotarla, la cuota se renueva el mes siguiente.",
+        "max_ai_chat_gastronomy_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local gastronómico. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_chat_experience_per_month": "Cuántas consultas por mes puede responder la IA sobre tu experiencia. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_search_per_month": "Cuántas búsquedas con IA podés hacer por mes. Al agotarla, seguís usando la búsqueda tradicional hasta el mes siguiente.",
+        "max_ai_support_per_month": "Cuántas consultas por mes podés hacerle al asistente de soporte con IA. La cuota se renueva al empezar cada mes.",
+        "max_ai_translate_per_month": "Cuántas traducciones automáticas de tu contenido podés pedir por mes. La cuota se renueva al empezar cada mes.",
+        "max_ai_accommodation_import_per_month": "Cuántos alojamientos podés importar por mes desde otra plataforma con ayuda de la IA. La cuota se renueva al empezar cada mes.",
+        "max_search_history_entries": "Cuántas búsquedas anteriores se guardan en tu historial. Al superar el tope se borran las más viejas.",
+        "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
+        "max_gastronomies": "Cuántos locales gastronómicos podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
+        "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
+        "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
     }
 }

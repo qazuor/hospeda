@@ -21,16 +21,17 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * PUT /api/v1/admin/gastronomies/:id
  * Update gastronomy listing — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service layer (`_canUpdate`)
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service layer (`_canUpdate`)
  * enforces the same gate, providing defense in depth.
  */
 export const adminUpdateGastronomyRoute = createAdminRoute({
     method: 'put',
     path: '/{id}',
     summary: 'Update gastronomy listing (admin)',
-    description: 'Updates a gastronomy listing. Requires COMMERCE_EDIT_ALL permission.',
+    description:
+        'Updates a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
     tags: ['Gastronomy'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -94,9 +94,15 @@ export * from './owner-promotion-discount-type.enum.js';
 export * from './owner-promotion-discount-type.schema.js';
 export * from './partner-content-review-state.enum.js';
 export * from './partner-content-review-state.schema.js';
+// Partner logo click destinations (HOS-1063)
+export * from './partner-logo-click-destination.enum.js';
+export * from './partner-logo-click-destination.schema.js';
 // Partner mention channels (HOS-377)
 export * from './partner-mention-channel.enum.js';
 export * from './partner-mention-channel.schema.js';
+// Partner payment review, kept OUT of the subscription status (HOS-1299)
+export * from './partner-payment-review-state.enum.js';
+export * from './partner-payment-review-state.schema.js';
 export * from './partner-subscription-status.enum.js';
 export * from './partner-subscription-status.schema.js';
 export * from './partner-tier.enum.js';
@@ -125,6 +131,20 @@ export * from './product-domain.enum.js';
 export * from './product-domain.schema.js';
 export * from './product-type.enum.js';
 export * from './product-type.schema.js';
+export * from './qr-code-center-logo.enum.js';
+export * from './qr-code-center-logo.schema.js';
+export * from './qr-code-error-correction-level.enum.js';
+export * from './qr-code-error-correction-level.schema.js';
+export * from './qr-code-format.enum.js';
+export * from './qr-code-format.schema.js';
+export * from './qr-code-purpose.enum.js';
+export * from './qr-code-purpose.schema.js';
+export * from './qr-code-source.enum.js';
+export * from './qr-code-source.schema.js';
+export * from './qr-scan-device-type.enum.js';
+export * from './qr-scan-device-type.schema.js';
+export * from './qr-scan-os.enum.js';
+export * from './qr-scan-os.schema.js';
 export * from './recurrence.enum.js';
 export * from './recurrence.schema.js';
 export * from './refund-status.enum.js';

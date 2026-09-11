@@ -5,12 +5,19 @@
  * `required`/`type="email"` enforcement, so before this change any string
  * (empty or malformed) reached `signIn.email()` and came back as a generic
  * Better Auth credentials error instead of a clear client-side message.
+ *
+ * HOS-959: `email` is now a controlled prop owned by the parent (`AuthTabs`
+ * in production) instead of local state, so every render here goes through
+ * a tiny `Harness` wrapper that supplies `email`/`onEmailChange` the same
+ * way `AuthTabs` does. The OAuth block moved out entirely — see
+ * `AuthTabs.client.test.tsx` for that coverage.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SignIn } from '../../../src/components/auth/SignIn.client';
+import { SignIn, type SignInProps } from '../../../src/components/auth/SignIn.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -30,19 +37,34 @@ vi.mock('../../../src/lib/auth-client', () => ({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+type HarnessProps = Omit<SignInProps, 'email' | 'onEmailChange'> & {
+    readonly initialEmail?: string;
+};
+
+/** Owns the controlled `email` value the way `AuthTabs` does in production. */
+function Harness({ initialEmail = '', ...props }: HarnessProps) {
+    const [email, setEmail] = useState(initialEmail);
+    return (
+        <SignIn
+            {...props}
+            email={email}
+            onEmailChange={setEmail}
+        />
+    );
+}
+
 function renderIsland() {
     return render(
-        <SignIn
+        <Harness
             locale="es"
             redirectTo="/es/mi-cuenta/"
-            showOAuth={false}
         />
     );
 }
 
 async function readyForm(): Promise<void> {
     // Wait for the hydrated tree before interacting with submit behavior.
-    await screen.findByLabelText('Correo electrónico');
+    await screen.findByLabelText(/Correo electrónico/);
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -72,7 +94,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'not-an-email' }
         });
         fireEvent.change(screen.getByLabelText(/^Contraseña/), {
@@ -90,7 +112,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: '  user@example.com  ' }
         });
         fireEvent.change(screen.getByLabelText(/^Contraseña/), {
@@ -111,13 +133,58 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
             <SignIn
                 locale="es"
                 redirectTo="/es/mi-cuenta/"
-                showOAuth={false}
+                email=""
+                onEmailChange={() => {}}
             />
         );
 
         expect(screen.getByRole('form', { name: 'Iniciar sesión' })).toBeInTheDocument();
-        expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument();
+        expect(screen.getByLabelText(/Correo electrónico/)).toBeInTheDocument();
         expect(screen.getByLabelText(/^Contraseña/)).toBeInTheDocument();
+    });
+});
+
+describe('SignIn controlled email (HOS-959)', () => {
+    beforeEach(() => {
+        // The SSR test in the previous describe block writes straight into
+        // document.body, which RTL's auto-cleanup does not own and
+        // therefore leaves behind — reset it or getByLabelText below can
+        // pick up the stale SSR markup instead of this test's own render.
+        document.body.innerHTML = '';
+        signInEmailMock.mockReset();
+        signInEmailMock.mockResolvedValue({ error: null });
+    });
+
+    it('renders the value handed in via the email prop', async () => {
+        render(
+            <Harness
+                locale="es"
+                redirectTo="/es/mi-cuenta/"
+                initialEmail="preset@example.com"
+            />
+        );
+        await readyForm();
+
+        expect(screen.getByLabelText(/Correo electrónico/)).toHaveValue('preset@example.com');
+    });
+
+    it('calls onEmailChange on every keystroke instead of managing its own state', async () => {
+        const onEmailChange = vi.fn();
+        render(
+            <SignIn
+                locale="es"
+                redirectTo="/es/mi-cuenta/"
+                email=""
+                onEmailChange={onEmailChange}
+            />
+        );
+        await readyForm();
+
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
+            target: { value: 'typed@example.com' }
+        });
+
+        expect(onEmailChange).toHaveBeenCalledWith('typed@example.com');
     });
 });
 
@@ -174,7 +241,7 @@ describe('SignIn password reveal (HOS-796)', () => {
         renderIsland();
         await readyForm();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
             target: { value: 'user@example.com' }
         });
         fireEvent.change(screen.getByLabelText(/^Contraseña/), {
@@ -189,5 +256,68 @@ describe('SignIn password reveal (HOS-796)', () => {
                 password: 'Secreta1!'
             });
         });
+    });
+});
+
+// ─── The required marker on the sign-in email label ──────────────────────────
+
+describe('SignIn required marker', () => {
+    it('marks the email label as required, like the password label below it', () => {
+        // Arrange / Act
+        renderIsland();
+
+        // Assert — on the label's own text, NOT the input's attributes:
+        // `required` and `aria-required` were already on this input, so an
+        // attribute check passed happily while this was the only mandatory
+        // field on either tab that did not look mandatory.
+        const label = screen.getByText('Correo electrónico').closest('label');
+        expect(label).not.toBeNull();
+        expect(label?.textContent).toBe('Correo electrónico *');
+    });
+
+    it('hides the marker from the accessibility tree', () => {
+        // The input already announces itself via `aria-required`; a literal
+        // asterisk in the accessible name on top of that is noise, which is
+        // why `PasswordField` marks its own span `aria-hidden` too.
+        renderIsland();
+
+        const marker = screen
+            .getByText('Correo electrónico')
+            .closest('label')
+            ?.querySelector('span');
+        expect(marker?.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('still resolves by label, which now requires a partial match', () => {
+        // Worth stating explicitly, because adding the marker broke seven
+        // queries in this file at once.
+        //
+        // `aria-hidden` hides the asterisk from a REAL screen reader's
+        // accessible name, but Testing Library's getByLabelText matches on the
+        // label's text content and does not honour it, so the exact string
+        // 'Correo electrónico' stops matching the moment the span is added.
+        // Every query here uses a regex for that reason — the same thing
+        // HOS-821 had to do on the sign-up side.
+        renderIsland();
+
+        expect(screen.getByLabelText(/Correo electrónico/)).toHaveAttribute('id', 'signin-email');
+        expect(() => screen.getByLabelText('Correo electrónico')).toThrow();
+    });
+
+    it('server-renders the marker too, so it is present before hydration', () => {
+        // NOTE: `PasswordField` is mocked in this file, so the password
+        // label's own asterisk is deliberately NOT asserted here — that would
+        // be testing the stub.
+        const html = renderToStaticMarkup(
+            <SignIn
+                locale="es"
+                redirectTo="/es/mi-cuenta/"
+                email=""
+                onEmailChange={() => {}}
+            />
+        );
+
+        expect(html).toContain('aria-hidden="true"');
+        expect(html.replace(/<[^>]*>/g, '')).toContain('Correo electrónico *');
     });
 });

@@ -1,5 +1,32 @@
 /**
- * Manual price-increase mechanism for a plan's existing subscribers (HOS-191 F6).
+ * Manual price-increase mechanism for a plan's existing subscribers (HOS-191 F6,
+ * widened to every business vertical by HOS-1288).
+ *
+ * ## Whose subscribers get raised: the PLAN decides, not a hardcoded domain
+ *
+ * Until HOS-1288 this filtered the matched rows through
+ * `isAccommodationSubscription`, so an operator raising the price of a
+ * gastronomy, experience, partner or tourist plan got HTTP 200 with
+ * `matched: 0` and nothing changed. A refusal would have been recoverable; a
+ * reported success is not, because nobody re-checks it.
+ *
+ * The domain is now READ FROM THE PLAN (`resolvePlanProductDomain`) and the
+ * per-row filter compares against that, so the tool works for whichever
+ * vertical the plan belongs to. Three consequences worth stating, because each
+ * one used to be a silent zero:
+ *
+ * - **An unknown `planId` is a 404**, not a 200 with `matched: 0`. A typo in
+ *   the id used to be indistinguishable from a plan nobody subscribes to.
+ * - **A plan outside {@link BUSINESS_VERTICAL_PRODUCT_DOMAINS} is a 422.**
+ *   `'addon'` is the only such value today — a recurring add-on's own
+ *   preapproval (HOS-847), never a customer's plan — but the enum has no
+ *   type-level defence (see `ProductDomainEnum`'s own doc), so a member added
+ *   later lands here rather than being swept into a batch mutation of real
+ *   money.
+ * - **A row whose own `product_domain` disagrees with its plan's is REPORTED**
+ *   (`outcome: 'skipped'`, `reason: 'domain_mismatch'`) and logged, not
+ *   dropped. It is a data anomaly; vanishing from the report is how it stayed
+ *   invisible.
  *
  * ## Why this exists (empirical finding, 2026-07-18 research)
  *
@@ -41,10 +68,11 @@
  *    `transaction_amount` with the blanket new price would silently kill the
  *    discount; those subscriptions need separate, discount-aware treatment.
  * 2. **Idempotent skip.** The LIVE MercadoPago preapproval amount is read via
- *    `subscriptions.retrieve` and compared (±1 ARS major tolerance for
- *    floating-point rounding) against the target. Already-at-target
- *    subscriptions are skipped, so re-running this function twice never
- *    double-applies the increase.
+ *    a direct `GET /preapproval/{id}` call (HOS-991 — `paymentAdapter.subscriptions.retrieve()`
+ *    never returns `auto_recurring`, so it cannot be used for this) and compared
+ *    (±1 ARS major tolerance for floating-point rounding) against the target.
+ *    Already-at-target subscriptions are skipped, so re-running this function
+ *    twice never double-applies the increase.
  * 3. **Dry run (default).** `dryRun: true` (the default) never calls
  *    `subscriptions.update` — every subscription that would be mutated is
  *    still reported with `outcome: 'updated'` and `reason: 'dry_run'` so the
@@ -62,10 +90,19 @@
 
 import { createMercadoPagoAdapter } from '@repo/billing';
 import { and, billingSubscriptions, eq, getDb, inArray, isNotNull, isNull } from '@repo/db';
-import { SubscriptionStatusEnum } from '@repo/schemas';
-import { isAccommodationSubscription } from '@repo/service-core';
+import {
+    BUSINESS_VERTICAL_PRODUCT_DOMAINS,
+    type ProductDomainEnum,
+    type ProductDomainValue,
+    SubscriptionStatusEnum
+} from '@repo/schemas';
+import { subscriptionMatchesDomain } from '@repo/service-core';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
+import { fetchLivePreapprovalAmountMajor } from '../../utils/mp-preapproval-amount-lookup.js';
+import { resolvePlanProductDomain } from './paid-subscription-create.js';
+import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -121,7 +158,8 @@ export interface PriceIncreaseSubscriptionDetail {
     readonly outcome: PriceIncreaseOutcome;
     /**
      * Short machine-readable reason. One of `'active_discount'`,
-     * `'already_at_target'`, `'dry_run'`, or a free-text failure message.
+     * `'already_at_target'`, `'domain_mismatch'`, `'dry_run'`, or a free-text
+     * failure message.
      */
     readonly reason?: string;
 }
@@ -147,11 +185,22 @@ export interface ApplyPriceIncreaseInput {
 
 /** Result of {@link applyPriceIncreaseToPlanSubscribers}. */
 export interface ApplyPriceIncreaseResult {
-    /** Number of subscriptions matched by the plan/status/domain query. */
+    /**
+     * The product domain resolved from the PLAN, which is the domain every
+     * matched subscription was compared against (HOS-1288). Echoed back so a
+     * `matched: 0` report says which vertical it looked at, instead of leaving
+     * the operator to assume it was theirs.
+     */
+    readonly productDomain: ProductDomainValue;
+    /**
+     * Number of subscriptions the plan/status query returned — INCLUDING rows
+     * skipped for a domain mismatch, which are reported rather than dropped.
+     * The domain has never been part of the SQL predicate.
+     */
     readonly matched: number;
     /** Number of subscriptions actually mutated (or, in `dryRun`, that WOULD be). */
     readonly updated: number;
-    /** Number of subscriptions skipped (active discount or already at target). */
+    /** Number of subscriptions skipped (domain mismatch, active discount, or already at target). */
     readonly skipped: number;
     /** Number of subscriptions where the MP retrieve/update call failed after retries. */
     readonly failed: number;
@@ -176,6 +225,25 @@ interface EligibleSubscriptionRow {
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Whether a plan's product domain is one this tool will mutate preapprovals
+ * for (HOS-1288).
+ *
+ * Derived from {@link BUSINESS_VERTICAL_PRODUCT_DOMAINS} rather than restated,
+ * so a vertical added to the enum is covered here without editing this file —
+ * and a NON-vertical member added there (the `'addon'` shape) is refused
+ * without editing it either. That direction is the one that matters: an
+ * add-on's preapproval carries its own `transaction_amount` and is not the
+ * customer's plan, so sweeping it into a plan-wide increase would silently
+ * charge somebody the plan price for an add-on.
+ *
+ * @param domain - The domain resolved from the plan row.
+ * @returns `true` when the domain names a subscribable business vertical.
+ */
+function isSupportedPriceIncreaseDomain(domain: ProductDomainValue): boolean {
+    return (BUSINESS_VERTICAL_PRODUCT_DOMAINS as readonly ProductDomainValue[]).includes(domain);
+}
 
 /** Promise-based sleep with a small random jitter added on top of `baseMs`. */
 function sleepWithJitter(baseMs: number): Promise<void> {
@@ -211,32 +279,6 @@ function looksLikeRateLimitError(err: unknown): boolean {
         return true;
     }
     return /rate.?limit|429/i.test(err.message);
-}
-
-/**
- * Extracts the live recurring `transaction_amount` (ARS major units) from a
- * MercadoPago preapproval object returned by `subscriptions.retrieve`.
- *
- * The amount lives under `auto_recurring.transaction_amount`, NOT at the top
- * level (top-level `transaction_amount` only exists on payment objects — see
- * `subscription-poll.job.ts`'s `reconcileActiveDiscountAmounts` for the same
- * extraction, duplicated here rather than imported since it is a 6-line
- * private helper local to each caller's file, not a shared utility).
- *
- * @returns The live amount in major units, or `null` when it cannot be read.
- */
-function extractLiveTransactionAmountMajor(livePreapproval: unknown): number | null {
-    if (typeof livePreapproval !== 'object' || livePreapproval === null) {
-        return null;
-    }
-    const record = livePreapproval as Record<string, unknown>;
-    const autoRecurring =
-        typeof record.auto_recurring === 'object' && record.auto_recurring !== null
-            ? (record.auto_recurring as Record<string, unknown>)
-            : {};
-    return typeof autoRecurring.transaction_amount === 'number'
-        ? autoRecurring.transaction_amount
-        : null;
 }
 
 /**
@@ -298,8 +340,16 @@ async function mutateTransactionAmountWithRetry(params: {
  * with `dryRun: false`.
  *
  * @param input - Plan id, new centavos amount, and optional dryRun/limit.
- * @returns Aggregate counts plus a per-subscription detail report.
+ * @returns The plan's resolved product domain, aggregate counts, and a
+ *   per-subscription detail report.
  *
+ * @throws {SubscriptionCheckoutError} `PLAN_NOT_FOUND` (HTTP 404) when no plan
+ *   row matches `planId` — raised by `resolvePlanProductDomain` before any
+ *   subscription is read, so a mistyped id can never report success.
+ * @throws {SubscriptionCheckoutError} `PLAN_DOMAIN_MISMATCH` (HTTP 422) when
+ *   the plan's domain is not a subscribable business vertical. Same code the
+ *   checkout and plan-change guards already use for "a real plan this surface
+ *   does not handle" (`subscription-checkout-error-http.ts`).
  * @throws {Error} If the MercadoPago adapter cannot be constructed (missing
  *   `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`) or the initial subscription query fails.
  *
@@ -329,6 +379,19 @@ export async function applyPriceIncreaseToPlanSubscribers(
 
     apiLogger.info({ planId, newAmountCentavos, dryRun, limit }, 'apply-price-increase: starting');
 
+    // Resolve the plan FIRST — before touching subscriptions — so the two ways
+    // this call can be nonsense (a plan that does not exist, a plan in a domain
+    // this tool does not mutate) answer 404 / 422 instead of a 200 that reports
+    // zero rows. Error-contract order: existence before business rules.
+    const planDomain: ProductDomainEnum = await resolvePlanProductDomain({ planId });
+
+    if (!isSupportedPriceIncreaseDomain(planDomain)) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_DOMAIN_MISMATCH',
+            `apply-price-increase: plan '${planId}' belongs to product domain '${planDomain}', which is not a subscribable business vertical — refusing to mutate its preapprovals`
+        );
+    }
+
     const db = getDb();
     const rows = (await db
         .select({
@@ -352,35 +415,80 @@ export async function applyPriceIncreaseToPlanSubscribers(
         )
         .limit(limit && limit > 0 ? limit : DEFAULT_BATCH_LIMIT)) as EligibleSubscriptionRow[];
 
-    // NOTE (FIX 5): the SQL `.limit()` above bounds the ROW SCAN, and the
-    // product-domain filter below runs in-memory AFTER it — so a page could
-    // return fewer than `limit` accommodation subscriptions when it happens to
-    // include commerce/partner rows. Low risk in practice: since SPEC-239 the
-    // accommodation and commerce plans are distinct `planId`s, and this query is
-    // already scoped to a single `planId`, so a matched page is effectively all
-    // one domain. Documented, not changed — pushing the domain predicate into
-    // SQL would require encoding `isAccommodationSubscription`'s logic in Drizzle
-    // and is unnecessary given the plan-id scoping.
+    // Product-domain isolation (SPEC-239 T-034, widened by HOS-1288): a row is
+    // eligible when its own domain agrees with the PLAN'S. `subscriptionMatchesDomain`
+    // is the repo's only domain comparator and carries the asymmetry each domain
+    // needs (accommodation fails open for legacy rows whose column predates them,
+    // every other domain fails closed). The rows come straight off a typed
+    // `.from(billingSubscriptions)` read, so `productDomain` is the real column
+    // and needs no `hydrateSubscriptionProductDomains` pass.
     //
-    // Product-domain isolation (SPEC-239 T-034): never touch commerce/partner
-    // subscriptions from the accommodation price-increase tool. Reuses the
-    // shared single-source-of-truth filter from @repo/service-core.
-    const eligibleRows = rows.filter((row) => isAccommodationSubscription(row));
+    // The predicate stays in memory rather than in SQL on purpose: encoding this
+    // asymmetry as Drizzle conditions would be a second comparator, which is
+    // exactly what `subscriptionMatchesDomain` exists to prevent. The SQL
+    // `.limit()` therefore bounds the ROW SCAN, not the eligible count — a page
+    // can hold fewer eligible rows than `limit`. That is benign here BECAUSE the
+    // query is scoped to one `planId` and a plan has exactly one domain: every
+    // row a page drops is a row whose domain contradicts its own plan, i.e. a
+    // data anomaly, which is why those rows are REPORTED below instead of
+    // silently filtered away.
+    const eligibleRows: EligibleSubscriptionRow[] = [];
+    const mismatchedRows: EligibleSubscriptionRow[] = [];
+    for (const row of rows) {
+        if (subscriptionMatchesDomain(row, planDomain)) {
+            eligibleRows.push(row);
+        } else {
+            mismatchedRows.push(row);
+        }
+    }
 
     const details: PriceIncreaseSubscriptionDetail[] = [];
     let updated = 0;
     let skipped = 0;
     let failed = 0;
 
+    for (const row of mismatchedRows) {
+        skipped += 1;
+        details.push({
+            subscriptionId: row.id,
+            mpSubscriptionId: row.mpSubscriptionId as string,
+            outcome: 'skipped',
+            reason: 'domain_mismatch'
+        });
+        apiLogger.warn(
+            {
+                planId,
+                planProductDomain: planDomain,
+                subscriptionId: row.id,
+                subscriptionProductDomain: row.productDomain ?? null
+            },
+            'apply-price-increase: subscription product_domain disagrees with its own plan, skipping'
+        );
+    }
+
     if (eligibleRows.length === 0) {
         apiLogger.info(
-            { planId, dryRun },
+            { planId, productDomain: planDomain, dryRun, matched: rows.length, skipped },
             'apply-price-increase: no eligible subscriptions matched'
         );
-        return { matched: 0, updated: 0, skipped: 0, failed: 0, details: [] };
+        return {
+            productDomain: planDomain,
+            matched: rows.length,
+            updated: 0,
+            skipped,
+            failed: 0,
+            details
+        };
     }
 
     const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
+
+    // Guaranteed set by createMercadoPagoAdapter() above (it throws otherwise);
+    // re-checked only to satisfy the `string | undefined` env type.
+    const accessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+        throw new Error('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN is not configured');
+    }
 
     for (const row of eligibleRows) {
         // mpSubscriptionId is guaranteed non-null by the WHERE clause above.
@@ -404,13 +512,15 @@ export async function applyPriceIncreaseToPlanSubscribers(
         }
 
         // 2. Idempotent skip — compare the LIVE MP amount against the target.
-        let liveAmountMajor: number | null;
-        try {
-            const live = await paymentAdapter.subscriptions.retrieve(mpSubscriptionId);
-            liveAmountMajor = extractLiveTransactionAmountMajor(live);
-        } catch (retrieveErr) {
+        //    HOS-991: retrieve() never returns auto_recurring, so a direct
+        //    GET /preapproval/{id} is used instead (mp-preapproval-plan-lookup.ts's primitive).
+        const lookup = await fetchLivePreapprovalAmountMajor({
+            preapprovalId: mpSubscriptionId,
+            accessToken
+        });
+        if (lookup.kind !== 'ok') {
             const message =
-                retrieveErr instanceof Error ? retrieveErr.message : String(retrieveErr);
+                lookup.kind === 'error' ? lookup.message : `preapproval lookup: ${lookup.kind}`;
             failed += 1;
             details.push({
                 subscriptionId: row.id,
@@ -425,6 +535,7 @@ export async function applyPriceIncreaseToPlanSubscribers(
             await sleepWithJitter(INTER_SUBSCRIPTION_DELAY_MS);
             continue;
         }
+        const liveAmountMajor = lookup.transactionAmountMajor;
 
         if (
             liveAmountMajor !== null &&
@@ -494,7 +605,8 @@ export async function applyPriceIncreaseToPlanSubscribers(
     }
 
     const result: ApplyPriceIncreaseResult = {
-        matched: eligibleRows.length,
+        productDomain: planDomain,
+        matched: rows.length,
         updated,
         skipped,
         failed,
@@ -502,7 +614,15 @@ export async function applyPriceIncreaseToPlanSubscribers(
     };
 
     apiLogger.info(
-        { planId, dryRun, matched: result.matched, updated, skipped, failed },
+        {
+            planId,
+            productDomain: planDomain,
+            dryRun,
+            matched: result.matched,
+            updated,
+            skipped,
+            failed
+        },
         'apply-price-increase: finished'
     );
 

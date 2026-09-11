@@ -30,8 +30,8 @@ This runbook provides step-by-step procedures for investigating and resolving pr
 
 ### Required Access
 
-- [ ] Vercel Dashboard access (frontend monitoring)
-- [ ] Neon Console access (database monitoring)
+- [ ] Coolify dashboard access (<https://coolify.hospeda.com.ar>)
+- [ ] SSH to the VPS — Postgres runs there as a container, reachable via `hops psql`
 - [ ] GitHub repository access (code, Actions)
 - [ ] Production database read-only access
 - [ ] Team communication channels
@@ -39,7 +39,7 @@ This runbook provides step-by-step procedures for investigating and resolving pr
 ### Required Tools
 
 - [ ] Browser (for dashboards)
-- [ ] Terminal with CLI tools (psql, gh, vercel)
+- [ ] SSH to the VPS, where `hops` lives (`gh` and `psql` locally)
 - [ ] Text editor for notes
 - [ ] Access to runbooks and documentation
 
@@ -84,13 +84,13 @@ Run basic health checks:
 
 ```bash
 # API health
-curl -f https://api.hospeda.com/health || echo "❌ API DOWN"
+curl -f https://api.hospeda.com.ar/health || echo "❌ API DOWN"
 
 # Web app health
-curl -sI https://hospeda.com | grep "200 OK" || echo "❌ WEB DOWN"
+curl -sI https://hospeda.com.ar | grep "200 OK" || echo "❌ WEB DOWN"
 
 # Admin app health
-curl -sI https://admin.hospeda.com | grep "200 OK" || echo "❌ ADMIN DOWN"
+curl -sI https://admin.hospeda.com.ar | grep "200 OK" || echo "❌ ADMIN DOWN"
 
 # Database connection (production)
 psql $DATABASE_URL -c "SELECT 1" || echo "❌ DB DOWN"
@@ -120,8 +120,7 @@ psql $DATABASE_URL -c "SELECT 1" || echo "❌ DB DOWN"
 gh api repos/:owner/hospeda/deployments \
   --jq '.[:5] | .[] | {created_at, environment, sha: .sha[0:7]}'
 
-# Or check Vercel deployments
-vercel list --limit 10
+# Or read the deploy history in Coolify → the app → Deployments
 ```
 
 **Questions to Answer**:
@@ -139,22 +138,22 @@ vercel list --limit 10
 
 ### Step 4: Check Monitoring Dashboards
 
-**Vercel Dashboard**:
+**Coolify** (<https://coolify.hospeda.com.ar>):
 
-1. Go to <https://vercel.com/[team]/[project>]
-2. Check **Logs** tab for errors
-3. Check **Analytics** for traffic patterns
-4. Note any error spikes or anomalies
+1. Open the app's resource and check its Deployments — did anything land
+   around the time the symptoms started?
+2. Read the logs from the VPS, which is faster than the dashboard:
+   `hops logs api -n 200` (`-f` to follow, `-g` to grep)
+3. Cross-check Sentry for the error itself and Better Stack for when the
+   monitors went red
 
-**Neon Console**:
+**Postgres** (a container on the VPS, not a managed service):
 
-1. Go to <https://console.neon.tech>
-2. Select project
-3. Check **Monitoring** tab
-4. Look for:
-   - Connection count spikes
-   - Query duration increases
-   - CPU/memory usage
+```bash
+hops --target=prod db-counts                       # approximate row counts
+hops --target=prod psql 'SELECT count(*) FROM pg_stat_activity'
+hops free-mem                                      # host + per-container memory
+```
 
 **GitHub Actions**:
 
@@ -208,14 +207,15 @@ Based on initial assessment, choose investigation path:
 
 **Investigation Steps**:
 
-**Step 1**: Check API logs (Vercel)
+**Step 1**: Check API logs
 
 ```bash
-# View production API logs
-vercel logs --prod --since 1h
+# From the VPS. --since takes a duration.
+hops --target=prod logs api --since 1h
 
-# Or check deployment logs
-vercel logs [deployment-url]
+# Follow live, or grep for one thing
+hops --target=prod logs api -f
+hops --target=prod logs api -g 'ECONNREFUSED'
 ```
 
 **Look for**:
@@ -245,11 +245,15 @@ docker exec hospeda_postgres psql -U hospeda_user -d hospeda_dev -c \
 # Expected: < 80% of max connections
 ```
 
-**For Neon (production)**:
+**Production**:
 
-1. Go to Neon Console
-2. Check **Monitoring** → **Connections**
-3. Look for connection count spikes
+```bash
+hops --target=prod psql \
+  'SELECT state, count(*) FROM pg_stat_activity GROUP BY state'
+```
+
+A climbing `idle in transaction` count is the usual culprit: a transaction was
+opened and never closed.
 
 **Step 4**: Review error handling
 
@@ -348,14 +352,12 @@ In DevTools **Network** tab:
 - Verify response data format
 - Note slow requests (> 1s)
 
-**Step 4**: Check Vercel deployment
+**Step 4**: Check the deploy
 
 ```bash
-# List recent deployments
-vercel list
-
-# Check specific deployment logs
-vercel logs [deployment-url]
+# Deploy history lives in Coolify → the app → Deployments.
+# The container's own logs, from the VPS:
+hops --target=prod logs api -n 200
 ```
 
 **Look for**:
@@ -411,25 +413,23 @@ Test in:
 
 **Investigation Steps**:
 
-**Step 1**: Check database health (Neon)
+**Step 1**: Check database health
 
-1. Go to Neon Console
-2. Check **Monitoring** dashboard
-3. Look for:
-   - High CPU usage (> 80%)
-   - High connection count (> 80% of max)
-   - Long-running queries
-   - Disk space issues
+```bash
+hops free-mem                                      # host + container memory
+hops --target=prod psql 'SELECT count(*) FROM pg_stat_activity'
+hops --target=prod psql \
+  "SELECT pid, now() - query_start AS age, left(query, 60)
+   FROM pg_stat_activity
+   WHERE state != 'idle' ORDER BY age DESC LIMIT 10"
+```
+
+Postgres shares the VPS with the three apps, so memory pressure anywhere shows
+up here. `hops free-mem` before blaming a query.
 
 **Step 2**: Identify slow queries
 
-**Using Neon Console**:
-
-1. Go to **Monitoring** → **Query Performance**
-2. Sort by duration
-3. Identify slow queries (> 500ms)
-
-**Using pg_stat_statements** (if enabled):
+**Using pg_stat_statements**:
 
 ```sql
 -- Top 10 slowest queries by mean time
@@ -547,7 +547,7 @@ idle   | 5
 
 ```bash
 # Test API response time
-time curl -s https://api.hospeda.com/api/accommodations > /dev/null
+time curl -s https://api.hospeda.com.ar/api/accommodations > /dev/null
 
 # Expected: < 200ms for list endpoints
 ```
@@ -584,10 +584,10 @@ SELECT * FROM accommodations WHERE id IN ('acc-1', 'acc-2', 'acc-3', ...);
 
 ```bash
 # Check response size
-curl -s https://api.hospeda.com/api/accommodations | wc -c
+curl -s https://api.hospeda.com.ar/api/accommodations | wc -c
 
 # Check with compression
-curl -s -H "Accept-Encoding: gzip" https://api.hospeda.com/api/accommodations \
+curl -s -H "Accept-Encoding: gzip" https://api.hospeda.com.ar/api/accommodations \
   --output /tmp/response.gz && ls -lh /tmp/response.gz
 ```
 
@@ -678,11 +678,11 @@ Verify auth middleware is:
 
 ```bash
 # Without auth (should get 401)
-curl https://api.hospeda.com/api/bookings
+curl https://api.hospeda.com.ar/api/bookings
 # Expected: {"error": "Unauthorized"}
 
 # With auth token
-curl https://api.hospeda.com/api/bookings \
+curl https://api.hospeda.com.ar/api/bookings \
   -H "Authorization: Bearer YOUR_TOKEN"
 # Expected: {"success": true, "data": [...]}
 ```
@@ -703,8 +703,10 @@ curl https://api.hospeda.com/api/bookings \
 **Step 1**: Verify DATABASE_URL environment variable
 
 ```bash
-# Check if set (in production environment)
-# Via Vercel dashboard → Project Settings → Environment Variables
+# List what is actually set on the running app (values redacted)
+hops --target=prod env-list api
+
+# Add --reveal to see values
 ```
 
 **Step 2**: Test database connection
@@ -715,7 +717,7 @@ psql $DATABASE_URL -c "SELECT version()"
 
 **If connection fails**:
 
-- Check Neon database status
+- Check Postgres on the VPS (`hops health prod`, `hops free-mem`)
 - Verify connection string format
 - Check IP allowlist (if configured)
 - Verify database exists
@@ -840,13 +842,16 @@ try {
 Verify Drizzle ORM is using connection pool:
 
 ```typescript
-// packages/db/src/client.ts
-import { drizzle } from 'drizzle-orm/neon-http';
-import { Pool } from '@neondatabase/serverless';
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool);
+// packages/db/src/client.ts — the real driver is node-postgres over a `pg` Pool
+import { drizzle } from 'drizzle-orm/node-postgres';
+import type { Pool } from 'pg';
 ```
+
+Postgres runs as a container on the same VPS, so this is an ordinary TCP
+connection to a long-lived server — not a serverless HTTP driver. Pool sizing
+matters here in a way it would not with a per-request driver: check live
+connections with
+`hops --target=prod psql 'SELECT count(*) FROM pg_stat_activity'`.
 
 **Step 4**: Profile memory (locally)
 
@@ -943,7 +948,7 @@ We apologize for the inconvenience.
 
 In Mercado Pago dashboard:
 
-- Webhook URL correct (<https://api.hospeda.com/api/webhooks/mercado-pago>)
+- Webhook URL correct (<https://api.hospeda.com.ar/api/webhooks/mercado-pago>)
 - Webhook events subscribed (payment, refund)
 - Webhook secret configured
 
@@ -951,7 +956,7 @@ In Mercado Pago dashboard:
 
 ```bash
 # Check API logs for webhook requests
-vercel logs --filter="/api/webhooks/mercado-pago"
+hops --target=prod logs api -g '/api/webhooks/mercado-pago'
 
 # Look for:
 # - 401/403 (authentication issues)
@@ -963,7 +968,7 @@ vercel logs --filter="/api/webhooks/mercado-pago"
 
 ```bash
 # Simulate webhook request
-curl -X POST https://api.hospeda.com/api/webhooks/mercado-pago \
+curl -X POST https://api.hospeda.com.ar/api/webhooks/mercado-pago \
   -H "Content-Type: application/json" \
   -H "x-signature: YOUR_TEST_SIGNATURE" \
   -d '{
@@ -1019,7 +1024,7 @@ SENDGRID_API_KEY=SG.xxx
 
 ```bash
 # Search for email-related logs
-vercel logs | grep -i "email\|sendgrid"
+hops --target=prod logs api -g 'email|sendgrid'
 
 # Look for:
 # - "Email sent successfully" (good)
@@ -1117,14 +1122,14 @@ After resolving the incident, follow these procedures:
 
 ```bash
 # Run health checks
-curl -f https://api.hospeda.com/health
-curl -sI https://hospeda.com | grep "200 OK"
+curl -f https://api.hospeda.com.ar/health
+curl -sI https://hospeda.com.ar | grep "200 OK"
 
 # Check error rates (should be < 0.1%)
 # Via monitoring dashboard
 
 # Check performance metrics
-# Via Vercel Analytics, Neon Console
+# Via Sentry, Better Stack, and `hops free-mem` on the VPS
 ```
 
 ### Step 2: Communicate Resolution
@@ -1335,14 +1340,14 @@ git push
 
 ```bash
 # === Health Checks ===
-curl -f https://api.hospeda.com/health
-curl -sI https://hospeda.com | grep "200 OK"
+curl -f https://api.hospeda.com.ar/health
+curl -sI https://hospeda.com.ar | grep "200 OK"
 psql $DATABASE_URL -c "SELECT 1"
 
 # === Logs ===
-vercel logs [deployment-url] --since 1h
-docker compose logs -f api
-gh run view [run-id] --log
+hops --target=prod logs api --since 1h    # from the VPS
+docker compose logs -f api                # local
+gh run view [run-id] --log                # CI
 
 # === Database ===
 # Connect (read-only)
@@ -1359,11 +1364,11 @@ docker exec hospeda_postgres psql -U hospeda_user -d hospeda_dev \
       ORDER BY mean_exec_time DESC LIMIT 10"
 
 # === Deployments ===
-vercel list --limit 10
+# History lives in Coolify → the app → Deployments
 gh api repos/:owner/hospeda/deployments --jq '.[:5]'
 
 # === Performance ===
-time curl -s https://api.hospeda.com/api/accommodations > /dev/null
+time curl -s https://api.hospeda.com.ar/api/accommodations > /dev/null
 ```
 
 ### Environment-Specific Checks
@@ -1387,16 +1392,17 @@ docker exec -it hospeda_postgres psql -U hospeda_user -d hospeda_dev
 **Production**:
 
 ```bash
-# Check Vercel deployment
-vercel list
-vercel logs [deployment-url]
+# Check the running apps and their logs (from the VPS)
+hops health prod
+hops --target=prod logs api -n 200
 
 # Check GitHub Actions
 gh run list --limit 10
 gh run view [run-id] --log
 
-# Check database (Neon Console)
-# Use web UI: https://console.neon.tech
+# Check the database (a container on the VPS)
+hops --target=prod psql 'SELECT 1'
+hops --target=prod db-counts
 ```
 
 ## Escalation

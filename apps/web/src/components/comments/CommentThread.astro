@@ -29,7 +29,12 @@ interface Props {
     /** Active UI locale — forwarded to the island for i18n. */
     readonly locale: SupportedLocale;
     /** Whether the requesting user is authenticated. */
-    /** Full current URL (e.g. Astro.url.href) — used to build the returnUrl for sign-in. */
+    /**
+     * Same-origin relative path + query (e.g. `${Astro.url.pathname}${Astro.url.search}`)
+     * used to build the returnUrl for sign-in. NOT `Astro.url.href`: the signin
+     * page's `resolveSafeReturnPath` guard (HOS-1170) rejects any absolute URL —
+     * same-origin or not — and silently falls back to `/mi-cuenta/` (HOS-1185).
+     */
     readonly currentUrl: string;
     /** Display name of the current user — author of optimistically appended comments. */
 }

@@ -50,11 +50,13 @@ export const normalizePhoneNumber = (phone: string): string => {
  * ```typescript
  * const normalized = normalizeContactInfo({
  *   mobilePhone: '+54 11 5555-0002',
+ *   whatsapp: '+54 11 5555-0002',
  *   personalEmail: ' USER@EXAMPLE.COM ',
  *   workEmail: 'work@example.com'
  * });
  * // Returns: {
  * //   mobilePhone: '+541155550002',
+ * //   whatsapp: '+541155550002',
  * //   personalEmail: 'user@example.com',
  * //   workEmail: 'work@example.com'
  * // }
@@ -76,6 +78,9 @@ export const normalizeContactInfo = (contactInfo: unknown): unknown => {
     }
     if (typeof normalized.workPhone === 'string') {
         normalized.workPhone = normalizePhoneNumber(normalized.workPhone);
+    }
+    if (typeof normalized.whatsapp === 'string') {
+        normalized.whatsapp = normalizePhoneNumber(normalized.whatsapp);
     }
 
     // Normalize emails

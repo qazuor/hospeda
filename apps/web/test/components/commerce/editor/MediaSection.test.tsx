@@ -687,9 +687,15 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             const valid = new File(['b'], 'b.jpg', { type: 'image/jpeg' });
             fireEvent.change(gallery, { target: { files: [valid, oversized] } });
 
+            // HOS-332: the oversized file goes through client-side
+            // compression first (jsdom has no real canvas, so it falls back
+            // to the original untouched) before the size cap is checked —
+            // the exact wording depends on whether that fallback was hit, so
+            // this only asserts the cap itself is named, like the size-cap
+            // suite below.
             await waitFor(() => {
-                const alert = screen.getByText((content) => content.includes('no puede superar'));
-                expect(alert).toBeInTheDocument();
+                const alert = screen.getByRole('alert');
+                expect(alert.textContent).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
             });
             expect(global.fetch).not.toHaveBeenCalled();
             expect(mockAddMedia).not.toHaveBeenCalled();
@@ -822,8 +828,12 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             const { featured } = fileInputs();
             fireEvent.change(featured, { target: { files: [fileOfBytes(CAP_BYTES + 1)] } });
 
+            // HOS-332: see the comment on the equivalent gallery test above —
+            // asserts the cap is named rather than the exact copy, since
+            // jsdom's lack of a real canvas can route this through either
+            // the generic or the compression-specific too-large message.
             await waitFor(() => {
-                const alert = screen.getByText((content) => content.includes('no puede superar'));
+                const alert = screen.getByRole('alert');
                 expect(alert.textContent).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
             });
             expect(global.fetch).not.toHaveBeenCalled();

@@ -3,7 +3,7 @@
  *
  * `buildResetTransaction` is a pure string-builder (no I/O) so its SQL
  * output — including FK-safe ordering and the new
- * `commerce_listing_subscriptions` / `featured_listing_addon_grants` /
+ * `entity_subscriptions` / `featured_listing_addon_grants` /
  * `accommodations` statements — is fully unit-testable. `discoverTarget`,
  * `countAffected`, and `countFeaturedAccommodations` shell out to
  * `docker exec ... psql` and are not covered here.
@@ -92,8 +92,8 @@ describe('buildResetTransaction(params)', () => {
             deleteUser: false
         });
 
-        it('deletes commerce_listing_subscriptions scoped by subscription_id subquery', () => {
-            expect(sql).toContain('DELETE FROM commerce_listing_subscriptions');
+        it('deletes entity_subscriptions scoped by subscription_id subquery', () => {
+            expect(sql).toContain('DELETE FROM entity_subscriptions');
             expect(sql).toContain(
                 `WHERE subscription_id IN (SELECT id FROM billing_subscriptions WHERE customer_id = '${CUSTOMER_ID}')`
             );
@@ -120,8 +120,8 @@ describe('buildResetTransaction(params)', () => {
             deleteUser: false
         });
 
-        it('deletes commerce_listing_subscriptions before billing_subscriptions', () => {
-            const childIdx = lineIndex(sql, 'DELETE FROM commerce_listing_subscriptions');
+        it('deletes entity_subscriptions before billing_subscriptions', () => {
+            const childIdx = lineIndex(sql, 'DELETE FROM entity_subscriptions');
             const parentIdx = lineIndex(sql, 'DELETE FROM billing_subscriptions WHERE customer_id');
             expect(childIdx).toBeGreaterThan(-1);
             expect(parentIdx).toBeGreaterThan(-1);

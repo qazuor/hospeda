@@ -112,7 +112,7 @@ interface CustomerScopedDelete {
  *     `ON DELETE no action` (non-deferrable), so the checkout rows must go
  *     first or the parent deletes raise a FK violation.
  *   - `billing_refunds` before `billing_payments`,
- *     `commerce_listing_subscriptions` before `billing_subscriptions`,
+ *     `entity_subscriptions` before `billing_subscriptions`,
  *     `featured_listing_addon_grants` before `billing_addon_purchases`.
  *
  * `billing_customers` is intentionally NOT in this list — it is the parent
@@ -142,7 +142,7 @@ function customerScopedDeletes(cid: string): readonly CustomerScopedDelete[] {
         { table: 'billing_refunds', where: `payment_id IN ${paymentsSub}` },
         { table: 'billing_payments', where: `customer_id = '${cid}'` },
         { table: 'billing_payment_methods', where: `customer_id = '${cid}'` },
-        { table: 'commerce_listing_subscriptions', where: `subscription_id IN ${subsSub}` },
+        { table: 'entity_subscriptions', where: `subscription_id IN ${subsSub}` },
         { table: 'billing_subscriptions', where: `customer_id = '${cid}'` },
         { table: 'featured_listing_addon_grants', where: `purchase_id IN ${purchasesSub}` },
         { table: 'billing_addon_purchases', where: `customer_id = '${cid}'` },
@@ -246,7 +246,7 @@ SELECT count(*) FROM accommodations
  *     subquery before those children are deleted).
  *   - `billing_checkouts` before `billing_payments` / `billing_subscriptions`
  *     (its FKs are `ON DELETE no action`).
- *   - `commerce_listing_subscriptions` before `billing_subscriptions`,
+ *   - `entity_subscriptions` before `billing_subscriptions`,
  *     `featured_listing_addon_grants` before `billing_addon_purchases`.
  * `billing_usage_records` is NOT deleted directly: its only scope is
  * `subscription_id` (it has no `customer_id` column) and its FK to

@@ -3,6 +3,8 @@
  * @description Application-wide constants for the Hospeda web app.
  */
 
+import { getBrandPhoneE164, getBrandPhoneWhatsAppUrl } from './brand-phone';
+
 /** Brand name used in titles, meta tags, and UI */
 export const BRAND_NAME = 'Hospeda';
 
@@ -52,6 +54,20 @@ export const TITLE_SEPARATOR = ' | ';
 export const TWITTER_SITE_HANDLE = '@HospedaLitoral' as const;
 
 /**
+ * The brand's WhatsApp `wa.me` link, derived from `HOSPEDA_BRAND_PHONE`
+ * (HOS-364 — see `./brand-phone`). Resolved once at module load and asserted
+ * non-null: the configured brand number is expected to always be dialable,
+ * so a `null` here means the env var is misconfigured and failing loudly at
+ * startup beats silently shipping a dead WhatsApp link.
+ */
+const brandWhatsAppUrl = getBrandPhoneWhatsAppUrl();
+if (!brandWhatsAppUrl) {
+    throw new Error(
+        '[web] HOSPEDA_BRAND_PHONE is configured but does not resolve to a dialable WhatsApp link'
+    );
+}
+
+/**
  * Official social profiles for the Hospeda brand. Single source of truth for
  * both `SocialLinks.astro` (rendered footer links) and `OrganizationJsonLd.astro`
  * (schema.org Organization `sameAs`).
@@ -64,7 +80,7 @@ export const SOCIAL_PROFILES = [
     { platform: 'instagram', url: 'https://www.instagram.com/hospeda.com.ar' },
     { platform: 'x', url: 'https://x.com/HospedaLitoral' },
     { platform: 'youtube', url: 'https://www.youtube.com/@hospeda.com.ar' },
-    { platform: 'whatsapp', url: 'https://wa.me/5493442453797' }
+    { platform: 'whatsapp', url: brandWhatsAppUrl }
 ] as const;
 
 /** A social platform key (e.g. for mapping to an icon component). */
@@ -95,9 +111,14 @@ export const ORGANIZATION_INFO = {
     /** One-paragraph description of the platform. */
     description:
         'Hospeda es la plataforma para descubrir y reservar alojamientos turísticos en el Litoral de Entre Ríos, Argentina: desde cabañas y casas de campo hasta hoteles, con información turística de la región.',
-    /** Public contact phone in E.164 format. AR mobile numbers carry the `9`
-     * after the country code (matches the WhatsApp contact line). */
-    telephone: '+5493442453797',
+    /**
+     * Public contact phone in E.164 form, derived from `HOSPEDA_BRAND_PHONE`
+     * (HOS-364 — see `./brand-phone`). Deliberately WITHOUT the AR mobile
+     * `9`: that prefix is WhatsApp-specific ({@link SOCIAL_PROFILES}'
+     * `whatsapp` entry carries it) and would be wrong on a plain phone call,
+     * which is what this schema.org field represents.
+     */
+    telephone: getBrandPhoneE164(),
     /** Public contact email. */
     email: 'info@hospeda.com.ar',
     /** Postal address fields (schema.org PostalAddress). */

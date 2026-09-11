@@ -94,10 +94,14 @@ graph TB
 
 ### Deployment Triggers
 
-- **Production**: Push/merge to `main` → `cd-production.yml` runs `vercel --prod`.
-- **Staging**: Push/merge to `staging` → `cd-staging.yml` runs preview deploy.
-- **Preview**: Pull requests to `main` → automatic Vercel preview.
-- **Manual**: `pnpm deploy:api`, `pnpm deploy:web`, `pnpm deploy:admin`, `pnpm deploy:all`.
+Deploying is **manual by policy**. Auto-deploy on push is disabled, and there is
+no CD workflow: CI runs lint, typecheck and tests, and stops there.
+
+- **Production / Staging**: once CI is green, press Deploy on the app's resource
+  in the [Coolify dashboard](https://coolify.hospeda.com.ar), or from the VPS run
+  `hops --target=prod redeploy <api|web|admin>` (`--target=staging` for staging).
+  One app at a time — there is no "deploy everything" command.
+- **Preview**: there are no per-PR preview environments. Verify against staging.
 
 ## Environment Strategy
 
@@ -206,20 +210,18 @@ pnpm db:start           # Start Postgres + Redis (Docker)
 pnpm db:fresh-dev       # Reset + push schema + seed
 pnpm db:studio          # Open Drizzle Studio
 
-# Environment sync
-pnpm env:check          # Validate local env against registry
-pnpm env:pull           # Pull from Vercel
-pnpm env:push           # Push to Vercel
+# Environment
+pnpm env:check:registry # Validate app schemas against the @repo/config registry
+pnpm env:doctor         # Diagnose the local environment
+```
 
-# Manual deployment (CI/CD is preferred)
-pnpm deploy:api         # Deploy API to production
-pnpm deploy:web         # Deploy web to production
-pnpm deploy:admin       # Deploy admin to production
-pnpm deploy:all         # Deploy all three sequentially
+Deploying, reading production logs and managing remote env vars all happen on
+the VPS through `hops` (`scripts/server-tools`), not from this repo:
 
-# Vercel
-vercel logs --prod      # View production logs
-vercel ls               # List recent deployments
+```bash
+hops --target=prod redeploy api        # Deploy one app after CI is green
+hops --target=prod logs api --since 2m # Production logs
+hops --target=prod env-set api KEY VAL # Upsert an env var, then redeploy
 ```
 
 ## Documents in This Folder

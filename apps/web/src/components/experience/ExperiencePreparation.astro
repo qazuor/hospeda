@@ -1,0 +1,129 @@
+---
+/**
+ * @file ExperiencePreparation.astro
+ * @description What to bring and what is required to take part (HOS-1046).
+ *
+ * ## Two lists, two headings, one block
+ *
+ * They are separate columns for a reason and they stay separate here: "qué
+ * llevar" is a packing list the traveller acts on, "requisitos" is an
+ * eligibility gate that may exclude them outright. Same block because a reader
+ * checking whether they can go and what to pack is doing one thing; different
+ * headings because the two sentences are not interchangeable.
+ *
+ * ## Renders nothing when both lists are empty
+ *
+ * `toExperienceDetailPageProps` already drops blank items and collapses a
+ * missing column to `[]`, so the two length checks below are the whole gate —
+ * there is no `null` case to also handle. Each half hides independently: a
+ * listing with requirements and no packing list shows one heading, not an empty
+ * one beside it.
+ *
+ * ## Not paid
+ *
+ * Owner decision (2026-09-01): ficha data from the basic tier. No entitlement
+ * check here, and there must not be one.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** What the traveller has to bring; `[]` when none was declared. */
+    readonly whatToBring: readonly string[];
+    /** Requirements to take part; `[]` when none was declared. */
+    readonly requirements: readonly string[];
+    readonly locale: SupportedLocale;
+}
+
+const { whatToBring, requirements, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const hasWhatToBring = whatToBring.length > 0;
+const hasRequirements = requirements.length > 0;
+---
+
+{(hasWhatToBring || hasRequirements) && (
+    <section class="exp-prep">
+        {hasWhatToBring && (
+            <div class="exp-prep__group">
+                <h3 class="exp-prep__title">
+                    {t('experience.detail.whatToBring.title', 'Qué llevar')}
+                </h3>
+                <ul class="exp-prep__list">
+                    {whatToBring.map((item) => (
+                        <li class="exp-prep__item">
+                            <span class="exp-prep__bullet" aria-hidden="true">🎒</span>
+                            <span>{item}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )}
+
+        {hasRequirements && (
+            <div class="exp-prep__group">
+                <h3 class="exp-prep__title">
+                    {t('experience.detail.requirements.title', 'Requisitos')}
+                </h3>
+                <ul class="exp-prep__list">
+                    {requirements.map((item) => (
+                        <li class="exp-prep__item">
+                            <span class="exp-prep__bullet" aria-hidden="true">✅</span>
+                            <span>{item}</span>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )}
+    </section>
+)}
+
+<style>
+    .exp-prep {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: var(--space-5, 20px);
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-card, 24px);
+        padding: var(--space-5, 20px);
+    }
+
+    .exp-prep__group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    .exp-prep__title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-prep__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .exp-prep__item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+    }
+
+    .exp-prep__bullet {
+        flex-shrink: 0;
+        line-height: 1.6;
+    }
+</style>

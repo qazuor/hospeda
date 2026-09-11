@@ -24,9 +24,11 @@ import { Image } from "astro:assets";
 import { NewsletterForm } from "@/components/newsletter/NewsletterForm.client";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import { statsApi } from "@/lib/api/endpoints";
+import { getBrandPhoneDisplay, getBrandPhoneTelHref } from "@/lib/brand-phone";
 import { getApiUrl } from "@/lib/env";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from "@/lib/publish/publish-page-paths";
 import { buildUrl } from "@/lib/urls";
 import {
     AmericanExpressIcon,
@@ -42,6 +44,12 @@ interface Props {
 
 const { locale } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
+
+// Brand contact phone, single source of truth (HOS-364) — was previously a
+// hand-typed i18n key here that had already drifted from the contact page's
+// number in the en/pt bundles.
+const brandPhoneDisplay = getBrandPhoneDisplay();
+const brandPhoneTelHref = getBrandPhoneTelHref();
 
 // Auth state for the NewsletterForm island (SPEC-101 T-101-33). The App.Locals
 // type does not yet declare `user` — narrowed cast matches the workaround used
@@ -118,15 +126,31 @@ const exploreLinks = [
  *  files and fails if they ever disagree, which is the drift the import would
  *  have prevented.
  *
- *  `footer.listProperty` deliberately keeps its own
- *  `/suscriptores/propietarios/` destination: it predates the chooser, and
- *  re-pointing an existing link is not what HOS-826 asked for. */
+ *  `footer.listProperty` deliberately keeps its own destination rather than
+ *  the chooser's: it predates it, and re-pointing it at `/publicar/` is not
+ *  what HOS-826 asked for. HOS-985 moved that destination from
+ *  `/suscriptores/propietarios/` to `/planes/anfitriones/` because the old URL
+ *  is now redirect-only (HOS-941 D-12) — the link keeps meaning the same thing,
+ *  it just stops costing every visitor a 301 hop. */
+/* HOS-1156: the two commerce entries say "Publicá tu …" and now lead to a page
+   where you can — they pointed at `/planes/*`, which are SALES pages. Both read
+   the same map the header's chooser does, so the parity
+   `footer-publish-parity.guard.test.ts` protects is now structural rather than
+   a matter of two literals agreeing. */
 const forYouLinks = [
-    { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
-    { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: "/publicar-restaurante/" }) },
-    { label: t("footer.listExperience"), href: buildUrl({ locale, path: "/publicar-experiencia/" }) },
-    { label: t("footer.ownerPlans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
-    { label: t("footer.touristPlans"), href: buildUrl({ locale, path: "/suscriptores/turistas/" }) },
+    /* Stays on the sales page by HOS-985's decision, which HOS-1156 did not
+       revisit: the accommodation funnel has had a landing of its own for far
+       longer than the chooser has existed. */
+    { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/planes/anfitriones/" }) },
+    { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy }) },
+    { label: t("footer.listExperience"), href: buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL.experience }) },
+    /* HOS-942: ONE link to the plan index, replacing the separate "Planes para
+       propietarios" / "Planes para turistas" entries. The footer used to
+       enumerate two of the five audiences Hospeda sells to, which meant a
+       restaurant owner, a tour operator and a prospective partner could not
+       reach a price from here at all. The index covers all five, so the footer
+       does not have to grow a row per vertical. */
+    { label: t("footer.plans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
     { label: t("footer.benefits"), href: buildUrl({ locale, path: "/beneficios/" }) },
 ] as const;
 
@@ -354,11 +378,11 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     </svg>
                     <span>{t("footer.contactEmail")}</span>
                 </a>
-                <a class="footer__contact-link" href={`tel:${t("footer.contactPhone").replace(/\s+/g, "")}`}>
+                <a class="footer__contact-link" href={brandPhoneTelHref}>
                     <svg class="footer__contact-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M22 16.92V20a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2H7.2a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>{t("footer.contactPhone")}</span>
+                    <span>{brandPhoneDisplay}</span>
                 </a>
             </div>
 

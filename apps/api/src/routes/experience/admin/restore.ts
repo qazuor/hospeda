@@ -16,7 +16,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * POST /api/v1/admin/experiences/:id/restore
  * Restore experience listing — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service layer (`_canRestore`)
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service layer (`_canRestore`)
  * enforces the same gate.
  */
 export const adminRestoreExperienceRoute = createAdminRoute({
@@ -24,9 +24,9 @@ export const adminRestoreExperienceRoute = createAdminRoute({
     path: '/{id}/restore',
     summary: 'Restore experience listing (admin)',
     description:
-        'Restores a soft-deleted experience listing. Requires COMMERCE_EDIT_ALL permission.',
+        'Restores a soft-deleted experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
     tags: ['Experience'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

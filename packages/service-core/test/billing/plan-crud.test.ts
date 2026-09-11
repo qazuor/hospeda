@@ -107,6 +107,7 @@ vi.mock('../../src/services/billing/plan/plan.audit.js', () => ({
 // ─── Imports (after mocks) ─────────────────────────────────────────────────
 
 import { MODEL_C_FIELD_SPLIT } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import {
     createPlan,
     getPlanById,
@@ -133,6 +134,7 @@ function makePlanRow(
         metadata: Record<string, unknown>;
         entitlements: string[];
         limits: Record<string, number>;
+        productDomain: string | null;
     }> = {}
 ): Record<string, unknown> {
     return {
@@ -142,6 +144,9 @@ function makePlanRow(
         active: overrides.active ?? true,
         deletedAt: overrides.deletedAt ?? null,
         livemode: overrides.livemode ?? false,
+        // HOS-1314: defaults to 'accommodation' like every pre-HOS-1233 row —
+        // override to exercise the admin grant-comp plan selector's grouping.
+        productDomain: overrides.productDomain ?? 'accommodation',
         metadata: overrides.metadata ?? {
             displayName: 'Básico',
             category: 'owner',
@@ -403,6 +408,44 @@ describe('plan.crud', () => {
             expect(result.sortOrder).toBe(0);
             expect(result.monthlyPriceUsdRef).toBe(0);
         });
+
+        // HOS-1062 F1 — the public-catalogue mark travels ON the DTO. The public
+        // endpoint filters on it and nothing else, so a mapper that stops
+        // emitting it is the one way an unlisted plan reaches a public response
+        // without anybody touching the route.
+        it('should carry publicListing from metadata', () => {
+            // Arrange
+            const planRow = makePlanRow({ metadata: { publicListing: 'unlisted' } });
+
+            // Act
+            const result = mapDbToPlan(planRow as unknown as Parameters<typeof mapDbToPlan>[0], []);
+
+            // Assert
+            expect(result.publicListing).toBe('unlisted');
+        });
+
+        it('should report an unmarked plan as listed', () => {
+            // Arrange — every plan in production is this case.
+            const planRow = makePlanRow({ metadata: {} });
+
+            // Act
+            const result = mapDbToPlan(planRow as unknown as Parameters<typeof mapDbToPlan>[0], []);
+
+            // Assert
+            expect(result.publicListing).toBe('listed');
+        });
+
+        it('should withhold a plan whose mark is present but unreadable', () => {
+            // Arrange — a typo in the operator's UPDATE. The mark exists and
+            // cannot be read: withhold, never publish by default.
+            const planRow = makePlanRow({ metadata: { publicListing: 'unlited' } });
+
+            // Act
+            const result = mapDbToPlan(planRow as unknown as Parameters<typeof mapDbToPlan>[0], []);
+
+            // Assert
+            expect(result.publicListing).toBe('unlisted');
+        });
     });
 
     // ── listPlans ───────────────────────────────────────────────────────────
@@ -495,6 +538,51 @@ describe('plan.crud', () => {
             expect(result.success).toBe(true);
             if (!result.success) return;
             expect(result.data.items[0]?.activeSubscriptionCount).toBe(5);
+        });
+
+        // HOS-1314: the admin grant-comp plan selector groups the list by
+        // vertical — without this field the caller cannot tell a gastronomy
+        // plan from an accommodation one.
+        it('carries productDomain on each item (HOS-1314)', async () => {
+            // Arrange
+            const planRow = makePlanRow({ productDomain: 'gastronomy' });
+            const priceRow = makePriceRow();
+            const db = buildMockDb([
+                [{ value: 1 }],
+                [planRow],
+                [priceRow],
+                [{ planId: 'plan-uuid-1', value: 0 }]
+            ]);
+            mockGetDb.mockReturnValue(db);
+
+            // Act
+            const result = await listPlans({});
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.items[0]?.productDomain).toBe('gastronomy');
+        });
+
+        it('reads a NULL productDomain as accommodation, like createCompSubscription does (HOS-1314)', async () => {
+            // Arrange
+            const planRow = makePlanRow({ productDomain: null });
+            const priceRow = makePriceRow();
+            const db = buildMockDb([
+                [{ value: 1 }],
+                [planRow],
+                [priceRow],
+                [{ planId: 'plan-uuid-1', value: 0 }]
+            ]);
+            mockGetDb.mockReturnValue(db);
+
+            // Act
+            const result = await listPlans({});
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data.items[0]?.productDomain).toBe('accommodation');
         });
 
         it('should filter the subscription-count query by the canonical ENTITLEMENT_GRANTING_STATUSES set, including comp (HOS-736)', async () => {
@@ -693,6 +781,7 @@ describe('plan.crud', () => {
             name: 'Básico',
             description: 'Plan básico',
             category: 'owner' as const,
+            productDomain: ProductDomainEnum.ACCOMMODATION,
             monthlyPriceArs: 500000,
             annualPriceArs: null,
             monthlyPriceUsdRef: 5,
@@ -777,6 +866,62 @@ describe('plan.crud', () => {
                     annualPriceArs: baseInput.annualPriceArs
                 })
             );
+        });
+
+        it("HOS-1233 T-033: writes the caller's productDomain, not the column default", async () => {
+            // Arrange — a TOURIST plan, deliberately. The column defaults to
+            // `accommodation`, so an insert that omitted the field would still
+            // produce a perfectly valid row; asserting the VALUE is the only
+            // thing that separates "wrote it" from "let the default answer".
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            let insertedDb: ReturnType<typeof buildMockDb> | undefined;
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                return fn(insertedDb);
+            });
+
+            // Act
+            await createPlan({
+                ...baseInput,
+                slug: 'tourist-vip',
+                category: 'tourist',
+                productDomain: ProductDomainEnum.TOURIST
+            });
+
+            // Assert
+            const insertChain = insertedDb?.insert.mock.results[0]?.value;
+            const insertedValues = insertChain?.values.mock.calls[0]?.[0] as {
+                productDomain?: unknown;
+            };
+            expect(insertedValues.productDomain).toBe(ProductDomainEnum.TOURIST);
+        });
+
+        it('HOS-1233 T-033: an accommodation plan still writes its own domain', async () => {
+            // The sibling of the test above, and not redundant with it: a
+            // hardcoded `TOURIST` would satisfy that one alone. Two domains in
+            // the same suite is what a hardcode cannot satisfy.
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            let insertedDb: ReturnType<typeof buildMockDb> | undefined;
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                return fn(insertedDb);
+            });
+
+            // Act
+            await createPlan(baseInput);
+
+            // Assert
+            const insertChain = insertedDb?.insert.mock.results[0]?.value;
+            const insertedValues = insertChain?.values.mock.calls[0]?.[0] as {
+                productDomain?: unknown;
+            };
+            expect(insertedValues.productDomain).toBe(ProductDomainEnum.ACCOMMODATION);
         });
 
         it('HOS-692 AC-29: does NOT write monthlyPriceArs into the metadata mirror', async () => {
@@ -876,7 +1021,7 @@ describe('plan.crud', () => {
             expect(mockInsertPlanAuditLog).toHaveBeenCalledOnce();
         });
 
-        it('should include trial days in monthly price when hasTrial=true', async () => {
+        it('never mirrors trial days onto the monthly price, even with hasTrial=true', async () => {
             // Arrange
             const planRow = makePlanRow();
             let insertValuesCalledWith: unknown[] = [];
@@ -905,11 +1050,22 @@ describe('plan.crud', () => {
             const inputWithTrial = { ...baseInput, hasTrial: true, trialDays: 14 };
             await createPlan(inputWithTrial, {}, ctx);
 
-            // Assert — second insert (monthly price) should include trialDays
+            // Assert — the plan row keeps the operator's trial (that is the field
+            // the product reads); the monthly PRICE row must not mirror it.
+            // HOS-1224: qzpay-core inherits `price.trialDays` whenever a caller of
+            // `subscriptions.create` omits `trialDays`, and qzpay-drizzle turns
+            // that into trial_start/trial_end — a PAID subscription born marked
+            // `trialing` for 30 days with the customer charged (HOS-1221 bug D3).
+            const planInsert = insertValuesCalledWith[0] as Record<string, unknown> | undefined;
+            const planMetadata = planInsert?.metadata as Record<string, unknown> | undefined;
+            expect(planMetadata?.trialDays).toBe(14);
+
             const monthlyPriceInsert = insertValuesCalledWith[1] as
                 | Record<string, unknown>
                 | undefined;
-            expect(monthlyPriceInsert?.trialDays).toBe(14);
+            expect(monthlyPriceInsert?.billingInterval).toBe('month');
+            expect(monthlyPriceInsert?.trialDays).toBeUndefined();
+            expect(Object.hasOwn(monthlyPriceInsert ?? {}, 'trialDays')).toBe(false);
         });
 
         it('should return INTERNAL_ERROR when withTransaction throws', async () => {

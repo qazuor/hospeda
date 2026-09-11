@@ -421,6 +421,63 @@ const logRouteError = (
 };
 
 /**
+ * Matches a Postgres unique-violation message, e.g.:
+ * `duplicate key value violates unique constraint "partners_slug_unique"`.
+ *
+ * The driver's `.detail` (which carries the actual column + value, e.g.
+ * `Key (slug)=(my-slug) already exists.`) never reaches this point — the DB
+ * layer's `update`/`create` wrap the raw `pg` error into a `DbError` using
+ * only `err.message` (see `packages/db/src/base/base.model.ts`), so the
+ * constraint name embedded in the top-level message is the only signal left.
+ */
+const UNIQUE_VIOLATION_PATTERN = /violates unique constraint "([^"]+)"/;
+
+/**
+ * Derives a human-readable field name from a Postgres unique constraint name.
+ *
+ * Drizzle's default naming for an unnamed `.unique()` column is
+ * `<table>_<column>_unique` (confirmed against every constraint in
+ * `packages/db/src/migrations/*.sql` — e.g. `partners_slug_unique`,
+ * `posts_slug_unique`, `users_email_unique`). Taking the last underscore
+ * segment before the `_unique` suffix recovers the column name correctly for
+ * every SINGLE-WORD column, which is every admin-editable unique field in
+ * the schema today (`slug`, `code`, `key`, `email`, `path`, `token`). A
+ * multi-word column (e.g. `token_hash`, `entity_type` — none of them
+ * user-editable) degrades to its last word only; that is an acceptable,
+ * documented limitation rather than a silent wrong answer.
+ *
+ * @param constraintName - The quoted constraint name from the Postgres error message.
+ * @returns The best-effort field name, or `'value'` if the name doesn't match the convention.
+ */
+const deriveUniqueConstraintFieldName = (constraintName: string): string => {
+    const withoutSuffix = constraintName.replace(/_(unique|key)$/, '');
+    const segments = withoutSuffix.split('_').filter(Boolean);
+    return segments.at(-1) ?? 'value';
+};
+
+/**
+ * Builds the 409 `ALREADY_EXISTS` error payload for a Postgres unique-violation
+ * message, or `null` if the message doesn't match that shape.
+ *
+ * @param message - The raw error message (`DbError#message` or a bare `Error#message`).
+ * @param entity - A human-readable entity label to name in the response message.
+ */
+const buildUniqueViolationErrorPayload = (
+    message: string,
+    entity: string
+): { code: 'ALREADY_EXISTS'; message: string; details: string | undefined } | null => {
+    const match = message.match(UNIQUE_VIOLATION_PATTERN);
+    if (!match?.[1]) return null;
+
+    const field = deriveUniqueConstraintFieldName(match[1]);
+    return {
+        code: 'ALREADY_EXISTS',
+        message: `A ${entity} with this ${field} already exists`,
+        details: env.HOSPEDA_API_DEBUG_ERRORS ? message : undefined
+    };
+};
+
+/**
  * Helper function to handle errors in route handlers
  * Provides consistent error handling across all endpoints
  */
@@ -657,6 +714,17 @@ export const handleRouteError = (error: unknown, c: Context) => {
             );
         }
 
+        // HOS-1061: a unique-constraint violation is a state conflict, not a
+        // server fault — answer 409 ALREADY_EXISTS naming the conflicting
+        // field instead of falling through to the generic 500 DATABASE_ERROR
+        // below. Applies to every entity with a `.unique()` column (partners,
+        // posts, events, destinations, ...), since the check is generic over
+        // `DbError#message`, not partner-specific.
+        const uniqueViolation = buildUniqueViolationErrorPayload(error.message, error.entity);
+        if (uniqueViolation) {
+            return createErrorResponse(uniqueViolation, c, 409);
+        }
+
         // Other database errors are server errors
         return createErrorResponse(
             {
@@ -741,6 +809,15 @@ export const handleRouteError = (error: unknown, c: Context) => {
             );
         }
 
+        // HOS-1061: same unique-violation handling as the DbError branch
+        // above, for a bare Error carrying the same Postgres message (e.g.
+        // one that bypassed DbError wrapping). No `.entity` to name here, so
+        // the message falls back to the generic "record".
+        const uniqueViolation = buildUniqueViolationErrorPayload(error.message, 'record');
+        if (uniqueViolation) {
+            return createErrorResponse(uniqueViolation, c, 409);
+        }
+
         // Check for validation errors
         if (error.message.includes('validation') || error.message.includes('Invalid')) {
             return createErrorResponse(
@@ -780,6 +857,12 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 c,
                 400
             );
+        }
+
+        // HOS-1061: same unique-violation handling as the two branches above.
+        const uniqueViolation = buildUniqueViolationErrorPayload(errorMessage, 'record');
+        if (uniqueViolation) {
+            return createErrorResponse(uniqueViolation, c, 409);
         }
 
         // Check for validation errors

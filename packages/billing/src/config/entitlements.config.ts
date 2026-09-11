@@ -243,5 +243,134 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'AI accommodation import',
         description:
             'Access to AI-powered accommodation import that extracts structured listing data from an external URL to pre-fill the creation form'
+    },
+    // Commerce vertical entitlements (HOS-1074).
+    //
+    // Appended as their OWN trailing section rather than folded into the owner
+    // block above: `test/entitlements.test.ts` slices this array by category and
+    // asserts each slice's length, so putting a commerce key inside the owner
+    // run would silently move an accommodation key out of its own count.
+    //
+    // See `EntitlementKey`'s doc for why these are four new keys rather than a
+    // reuse of the accommodation pair, and `commerce-entitlements.config.ts`
+    // for which vertical grants which.
+    {
+        key: EntitlementKey.EDIT_GASTRONOMY_INFO,
+        name: 'Edit gastronomy info',
+        description: 'Allows editing the information of owned gastronomy listings'
+    },
+    {
+        key: EntitlementKey.PUBLISH_GASTRONOMY,
+        name: 'Publish gastronomy listings',
+        description: 'Allows publishing gastronomy listings on the platform'
+    },
+    {
+        key: EntitlementKey.EDIT_EXPERIENCE_INFO,
+        name: 'Edit experience info',
+        description: 'Allows editing the information of owned experience listings'
+    },
+    {
+        key: EntitlementKey.PUBLISH_EXPERIENCE,
+        name: 'Publish experience listings',
+        description: 'Allows publishing experience listings on the platform'
+    },
+    // HOS-1058. Sits in the same trailing commerce section for the slicing
+    // reason above, but is granted differently from the four keys before it:
+    // those are uniform across a vertical's three tiers, this one is granted by
+    // the PREMIUM tier of each vertical only.
+    {
+        key: EntitlementKey.DOWNLOAD_LISTING_PDF,
+        name: 'Downloadable PDF listing sheet',
+        description:
+            'Allows downloading a print-ready PDF of the listing public page — photo, hours, contact and a QR back to the online sheet'
+    },
+    // HOS-895. Granted from `gastronomy-pro` upwards, and gastronomy-only:
+    // an experience has no carta. The two menu fallbacks (external link,
+    // uploaded photo/PDF) are NOT behind it — every gastronomy tier keeps them.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        name: 'Structured gastronomy menu',
+        description:
+            'Allows building the venue menu as sections and dishes with names, descriptions and prices, instead of only linking or uploading it'
+    },
+    // HOS-1045. Granted by `gastronomy-premium` ALONE — the tier step above
+    // `-pro`'s structured carta, and the same trailing commerce section for
+    // the slicing reason above.
+    {
+        key: EntitlementKey.MENU_ITEM_PHOTOS,
+        name: 'Photos per dish',
+        description:
+            'Allows attaching a photo to each dish of the structured menu, shown next to the dish on the public page'
+    },
+    // HOS-1057. Granted from `experience-pro` upwards, and experience-only:
+    // a restaurant has nothing to certify. The exact mirror of the key above
+    // it, one vertical over.
+    {
+        key: EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+        name: 'Experience certificates',
+        description:
+            'Allows issuing a printable certificate to a person who did the experience, naming them, the outing and its date'
+    },
+    // HOS-1049. Granted from `experience-pro` upwards, and experience-only:
+    // a restaurant has an address and a door. The meeting point itself stays
+    // free on every tier (HOS-1048) — only the how-to-get-there half is here.
+    {
+        key: EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+        name: 'Meeting point map and directions',
+        description:
+            'Allows publishing how to reach the meeting point — where to park, which bus, how far the walk is — and drawing it on a map, on top of the meeting point address every tier already carries'
+    },
+    // HOS-1041. Same tier and same shape as the carta above — `gastronomy-pro`
+    // upwards, gastronomy-only, kept out of the vertical floor map — but a
+    // SEPARATE key: the carta is the year's menu, this is today's, and they are
+    // bought for different reasons. See the enum member for why they are not
+    // merged.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+        name: 'Menú del día',
+        description:
+            'Allows publishing a dish of the day with its own validity window, which stops being shown on the public page when the window passes'
+    },
+    // HOS-1042. Granted from `gastronomy-pro` upwards and gastronomy-only, on
+    // exactly the terms the carta above is, and appended to this same trailing
+    // commerce section for the slicing reason stated at its head.
+    //
+    // Not the platform's destination `events` entity, and not the free "we host
+    // your birthday" CTA (HOS-1055) — see the enum member's doc for the three-way
+    // distinction.
+    {
+        key: EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
+        name: 'Venue events agenda',
+        description:
+            'Allows publishing the venue’s own events — live music night, happy hour, dinner show — on a date or repeating every week'
+    },
+    // HOS-1043. Granted by `gastronomy-premium` ALONE, same tier and shape as
+    // `MENU_ITEM_PHOTOS`, and appended to this same trailing commerce section
+    // for the slicing reason stated at its head.
+    {
+        key: EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU,
+        name: 'Multi-language menu',
+        description:
+            'Allows translating the structured menu into English and Portuguese, shown to the visitor with a language switcher on the public page'
+    },
+    // HOS-1044. Granted by `gastronomy-premium` ALONE, same tier and shape as
+    // `MULTILINGUAL_GASTRONOMY_MENU`, and appended to this same trailing
+    // commerce section for the slicing reason stated at its head.
+    {
+        key: EntitlementKey.MENU_QR_SCAN_METRICS,
+        name: 'Menu QR with scan analytics',
+        description:
+            'Allows minting a table QR that opens the venue menu and viewing a scan-analytics panel for it — total scans, a daily series, and a breakdown by device, OS and browser language'
+    },
+    // HOS-1060. Experience-only, and the first key in this file granted by TWO
+    // sources at once: `experience-premium` carries it, and the three
+    // `private-galleries-+N` add-ons grant it to `-basico`/`-pro` as well. See
+    // the enum member for why that is additive rather than one being the
+    // other's fallback.
+    {
+        key: EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES,
+        name: 'Private tourist galleries',
+        description:
+            'Allows creating a private photo gallery per tourist, shared by a secret link rather than an account, so whoever did the outing can see and download their own photos. Capped by max_active_private_galleries and expiring 30 days after creation.'
     }
 ];

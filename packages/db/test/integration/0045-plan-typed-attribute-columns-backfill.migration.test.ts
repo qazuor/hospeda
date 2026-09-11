@@ -70,6 +70,11 @@ function preBackfillPlanRow(
         entitlements: [],
         limits: {},
         livemode: false,
+        // HOS-1233: `product_domain` lost its DEFAULT, so it can no longer be
+        // one of the columns this factory deliberately omits — an omitted one
+        // is now a NOT NULL violation rather than a DB default. Derived from
+        // the slug so a tourist fixture is never filed as accommodation.
+        productDomain: overrides.name.startsWith('tourist') ? 'tourist' : 'accommodation',
         ...overrides
     } as QZPayBillingPlanInsert;
 }

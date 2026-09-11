@@ -53,7 +53,8 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     eventEditApi: {
         update: vi.fn(),
         softDelete: vi.fn(),
-        setPublishState: vi.fn()
+        setPublishState: vi.fn(),
+        moderate: vi.fn()
     },
     /*
      * HOS-390: the editor now renders `ContentMediaSection`, which reaches for
@@ -76,6 +77,7 @@ import { addToast } from '../../../../src/store/toast-store';
 const mockUpdate = vi.mocked(eventEditApi.update);
 const mockSoftDelete = vi.mocked(eventEditApi.softDelete);
 const mockSetPublishState = vi.mocked(eventEditApi.setPublishState);
+const mockModerate = vi.mocked(eventEditApi.moderate);
 
 const BASE_EVENT: EventEditDetail = {
     id: 'event-1',
@@ -88,8 +90,11 @@ const BASE_EVENT: EventEditDetail = {
     datePrecision: 'EXACT',
     organizerName: 'Club Social',
     locationName: 'Sala Mayo',
+    // Real-world default at creation (HOS-1037): `visibility` starts PUBLIC
+    // while `moderationState` starts PENDING — the exact combination that
+    // used to show "Despublicar" on content that was never actually live.
     moderationState: 'PENDING',
-    visibility: 'PRIVATE',
+    visibility: 'PUBLIC',
     lifecycleState: 'ACTIVE'
 };
 
@@ -201,6 +206,7 @@ describe('EventEditor — capability-gated controls', () => {
         mockUpdate.mockReset();
         mockSoftDelete.mockReset();
         mockSetPublishState.mockReset();
+        mockModerate.mockReset();
     });
     afterEach(() => vi.clearAllMocks());
 
@@ -218,9 +224,48 @@ describe('EventEditor — capability-gated controls', () => {
         expect(screen.queryByTestId('content-publish-toggle')).not.toBeInTheDocument();
     });
 
-    it('publishes through the publish-state endpoint, never through the PATCH', async () => {
-        mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
+    it('approves a pending event through the moderate endpoint, never publish-state (HOS-1037)', async () => {
+        // BASE_EVENT is PENDING + PUBLIC — visibility was never the blocker,
+        // so the control must call `moderate`, not `setPublishState`.
+        mockModerate.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor({ canPublish: true });
+
+        expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Publicar');
+
+        fireEvent.click(screen.getByTestId('content-publish-toggle'));
+
+        await waitFor(() => expect(mockModerate).toHaveBeenCalledWith({ id: 'event-1' }));
+        expect(mockSetPublishState).not.toHaveBeenCalled();
+        expect(mockUpdate).not.toHaveBeenCalled();
+        await waitFor(() =>
+            expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Despublicar')
+        );
+    });
+
+    it('unpublishes an already-live (approved + public) event', async () => {
+        mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor({
+            event: { moderationState: 'APPROVED', visibility: 'PUBLIC' },
+            canPublish: true
+        });
+
+        fireEvent.click(screen.getByTestId('content-publish-toggle'));
+
+        await waitFor(() =>
+            expect(mockSetPublishState).toHaveBeenCalledWith({
+                id: 'event-1',
+                visibility: 'PRIVATE'
+            })
+        );
+        expect(mockModerate).not.toHaveBeenCalled();
+    });
+
+    it('republishes an approved event the author had made private', async () => {
+        mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor({
+            event: { moderationState: 'APPROVED', visibility: 'PRIVATE' },
+            canPublish: true
+        });
 
         fireEvent.click(screen.getByTestId('content-publish-toggle'));
 
@@ -230,7 +275,7 @@ describe('EventEditor — capability-gated controls', () => {
                 visibility: 'PUBLIC'
             })
         );
-        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(mockModerate).not.toHaveBeenCalled();
     });
 
     it('blocks publishing while the form holds unsaved edits', () => {

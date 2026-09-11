@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Perguntar à IA sobre este local",
+        "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Confirme sempre as informações com o local.",
+        "panelLabel": "Chat com IA — Perguntas sobre o local",
+        "priceDisclaimer": "O cardápio, os preços e os horários podem ter mudado. Entre em contato com o local para confirmar.",
+        "unavailable": "O chat de IA não está disponível para este local"
+    },
     "listing": {
         "title": "Gastronomia",
         "subtitle": "Descubra os melhores restaurantes, bares e sabores da região",
@@ -13,6 +20,7 @@
         "type": "Tipo de estabelecimento",
         "priceRange": "Faixa de preço",
         "featured": "Somente destaques",
+        "features": "Opções alimentares e características",
         "minRating": "Avaliação mínima",
         "sort": {
             "featured": "Destaques primeiro",
@@ -38,15 +46,31 @@
             "closed": "Fechado",
             "open24h": "Aberto 24 horas",
             "today": "Hoje",
-            "friday": "Viernes",
-            "monday": "Lunes",
+            "friday": "Sexta-feira",
+            "monday": "Segunda-feira",
             "saturday": "Sábado",
             "sunday": "Domingo",
-            "thursday": "Jueves",
-            "tuesday": "Martes",
-            "wednesday": "Miércoles"
+            "thursday": "Quinta-feira",
+            "tuesday": "Terça-feira",
+            "wednesday": "Quarta-feira"
         },
         "menu": "Ver cardápio",
+        "menuCarta": {
+            "title": "Cardápio",
+            "attachmentImage": "Cardápio em imagem",
+            "attachmentPdf": "Cardápio em PDF",
+            "viewPdf": "Ver cardápio em PDF",
+            "consultPrice": "A consultar",
+            "unavailable": "Indisponível",
+            "switchLanguage": "Ver o cardápio em:",
+            "seoDescription": "Cardápio de {{name}}",
+            "backToListing": "← Voltar à ficha"
+        },
+        "dailySpecials": {
+            "title": "Menu do dia",
+            "intro": "O que se oferece hoje",
+            "consultPrice": "Consultar"
+        },
         "reviews": {
             "title": "Avaliações",
             "empty": "Ainda não há avaliações. Seja o primeiro a comentar!",
@@ -59,6 +83,17 @@
         "social": "Redes sociais",
         "amenities": {
             "title": "Serviços e comodidades"
+        },
+        "eventsCta": {
+            "title": "Está procurando um salão para eventos?",
+            "description": "Este lugar aceita aniversários, eventos corporativos e casamentos. Entre em contato para combinar.",
+            "button": "Entrar em contato"
+        },
+        "venueEvents": {
+            "title": "Agenda do local",
+            "weekly": "Toda {{weekday}}",
+            "range": "{{when}}, das {{start}} às {{end}}",
+            "fromOnly": "{{when}}, a partir das {{start}}"
         }
     },
     "types": {

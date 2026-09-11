@@ -21,7 +21,7 @@
  */
 
 import { PackageIcon } from '@repo/icons';
-import type { AddonResponse } from '@repo/schemas';
+import type { PurchasableAddonResponse } from '@repo/schemas';
 import { useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
@@ -53,15 +53,103 @@ const SUBSCRIPTION_GATE_REASONS: ReadonlySet<string> = new Set([
     'NO_ACTIVE_SUBSCRIPTION'
 ]);
 
+/**
+ * Resolves the subscription-gate CTA's audience for ONE add-on card, from
+ * that add-on's own `productDomain` (HOS-1293).
+ *
+ * Addon purchases are NOT a host-only surface — `targetCategories` is always
+ * `owner`/`complex` because `PlanCategory` has no commerce member (see
+ * `AddonDefinition.productDomain`'s doc in `@repo/billing`), but
+ * `extra-gastronomies-1` / `extra-experiences-1` are real, purchasable,
+ * gastronomy/experience-domain add-ons. Before this fix every card's gate CTA
+ * was hardcoded to the host plans page, so a gastronomy-only or
+ * experience-only owner who hit the "necesitás una suscripción activa" banner
+ * on one of their OWN add-ons was sent to buy an accommodation plan instead.
+ *
+ * Anything other than `'gastronomy'`/`'experience'` (accommodation, `null`,
+ * or a future domain this panel does not yet know) degrades to `'host'` —
+ * every add-on in the catalogue today carries `productDomain: 'accommodation'`
+ * except the two commerce pairs, so this is not a guess so much as the
+ * existing default kept for everything that isn't explicitly commerce.
+ *
+ * @param productDomain - The add-on's own `productDomain`, from the catalogue.
+ * @returns The audience {@link resolveSubscriptionPlansPathForAudience} expects.
+ */
+function resolveAddonUpgradeAudience(
+    productDomain: AddonCardData['productDomain']
+): 'host' | 'gastronomy' | 'experience' {
+    if (productDomain === 'gastronomy' || productDomain === 'experience') {
+        return productDomain;
+    }
+    return 'host';
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** A single purchasable add-on, as returned by `billingApi.listAvailableAddons`. */
-export type AddonCardData = AddonResponse;
+export type AddonCardData = PurchasableAddonResponse;
 
-/** A host's own accommodation, for the per-accommodation target selector. */
+/** One of the caller's own listings, for the per-listing target selector. */
 export interface AddonTargetAccommodation {
     readonly id: string;
     readonly name: string;
+}
+
+/**
+ * The caller's own listings, keyed by the product domain that owns them
+ * (HOS-1286).
+ *
+ * A targeted add-on must offer listings of ITS OWN vertical: before this, the
+ * selector listed accommodations for every `requiresAccommodationTarget`
+ * add-on, so a gastronomy visibility boost would have offered a restaurant
+ * owner their hotels — or, far more often, nothing at all, and the card would
+ * have rendered its "you need a listing first" empty state to somebody who owns
+ * three restaurants.
+ *
+ * A domain with no entry is treated as an empty list, which disables the card
+ * rather than falling back to another vertical's listings.
+ */
+export type AddonTargetListingsByDomain = Readonly<
+    Partial<Record<string, readonly AddonTargetAccommodation[]>>
+>;
+
+/**
+ * Spanish fallbacks for the target selector, per vertical (HOS-1286).
+ *
+ * The strings are keyed by vertical because "Elegí un alojamiento" on a
+ * restaurant's visibility boost is not a cosmetic slip — it tells the owner to
+ * pick something they do not have, next to a dropdown listing their
+ * restaurants. Real translations live under
+ * `account.addons.accommodationSelect.*.<noun>`; these are the inline
+ * fallbacks every `t()` call in this file already carries.
+ */
+const TARGET_LABEL_FALLBACK = {
+    accommodation: {
+        label: 'Alojamiento',
+        placeholder: 'Elegí un alojamiento',
+        empty: 'Necesitás un alojamiento primero'
+    },
+    gastronomy: {
+        label: 'Local gastronómico',
+        placeholder: 'Elegí un local',
+        empty: 'Necesitás un local publicado primero'
+    },
+    experience: {
+        label: 'Experiencia',
+        placeholder: 'Elegí una experiencia',
+        empty: 'Necesitás una experiencia publicada primero'
+    }
+} as const;
+
+/** Which label set an add-on's selector uses. Unknown domains read as accommodation. */
+function resolveTargetNoun(
+    productDomain: string | null | undefined
+): keyof typeof TARGET_LABEL_FALLBACK {
+    // A card with no options never renders the selector (`hasNoAccommodations`
+    // is true), so this default only ever labels a control the user cannot
+    // reach — it is a copy fallback, never a purchase decision.
+    if (productDomain === 'gastronomy' || productDomain === 'experience') return productDomain;
+    return 'accommodation';
 }
 
 /** Props for the AddonsPurchasePanel island. */
@@ -72,8 +160,11 @@ export interface AddonsPurchasePanelProps {
     readonly addons: readonly AddonCardData[];
     /** Slugs of add-ons the user currently owns with `status === 'active'`. */
     readonly ownedAddonSlugs: readonly string[];
-    /** The host's own accommodations, for `requiresAccommodationTarget` add-ons. */
-    readonly accommodations: readonly AddonTargetAccommodation[];
+    /**
+     * The caller's own listings per vertical, for `requiresAccommodationTarget`
+     * add-ons. The add-on's `productDomain` picks the list.
+     */
+    readonly targetListingsByDomain: AddonTargetListingsByDomain;
     /**
      * Add-on slug to put in focus (HOS-729), read server-side from
      * `?focus=<slug>`. A slug that matches nothing degrades to the normal
@@ -91,7 +182,7 @@ export function AddonsPurchasePanel({
     locale,
     addons,
     ownedAddonSlugs,
-    accommodations,
+    targetListingsByDomain,
     focusSlug
 }: AddonsPurchasePanelProps) {
     const { t, tPlural } = createTranslations(locale);
@@ -132,14 +223,6 @@ export function AddonsPurchasePanel({
         (addon) => !addon.requiresAccommodationTarget
     );
 
-    // Addon purchases are a host-only surface (targetCategories are always
-    // `owner`/`complex`), so the upgrade CTA always points at the host plans,
-    // never the tourist ones.
-    const upgradePlansHref = buildUrl({
-        locale,
-        path: resolveSubscriptionPlansPathForAudience({ audience: 'host' })
-    });
-
     function handleAccommodationChange(slug: string, accommodationId: string): void {
         setSelectedAccommodationBySlug((prev) => ({ ...prev, [slug]: accommodationId }));
     }
@@ -171,8 +254,11 @@ export function AddonsPurchasePanel({
         const idempotencyKey = crypto.randomUUID();
         const result = await billingApi.purchaseAddon({
             slug: addon.slug,
+            // HOS-1286: `entityId` is the canonical field for any vertical's
+            // listing. The server still accepts `accommodationId` from a client
+            // built before this change; this client no longer sends it.
             body: addon.requiresAccommodationTarget
-                ? { accommodationId: selectedAccommodationId }
+                ? { entityId: selectedAccommodationId }
                 : undefined,
             idempotencyKey
         });
@@ -249,8 +335,24 @@ export function AddonsPurchasePanel({
         const isOwned = ownedSet.has(addon.slug);
         const isPurchasing = purchasingSlug === addon.slug;
         const needsSelect = addon.requiresAccommodationTarget;
-        const hasNoAccommodations = needsSelect && accommodations.length === 0;
+        // HOS-1286: the options come from the add-on's OWN vertical. An add-on
+        // whose domain the API did not declare gets no options and therefore
+        // cannot be bought — the same fail-closed answer `addon-domain.ts` gives
+        // when it drops such an add-on from the catalogue.
+        const targetOptions = addon.productDomain
+            ? (targetListingsByDomain[addon.productDomain] ?? [])
+            : [];
+        const hasNoAccommodations = needsSelect && targetOptions.length === 0;
+        const targetNoun = resolveTargetNoun(addon.productDomain);
         const selectedId = selectedAccommodationBySlug[addon.slug] ?? '';
+        // HOS-1293: per-card, not page-level — a gastronomy add-on's gate
+        // points at the gastronomy plans, never at the host's.
+        const upgradePlansHref = buildUrl({
+            locale,
+            path: resolveSubscriptionPlansPathForAudience({
+                audience: resolveAddonUpgradeAudience(addon.productDomain)
+            })
+        });
         const canPurchase =
             !isOwned &&
             !isPurchasing &&
@@ -303,9 +405,38 @@ export function AddonsPurchasePanel({
                     )}
                 </div>
 
+                {/*
+                 * HOS-847: a recurring add-on is charged again every month, so
+                 * the buyer has to read that BEFORE the buy button, not after
+                 * the second charge lands.
+                 *
+                 * Gated on the SERVER's answer, not on `billingType`. The
+                 * catalog label and the charge are different facts: the
+                 * recurring checkout is behind a flag this app cannot read, and
+                 * with it off — which is how production ships — a
+                 * `billingType: 'recurring'` add-on is charged ONCE and its
+                 * benefit never expires. Announcing a subscription there is a
+                 * promise the purchase does not keep. `recurringChargingEnabled`
+                 * is `shouldUseRecurringAddonCheckout`'s own verdict for this
+                 * row, all three conditions included, so the notice appears
+                 * exactly where the checkout takes the preapproval path and
+                 * disappears on its own the day the flag goes back off.
+                 */}
+                {addon.recurringChargingEnabled && (
+                    <p className={styles.recurringNotice}>
+                        {t(
+                            'account.addons.recurringNotice',
+                            'Es una suscripción: se renueva sola y te la cobramos todos los meses mientras siga activa.'
+                        )}
+                    </p>
+                )}
+
                 {needsSelect && !isOwned && !hasNoAccommodations && (
                     <label className={styles.selectLabel}>
-                        {t('account.addons.accommodationSelect.label', 'Alojamiento')}
+                        {t(
+                            `account.addons.accommodationSelect.label.${targetNoun}`,
+                            TARGET_LABEL_FALLBACK[targetNoun].label
+                        )}
                         <select
                             className={styles.select}
                             value={selectedId}
@@ -314,11 +445,11 @@ export function AddonsPurchasePanel({
                         >
                             <option value="">
                                 {t(
-                                    'account.addons.accommodationSelect.placeholder',
-                                    'Elegí un alojamiento'
+                                    `account.addons.accommodationSelect.placeholder.${targetNoun}`,
+                                    TARGET_LABEL_FALLBACK[targetNoun].placeholder
                                 )}
                             </option>
-                            {accommodations.map((accommodation) => (
+                            {targetOptions.map((accommodation) => (
                                 <option
                                     key={accommodation.id}
                                     value={accommodation.id}
@@ -333,8 +464,8 @@ export function AddonsPurchasePanel({
                 {needsSelect && !isOwned && hasNoAccommodations && (
                     <p className={styles.noAccommodations}>
                         {t(
-                            'account.addons.accommodationSelect.empty',
-                            'Necesitás un alojamiento primero'
+                            `account.addons.accommodationSelect.empty.${targetNoun}`,
+                            TARGET_LABEL_FALLBACK[targetNoun].empty
                         )}
                     </p>
                 )}

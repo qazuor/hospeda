@@ -59,11 +59,13 @@
  * @module cron/jobs/dunning
  */
 
-import type { LifecycleEvent, QZPayCurrency } from '@qazuor/qzpay-core';
+import type { LifecycleEvent, QZPayBilling, QZPayCurrency } from '@qazuor/qzpay-core';
 import { createSubscriptionLifecycle } from '@qazuor/qzpay-core';
 import { DUNNING_RETRY_INTERVALS } from '@repo/billing';
 import { billingDunningAttempts, getDb, sql, withTransaction } from '@repo/db';
 import {
+    hydrateSubscriptionProductDomains,
+    isAddonSubscription,
     loadSubscriptionDiscountState,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
@@ -71,8 +73,8 @@ import {
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { sendSubscriptionCancelledNotification } from '../../routes/webhooks/mercadopago/notifications.js';
-import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -132,6 +134,36 @@ async function isCompOrActivelyDiscounted(
         );
         return null;
     }
+}
+
+/**
+ * Loads every `past_due` subscription via `billing.subscriptions.listAll`,
+ * excluding a recurring add-on's own preapproval row (HOS-847).
+ *
+ * **Why hydration is required**: `listAll()` returns `QZPaySubscription`
+ * objects built field-by-field by qzpay-core's mapper, which does not declare
+ * `productDomain` (a Hospeda-only column beyond qzpay-core's interface) — so
+ * every object arrives with it `undefined`, never the real string. Handed
+ * directly to a domain check, that `undefined` reads as "no domain info",
+ * which would let an add-on row slip through. {@link hydrateSubscriptionProductDomains}
+ * closes that gap with one batched `SELECT` before filtering.
+ *
+ * Not because this cron currently acts on the result (`DUNNING_MUTATIONS_ENABLED`
+ * is off, see the module doc) — an add-on's rejected charge must never be
+ * counted, logged, or alerted on as if it were the customer's own subscription
+ * going past-due, even in the observe-only counts this cron reports today.
+ *
+ * @param billing - The QZPay billing facade (`getQZPayBilling()`).
+ * @returns Every past-due subscription that is NOT an add-on's own preapproval.
+ */
+async function loadPastDueNonAddonSubscriptions(
+    billing: QZPayBilling
+): Promise<Array<{ id: string; status: string }>> {
+    const pastDue = (
+        await billing.subscriptions.listAll({ filters: { status: 'past_due' } })
+    ).filter((sub) => sub.status === 'past_due');
+    const hydrated = await hydrateSubscriptionProductDomains(pastDue);
+    return hydrated.filter((sub) => !isAddonSubscription(sub));
 }
 
 /**
@@ -409,7 +441,7 @@ export const dunningJob: CronJobDefinition = {
                                 // subscription, so re-show any linked commerce listing
                                 // (active → PUBLIC). No-op for accommodation subs;
                                 // non-blocking.
-                                await reconcileCommerceListingForSubscription({
+                                await reconcileSubscriptionLinkedEntities({
                                     subscriptionId: event.subscriptionId,
                                     subscriptionStatus: 'active',
                                     source: 'dunning-cron'
@@ -488,7 +520,7 @@ export const dunningJob: CronJobDefinition = {
                                 // SPEC-239 T-050: hide any commerce listing linked to this
                                 // subscription (cancelled → PRIVATE). No-op for accommodation
                                 // subs; non-blocking (never breaks the cron).
-                                await reconcileCommerceListingForSubscription({
+                                await reconcileSubscriptionLinkedEntities({
                                     subscriptionId: event.subscriptionId,
                                     subscriptionStatus: 'cancelled',
                                     source: 'dunning-cron'
@@ -569,9 +601,10 @@ export const dunningJob: CronJobDefinition = {
                     // `notification-schedule.job.ts` and `trial-expiry.ts` take: this
                     // job must not depend on the listing being clean, which is
                     // precisely the assumption that broke.
-                    const pastDue = (
-                        await billing.subscriptions.listAll({ filters: { status: 'past_due' } })
-                    ).filter((sub) => sub.status === 'past_due');
+                    //
+                    // HOS-847: excludes a recurring add-on's own preapproval row —
+                    // see loadPastDueNonAddonSubscriptions's doc.
+                    const pastDue = await loadPastDueNonAddonSubscriptions(billing);
 
                     logger.info('Dry run complete - would process past-due subscriptions', {
                         pastDueCount: pastDue.length,
@@ -607,10 +640,9 @@ export const dunningJob: CronJobDefinition = {
                     // Same fix as the dry-run branch: this is the PRODUCTION
                     // observe-only pass, so its past-due count was the one being
                     // under-reported. The JS check is likewise kept as defence in
-                    // depth.
-                    const pastDueCount = (
-                        await billing.subscriptions.listAll({ filters: { status: 'past_due' } })
-                    ).filter((sub) => sub.status === 'past_due').length;
+                    // depth. HOS-847: excludes a recurring add-on's own preapproval
+                    // row — see loadPastDueNonAddonSubscriptions's doc.
+                    const pastDueCount = (await loadPastDueNonAddonSubscriptions(billing)).length;
                     const durationMs = Date.now() - startedAt.getTime();
 
                     logger.info('Dunning job completed (observe-only, HOS-191 F5)', {

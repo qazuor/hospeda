@@ -106,7 +106,7 @@ describe('PostService state transitions', () => {
             expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
 
-        it('gives the author no path of their own — the verdict is the platform’s', async () => {
+        it('lets a trusted author approve their own pending post (HOS-1037)', async () => {
             const trustedAuthor = createActor({
                 id: authorId,
                 roles: [RoleEnum.EDITOR],
@@ -119,7 +119,80 @@ describe('PostService state transitions', () => {
                 moderationState: ModerationStatusEnum.APPROVED
             });
 
+            expectSuccess(result);
+            expect(result.data?.moderationState).toBe(ModerationStatusEnum.APPROVED);
+        });
+
+        it('refuses a trusted author trying to REJECT their own post — approve is the only author path', async () => {
+            const trustedAuthor = createActor({
+                id: authorId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_PUBLISH_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: trustedAuthor,
+                id: post.id,
+                moderationState: ModerationStatusEnum.REJECTED
+            });
+
+            // The actor owns the row, so the refusal stays 403 — it is about
+            // the requested state, not existence (HOS-706 rule 3).
             expectForbiddenError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
+        });
+
+        it('refuses a trusted author trying to send their own post back to PENDING', async () => {
+            const trustedAuthor = createActor({
+                id: authorId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_PUBLISH_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: trustedAuthor,
+                id: post.id,
+                moderationState: ModerationStatusEnum.PENDING
+            });
+
+            expectForbiddenError(result);
+        });
+
+        it('refuses a plain author who holds authorship but not POST_PUBLISH_OWN', async () => {
+            // The mixed case: authorship alone is not the grant.
+            const plainAuthor = createActor({
+                id: authorId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_UPDATE_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: plainAuthor,
+                id: post.id,
+                moderationState: ModerationStatusEnum.APPROVED
+            });
+
+            expectForbiddenError(result);
+        });
+
+        it('masks a trusted editor probing a post they did not author as NOT_FOUND, not FORBIDDEN', async () => {
+            // The other mixed case: holding POST_PUBLISH_OWN is not enough
+            // without authorship. HOS-706: a foreign-row refusal must never
+            // confirm the id is real.
+            const stranger = createActor({
+                id: strangerId,
+                roles: [RoleEnum.EDITOR],
+                permissions: [PermissionEnum.POST_PUBLISH_OWN]
+            });
+
+            const result = await service.moderate({
+                actor: stranger,
+                id: post.id,
+                moderationState: ModerationStatusEnum.APPROVED
+            });
+
+            expectNotFoundError(result);
+            expect(modelMock.update as Mock).not.toHaveBeenCalled();
         });
 
         it('returns NOT_FOUND when the post does not exist', async () => {

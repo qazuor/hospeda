@@ -83,6 +83,62 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.AI_TRANSLATE,
             EntitlementKey.AI_ACCOMMODATION_IMPORT
         ]
+    },
+    {
+        // HOS-1074 — both commerce verticals in ONE group rather than a
+        // gastronomy group and an experience group. The editor is a flat
+        // per-plan checklist and a commerce plan only ever belongs to one
+        // vertical, so two single-pair groups would add a header that is empty
+        // on every plan an operator actually opens.
+        labelKey: 'commerce',
+        keys: [
+            EntitlementKey.EDIT_GASTRONOMY_INFO,
+            EntitlementKey.PUBLISH_GASTRONOMY,
+            EntitlementKey.EDIT_EXPERIENCE_INFO,
+            EntitlementKey.PUBLISH_EXPERIENCE,
+            // HOS-1058 — the one commerce key that is NOT uniform across a
+            // vertical's tiers: only each vertical's premium plan grants it,
+            // which is exactly why an operator needs it as a tickable box here.
+            EntitlementKey.DOWNLOAD_LISTING_PDF,
+            // HOS-895 — likewise tier-dependent, and gastronomy-only: it is
+            // tickable on any plan here because the editor is a flat checklist,
+            // but only a gastronomy plan has a carta for it to unlock.
+            EntitlementKey.MANAGE_GASTRONOMY_MENU,
+            // HOS-1045 — narrower still: gastronomy PREMIUM only, where the
+            // carta key above starts at `-pro`. Same flat-checklist caveat.
+            EntitlementKey.MENU_ITEM_PHOTOS,
+            // HOS-1049 — the mirror image of the one above: tier-dependent
+            // (`experience-pro` and up) and experience-only, since a restaurant
+            // has an address and a door rather than a meeting point to walk to.
+            EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+            // HOS-1057 — same shape, same tier: the certificate a provider
+            // issues to whoever did the experience.
+            EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+            // HOS-1041 — the menú del día, same tier and same gastronomy-only
+            // caveat as the carta above it. A separate box rather than folded
+            // into that one because they are separate keys: an operator must be
+            // able to grant a venue today's menu without the full carta.
+            EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+            // HOS-1042 — the venue's own agenda. Same shape as the carta above:
+            // tier-dependent, gastronomy-only, and tickable on any plan here
+            // because the editor is a flat checklist.
+            EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
+            // HOS-1043 — translating the carta into `{es,en,pt}`. Same shape
+            // and same tier as `MENU_ITEM_PHOTOS` above: gastronomy PREMIUM
+            // only, layered on top of the carta key rather than replacing it.
+            EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU,
+            // HOS-1044 — the table QR and its scan-analytics panel. Same
+            // shape and tier as the translated carta right above it:
+            // gastronomy PREMIUM only.
+            EntitlementKey.MENU_QR_SCAN_METRICS,
+            // HOS-1060 — private per-tourist galleries. Experience-only and
+            // tier-dependent (`experience-premium`), with the same flat-checklist
+            // caveat as its neighbours. Unlike them it is ALSO granted by the
+            // `private-galleries-+N` add-ons, so an operator ticking it here adds
+            // a plan-level grant on top of whatever add-on the owner holds — the
+            // two sets are unioned, never counted.
+            EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES
+        ]
     }
 ];
 

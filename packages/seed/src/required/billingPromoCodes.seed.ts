@@ -9,9 +9,15 @@ import { summaryTracker } from '../utils/summaryTracker.js';
  * Seed billing promo codes from configuration
  *
  * Populates the billing_promo_codes table with default promo code definitions:
- * - HOSPEDA_FREE: 100% discount, permanent, unlimited (internal use)
  * - LANZAMIENTO50: 50% discount, 3 months, max 100 redemptions (new users)
  * - BIENVENIDO30: 30% discount, 1 month, max 500 redemptions (new users)
+ * - FREEMONTH: trial extension
+ *
+ * `HOSPEDA_FREE` was in this list until HOS-1171 retired it. Because this seed
+ * is SKIP-BY-CODE and never updates an existing row, dropping it from the
+ * baseline reaches FRESH databases only; seed data-migration
+ * `0099-hos-1171-retire-hospeda-free` carries the same delta to already-seeded
+ * environments by deactivating the row. That pair is the HOS-25 dual write.
  *
  * This seed:
  * - Creates promo code records with discount and restriction metadata

@@ -204,14 +204,81 @@ class ExperienceMockModel extends GenericMockModel {
     }
 }
 
+/**
+ * HOS-981 — `qr_codes` table stub.
+ *
+ * Shape-only, in the style of the `accommodations` stub further down: a map from
+ * the property name production code uses to the physical column name, which is
+ * everything `Object.hasOwn(table, col)` and `safeIlike(table[col], term)` need.
+ *
+ * Declared at module scope rather than inline because three exports have to
+ * agree on the SAME object: `qrCodes` itself (imported at module scope by
+ * `QrCodeService._buildSearchConditions`), `MockQrCodeModel.getTable()` — which
+ * `adminList` calls to validate the sort field, and which throws
+ * "Cannot convert undefined or null to object" when it answers `undefined` —
+ * and `buildSearchCondition`.
+ */
+const qrCodesTableStub = {
+    id: 'id',
+    slug: 'slug',
+    targetUrl: 'target_url',
+    label: 'label',
+    description: 'description',
+    source: 'source',
+    entityType: 'entity_type',
+    entityId: 'entity_id',
+    purpose: 'purpose',
+    renderOptions: 'render_options',
+    isActive: 'is_active',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+};
+
+/** HOS-981 — `qr_code_scans` table stub. Append-only: three columns, no audit. */
+const qrCodeScansTableStub = {
+    id: 'id',
+    qrCodeId: 'qr_code_id',
+    scannedAt: 'scanned_at'
+};
+
 export function createDbMock() {
     return {
         // Database client
         getDb: vi.fn(() => ({
+            /**
+             * Makes the builder itself awaitable, resolving to an empty result
+             * set (HOS-1072).
+             *
+             * Without it, awaiting a chain that does not end in `limit()` —
+             * `select().from().innerJoin().where().orderBy()`, which is what a
+             * catalog join looks like — handed the caller the BUILDER OBJECT.
+             * The next line is invariably `rows.map(...)`, so the route threw
+             * "rows.map is not a function" and the failure read as a broken
+             * route rather than an unstubbed query. Chaining is unaffected:
+             * every step still returns `this`, and `limit()` stays terminal.
+             */
+            // biome-ignore lint/suspicious/noThenProperty: a query builder that can be awaited is exactly what this stub must imitate.
+            then: (
+                onFulfilled?: ((value: unknown[]) => unknown) | null,
+                onRejected?: ((reason: unknown) => unknown) | null
+            ) => Promise.resolve([]).then(onFulfilled, onRejected),
             select: vi.fn().mockReturnThis(),
             from: vi.fn().mockReturnThis(),
+            innerJoin: vi.fn().mockReturnThis(),
+            leftJoin: vi.fn().mockReturnThis(),
             where: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockReturnThis(),
+            // Resolves to an empty result set, not to the chain itself. `limit()`
+            // is terminal in this codebase and callers destructure it
+            // (`const [row] = await ...limit(1)`); returning the builder made
+            // that throw "is not iterable" before any assertion could run, which
+            // reads as a broken suite rather than an unstubbed query. The
+            // `withTransaction` stub below already resolved `[]` here — this is
+            // the same fix, applied to the half that was missing it.
+            limit: vi.fn().mockResolvedValue([]),
             orderBy: vi.fn().mockReturnThis(),
             execute: vi.fn().mockResolvedValue([]),
             insert: vi.fn().mockReturnThis(),
@@ -233,6 +300,99 @@ export function createDbMock() {
             col,
             term
         })),
+
+        /**
+         * Free-text search-condition builder used by `BaseCrudService.adminList`
+         * and `search` (HOS-981).
+         *
+         * Shape-only, but it reproduces the ONE behaviour a caller can be wrong
+         * about: a column the table does not carry is dropped SILENTLY, and an
+         * empty result becomes `undefined` rather than an always-true clause. A
+         * service that names a column it does not have therefore attaches NO
+         * filter and answers `?search=anything` with the whole table — a bug
+         * that looks like a search matching everything rather than one that ran
+         * nothing, so a stub that always returned a condition would hide exactly
+         * the failure worth catching.
+         *
+         * Absent until now, which meant the import resolved to `undefined` and
+         * any admin list carrying a `search` term died with "is not a function".
+         */
+        buildSearchCondition: vi.fn((term: string, columns: readonly string[], table: unknown) => {
+            if (!term || term.trim().length === 0) return undefined;
+            if (typeof table !== 'object' || table === null) return undefined;
+
+            const tableRecord = table as Record<string, unknown>;
+            const conditions = columns
+                .filter((col) => Object.hasOwn(tableRecord, col))
+                .map((col) => ({ type: 'safeIlike', col: tableRecord[col], term: term.trim() }));
+
+            if (conditions.length === 0) return undefined;
+            if (conditions.length === 1) return conditions[0];
+            return { type: 'or', conditions };
+        }),
+
+        /**
+         * HOS-981 — `qr_codes` / `qr_code_scans` table stubs. `qrCodes` is
+         * imported at module scope by `QrCodeService`, so its absence is not a
+         * QR-only problem: it surfaces wherever the app is booted.
+         */
+        qrCodes: qrCodesTableStub,
+        qrCodeScans: qrCodeScansTableStub,
+
+        /**
+         * Gastronomy catalog-membership clause builders (HOS-1054).
+         *
+         * This factory is an explicit INVENTORY of `@repo/db`'s surface, not a
+         * passthrough, so any production import it does not name resolves to a
+         * hard vitest error ("No <x> export is defined on the @repo/db mock")
+         * the moment the importing line runs.
+         *
+         * That is not a cosmetic gap. `GastronomyService._executeCount` is on the
+         * path the commerce limits middleware takes to count an owner's listings,
+         * and since HOS-1078 that middleware fails CLOSED — so a missing export
+         * here surfaces as a **503 on listing creation**, which reads as a broken
+         * route rather than as an unstubbed helper. Same species of failure the
+         * awaitable-builder note above documents.
+         *
+         * Shape-only stubs, mirroring `safeIlike`: enough for a WHERE builder to
+         * hold, and inspectable by a test that asserts on the emitted condition.
+         * `buildGastronomyCatalogConditions` reproduces the real contract that
+         * matters to callers — an EMPTY array when no filter is active, so the
+         * no-filter path (every limits-middleware count) stays identical to
+         * before the filter existed.
+         */
+        buildGastronomyFeatureIntersectionClause: vi.fn((featureIds: readonly string[]) => ({
+            type: 'gastronomyFeatureIntersection',
+            featureIds
+        })),
+        buildGastronomyAmenityIntersectionClause: vi.fn((amenityIds: readonly string[]) => ({
+            type: 'gastronomyAmenityIntersection',
+            amenityIds
+        })),
+        buildGastronomyCatalogConditions: vi.fn(
+            ({
+                amenities,
+                features
+            }: {
+                readonly amenities?: readonly string[];
+                readonly features?: readonly string[];
+            }) => {
+                const conditions: unknown[] = [];
+                if (amenities && amenities.length > 0) {
+                    conditions.push({
+                        type: 'gastronomyAmenityIntersection',
+                        amenityIds: amenities
+                    });
+                }
+                if (features && features.length > 0) {
+                    conditions.push({
+                        type: 'gastronomyFeatureIntersection',
+                        featureIds: features
+                    });
+                }
+                return conditions;
+            }
+        ),
         /**
          * Simulates withTransaction by executing the callback with a stub tx client.
          * The stub tx client supports the same chained query builder methods as getDb().
@@ -261,6 +421,10 @@ export function createDbMock() {
         // Re-export drizzle-orm operators (commonly used)
         sql: vi.fn(),
         eq: vi.fn((a: string, b: unknown) => ({ type: 'eq', left: a, right: b })),
+        // HOS-1012 T-022: the trial supersede excludes the row being activated
+        // with `ne(id, activatedId)`; without this export the whole webhook
+        // activation path throws "No 'ne' export is defined on the @repo/db mock".
+        ne: vi.fn((a: string, b: unknown) => ({ type: 'ne', left: a, right: b })),
         and: vi.fn((...args: unknown[]) => ({ type: 'and', conditions: args })),
         or: vi.fn((...args: unknown[]) => ({ type: 'or', conditions: args })),
         ilike: vi.fn((a: string, b: string) => ({ type: 'ilike', column: a, pattern: b })),
@@ -268,9 +432,48 @@ export function createDbMock() {
         asc: vi.fn((a: string) => ({ type: 'asc', column: a })),
         count: vi.fn(),
         gte: vi.fn((a: string, b: unknown) => ({ type: 'gte', left: a, right: b })),
+        // HOS-847 PR 7b: `loadDeferredAddonGrants` selects rows whose paid
+        // period has NOT elapsed with `gt(currentPeriodEnd, now)`. A missing
+        // export here would not fail loudly — the helper runs inside a
+        // try/catch, so `gt is not a function` would be swallowed into its
+        // degraded path and every deferred add-on would silently grant nothing
+        // (the HOS-702 shape).
+        gt: vi.fn((a: string, b: unknown) => ({ type: 'gt', left: a, right: b })),
+        lt: vi.fn((a: string, b: unknown) => ({ type: 'lt', left: a, right: b })),
         lte: vi.fn((a: string, b: unknown) => ({ type: 'lte', left: a, right: b })),
         isNull: vi.fn((a: string) => ({ type: 'isNull', column: a })),
+        // HOS-1326: the shared `mp_subscription_id` predicates. Rendered as the
+        // same plain descriptors as the operators around them so a test can
+        // evaluate the condition tree a query actually built (see
+        // `test/helpers/drizzle-condition.ts`). Their REAL emitted SQL is pinned
+        // by `packages/db/test/billing-subscription-conditions.test.ts`, which is
+        // what stops these stubs from drifting away from the thing they stand in
+        // for — the column can hold `''` as well as NULL, and a stub that forgot
+        // the second half would re-certify exactly the bug they exist to prevent.
+        hasNoLinkedPreapprovalCondition: vi.fn(() => ({
+            type: 'or',
+            conditions: [
+                { type: 'isNull', column: 'mp_subscription_id' },
+                { type: 'eq', left: 'mp_subscription_id', right: '' }
+            ]
+        })),
+        hasLinkedPreapprovalCondition: vi.fn(() => ({
+            type: 'and',
+            conditions: [
+                { type: 'isNotNull', column: 'mp_subscription_id' },
+                { type: 'ne', left: 'mp_subscription_id', right: '' }
+            ]
+        })),
         isNotNull: vi.fn((a: string) => ({ type: 'isNotNull', column: a })),
+        // HOS-934: hydrateSubscriptionProductDomains() batches its recovery
+        // query with `inArray(billingSubscriptions.id, ids)`. Without this
+        // export, any test that exercises the real (pass-through) hydration
+        // helper throws "No 'inArray' export is defined on the @repo/db mock".
+        inArray: vi.fn((a: string, b: readonly unknown[]) => ({
+            type: 'inArray',
+            column: a,
+            values: b
+        })),
 
         // Mock BaseModel class
         BaseModel: class MockBaseModel {
@@ -456,6 +659,114 @@ export function createDbMock() {
             }
             async delete(_id: string) {
                 return { id: _id, deletedAt: new Date() };
+            }
+        },
+
+        /**
+         * HOS-1057 — Mock ExperienceCertificateModel.
+         *
+         * This mock is an explicit INVENTORY: an export missing from it arrives
+         * `undefined`, and the `new ExperienceCertificateModel()` inside the
+         * service-core certificate helpers then throws at CALL time rather than
+         * at import time — which reads as a broken handler instead of a missing
+         * stub. Registered here so the certificate route tests exercise the real
+         * chain up to the database and no further.
+         */
+        ExperienceCertificateModel: class MockExperienceCertificateModel {
+            async findOne(_where: unknown) {
+                return null;
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+            async create(_data: unknown) {
+                return { id: 'experience_certificate_mock_id', createdAt: new Date() };
+            }
+            async update(_id: string, _data: unknown) {
+                return { id: _id, updatedAt: new Date() };
+            }
+        },
+
+        /**
+         * HOS-981 — Mock QrCodeModel.
+         *
+         * Needed by every `apps/api` test that boots the app, not just the QR
+         * ones: `routes/index.ts` imports the public QR router, whose module
+         * scope constructs a `QrCodeService`, whose constructor does
+         * `new QrCodeModel()`. Without this entry that construction throws
+         * `No "QrCodeModel" export is defined on the "@repo/db" mock` at import
+         * time, so the failure lands on whichever unrelated route test happens
+         * to pull the app in — which is why omitting it reddened all five unit
+         * shards rather than one file.
+         */
+        QrCodeModel: class MockQrCodeModel {
+            /**
+             * `adminList` calls this to validate the requested sort field
+             * against the real columns. Returning `undefined` makes
+             * `Object.hasOwn(table, sortBy)` throw a bare TypeError that
+             * surfaces as a 500 with no mention of the table — so the stub
+             * answers with the same object `qrCodes` exports.
+             */
+            getTable() {
+                return qrCodesTableStub;
+            }
+            async findOne(_where: unknown) {
+                return null;
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+            /**
+             * Echoes the written row back (HOS-981 PR 4).
+             *
+             * The bare `{id, createdAt}` this used to answer was enough while
+             * nothing read the result, but `getOrCreateForEntity` returns the
+             * created row straight to the caller — and a stub that drops `slug`
+             * makes the provider QR route render a code for `undefined` while
+             * every assertion about it still passes. Spreading the input keeps
+             * the stub honest about what a real insert returns without teaching
+             * it any schema.
+             */
+            async create(data: unknown) {
+                return {
+                    id: 'qr_code_mock_id',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    ...(data as Record<string, unknown>)
+                };
+            }
+            async update(_id: string, _data: unknown) {
+                return { id: _id, updatedAt: new Date() };
+            }
+        },
+
+        /**
+         * HOS-981 — Mock QrCodeScanModel. Same construction path as
+         * `QrCodeModel` above: the service instantiates both in its
+         * constructor. Append-only, so it carries no soft-delete or audit
+         * methods.
+         */
+        QrCodeScanModel: class MockQrCodeScanModel {
+            async create(_data: unknown) {
+                return { id: 'qr_code_scan_mock_id', scannedAt: new Date() };
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async count(_filters: unknown) {
+                return 0;
             }
         },
 
@@ -782,6 +1093,27 @@ export function createDbMock() {
             updatedAt: 'updated_at'
         },
 
+        // HOS-1272: the Path C correlation row `checkout-idempotency.ts` reads
+        // (`loadCorrelationRow`) to decide whether an in-flight checkout's
+        // share link may be handed back. Imported at module scope by
+        // `subscription-checkout.service.ts` (via `checkout-idempotency.ts`),
+        // so any test that boots the accommodation/commerce/partner checkout
+        // path resolves it through this mock — column-marker stub only, same
+        // shape as `billingSubscriptions` above; the generic `getDb()` builder
+        // resolves every `.limit()` to `[]` regardless of table.
+        billingPendingCheckouts: {
+            localSubscriptionId: 'local_subscription_id',
+            customerId: 'customer_id',
+            planId: 'plan_id',
+            mpPreapprovalPlanId: 'mp_preapproval_plan_id',
+            nonce: 'nonce',
+            status: 'status',
+            createdAt: 'created_at',
+            expiresAt: 'expires_at',
+            pendingDiscount: 'pending_discount',
+            pendingTrialExtension: 'pending_trial_extension'
+        },
+
         // Admin billing VIEW service (HOS-474) joins these four to turn qzpay's
         // customerId/planId into a user and a plan. They are imported at module
         // scope by the payments/subscriptions view routes, so EVERY test that
@@ -808,6 +1140,37 @@ export function createDbMock() {
             name: 'name',
             deletedAt: 'deleted_at'
         },
+
+        // HOS-1084: the shared subscription-status cache. Imported at module
+        // scope by `entity-subscription-cache.service.ts`, which the public
+        // accommodation routes reach through `owner-entitlement.ts` — so every
+        // test that boots the route tree resolves it through this mock.
+        entitySubscriptions: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            productDomain: 'product_domain',
+            entityType: 'entity_type',
+            entityId: 'entity_id',
+            status: 'status',
+            planId: 'plan_id',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        },
+        ENTITY_SUBSCRIPTION_STATUS_NONE: 'none',
+        // SPEC-271: the partner half of the same bridge, one row per partner
+        // (UNIQUE `partner_id`). Imported at module scope by
+        // `subscription-domain-carry-forward.ts` (HOS-1287), which every
+        // partner mint/retry path now goes through — without it the module
+        // resolves the table as `undefined` and the insert throws.
+        partnerSubscriptions: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            productDomain: 'product_domain',
+            partnerId: 'partner_id',
+            status: 'status',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        },
         billingPlans: {
             id: 'id',
             name: 'name',
@@ -824,6 +1187,44 @@ export function createDbMock() {
             firstName: 'first_name',
             lastName: 'last_name',
             deletedAt: 'deleted_at'
+        },
+
+        // Shared amenity/feature catalog and the commerce junction tables the
+        // public detail routes join against (HOS-1072). Column-name stubs only:
+        // this mock replaces the WHOLE `@repo/db` module, so a table it does not
+        // name arrives as `undefined` and the first `eq(table.column, …)` throws
+        // — which surfaces as a 500 from a route whose own logic is fine.
+        amenities: {
+            id: 'id',
+            slug: 'slug',
+            icon: 'icon',
+            displayWeight: 'display_weight'
+        },
+        features: {
+            id: 'id',
+            slug: 'slug',
+            icon: 'icon',
+            displayWeight: 'display_weight'
+        },
+        rGastronomyAmenity: {
+            gastronomyId: 'gastronomy_id',
+            amenityId: 'amenity_id'
+        },
+        rGastronomyFeature: {
+            gastronomyId: 'gastronomy_id',
+            featureId: 'feature_id',
+            hostReWriteName: 'host_rewrite_name',
+            comments: 'comments'
+        },
+        rExperienceAmenity: {
+            experienceId: 'experience_id',
+            amenityId: 'amenity_id'
+        },
+        rExperienceFeature: {
+            experienceId: 'experience_id',
+            featureId: 'feature_id',
+            hostReWriteName: 'host_rewrite_name',
+            comments: 'comments'
         },
 
         // Promo code effect columns (HOS-75 T-022) — typed Drizzle columns as
@@ -1020,11 +1421,50 @@ export function createDbMock() {
         // because entityViewModel is a singleton, not a constructor.
         // getRecentlyViewedByUser added SPEC-284 T-001 — RecommendationService default-
         // injects this singleton at module scope, same collection-breaking risk as above.
+        // rollUpMonth added HOS-1063 A-6 — view-monthly-rollup.job.ts calls it on
+        // this singleton.
         entityViewModel: {
             insertView: vi.fn().mockResolvedValue({ id: 'ev_mock_id' }),
             getStatsForEntities: vi.fn().mockResolvedValue([]),
             purgeOlderThan: vi.fn().mockResolvedValue(0),
+            rollUpMonth: vi.fn().mockResolvedValue(0),
             getRecentlyViewedByUser: vi.fn().mockResolvedValue({ accommodationIds: [] })
+        },
+
+        /*
+         * HOS-1063 — the partner statistics trio.
+         *
+         * PartnerStatsService defaults all three of its models at CONSTRUCTION
+         * time (`ctx.clickModel ?? new PartnerLogoClickModel()`), and
+         * `routes/index.ts` imports the click-capture route, so every test that
+         * mounts the router loads this constructor. A mock that omits the export
+         * does not fail where the model is used — it fails at import with
+         * `No "PartnerLogoClickModel" export is defined on the "@repo/db" mock`,
+         * taking down suites that never touch partner statistics at all.
+         *
+         * The CLASSES are what the service news up; the lowercase singleton is
+         * what the two cron jobs reach for. Both spellings have to exist.
+         */
+        PartnerLogoClickModel: class MockPartnerLogoClickModel {
+            insertClick = vi.fn().mockResolvedValue({ id: 'plc_mock_id' });
+            getStatsForPartner = vi.fn().mockResolvedValue({ total: 0, uniqueVisitors: 0 });
+            purgeOlderThan = vi.fn().mockResolvedValue(0);
+            rollUpMonth = vi.fn().mockResolvedValue(0);
+        },
+
+        EntityViewModel: class MockEntityViewModel {
+            insertView = vi.fn().mockResolvedValue({ id: 'ev_mock_id' });
+            getStatsForEntities = vi.fn().mockResolvedValue([]);
+            purgeOlderThan = vi.fn().mockResolvedValue(0);
+            rollUpMonth = vi.fn().mockResolvedValue(0);
+            getRecentlyViewedByUser = vi.fn().mockResolvedValue({ accommodationIds: [] });
+        },
+
+        partnerLogoClickModel: {
+            insertClick: vi.fn().mockResolvedValue({ id: 'plc_mock_id' }),
+            getStatsForPartner: vi.fn().mockResolvedValue({ total: 0, uniqueVisitors: 0 }),
+            purgeOlderThan: vi.fn().mockResolvedValue(0),
+            rollUpMonth: vi.fn().mockResolvedValue(0)
         },
 
         // SPEC-284: accommodationModel/destinationModel/userBookmarkModel singleton
@@ -1120,6 +1560,24 @@ export function createDbMock() {
         // GastronomyFaqModel for FAQ CRUD). Expose both the class and singleton.
         GastronomyFaqModel: GenericMockModel,
         gastronomyFaqModel: new GenericMockModel(),
+
+        // HOS-895: the carta. `gastronomy.menu.ts` constructs both of these
+        // itself, exactly as the FAQ helper constructs `GastronomyFaqModel`, so
+        // the CLASS has to be here or the menu routes throw "not a constructor"
+        // at request time rather than failing a visible assertion. This object
+        // is an explicit inventory of `@repo/db`: an export missing from it
+        // arrives as `undefined`, not as an import error.
+        GastronomyMenuSectionModel: GenericMockModel,
+        gastronomyMenuSectionModel: new GenericMockModel(),
+        GastronomyMenuItemModel: GenericMockModel,
+        gastronomyMenuItemModel: new GenericMockModel(),
+
+        // HOS-1042: the venue agenda. `gastronomy.events.ts` constructs the
+        // CLASS itself, same as the carta above, so it has to be in this
+        // inventory or `new GastronomyEventModel()` throws "not a constructor"
+        // at request time instead of failing a visible assertion.
+        GastronomyEventModel: GenericMockModel,
+        gastronomyEventModel: new GenericMockModel(),
 
         // HOS-277: AllianceLeadModel — instantiated at module scope by
         // AllianceLeadService when the alliance lead routes load. A GenericMockModel

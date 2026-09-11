@@ -147,9 +147,12 @@ signature verifier was unable to distinguish them.
 
 ### `HOSPEDA_MERCADO_PAGO_SANDBOX=true`
 
-`packages/billing/src/adapters/mercadopago.ts` derives `livemode` from
-this flag (`livemode = !sandbox`) and passes it to both the storage
+`apps/api/src/middlewares/billing.ts:152` derives `livemode` from
+this flag (`const livemode = !sandbox`) and passes it to both the storage
 adapter and the qzpay-billing instance. When `livemode=false`:
+
+> This paragraph used to name `packages/billing/src/adapters/mercadopago.ts` as
+> the derivation site. That file contains no `livemode` at all (HOS-1302).
 
 - qzpay-billing's `customers.create()` skips the MP `/v1/customers`
   sync (or treats the failure as soft), so signup creates a local
@@ -214,9 +217,9 @@ nothing else in the system needs to change.
 ## Cleanup between smoke runs
 
 When iterating on the billing layer it's common to want a clean slate.
-Use the dedicated `hops` SQL block from
-`docs/billing/test-data-reset.md` (or its inline equivalent in the
-smoke checklist) which:
+**`docs/billing/test-data-reset.md` does not exist** — it is not in this repo
+and this pointer has never resolved (HOS-1302). Use the inline equivalent in
+the smoke checklist instead. Whichever block you use, it should:
 
 1. `TRUNCATE` all transactional billing tables (`billing_customers`,
    `billing_subscriptions`, `billing_payments`, etc.) — preserves

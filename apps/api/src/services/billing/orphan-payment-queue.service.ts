@@ -23,6 +23,22 @@
  * MercadoPago does to a past-due preapproval on a plan change — an open
  * question, not a decision). Queued, so nothing is lost and a person decides.
  *
+ * ## The second family (HOS-1001)
+ *
+ * Everything above describes a payment the SUBSCRIPTION cannot take. HOS-1001
+ * added the other half: a payment the subscription can take perfectly well and
+ * that OUR OWN write to `billing_payments` failed to book
+ * (`reason: 'ledger-write-failed'`).
+ *
+ * Four flows used to answer that with `apiLogger.error(...)` and continue —
+ * add-on purchase, annual confirmation, plan-upgrade delta, and the dead-letter
+ * retry cron. The money moved, the subscription advanced, the ledger row was
+ * never written, and nothing anywhere recorded that it was owed. One of the four
+ * logs literally asked a human to "reconcile manually" with nothing in the
+ * codebase that would ever tell that human to. They enqueue here now, for the
+ * same reason and with the same guarantees as the original three: the write is
+ * cheap, it happens at the instant of the failure, and it cannot be missed.
+ *
  * ## What callers get
  *
  * {@link recordOrphanPayment} never throws and never rejects. A confirmation
@@ -36,33 +52,23 @@
 
 import { type Major, toCentavos } from '@repo/billing';
 import { billingOrphanPayments, getDb } from '@repo/db';
+import type { OrphanPaymentFlow, OrphanPaymentReason } from '@repo/schemas';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 
 /**
- * Which confirmation flow could not apply the payment.
+ * The queue's vocabularies moved to `@repo/schemas` in HOS-1001 and are
+ * re-exported here so the historical import path keeps working.
  *
- * Stored verbatim in `billing_orphan_payments.flow` so a human triaging the
- * queue knows which code path produced the row.
- */
-export type OrphanPaymentFlow =
-    /** Prorated delta paid upfront to move to a more expensive plan (SPEC-141 D7). */
-    | 'plan-change-upgrade'
-    /** Annual subscription paid upfront (SPEC-141 D1). */
-    | 'annual-upfront';
-
-/**
- * Why the payment could not be applied.
+ * They had to move: HOS-1001 gave the queue a READER (the admin endpoints in
+ * `routes/billing/admin/orphan-payment-queue.ts`), and a reader that has to
+ * validate and filter on `flow`/`reason` cannot depend on a union declared
+ * inside a webhook service. One vocabulary, in the package that owns types.
  *
- * Stored verbatim in `billing_orphan_payments.reason`. Kept coarse on purpose:
- * the precise status that blocked the flow travels in `observedStatus`, so a
- * new blocking status does not need a new reason code.
+ * @see OrphanPaymentFlowSchema
+ * @see OrphanPaymentReasonSchema
  */
-export type OrphanPaymentReason =
-    /** The subscription the payment names has no local row. */
-    | 'subscription-not-found'
-    /** A local row exists, but its status is not one the flow can act on. */
-    | 'subscription-status-not-applicable';
+export type { OrphanPaymentFlow, OrphanPaymentReason };
 
 /** Input for {@link recordOrphanPayment}. */
 export interface RecordOrphanPaymentInput {

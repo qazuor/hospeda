@@ -19,12 +19,27 @@
  * (reactivation, which carries `planId` directly) share the same helper
  * without either owning the other's identifier space.
  *
+ * ONE exception to "never looks a plan up", added by HOS-1233 T-032: it reads
+ * the resolved plan's `product_domain` to state on the preapproval, because
+ * qzpay-core 6.0.0 requires it. Doing that here rather than at each caller is
+ * deliberate — every paid checkout of every vertical funnels through this one
+ * call, distinguished only by `planId`, so a caller-supplied value would be a
+ * value somebody could forget or hardcode wrong. That is the shape of the bug
+ * this replaces: the parameter did not exist, so every row it created was born
+ * on the column's `'accommodation'` default, and every tourist plan reported
+ * `accommodation` in prod and staging alike (spec F-4b/F-4c). It stays a
+ * DOMAIN lookup and nothing more: no slug resolution, no price selection, no
+ * eligibility.
+ *
  * @module services/billing/paid-subscription-create
  */
 
 import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { applyTestControl } from '@repo/billing';
-import { apiLogger } from '../../utils/logger.js';
+import { billingPlans, type DrizzleClient, eq, getDb } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
+import { abandonNeverConfirmedSubscription } from './abandon-never-confirmed-subscription.js';
+import { assertNoLiveSubscriptionForDomain } from './duplicate-subscription-guard.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 /**
@@ -38,8 +53,12 @@ export interface CreatePaidSubscriptionInput {
     /**
      * Resolved qzpay plan ID (`billing_plans.id`, a UUID). The caller is
      * responsible for resolving this beforehand — by slug (checkout) or by
-     * whatever identifier its own contract carries (reactivation) — this
-     * helper never looks a plan up itself.
+     * whatever identifier its own contract carries (reactivation).
+     *
+     * This helper reads exactly ONE thing off the resolved plan: its
+     * `product_domain`, to state on the preapproval (HOS-1233 T-032). It still
+     * never resolves the plan itself, never picks a price, and never checks
+     * eligibility.
      */
     readonly planId: string;
     /** Resolved qzpay price ID (`billing_prices.id`) for {@link planId}. */
@@ -59,16 +78,51 @@ export interface CreatePaidSubscriptionInput {
     readonly paymentMethodReturnUrl: string;
     /** Webhook destination for this preapproval. */
     readonly notificationUrl: string;
-    /**
-     * Extra free-trial days to delay the first recurring charge
-     * (SPEC-126 D9). Omitted for a plain paid create with no promo effect.
+    /*
+     * HOS-1012: there is deliberately NO `freeTrialDays` here any more, and no
+     * `startDate` either. This is THE preapproval-create payload — every paid
+     * checkout funnels through the `billing.subscriptions.create` call below —
+     * so it is exactly where a free trial would leak back to MercadoPago.
      *
-     * NOTE (HOS-191): in the `preapproval_plan` flow the trial is baked into the
-     * MP plan referenced by {@link providerPriceId}, so this field is a no-op there
-     * (qzpay builds no inline `auto_recurring` when `providerPriceId` is present).
-     * It is retained for the legacy inline-preapproval fallback.
+     * MercadoPago grants a preapproval's free trial once per
+     * `(payer, preapproval_plan)` and reports a spent trial identically to a
+     * live one; in production that charged ARS 18.000 one hundred and eighteen
+     * seconds after promising fourteen free days (HOS-522). Hospeda's trial is
+     * local now — a `trialing` row with `mp_subscription_id = NULL`, born at the
+     * first publish — so nothing has to be asked of, or believed from, the
+     * provider. Removing the field is what makes the checkout callers unable to
+     * pass one by accident; `scripts/check-no-trial-to-mercadopago.sh` (G-1) is
+     * what stops it being added back.
      */
-    readonly freeTrialDays?: number;
+    /**
+     * LOCAL trial length written onto the `billing_subscriptions` row, in days.
+     *
+     * Not a trial for MercadoPago and not reachable by one. Two distinct fields
+     * exist and only the other one is a provider trial:
+     *
+     *  - `freeTrialDays` — REMOVED above (HOS-1012). It is what the MercadoPago
+     *    adapter reads to build `auto_recurring.free_trial`, and it is banned by
+     *    guard G-1.
+     *  - `trialDays` — read by qzpay-core only to populate the storage adapter's
+     *    create input (`billing.ts`: `if (input.trialDays !== undefined)
+     *    createInput.trialDays = input.trialDays;`), from which
+     *    `@qazuor/qzpay-drizzle` derives `trial_start` / `trial_end` on OUR row.
+     *    It never appears in a preapproval payload on either adapter branch.
+     *
+     * Passing it EXPLICITLY is the point. When it is `undefined`, qzpay-core
+     * falls through to `else if (price?.trialDays != null) createInput.trialDays
+     * = price.trialDays` — i.e. it inherits `billing_prices.trial_days` from
+     * whichever price the caller resolved. That default is right for a plan
+     * checkout (the price IS the plan's) and wrong for any caller that borrows
+     * someone else's price purely to satisfy qzpay's plan+price requirement:
+     * HOS-847's recurring add-on borrows the owner's monthly plan price, which
+     * data-migration `0055-owner-trial-30-days` set to 30, and would otherwise
+     * be born claiming a 30-day trial MercadoPago never granted it — the
+     * mirror image of HOS-522, told to ourselves instead of by the provider.
+     *
+     * Omit it to keep the inherited behavior (all four plan checkouts do).
+     */
+    readonly trialDays?: number;
     /**
      * MercadoPago `preapproval_plan` id to subscribe against (HOS-191). When set,
      * qzpay builds a plan-based preapproval (`preapproval_plan_id`, no inline
@@ -77,8 +131,91 @@ export interface CreatePaidSubscriptionInput {
      * Omitted for the legacy inline-preapproval path.
      */
     readonly providerPriceId?: string;
+    /**
+     * Amount in CENTAVOS to charge instead of the resolved price's own
+     * `unitAmount` (HOS-1221 D2, `@qazuor/qzpay-core@5.2.0`). Same unit as
+     * `billing_prices.unit_amount` — an ARS 9.000 cycle is `900000`.
+     *
+     * This is what a signup discount rides on now. It used to ride inside the
+     * MercadoPago `preapproval_plan`: `resolveCheckoutMpPlanId` provisioned the
+     * plan at the discounted cycle-1 amount and the preapproval inherited it.
+     * HOS-1221 stopped sending the plan (MercadoPago rejects that request), so
+     * the amount reverted to the price row's full price while `pendingDiscount`
+     * went on being snapshotted — the customer was promised half off and
+     * charged in full.
+     *
+     * `0` is a VALID, distinct value, not "absent": qzpay checks it with
+     * `!== undefined`, so anything on this side that tests it for truthiness
+     * reintroduces the zero bug one layer up. Forwarded with the same
+     * `!== undefined` check below.
+     */
+    readonly providerUnitAmountOverride?: number;
+    /**
+     * Buyer-visible plan name for the MercadoPago `reason` (HOS-1221 D4,
+     * `@qazuor/qzpay-core@5.2.0`). The adapter still appends its own
+     * `" - Mensual"` / `" - Anual"` suffix; this replaces only the name part.
+     *
+     * Without it the adapter builds the reason from `plan.name`, which in this
+     * project IS the slug — the buyer read "owner-basico - Mensual" on
+     * MercadoPago's page. Callers pass `planDisplayNameFromPlan(plan)`
+     * (`plan-change-reason.ts`), the same resolver Path C already used for the
+     * `preapproval_plan`'s reason. An empty or whitespace-only string falls
+     * back to the previous behavior (the adapter trims it).
+     */
+    readonly planDisplayName?: string;
     /** Arbitrary metadata attached to the created subscription/preapproval. */
     readonly metadata?: Readonly<Record<string, string>>;
+    /**
+     * HOS-937 step 2: the resolved MercadoPago payer email (spec §6.3, see
+     * `billing/payer-email.ts`'s `resolvePayerEmail`) to bind this
+     * preapproval to. Forwarded verbatim to qzpay-core's
+     * `billing.subscriptions.create` (`@qazuor/qzpay-core@5.1.0`), which
+     * uses it in place of `customer.email` when present — fully
+     * backwards-compatible when omitted.
+     */
+    readonly payerEmail?: string;
+    /**
+     * Optional read client for the plan-domain lookup (HOS-1233 T-032).
+     *
+     * Only ever used for the `SELECT product_domain FROM billing_plans` this
+     * helper issues before creating the preapproval. Omitted, it falls back to
+     * `getDb()`. It exists so a caller already inside a transaction reads its
+     * own uncommitted plan row rather than a stale one.
+     */
+    readonly db?: DrizzleClient;
+    /**
+     * The domain the RESULTING SUBSCRIPTION ROW belongs to, when it differs from
+     * the domain of the plan whose price is being charged (HOS-1322).
+     *
+     * There is exactly one such caller and it is not a corner case: a recurring
+     * add-on BORROWS the owner's own plan row to satisfy qzpay's plan+price
+     * requirement (`addon.checkout.recurring-resolve.ts`), then stamps the row
+     * `product_domain = 'addon'`. Its plan-resolved domain is therefore the
+     * owner's vertical while the row's own domain is `addon` — and it is the
+     * ROW's domain the duplicate guard must reason about, or every add-on
+     * purchase by a subscribed host is refused as a duplicate of the plan it
+     * borrowed the price from.
+     *
+     * Omitted (every plan checkout), the plan's own resolved domain is used,
+     * which for those callers IS the row's domain.
+     *
+     * This does NOT change what is stated on the preapproval — that stays the
+     * plan's domain, resolved from the database by
+     * {@link resolvePlanProductDomain}. It only tells the duplicate guard which
+     * bucket this creation lands in.
+     */
+    readonly subscriptionProductDomain?: string;
+    /**
+     * The subscriptions this creation REPLACES, exempted from the duplicate guard.
+     *
+     * Passed by the three flows that legitimately mint a preapproval while a live
+     * row exists in the same domain: trial → paid reactivation
+     * (`trial.service.ts`), the past-due payment-method replacement, and the
+     * HOS-937 preapproval retry. It exempts THOSE ROWS and nothing else — a live
+     * subscription that is not on the list still refuses — which is why it is a
+     * list of ids and not a boolean.
+     */
+    readonly supersedesSubscriptionIds?: readonly string[];
 }
 
 /**
@@ -95,6 +232,55 @@ export interface CreatePaidSubscriptionResult {
     readonly subscription: QZPaySubscriptionWithHelpers;
     /** MercadoPago checkout URL the caller must redirect the user to. */
     readonly checkoutUrl: string;
+}
+
+/**
+ * Resolves the product domain a PLAN currently carries in the database
+ * (`billing_plans.product_domain`), read fresh rather than trusted from any
+ * caller (HOS-1233 T-032, extracted standalone by HOS-1271).
+ *
+ * This is the ONE authoritative source `createPaidSubscription` uses to state
+ * `productDomain` on every `mode: 'paid'` preapproval it creates, and HOS-1271
+ * reuses it in `subscription-checkout.service.ts` to VALIDATE a plan's domain
+ * before minting anything — e.g. rejecting a `gastronomy-pro` slug at the
+ * accommodation/tourist `/start-paid` endpoint. Reading the actual DB column
+ * (rather than the static plan-slug catalogue in `@repo/billing`) is
+ * deliberate: it is correct for an admin-created negotiated plan too
+ * (HOS-1062 — one row per agreement, present in no static catalogue), which a
+ * catalogue lookup would resolve to `undefined` and either wrongly reject or
+ * require a separate fail-open carve-out to admit.
+ *
+ * @param input.planId - The plan whose domain to resolve (`billing_plans.id`).
+ * @param input.db - Optional read client override (tests, or a caller already
+ *   inside a transaction that must read its own uncommitted plan row).
+ * @returns The plan's product domain.
+ * @throws SubscriptionCheckoutError With code `PLAN_NOT_FOUND` when no plan
+ *   row exists for `planId` — fails closed rather than guessing a domain.
+ */
+export async function resolvePlanProductDomain(input: {
+    readonly planId: string;
+    readonly db?: DrizzleClient;
+}): Promise<ProductDomainEnum> {
+    const readClient = input.db ?? getDb();
+    const [planRow] = await readClient
+        .select({ productDomain: billingPlans.productDomain })
+        .from(billingPlans)
+        .where(eq(billingPlans.id, input.planId))
+        .limit(1);
+
+    if (!planRow) {
+        throw new SubscriptionCheckoutError(
+            'PLAN_NOT_FOUND',
+            `resolvePlanProductDomain: plan '${input.planId}' not found`
+        );
+    }
+
+    // NULL reads as accommodation — the same asymmetry `subscriptionMatchesDomain`
+    // applies, for the same reason: the column post-dates most rows, so
+    // accommodation fails open and every other domain fails closed. This is a
+    // read of an existing row, not a write that omits the value, so it does not
+    // reintroduce what AC-15b forbids.
+    return (planRow.productDomain as ProductDomainEnum | null) ?? ProductDomainEnum.ACCOMMODATION;
 }
 
 /**
@@ -138,11 +324,65 @@ export async function createPaidSubscription(
         priceId,
         paymentMethodReturnUrl,
         notificationUrl,
-        freeTrialDays,
         providerPriceId,
+        providerUnitAmountOverride,
+        planDisplayName,
         billingInterval = 'monthly',
-        metadata
+        metadata,
+        payerEmail,
+        trialDays
     } = input;
+
+    // HOS-1233 T-032 / AC-15e — the domain is RESOLVED FROM THE PLAN BEING
+    // PURCHASED, and resolving it here rather than at each caller is the point.
+    //
+    // Every `mode: 'paid'` checkout funnels through this one call: the host
+    // plans and the tourist plans alike, plus both reactivation paths and the
+    // past-due card replacement. Until qzpay-core 6.0.0 the parameter did not
+    // exist, so every row this created was born on the column's
+    // `'accommodation'` default — which is why every tourist plan reported
+    // `accommodation` in prod and staging alike (spec F-4b/F-4c). Nothing was
+    // wrong in the code; the value was simply never stated.
+    //
+    // A hardcoded forward would be the same bug with extra steps: it would be
+    // right for the accommodation checkout and wrong for the tourist one, both
+    // of which arrive here down the same code path with only `planId` telling
+    // them apart. Hence the read, and hence the two checkouts being asserted
+    // separately in the tests.
+    //
+    // HOS-1271: extracted into {@link resolvePlanProductDomain} so a checkout
+    // that needs to know (and validate) a plan's domain BEFORE minting
+    // anything — `subscription-checkout.service.ts`'s accommodation/tourist
+    // entry points — reads the exact same authoritative value this create
+    // path stamps, instead of trusting the static plan-slug catalogue (which
+    // does not cover admin-created negotiated plans, HOS-1062) or duplicating
+    // the query.
+    const productDomain = await resolvePlanProductDomain({ planId, db: input.db });
+
+    // HOS-1322 — the duplicate guard, INSIDE the primitive.
+    //
+    // This is the call every `mode: 'paid'` preapproval funnels through, and
+    // until now not one of the four creation primitives refused a duplicate on
+    // its own: every guard lived in a caller, so the seven paths that had no
+    // caller-side guard (`reactivateFromTrial`, the admin commerce
+    // start-subscription, `partners/{id}/send-link`, ...) minted a SECOND live
+    // preapproval on top of the one the customer was already paying, and
+    // answered 201 doing it.
+    //
+    // Scoped by the ROW's domain, not by customer alone: a host who also runs a
+    // restaurant holds two live subscriptions legitimately, and a
+    // customer-wide check would refuse their gastronomy checkout. See the
+    // guard's module docblock for the add-on exemption, which is why
+    // `subscriptionProductDomain` exists.
+    await assertNoLiveSubscriptionForDomain({
+        customerId,
+        productDomain: input.subscriptionProductDomain ?? productDomain,
+        ...(input.supersedesSubscriptionIds === undefined
+            ? {}
+            : { supersedesSubscriptionIds: input.supersedesSubscriptionIds }),
+        ...(input.db === undefined ? {} : { db: input.db }),
+        source: 'createPaidSubscription'
+    });
 
     // The preapproval create is wrapped in the E2E test-control seam so the
     // resilience suite can force the provider to be down or time out at exactly
@@ -163,14 +403,38 @@ export async function createPaidSubscription(
             billingInterval,
             paymentMethodReturnUrl,
             notificationUrl,
-            // SPEC-126 D9: extra free-trial days are forwarded to the MP
-            // preapproval so the first recurring charge is delayed by N days.
-            // Omitted when the caller has no qualifying trial extension.
-            ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
+            // HOS-1233 T-032: required by qzpay-core since 6.0.0 — see the
+            // resolution above for why it is read from the plan rather than
+            // taken from the caller.
+            productDomain,
+            // HOS-1012: no trial field of any kind reaches this payload — not
+            // `freeTrialDays`, not `startDate`. HOS-171 measured that
+            // `auto_recurring.free_trial` and `start_date` are the same
+            // mechanism, so both are banned, and the ban is enforced statically
+            // by `scripts/check-no-trial-to-mercadopago.sh` (guard G-1).
             // HOS-191: when set, qzpay subscribes against this MP preapproval_plan
             // (plan-based flow) instead of building an inline preapproval.
             ...(providerPriceId === undefined ? {} : { providerPriceId }),
-            ...(metadata === undefined ? {} : { metadata })
+            // HOS-1221 D2: the discounted cycle-1 amount, in centavos. Checked
+            // with `!== undefined` and NOT for truthiness — `0` is a legitimate
+            // override and a truthy test would silently drop it, which is the
+            // same class of bug as the one this field exists to fix. qzpay
+            // applies the identical rule on its side.
+            ...(providerUnitAmountOverride === undefined ? {} : { providerUnitAmountOverride }),
+            // HOS-1221 D4: what the buyer reads on MercadoPago's page. Without
+            // it the reason is built from `plan.name`, which here is the slug.
+            ...(planDisplayName === undefined ? {} : { planDisplayName }),
+            // HOS-847: the LOCAL trial length, forwarded only when the caller
+            // states one. Omitted, qzpay-core inherits the resolved price's
+            // `trialDays` — see the `trialDays` JSDoc on
+            // {@link CreatePaidSubscriptionInput} for why a borrowed price makes
+            // that inheritance a lie. This is NOT `freeTrialDays` and never
+            // reaches MercadoPago.
+            ...(trialDays === undefined ? {} : { trialDays }),
+            ...(metadata === undefined ? {} : { metadata }),
+            // HOS-937 step 2: the resolved MercadoPago payer email (see
+            // `payerEmail` JSDoc on {@link CreatePaidSubscriptionInput}).
+            ...(payerEmail === undefined ? {} : { payerEmail })
         })
     )) as QZPaySubscriptionWithHelpers;
 
@@ -186,33 +450,34 @@ export async function createPaidSubscription(
     // HOS-151 Bug C: a 2xx preapproval with no provider subscription id is
     // unrecoverable — the webhook lookup keys on `mpSubscriptionId`, so a row
     // persisted with an empty id can never activate and its preapproval can
-    // never be located to cancel. Fail loudly instead of leaving an orphan.
-    // Clean up the just-created local row best-effort first (mirrors the
-    // `cancelSubscriptionFailClosed` fail-closed pattern in
-    // subscription-checkout.service.ts); the abandoned-pending cron is the
-    // backstop if the cancel does not take effect.
+    // never be located to cancel. Fail loudly instead of leaving an orphan, and
+    // close the seconds-old local row on the way out. The abandoned-pending cron
+    // is the backstop if that write does not take effect.
     const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
     if (!mpSubscriptionId) {
-        try {
-            await billing.subscriptions.cancel(subscription.id);
-            apiLogger.warn(
-                { subscriptionId: subscription.id },
-                'HOS-151 Bug C: cancelled subscription created with an empty provider id (fail-closed)'
-            );
-        } catch (cancelErr) {
-            apiLogger.error(
-                {
-                    subscriptionId: subscription.id,
-                    error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr)
-                },
-                'HOS-151 Bug C: FAILED to cancel subscription created with an empty provider id — abandoned-pending cron will reap it'
-            );
-        }
+        // The row has NO provider id — that is the condition that got us here —
+        // so there is nothing to cancel at MercadoPago and the only work left is
+        // the local terminal status. Deliberately NOT
+        // `billing.subscriptions.cancel()`: on this row that call does no
+        // provider work at all (qzpay resolves the preapproval from
+        // `providerSubscriptionIds`, finds none, skips) and its entire effect was
+        // a local `canceled` write — the wrong word, in the wrong spelling.
+        await abandonNeverConfirmedSubscription({
+            subscriptionId: subscription.id,
+            expectedMpSubscriptionId: null,
+            source: 'paid-subscription-create-missing-provider-id',
+            db: input.db
+        });
         throw new SubscriptionCheckoutError(
             'MISSING_PROVIDER_SUBSCRIPTION_ID',
-            'Payment provider returned no subscription id — cannot link the preapproval; subscription cancelled.'
+            'Payment provider returned no subscription id — cannot link the preapproval; subscription abandoned.'
         );
     }
+
+    // REMOVED, HOS-1012 T-026: HOS-936 asked the fresh preapproval whether
+    // MercadoPago was honouring the trial qzpay had written from
+    // `freeTrialDays`. No trial is sent anymore (guard G-1) and none is written
+    // here, so the question has no subject left.
 
     return { subscription, checkoutUrl };
 }

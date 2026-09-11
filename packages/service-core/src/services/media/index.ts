@@ -1,3 +1,10 @@
+export type {
+    AddFeaturedMediaParams,
+    AddFeaturedMediaResult,
+    FeaturedMediaPort,
+    PreviousFeaturedOutcome
+} from './add-featured-media';
+export { addFeaturedMediaRow } from './add-featured-media';
 export type { ComposeContentMediaInput } from './content-media-compose';
 export { composeContentMedia } from './content-media-compose';
 export type { DeletableMediaRow, DeleteMediaAssetOutcome } from './delete-media-asset';
@@ -15,3 +22,10 @@ export type {
     StockImageResult
 } from './image-search.service';
 export { ImageSearchService } from './image-search.service';
+export type { MediaTextPatchInput } from './media-text-patch';
+export { buildMediaTextPatch } from './media-text-patch';
+export type {
+    BuildOwnedMediaFeaturedPortInput,
+    FeaturedCapableMediaModel
+} from './owned-media-featured-port';
+export { buildOwnedMediaFeaturedPort } from './owned-media-featured-port';

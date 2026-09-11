@@ -4,8 +4,22 @@
  * Unlike config-validator.test.ts which uses a local reimplementation,
  * these tests mock the config imports and call the real validateBillingConfig
  * and validateBillingConfigOrThrow functions to achieve source code coverage.
+ *
+ * HOS-1290: the validator now walks `ALL_PLAN_CATALOGS` (every vertical's
+ * plan catalogue) instead of `ALL_PLANS` alone, and groups its per-catalogue
+ * checks (sortOrder uniqueness, "exactly one default") by `productDomain`
+ * rather than by `PlanCategory` — every commerce/partner tier shares
+ * `category: 'owner'` to satisfy the (commerce-unaware) `PlanCategory` type,
+ * so `category` can no longer tell verticals apart. The mock below reflects
+ * that: `ALL_PLAN_CATALOGS` is TWO independently-controllable mock arrays
+ * (`[mockAllPlans, mockSecondCatalogPlans]`), not one — a single-catalogue
+ * mock cannot tell "walks every catalogue" apart from "walks only the
+ * first", which is exactly the regression HOS-1290 fixes. Every
+ * `createTestPlan` MUST declare a `productDomain` since it is a required
+ * `PlanDefinition` field.
  */
 
+import { ProductDomainEnum } from '@repo/schemas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PromoCodeDefinition } from '../../src/config/promo-codes.config.js';
 import type { AddonDefinition } from '../../src/types/addon.types.js';
@@ -28,12 +42,22 @@ vi.mock('@repo/logger', () => ({
 
 // We'll dynamically mock the config module in each test group
 const mockAllPlans: PlanDefinition[] = [];
+// A SECOND, independent catalogue — never populated by most tests, but
+// essential to a handful that prove the validator walks EVERY entry of
+// `ALL_PLAN_CATALOGS`, not merely the first (see "should validate a plan
+// that exists ONLY in the second catalogue"). A regression that narrows
+// `ALL_PLAN_CATALOGS.flat()` back to `ALL_PLAN_CATALOGS[0]` would still pass
+// every OTHER test in this file, because they only ever populate
+// `mockAllPlans` — this is the one structurally able to catch it.
+const mockSecondCatalogPlans: PlanDefinition[] = [];
 const mockAllAddons: AddonDefinition[] = [];
 const mockDefaultPromoCodes: PromoCodeDefinition[] = [];
 
 vi.mock('../../src/config/index.js', () => ({
-    get ALL_PLANS() {
-        return mockAllPlans;
+    // HOS-1290: the real module exports `ALL_PLAN_CATALOGS` (an array of
+    // catalogues), not a single `ALL_PLANS` array.
+    get ALL_PLAN_CATALOGS() {
+        return [mockAllPlans, mockSecondCatalogPlans];
     },
     get ALL_ADDONS() {
         return mockAllAddons;
@@ -54,6 +78,7 @@ function createTestPlan(overrides: Partial<PlanDefinition> = {}): PlanDefinition
         name: 'Test Plan',
         description: 'Test description',
         category: 'owner',
+        productDomain: ProductDomainEnum.ACCOMMODATION,
         monthlyPriceArs: 1000000,
         annualPriceArs: 10000000,
         monthlyPriceUsdRef: 10,
@@ -115,15 +140,21 @@ function createTestPromo(overrides: Partial<PromoCodeDefinition> = {}): PromoCod
 /** Replaces mock arrays in-place with new data */
 function setMockConfig(config: {
     plans?: PlanDefinition[];
+    /** Plans that live in the SECOND catalogue, not the first. */
+    secondCatalogPlans?: PlanDefinition[];
     addons?: AddonDefinition[];
     promoCodes?: PromoCodeDefinition[];
 }): void {
     mockAllPlans.length = 0;
+    mockSecondCatalogPlans.length = 0;
     mockAllAddons.length = 0;
     mockDefaultPromoCodes.length = 0;
 
     if (config.plans) {
         mockAllPlans.push(...config.plans);
+    }
+    if (config.secondCatalogPlans) {
+        mockSecondCatalogPlans.push(...config.secondCatalogPlans);
     }
     if (config.addons) {
         mockAllAddons.push(...config.addons);
@@ -141,25 +172,25 @@ describe('validateBillingConfig (source coverage)', () => {
     });
 
     describe('valid configurations', () => {
-        it('should return valid for a complete valid config with one default per category', () => {
+        it('should return valid with one default per product domain', () => {
             // Arrange
             setMockConfig({
                 plans: [
                     createTestPlan({
                         slug: 'owner-1',
-                        category: 'owner',
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         isDefault: true,
                         sortOrder: 1
                     }),
                     createTestPlan({
-                        slug: 'complex-1',
-                        category: 'complex',
+                        slug: 'gastronomy-1',
+                        productDomain: ProductDomainEnum.GASTRONOMY,
                         isDefault: true,
                         sortOrder: 1
                     }),
                     createTestPlan({
                         slug: 'tourist-1',
-                        category: 'tourist',
+                        productDomain: ProductDomainEnum.TOURIST,
                         isDefault: true,
                         sortOrder: 1
                     })
@@ -176,22 +207,77 @@ describe('validateBillingConfig (source coverage)', () => {
             expect(result.errors).toHaveLength(0);
         });
 
-        it('should report missing defaults for non-empty-allowed categories when config is empty', () => {
+        it('should report a missing default for accommodation/tourist but NOT for a zero-default-allowed domain, when config is empty', () => {
             // Arrange
             setMockConfig({});
 
             // Act
             const result = validateBillingConfig();
 
-            // Assert — owner/tourist still fail loudly on zero plans (a broken
-            // config load), but 'complex' is on the explicit
-            // CATEGORIES_ALLOWED_EMPTY allowlist (HOS-692, spec §6.9: the
-            // complex-* plans were removed and the category is deliberately
-            // empty in real config too), so it is never flagged.
+            // Assert — an empty config has NO plans at all, so no product
+            // domain appears in the map and nothing is flagged (there is
+            // nothing to require a default OF). This mirrors HOS-692's old
+            // "complex is allowed empty" case, generalized: a domain with
+            // zero plans in the input never triggers "no default found" —
+            // only a domain that appears WITH zero of its plans marked
+            // default does (see the next test).
+            expect(result.valid).toBe(true);
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('flags accommodation/tourist for a missing default, but not gastronomy/experience/partner (HOS-1290)', () => {
+            // Arrange — one plan per domain, none marked default.
+            setMockConfig({
+                plans: [
+                    createTestPlan({
+                        slug: 'owner-1',
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
+                        isDefault: false,
+                        sortOrder: 1
+                    }),
+                    createTestPlan({
+                        slug: 'tourist-1',
+                        productDomain: ProductDomainEnum.TOURIST,
+                        isDefault: false,
+                        sortOrder: 1
+                    }),
+                    createTestPlan({
+                        slug: 'gastronomy-1',
+                        productDomain: ProductDomainEnum.GASTRONOMY,
+                        isDefault: false,
+                        sortOrder: 1
+                    }),
+                    createTestPlan({
+                        slug: 'experience-1',
+                        productDomain: ProductDomainEnum.EXPERIENCE,
+                        isDefault: false,
+                        sortOrder: 1
+                    }),
+                    createTestPlan({
+                        slug: 'partner-1',
+                        productDomain: ProductDomainEnum.PARTNER,
+                        isDefault: false,
+                        sortOrder: 1
+                    })
+                ]
+            });
+
+            // Act
+            const result = validateBillingConfig();
+
+            // Assert
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Category "owner": No default plan found');
-            expect(result.errors).not.toContain('Category "complex": No default plan found');
-            expect(result.errors).toContain('Category "tourist": No default plan found');
+            expect(result.errors).toContain(
+                'Product domain "accommodation": No default plan found'
+            );
+            expect(result.errors).toContain('Product domain "tourist": No default plan found');
+            expect(result.errors).not.toContain(
+                'Product domain "gastronomy": No default plan found'
+            );
+            expect(result.errors).not.toContain(
+                'Product domain "experience": No default plan found'
+            );
+            expect(result.errors).not.toContain('Product domain "partner": No default plan found');
         });
     });
 
@@ -213,6 +299,66 @@ describe('validateBillingConfig (source coverage)', () => {
             expect(result.errors).toContain('Plan "dup": Duplicate slug found');
         });
 
+        it('should detect a duplicate slug even across DIFFERENT ALL_PLAN_CATALOGS entries (HOS-1290)', () => {
+            // Arrange — this is exactly the class of bug HOS-1290 fixes: a
+            // commerce-domain plan slug colliding with an accommodation one
+            // used to be invisible because the validator only ever saw
+            // ALL_PLANS. The two colliding plans are placed in TWO DIFFERENT
+            // mock catalogues (not the same array) so this only passes if
+            // the validator actually walks every entry of
+            // `ALL_PLAN_CATALOGS`.
+            setMockConfig({
+                plans: [
+                    createTestPlan({
+                        slug: 'cross-domain-dup',
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
+                        isDefault: true,
+                        sortOrder: 1
+                    })
+                ],
+                secondCatalogPlans: [
+                    createTestPlan({
+                        slug: 'cross-domain-dup',
+                        productDomain: ProductDomainEnum.GASTRONOMY,
+                        sortOrder: 1
+                    })
+                ]
+            });
+
+            // Act
+            const result = validateBillingConfig();
+
+            // Assert
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain('Plan "cross-domain-dup": Duplicate slug found');
+        });
+
+        it('validates a plan that exists ONLY in the second catalogue (HOS-1290 — catches a narrowed-to-first-catalogue regression)', () => {
+            // Arrange — no plan at all in the first mock catalogue; the
+            // ENTIRE input lives in the second one. A validator that reads
+            // `ALL_PLAN_CATALOGS[0]` instead of flattening every entry would
+            // see zero plans here and report this config as valid.
+            setMockConfig({
+                secondCatalogPlans: [
+                    createTestPlan({
+                        slug: 'second-catalog-only',
+                        productDomain: ProductDomainEnum.GASTRONOMY,
+                        monthlyPriceArs: -1,
+                        isDefault: false
+                    })
+                ]
+            });
+
+            // Act
+            const result = validateBillingConfig();
+
+            // Assert
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain(
+                'Plan "second-catalog-only": monthlyPriceArs must be >= 0, got -1'
+            );
+        });
+
         it('should detect negative monthlyPriceArs', () => {
             // Arrange
             setMockConfig({
@@ -226,6 +372,31 @@ describe('validateBillingConfig (source coverage)', () => {
             expect(result.valid).toBe(false);
             expect(result.errors).toContain(
                 'Plan "test-plan": monthlyPriceArs must be >= 0, got -100'
+            );
+        });
+
+        it('should detect negative monthlyPriceArs on a GASTRONOMY-domain plan (HOS-1290 regression)', () => {
+            // Arrange — before HOS-1290, a negative price on a commerce plan
+            // never reached the validator at all (it wasn't in ALL_PLANS),
+            // so the API started up without a complaint.
+            setMockConfig({
+                plans: [
+                    createTestPlan({
+                        slug: 'gastronomy-broken',
+                        productDomain: ProductDomainEnum.GASTRONOMY,
+                        monthlyPriceArs: -500,
+                        isDefault: false
+                    })
+                ]
+            });
+
+            // Act
+            const result = validateBillingConfig();
+
+            // Assert
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain(
+                'Plan "gastronomy-broken": monthlyPriceArs must be >= 0, got -500'
             );
         });
 
@@ -252,18 +423,12 @@ describe('validateBillingConfig (source coverage)', () => {
                     createTestPlan({
                         annualPriceArs: null,
                         isDefault: true,
-                        category: 'owner',
-                        sortOrder: 1
-                    }),
-                    createTestPlan({
-                        slug: 'c1',
-                        category: 'complex',
-                        isDefault: true,
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 1
                     }),
                     createTestPlan({
                         slug: 't1',
-                        category: 'tourist',
+                        productDomain: ProductDomainEnum.TOURIST,
                         isDefault: true,
                         sortOrder: 1
                     })
@@ -317,18 +482,12 @@ describe('validateBillingConfig (source coverage)', () => {
                         hasTrial: false,
                         trialDays: -1,
                         isDefault: true,
-                        category: 'owner',
-                        sortOrder: 1
-                    }),
-                    createTestPlan({
-                        slug: 'c1',
-                        category: 'complex',
-                        isDefault: true,
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         sortOrder: 1
                     }),
                     createTestPlan({
                         slug: 't1',
-                        category: 'tourist',
+                        productDomain: ProductDomainEnum.TOURIST,
                         isDefault: true,
                         sortOrder: 1
                     })
@@ -363,7 +522,7 @@ describe('validateBillingConfig (source coverage)', () => {
             );
         });
 
-        it('should detect duplicate sortOrder within the same category', () => {
+        it('should detect duplicate sortOrder within the same product domain', () => {
             // Arrange
             setMockConfig({
                 plans: [
@@ -371,13 +530,13 @@ describe('validateBillingConfig (source coverage)', () => {
                         slug: 'p1',
                         isDefault: true,
                         sortOrder: 1,
-                        category: 'owner'
+                        productDomain: ProductDomainEnum.ACCOMMODATION
                     }),
                     createTestPlan({
                         slug: 'p2',
                         isDefault: false,
                         sortOrder: 1,
-                        category: 'owner'
+                        productDomain: ProductDomainEnum.ACCOMMODATION
                     })
                 ]
             });
@@ -387,10 +546,42 @@ describe('validateBillingConfig (source coverage)', () => {
 
             // Assert
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Plan "p2": Duplicate sortOrder 1 in category "owner"');
+            expect(result.errors).toContain(
+                'Plan "p2": Duplicate sortOrder 1 in product domain "accommodation"'
+            );
         });
 
-        it('should detect no default plan in a category', () => {
+        it('should pass when different product domains share the same sortOrder', () => {
+            // Arrange — this is the exact case that used to false-positive
+            // once commerce/partner plans (all `category: 'owner'`) were fed
+            // into the old category-keyed check: gastronomy's own sortOrder
+            // 1/2/3 ladder must NOT collide with accommodation's.
+            setMockConfig({
+                plans: [
+                    createTestPlan({
+                        slug: 'owner-plan',
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
+                        isDefault: true,
+                        sortOrder: 1
+                    }),
+                    createTestPlan({
+                        slug: 'gastronomy-plan',
+                        productDomain: ProductDomainEnum.GASTRONOMY,
+                        isDefault: false,
+                        sortOrder: 1
+                    })
+                ]
+            });
+
+            // Act
+            const result = validateBillingConfig();
+
+            // Assert
+            expect(result.valid).toBe(true);
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('should detect no default plan in the accommodation domain', () => {
             // Arrange
             setMockConfig({
                 plans: [
@@ -398,7 +589,7 @@ describe('validateBillingConfig (source coverage)', () => {
                         slug: 'p1',
                         isDefault: false,
                         sortOrder: 1,
-                        category: 'owner'
+                        productDomain: ProductDomainEnum.ACCOMMODATION
                     })
                 ]
             });
@@ -408,10 +599,12 @@ describe('validateBillingConfig (source coverage)', () => {
 
             // Assert
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Category "owner": No default plan found');
+            expect(result.errors).toContain(
+                'Product domain "accommodation": No default plan found'
+            );
         });
 
-        it('should detect multiple default plans in a category', () => {
+        it('should detect multiple default plans in the accommodation domain', () => {
             // Arrange
             setMockConfig({
                 plans: [
@@ -419,9 +612,14 @@ describe('validateBillingConfig (source coverage)', () => {
                         slug: 'p1',
                         isDefault: true,
                         sortOrder: 1,
-                        category: 'owner'
+                        productDomain: ProductDomainEnum.ACCOMMODATION
                     }),
-                    createTestPlan({ slug: 'p2', isDefault: true, sortOrder: 2, category: 'owner' })
+                    createTestPlan({
+                        slug: 'p2',
+                        isDefault: true,
+                        sortOrder: 2,
+                        productDomain: ProductDomainEnum.ACCOMMODATION
+                    })
                 ]
             });
 
@@ -430,14 +628,29 @@ describe('validateBillingConfig (source coverage)', () => {
 
             // Assert
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Category "owner": Multiple default plans found (2)');
+            expect(result.errors).toContain(
+                'Product domain "accommodation": Multiple default plans found (2)'
+            );
         });
 
-        it('does NOT report a missing default for the allowlisted empty "complex" category, but STILL does for an accidentally-empty one (HOS-692)', () => {
-            // Arrange - only owner plans, no complex/tourist
+        it('should still detect multiple defaults on a zero-default-allowed domain (gastronomy)', () => {
+            // Arrange — DOMAINS_ALLOWED_ZERO_DEFAULT permits ZERO defaults,
+            // never MORE THAN ONE. Two commerce plans both claiming
+            // isDefault:true is still a real config bug.
             setMockConfig({
                 plans: [
-                    createTestPlan({ slug: 'p1', isDefault: true, sortOrder: 1, category: 'owner' })
+                    createTestPlan({
+                        slug: 'g1',
+                        isDefault: true,
+                        sortOrder: 1,
+                        productDomain: ProductDomainEnum.GASTRONOMY
+                    }),
+                    createTestPlan({
+                        slug: 'g2',
+                        isDefault: true,
+                        sortOrder: 2,
+                        productDomain: ProductDomainEnum.GASTRONOMY
+                    })
                 ]
             });
 
@@ -445,14 +658,10 @@ describe('validateBillingConfig (source coverage)', () => {
             const result = validateBillingConfig();
 
             // Assert
-            // 'complex' is on the explicit CATEGORIES_ALLOWED_EMPTY allowlist
-            // (HOS-692, spec §6.9: the complex-* plans were removed and the
-            // category is deliberately empty in real config too) — never
-            // flagged. 'tourist' is NOT on that allowlist, so a config that
-            // accidentally has zero tourist plans must still fail loudly,
-            // exactly as before this change.
-            expect(result.errors).not.toContain('Category "complex": No default plan found');
-            expect(result.errors).toContain('Category "tourist": No default plan found');
+            expect(result.valid).toBe(false);
+            expect(result.errors).toContain(
+                'Product domain "gastronomy": Multiple default plans found (2)'
+            );
         });
     });
 
@@ -680,24 +889,18 @@ describe('validateBillingConfig (source coverage)', () => {
         });
 
         it('should warn about expired promo codes', () => {
-            // Arrange - include default plans to avoid category errors
+            // Arrange - include default plans to avoid product-domain errors
             setMockConfig({
                 plans: [
                     createTestPlan({
                         slug: 'o1',
-                        category: 'owner',
-                        isDefault: true,
-                        sortOrder: 1
-                    }),
-                    createTestPlan({
-                        slug: 'c1',
-                        category: 'complex',
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         isDefault: true,
                         sortOrder: 1
                     }),
                     createTestPlan({
                         slug: 't1',
-                        category: 'tourist',
+                        productDomain: ProductDomainEnum.TOURIST,
                         isDefault: true,
                         sortOrder: 1
                     })
@@ -720,19 +923,13 @@ describe('validateBillingConfig (source coverage)', () => {
                 plans: [
                     createTestPlan({
                         slug: 'o1',
-                        category: 'owner',
-                        isDefault: true,
-                        sortOrder: 1
-                    }),
-                    createTestPlan({
-                        slug: 'c1',
-                        category: 'complex',
+                        productDomain: ProductDomainEnum.ACCOMMODATION,
                         isDefault: true,
                         sortOrder: 1
                     }),
                     createTestPlan({
                         slug: 't1',
-                        category: 'tourist',
+                        productDomain: ProductDomainEnum.TOURIST,
                         isDefault: true,
                         sortOrder: 1
                     })
@@ -794,6 +991,31 @@ describe('validateBillingConfig (source coverage)', () => {
             const promoErrors = result.errors.filter((e) => e.includes('Promo code'));
             expect(promoErrors).toHaveLength(0);
         });
+
+        it('should pass when restrictedToPlans references a GASTRONOMY-domain plan slug (HOS-1290 regression)', () => {
+            // Arrange — before HOS-1290, a promo restricted to a commerce
+            // plan slug ALWAYS failed startup: the validator only knew
+            // ALL_PLANS's slugs, so a real, existing gastronomy plan read as
+            // "non-existent" and threw on every boot.
+            setMockConfig({
+                plans: [
+                    createTestPlan({
+                        slug: 'gastronomy-premium',
+                        productDomain: ProductDomainEnum.GASTRONOMY,
+                        isDefault: false,
+                        sortOrder: 1
+                    })
+                ],
+                promoCodes: [createTestPromo({ restrictedToPlans: ['gastronomy-premium'] })]
+            });
+
+            // Act
+            const result = validateBillingConfig();
+
+            // Assert
+            const promoErrors = result.errors.filter((e) => e.includes('Promo code'));
+            expect(promoErrors).toHaveLength(0);
+        });
     });
 });
 
@@ -806,9 +1028,18 @@ describe('validateBillingConfigOrThrow (source coverage)', () => {
         // Arrange
         setMockConfig({
             plans: [
-                createTestPlan({ slug: 'o1', category: 'owner', isDefault: true, sortOrder: 1 }),
-                createTestPlan({ slug: 'c1', category: 'complex', isDefault: true, sortOrder: 1 }),
-                createTestPlan({ slug: 't1', category: 'tourist', isDefault: true, sortOrder: 1 })
+                createTestPlan({
+                    slug: 'o1',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
+                    isDefault: true,
+                    sortOrder: 1
+                }),
+                createTestPlan({
+                    slug: 't1',
+                    productDomain: ProductDomainEnum.TOURIST,
+                    isDefault: true,
+                    sortOrder: 1
+                })
             ],
             addons: [createTestAddon()],
             promoCodes: [createTestPromo()]
@@ -840,13 +1071,44 @@ describe('validateBillingConfigOrThrow (source coverage)', () => {
         expect(() => validateBillingConfigOrThrow()).toThrow('priceArs must be > 0');
     });
 
+    it('should throw when a commerce-domain promo restriction breaks startup (HOS-1290 inverse case)', () => {
+        // Arrange — the exact "promo restricted to a commerce plan tears
+        // down the boot" bug named in HOS-1290, reproduced with NO plan
+        // registered under that slug at all (so it MUST still error).
+        setMockConfig({
+            plans: [
+                createTestPlan({
+                    slug: 'o1',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
+                    isDefault: true,
+                    sortOrder: 1
+                })
+            ],
+            promoCodes: [createTestPromo({ restrictedToPlans: ['gastronomy-does-not-exist'] })]
+        });
+
+        // Act & Assert
+        expect(() => validateBillingConfigOrThrow()).toThrow(
+            'References non-existent plan slug "gastronomy-does-not-exist"'
+        );
+    });
+
     it('should log warnings without throwing when config is otherwise valid', () => {
         // Arrange
         setMockConfig({
             plans: [
-                createTestPlan({ slug: 'o1', category: 'owner', isDefault: true, sortOrder: 1 }),
-                createTestPlan({ slug: 'c1', category: 'complex', isDefault: true, sortOrder: 1 }),
-                createTestPlan({ slug: 't1', category: 'tourist', isDefault: true, sortOrder: 1 })
+                createTestPlan({
+                    slug: 'o1',
+                    productDomain: ProductDomainEnum.ACCOMMODATION,
+                    isDefault: true,
+                    sortOrder: 1
+                }),
+                createTestPlan({
+                    slug: 't1',
+                    productDomain: ProductDomainEnum.TOURIST,
+                    isDefault: true,
+                    sortOrder: 1
+                })
             ],
             promoCodes: [createTestPromo({ expiresAt: new Date('2020-01-01') })]
         });

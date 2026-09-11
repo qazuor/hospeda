@@ -32,9 +32,27 @@ describe('isEntitlementGrantingStatus', () => {
     });
 
     it('exposes the canonical status set and it matches the predicate', () => {
-        expect([...ENTITLEMENT_GRANTING_STATUSES]).toEqual(['active', 'trialing', 'comp']);
+        expect([...ENTITLEMENT_GRANTING_STATUSES]).toEqual([
+            'active',
+            'trialing',
+            'comp',
+            'courtesy'
+        ]);
         for (const status of ENTITLEMENT_GRANTING_STATUSES) {
             expect(isEntitlementGrantingStatus(status)).toBe(true);
         }
+    });
+
+    it('grants entitlements during a courtesy window (HOS-180)', () => {
+        expect(isEntitlementGrantingStatus('courtesy')).toBe(true);
+    });
+
+    it('still refuses paused — a real pause cuts access, a gift does not', () => {
+        // The single most important pairing in this file. A courtesy sits on a
+        // PAUSED MercadoPago preapproval, so if 'paused' ever joined the set the
+        // two would become indistinguishable and every genuinely paused
+        // subscriber would silently keep their entitlements.
+        expect(isEntitlementGrantingStatus('paused')).toBe(false);
+        expect(isEntitlementGrantingStatus('courtesy')).toBe(true);
     });
 });

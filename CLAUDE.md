@@ -63,10 +63,12 @@ The API uses a three-tier route architecture:
 ### Key Commands
 
 ```bash
-# Interactive CLI (discover and run all commands)
-pnpm cli              # Interactive menu with fuzzy search
-pnpm cli <command>    # Run a command directly (e.g., pnpm cli db:start)
-pnpm test:cli         # Run CLI tool tests
+# hops — the local CLI (scripts/client-tools, runs on bun)
+hops                  # Interactive picker
+hops <command>        # Run one directly (e.g. hops db-start)
+hops --help           # The 18 commands
+hops run <script>     # Any package.json script in the repo, with search
+hops run <script> -- --flag   # Flags for the script go after `--`
 
 # Development
 pnpm dev              # Start all apps
@@ -110,6 +112,46 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 # Remote env management lives in hops env-* on the VPS (see docs/guides/env-management.md).
 ```
 
+### Comandos de `hops` que reemplazan trabajo manual
+
+Estos existen porque hacerlo a mano cuesta decenas de llamadas de herramienta.
+**Usá el comando; no rehagas el método manual.** Cada uno se verificó contra la
+realidad antes de entrar acá: unit con casos-trampa, mutación de sus guards
+centrales, y los modos degradados forzados a mano.
+
+| En vez de | Corré | Ahorro |
+|---|---|---|
+| Pollear el CI con monitores y notificaciones sueltas | `hops ci --wait` | ~20 llamadas → 1 |
+| Armar el `gh pr view --json mergeable,mergeStateStatus,statusCheckRollup --jq …` antes de cada merge | `hops merge` | 4-6 llamadas → 1 |
+
+**`hops ci --wait`** bloquea hasta que el run cierra y devuelve una línea. Leé
+el **exit code**, no el texto:
+
+- `0` verde · `1` rojo, conflicto, sin PR o error de consulta
+- `3` **SIN ARRANCAR**: cero checks en toda la espera. No corrió nada — PR en
+  conflicto, o un evento que GitHub dropeó. Se arregla redisparando, no debuggeando.
+- `4` **TIMEOUT**: seguían corriendo al llegar al techo (`--timeout=<min>`, default 30).
+
+`CI CORTADO` (exit 1) tampoco es un test roto: todos los checks fallados fueron
+cortados por el `timeout-minutes` del job o por un push que los reemplazó. Se
+re-corren; no se debuggean. Con una falla genuina en la mezcla vuelve a decir
+`ROJO`.
+
+`3` y `4` **NO son fallas**: son las dos formas de no saber. Reportar
+cualquiera de las dos como "el CI falló" manda a debuggear un rojo inexistente.
+No dice por qué falló (eso es diagnóstico aparte) ni si el PR se puede mergear
+(para eso está `hops merge`).
+
+**`hops merge`** dictamina si el PR se puede mergear y **NO mergea** — el merge
+sigue siendo decisión del usuario. Da UNA razón, la primera que bloquea. Exit
+`0` LISTO · `1` BLOQUEADO · `3` NO SÉ (GitHub nunca calculó la mergeabilidad;
+tampoco es una falla). Dos cosas que el método manual dejaba pasar y este no:
+`mergeable` viene `UNKNOWN` en la primera consulta porque GitHub lo calcula
+recién cuando se lo pedís (medido: 3 de 8 PRs, resueltos todos en la segunda),
+y **`BEHIND` bloquea aunque esté todo verde**, porque esos checks corrieron
+sobre otro merge-base. Detalle completo en
+[`scripts/client-tools/README.md`](scripts/client-tools/README.md).
+
 ### Coding Standards
 
 - **TypeScript strict mode** with no `any` types
@@ -152,21 +194,77 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 
 - **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
 - **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
-- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch)
+- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch — **a partial list**; `preapproval-less-expiry`, `entity-subscription-cache-reconcile`, `addon-subscription-reconcile`, `courtesy-expiry`, `partner-expiry`, `partner-unpaid-reaper`, `propagate-plan-price-changes` and `reactivation-supersession-reconcile` are billing-side too). These are JOB NAMES, not filenames — `trial-reconcile` lives in `trial-expiry.ts`, so `ls` will not find it. `apps/api/src/cron/schedules.manifest.ts` is the authoritative name → schedule list.
 - **Config**: `packages/billing/` (plan definitions, entitlement keys, limits, MP adapter factory)
 - **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
 
 Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for EVERY subscription — monthly and annual alike since HOS-171 (see below). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
 
-#### Card-first trials, one charging mechanism (HOS-171)
+**`billing_customers.mp_payer_email` holds a CONFIRMED email, never a declared
+one** — its docblock says "the last email MercadoPago actually accepted". Two
+measured facts about where that value can come from (2026-09-08, staging, real MP
+sandbox API):
 
-Every subscription is a MercadoPago **preapproval**, trial or not:
+- **A preapproval NEVER yields it.** `GET /preapproval/{id}` returns the
+  `payer_email` key with an **empty string**, not a missing field — on an
+  `authorized` preapproval whose checkout supplied a perfectly good address.
+  `payer_id` IS populated. So `if (preapproval.payer_email)` is falsy and both
+  qzpay's adapter (`result.payerEmail = preapproval.payer_email`) and the webhook's
+  own `if (mpSubscription.payerEmail)` skip silently, with no log on either side.
+  That pair of guards is why the column sat empty across all 37 staging customers
+  while the persist code was deployed and running (HOS-1234).
+- **A payment DOES yield it.** `GET /v1/payments/{id}` returns
+  `payer.email` populated, with the same `payer.id` as the preapproval. But
+  `@qazuor/qzpay-mercadopago` (2.10.0) does **not** map it: `payerEmail` is written
+  only on the WRITE paths and on the preapproval read, never in `payments.retrieve`.
+  `QZPayProviderPayment.payerEmail` is therefore always `undefined` — which also
+  means `payment-reconcile.service.ts` has been recording `mpPayerEmail: undefined`
+  into its HOS-765 backfill audit metadata since day one.
 
-- **The trial is MercadoPago's**, not ours: a preapproval carrying
-  `auto_recurring.free_trial`, so the card is collected on day 1 and MP defers the
-  first charge to day N. There is no no-card trial and no `TrialService.startTrial`
-  path from checkout. `freeTrialDays` is decided ONCE, at checkout, by
-  `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
+Do not "fix" an empty payer email by persisting whatever the user typed on the
+pre-redirect dialog: an address that never completed a checkout would then be
+stored, suppress the dialog on the next attempt, and leave the account unable to
+pay with no way to correct itself.
+
+#### The trial is Hospeda's; MercadoPago only charges (HOS-171 → HOS-1012)
+
+**Checkout is the PAID path and nothing else.** The trial is Hospeda's own,
+granted locally at the first publish; MercadoPago is never asked for a free day.
+So a subscription's preapproval is created when the user actually goes to pay,
+and the first charge lands within minutes of it — measured 2026-09-08 on staging:
+checkout at 15:42:34, payment `177923168044` approved at 15:44:37. There is no
+window in which a subscription exists at MercadoPago but has not been charged
+yet, which is why anything that depends on a confirmed payment (see
+`mp_payer_email` below) is available almost immediately rather than N days later.
+
+- **Card-first is RETIRED — do not restore it, and do not read the HOS-171
+  design as current.** The original design put the trial on MercadoPago: a
+  preapproval carrying `auto_recurring.free_trial`, card collected on day 1, first
+  charge deferred to day N, with `freeTrialDays` resolved once at checkout by
+  `resolveCheckoutFreeTrialDays`. HOS-1012 deleted the PATH, not the functions:
+  `subscription-checkout.service.ts` no longer imports `resolveCheckoutFreeTrialDays`
+  or `resolvePlanTrialConfig` at all, and `scripts/check-no-trial-to-mercadopago.sh`
+  (guard G-1) fails CI if a checkout payload names a free trial again. Both
+  functions still EXIST and are still exported
+  (`packages/service-core/src/services/billing/addon/trial.types.ts:337` and `:459`),
+  with **zero production call sites** — only their own unit tests call them. Treat
+  any doc, docblock or test comment describing either as live on the checkout path
+  as stale; do not resurrect them as "the" trial resolver. The next bullet is why.
+- **Nothing is asked of MercadoPago about trials anymore (HOS-1012).** MercadoPago
+  grants a preapproval's free trial once per `(payer, preapproval_plan)`, so
+  `auto_recurring.free_trial` and `first_invoice_offset` describe the PLAN'S terms
+  and are byte-identical on a preapproval whose trial will run and one whose trial
+  was already spent. Measured 2026-08-31 on two preapprovals for the same payer,
+  two seconds apart: same `free_trial`, `next_payment_date` at +30 days on one and
+  at the creation instant on the other. In production that promised fourteen free
+  days and charged ARS 18.000 one hundred and eighteen seconds later (HOS-522).
+  HOS-936's answer was to read the honest field instead
+  (`next_payment_date - date_created`); HOS-1012's is to stop asking at all — a
+  trial we never request is a trial MercadoPago cannot lie about. So checkout is
+  the paid path and nothing else, and `scripts/check-no-trial-to-mercadopago.sh`
+  (guard G-1) fails CI if any checkout payload names a free trial again. The
+  derivation, its reconciler and their read-direction guard were deleted with
+  their subject (T-026); `trial_end` now comes from the local row and nowhere else.
 - **`TRIALING` is derived, never stored at creation.** MercadoPago reports an
   authorized preapproval as `active`; `deriveTrialingStatus` turns that into
   `trialing` in the webhook when the local `trialEnd` is still in the future. Do NOT
@@ -196,18 +294,141 @@ For MP sandbox setup, webhook configuration, sandbox test-user creation, and rol
 Commerce listings use a **separate billing domain** that must never pollute the
 accommodation entitlement engine:
 
-- `billing_subscriptions.product_domain` — `'accommodation'` for host subscriptions,
-  `'commerce'` for commerce-listing subscriptions. `loadEntitlements()` filters to
-  `product_domain = 'accommodation'` only, so a user who is both a host and a
-  commerce owner retains correct accommodation entitlements regardless of their
-  commerce subscription state.
-- The commerce plan in `billing_plans` has `product_domain = 'commerce'` and is
-  intentionally kept OUT of `ALL_PLANS` so that `GET /api/v1/public/plans` does
-  not expose it to accommodation hosts.
-- `commerce_listing_subscriptions` — a link table (one row per listing, UNIQUE on
-  `(entity_type, entity_id)`) that ties an active commerce subscription to its
-  concrete listing. The commerce-visibility reconciler reads this table to decide
-  whether a listing is publicly visible.
+- `billing_subscriptions.product_domain` — **one domain per vertical**, not a single
+  `'commerce'` bucket. `ProductDomainEnum` holds six values:
+  `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'`,
+  `'partner'`, `'tourist'` (HOS-1233 — the tourist tiers, which own no listings
+  at all; before that spec they were filed as `'accommodation'`, so every read
+  that wanted "the plan this person pays for" matched them BY ACCIDENT), and
+  `'addon'` (HOS-847 — a recurring add-on's own MercadoPago preapproval,
+  isolated from the customer's real plan subscription). The entitlement engine
+  counts `'accommodation'` **and `'tourist'`** — since HOS-1233 `loadEntitlements`
+  (`apps/api/src/middlewares/entitlement.ts:626`) matches either, because both are
+  "the plan this person pays for". It counts no other domain, so a user who is at
+  once a host, a restaurant owner and a partner keeps correct accommodation
+  entitlements regardless of the other subscriptions' state.
+- **`'commerce'` is a RETIRED value** (release B / HOS-692) that survives only on
+  legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
+  `'commerce'` satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
+  goes dark rather than silently matching a vertical it was never resolved to. Do
+  not "fix" that by widening the comparison — a dark listing is the intended
+  failure mode.
+- `subscriptionMatchesDomain()`
+  (`packages/service-core/src/services/billing/subscription/subscription-product-domain.ts`)
+  is the ONLY place in the codebase that compares a subscription's domain, and it
+  reads asymmetrically by design: **`accommodation` fails open** (a missing object,
+  or a `null`/`undefined` column, counts as accommodation, because the column
+  post-dates most rows), while **every other domain fails closed**. To test
+  membership across all commerce verticals at once, call it once per domain —
+  there is no union helper, and there deliberately is not one: `HOS-1081`
+  (`ebfd413e0`) deleted `isCommerceSubscription()` because it had zero callers
+  outside its own file and tests. Do not reintroduce it without a consumer, and
+  do not reach for `isAccommodationSubscription()` as a substitute — it answers
+  a different question and, unlike the rest, fails OPEN.
+- **When you build that pair by hand, ORDER it — never match "either" (HOS-1233).**
+  The reads that resolve *the plan this person pays for* need `accommodation` OR
+  `tourist`, and the tempting shape is one `find` whose predicate accepts both.
+  That shape is a bug: a HOST auto-promoted by host-onboarding legitimately holds
+  BOTH subscriptions at once — the case the HOS-217 discard in `loadEntitlements`
+  exists for — so an unordered match lets the storage adapter's row ordering
+  decide which subscription is read, or which one a plan change MUTATES. That is
+  HOS-259 wearing a new domain, and it is indistinguishable from correct
+  behaviour from outside. Try the domain the surface actually governs first and
+  use the other as a FALLBACK: ordered, it can only ever turn a `null` into an
+  answer, so every account holding the primary domain is byte-identical to
+  before. Only **two** call sites actually implement the ordered shape:
+  `services/billing/plan-domain-guard.ts:277` (`find(accommodation) ?? find(tourist)`)
+  and `routes/user/protected/subscription.ts:315`. The other two —
+  `middlewares/entitlement.ts:626` and `routes/user/protected/entitlements.ts:164` —
+  still use the single unordered `find` with `isAccommodationSubscription(sub) ||
+  subscriptionMatchesDomain(sub, TOURIST)`. Copy the first pair, not the second.
+  (NOT VERIFIED: whether the unordered shape is actually harmful in those two —
+  `entitlement.ts` runs the HOS-217 HOST discard immediately afterwards, which may
+  or may not neutralise it. Nobody has measured it.)
+  Two corollaries that bite:
+  - A route scoped by an EXPLICIT `?productDomain=` must stay strict — a caller
+    that names a domain means it, and must never pick up the fallback. Only the
+    DEFAULT falls back.
+  - **`'tourist'` IS in `SUBSCRIPTION_SCOPE_DOMAINS` since HOS-1282**
+    (`apps/api/src/schemas/product-domain-query.schema.ts:54-58`), so
+    `?productDomain=tourist` is a **200**. This paragraph previously said the
+    opposite — it was left out at HOS-1233 on purpose and HOS-1282 widened it —
+    and the stale version is what makes a reader "fix" a caller that is already
+    correct. What the tuple still excludes is **`partner` and `addon`**, because
+    neither owns a trial site, so `?productDomain=partner` is a 400 and
+    `/planes/aliados/precios/` reads no clock at all. There is still no
+    client-side workaround for a default that resolves the wrong domain — fix
+    the default, and widen that tuple only with its `routes/billing/usage.ts`
+    consumers in view.
+- **Hydrate before you compare.** `getByCustomerId()` does not populate
+  `productDomain` (QZPay's mapper drops it — HOS-934), so
+  `subscriptionMatchesDomain` over a raw result reads `undefined` and fails
+  closed for every non-accommodation domain: every listing goes dark and nothing
+  errors. Call `hydrateSubscriptionProductDomains()` first, or read the column
+  straight from Drizzle. `scripts/check-subscription-domain-hydration.sh` (HOS-1176)
+  fails CI on a comparison whose file does neither.
+- The commerce-vertical plans in `billing_plans` carry their own
+  `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
+  accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
+  snapshot tests all stay accommodation-only.
+- `entity_subscriptions` (renamed from `commerce_listing_subscriptions` by
+  HOS-1084) — **ONE subscription-status cache for the three verticals**, not a
+  commerce-only link table. One row per LISTING, `UNIQUE(entity_type, entity_id)`,
+  where `entity_type` is `'accommodation' | 'gastronomy' | 'experience'`. It does
+  two jobs and not every vertical needs both: it maps a subscription to the
+  listings it covers (commerce needs this; accommodation resolves its listings
+  from `accommodations.owner_id`), and it lets a public request read the status
+  without joining `billing_subscriptions` (both need this). The commerce
+  visibility reconciler reads it to decide whether a listing is public;
+  `owner-entitlement.ts` reads it to resolve a host's entitlements without
+  walking QZPay.
+  Three things not to break:
+  - the UNIQUE is per **listing**, never per subscription — one subscription
+    legitimately owns many rows (a host's whole portfolio, a commerce owner's
+    1/3/10 cap), and a unique on `subscription_id` would reject the second
+    property of every multi-property host;
+  - a row with `subscription_id = NULL` and `status = 'none'` is a **negative
+    cache** entry, not a broken row. It is how an unsubscribed host — the most
+    common one on the platform — stays a cache HIT instead of falling through to
+    the live billing walk on every request;
+  - a **missing** row is never a wrong answer: the public read falls back to the
+    live resolution. Only a row that is present AND wrong can lie, which is what
+    the write-through path and the reconcile cron defend.
+- **TWO reconcilers, and the second one is partners.** `reconcileSubscriptionLinkedEntities`
+  (`apps/api/src/services/subscription-linked-entities.service.ts`) drives commerce
+  visibility AND the accommodation `entity_subscriptions` cache. It does **not**
+  touch partners: `reconcilePartnerForSubscription`
+  (`apps/api/src/services/partner-reconcile.service.ts`) is a separate bridge
+  writing its own `partner_subscriptions` table (partners are NOT in
+  `entity_subscriptions`), and neither reconciler calls the other. So "did every
+  site get wired?" has TWO answers, and an audit that reads only the first
+  reconciler skips the partner vertical entirely.
+  **Do not look for the count here** — this bullet twice carried a number that was
+  wrong by the time it was read ("six sites", then "nine ... wired at five").
+  `apps/api/test/services/subscription-linked-entities-bridge.guard.test.ts` holds
+  the live tally, and since HOS-1306 it also enforces the pairing: every file
+  calling the entity bridge must either call the partner reconciler too, or appear
+  in `BRIDGE_ONLY_SITES` with the measured reason a partner cannot reach it. A new
+  call site cannot be born with the gap silently.
+  HOS-1306 measured the four then-unwired sites and found **zero real gaps** —
+  `subscription-comp-grant` had already been wired by HOS-1160, and a partner
+  subscription cannot reach the other three (the commerce attach path is closed by
+  `CommerceVertical = 'gastronomy' | 'experience'` plus `subscriptionMatchesDomain`'s
+  fail-closed; `trial-local-expiry` because no partner plan has a trial;
+  `preapproval-less-expiry` because no writer produces an `active` partner row with
+  a null preapproval). That last one is the fragile one: it holds by the ABSENCE of
+  a producing write, not by an invariant, and **HOS-1062 (activating a partner
+  without MercadoPago) is building the population that breaks it** — that change
+  must wire the partner reconciler into `preapproval-less-expiry` in the same PR.
+  Note also that the daily `partner-expiry` cron only archives partners whose
+  `endsAt` has passed while still ACTIVE, and nothing outside the admin edit form
+  ever writes `partners.endsAt` — it is NOT a general backstop for a missed partner
+  reconcile. The accommodation half ignores
+  the status it was handed and **re-derives** the owner's current subscription
+  from the DB, so a late webhook for a superseded subscription cannot un-publish
+  the one they are paying for. Backstop: the 6-hourly
+  `entity-subscription-cache-reconcile` cron re-derives every accommodation row
+  and prunes orphans.
 - The `product_domain` columns on `billing_plans` and `billing_subscriptions` are
   typed Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — accessed via
   normal typed queries (HOS-75), not raw SQL or the extras carril. The old
@@ -220,6 +441,72 @@ accommodation entitlement engine:
 - `billing_subscriptions.promo_effect_remaining_cycles` (integer) — multi-cycle discount countdown, also a typed Drizzle column (HOS-73). `NULL` = forever or no active discount; `N > 0` = N discounted cycles remain; `0` = exhausted (full price already restored). Decremented once per confirmed charge on the `subscription_authorized_payment.created` webhook by `resolveRenewalPromoEffect` in `packages/service-core/src/services/billing/promo-code/promo-code.renewal.ts`.
 - `billing_subscriptions.status = 'comp'` (`SubscriptionStatusEnum.COMP`) — a permanently-complimentary subscription. Created by `apps/api/src/services/subscription-comp-create.service.ts` as a direct DB insert with NO MercadoPago preapproval (`mp_subscription_id = NULL`). The dunning cron excludes it; `loadEntitlements` treats it as active. Not a 100% discount computation — an explicit status that cannot revert to full price.
 - The CHECK constraints enforcing per-`effect_kind` shape invariants (cross-column logic Drizzle cannot express) still live in the extras carril, applied by `pnpm db:apply-extras` (`packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql`). The MP preapproval mutation mechanism (lowering then restoring `transaction_amount`) was verified viable in the spike doc at `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` (Outcome A — GO).
+
+#### The plans page reads the trial before it charges (HOS-1233)
+
+`/{lang}/planes/<vertical>/precios/` used to charge without looking. Measured on
+staging: a host three days into a 30-day trial pressed "Empezar" and was charged
+ARS 18.000 on the spot, losing the remaining 27 days with nothing asked; a
+tourist was charged ARS 15.000 the same way. Two pages reached payment
+(`anfitriones`, `turistas`); the other three already send the visitor to a create
+form and are **banner-only** — turning them into checkout pages would undo
+HOS-1156.
+
+Four things a future reader would otherwise re-derive wrongly:
+
+- **The decision lives in ONE module and a static guard keeps it there.**
+  `apps/web/src/lib/billing/trial-start-branch.ts` maps a trial reading to
+  `trial_create_form` / `trial_warn_then_checkout` / `trial_checkout`.
+  `apps/web/test/lib/billing/trial-start-branch-canonical.guard.test.ts` is the
+  web twin of the API's canonical-predicate guard and fails CI on a second call
+  site comparing those literals — so consumers **dispatch through an exhaustive
+  `Record<TrialStartBranch, () => void>`**, never a `switch` or `===`. The
+  `trial_` prefix is load-bearing: bare `'checkout'` is already `ctaMode`'s value
+  on every pricing grid, and a guard anchored on it would cry wolf until somebody
+  switched it off. Renaming a branch means editing the guard's `BRANCH_LITERAL`
+  in the same commit.
+- **Two fail-safe directions, deliberately OPPOSITE.** The trial branch fails
+  toward WARNING (an unresolved read must never become a silent charge — R-2);
+  the already-VIP predicate
+  (`apps/web/src/lib/billing/tourist-vip-already-held.ts`) fails toward the
+  button staying ENABLED (wrongly claiming somebody holds a benefit is invisible
+  in testing and costs a sale — R-7), which is why it uses an ALLOWLIST of
+  holding statuses and never a denylist. They point opposite ways because the
+  money moves opposite ways. Do not "make them consistent".
+- **The web's subscription status does NOT use the domain enum's spelling.** The
+  API maps `trialing → 'trial'`
+  (`apps/api/src/routes/user/protected/subscription.ts:53`), and there is no
+  `'comp'` on the wire at all — a complimentary subscription arrives as
+  `status: 'active'` with `isComplimentary: true`. A web predicate written as
+  `status === 'trialing'` **never matches and never fails**; it reads as "not on
+  trial" and falls through.
+- **The clock is HOS-1282's endpoint, consumed and never rebuilt.**
+  `GET /protected/billing/trial/status?productDomain=` (wrapper:
+  `billingApi.getTrialStatus`). It hydrates before it narrows, so it cannot be
+  masked by a live subscription in another vertical. `partner` and `addon` are
+  rejected by `ProductDomainScopeEnumSchema` because neither owns a trial site,
+  so `/planes/aliados/precios/` reads no clock and shows no banner — correct, not
+  a gap. The spec's own F-3 ("nothing answers days-left-in-this-vertical") is
+  **stale**; believing it produces a duplicate resolver, which is its R-1.
+
+The banner is a **client island**, and the guard that enforces that is
+`apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts` — which
+scans `src/pages` in full against a prefix allowlist. It is **not**
+`cacheable-routes-parse-no-session.guard.test.ts`, whose hand-written list of
+eight route families omits `planes` entirely; the spec's AC-10 named that one and
+was therefore satisfiable by construction (witness case on HOS-1311).
+
+AC-16's claim — "you already hold the VIP benefits" — rests on every
+accommodation and commerce tier spreading `TOURIST_VIP_ENTITLEMENTS` and
+`TOURIST_VIP_LIMITS` whole (HOS-975 D-A). That invariant is already guarded, in
+two places, so do not write a third: `packages/billing/test/owner-inherits-tourist.test.ts`
+(the six accommodation tiers) and `packages/billing/test/commerce-vertical-plans.test.ts`
+(all six commerce tiers, plus the limit VALUES — the entitlement engine reads an
+absent key as UNLIMITED, so keys alone would not prove it). The six commerce
+tiers receive that spread from **one** factory, `commerceVerticalTier()` in
+`packages/billing/src/config/plans.config.ts` — a single point of failure worth
+knowing before editing it. Partner plans spread neither, which is why `partner`
+is absent from `TOURIST_VIP_BLOCKING_DOMAINS`.
 
 #### Featured-listing entitlement (SPEC-292 → SPEC-309)
 
@@ -239,16 +526,26 @@ flag driven by **two independent sources** (SPEC-309 OQ-3):
   (`getRevalidationService().scheduleRevalidationBatch`) on every actual write (SPEC-309 G-3).
 - The 6-hourly backstop cron (renamed `featured-by-plan-reconcile` → `featured-by-entitlement-reconcile`,
   `apps/api/src/cron/jobs/featured-by-entitlement-reconcile.job.ts`) corrects drift from both sources.
-- `accommodations.isFeatured` (admin-curated, separate column) is now ALSO settable by an entitled owner
-  via a dedicated self-service toggle — `PATCH`/`GET /api/v1/protected/accommodations/:id/featured-toggle`
-  (SPEC-309 T-019/T-020) — gated by a live `FEATURED_LISTING` entitlement check (plan OR addon), not by
-  the general accommodation update schema.
+- **No owner-facing toggle (HOS-929, 2026-08-29 owner decision, superseding SPEC-309 T-019/T-020).**
+  Holding `FEATURED_LISTING` — plan or addon — features the listing automatically for as long as the
+  entitlement lasts, with no second owner gesture. The `PATCH`/`GET /api/v1/protected/accommodations/:id/featured-toggle`
+  routes, `setAccommodationFeaturedToggle`/`getAccommodationFeaturedEntitlement`, and
+  `FeaturedToggleSection.client.tsx` are gone. Every PUBLIC accommodation read
+  (`apps/api/src/routes/accommodation/public/*`) instead ORs the two source columns via
+  `resolvePublicIsFeatured()` (`apps/api/src/utils/accommodation-featured.ts`) before serializing
+  `isFeatured` — the OR lives ONLY in those routes, never in the generic service (shared with
+  admin/protected) or in the DB ordering resolver, so the two columns stay independent everywhere else.
+  `featuredByEntitlement` itself is never added to `AccommodationPublicSchema`, only to
+  `AccommodationProtectedSchema`/`AccommodationAdminSchema` (admin and the owner's own editor still see
+  both columns separately). The addon upsell for owners who do NOT hold the entitlement (HOS-728) is
+  restored as `FeaturedAddonOffer.astro` in the editor hub — SSR-only (no client island, no fetch on
+  mount), self-hiding once `isFeatured || featuredByEntitlement` is true.
 
 ### Local testing for billing entitlements (SPEC-143)
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
 
-`pnpm db:fresh-dev` creates 18 dev-only test users covering every role × plan combination (2 staff + 3 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 1 dual-role host/provider + 4 commerce-owner fixtures, HOS-694 + 3 complex tiers). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1). To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
+`pnpm db:fresh-dev` creates 42 dev-only test users covering every role × plan × billing-state combination (17 pre-HOS-1268: 2 staff + 2 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 1 dual-role host/provider + 4 commerce-owner fixtures, HOS-694 + 3 complex tiers + 1 dual-role host/commerce; plus 25 from HOS-1268: gastronomy/experience trial + addon + at-cap parity fixtures, and a past_due/cancelled/paused/comp/courtesy fixture per vertical — accommodation, gastronomy, experience, tourist). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1) and its [Billing-state matrix](packages/seed/CLAUDE.md#billing-state-matrix-hos-1268) section. To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
 
 Staging is still required for: MercadoPago checkout (`/start-paid`, polling fallback, webhook signature verification), Cloudflare cache revalidation, and cron behavior in production-like timing. Everything else goes local.
 
@@ -338,6 +635,48 @@ but when the environments cover genuinely distinct concerns — local for migrat
 from scratch, staging for the MercadoPago sandbox, prod for Cloudflare and real
 cron timing — each needs its own sign-off and the issue stays open until all are
 signed.
+
+### What's New: every promoted PR carries a novelty decision (HOS-1214)
+
+The What's New catalog is filled at the smoke sign-off and audited at the
+promotion. Two moments, two jobs: one writes, the other catches what the first
+missed.
+
+- **The write** — Phase 2b of the `smoke-tanda` skill. On `Resultado: PASO` only,
+  the flow **writes the entry without asking anything** (owner decision,
+  2026-09-08): it drafts the `es` text from the sign-off's own `Observado` field,
+  infers the audience, and commits it to
+  `apps/api/src/data/whats-new/whats-new.ts` with `publishedAt: 'on-promotion'`
+  (the writer never picks a date) via a `[HOS-N] docs(whats-new):` PR to
+  `staging`, labelling every bound PR `whats-new-done` and recording the id on
+  the sign-off's `Novedad:` line. Writing unattended is safe **because the marker
+  keeps the entry invisible until the promotion resolves it** — an unwanted entry
+  costs nothing until it is let through.
+- **The review** — at the promotion, over every pending entry at once. The gate
+  prints each one in full (id, audience, title, body) on the promotion PR, and
+  `hops whats-new drop <id>...` withdraws the ones the owner does not want: it
+  opens the PR itself and flips those entries' originating PRs to
+  `whats-new-none`. Naming ids and merging is the whole gesture.
+- **Editing the catalog by hand is fine, and nothing overwrites you.** The
+  date-resolution workflow only ever replaces the literal
+  `publishedAt: 'on-promotion'`; every other byte is copied through. Writing a
+  real date by hand takes that entry out of the marker's protection (a past date
+  is silently destroyed for every new account); changing an `id` is harmless
+  while the entry is unpublished, and a collision is still caught by the guard;
+  deleting an entry by hand works but leaves its PRs claiming an entry that no
+  longer exists — which is why `drop` exists.
+- **The two labels** — `whats-new-none` (evaluated, not a novelty) and
+  `whats-new-done` (evaluated, produced or extended an entry). Exactly one per
+  PR, never a third.
+- **The gate** — a `staging` → `main` promotion PR fails if any PR in
+  `origin/main..origin/staging` carries neither label, if a first-parent commit
+  resolves to no PR at all (a direct push), or if a due entry still carries a
+  `'machine'` translation mark. **It blocks for lack of a decision, never for
+  lack of novelty**, and it blocks equally when it cannot determine the answer.
+  Bot-authored and pre-cutoff PRs are exempt and reported as such — the cutoff is
+  **derived**, not configured: the commit that added the gate workflow itself.
+  Fix a red gate with `hops whats-new audit --fix`, which asks per PR and labels
+  it — no push required.
 
 ### Git Conventions
 
@@ -537,7 +876,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 
 - **Amenity/feature catalog (SPEC-266)**: the `name` column was DROPPED. Display labels come from `@repo/i18n` (`accommodations.amenityNames.<slug>` / `accommodations.featureNames.<slug>`), keyed by `slug`. The amenity/feature slug regex now allows underscores (`^[a-z0-9]+(?:[-_][a-z0-9]+)*$`) — the slug IS the i18n key. Both tables carry `applicable_verticals text[]`; public catalog endpoints (`/api/v1/public/amenities|features`) accept `?applicableVertical=accommodation|gastronomy|experience` to scope results. **BETA-90** (remove `name` → i18n by slug) is ABSORBED by SPEC-266 — do not plan it separately.
 - **Points of interest (POI) catalog (HOS-113 → HOS-138/146)**: `points_of_interest` has NO `name` column (like SPEC-266's amenities/features). Display names come from the admin-editable multilang `nameI18n` column, degrading to a humanized slug when absent — resolve them with `translatePoiName()` (`apps/web/src/lib/poi-labels.ts`), NEVER by i18n key: **HOS-138 removed the legacy `destinations.poiNames.<slug>` keys entirely**. Only `type` (closed 9-value `PointOfInterestTypeEnum`) still resolves via i18n (`destinations.poiTypeLabels.<TYPE>`). Coordinates are plain `doublePrecision` `lat`/`long` columns, **nullable since HOS-138** — NOT the JSONB/string shape `accommodations`/`destinations` use elsewhere, so no `::numeric` casts or `long`/`lng` naming confusion. Relation to destinations is **many-to-many** via `r_destination_point_of_interest` (a POI can belong to several destinations; coordinates live on the POI row, not the join table). The destination detail page renders POIs **twice**: the SSR `list/grid` (`DestinationPOISection.astro`) stays the indexable content source, and **HOS-146** added a multi-marker map (`DestinationPOIMap.client.tsx`) below it as enrichment. Three things to know before touching that map: (1) `LocationMap` now has a `mode: 'multi'`, implemented in a SIBLING chunk (`MultiMarkerMapInner.client.tsx`), NOT by extending `LocationMapInner.client.tsx` — POI pins pull in `react-dom/server` + the icon table, and the split is what keeps the approximate/exact maps from paying for it; (2) the destination payload is **PRIMARY-only** — `NEARBY` POIs are fetched client-side from `GET /api/v1/public/destinations/:id/points-of-interest?relation=NEARBY` (Colón alone has 57; bundling them would inflate every consumer's payload for one toggle); (3) the initial frame is **destination-centre + p90 radius clamped to [1.5, 8]km**, NOT the POI bbox — HOS-141's pipeline marks POIs up to 39km away as PRIMARY, so a bbox fit yields 100-200km viewports on 20 of 22 destinations.
-- **Partner tiers are gold/silver, and only gold has a page (HOS-294)**: `/{lang}/partners/<slug>/` is what separates the two paid partner plans — a silver partner has carousel presence and nothing else, and its logo links OUT to its own site with `rel="sponsored nofollow noopener"`. The old filtered directory at `/{lang}/partners/` was retired by owner decision and does not come back; that URL now 404s. The tier is never rendered publicly. Public reads answer 200/410/404, where 410 means a gold partner that WAS published and no longer is. Full reference: [apps/web/CLAUDE.md](apps/web/CLAUDE.md).
+- **Partner tiers are gold/silver, and only gold has a page (HOS-294)**: `/{lang}/partners/<slug>/` is what separates the two paid partner plans — a silver partner has carousel presence and nothing else, and its logo links OUT to its own site with `rel="sponsored nofollow noopener"`. The old filtered directory at `/{lang}/partners/` was retired by owner decision and does not come back; that URL now 404s. The tier is never rendered publicly. Public reads answer 200/410/404, where **410 means `partner.revokedAt` is set and nothing else** (HOS-562, `packages/service-core/src/services/partner/partner.service.ts:608`) — a gold partner who merely stopped paying answers 404, not 410, because "stopped paying" is not "permanently gone" and they can come back. Partners are also their own billing vertical: they live in `partner_subscriptions` (not `entity_subscriptions`) and are reconciled by `reconcilePartnerForSubscription`, not by `reconcileSubscriptionLinkedEntities`. Full reference: [apps/web/CLAUDE.md](apps/web/CLAUDE.md).
 - **Benefit usages are the repo's first "A declares, B confirms" flow (HOS-376)**: one party opens a `host_trade_benefit_usages` row and the COUNTERPART resolves it; only a `CONFIRMED` row counts for anything. Four things have no precedent elsewhere and are easy to break by analogy with code that looks similar. (1) `confirm`/`reject`/`reject/undo` are **role-blind** — the row's `declaredBy` decides who may answer, never the actor's role, because an account can be host AND provider at once (`host-provider@local.test` is seeded to prove it). They declare no `requiredPermissions`, and a static guard fails CI if one appears. (2) **Every foreign path answers 404, never 403**, including the declarant answering their own declaration (AC-6) — a 403 would confirm the id exists. On the admin side the same rule means the permission gate runs BEFORE the row lookup. (3) A provider is an ordinary account with no `HOST_TRADE_*` permission, so provider routes authorise by **row ownership**; the QR declaration is the one exception (`HOST_TRADE_VIEW`, which is what stops a passer-by who scanned a sticker). (4) Rejecting is **cheap on purpose** — the note is optional — because it is the only control keeping the public counters honest. Full reference: [apps/api/docs/route-architecture.md](apps/api/docs/route-architecture.md); the moderation asymmetry (host review APPROVED by default, provider reply always PENDING) is in [docs/guides/review-moderation.md](docs/guides/review-moderation.md).
 - **Biome `useDefaultParameterLast`**: Params with defaults MUST come after required params
 - **Biome `noExplicitAny`**: `biome-ignore` on interface/type properties does NOT work.. use proper types
@@ -548,7 +887,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix (web) or `VITE_` prefix (admin)
 - **No legacy env aliasing**: Per SPEC-035, env vars are validated by Zod against `HOSPEDA_*` names exclusively in `apps/api/src/utils/env.ts` (`ApiEnvBaseSchema`). There is NO runtime mapping from unprefixed names. The only accepted exceptions are platform-injected vars (`NODE_ENV`, `CI`, `API_PORT`, `API_HOST`) which are read as-is. See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full policy.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
-- **Three migration carriles** — (1) structural changes (tables/columns/indexes/FKs/enums) go to `packages/db/src/migrations/` via `pnpm db:generate` + `pnpm db:migrate`; (2) Drizzle-invisible objects (triggers, materialized views, CHECK constraints, special indexes) go to `packages/db/src/migrations/extras/` (hand-written, idempotent, re-applied by `pnpm db:apply-extras`); (3) **seed DATA changes** go to `packages/seed/src/data-migrations/` (numbered TS modules, ledgered in `seed_migrations`, run by `pnpm db:seed:migrate` — HOS-25). Run order on a live env: `db:migrate` → `db:apply-extras` → `db:seed:migrate`. See [packages/db/CLAUDE.md](packages/db/CLAUDE.md), [packages/seed/CLAUDE.md](packages/seed/CLAUDE.md), and [docs/guides/migrations.md](docs/guides/migrations.md).
+- **Three migration carriles** — (1) structural changes (tables/columns/indexes/FKs/enums) go to `packages/db/src/migrations/` via `pnpm db:generate` + `pnpm db:migrate`; (2) Drizzle-invisible objects (triggers, materialized views, CHECK constraints, special indexes) go to `packages/db/src/migrations/extras/` (hand-written, idempotent, re-applied by `pnpm db:apply-extras`); (3) **seed DATA changes** go to `packages/seed/src/data-migrations/` (numbered TS modules, ledgered in `seed_migrations`, run by `pnpm db:seed:migrate` — HOS-25). Run order on a live env: `db:migrate` → `db:apply-extras` → `db:seed:migrate`. **That order satisfies one direction only** — it is right for a data-migration that needs a column the schema carril ADDS, and wrong for one that needs a column the schema carril REMOVES, because `db:migrate` applies the whole pending batch before any data change runs. A backfill shipped in the same release as the `DROP COLUMN` of its source therefore reads nothing, moves zero rows, and is ledgered applied forever (HOS-433, measured in production: 18ms and `ok`). The fix is not a different order but the expand/contract split the structural carril already requires — backfill in release N, drop in N+1 — plus `meta.requiresColumns` on the migration so the runner aborts loudly if it is violated anyway (it refuses only when the column is missing AND its table still holds rows — an absent column over an empty table lost nothing). See [packages/db/CLAUDE.md](packages/db/CLAUDE.md), [packages/seed/CLAUDE.md](packages/seed/CLAUDE.md), and [docs/guides/migrations.md](docs/guides/migrations.md).
 - **Seed dual-write rule (MANDATORY, HOS-25)** — when a change modifies **seed DATA that already lives in a live env** (add/rename/remove a `required` catalog row — amenity, feature, attraction, destination — a billing plan/limit/entitlement, or any `example` row with a deterministic id), the SAME PR MUST do BOTH: (1) edit the **baseline** (JSON fixture / TS constant) so a fresh DB is built correct, AND (2) add a numbered **data-migration** via `pnpm db:seed:make <slug>` so already-seeded staging/prod get the same delta. Editing only the baseline is a silent bug: fresh DBs are correct but live DBs never receive the change (exactly why billing had to patch via `extras/*.plan.sql`). A CI drift guard enforces this (`scripts/check-seed-dual-write.sh`, **fail-closed** since HOS-173: everything under `packages/seed/src/data/**` is guarded by default minus an explicit demo-only exemption list). Does NOT apply to seed **infrastructure** (seedFactory, utils, orchestrator), tests, types, or **demo-only synthetic `example` data** (fake accommodations, events, posts, reviews — content that must never represent a real environment). It DOES apply to curated `example` content bound for a live env (`partner`, `gastronomy`, `hostTrade`, `postSponsor`, `postSponsorship`, `experiences`) — every fixture here has a deterministic id, so "non-deterministic example data" is not a real exemption. See [packages/seed/CLAUDE.md](packages/seed/CLAUDE.md).
 - **`db:push` is dev-only** — NEVER run `drizzle-kit push` against the VPS. Use `pnpm db:migrate` for staging and production. On VPS use `hops db-migrate --target=staging|prod`.
 - **`db:generate` before a schema PR** — the drift guard blocks CI if the TS schema changed without a committed migration file.
@@ -735,6 +1074,26 @@ a PR, spot-check `mcp__linear__get_issue` on every issue named in that title bef
 trusting its state, and prefer NOT putting an HOS-N in a PR title unless that PR is
 genuinely the completing work for that issue.
 
+**The same automation also fires on PR OPEN, not only on merge** (measured
+2026-09-05). Opening PR #3237 — a docs-only PR publishing a spec, carrying no magic
+word — with `[HOS-1183]` in its title moved that issue straight from `Backlog` to
+`In Progress` on its own. So the spot-check above is needed at BOTH ends: once when
+the PR is opened, and again after it merges. This matters most for the Phase 1
+docs PR, whose title the `Validate PR Title` check REQUIRES to carry the tag — the
+tag is not optional, so the state drift is not avoidable by naming, only by
+correcting it afterwards. A spec whose implementation has not started belongs in
+`Backlog`; move it back by hand.
+
+**When a merge does NOT move the issue, suspect the automation, not the labels.**
+The `smoke-gate-sync` Action calls the Linear API over `curl`, and a degraded API
+that answers 5xx with an HTML body used to abort that job with a bare
+`Process completed with exit code 5`, leaving the issue in its pre-merge state with
+its `status-needs-smoke-*` labels intact — invisible from Linear's side, where the
+issue simply looks untouched. The job now validates the response and exits naming
+every issue it could not move, but the check that catches this in one step is the
+same either way: compare the issue's `updatedAt` against the merge time. If it is
+older, no automation touched it, and the state has to be set by hand.
+
 ### Legacy system (`.qtm/`) — do not use for new work
 
 `.qtm/specs/index.json`, `.qtm/tasks/index.json`, and `specs-prioritization.csv` are
@@ -856,10 +1215,10 @@ Para correr la app en un worktree (los 3 servers con puertos + DB aislados), **N
 
 Dos pares simétricos:
 
-- `pnpm cli wt:up` — levanta todo: puertos libres, DB por worktree clonada del template (o auto-heal), env, build de packages, 3 servers, health wait. Idempotente.
-- `pnpm cli wt:down` — para los servers **solamente** (DB + worktree quedan; `wt:up` reinicia al instante).
-- `pnpm cli wt:remove` — teardown total (servers + DB + worktree + branch); funciona desde adentro del worktree.
-- `pnpm cli wt:create` — imprime el uso de `wt-create.sh <type> <slug>` (el CLI no pasa args interactivos).
+- `hops servers-up` — levanta todo: puertos libres, DB por worktree clonada del template (o auto-heal), env, build de packages, 3 servers, health wait. Idempotente.
+- `hops servers-down` — para los servers **solamente** (DB + worktree quedan; `servers-up` reinicia al instante).
+- `hops wt-clean` — borrado interactivo de worktrees: teardown total (servers + DB + worktree + branch); funciona desde adentro del worktree.
+- Para crear: `bash ~/.claude/skills/worktree/scripts/wt-create.sh <type> <slug>` directo, o `hops start-issue HOS-N`, que arma el worktree del issue.
 
 Bootstrap (una vez por máquina): `bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template` crea `hospeda_template` desde `hospeda_dev` para que los worktrees clonen la DB al instante.
 

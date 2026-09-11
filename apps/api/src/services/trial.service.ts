@@ -1,12 +1,14 @@
 /**
  * Trial Service
  *
- * Manages 14-day trial lifecycle for all HOST users.
+ * Manages the trial lifecycle for all HOST users (`OWNER_TRIAL_DAYS` days —
+ * currently 30, not the 14 this docblock used to claim; `TOURIST_TRIAL_DAYS`
+ * is the same 30, see `packages/billing/src/constants/billing.constants.ts`).
  * Handles trial creation, status checks, expiry detection, and reactivation.
  *
  * Features:
  * - Auto-start trial on HOST registration
- * - 14-day countdown tracking
+ * - Countdown tracking against `OWNER_TRIAL_DAYS`
  * - Auto-block on expiry (dashboard blocked, listings hidden, data preserved)
  * - Trial to paid subscription conversion
  * - Batch expiry checking
@@ -19,12 +21,16 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
-import { SubscriptionStatusEnum } from '@repo/schemas';
+import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import {
     BILLING_EVENT_TYPES,
     calculateTrialDaysRemaining,
     checkSubscriptionStatusTransition,
-    DEFAULT_TRIAL_PLAN_SLUG,
+    excludeAddonDomainCondition,
+    hydrateSubscriptionProductDomains,
+    isAddonSubscription,
+    isOwnerCategorySubscription,
+    normalizeStoredSubscriptionStatus,
     QZPAY_TO_HOSPEDA_STATUS,
     type ReactivateFromTrialInput,
     type ReactivateFromTrialResult,
@@ -32,18 +38,27 @@ import {
     type ReactivateSubscriptionResult,
     resolveIntendedInterval,
     type StartTrialInput,
+    subscriptionMatchesDomain,
     type TrialEndingSubscription,
     type TrialStatus,
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
-import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import {
+    createPaidSubscription,
+    resolvePlanProductDomain
+} from './billing/paid-subscription-create.js';
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
+import { selectAccommodationSubscription } from './billing/plan-domain-guard.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
+import { expireLocalTrial } from './billing/trial-local-expiry.service.js';
+
+/** Milliseconds in a day. Durations are epoch arithmetic, never local-time setters (HOS-1010). */
+const MS_PER_DAY = 86_400_000;
 
 export type {
     ReactivateFromTrialInput,
@@ -82,53 +97,115 @@ const BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004;
 const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
 
 /**
- * Web path (with locale) to the owner pricing page that renders
- * `PricingCardsGrid.astro` — the ONLY page with the monthly/annual billing
- * toggle (HOS-115 §5). `/mi-cuenta/suscripcion` (the account subscription
- * page previously used here) renders `SubscriptionDashboard` instead, which
- * has no toggle — a `?interval=` query param appended to that URL would be
- * silently ignored. Every trial-eligible plan today is an owner plan (see
- * {@link DEFAULT_TRIAL_PLAN_SLUG}), so the owner pricing page is the correct,
- * single nudge target for every trial regardless of which plan it started on.
+ * Web path segment (under `/es/planes/<segment>/precios/`) to each vertical's
+ * own pricing page — the ONLY pages with the monthly/annual billing toggle
+ * (HOS-115 §5). `/mi-cuenta/suscripcion` (the account subscription page
+ * previously used here) renders `SubscriptionDashboard` instead, which has no
+ * toggle — a `?interval=` query param appended to that URL would be silently
+ * ignored.
+ *
+ * **This used to be a single constant** (`'/es/planes/anfitriones/precios/'`),
+ * on the claim that "every trial-eligible plan today is an owner plan". That
+ * was true when it was written (HOS-115) and false by the time HOS-1184
+ * restored local trials for gastronomy and experience listings — the
+ * conclusion (one hardcoded URL) survived the reason that had justified it,
+ * and every commerce trial's nudge email pointed a restaurant or tour owner at
+ * the ANFITRIONES (host) pricing page instead of their own (HOS-1283). The
+ * per-domain map below is the fix: one path segment per vertical that can
+ * actually hold a Hospeda-owned local trial today (see
+ * `createTrialSubscription`'s two callers — `accommodation-publish-deps.ts`
+ * and `commerce-trial-start.service.ts`). `tourist` and `partner` are included
+ * for completeness / fail-open safety even though neither currently reaches
+ * this function via a real trial.
+ *
+ * HOS-1032 moved the accommodation page to `/planes/anfitriones/precios/`. The
+ * old URL still 301s there, so an unrepointed link would not 404 — it would
+ * cost a round trip and, worse, DROP THE QUERY STRING, which is the one thing
+ * this URL exists to carry. An `?interval=annual` nudge would have landed on
+ * the monthly toggle, silently, for the customer who had already chosen
+ * annual.
+ *
+ * Spelled here rather than imported: `apps/api` does not depend on `apps/web`,
+ * so `PRICING_PAGE_PATH_BY_AUDIENCE` (`apps/web/src/lib/pricing-plans.ts`,
+ * the canonical mapping this mirrors) is not reachable from this package. The
+ * static guard `apps/web/test/static-guards/retired-pricing-urls.guard.test.ts`
+ * is what keeps every one of these literals from going stale again — it scans
+ * `apps/` and `packages/` for the retired paths, not just `apps/web`.
  */
-const TRIAL_UPGRADE_PATH = '/es/suscriptores/planes/';
+const TRIAL_UPGRADE_PATH_SEGMENT_BY_DOMAIN: Readonly<Record<string, string>> = {
+    accommodation: 'anfitriones',
+    gastronomy: 'gastronomia',
+    experience: 'experiencias',
+    tourist: 'turistas',
+    partner: 'aliados'
+};
 
 /**
- * Builds the trial→paid conversion nudge URL sent on the `TRIAL_ENDING_REMINDER`
- * notification (HOS-115 §5). Appends `?interval=<intendedInterval>` when the
- * trial recorded a valid intent, so the pricing page can pre-select the same
- * toggle the customer started from instead of defaulting to monthly. Degrades
- * gracefully — the query param is simply omitted — when `intendedInterval` is
- * missing or not one of the two known values.
+ * Resolves the pricing-page path segment for a trial's vertical.
  *
- * Single source of truth for this URL, with one live sender left:
- * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER`. It used to be shared
- * with `blockExpiredTrials`'s `TRIAL_EXPIRED` email, which HOS-171 deleted along
- * with the cancel-at-expiry cron — an elapsed card-first trial is a customer
- * MercadoPago is about to charge, not one to nudge into paying.
+ * Fails OPEN to accommodation — same convention as
+ * `subscriptionMatchesDomain` and `createTrialSubscription`'s own
+ * `planDomain ?? 'accommodation'` fallback — for `null`, `undefined`, or any
+ * value this map does not recognize (including `'addon'`, which never backs a
+ * real trial). Accommodation is overwhelmingly the common case and, unlike
+ * every other domain, was already correct before HOS-1283; failing closed
+ * here would regress it for a merely unrecognized value.
+ */
+function resolveTrialUpgradePathSegment(productDomain: string | null | undefined): string {
+    const fallback = TRIAL_UPGRADE_PATH_SEGMENT_BY_DOMAIN.accommodation as string;
+    if (!productDomain) return fallback;
+    return TRIAL_UPGRADE_PATH_SEGMENT_BY_DOMAIN[productDomain] ?? fallback;
+}
+
+/**
+ * Builds the trial→paid conversion nudge URL sent on all nine sends of the
+ * trial series (HOS-1012, HOS-1283). Appends `?interval=<intendedInterval>`
+ * when the trial recorded a valid intent, so the pricing page can pre-select
+ * the same toggle the customer started from instead of defaulting to monthly.
+ * Degrades gracefully — the query param is simply omitted — when
+ * `intendedInterval` is missing or not one of the two known values.
  *
- * A third sender once existed — `trial-pre-end-notif.job.ts` (SPEC-126 D5)
- * also sent `TRIAL_ENDING_REMINDER`, duplicating `notification-schedule`'s
- * send and building its own divergent `/cuenta/planes` link inline instead
- * of calling this function. It was disabled under HOS-115 as a duplicate-cron
- * fix and then DELETED under HOS-121, once its two robustness advantages
- * (skip-tolerant D-3 window + durable `billing_subscription_events` dedup)
- * were ported into `notification-schedule.job.ts`. Its divergent link is gone;
- * this function is again literally the only trial-nudge URL pattern in play.
+ * **Corrected (HOS-1283): this is NOT called from `TRIAL_ENDING_REMINDER`.**
+ * The previous docblock here claimed "one live sender left:
+ * `notification-schedule.job.ts`'s `TRIAL_ENDING_REMINDER`" — that was true at
+ * HOS-115 but stopped being true once HOS-1012 replaced the single-send
+ * reminder with the nine-send series: `NotificationType.TRIAL_ENDING_REMINDER`
+ * has no `sendNotification` call anywhere in the codebase today (verified by
+ * search), and the ONE actual caller of this function is
+ * `trial-series-dispatch.ts`'s `dispatchOne`, for all nine sends. The
+ * `TrialEndingReminder` template and type still exist but are effectively
+ * dead — left alone here since retiring them is outside HOS-1283's scope.
+ * `blockExpiredTrials`'s `TRIAL_EXPIRED` email, which used to share this URL
+ * too, was deleted entirely by HOS-171 along with the cancel-at-expiry cron —
+ * an elapsed card-first trial is a customer MercadoPago is about to charge,
+ * not one to nudge into paying.
+ *
+ * The locale segment stays a hardcoded `/es/` even though the vertical is now
+ * derived (HOS-1283): every template in `@repo/notifications` is Spanish-only
+ * by owner decision (2026-09-01, see `trial-series-shared.ts`'s docblock), so
+ * varying the URL's locale without the surrounding copy following it would
+ * send a Portuguese-reading link inside a Spanish email. Locale-aware CTAs are
+ * therefore NOT part of this fix — flagged for the owner rather than decided
+ * here (this repo's "no autonomous product decisions" rule).
  *
  * @param input.siteUrl - `HOSPEDA_SITE_URL` (no trailing slash expected).
  * @param input.intendedInterval - Raw value read off the trial
  *   subscription's `metadata.intendedInterval` (unknown/untyped at the
  *   source — the QZPay SDK does not narrow subscription metadata).
+ * @param input.productDomain - The trial's `billing_subscriptions.product_domain`
+ *   value (HOS-1283). `null`/`undefined`/unrecognized fails open to the
+ *   accommodation pricing page — see {@link resolveTrialUpgradePathSegment}.
  * @returns The absolute upgrade URL, with `?interval=` appended only when a
  *   valid interval was recorded.
  */
 export function buildTrialUpgradeUrl(input: {
     readonly siteUrl: string;
     readonly intendedInterval?: unknown;
+    readonly productDomain?: string | null;
 }): string {
-    const { siteUrl, intendedInterval } = input;
-    const base = `${siteUrl}${TRIAL_UPGRADE_PATH}`;
+    const { siteUrl, intendedInterval, productDomain } = input;
+    const segment = resolveTrialUpgradePathSegment(productDomain);
+    const base = `${siteUrl}/es/planes/${segment}/precios/`;
     const resolved = resolveIntendedInterval(intendedInterval);
     return resolved ? `${base}?interval=${resolved}` : base;
 }
@@ -182,6 +259,48 @@ function toIsoOrNull(value: unknown): string | null {
 }
 
 /**
+ * Reads `billing_subscriptions.trial_converted` for a set of subscription
+ * ids, keyed by id.
+ *
+ * `trial_converted` is a Hospeda-only Drizzle column (like `product_domain`
+ * — see {@link hydrateSubscriptionProductDomains}'s doc) that the QZPay SDK's
+ * mapper drops from the objects `subscriptions.getByCustomerId()` returns, so
+ * it has to be read straight from `@repo/db` instead of off the mapped
+ * subscription. It is written by FOUR call sites — `trial-supersede-on-
+ * activation.ts` and `webhooks/mercadopago/subscription-payment-handler.ts`
+ * (`true`, the trial converted to paid), `trial-local-expiry.service.ts`
+ * (`false`, it expired without converting), and this file's own
+ * `reconcileExpiredTrials` (`converted`, either value, mirroring the
+ * card-first provider's verdict) — and defaults to `false`
+ * (`packages/drizzle/src/schema/subscriptions.schema.ts`) for every row none
+ * of those four ever touched, so a subscription that was cancelled by, say,
+ * `finalize-cancelled-subs` without ever having converted correctly reads as
+ * `false` here, not as a false "converted" positive.
+ *
+ * @param ids - Subscription ids to look up. Deduplication is the caller's
+ *   concern; an empty array short-circuits without a query.
+ * @returns Map of subscription id to its stored `trial_converted` value
+ *   (`false` when the row itself stores `null`, matching the column's own
+ *   default).
+ */
+async function hydrateTrialConverted(ids: readonly string[]): Promise<Map<string, boolean>> {
+    if (ids.length === 0) {
+        return new Map();
+    }
+
+    const db = getDb();
+    const rows = await db
+        .select({
+            id: billingSubscriptions.id,
+            trialConverted: billingSubscriptions.trialConverted
+        })
+        .from(billingSubscriptions)
+        .where(inArray(billingSubscriptions.id, ids as string[]));
+
+    return new Map(rows.map((row) => [row.id, row.trialConverted === true]));
+}
+
+/**
  * Result of a reconciliation run for a single customer.
  */
 export interface ReconcileResult {
@@ -205,9 +324,16 @@ export class TrialService {
      * was the `TRIAL_EXPIRED` email the cancel-at-expiry cron sent. Card-first
      * reconciliation sends nothing (HOS-171): a converting customer was already
      * warned by `TRIAL_ENDING_REMINDER` before the charge, and a failed charge is
-     * the dunning cron's story. `TRIAL_ENDING_REMINDER` is dispatched by
-     * `notification-schedule.job.ts`, not from here, so the sender is gone rather
-     * than left dangling for callers to dutifully wire into nothing.
+     * the dunning cron's story, so the sender is gone rather than left dangling
+     * for callers to dutifully wire into nothing.
+     *
+     * "`TRIAL_ENDING_REMINDER` is dispatched by `notification-schedule.job.ts`"
+     * was true at HOS-171 and stopped being true once HOS-1012 replaced that
+     * single-send reminder with the nine-send trial series — the type has no
+     * live `sendNotification` call anywhere in the codebase today (HOS-1283
+     * verified this while fixing `buildTrialUpgradeUrl`'s own stale doc; see
+     * that function). The reasoning above (why this constructor takes no
+     * sender) still holds regardless.
      */
     constructor(private readonly billing: QZPayBilling | null) {}
 
@@ -229,14 +355,37 @@ export class TrialService {
      *    - `trialing` is the only status whose trial can expire (HOS-171: a
      *      converted card-first row keeps its `trialEnd` while `active`).
      * 2. Only when there is NO live subscription, the most recent historical
-     *    canceled trial, reported as expired **iff** its `trialEnd` has actually
-     *    elapsed — or if the stored date is corrupt, which fails closed.
+     *    expired-or-cancelled trial (HOS-337: both cancellation spellings —
+     *    qzpay-core's 1-L `canceled` and Hospeda's own 2-L `cancelled` — via
+     *    `normalizeStoredSubscriptionStatus`; `CANCELLED` additionally scoped to
+     *    non-tourist plans (`isOwnerCategorySubscription`) that never converted,
+     *    see inline),
+     *    reported as expired **iff** its `trialEnd` has actually elapsed — or
+     *    if the stored date is corrupt, which fails closed.
      *
-     * @param input - Receives the billing customer ID.
+     * `input.productDomain` (HOS-1282) is an OPT-IN narrowing, not a change to
+     * the default resolution the paywall depends on. Omitted (both
+     * `trialMiddleware` call sites and this route's own default), the method
+     * keeps its long-standing domain-BLIND behavior — see the "DELIBERATELY
+     * NOT domain-filtered" comment inline below for why that default must
+     * stay as-is. Passed explicitly, `subscriptions` is narrowed to that one
+     * domain (via `subscriptionMatchesDomain`) before either resolution step
+     * runs, so a caller that already knows which vertical it cares about —
+     * e.g. the publish flow asking "is THIS accommodation's trial expired",
+     * never "should this write be paywalled" — gets an answer that cannot be
+     * masked by an unrelated live subscription in a different vertical (the
+     * exact failure this function's default behavior still has, by design,
+     * per HOS-337).
+     *
+     * @param input - Receives the billing customer ID, and optionally the
+     *   product domain to scope the resolution to.
      * @returns Trial status information. Never throws: on error it returns the
      *   safe "no trial" defaults so a billing outage cannot paywall the site.
      */
-    async getTrialStatus(input: { customerId: string }): Promise<TrialStatus> {
+    async getTrialStatus(input: {
+        customerId: string;
+        productDomain?: ProductDomainValue;
+    }): Promise<TrialStatus> {
         if (!this.billing) {
             return {
                 isOnTrial: false,
@@ -249,13 +398,44 @@ export class TrialService {
             };
         }
 
-        const { customerId } = input;
+        const { customerId, productDomain } = input;
 
         try {
-            // Get customer's subscriptions
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            // Get customer's subscriptions.
+            //
+            // HOS-847: hydrated and then stripped of `product_domain = 'addon'`
+            // rows before anything else looks at them. A recurring add-on has
+            // its OWN `billing_subscriptions` row and PR 5 is the first thing
+            // that ever moves one to `active`; `getByCustomerId` returns it like
+            // any other and does not even populate `productDomain` (HOS-1104,
+            // see `hydrateSubscriptionProductDomains`). Left in, that `active`
+            // row beats a real `trialing` plan row on
+            // `LIVE_STATUS_PRECEDENCE` — deterministically, since `active` ranks
+            // 1 and `trialing` 2 — and `getTrialStatus` then answers
+            // `isOnTrial: false, isExpired: false`. `trialMiddleware` is mounted
+            // globally and 402s every write off that verdict, so the customer
+            // keeps writing to a paid platform for free for as long as the
+            // add-on lives, INCLUDING after their real trial has expired. This
+            // is not the documented commerce hole below: an add-on is not a
+            // second product the customer subscribed to, it is a line item on
+            // this one.
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const hydratedSubscriptions = (
+                await hydrateSubscriptionProductDomains(rawSubscriptions ?? [])
+            ).filter((sub) => !isAddonSubscription(sub));
 
-            if (!subscriptions || subscriptions.length === 0) {
+            // HOS-1282: opt-in narrowing (see the doc above). `undefined` keeps
+            // the domain-BLIND default every existing caller (the paywall, this
+            // route with no query param) relies on — every subscription stays
+            // in play, same as before this parameter existed.
+            const subscriptions =
+                productDomain === undefined
+                    ? hydratedSubscriptions
+                    : hydratedSubscriptions.filter((sub) =>
+                          subscriptionMatchesDomain(sub, productDomain)
+                      );
+
+            if (subscriptions.length === 0) {
                 return {
                     isOnTrial: false,
                     isExpired: false,
@@ -278,16 +458,20 @@ export class TrialService {
             // `isEntitlementGrantingStatus` is the shared definition of "which
             // statuses are live right now", so that divergence cannot come back.
             //
-            // DELIBERATELY NOT domain-filtered, unlike `entitlement.ts` and
-            // `start-paid.ts`, which AND this predicate with
+            // DELIBERATELY NOT domain-filtered BY DEFAULT, unlike `entitlement.ts`
+            // and `start-paid.ts`, which AND this predicate with
             // `isAccommodationSubscription` (SPEC-239): `trialMiddleware` is global
             // and paywalls writes of EVERY domain, so scoping the lookup to
             // accommodation subs would start answering a commerce owner's commerce
             // writes with a 402 about an accommodation trial. Known consequence: a
             // live commerce sub can mask an elapsed accommodation trial — and this
             // change EXTENDS that hole to `comp`, since a comp row could not be
-            // selected at all before. Narrowing it needs per-domain trial state, not a
-            // one-line predicate change (HOS-337).
+            // selected at all before. Narrowing the PAYWALL's own resolution needs
+            // per-domain trial state layered into the global gate itself, not a
+            // one-line predicate change (HOS-337) — `input.productDomain` above
+            // does NOT do that: it is opt-in, and `subscriptions` is already
+            // narrowed to the requested domain by the time this line runs, only
+            // when a caller other than the paywall asked for it (HOS-1282).
             //
             // Second consequence of the ordering below: a customer holding a live
             // commerce `active` sub AND a genuine accommodation trial now
@@ -327,24 +511,114 @@ export class TrialService {
                 // definition NOT the customer's current state, so it must only be
                 // consulted when there is no current state to read.
                 //
-                // KNOWN, DELIBERATELY UNFIXED HERE — see HOS-337. This filter matches
-                // only the 1-L `'canceled'` that qzpay-core writes, while every DIRECT
-                // Hospeda writer stores the 2-L `'cancelled'`, and it ignores `expired`
-                // entirely. The branch is NOT dead (the HOS-285 prod lockout came
-                // through it) but it is blind to the dominant cancellation paths, so
-                // for most cancelled customers the paywall never fires. Closing that
-                // activates the gate for a large population and needs its own scoping:
-                // owner-category only (tourist plans carry a 14-day trial too),
-                // `trial_converted` as the conversion signal (`current_period_start` is
-                // insert-only, so period arithmetic cannot detect a charge), the
-                // dunning/pause interaction, and a staging smoke.
+                // CORRECTED (HOS-1282). This comment used to say the filter "ignores
+                // `expired` entirely" and left that unfixed — true when it was
+                // written (pre-HOS-1012, a trial that lapsed without converting was
+                // cancelled at the provider, landing here as `'canceled'`). HOS-1012
+                // made a Hospeda-owned local trial (`mp_subscription_id = NULL`) the
+                // only kind that expires organically, and BOTH writers of that
+                // outcome — `trial-local-expiry.service.ts`'s `expireLocalTrial` and
+                // `trial-supersede-on-activation.ts`'s `SUPERSEDED_TRIAL_STATUS` —
+                // stamp `SubscriptionStatusEnum.EXPIRED`, never `'canceled'`. So the
+                // "ignores `expired`" gap stopped being partial and started being
+                // total: EVERY locally-expired trial fell through this branch and got
+                // "you never had a trial" instead of the paywall this function backs.
+                // Fixed below by also matching the normalized `EXPIRED` status.
                 //
-                // Note one behaviour change this fix DOES make here: with the date
-                // comparison below, a subscription hard-cancelled mid-trial keeps write
-                // access until its original `trialEnd` instead of losing it at once.
-                // Whether an admin revocation should be immediate is part of HOS-337.
+                // FIXED (HOS-337): this filter used to match only the 1-L
+                // `'canceled'` that qzpay-core writes, while every DIRECT Hospeda
+                // writer of a genuine (non-expiry) cancellation stores the 2-L
+                // `'cancelled'` (the MercadoPago webhook via
+                // `QZPAY_TO_HOSPEDA_STATUS`, `finalize-cancelled-subs`,
+                // `refund-lifecycle.service.ts`) — the DOMINANT cancellation
+                // paths, for which the paywall never fired. Both spellings are
+                // now unified via `normalizeStoredSubscriptionStatus`, which
+                // maps qzpay's 1-L `canceled` AND Hospeda's own 2-L `cancelled`
+                // to the same `SubscriptionStatusEnum.CANCELLED` (see that
+                // function's docblock) — the same normalizer already used below
+                // for `EXPIRED`.
+                //
+                // Recognizing `CANCELLED` is scoped, unlike `EXPIRED` (which
+                // needs no scoping: it is written ONLY by the two local-trial
+                // paths, both already accommodation/gastronomy/experience-only —
+                // `createTrialSubscription` has exactly two call sites):
+                //
+                // 1. `isOwnerCategorySubscription`, computed per candidate BELOW,
+                //    before the sort — not on the sort's winner, or a newer
+                //    tourist cancellation could still mask an older owner one by
+                //    winning the "most recent trialEnd" sort first. CORRECTED —
+                //    this does NOT mean "owner/complex-category plans only": it
+                //    reads `row.category ?? 'owner'`
+                //    (`subscription-product-domain.ts`), so it also returns
+                //    `true` — is included — for gastronomy/experience/partner
+                //    commerce plans, which are tagged `category: 'owner'` on
+                //    purpose (`product_domain` is their real discriminator, not
+                //    `category` — see `commerceVerticalTier` in
+                //    `plans.config.ts`), and for ANY plan whose stored category
+                //    is missing entirely (the `?? 'owner'` fallback). The actual
+                //    scope this predicate draws is "not literally tagged
+                //    tourist", not "owner/complex only" — it returns `false`
+                //    only for the two `tourist-*` plans, which are the ones this
+                //    exclusion exists for. Tourist plans carry their own 30-day
+                //    trial (`TOURIST_TRIAL_DAYS === OWNER_TRIAL_DAYS === 30`) and
+                //    this middleware is GLOBAL: an unscoped match would 402 a
+                //    tourist's favourites/reviews/profile writes with a "your
+                //    trial expired, upgradeAudience: 'host'" message that
+                //    contradicts the entitlement middleware immediately before
+                //    it, which already resolved them to the free tier (the same
+                //    divergence class HOS-285 was about). KNOWN RESIDUAL RISK:
+                //    `isOwnerCategorySubscription` returns `false` — excluded —
+                //    for a missing or soft-deleted plan row too, so a dangling
+                //    `planId` fails this branch OPEN (no paywall) rather than
+                //    closed. Not hardened here; tracked as a pre-existing
+                //    property of that shared predicate (also used by
+                //    `entitlement.ts`), not something this fix introduces.
+                // 2. `trial_converted !== true` (see {@link hydrateTrialConverted}).
+                //    A subscription that DID convert to paid before being
+                //    cancelled is not "a trial that expired without paying" —
+                //    it is a paid plan the customer later cancelled, and this
+                //    branch exists to report the former, not the latter.
+                //    `trial_converted` defaults to `false`, so the dominant
+                //    "cancelled without ever converting" case this fix targets
+                //    is unaffected by the exclusion.
+                //
+                // Note one behaviour change the EXPIRED half of this fix (HOS-1282)
+                // already made: with the date comparison below, a subscription
+                // hard-cancelled mid-trial keeps write access until its original
+                // `trialEnd` instead of losing it at once. Whether an admin
+                // revocation should be immediate remains an open owner decision
+                // (HOS-337), unchanged by this pass. Also unchanged: the
+                // dunning/pause interaction (`trialMiddleware` runs before
+                // `pastDueGraceMiddleware`) and the blast-radius allowlist gap
+                // (profile/comments/conversations/bookmarks) the original
+                // HOS-337 analysis flagged — neither is a status-matching bug,
+                // so neither is touched by this pass.
+                const cancelledCandidates = subscriptions.filter(
+                    (sub) =>
+                        normalizeStoredSubscriptionStatus(sub.status) ===
+                            SubscriptionStatusEnum.CANCELLED && sub.trialEnd != null
+                );
+                const trialConvertedById = await hydrateTrialConverted(
+                    cancelledCandidates.map((sub) => sub.id)
+                );
+                const ownerCancelledIds = new Set<string>();
+                for (const sub of cancelledCandidates) {
+                    if (trialConvertedById.get(sub.id) === true) {
+                        continue;
+                    }
+                    if (await isOwnerCategorySubscription({ planId: sub.planId })) {
+                        ownerCancelledIds.add(sub.id);
+                    }
+                }
+
                 const historicalTrialSub = subscriptions
-                    .filter((sub) => sub.status === 'canceled' && sub.trialEnd != null)
+                    .filter(
+                        (sub) =>
+                            (normalizeStoredSubscriptionStatus(sub.status) ===
+                                SubscriptionStatusEnum.EXPIRED ||
+                                ownerCancelledIds.has(sub.id)) &&
+                            sub.trialEnd != null
+                    )
                     .sort((a, b) => {
                         // Most-recent first: use trialEnd as the ordering key. An
                         // unparseable value sorts FIRST (not as NaN, which would make
@@ -661,7 +935,12 @@ export class TrialService {
                             eq(billingSubscriptions.status, SubscriptionStatusEnum.TRIALING),
                             isNotNull(billingSubscriptions.trialEnd),
                             lt(billingSubscriptions.trialEnd, new Date()),
-                            isNull(billingSubscriptions.deletedAt)
+                            isNull(billingSubscriptions.deletedAt),
+                            // HOS-847: a recurring add-on's own preapproval row
+                            // should never legitimately be 'trialing' (add-on
+                            // provisioning always bakes trialDays: 0), but this
+                            // sweep must not depend on that staying true.
+                            excludeAddonDomainCondition()
                         )
                     )
                     .limit(BLOCK_EXPIRED_TRIALS_BATCH_SIZE);
@@ -760,33 +1039,26 @@ export class TrialService {
                         continue;
                     }
 
-                    // A trialing subscription with no preapproval cannot be
-                    // reconciled — there is no provider record to ask. Under
-                    // card-first this should not exist (every trial is created as a
-                    // preapproval), so surface it instead of guessing an outcome.
-                    // Guessing here means either cancelling a paying customer or
-                    // granting a free one; both are worse than an alert.
+                    // ── HOS-1012: a trial with no preapproval is OURS ─────────────
+                    // Before HOS-1012 this was an anomaly worth an alert: under
+                    // card-first every trial was a preapproval, so a missing
+                    // provider id meant something had gone wrong, and guessing an
+                    // outcome would either cut off a paying customer or hand out a
+                    // free one.
+                    //
+                    // It is now the normal shape of a Hospeda-owned trial, and our
+                    // clock is the only clock. The two kinds of row are told apart
+                    // HERE rather than by two jobs competing for the same advisory
+                    // lock: the remaining legacy rows are converted only after this
+                    // ships (T-032), and staging keeps minting new ones until it is
+                    // redeployed.
                     if (!subscription.mpSubscriptionId) {
-                        Sentry.captureException(
-                            new Error(
-                                `Trialing subscription has no provider id: ${subscription.id}`
-                            ),
-                            {
-                                extra: {
-                                    subscriptionId: subscription.id,
-                                    customerId: subscription.customerId,
-                                    trialEnd: trialEnd.toISOString()
-                                },
-                                tags: {
-                                    module: 'trial-service',
-                                    operation: 'reconcileExpiredTrials'
-                                }
-                            }
-                        );
-                        apiLogger.warn(
-                            { subscriptionId: subscription.id },
-                            'reconcileExpiredTrials: trialing subscription has no mpSubscriptionId — cannot reconcile, skipping'
-                        );
+                        const { outcome } = await expireLocalTrial({ subscription });
+
+                        if (outcome === 'expired') {
+                            reconciledCount++;
+                        }
+
                         continue;
                     }
 
@@ -877,8 +1149,13 @@ export class TrialService {
                                 status: targetStatus,
                                 // `trial_converted` / `trial_converted_at` record how
                                 // the trial ENDED. Under card-first the provider's
-                                // verdict decides that, so this is now the only
-                                // place either column is written.
+                                // verdict decides that. NOT the only writer of
+                                // either column — `trial-supersede-on-activation.ts`,
+                                // `webhooks/mercadopago/subscription-payment-
+                                // handler.ts` and `trial-local-expiry.service.ts`
+                                // also write them, each for its own trigger (see
+                                // {@link hydrateTrialConverted}'s doc for the full
+                                // list).
                                 trialConverted: converted,
                                 trialConvertedAt: new Date()
                             })
@@ -986,8 +1263,14 @@ export class TrialService {
             const currentTrialEnd = subscription.trialEnd
                 ? new Date(subscription.trialEnd)
                 : new Date();
-            const newTrialEnd = new Date(currentTrialEnd);
-            newTrialEnd.setDate(newTrialEnd.getDate() + additionalDays);
+            // Extending a trial by N days is a DURATION, so it is plain epoch
+            // arithmetic. The `setDate(getDate() + n)` this replaces read and
+            // wrote in the process's local timezone, which happens to agree
+            // here only because Argentina has had no DST since 2009 — an
+            // undeclared premise the code should not rest on (HOS-1010).
+            // `promo-code.trial-extension.ts` already computes the identical
+            // value this way.
+            const newTrialEnd = new Date(currentTrialEnd.getTime() + additionalDays * MS_PER_DAY);
 
             // Update both the actual trialEnd field and metadata for audit trail
             await this.billing.subscriptions.update(subscriptionId, {
@@ -1112,10 +1395,15 @@ export class TrialService {
             // (unexpected) multi-sub case without losing any id.
             const existingSubscriptions =
                 await this.billing.subscriptions.getByCustomerId(customerId);
-            const supersedesSubscriptionId = (existingSubscriptions ?? [])
+            // HOS-1322: kept as a LIST as well as the comma-joined string. The
+            // string is the metadata contract the webhook reads; the list is what
+            // `createPaidSubscription`'s duplicate guard needs, and a guard that
+            // was handed `'id-a,id-b'` would match no row at all and refuse the
+            // very conversion this method exists to perform.
+            const supersededSubscriptionIds = (existingSubscriptions ?? [])
                 .filter((sub) => sub.status === 'trialing')
-                .map((sub) => sub.id)
-                .join(',');
+                .map((sub) => sub.id);
+            const supersedesSubscriptionId = supersededSubscriptionIds.join(',');
 
             if (interval === 'annual') {
                 // HOS-123: annual reactivation routes through the one-time
@@ -1143,6 +1431,13 @@ export class TrialService {
                     billingInterval: 'annual',
                     paymentMethodReturnUrl: urls.successUrl,
                     notificationUrl: urls.notificationUrl,
+                    // HOS-1322: the trialing rows this conversion replaces, named
+                    // so the primitive's duplicate guard exempts THEM and nothing
+                    // else. The old row deliberately stays live until the webhook
+                    // confirms the new preapproval (see below), so without this
+                    // the guard would read it as a duplicate and refuse the
+                    // conversion.
+                    supersedesSubscriptionIds: supersededSubscriptionIds,
                     metadata: {
                         convertedFromTrial: 'true',
                         convertedAt: new Date().toISOString(),
@@ -1196,6 +1491,11 @@ export class TrialService {
                 priceId,
                 paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
                 notificationUrl: urls.notificationUrl,
+                // HOS-1322: see the annual branch above — the trialing rows this
+                // conversion replaces stay live until the webhook confirms the
+                // new preapproval, so the primitive's duplicate guard has to be
+                // told which rows those are.
+                supersedesSubscriptionIds: supersededSubscriptionIds,
                 metadata: {
                     convertedFromTrial: 'true',
                     convertedAt: new Date().toISOString(),
@@ -1303,9 +1603,18 @@ export class TrialService {
                 billingInterval
             });
 
-            const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            // HOS-847: add-on rows are excluded here for the same reason as in
+            // `getTrialStatus`. A customer who cancels their plan but keeps a
+            // live recurring add-on would otherwise hit the
+            // `ACTIVE_SUBSCRIPTION_EXISTS` 409 below on the add-on's own
+            // subscription row — with no plan to change and no route left to
+            // resubscribe through.
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const subscriptions = (
+                await hydrateSubscriptionProductDomains(rawSubscriptions ?? [])
+            ).filter((sub) => !isAddonSubscription(sub));
 
-            if (!subscriptions || subscriptions.length === 0) {
+            if (subscriptions.length === 0) {
                 // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
                 // typed business error mapped to HTTP 404 by
                 // `mapSubscriptionCheckoutErrorToHttp`.
@@ -1315,13 +1624,55 @@ export class TrialService {
                 );
             }
 
-            // Reject if any subscription is already live. HOS-702: the canonical
-            // entitlement-granting set, so a `comp` subscriber cannot "reactivate"
-            // a stale cancelled row on top of their complimentary grant — the
-            // hand-rolled pair this replaces let exactly that through.
-            const activeOrTrialing = subscriptions.find((sub) =>
-                isEntitlementGrantingStatus(sub.status)
-            );
+            // HOS-1277: which domain THIS reactivation is for. `subscriptions`
+            // above hydrates every one of the customer's product domains, so
+            // without this the checks below reached across verticals — a host
+            // reactivating their ACCOMMODATION plan got a 409
+            // `ACTIVE_SUBSCRIPTION_EXISTS` off an unrelated live GASTRONOMY
+            // subscription, and the "find a canceled subscription" step could
+            // just as easily hand a gastronomy plan's cancelled row to an
+            // accommodation reactivation.
+            //
+            // `resolvePlanProductDomain` re-reads the column fresh rather than
+            // trusting `plan` (HOS-1233 T-032) — but `resolveReactivationPlan`
+            // already proved this exact `planId` exists, so a failure here is a
+            // transient DB blip, not a bad id. Defaulting to ACCOMMODATION on
+            // that failure — rather than refusing the whole reactivation — keeps
+            // this degrading exactly like it did before this fix existed (when
+            // the domain was never read at all), for the domain most
+            // reactivation targets belong to.
+            let planDomain: ProductDomainValue;
+            try {
+                planDomain = await resolvePlanProductDomain({ planId: plan.id });
+            } catch (error) {
+                apiLogger.warn(
+                    {
+                        customerId,
+                        planId: plan.id,
+                        error: error instanceof Error ? error.message : String(error)
+                    },
+                    'Reactivation: plan product-domain lookup failed — defaulting to accommodation'
+                );
+                planDomain = ProductDomainEnum.ACCOMMODATION;
+            }
+
+            // Accommodation OR tourist, ORDERED — never an unordered match
+            // between them — for the same reason `selectAccommodationSubscription`
+            // exists (HOS-1213/HOS-1233): a plan filed under the accommodation
+            // catalogue bucket can be a tourist-tier plan whose SUBSCRIPTION rows
+            // carry `productDomain: 'tourist'`, not `'accommodation'`. Every
+            // other domain matches itself exactly — there is no tourist-style
+            // ambiguity for gastronomy/experience/partner subscriptions.
+            const activeOrTrialing =
+                planDomain === ProductDomainEnum.ACCOMMODATION
+                    ? await selectAccommodationSubscription(
+                          subscriptions.filter((sub) => isEntitlementGrantingStatus(sub.status))
+                      )
+                    : subscriptions.find(
+                          (sub) =>
+                              isEntitlementGrantingStatus(sub.status) &&
+                              subscriptionMatchesDomain(sub, planDomain)
+                      );
 
             if (activeOrTrialing) {
                 // Report the actual status rather than collapsing it to one of two
@@ -1337,8 +1688,33 @@ export class TrialService {
                 );
             }
 
-            // Find a canceled subscription to reactivate from
-            const canceledSub = subscriptions.find((sub) => sub.status === 'canceled');
+            // Find a canceled subscription to reactivate from, scoped to the
+            // SAME domain as the target plan (HOS-1277) — see above.
+            //
+            // FIXED (HOS-337, caught in review): this used to compare against the
+            // literal 1-L `'canceled'` only. `getTrialStatus` above (this same
+            // file) now recognizes the DOMINANT cancellation paths — the
+            // MercadoPago webhook, `finalize-cancelled-subs`,
+            // `refund-lifecycle.service.ts` — all of which store the 2-L
+            // `'cancelled'`, and fires the trial paywall for those rows. A host
+            // paywalled that way would reach this method to reactivate and get a
+            // 404 `NO_CANCELED_SUBSCRIPTION` from a raw 1-L check that could never
+            // match its own row — locked out of the product AND unable to exit
+            // that lock. Normalized via `normalizeStoredSubscriptionStatus`, the
+            // same function used above, so both spellings resolve here exactly as
+            // they do in the paywall that sent the customer to this endpoint.
+            const isCancelledStatus = (status: unknown): boolean =>
+                normalizeStoredSubscriptionStatus(status) === SubscriptionStatusEnum.CANCELLED;
+            const canceledSub =
+                planDomain === ProductDomainEnum.ACCOMMODATION
+                    ? await selectAccommodationSubscription(
+                          subscriptions.filter((sub) => isCancelledStatus(sub.status))
+                      )
+                    : subscriptions.find(
+                          (sub) =>
+                              isCancelledStatus(sub.status) &&
+                              subscriptionMatchesDomain(sub, planDomain)
+                      );
 
             if (!canceledSub) {
                 // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
@@ -1388,6 +1764,12 @@ export class TrialService {
                     billingInterval: 'annual',
                     paymentMethodReturnUrl: urls.successUrl,
                     notificationUrl: urls.notificationUrl,
+                    // HOS-1322: the row this reactivation replaces. A hard-cancelled
+                    // row is not live and would not have blocked, but the selector
+                    // above also accepts a SOFT-cancelled one, whose status is still
+                    // `active` until the finalization cron runs — naming it is what
+                    // keeps that case working.
+                    supersedesSubscriptionIds: [canceledSub.id],
                     metadata: {
                         reactivatedFromCanceled: 'true',
                         reactivatedAt: new Date().toISOString(),
@@ -1444,6 +1826,8 @@ export class TrialService {
                 priceId,
                 paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
                 notificationUrl: urls.notificationUrl,
+                // HOS-1322: see the annual branch above.
+                supersedesSubscriptionIds: [canceledSub.id],
                 metadata: {
                     reactivatedFromCanceled: 'true',
                     reactivatedAt: new Date().toISOString(),
@@ -1668,9 +2052,18 @@ export class TrialService {
         const { customerId } = input;
 
         try {
-            const allSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            // HOS-847: add-on rows are removed before this reaper sees them.
+            // It cancels every live subscription but the newest, and a recurring
+            // add-on's own row is live and — being created at the moment of
+            // purchase — is usually the newest of all. Left in, buying an add-on
+            // would cancel the plan that add-on extends, and a customer holding
+            // two add-ons would have one of them silently reaped by the other.
+            const rawSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+            const allSubscriptions = (
+                await hydrateSubscriptionProductDomains(rawSubscriptions ?? [])
+            ).filter((sub) => !isAddonSubscription(sub));
 
-            if (!allSubscriptions || allSubscriptions.length === 0) {
+            if (allSubscriptions.length === 0) {
                 return { cancelledCount: 0, cancelledIds: [], keptId: null };
             }
 

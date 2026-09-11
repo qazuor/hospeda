@@ -13,6 +13,16 @@ import { useEffect, useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import type { DataTableColumn } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -58,6 +68,12 @@ function BillingPlansPage() {
     const [planToSoftDelete, setPlanToSoftDelete] = useState<ParsedPlanRecord | null>(null);
     // Plan pending a permanent-delete confirmation.
     const [planToHardDelete, setPlanToHardDelete] = useState<ParsedPlanRecord | null>(null);
+    // Pending active-state toggle, captured at click time so a second click on
+    // another row before this dialog closes can't apply the wrong `isActive`.
+    const [pendingToggleActive, setPendingToggleActive] = useState<{
+        id: string;
+        isActive: boolean;
+    } | null>(null);
 
     // Fetch plans from the DB-backed API endpoint
     const { data, isLoading, error } = usePlansQuery({
@@ -118,8 +134,11 @@ function BillingPlansPage() {
     const handleSubmit = async (payload: CreatePlanPayload): Promise<PlanSubmitResult> => {
         if (editingPlan) {
             // Update: use id (UUID) as the mutation identifier per D1.
-            // slug is stripped from the payload (immutable after creation).
-            const { slug: _slug, ...updateFields } = payload;
+            // slug is stripped from the payload (immutable after creation), and
+            // so is productDomain (HOS-1233): the domain is a capability-layer
+            // field that config owns, not an operator decision, and
+            // `UpdateBillingPlanSchema` is `.strict()` — sending it would 400.
+            const { slug: _slug, productDomain: _productDomain, ...updateFields } = payload;
             const result = await updateMutation.mutateAsync({
                 id: editingPlan.id,
                 ...updateFields
@@ -131,15 +150,21 @@ function BillingPlansPage() {
     };
 
     /**
-     * Toggles active state for a plan by UUID (D1: id-based mutations).
+     * Opens the activate/deactivate confirmation dialog for a plan by UUID
+     * (D1: id-based mutations). The mutation itself runs from
+     * {@link confirmToggleActive} once the admin confirms.
      */
     const handleToggleActive = (id: string, isActive: boolean) => {
-        const message = isActive
-            ? t('admin-billing.plans.confirmActivate')
-            : t('admin-billing.plans.confirmDeactivate');
-        if (confirm(message)) {
-            toggleActiveMutation.mutate({ id, isActive });
-        }
+        setPendingToggleActive({ id, isActive });
+    };
+
+    /**
+     * Confirms the pending active-state toggle.
+     */
+    const confirmToggleActive = () => {
+        if (!pendingToggleActive) return;
+        toggleActiveMutation.mutate(pendingToggleActive);
+        setPendingToggleActive(null);
     };
 
     /**
@@ -322,6 +347,38 @@ function BillingPlansPage() {
                     onCancel={() => setPlanToHardDelete(null)}
                     onConfirm={confirmHardDelete}
                 />
+
+                <AlertDialog
+                    open={pendingToggleActive != null}
+                    onOpenChange={(open) => {
+                        if (!open) setPendingToggleActive(null);
+                    }}
+                >
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>
+                                {pendingToggleActive?.isActive
+                                    ? t('admin-billing.plans.actionActivate')
+                                    : t('admin-billing.plans.actionDeactivate')}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {pendingToggleActive?.isActive
+                                    ? t('admin-billing.plans.confirmActivate')
+                                    : t('admin-billing.plans.confirmDeactivate')}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setPendingToggleActive(null)}>
+                                {t('admin-billing.plans.dialog.cancelButton')}
+                            </AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmToggleActive}>
+                                {pendingToggleActive?.isActive
+                                    ? t('admin-billing.plans.actionActivate')
+                                    : t('admin-billing.plans.actionDeactivate')}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </SidebarPageLayout>
     );

@@ -27,7 +27,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 type CapturedRoute = {
     path: string;
     summary: string;
-    requiredPermissions: readonly unknown[];
+    requiredPermissions?: readonly unknown[];
+    anyOfPermissions?: readonly (readonly unknown[])[];
     handler: (ctx: unknown, params: unknown, body: unknown) => Promise<unknown>;
 };
 
@@ -114,12 +115,14 @@ const VERTICALS = [
     {
         name: 'gastronomy',
         summary: 'Moderate a gastronomy listing (admin)',
+        moderationChange: PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
         moderate: mockGastronomyModerate,
         update: mockGastronomyUpdate
     },
     {
         name: 'experience',
         summary: 'Moderate an experience listing (admin)',
+        moderationChange: PermissionEnum.EXPERIENCE_MODERATION_CHANGE,
         moderate: mockExperienceModerate,
         update: mockExperienceUpdate
     }
@@ -155,19 +158,34 @@ describe('both verticals expose a listing-moderate route (AC-10)', () => {
         expect(capturedRoutes).toHaveLength(2);
     });
 
-    for (const { name, summary } of VERTICALS) {
+    for (const { name, summary, moderationChange } of VERTICALS) {
         it(`${name}: is mounted at /{id}/moderate`, () => {
             expect(getRoute(summary).path).toBe('/{id}/moderate');
         });
 
-        it(`${name}: is gated by COMMERCE_MODERATION_CHANGE and nothing else`, () => {
-            // Exact equality. `COMMERCE_MODERATE_REVIEW` here would gate the
-            // listing verdict behind the review authority; `COMMERCE_EDIT_ALL`
-            // would let any staff editor clear a rejection. Both read as
-            // "an admin-only route" at a glance.
-            expect(getRoute(summary).requiredPermissions).toEqual([
-                PermissionEnum.COMMERCE_MODERATION_CHANGE
+        it(`${name}: is gated by moderationChange and nothing else`, () => {
+            // Exact equality, still. `COMMERCE_MODERATE_REVIEW` here would gate
+            // the listing verdict behind the review authority;
+            // `COMMERCE_EDIT_ALL` would let any staff editor clear a rejection.
+            // Both read as "an admin-only route" at a glance.
+            //
+            // HOS-1077 turned the AND list into ONE or-group: the vertical's own
+            // moderationChange, or the legacy commerce one. The AND list must be
+            // gone — leaving a permission there would AND it with the group and
+            // silently tighten the gate.
+            expect(getRoute(summary).requiredPermissions).toBeUndefined();
+            expect(getRoute(summary).anyOfPermissions).toEqual([
+                [moderationChange, PermissionEnum.COMMERCE_MODERATION_CHANGE]
             ]);
+        });
+
+        it(`${name}: does NOT accept the OTHER vertical's moderationChange`, () => {
+            // The whole point of the split, asserted on the route's own
+            // declaration: a gastronomy moderator must not be able to take an
+            // experience listing down.
+            const other = VERTICALS.find((v) => v.name !== name);
+            const declared = (getRoute(summary).anyOfPermissions ?? []).flat();
+            expect(declared).not.toContain(other?.moderationChange);
         });
     }
 });

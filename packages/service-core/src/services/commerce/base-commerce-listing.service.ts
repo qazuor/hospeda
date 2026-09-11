@@ -29,6 +29,7 @@ import type { ContentModerationChangeInput } from '@repo/schemas';
 import {
     ContentModerationChangeInputSchema,
     DestinationTypeEnum,
+    LifecycleStatusEnum,
     PermissionEnum,
     RoleEnum,
     RoleGrantReason,
@@ -47,12 +48,17 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { shouldRegenerateSlugOnRename } from '../../utils/listing-slug-policy';
+import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
 import { syncCommerceAmenityJunction, syncCommerceFeatureJunction } from './commerce.junction-sync';
-import { checkCanModerateCommerceListing } from './commerce.permissions';
+import {
+    checkCanModerateCommerceListing,
+    hasCommercePermission,
+    VERTICAL_OWNER_ROLES,
+    verticalPermission
+} from './commerce.permissions';
 import type { CommerceListingHookState } from './commerce.types';
 import { scheduleCommerceListingRevalidation } from './commerce-revalidation.js';
 
@@ -491,7 +497,12 @@ export abstract class BaseCommerceListingService<
             schema: ContentModerationChangeInputSchema,
             ctx,
             execute: async (validated, validatedActor, execCtx) => {
-                checkCanModerateCommerceListing(validatedActor);
+                // HOS-1077: `_revalidationEntityType` is already exactly the
+                // vertical (`'gastronomy' | 'experience'`), so the per-vertical
+                // moderation permission is reachable here without a new abstract
+                // member. The check still accepts the legacy
+                // `COMMERCE_MODERATION_CHANGE` (dual-read).
+                checkCanModerateCommerceListing(validatedActor, this._revalidationEntityType);
 
                 const listing = await this.model.findById(input.id, execCtx?.tx);
                 if (!listing || listing.deletedAt) {
@@ -531,8 +542,8 @@ export abstract class BaseCommerceListingService<
 
     /**
      * Creates a commerce listing on behalf of its own owner and grants that
-     * owner the `COMMERCE_OWNER` hat in the SAME transaction
-     * (HOS-687 / HOS-589 §6.1).
+     * owner the commerce hats in the SAME transaction (HOS-687 / HOS-589 §6.1):
+     * the legacy `COMMERCE_OWNER` and the vertical's own role (HOS-1077).
      *
      * The exact mirror of `AccommodationService.createForOnboarding`: creating
      * the listing is what makes somebody a commerce owner, so there is no
@@ -582,15 +593,28 @@ export abstract class BaseCommerceListingService<
                 );
             }
 
-            const granted = await grantRole({
-                userId: actor.id,
-                role: RoleEnum.COMMERCE_OWNER,
-                grantedBy: null,
-                reason: RoleGrantReason.COMMERCE_LISTING_CREATED,
-                ctx: txCtx
-            });
-            if (granted.error) {
-                throw granted.error;
+            // HOS-1077: BOTH hats, in the same transaction as the listing.
+            //
+            // The vertical role is the one that survives release 2; the legacy
+            // `COMMERCE_OWNER` is what every gate still reads until then. Granting
+            // only the legacy one would mean every listing created during the
+            // migration window produces an account release 2's contract migration
+            // has to sweep up a second time — the expand release exists precisely
+            // so that sweep is a single backfill, not a recurring one.
+            for (const role of [
+                RoleEnum.COMMERCE_OWNER,
+                VERTICAL_OWNER_ROLES[this._revalidationEntityType]
+            ]) {
+                const granted = await grantRole({
+                    userId: actor.id,
+                    role,
+                    grantedBy: null,
+                    reason: RoleGrantReason.COMMERCE_LISTING_CREATED,
+                    ctx: txCtx
+                });
+                if (granted.error) {
+                    throw granted.error;
+                }
             }
 
             return created.data;
@@ -809,7 +833,7 @@ export abstract class BaseCommerceListingService<
             const current = await this.model.findById(updateId, ctx.tx);
             if (
                 current &&
-                shouldRegenerateSlugOnRename({
+                shouldRegenerateSlugOnListingChange({
                     currentLifecycleState: current.lifecycleState as string | null | undefined,
                     currentName: current.name as string | null | undefined,
                     nextName: typeof payload.name === 'string' ? payload.name : undefined,
@@ -1132,11 +1156,13 @@ export abstract class BaseCommerceListingService<
         tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+            // HOS-1077 dual-read: the vertical's own `editAll`, or the legacy
+            // `COMMERCE_EDIT_ALL`.
+            if (!hasCommercePermission(actor, 'editAll', this._revalidationEntityType)) {
                 return {
                     error: new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        `Permission denied: ${PermissionEnum.COMMERCE_EDIT_ALL} required to assign a ${this.entityName} owner`
+                        `Permission denied: ${verticalPermission(this._revalidationEntityType, 'editAll')} required to assign a ${this.entityName} owner`
                     )
                 };
             }
@@ -1217,6 +1243,144 @@ export abstract class BaseCommerceListingService<
             const error = new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 `Failed to list own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    /**
+     * Counts every non-deleted commerce listing owned by the given actor.
+     *
+     * The counting twin of {@link listOwn}, and it exists for the same reason
+     * that method does: **the public `count()` inherited from `BaseCrudRead`
+     * cannot answer this question.** Both verticals' `_executeCount` mirror
+     * their `_executeSearch` and force `visibility: PUBLIC` +
+     * `lifecycleState: ACTIVE` (`gastronomy.service.ts` / `experience.service.ts`),
+     * because a public-search total has to match the page it paginates. A
+     * listing created through the owner self-service route starts
+     * `PRIVATE`/`DRAFT` by construction (`commerce/protected/create.ts` D-3), so
+     * `count(actor, { ownerId })` reports ZERO for exactly the listings a quota
+     * has to count — which is HOS-1247: three listings created on a plan of one,
+     * every gate reading a count of zero and raising nothing.
+     *
+     * Accommodation never had this hole: its `_executeCount` drops `activeOnly`
+     * when `params.ownerId === actor.id` (`accommodation.service.ts`), so its cap
+     * always counted drafts. This method gives the two commerce verticals the
+     * same guarantee WITHOUT touching either vertical's public search/count
+     * pair — those still agree with each other, exactly as their own tests
+     * require.
+     *
+     * Ownership IS the gate, as in {@link listOwn}: the query is hard-scoped to
+     * `ownerId = actor.id`, so no permission is required and no actor can count
+     * anybody else's listings.
+     *
+     * @param actor - The authenticated actor whose listings to count.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns `ServiceOutput<{ count: number }>` with the owner's listing count.
+     */
+    public async countOwn(
+        actor: Actor,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ count: number }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'countOwn requires an authenticated actor'
+                    )
+                };
+            }
+
+            const count = await this.model.count({ ownerId: actor.id, deletedAt: null }, { tx });
+
+            return { data: { count } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to count own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    /**
+     * Soft-deletes ONE of the actor's own DRAFT listings.
+     *
+     * The owner-tier counterpart to `softDelete()`, which is staff-only:
+     * `_canSoftDelete` resolves to `checkCanDeleteCommerce`, i.e.
+     * `COMMERCE_DELETE`, which no owner holds. That gate is right for the
+     * general case — an owner must not be able to erase a listing people are
+     * paying for or linking to — and wrong for the one case this method
+     * serves: the publish precheck offers "borrar el borrador" as the FREE way
+     * out of a full plan (HOS-1156 AC-14), and without an owner path that
+     * button could only ever answer 403.
+     *
+     * Three conditions, all narrowing rather than widening:
+     *
+     * - **Ownership is the gate**, as in {@link listOwn}. No permission is
+     *   required, deliberately: `COMMERCE_OWNER` is granted by the create call
+     *   itself, so requiring the role here would reproduce HOS-687's shape —
+     *   the flow that hands out the role being locked behind it.
+     * - **DRAFT only.** A listing in any other lifecycle state is refused. A
+     *   published or paid-for listing is not a draft to discard, and deleting
+     *   one is an admin action with consequences this path does not carry
+     *   (subscription, visibility reconciliation, cache purges).
+     * - **Someone else's row answers NOT_FOUND, never FORBIDDEN** — a 403 would
+     *   confirm the id exists (see `apps/api/docs/error-contract.md`).
+     *
+     * @param actor - The authenticated actor, who must own the listing.
+     * @param id - The listing to delete.
+     * @param ctx - Optional service context (transaction, hook state).
+     * @returns `ServiceOutput<{ deleted: true }>` on success.
+     */
+    public async softDeleteOwnDraft(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ deleted: true }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'softDeleteOwnDraft requires an authenticated actor'
+                    )
+                };
+            }
+
+            const entity = await this.model.findById(id, ctx?.tx);
+
+            // One branch for "no row", "someone else's row" and "already
+            // deleted": all three are indistinguishable to a caller who has no
+            // business knowing this id, which is the point.
+            if (!entity || entity.deletedAt || entity.ownerId !== actor.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} not found`
+                    )
+                };
+            }
+
+            if (entity.lifecycleState !== LifecycleStatusEnum.DRAFT) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Only a DRAFT ${this.entityName} listing can be deleted by its owner`
+                    )
+                };
+            }
+
+            await this.model.softDelete({ id }, actor.id, ctx?.tx);
+
+            return { data: { deleted: true } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to delete own ${this.entityName} draft: ${err instanceof Error ? err.message : String(err)}`,
                 err
             );
             return { error };

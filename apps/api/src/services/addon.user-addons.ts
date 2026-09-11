@@ -31,6 +31,8 @@ import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { recalculateAddonLimitsForCustomer } from './addon-limit-recalculation.service';
+import { closeAddonPreapproval } from './addon-preapproval-cancel';
+import { softCancelRecurringAddon } from './addon-soft-cancel';
 import { resolveRecipientLocale } from './notification-recipient-locale';
 
 // Re-export types from service-core for backward compatibility
@@ -84,8 +86,15 @@ export async function getUserAddons(
  * Cancel an active add-on for a customer.
  *
  * Looks up the purchase record by `purchaseId` (primary key) to get the real
- * `addonSlug`, updates its status to 'canceled', then removes entitlements
- * from JSON metadata for backward compatibility.
+ * `addonSlug`, then takes ONE of two paths (HOS-847 PR 6):
+ *
+ * - **Recurring** (`mp_subscription_id` present): the MercadoPago preapproval is
+ *   hard-cancelled immediately and fails closed, but the row stays `active` with
+ *   `cancel_at_period_end = true` — the customer keeps the benefit until
+ *   `current_period_end`, which they already paid for. The `addon-expiry` cron
+ *   revokes it when that date arrives. See `addon-soft-cancel.ts`.
+ * - **One-time** (no preapproval): unchanged — status goes to `'canceled'`,
+ *   limits are recalculated and entitlements removed immediately.
  *
  * @param billing - QZPay billing instance
  * @param entitlementService - AddonEntitlementService for removing entitlements
@@ -109,7 +118,15 @@ export async function cancelUserAddon(
                 id: billingAddonPurchases.id,
                 addonSlug: billingAddonPurchases.addonSlug,
                 status: billingAddonPurchases.status,
-                customerId: billingAddonPurchases.customerId
+                customerId: billingAddonPurchases.customerId,
+                // HOS-847 PR 6: the add-on's OWN MercadoPago preapproval. Read
+                // here so the provider can be closed before anything local is
+                // written — see the `closeAddonPreapproval` call below.
+                mpSubscriptionId: billingAddonPurchases.mpSubscriptionId,
+                // HOS-847 PR 6: when the period the customer ALREADY PAID FOR
+                // runs out. It is what a recurring cancellation preserves, and
+                // what the expiry cron later revokes on.
+                currentPeriodEnd: billingAddonPurchases.currentPeriodEnd
             })
             .from(billingAddonPurchases)
             .where(
@@ -149,8 +166,116 @@ export async function cancelUserAddon(
 
         const addonSlug = purchase.addonSlug;
         // Resolve addon definition from the DB-backed catalog service (SPEC-192 T-011 cutover).
+        // Hoisted above the recurring branch (HOS-847 PR 6) so both paths can put
+        // the add-on's display name in the cancellation email.
         const addonCatalogResult = await catalogService.getBySlug(addonSlug);
         const addonDef = addonCatalogResult.success ? addonCatalogResult.data : null;
+
+        // ── HOS-847 PR 6: a RECURRING add-on ends at the end of the paid period ──
+        // Owner decision. The charging stops in the same instant (the preapproval
+        // is hard-cancelled below), but the BENEFIT survives until
+        // `current_period_end`, because the customer already paid for that
+        // period. This mirrors what the rest of Hospeda billing already does for
+        // plan subscriptions — the soft-cancel grace documented in
+        // `docs/billing/grace-period-source-of-truth.md`.
+        //
+        // A ONE-TIME add-on has no period and no preapproval: it keeps today's
+        // immediate revocation, unchanged, and skips this branch entirely.
+        if (purchase.mpSubscriptionId) {
+            // The date is checked BEFORE the provider is touched, on purpose. A
+            // row we cannot date is a row we cannot schedule the revocation for,
+            // and closing MercadoPago first would leave the customer unhooked
+            // from billing with a benefit that has no end — the "never expires"
+            // outcome, which is the worst of the three (worse than revoking
+            // immediately, and both worse than refusing visibly). So this
+            // refuses, changes nothing at all, and is loud about it.
+            if (!purchase.currentPeriodEnd) {
+                apiLogger.error(
+                    {
+                        customerId: input.customerId,
+                        addonSlug,
+                        purchaseId: input.purchaseId,
+                        mpSubscriptionId: purchase.mpSubscriptionId
+                    },
+                    'HOS-847: recurring add-on has no current_period_end — refusing to cancel rather than granting a benefit with no end date',
+                    { capture: true }
+                );
+
+                return {
+                    success: false,
+                    error: {
+                        code: 'INTERNAL_ERROR',
+                        message:
+                            'This add-on is missing its billing period and cannot be cancelled automatically. Nothing was changed — please contact support.'
+                    }
+                };
+            }
+
+            // Close MercadoPago FIRST, and fail closed. Nothing local is written
+            // until the provider confirms it will not charge again.
+            const recurringClose = await closeAddonPreapproval({
+                purchase: {
+                    id: purchase.id,
+                    addonSlug,
+                    mpSubscriptionId: purchase.mpSubscriptionId
+                },
+                source: 'user-cancel',
+                billing
+            });
+
+            if (!recurringClose.closed) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'SERVICE_UNAVAILABLE',
+                        message:
+                            'Could not cancel the add-on subscription with the payment provider. Nothing was changed — please try again in a few minutes.'
+                    }
+                };
+            }
+
+            return await softCancelRecurringAddon({
+                purchaseId: input.purchaseId,
+                customerId: input.customerId,
+                addonSlug,
+                addonName: addonDef?.name || addonSlug,
+                currentPeriodEnd: purchase.currentPeriodEnd,
+                reason: input.reason,
+                userId: input.userId,
+                billing,
+                db
+            });
+        }
+
+        // ── HOS-847 PR 6: one-time add-on — close the provider, fail closed ───
+        // `mp_subscription_id` is null here by construction, so this is a no-op
+        // that returns `no-preapproval`. It is kept rather than skipped because
+        // the invariant belongs to the PATH, not to today's data: a future
+        // one-time flow that starts linking a provider object inherits the gate
+        // instead of quietly bypassing it.
+        const providerClose = await closeAddonPreapproval({
+            purchase: {
+                id: purchase.id,
+                addonSlug,
+                mpSubscriptionId: purchase.mpSubscriptionId
+            },
+            source: 'user-cancel',
+            billing
+        });
+
+        if (!providerClose.closed) {
+            // Deliberately NOT a partial success: the row stays `active`, which
+            // keeps it inside every retry and reconciliation sweep. 503 tells
+            // the caller to try again rather than suggesting it worked.
+            return {
+                success: false,
+                error: {
+                    code: 'SERVICE_UNAVAILABLE',
+                    message:
+                        'Could not cancel the add-on subscription with the payment provider. Nothing was changed — please try again in a few minutes.'
+                }
+            };
+        }
 
         // SPEC-064 OP-5: recalculateAddonLimitsForCustomer makes external QZPay HTTP calls
         // (billing.subscriptions.getByCustomerId, billing.limits.set/removeBySource).
@@ -464,6 +589,21 @@ export async function checkAddonActive(
  *
  * Adds Sentry reporting and structured logging as infra concerns.
  *
+ * ## HOS-847 PR 6 — the provider close happens BEFORE the transaction
+ *
+ * A recurring add-on's MercadoPago preapproval has to be hard-cancelled before
+ * its row goes terminal, but that is an HTTP call and this function's whole body
+ * runs under `SELECT ... FOR UPDATE`. Holding row locks across third-party
+ * latency is exactly what ADR-019 forbids, so the closes run first, outside the
+ * lock, and the transaction only cancels rows whose provider side is already
+ * closed (or that never had a preapproval).
+ *
+ * The pre-read and the locked read can disagree — a purchase activated in
+ * between appears only in the second. That row is SKIPPED and reported as a
+ * failure rather than cancelled, because the alternative is the forbidden state:
+ * a terminal row over a preapproval nobody closed. Skipping leaves it `active`,
+ * which is where every retry and sweep can still find it.
+ *
  * @param input - Customer ID whose addons should be revoked
  * @returns Count of successfully revoked purchases and IDs of any failures
  */
@@ -474,12 +614,51 @@ export async function revokeAllAddonsForCustomer(
 
     const failedIds: string[] = [];
 
+    // ── Phase 0 (pre-lock): close every live add-on preapproval ───────────────
+    const db = getDb();
+    const recurringPurchases = await db
+        .select({
+            id: billingAddonPurchases.id,
+            addonSlug: billingAddonPurchases.addonSlug,
+            mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
+        })
+        .from(billingAddonPurchases)
+        .where(
+            and(
+                eq(billingAddonPurchases.customerId, customerId),
+                eq(billingAddonPurchases.status, 'active'),
+                isNull(billingAddonPurchases.deletedAt)
+            )
+        );
+
+    /** Purchase ids whose preapproval MercadoPago confirmed is cancelled. */
+    const providerClosedIds = new Set<string>();
+
+    for (const purchase of recurringPurchases) {
+        if (!purchase.mpSubscriptionId) {
+            continue;
+        }
+
+        const close = await closeAddonPreapproval({
+            purchase,
+            source: 'bulk-customer-revoke'
+        });
+
+        if (close.closed) {
+            providerClosedIds.add(purchase.id);
+        }
+    }
+
     const revokedCount = await withTransaction(async (tx) => {
         // SELECT FOR UPDATE: lock matching rows for the duration of this
         // transaction so no concurrent process can modify them between the
         // read and the subsequent UPDATE statements.
-        const lockedRows = await tx.execute<{ id: string; addonSlug: string }>(
-            sql`SELECT id, addon_slug AS "addonSlug"
+        const lockedRows = await tx.execute<{
+            id: string;
+            addonSlug: string;
+            mpSubscriptionId: string | null;
+        }>(
+            sql`SELECT id, addon_slug AS "addonSlug", mp_subscription_id AS "mpSubscriptionId"
                 FROM ${billingAddonPurchases}
                 WHERE ${and(
                     eq(billingAddonPurchases.customerId, customerId),
@@ -499,6 +678,25 @@ export async function revokeAllAddonsForCustomer(
         let count = 0;
 
         for (const purchase of activePurchases) {
+            // HOS-847 PR 6: a purchase with a preapproval we did not manage to
+            // close must not be written terminal. `mp_subscription_id` null is
+            // every one-time add-on — nothing to close, always allowed.
+            if (purchase.mpSubscriptionId && !providerClosedIds.has(purchase.id)) {
+                apiLogger.error(
+                    {
+                        customerId,
+                        purchaseId: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        mpSubscriptionId: purchase.mpSubscriptionId
+                    },
+                    'HOS-847: skipping bulk revocation of an add-on whose MercadoPago preapproval was not closed — the row stays active so a retry can still see it',
+                    { capture: true }
+                );
+
+                failedIds.push(purchase.id);
+                continue;
+            }
+
             try {
                 await cancelAddonPurchaseRecord({ purchaseId: purchase.id, ctx: { tx } });
                 count++;
@@ -543,8 +741,6 @@ export async function revokeAllAddonsForCustomer(
     // T-046 / T-047: when at least one revocation failed (partial failure), record
     // the incomplete state for reconciliation.
     if (failedIds.length > 0) {
-        const db = getDb();
-
         try {
             // Find the customer's most recent active/trialing subscription so we can
             // anchor the compensating event to a subscription row. If no subscription

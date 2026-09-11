@@ -29,10 +29,20 @@ const VALID_FEATURE_CONFIG = {
     params: {}
 } as const;
 
-/** A complete, valid feature map with all required keys. */
+/**
+ * A complete, valid feature map with all required keys.
+ *
+ * Must list every `AiFeature` member (nine as of HOS-400, which added
+ * `chat_gastronomy` and `chat_experience`) — `AiFeaturesMapSchema` is a full
+ * `z.record` over the enum, so a fixture missing a key stops being "complete"
+ * the moment a new feature ships, and the happy-path test below silently
+ * starts asserting a REJECT it did not mean to.
+ */
 const FULL_FEATURES_MAP = {
     text_improve: VALID_FEATURE_CONFIG,
     chat: { ...VALID_FEATURE_CONFIG, enabled: false },
+    chat_gastronomy: { ...VALID_FEATURE_CONFIG, enabled: false },
+    chat_experience: { ...VALID_FEATURE_CONFIG, enabled: false },
     search: { ...VALID_FEATURE_CONFIG, enabled: false },
     support: { ...VALID_FEATURE_CONFIG, enabled: false },
     translate: { ...VALID_FEATURE_CONFIG, enabled: false },
@@ -191,20 +201,21 @@ describe('AiSettingsValueSchema (PUT request body — write contract)', () => {
     });
 
     it('should REJECT a partial features map (only some features present)', () => {
-        // Arrange: only two of four features provided.
+        // Arrange: only two of nine features provided.
         const partialFeatures = {
             providers: { openai: { enabled: true } },
             features: {
                 text_improve: VALID_FEATURE_CONFIG,
                 chat: VALID_FEATURE_CONFIG
-                // missing: search, support
+                // missing: chat_gastronomy, chat_experience, search, support,
+                // translate, accommodation_import, post_generate
             }
         };
 
         // Act
         const result = AiSettingsValueSchema.safeParse(partialFeatures);
 
-        // Assert — MUST fail: the write schema requires all four keys.
+        // Assert — MUST fail: the write schema requires every feature key.
         expect(result.success).toBe(false);
     });
 });

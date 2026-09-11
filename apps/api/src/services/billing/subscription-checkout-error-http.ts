@@ -53,6 +53,18 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
         // supported (HOS-123 T-003) via that flag.
         case 'INVALID_REACTIVATION_PLAN':
         case 'ANNUAL_REACTIVATION_UNSUPPORTED':
+        // HOS-917: the initial-checkout free-plan price guard (mirrors
+        // INVALID_REACTIVATION_PLAN above) — a well-formed request naming a
+        // real, active plan that simply cannot be purchased (its resolved
+        // price is $0). Well-formed but unprocessable -> 422, same family as
+        // the reactivation codes it mirrors.
+        case 'PLAN_NOT_PURCHASABLE':
+        // HOS-1287: the past-due row's product domain cannot be carried onto a
+        // fresh preapproval. The row exists and belongs to the caller (the
+        // route already answered 404 otherwise), so this is a well-formed
+        // request against an unprocessable state — 422, never a 500, and never
+        // a silent success.
+        case 'DOMAIN_NOT_REPLACEABLE':
             return new HTTPException(422, { message: err.message });
         // HOS-114 T-015b: `reactivateSubscription` rejects the request
         // because the customer already has a live (active/trialing)
@@ -99,6 +111,19 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
             // for the immediate cross-category plan swap — MP already mutated,
             // local commit failed after. 500 (server-side inconsistency).
             return new HTTPException(500, { message: err.message });
+        case 'PAYER_EMAIL_UNSUPPORTED_CHARACTER':
+            // HOS-937 step 2: the resolved payer email contains a '+', which
+            // MercadoPago rejects outright. Well-formed input, but not something
+            // the provider will accept — 400, so the front-end can prompt for a
+            // different email (spec §11 OQ-1).
+            return new HTTPException(400, { message: err.message });
+        case 'PLAN_DOMAIN_MISMATCH':
+            // HOS-1271: a well-formed request naming a real plan that simply
+            // belongs to a domain this checkout does not sell. Not 404 (the
+            // plan exists) — 422, same family as `PLAN_NOT_PURCHASABLE` and
+            // the plan-change route's identical `PLAN_DOMAIN_MISMATCH`
+            // (`ServiceError` `VALIDATION_ERROR`, `plan-domain-guard.ts`).
+            return new HTTPException(422, { message: err.message });
         default: {
             // Defensive: the union should be exhaustive, but TS doesn't
             // enforce that downstream consumers add new codes here. Fall

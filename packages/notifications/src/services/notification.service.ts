@@ -1,3 +1,4 @@
+import { asMajor } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { billingNotificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
@@ -10,13 +11,18 @@ import {
     AddonExpired,
     AddonPurchaseConfirmation,
     AddonRenewalConfirmation,
+    AddonSubscriptionStarted,
     AdminLeadReceived,
     AdminPaymentFailure,
     AdminSystemEvent,
     AiCostThresholdAlert,
     AllianceClaimInvite,
     AllianceLeadDecision,
+    CompGranted,
     ContactSubmissionEmail,
+    CourtesyEnded,
+    CourtesyGranted,
+    CourtesyStarted,
     FeedbackReportEmail,
     HostTradeRevoked,
     PartnerMentionsLogged,
@@ -38,7 +44,16 @@ import {
     SubscriptionCancelled,
     SubscriptionPaused,
     SubscriptionReactivated,
+    TrialEnding1Day,
+    TrialEnding5Days,
+    TrialEnding10Days,
     TrialEndingReminder,
+    TrialExpired,
+    TrialWinBack1Day,
+    TrialWinBack5Days,
+    TrialWinBack10Days,
+    TrialWinBack30Days,
+    TrialWinBack60Days,
     UsageConfirmationReminder,
     UsageConfirmationRequest,
     UsageConfirmed,
@@ -52,12 +67,15 @@ import type {
     AddonCancellationPayload,
     AddonEventPayload,
     AddonPurchaseConfirmationPayload,
+    AddonSubscriptionStartedPayload,
     AdminLeadReceivedPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
     AllianceClaimInvitePayload,
     AllianceLeadDecisionPayload,
+    CompGrantedPayload,
     ContactSubmissionPayload,
+    CourtesyPayload,
     FeedbackReportPayload,
     HostTradeReplyModeratedPayload,
     HostTradeReviewReceivedPayload,
@@ -81,9 +99,11 @@ import type {
     SubscriptionCancelConfirmedPayload,
     SubscriptionEventPayload,
     SubscriptionLifecyclePayload,
-    TrialEventPayload
+    TrialEventPayload,
+    TrialSeriesPayload
 } from '../types/notification.types.js';
 import { buildAddonLinkMetadata } from '../utils/addon-link-metadata.js';
+import { buildCompGrantMetadata } from '../utils/comp-grant-metadata.js';
 import {
     findUnresolvedPlaceholders,
     getSubject,
@@ -380,11 +400,39 @@ export class NotificationService {
                 });
             }
 
+            // HOS-847 PR 5: a RECURRING add-on's first charge. Its own template
+            // because the one above says a purchase "has been processed", which
+            // is the opposite of what a subscriber needs to read. The cadence,
+            // the next charge date and how to cancel are REQUIRED on this
+            // payload rather than optional, so the template cannot render the
+            // one-time message by omission.
+            case 'addon_subscription_started': {
+                const p = payload as AddonSubscriptionStartedPayload;
+                return AddonSubscriptionStarted({
+                    customerName: recipientName,
+                    addonName: p.addonName,
+                    addonDescription: p.addonDescription,
+                    amount: p.amount,
+                    currency: p.currency,
+                    billingInterval: p.billingInterval,
+                    nextChargeAt: p.nextChargeAt,
+                    baseUrl: this.deps.siteUrl,
+                    addonSlug: p.addonSlug,
+                    locale: p.locale
+                });
+            }
+
             case 'payment_success': {
                 const p = payload as PaymentNotificationPayload;
                 return PaymentSuccess({
                     recipientName,
-                    amount: p.amount,
+                    // `PaymentNotificationPayload.amount` is untyped `number`
+                    // (it is shared by the whole notification union), but its
+                    // only producer (`sendPaymentSuccessNotification`) already
+                    // asserts it MAJOR (pesos) at the source. Re-asserting the
+                    // brand here is what lets `PaymentSuccess` require `Major`
+                    // instead of silently accepting centavos (HOS-839).
+                    amount: asMajor(p.amount),
                     currency: p.currency,
                     planName: p.planName,
                     baseUrl: this.deps.siteUrl,
@@ -396,10 +444,12 @@ export class NotificationService {
                 const p = payload as PaymentNotificationPayload;
                 return PaymentFailure({
                     recipientName,
-                    amount: p.amount,
+                    // See the HOS-839 note in the 'payment_success' case above.
+                    amount: asMajor(p.amount),
                     currency: p.currency,
                     baseUrl: this.deps.siteUrl,
-                    failureReason: p.failureReason
+                    failureReason: p.failureReason,
+                    retryUrl: p.retryUrl
                 });
             }
 
@@ -411,7 +461,8 @@ export class NotificationService {
                     baseUrl: this.deps.siteUrl,
                     amount: p.amount,
                     currency: p.currency,
-                    renewalDate: p.renewalDate || ''
+                    renewalDate: p.renewalDate || '',
+                    productDomain: p.productDomain
                 });
             }
 
@@ -473,6 +524,116 @@ export class NotificationService {
                     trialEndDate: p.trialEndDate,
                     daysRemaining: p.daysRemaining,
                     upgradeUrl: p.upgradeUrl
+                });
+            }
+
+            // ── HOS-1012: the nine sends of the Hospeda-owned trial series ───
+            //
+            // Nine cases and nine templates, not one case switching on a day
+            // count. The whole point of the redesign is that these read as nine
+            // different messages; routing them through one component would make
+            // that impossible to hold, and the ninefold repetition below is the
+            // cheapest possible way to keep each send's copy independently
+            // editable. The argument list is identical because the payload
+            // shape is (`TrialSeriesPayload`) — the difference lives in the
+            // template, which is where a reader looks for it.
+
+            case 'trial_ending_10d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialEnding10Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_ending_5d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialEnding5Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_ending_1d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialEnding1Day({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_expired': {
+                const p = payload as TrialSeriesPayload;
+                return TrialExpired({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_win_back_1d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack1Day({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_win_back_5d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack5Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_win_back_10d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack10Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_win_back_30d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack30Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
+                });
+            }
+
+            case 'trial_win_back_60d': {
+                const p = payload as TrialSeriesPayload;
+                return TrialWinBack60Days({
+                    recipientName,
+                    planName: p.planName,
+                    trialEndDate: p.trialEndDate,
+                    upgradeUrl: p.upgradeUrl,
+                    productDomain: p.productDomain
                 });
             }
 
@@ -560,6 +721,54 @@ export class NotificationService {
                 });
             }
 
+            // HOS-180. Registering a template and a type is NOT enough — this
+            // switch is what routes a type to a template, and a case missing
+            // here means the email is silently never sent.
+            case 'courtesy_granted': {
+                const p = payload as CourtesyPayload;
+                return CourtesyGranted({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    cycles: p.cycles ?? 1,
+                    startsAt: p.startsAt ?? '',
+                    endsAt: p.endsAt ?? '',
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'courtesy_started': {
+                const p = payload as CourtesyPayload;
+                return CourtesyStarted({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    endsAt: p.endsAt ?? '',
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            // HOS-1171. Same warning as the courtesy block above: a type with a
+            // template but no case here renders nothing and the email is
+            // silently never sent.
+            case 'comp_granted': {
+                const p = payload as CompGrantedPayload;
+                return CompGranted({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    hadActiveBilling: p.hadActiveBilling,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'courtesy_ended': {
+                const p = payload as CourtesyPayload;
+                return CourtesyEnded({
+                    recipientName: payload.recipientName,
+                    planName: p.planName,
+                    nextBillingDate: p.nextBillingDate ?? '',
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
             case 'subscription_reactivated': {
                 const lifecyclePayload = payload as SubscriptionLifecyclePayload;
                 return SubscriptionReactivated({
@@ -602,7 +811,11 @@ export class NotificationService {
                     canceledAt: p.canceledAt,
                     baseUrl: this.deps.siteUrl,
                     addonSlug: p.addonSlug,
-                    locale: p.locale
+                    locale: p.locale,
+                    // Undefined for every immediate cancellation, which is what
+                    // keeps the template from promising access the customer no
+                    // longer has (HOS-847 PR 7c).
+                    accessUntil: p.accessUntil
                 });
             }
 
@@ -863,7 +1076,12 @@ export class NotificationService {
                     messageId: messageId || null,
                     category: NOTIFICATION_CATEGORY_MAP[payload.type],
                     idempotencyKey: payload.idempotencyKey || null,
-                    ...buildAddonLinkMetadata(payload)
+                    ...buildAddonLinkMetadata(payload),
+                    // HOS-1171: same reason as the add-on fields above. A comp
+                    // email rebuilt on retry without `hadActiveBilling` reverts
+                    // to the "you never gave us a card" variant and drops the
+                    // only notice that we cancelled the customer's preapproval.
+                    ...buildCompGrantMetadata(payload)
                 }
             });
 

@@ -215,6 +215,87 @@ describe('UserService.completeProfile', () => {
         expect(updateCall?.settings?.languageWeb).toBe('pt');
     });
 
+    // ── theme (HOS-313) ──────────────────────────────────────────────────────
+
+    it('should persist theme into settings.themeWeb', async () => {
+        // Arrange
+        const user = getUser({ id: userId });
+        asMock(userModelMock.findById).mockResolvedValue(user);
+        asMock(userModelMock.update).mockResolvedValue({ ...user, profileCompleted: true });
+        mockAccountQuery([{ providerId: 'credential' }]);
+
+        // Act
+        await service.completeProfile(actor, {
+            userId,
+            firstName: 'Test',
+            lastName: 'User',
+            theme: 'dark',
+            acceptedTerms: true
+        });
+
+        const updateCall = asMock(userModelMock.update).mock.lastCall?.[1];
+        expect(updateCall?.settings?.themeWeb).toBe('dark');
+    });
+
+    it('should not set settings.themeWeb when theme is not provided', async () => {
+        // Arrange
+        const user = getUser({ id: userId });
+        asMock(userModelMock.findById).mockResolvedValue(user);
+        asMock(userModelMock.update).mockResolvedValue({ ...user, profileCompleted: true });
+        mockAccountQuery([{ providerId: 'credential' }]);
+
+        // Act
+        await service.completeProfile(actor, {
+            userId,
+            firstName: 'Test',
+            lastName: 'User',
+            acceptedTerms: true
+        });
+
+        const updateCall = asMock(userModelMock.update).mock.lastCall?.[1];
+        expect(updateCall?.settings?.themeWeb).toBeUndefined();
+    });
+
+    it('should merge theme AND locale into settings without clobbering each other or pre-existing keys', async () => {
+        // Arrange — the user already has an unrelated settings key plus an
+        // existing languageWeb. Regression guard: `expect.objectContaining`
+        // would stay green even if the merge silently dropped a sibling key,
+        // so this asserts the FULL settings object instead.
+        const user = getUser({
+            id: userId,
+            settings: {
+                languageWeb: 'en',
+                notifications: {
+                    enabled: true,
+                    allowEmails: true,
+                    allowPush: false,
+                    allowSms: false
+                }
+            }
+        });
+        asMock(userModelMock.findById).mockResolvedValue(user);
+        asMock(userModelMock.update).mockResolvedValue({ ...user, profileCompleted: true });
+        mockAccountQuery([{ providerId: 'credential' }]);
+
+        // Act — only theme changes; locale is omitted this time.
+        await service.completeProfile(actor, {
+            userId,
+            firstName: 'Test',
+            lastName: 'User',
+            theme: 'light',
+            acceptedTerms: true
+        });
+
+        // Assert — full settings object: languageWeb and notifications survive
+        // untouched, themeWeb is added.
+        const updateCall = asMock(userModelMock.update).mock.lastCall?.[1];
+        expect(updateCall?.settings).toEqual({
+            languageWeb: 'en',
+            notifications: { enabled: true, allowEmails: true, allowPush: false, allowSms: false },
+            themeWeb: 'light'
+        });
+    });
+
     it('should return FORBIDDEN when actor is not acting on their own profile', async () => {
         // Arrange
         const otherUserId = getMockId('user', 'other-user') as string;

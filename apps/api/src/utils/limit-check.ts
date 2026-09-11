@@ -68,7 +68,18 @@ const RESOURCE_NAMES: Record<LimitKey, string> = {
     max_search_history_entries: 'entradas en el historial de búsquedas',
     max_collections: 'colecciones',
     max_gastronomies: 'gastronomías publicadas',
-    max_experiences: 'experiencias publicadas'
+    max_experiences: 'experiencias publicadas',
+    // HOS-400: named by VERTICAL rather than reusing "conversaciones con IA por
+    // mes". An owner who is both a host and a restaurateur can exhaust one of
+    // these while the others still have headroom, and a message that does not
+    // say WHICH cap was hit sends them to look at the wrong plan.
+    max_ai_chat_gastronomy_per_month: 'conversaciones con IA por mes en gastronomía',
+    max_ai_chat_experience_per_month: 'conversaciones con IA por mes en experiencias',
+    // HOS-1060: "activas" is load-bearing in the message. The cap counts
+    // galleries that have not expired yet, so a provider who hits it gets slots
+    // back as the old ones lapse — a message reading just "galerías privadas"
+    // would send them to buy a pack when waiting would have done.
+    max_active_private_galleries: 'galerías privadas activas'
 };
 
 /**

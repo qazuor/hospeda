@@ -11,6 +11,7 @@
 import type { QZPayBilling, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import {
     billingSubscriptionEvents,
     billingSubscriptions,
@@ -23,9 +24,11 @@ import {
     BILLING_EVENT_TYPES,
     type BillingEventType,
     checkSubscriptionStatusTransition,
+    deriveCourtesyStatus,
     deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
     QZPAY_TO_HOSPEDA_STATUS,
+    readCourtesyFields,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner,
     withServiceTransaction
@@ -35,13 +38,33 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
-import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import {
+    applyPendingDiscountBestEffort,
+    applyPendingTrialExtensionBestEffort,
+    linkPreapprovalToLocalSub
+} from '../../../services/billing/link-preapproval.service.js';
+import {
+    PENDING_DISCOUNT_METADATA_KEY,
+    PENDING_TRIAL_EXTENSION_METADATA_KEY
+} from '../../../services/billing/own-preapproval-subscription-create.js';
+import { PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY } from '../../../services/billing/past-due-payment-method-replacement.service.js';
+import type {
+    PendingCheckoutDiscount,
+    PendingTrialExtension
+} from '../../../services/billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
-import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
+import { supersedeLocalTrialsOnActivation } from '../../../services/billing/trial-supersede-on-activation.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../../services/subscription-linked-entities.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
+import {
+    buildCheckoutRetryLandingUrl,
+    DEFAULT_RETURN_URL_LOCALE
+} from '../../billing/checkout-return-urls.js';
+import { routeAddonPreapprovalEvent } from './addon-recurring-handler.js';
+import { markProviderReadFailure } from './provider-read-failure.js';
 
 /**
  * Safety margin timeout before MercadoPago's 22s webhook deadline.
@@ -309,11 +332,20 @@ export async function completeReactivationSupersession({
         return;
     }
 
-    // Infer which reactivation flavor this was from the markers T-005/T-006
-    // stamp on the NEW subscription's metadata, so the audit row preserves
-    // the same triggerSource the pre-T-005/T-006 inline code used to write.
+    // Infer which supersession flavor this was from the markers each minting
+    // flow stamps on the NEW subscription's metadata, so the audit row
+    // preserves the right triggerSource:
+    //   - T-005 (`reactivateFromTrial`)      -> convertedFromTrial
+    //   - T-006 (`reactivateSubscription`)   -> (fallback — no marker of its own)
+    //   - HOS-348 (`replacePastDuePaymentMethod`) -> pastDuePaymentMethodReplacement
     const isTrialReactivation = metadata.convertedFromTrial === 'true';
-    const triggerSource = isTrialReactivation ? 'trial-reactivation' : 'subscription-reactivation';
+    const isPastDuePaymentMethodReplacement =
+        metadata[PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY] === 'true';
+    const triggerSource = isTrialReactivation
+        ? 'trial-reactivation'
+        : isPastDuePaymentMethodReplacement
+          ? 'payment-method-replacement'
+          : 'subscription-reactivation';
 
     for (const supersededId of supersededIds) {
         // completeSupersessionPairing never throws — it swallows and reports
@@ -336,60 +368,98 @@ export async function completeReactivationSupersession({
     }
 }
 
-/**
- * Reads whether a live MercadoPago preapproval carries a card-first free trial
- * (HOS-211).
+/*
+ * REMOVED, HOS-936: `livePreapprovalHasFreeTrial`.
  *
- * **Corrected, HOS-211 follow-up**: this was originally documented as reading
- * `auto_recurring.free_trial` off the raw snake_case payload that supposedly
- * survives alongside qzpay's typed fields on `subscriptions.retrieve()`. That
- * claim was FALSE — `@qazuor/qzpay-mercadopago@2.6.0`'s `mapToProviderSubscription()`
- * builds a closed camelCase object (`id`, `status`, `currentPeriodStart`,
- * `currentPeriodEnd`, `cancelAtPeriodEnd`, `canceledAt`, `trialStart`, `trialEnd`,
- * `metadata`) with NO `auto_recurring` key at all, and hardcodes `trialStart`/
- * `trialEnd` to `null` unconditionally. This function therefore ALWAYS returned
- * `false` against a real MP response, which is exactly how every card-first
- * trial subscription landed as `active`/`trial_end=null` instead of `trialing`
- * (the bug this comment used to misdescribe as already handled).
+ * It read `auto_recurring.free_trial` off the live preapproval and treated a
+ * positive `frequency` as "this subscription is on a trial". That premise is
+ * measurably wrong: MercadoPago grants a preapproval's free trial once per
+ * `(payer, preapproval_plan)`, so `free_trial` describes the PLAN'S TERMS and is
+ * byte-identical on a preapproval whose trial will run and one whose trial was
+ * already spent. Two preapprovals for the same payer on the same plan, created
+ * two seconds apart on 2026-08-31, reported the same `free_trial` and the same
+ * `first_invoice_offset` while only one of them was actually being deferred.
  *
- * The real fix (Option B) is upstream of this function: `trial_end` is now
- * PERSISTED on the local `billing_subscriptions` row at subscription creation
- * time, computed from `freeTrialDays` (already resolved at checkout by
- * `resolveCheckoutFreeTrialDays`) — see
- * `apps/api/src/services/billing/pending-provider-subscription-create.ts`. The
- * caller's preserve-if-set logic (`resolvedTrialEnd = localSubscription.trialEnd
- * ?? ...`) picks that up directly, without ever needing this helper.
- *
- * This function remains ONLY as a defensive fallback for the (currently
- * unreachable in prod) case where `livePreapproval` genuinely does carry an
- * `auto_recurring.free_trial` object — e.g. a future qzpay version, a test
- * double, or a differently-shaped provider response. Do not rely on it firing
- * against real MercadoPago traffic today.
- *
- * @param livePreapproval - The object returned by `subscriptions.retrieve()`.
- * @returns `true` only when `auto_recurring.free_trial` is a non-null object with
- *   a positive `frequency`. Always `false` for qzpay's real mapped shape.
+ * HOS-936 replaced it with a reader that derived the window from
+ * `next_payment_date - date_created`. HOS-1012 removed that too (T-026), and
+ * with it the whole `trial-window-derivation.ts` module: Hospeda no longer asks
+ * MercadoPago for a free trial at all (guard G-1), so no preapproval defers its
+ * first charge and there is no provider-side window left to read or to disbelieve.
+ * `resolvedTrialEnd` in Step 5c now comes from the local row and nothing else.
  */
-function livePreapprovalHasFreeTrial(livePreapproval: unknown): boolean {
-    if (typeof livePreapproval !== 'object' || livePreapproval === null) {
-        return false;
+
+/**
+ * Result of {@link extractPendingPromoFromRowMetadata}.
+ */
+interface ExtractedPendingPromo {
+    readonly pendingDiscount?: PendingCheckoutDiscount;
+    readonly pendingTrialExtension?: PendingTrialExtension;
+}
+
+/**
+ * Read back the deferred-redemption promo snapshot HOS-937's own-preapproval
+ * flow stores on `billing_subscriptions.metadata` (see
+ * `own-preapproval-subscription-create.ts` — there is no
+ * `billing_pending_checkouts` row for that flow to snapshot it on instead).
+ *
+ * Absence of both keys is the ordinary case for every OLD Path C row (which
+ * snapshots on the correlation row and never writes these keys on the
+ * subscription's own metadata) as well as an own-preapproval row with no
+ * promo applied — this function returns an empty object for both, and the
+ * caller no-ops. Malformed JSON (should never happen; only this module ever
+ * writes these keys) is treated the same as absent rather than throwing,
+ * since a webhook must never fail processing a status transition over
+ * promo-bookkeeping metadata.
+ *
+ * @param metadata - `billing_subscriptions.metadata` as read off the row.
+ */
+function extractPendingPromoFromRowMetadata(metadata: unknown): ExtractedPendingPromo {
+    if (typeof metadata !== 'object' || metadata === null) {
+        return {};
     }
-    const record = livePreapproval as Record<string, unknown>;
-    const autoRecurring =
-        typeof record.auto_recurring === 'object' && record.auto_recurring !== null
-            ? (record.auto_recurring as Record<string, unknown>)
-            : null;
-    if (autoRecurring === null) {
-        return false;
+    const record = metadata as Record<string, unknown>;
+    const result: {
+        pendingDiscount?: PendingCheckoutDiscount;
+        pendingTrialExtension?: PendingTrialExtension;
+    } = {};
+
+    const discountJson = record[PENDING_DISCOUNT_METADATA_KEY];
+    if (typeof discountJson === 'string') {
+        try {
+            const parsed = JSON.parse(discountJson) as Partial<PendingCheckoutDiscount>;
+            if (
+                typeof parsed.promoCodeId === 'string' &&
+                typeof parsed.finalAmountCentavos === 'number'
+            ) {
+                result.pendingDiscount = {
+                    promoCodeId: parsed.promoCodeId,
+                    finalAmountCentavos: parsed.finalAmountCentavos,
+                    ...(parsed.durationCycles === undefined
+                        ? {}
+                        : { durationCycles: parsed.durationCycles })
+                };
+            }
+        } catch {
+            // Malformed — treat as absent, see docblock.
+        }
     }
-    const freeTrial =
-        typeof autoRecurring.free_trial === 'object' && autoRecurring.free_trial !== null
-            ? (autoRecurring.free_trial as Record<string, unknown>)
-            : null;
-    if (freeTrial === null) {
-        return false;
+
+    const trialExtensionJson = record[PENDING_TRIAL_EXTENSION_METADATA_KEY];
+    if (typeof trialExtensionJson === 'string') {
+        try {
+            const parsed = JSON.parse(trialExtensionJson) as Partial<PendingTrialExtension>;
+            if (typeof parsed.promoCodeId === 'string' && typeof parsed.code === 'string') {
+                result.pendingTrialExtension = {
+                    promoCodeId: parsed.promoCodeId,
+                    code: parsed.code
+                };
+            }
+        } catch {
+            // Malformed — treat as absent, see docblock.
+        }
     }
-    return typeof freeTrial.frequency === 'number' && freeTrial.frequency > 0;
+
+    return result;
 }
 
 /**
@@ -403,12 +473,59 @@ interface ProcessSubscriptionUpdatedInput {
     readonly source?: string;
 }
 
+/**
+ * WHY this call ended where it did (HOS-914).
+ *
+ * `statusChanged: false` is returned from nine distinct situations and only ONE of
+ * them means "local and provider already agree". The rest are divergences that
+ * could not be applied — an illegal transition, an unrecognised stored status, a
+ * provider status we do not map, a soft-cancel guard, a row that vanished under
+ * the lock. A caller that reads the boolean alone cannot tell them apart, and
+ * `subscription-drift-reconcile` reported the worst case ("paused locally,
+ * `finished` at MercadoPago, transition refused") as *"already in sync"* — the one
+ * sentence the system's last safety net must never be able to say about a row that
+ * is, in fact, diverging.
+ *
+ * So the reason is reported by the code that knows it, rather than inferred by the
+ * caller. `already_in_sync` is the only benign value; `status_written` is the only
+ * one that wrote.
+ */
+export type SubscriptionUpdateOutcome =
+    /** The status was written. Accompanied by `statusChanged: true`. */
+    | 'status_written'
+    /** Local status already equals the derived target. The one benign no-op. */
+    | 'already_in_sync'
+    /** The event carried no preapproval id. */
+    | 'no_provider_id'
+    /** The preapproval belongs to a recurring add-on; the add-on path handled it. */
+    | 'addon_routed'
+    /** MercadoPago reports `pending`; nothing is decided yet. */
+    | 'provider_pending'
+    /** MercadoPago reported a status this codebase does not map. */
+    | 'provider_status_unknown'
+    /** No local row matches this preapproval (and linking did not produce one). */
+    | 'local_row_not_found'
+    /** The stored status does not map to Hospeda vocabulary — a data-integrity bug. */
+    | 'stored_status_unrecognized'
+    /** The state machine refused the transition. A REAL, unapplied divergence. */
+    | 'transition_refused'
+    /** The known legacy ACTIVE→TRIALING no-op, deliberately not auto-corrected. */
+    | 'transition_refused_legacy_active_to_trialing'
+    /** PAUSED skipped because the row is inside its soft-cancel grace. */
+    | 'soft_cancel_grace';
+
 /** Result of processing a subscription_preapproval.updated event */
-interface ProcessSubscriptionUpdatedResult {
+export interface ProcessSubscriptionUpdatedResult {
     readonly success: boolean;
     readonly statusChanged: boolean;
     readonly newStatus?: string;
     readonly error?: string;
+    /**
+     * Why this call ended where it did. Optional only so the two `success: false`
+     * early exits in the callers' own error paths need not invent one; every
+     * return inside {@link processSubscriptionUpdated} sets it.
+     */
+    readonly outcome?: SubscriptionUpdateOutcome;
 }
 
 /**
@@ -437,7 +554,41 @@ export async function processSubscriptionUpdated({
             { eventId: event.id, source },
             'No subscription ID found in webhook event data'
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'no_provider_id' };
+    }
+
+    // Step 1b (HOS-847 PR 5): route an ADD-ON's own preapproval away from every
+    // line below this one.
+    //
+    // Placed here — before the MercadoPago retrieve, before the
+    // `billing_subscriptions` lookup in step 5, before any status write — for
+    // two reasons. First, that lookup has no product-domain filter, so it
+    // resolves the `product_domain = 'addon'` row PR 4 writes, and the rest of
+    // this function then runs a customer's whole subscription lifecycle
+    // (status transitions, add-on plan-change recalculation, cancellation of
+    // every add-on they own, featured sync, entity-subscription reconcile,
+    // notifications) against one add-on. Second, this function has three
+    // callers — the webhook, `webhook-retry.job.ts` and
+    // `subscription-poll.job.ts` — so guarding the webhook handler alone would
+    // leave two doors open.
+    const addonRouting = await routeAddonPreapprovalEvent({
+        preapprovalId: mpPreapprovalId,
+        billing,
+        paymentAdapter,
+        triggerSource: source
+    });
+
+    if (addonRouting.handled) {
+        apiLogger.info(
+            {
+                mpPreapprovalId: maskId(mpPreapprovalId),
+                purchaseId: addonRouting.purchaseId,
+                providerEventId,
+                source
+            },
+            'HOS-847: preapproval belongs to a recurring add-on — handled by the add-on path, never as a plan subscription'
+        );
+        return { success: true, statusChanged: false, outcome: 'addon_routed' };
     }
 
     apiLogger.info(
@@ -453,6 +604,15 @@ export async function processSubscriptionUpdated({
             Sentry.captureException(error, {
                 extra: { mpPreapprovalId: maskId(mpPreapprovalId), providerEventId, source }
             });
+            // HOS-914: stamp the error as having come from THIS read before it
+            // leaves. Everything below this line can also throw — the status
+            // write, the audit insert, a notification, a reconciler bridge — and
+            // a caller that cannot tell those apart from a provider read will
+            // misattribute them. `subscription-drift-reconcile` in particular
+            // reports an unresolvable preapproval as an anomaly for a human, and
+            // a mailer error whose message happens to contain "not found" would
+            // otherwise send someone hunting for a preapproval that is fine.
+            markProviderReadFailure(error);
             throw error;
         });
 
@@ -473,7 +633,7 @@ export async function processSubscriptionUpdated({
             { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
             'Subscription in pending state - no status change applied'
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'provider_pending' };
     }
 
     if (providerStatus === undefined) {
@@ -485,7 +645,7 @@ export async function processSubscriptionUpdated({
         Sentry.captureException(new Error(`Unknown QZPay subscription status: ${qzpayStatus}`), {
             extra: { mpPreapprovalId: maskId(mpPreapprovalId), providerEventId, source }
         });
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'provider_status_unknown' };
     }
 
     // Step 5: Query local subscription via direct Drizzle query.
@@ -543,48 +703,50 @@ export async function processSubscriptionUpdated({
                 },
                 `No local subscription found for mp_subscription_id=${maskId(mpPreapprovalId)} (HOS-191 link outcome: ${linkResult.outcome})`
             );
-            return { success: true, statusChanged: false };
+            return { success: true, statusChanged: false, outcome: 'local_row_not_found' };
         }
     }
 
     // Step 5c: Derive TRIALING from the provider status + the local trial window
     // (HOS-171 / HOS-211).
     //
-    // MercadoPago has no trial status: a card-first trial is an `authorized`
-    // preapproval whose first charge is deferred, which arrives here as `active`.
-    // `trialEnd` normally comes straight from the row already fetched above (no
-    // extra query) — EXCEPT for a share-link (Path C) subscription just linked
-    // by Step 5 above, whose row was inserted with `trialEnd = null` (qzpay's
-    // `mode: 'paid'` insert never knows about a trial that only the live
-    // preapproval reports). HOS-211: resolve it once here, PRESERVE-IF-SET.
+    // MercadoPago has no trial status: a preapproval whose first charge is
+    // deferred arrives here as `active`, so a row still inside its window has to
+    // be recognised locally.
     //
-    // `resolvedTrialEnd` is only ever COMPUTED when the stored value is still
-    // null — an already-set `trialEnd` always wins untouched. This is load
-    // bearing, not a simplification: if we recomputed trialEnd from
-    // `currentPeriodEnd` on every webhook, then AFTER the day-N charge MP still
-    // reports `auto_recurring.free_trial` (it describes the plan's trial terms,
-    // not "is currently trialing") and `currentPeriodEnd` has already rolled to
-    // the NEXT (future) cycle — so the row would wrongly flip back to `trialing`
-    // forever. Fixing `trialEnd` once, only while it is still null, is what lets
-    // `deriveTrialingStatus`'s own past-date rule settle the row to `ACTIVE`
-    // once the real trial elapses.
+    // HOS-1012 T-026: the window is now read from the local row and NOTHING
+    // ELSE. Until this task the value could also be derived from the
+    // preapproval's own `next_payment_date` (HOS-936), for the one case where a
+    // share-link row was linked with `trialEnd = null` and only MercadoPago knew
+    // about the trial. That case cannot occur anymore: Hospeda never asks
+    // MercadoPago for a free trial (guard G-1,
+    // `scripts/check-no-trial-to-mercadopago.sh`), so a preapproval never defers
+    // its first charge and there is no provider window left to read. Hospeda's
+    // trial is its own local row with no preapproval behind it, and a paid
+    // activation supersedes it rather than inheriting its dates (T-022).
     const now = new Date();
     const periodEnd = mpSubscription.currentPeriodEnd ?? null;
-    const resolvedTrialEnd =
-        localSubscription.trialEnd ??
-        (livePreapprovalHasFreeTrial(mpSubscription) &&
-        periodEnd &&
-        periodEnd.getTime() > now.getTime()
-            ? periodEnd
-            : null);
+    const resolvedTrialEnd = localSubscription.trialEnd ?? null;
 
     // This deliberately lands BEFORE every consumer of `mappedStatus` — the
     // planId safety net, the Step 6 fast-path guard and the in-transaction guard
     // must all observe the SAME target status, or the row is written with one
     // value while the guards reason about another.
-    const mappedStatus = deriveTrialingStatus({
-        mappedStatus: providerStatus,
-        trialEnd: resolvedTrialEnd,
+    // HOS-180: courtesy is the SECOND local derivation, chained after trialing.
+    // The two can never both fire — trialing keys off ACTIVE, courtesy off
+    // PAUSED — so the order between them is irrelevant, but their position
+    // relative to everything below is not (see the comment above).
+    //
+    // This is also what keeps a gifted subscriber from being told their card
+    // failed: `shouldSendPausedEmail` reads the DERIVED status, so a courtesy
+    // never looks like a pause to the notification decision (HOS-926, R-7).
+    const mappedStatus = deriveCourtesyStatus({
+        mappedStatus: deriveTrialingStatus({
+            mappedStatus: providerStatus,
+            trialEnd: resolvedTrialEnd,
+            now
+        }),
+        courtesyEndsAt: readCourtesyFields(localSubscription).courtesyEndsAt,
         now
     });
 
@@ -701,7 +863,7 @@ export async function processSubscriptionUpdated({
             'Subscription webhook: stored status not recognized — skipping status write and side effects',
             { capture: true }
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'stored_status_unrecognized' };
     }
 
     if (previousStatus === mappedStatus) {
@@ -717,7 +879,7 @@ export async function processSubscriptionUpdated({
             { subscriptionId: localSubscription.id, status: mappedStatus, source },
             `No status change for subscription ${localSubscription.id}: still ${mappedStatus}`
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'already_in_sync' };
     }
 
     // Step 6b: Guard — verify the transition is permitted by the state machine
@@ -778,7 +940,11 @@ export async function processSubscriptionUpdated({
                 },
                 'Subscription webhook: expected ACTIVE→TRIALING no-op for a legacy pre-HOS-211 row (activated before the trial-sync fix, trial_end was never populated) — state machine intentionally does not auto-correct this; skipping status write'
             );
-            return { success: true, statusChanged: false };
+            return {
+                success: true,
+                statusChanged: false,
+                outcome: 'transition_refused_legacy_active_to_trialing'
+            };
         }
 
         // SPEC-180: invalid transitions are actionable (indicate MP/local state divergence).
@@ -796,7 +962,7 @@ export async function processSubscriptionUpdated({
             'Subscription webhook: invalid status transition — skipping status write and all dependent side effects',
             { capture: true }
         );
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: 'transition_refused' };
     }
 
     // Step 7: Update billing_subscriptions and insert audit log in a single transaction.
@@ -854,6 +1020,19 @@ export async function processSubscriptionUpdated({
     // whether to run the post-commit side effects (notifications, addon cleanup, etc.).
     let txStatusChanged = true;
 
+    /**
+     * Why the transaction wrote nothing, when it wrote nothing (HOS-914). Set
+     * beside every `txStatusChanged = false` so the post-commit return can report
+     * the reason instead of collapsing six distinct outcomes — including a refused
+     * transition, which is a real divergence — into one bare `false`.
+     *
+     * Initialised to the refused-transition value rather than to `already_in_sync`:
+     * if a future branch sets `txStatusChanged = false` and forgets to set this,
+     * the result errs toward "something was wrong here" rather than toward the one
+     * value that means "nothing to see".
+     */
+    let txOutcome: SubscriptionUpdateOutcome = 'transition_refused';
+
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
@@ -885,6 +1064,7 @@ export async function processSubscriptionUpdated({
                 'Subscription webhook tx: row not found under FOR UPDATE lock — skipping write'
             );
             txStatusChanged = false;
+            txOutcome = 'local_row_not_found';
             return;
         }
 
@@ -906,6 +1086,7 @@ export async function processSubscriptionUpdated({
                 { capture: true }
             );
             txStatusChanged = false;
+            txOutcome = 'stored_status_unrecognized';
             return;
         }
 
@@ -916,6 +1097,7 @@ export async function processSubscriptionUpdated({
                 'Subscription webhook tx: status already up-to-date (concurrent write) — skipping'
             );
             txStatusChanged = false;
+            txOutcome = 'already_in_sync';
             return;
         }
 
@@ -950,6 +1132,7 @@ export async function processSubscriptionUpdated({
                 'Subscription webhook tx: skipping PAUSED transition — intentional soft-cancel grace period'
             );
             txStatusChanged = false;
+            txOutcome = 'soft_cancel_grace';
             return;
         }
 
@@ -988,6 +1171,7 @@ export async function processSubscriptionUpdated({
                     'Subscription webhook tx: expected ACTIVE→TRIALING no-op for a legacy pre-HOS-211 row (activated before the trial-sync fix, trial_end was never populated) — state machine intentionally does not auto-correct this; committing nothing'
                 );
                 txStatusChanged = false;
+                txOutcome = 'transition_refused_legacy_active_to_trialing';
                 return;
             }
 
@@ -1008,6 +1192,7 @@ export async function processSubscriptionUpdated({
                 { capture: true }
             );
             txStatusChanged = false;
+            txOutcome = 'transition_refused';
             return;
         }
 
@@ -1036,6 +1221,44 @@ export async function processSubscriptionUpdated({
             .update(billingSubscriptions)
             .set(updateData)
             .where(eq(billingSubscriptions.id, localSubscription.id));
+
+        // Step 7b (HOS-1012 T-022): end the customer's Hospeda-owned trial in
+        // THIS transaction, so the overlap never outlives it.
+        //
+        // Since HOS-1012 a trial is a local row (`trialing`,
+        // `mp_subscription_id = NULL`) minted at first publish, and the paid
+        // checkout creates its own separate row — so the instant this webhook
+        // activates that row, the customer holds TWO entitlement-granting rows.
+        // `loadEntitlements` takes the FIRST one it finds, so a committed
+        // overlap resolves a nondeterministic plan.
+        //
+        // Gated on a transition INTO an entitlement-granting status from one
+        // that was not granting — the activation, whatever its shape. Read off
+        // `freshStatus`, the FOR-UPDATE-locked value, and not the stale
+        // pre-transaction snapshot, for the same reason every other guard in
+        // this block is. Every early `return` above therefore skips it too: a
+        // refused activation must leave the trial granting, because the
+        // customer got nothing in exchange for it.
+        //
+        // Deliberately NOT placed after `withServiceTransaction` next to
+        // `completeReactivationSupersession` (HOS-114): that one cancels a
+        // MercadoPago preapproval and cannot be transactional, which is why it
+        // needs a reconcile cron behind it. This one is a purely local write
+        // with nothing to reconcile — and its failure MUST roll the activation
+        // back rather than commit the two-row state.
+        if (
+            !isEntitlementGrantingStatus(freshStatus) &&
+            isEntitlementGrantingStatus(mappedStatus)
+        ) {
+            await supersedeLocalTrialsOnActivation({
+                tx,
+                activatedSubscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                productDomain: localSubscription.productDomain,
+                providerEventId,
+                source: source ?? 'webhook'
+            });
+        }
 
         // Step 8: Insert audit log within the transaction (non-blocking on failure)
         try {
@@ -1093,7 +1316,7 @@ export async function processSubscriptionUpdated({
     // If the tx-internal guard determined no write happened (stale-read scenario),
     // skip all post-commit side effects and return statusChanged:false.
     if (!txStatusChanged) {
-        return { success: true, statusChanged: false };
+        return { success: true, statusChanged: false, outcome: txOutcome };
     }
 
     // Clear entitlement cache to reflect status change immediately
@@ -1125,10 +1348,82 @@ export async function processSubscriptionUpdated({
         });
     }
 
-    // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
-    // No-op for accommodation subs (no commerce_listing_subscriptions row).
+    // HOS-937 step 1: redeem any deferred-redemption promo bookkeeping the
+    // own-preapproval checkout flow snapshotted on THIS row's own metadata
+    // (`own-preapproval-subscription-create.ts` — that flow has no
+    // `billing_pending_checkouts` correlation row to snapshot on instead, and
+    // therefore no `linkPreapprovalToLocalSub` "link" event to redeem at; the
+    // row already carried `mp_subscription_id` from creation, so it was found
+    // directly in Step 5 above and the `!localSubscription` / F3 fallback
+    // branch — the OLD flow's redemption call site — never ran for it).
+    //
+    // Gated on the SAME pending_provider -> active/trialing transition as the
+    // reactivation-supersession block above, but broader: TRIALING is
+    // included (not just ACTIVE) because a trial_extension code is most often
+    // exactly what put the row in trialing in the first place. Reused
+    // verbatim from `link-preapproval.service.ts` (`applyPendingDiscountBestEffort`
+    // / `applyPendingTrialExtensionBestEffort`) rather than reimplemented —
+    // same fail-closed-stamp / best-effort-record split, same Sentry
+    // reporting. Never runs for an OLD Path C row: those never carry either
+    // metadata key (see `extractPendingPromoFromRowMetadata`'s docblock), so
+    // this is a pure no-op for them, not a second redemption on top of the
+    // one `linkPreapprovalToLocalSub` already recorded at link time.
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        (mappedStatus === SubscriptionStatusEnum.ACTIVE ||
+            mappedStatus === SubscriptionStatusEnum.TRIALING)
+    ) {
+        const { pendingDiscount, pendingTrialExtension } = extractPendingPromoFromRowMetadata(
+            localSubscription.metadata
+        );
+        if (pendingDiscount) {
+            await applyPendingDiscountBestEffort({
+                billing,
+                localSubscriptionId: localSubscription.id,
+                preapprovalId: mpPreapprovalId,
+                customerId: localSubscription.customerId,
+                planId: localSubscription.planId,
+                pendingDiscount,
+                livemode: localSubscription.livemode
+            });
+        }
+        if (pendingTrialExtension) {
+            await applyPendingTrialExtensionBestEffort({
+                localSubscriptionId: localSubscription.id,
+                preapprovalId: mpPreapprovalId,
+                customerId: localSubscription.customerId,
+                pendingTrialExtension,
+                livemode: localSubscription.livemode
+            });
+        }
+
+        // REMOVED, HOS-1234: the `mp_payer_email` persist used to live here,
+        // gated on `if (mpSubscription.payerEmail)`. It never wrote a single
+        // row in production — `billing_customers.mp_payer_email` was empty for
+        // all 37 staging customers — because a preapproval NEVER reports the
+        // address: `GET /preapproval/{id}` answers with `payer_email` PRESENT
+        // AND EMPTY even for an `authorized` preapproval whose checkout supplied
+        // a valid one (measured 2026-09-08 against the live sandbox; its
+        // `payer_id` came back populated). An empty string is falsy, so the
+        // guard was false every time and nothing was logged on either side.
+        //
+        // Do NOT reinstate it here off `mpSubscription`. A payment is the only
+        // MercadoPago object that states which email actually paid, so the
+        // recording now hangs off a CLEARED PAYMENT instead — see
+        // `recordPayerEmailFromSettledCharge` in `subscription-payment-handler.ts`
+        // for subscription charges, and `recordConfirmedPayerEmail` in
+        // `payment-logic.ts` for every other payment.
+    }
+
+    // SPEC-239 T-050: reconcile everything linked to this subscription.
+    // Commerce listings flip visibility from the status; the accommodation
+    // halves are keyed off the OWNER — the bridge re-derives their current
+    // subscription, refreshes their entity_subscriptions cache rows, and
+    // (HOS-1181) republishes whatever billing had taken down now that they
+    // pay again. There is no accommodation branch to maintain here and no
+    // second bridge to remember: every effect hangs off this one call.
     // Non-blocking: never breaks webhook processing.
-    await reconcileCommerceListingForSubscription({
+    await reconcileSubscriptionLinkedEntities({
         subscriptionId: localSubscription.id,
         subscriptionStatus: mappedStatus,
         source: 'mp-webhook'
@@ -1258,7 +1553,38 @@ export async function processSubscriptionUpdated({
                         subscriptionId: localSubscription.id,
                         customerId: localSubscription.customerId,
                         billing,
-                        db
+                        db,
+                        // HOS-847 PR 7a — `'unknown'` here is measured, not lazy.
+                        //
+                        // Several different endings reach this one branch as a
+                        // single `mappedStatus === CANCELLED`: the buyer
+                        // cancelled the preapproval on MercadoPago's own site,
+                        // and MercadoPago auto-cancelled it after its native
+                        // recycling exhausted its retries (non-payment). MP's
+                        // preapproval resource carries no reason field that
+                        // separates them, and the one local tell that would —
+                        // `previousStatus === PAST_DUE` — never fires because
+                        // **no writer in this repo puts `past_due` into
+                        // `billing_subscriptions.status`** (this repo's own
+                        // dunning status mutations are off:
+                        // `cron/jobs/dunning.job.ts`, HOS-191 F5).
+                        //
+                        // Do not read that as "the value does not exist":
+                        // `subscription-status-provider.ts` and
+                        // `subscription-status-normalize.ts` both MAP a provider
+                        // status onto `PAST_DUE`. Those are read directions. The
+                        // missing half is the write, and a tell nothing writes
+                        // is a tell nothing can read.
+                        //
+                        // So this call site genuinely cannot tell "they stopped
+                        // paying" from "they cancelled". `'unknown'` says exactly
+                        // that, and the owner answered it on 2026-09-07 in the
+                        // customer's favour:
+                        // `UNKNOWN_CANCELLATION_CAUSE_POLICY` in
+                        // `services/addon-lifecycle-cancellation.service.ts` now
+                        // reads `'honour-paid-period'`, so an add-on reaching
+                        // this path keeps the period it was already charged for.
+                        cause: 'unknown'
                     }),
                     cancellationTimeoutPromise
                 ]);
@@ -1466,7 +1792,12 @@ export async function processSubscriptionUpdated({
             { error: lookupError, subscriptionId: localSubscription.id },
             'Failed to fetch customer/plan for notification. Status update succeeded, skipping notifications.'
         );
-        return { success: true, statusChanged: true, newStatus: mappedStatus };
+        return {
+            success: true,
+            statusChanged: true,
+            newStatus: mappedStatus,
+            outcome: 'status_written'
+        };
     }
 
     // `plan.name` from the qzpay adapter is the SLUG (`owner-basico`) — fine for
@@ -1500,6 +1831,55 @@ export async function processSubscriptionUpdated({
             previousStatus
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription cancelled notification failed');
+        });
+    }
+
+    // HOS-937 step 3: PENDING_PROVIDER -> CANCELLED means MercadoPago
+    // cancelled a preapproval that never activated (typically a card
+    // rejection during checkout, spec §8.3). Left alone, MP keeps offering
+    // the user a "pay with another method" button that can never work
+    // (`cancelled -> authorized` is a forbidden MP transition) — an
+    // infinite loop with no way out.
+    //
+    // Redesigned per adversarial review: the webhook does NOT mint a fresh
+    // preapproval here. R-3 measured cancellations that read `cancelled` on
+    // BOTH the `PUT` and an immediate `GET`, then read `authorized`/
+    // `pending` HOURS later — a 350ms deferred re-read (what this used to
+    // do) does not cover that gap, and minting here risks a second live MP
+    // preapproval for a user whose original one resurrects. Minting is
+    // deferred all the way to the checkout-retry endpoint
+    // (`routes/billing/checkout-retry.ts`), which the user reaches by
+    // clicking the link below — naturally minutes-to-hours later, which
+    // covers R-3 for real, with no new mechanism. That endpoint does its
+    // own fresh `GET` and only mints if MercadoPago STILL reports
+    // cancelled at click time.
+    //
+    // This is deliberately its own `if`, NOT an `else` on
+    // `shouldSendCancelledEmail` above — that guard explicitly EXCLUDES
+    // this exact transition (a checkout that never activated is not "your
+    // subscription was cancelled"), which is why this transition has never
+    // sent the user anything until now.
+    if (
+        previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER &&
+        mappedStatus === SubscriptionStatusEnum.CANCELLED &&
+        customer?.email
+    ) {
+        sendNotification({
+            type: NotificationType.PAYMENT_FAILURE,
+            recipientEmail: customer.email,
+            recipientName: customerName,
+            userId,
+            customerId: localSubscription.customerId,
+            planName: planDisplayName,
+            amount: 0,
+            currency: 'ARS',
+            failureReason: 'card_rejected',
+            retryUrl: buildCheckoutRetryLandingUrl(DEFAULT_RETURN_URL_LOCALE, localSubscription.id)
+        }).catch((notifErr) => {
+            apiLogger.debug(
+                { error: notifErr, subscriptionId: localSubscription.id },
+                'HOS-937 step 3: retry-checkout notification failed'
+            );
         });
     }
 
@@ -1589,23 +1969,40 @@ export async function processSubscriptionUpdated({
     }
 
     // Step 10: Return success
-    return { success: true, statusChanged: true, newStatus: mappedStatus };
+    return {
+        success: true,
+        statusChanged: true,
+        newStatus: mappedStatus,
+        outcome: 'status_written'
+    };
 }
 
-// GAP-043-53: ADDON_RENEWAL_CONFIRMATION dispatch is intentionally not implemented here.
+// GAP-043-53, CORRECTED BY HOS-847 PR 5. The comment that stood here was wrong,
+// and it is worth saying exactly how, because it read entirely plausibly.
 //
-// MercadoPago handles add-on recurring billing externally and does not emit a
-// distinct webhook event per add-on renewal. The `subscription_preapproval.updated`
-// event only signals changes to the subscription's overall status (active, paused,
-// canceled, etc.) — it carries no per-addon granularity.
+// It asserted that "MercadoPago handles add-on recurring billing externally and
+// does not emit a distinct webhook event per add-on renewal", and concluded
+// that an add-on renewal was therefore not observable from webhook processing.
+// The premise was false in a way no reader could check from here: MercadoPago
+// was not handling anything, because nobody had ever asked it for an add-on
+// preapproval. `billingType: 'recurring'` add-ons went through
+// `checkout.create({ mode: 'payment' })` — a one-time Preference — so they were
+// charged once and never renewed at all. There was no renewal to notify about;
+// the absence of an event was the bug, not a provider limitation.
 //
-// To implement ADDON_RENEWAL_CONFIRMATION in the future:
-//   1. Create a dedicated webhook handler for add-on payment events (e.g.
-//      `payment.approved` with metadata.type === 'addon_renewal').
-//   2. Extract the addonSlug from the payment metadata.
-//   3. Call sendNotification({ type: NotificationType.ADDON_RENEWAL_CONFIRMATION, ... })
-//      after confirming the renewal in billing_addon_purchases.
+// Since PR 4 a recurring add-on gets a preapproval OF ITS OWN, so MercadoPago
+// does now emit a per-add-on renewal event — a `subscription_authorized_payment`
+// against that preapproval, carrying exactly the granularity this comment said
+// did not exist. PR 5 routes it: see `addon-recurring-handler.ts` and
+// `addon-recurring-renewal.service.ts`. The renewal is recorded in
+// `billing_payments` (`metadata.flow = 'addon-recurring'`) and the purchase's
+// `current_period_end` advances.
 //
-// Until MercadoPago surfaces add-on renewal events separately, this notification
-// cannot be reliably dispatched from subscription webhook processing without
-// risking false positives or requiring a per-addon payment scan on every event.
+// The ADDON_RENEWAL_CONFIRMATION *notification* is still not dispatched, and
+// that is now a deliberate scope decision rather than a claimed impossibility:
+// the copy has to tell a subscriber they were charged again and will be charged
+// again, which belongs with PR 8's recurring copy work. When it is built, the
+// dispatch site is `addon-recurring-renewal.service.ts`, and
+// `addon-notification-deep-link.guard.test.ts` must gain that file in
+// `DISPATCH_FILES` plus a bumped `EXPECTED_DISPATCH_COUNT` — otherwise the new
+// dispatch is invisible to the guard that checks deep-link fields are wired.

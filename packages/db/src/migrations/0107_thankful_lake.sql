@@ -1,0 +1,1 @@
+ALTER TABLE "experiences" ADD COLUMN "meeting_point_directions" text[] DEFAULT '{}' NOT NULL;

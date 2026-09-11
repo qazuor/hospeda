@@ -20,18 +20,36 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { protectedAddGastronomyFaqRoute } from './addFaq';
+import { protectedAddGastronomyFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddGastronomyMediaRoute } from './addMedia';
+import { protectedGetGastronomyBrochureRoute } from './brochure';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
+import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
 import { protectedGetGastronomyByIdRoute } from './getById';
+import { protectedGetGastronomyDailySpecialsRoute } from './getDailySpecials';
+import { protectedGetGastronomyEventsRoute } from './getEvents';
 import { protectedGetGastronomyMediaRoute } from './getMedia';
+import { protectedGetGastronomyMenuRoute } from './getMenu';
 import { protectedListMyGastronomyRoute } from './listMine';
+import { protectedGetGastronomyMenuQrRoute } from './menuQr';
+import { protectedGetGastronomyMenuQrScansRoute } from './menuQrScans';
 import { protectedPatchGastronomyRoute } from './patch';
+import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
+import { protectedPutGastronomyEventsRoute } from './putEvents';
+import { protectedPutGastronomyMenuRoute } from './putMenu';
+import { protectedGetGastronomyQrCodeRoute } from './qrCode';
+import { protectedGetGastronomyQrSheetRoute } from './qrSheet';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
+import { protectedUpdateGastronomyMediaRoute } from './updateMedia';
+import { protectedUploadGastronomyMenuFileRoute } from './uploadMenuFile';
+import { protectedUploadGastronomyMenuItemPhotoRoute } from './uploadMenuItemPhoto';
+import { protectedGastronomyViewStatsRoute } from './viewStats';
+import { protectedGastronomyViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
 const app = createRouter();
 
@@ -41,6 +59,89 @@ app.route('/', protectedReorderGastronomyFaqsRoute);
 // GET /mine — Owner's own listings. MUST be before /{id} so the literal
 // "mine" segment is not captured as an :id param.
 app.route('/', protectedListMyGastronomyRoute);
+
+// GET /mine/views, /mine/views/daily-series — Basic view stats (HOS-734).
+// Two literal segments under /mine, so ordering relative to /mine and /{id}
+// is not load-bearing (Hono matches exact segment counts), but registered
+// alongside /mine for readability.
+app.route('/', protectedGastronomyViewStatsRoute);
+app.route('/', protectedGastronomyViewStatsDailySeriesRoute);
+
+// GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before
+// /{id} for the same DEFENSIVE reason as the media entries: Hono resolves a
+// static segment ahead of a param at the same position regardless of insertion
+// order, so this ordering is belt-and-braces, not load-bearing.
+app.route('/', protectedGetGastronomyBrochureRoute);
+
+// GET /{id}/qr-sheet — Printable QR sheet for the door (HOS-982). A different
+// document from the brochure above and from the table's menu code: this one is
+// `purpose: LISTING` and carries NO entitlement gate (owner decision). Same
+// defensive ordering rationale as the brochure.
+app.route('/', protectedGetGastronomyQrSheetRoute);
+app.route('/', protectedGetGastronomyQrCodeRoute);
+
+// Menu (HOS-895) — the carta and its photo/PDF alternative. Registered
+// before /{id} for the same DEFENSIVE reason as the media and brochure
+// entries: Hono resolves a static segment ahead of a param at the same
+// position regardless of insertion order.
+//
+// GET /{id}/menu — read the carta. NOT entitlement-gated: every gastronomy
+// tier sees its own menu, and only writing the structured half is paid.
+app.route('/', protectedGetGastronomyMenuRoute);
+
+// PUT /{id}/menu — replace the structured carta. Gated on
+// MANAGE_GASTRONOMY_MENU (gastronomy-pro and above).
+app.route('/', protectedPutGastronomyMenuRoute);
+
+// POST /{id}/menu-file — upload the photo/PDF alternative. Gated on
+// MANAGE_GASTRONOMY_MENU, same as PUT /{id}/menu (HOS-895 PR2 — owner
+// decision reversed PR1's ungated shipment).
+app.route('/', protectedUploadGastronomyMenuFileRoute);
+
+// DELETE /{id}/menu-file — clear it, asset included. Same gate as the upload.
+app.route('/', protectedDeleteGastronomyMenuFileRoute);
+
+// POST /{id}/menu-item-photo — upload ONE dish photo (HOS-1045). Gated on
+// MENU_ITEM_PHOTOS (gastronomy-premium), a strictly narrower gate than the
+// carta's: writing a carta is `-pro`, putting a picture on a dish of it is the
+// tier above. Returns the asset; the association is written by PUT /{id}/menu,
+// because a dish's id does not survive that write.
+app.route('/', protectedUploadGastronomyMenuItemPhotoRoute);
+
+// GET /{id}/menu-qr — the venue's printable menu QR (HOS-1044), minted (or
+// reused) on this call only — never on the public /carta/ page. Gated on
+// MENU_QR_SCAN_METRICS (gastronomy-premium). Registered before /{id} for the
+// same DEFENSIVE reason as the entries above.
+app.route('/', protectedGetGastronomyMenuQrRoute);
+
+// GET /{id}/menu-qr/scans — the scan aggregate for that same QR (HOS-1044
+// §6.4): total, daily series, device/OS/language breakdowns. Never mints —
+// a venue with no code yet gets an all-zero aggregate. Same gate as above,
+// three literal segments so ordering relative to /{id}/menu-qr is defensive
+// only (Hono matches exact segment counts).
+app.route('/', protectedGetGastronomyMenuQrScansRoute);
+
+// Menú del día (HOS-1041) — a dish with its own validity window. Registered
+// before /{id} for the same DEFENSIVE reason as the entries above.
+//
+// GET /{id}/daily-specials — read them, UNFILTERED by the window. NOT
+// entitlement-gated: every gastronomy tier sees its own specials, and only
+// publishing them is paid.
+app.route('/', protectedGetGastronomyDailySpecialsRoute);
+
+// PUT /{id}/daily-specials — replace them. Gated on
+// MANAGE_GASTRONOMY_DAILY_SPECIAL (gastronomy-pro and above).
+app.route('/', protectedPutGastronomyDailySpecialsRoute);
+// Venue events (HOS-1042) — the venue's own agenda. Registered before /{id}
+// for the same DEFENSIVE reason as every static-segment entry above.
+//
+// GET /{id}/events — read the agenda. NOT entitlement-gated: an owner whose
+// plan no longer grants it still owns the rows, and only writing is paid.
+app.route('/', protectedGetGastronomyEventsRoute);
+
+// PUT /{id}/events — replace the agenda. Gated on MANAGE_GASTRONOMY_EVENTS
+// (gastronomy-pro and above).
+app.route('/', protectedPutGastronomyEventsRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetGastronomyByIdRoute);
@@ -70,6 +171,11 @@ app.route('/', protectedReorderGastronomyMediaRoute);
 app.route('/', protectedGetGastronomyMediaRoute);
 
 // POST /{id}/media — Add photo to gallery.
+// POST /:id/media/featured - Upload straight to cover (HOS-803).
+// Registered before POST /:id/media so "featured" resolves as the fixed
+// suffix rather than being absorbed by the collection route.
+app.route('/', protectedAddGastronomyFeaturedMediaRoute);
+
 app.route('/', protectedAddGastronomyMediaRoute);
 
 // PUT /{id}/media/{mediaId}/featured — Must be before /{id}/media/{mediaId} (DELETE).
@@ -77,5 +183,9 @@ app.route('/', protectedSetFeaturedGastronomyMediaRoute);
 
 // DELETE /{id}/media/{mediaId} — Remove photo from gallery.
 app.route('/', protectedRemoveGastronomyMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdateGastronomyMediaRoute);
 
 export { app as protectedGastronomyRoutes };

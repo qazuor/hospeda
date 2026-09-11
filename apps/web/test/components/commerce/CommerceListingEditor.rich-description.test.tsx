@@ -40,7 +40,11 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
-vi.mock('../../../src/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
+vi.mock('../../../src/lib/api/client', () => ({
+    apiClient: {
+        patch: vi.fn()
+    }
+}));
 
 // `MediaSection` hydrates itself from `commerceMediaApi.listMedia` on mount
 // (HOS-372), so the editor cannot render without it stubbed.
@@ -69,6 +73,7 @@ function renderEditor(richDescription: string | undefined) {
     return render(
         <CommerceListingEditor
             vertical="gastronomy"
+            sectionId="basicInfo"
             listingId="abc"
             locale="es"
             initialData={

@@ -56,7 +56,20 @@ export interface UsageBadgeData {
 export interface HostUsageBadgeLoadResult {
     /** Parsed usage badge data, or `null` when the usage read failed. */
     readonly usageData: UsageBadgeData | null;
-    /** Whether `/users/me/entitlements` resolved a real owner plan. */
+    /**
+     * Whether `/users/me/entitlements` resolved a real owner plan.
+     *
+     * This is the server's `has_active_sub` verdict and nothing more. It does
+     * NOT answer "can this owner publish": since HOS-1012 the server also
+     * publishes on `first_publish` — an owner with no plan but an intact trial —
+     * and this value is `false` for them.
+     *
+     * It gates the "anfitrión en preparación" banner, which is the right
+     * consumer: that banner is about not having a plan. A publish affordance
+     * must read `GET /protected/accommodations/publish-eligibility` instead.
+     * Feeding this into one was HOS-1183, and it hid the button from exactly
+     * the owner the server would have published.
+     */
     readonly hasOwnerPlan: boolean;
     /** Whether the entitlements read itself succeeded. */
     readonly entitlementsReadOk: boolean;

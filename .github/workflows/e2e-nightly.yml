@@ -137,6 +137,21 @@ jobs:
       HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
       HOSPEDA_E2E_RUN_ID: ${{ github.run_id }}
 
+      # HOS-1144 — replace every remote media URL with a placeholder the site
+      # serves itself, so this run downloads nothing from Cloudinary DELIVERY
+      # (res.cloudinary.com). The seed carries the REAL production Cloudinary
+      # URLs and apps/web is `output: 'server'` with zero prerendered pages, so
+      # without this every page render made the SSR Node process fetch
+      # untransformed originals through `/_image` (70.66 GB in 30 days, 98.5%
+      # from GitHub runners).
+      # This does NOT touch the @cloudinary upload specs above: those talk to
+      # the Cloudinary Admin/Upload API (api.cloudinary.com) from the API
+      # process, which is a different host and is not blocked. Only the
+      # browser's ability to resolve res.cloudinary.com is removed.
+      # Deliberately its own variable rather than `CI`, which production build
+      # pipelines also set — placeholders in production would be catastrophic.
+      HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS: 'true'
+
       # Playwright tuning (2 workers per spec — sandbox rate limits)
       E2E_MODE: nightly
 

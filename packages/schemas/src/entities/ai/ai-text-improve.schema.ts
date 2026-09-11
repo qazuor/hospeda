@@ -43,6 +43,35 @@ export const AiTextImproveFieldTypeSchema = z.enum(['description', 'summary', 'f
 export type AiTextImproveFieldType = z.infer<typeof AiTextImproveFieldTypeSchema>;
 
 // ---------------------------------------------------------------------------
+// Entity-type discriminator (HOS-1075)
+// ---------------------------------------------------------------------------
+
+/**
+ * Which vertical the improved text belongs to (HOS-1075).
+ *
+ * Before this field existed the route had no way to know whether
+ * `fieldValue` came from an accommodation, a gastronomy listing, or an
+ * experience listing, so it could only gate on the actor's ACCOMMODATION
+ * entitlement — a host who also owns a comercio could improve their
+ * comercio's text for free off their accommodation plan, and a comercio-only
+ * owner was blocked even though `AI_TEXT_IMPROVE` is meant to be gated per
+ * vertical, not per actor.
+ *
+ * **Optional, defaulting to `'accommodation'`** — every caller in production
+ * today (the web host editor and the admin accommodation/FAQ panels) sends
+ * neither this field nor `entityId`, and their behaviour must not change.
+ * A future comercio "mejorar con IA" panel sends `'gastronomy'` /
+ * `'experience'` explicitly once that surface exists.
+ *
+ * **APPEND-ONLY**: once a value ships to production, members may only be
+ * added, mirroring {@link AiTextImproveFieldTypeSchema}.
+ */
+export const AiTextImproveEntityTypeSchema = z.enum(['accommodation', 'gastronomy', 'experience']);
+
+/** Inferred type for {@link AiTextImproveEntityTypeSchema}. */
+export type AiTextImproveEntityType = z.infer<typeof AiTextImproveEntityTypeSchema>;
+
+// ---------------------------------------------------------------------------
 // Per-field length caps
 // ---------------------------------------------------------------------------
 
@@ -80,6 +109,12 @@ export const AI_TEXT_IMPROVE_MAX_LENGTH: Readonly<Record<AiTextImproveFieldType,
  * - `locale` is optional. When absent the route handler defaults to
  *   `'es'` (the Argentine market default). Making it optional in the
  *   schema keeps callers that do not track locale functional.
+ * - `entityType` / `entityId` (HOS-1075) identify which entity the text
+ *   belongs to, so the route can gate on that vertical's entitlement
+ *   instead of always the actor's accommodation one. Both optional and
+ *   independent — `entityType` defaults to `'accommodation'` server-side
+ *   when absent (see {@link AiTextImproveEntityTypeSchema}); `entityId` is
+ *   accepted for observability/future ownership checks but not required.
  * - `.strict()` rejects unknown keys so the route boundary fails fast on
  *   typos and stray client fields.
  */
@@ -99,7 +134,23 @@ export const AiTextImproveRequestSchema = z
          * Target locale for the AI suggestion. When absent the route
          * defaults to `'es'`.
          */
-        locale: LanguageEnumSchema.optional()
+        locale: LanguageEnumSchema.optional(),
+        /**
+         * Which vertical the text belongs to (HOS-1075). Absent means
+         * `'accommodation'` — see {@link AiTextImproveEntityTypeSchema}.
+         */
+        entityType: AiTextImproveEntityTypeSchema.optional(),
+        /**
+         * The id of the entity `fieldValue` belongs to (HOS-1075). Optional:
+         * this route does not persist anything and performs no ownership
+         * check today, so the id is not required for the entitlement gate
+         * to work — only `entityType` is. Accepted for observability and to
+         * keep the shape consistent with the sibling `/ai/translate` route.
+         */
+        entityId: z
+            .string()
+            .uuid({ message: 'zodError.ai.textImprove.entityId.invalidUuid' })
+            .optional()
     })
     .strict()
     .superRefine((val, ctx) => {

@@ -66,14 +66,61 @@ describe('fotos.astro — VIDEO cells (GLightbox + play overlay)', () => {
         expect(fotosSrc).toContain('src={item.thumbGrid}');
     });
 
-    it('video item builds poster URL from YouTube video ID (maxresdefault)', () => {
-        expect(fotosSrc).toContain('maxresdefault.jpg');
-        expect(fotosSrc).toContain('img.youtube.com/vi/');
+    it('video item builds its poster URL through getYoutubePosterUrl (HOS-1022)', () => {
+        // HOS-1022: the `img.youtube.com/vi/<id>/maxresdefault.jpg` template
+        // moved into `@/lib/video-embed`'s getYoutubePosterUrl() — see
+        // video-embed.test.ts for the literal URL assertions. This page must
+        // import and call it rather than re-deriving the template locally.
+        expect(fotosSrc).toContain('getYoutubePosterUrl');
+        expect(fotosSrc).toMatch(/import\s*\{[^}]*getYoutubePosterUrl/);
     });
 
-    it('video item has an hqdefault fallback for posters', () => {
-        expect(fotosSrc).toContain('hqdefault.jpg');
+    it('video item has an hqdefault fallback for posters, built via getYoutubePosterUrl', () => {
+        expect(fotosSrc).toContain("quality: 'hqdefault'");
         expect(fotosSrc).toContain('data-fallback={item.thumbFallback');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 1b. VIDEO URL DERIVATION (HOS-1022) — resolveVideoEmbed, not a local regex
+// ---------------------------------------------------------------------------
+describe('fotos.astro — video URL derivation goes through resolveVideoEmbed (HOS-1022)', () => {
+    it('imports resolveVideoEmbed from @/lib/video-embed', () => {
+        expect(fotosSrc).toMatch(
+            /import\s*\{[^}]*resolveVideoEmbed[^}]*\}\s*from\s*['"]@\/lib\/video-embed['"]/
+        );
+    });
+
+    it('does NOT define a local extractYoutubeId regex parser', () => {
+        // This is the exact bug this ticket closes: a substring regex (no host
+        // parsing) let a Vimeo/Dailymotion URL that merely CONTAINED
+        // YouTube-shaped text anywhere (e.g. in a query param) be misread as a
+        // YouTube video. See video-embed.test.ts's
+        // "does not misread a Vimeo URL containing YouTube-shaped text" case
+        // for the behavioral proof — resolveVideoEmbed parses the real
+        // hostname, so this class of bug cannot recur.
+        expect(fotosSrc).not.toContain('extractYoutubeId');
+        expect(fotosSrc).not.toMatch(/url\.match\(/);
+    });
+
+    it('skips a video entry resolveVideoEmbed rejects (continue, not pushed)', () => {
+        expect(fotosSrc).toMatch(/const resolved = resolveVideoEmbed\(\{ url: entry\.url \}\);/);
+        expect(fotosSrc).toContain('if (!resolved) continue;');
+    });
+
+    it('uses the derived embedUrl as the GLightbox href for videos, never the raw entry.url', () => {
+        // The video-building loop must assign the DERIVED embed URL — not
+        // `entry.url` (the raw host-authored URL), which is what the photo
+        // loops above legitimately use for their own `src` (unrelated —
+        // `entry.url` there refers to a plain image URL, not a video).
+        expect(fotosSrc).toContain('src: resolved.embedUrl,');
+        const videoLoopStart = fotosSrc.indexOf('for (const entry of accommodation.media.videos)');
+        const videoLoopSrc = fotosSrc.slice(videoLoopStart, videoLoopStart + 800);
+        expect(videoLoopSrc).not.toMatch(/src:\s*entry\.url/);
+    });
+
+    it('sets data-type="video" explicitly for video items instead of relying on GLightbox auto-detection', () => {
+        expect(fotosSrc).toContain("data-type={item.type === 'video' ? 'video' : undefined}");
     });
 });
 
@@ -94,6 +141,41 @@ describe('fotos.astro — PHOTO cells (href = full-size, thumbGrid = galleryHalf
         expect(fotosSrc).toContain('getMediaUrl');
     });
 
+    it("strips the featured image's baked-in transform before re-cropping thumbGrid to galleryHalf (HOS-881 M-1)", () => {
+        // `accommodation.featuredImage` now carries the detail page's `og`
+        // preset (1200x630) baked in (HOS-881). `getMediaUrl` no-ops on a URL
+        // that already has a transform, so `thumbGrid` MUST feed it a
+        // stripped URL, not the raw `featuredImage` field directly — the
+        // test above (loose `toContain('getMediaUrl')` +
+        // `toContain("preset: 'galleryHalf'")`) passes even when the strip is
+        // missing, since both strings exist elsewhere in the file regardless.
+        // Anchor on the actual composed call chain instead.
+        expect(fotosSrc).toMatch(
+            /const featuredBareUrl = stripCloudinaryTransform\(accommodation\.featuredImage\);/
+        );
+        expect(fotosSrc).toMatch(
+            /thumbGrid:\s*getMediaUrl\(featuredBareUrl,\s*\{\s*preset:\s*'galleryHalf'\s*\}\)/
+        );
+    });
+
+    it('uses the SAME stripped URL for the GLightbox href/thumb, not the og-cropped one (HOS-881 M-1)', () => {
+        // A fixed 1200x630 (1.905:1) crop on the full-size lightbox view is
+        // real content loss on a portrait photo, not just a byte-size
+        // regression — `src`/`thumb` must resolve to the bare photo.
+        expect(fotosSrc).toMatch(/src:\s*featuredBareUrl,/);
+        expect(fotosSrc).toMatch(/thumb:\s*featuredBareUrl,/);
+    });
+
+    it('strips the video-poster fallback (featured image) before its own galleryHalf crop (HOS-881 M-1)', () => {
+        expect(fotosSrc).toMatch(/:\s*stripCloudinaryTransform\(accommodation\.featuredImage\);/);
+    });
+
+    it('imports stripCloudinaryTransform alongside getMediaUrl from @repo/media (HOS-881 M-1)', () => {
+        expect(fotosSrc).toMatch(
+            /import\s*\{\s*getMediaUrl,\s*stripCloudinaryTransform\s*\}\s*from\s*['"]@repo\/media['"]/
+        );
+    });
+
     it('galleryHalf preset is used ONLY for thumbGrid, not for the href src', () => {
         // The src field is assigned from the raw entry.url / featuredSrc, NOT from
         // getMediaUrl(..., { preset: 'galleryHalf' }).
@@ -104,8 +186,10 @@ describe('fotos.astro — PHOTO cells (href = full-size, thumbGrid = galleryHalf
         expect(fotosSrc).not.toMatch(/\bsrc:\s*getMediaUrl/);
     });
 
-    it('import statement pulls getMediaUrl from @repo/media', () => {
-        expect(fotosSrc).toMatch(/import\s*\{\s*getMediaUrl\s*\}\s*from\s*['"]@repo\/media['"]/);
+    it('import statement pulls getMediaUrl (and stripCloudinaryTransform, HOS-881) from @repo/media', () => {
+        expect(fotosSrc).toMatch(
+            /import\s*\{\s*getMediaUrl,\s*stripCloudinaryTransform\s*\}\s*from\s*['"]@repo\/media['"]/
+        );
     });
 
     it('GalleryItem.src is documented as full-size / uncropped GLightbox href', () => {

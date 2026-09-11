@@ -77,7 +77,11 @@ describe('EntityViewService.getDailySeriesForHostAccommodations (SPEC-207)', () 
         service = new EntityViewService({ logger: loggerMock }, modelMock, accommodationModelMock);
 
         // Suppress the time-dependency of gap-fill by using fake timers pinned to
-        // a known date (2026-06-15 UTC midnight) so date assertions are stable.
+        // a known instant. Deliberately UTC midnight (2026-06-15T00:00:00Z), which
+        // is 2026-06-14T21:00:00-03:00 in Argentina — i.e. the exact boundary case
+        // HOS-1169 fixes: "today" is 2026-06-14 in local terms even though the
+        // clock already reads 2026-06-15 in UTC. Every hard-coded date below is
+        // the LOCAL-day-anchored one, not the UTC one.
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
     });
@@ -273,7 +277,9 @@ describe('EntityViewService.getDailySeriesForHostAccommodations (SPEC-207)', () 
         it('should gap-fill missing days to total=0 in the output', async () => {
             // Arrange — model returns only one day; all others must be gap-filled
             asMock(accommodationModelMock.findIdsByOwnerId).mockResolvedValue([UUID_ACC_1]);
-            // Fake clock = 2026-06-15; with window=7d, the oldest date is 2026-06-09
+            // Local today = 2026-06-14 (see beforeEach); with window=7d, the
+            // local window is [2026-06-08 .. 2026-06-14], so the oldest date is
+            // 2026-06-08.
             asMock(modelMock.getDailySeriesForEntityIds).mockResolvedValue([
                 { date: '2026-06-12', total: 8 }
             ]);
@@ -290,7 +296,7 @@ describe('EntityViewService.getDailySeriesForHostAccommodations (SPEC-207)', () 
             const dataDay = result.data?.find((item) => item.date === '2026-06-12');
             expect(dataDay?.total).toBe(8);
             // Gap-filled days
-            const zeroDay = result.data?.find((item) => item.date === '2026-06-09');
+            const zeroDay = result.data?.find((item) => item.date === '2026-06-08');
             expect(zeroDay?.total).toBe(0);
         });
 
@@ -322,7 +328,9 @@ describe('EntityViewService.getDailySeriesForHostAccommodations (SPEC-207)', () 
         });
 
         it('should order items from oldest to newest date', async () => {
-            // Arrange — fake clock 2026-06-15, window 7d → dates 2026-06-09..2026-06-15
+            // Arrange — local today = 2026-06-14 (see beforeEach), window 7d →
+            // dates 2026-06-08..2026-06-14 (HOS-1169: local-day anchored, NOT
+            // the UTC-midnight clock reading of 2026-06-15).
             asMock(accommodationModelMock.findIdsByOwnerId).mockResolvedValue([UUID_ACC_1]);
             asMock(modelMock.getDailySeriesForEntityIds).mockResolvedValue([]);
 
@@ -332,9 +340,9 @@ describe('EntityViewService.getDailySeriesForHostAccommodations (SPEC-207)', () 
                 window: '7d'
             });
 
-            // Assert — first date is oldest, last is today
-            expect(result.data?.[0]?.date).toBe('2026-06-09');
-            expect(result.data?.[6]?.date).toBe('2026-06-15');
+            // Assert — first date is oldest, last is local today
+            expect(result.data?.[0]?.date).toBe('2026-06-08');
+            expect(result.data?.[6]?.date).toBe('2026-06-14');
         });
 
         it('should use actor.id (not caller-supplied) to resolve owned IDs', async () => {

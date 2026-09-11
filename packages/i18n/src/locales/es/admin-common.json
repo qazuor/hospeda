@@ -47,6 +47,7 @@
         "stop": "Dejar de suplantar",
         "start": "Suplantar usuario",
         "confirm": "¿Estás seguro de que quieres suplantar a este usuario?",
+        "cancel": "Cancelar",
         "error": "Error al suplantar usuario. Intenta de nuevo.",
         "unavailable": "La suplantación de identidad no está disponible temporalmente"
     },

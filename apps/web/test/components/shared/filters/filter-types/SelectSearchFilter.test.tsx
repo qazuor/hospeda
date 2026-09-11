@@ -178,6 +178,34 @@ describe('SelectSearchFilter', () => {
             // Assert
             expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
         });
+
+        it('finds "Colón" when the visitor types "Colon" without the accent (HOS-979)', () => {
+            // Arrange
+            const destinationConfig: SelectSearchFilterConfig = {
+                id: 'destinations',
+                label: 'Destinos',
+                type: 'select-search',
+                options: [
+                    { value: 'colon', label: 'Colón' },
+                    { value: 'cdu', label: 'Concepción del Uruguay' }
+                ]
+            };
+            render(
+                <SelectSearchFilter
+                    config={destinationConfig}
+                    value={[]}
+                    onChange={vi.fn()}
+                    locale="es"
+                />
+            );
+
+            // Act
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Colon' } });
+
+            // Assert
+            expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+            expect(screen.getByText('Colón')).toBeInTheDocument();
+        });
     });
 
     describe('selection', () => {

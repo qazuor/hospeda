@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Perguntar à IA sobre esta experiência",
+        "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Confirme sempre as informações com o prestador.",
+        "panelLabel": "Chat com IA — Perguntas sobre a experiência",
+        "priceDisclaimer": "Horários, vagas e preços podem ter mudado. Entre em contato com o prestador para confirmar.",
+        "unavailable": "O chat de IA não está disponível para esta experiência"
+    },
     "meta": {
         "title": "Experiências e Serviços",
         "description": "Descubra as melhores experiências e serviços turísticos da região: aluguéis, excursões, guias e muito mais"
@@ -28,13 +35,27 @@
         "featured": "Destaque"
     },
     "detail": {
+        "amenities": {
+            "title": "Serviços e comodidades"
+        },
+        "cancellationPolicy": {
+            "title": "Se o passeio não sair"
+        },
         "contact": "Contato",
-        "contactPhoneAriaLabel": "Ligar para o prestador",
         "contactEmailAriaLabel": "Enviar um email ao prestador",
+        "contactPhoneAriaLabel": "Ligar para o prestador",
         "contactWebsiteAriaLabel": "Visitar o site do prestador",
-        "whatsapp": "Consultar via WhatsApp",
-        "whatsappMessage": "Olá, tenho interesse em mais informações sobre {{name}}",
+        "duration": {
+            "dayShort": "d",
+            "hourShort": "h",
+            "minuteShort": "min"
+        },
         "hours": "Horário de funcionamento",
+        "meetingPoint": {
+            "title": "Ponto de encontro",
+            "howToGetThere": "Como chegar",
+            "mapAriaLabel": "Mapa do ponto de encontro"
+        },
         "openingHours": {
             "title": "Horário de funcionamento",
             "closed": "Fechado",
@@ -48,10 +69,20 @@
             "saturday": "Sábado",
             "sunday": "Domingo"
         },
+        "privateGroups": {
+            "title": "Grupos privados",
+            "body": "Fazemos preço especial para grupos privados: famílias grandes, empresas, ou se você quiser o passeio inteiro só para vocês.",
+            "cta": "Fale com a gente sobre seu grupo"
+        },
+        "requirements": {
+            "title": "Requisitos"
+        },
         "social": "Redes sociais",
-        "amenities": {
-            "title": "Serviços e comodidades"
-        }
+        "whatToBring": {
+            "title": "O que levar"
+        },
+        "whatsapp": "Consultar via WhatsApp",
+        "whatsappMessage": "Olá, tenho interesse em mais informações sobre {{name}}"
     },
     "type": {
         "CAR_RENTAL": "Aluguel de carros",

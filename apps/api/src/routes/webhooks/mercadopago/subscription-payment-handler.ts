@@ -17,6 +17,10 @@
  *
  * - Converts a card-first trial the moment its day-N charge settles
  *   (HOS-171). This is the PRIMARY conversion path — see below.
+ * - Mails the customer their receipt for the charge (HOS-1238), via
+ *   `subscription-charge-receipt.ts`. Since HOS-171 this is the only path a
+ *   subscription is ever charged on, so it is the only place that receipt can
+ *   come from.
  *
  * What this handler does NOT do:
  * - Recover a `past_due` subscription back to `active` when a retry
@@ -43,8 +47,9 @@
  * @module routes/webhooks/mercadopago/subscription-payment-handler
  */
 
-import type { QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
+import type { QZPayCurrency } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
+import { asMajor } from '@repo/billing';
 import {
     and,
     billingPayments,
@@ -73,8 +78,10 @@ import {
 import type { getQZPayBilling } from '../../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
-import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason.js';
-import { classifySettledTrialCharge } from '../../../services/billing/trial-promise-verification.js';
+import {
+    getMpPayerEmail,
+    persistMpPayerEmailBestEffort
+} from '../../../services/billing/payer-email.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -82,8 +89,21 @@ import {
     fetchAuthorizedPaymentDetails,
     type MPAuthorizedPaymentDetails
 } from '../../../utils/mp-authorized-payment.js';
+// HOS-847 PR 5: the status mapper moved to its own leaf module so the add-on
+// renewal handler — which is routed AHEAD of this file and so cannot import
+// from it — shares one mapping. It could not live in `mp-authorized-payment.ts`
+// either: this file's own test replaces that module wholesale with `vi.mock`.
+import { mapMpStatusToQZPayStatus } from '../../../utils/mp-payment-status.js';
+// HOS-847 PR 5: an add-on's OWN preapproval charge must be settled by the
+// add-on handler and never by this one. See `routeAddonAuthorizedPayment`'s
+// JSDoc and the call site below for why the interception is here and not in
+// the router's handler map.
+import { routeAddonAuthorizedPayment } from './addon-recurring-handler.js';
 import { cleanupRequestProviderEventId } from './event-handler.js';
-import { sendTrialNotGrantedAdminAlert } from './notifications.js';
+// HOS-1238: the customer-facing receipt for a recurring charge. A leaf module so
+// BOTH settlement sites (this handler and the dead-letter retry cron) share one
+// dispatch with one idempotency key, rather than each growing its own.
+import { dispatchSubscriptionChargeReceipt } from './subscription-charge-receipt.js';
 import {
     getWebhookDependencies,
     markEventFailedByProviderId,
@@ -126,34 +146,6 @@ function extractAuthorizedPaymentId(event: { data: unknown }): string | null {
 }
 
 /**
- * Map a MercadoPago authorized-payment status to a `QZPayPaymentStatus`.
- *
- * Prefers the inner `payment.status` (reflects the actual gateway
- * disposition) and falls back to the outer authorization-lifecycle
- * `status` when the inner block is absent.
- */
-function mapMpStatusToQZPayStatus(details: MPAuthorizedPaymentDetails): QZPayPaymentStatus {
-    const source = details.paymentStatus ?? details.status;
-    switch (source) {
-        case 'approved':
-        case 'processed':
-            return 'succeeded';
-        case 'rejected':
-            return 'failed';
-        case 'cancelled':
-        case 'canceled':
-            return 'canceled';
-        case 'refunded':
-            return 'refunded';
-        case 'in_process':
-        case 'in_mediation':
-            return 'processing';
-        default:
-            return 'pending';
-    }
-}
-
-/**
  * Find the local `billing_subscriptions` row mapped to a MercadoPago
  * preapproval ID. Returns the bare minimum needed to record a payment
  * (`id`, `customerId`).
@@ -163,13 +155,6 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
     customerId: string;
     planId: string | null;
     status: string;
-    /**
-     * Start of the promised trial window. Additive for H-137: without it a
-     * settled charge can only be compared against `trialEnd`, which cannot tell
-     * "the trial ran out" from "the provider never granted it" — the two look
-     * identical from one end of the window.
-     */
-    trialStart: Date | null;
     trialEnd: Date | null;
     /**
      * Subscription-vocabulary interval (`'month' | 'year'`), or `null`. Additive
@@ -185,7 +170,6 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
             customerId: billingSubscriptions.customerId,
             planId: billingSubscriptions.planId,
             status: billingSubscriptions.status,
-            trialStart: billingSubscriptions.trialStart,
             trialEnd: billingSubscriptions.trialEnd,
             billingInterval: billingSubscriptions.billingInterval
         })
@@ -201,69 +185,100 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
 }
 
 /**
- * Resolve when a settled charge actually happened (H-137).
+ * Remember which email MercadoPago actually charged for this subscription.
  *
- * MercadoPago reports `debit_date` on the authorized payment; it is absent on
- * some responses and can be unparseable. Falling back to wall-clock time is
- * correct for the live path (the webhook arrives seconds after the debit) and
- * is the only option left when the provider did not tell us — but the fallback
- * is deliberately last, because a late-processed webhook judged by `now` would
- * mistake a trial that was never granted for one that ran its course.
+ * This is the recording path for SUBSCRIPTION charges, and it exists separately
+ * from the one in `payment-logic.ts` because a recurring charge cannot use it:
+ * such a payment arrives with `metadata: {}` (measured on payment
+ * `177923168044`, 2026-09-08), so there is no customer in the payload to write
+ * against. Here the customer is already resolved from
+ * `billing_subscriptions.mp_subscription_id` — a dedicated column, not an
+ * overloaded reference field — which makes this the trustworthy half.
  *
- * @param debitDate - MercadoPago's `debit_date`, when present.
- * @returns The parsed debit date, or the current time when it is missing or invalid.
+ * Why a second provider call is needed at all: the authorized-payment REST
+ * payload this handler runs on carries no payer email. Its inner `payment`
+ * block holds `{ id, status, status_detail }` and nothing else (verified
+ * against authorized payment `7031725770`), so the address has to be read off
+ * the payment itself.
+ *
+ * That call is skipped once the customer already has an email on file, which is
+ * also the point of the feature: the value is asked for once and then reused, so
+ * steady-state renewals add no provider traffic at all.
+ *
+ * Fire-and-forget and fully swallowed: a charge is already on record by the time
+ * this runs, and a bookkeeping column must never turn a settled payment into a
+ * failed webhook.
+ *
+ * @param input.customerId - Billing customer resolved from the local subscription.
+ * @param input.mpPaymentId - MercadoPago `payment.id` of the settled charge.
+ * @param input.paymentAdapter - Provider adapter used to read the payment.
+ * @param input.status - QZPay-normalized status of the charge just recorded.
  */
-function resolveChargeSettledAt(debitDate: string | null): Date {
-    if (debitDate === null) return new Date();
-    const parsed = new Date(debitDate);
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-}
-
-/**
- * Resolve who was affected and raise the H-137 admin alert.
- *
- * Kept out of {@link convertTrialOnSettledCharge} so that function stays a pure
- * database transition with no notification or billing-facade dependency, and so
- * a lookup failure here can never roll back a conversion that already committed.
- *
- * Never throws: the caller invokes it fire-and-forget.
- *
- * @internal
- */
-async function notifyTrialNotGranted(params: {
-    customerId: string;
-    planId: string | null;
-    promisedTrialEnd: Date | null;
-    chargedAt: Date;
-    preapprovalId: string | null;
-    billing: ReturnType<typeof getQZPayBilling>;
+async function recordPayerEmailFromSettledCharge(input: {
+    readonly customerId: string;
+    readonly mpPaymentId: string;
+    readonly paymentAdapter: {
+        readonly payments: {
+            retrieve: (id: string) => Promise<{ readonly payerEmail?: string | null }>;
+        };
+    };
+    readonly status: string;
+    readonly requestId: string;
 }): Promise<void> {
+    const { customerId, mpPaymentId, paymentAdapter, status, requestId } = input;
+
+    // Only a charge that actually cleared says anything about the address. A
+    // failed or still-pending one must never write: the value is later used to
+    // STOP asking the user which email to bill, so an unconfirmed address would
+    // suppress that question while naming an account that cannot pay.
+    if (status !== 'succeeded') {
+        return;
+    }
+
     try {
-        const customer = await params.billing?.customers.get(params.customerId);
-        if (!customer?.email) return;
+        if (await getMpPayerEmail(customerId)) {
+            return;
+        }
 
-        const planName = params.planId
-            ? ((await resolvePlanDisplayName({ planId: params.planId })) ?? 'Subscription')
-            : 'Subscription';
+        const payment = await paymentAdapter.payments.retrieve(mpPaymentId);
 
-        await sendTrialNotGrantedAdminAlert({
-            customerId: params.customerId,
-            customerEmail: customer.email,
-            planName,
-            promisedTrialEnd: params.promisedTrialEnd?.toISOString() ?? null,
-            chargedAt: params.chargedAt.toISOString(),
-            mpSubscriptionId: params.preapprovalId
-        });
-    } catch (err) {
-        apiLogger.debug(
+        // `''` is what MercadoPago returns for "no email" elsewhere, and it is
+        // falsy enough to look handled while still being a `string`. qzpay >=
+        // 2.11.0 already collapses it to `null`; this is the second line.
+        if (!payment.payerEmail) {
+            return;
+        }
+
+        await persistMpPayerEmailBestEffort({ customerId, payerEmail: payment.payerEmail });
+
+        apiLogger.info(
+            { customerId, mpPaymentId, requestId },
+            'HOS-1234: recorded the confirmed MercadoPago payer email from a settled subscription charge'
+        );
+    } catch (error) {
+        apiLogger.warn(
             {
-                customerId: params.customerId,
-                error: err instanceof Error ? err.message : String(err)
+                customerId,
+                mpPaymentId,
+                requestId,
+                error: error instanceof Error ? error.message : String(error)
             },
-            'H-137: could not raise the trial-not-granted admin alert'
+            'HOS-1234: could not record the payer email for this charge (best-effort, the charge itself is unaffected)'
         );
     }
 }
+
+/*
+ * REMOVED, HOS-1012 T-027: `resolveChargeSettledAt` and `notifyTrialNotGranted`.
+ *
+ * Both existed for H-137 — a charge landing before the promised free window
+ * could plausibly have elapsed, which proved MercadoPago had ignored the
+ * `free_trial` we asked for. Nothing asks for one anymore (guard G-1), so a
+ * preapproval Hospeda creates has no promised window for a charge to beat, and
+ * Hospeda's own trial has no preapproval that could charge at all. With no
+ * verdict left to reach, the debit-date resolution and the admin alert it fed
+ * have no subject.
+ */
 
 /**
  * Convert a card-first trial the moment MercadoPago's day-N charge settles
@@ -282,18 +297,12 @@ async function notifyTrialNotGranted(params: {
  * Never throws: the charge already settled and is already recorded. Failing to
  * flip a status must not turn into a webhook retry storm.
  *
- * ## H-137 — the same charge, two very different facts
- *
- * The conversion itself is unconditional and stays that way: the customer paid,
- * so gating their writes behind an elapsed trial would be wrong regardless of
- * how the charge came about. What this function now distinguishes is *why* the
- * charge arrived. A charge landing before the promised window could plausibly
- * have elapsed means MercadoPago never granted the `free_trial` — it grants one
- * per `(payer, preapproval_plan)`, and the plan is shared across every buyer of
- * a variant, so a payer who already used it is silently billed cycle 1. That
- * case writes a distinct event, stops the row from advertising a trial it has
- * already billed, and is logged loudly instead of being filed as a routine
- * conversion.
+ * The conversion is unconditional: the customer paid, so gating their writes
+ * behind an elapsed trial would be wrong regardless of how the charge came
+ * about. Until HOS-1012 T-027 this function also classified *why* the charge
+ * arrived (H-137) and wrote a distinct event when the provider had never
+ * granted the trial it advertised. That distinction is gone with the promise
+ * that created it — no checkout asks MercadoPago for a trial anymore.
  *
  * @internal
  */
@@ -302,43 +311,16 @@ async function convertTrialOnSettledCharge(params: {
         id: string;
         customerId: string;
         status: string;
-        trialStart: Date | null;
         trialEnd: Date | null;
     };
-    /**
-     * When the provider's charge actually settled (H-137). Sourced from
-     * MercadoPago's own `debit_date` rather than wall-clock time, so a webhook
-     * replayed days later by `webhook-retry.job.ts` is still judged against the
-     * moment the money moved.
-     */
-    chargedAt: Date;
     eventId: string | number;
     requestId: string;
-}): Promise<{ readonly trialWasNotGranted: boolean }> {
-    const { subscription, chargedAt, eventId, requestId } = params;
-
-    /**
-     * Reported to the caller rather than acted on here, because raising the
-     * alert needs the billing instance this function deliberately does not take.
-     * `false` on every path that did not positively establish a broken promise —
-     * including the error path, so a failed write can never manufacture one.
-     */
-    const noFinding = { trialWasNotGranted: false } as const;
+}): Promise<void> {
+    const { subscription, eventId, requestId } = params;
 
     if (subscription.status !== SubscriptionStatusEnum.TRIALING) {
-        return noFinding;
+        return;
     }
-
-    // H-137: a charge that lands before the promised window could plausibly have
-    // elapsed is proof the provider ignored the `free_trial` we asked for. The
-    // conversion below is still correct — the customer paid, so they must not be
-    // 402'd — but it must not be recorded as a trial that ran its course.
-    const trialVerdict = classifySettledTrialCharge({
-        trialStart: subscription.trialStart,
-        trialEnd: subscription.trialEnd,
-        chargedAt
-    });
-    const trialWasNotGranted = trialVerdict.outcome === 'trial-not-granted';
 
     try {
         const guard = checkSubscriptionStatusTransition({
@@ -351,7 +333,7 @@ async function convertTrialOnSettledCharge(params: {
                 { eventId, requestId, localSubscriptionId: subscription.id, reason: guard.reason },
                 'MercadoPago webhook: trial conversion blocked by the status guard — the reconcile cron will retry'
             );
-            return noFinding;
+            return;
         }
 
         await withServiceTransaction(async (ctx) => {
@@ -363,40 +345,20 @@ async function convertTrialOnSettledCharge(params: {
                 .set({
                     status: SubscriptionStatusEnum.ACTIVE,
                     trialConverted: true,
-                    trialConvertedAt: new Date(),
-                    // H-137: when the provider never granted the trial, the free
-                    // window really ended the instant the card was charged.
-                    // Leaving the promised `trial_end` in the future on an
-                    // already-charged row is what made the first diagnosis of
-                    // this incident point at the wrong subsystem — the row
-                    // asserted a trial that had already been billed.
-                    ...(trialWasNotGranted ? { trialEnd: chargedAt } : {})
+                    trialConvertedAt: new Date()
                 })
                 .where(eq(billingSubscriptions.id, subscription.id));
 
             await tx.insert(billingSubscriptionEvents).values({
                 subscriptionId: subscription.id,
-                eventType: trialWasNotGranted
-                    ? BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER
-                    : BILLING_EVENT_TYPES.TRIAL_RECONCILED,
+                eventType: BILLING_EVENT_TYPES.TRIAL_RECONCILED,
                 previousStatus: subscription.status,
                 newStatus: SubscriptionStatusEnum.ACTIVE,
                 triggerSource: 'subscription-authorized-payment-webhook',
                 metadata: {
-                    // The promise as sold, preserved even when the row above
-                    // stops carrying it — this is the only place the broken
-                    // commitment survives.
                     trialEnd: subscription.trialEnd?.toISOString() ?? null,
                     converted: true,
-                    reconciledAt: new Date().toISOString(),
-                    ...(trialWasNotGranted
-                        ? {
-                              trialGranted: false,
-                              chargedAt: chargedAt.toISOString(),
-                              promisedTrialMs: trialVerdict.promisedTrialMs,
-                              elapsedAtChargeMs: trialVerdict.elapsedAtChargeMs
-                          }
-                        : {})
+                    reconciledAt: new Date().toISOString()
                 }
             });
         });
@@ -405,37 +367,15 @@ async function convertTrialOnSettledCharge(params: {
         // out the 5-minute cache to use what they paid for (INV-1).
         clearEntitlementCache(subscription.customerId);
 
-        if (trialWasNotGranted) {
-            // Loud on purpose, and captured: every occurrence is a customer who
-            // was shown a free-trial offer and billed instead. Ops needs to see
-            // these individually, not aggregated into conversion traffic.
-            apiLogger.warn(
-                {
-                    eventId,
-                    requestId,
-                    localSubscriptionId: subscription.id,
-                    customerId: subscription.customerId,
-                    promisedTrialEnd: subscription.trialEnd?.toISOString() ?? null,
-                    chargedAt: chargedAt.toISOString(),
-                    promisedTrialMs: trialVerdict.promisedTrialMs,
-                    elapsedAtChargeMs: trialVerdict.elapsedAtChargeMs
-                },
-                'H-137: MercadoPago charged a subscription before its promised free trial could elapse — the trial was never granted',
-                { capture: true }
-            );
-        } else {
-            apiLogger.info(
-                {
-                    eventId,
-                    requestId,
-                    localSubscriptionId: subscription.id,
-                    customerId: subscription.customerId
-                },
-                'MercadoPago webhook: card-first trial converted to active on its first settled charge'
-            );
-        }
-
-        return { trialWasNotGranted };
+        apiLogger.info(
+            {
+                eventId,
+                requestId,
+                localSubscriptionId: subscription.id,
+                customerId: subscription.customerId
+            },
+            'MercadoPago webhook: card-first trial converted to active on its first settled charge'
+        );
     } catch (err) {
         // The reconcile cron is the backstop; log and let it pick this up.
         apiLogger.error(
@@ -448,7 +388,6 @@ async function convertTrialOnSettledCharge(params: {
             'MercadoPago webhook: failed to convert a card-first trial — the reconcile cron will retry',
             { capture: true }
         );
-        return noFinding;
     }
 }
 
@@ -984,6 +923,35 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
     }
 
     try {
+        // HOS-847 PR 5: is this preapproval an ADD-ON's rather than a plan's?
+        //
+        // This runs BEFORE `findLocalSubscriptionByPreapprovalId` below, and
+        // that order is the whole defence. PR 4 gives every recurring add-on
+        // its own preapproval AND its own `billing_subscriptions` row; that
+        // lookup carries no product-domain filter, so it would resolve the
+        // add-on's row and this handler would then book an add-on's charge as a
+        // plan renewal, run the plan-price divergence detector against it, and
+        // try to convert a trial on it. Deliberately not behind the feature
+        // flag — see `addon-recurring-handler.ts`'s module JSDoc.
+        //
+        // Placed INSIDE this try on purpose. The routing lookup is a database
+        // read, and a read that fails leaves us unable to tell an add-on charge
+        // from a plan charge. Guessing "plan" there is the very bug this
+        // routing exists to prevent, so the failure propagates into the catch
+        // below, which marks the event failed for the dead-letter retry — fail
+        // closed, retry later, never guess.
+        const addonRouting = await routeAddonAuthorizedPayment({
+            details,
+            billing,
+            triggerSource: 'subscription-authorized-payment-webhook'
+        });
+
+        if (addonRouting.handled) {
+            await safeMarkProcessed(event.id);
+            cleanupRequestProviderEventId(requestId);
+            return undefined;
+        }
+
         // HOS-276: resolve the local subscription. A real MercadoPago charge
         // has already settled by this point (`details.paymentId` is set), so
         // an unresolved subscription is handled specially below (thrown as a
@@ -1122,6 +1090,19 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             'MercadoPago webhook: recurring payment recorded in billing_payments'
         );
 
+        // HOS-1234: the charge is on record, so MercadoPago accepted whatever
+        // account is behind this subscription — this is the moment its email
+        // becomes a confirmed fact rather than something the user typed. Same
+        // fire-and-forget contract as the two accounting defenses below: the
+        // money already settled, and nothing here may delay the ACK or fail it.
+        void recordPayerEmailFromSettledCharge({
+            customerId: sub.customerId,
+            mpPaymentId: details.paymentId,
+            paymentAdapter,
+            status,
+            requestId
+        });
+
         // Accounting defense (HOS-171 §7.5): the money that arrived is now on
         // record; check whether MercadoPago's own campaign engine is the reason
         // it is not the amount we asked for. Fire-and-forget so an accounting
@@ -1164,32 +1145,11 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             // rather than fire-and-forget — it is the PRIMARY conversion path,
             // and until it commits the trial middleware 402s this (paid-up)
             // customer on every write. The daily cron is only the backstop.
-            const { trialWasNotGranted } = await convertTrialOnSettledCharge({
+            await convertTrialOnSettledCharge({
                 subscription: sub,
-                // H-137: MercadoPago's own `debit_date` is when the money moved.
-                // Wall-clock time would be wrong for a webhook this handler
-                // processes late (a retry, or `webhook-retry.job.ts` draining a
-                // backlog): by then `now` can sit past the promised trial window
-                // and a charge that never honoured the trial would read as a
-                // normal end-of-trial conversion.
-                chargedAt: resolveChargeSettledAt(details.debitDate),
                 eventId: event.id,
                 requestId
             });
-
-            // H-137: get a human involved the moment somebody is billed instead
-            // of receiving the trial they were shown. Fire-and-forget — an alert
-            // must never delay the webhook ACK, and the charge already settled.
-            if (trialWasNotGranted) {
-                void notifyTrialNotGranted({
-                    customerId: sub.customerId,
-                    planId: sub.planId,
-                    promisedTrialEnd: sub.trialEnd,
-                    chargedAt: resolveChargeSettledAt(details.debitDate),
-                    preapprovalId: details.preapprovalId,
-                    billing
-                });
-            }
 
             // SPEC-262 T-007: multi-cycle promo discount renewal handling.
             // Anchor the discounted-cycle countdown on this post-charge event
@@ -1211,6 +1171,42 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
                 billing,
                 eventId: event.id,
                 requestId
+            });
+
+            // HOS-1238: tell the customer they were charged. Until this, a
+            // recurring charge was recorded and acknowledged to MercadoPago
+            // without ever reaching the customer — measured on four real staging
+            // charges, which produced no notification row and no log line either
+            // way. Since HOS-171 this is the ONLY path a subscription is ever
+            // charged on, for all five product domains.
+            //
+            // Hung on THIS settled charge — a `providerPaymentId` plus a cleared
+            // status — and never on a status transition. HOS-914's
+            // `subscription-drift-reconcile` cron delegates its writes to
+            // `processSubscriptionUpdated`, so a receipt hung on a transition
+            // would be mailed every time a reconciliation sweep corrected a row.
+            //
+            // Placed AFTER the trial conversion so a slow mail never delays the
+            // write that stops the trial middleware from 402-ing a paid-up
+            // customer, and awaited like its sibling in `payment-logic.ts` so the
+            // notification-log row lands before this handler acknowledges — which
+            // is what makes the cross-path dedupe see it. Never throws.
+            await dispatchSubscriptionChargeReceipt({
+                customerId: sub.customerId,
+                // The plan of the subscription THIS charge settled, never the
+                // customer's first — one account holds several subscriptions at
+                // once across the five domains.
+                planId: sub.planId,
+                providerPaymentId: details.paymentId,
+                // MercadoPago's own `transaction_amount`, already in MAJOR units.
+                // `amountInCentavos` is the ledger figure and would mail a
+                // hundredfold overstatement (HOS-713).
+                amountMajor: asMajor(details.transactionAmount),
+                currency,
+                chargeStatus: status,
+                billing,
+                localSubscriptionId: sub.id,
+                source: 'subscription-authorized-payment-webhook'
             });
         }
     } catch (recordErr) {

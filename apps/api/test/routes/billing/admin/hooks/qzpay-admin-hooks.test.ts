@@ -149,6 +149,14 @@ vi.mock('../../../../../src/services/addon-lifecycle.service', () => ({
     revokeAddonForSubscriptionCancellation: vi.fn()
 }));
 
+// HOS-847 PR 6: the add-on's own MercadoPago preapproval. Defaults to
+// `no-preapproval`, which is what every one-time add-on resolves to — i.e. every
+// fixture in this file bar the recurring one added below — so the rest of the
+// suite is unaffected.
+vi.mock('../../../../../src/services/addon-preapproval-cancel', () => ({
+    closeAddonPreapproval: vi.fn()
+}));
+
 // SPEC-194 T-006/T-007: refund lifecycle service — mocked so hook tests can
 // verify delegation. The service itself is unit-tested in refund-lifecycle.service.test.ts.
 vi.mock('../../../../../src/services/refund-lifecycle.service', () => ({
@@ -177,6 +185,18 @@ vi.mock('../../../../../src/services/subscription-pause.service', () => ({
     setOwnerServiceSuspension: vi.fn().mockResolvedValue({ accommodationsUpdated: 0 })
 }));
 
+// HOS-1280: the bridge (and partner reconciler) wired into the cancel/pause/
+// resume hooks. Mocked as spies — the reconciler's own vertical-specific
+// behavior is covered by commerce-reconcile.test.ts; these hooks previously
+// never called it at all, which is the bug this fix closes.
+vi.mock('../../../../../src/services/subscription-linked-entities.service', () => ({
+    reconcileSubscriptionLinkedEntities: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../../../../src/services/partner-reconcile.service', () => ({
+    reconcilePartnerForSubscription: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('../../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
@@ -196,9 +216,12 @@ import { getQZPayBilling } from '../../../../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../../../../src/middlewares/entitlement';
 import { adminBillingHooks } from '../../../../../src/routes/billing/admin/qzpay-admin-hooks';
 import { revokeAddonForSubscriptionCancellation } from '../../../../../src/services/addon-lifecycle.service';
+import { closeAddonPreapproval } from '../../../../../src/services/addon-preapproval-cancel';
+import { reconcilePartnerForSubscription } from '../../../../../src/services/partner-reconcile.service';
 import { applyDowngradeRestrictionsOrWarn } from '../../../../../src/services/plan-downgrade-remediation.service';
 import { applyUpgradeRestorationsOrWarn } from '../../../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../../../src/services/refund-lifecycle.service';
+import { reconcileSubscriptionLinkedEntities } from '../../../../../src/services/subscription-linked-entities.service';
 import { resolveOwnerUserId } from '../../../../../src/services/subscription-pause.service';
 import { apiLogger } from '../../../../../src/utils/logger';
 
@@ -381,6 +404,81 @@ function buildBillingMockWithPlans(planMap: Record<string, MockPlan>) {
 describe('adminBillingHooks.onBeforeSubscriptionCancel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // `clearAllMocks` wipes implementations set at declaration time, so the
+        // default is re-established here rather than in the vi.mock factory.
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({
+            closed: true,
+            kind: 'no-preapproval'
+        });
+    });
+
+    it('HOS-847: aborts the whole cancel when an add-on preapproval will not close', async () => {
+        // The BEFORE hook is the last point at which anything can refuse. Let
+        // the cancel through and qzpay commits it, the after-hook writes
+        // `canceled` onto the purchases, and MercadoPago keeps charging a
+        // preapproval no local row explains any more (HOS-751).
+        const { db } = buildDbMock({
+            activePurchases: [
+                {
+                    id: 'purchase-recurring',
+                    addonSlug: 'extra-accommodations-20',
+                    customerId: CUSTOMER_ID
+                }
+            ]
+        });
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMock() as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({
+            closed: false,
+            reason: 'MP 502'
+        });
+
+        const result = await adminBillingHooks.onBeforeSubscriptionCancel!({
+            subscriptionId: SUBSCRIPTION_ID,
+            immediate: false,
+            ctx: buildContext()
+        });
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.reason).toContain('extra-accommodations-20');
+        }
+        // And the entitlement is left alone: removing it while the customer is
+        // still being charged is the worst of both.
+        expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+    });
+
+    it('HOS-847 CONTROL: the same add-on is revoked once the preapproval closes', async () => {
+        // Pairs with the assertion above — without it, a hook that had stopped
+        // revoking anything at all would satisfy the "not called" expectation.
+        const { db } = buildDbMock({
+            activePurchases: [
+                {
+                    id: 'purchase-recurring',
+                    addonSlug: 'extra-accommodations-20',
+                    customerId: CUSTOMER_ID
+                }
+            ]
+        });
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMock() as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({ closed: true, kind: 'cancelled' });
+
+        const result = await adminBillingHooks.onBeforeSubscriptionCancel!({
+            subscriptionId: SUBSCRIPTION_ID,
+            immediate: false,
+            ctx: buildContext()
+        });
+
+        expect(result).toEqual({ ok: true });
+        expect(revokeAddonForSubscriptionCancellation).toHaveBeenCalledTimes(1);
+        expect(closeAddonPreapproval).toHaveBeenCalledWith(
+            expect.objectContaining({ source: 'admin-subscription-cancel' })
+        );
     });
 
     it('returns { ok: true } when no active addons exist (no DB writes)', async () => {
@@ -635,6 +733,37 @@ describe('adminBillingHooks.onAfterSubscriptionCancel', () => {
 
         expect(clearEntitlementCache).toHaveBeenCalledTimes(1);
         expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1280 regression: admin hard-cancel must call the bridge — without
+    // it, a hard-cancelled commerce (gastronomy/experience) listing stayed
+    // PUBLIC forever, with no backstop cron (unlike accommodation, whose
+    // `entity-subscription-cache-reconcile` cron self-heals within 6 hours).
+    // -----------------------------------------------------------------------
+
+    it('HOS-1280: calls reconcileSubscriptionLinkedEntities and reconcilePartnerForSubscription with CANCELLED', async () => {
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+        await adminBillingHooks.onAfterSubscriptionCancel!({
+            subscription: buildSubscription(),
+            immediate: true,
+            ctx: buildContext()
+        });
+
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: SUBSCRIPTION_ID,
+            subscriptionStatus: 'cancelled',
+            source: 'admin-cancel'
+        });
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledTimes(1);
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+            subscriptionId: SUBSCRIPTION_ID,
+            subscriptionStatus: 'cancelled',
+            source: 'admin-cancel'
+        });
     });
 });
 
@@ -1300,6 +1429,31 @@ describe('adminBillingHooks.onAfterSubscriptionPause', () => {
             }
         });
     });
+
+    // HOS-1280 regression: same reasoning as the cancel hook above.
+    it('HOS-1280: calls reconcileSubscriptionLinkedEntities and reconcilePartnerForSubscription with PAUSED', async () => {
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        await adminBillingHooks.onAfterSubscriptionPause!({
+            subscription: buildSubscription({ status: 'paused' }),
+            ctx: buildContextWithBody({ suspendService: true })
+        });
+
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: SUBSCRIPTION_ID,
+            subscriptionStatus: 'paused',
+            source: 'admin-pause'
+        });
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledTimes(1);
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+            subscriptionId: SUBSCRIPTION_ID,
+            subscriptionStatus: 'paused',
+            source: 'admin-pause'
+        });
+    });
 });
 
 describe('adminBillingHooks.onAfterSubscriptionResume', () => {
@@ -1330,6 +1484,31 @@ describe('adminBillingHooks.onAfterSubscriptionResume', () => {
             metadata: {
                 adminUserId: ADMIN_USER_ID
             }
+        });
+    });
+
+    // HOS-1280 regression: same reasoning as the cancel hook above.
+    it('HOS-1280: calls reconcileSubscriptionLinkedEntities and reconcilePartnerForSubscription with ACTIVE', async () => {
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        await adminBillingHooks.onAfterSubscriptionResume!({
+            subscription: buildSubscription({ status: 'active' }),
+            ctx: buildContext()
+        });
+
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: SUBSCRIPTION_ID,
+            subscriptionStatus: 'active',
+            source: 'admin-resume'
+        });
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledTimes(1);
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+            subscriptionId: SUBSCRIPTION_ID,
+            subscriptionStatus: 'active',
+            source: 'admin-resume'
         });
     });
 });

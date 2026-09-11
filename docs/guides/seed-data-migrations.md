@@ -77,7 +77,26 @@ pnpm db:seed:migrate    # 3. Data: versioned seed data migrations
 
 Why this order, concretely: if a migration's `up()` writes to a column that a schema
 migration adds, running `db:seed:migrate` before `db:migrate` fails at the first `INSERT`/
-`UPDATE` referencing that column. `db:apply-extras` sits in the middle because extras objects
+`UPDATE` referencing that column.
+
+> **This order satisfies one direction only, and the other one bites (HOS-433).** It is
+> correct for a migration that needs a column the schema carril **adds**. It is wrong for a
+> migration that needs a column the schema carril **removes** — and those two dependencies
+> point in opposite directions, so no single linear order satisfies both.
+>
+> Concretely: `db:migrate` applies every pending schema change in one run, so a migration
+> creating a destination table and one dropping the source column both land before
+> `db:seed:migrate` starts. A backfill that reads the source then finds it gone. It moves
+> nothing, the ledger records it applied, and it never runs again.
+>
+> **The fix is not a different order — it is not shipping both in one release.** The
+> `CREATE` + backfill go in Release N, where the source column is still alive; the `DROP`
+> goes in Release N+1. This is the same expand/contract split the structural carril already
+> requires for a different reason, so there is one rule, not two — see
+> [migrations.md → Deploy order](migrations.md#deploy-order-drop-column-ships-one-release-after-the-code-stops-using-it).
+>
+> Declare the dependency with [`meta.requiresColumns`](#the-requirescolumns-flag-declaring-what-a-migration-must-be-able-to-read)
+> so the runner aborts loudly if it is ever violated anyway. `db:apply-extras` sits in the middle because extras objects
 (e.g. a CHECK constraint) can themselves depend on the schema migration that just ran, and a
 data migration could in principle depend on an extras object (e.g. a trigger) existing.
 On the VPS, `hops db-migrate --target=<env>` runs steps 1-2 in this order; step 3 is a
@@ -130,7 +149,8 @@ export const meta = {
     name: '0004-remove-legacy-feature', // MUST equal the filename stem
     group: 'required',                  // 'required' | 'example'
     destructive: false,                 // see "destructive flag" below
-    contentOnly: false                  // see "contentOnly flag" below
+    contentOnly: false,                 // see "contentOnly flag" below
+    requiresColumns: []                 // see "requiresColumns flag" below
 } as const satisfies SeedMigrationModule['meta'];
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
@@ -518,6 +538,62 @@ apply.
 
 ---
 
+## The `requiresColumns` flag: declaring what a migration must be able to read
+
+Set `meta.requiresColumns` when the migration's work depends on reading a column that could
+disappear — in practice, any backfill that moves data OUT of a column headed for a
+`DROP COLUMN`.
+
+```ts
+export const meta = {
+    name: '0034-hos-372-commerce-media-to-relational',
+    group: 'required',
+    requiresColumns: [
+        { table: 'gastronomies', column: 'media' },
+        { table: 'experiences', column: 'media' }
+    ]
+} as const satisfies SeedMigrationModule['meta'];
+```
+
+Names are **physical Postgres identifiers** in the `public` schema, not Drizzle camelCase
+properties — the whole point is to name a column the TypeScript schema may no longer
+describe. The runner resolves each one against `information_schema` before calling `up()`.
+
+**It aborts only when the column is missing AND its table still holds rows.** A missing
+column means one of two things, and the row count is what separates them:
+
+- **The table has rows** — data this migration was written to move is now unreachable. That
+  is the HOS-433 failure: abort, write no ledger row, leave the migration pending so it can
+  be retried once the environment is fixed.
+- **The table is empty** — nothing was lost, because nothing was there. This is an ordinary,
+  legitimate state: a database built from scratch runs every migration in sequence against
+  the CURRENT schema, where a column dropped by a later structural migration never existed.
+
+The first version of the gate checked only for the column's absence, on the reasoning that a
+fresh environment stamps migrations rather than running them. That reasoning was wrong, and
+CI caught it — the day-1 bootstrap and `cli-data-migrate.integration.test.ts` both run them
+for real.
+
+**What it is and is not for.** It does not make a misordered deploy work — it makes it fail
+legibly instead of silently. The actual fix for the ordering is the two-release split
+described under [Run order](#run-order-critical). Without this flag a violated dependency
+still fails (Postgres raises `column ... does not exist`), but with a message that names
+neither the cause nor the way out; with it, the error says the run order is wrong and what
+to do about it.
+
+**It is not a substitute for [Never gate on schema existence](#never-gate-on-schema-existence)
+— it is the sanctioned inverse.** That rule bans a migration from *deciding for itself*
+whether to work based on the schema's shape, because a migration that answers that question
+alone answers it wrongly and reports success. This flag moves the same question to the
+runner, which can act on it: refuse. Declaring a dependency is allowed; silently skipping
+because of one is not.
+
+Omit the flag and nothing changes — the gate is opt-in per migration and cannot alter how an
+existing migration runs. Migrations already stamped in every environment (`0034`, `0037`)
+carry it as the worked example, not because it changes anything for them.
+
+---
+
 ## Common mistakes
 
 | Mistake | Consequence | Fix |
@@ -529,6 +605,7 @@ apply.
 | Forgot `destructive: true` on a migration that deletes/irreversibly mutates data | Gate never protects it in production | Set `meta.destructive: true` when scaffolding (`--destructive`) or by hand |
 | Forgot `contentOnly: true` on a migration whose rows have no fixture baseline | Every fresh build stamps it applied with its content never created, and the ledger then blocks it forever | Set `meta.contentOnly: true` — see [above](#the-contentonly-flag-migrations-with-no-fixture-baseline) |
 | Assumed `pnpm db:fresh`'s auto-baseline-stamp covers the prod day-1 seed | Migrations silently run "for real" against curated prod data (or `db:seed:migrate:status` shows a surprising pending count) | Baseline-stamp manually after the day-1 `--required --exclude=users` seed — see [above](#production-day-1-manual-baseline-stamp-is-still-required-open-item) |
+| Shipped a backfill and the `DROP COLUMN` of its source in the same release | The backfill runs against an already-dropped column, moves zero rows, and is ledgered applied forever (measured: 18ms, HOS-433) | Split the release (backfill in N, drop in N+1) and declare `meta.requiresColumns` — see [above](#the-requirescolumns-flag-declaring-what-a-migration-must-be-able-to-read) |
 | Gated the migration on a schema-existence probe (`information_schema`, `to_regclass`) | An absent source — or any failed read — returns empty, reports success, and gets ledgered as applied forever | Verify the **target state** instead, and throw on the ambiguous zero — see [below](#never-gate-on-schema-existence) |
 
 ---

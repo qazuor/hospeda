@@ -10,6 +10,7 @@
 import { z } from 'zod';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { InternationalPhoneRegex } from '../../utils/utils.js';
+import { ThemeEnumSchema } from './user.settings.schema.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -130,6 +131,13 @@ export const CompleteProfileBodySchema = z
          * Persisted to users.settings.languageWeb JSONB path.
          */
         locale: z.enum(SUPPORTED_LOCALES).optional(),
+
+        /**
+         * Preferred theme for the web surface (HOS-313).
+         * Persisted to users.settings.themeWeb JSONB path.
+         * Optional — not selecting one keeps the existing default ('system').
+         */
+        theme: ThemeEnumSchema.optional(),
 
         /**
          * Whether the user opted into the marketing newsletter.

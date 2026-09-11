@@ -26,6 +26,7 @@
 import { PartnerSubscriptionStatusEnum, PartnerTierEnum, PartnerTypeEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/lib/errors';
 import type { PartnerFormProps } from '../PartnerForm';
 import { PartnerForm } from '../PartnerForm';
 
@@ -139,5 +140,94 @@ describe('PartnerForm — a refused save says so (H-161)', () => {
 
         await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
         expect(onSubmit).not.toHaveBeenCalled();
+    });
+});
+
+describe('PartnerForm — a rejected save says so (HOS-1061)', () => {
+    /**
+     * Before this fix, a `PUT` that answered 409 (a slug already used by
+     * another partner) left `await onSubmit(result.data)` uncaught: the
+     * rejection vanished, nothing rendered, and the operator was left
+     * believing the save had succeeded while their edit never persisted.
+     */
+    it('shows role="alert" and marks the slug field when the save rejects with a 409 slug conflict', async () => {
+        const conflictMessage = 'A partner with this slug already exists';
+        const onSubmit = vi
+            .fn()
+            .mockRejectedValue(new ApiError(conflictMessage, { status: 409, code: 'CONFLICT' }));
+
+        render(
+            <PartnerForm
+                initialData={prodPartner()}
+                plans={PLANS}
+                submitLabel="Guardar cambios"
+                onSubmit={onSubmit}
+            />
+        );
+
+        fireEvent.click(submitButton());
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+
+        // The form-wide alert AND the slug field's own error both say it —
+        // an operator scanning only the field, or only the top of the form,
+        // must see it either way.
+        await waitFor(() => {
+            const alert = screen.getByRole('alert');
+            expect(alert).toHaveTextContent(conflictMessage);
+        });
+        const matches = await screen.findAllByText(conflictMessage);
+        expect(matches.length).toBeGreaterThanOrEqual(2);
+
+        // The operator's slug input keeps their (duplicate) value on
+        // screen — it must NOT look like a successful save discarded it.
+        expect(screen.getByLabelText(/^Slug/)).toHaveValue(prodPartner()?.slug);
+    });
+
+    it('clears the slug field conflict as soon as the operator edits the slug again', async () => {
+        const conflictMessage = 'A partner with this slug already exists';
+        const onSubmit = vi
+            .fn()
+            .mockRejectedValue(new ApiError(conflictMessage, { status: 409, code: 'CONFLICT' }));
+
+        render(
+            <PartnerForm
+                initialData={prodPartner()}
+                plans={PLANS}
+                submitLabel="Guardar cambios"
+                onSubmit={onSubmit}
+            />
+        );
+
+        fireEvent.click(submitButton());
+        await waitFor(() => expect(screen.getAllByText(conflictMessage).length).toBeGreaterThan(0));
+
+        fireEvent.change(screen.getByLabelText(/^Slug/), {
+            target: { value: 'fundacion-entre-rios-sustentable-2' }
+        });
+
+        // The form-wide alert may persist until the next submit attempt, but
+        // the slug field's own conflict marker must clear immediately —
+        // otherwise it keeps blaming a value the operator already changed.
+        await waitFor(() => expect(screen.getAllByText(conflictMessage).length).toBe(1));
+    });
+
+    it('still shows the generic global error for a non-409 failure (unchanged behavior)', async () => {
+        const onSubmit = vi.fn().mockRejectedValue(new Error('Network error'));
+
+        render(
+            <PartnerForm
+                initialData={prodPartner()}
+                plans={PLANS}
+                submitLabel="Guardar cambios"
+                onSubmit={onSubmit}
+            />
+        );
+
+        fireEvent.click(submitButton());
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent('Network error');
+        });
     });
 });

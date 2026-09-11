@@ -88,10 +88,6 @@
             "goToSite": "Go to website",
             "contactAdmin": "Contact support",
             "reason": {
-                "host-missing-permission": {
-                    "title": "The admin panel isn't part of your account",
-                    "message": "Hosts manage their listings and bookings from the main Hospeda site — the admin panel is only for Hospeda staff. This isn't an error, just the wrong door. Head back to the site to keep managing your account."
-                },
                 "generic": {
                     "title": "Restricted area",
                     "message": "This area is for Hospeda admins and hosts. Your account doesn't have access. If you think this is a mistake, contact us or sign in with another account."
@@ -734,6 +730,28 @@
                         "cap5": "View their commerce analytics"
                     }
                 },
+                "GASTRONOMY_OWNER": {
+                    "name": "Gastronomy Owner",
+                    "description": "Owner of a restaurant, bar or café who manages their own listing (no access to experiences)",
+                    "capabilities": {
+                        "cap1": "Manage their gastronomy listing",
+                        "cap2": "Update opening hours and contact details",
+                        "cap3": "Upload photos",
+                        "cap4": "Reply to reviews",
+                        "cap5": "View their gastronomy analytics"
+                    }
+                },
+                "EXPERIENCE_OWNER": {
+                    "name": "Experience Owner",
+                    "description": "Owner of a tour or activity who manages their own listing (no access to gastronomy)",
+                    "capabilities": {
+                        "cap1": "Manage their experience listing",
+                        "cap2": "Update schedules and contact details",
+                        "cap3": "Upload photos",
+                        "cap4": "Reply to reviews",
+                        "cap5": "View their experience analytics"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Sponsor",
                     "description": "External business sponsor with access to sponsorship management and analytics",
@@ -828,7 +846,7 @@
                 "grantOverrides": "Granted Permissions",
                 "denyOverrides": "Denied Permissions",
                 "trustedEditor": "Trusted editor",
-                "trustedEditorDesc": "Can publish and delete their own posts and events without prior approval",
+                "trustedEditorDesc": "Can approve, publish, and delete their own posts and events without going through moderator review",
                 "trustedEditorEnabled": "Marked as trusted editor",
                 "trustedEditorDisabled": "Trusted editor unmarked",
                 "addOverride": "Add override",
@@ -1289,6 +1307,7 @@
             "newAnnouncement": "New announcement",
             "editAction": "Edit",
             "deleteAction": "Delete",
+            "cancelAction": "Cancel",
             "deleteConfirm": "Delete this announcement? This cannot be undone.",
             "deleteError": "We couldn't delete the announcement. Please try again.",
             "deleteSuccess": "Announcement deleted"

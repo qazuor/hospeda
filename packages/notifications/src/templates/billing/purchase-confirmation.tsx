@@ -79,7 +79,7 @@ export function PurchaseConfirmation({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta`}>Ver mi cuenta</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/`}>Ver mi cuenta</Button>
             </Section>
 
             <Text style={styles.footerNote}>

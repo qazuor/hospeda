@@ -14,6 +14,7 @@ import { billingAddonPurchases, billingSubscriptions, withTransaction } from '@r
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger';
+import { clearMpPayerEmailBestEffort } from './billing/payer-email.js';
 import { describeProviderSyncError, isDuplicateKeyError } from './billing-customer-sync.errors.js';
 
 /**
@@ -213,6 +214,17 @@ export class BillingCustomerSyncService {
      * Sync customer data (update existing customer)
      * Updates email and name if they have changed
      *
+     * Called from Better Auth's `user.update.after` hook, which makes this the
+     * ONLY place in the API where a change of account email is observable —
+     * `email` is not a field `ProfileEditSchema` or the admin user-update
+     * schema can write. HOS-971 hangs one extra effect off that observation:
+     * a changed email invalidates `billing_customers.mp_payer_email`, the
+     * cache of the last address MercadoPago accepted, which otherwise
+     * outranks the (now updated) `email` when the next preapproval picks its
+     * `payer_email`. Nothing is asked of MercadoPago — `payer_email` is
+     * immutable on an existing preapproval, so live subscriptions are
+     * untouched by design. See `services/billing/payer-email.ts`.
+     *
      * @param input - User identification and updated data
      * @returns Updated customer ID or null if billing is not enabled
      */
@@ -244,8 +256,33 @@ export class BillingCustomerSyncService {
             }
 
             // Check if data needs updating
-            const needsUpdate =
-                existingCustomer.email !== email || existingCustomer.name !== (name || null);
+            const emailChanged = existingCustomer.email !== email;
+            const needsUpdate = emailChanged || existingCustomer.name !== (name || null);
+
+            // HOS-971: the account email is the source of truth for who this
+            // customer is; `billing_customers.mp_payer_email` is only a cache
+            // of the last address MercadoPago accepted. A change of account
+            // email is the ONE event that makes that cache stop describing
+            // this account, and this hook is the single choke point where it
+            // is observable — `email` is not a field the profile-edit or
+            // admin user-update schemas can write, so Better Auth's
+            // `user.update.after` is the only path in.
+            //
+            // Nothing is asked of MercadoPago here. `payer_email` is immutable
+            // on an existing preapproval (HOS-937 measured the `PUT` being
+            // ignored), so a live subscription necessarily keeps charging under
+            // the binding it was authorized with — which is the outcome to
+            // protect. Only the NEXT preapproval picks up the new address.
+            //
+            // Ordered BEFORE the provider update on purpose: a MercadoPago
+            // outage leaves `billing_customers.email` holding the old value,
+            // and falling back to that is survivable. Falling back to a stale
+            // `mp_payer_email` is not — it OUTRANKS `email` in
+            // `resolvePayerEmail`'s precedence, so it would bind the next
+            // preapproval to an address the person no longer owns.
+            if (emailChanged) {
+                await clearMpPayerEmailBestEffort({ customerId: existingCustomer.id });
+            }
 
             if (!needsUpdate) {
                 apiLogger.debug(

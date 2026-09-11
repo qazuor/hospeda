@@ -5,6 +5,7 @@
  * using Argentine Spanish locale conventions.
  */
 
+import type { Major } from '@repo/billing';
 import { formatCalendarDate } from '@repo/utils';
 
 /**
@@ -13,6 +14,16 @@ import { formatCalendarDate } from '@repo/utils';
 export interface FormatCurrencyInput {
     /** Amount in cents (e.g. 150000 = $1,500.00). */
     readonly amount: number;
+    /** ISO 4217 currency code (e.g. "ARS", "USD"). */
+    readonly currency: string;
+}
+
+/**
+ * Input parameters for {@link formatMajorCurrency}.
+ */
+export interface FormatMajorCurrencyInput {
+    /** Amount already in MAJOR units (ARS pesos), e.g. 5000 = $5.000,00. */
+    readonly amount: Major;
     /** ISO 4217 currency code (e.g. "ARS", "USD"). */
     readonly currency: string;
 }
@@ -45,6 +56,40 @@ export interface FormatDateInput {
 export function formatCurrency({ amount, currency }: FormatCurrencyInput): string {
     const amountInUnits = amount / 100;
     const formatted = amountInUnits.toLocaleString('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
+    return `${currencySymbol}${formatted}`;
+}
+
+/**
+ * Format a currency amount already expressed in MAJOR units (pesos) for
+ * display in notification templates.
+ *
+ * Companion to {@link formatCurrency}, which expects CENTAVOS and divides by
+ * 100 — do NOT use that one here. `PaymentNotificationPayload.amount` is
+ * MAJOR units: its only producers, `sendPaymentSuccessNotification` and
+ * `sendPaymentFailureNotifications`
+ * (`apps/api/src/routes/webhooks/mercadopago/notifications.ts`), type the
+ * parameter {@link Major} for exactly this reason (HOS-713/HOS-720). Passing
+ * that value through `formatCurrency` divided a real charge by 100 in the
+ * payment email BODY while the SUBJECT (fixed by HOS-830, which reads the
+ * same field) already read it correctly — the same email showing two
+ * different amounts (HOS-839).
+ *
+ * @param params - Amount in MAJOR units (pesos) and ISO 4217 currency code
+ * @returns Formatted string like "$5.000,00" (ARS) or "USD 1.500,00"
+ *
+ * @example
+ * ```ts
+ * formatMajorCurrency({ amount: asMajor(5000), currency: 'ARS' }) // "$5.000,00"
+ * formatMajorCurrency({ amount: asMajor(0),    currency: 'ARS' }) // "$0,00"
+ * ```
+ */
+export function formatMajorCurrency({ amount, currency }: FormatMajorCurrencyInput): string {
+    const formatted = amount.toLocaleString('es-AR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });

@@ -17,6 +17,8 @@ import type { AppBindings } from '../../../../src/types';
 
 const mockSelect = vi.fn();
 const mockFindMany = vi.fn();
+/** HOS-963: batch media loader the route now calls after `findMany`. */
+const mockFindByAccommodations = vi.fn().mockResolvedValue(new Map());
 
 /**
  * Shared accommodation stub that includes a richDescription value.
@@ -89,6 +91,9 @@ vi.mock('@repo/db', async (importOriginal) => {
             lifecycleState: 'acc.lifecycleState',
             visibility: 'acc.visibility',
             averageRating: 'acc.averageRating'
+        },
+        accommodationMediaModel: {
+            findByAccommodations: mockFindByAccommodations
         }
     };
 });

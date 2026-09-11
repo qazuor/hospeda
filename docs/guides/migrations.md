@@ -229,18 +229,32 @@ live, because the break is about the *projection*, not the *content*.
 
 This repo has three migration carriles (structural / extras / seed-data — see
 [Two carriles, one rule](#two-carriles-one-rule) above and
-[`packages/db/CLAUDE.md`](../../packages/db/CLAUDE.md)). **This rule is about the
-structural carril specifically** — extras (triggers, matviews, CHECK constraints) and
-seed-data migrations do not change what columns the running application code projects, so
-they do not have this failure mode. Only `packages/db/src/migrations/*.sql` statements that
-remove something the currently-deployed code still reads can cause it — in practice, that
-means `DROP COLUMN` (and, by the same logic, `DROP TABLE`).
+[`packages/db/CLAUDE.md`](../../packages/db/CLAUDE.md)). **Only the structural carril can
+CAUSE this** — extras (triggers, matviews, CHECK constraints) and seed-data migrations do
+not change what columns the running application code projects. Only
+`packages/db/src/migrations/*.sql` statements that remove something still being read can
+cause it — in practice, `DROP COLUMN` (and, by the same logic, `DROP TABLE`).
+
+**But a seed-data migration can be its VICTIM, and that is a second, quieter failure
+mode.** A data-migration whose job is to move data OUT of a column being dropped reads that
+column, and `db:migrate` applies every pending schema change before `db:seed:migrate` runs
+any data change. Ship the `CREATE` of the destination and the `DROP` of the source in one
+release and the data-migration executes against a column that is already gone — it moves
+nothing, and the `seed_migrations` ledger records it applied, permanently. HOS-433 is that
+failure, observed in production: `0034-hos-372-commerce-media-to-relational` ran in 18ms
+against a dropped `gastronomies.media` and was recorded `ok`.
+
+The split below fixes both. Release N keeps the source column alive, which is exactly what
+the data-migration needs; Release N+1 removes it once nothing — neither running code nor a
+pending migration — reads it any more.
 
 **Split a column removal into two releases, never one:**
 
 1. **Release N** — stop reading/writing the column in application code
    (`packages/service-core`, `apps/*`). Do **not** touch the Drizzle TS schema yet, so
-   `db:generate` produces no migration. Deploy this release and confirm it is live.
+   `db:generate` produces no migration. If the data has to be preserved somewhere else,
+   this is the release that carries the backfill data-migration — it still has a live
+   source column to read. Deploy this release and confirm it is live.
 2. **Release N+1** (a *later* deploy, after Release N has actually reached the target
    environment — not just merged to `staging`) — remove the column from the Drizzle TS
    schema, run `db:generate`, review the generated `DROP COLUMN` migration, and deploy it.
@@ -328,6 +342,7 @@ HOSPEDA_TEST_URL="postgresql://user:pass@localhost:5432/hospeda_migration_test" 
 | Ran `push` against a VPS | Journal desynced, rollback impossible | Restore from the `pg_dump` backup |
 | Forgot `db:apply-extras` after `migrate` | Triggers/matview missing | Run `pnpm db:apply-extras` |
 | `DROP COLUMN` in the same release as the code that stops using it | Old container 404s/500s until redeploy finishes (measured: 8m10s, HOS-601) | Split into two releases — see [Deploy order](#deploy-order-drop-column-ships-one-release-after-the-code-stops-using-it) |
+| `DROP COLUMN` in the same release as the seed data-migration that reads it | The data-migration moves zero rows, is ledgered applied, and never retries (measured: 18ms, HOS-433) | Same split — the backfill ships in Release N, the drop in N+1. Declare `meta.requiresColumns` so the runner refuses instead of succeeding emptily |
 
 ---
 

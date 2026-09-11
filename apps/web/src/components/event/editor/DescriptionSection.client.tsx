@@ -77,6 +77,7 @@ export function DescriptionSection({
                  */}
                 <RichTextEditor
                     id={DESCRIPTION_ID}
+                    locale={locale}
                     ariaLabel={label}
                     value={value}
                     onChange={onChange}

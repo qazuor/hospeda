@@ -18,7 +18,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import type { MediaAttribution } from '@/lib/media';
-import { getMediaUrl } from '@repo/media';
+import { getYoutubePosterUrl, resolveVideoEmbed } from '@/lib/video-embed';
+import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
 
 export const prerender = false;
 
@@ -37,10 +38,6 @@ const accommodation = toAccommodationDetailPageProps({
 });
 
 // Build gallery items: featured image first, then gallery images, then videos
-function extractYoutubeId(url: string): string | null {
-    const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-    return m?.[1] ?? null;
-}
 
 interface GalleryItem {
     type: 'image' | 'video';
@@ -73,14 +70,29 @@ const galleryItems: GalleryItem[] = [];
 
 // Featured image first
 if (accommodation.featuredImage && !accommodation.featuredImage.includes('placeholder')) {
-    const featuredSrc = accommodation.featuredImage;
+    // HOS-881 follow-up: `accommodation.featuredImage` already carries the
+    // detail page's `og` preset (1200x630, a FIXED center crop — `og` is the
+    // only preset in the repo without `g_auto`) baked in by
+    // `toAccommodationDetailPageProps`. Strip it once here rather than at
+    // each field below:
+    // - `src`/`thumb` feed the GLightbox full-size view (its own JSDoc says
+    //   "large/uncropped" — see `GalleryItem.thumb` above), so they need the
+    //   bare photo. A fixed 1200x630 (1.905:1) crop is the WRONG aspect
+    //   ratio for a portrait photo regardless of size — real content loss,
+    //   not just a byte-size regression.
+    // - `thumbGrid` needs its OWN `galleryHalf` (4:3) crop applied to the
+    //   same bare photo. `getMediaUrl` no-ops on a URL that already has a
+    //   transform, so without stripping first this cell would keep serving
+    //   the 1200x630 asset inside a 4:3 box — 6.3x the pixels on a mobile
+    //   grid cell (~360x270 CSS px).
+    const featuredBareUrl = stripCloudinaryTransform(accommodation.featuredImage);
     galleryItems.push({
         type: 'image',
-        src: featuredSrc,
-        thumb: featuredSrc,
+        src: featuredBareUrl,
+        thumb: featuredBareUrl,
         // Apply galleryHalf preset for the grid cell thumbnail (4:3, c_fill, 640px).
         // Non-Cloudinary URLs pass through unchanged.
-        thumbGrid: getMediaUrl(featuredSrc, { preset: 'galleryHalf' }),
+        thumbGrid: getMediaUrl(featuredBareUrl, { preset: 'galleryHalf' }),
         // H-125: the owner's alt text wins over the listing name.
         alt: accommodation.featuredImageAlt ?? accommodation.name,
         attribution: accommodation.featuredImageAttribution
@@ -113,19 +125,47 @@ for (const entry of galleryEntries) {
     }
 }
 
-// Videos — YouTube poster URLs are not Cloudinary; getMediaUrl passes them through.
+// Videos (HOS-1022) — resolveVideoEmbed() is the ONLY place that turns a
+// host-authored video URL into something safe to hand to GLightbox. It parses
+// the URL's actual hostname and validates the extracted id's shape, unlike the
+// substring regex this page used to run locally — that regex matched anywhere
+// in the string, so a Vimeo/Dailymotion URL that merely CONTAINED YouTube-shaped
+// text (e.g. in a query param) could be misread as a YouTube video and shown
+// with the wrong poster. A video that does not match a known provider is
+// silently excluded — never pushed with the raw, unvalidated URL "just in case".
+//
+// `data-type="video"` is set explicitly on the anchor below so GLightbox uses
+// this exact `embedUrl` as the iframe src instead of running its own
+// host/URL-sniffing heuristics on a URL we haven't validated ourselves.
 for (const entry of accommodation.media.videos) {
-    const ytId = extractYoutubeId(entry.url);
-    const posterUrl = ytId
-        ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
-        : accommodation.featuredImage;
+    const resolved = resolveVideoEmbed({ url: entry.url });
+    if (!resolved) continue;
+
+    // Only YouTube has a free, predictable static-thumbnail URL (getYoutubePosterUrl,
+    // @/lib/video-embed). Vimeo and Dailymotion fall back to the accommodation's
+    // featured image, same as this page's pre-existing behavior for a video
+    // whose poster could not be derived.
+    // HOS-881 follow-up: the featured-image fallback carries the detail
+    // page's baked-in `og` preset — strip it here too, same reasoning as the
+    // featured-image block above, so `thumbGrid` below re-crops the bare
+    // photo to `galleryHalf` instead of stacking a 4:3 crop on top of a
+    // 1200x630 one.
+    const posterUrl =
+        resolved.provider === 'youtube'
+            ? getYoutubePosterUrl({ videoId: resolved.videoId })
+            : stripCloudinaryTransform(accommodation.featuredImage);
+
     galleryItems.push({
         type: 'video',
-        src: entry.url,
+        // The DERIVED embed URL, never entry.url — see the JSDoc above.
+        src: resolved.embedUrl,
         thumb: posterUrl,
         // YouTube poster: non-Cloudinary → passes through unchanged (no c_fill crop).
         thumbGrid: getMediaUrl(posterUrl, { preset: 'galleryHalf' }),
-        thumbFallback: ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined,
+        thumbFallback:
+            resolved.provider === 'youtube'
+                ? getYoutubePosterUrl({ videoId: resolved.videoId, quality: 'hqdefault' })
+                : undefined,
         alt: entry.caption ?? `${accommodation.name} - video`,
         caption: entry.caption,
         description: entry.description
@@ -185,6 +225,7 @@ const jsonLd = {
                     <a
                         href={item.src}
                         data-glightbox
+                        data-type={item.type === 'video' ? 'video' : undefined}
                         data-gallery="accommodation-gallery"
                         data-title={item.caption ?? undefined}
                         data-description={item.description ?? undefined}

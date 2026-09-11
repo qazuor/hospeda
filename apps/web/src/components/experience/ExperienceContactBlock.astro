@@ -10,8 +10,9 @@
  * hard requirement listed next to the main photo, there to protect the
  * traveller from a dead-end listing. The public page then rendered none of it:
  * the only contact affordance was the site-wide WhatsApp button, which points
- * at Hospeda's own number (`wa.me/5493442453797`), not the provider's. The
- * datum was demanded and then withheld from the person it was demanded for.
+ * at Hospeda's own brand number (`SOCIAL_PROFILES`'s `whatsapp` entry, see
+ * `@/lib/constants`), not the provider's. The datum was demanded and then
+ * withheld from the person it was demanded for.
  *
  * ## Field selection (HOS-815)
  *
@@ -33,10 +34,14 @@
  *
  * Deliberate. The repo's precedent keeps WhatsApp a SEPARATE, entitlement-gated
  * channel sourced only from `contactInfo.whatsapp` — `AccommodationContactBlock`
- * never derives one from `phone`, and `ExperienceContactCTA` builds its link
- * only from `contactInfo.whatsapp`. Assuming a mobile line accepts WhatsApp
- * would invent a channel the provider never opted into, so mobiles render as a
- * plain `tel:` link.
+ * never derives one from `phone`. Assuming a mobile line accepts WhatsApp would
+ * invent a channel the provider never opted into, so mobiles render as a plain
+ * `tel:` link.
+ *
+ * HOS-363 removed the experience WhatsApp CTA that used to sit next to this
+ * block: it read `contactInfo.whatsapp`, which the public payload never carries,
+ * so it never rendered. This block is now the WHOLE contact surface of the page,
+ * and HOS-924 made one of the channels it renders a publish requirement.
  *
  * ## Anti-scraping
  *
@@ -57,6 +62,10 @@ import type { ExperienceContactInfo } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import {
+    EXPERIENCE_CONTACT_ANCHOR_ID,
+    hasPublicContactChannel
+} from '@/lib/experience-contact';
 
 interface Props {
     readonly contactInfo: ExperienceContactInfo | null;
@@ -103,14 +112,20 @@ const phones = [
 
 // Render nothing rather than an empty card — the three seeded experience
 // listings have an empty `contact_info` (noted on HOS-815).
-if (phones.length === 0 && !workEmail && !websiteHref) {
+//
+// The decision is delegated to `hasPublicContactChannel` (HOS-1056) because the
+// private-groups CTA is an ANCHOR into this block: the same predicate has to
+// decide whether the block exists and whether that link is real, or the two
+// drift into an anchor pointing at an element that is not on the page — silent,
+// with no error and no visible symptom.
+if (!hasPublicContactChannel({ contactInfo })) {
     return;
 }
 
 const heading = t('experience.detail.contact', 'Contacto');
 ---
 
-<section class="exp-contact" aria-label={heading}>
+<section class="exp-contact" id={EXPERIENCE_CONTACT_ANCHOR_ID} aria-label={heading}>
     <h3 class="exp-contact__title">{heading}</h3>
 
     <div class="exp-contact__channels">

@@ -185,16 +185,13 @@
         "cta": "List your experience"
     },
     "gastronomy": {
-        "tagline": "For restaurants",
-        "cta": "List your restaurant"
+        "tagline": "For food businesses",
+        "cta": "List your food business"
     },
     "partner": {
         "tagline": "For partners",
         "title": "Benefits for your partnership",
         "cta": "Become a partner",
-        "1": {
-            "title": "Verified network"
-        },
         "2": {
             "title": "Joint outreach"
         },

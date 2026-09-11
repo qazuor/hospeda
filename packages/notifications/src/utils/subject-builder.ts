@@ -25,7 +25,27 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.ADDON_EXPIRATION_WARNING]: 'Tu add-on {addonName} expira pronto',
     [NotificationType.ADDON_EXPIRED]: 'Tu add-on {addonName} ha expirado',
     [NotificationType.ADDON_RENEWAL_CONFIRMATION]: 'Add-on renovado - {addonName}',
+    // HOS-847 PR 5: the FIRST charge of a recurring add-on. It names the
+    // subscription, not a purchase — the inbox line is the first place a
+    // subscriber can be told the difference, and the body is where the cadence
+    // and the next charge date live. 'Complemento', not 'add-on', for the same
+    // reason as ADDON_PURCHASE above (HOS-830).
+    [NotificationType.ADDON_SUBSCRIPTION_STARTED]: 'Suscripción activa: complemento {addonName}',
     [NotificationType.TRIAL_ENDING_REMINDER]: 'Tu período de prueba termina pronto',
+
+    // HOS-1012 — nine subjects, deliberately different from each other. The
+    // tone shifts across the series (spec section 4) and the subject is the
+    // first place a reader notices it. Nine copies of one line would pass every
+    // structural check and fail the requirement silently.
+    [NotificationType.TRIAL_ENDING_10D]: '¿Cómo venís con tu publicación?',
+    [NotificationType.TRIAL_ENDING_5D]: 'Quedan 5 días de tu prueba gratis',
+    [NotificationType.TRIAL_ENDING_1D]: 'Mañana tu publicación sale del sitio',
+    [NotificationType.TRIAL_EXPIRED]: 'Tu publicación salió del sitio',
+    [NotificationType.TRIAL_WIN_BACK_1D]: 'Tu publicación te está esperando',
+    [NotificationType.TRIAL_WIN_BACK_5D]: 'Volvé a aparecer en Hospeda',
+    [NotificationType.TRIAL_WIN_BACK_10D]: 'Tus fotos y tus datos siguen guardados',
+    [NotificationType.TRIAL_WIN_BACK_30D]: '¿Retomamos tu publicación?',
+    [NotificationType.TRIAL_WIN_BACK_60D]: 'Tu ficha sigue disponible cuando quieras',
     [NotificationType.ADMIN_PAYMENT_FAILURE]: '[Admin] Fallo de pago - {userEmail}',
     [NotificationType.ADMIN_SYSTEM_EVENT]: '[Admin] Evento del sistema - {eventType}',
     // New acquisition lead (H-62 / H-148). Names the program and the applicant
@@ -33,16 +53,33 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // operator nothing they can act on without opening the admin, which is the
     // dependency this alert exists to remove.
     [NotificationType.ADMIN_LEAD_RECEIVED]: '[Admin] Nuevo lead de {programLabel} — {contactName}',
+    // Names the partner AND phrases it as a question, for the same triage reason
+    // plus one of its own: nothing has happened to this partner yet, and a
+    // subject that read like a notice of removal would be a lie about the only
+    // thing this email is for.
+    [NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW]:
+        '[Admin] ¿{partnerName} sigue pagando? No hay pago registrado',
     [NotificationType.FEEDBACK_REPORT]: '[{reportType}] {reportTitle}',
     [NotificationType.CONTACT_SUBMISSION]: '[Contacto] {contactType} - {senderName}',
     [NotificationType.SUBSCRIPTION_CANCELLED]: 'Tu suscripción {planName} ha sido cancelada',
     [NotificationType.SUBSCRIPTION_PAUSED]:
         'Tu suscripción {planName} ha sido pausada - Acción requerida',
     [NotificationType.SUBSCRIPTION_REACTIVATED]: 'Tu suscripción {planName} ha sido reactivada',
+    // Never phrase these as an action the subscriber has to take: nothing is
+    // required of them, which is the entire point of a gift.
+    [NotificationType.COURTESY_GRANTED]: 'Te regalamos tu plan {planName} por un tiempo',
+    [NotificationType.COURTESY_STARTED]: 'Tu regalo ya está activo - plan {planName}',
+    [NotificationType.COURTESY_ENDED]: 'Tu regalo terminó - vuelve la facturación de {planName}',
+    // No end date and no "por un tiempo": a comp does not expire, and a subject
+    // borrowed from courtesy would promise the opposite of what was granted.
+    [NotificationType.COMP_GRANTED]: 'Tu plan {planName} queda sin cargo',
     [NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING]:
         'Límite reducido en tu plan {planName} - Revisá tu contenido',
     [NotificationType.PAYMENT_RETRY_WARNING]:
         'Problema con tu pago - Intento {failureCount} de {maxRetries}',
+    // The IMMEDIATE cancellation: the benefit is already gone. A soft-cancel
+    // that leaves the customer a paid period gets its own line — see
+    // CONDITIONAL_SUBJECT_PATTERNS below.
     [NotificationType.ADDON_CANCELLATION]: 'Tu complemento {addonName} ha sido cancelado',
 
     // Newsletter (SPEC-101)
@@ -125,6 +162,45 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 };
 
 /**
+ * An alternative subject, used when one variable resolved and skipped when it
+ * did not.
+ */
+interface ConditionalSubjectPattern {
+    /** The subject-data key whose presence selects {@link pattern}. */
+    readonly onKey: string;
+    /** Used INSTEAD of the type's entry in `SUBJECT_PATTERNS`. */
+    readonly pattern: string;
+}
+
+/**
+ * Subjects that come in two shapes, chosen by whether a variable resolved.
+ *
+ * Two whole patterns, never one pattern with an optional placeholder in it. A
+ * `{accessUntil}` left unresolved does not vanish: `replacePlaceholders`
+ * preserves it by design, so the immediate-cancellation half of this type would
+ * publish its own template syntax to an inbox (H-64 / H-75), and blanking it
+ * instead would leave "…hasta el " hanging in the subject line. Both failures
+ * happen where nobody can intercept them — an inbox list.
+ *
+ * HOS-847 PR 7c: an add-on cancellation reaches the customer in two very
+ * different states. Non-payment and an admin cancel end the benefit on the
+ * spot; `softCancelRecurringAddon` leaves it running until the end of the
+ * period already paid for, and only that path supplies `accessUntil`. Saying
+ * only "ha sido cancelado" above a body that reads "seguís teniendo el
+ * beneficio hasta el 15 de abril" is the contradiction this split removes.
+ *
+ * The absent-variable branch keeps the ORIGINAL wording, byte for byte: the
+ * immediate cancellation's subject did not change and a test pins that.
+ */
+const CONDITIONAL_SUBJECT_PATTERNS: Partial<Record<NotificationType, ConditionalSubjectPattern>> = {
+    [NotificationType.ADDON_CANCELLATION]: {
+        onKey: 'accessUntil',
+        pattern:
+            'Tu complemento {addonName} queda cancelado — lo seguís usando hasta el {accessUntil}'
+    }
+};
+
+/**
  * Generic fallback subject for unknown notification types
  */
 const FALLBACK_SUBJECT = 'Notificación de Hospeda';
@@ -160,10 +236,19 @@ export function getSubjectPlaceholders(params: { readonly type: NotificationType
     }
 
     const found = new Set<string>();
-    for (const match of pattern.matchAll(PLACEHOLDER_PATTERN)) {
-        const key = match[1];
-        if (key !== undefined) {
-            found.add(key);
+    // The UNION of both shapes for a conditional subject. A variable that only
+    // the alternative pattern uses still has to be resolvable, and this is the
+    // list the coverage guard and `buildSubjectData` read.
+    const patterns = [pattern, CONDITIONAL_SUBJECT_PATTERNS[params.type]?.pattern].filter(
+        (candidate): candidate is string => candidate !== undefined
+    );
+
+    for (const candidate of patterns) {
+        for (const match of candidate.matchAll(PLACEHOLDER_PATTERN)) {
+            const key = match[1];
+            if (key !== undefined) {
+                found.add(key);
+            }
         }
     }
 
@@ -265,5 +350,15 @@ export function getSubject(type: NotificationType, data: Record<string, string>)
         return FALLBACK_SUBJECT;
     }
 
-    return replacePlaceholders(pattern, data);
+    // A conditional subject switches shape only on a value that actually
+    // resolved. An empty string is not a date — `formatDate` returns one for an
+    // input it cannot read — and picking the alternative on it would publish
+    // "…hasta el " with nothing after it.
+    const conditional = CONDITIONAL_SUBJECT_PATTERNS[type];
+    const chosen =
+        conditional && typeof data[conditional.onKey] === 'string' && data[conditional.onKey] !== ''
+            ? conditional.pattern
+            : pattern;
+
+    return replacePlaceholders(chosen, data);
 }

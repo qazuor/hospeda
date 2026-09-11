@@ -38,6 +38,7 @@ import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import {
+    commerceEditorUrl,
     saveCommerceEditor,
     waitForCommerceEditorHydration
 } from '../../fixtures/commerce-editor-helpers.ts';
@@ -182,12 +183,18 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Navigate to the gastronomy editor ────────────────────────────────
-        // Trailing slash required: Astro trailingSlash:'always' returns 404 (not
-        // a redirect) for URLs without a trailing slash in SSR mode.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
-            waitUntil: 'load'
-        });
+        // ── Navigate to the gastronomy editor's basic-info section ───────────
+        // HOS-1080: `#ce-type` is a basic-info field, and `…/editar/` is the hub
+        // now — it lists the sections and renders no form.
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'gastronomy',
+                listingId: gastronomyId,
+                section: 'datos'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for React island hydration.
         //
@@ -247,11 +254,17 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Navigate to the gastronomy editor ────────────────────────────────
-        // Trailing slash required — Astro trailingSlash:'always'.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
-            waitUntil: 'load'
-        });
+        // ── Navigate to the gastronomy editor's translations section ─────────
+        // HOS-1080: the translation panel has its own page now.
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'gastronomy',
+                listingId: gastronomyId,
+                section: 'traducciones'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for real island hydration first (HOS-371): everything asserted
         // below — the panel fieldset, the textarea being visible and editable —
@@ -287,9 +300,15 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         // Navigation to the same editor triggers a fresh SSR page with the
         // updated DB data. The island reads initialData.nameI18n.es which the
         // protected getById endpoint now returns.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
-            waitUntil: 'load'
-        });
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'gastronomy',
+                listingId: gastronomyId,
+                section: 'traducciones'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for the TranslationPanel to be ready again.
         const nameI18nEsTextareaAfter = page.locator('#ctp-nameI18n-es');
@@ -310,11 +329,17 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Navigate to the experience editor ────────────────────────────────
-        // Trailing slash required — Astro trailingSlash:'always'.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/experience/${experienceId}/editar/`, {
-            waitUntil: 'load'
-        });
+        // ── Navigate to the experience editor's basic-info section ───────────
+        // HOS-1080: `#ce-type` is a basic-info field (see the gastronomy test).
+        await page.goto(
+            commerceEditorUrl({
+                webUrl: WEB_URL,
+                vertical: 'experience',
+                listingId: experienceId,
+                section: 'datos'
+            }),
+            { waitUntil: 'load' }
+        );
 
         // Wait for real island hydration (see the HOS-371 note above).
         await waitForCommerceEditorHydration({ page });

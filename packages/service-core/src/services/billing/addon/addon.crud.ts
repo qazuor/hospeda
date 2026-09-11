@@ -33,7 +33,7 @@ import {
     withTransaction
 } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import type { AdminAddonResponse } from '@repo/schemas';
+import type { AdminAddonResponse, ProductDomain } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import { diffAddonFields, insertAddonAuditLog } from './addon.audit.js';
 import type { CreateAddonInput, UpdateAddonInput } from './addon.write-types.js';
@@ -82,6 +82,22 @@ export function mapRowToAdminAddonResponse(row: QZPayBillingAddon): AdminAddonRe
         // (z.boolean().default(false)), so the output type requires a concrete
         // boolean; the AddonDefinition mapper leaves it optional. Normalize here.
         requiresAccommodationTarget: def.requiresAccommodationTarget ?? false,
+        // HOS-1178: the same normalization, for the same reason.
+        // `AddonResponseSchema` declares `productDomain` as
+        // `.nullable().default(null)`, so its OUTPUT type is
+        // `ProductDomain | null` with no `undefined`; the definition mapper
+        // answers `undefined` for a slug the catalogue does not know. `null` is
+        // that identical "no declared domain" answer spelled the way the wire
+        // spells it — never a domain substituted for a missing one.
+        //
+        // The narrowing is real, not a shrug: `ProductDomainEnumSchema` is a
+        // `z.nativeEnum`, so the DTO's type is the ENUM while `AddonDefinition`
+        // (like `productDomainForLimitKey` beside it) uses the template-literal
+        // VALUE union — the two describe the same four strings, and the schema
+        // file asks that the value union stay the one callers pass literals to.
+        // Narrowed here, at the single boundary between them, rather than by
+        // splitting the vocabulary in two.
+        productDomain: (def.productDomain ?? null) as ProductDomain | null,
         id: row.id,
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt?.toISOString() ?? row.createdAt.toISOString(),

@@ -190,7 +190,25 @@ async function resolveCommerceListingById(params: {
     readonly entityType: 'gastronomy' | 'experience';
     readonly entityId: string;
 }): Promise<EntityChangeData | null> {
-    const table = params.entityType === 'gastronomy' ? gastronomies : experiences;
+    // HOS-1079: an exhaustive switch, not a binary ternary — `entityType` is
+    // already narrowed to exactly these two literals by the caller's own
+    // `switch` above, so the `default` throw is defense-in-depth, not a
+    // reachable path today.
+    let table: typeof gastronomies | typeof experiences;
+    switch (params.entityType) {
+        case 'gastronomy':
+            table = gastronomies;
+            break;
+        case 'experience':
+            table = experiences;
+            break;
+        default: {
+            const exhaustiveCheck: never = params.entityType;
+            throw new Error(
+                `resolveCommerceListingById: unsupported entityType '${exhaustiveCheck}'`
+            );
+        }
+    }
 
     const db = getDb();
     const rows = await db

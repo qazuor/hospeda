@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolveWebIcon } from '@/lib/icon-map';
+import { foldForRanking } from '@/lib/rank-city-suggestions';
 import type { IconChipsFilterConfig } from './filter.types';
 import styles from './IconChipsFilter.module.css';
 
@@ -102,10 +103,11 @@ export function IconChipsFilter({ config, value, onChange, locale }: IconChipsFi
         return () => dialog.removeEventListener('click', handleClick);
     }, []);
 
-    // Filter options by dialog search query
+    // Filter options by dialog search query. Diacritic-insensitive (HOS-979):
+    // a query typed without accents still matches an accented option label.
     const filteredOptions = dialogSearch
         ? config.options.filter((opt) =>
-              opt.label.toLowerCase().includes(dialogSearch.toLowerCase())
+              foldForRanking(opt.label).includes(foldForRanking(dialogSearch))
           )
         : config.options;
 
@@ -152,10 +154,10 @@ export function IconChipsFilter({ config, value, onChange, locale }: IconChipsFi
             {/* Full-options dialog */}
             <dialog
                 ref={dialogRef}
-                className={styles.iconChipsDialog}
+                className={`${styles.iconChipsDialog} dialog-viewport`}
                 aria-label={config.label}
             >
-                <div className={styles.iconChipsDialogPanel}>
+                <div className={`${styles.iconChipsDialogPanel} dialog-panel`}>
                     {/* Header */}
                     <div className={styles.iconChipsDialogHeader}>
                         <h3 className={styles.iconChipsDialogTitle}>{config.label}</h3>
@@ -182,7 +184,7 @@ export function IconChipsFilter({ config, value, onChange, locale }: IconChipsFi
                     </div>
 
                     {/* Body */}
-                    <div className={styles.iconChipsDialogBody}>
+                    <div className={`${styles.iconChipsDialogBody} dialog-panel-scroll`}>
                         {/* Selected options section */}
                         {selectedOptions.length > 0 && (
                             <>

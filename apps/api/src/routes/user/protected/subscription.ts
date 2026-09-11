@@ -5,8 +5,13 @@
  */
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { billingSubscriptions, eq, getDb } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
-import { subscriptionMatchesDomain } from '@repo/service-core';
+import {
+    hydrateSubscriptionProductDomains,
+    readCourtesyFields,
+    subscriptionMatchesDomain
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -26,6 +31,7 @@ const planService = new PlanService();
 const SUBSCRIPTION_STATUSES = [
     'active',
     'trial',
+    'courtesy',
     'cancelled',
     'expired',
     'past_due',
@@ -46,6 +52,22 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     comp: 'active',
     trialing: 'trial',
     trial: 'trial',
+    // HOS-1007: a `courtesy` (HOS-180 gifted cycles) subscription gets its OWN
+    // response status rather than following the `comp` precedent above
+    // (map → 'active' + a boolean flag). Two reasons the two cases differ:
+    //   1. A courtesy is a *window*, not a permanent state. The panel has to say
+    //      "sin cargo hasta <courtesyEndsAt>" and badge it "De regalo" — copy it
+    //      can only select on a status of its own. Collapsing it into 'active'
+    //      would need yet another boolean AND would render the honest date under
+    //      a "Próxima facturación" label that is factually wrong.
+    //   2. Unlike a comp, a courtesy IS self-service cancellable
+    //      (`SOFT_CANCELLABLE_STATUSES` in subscription-cancel.service.ts holds
+    //      `active | trialing | courtesy`), so it cannot reuse `isComplimentary`,
+    //      whose whole job is to hide the cancel action.
+    // The web panel already declares 'courtesy' in its status union and consumes
+    // it; without this entry the value fell through to the 'pending' default
+    // below and that branch was unreachable in production.
+    courtesy: 'courtesy',
     canceled: 'cancelled',
     cancelled: 'cancelled',
     expired: 'expired',
@@ -97,6 +119,12 @@ const SubscriptionResponseSchema = z.object({
              */
             canceledAt: z.string().nullable(),
             trialEndsAt: z.string().nullable(),
+            /**
+             * End of a gifted courtesy window (HOS-180), or null.
+             * While the subscription is in `courtesy` this — not
+             * currentPeriodEnd — is when the subscriber is charged again.
+             */
+            courtesyEndsAt: z.string().nullable(),
             monthlyPriceArs: z.number(),
             paymentMethod: z
                 .object({
@@ -153,6 +181,19 @@ export const userSubscriptionRoute = createProtectedRoute({
         const { productDomain } = (query || {}) as { productDomain?: ProductDomainScope };
         const resolvedProductDomain: ProductDomainScope =
             productDomain ?? ProductDomainEnum.ACCOMMODATION;
+        // HOS-1233 (F-4g #3): whether the caller NAMED a domain or fell to the
+        // default. The two are not the same question, and before this spec they
+        // could not be told apart because the default was applied at the read.
+        //
+        // A caller that names a domain means it: `?productDomain=gastronomy`
+        // must never pick up an accommodation or tourist row (HOS-259/HOS-685).
+        // A caller that names none is asking "my subscription" — and the
+        // reclassification of the tourist tiers into their own domain (F-4b)
+        // turned that question into `null` for every paying tourist, because
+        // the default is `accommodation` and `tourist` is not even in
+        // `SUBSCRIPTION_SCOPE_DOMAINS` for them to ask for: `?productDomain=tourist`
+        // is a 400, not an unused escape hatch. No client can work around this.
+        const domainWasRequested = productDomain !== undefined;
 
         // Check if billing is enabled
         const billingEnabled = ctx.get('billingEnabled');
@@ -201,7 +242,14 @@ export const userSubscriptionRoute = createProtectedRoute({
         let subscriptions: QZPaySubscriptionWithHelpers[] = [];
 
         try {
-            subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+            const rawSubscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+            // HOS-934: `getByCustomerId()` never populates `productDomain` (it is
+            // a qzpay-drizzle column outside core's mapped interface — see
+            // `hydrateSubscriptionProductDomains`'s doc). Without this, every
+            // subscription reaches `subscriptionMatchesDomain` below with
+            // `productDomain = undefined`, which fails OPEN to accommodation for
+            // ALL of them regardless of their real vertical.
+            subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             apiLogger.warn(
@@ -241,13 +289,31 @@ export const userSubscriptionRoute = createProtectedRoute({
         // binary branch that would answer `accommodation` for a vertical it does
         // not recognise — the failure mode that hands a host's plan to a
         // commerce-scoped caller.
-        const activeSubscription = subscriptions.find(
-            (sub) =>
-                (isEntitlementGrantingStatus(sub.status) ||
-                    sub.status === 'past_due' ||
-                    sub.status === 'paused') &&
-                subscriptionMatchesDomain(sub, resolvedProductDomain)
-        );
+        // HOS-1233: an UNQUALIFIED caller falls back to the tourist domain when
+        // the customer holds no accommodation subscription. Ordered, never an
+        // "either" match: a host auto-promoted by host-onboarding can hold both
+        // (see the HOS-217 discard in `loadEntitlements`), and matching either
+        // would let the storage adapter's ordering hand that host their tourist
+        // tier instead of the owner plan they manage here — HOS-259's bug under
+        // a new domain. Ordered, the fallback can only ever turn a `null` into
+        // an answer: wherever an accommodation subscription exists, the response
+        // is byte-identical to what this route returned before.
+        //
+        // It does NOT fall back to gastronomy/experience. Those have their own
+        // scoped callers and their own management surfaces; a commerce row
+        // surfacing on the accommodation account page is the failure HOS-259 and
+        // HOS-685 were written to stop.
+        const isManageableStatus = (status: string) =>
+            isEntitlementGrantingStatus(status) || status === 'past_due' || status === 'paused';
+
+        const matchInDomain = (domain: ProductDomainScope) =>
+            subscriptions.find(
+                (sub) => isManageableStatus(sub.status) && subscriptionMatchesDomain(sub, domain)
+            );
+
+        const activeSubscription =
+            matchInDomain(resolvedProductDomain) ??
+            (domainWasRequested ? undefined : matchInDomain(ProductDomainEnum.TOURIST));
 
         if (!activeSubscription) {
             apiLogger.debug(
@@ -344,6 +410,27 @@ export const userSubscriptionRoute = createProtectedRoute({
                 ? activeSubscription.scheduledPlanChange
                 : null;
 
+        // The courtesy window is read from the ROW, not from `activeSubscription`.
+        //
+        // These objects come from `billing.subscriptions.getByCustomerId()`, and
+        // qzpay-core's subscription mapper builds them field by field from the
+        // fields core itself declares — there is no spread, so a column
+        // qzpay-drizzle adds beyond core's interface never reaches the object.
+        // `courtesy_starts_at` / `courtesy_ends_at` / `courtesy_cycles_granted`
+        // (HOS-993) are exactly such columns, so reading them off the facade
+        // object would yield an empty window on every subscription, silently:
+        // a gifted subscriber would simply never see their gift here.
+        const [courtesyRow] = await getDb()
+            .select({
+                courtesyStartsAt: billingSubscriptions.courtesyStartsAt,
+                courtesyEndsAt: billingSubscriptions.courtesyEndsAt,
+                courtesyCyclesGranted: billingSubscriptions.courtesyCyclesGranted
+            })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, activeSubscription.id))
+            .limit(1);
+        const courtesyWindow = readCourtesyFields(courtesyRow);
+
         return {
             subscription: {
                 id: activeSubscription.id,
@@ -359,6 +446,7 @@ export const userSubscriptionRoute = createProtectedRoute({
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
                 canceledAt: toIsoString(activeSubscription.canceledAt),
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
+                courtesyEndsAt: toIsoString(courtesyWindow.courtesyEndsAt),
                 monthlyPriceArs,
                 paymentMethod: null,
                 gracePeriodDaysRemaining,

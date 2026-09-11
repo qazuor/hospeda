@@ -169,11 +169,11 @@
             "description": "Verificando seu endereço de email no Hospeda"
         },
         "verifyEmailSent": {
-            "body": "Te enviamos un correo con un enlace para verificar tu cuenta. Hacé clic en el enlace para activar tu acceso. Si no lo ves en la bandeja de entrada, revisá la carpeta de spam o promociones.",
-            "description": "Te enviamos un correo para verificar tu cuenta",
-            "heading": "Casi listo",
-            "signInLink": "Ir a iniciar sesión",
-            "title": "Revisá tu correo"
+            "body": "Enviamos um e-mail com um link para verificar sua conta. Clique no link para ativar seu acesso. Se não estiver na caixa de entrada, verifique a pasta de spam ou promoções.",
+            "description": "Enviamos um e-mail para verificar sua conta",
+            "heading": "Quase lá",
+            "signInLink": "Ir para o login",
+            "title": "Verifique seu e-mail"
         }
     },
     "loading": "Loading form"

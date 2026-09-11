@@ -47,6 +47,15 @@ export interface ChangePasswordFormProps {
      * acting as. Rendering it is what makes that visible.
      */
     readonly accountEmail: string;
+    /**
+     * Where to land once this step is done.
+     *
+     * Resolved and validated server-side by the page (HOS-838): it is the
+     * destination the onboarding gate interrupted, or `/{locale}/mi-cuenta/`
+     * when there was none. Never build it here — the open-redirect guard lives
+     * on the server and an island must not re-implement it.
+     */
+    readonly returnUrl: string;
 }
 
 interface FormFields {
@@ -79,7 +88,7 @@ const INITIAL_FIELDS: FormFields = {
  *
  * @param props - Component props (see {@link ChangePasswordFormProps})
  */
-export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePasswordFormProps) {
     const { t } = createTranslations(locale);
 
     const [fields, setFields] = useState<FormFields>(INITIAL_FIELDS);
@@ -210,7 +219,7 @@ export function ChangePasswordForm({ locale, accountEmail }: ChangePasswordFormP
             // Show success banner first, then redirect to account page after 1.5 s.
             setIsSuccess(true);
             redirectTimerRef.current = setTimeout(() => {
-                window.location.href = `/${locale}/mi-cuenta/`;
+                window.location.href = returnUrl;
             }, 1500);
         } catch (err: unknown) {
             const msg =

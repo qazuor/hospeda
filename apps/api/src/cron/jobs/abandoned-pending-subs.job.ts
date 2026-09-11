@@ -17,13 +17,20 @@
  *     window the start-paid route returns to the front,
  *   - `deleted_at IS NULL`.
  * - For each stale row that still holds a live `mp_subscription_id`
- *   (HOS-151 Bug B), the MercadoPago preapproval is CANCELLED and then
- *   VERIFIED cancelled against the live provider (`retrieve()`) BEFORE the
- *   local row is flipped to `abandoned` — so no orphaned chargeable
- *   authorization survives. A cancel/verify failure leaves the row pending
- *   (retried next hour) and is captured to Sentry; it is NOT marked
- *   `abandoned` (D-2). Rows with no `mp_subscription_id` (nothing to cancel)
- *   are abandoned directly.
+ *   (HOS-151 Bug B), the MercadoPago preapproval is CANCELLED **at the provider
+ *   and only at the provider** and then VERIFIED cancelled against the live
+ *   provider (`retrieve()`) BEFORE the local row is flipped to `abandoned` — so
+ *   no orphaned chargeable authorization survives. A cancel/verify failure
+ *   leaves the row pending (retried next hour) and is captured to Sentry; it is
+ *   NOT marked `abandoned` (D-2). Rows with no `mp_subscription_id` (nothing to
+ *   cancel) are abandoned directly.
+ * - HOS-1326: that provider cancel goes through the payment adapter directly,
+ *   NEVER through `billing.subscriptions.cancel()`. See the comment on the call
+ *   itself — the qzpay-core helper also writes `status: 'canceled'` on the local
+ *   row, which took every preapproval-holding candidate out of
+ *   {@link PENDING_STATUSES} before the abandon UPDATE below could match it. The
+ *   result was silent and total: no row that ever had a preapproval could reach
+ *   `abandoned`, and every one of them was filed as a cancellation instead.
  * - Marks each reaped row canonical `abandoned` (Hospeda enum vocabulary).
  *   Legacy `incomplete_expired` rows written before this fix are handled
  *   by the `010-abandoned-status.data-migration.sql` extras migration.
@@ -42,27 +49,31 @@
  * @module cron/jobs/abandoned-pending-subs
  */
 
-import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { createMercadoPagoAdapter, PENDING_PROVIDER_STORED_STATUSES } from '@repo/billing';
 import {
+    and,
     billingPendingCheckoutModel,
     billingSubscriptions,
+    eq,
     getDb,
+    hasNoLinkedPreapprovalCondition,
+    inArray,
+    isNull,
+    lt,
     sql,
     withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { checkSubscriptionStatusTransition } from '@repo/service-core';
+import { checkSubscriptionStatusTransition, excludeAddonDomainCondition } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { CONFIRMED_TERMINAL_STATUSES } from '../../services/billing/reactivation-supersession-complete.js';
-import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -82,12 +93,17 @@ const ADVISORY_LOCK_KEY = 1006;
 const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
 
 /**
- * Subscription statuses that this cron considers "abandonable". qzpay-core
- * writes `incomplete` during its `mode: 'paid'` flow; the Hospeda enum
- * `pending_provider` is included for forward compatibility with any
- * direct-insert path that bypasses qzpay-core.
+ * Subscription statuses that this cron considers "abandonable": every stored
+ * spelling that means "created locally, never confirmed by the provider".
+ *
+ * HOS-1326: no longer typed out here. It is
+ * {@link PENDING_PROVIDER_STORED_STATUSES} from `@repo/billing`, DERIVED from
+ * the same alias map `normalizeStoredSubscriptionStatus` reads, so this cron and
+ * the `paid-subscription-create` cleanup share one definition and a third
+ * spelling joins both at once. qzpay-core writes `incomplete` during its
+ * `mode: 'paid'` flow; every direct Hospeda writer uses `pending_provider`.
  */
-const PENDING_STATUSES = ['incomplete', 'pending_provider'] as const;
+const PENDING_STATUSES = PENDING_PROVIDER_STORED_STATUSES;
 
 /**
  * Terminal status written by the reaper. Uses the canonical Hospeda enum
@@ -143,12 +159,11 @@ type ReapOutcome =
  */
 async function reapPendingCandidate(params: {
     readonly candidate: PendingCandidate;
-    readonly billing: QZPayBilling;
     readonly paymentAdapter: QZPayMercadoPagoAdapter;
     readonly db: ReturnType<typeof getDb>;
     readonly logger: Parameters<CronJobDefinition['handler']>[0]['logger'];
 }): Promise<ReapOutcome> {
-    const { candidate, billing, paymentAdapter, db, logger } = params;
+    const { candidate, paymentAdapter, db, logger } = params;
     const mpSubscriptionId = candidate.mpSubscriptionId?.trim();
 
     // Bug B core: a row that still holds a live preapproval must have it
@@ -158,8 +173,33 @@ async function reapPendingCandidate(params: {
     // `abandoned → active` write is rejected).
     if (mpSubscriptionId) {
         // Cancel attempt — swallow, the retrieve() below is the source of truth.
+        //
+        // HOS-1326: this goes to the payment adapter DIRECTLY and must keep
+        // doing so. It used to call `billing.subscriptions.cancel(candidate.id)`,
+        // which does two things, not one: it forwards to exactly this adapter
+        // method, AND — whenever `cancelAtPeriodEnd` is falsy, as it is here —
+        // writes `status: 'canceled'` + `canceledAt` onto the LOCAL row
+        // (qzpay-core 7.0.0 `billing.ts`; qzpay-drizzle spreads the value into
+        // the UPDATE verbatim, so the American spelling lands in the column
+        // as-is). That second effect broke this job in two ways:
+        //
+        //   1. it took the row OUT of PENDING_STATUSES before the abandon UPDATE
+        //      at the bottom of this function ran, so that UPDATE's WHERE matched
+        //      nothing and the candidate returned `already-reaped`. Every
+        //      candidate holding an `mp_subscription_id` therefore stopped at
+        //      `canceled` and could never reach `abandoned` — which is exactly
+        //      what production shows: the only `abandoned` rows there are the
+        //      ones that never had a preapproval;
+        //   2. `canceled` is the wrong word AND the wrong spelling. An abandoned
+        //      checkout is not a cancellation, and every direct Hospeda writer
+        //      spells that word `cancelled`. The row was being filed as churn.
+        //
+        // Same rule, same reason as `services/billing/preapproval-hard-cancel.ts`:
+        // when the local terminal status is ours to write, the provider call is
+        // the adapter's job and nothing else's. `false` = irreversible
+        // `PUT status: 'cancelled'`, never the reversible pause.
         try {
-            await billing.subscriptions.cancel(candidate.id);
+            await paymentAdapter.subscriptions.cancel(mpSubscriptionId, false);
         } catch (cancelError) {
             logger.warn(
                 'abandoned-pending-subs: cancel of MP preapproval failed on first attempt — verifying live provider status before deciding',
@@ -256,7 +296,7 @@ async function reapPendingCandidate(params: {
         // since `reconcile_assisted` is a terminal outcome the row's TTL is
         // irrelevant to.
         const reconcileAssisted =
-            await billingPendingCheckoutModel.findReconcileAssistedByLocalSubscriptionId({
+            await billingPendingCheckoutModel.findUnlinkedChargeByLocalSubscriptionId({
                 localSubscriptionId: candidate.id
             });
         if (reconcileAssisted) {
@@ -281,10 +321,16 @@ async function reapPendingCandidate(params: {
     //     a no-op `already-reaped` rather than a wrong abandon);
     //   - cancel+verify branch → require the mp id is unchanged from the snapshot
     //     (a drift means the row was re-linked; do not abandon it).
+    //
+    // The mp-null branch matches `NULL` **or** `''`: a 2xx preapproval with no
+    // `id` is persisted as the EMPTY STRING, not NULL, while every JS-side read
+    // reports it as absent (see {@link hasNoLinkedPreapprovalCondition}). An
+    // `IS NULL`-only guard therefore matched zero rows for exactly the checkout
+    // this reaper exists to close, every hour, forever.
     const mpGuard =
         mpSubscriptionId && candidate.mpSubscriptionId
             ? eq(billingSubscriptions.mpSubscriptionId, candidate.mpSubscriptionId)
-            : isNull(billingSubscriptions.mpSubscriptionId);
+            : hasNoLinkedPreapprovalCondition();
     const [row] = await db
         .update(billingSubscriptions)
         .set({ status: ABANDONED_STATUS, updatedAt: new Date() })
@@ -307,14 +353,14 @@ async function reapPendingCandidate(params: {
     }
 
     // Propagate the terminal status to the domain link tables. A commerce or
-    // partner checkout owns a `commerce_listing_subscriptions` /
+    // partner checkout owns a `entity_subscriptions` /
     // `partner_subscriptions` row created at checkout time; without these calls
     // it keeps reporting the pre-abandon status forever, since every OTHER
     // status-changing path (webhook, dunning, finalize-cancelled) already
     // reconciles and only this reaper did not. No-op for accommodation subs (no
     // link row) and non-blocking by construction — both reconcilers swallow
     // their own errors, mirroring the webhook and dunning call sites.
-    await reconcileCommerceListingForSubscription({
+    await reconcileSubscriptionLinkedEntities({
         subscriptionId: row.id,
         subscriptionStatus: ABANDONED_STATUS,
         source: 'abandoned-pending-subs-cron'
@@ -403,7 +449,12 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                             and(
                                 inArray(billingSubscriptions.status, [...PENDING_STATUSES]),
                                 lt(billingSubscriptions.createdAt, cutoff),
-                                isNull(billingSubscriptions.deletedAt)
+                                isNull(billingSubscriptions.deletedAt),
+                                // HOS-847: exclude a recurring add-on's own
+                                // preapproval row — abandoning it must not send the
+                                // customer a "your subscription was cancelled" email
+                                // (see the notification loop below).
+                                excludeAddonDomainCondition()
                             )
                         );
 
@@ -422,7 +473,9 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                         and(
                             inArray(billingSubscriptions.status, [...PENDING_STATUSES]),
                             lt(billingSubscriptions.createdAt, cutoff),
-                            isNull(billingSubscriptions.deletedAt)
+                            isNull(billingSubscriptions.deletedAt),
+                            // HOS-847: see the dry-run branch above.
+                            excludeAddonDomainCondition()
                         )
                     );
 
@@ -473,16 +526,22 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                 };
             }
 
-            // Phase 2 (post-commit, R-2): cancel + verify + abandon per row. We
-            // need the billing client AND the MP adapter to cancel/verify a live
-            // preapproval. If either is unavailable we must NOT abandon rows that
-            // hold a preapproval (we could not cancel them) — skip the whole run
-            // and leave the rows pending for the next hour, rather than orphaning
-            // a live charge.
+            // Phase 2 (post-commit, R-2): cancel + verify + abandon per row.
+            //
+            // The MP adapter does the cancel/verify (HOS-1326 — see
+            // `reapPendingCandidate`); the billing client is what resolves the
+            // customer and plan for the post-abandon notification loop below.
+            // Both bail-outs are deliberately WHOLE-RUN skips rather than partial
+            // sweeps: an unconfigured environment is not the place to start
+            // writing terminal statuses on rows whose preapprovals we may not be
+            // able to reach, and a candidate left pending is re-selected an hour
+            // later at no cost. Do not "improve" this into reaping without
+            // notifications — a silently abandoned checkout the owner is never
+            // told about is a support ticket, not an optimization.
             const billing = getQZPayBilling();
             if (!billing) {
                 logger.warn(
-                    'abandoned-pending-subs: billing not configured — cannot cancel preapprovals, leaving candidates pending',
+                    'abandoned-pending-subs: billing not configured — cannot notify abandoned owners, leaving candidates pending',
                     { candidates: cronResult.candidates.length }
                 );
                 return {
@@ -528,7 +587,6 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
             for (const candidate of cronResult.candidates) {
                 const outcome = await reapPendingCandidate({
                     candidate,
-                    billing,
                     paymentAdapter,
                     db,
                     logger

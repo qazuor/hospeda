@@ -21,6 +21,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import type { ZodTypeAny } from 'zod';
+import { buildEditorHubUrl } from '@/lib/editor/accommodation-editor-sections';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -66,7 +67,8 @@ export function useAccommodationSectionForm<TValues extends object>({
     ownFields,
     schema,
     fieldKeyMap = {},
-    extendPayload
+    extendPayload,
+    onSaved
 }: {
     readonly locale: SupportedLocale;
     readonly accommodationId: string;
@@ -89,6 +91,19 @@ export function useAccommodationSectionForm<TValues extends object>({
         readonly values: TValues;
         readonly baseline: TValues;
     }) => Record<string, unknown>;
+    /**
+     * Called after a save succeeds, with BOTH sides of it (HOS-1183).
+     *
+     * It runs before the baseline resyncs, which is the only moment `before`
+     * still exists: one line later `setBaseline(values)` makes the two
+     * identical, and any consumer asking "what changed" gets nothing. A
+     * transition-shaped decision — such as "did this save make the listing
+     * publishable" — cannot be reconstructed after that point.
+     *
+     * Deliberately not awaited: a slow consumer must not delay the success
+     * toast or leave the form in a saving state.
+     */
+    readonly onSaved?: (input: { readonly before: TValues; readonly after: TValues }) => void;
 }): AccommodationSectionForm<TValues> {
     const { t } = createTranslations(locale);
 
@@ -177,6 +192,8 @@ export function useAccommodationSectionForm<TValues extends object>({
 
                 if (result.ok) {
                     setFormError(null);
+                    // Before the resync below, which is what destroys `before`.
+                    onSaved?.({ before: baseline, after: values });
                     setBaseline(values);
                     addToast({
                         type: 'success',
@@ -194,12 +211,34 @@ export function useAccommodationSectionForm<TValues extends object>({
                 setIsSaving(false);
             }
         },
-        [accommodationId, handleApiError, isDirty, payload, setFormError, t, validate, values]
+        [
+            accommodationId,
+            baseline,
+            handleApiError,
+            isDirty,
+            onSaved,
+            payload,
+            setFormError,
+            t,
+            validate,
+            values
+        ]
     );
 
+    /**
+     * Leaves the section for the editor hub.
+     *
+     * HOS-1014: was `window.history.back()`, which lands wherever the user
+     * happened to arrive from (a bookmark, a direct link, another section) —
+     * not necessarily this accommodation's hub. The hub is the page every
+     * section is reached from, so it's always the right destination, matching
+     * the pattern the commerce editor already uses
+     * (`CommerceListingEditor.client.tsx`'s `handleCancel`).
+     */
     const handleCancel = useCallback(() => {
-        if (typeof window !== 'undefined') window.history.back();
-    }, []);
+        if (typeof window === 'undefined') return;
+        window.location.href = buildEditorHubUrl({ locale, accommodationId });
+    }, [locale, accommodationId]);
 
     return {
         values,

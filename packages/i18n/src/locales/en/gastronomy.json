@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Ask the AI about this venue",
+        "headerDisclaimer": "Answers are AI-generated and may contain errors. Always confirm the information with the venue.",
+        "panelLabel": "AI chat — Questions about the venue",
+        "priceDisclaimer": "The menu, prices and hours may have changed. Contact the venue to confirm.",
+        "unavailable": "AI chat is not available for this venue"
+    },
     "listing": {
         "title": "Gastronomy",
         "subtitle": "Discover the best restaurants, bars, and flavors of the region",
@@ -13,6 +20,7 @@
         "type": "Establishment type",
         "priceRange": "Price range",
         "featured": "Featured only",
+        "features": "Dietary options and features",
         "minRating": "Minimum rating",
         "sort": {
             "featured": "Featured first",
@@ -38,15 +46,31 @@
             "closed": "Closed",
             "open24h": "Open 24 hours",
             "today": "Today",
-            "friday": "Viernes",
-            "monday": "Lunes",
-            "saturday": "Sábado",
-            "sunday": "Domingo",
-            "thursday": "Jueves",
-            "tuesday": "Martes",
-            "wednesday": "Miércoles"
+            "friday": "Friday",
+            "monday": "Monday",
+            "saturday": "Saturday",
+            "sunday": "Sunday",
+            "thursday": "Thursday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday"
         },
         "menu": "View menu",
+        "menuCarta": {
+            "title": "Menu",
+            "attachmentImage": "Menu photo",
+            "attachmentPdf": "Menu PDF",
+            "viewPdf": "View menu PDF",
+            "consultPrice": "Ask staff",
+            "unavailable": "Unavailable",
+            "switchLanguage": "View menu in:",
+            "seoDescription": "{{name}}'s menu",
+            "backToListing": "← Back to the listing"
+        },
+        "dailySpecials": {
+            "title": "Today's menu",
+            "intro": "What's on offer today",
+            "consultPrice": "Ask for price"
+        },
         "reviews": {
             "title": "Reviews",
             "empty": "No reviews yet. Be the first to share your experience!",
@@ -59,6 +83,17 @@
         "social": "Social networks",
         "amenities": {
             "title": "Services and amenities"
+        },
+        "eventsCta": {
+            "title": "Looking for a venue for an event?",
+            "description": "This place accepts birthdays, corporate events, and weddings. Get in touch to coordinate.",
+            "button": "Get in touch"
+        },
+        "venueEvents": {
+            "title": "Venue schedule",
+            "weekly": "Every {{weekday}}",
+            "range": "{{when}}, {{start}} to {{end}}",
+            "fromOnly": "{{when}}, from {{start}}"
         }
     },
     "types": {

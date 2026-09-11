@@ -56,13 +56,15 @@
          * the browser's dynamic viewport so the panel stays full-height even
          * as the address bar shows/hides. */
         height: 100dvh;
-        max-height: 100dvh;
+        /* `max-height` and `overflow` are NOT declared here: the element
+         * composes the shared `.dialog-viewport` class (styles/components.css),
+         * which caps it at the viewport and clips. The scroll belongs to the
+         * filter panel the consumer renders inside it, not to the drawer. */
         z-index: 400;
         background-color: var(--core-card);
         box-shadow: 4px 0 24px oklch(0 0 0 / 0.12);
         transform: translateX(-100%);
         transition: transform var(--duration-normal) ease;
-        overflow: hidden;
         border: none;
         padding: 0;
         margin: 0;

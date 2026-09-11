@@ -92,6 +92,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
+import { PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY } from '../../services/billing/past-due-payment-method-replacement.service.js';
 import { completeSupersessionPairing } from '../../services/billing/reactivation-supersession-complete.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -106,16 +107,24 @@ const RECONCILE_PROVIDER_EVENT_ID = 'reactivation-supersession-reconcile-cron';
 const JOB_NAME = 'reactivation-supersession-reconcile';
 
 /**
- * Infers the reactivation flavor from the markers `TrialService`'s two
- * reactivate methods stamp on the NEW subscription's metadata — mirrors the
- * identical inference in `subscription-logic.ts::completeReactivationSupersession`.
+ * Infers the supersession flavor from the markers each minting flow stamps
+ * on the NEW subscription's metadata — mirrors the identical inference in
+ * `subscription-logic.ts::completeReactivationSupersession`. HOS-348: a
+ * `payment-method-replacement` pairing left unaudited (e.g. the webhook
+ * never arrived) must land here labeled correctly too, or this backstop
+ * cron would write `reactivatedFromCanceled: 'true'` on a row that was
+ * never `canceled`.
  */
 function inferTriggerSource(
     metadata: Record<string, unknown>
-): 'trial-reactivation' | 'subscription-reactivation' {
-    return metadata.convertedFromTrial === 'true'
-        ? 'trial-reactivation'
-        : 'subscription-reactivation';
+): 'trial-reactivation' | 'subscription-reactivation' | 'payment-method-replacement' {
+    if (metadata.convertedFromTrial === 'true') {
+        return 'trial-reactivation';
+    }
+    if (metadata[PAST_DUE_PAYMENT_METHOD_REPLACEMENT_METADATA_KEY] === 'true') {
+        return 'payment-method-replacement';
+    }
+    return 'subscription-reactivation';
 }
 
 /** Parses the (possibly comma-joined) `supersedesSubscriptionId` metadata value. */

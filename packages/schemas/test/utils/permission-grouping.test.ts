@@ -138,3 +138,37 @@ describe('author-scoped post/event permissions (HOS-374)', () => {
         });
     }
 });
+
+/**
+ * The QR-code permissions must land in their own category, not in the SYSTEM
+ * catch-all (HOS-981).
+ *
+ * Same failure mode the HOS-374 block above guards, and it very nearly happened
+ * here: the family is modelled on `FEATURE_FLAG_MANAGE`, which has NO category
+ * and therefore falls through to `SYSTEM`. Copying that shape would have buried
+ * the four verbs among the platform-level grants in the admin's categorised
+ * picker — and that picker is exactly how an operator would delegate the QR
+ * manager to somebody without granting settings wholesale, which is the only
+ * reason the family exists. Nothing errors when it goes wrong; the permissions
+ * simply become near-impossible to find.
+ */
+describe('QR-code permissions (HOS-981)', () => {
+    const QR_PERMISSIONS: readonly PermissionEnum[] = [
+        PermissionEnum.QR_CODE_VIEW,
+        PermissionEnum.QR_CODE_CREATE,
+        PermissionEnum.QR_CODE_UPDATE,
+        PermissionEnum.QR_CODE_DELETE
+    ];
+
+    for (const permission of QR_PERMISSIONS) {
+        it(`maps ${permission} to QR_CODE, not SYSTEM`, () => {
+            expect(PERMISSION_TO_CATEGORY[permission]).toBe(PermissionCategoryEnum.QR_CODE);
+            expect(PERMISSION_TO_CATEGORY[permission]).not.toBe(PermissionCategoryEnum.SYSTEM);
+        });
+    }
+
+    it('groups all four together and nothing else with them', () => {
+        const grouped = getPermissionsByCategory();
+        expect(grouped.get(PermissionCategoryEnum.QR_CODE)).toEqual([...QR_PERMISSIONS].sort());
+    });
+});

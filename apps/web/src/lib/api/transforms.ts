@@ -16,7 +16,9 @@ import type {
     ArticleCardData,
     CardAmenityFeature,
     DestinationCardData,
+    DetailAmenity,
     DetailFaq,
+    DetailFeature,
     EventCardData,
     EventDetailData,
     ExperienceCardData,
@@ -24,9 +26,12 @@ import type {
     ExperienceDetailData,
     ExperienceSocialNetworks,
     GastronomyCardData,
+    GastronomyDailySpecial,
     GastronomyDetailData,
+    GastronomyMenuSection,
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
+    GastronomyVenueEvent,
     PartnerData,
     PartnerDetailData,
     ReviewCardData
@@ -40,7 +45,11 @@ import {
     type MediaAttribution,
     toRenderableImageUrl
 } from '../media';
-import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
+import {
+    type I18nTextLike,
+    resolveI18nText,
+    resolveI18nTextWithLegacyFallback
+} from '../resolve-i18n-text';
 import { resolveSafeExternalUrl } from '../safe-external-url';
 import { SEO_SOURCE_LOCALE } from '../seo';
 
@@ -324,11 +333,16 @@ export function toAccommodationCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         type: String(item.type || item.accommodationType || ''),
         featuredImage,
         photoCount,
@@ -416,7 +430,11 @@ export function toAccommodationDetailedProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale
+        }),
         type: String(item.type || item.accommodationType || ''),
         images,
         location: {
@@ -485,14 +503,17 @@ export function toDestinationCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name ?? 'Sin nombre',
+        name:
+            resolveI18nTextWithLegacyFallback({
+                i18n: item.nameI18n as I18nTextLike | string | undefined,
+                legacy: item.name,
+                locale
+            }) || 'Sin nombre',
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
             locale
-        ),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
-            locale
-        ),
+        }),
         featuredImage,
         accommodationsCount: Number(item.accommodationsCount || 0),
         isFeatured: Boolean(item.isFeatured),
@@ -669,11 +690,16 @@ export function toEventCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         category: String(item.category || ''),
         date: {
@@ -766,11 +792,16 @@ export function toArticleCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        title: resolveI18nText((item.titleI18n as I18nTextLike | string) ?? item.title, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.content,
+        title: resolveI18nTextWithLegacyFallback({
+            i18n: item.titleI18n as I18nTextLike | string | undefined,
+            legacy: item.title,
             locale
-        ),
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.content,
+            locale
+        }),
         featuredImage,
         category: String(item.category || ''),
         publishedAt: String(item.publishedAt || item.createdAt || ''),
@@ -809,7 +840,15 @@ export function toTestimonialCardProps({
         rating: Number(item.rating ?? 0),
         reviewerName: String(item.userName || 'Usuario'),
         reviewerOrigin: String(item.entityName || ''),
-        reviewerAvatar: item.avatarUrl ? String(item.avatarUrl) : undefined,
+        // Routed through `toRenderableImageUrl` rather than a bare `String()`
+        // for two reasons. It is the same screening the sibling author-avatar
+        // field already gets (HOS-375): `avatarUrl` is written outside Zod, so
+        // a bare relative path or a `javascript:` value can reach here and
+        // render a broken image. And it is what puts the field inside the
+        // HOS-1144 CI cost guard — TestimonialsSection hands this value
+        // straight to Astro's `getImage()`, whose server-side fetch is exactly
+        // what must not reach Cloudinary during a CI run.
+        reviewerAvatar: toRenderableImageUrl(item.avatarUrl),
         initials: getInitialsFromName(String(item.userName || 'U')),
         location: String(item.entityName || ''),
         entityName: String(item.entityName || ''),
@@ -903,22 +942,52 @@ export function toAccommodationDetailPageProps({
     // H-125: the rich shape carries the cover photo's author-written alt text.
     // The URL-only wrapper drops it, which is why every cover fell back to the
     // listing name.
+    // HOS-881: this URL feeds the JSON-LD `image` field directly
+    // (`LodgingBusinessJsonLd` on the detail page) AND, indirectly, the
+    // `og:image` meta tag. The indirect path matters for tracing this: the
+    // detail page passes it as `ogImage` to `SEOHead.astro`, which folds it
+    // into a `/api/og/?...&image=<this-url>&...` endpoint URL (NOT a
+    // `<meta>` pointing straight at Cloudinary — see `buildOgImagePath` in
+    // `apps/web/src/lib/og-template.ts`), and that endpoint's Satori template
+    // renders the photo full-bleed at a hard 1200x630 with `object-fit:
+    // cover` (`og-template.ts` around the `img(image, {width:1200,
+    // height:630, objectFit:'cover'})` node). A 400x300 (`card`) source fed
+    // into that meant a 3x upscale on every share preview — hence `og`, not
+    // `card`.
+    //
+    // Three OTHER call sites read this same field and strip the transform
+    // baked in here before re-applying their own preset, so raising it does
+    // not regress their byte size: `ImageGallery.client.tsx`'s featured
+    // cell, `CompareBar.client.tsx`'s thumbnail (both via
+    // `stripCloudinaryTransform` + `getMediaUrl`), and
+    // `alojamientos/[slug]/fotos.astro`'s featured cell + video-poster
+    // fallback (HOS-881 M-1 — this one did NOT strip until this same
+    // change; a stale claim of "the other consumers are safe" is exactly
+    // what let it go unnoticed, so if a future edit adds a fourth
+    // consumer, verify it strips too instead of trusting this comment).
     const featuredImage = extractFeaturedImage(item, {
-        fallback: '/assets/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg',
+        preset: 'og'
     });
 
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
-        description: resolveI18nText(
-            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+        }),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary,
             locale
-        ),
+        }),
+        description: resolveI18nTextWithLegacyFallback({
+            i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+            legacy: item.description,
+            locale
+        }),
         richDescription:
             item.richDescriptionI18n != null || item.richDescription != null
                 ? resolveI18nText(
@@ -955,12 +1024,21 @@ export function toAccommodationDetailPageProps({
             const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
             // Normalize videos to `{ url, caption?, description? }`. Accepts both
             // the schema shape (objects) and legacy bare-URL strings so older
-            // accommodation records keep rendering. `moderationState` from the
-            // schema is intentionally dropped — public reads don't surface it.
+            // accommodation records keep rendering.
+            //
+            // HOS-1022: `moderationState` is read here ONLY to filter — it is
+            // still dropped from the output object, exactly as before. Nothing
+            // read `videos` on the public detail page prior to this ticket, so
+            // no filter existed; now that a video actually reaches the DOM as an
+            // `<iframe>`, an un-approved one must not render. A legacy bare-URL
+            // string entry carries no `moderationState` at all (it predates the
+            // field), which is treated as "not approved" — fail closed, matching
+            // the platform's moderation default, rather than assuming old data is
+            // safe to publish unreviewed.
             const videos = (rawVideos ?? [])
                 .map((entry) => {
                     if (typeof entry === 'string') {
-                        return entry.length > 0 ? { url: entry } : null;
+                        return entry.length > 0 ? { url: entry, moderationState: undefined } : null;
                     }
                     if (entry && typeof entry === 'object') {
                         const v = entry as Record<string, unknown>;
@@ -970,15 +1048,27 @@ export function toAccommodationDetailPageProps({
                             url,
                             caption: typeof v.caption === 'string' ? v.caption : undefined,
                             description:
-                                typeof v.description === 'string' ? v.description : undefined
+                                typeof v.description === 'string' ? v.description : undefined,
+                            moderationState:
+                                typeof v.moderationState === 'string'
+                                    ? v.moderationState
+                                    : undefined
                         };
                     }
                     return null;
                 })
                 .filter(
-                    (entry): entry is { url: string; caption?: string; description?: string } =>
-                        entry !== null
-                );
+                    (
+                        entry
+                    ): entry is {
+                        url: string;
+                        caption?: string;
+                        description?: string;
+                        moderationState?: string;
+                    } => entry !== null
+                )
+                .filter((entry) => entry.moderationState === 'APPROVED')
+                .map(({ moderationState: _moderationState, ...rest }) => rest);
             return {
                 images: mediaObj?.images ?? extractGalleryUrls(item),
                 // Preserve caption/description alongside gallery URLs so
@@ -1526,10 +1616,14 @@ export function toEventDetailProps({
     });
 
     // Build gallery with alt text. Use name as fallback alt.
-    const eventName = resolveI18nText(
-        (item.nameI18n as I18nTextLike | string) ?? item.name ?? item.title,
+    // HOS-802: `?? item.title` is deliberately kept here — some legacy event
+    // rows only ever had a `title` field, never a `name` one, and this
+    // detail transform is the sole call site that carries that extra rung.
+    const eventName = resolveI18nTextWithLegacyFallback({
+        i18n: item.nameI18n as I18nTextLike | string | undefined,
+        legacy: item.name ?? item.title,
         locale
-    );
+    });
     const mediaObj = item.media as
         | {
               gallery?: ReadonlyArray<{
@@ -1709,14 +1803,16 @@ export function toEventDetailProps({
         id,
         slug: String(item.slug || ''),
         name: eventName,
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
             locale
-        ),
-        description: resolveI18nText(
-            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+        }),
+        description: resolveI18nTextWithLegacyFallback({
+            i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+            legacy: item.description,
             locale
-        ),
+        }),
         contentHtml: item.contentHtml ? String(item.contentHtml) : undefined,
         category: String(item.category || ''),
         isFeatured: Boolean(item.isFeatured),
@@ -1886,14 +1982,16 @@ export function transformAccommodationEdit({
         // does. And the locale is pinned to `SEO_SOURCE_LOCALE`, not the UI
         // locale — the override only applies on `es`, so that is the page whose
         // fallback is being previewed even when the host edits in English.
-        seoTitleDefault: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name,
-            SEO_SOURCE_LOCALE
-        ).trim(),
-        seoDescriptionDefault: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
-            SEO_SOURCE_LOCALE
-        ).trim(),
+        seoTitleDefault: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale: SEO_SOURCE_LOCALE
+        }).trim(),
+        seoDescriptionDefault: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary,
+            locale: SEO_SOURCE_LOCALE
+        }).trim(),
         videos,
         basePrice:
             priceObj?.price == null
@@ -1904,6 +2002,8 @@ export function transformAccommodationEdit({
         currency: priceObj?.currency == null ? null : String(priceObj.currency),
         isAvailable: item.isAvailable == null ? true : Boolean(item.isAvailable),
         isFeatured: item.isFeatured == null ? false : Boolean(item.isFeatured),
+        featuredByEntitlement:
+            item.featuredByEntitlement == null ? false : Boolean(item.featuredByEntitlement),
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
         featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
         // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
@@ -2557,6 +2657,11 @@ function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHo
 /**
  * Normalize a raw `socialNetworks` value from the API.
  * Returns `null` when absent or empty.
+ *
+ * NOTE (HOS-1076): `whatsapp` is deliberately NOT read here, even though a raw
+ * payload could carry one (belt and braces — see `GastronomySocialNetworks`).
+ * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
+ * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
 function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -2566,7 +2671,6 @@ function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null 
         instagram: obj.instagram ? String(obj.instagram) : null,
         twitter: obj.twitter ? String(obj.twitter) : null,
         youtube: obj.youtube ? String(obj.youtube) : null,
-        whatsapp: obj.whatsapp ? String(obj.whatsapp) : null,
         tiktok: obj.tiktok ? String(obj.tiktok) : null,
         website: obj.website ? String(obj.website) : null
     };
@@ -2614,14 +2718,20 @@ export function toGastronomyCardProps({
         // Some gastronomy rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
         // while `name` holds the real value; without this guard the card and
         // detail headings render empty (a11y empty-heading violation, SPEC-308).
-        name:
-            resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale) ||
-            String(item.name ?? ''),
-        type: String(item.type || ''),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        // HOS-802: this used to be an inline `||` guard duplicated at every
+        // other i18n call site — now centralized in
+        // `resolveI18nTextWithLegacyFallback`.
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        type: String(item.type || ''),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
@@ -2642,6 +2752,208 @@ export function toGastronomyCardProps({
         })(),
         bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount)
     };
+}
+
+/**
+ * Maps the catalog-joined `amenities` array a commerce detail payload carries
+ * into the item shape `AmenitiesGrid.astro` renders (HOS-1072).
+ *
+ * Two deliberate coercions, both matching what the accommodation transform
+ * already does with the same catalog:
+ *
+ * - `name` receives the **slug**, because the grid uses it as the i18n key
+ *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
+ *   `name` column, so a slug is the only identifier there is.
+ * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
+ *   values. The commerce junction tables have no such columns (see
+ *   `CommerceListingAmenityPublicSchema`), so there is nothing to read; the
+ *   constants keep one grid component serving three verticals instead of
+ *   forking it. `additionalCost: null` is what stops the grid from printing a
+ *   "(costo adicional)" tag no commerce owner could have set.
+ *
+ * Server order is PRESERVED — the API already sorts by the catalog's
+ * `displayWeight` — so the flat `50` here re-sorts nothing.
+ *
+ * @param raw - The payload's `amenities` value, of unknown shape.
+ * @returns Grid-ready amenity items; empty when absent or malformed.
+ */
+function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((item) => ({
+            amenityId: String(item.amenityId ?? ''),
+            name: String(item.slug ?? ''),
+            icon: item.icon == null ? null : String(item.icon),
+            isOptional: false,
+            additionalCost: null,
+            displayWeight: 50
+        }))
+        .filter((item) => item.name.length > 0);
+}
+
+/**
+ * Maps the catalog-joined `features` array a commerce detail payload carries
+ * into the item shape `FeaturesGrid.astro` renders (HOS-1072).
+ *
+ * Unlike the amenity twin, `hostReWriteName` and `comments` are REAL here: the
+ * commerce feature junction tables carry both columns and the owner writes
+ * them, so they are read straight through. `name` holds the slug for the same
+ * i18n reason as above.
+ *
+ * @param raw - The payload's `features` value, of unknown shape.
+ * @returns Grid-ready feature items; empty when absent or malformed.
+ */
+function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((item) => ({
+            featureId: String(item.featureId ?? ''),
+            name: String(item.slug ?? ''),
+            icon: item.icon == null ? null : String(item.icon),
+            hostReWriteName: item.hostReWriteName == null ? null : String(item.hostReWriteName),
+            comments: item.comments == null ? null : String(item.comments),
+            displayWeight: 50
+        }))
+        .filter((item) => item.name.length > 0);
+}
+
+/**
+ * Coerces a raw `nameI18n`/`descriptionI18n` value into an {@link I18nTextLike}
+ * or `null`, defensively.
+ *
+ * `null` covers both "never translated" and "withheld server-side for a plan
+ * that does not grant `multilingual_gastronomy_menu`" (HOS-1043) — the same
+ * single-value collapse {@link GastronomyMenuItem.photoUrl}'s own doc
+ * describes for the photo gate, and for the same reason: the API decides, the
+ * renderer draws what it is given.
+ *
+ * @param raw - The raw field value, of unknown shape.
+ * @returns An {@link I18nTextLike} object, or `null`.
+ */
+function coerceI18nTextLike(raw: unknown): I18nTextLike | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const record = raw as Record<string, unknown>;
+    const result: { es?: string; en?: string; pt?: string } = {};
+    for (const locale of ['es', 'en', 'pt'] as const) {
+        if (typeof record[locale] === 'string') {
+            result[locale] = record[locale] as string;
+        }
+    }
+    return Object.keys(result).length > 0 ? result : null;
+}
+
+/**
+ * Maps the raw `menuSections` array a gastronomy detail payload carries
+ * (HOS-895 PR2, per-dish photos added by HOS-1045, translations added by
+ * HOS-1043) into the shape `GastronomyMenu.astro` renders.
+ *
+ * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
+ * API's live entitlement check returns nothing — the same treatment the
+ * amenities/features mappers give an absent join.
+ *
+ * `nameI18n`/`descriptionI18n` are carried through RAW (not pre-resolved to
+ * the page locale, unlike the FAQ transform's `resolveFaqField`): the carta
+ * renders its own language switcher independent of the page's URL locale
+ * (HOS-1043), so the renderer needs every translated leg the API sent, not
+ * just the one matching the current page.
+ *
+ * @param raw - The payload's `menuSections` value, of unknown shape.
+ * @returns Renderer-ready sections; empty when absent or malformed.
+ */
+function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((section) => ({
+            id: String(section.id ?? ''),
+            name: String(section.name ?? ''),
+            description: section.description == null ? null : String(section.description),
+            nameI18n: coerceI18nTextLike(section.nameI18n),
+            descriptionI18n: coerceI18nTextLike(section.descriptionI18n),
+            items: Array.isArray(section.items)
+                ? (section.items as Array<Record<string, unknown>>).map((item) => ({
+                      id: String(item.id ?? ''),
+                      name: String(item.name ?? ''),
+                      description: item.description == null ? null : String(item.description),
+                      nameI18n: coerceI18nTextLike(item.nameI18n),
+                      descriptionI18n: coerceI18nTextLike(item.descriptionI18n),
+                      priceCents:
+                          typeof item.priceCents === 'number'
+                              ? item.priceCents
+                              : item.priceCents == null
+                                ? null
+                                : Number(item.priceCents),
+                      isAvailable: item.isAvailable !== false,
+                      // HOS-1045. Already withheld server-side for an owner
+                      // whose plan does not grant `menu_item_photos`, so a
+                      // present value here is one the API decided to publish.
+                      photoUrl: item.photoUrl == null ? null : String(item.photoUrl),
+                      photoAlt: item.photoAlt == null ? null : String(item.photoAlt)
+                  }))
+                : []
+        }))
+        .filter((section) => section.name.length > 0);
+}
+
+/**
+ * Maps the payload's `dailySpecials` into renderer-ready specials (HOS-1041).
+ *
+ * Defensive in the same way `mapGastronomyMenuSections` is: every field is
+ * coerced, and an untitled row is dropped rather than rendered as a blank line
+ * on the public page.
+ *
+ * `validFrom`/`validUntil` are NOT carried through, and their absence is the
+ * point. What arrives here has already been filtered by the API to the specials
+ * valid today; re-deriving that in the browser would evaluate the same window
+ * in the visitor's timezone and could disagree with the server about which day
+ * it is.
+ *
+ * @param raw - The payload's `dailySpecials` value, of unknown shape.
+ * @returns Renderer-ready specials; empty when absent or malformed.
+ */
+function mapGastronomyDailySpecials(raw: unknown): readonly GastronomyDailySpecial[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((special) => ({
+            id: String(special.id ?? ''),
+            title: String(special.title ?? ''),
+            description: special.description == null ? null : String(special.description),
+            priceCents:
+                typeof special.priceCents === 'number'
+                    ? special.priceCents
+                    : special.priceCents == null
+                      ? null
+                      : Number(special.priceCents)
+        }))
+        .filter((special) => special.title.length > 0);
+}
+
+/**
+ * Maps the raw `venueEvents` array a gastronomy detail payload carries
+ * (HOS-1042) into the shape `GastronomyVenueEvents.astro` renders.
+ *
+ * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
+ * API's live entitlement check returns nothing, or drops an entry with no
+ * `title` — the same treatment `mapGastronomyMenuSections` gives a malformed
+ * row. `date`/`weekday` are passed through as-is (already mutually exclusive
+ * per `recurrence` on the server), never re-derived here.
+ *
+ * @param raw - The payload's `venueEvents` value, of unknown shape.
+ * @returns Renderer-ready agenda entries; empty when absent or malformed.
+ */
+function mapGastronomyVenueEvents(raw: unknown): readonly GastronomyVenueEvent[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as Array<Record<string, unknown>>)
+        .map((event) => ({
+            id: String(event.id ?? ''),
+            title: String(event.title ?? ''),
+            description: event.description == null ? null : String(event.description),
+            recurrence: event.recurrence === 'weekly' ? ('weekly' as const) : ('once' as const),
+            date: event.date == null ? null : String(event.date),
+            weekday: typeof event.weekday === 'number' ? event.weekday : null,
+            startTime: String(event.startTime ?? ''),
+            endTime: event.endTime == null ? null : String(event.endTime)
+        }))
+        .filter((event) => event.id.length > 0 && event.title.length > 0);
 }
 
 /**
@@ -2676,6 +2988,18 @@ export function toGastronomyDetailPageProps({
         ),
         richDescription: item.richDescription == null ? null : String(item.richDescription),
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
+        // HOS-895 PR2: both already withheld server-side (null / absent) for a
+        // listing whose owner does not currently hold
+        // `manage_gastronomy_menu` — see GastronomyPublicSchema's field docs.
+        menuFileUrl: item.menuFileUrl == null ? null : String(item.menuFileUrl),
+        menuFileKind:
+            item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
+        menuSections: mapGastronomyMenuSections(item.menuSections),
+        // HOS-1041: already filtered to TODAY and already entitlement-gated by
+        // the API — see GastronomyPublicSchema's field docs. Nothing here
+        // re-applies either.
+        dailySpecials: mapGastronomyDailySpecials(item.dailySpecials),
+        venueEvents: mapGastronomyVenueEvents(item.venueEvents),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {
@@ -2685,6 +3009,8 @@ export function toGastronomyDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
+        amenities: mapCommerceAmenities(item.amenities),
+        features: mapCommerceFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -2726,10 +3052,10 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
  * the listing form blocks publication without a phone or an email and then the
  * page showed neither, leaving the traveller with no way to reach the provider.
  *
- * `whatsapp` is read but is still absent on the public payload: it is gated by
- * the VIEWER's plan on a separate protected endpoint (HOS-19) and this response
- * is shared-cached. It is mapped so `ExperienceContactCTA` keeps working
- * wherever a payload does carry it.
+ * `whatsapp` is NOT read (HOS-363): the public payload never carries it — the
+ * number is gated by the VIEWER's plan on a separate protected endpoint
+ * (HOS-19) and this response is shared-cached — so mapping it only kept a CTA
+ * alive that could never render.
  *
  * Returns `null` when no publishable channel is present, so the caller renders
  * nothing rather than an empty contact card.
@@ -2745,7 +3071,6 @@ function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | n
     };
 
     const contact: ExperienceContactInfo = {
-        whatsapp: read('whatsapp'),
         workEmail: read('workEmail'),
         workPhone: read('workPhone'),
         mobilePhone: read('mobilePhone'),
@@ -2789,12 +3114,17 @@ export function toExperienceCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
-        type: String(item.type || ''),
-        summary: resolveI18nText(
-            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
             locale
-        ),
+        }),
+        type: String(item.type || ''),
+        summary: resolveI18nTextWithLegacyFallback({
+            i18n: item.summaryI18n as I18nTextLike | string | undefined,
+            legacy: item.summary ?? item.description,
+            locale
+        }),
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
@@ -2825,6 +3155,43 @@ export function toExperienceCardProps({
         })(),
         bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount)
     };
+}
+
+/**
+ * Collapses a raw `meetingPoint` value to `string | null` (HOS-1048).
+ *
+ * Three inputs mean "the owner has not said where to meet" and they must all
+ * arrive at the view as ONE value: the key absent, the column `null`, and a
+ * string that is empty or only whitespace. Leaving the last one as `''` would
+ * make the section render its heading over nothing, because `''` is a string
+ * and the view's guard is a presence check.
+ *
+ * @param raw - The value as it came off the public payload.
+ * @returns The trimmed meeting point, or `null` when there is nothing to show.
+ */
+function normalizeMeetingPoint(raw: unknown): string | null {
+    if (typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * Collapses a raw `text[]` checklist to a clean array of items (HOS-1046).
+ *
+ * Four inputs mean "nothing declared" and must all arrive at the view as `[]`:
+ * the key absent, the column null, a non-array value, and an array whose entries
+ * are all blank. Non-string entries are DROPPED rather than coerced — `String(x)`
+ * would publish a stray `null` as the literal bullet "null" on the ficha.
+ *
+ * @param raw - The value as it came off the public payload.
+ * @returns The trimmed, non-empty items, in order.
+ */
+function normalizeChecklist(raw: unknown): readonly string[] {
+    if (!Array.isArray(raw)) return [];
+    return raw
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
 }
 
 /**
@@ -2860,6 +3227,40 @@ export function toExperienceDetailPageProps({
         richDescription: item.richDescription == null ? null : String(item.richDescription),
         contactInfo: normalizeExperienceContactInfo(item.contactInfo),
         socialNetworks: normalizeExperienceSocialNetworks(item.socialNetworks),
+        // HOS-1048. A blank/whitespace string collapses to `null` so the view
+        // has ONE "nothing to show" value to test: a listing whose meeting point
+        // is an empty string must not render a heading over nothing.
+        meetingPoint: normalizeMeetingPoint(item.meetingPoint),
+        // `typeof === 'number'`, NOT `Number(x) || null`: a coordinate of 0 is a
+        // real place (the Gulf of Guinea) and the falsy check would erase it.
+        meetingPointLat: typeof item.meetingPointLat === 'number' ? item.meetingPointLat : null,
+        meetingPointLong: typeof item.meetingPointLong === 'number' ? item.meetingPointLong : null,
+        // HOS-1049. Reuses `normalizeChecklist` — same shape, same blank-item
+        // problem as `whatToBring`. A withheld payload simply carries no key,
+        // which lands on the same `[]` as "the provider wrote none": the view
+        // has no reason to tell those apart, and the FLAG below is what decides
+        // whether the map is drawn.
+        meetingPointDirections: normalizeChecklist(item.meetingPointDirections),
+        // Strictly `=== true`, like `acceptsPrivateGroups`. Absent means the
+        // payload never resolved the entitlement (a list card, a legacy
+        // response), and only an explicit true may turn the paid map on — the
+        // one direction where guessing gives the product away.
+        meetingPointDirectionsEnabled: item.meetingPointDirectionsEnabled === true,
+        // HOS-898. `typeof === 'number'`, NOT `Number(x) || null`: the falsy
+        // check is wrong here for the same reason as on the coordinates, and a
+        // legacy row simply carries no key at all.
+        durationMinutes: typeof item.durationMinutes === 'number' ? item.durationMinutes : null,
+        // HOS-1046. Blank items are dropped so the view never renders an empty
+        // bullet, and a missing column reads as `[]` rather than `undefined`.
+        whatToBring: normalizeChecklist(item.whatToBring),
+        requirements: normalizeChecklist(item.requirements),
+        // HOS-1047: reuses the meeting point's normaliser — same problem, same
+        // answer. A whitespace-only policy must not render a heading over
+        // nothing.
+        cancellationPolicy: normalizeMeetingPoint(item.cancellationPolicy),
+        // HOS-1056: strictly `=== true`. A legacy row has no key, and only an
+        // explicit true may turn the CTA on.
+        acceptsPrivateGroups: item.acceptsPrivateGroups === true,
         seo: seoObj
             ? {
                   title: seoObj.title == null ? null : String(seoObj.title),
@@ -2868,6 +3269,8 @@ export function toExperienceDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
+        amenities: mapCommerceAmenities(item.amenities),
+        features: mapCommerceFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -2903,15 +3306,20 @@ export function toPartnerDetailProps({
 }): PartnerDetailData {
     return {
         slug: String(item.slug || ''),
-        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        name: resolveI18nTextWithLegacyFallback({
+            i18n: item.nameI18n as I18nTextLike | string | undefined,
+            legacy: item.name,
+            locale
+        }),
         type: String(item.type || ''),
         description:
             item.description == null
                 ? null
-                : resolveI18nText(
-                      (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+                : resolveI18nTextWithLegacyFallback({
+                      i18n: item.descriptionI18n as I18nTextLike | string | undefined,
+                      legacy: item.description,
                       locale
-                  ),
+                  }),
         logoUrl: item.logoUrl == null ? null : String(item.logoUrl),
         websiteUrl: item.websiteUrl == null ? null : String(item.websiteUrl),
         contactInfo:
@@ -2946,6 +3354,11 @@ const DEFAULT_PARTNER_LOGO_ASPECT_RATIO = 3.5;
  */
 export function toPartnerData({ item }: { readonly item: Record<string, unknown> }): PartnerData {
     return {
+        // Carried for the logo-click beacon (HOS-1063 A-3). It was already in
+        // `PartnerPublicSchema`; this transform was simply dropping it, so the
+        // browser only ever received a slug — and `partner_logo_clicks.partner_id`
+        // is a uuid.
+        id: item.id == null ? undefined : String(item.id),
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),

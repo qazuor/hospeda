@@ -74,6 +74,10 @@ export const HEADER_READER_ALLOWLIST: readonly AllowlistEntry[] = [
     {
         file: 'apps/api/src/routes/billing/checkout-return-urls.ts',
         reason: 'resolveReturnUrlLocale reads the header as step 3 of the precedence rule (HOS-605), delegating the actual decision to resolveDisplayLocale.'
+    },
+    {
+        file: 'apps/api/src/routes/qr-code/public/resolve.ts',
+        reason: 'HOS-1141: reads the header to RECORD which language a QR scanner asked for (qr_code_scans.browser_language), never to choose what anything is rendered in — this route answers a redirect target and nothing about it is localised. The parsing is still delegated: deriveQrScanContext calls matchAcceptLanguage and stores null wherever it reports matched:false, deliberately DISCARDING the default-locale fallback, because defaulting to es would report every header-less scanner as a Spanish speaker.'
     }
 ];
 

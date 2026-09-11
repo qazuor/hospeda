@@ -26,7 +26,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * POST /api/v1/admin/experiences/:id/media
  * Add photo to experience listing gallery — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `addExperienceMedia` enforces the same gate via `checkExperienceCanEditMedia`.
  */
 export const adminAddExperienceMediaRoute = createAdminRoute({
@@ -34,9 +34,9 @@ export const adminAddExperienceMediaRoute = createAdminRoute({
     path: '/{id}/media',
     summary: 'Add photo to experience listing gallery (admin)',
     description:
-        'Registers an already-uploaded URL as a new experience_media row. Requires COMMERCE_EDIT_ALL.',
+        'Registers an already-uploaded URL as a new experience_media row. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Experience', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

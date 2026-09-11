@@ -15,6 +15,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { adminGastronomyReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddGastronomyFaqRoute } from './addFaq';
+import { adminAddGastronomyFeaturedMediaRoute } from './addFeaturedMedia';
 import { adminAddGastronomyMediaRoute } from './addMedia';
 import { adminAssignGastronomyOwnerRoute } from './assignOwner';
 import { adminBatchGastronomiesRoute } from './batch';
@@ -36,6 +37,7 @@ import { adminRestoreGastronomyRoute } from './restore';
 import { adminSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { adminUpdateGastronomyRoute } from './update';
 import { adminUpdateGastronomyFaqRoute } from './updateFaq';
+import { adminUpdateGastronomyMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -109,6 +111,11 @@ app.route('/', adminReorderGastronomyMediaRoute);
 app.route('/', adminGetGastronomyMediaRoute);
 
 // POST /:id/media - Add photo to gallery
+// POST /:id/media/featured - Upload straight to cover (HOS-803).
+// Registered before POST /:id/media so "featured" resolves as the fixed
+// suffix rather than being absorbed by the collection route.
+app.route('/', adminAddGastronomyFeaturedMediaRoute);
+
 app.route('/', adminAddGastronomyMediaRoute);
 
 // PUT /:id/media/:mediaId/featured - Set featured photo
@@ -117,5 +124,9 @@ app.route('/', adminSetFeaturedGastronomyMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery
 app.route('/', adminRemoveGastronomyMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', adminUpdateGastronomyMediaRoute);
 
 export { app as adminGastronomyRoutes };

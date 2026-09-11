@@ -1,9 +1,12 @@
 /**
  * @file generic-trial-days.test.ts
- * @description Tests for the generic owner trial length resolver (H-98).
+ * @description Tests for the generic owner trial length resolver (H-98) and the
+ * audience-agnostic core it was generalised into for the plan index (HOS-943).
  *
- * `computeGenericOwnerTrialDays` is exercised directly against fabricated
- * plan lists (pure logic, no fetch). `resolveGenericOwnerTrialDays` is
+ * `computeMinimumTrialDays` and `computeGenericOwnerTrialDays` are exercised
+ * directly against fabricated plan lists (pure logic, no fetch). The per-
+ * audience wiring on top of the core lives in
+ * `test/lib/billing/audience-plans.test.ts`. `resolveGenericOwnerTrialDays` is
  * exercised with `fetchPublicPlans` mocked, so the fallback-to-constant path
  * (fetch failure, or a fetch that returns no eligible owner plan) is covered
  * without hitting the network.
@@ -24,6 +27,7 @@ vi.mock('@/lib/billing/fetch-plans', async (importOriginal) => {
 import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import {
     computeGenericOwnerTrialDays,
+    computeMinimumTrialDays,
     resolveGenericOwnerTrialDays
 } from '@/lib/billing/generic-trial-days';
 
@@ -53,6 +57,88 @@ const makePlan = (
 });
 
 afterEach(() => vi.clearAllMocks());
+
+describe('computeMinimumTrialDays', () => {
+    // The audience-agnostic core, extracted for HOS-943 so the plan index can
+    // resolve tourist / gastronomy / experience / partner through the SAME rule
+    // the owner tier has used since H-98 rather than a second copy of it. It
+    // takes plans already selected for one audience and knows nothing about
+    // categories or domains — the selection is the caller's job.
+
+    it('returns the shortest trial actually on offer', () => {
+        const plans = [
+            makePlan({ slug: 'a', trialDays: 30 }),
+            makePlan({ slug: 'b', trialDays: 45 }),
+            makePlan({ slug: 'c', trialDays: 7 })
+        ];
+
+        expect(computeMinimumTrialDays({ plans })).toBe(7);
+    });
+
+    it('does not let a no-trial plan drag the answer to zero', () => {
+        // The tourist shape: a free tier that never expires has no trial, and a
+        // paid tier that does. A naive `Math.min` over `trialDays` answers 0 and
+        // silently removes the promise from the card.
+        const plans = [
+            makePlan({ slug: 'tourist-free', hasTrial: false, trialDays: 0 }),
+            makePlan({ slug: 'tourist-vip', hasTrial: true, trialDays: 45 })
+        ];
+
+        expect(computeMinimumTrialDays({ plans })).toBe(45);
+    });
+
+    it('needs BOTH hasTrial and a positive trialDays', () => {
+        // Each half fails on its own: a flag with no days, and days with no flag.
+        expect(
+            computeMinimumTrialDays({
+                plans: [makePlan({ slug: 'flag-only', hasTrial: true, trialDays: 0 })]
+            })
+        ).toBeNull();
+        expect(
+            computeMinimumTrialDays({
+                plans: [makePlan({ slug: 'days-only', hasTrial: false, trialDays: 30 })]
+            })
+        ).toBeNull();
+    });
+
+    it('drops inactive plans, including ones offering a shorter trial', () => {
+        const plans = [
+            makePlan({ slug: 'retired', isActive: false, trialDays: 1 }),
+            makePlan({ slug: 'live', trialDays: 30 })
+        ];
+
+        expect(computeMinimumTrialDays({ plans })).toBe(30);
+    });
+
+    it('returns null, never 0, when nothing offers a trial', () => {
+        // The partner shape. `null` is what tells the caller to render no line;
+        // `0` would render "0 días de prueba".
+        const plans = [
+            makePlan({ slug: 'partner-silver', hasTrial: false, trialDays: 0 }),
+            makePlan({ slug: 'partner-gold', hasTrial: false, trialDays: 0 })
+        ];
+        const result = computeMinimumTrialDays({ plans });
+
+        expect(result).toBeNull();
+        expect(result).not.toBe(0);
+    });
+
+    it('returns null for an empty list rather than Infinity', () => {
+        // `Math.min()` with no arguments is `Infinity`, which would render as a
+        // trial line reading "Infinity días".
+        expect(computeMinimumTrialDays({ plans: [] })).toBeNull();
+    });
+
+    it('does not filter by category — that is the caller’s selection', () => {
+        // Deliberate: the plan index selects tourist, gastronomy, experience and
+        // partner plans, none of which are the `owner` category this function
+        // used to be hardwired to. Narrowing here would make it unusable for
+        // four of the five audiences.
+        const plans = [makePlan({ slug: 'tourist-vip', category: 'tourist', trialDays: 45 })];
+
+        expect(computeMinimumTrialDays({ plans })).toBe(45);
+    });
+});
 
 describe('computeGenericOwnerTrialDays', () => {
     it('returns the minimum trialDays among several eligible owner plans', () => {

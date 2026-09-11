@@ -9,6 +9,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 import { addFaqRoute } from './addFaq';
+import { protectedAddFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddMediaRoute } from './addMedia';
 import { protectedAddOccupancyRoute } from './addOccupancy';
 import { protectedBatchOccupancyRoute } from './batchOccupancy';
@@ -22,10 +23,6 @@ import { compareAccommodationsRoute } from './compare';
 import { protectedGetContactRoute } from './contact';
 import { protectedCreateAccommodationRoute } from './create';
 import { protectedCreateAccommodationDraftRoute } from './createDraft';
-import {
-    protectedFeaturedToggleRoute,
-    protectedGetFeaturedEntitlementRoute
-} from './featured-toggle';
 import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
@@ -38,6 +35,9 @@ import { protectedImportFromUrlStatusRoute } from './import-from-url-status';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { protectedPublishAccommodationRoute } from './publish';
+import { protectedGetPublishEligibilityRoute } from './publishEligibility';
+import { protectedGetAccommodationQrCodeRoute } from './qrCode';
+import { protectedGetAccommodationQrSheetRoute } from './qrSheet';
 import { removeFaqRoute } from './removeFaq';
 import { protectedRemoveMediaRoute } from './removeMedia';
 import { protectedRemoveOccupancyRoute } from './removeOccupancy';
@@ -80,6 +80,19 @@ app.route('/', protectedListOwnAccommodationsRoute);
 // CRITICAL: registered BEFORE GET /:id so "compare" is not captured as a UUID param.
 app.route('/', compareAccommodationsRoute);
 
+// GET /publish-eligibility - What POST /:id/publish would decide for this owner (HOS-1183)
+// CRITICAL: same single-segment collision as /compare above — registered BEFORE
+// GET /:id so "publish-eligibility" is not captured as a UUID param. Owner-level
+// on purpose: billing eligibility cannot differ between two listings of the same
+// owner, so the properties page resolves it once for the whole portfolio.
+app.route('/', protectedGetPublishEligibilityRoute);
+
+// GET /:id/qr-sheet - Printable QR sheet for the door (HOS-982). Two segments,
+// so it never collides with GET /:id; registered ahead of it for the same
+// defensive reason as the media routes below.
+app.route('/', protectedGetAccommodationQrSheetRoute);
+app.route('/', protectedGetAccommodationQrCodeRoute);
+
 // GET /:id - Get own accommodation by ID (ownership check in handler)
 app.route('/', protectedGetOwnAccommodationByIdRoute);
 
@@ -103,16 +116,6 @@ app.route('/', protectedGetContactRoute);
 // Auth required, NO ownership: any authenticated tourist on the right plan may
 // read it. Separate from the shared-cached public payload for cache safety.
 app.route('/', protectedGetWhatsAppRoute);
-
-// PATCH /:id/featured-toggle - Owner self-service featured toggle (SPEC-309 T-019)
-// Ownership + entitlement gate enforced inside setAccommodationFeaturedToggle,
-// no declarative ownership middleware — safe to mount directly.
-app.route('/', protectedFeaturedToggleRoute);
-
-// GET /:id/featured-toggle - Read isFeatured + entitlement gate status (SPEC-309 T-020)
-// Read-side counterpart used by the web editor to decide whether to render
-// the toggle at all. Same ownership handling as the PATCH above.
-app.route('/', protectedGetFeaturedEntitlementRoute);
 
 // Occupancy calendar (auth required; ownership + MANAGE enforced inline in the service,
 // CAN_USE_CALENDAR enforced at the route via requireEntitlement middleware on the write
@@ -165,6 +168,11 @@ app.route('/', protectedReorderMediaRoute);
 
 // GET /:id/media - List gallery photos
 app.route('/', protectedGetMediaRoute);
+
+// POST /:id/media/featured - Upload straight to cover (HOS-803)
+// Registered BEFORE POST /:id/media so "featured" is not swallowed by a route
+// that would treat the rest of the path as part of the collection.
+app.route('/', protectedAddFeaturedMediaRoute);
 
 // POST /:id/media - Add a photo to accommodation gallery
 app.route('/', protectedAddMediaRoute);

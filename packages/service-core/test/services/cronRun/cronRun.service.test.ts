@@ -207,5 +207,28 @@ describe('CronRunService', () => {
             expect((now - arg.successBefore.getTime()) / 86_400_000).toBeCloseTo(10, 0);
             expect((now - arg.failedBefore.getTime()) / 86_400_000).toBeCloseTo(20, 0);
         });
+
+        // HOS-918: `partial` (completed with soft errors) must be retained under the
+        // longer failure-retention window, not orphaned by falling outside both branches.
+        // The status → window assignment itself lives in CronRunModel.purgeOlderThan's
+        // WHERE clause (`packages/db/src/models/cron/cronRun.model.ts`), which this
+        // service test's fully-mocked model cannot observe — that behavior is covered
+        // directly against the real model in
+        // `packages/db/test/models/cron/cronRun.model.test.ts`. What this test confirms
+        // is the service's half of the contract: `purgeOld()` passes through only the
+        // two retention dates and applies no status allowlist of its own that could
+        // silently exclude `partial` (or any other status) from being purged at all.
+        it('passes through only the two retention dates, applying no status filter of its own', async () => {
+            asMock(modelMock.purgeOlderThan).mockResolvedValue(3);
+
+            await service.purgeOld();
+
+            expect(asMock(modelMock.purgeOlderThan)).toHaveBeenCalledTimes(1);
+            const arg = asMock(modelMock.purgeOlderThan).mock.calls[0]?.[0] as Record<
+                string,
+                unknown
+            >;
+            expect(Object.keys(arg).sort()).toEqual(['failedBefore', 'successBefore']);
+        });
     });
 });

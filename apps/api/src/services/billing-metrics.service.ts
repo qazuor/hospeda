@@ -220,11 +220,20 @@ export class BillingMetricsService {
                     AND s.livemode = ${livemode}
                     AND s.deleted_at IS NULL
                 `),
-                // Calculate churn rate (last 30 days)
+                // Calculate churn rate (last 30 days).
+                //
+                // FIXED (HOS-337, caught in review): matched only the 1-L
+                // `'canceled'` that qzpay-core writes on a direct cancel, missing
+                // the 2-L `'cancelled'` that every DIRECT Hospeda writer stores
+                // (the MercadoPago webhook, `finalize-cancelled-subs`,
+                // `refund-lifecycle.service.ts`) — the DOMINANT cancellation
+                // paths. This metric undercounted churn to near-zero rather than
+                // erroring, which is why it went unnoticed: a wrong dashboard
+                // number, not a failing query.
                 db.execute(sql`
                     SELECT COUNT(*) as churned
                     FROM billing_subscriptions
-                    WHERE status = 'canceled'
+                    WHERE status IN ('canceled', 'cancelled')
                     AND canceled_at >= ${thirtyDaysAgo.toISOString()}
                     AND livemode = ${livemode}
                 `),

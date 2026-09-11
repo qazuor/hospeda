@@ -1,0 +1,97 @@
+/**
+ * @file LinkUrlDialog.module.css
+ * @description Styles for LinkUrlDialog — HOS-957.
+ *
+ * Deliberately declares NOTHING about height or overflow. The panel this sits
+ * in carries the shared global `.dialog-panel` (cap + scroll, HOS-958), and a
+ * CSS Module class has the same specificity as a global one — a `max-height`
+ * or `overflow` here would race that cap rather than override it, and which one
+ * won would be decided by the order the bundler happened to emit them in.
+ * `pnpm check:dialog-panel` fails on exactly that. These rules style the field
+ * inside the body and nothing else.
+ */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.input {
+    width: 100%;
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    box-sizing: border-box;
+    transition:
+        border-color var(--duration-normal, 0.4s) ease,
+        box-shadow var(--duration-normal, 0.4s) ease;
+}
+
+.input:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
+}
+
+.hint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+
+.cancelBtn {
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    background: var(--surface-warm);
+}
+
+.submitBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-md, 10px);
+    background: var(--brand-primary);
+    color: var(--core-background);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.submitBtn:hover {
+    filter: brightness(1.05);
+}

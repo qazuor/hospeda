@@ -17,6 +17,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -196,7 +197,15 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             return null;
         }
 
-        const accommodation = result.data;
+        // HOS-929: public read treats holding either the admin-curated
+        // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
+        // flag as featured. `featuredByEntitlement` itself is stripped by
+        // `AccommodationPublicSchema` (never in its pick), so only the OR'd
+        // `isFeatured` reaches the response.
+        const accommodation = {
+            ...result.data,
+            isFeatured: resolvePublicIsFeatured(result.data)
+        };
         const ownerEntitlements = accommodation.ownerId
             ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
             : [];

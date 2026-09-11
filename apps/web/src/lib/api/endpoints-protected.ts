@@ -14,7 +14,7 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
-    AddonResponse,
+    CheckoutRetryResponse,
     DestinationReviewListItem,
     DowngradePreview,
     HostTradeBenefitTypeEnum,
@@ -27,7 +27,10 @@ import type {
     OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
+    PublishEligibilityResponse,
+    PurchasableAddonResponse,
     PurchaseAddonResponse,
+    ReplacePaymentMethodResponse,
     StartPaidSubscriptionResponse,
     SubscriptionStatusResponse,
     UserBookmark,
@@ -290,7 +293,15 @@ export const userBookmarksApi = {
 // --- User (Protected) ---
 
 /** Subscription status values */
-type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due' | 'pending';
+type SubscriptionStatus =
+    | 'active'
+    | 'trial'
+    | 'cancelled'
+    | 'expired'
+    | 'past_due'
+    | 'pending'
+    | 'paused'
+    | 'courtesy';
 
 /** Subscription data returned by the protected subscription endpoint */
 export interface SubscriptionData {
@@ -311,6 +322,15 @@ export interface SubscriptionData {
     readonly currentPeriodEnd: string | null;
     readonly cancelAtPeriodEnd: boolean;
     readonly trialEndsAt: string | null;
+    /**
+     * End of a gifted courtesy window (HOS-180), or `null` when there is none.
+     *
+     * While `status` is `'courtesy'` this — not `currentPeriodEnd` — is the date
+     * the subscriber actually gets charged again, so the dashboard reads it for
+     * the "sin cargo hasta" field. Same relationship `trialEndsAt` has to a
+     * trialing subscription.
+     */
+    readonly courtesyEndsAt?: string | null;
     readonly monthlyPriceArs: number;
     readonly paymentMethod?: {
         readonly brand: string;
@@ -373,7 +393,11 @@ export const userApi = {
     /**
      * Get statistics for the authenticated user.
      *
-     * @returns Bookmark count, review count, and current plan info
+     * @returns Bookmark count, review count, current plan info, and how many
+     *   product domains carry a live subscription. `plan` is populated only
+     *   when `activeSubscriptionsCount` is exactly 1 — with 0 or 2+, `plan`
+     *   is `null` and the count is what a caller should render instead
+     *   (HOS-1066: see `resolveUserPlanSummary` in the API's `stats.ts`).
      *
      * @example
      * ```ts
@@ -386,6 +410,7 @@ export const userApi = {
             readonly bookmarkCount: number;
             readonly reviewCount: number;
             readonly plan: { readonly name: string; readonly status: string } | null;
+            readonly activeSubscriptionsCount: number;
         }>
     > {
         return apiClient.getProtected({ path: `${PROTECTED}/users/me/stats` });
@@ -407,8 +432,9 @@ export const userApi = {
      * const result = await userApi.getSubscription();
      * if (result.ok && result.data.subscription) { ... }
      *
-     * // Scope to the commerce subscription instead:
-     * const commerce = await userApi.getSubscription({ productDomain: 'commerce' });
+     * // Scope to one commerce vertical instead — 'commerce' itself is a
+     * // RETIRED ProductDomainEnum value (HOS-695) and must never be passed:
+     * const gastronomy = await userApi.getSubscription({ productDomain: 'gastronomy' });
      * ```
      */
     getSubscription(params?: {
@@ -639,6 +665,32 @@ export interface PlanItem {
     readonly isCurrent?: boolean;
 }
 
+/**
+ * Response of `POST /protected/billing/promo-codes/apply` (HOS-1012 T-039).
+ *
+ * `trialEnd` is present only for a `trial_extension` effect, and it is the
+ * value PERSISTED on the subscription row by the apply — not a projection the
+ * client should recompute.
+ */
+export interface ApplyPromoCodeResult {
+    /** Billing customer the code was applied to */
+    readonly id: string;
+    /** The applied code, echoed back */
+    readonly promoCode: string | null;
+    /** `discount` | `trial_extension` | `comp` */
+    readonly effectKind: string;
+    readonly originalAmount: number;
+    readonly discountAmount: number;
+    readonly finalAmount: number;
+    readonly amount: number;
+    /** Calendar days added — `trial_extension` only */
+    readonly extraDays?: number;
+    /** ISO 8601 persisted trial end — `trial_extension` only */
+    readonly trialEnd?: string;
+    /** True when the subscription became permanently complimentary */
+    readonly comp?: boolean;
+}
+
 /** Protected billing API endpoints for the user dashboard */
 export const billingApi = {
     /**
@@ -780,11 +832,20 @@ export const billingApi = {
     /**
      * Pause the authenticated user's own subscription (SPEC-143 #29).
      *
-     * A host self-pause is always "full": it stops billing AND hides/edit-locks
-     * the owner's accommodations until resume. No body — it targets the caller's
-     * own active subscription.
+     * Always stops billing. For an accommodation-domain subscription it also
+     * hides/edit-locks the owner's accommodations until resume; for a commerce
+     * (gastronomy/experience) subscription, the linked listing's visibility is
+     * instead handled by the shared subscription-linked-entities bridge —
+     * `accommodationsUpdated` stays `0` in that case (HOS-1278).
+     *
+     * `subscriptionId` is REQUIRED (HOS-1278): the route no longer guesses the
+     * caller's "current" subscription — a customer can legitimately hold more
+     * than one (a dual host/commerce owner, or a host auto-promoted from a
+     * paying tourist), so the caller must name the exact one.
+     *
+     * @param params - The id of the subscription to pause.
      */
-    pauseSubscription(): Promise<
+    pauseSubscription({ subscriptionId }: { readonly subscriptionId: string }): Promise<
         ApiResult<{
             readonly success: boolean;
             readonly subscriptionId: string;
@@ -794,15 +855,21 @@ export const billingApi = {
     > {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/me/subscription-pause`,
-            body: {}
+            body: { subscriptionId }
         });
     },
 
     /**
      * Resume the authenticated user's own paused subscription (SPEC-143 #29).
-     * Restarts billing and restores the owner's accommodations.
+     * Restarts billing and reverts whichever service-suspension effect applied
+     * to that subscription's domain (see {@link pauseSubscription}).
+     *
+     * `subscriptionId` is REQUIRED (HOS-1278) — same reasoning as
+     * {@link pauseSubscription}.
+     *
+     * @param params - The id of the subscription to resume.
      */
-    resumeSubscription(): Promise<
+    resumeSubscription({ subscriptionId }: { readonly subscriptionId: string }): Promise<
         ApiResult<{
             readonly success: boolean;
             readonly subscriptionId: string;
@@ -812,7 +879,7 @@ export const billingApi = {
     > {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/me/subscription-resume`,
-            body: {}
+            body: { subscriptionId }
         });
     },
     /**
@@ -830,7 +897,9 @@ export const billingApi = {
      * `window.location.href`; the sentinel page handles the success flow
      * without touching the payment provider (SPEC-262 T-012).
      *
-     * @param params - Plan slug, billing interval, and optional promo code
+     * @param params - Plan slug, billing interval, optional promo code, and
+     *   optional payer email (HOS-937 step 2 — the email confirmed/edited on
+     *   the pre-redirect screen; see `PayerEmailConfirmDialog.client.tsx`).
      * @returns The checkout URL to redirect the user to, plus metadata
      *
      * @example
@@ -842,15 +911,25 @@ export const billingApi = {
     createCheckout({
         planSlug,
         billingInterval,
-        promoCode
+        promoCode,
+        payerEmail
     }: {
         readonly planSlug: string;
         readonly billingInterval: 'monthly' | 'annual';
         readonly promoCode?: string;
+        /**
+         * HOS-937 step 2: the email the user confirmed or typed on the
+         * pre-redirect screen (spec §8.1). Optional — when omitted, the
+         * server falls back to its own resolution (spec §6.3).
+         */
+        readonly payerEmail?: string;
     }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
         const body: Record<string, unknown> = { planSlug, billingInterval };
         if (promoCode) {
             body.promoCode = promoCode;
+        }
+        if (payerEmail) {
+            body.payerEmail = payerEmail;
         }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/start-paid`,
@@ -944,6 +1023,83 @@ export const billingApi = {
     },
 
     /**
+     * Recover a checkout that did not come back `authorized` (HOS-937 step 4).
+     *
+     * Reads the caller's own preapproval by its LOCAL subscription id (never
+     * the MercadoPago id) and returns the recovery spec §6.4 defines. The
+     * four possible `recovery` values are NOT interchangeable:
+     * - `'authorized'` — the checkout already succeeded. `checkoutUrl` is
+     *   `null` — never redirect to pay again.
+     * - `'pending'` — the SAME preapproval is still awaiting completion.
+     *   `checkoutUrl` (when present) is its own `init_point`.
+     * - `'cancelled'` — a FRESH preapproval was minted (or reused from an
+     *   earlier call). `checkoutUrl` is the new `init_point`.
+     * - `'confirming'` — a concurrent call already claimed the right to
+     *   mint, or the deferred re-read was ambiguous. `checkoutUrl` is
+     *   `null`; the caller should retry shortly rather than treat this as
+     *   final.
+     *
+     * @param params.localId - The local subscription UUID (the `retryCheckoutId`
+     * query param on `/mi-cuenta/suscripcion/`).
+     * @returns The recovery classification plus a redirect URL when applicable.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.checkoutRetry({ localId });
+     * if (result.ok && result.data.recovery === 'authorized') { // already active }
+     * ```
+     */
+    checkoutRetry({
+        localId
+    }: {
+        readonly localId: string;
+    }): Promise<ApiResult<CheckoutRetryResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${localId}/checkout-retry`,
+            body: {}
+        });
+    },
+
+    /**
+     * Replace the payment method on a `past_due` subscription (HOS-348 Part B).
+     *
+     * Mints a fresh MercadoPago preapproval on the subscription's CURRENT
+     * plan and returns its `checkoutUrl` — the caller MUST redirect the
+     * browser there. The old (past-due) preapproval is cancelled only once
+     * the new one confirms authorized; nothing is charged or cancelled by
+     * this call itself. The unpaid period on the old subscription is
+     * deliberately not collected (owner decision — see
+     * `apps/api/src/services/billing/past-due-payment-method-replacement.service.ts`).
+     *
+     * `/replace-payment-method` is wrapped by `idempotencyKeyMiddleware`
+     * (same contract as `/start-paid`), so a fresh UUID v4 per click means a
+     * double-click retry gets the cached response instead of a second
+     * preapproval.
+     *
+     * @param params.localId - The past-due subscription's local UUID
+     *   (`subscription.id` from `userApi.getSubscription`).
+     * @returns The new preapproval's `checkoutUrl` to redirect to, and
+     *   whether an already-in-flight attempt was reused.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.replacePaymentMethod({ localId });
+     * if (result.ok) window.location.href = result.data.checkoutUrl;
+     * ```
+     */
+    replacePaymentMethod({
+        localId
+    }: {
+        readonly localId: string;
+    }): Promise<ApiResult<ReplacePaymentMethodResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${localId}/replace-payment-method`,
+            body: {},
+            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
+        });
+    },
+
+    /**
      * Validate a promo code before checkout and preview its effect.
      *
      * Rate-limited to 5 requests/minute server-side. Always call on an
@@ -981,6 +1137,49 @@ export const billingApi = {
         }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/promo-codes/validate`,
+            body
+        });
+    },
+
+    /**
+     * Apply a promo code to the authenticated user's own account (HOS-1012 T-039).
+     *
+     * Today the only self-service caller is the trial-extension form on the
+     * account subscription page: a `trial_extension` code applied while a trial
+     * is running pushes `trial_end` on the row and comes back with the date that
+     * was actually PERSISTED (`trialEnd`), never a projection.
+     *
+     * `customerId` is deliberately NOT sent — the endpoint resolves the caller's
+     * own billing customer from the session, which is the only customer a
+     * non-admin may ever target.
+     *
+     * Failure modes worth surfacing to the host: 422 when no trial is running
+     * (the code is NOT consumed and stays valid), 409 when the code was already
+     * used, 404/400 for an unknown, inactive or expired code.
+     *
+     * @param params.code - Promo code string entered by the user
+     * @param params.subscriptionId - Optional explicit subscription to target
+     * @returns The applied effect, including the persisted `trialEnd`
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.applyPromoCode({ code: 'FREEMONTH', subscriptionId });
+     * if (result.ok) console.log(result.data.trialEnd);
+     * ```
+     */
+    applyPromoCode({
+        code,
+        subscriptionId
+    }: {
+        readonly code: string;
+        readonly subscriptionId?: string;
+    }): Promise<ApiResult<ApplyPromoCodeResult>> {
+        const body: { code: string; subscriptionId?: string } = { code };
+        if (subscriptionId !== undefined) {
+            body.subscriptionId = subscriptionId;
+        }
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/promo-codes/apply`,
             body
         });
     },
@@ -1097,7 +1296,8 @@ export const billingApi = {
      * List available add-ons for purchase (HOS-224 self-service).
      *
      * `GET /protected/billing/addons` (`ListAddonsQuerySchema` /
-     * `z.array(AddonResponseSchema)` — see `apps/api/src/routes/billing/addons.ts`).
+     * `z.array(PurchasableAddonResponseSchema)` — see
+     * `apps/api/src/routes/billing/addons.ts`).
      * Distinct from {@link billingApi.getAddons}, which lists the user's own
      * *purchased* addons — this lists the *catalog* of purchasable ones.
      *
@@ -1114,7 +1314,7 @@ export const billingApi = {
         readonly active?: boolean;
         readonly targetCategory?: 'owner' | 'complex';
         readonly cookieHeader?: string;
-    }): Promise<ApiResult<readonly AddonResponse[]>> {
+    }): Promise<ApiResult<readonly PurchasableAddonResponse[]>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/addons`,
             params: {
@@ -1150,8 +1350,8 @@ export const billingApi = {
      * @example
      * ```ts
      * const result = await billingApi.purchaseAddon({
-     *   slug: 'visibility-boost-7d',
-     *   body: { accommodationId: 'acc-uuid' },
+     *   slug: 'visibility-boost-gastronomy-7d',
+     *   body: { entityId: 'gastronomy-uuid' },
      *   idempotencyKey: crypto.randomUUID()
      * });
      * if (result.ok) window.location.href = result.data.checkoutUrl;
@@ -1166,6 +1366,16 @@ export const billingApi = {
         readonly slug: string;
         readonly body?: {
             readonly promoCode?: string;
+            /**
+             * Target listing for a `requiresAccommodationTarget` add-on
+             * (HOS-1286). Any of the three verticals; the server derives WHICH
+             * table from the add-on's own `productDomain`.
+             */
+            readonly entityId?: string;
+            /**
+             * @deprecated Since HOS-1286 — send `entityId`. Still accepted by
+             * the server for one release; this client no longer sends it.
+             */
             readonly accommodationId?: string;
         };
         readonly idempotencyKey: string;
@@ -1194,15 +1404,27 @@ export const billingApi = {
      * `?interval=` query param).
      *
      * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
+     *   plus an optional `productDomain` (HOS-1282) to scope the check to one
+     *   vertical (accommodation | gastronomy | experience | tourist) — e.g. the
+     *   publish flow asking "is THIS accommodation's trial expired" rather than
+     *   the domain-blind answer every pre-existing caller gets. Omitted, the
+     *   server keeps its long-standing domain-blind resolution, matching every
+     *   caller's behaviour before this parameter existed.
      * @returns Trial status information for the current user.
      *
      * @example
      * ```ts
      * const result = await billingApi.getTrialStatus();
      * if (result.ok && result.data.isExpired) { ... }
+     *
+     * // Scope to the gastronomy trial instead of the domain-blind default:
+     * const gastronomy = await billingApi.getTrialStatus({ productDomain: 'gastronomy' });
      * ```
      */
-    getTrialStatus(params?: { readonly cookieHeader?: string }): Promise<
+    getTrialStatus(params?: {
+        readonly cookieHeader?: string;
+        readonly productDomain?: ProductDomainScope;
+    }): Promise<
         ApiResult<{
             readonly isOnTrial: boolean;
             readonly isExpired: boolean;
@@ -1215,6 +1437,7 @@ export const billingApi = {
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/trial/status`,
+            params: params?.productDomain ? { productDomain: params.productDomain } : undefined,
             cookieHeader: params?.cookieHeader
         });
     },
@@ -1274,19 +1497,26 @@ export const billingApi = {
 
     /**
      * Get whether the authenticated user is still eligible for a free trial
-     * (one trial per customer, for life — any status, any product domain).
+     * in one product domain (one trial per customer PER DOMAIN, for life —
+     * HOS-1012 D-2).
      *
      * Read-only, never reserves or consumes a trial. Used by
-     * `PlanPurchaseButton.client.tsx` to correct the SSR-rendered "N days
-     * free" pricing badge at hydration time for a logged-in visitor who
-     * already consumed their lifetime trial — the badge itself comes from
-     * the static, unauthenticated, 1h-cached `GET /api/v1/public/plans` and
-     * has no notion of per-user eligibility.
+     * `PlanPurchaseButton.client.tsx` (accommodation, omits `productDomain`)
+     * to correct the SSR-rendered "N days free" pricing badge at hydration
+     * time for a logged-in visitor who already consumed their lifetime trial
+     * — the badge itself comes from the static, unauthenticated, 1h-cached
+     * `GET /api/v1/public/plans` and has no notion of per-user eligibility.
+     * The gastronomy/experience publish pages (HOS-1293) pass their own
+     * vertical explicitly, for the same reason `getTrialStatus` takes one:
+     * an unscoped read silently answers about accommodation regardless of
+     * which vertical the caller actually asked about.
      *
      * @param params - Optional plan slug (informational, echoed back — the
-     *   eligibility rule is customer-scoped, not plan-scoped) and SSR cookie
+     *   eligibility rule is customer-scoped, not plan-scoped), an optional
+     *   `productDomain` (HOS-1293) defaulting server-side to `'accommodation'`
+     *   when omitted (matching every pre-existing caller), and SSR cookie
      *   header (see {@link protectedConversationsApi.list}).
-     * @returns Whether the current user is trial-eligible.
+     * @returns Whether the current user is trial-eligible in that domain.
      *
      * @example
      * ```ts
@@ -1294,10 +1524,14 @@ export const billingApi = {
      * if (result.ok && !result.data.eligible) {
      *   // suppress the "N days free" badge for this visitor
      * }
+     *
+     * // Scope to the gastronomy vertical instead of accommodation:
+     * const gastronomy = await billingApi.getTrialEligibility({ productDomain: 'gastronomy' });
      * ```
      */
     getTrialEligibility(params?: {
         readonly planSlug?: string;
+        readonly productDomain?: ProductDomainScope;
         readonly cookieHeader?: string;
     }): Promise<
         ApiResult<{
@@ -1305,10 +1539,51 @@ export const billingApi = {
             readonly planSlug: string | null;
         }>
     > {
-        const { planSlug, cookieHeader } = params ?? {};
+        const { planSlug, productDomain, cookieHeader } = params ?? {};
+        const queryParams: Record<string, string> = {};
+        if (planSlug !== undefined) {
+            queryParams.planSlug = planSlug;
+        }
+        if (productDomain !== undefined) {
+            queryParams.productDomain = productDomain;
+        }
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/trial-eligibility`,
-            params: planSlug === undefined ? undefined : { planSlug },
+            params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+            cookieHeader
+        });
+    },
+
+    // ── Payer-email known (HOS-1234) ────────────────────────────────────────
+
+    /**
+     * Get whether the authenticated user already has a known MercadoPago
+     * payer email on file (`billing_customers.mp_payer_email`).
+     *
+     * Read-only, boolean-only — never returns the email itself (see
+     * `apps/api/src/routes/billing/payer-email-known.ts`). Used by
+     * `PlanPurchaseButton.client.tsx` to skip the pre-redirect payer-email
+     * confirm dialog once a prior own-preapproval charge already confirmed
+     * an email that worked.
+     *
+     * @param params - Optional SSR cookie header (see
+     *   {@link protectedConversationsApi.list}).
+     * @returns Whether a payer email is already known for this customer.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getPayerEmailKnown();
+     * if (result.ok && result.data.hasKnownPayerEmail) {
+     *   // skip the payer-email confirm dialog
+     * }
+     * ```
+     */
+    getPayerEmailKnown(params?: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly hasKnownPayerEmail: boolean }>> {
+        const { cookieHeader } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/payer-email-known`,
             cookieHeader
         });
     }
@@ -2226,17 +2501,32 @@ export interface SavedReviewReply {
 }
 
 /**
- * The provider's answer as the DIRECTORY serves it (HOS-376 T-053).
+ * The provider's answer as the DIRECTORY serves it (HOS-376 T-053, HOS-1067).
  *
- * Structurally identical to {@link SavedReviewReply} — both mirror
- * `HostTradeReviewReplyProtectedSchema` — but arriving here carries a claim the
- * write path cannot make: a moderator cleared it. The endpoint omits an answer
- * that is PENDING or REJECTED, so `null` on a row means "no answer a reader may
- * see", NEVER "no answer exists". That distinction is why the provider's own
- * panel reads a different endpoint with a different shape
- * ({@link OwnerReviewReply}, which keeps the state and the reason).
+ * Narrower than {@link SavedReviewReply} by two fields, and neither absence is
+ * an oversight. Arriving here carries a claim the write path cannot make: a
+ * moderator cleared it. The endpoint omits an answer that is PENDING or
+ * REJECTED, so `null` on a row means "no answer a reader may see", NEVER "no
+ * answer exists" — which is why `moderationState` must not be here. It would be
+ * the constant `'APPROVED'`, and a reader holding it could separate a rejected
+ * answer from an absent one, undoing what the omission protects. `reviewId`
+ * goes because the review is the object this hangs off.
+ *
+ * The provider's own panel reads a different endpoint with a different shape
+ * ({@link OwnerReviewReply}, which keeps the state and the reason) — that is
+ * the reader `moderationState` exists for.
+ *
+ * This used to alias {@link SavedReviewReply}, and the API declared the same
+ * wider shape while its query projected these five: every answered provider
+ * returned 500 (HOS-1067).
  */
-export type DirectoryReviewReply = SavedReviewReply;
+export interface DirectoryReviewReply {
+    readonly id: string;
+    readonly content: string;
+    readonly reviewEditedAfterReply: boolean;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
 
 /**
  * One row of a provider's public review list (HOS-376 T-053).
@@ -2597,21 +2887,26 @@ export const hostTradesApi = {
     },
 
     /**
-     * The caller's own QR (HOS-376 T-050, §6.2a).
+     * The caller's own QR (HOS-376 T-050, §6.2a; HOS-981 PR 4).
      *
-     * The URL travels alongside the image because a provider who cannot scan
-     * his own code — printing from a machine with no camera, or working out why
-     * a scan lands nowhere — needs to read the destination as text.
+     * Two URLs travel alongside the image because since HOS-981 they are two
+     * different things: `url` is what the symbol encodes (`{site}/qr/{qrSlug}/`,
+     * readable as text by a provider who cannot scan his own code), and
+     * `targetUrl` is where that redirect lands — the usage-registration page,
+     * which is what `url` alone used to mean.
      *
      * @param params - `cookieHeader` when calling from SSR.
-     * @returns The SVG markup, the URL it encodes, and the slug.
+     * @returns The SVG markup, the URL it encodes, the URL it redirects to, the
+     *   listing's slug and the QR code's own slug.
      */
-    getMyQr({
-        cookieHeader
-    }: {
-        cookieHeader?: string;
-    } = {}): Promise<
-        ApiResult<{ readonly svg: string; readonly url: string; readonly slug: string }>
+    getMyQr({ cookieHeader }: { cookieHeader?: string } = {}): Promise<
+        ApiResult<{
+            readonly svg: string;
+            readonly url: string;
+            readonly targetUrl: string;
+            readonly slug: string;
+            readonly qrSlug: string;
+        }>
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/host-trades/mine/qr`,
@@ -2945,6 +3240,39 @@ export interface MyPartnerMentionsResponse {
     readonly batches: readonly MyPartnerMentionBatch[];
 }
 
+/** One metric's deduplicated counts over the requested window (HOS-1063). */
+export interface MyPartnerStatsCounts {
+    readonly unique: number;
+    readonly total: number;
+}
+
+/**
+ * Response envelope for `GET /protected/partners/mine/stats` (HOS-1063 A-4).
+ *
+ * `available: false` with nothing else is the answer for a caller who owns no
+ * partner — never a 403/404, for the same reason the mentions log is not.
+ *
+ * `views` and `clicks` are present whenever `available` is true, INCLUDING for a
+ * partner whose logo links nowhere and who therefore cannot receive clicks. That
+ * is deliberate: the honest count of a thing that did not happen is zero, and it
+ * is the SECTION that must omit a card whose surface does not exist. The API
+ * deciding it instead would be a second source of truth about what the home
+ * carousel renders.
+ */
+export interface MyPartnerStats {
+    readonly available: boolean;
+    readonly partner?: {
+        readonly id: string;
+        readonly name: string;
+        readonly slug?: string;
+        readonly tier?: string;
+        readonly websiteUrl?: string;
+    };
+    readonly windowDays?: number;
+    readonly views?: MyPartnerStatsCounts;
+    readonly clicks?: MyPartnerStatsCounts;
+}
+
 /** What a partner may PATCH onto their own listing. */
 export interface MyPartnerUpdate {
     readonly logoUrl?: string | null;
@@ -3013,6 +3341,34 @@ export const partnersApi = {
     } = {}): Promise<ApiResult<MyPartnerMentionsResponse>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/partners/mine/mentions`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * The caller's own in-platform statistics over a 7- or 30-day window
+     * (HOS-1063 A-4).
+     *
+     * Answers `{ available: false }` rather than an error when the caller owns
+     * no partner — the same fail-closed shape as {@link partnersApi.mineMentions},
+     * and for the same reason: a 403 would confirm a partner exists.
+     *
+     * The payload carries the NUMBERS plus `tier`/`slug`/`websiteUrl`, and says
+     * nothing about which cards to render. That is `resolvePartnerLogoLink`'s
+     * job — see `PartnerStatsSection.astro`.
+     *
+     * @param params - `{ windowDays }`, and `{ cookieHeader }` when calling from SSR.
+     * @returns The caller's statistics, or an error the page degrades from.
+     */
+    mineStats({
+        cookieHeader,
+        windowDays = 30
+    }: {
+        cookieHeader?: string;
+        windowDays?: 7 | 30;
+    } = {}): Promise<ApiResult<MyPartnerStats>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/partners/mine/stats?windowDays=${windowDays}`,
             cookieHeader
         });
     }
@@ -3209,6 +3565,189 @@ export const hostAnalyticsApi = {
     }
 };
 
+// --- Commerce Analytics (Protected — HOS-734) ---
+
+/** The two commerce verticals — matches `CommerceVertical` in `@repo/billing`. */
+type CommerceAnalyticsVertical = 'gastronomy' | 'experience';
+
+/** Path segment each vertical mounts its protected routes under. */
+const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>> = {
+    gastronomy: 'gastronomies',
+    experience: 'experiences'
+};
+
+/**
+ * Protected commerce (gastronomy/experience) basic-stats API endpoints
+ * (HOS-734). Mirrors `hostAnalyticsApi`'s accommodation views shape — same
+ * `entity_views` telemetry table, same `view_basic_stats` entitlement,
+ * applied to the two commerce verticals instead of ACCOMMODATION.
+ *
+ * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
+ * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
+ * `menu_qr_scan_metrics` entitlement (granted by `gastronomy-premium` only).
+ * Still out of scope, per vertical, and still without an endpoint or
+ * entitlement key: gastronomy's most-viewed dishes, and experience's origin
+ * destinations.
+ */
+/**
+ * Protected commerce listing endpoints the OWNER reads about their own listings
+ * (HOS-1286).
+ *
+ * Separate from {@link commerceAnalyticsApi} on purpose: that object is the
+ * `view_basic_stats` surface and everything on it is entitlement-gated
+ * telemetry. This is "which listings do I own", which the add-on purchase panel
+ * needs to offer a per-listing visibility boost a target to point at, and which
+ * no entitlement gates.
+ */
+export const commerceListingsApi = {
+    /**
+     * List the caller's own listings in one commerce vertical.
+     *
+     * @param params - `{ vertical }`
+     * @returns `{ listings }` — the owner's listing summaries for that vertical.
+     */
+    listMine({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: CommerceAnalyticsVertical;
+        /** Forwarded when called from SSR, as `hostAnalyticsApi.listOwnAccommodations` does. */
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly listings: readonly {
+                readonly id: string;
+                readonly name: string;
+                readonly slug: string;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine`,
+            cookieHeader
+        });
+    }
+};
+
+export const commerceAnalyticsApi = {
+    /**
+     * Get view stats (cumulative) for every listing the caller owns in one
+     * commerce vertical, over a rolling window.
+     *
+     * @param params - `{ vertical, window }`
+     * @returns One `{ entityId, unique, total }` entry per owned listing.
+     */
+    getViews({
+        vertical,
+        window: windowParam
+    }: {
+        readonly vertical: CommerceAnalyticsVertical;
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<
+            readonly {
+                readonly entityId: string;
+                readonly unique: number;
+                readonly total: number;
+            }[]
+        >
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get the gap-filled daily view-count series for every listing the
+     * caller owns in one commerce vertical, over a rolling window. Not
+     * currently rendered by any web UI (the `mi-cuenta/comercio` widget shows
+     * cumulative totals only, HOS-734) — kept here so a future daily chart
+     * does not need a new backend round-trip.
+     *
+     * @param params - `{ vertical, window }`
+     * @returns Daily series `{ window, items: { date, total }[] }`.
+     */
+    getViewsDailySeries({
+        vertical,
+        window: windowParam
+    }: {
+        readonly vertical: CommerceAnalyticsVertical;
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: '7d' | '30d';
+            readonly items: readonly { readonly date: string; readonly total: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get the menu QR for one gastronomy listing (HOS-1044 §6.2). Mints the
+     * code on first call and reuses it afterwards — the SAME `qr_codes` row
+     * every time, even across a slug rename (the target is repointed
+     * server-side, not the code itself).
+     *
+     * Premium-only: a caller on gastronomy basic/pro gets a `403`, which the
+     * panel renders as a locked upsell state, never a generic error.
+     *
+     * @param params - `{ gastronomyId }`
+     * @returns The QR's SVG markup, the scan URL it encodes, its target URL,
+     *   and both slugs.
+     */
+    getMenuQr({ gastronomyId }: { readonly gastronomyId: string }): Promise<
+        ApiResult<{
+            readonly svg: string;
+            readonly url: string;
+            readonly targetUrl: string;
+            readonly slug: string;
+            readonly qrSlug: string;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr`
+        });
+    },
+
+    /**
+     * Get the scan aggregate for one gastronomy listing's menu QR (HOS-1044
+     * §6.4): total, a gap-filled daily series, and device/OS/language
+     * breakdowns over a rolling window. A venue with no menu QR minted yet
+     * gets an all-zero aggregate — this endpoint never mints a code.
+     *
+     * Same gate as {@link getMenuQr}: a `403` means the panel should render
+     * the locked upsell state.
+     *
+     * @param params - `{ gastronomyId, window }`
+     * @returns The scan aggregate for the requested window.
+     */
+    getMenuQrScans({
+        gastronomyId,
+        window: windowParam
+    }: {
+        readonly gastronomyId: string;
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: AnalyticsWindow;
+            readonly total: number;
+            readonly dailySeries: readonly { readonly date: string; readonly total: number }[];
+            readonly byDeviceType: Readonly<Record<string, number>>;
+            readonly byOs: Readonly<Record<string, number>>;
+            readonly byBrowserLanguage: Readonly<Record<string, number>>;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr/scans`,
+            params: { window: windowParam }
+        });
+    }
+};
+
 // --- Accommodation Contact (Protected) ---
 
 /** Contact info returned by the protected endpoint. */
@@ -3243,7 +3782,8 @@ export const protectedAccommodationsApi = {
      * (viewer's) billing plan (HOS-19).
      *
      * - `number`: the WhatsApp number, present ONLY when the caller has
-     *   `CAN_CONTACT_WHATSAPP_DISPLAY` (tourist-plus+) AND the owner set one;
+     *   `CAN_CONTACT_WHATSAPP_DISPLAY` (owner-basico+ since HOS-1224 retired
+     *   tourist-plus) AND the owner set one;
      *   `null` otherwise (never leaked to unentitled callers).
      * - `direct`: `true` when the caller also has `CAN_CONTACT_WHATSAPP_DIRECT`
      *   (tourist-vip+) — authorizes rendering a one-click `wa.me` deep link.
@@ -3534,6 +4074,144 @@ export const hostOnboardingApi = {
 };
 
 /**
+ * The three verticals reachable from the header's "Publicar" menu (HOS-1156).
+ *
+ * A local literal union, same precedent as `HostOnboardingPrecheckDecision`
+ * above: the web app does not import `@repo/billing`'s `PublishVertical` here,
+ * so a change to the API contract surfaces as a typecheck failure at the call
+ * sites rather than silently reshaping a rendered page.
+ */
+export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+
+/**
+ * Publish precheck API (HOS-1156 D-7).
+ *
+ * The vertical-parameterised generalisation of {@link hostOnboardingApi}: one
+ * read-only endpoint each `/publicar/*` page calls BEFORE rendering its create
+ * form, to decide whether to create directly, resume/pick among existing
+ * DRAFTs, or send the owner to upgrade.
+ *
+ * The response shape is identical to the accommodation-only ancestor's, so
+ * {@link HostOnboardingPrecheckResponse} is reused rather than copied.
+ */
+export const publishApi = {
+    /**
+     * Precheck publishing in one vertical for the current actor.
+     *
+     * @param params.vertical - Which vertical to precheck.
+     * @param params.cookieHeader - Optional SSR cookie header (browser callers
+     *   omit it; `credentials: 'include'` covers them).
+     * @returns The listing/draft counts, the quota verdict and the decision.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.precheck({ vertical: 'gastronomy', cookieHeader });
+     * if (result.ok) console.log(result.data.decision);
+     * ```
+     */
+    precheck({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<HostOnboardingPrecheckResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/precheck/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Soft-deletes one DRAFT listing the caller owns, in any publish vertical
+     * (HOS-1156 T-015, AC-14).
+     *
+     * The precheck panel's "borrar el borrador" is the FREE way past a full
+     * plan, and it must delete a draft OF THE VERTICAL BEING PUBLISHED — a
+     * gastronomy owner blocked on gastronomy is not helped by deleting a
+     * property.
+     *
+     * ## Why this dispatches instead of calling one endpoint
+     *
+     * The two halves land on different routes on purpose. Accommodation keeps
+     * `DELETE /protected/accommodations/{id}`, which has accepted its owner
+     * since BETA-197 and is live in production; routing it through the commerce
+     * endpoint would move a working flow for no gain (HOS-1156 R-2). Commerce
+     * had no owner-facing delete at all before this change, so it gets the new
+     * one. The branch lives here, in the API layer that already knows about
+     * endpoints, rather than inside the island that renders the button.
+     *
+     * @param params.vertical - Which vertical's draft to delete.
+     * @param params.id - The listing id.
+     * @returns The delete result.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.deleteDraft({ vertical: 'gastronomy', id });
+     * if (result.ok) window.location.reload();
+     * ```
+     */
+    deleteDraft({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        if (vertical === 'accommodation') {
+            return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
+        }
+        return apiClient.delete({ path: `${PROTECTED}/commerce/listings/${vertical}/${id}` });
+    },
+
+    /**
+     * Reads what publishing an accommodation would do for the current actor
+     * (HOS-1183).
+     *
+     * ## This is not {@link publishApi.precheck}, and the two never merge
+     *
+     * `precheck` answers "can you CREATE another listing" — caps and drafts,
+     * asked before a create form renders. This answers "can you put an existing
+     * one LIVE". Different gate, different moment in the lifecycle, different
+     * consumer page. They sit together here because they are both publishing
+     * reads, not because either can stand in for the other.
+     *
+     * ## Read `canPublish`, never re-derive it
+     *
+     * The whole point of the endpoint is that ONE side owns the rule. A caller
+     * that computes `eligibility !== 'subscription_required'` itself is the
+     * second statement of it, and the next verdict added would make the two
+     * disagree — which is the bug this endpoint was built to close. Use
+     * `eligibility` and `startsTrial` for COPY, `canPublish` for the affordance.
+     *
+     * Accommodation-only for now: commerce listings go live through a checkout
+     * and resolve their own verdict (HOS-1184), so a `vertical` parameter here
+     * would promise a generality the endpoint does not have.
+     *
+     * @param params.cookieHeader - Optional SSR cookie header (browser callers
+     *   omit it; `credentials: 'include'` covers them).
+     * @returns The billing verdict, whether publishing is allowed right now,
+     *   and whether it would start a free trial.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.accommodationEligibility({ cookieHeader });
+     * const canPublish = result.ok ? result.data.canPublish : true; // fail-open
+     * ```
+     */
+    accommodationEligibility({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    } = {}): Promise<ApiResult<PublishEligibilityResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/publish-eligibility`,
+            cookieHeader
+        });
+    }
+};
+
+/**
  * Protected accommodation edit API endpoints.
  * Wraps the protected accommodation GET/PATCH and public amenities/destinations
  * endpoints used by the web editor form.
@@ -3647,46 +4325,6 @@ export const accommodationEditApi = {
      */
     softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
-    },
-
-    /**
-     * Read the current `isFeatured` value and whether the owner currently
-     * holds an active FEATURED_LISTING entitlement (plan or addon) for this
-     * accommodation (SPEC-309 T-020). Used to decide whether the owner
-     * self-service featured toggle should render in the editor at all.
-     *
-     * @param params - Accommodation ID
-     * @returns The current featured status and entitlement gate
-     */
-    getFeaturedEntitlement({
-        id
-    }: {
-        readonly id: string;
-    }): Promise<ApiResult<{ readonly isFeatured: boolean; readonly hasEntitlement: boolean }>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/accommodations/${id}/featured-toggle`
-        });
-    },
-
-    /**
-     * Set `isFeatured` for an accommodation the actor owns (SPEC-309 T-019).
-     * Rejected server-side (403) if the owner does not currently hold an
-     * active FEATURED_LISTING entitlement (plan or addon) for it.
-     *
-     * @param params - Accommodation ID and the target `isFeatured` value
-     * @returns The new `isFeatured` value
-     */
-    setFeaturedToggle({
-        id,
-        isFeatured
-    }: {
-        readonly id: string;
-        readonly isFeatured: boolean;
-    }): Promise<ApiResult<{ readonly isFeatured: boolean }>> {
-        return apiClient.patch({
-            path: `${PROTECTED}/accommodations/${id}/featured-toggle`,
-            body: { isFeatured }
-        });
     },
 
     /**
@@ -3977,6 +4615,25 @@ export const postEditApi = {
             body: { visibility }
         });
     },
+
+    /**
+     * Approve one of the caller's own posts (HOS-1037): the trusted editor's
+     * self-approve action.
+     *
+     * Moves `moderationState` ONLY — `visibility` is left intact. Requires
+     * `POST_PUBLISH_OWN` plus authorship; a plain editor gets a 403, and a
+     * post authored by someone else answers 404 (never 403 — see
+     * `apps/api/docs/error-contract.md`).
+     *
+     * @param params - Post ID.
+     * @returns The updated post.
+     */
+    moderate({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/posts/${id}/moderate`,
+            body: { moderationState: 'APPROVED' }
+        });
+    },
     /**
      * List the authenticated user's own posts, in every moderation and
      * lifecycle state — including drafts, pending-review, and rejected
@@ -4125,6 +4782,25 @@ export const eventEditApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/events/${id}/publish-state`,
             body: { visibility }
+        });
+    },
+
+    /**
+     * Approve one of the caller's own events (HOS-1037): the trusted editor's
+     * self-approve action.
+     *
+     * Moves `moderationState` ONLY — `visibility` is left intact. Requires
+     * `EVENT_PUBLISH_OWN` plus authorship; a plain editor gets a 403, and an
+     * event authored by someone else answers 404 (never 403 — see
+     * `apps/api/docs/error-contract.md`).
+     *
+     * @param params - Event ID.
+     * @returns The updated event.
+     */
+    moderate({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/events/${id}/moderate`,
+            body: { moderationState: 'APPROVED' }
         });
     },
 
@@ -4972,6 +5648,48 @@ export const accommodationMediaApi = {
     },
 
     /**
+     * Register a photo as the accommodation's COVER in one request (HOS-803).
+     *
+     * Replaces the old `addMedia` + `setFeaturedMedia` pair. That pair could
+     * not run when the gallery was at the plan cap: the first call was refused
+     * by the photo limit — which counts the gallery alone, since a cover is not
+     * a gallery item — so the promotion was never reached, and the one action
+     * exempt from the quota was the only one an owner at the cap could not do.
+     *
+     * `isFeatured` is not part of the body and cannot be: the endpoint decides
+     * it, which is what lets the server waive the gallery cap safely here.
+     *
+     * @param params - Accommodation ID and media body
+     * @returns The created cover, plus the id of the one it replaced — which is
+     *   soft-deleted in the same transaction, unconditionally, so the swap costs
+     *   the gallery nothing. `null` when the accommodation had no cover before.
+     */
+    addFeaturedMedia({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<
+        ApiResult<{
+            readonly media: AccommodationMediaRow;
+            readonly previousFeatured: { readonly id: string } | null;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/media/featured`,
+            body
+        });
+    },
+
+    /**
      * Delete a media row by its DB UUID.
      * Also removes the Cloudinary asset on the server side.
      *
@@ -5446,6 +6164,13 @@ export interface CommerceMediaRow {
     readonly caption?: string | null;
     readonly description?: string | null;
     readonly alt?: string | null;
+    /**
+     * Photo credit, or `null` when there is none (HOS-1036). Read back into
+     * the metadata panel every time it opens, so an existing credit — a stock
+     * import's provenance, for instance — is corrected rather than silently
+     * overwritten.
+     */
+    readonly attribution?: MediaAttribution | null;
     readonly isFeatured: boolean;
     readonly sortOrder: number;
     readonly state: 'visible' | 'archived';
@@ -5593,6 +6318,44 @@ export const commerceMediaApi = {
             path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/reorder`,
             body: { orderedIds }
         });
+    },
+
+    /**
+     * Correct a photo's text metadata — caption, description, alt and the
+     * credit (HOS-1036). Lets an owner write the accessible text the upload
+     * flow never asked for, or fix a typo, without deleting and re-uploading
+     * the photo (which would burn a second Cloudinary asset and lose the row's
+     * gallery position).
+     *
+     * Each field is nullable AND optional: omit it to leave the column
+     * untouched, send `null` to CLEAR it, send a value to replace it. At least
+     * one field must be present — an empty body is rejected by the API as
+     * `VALIDATION_ERROR`, not silently accepted.
+     *
+     * @param params - Vertical, listing ID, media row ID (DB UUID), and the fields to update
+     * @returns `{ media: CommerceMediaRow }` — the updated row
+     */
+    updateMedia({
+        vertical,
+        id,
+        mediaId,
+        body
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly mediaId: string;
+        readonly body: {
+            readonly caption?: string | null;
+            readonly description?: string | null;
+            readonly alt?: string | null;
+            /** Whole credit object, or `null` to clear it. */
+            readonly attribution?: MediaAttribution | null;
+        };
+    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`,
+            body
+        });
     }
 };
 
@@ -5626,6 +6389,13 @@ export interface ContentMediaRow {
     readonly caption?: string | null;
     readonly description?: string | null;
     readonly alt?: string | null;
+    /**
+     * Photo credit, or `null` when there is none (HOS-1036). Read back into
+     * the metadata panel every time it opens, so an existing credit — a stock
+     * import's provenance, for instance — is corrected rather than silently
+     * overwritten.
+     */
+    readonly attribution?: MediaAttribution | null;
     readonly isFeatured: boolean;
     readonly sortOrder: number;
     readonly state: 'visible' | 'archived';
@@ -5776,6 +6546,43 @@ export const contentMediaApi = {
         return apiClient.patch({
             path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/reorder`,
             body: { orderedIds }
+        });
+    },
+
+    /**
+     * Correct a photo's text metadata — caption, description, alt and the
+     * credit (HOS-1036). Until this endpoint existed the post and event
+     * editors offered no way to write a photo's alt text at all, so every
+     * uploaded photo shipped with nothing a screen reader could announce.
+     *
+     * Each field is nullable AND optional: omit it to leave the column
+     * untouched, send `null` to CLEAR it, send a value to replace it. At least
+     * one field must be present — an empty body is rejected by the API as
+     * `VALIDATION_ERROR`, not silently accepted.
+     *
+     * @param params - Entity, entity ID, media row ID (DB UUID), and the fields to update
+     * @returns `{ media: ContentMediaRow }` — the updated row
+     */
+    updateMedia({
+        entity,
+        id,
+        mediaId,
+        body
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly mediaId: string;
+        readonly body: {
+            readonly caption?: string | null;
+            readonly description?: string | null;
+            readonly alt?: string | null;
+            /** Whole credit object, or `null` to clear it. */
+            readonly attribution?: MediaAttribution | null;
+        };
+    }): Promise<ApiResult<{ readonly media: ContentMediaRow }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}`,
+            body
         });
     }
 };

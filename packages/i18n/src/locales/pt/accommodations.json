@@ -479,6 +479,11 @@
             "backToAccommodation": "← Voltar ao alojamento",
             "photosSubpage": "Fotos"
         },
+        "videos": {
+            "title": "Vídeos",
+            "play": "Reproduzir vídeo",
+            "playNamed": "Reproduzir vídeo: {{caption}}"
+        },
         "pricing": {
             "from": "A partir de",
             "perNightLabel": "/noite",
@@ -830,6 +835,16 @@
         "gluten_free_options": "Opções sem glúten",
         "vegan_options": "Opções veganas",
         "vegetarian_options": "Opções vegetarianas",
+        "lactose_free_options": "Opções sem lactose",
+        "nut_free_options": "Opções sem frutos secos",
+        "argentine_cuisine": "Cozinha argentina",
+        "river_cuisine": "Cozinha de rio",
+        "italian_cuisine": "Cozinha italiana",
+        "peruvian_cuisine": "Cozinha peruana",
+        "international_cuisine": "Cozinha internacional",
+        "asian_cuisine": "Cozinha asiática",
+        "mediterranean_cuisine": "Cozinha mediterrânea",
+        "fusion_cuisine": "Cozinha de fusão",
         "kids_menu": "Cardápio infantil",
         "family_friendly": "Adequado para famílias",
         "romantic_ambiance": "Ambiente romântico",

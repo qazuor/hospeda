@@ -1,4 +1,49 @@
 {
+    "qrCode": {
+        "description": {
+            "max": "La descripción no puede superar los {{max}} caracteres"
+        },
+        "entityRef": {
+            "forbiddenForManual": "Un código manual no puede estar asociado a una entidad",
+            "requiredForGenerated": "Un código generado debe indicar la entidad de la que proviene"
+        },
+        "label": {
+            "max": "El nombre del código QR no puede superar los {{max}} caracteres",
+            "min": "El nombre del código QR es obligatorio"
+        },
+        "renderOptions": {
+            "centerLogo": {
+                "levelRequiredWithLogo": "Al activar el logo central hay que indicar también el nivel de corrección de errores, porque el guardado no se puede ver desde acá",
+                "logoRequiredWithLevel": "Al bajar el nivel de corrección de errores hay que indicar también si el código lleva logo central, porque el guardado no se puede ver desde acá",
+                "requiresErrorCorrection": "Para llevar el logo central, el código necesita un nivel de corrección de errores más alto (Q o H): el logo tapa parte del símbolo y sólo la corrección lo vuelve legible"
+            },
+            "color": {
+                "invalid": "El color debe ser hexadecimal, con el formato #rgb, #rrggbb o #rrggbbaa"
+            },
+            "margin": {
+                "max": "El margen no puede superar los {{max}} módulos",
+                "min": "El margen no puede ser menor a {{min}} módulos"
+            },
+            "size": {
+                "max": "El tamaño no puede superar los {{max}} píxeles",
+                "min": "El tamaño debe ser de al menos {{min}} píxeles para que una cámara pueda leer el código"
+            }
+        },
+        "scan": {
+            "window": {
+                "invalid": "La ventana de tiempo debe ser 7d o 30d"
+            }
+        },
+        "slug": {
+            "invalidPattern": "El código sólo puede usar caracteres inequívocos: sin 0, O, 1, l ni I",
+            "max": "El código no puede superar los {{max}} caracteres",
+            "min": "El código debe tener al menos {{min}} caracteres"
+        },
+        "targetUrl": {
+            "invalidUrl": "El destino debe ser una URL válida",
+            "max": "El destino no puede superar los {{max}} caracteres"
+        }
+    },
     "reviewMarkedFields": "Revisá los campos marcados.",
     "accommodation": {
         "address": {
@@ -54,11 +99,6 @@
                 "required": "La cantidad mínima de noches es obligatoria",
                 "min": "La cantidad mínima de noches no puede ser menor a {{min}}",
                 "max": "La cantidad mínima de noches no puede superar los {{max}}"
-            }
-        },
-        "featuredToggle": {
-            "isFeatured": {
-                "required": "El destacado es obligatorio"
             }
         },
         "featureFlag": {
@@ -522,6 +562,24 @@
             }
         }
     },
+    "ai": {
+        "chat": {
+            "accommodationId": {
+                "invalidUuid": "El ID del alojamiento debe ser un UUID válido",
+                "notAllowedForEntityType": "No se puede enviar accommodationId cuando la consulta es sobre gastronomía o experiencias"
+            },
+            "entityId": {
+                "conflictsWithAccommodationId": "entityId y accommodationId apuntan a fichas distintas",
+                "invalidUuid": "El ID de la ficha debe ser un UUID válido",
+                "required": "Falta el ID de la ficha sobre la que se consulta"
+            }
+        },
+        "textImprove": {
+            "entityId": {
+                "invalidUuid": "El ID de la entidad debe ser un UUID válido"
+            }
+        }
+    },
     "allianceLead": {
         "adminList": {
             "page": {
@@ -763,6 +821,11 @@
         }
     },
     "billing": {
+        "checkoutRetry": {
+            "recovery": {
+                "invalid": "El estado de recuperación no es válido"
+            }
+        },
         "addon": {
             "cancel": {
                 "reason": {
@@ -944,6 +1007,11 @@
                 "invalidType": "El new plan id tiene un tipo de dato inválido",
                 "max": "El new plan id no puede superar los {{max}} caracteres",
                 "min": "El new plan id debe tener al menos {{min}} caracteres"
+            },
+            "planSlug": {
+                "invalid": "El slug del plan no tiene un formato válido",
+                "invalidType": "El slug del plan tiene un tipo de dato inválido",
+                "max": "El slug del plan no puede superar los {{max}} caracteres"
             },
             "previousPlanId": {
                 "invalidType": "El previous plan id tiene un tipo de dato inválido",
@@ -1179,7 +1247,13 @@
                 "invalid": "El ID de suscripción local no es válido",
                 "invalidType": "El ID de suscripción local tiene un tipo de dato inválido"
             },
+            "payerEmail": {
+                "invalid": "El email de pago no es válido",
+                "invalidType": "El email de pago tiene un tipo de dato inválido",
+                "max": "El email de pago no puede superar los {{max}} caracteres"
+            },
             "planSlug": {
+                "invalid": "El slug del plan no tiene un formato válido",
                 "invalidType": "El slug del plan tiene un tipo de dato inválido",
                 "max": "El slug del plan no puede superar los {{max}} caracteres",
                 "min": "El slug del plan debe tener al menos {{min}} caracteres"
@@ -1246,6 +1320,15 @@
             "triggerSource": {
                 "invalidType": "El trigger source tiene un tipo de dato inválido",
                 "max": "El trigger source no puede superar los {{max}} caracteres"
+            }
+        },
+        "payerEmail": {
+            "known": {
+                "response": {
+                    "hasKnownPayerEmail": {
+                        "invalidType": "El indicador de email de pago conocido debe ser un booleano"
+                    }
+                }
             }
         },
         "trial": {
@@ -1458,6 +1541,9 @@
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"
             },
+            "update": {
+                "atLeastOneField": "Tenés que completar al menos uno de los campos: epígrafe, descripción, texto alternativo o atribución"
+            },
             "url": {
                 "invalid": "La URL no es válida"
             }
@@ -1534,6 +1620,9 @@
             },
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Tenés que completar al menos uno de los campos: epígrafe, descripción, texto alternativo o atribución"
             },
             "url": {
                 "invalid": "La URL no es válida"
@@ -1763,6 +1852,14 @@
             "tooLow": "El max rating es demasiado bajo"
         },
         "media": {
+            "featured": {
+                "planCap": {
+                    "int": "El límite de fotos del plan debe ser un número entero"
+                },
+                "previousId": {
+                    "invalid": "El identificador de la portada anterior no es válido"
+                }
+            },
             "image": {
                 "alt": {
                     "max": "El texto alternativo no puede superar los {{max}} caracteres",
@@ -1845,6 +1942,9 @@
             "invalid": "El non_negative_int no es válido"
         },
         "openingHours": {
+            "day": {
+                "notOpenOrClosed": "Marcá el día como cerrado o cargá al menos un turno"
+            },
             "shift": {
                 "invalidTime": "El formato de hora no es válido",
                 "sameOpenAndClose": "La hora de cierre no puede ser igual a la de apertura"
@@ -2399,6 +2499,27 @@
         "productType": {
             "invalid": "El product type no es válido"
         },
+        "qrCodeCenterLogo": {
+            "invalid": "El logo central del código QR no es válido"
+        },
+        "qrCodeErrorCorrectionLevel": {
+            "invalid": "El nivel de corrección de errores no es válido"
+        },
+        "qrCodeFormat": {
+            "invalid": "El formato del código QR no es válido"
+        },
+        "qrCodePurpose": {
+            "invalid": "El propósito del código QR no es válido"
+        },
+        "qrCodeSource": {
+            "invalid": "El origen del código QR no es válido"
+        },
+        "qrScanDeviceType": {
+            "invalid": "El tipo de dispositivo del escaneo no es válido"
+        },
+        "qrScanOs": {
+            "invalid": "El sistema operativo del escaneo no es válido"
+        },
         "recurrenceType": {
             "invalid": "El recurrence type no es válido"
         },
@@ -2465,6 +2586,9 @@
         },
         "visibility": {
             "invalid": "El visibility no es válido"
+        },
+        "partnerLogoClickDestination": {
+            "invalid": "El destino del clic en el logo no es válido"
         }
     },
     "event": {
@@ -2795,6 +2919,9 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "cancellationPolicy": {
+            "max": "La política de cancelación no puede superar los {{max}} caracteres"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -2805,6 +2932,13 @@
             "success": {
                 "required": "El resultado exitoso es obligatorio"
             }
+        },
+        "durationMinutes": {
+            "int": "La duración debe ser un número entero de minutos",
+            "max": "La duración no puede superar los {{max}} minutos",
+            "max_one": "La duración no puede superar {{max}} minuto",
+            "max_other": "La duración no puede superar los {{max}} minutos",
+            "min": "La duración debe ser de al menos {{min}} minuto"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
@@ -2817,11 +2951,38 @@
                 }
             }
         },
+        "meetingPoint": {
+            "max": "El punto de encuentro no puede superar los {{max}} caracteres"
+        },
+        "meetingPointDirections": {
+            "item": {
+                "max": "Cada indicación de cómo llegar no puede superar los {{max}} caracteres",
+                "min": "Las indicaciones de cómo llegar no pueden quedar vacías"
+            },
+            "max": "No podés cargar más de {{max}} indicaciones de cómo llegar",
+            "max_one": "No podés cargar más de {{max}} indicación de cómo llegar",
+            "max_other": "No podés cargar más de {{max}} indicaciones de cómo llegar"
+        },
+        "meetingPointLat": {
+            "max": "La latitud del punto de encuentro no puede superar {{max}}",
+            "min": "La latitud del punto de encuentro debe ser al menos {{min}}"
+        },
+        "meetingPointLong": {
+            "max": "La longitud del punto de encuentro no puede superar {{max}}",
+            "min": "La longitud del punto de encuentro debe ser al menos {{min}}"
+        },
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
         },
         "priceUnit": {
             "requiredUnlessOnRequest": "Elegí la unidad de precio (por día, por hora, por persona o por grupo). Si la experiencia no tiene precio fijo, marcá «Precio a consultar»."
+        },
+        "requirements": {
+            "item": {
+                "max": "Cada requisito no puede superar los {{max}} caracteres",
+                "min": "Los requisitos no pueden quedar vacíos"
+            },
+            "max": "No podés cargar más de {{max}} requisitos"
         },
         "review": {
             "content": {
@@ -2837,6 +2998,25 @@
                 "max": "El título de la reseña no puede superar los {{max}} caracteres",
                 "min": "El título de la reseña debe tener al menos {{min}} caracteres"
             }
+        },
+        "whatToBring": {
+            "item": {
+                "max": "Cada ítem de qué llevar no puede superar los {{max}} caracteres",
+                "min": "Los ítems de qué llevar no pueden quedar vacíos"
+            },
+            "max": "No podés cargar más de {{max}} ítems de qué llevar",
+            "max_one": "No podés cargar más de {{max}} ítem de qué llevar",
+            "max_other": "No podés cargar más de {{max}} ítems de qué llevar"
+        }
+    },
+    "experienceCertificate": {
+        "recipientName": {
+            "required": "Ingresá el nombre de quien hizo la experiencia",
+            "tooLong": "El nombre no puede superar los 120 caracteres",
+            "invalidCharacters": "El nombre no puede contener caracteres de control"
+        },
+        "completedAt": {
+            "format": "La fecha debe tener el formato AAAA-MM-DD"
         }
     },
     "experienceFeature": {
@@ -3045,6 +3225,36 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "dailySpecial": {
+            "title": {
+                "min": "El nombre del plato del día es obligatorio",
+                "max": "El nombre del plato del día no puede superar los {{max}} caracteres"
+            },
+            "description": {
+                "max": "La descripción del plato del día no puede superar los {{max}} caracteres"
+            },
+            "priceCents": {
+                "int": "El precio del plato del día debe ser un número entero de centavos",
+                "min": "El precio del plato del día no puede ser negativo",
+                "max": "El precio del plato del día supera el máximo permitido"
+            },
+            "validFrom": {
+                "invalid": "La fecha de inicio debe ser una fecha válida con formato AAAA-MM-DD"
+            },
+            "validOn": {
+                "invalid": "La fecha de consulta debe ser una fecha válida con formato AAAA-MM-DD"
+            },
+            "validUntil": {
+                "invalid": "La fecha de fin debe ser una fecha válida con formato AAAA-MM-DD",
+                "beforeValidFrom": "La fecha de fin no puede ser anterior a la de inicio",
+                "windowTooLong": "El plato del día no puede estar vigente más de {{max}} días",
+                "windowTooLong_one": "El plato del día no puede estar vigente más de {{max}} día",
+                "windowTooLong_other": "El plato del día no puede estar vigente más de {{max}} días"
+            }
+        },
+        "dailySpecials": {
+            "max": "El menú del día no puede tener más de {{max}} platos"
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -3056,6 +3266,38 @@
                 "required": "El resultado exitoso es obligatorio"
             }
         },
+        "event": {
+            "title": {
+                "min": "El título del evento es obligatorio",
+                "max": "El título del evento no puede superar los {{max}} caracteres"
+            },
+            "description": {
+                "max": "La descripción del evento no puede superar los {{max}} caracteres"
+            },
+            "dateRequiredForOnce": "Un evento con fecha necesita una fecha",
+            "dateForbiddenForWeekly": "Un evento semanal no lleva fecha: se repite todas las semanas",
+            "weekdayRequiredForWeekly": "Un evento semanal necesita un día de la semana",
+            "weekdayForbiddenForOnce": "Un evento con fecha no lleva día de la semana",
+            "endTimeEqualsStart": "La hora de fin no puede ser igual a la de inicio"
+        },
+        "eventDate": {
+            "invalid": "La fecha del evento no es válida (formato AAAA-MM-DD)"
+        },
+        "eventRecurrence": {
+            "invalid": "La repetición del evento no es válida"
+        },
+        "eventTime": {
+            "invalid": "La hora del evento no es válida (formato HH:MM)"
+        },
+        "eventWeekday": {
+            "int": "El día de la semana debe ser un número entero",
+            "range": "El día de la semana debe estar entre 0 (domingo) y 6 (sábado)"
+        },
+        "events": {
+            "max": "La agenda no puede tener más de {{max}} eventos",
+            "max_one": "La agenda no puede tener más de {{max}} evento",
+            "max_other": "La agenda no puede tener más de {{max}} eventos"
+        },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
         },
@@ -3065,6 +3307,54 @@
                     "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",
                     "min": "La lista ordenada debe contener al menos {{min}} elemento"
                 }
+            }
+        },
+        "menu": {
+            "sections": {
+                "max": "La carta no puede tener más de {{max}} secciones"
+            }
+        },
+        "menuFileKind": {
+            "invalid": "El tipo de archivo del menú no es válido"
+        },
+        "menuFileUrl": {
+            "invalid": "La URL del archivo del menú no es válida"
+        },
+        "menuItem": {
+            "name": {
+                "min": "El nombre del plato es obligatorio",
+                "max": "El nombre del plato no puede superar los {{max}} caracteres"
+            },
+            "description": {
+                "max": "La descripción del plato no puede superar los {{max}} caracteres"
+            },
+            "priceCents": {
+                "int": "El precio del plato debe ser un número entero de centavos",
+                "min": "El precio del plato no puede ser negativo",
+                "max": "El precio del plato supera el máximo permitido"
+            }
+        },
+        "menuItemPhoto": {
+            "url": {
+                "invalid": "La URL de la foto del plato no es válida"
+            },
+            "publicId": {
+                "max": "El identificador de la foto del plato no puede superar los {{max}} caracteres"
+            },
+            "alt": {
+                "max": "La descripción de la foto del plato no puede superar los {{max}} caracteres"
+            }
+        },
+        "menuSection": {
+            "name": {
+                "min": "El nombre de la sección es obligatorio",
+                "max": "El nombre de la sección no puede superar los {{max}} caracteres"
+            },
+            "description": {
+                "max": "La descripción de la sección no puede superar los {{max}} caracteres"
+            },
+            "items": {
+                "max": "Una sección no puede tener más de {{max}} platos"
             }
         },
         "menuUrl": {
@@ -4792,5 +5082,16 @@
             "failed": "La validación del esquema ha fallado"
         }
     },
-    "formHasErrors": "Revisá los campos marcados"
+    "formHasErrors": "Revisá los campos marcados",
+    "partnerLogoClick": {
+        "partnerId": {
+            "invalidUuid": "El ID del aliado debe ser un UUID válido",
+            "required": "El ID del aliado es obligatorio"
+        }
+    },
+    "partnerStats": {
+        "windowDays": {
+            "unsupported": "La ventana de días solicitada no está disponible"
+        }
+    }
 }

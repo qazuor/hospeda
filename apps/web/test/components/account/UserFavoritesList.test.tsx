@@ -34,7 +34,8 @@
  */
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { COLLECTION_CREATED_EVENT } from '../../../src/components/account/collection-created-event';
 import { UserFavoritesList } from '../../../src/components/account/UserFavoritesList.client';
 import { addToast } from '../../../src/store/toast-store';
 
@@ -184,6 +185,14 @@ function makeSuccessResponse() {
 function makeErrorResponse() {
     return new Response(JSON.stringify({ success: false, error: { message: 'Error de red' } }), {
         status: 500,
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+
+/** 403 error envelope carrying a machine-readable `error.code` (HOS-899). */
+function make403Response(code: string) {
+    return new Response(JSON.stringify({ success: false, error: { code, message: 'Forbidden' } }), {
+        status: 403,
         headers: { 'Content-Type': 'application/json' }
     });
 }
@@ -811,6 +820,113 @@ describe('UserFavoritesList', () => {
         await waitFor(() => {
             expect(screen.getByText(/Aún no tenés colecciones/i)).toBeInTheDocument();
         });
+    });
+
+    // ── HOS-999: collection-created broadcast ──────────────────────────────────
+
+    it('refetches "Mis colecciones" after a hospeda:collection-created event', async () => {
+        let collectionsCallCount = 0;
+        globalThis.fetch = makeRoutedFetchMock({
+            collectionsResponse: () => {
+                collectionsCallCount += 1;
+                return collectionsCallCount === 1
+                    ? makeEmptyCollectionsResponse()
+                    : makeCollectionsResponse([COLLECTION_1], 1);
+            }
+        });
+        renderList();
+
+        await waitFor(() => {
+            expect(screen.getByText(/Aún no tenés colecciones/i)).toBeInTheDocument();
+        });
+
+        fireEvent(
+            window,
+            new CustomEvent(COLLECTION_CREATED_EVENT, {
+                detail: { id: 'col-uuid-1', name: 'Viajes soñados' }
+            })
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Viajes soñados')).toBeInTheDocument();
+        });
+        expect(collectionsCallCount).toBeGreaterThanOrEqual(2);
+    });
+
+    it('removes its hospeda:collection-created listener on unmount', async () => {
+        globalThis.fetch = makeRoutedFetchMock();
+        const { unmount } = renderList();
+        await waitFor(() => {
+            expect(screen.getByText('Mis colecciones')).toBeInTheDocument();
+        });
+
+        const callsBefore = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length;
+        unmount();
+
+        fireEvent(
+            window,
+            new CustomEvent(COLLECTION_CREATED_EVENT, { detail: { id: 'col-x', name: 'X' } })
+        );
+
+        // No new fetch should fire for an unmounted component's listener.
+        expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore);
+    });
+
+    // ── HOS-899: collections entitlement gate ──────────────────────────────────
+
+    it('shows the upgrade cartel (not the empty state) on 403 ENTITLEMENT_REQUIRED', async () => {
+        globalThis.fetch = makeRoutedFetchMock({
+            collectionsResponse: () => make403Response('ENTITLEMENT_REQUIRED')
+        });
+        renderList();
+
+        await waitFor(() => {
+            expect(screen.getByText('Colecciones')).toBeInTheDocument();
+            expect(
+                screen.getByText(/Las colecciones están disponibles en los planes Plus y VIP/i)
+            ).toBeInTheDocument();
+        });
+
+        // The upgrade CTA links to the tourist pricing page, not a dead end.
+        const cta = screen.getByRole('link', { name: 'Ver planes' });
+        expect(cta).toHaveAttribute('href');
+        expect(cta.getAttribute('href')?.length).toBeGreaterThan(0);
+
+        // The ordinary "no collections yet" copy must NOT also render — this
+        // is the assertion that distinguishes the fix from a cartel that
+        // shows unconditionally.
+        expect(screen.queryByText(/Aún no tenés colecciones/i)).not.toBeInTheDocument();
+    });
+
+    it('does not show the upgrade cartel on a normal 200 empty collections list', async () => {
+        globalThis.fetch = makeRoutedFetchMock({
+            collectionsResponse: makeEmptyCollectionsResponse
+        });
+        renderList();
+
+        await waitFor(() => {
+            expect(screen.getByText(/Aún no tenés colecciones/i)).toBeInTheDocument();
+        });
+
+        expect(
+            screen.queryByText(/Las colecciones están disponibles en los planes Plus y VIP/i)
+        ).not.toBeInTheDocument();
+    });
+
+    it('does not show the upgrade cartel and does not crash on a generic 500', async () => {
+        globalThis.fetch = makeRoutedFetchMock({
+            collectionsResponse: () => new Response(null, { status: 500 })
+        });
+        renderList();
+
+        await waitFor(() => {
+            // Falls back to the ordinary empty state rather than any gate copy.
+            expect(screen.getByText(/Aún no tenés colecciones/i)).toBeInTheDocument();
+        });
+
+        expect(
+            screen.queryByText(/Las colecciones están disponibles en los planes Plus y VIP/i)
+        ).not.toBeInTheDocument();
     });
 
     it('uncollected count badge in section heading shows correct number', async () => {

@@ -83,3 +83,28 @@ export function buildFeaturedAddonOffers({
         nameFallback: NAME_FALLBACK_BY_SLUG[slug]
     }));
 }
+
+/**
+ * Whether the listing is CURRENTLY featured, from either independent source
+ * (SPEC-309 OQ-3). HOS-929 retired the owner self-service toggle: holding
+ * `featuredByEntitlement` now features the listing automatically, so "not
+ * featured" is exactly "holds neither source" — there is no separate
+ * "entitled but not yet toggled on" state to account for anymore.
+ *
+ * Used by {@link FeaturedAddonOffer.astro} to decide whether to render the
+ * upsell at all: pitching the add-on to a host who is already featured makes
+ * no sense.
+ *
+ * @param params.isFeatured - Admin-curated column.
+ * @param params.featuredByEntitlement - Billing-derived column.
+ * @returns `true` when the listing is featured for any reason.
+ */
+export function isAccommodationAlreadyFeatured({
+    isFeatured,
+    featuredByEntitlement
+}: {
+    readonly isFeatured: boolean;
+    readonly featuredByEntitlement: boolean;
+}): boolean {
+    return isFeatured || featuredByEntitlement;
+}

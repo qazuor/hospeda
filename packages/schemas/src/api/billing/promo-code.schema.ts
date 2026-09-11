@@ -36,8 +36,16 @@ export const PromoCodeDiscountTypeEnumSchema = z.nativeEnum(PromoCodeDiscountTyp
  * - `discount` — a percentage or fixed-amount deduction applied for N cycles
  *   (or forever when `durationCycles` is null).
  * - `trial_extension` — extends the subscription trial period by N days.
- * - `comp` — permanently comps the subscription (no charge, ever). Triggers
- *   the `comp` subscription status (Model β, SPEC-262 §7.3 / §14 decision 1).
+ * - `comp` — RETIRED as a redeemable effect (HOS-1171). The value stays in this
+ *   enum so historical rows remain READABLE — the two comp subscriptions live in
+ *   production were granted by redeeming `HOSPEDA_FREE`, and
+ *   `routes/billing/admin/subscription-promo-effect.ts` still reports the effect
+ *   of an already-comped subscription. Nothing REDEEMS it: `/promo-codes/apply`
+ *   answers 403, the self-serve checkout answers `invalid`, and `HOSPEDA_FREE`
+ *   itself is out of the seed baseline and deactivated in seeded environments.
+ *   A complimentary subscription is an admin action —
+ *   `POST /admin/billing/subscriptions/grant-comp` (`BILLING_MANAGE`) — exactly
+ *   like courtesy. Do NOT create new promo codes with this effect kind.
  *
  * @see {@link PromoEffectSchema} for the full discriminated-union shape.
  */
@@ -46,7 +54,10 @@ export enum PromoEffectKindEnum {
     DISCOUNT = 'discount',
     /** Trial period extension */
     TRIAL_EXTENSION = 'trial_extension',
-    /** Permanently complimentary — no billing ever */
+    /**
+     * Permanently complimentary — no billing ever.
+     * RETIRED as a redeemable effect (HOS-1171): read-only, for historical rows.
+     */
     COMP = 'comp'
 }
 
@@ -246,10 +257,21 @@ export const ApplyPromoCodeSchema = z.object({
     code: z
         .string({ message: 'zodError.billing.promoCode.apply.code.invalidType' })
         .min(1, { message: 'zodError.billing.promoCode.apply.code.min' }),
-    /** The billing customer ID to apply the code to */
+    /**
+     * The billing customer ID to apply the code to.
+     *
+     * OPTIONAL since HOS-1012 T-039: a self-service caller applying a code to
+     * their own account (the account page's trial-extension form) has no way to
+     * discover its billing customer UUID, and the route already refuses any id
+     * other than the caller's own unless the actor holds `ACCESS_API_ADMIN`.
+     * Omitting it therefore means "my own billing customer" — the route falls
+     * back to the `billingCustomerId` the middleware resolved from the session.
+     * An explicitly supplied foreign id is still rejected with 403.
+     */
     customerId: z
         .string({ message: 'zodError.billing.promoCode.apply.customerId.invalidType' })
-        .uuid({ message: 'zodError.billing.promoCode.apply.customerId.invalid' }),
+        .uuid({ message: 'zodError.billing.promoCode.apply.customerId.invalid' })
+        .optional(),
     /** Optional base amount in cents used to compute fixed discounts */
     amount: z
         .number({ message: 'zodError.billing.promoCode.apply.amount.invalidType' })

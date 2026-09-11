@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { BillingIntervalEnum } from '../../enums/billing-interval.enum.js';
-import { DowngradePreviewSchema, KeepSelectionsSchema } from './downgrade-preview.schema.js';
+import {
+    CommerceDowngradePreviewSchema,
+    CommerceKeepSelectionsSchema,
+    DowngradePreviewSchema,
+    KeepSelectionsSchema
+} from './downgrade-preview.schema.js';
 
 /**
  * Plan change status enum
@@ -71,6 +76,68 @@ export const PlanChangeRequestSchema = z.object({
 
 /** TypeScript type inferred from PlanChangeRequestSchema */
 export type PlanChangeRequest = z.infer<typeof PlanChangeRequestSchema>;
+
+/**
+ * Request body for the commerce tier change
+ * (`POST /api/v1/protected/commerce/{entityType}/change-plan`, HOS-1119).
+ *
+ * A deliberately NARROWER contract than {@link PlanChangeRequestSchema}, and
+ * every difference is a decision rather than an omission:
+ *
+ * - **`planSlug`, not `newPlanId`.** The accommodation route takes a plan UUID
+ *   because its picker reads the public plan list and already holds one. A
+ *   commerce tier has to be validated against ITS VERTICAL before it may be
+ *   subscribed (HOS-688 AC-35), and `resolveCommercePlanSlug` — the one place
+ *   that validation may live — speaks slugs. Taking a UUID here would mean
+ *   resolving the plan first and checking the vertical afterwards, i.e. a
+ *   second place that decides which plans a vertical may be on.
+ * - **No `billingInterval`.** The conclusion stands; its REASON has been
+ *   replaced. It used to be "every commerce plan is monthly and only monthly;
+ *   `commerceVerticalTier` hardcodes `annualPriceArs: null` for all six tiers",
+ *   which stopped being true in HOS-1285 — the six tiers sell a year now. The
+ *   field is still absent because a TIER change is not a CADENCE change: the
+ *   handler resolves both plans' prices, the prorated delta and the scheduled
+ *   downgrade against the interval the subscription is ALREADY on, read off
+ *   `subscription.interval`. Accepting one here would let a caller change
+ *   cadence through a route whose whole contract is "same cadence, different
+ *   tier".
+ * - **A NARROWER `keepSelections`.** The accommodation field steers three
+ *   dimensions — accommodations, promotions and per-accommodation photos — and
+ *   a commerce vertical has none of them. HOS-1122 gave commerce a downgrade,
+ *   so the field exists here now, restricted to the one dimension commerce
+ *   actually restricts: {@link CommerceKeepSelectionsSchema}'s `listingIds`.
+ *   Accepting the full shape would let a caller submit `photoKeepMap` against a
+ *   restaurant and have it silently ignored, which reads as "the server took my
+ *   choice" and is the failure mode this whole flow exists to avoid.
+ */
+export const CommercePlanChangeRequestSchema = z.object({
+    /**
+     * Slug of the tier to move to, within the caller's own vertical.
+     *
+     * Shape-validated here; MEMBERSHIP of the vertical is decided by
+     * `resolveCommercePlanSlug` and nowhere else. Not `.optional()` — unlike the
+     * checkout, where an absent tier sensibly means "the default", asking to
+     * change plan without saying to what is a malformed request, not a default.
+     */
+    planSlug: z
+        .string({ message: 'zodError.billing.planChange.planSlug.invalidType' })
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+            message: 'zodError.billing.planChange.planSlug.invalid'
+        })
+        .max(100, { message: 'zodError.billing.planChange.planSlug.max' }),
+    /**
+     * Optional owner selection of which LISTINGS to keep public when the tier
+     * change is a DOWNGRADE (HOS-1122). Ignored for upgrades — an upgrade only
+     * ever raises the cap, so there is nothing to choose between.
+     *
+     * Absent, or an empty array, means "use the default keep order"
+     * (most-recently-updated first), exactly as on the accommodation route.
+     */
+    keepSelections: CommerceKeepSelectionsSchema.optional()
+});
+
+/** TypeScript type inferred from CommercePlanChangeRequestSchema */
+export type CommercePlanChangeRequest = z.infer<typeof CommercePlanChangeRequestSchema>;
 
 /**
  * Variant of the plan-change response that fires when the change was
@@ -144,7 +211,21 @@ export const PlanChangeAppliedResponseSchema = z.object({
      * and may differ from the apply-time result if the host changes usage
      * between request and period end.
      */
-    restrictionPreview: DowngradePreviewSchema.optional()
+    restrictionPreview: DowngradePreviewSchema.optional(),
+    /**
+     * Request-time restriction preview for a COMMERCE downgrade (HOS-1122).
+     *
+     * A SEPARATE field from `restrictionPreview`, never a variant of it: the two
+     * describe different dimensions and exactly one of them is ever present. A
+     * commerce response carries this one; an accommodation response carries the
+     * other. Folding commerce into `restrictionPreview` would mean emitting
+     * `accommodations: { activeCount: 0 }` for a restaurant owner, which reads
+     * as a measurement and is not one.
+     *
+     * Same soft-fail and apply-time-recompute semantics as its sibling: absent
+     * means "preview unavailable", and the apply step recomputes fresh.
+     */
+    commerceRestrictionPreview: CommerceDowngradePreviewSchema.optional()
 });
 
 /**

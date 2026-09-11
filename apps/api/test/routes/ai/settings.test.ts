@@ -139,6 +139,23 @@ const VALID_SETTINGS_BLOB = {
             model: 'gpt-4o-mini',
             params: {}
         },
+        // HOS-400: chat_gastronomy/chat_experience are separate AiFeature
+        // values from `chat` (own metering counter per vertical), and the
+        // write record requires every AiFeature key.
+        chat_gastronomy: {
+            enabled: false,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
+        },
+        chat_experience: {
+            enabled: false,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
+        },
         search: {
             enabled: false,
             primaryProvider: 'openai',

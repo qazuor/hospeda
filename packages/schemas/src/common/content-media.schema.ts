@@ -251,3 +251,64 @@ export const ContentMediaReorderPayloadSchema = z.object({
 
 /** Inferred type for the shared reorder payload. */
 export type ContentMediaReorderPayload = z.infer<typeof ContentMediaReorderPayloadSchema>;
+
+// ============================================================================
+// Command payload — shared text-metadata PATCH input (HOS-1036)
+// ============================================================================
+
+/**
+ * Shared HTTP payload for `PATCH /<posts|events>/:id/media/:mediaId`.
+ *
+ * The editorial twin of `AccommodationMediaUpdatePayloadSchema` (HOS-388).
+ * Before this endpoint existed, the ONLY way to fix a typo in a post's `alt`
+ * text — or to write one at all, since the editor never offered the field —
+ * was to delete the photo and re-upload it, burning a second Cloudinary asset
+ * and losing the photo's gallery position.
+ *
+ * Text metadata ONLY. `url`, `publicId`, `moderationState`, `state`,
+ * `isFeatured`, `sortOrder` and the parent FK are server-controlled and
+ * intentionally absent, so extra keys in the body cannot smuggle them through
+ * (Zod strips unknown keys on a plain `z.object()`).
+ *
+ * All four fields are NULLABLE as well as optional:
+ * - omitted (`undefined`) → leave the existing column value untouched.
+ * - `null` → explicitly CLEAR the column (half of "correct a mistake").
+ * - a value → replace the column (same min/max as {@link BaseContentMediaSchema}).
+ *
+ * NO `.refine()` here on purpose (the Zod 4 gotcha documented on the
+ * accommodation twin): `.refine()` returns a wrapper whose `.shape` is
+ * inaccessible, so it could never again be spread into the per-entity service
+ * input schemas below. The "at least one field present" rule is refined on
+ * those INPUT schemas instead.
+ *
+ * @see packages/schemas/src/entities/post/subtypes/post.media.schema.ts
+ * @see packages/schemas/src/entities/event/subtypes/event.media.schema.ts
+ */
+export const ContentMediaUpdatePayloadSchema = z.object({
+    /** Short display caption (max 100 chars). `null` clears it; omit to leave unchanged. */
+    caption: z
+        .string()
+        .min(3, { message: 'zodError.common.contentMedia.caption.min' })
+        .max(100, { message: 'zodError.common.contentMedia.caption.max' })
+        .nullable()
+        .optional(),
+    /** Longer photo description (max 300 chars). `null` clears it; omit to leave unchanged. */
+    description: z
+        .string()
+        .min(10, { message: 'zodError.common.contentMedia.description.min' })
+        .max(300, { message: 'zodError.common.contentMedia.description.max' })
+        .nullable()
+        .optional(),
+    /** Accessible alt text (max 200 chars). `null` clears it; omit to leave unchanged. */
+    alt: z
+        .string()
+        .min(1, { message: 'zodError.common.contentMedia.alt.min' })
+        .max(200, { message: 'zodError.common.contentMedia.alt.max' })
+        .nullable()
+        .optional(),
+    /** Optional credits/source metadata. `null` clears it; omit to leave unchanged. */
+    attribution: ImageAttributionSchema.nullable().optional()
+});
+
+/** Inferred type for the shared text-metadata PATCH payload. */
+export type ContentMediaUpdatePayload = z.infer<typeof ContentMediaUpdatePayloadSchema>;

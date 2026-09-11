@@ -66,6 +66,9 @@ const STUB_OWNER_BASICO = {
     entitlements: ['CAN_LIST_ACCOMMODATION'],
     limits: { max_accommodations: 1 },
     isActive: true,
+    // HOS-1062 F1: the DTO carries the plan's public-catalogue visibility,
+    // resolved from `metadata.publicListing`.
+    publicListing: 'listed' as const,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z'
 };

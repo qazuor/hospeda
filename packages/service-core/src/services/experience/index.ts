@@ -11,9 +11,23 @@
  *   plus the composed-media read attach helpers
  * - Projection utilities — projectExperiencePublic / projectExperienceOwnerAvatar
  * - Permission helpers — granular COMMERCE_* gate wrappers
+ * - Certificate helpers (HOS-1057) — issueExperienceCertificate /
+ *   listExperienceCertificates / getExperienceCertificate
+ * - Entitlement resolver (HOS-1049) — resolveOwnerGrantsExperienceDirections
  * - Types — ExperienceHookState
  */
 
+// Certificate helpers (HOS-1057)
+export {
+    getExperienceCertificate,
+    issueExperienceCertificate,
+    listExperienceCertificates
+} from './experience.certificate';
+// Meeting-point directions entitlement resolver (HOS-1049)
+export {
+    type ResolveOwnerGrantsExperienceDirectionsInput,
+    resolveOwnerGrantsExperienceDirections
+} from './experience.directions-entitlement';
 // FAQ helpers
 export {
     addExperienceFaq,
@@ -22,13 +36,15 @@ export {
     reorderExperienceFaqs,
     updateExperienceFaq
 } from './experience.faq';
-// Media helpers (HOS-372)
+// Media helpers (HOS-372); the born-featured cover upload is HOS-803
 export {
+    addExperienceFeaturedMedia,
     addExperienceMedia,
     getExperienceMedia,
     removeExperienceMedia,
     reorderExperienceMedia,
-    setFeaturedExperienceMedia
+    setFeaturedExperienceMedia,
+    updateExperienceMedia
 } from './experience.media';
 // Media read/compose attach helpers (HOS-372)
 export {

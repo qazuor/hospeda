@@ -156,10 +156,15 @@ Sentry.captureMessage('moderation.degraded', 'warning');
 
 | Cron | Descripción | Frecuencia |
 |------|-------------|------------|
-| `apply-scheduled-plan-changes` | Aplica cambios de plan programados | Diario |
-| `trial-pre-end-notif` | Notifica usuarios antes de que termine el trial | Diario |
+| `apply-scheduled-plan-changes` | Aplica cambios de plan programados | Cada 15 min |
+| `trial-reconcile` | Concilia trials vencidos contra el proveedor (convierte; NO cancela) | Diario 02:00 |
 | `conversation-notification` | Procesa notificaciones de mensajes | Cada 5 min |
-| `trial-reactivate` | Reactiva trials expirados | Diario |
+
+> **Corregido por HOS-1302.** Dos de las cuatro filas nombraban jobs que no
+> existen: `trial-pre-end-notif` lo borró HOS-121, y `trial-reactivate` no está
+> registrado en ninguna parte. Y `apply-scheduled-plan-changes` corre cada 15
+> minutos, no a diario. Los nombres y las frecuencias salen de
+> `apps/api/src/cron/schedules.manifest.ts` — nunca de un nombre de archivo.
 
 ---
 

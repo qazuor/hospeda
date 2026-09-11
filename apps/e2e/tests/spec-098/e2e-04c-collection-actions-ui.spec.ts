@@ -72,10 +72,10 @@ async function attachSessionCookie(
 
 test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @ui @spec-098', () => {
     const userIds: string[] = [];
-    let plusPlanId: string | null = null;
+    let vipPlanId: string | null = null;
 
     test.beforeAll(async () => {
-        ({ planId: plusPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-plus' }));
+        ({ planId: vipPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-vip' }));
     });
 
     test.beforeEach(async ({ page }) => {
@@ -112,12 +112,12 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
             return;
         }
 
-        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
-        if (!plusPlanId) return;
+        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
+        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         // SPEC-113 bounces users with profile_completed = false to the completion
         // form, so a UI spec never reaches the account page it asserts on.
         await markProfileCompleted({ userId: user.id });

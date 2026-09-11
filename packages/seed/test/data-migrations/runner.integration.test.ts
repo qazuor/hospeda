@@ -47,6 +47,8 @@ const FIXTURES_DIR = path.resolve(__dirname, '__fixtures__/runner');
 const SUCCESS_DIR = path.join(FIXTURES_DIR, 'success');
 const FAILURE_DIR = path.join(FIXTURES_DIR, 'failure');
 const DESTRUCTIVE_DIR = path.join(FIXTURES_DIR, 'destructive');
+const REQUIRES_MISSING_DIR = path.join(FIXTURES_DIR, 'requires-columns-missing');
+const REQUIRES_PRESENT_DIR = path.join(FIXTURES_DIR, 'requires-columns-satisfied');
 
 const SCRATCH_TABLE = 'zzz_test_runner_scratch';
 const NAME_PREFIX = 'zzz-test-runner-';
@@ -205,5 +207,88 @@ describe('HOS-25 T-009: runMigrations (integration, real worktree DB)', () => {
 
         expect(result.applied).toEqual(['0001-zzz-test-runner-destructive-op']);
         expect(await readScratchNames()).toEqual(['0001-zzz-test-runner-destructive-op']);
+    });
+
+    // ── HOS-433: meta.requiresColumns ───────────────────────────────────────
+    //
+    // A data-migration that reads a column being dropped by a structural
+    // migration in the same deploy used to run against the already-dropped
+    // column, move zero rows, and be recorded `ok` — closing itself in the
+    // ledger forever. These assert the runner now refuses instead.
+
+    describe('meta.requiresColumns (HOS-433)', () => {
+        /**
+         * The gate only fires when there is DATA at stake, so a declared-missing
+         * column over an EMPTY table is legitimate and must pass. These tests
+         * therefore have to seed a row first.
+         */
+        async function seedScratchRow(): Promise<void> {
+            await getDb().execute(
+                sql`INSERT INTO ${sql.identifier(SCRATCH_TABLE)} (name) VALUES ('pre-existing')`
+            );
+        }
+
+        it('lets the run through when the column is missing but the table is EMPTY', async () => {
+            // The case CI caught. A database built from scratch runs every
+            // migration against the CURRENT schema, where a column dropped by a
+            // later structural migration never existed — and nothing was lost,
+            // because there was nothing there. Refusing here breaks
+            // `--data-migrate` on every fresh database.
+            const result = await runMigrations({
+                db: getDb(),
+                dir: REQUIRES_MISSING_DIR,
+                actor: STUB_ACTOR
+            });
+
+            expect(result.applied).toEqual(['0001-zzz-test-runner-requires-missing']);
+        });
+
+        it('aborts the run when a declared column is missing, without executing up()', async () => {
+            await seedScratchRow();
+            await expect(
+                runMigrations({
+                    db: getDb(),
+                    dir: REQUIRES_MISSING_DIR,
+                    actor: STUB_ACTOR
+                })
+            ).rejects.toThrow(/zzz_test_runner_scratch\.zzz_column_that_never_existed/);
+
+            // up() must never have run: only the row we seeded is present (the
+            // migration's own insert never happened), and no ledger row closed
+            // it out as applied.
+            expect(await readScratchNames()).toEqual(['pre-existing']);
+
+            const rows = await getDb()
+                .select()
+                .from(seedMigrations)
+                .where(sql`${seedMigrations.name} LIKE ${`%${NAME_PREFIX}%`}`);
+            expect(rows).toEqual([]);
+        });
+
+        it('names the migration and the run-order cause in the error', async () => {
+            await seedScratchRow();
+            await expect(
+                runMigrations({
+                    db: getDb(),
+                    dir: REQUIRES_MISSING_DIR,
+                    actor: STUB_ACTOR
+                })
+            ).rejects.toThrow(/0001-zzz-test-runner-requires-missing/);
+        });
+
+        it('runs a migration whose declared column exists', async () => {
+            await seedScratchRow();
+            const result = await runMigrations({
+                db: getDb(),
+                dir: REQUIRES_PRESENT_DIR,
+                actor: STUB_ACTOR
+            });
+
+            expect(result.applied).toEqual(['0001-zzz-test-runner-requires-present']);
+            expect(await readScratchNames()).toEqual([
+                'pre-existing',
+                '0001-zzz-test-runner-requires-present'
+            ]);
+        });
     });
 });

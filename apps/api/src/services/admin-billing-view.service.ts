@@ -263,6 +263,11 @@ export async function listSubscriptions(
     const rows = await db
         .select({
             id: billingSubscriptions.id,
+            // HOS-1314: selected so the admin grant-comp dialog can identify
+            // the billing customer behind a subscription row — see the field's
+            // JSDoc on AdminSubscriptionViewSchema for why this differs from
+            // `user.id` (a Hospeda `users.id`, not a `billing_customers.id`).
+            customerId: billingSubscriptions.customerId,
             rawStatus: billingSubscriptions.status,
             billingInterval: billingSubscriptions.billingInterval,
             currentPeriodStart: billingSubscriptions.currentPeriodStart,
@@ -292,6 +297,7 @@ export async function listSubscriptions(
 
         return {
             id: row.id,
+            customerId: row.customerId,
             status,
             rawStatus: row.rawStatus,
             user: mapUserRef(row),

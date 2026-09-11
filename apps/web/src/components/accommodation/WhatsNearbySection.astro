@@ -2,32 +2,52 @@
 /**
  * @file WhatsNearbySection.astro
  * @description "What's nearby" section for the accommodation detail page
- * (HOS-145 T-008). Purely presentational — it does NOT fetch data; it
- * receives an already-fetched `NearbyPoi[]` list as props (the SSR fetch is
- * T-009). Mirrors `DestinationPOISection.astro`'s structure, i18n
- * resolution, empty convention, and scoped-`<style>` grid approach, adding
- * a per-card distance badge (`formatDistanceKm`) since `NearbyPoi` extends
- * the public POI schema with `distanceKm` (great-circle distance from the
- * accommodation).
+ * (HOS-145 T-008, reworked by HOS-327). Purely presentational — it does NOT
+ * fetch data; it receives an already-fetched `NearbyPoi[]` list as props (the
+ * SSR fetch lives in `[lang]/alojamientos/[slug].astro`).
  *
- * Each card shows: a type-derived icon, the display name (resolves
+ * Each card shows: a category/type-derived icon, the display name (resolves
  * admin-editable multilang `nameI18n`, degrading to a humanized slug when
- * absent — see `poi-labels.ts`), a translated type label
- * (`destinations.poiTypeLabels.<TYPE>`), the distance from the
- * accommodation, and an optional 2-line description. `NearbyPoi` (derived
- * from `PointOfInterestPublicSchema`) only carries the legacy plain-text
- * `description` field — no `descriptionI18n` — so unlike
- * `DestinationPOISection.astro` there is no multilang description to
- * resolve here. Ordered by ascending distance — the backend already
- * returns nearest-first, but this component sorts defensively so the
- * presentational contract is self-contained. Renders nothing when there
- * are no nearby POIs.
+ * absent — see `poi-labels.ts`), and one metadata line combining the category
+ * label and the distance, plus an optional 2-line description.
+ *
+ * ## HOS-327
+ *
+ * Three changes, each with a reason worth keeping:
+ *
+ *  1. **The server order is PRESERVED.** The API ranks POIs by relevance now
+ *     (editorial weight decayed by distance — see
+ *     `point-of-interest.nearby-relevance.ts`), so the defensive
+ *     `sort((a, b) => a.distanceKm - b.distanceKm)` this component used to
+ *     apply would silently throw that ranking away and restore the exact
+ *     behaviour HOS-327 set out to remove. A presentational component must not
+ *     re-decide an ordering the server computed on purpose.
+ *  2. **A POI with its own page is LINKED**, using the same route and the same
+ *     `hasOwnPage` gate as `DestinationPOISection.astro`. Only the curated few
+ *     carry that flag; `/destinos/lugar/{slug}/` 404s for every other catalog
+ *     row, so an ungated link would be a broken link that neither `astro
+ *     check` nor `tsc` can see.
+ *  3. **`descriptionI18n` is preferred over the legacy plain `description`**,
+ *     the same multilang-first / legacy-fallback order the destination grid
+ *     uses. Both fields have always been on `PointOfInterestPublicSchema` (and
+ *     therefore on `NearbyPoi`); this component simply never read the
+ *     multilang one.
+ *
+ * The card itself was compacted: the section sits below the photos, the
+ * description and the price, and must not compete with them. The double
+ * box-shadow became a hairline border, the icon moved inline with the name,
+ * the type pill became plain metadata text, and the padding shrank — so the
+ * same information costs roughly half the vertical space it used to.
+ *
+ * Renders nothing when there are no nearby POIs.
  */
+import { formatDistanceKm } from '@/lib/format-distance';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { formatDistanceKm } from '@/lib/format-distance';
 import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import { buildUrl } from '@/lib/urls';
 import { getPoiCategoryColorScheme, getPoiCategoryIcon } from '@repo/icons';
 import type { NearbyPoi } from '@repo/schemas';
 
@@ -41,13 +61,14 @@ const { t } = createTranslations(locale);
 
 if (!pointsOfInterest || pointsOfInterest.length === 0) return;
 
-const sorted = [...pointsOfInterest]
-	.map((poi) => ({
-		...poi,
-		displayName: translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale }),
-		distanceLabel: formatDistanceKm({ distanceKm: poi.distanceKm, locale })
-	}))
-	.sort((a, b) => a.distanceKm - b.distanceKm);
+// HOS-327: NO re-sorting. The API already ordered these by relevance; sorting
+// by distance here would undo it.
+const items = pointsOfInterest.map((poi) => ({
+	...poi,
+	displayName: translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale }),
+	distanceLabel: formatDistanceKm({ distanceKm: poi.distanceKm, locale }),
+	resolvedDescription: resolveI18nText(poi.descriptionI18n, locale) || poi.description
+}));
 ---
 
 <section class="nearby-poi-section" aria-labelledby="nearby-poi-section-title">
@@ -55,8 +76,8 @@ const sorted = [...pointsOfInterest]
 		{t('accommodations.detail.nearbyPoi.title', 'Qué hay cerca')}
 	</h2>
 
-	<div class="nearby-poi-section__grid">
-		{sorted.map((poi) => {
+	<ul class="nearby-poi-section__grid">
+		{items.map((poi) => {
 			const categorySlug = poi.primaryCategory?.slug;
 			const Icon = categorySlug
 				? getPoiCategoryIcon({ slug: categorySlug })
@@ -74,29 +95,43 @@ const sorted = [...pointsOfInterest]
 				locale
 			});
 			return (
-				<div class="nearby-poi-section__card">
-					<span class="nearby-poi-section__icon" aria-hidden="true">
-						<Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
-					</span>
-					<h3 class="nearby-poi-section__name">{poi.displayName}</h3>
-					<div class="nearby-poi-section__meta">
-						<span class="nearby-poi-section__type-badge">{typeLabel}</span>
-						<span class="nearby-poi-section__distance">{poi.distanceLabel}</span>
+				<li class="nearby-poi-section__card">
+					<div class="nearby-poi-section__head">
+						<span class="nearby-poi-section__icon" aria-hidden="true">
+							<Icon size={20} weight="fill" color={iconColor} aria-hidden="true" />
+						</span>
+						<h3 class="nearby-poi-section__name">
+							{poi.hasOwnPage ? (
+								<a
+									class="nearby-poi-section__name-link"
+									href={buildUrl({ locale, path: `destinos/lugar/${poi.slug}` })}
+								>
+									{poi.displayName}
+								</a>
+							) : (
+								poi.displayName
+							)}
+						</h3>
 					</div>
-					{poi.description && (
-						<p class="nearby-poi-section__description">{poi.description}</p>
+					<p class="nearby-poi-section__meta">
+						<span class="nearby-poi-section__type">{typeLabel}</span>
+						<span class="nearby-poi-section__sep" aria-hidden="true">·</span>
+						<span class="nearby-poi-section__distance">{poi.distanceLabel}</span>
+					</p>
+					{poi.resolvedDescription && (
+						<p class="nearby-poi-section__description">{poi.resolvedDescription}</p>
 					)}
-				</div>
+				</li>
 			);
 		})}
-	</div>
+	</ul>
 </section>
 
 <style>
 	.nearby-poi-section {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 1rem;
 	}
 
 	.nearby-poi-section__title {
@@ -110,76 +145,105 @@ const sorted = [...pointsOfInterest]
 	.nearby-poi-section__grid {
 		display: grid;
 		grid-template-columns: 1fr;
-		gap: 1rem;
+		gap: 0.5rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
 	}
 
-	@media (min-width: 640px) {
+	@media (min-width: 560px) {
 		.nearby-poi-section__grid {
 			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 
-	@media (min-width: 1024px) {
+	@media (min-width: 900px) {
 		.nearby-poi-section__grid {
 			grid-template-columns: repeat(4, 1fr);
 		}
 	}
 
+	/*
+	 * HOS-327: a hairline border on the card surface instead of the previous
+	 * `--shadow-card` / `--shadow-card-hover` pair. Eight lifted, shadowed
+	 * cards read as a second gallery competing with the photos above; a flat
+	 * bordered tile reads as a list, which is what this is.
+	 */
 	.nearby-poi-section__card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		padding: 1.25rem;
+		gap: 0.25rem;
+		padding: 0.75rem 0.875rem;
 		background-color: var(--core-card);
-		border-radius: var(--radius-card);
-		box-shadow: var(--shadow-card);
-		transition: box-shadow var(--duration-fast) ease;
+		border: 1px solid var(--core-muted-foreground-a15);
+		border-radius: var(--radius-md);
+		transition: border-color var(--duration-fast) ease;
 	}
 
 	.nearby-poi-section__card:hover {
-		box-shadow: var(--shadow-card-hover);
+		border-color: var(--core-muted-foreground-a35);
+	}
+
+	.nearby-poi-section__head {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
 	}
 
 	.nearby-poi-section__icon {
 		display: inline-flex;
+		flex-shrink: 0;
 		color: var(--brand-primary);
 	}
 
 	.nearby-poi-section__name {
 		font-family: var(--font-heading);
-		font-size: 1rem;
+		font-size: 0.9375rem;
 		font-weight: 600;
+		line-height: 1.3;
 		color: var(--core-foreground);
 		margin: 0;
+		min-width: 0;
 	}
 
+	.nearby-poi-section__name-link {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.nearby-poi-section__name-link:hover,
+	.nearby-poi-section__name-link:focus-visible {
+		text-decoration: underline;
+	}
+
+	/*
+	 * One metadata line replaces the pill badge + separate distance. The pill
+	 * was the loudest element on the card and repeated on every one of them.
+	 */
 	.nearby-poi-section__meta {
 		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+		align-items: baseline;
 		flex-wrap: wrap;
-	}
-
-	.nearby-poi-section__type-badge {
+		gap: 0.375rem;
+		margin: 0;
 		font-family: var(--font-sans);
 		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--brand-primary);
-		background-color: var(--surface-warm);
-		border-radius: var(--radius-pill);
-		padding: 0.25rem 0.75rem;
-	}
-
-	.nearby-poi-section__distance {
-		font-family: var(--font-sans);
-		font-size: 0.75rem;
-		font-weight: 600;
 		color: var(--core-muted-foreground);
+	}
+
+	.nearby-poi-section__type {
+		font-weight: 600;
+	}
+
+	.nearby-poi-section__sep {
+		opacity: 0.6;
 	}
 
 	.nearby-poi-section__description {
 		font-family: var(--font-sans);
-		font-size: 0.875rem;
+		font-size: 0.8125rem;
+		line-height: 1.4;
 		color: var(--core-muted-foreground);
 		margin: 0;
 		display: -webkit-box;

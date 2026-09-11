@@ -42,6 +42,14 @@ export interface PublicRouteOptions extends CreateOpenApiRouteInterface {
 export interface ProtectedRouteOptions extends CreateOpenApiRouteInterface {
     /** Required permissions for this route */
     requiredPermissions?: PermissionEnum[];
+    /**
+     * OR-groups of permissions, ANDed together (HOS-1077).
+     *
+     * Each inner array passes when the actor holds ANY of its members. Use it
+     * when a route must accept either of two permissions — `requiredPermissions`
+     * is strictly AND and cannot express that. See `AuthorizationConfig`.
+     */
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[];
     /** Ownership configuration for resource access */
     ownership?: OwnershipConfig;
     /** Override default tags to include "Protected" prefix */
@@ -54,6 +62,14 @@ export interface ProtectedRouteOptions extends CreateOpenApiRouteInterface {
 export interface AdminRouteOptions extends CreateOpenApiRouteInterface {
     /** Required admin permissions for this route */
     requiredPermissions?: PermissionEnum[];
+    /**
+     * OR-groups of permissions, ANDed together (HOS-1077).
+     *
+     * Each inner array passes when the actor holds ANY of its members. Use it
+     * when a route must accept either of two permissions — `requiredPermissions`
+     * is strictly AND and cannot express that. See `AuthorizationConfig`.
+     */
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[];
     /** Override default tags to include "Admin" prefix */
     adminTag?: boolean;
 }
@@ -127,7 +143,13 @@ export const createPublicRoute = (options: PublicRouteOptions) => {
  * });
  */
 export const createProtectedRoute = (options: ProtectedRouteOptions) => {
-    const { protectedTag = true, requiredPermissions, ownership, ...routeOptions } = options;
+    const {
+        protectedTag = true,
+        requiredPermissions,
+        anyOfPermissions,
+        ownership,
+        ...routeOptions
+    } = options;
 
     // Add Protected tag prefix if enabled
     const tags = protectedTag
@@ -136,7 +158,7 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
 
     // Build middleware chain
     const middlewares: MiddlewareHandler[] = [
-        protectedAuthMiddleware(requiredPermissions),
+        protectedAuthMiddleware(requiredPermissions, anyOfPermissions),
         ...(routeOptions.options?.middlewares || [])
     ];
 
@@ -199,7 +221,7 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
  * });
  */
 export const createAdminRoute = (options: AdminRouteOptions) => {
-    const { adminTag = true, requiredPermissions, ...routeOptions } = options;
+    const { adminTag = true, requiredPermissions, anyOfPermissions, ...routeOptions } = options;
 
     // Add Admin tag prefix if enabled
     const tags = adminTag
@@ -213,7 +235,7 @@ export const createAdminRoute = (options: AdminRouteOptions) => {
             ...routeOptions.options,
             skipAuth: false,
             middlewares: [
-                adminAuthMiddleware(requiredPermissions),
+                adminAuthMiddleware(requiredPermissions, anyOfPermissions),
                 ...(routeOptions.options?.middlewares || [])
             ]
         }
@@ -240,6 +262,14 @@ export interface ProtectedListRouteOptions extends CreateOpenApiRouteInterface {
     requestQuery?: Record<string, z.ZodTypeAny>;
     allowedQueryParams?: string[];
     requiredPermissions?: PermissionEnum[];
+    /**
+     * OR-groups of permissions, ANDed together (HOS-1077).
+     *
+     * Each inner array passes when the actor holds ANY of its members. Use it
+     * when a route must accept either of two permissions — `requiredPermissions`
+     * is strictly AND and cannot express that. See `AuthorizationConfig`.
+     */
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[];
     protectedTag?: boolean;
 }
 
@@ -250,6 +280,14 @@ export interface AdminListRouteOptions extends CreateOpenApiRouteInterface {
     requestQuery?: Record<string, z.ZodTypeAny>;
     allowedQueryParams?: string[];
     requiredPermissions?: PermissionEnum[];
+    /**
+     * OR-groups of permissions, ANDed together (HOS-1077).
+     *
+     * Each inner array passes when the actor holds ANY of its members. Use it
+     * when a route must accept either of two permissions — `requiredPermissions`
+     * is strictly AND and cannot express that. See `AuthorizationConfig`.
+     */
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[];
     adminTag?: boolean;
 }
 
@@ -316,7 +354,7 @@ export const createPublicListRoute = (options: PublicListRouteOptions) => {
  * });
  */
 export const createProtectedListRoute = (options: ProtectedListRouteOptions) => {
-    const { protectedTag = true, requiredPermissions, ...routeOptions } = options;
+    const { protectedTag = true, requiredPermissions, anyOfPermissions, ...routeOptions } = options;
 
     // Add Protected tag prefix if enabled
     const tags = protectedTag
@@ -330,7 +368,7 @@ export const createProtectedListRoute = (options: ProtectedListRouteOptions) => 
             ...routeOptions.options,
             skipAuth: false,
             middlewares: [
-                protectedAuthMiddleware(requiredPermissions),
+                protectedAuthMiddleware(requiredPermissions, anyOfPermissions),
                 ...(routeOptions.options?.middlewares || [])
             ]
         }
@@ -358,7 +396,7 @@ export const createProtectedListRoute = (options: ProtectedListRouteOptions) => 
  * });
  */
 export const createAdminListRoute = (options: AdminListRouteOptions) => {
-    const { adminTag = true, requiredPermissions, ...routeOptions } = options;
+    const { adminTag = true, requiredPermissions, anyOfPermissions, ...routeOptions } = options;
 
     // Add Admin tag prefix if enabled
     const tags = adminTag
@@ -372,7 +410,7 @@ export const createAdminListRoute = (options: AdminListRouteOptions) => {
             ...routeOptions.options,
             skipAuth: false,
             middlewares: [
-                adminAuthMiddleware(requiredPermissions),
+                adminAuthMiddleware(requiredPermissions, anyOfPermissions),
                 ...(routeOptions.options?.middlewares || [])
             ]
         }

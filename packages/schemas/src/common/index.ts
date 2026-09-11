@@ -17,6 +17,8 @@ export {
     SortingParamsSchema,
     UuidSchema
 } from './base.schema.js';
+// Public amenity/feature projections shared by both commerce verticals (HOS-1072)
+export * from './commerce-catalog.schema.js';
 // Commerce listing publish-readiness ("complete") contract — single
 // canonical definition shared by web, service-core, and apps/api (HOS-166 R-5)
 export * from './commerce-completeness.js';
@@ -33,6 +35,8 @@ export * from './content-state.schema.js';
 // Relation-selector lookup options (SPEC-169 §5.5)
 export * from './entity-options.schema.js';
 export * from './faq.schema.js';
+// Shared shapes for the born-featured cover endpoints (HOS-803)
+export * from './featured-media.schema.js';
 export * from './helpers.schema.js';
 // Structured service-provider benefit, shared by alliance leads and host trades
 export * from './host-trade-benefit.schema.js';

@@ -140,9 +140,18 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-// Service layer mock: notification helper
+// Service layer mock: notification helper.
+//
+// This is a WHOLE-module mock, so any export the code under test reaches for and
+// this object omits arrives as `undefined` and throws only when called — inside
+// the producer's own best-effort catch, which turns it into "no notification was
+// sent" rather than an import error. That is exactly how HOS-1238 first showed up
+// here: `sendPaymentSuccessNotification` moved from `sendNotification` to
+// `trySendNotification` (it now needs the DELIVERY OUTCOME, so the silence of an
+// undelivered receipt can be reported), and this mock had only the former.
 vi.mock('../../src/utils/notification-helper', () => ({
-    sendNotification: vi.fn()
+    sendNotification: vi.fn(),
+    trySendNotification: vi.fn()
 }));
 
 import { getDb } from '@repo/db';
@@ -161,7 +170,7 @@ import {
     sanitizeErrorForNotification
 } from '../../src/routes/webhooks/mercadopago';
 import { AddonService } from '../../src/services/addon.service';
-import { sendNotification } from '../../src/utils/notification-helper';
+import { sendNotification, trySendNotification } from '../../src/utils/notification-helper';
 
 /**
  * Helper to create mock Hono context
@@ -758,7 +767,12 @@ describe('MercadoPago Webhook Handler', () => {
                     }
                 }
             });
-            vi.mocked(sendNotification).mockResolvedValue({ success: true, data: {} } as never);
+            // HOS-1238: the success producer now sends through
+            // `trySendNotification`, because it needs the DELIVERY OUTCOME — a
+            // receipt that did not go out has to be reportable, and
+            // `sendNotification` discards that by design. The failure sibling below
+            // still uses `sendNotification` and is asserted accordingly.
+            vi.mocked(trySendNotification).mockResolvedValue({ delivered: true });
 
             const context = createMockContext({ requestId: 'req_approved' });
             const event = createMockEvent({
@@ -771,10 +785,10 @@ describe('MercadoPago Webhook Handler', () => {
 
             // Flush fire-and-forget IIFE async notification by waiting for microtasks
             await vi.waitFor(() => {
-                expect(sendNotification).toHaveBeenCalled();
+                expect(trySendNotification).toHaveBeenCalled();
             });
 
-            expect(sendNotification).toHaveBeenCalledWith(
+            expect(trySendNotification).toHaveBeenCalledWith(
                 expect.objectContaining({
                     type: 'PAYMENT_SUCCESS',
                     recipientEmail: 'user@example.com',

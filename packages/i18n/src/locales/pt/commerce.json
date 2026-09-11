@@ -15,21 +15,8 @@
             "message": "Conte-nos sobre seu negócio (opcional)"
         },
         "prefillNotice": "Preenchemos seu nome e seu e-mail com os dados da sua conta. Você pode editá-los se o contato do negócio for outro: é para esse e-mail que vamos responder.",
-        "process": {
-            "title": "Como segue depois de enviar",
-            "step1": "Você envia o formulário com os dados do seu negócio.",
-            "step2": "Nossa equipe revisa sua solicitação e entra em contato para combinar os próximos passos. Costuma levar de 24 a 48 horas úteis.",
-            "step3": "Escrevemos por e-mail para combinar como incluir seu negócio na plataforma.",
-            "step4": "Você cria sua conta, completa a publicação e contrata o plano."
-        },
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",
-        "successDetail": {
-            "title": "Pronto! Recebemos sua solicitação.",
-            "sentTo": "Vamos escrever para você em {{email}}.",
-            "processTitle": "O que acontece agora",
-            "closing": "Se tiver dúvidas ou passarem alguns dias sem novidades, entre em contato que vamos verificar."
-        },
         "error": "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
         "rateLimited": "Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.",
         "validation": {
@@ -67,6 +54,34 @@
         "hidden": "Oculto",
         "pending": "Pendente"
     },
+    "brochure": {
+        "qrHint": "Escaneie o código para ver a ficha completa, com fotos e avaliações.",
+        "footer": "Ficha gerada por Hospeda — hospeda.com.ar",
+        "download": "Baixar ficha em PDF",
+        "downloading": "Gerando a ficha…",
+        "error": "Não conseguimos gerar a ficha. Tente novamente em instantes.",
+        "locked": "A ficha em PDF está disponível no plano Premium do seu ramo."
+    },
+    "certificate": {
+        "title": "Certificado",
+        "preamble": "O presente certifica que",
+        "connector": "realizou a experiência",
+        "qrHint": "Escaneie o código para conhecer a experiência.",
+        "footer": "Certificado emitido pelo prestador através da Hospeda — hospeda.com.ar",
+        "heading": "Certificados",
+        "intro": "Emita um certificado para quem fez a experiência. Pode baixar, imprimir ou compartilhar.",
+        "recipientLabel": "Nome de quem fez",
+        "dateLabel": "Dia em que fez",
+        "submit": "Emitir certificado",
+        "submitting": "Emitindo…",
+        "issuedOn": "Emitido em {date}",
+        "download": "Baixar PDF",
+        "downloading": "Gerando o certificado…",
+        "empty": "Você ainda não emitiu nenhum certificado.",
+        "error": "Não conseguimos emitir o certificado. Tente novamente em instantes.",
+        "downloadError": "Não conseguimos gerar o certificado. Tente novamente em instantes.",
+        "locked": "Os certificados estão disponíveis a partir do plano Profissional de Experiências."
+    },
     "owner": {
         "nav": "Meu comércio",
         "list": {
@@ -101,6 +116,27 @@
                     "label_other": "{{current}} de {{max}} experiências"
                 },
                 "upgrade": "Ampliar cota"
+            },
+            "views": {
+                "title": "Visualizações",
+                "unique": "únicos",
+                "total": "totais",
+                "error": "Não foi possível carregar suas visualizações. Tente novamente mais tarde."
+            },
+            "menuQr": {
+                "title": "QR do cardápio",
+                "scans": "leituras",
+                "device": "Dispositivo",
+                "os": "Sistema operacional",
+                "language": "Idioma",
+                "unknown": "Desconhecido",
+                "download": "Baixar QR (PNG)",
+                "downloaded": "Pronto, baixamos.",
+                "qrAlt": "Código QR que leva ao cardápio de {{name}}",
+                "encodes": "Leva a: {{url}}",
+                "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de gastronomia.",
+                "error": "Não foi possível carregar as leituras do QR. Tente novamente mais tarde.",
+                "empty": "Ainda não houve leituras neste período."
             }
         },
         "editor": {
@@ -113,7 +149,13 @@
                 "translations": "Traduções",
                 "amenities": "Serviços",
                 "price": "Preço",
-                "faqs": "Perguntas frequentes"
+                "faqs": "Perguntas frequentes",
+                "meetingPoint": "Ponto de encontro",
+                "practicalInfo": "Dados práticos",
+                "contactSocial": "Contato e redes",
+                "menu": "Cardápio",
+                "dailySpecials": "Menu do dia",
+                "venueEvents": "Eventos"
             },
             "sections": {
                 "type": "Categoria",
@@ -136,7 +178,35 @@
                 "destination": "Cidade / Destino",
                 "description": "Descrição",
                 "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
-                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
+                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo.",
+                "meetingPoint": "Ponto de encontro",
+                "meetingPointPlaceholder": "Ex.: Píer 3 do porto, em frente à cabine azul",
+                "meetingPointHint": "Onde a experiência começa. Pode ser um endereço ou uma referência do lugar.",
+                "meetingPointLat": "Latitude (opcional)",
+                "meetingPointLong": "Longitude (opcional)",
+                "meetingPointCoordsHint": "Se você informar as coordenadas, mostramos o ponto num mapa. Pode deixá-las vazias.",
+                "meetingPointDirections": "Como chegar",
+                "meetingPointDirectionsPlaceholder": "Estacione na descida municipal, na beira do rio\nO ônibus 4 deixa você na rotatória\nSão 300 m por estrada de saibro, procure o píer de madeira",
+                "meetingPointDirectionsHint": "Uma indicação por linha. Onde estacionar, qual ônibus, quanto se caminha desde a estrada, que referência procurar.",
+                "meetingPointDirectionsLocked": "O mapa e as indicações de como chegar não estão incluídos no seu plano. O ponto de encontro está, e continua publicado.",
+                "durationHours": "Duração — horas",
+                "durationMinutes": "Duração — minutos",
+                "durationHint": "Quanto dura a experiência. Deixe os dois campos vazios se preferir não publicar.",
+                "whatToBring": "O que levar",
+                "whatToBringPlaceholder": "Repelente\nCalçado fechado\nTraje de banho",
+                "whatToBringHint": "Um item por linha. O que a pessoa que se inscreve precisa levar.",
+                "requirements": "Requisitos",
+                "requirementsPlaceholder": "Idade mínima 12 anos\nSaber nadar\nNão indicado para gestantes",
+                "requirementsHint": "Um requisito por linha. Idade, condição física, saúde — o que for necessário para participar.",
+                "cancellationPolicy": "Política de cancelamento",
+                "cancellationPolicyPlaceholder": "Se houver alerta meteorológico ou o rio baixar, avisamos com 12 horas de antecedência e remarcamos sem custo.",
+                "cancellationPolicyHint": "O que acontece se o passeio não sair: chuva, vento, rio baixo, ou se não houver o mínimo de pessoas.",
+                "acceptsPrivateGroups": "Faço preço especial para grupos privados",
+                "acceptsPrivateGroupsHint": "Se ativar, a ficha convida a escrever para você sobre grupos. Não publicamos nenhuma tabela de preços."
+            },
+            "acceptsEvents": {
+                "label": "Aceito eventos (aniversários, empresas, casamentos)",
+                "hint": "Mostramos um botão de contato na sua ficha para que entrem em contato para esse tipo de consulta."
             },
             "contactField": {
                 "mobilePhone": "Telefone",
@@ -190,9 +260,23 @@
                 "moveUp": "Mover para cima",
                 "moveDown": "Mover para baixo",
                 "deleteConfirm": "Excluir esta pergunta?",
+                "deleteDialogTitle": "Excluir pergunta",
+                "deleteConfirmButton": "Excluir pergunta",
+                "deleting": "Excluindo...",
                 "saveError": "Não foi possível salvar a pergunta.",
                 "deleteError": "Não foi possível excluir a pergunta.",
-                "reorderError": "Não foi possível reordenar."
+                "reorderError": "Não foi possível reordenar.",
+                "channelIntro": {
+                    "title": "Por que ocultar ou restringir uma pergunta?",
+                    "body1": "\"Visível na página do local\" exibe a pergunta na página do estabelecimento e nos dados estruturados (JSON-LD) que os buscadores leem. \"Utilizável pela IA\" permite que o assistente de chat use esta pergunta para responder consultas.",
+                    "body2": "Desmarque \"Visível na página do local\" para informações úteis, mas que você não quer publicar: algo temporário, uma margem que prefere não prometer por escrito, ou uma dica que soa melhor numa conversa do que na vitrine.",
+                    "body3": "Desmarque \"Utilizável pela IA\" para conteúdo que você prefere mostrar exatamente como escrito, sem que o assistente o reformule.",
+                    "body4": "Importante: uma pergunta não visível na página, mas utilizável pela IA, não é privada. O assistente pode dizê-la a qualquer pessoa que perguntar pelo chat; ela só não aparece publicada na página."
+                },
+                "visibleOnListingLabel": "Visível na página do local",
+                "usableByAiLabel": "Utilizável pela IA",
+                "notVisibleBadge": "Não visível na página",
+                "notAiUsableBadge": "Não utilizável pela IA"
             },
             "noChanges": "Não há alterações para salvar",
             "success": "Alterações salvas.",
@@ -203,16 +287,19 @@
                 "gallery": "Galeria de fotos",
                 "add": "Adicionar foto",
                 "remove": "Remover",
-                "uploadHint": "JPG, PNG ou WebP — máx. {{maxSize}}MB",
-                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "uploadHint": "JPG, PNG, WebP ou HEIC — máx. {{maxSize}}MB",
+                "invalidType": "Apenas arquivos JPG, PNG, WebP ou HEIC são permitidos",
                 "tooLarge": "O arquivo não pode exceder {{maxSize}}MB",
                 "uploadFailed": "Erro ao enviar a imagem",
                 "uploadTimeout": "O envio demorou demais. Tente novamente.",
                 "uploadingBatch": "Enviando foto {{current}} de {{total}}…",
+                "processingImage": "Otimizando imagem…",
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}}MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
                 "capReached_one": "Limite da galeria atingido (máx. {{cap}} foto)",
                 "capReached_other": "Limite da galeria atingido (máx. {{cap}} fotos)",
                 "featuredFailed": "No se pudo marcar la imagen como principal",
                 "persistFailed": "No se pudo guardar la imagen en la base de datos",
+                "metadataSaveFailed": "Não foi possível salvar os dados da foto",
                 "removeFailed": "No se pudo eliminar la imagen"
             },
             "slugFollowsNameNotice": "O endereço web da sua ficha (a URL dela) vai acompanhar o nome até você publicá-la.",
@@ -221,6 +308,139 @@
                 "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome.",
                 "warning": "Se você mudar o endereço web, isso pode afetar como ele aparece hoje no Google ou em links que você já compartilhou.",
                 "checkbox": "Mudar também o endereço web para que ele siga este novo nome"
+            },
+            "group": {
+                "listing": "Sua ficha",
+                "content": "Conteúdo",
+                "management": "Gestão"
+            },
+            "breadcrumb": {
+                "listings": "Meus comércios"
+            },
+            "pageDescription": "Editar as informações da sua ficha",
+            "hub": {
+                "subtitle": "Escolha o que você quer editar",
+                "status": {
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
+                    "faqs_one": "{{count}} pergunta",
+                    "faqs_other": "{{count}} perguntas",
+                    "selected_one": "{{count}} selecionado",
+                    "selected_other": "{{count}} selecionados",
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                }
+            },
+            "amenities": {
+                "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente."
+            },
+            "menuManager": {
+                "title": "Cardápio",
+                "intro": "Carregue o cardápio prato a prato ou envie uma foto ou um PDF dele. Você pode usar as duas formas, e nenhuma é obrigatória.",
+                "fileTitle": "Foto ou PDF do cardápio",
+                "filePdf": "Ver o PDF",
+                "fileImage": "Ver a foto",
+                "fileUnavailable": "Não é possível abrir este arquivo. Exclua-o e envie novamente.",
+                "addFile": "Enviar foto ou PDF",
+                "replaceFile": "Substituir o arquivo",
+                "removeFile": "Excluir",
+                "uploaded": "Arquivo do cardápio enviado.",
+                "fileRemoved": "Arquivo do cardápio excluído.",
+                "uploadError": "Não foi possível enviar o arquivo do cardápio.",
+                "deleteError": "Não foi possível excluir o arquivo do cardápio.",
+                "sectionsTitle": "Pratos por seção",
+                "newSection": "Nova seção",
+                "sectionName": "Nome da seção",
+                "sectionNamePlaceholder": "Entradas, Principais, Sobremesas…",
+                "addSection": "Adicionar seção",
+                "removeSection": "Remover",
+                "moveSectionUp": "Subir a seção",
+                "moveSectionDown": "Descer a seção",
+                "itemName": "Nome do prato",
+                "itemNamePlaceholder": "Nome do prato",
+                "itemDescription": "Descrição do prato",
+                "itemDescriptionPlaceholder": "Ingredientes, porção…",
+                "itemPrice": "Preço do prato",
+                "itemPricePlaceholder": "Sob consulta",
+                "itemAvailable": "Disponível",
+                "addItem": "Adicionar prato",
+                "removeItem": "Remover",
+                "save": "Salvar cardápio",
+                "saving": "Salvando…",
+                "saved": "Cardápio salvo.",
+                "saveError": "Não foi possível salvar o cardápio.",
+                "locked": "Carregar o cardápio prato a prato está disponível a partir do plano Profissional. Enquanto isso você pode enviar uma foto ou um PDF do cardápio, ou deixar o link.",
+                "addPhoto": "Adicionar foto",
+                "replacePhoto": "Trocar a foto",
+                "removePhoto": "Remover a foto",
+                "photoPreview": "Foto do prato",
+                "photoAlt": "Texto alternativo da foto",
+                "photoAltPlaceholder": "Descreva a foto (opcional)",
+                "photoAttached": "Foto adicionada. Lembre de salvar o cardápio.",
+                "photoUploadError": "Não foi possível enviar a foto do prato.",
+                "photoLocked": "As fotos por prato estão disponíveis no plano Premium. Você pode remover as fotos e salvar o cardápio mesmo assim.",
+                "translations": "Traduções (EN/PT)",
+                "nameEn": "Nome em inglês",
+                "nameEnPlaceholder": "Nome em inglês",
+                "namePt": "Nome em português",
+                "namePtPlaceholder": "Nome em português",
+                "descriptionEn": "Descrição em inglês",
+                "descriptionEnPlaceholder": "Descrição em inglês",
+                "descriptionPt": "Descrição em português",
+                "descriptionPtPlaceholder": "Descrição em português",
+                "translationLocked": "Traduzir o cardápio está disponível no plano Premium. Você pode apagar as traduções e salvar o cardápio apenas em espanhol.",
+                "translationLockedHint": "Disponível no plano Premium. Apague o inglês e o português para salvar o cardápio apenas em espanhol."
+            },
+            "dailySpecials": {
+                "title": "Menu do dia",
+                "intro": "O prato do dia ou a sugestão do chef. Cada um vale até a data que você definir e depois deixa de aparecer sozinho — você nunca precisa tirá-lo.",
+                "newSpecial": "Novo prato do dia",
+                "titleLabel": "Prato",
+                "titlePlaceholder": "Milanesa à napolitana com purê",
+                "descriptionLabel": "Detalhe",
+                "descriptionPlaceholder": "Com acompanhamento e sobremesa",
+                "priceLabel": "Preço em pesos",
+                "pricePlaceholder": "Preço",
+                "from": "De",
+                "until": "Até",
+                "moveUp": "Subir",
+                "moveDown": "Descer",
+                "remove": "Remover",
+                "add": "Adicionar prato do dia",
+                "save": "Salvar menu do dia",
+                "saving": "Salvando…",
+                "saved": "Menu do dia salvo.",
+                "saveError": "Não foi possível salvar o menu do dia.",
+                "locked": "O menu do dia está disponível a partir do plano Profissional.",
+                "expired": "Já venceu — não está sendo exibido.",
+                "scheduled": "Programado — ainda não é exibido."
+            },
+            "venueEventsManager": {
+                "title": "Agenda do local",
+                "intro": "Avise seus clientes quando algo acontece no seu local: música ao vivo, happy hour, a promoção de terça-feira.",
+                "newEntry": "Novo evento",
+                "entryTitle": "Título",
+                "titlePlaceholder": "Música ao vivo, Happy hour…",
+                "entryDescription": "Descrição",
+                "descriptionPlaceholder": "Detalhe opcional",
+                "moveUp": "Subir o evento",
+                "moveDown": "Descer o evento",
+                "removeEntry": "Remover",
+                "recurrenceWeekly": "Toda semana",
+                "recurrenceOnce": "Um único dia",
+                "weekday": "Dia da semana",
+                "date": "Data",
+                "startTime": "Horário de início",
+                "endTime": "Horário de término (opcional)",
+                "active": "Ativo",
+                "addEntry": "Adicionar evento",
+                "maxReached": "Você atingiu o limite de {{max}} eventos.",
+                "maxReached_one": "Você atingiu o limite de {{max}} evento.",
+                "maxReached_other": "Você atingiu o limite de {{max}} eventos.",
+                "save": "Salvar agenda",
+                "saving": "Salvando…",
+                "saved": "Agenda salva.",
+                "saveError": "Não foi possível salvar a agenda.",
+                "locked": "Manter uma agenda de eventos está disponível a partir do plano Profissional."
             }
         },
         "checklist": {
@@ -242,21 +462,67 @@
             "incompleteError": "Ainda faltam dados para publicar.",
             "alreadySubscribedError": "Este comércio já tem uma assinatura ativa.",
             "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente.",
+            "invalidPlanError": "O plano escolhido não está mais disponível. Recarregue a página e tente novamente.",
             "publishCtaFree": "Publicar",
-            "publishingFree": "Publicando..."
+            "publishingFree": "Publicando...",
+            "publishCtaTrial_one": "Publicar grátis por {{count}} dia",
+            "publishCtaTrial_other": "Publicar grátis por {{count}} dias",
+            "publishCtaTrialNoCount": "Publicar grátis"
+        },
+        "planPicker": {
+            "title": "Escolha seu plano",
+            "subtitle": "Você pode mudar de plano mais tarde pela sua conta.",
+            "confirm": "Continuar"
+        },
+        "planChange": {
+            "currentLabel": "Plano atual",
+            "cta": "Mudar de plano",
+            "error": {
+                "400": "O plano escolhido não é válido.",
+                "404": "Não encontramos uma assinatura ativa para mudar de plano.",
+                "409": "Você tem um cancelamento pendente — não é possível mudar de plano até que seja resolvido.",
+                "410": "Esse plano não está mais disponível.",
+                "422": "Esse plano custa o mesmo que o atual, então não há nada a mudar.",
+                "503": "O serviço de pagamentos está indisponível no momento. Tente novamente mais tarde.",
+                "generic": "Não conseguimos mudar seu plano. Tente novamente mais tarde.",
+                "previewUnavailable": "Não conseguimos calcular quais fichas ficariam fora desse plano. Tente novamente mais tarde."
+            },
+            "note": {
+                "upgrade": "Você paga a diferença proporcional agora e passa a valer imediatamente.",
+                "downgrade": "Sem cobrança. Passa a valer em {date}.",
+                "downgradeNoDate": "Sem cobrança. Passa a valer no fim do período que você já pagou."
+            },
+            "scheduled": {
+                "title": "Mudança agendada",
+                "body": "Seu plano muda para {plan} em {date}. Até lá nada muda: você continua no {current} e com todas as suas fichas visíveis."
+            },
+            "keepPanel": {
+                "title": "Escolha quais fichas continuam visíveis",
+                "intro_one": "O plano {plan} inclui {cap} da sua {active} ficha. Se você não a escolher, deixará de aparecer.",
+                "intro_other": "O plano {plan} inclui {cap} das suas {active} fichas. As que você não escolher deixarão de aparecer.",
+                "when": "A mudança se aplica em {date}. Até lá você continua no seu plano atual e com todas as suas fichas visíveis.",
+                "whenNoDate": "A mudança se aplica no fim do período que você já pagou. Até lá nada muda.",
+                "quotaNote": "Uma ficha oculta continua ocupando espaço na sua cota: você não poderá criar outra no lugar dela. Ela volta a aparecer se você subir de plano.",
+                "overCap": "Você escolheu {selected} e o plano permite {cap}. Desmarque {extra}.",
+                "listLabel": "Suas fichas desta categoria",
+                "suggested": "Sugerida",
+                "confirm": "Agendar a mudança"
+            }
+        },
+        "entitlements": {
+            "manageGastronomyMenu": "Cardápio estruturado",
+            "menuItemPhotos": "Foto por prato",
+            "manageExperienceDirections": "Mapa e como chegar",
+            "issueExperienceCertificate": "Certificados de experiência",
+            "manageGastronomyDailySpecial": "Menu do dia",
+            "manageGastronomyEvents": "Agenda de eventos",
+            "multilingualGastronomyMenu": "Cardápio em vários idiomas",
+            "menuQrScanMetrics": "QR do cardápio com painel de escaneamentos",
+            "manageExperiencePrivateGalleries": "Galerias privadas por cliente",
+            "aiChat": "Chat com IA na sua ficha",
+            "downloadListingPdf": "Ficha em PDF para imprimir"
         },
         "create": {
-            "pickVertical": {
-                "title": "Criar novo comércio",
-                "subtitle": "Escolha que tipo de comércio você quer publicar.",
-                "gastronomyDescription": "Restaurantes, bares, cafés e outros locais gastronômicos.",
-                "experienceDescription": "Passeios, excursões, aluguéis e outras experiências."
-            },
-            "title": {
-                "gastronomy": "Criar ficha de gastronomia",
-                "experience": "Criar ficha de experiência"
-            },
-            "subtitle": "Preencha o básico agora — você vai poder adicionar fotos, horários e mais detalhes depois.",
             "fields": {
                 "name": {
                     "gastronomy": "Nome do comércio",
@@ -284,7 +550,7 @@
         "gastronomy": {
             "benefits": {
                 "tagline": "Por que Hospeda?",
-                "title": "Benefícios para seu restaurante",
+                "title": "Benefícios para seu local gastronômico",
                 "item1": {
                     "title": "Visibilidade regional",
                     "desc": "Apareça onde milhares de viajantes procuram onde comer em Concepción del Uruguay e no litoral entrerriano."
@@ -316,9 +582,13 @@
             },
             "price": {
                 "tagline": "Um único plano, simples",
+                "taglineMulti": "Escolha o plano ideal para o seu comércio",
                 "title": "Gastronomia Premium",
                 "priceSuffix": "/mês",
-                "trial": "30 dias de teste grátis",
+                "fromPrefix": "A partir de ",
+                "tiersTitle": "Escolha seu plano",
+                "trial_one": "{{count}} dia de teste grátis",
+                "trial_other": "{{count}} dias de teste grátis",
                 "feature1": "1 ficha de gastronomia publicada",
                 "feature2": "Presença no catálogo do Hospeda",
                 "feature3": "Sem comissão por reserva ou consulta",
@@ -328,8 +598,10 @@
             "faq": {
                 "tagline": "Tire suas dúvidas",
                 "title": "Perguntas frequentes",
-                "q1": "Quanto custa publicar meu restaurante no Hospeda?",
-                "a1": "Um pagamento mensal fixo, com 30 dias de teste grátis. Sem comissão por reserva ou consulta.",
+                "q1": "Quanto custa publicar meu local gastronômico no Hospeda?",
+                "a1_one": "Um pagamento mensal fixo, com {{count}} dia de teste grátis. Sem comissão por reserva ou consulta.",
+                "a1_other": "Um pagamento mensal fixo, com {{count}} dias de teste grátis. Sem comissão por reserva ou consulta.",
+                "a1NoTrial": "Um pagamento mensal fixo. Sem comissão por reserva ou consulta.",
                 "q2": "Existe algum compromisso de permanência?",
                 "a2": "Não. Você pode cancelar sua assinatura quando quiser pela sua conta.",
                 "q3": "Quantas fichas posso publicar?",
@@ -371,9 +643,13 @@
             },
             "price": {
                 "tagline": "Um único plano, simples",
+                "taglineMulti": "Escolha o plano ideal para a sua experiência",
                 "title": "Experiências Premium",
                 "priceSuffix": "/mês",
-                "trial": "30 dias de teste grátis",
+                "fromPrefix": "A partir de ",
+                "tiersTitle": "Escolha seu plano",
+                "trial_one": "{{count}} dia de teste grátis",
+                "trial_other": "{{count}} dias de teste grátis",
                 "feature1": "1 ficha de experiência publicada",
                 "feature2": "Presença no catálogo do Hospeda",
                 "feature3": "Sem comissão por reserva ou consulta",
@@ -384,7 +660,9 @@
                 "tagline": "Tire suas dúvidas",
                 "title": "Perguntas frequentes",
                 "q1": "Quanto custa publicar minha experiência no Hospeda?",
-                "a1": "Um pagamento mensal fixo, com 30 dias de teste grátis. Sem comissão por reserva ou consulta.",
+                "a1_one": "Um pagamento mensal fixo, com {{count}} dia de teste grátis. Sem comissão por reserva ou consulta.",
+                "a1_other": "Um pagamento mensal fixo, com {{count}} dias de teste grátis. Sem comissão por reserva ou consulta.",
+                "a1NoTrial": "Um pagamento mensal fixo. Sem comissão por reserva ou consulta.",
                 "q2": "Existe algum compromisso de permanência?",
                 "a2": "Não. Você pode cancelar sua assinatura quando quiser pela sua conta.",
                 "q3": "Quantas fichas posso publicar?",

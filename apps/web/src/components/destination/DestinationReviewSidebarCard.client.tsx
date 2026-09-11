@@ -35,6 +35,7 @@ import {
     useState
 } from 'react';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -229,6 +230,11 @@ export function DestinationReviewSidebarCard({
         }, 200);
     }, []);
 
+    // Back button closes the dialog instead of leaving the page (HOS-334).
+    // This form uses a native <dialog>, not the shared `Dialog`, so it wires
+    // the hook directly — same pattern as AiChatWidget.
+    useDialogHistoryBack({ isOpen: open, onClose: handleClose });
+
     const setDimension = useCallback((key: RatingKey, value: number) => {
         setRatings((prev) => ({ ...prev, [key]: value }));
     }, []);
@@ -377,7 +383,7 @@ export function DestinationReviewSidebarCard({
 
             <dialog
                 ref={dialogRef}
-                className={styles.dialog}
+                className={`${styles.dialog} dialog-panel`}
                 aria-labelledby={dialogTitleId}
                 onClose={() => setOpen(false)}
                 onClick={(event) => {

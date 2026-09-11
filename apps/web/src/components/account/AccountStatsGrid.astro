@@ -2,11 +2,13 @@
 /**
  * @file AccountStatsGrid.astro
  * @description Quick stats grid for the account dashboard.
- * Shows favorites count, reviews count, and subscription status.
- * Values are updated client-side via DOM id references from the parent page script.
+ * Renders one of three audience branches — tourist (favorites + reviews),
+ * host (properties + messages), or commerce owner (listings, HOS-1293) — plus
+ * the subscription card, always shown. Values are updated client-side via DOM
+ * id references from the parent page script.
  */
 
-import { FavoriteIcon, StarIcon, CreditCardIcon, BuildingIcon, ChatIcon } from '@repo/icons';
+import { FavoriteIcon, StarIcon, CreditCardIcon, BuildingIcon, ChatIcon, BriefcaseIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -17,9 +19,18 @@ interface Props {
     /** When true, renders host-specific stat cards (properties + messages) instead of
      *  the default tourist cards (favorites + reviews). The subscription card is always shown. */
     readonly isHost?: boolean;
+    /**
+     * When true AND `isHost` is false, renders the commerce-owner listings
+     * card instead of the tourist pair (HOS-1293). A commerce-only owner
+     * (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role) used to fall
+     * into the tourist branch — Favoritos/Reseñas, neither of which
+     * describes their account. Host wins over commerce when an account
+     * holds both hats, same precedence `resolveSubscriptionPlansPath` uses.
+     */
+    readonly isCommerceOwner?: boolean;
 }
 
-const { locale, isHost = false } = Astro.props;
+const { locale, isHost = false, isCommerceOwner = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
@@ -38,10 +49,32 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
 // `data-label-${planStatus}`, so without this attribute a `comp` subscriber
 // keeps the placeholder and the card reads as if they had nothing (H-130).
 const statCompStatus = t('account.pages.dashboard.stats.compStatus', 'Bonificado');
+// HOS-1066: an account can hold more than one active subscription across
+// product domains (e.g. an accommodation host who also runs a gastronomy
+// listing). `/users/me/stats` then reports `plan: null` with
+// `activeSubscriptionsCount > 1` instead of picking one arbitrarily. The
+// actual count is only known after the client-side fetch, so — same
+// pattern as `maps/AccommodationsListingMap.client.tsx`'s
+// `resultsCountOne`/`resultsCountOther` — both CLDR plural templates are
+// resolved here with their `{{count}}` placeholder left raw, and the client
+// script picks the right one and interpolates the real count at runtime.
+const statMultipleSubscriptionsOne = t(
+    'account.pages.dashboard.stats.multipleSubscriptions_one',
+    '{{count}} suscripción activa'
+);
+const statMultipleSubscriptionsOther = t(
+    'account.pages.dashboard.stats.multipleSubscriptions_other',
+    '{{count}} suscripciones activas'
+);
 const statPropertiesLabel = t('account.pages.dashboard.stats.properties', 'Mis propiedades');
 const statPropertiesDesc = t('account.pages.dashboard.stats.propertiesDesc', 'Alojamientos publicados');
 const statMessagesLabel = t('account.pages.dashboard.stats.messages', 'Mensajes sin leer');
 const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consultas de huéspedes');
+// HOS-1293: the commerce-owner branch. Separate labels from the host pair
+// above — "propiedades" describes accommodation, not a gastronomy or
+// experience listing.
+const statListingsLabel = t('account.pages.dashboard.stats.listings', 'Mis fichas');
+const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas publicadas');
 ---
 
 <div class="account__stats-grid">
@@ -74,6 +107,32 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
                 <p class="account__stat-desc">{statMessagesDesc}</p>
                 <a href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })} class="account__stat-link">
                     {viewLabel} {statMessagesLabel.toLowerCase()}
+                </a>
+            </article>
+        </>
+    ) : isCommerceOwner ? (
+        <>
+            <!--
+              Commerce owner: listings stat (HOS-1293). Only ONE card, not a
+              pair like the host/tourist branches: this platform has no
+              conversation/inquiry model for gastronomy or experience listings
+              — `conversations.accommodationId` is the table's only listing
+              FK — so a "mensajes" card here would have to be backed by
+              either a made-up number or the GUEST-side inbox count (the
+              owner's own outgoing tourist conversations, an unrelated fact).
+              Both are worse than one honest card.
+            -->
+            <article class:list={['account__stat-card', styles.branded]}>
+                <div class="account__stat-card-header">
+                    <h3 class="account__stat-card-title">{statListingsLabel}</h3>
+                    <span class="account__stat-icon" aria-hidden="true">
+                        <BriefcaseIcon size={20} weight="fill" aria-hidden="true" />
+                    </span>
+                </div>
+                <p id="stat-commerce-listings" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p class="account__stat-desc">{statListingsDesc}</p>
+                <a href={buildUrl({ locale, path: 'mi-cuenta/comercio' })} class="account__stat-link">
+                    {viewLabel} {statListingsLabel.toLowerCase()}
                 </a>
             </article>
         </>
@@ -123,6 +182,8 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
             id="stat-subscription"
             class="account__stat-value stat-value--loading"
             data-label-free={statFreeStatus}
+            data-label-multiple-one={statMultipleSubscriptionsOne}
+            data-label-multiple-other={statMultipleSubscriptionsOther}
             aria-live="polite"
         >
             {statSubscriptionDesc}

@@ -1,0 +1,123 @@
+---
+/**
+ * @file ExperiencePrivateGroups.astro
+ * @description The private-groups invitation and its CTA (HOS-1056).
+ *
+ * ## Deliberately small
+ *
+ * A toggle, a sentence, and a link to the contact the ficha already publishes.
+ * No rate card, no quote calculator, no group booking. A price table by group
+ * size is an entire pricing model, and the provider is going to want to talk
+ * before closing anyway: the toggle captures the intent, the conversation
+ * closes the deal. Same scope call as the events room in gastronomy (HOS-1055).
+ *
+ * ## The CTA degrades instead of pointing at nothing
+ *
+ * This is the part worth reading before changing anything. `ExperienceContactBlock`
+ * renders NOTHING when the listing publishes no usable channel, and this CTA is
+ * an anchor into that block. So the page passes `hasContactBlock`, computed from
+ * the same `hasPublicContactChannel` predicate the block itself uses, and when it
+ * is false the invitation renders as plain text with no link.
+ *
+ * The alternative — always emitting the anchor — is a link that scrolls nowhere,
+ * with no console error and nothing visibly wrong. That is the exact family of
+ * bug HOS-363 measured on this page (a WhatsApp CTA reading a field the public
+ * payload never carried, so it never rendered at all) and HOS-924 (an experience
+ * published with no visible contact). A group CTA hung off a dead channel would
+ * be born dead in the same way, and the issue says so explicitly.
+ *
+ * Not entitlement-gated — ficha data from the basic tier (owner decision,
+ * 2026-09-01).
+ */
+
+import { EXPERIENCE_CONTACT_ANCHOR_ID } from '@/lib/experience-contact';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Whether the owner ticked the private-groups toggle. */
+    readonly acceptsPrivateGroups: boolean;
+    /**
+     * Whether `ExperienceContactBlock` will actually render on this page.
+     * Decides whether the CTA is a link or a plain sentence — see the file
+     * docstring.
+     */
+    readonly hasContactBlock: boolean;
+    readonly locale: SupportedLocale;
+}
+
+const { acceptsPrivateGroups, hasContactBlock, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const body = t(
+    'experience.detail.privateGroups.body',
+    'Hacemos precio especial para grupos privados: familias grandes, empresas, o si querés la salida entera para vos.'
+);
+---
+
+{acceptsPrivateGroups && (
+    <section class="exp-groups">
+        <h3 class="exp-groups__title">
+            {t('experience.detail.privateGroups.title', 'Grupos privados')}
+        </h3>
+        <p class="exp-groups__body">{body}</p>
+
+        {hasContactBlock && (
+            <a class="exp-groups__cta" href={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}>
+                {t('experience.detail.privateGroups.cta', 'Consultanos por tu grupo')}
+            </a>
+        )}
+    </section>
+)}
+
+<style>
+    .exp-groups {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2, 8px);
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-card, 24px);
+        padding: var(--space-5, 20px);
+    }
+
+    .exp-groups__title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-groups__body {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-groups__cta {
+        display: inline-flex;
+        align-items: center;
+        margin-top: var(--space-2, 8px);
+        padding: 10px 20px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary);
+        color: var(--core-card);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity 150ms ease-out;
+    }
+
+    .exp-groups__cta:hover {
+        opacity: 0.9;
+    }
+
+    .exp-groups__cta:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

@@ -498,6 +498,49 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v === 'true'),
     /**
+     * Feature flag for the own-preapproval accommodation-monthly checkout
+     * (HOS-937 step 1). Ships dark (default false): while unset/false,
+     * `initiatePaidMonthlySubscription` keeps redirecting to the shared
+     * MercadoPago `preapproval_plan` share link (Path C, HOS-191), whose
+     * `external_reference` MercadoPago silently discards. Set to the literal
+     * string `'true'` to create a per-user `POST /preapproval` instead, whose
+     * `external_reference` (the local subscription id) survives in the body
+     * of the server-to-server call. Scoped to accommodation monthly only —
+     * annual, commerce and partner checkouts are unaffected regardless of
+     * this flag.
+     */
+    HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+    /**
+     * Feature flag for recurring add-on charging via a dedicated MercadoPago
+     * preapproval per add-on (HOS-847). Ships dark (default false) across the
+     * whole PR chain: while unset/false, add-on checkout keeps using the
+     * one-time `Preference` path (`mode: 'payment'`) byte-for-byte, regardless
+     * of `billingType: 'recurring'` on the add-on. Set to the literal string
+     * `'true'` ONLY once the full chain is merged (checkout, webhook
+     * activation/renewal, hard-cancel on cancellation, and the reconciler
+     * cron).
+     *
+     * Turning it on before PR 5's webhook handler exists is WORSE than a
+     * purchase stuck `pending`, which is what this comment used to claim. The
+     * add-on's own `billing_subscriptions` row carries a real
+     * `mp_subscription_id`, and `subscription-logic.ts` resolves an incoming
+     * `preapproval.updated` against that column with no product-domain filter —
+     * so the generic plan handler MATCHES the add-on's row and runs the full
+     * plan activation over something that is not a plan (status transition,
+     * period arithmetic, notifications, promo redemption). The buyer is charged
+     * either way; what they do not get is the add-on.
+     *
+     * Do NOT flip this on staging/prod until the staging + prod smoke
+     * checklists (SPEC-143) have both signed off.
+     */
+    HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+    /**
      * Statement descriptor that appears on the cardholder's bank statement
      * after a MercadoPago payment. MP rejects descriptors longer than 11
      * characters and recommends uppercase ASCII (letters, digits, spaces) so

@@ -78,7 +78,7 @@ const seedRequire = createRequire(import.meta.url);
 const seedPackageRoot = resolve(dirname(seedRequire.resolve('@repo/seed')), '..');
 process.chdir(seedPackageRoot);
 
-const { runSeed } = await import('@repo/seed');
+const { describeError, runSeed } = await import('@repo/seed');
 
 async function main(): Promise<void> {
     console.info(`[e2e-seed] Resetting + seeding ${dbUrl}`);
@@ -88,6 +88,13 @@ async function main(): Promise<void> {
         example: true,
         continueOnError: false,
         rollbackOnError: false,
+        // A transient Cloudinary failure used to abort the whole run and block
+        // a pull request that had touched no code at all (HOS-922). The E2E
+        // database is ephemeral and no test asserts that an image reached
+        // Cloudinary, so in CI the image keeps its original URL and the run
+        // carries on. A local run still fails loudly, so a real breakage in the
+        // image pipeline is not hidden from whoever is working on it.
+        allowRequiredFallback: Boolean(process.env.CI),
         // The example seed creates a known admin user. Allowed in E2E
         // because the database is ephemeral.
         exclude: []
@@ -96,6 +103,12 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-    console.error('[e2e-seed] FAILED:', error);
+    // Never interpolate a thrown value directly: a plain object, or an Error
+    // whose `message` is not a string, renders as `[object Object]` and makes
+    // the failure impossible to diagnose from CI logs alone (HOS-922).
+    const { message, stack, cause } = describeError(error);
+    console.error(`[e2e-seed] FAILED: ${message}`);
+    if (cause) console.error(`[e2e-seed] Cause: ${cause}`);
+    if (stack) console.error(stack);
     exit(1);
 });

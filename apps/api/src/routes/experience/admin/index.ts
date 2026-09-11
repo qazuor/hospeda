@@ -15,6 +15,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { adminExperienceReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddExperienceFaqRoute } from './addFaq';
+import { adminAddExperienceFeaturedMediaRoute } from './addFeaturedMedia';
 import { adminAddExperienceMediaRoute } from './addMedia';
 import { adminAssignExperienceOwnerRoute } from './assignOwner';
 import { adminBatchExperiencesRoute } from './batch';
@@ -36,6 +37,7 @@ import { adminRestoreExperienceRoute } from './restore';
 import { adminSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { adminUpdateExperienceRoute } from './update';
 import { adminUpdateExperienceFaqRoute } from './updateFaq';
+import { adminUpdateExperienceMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -109,6 +111,11 @@ app.route('/', adminReorderExperienceMediaRoute);
 app.route('/', adminGetExperienceMediaRoute);
 
 // POST /:id/media - Add photo to gallery
+// POST /:id/media/featured - Upload straight to cover (HOS-803).
+// Registered before POST /:id/media so "featured" resolves as the fixed
+// suffix rather than being absorbed by the collection route.
+app.route('/', adminAddExperienceFeaturedMediaRoute);
+
 app.route('/', adminAddExperienceMediaRoute);
 
 // PUT /:id/media/:mediaId/featured - Set featured photo
@@ -117,5 +124,9 @@ app.route('/', adminSetFeaturedExperienceMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery
 app.route('/', adminRemoveExperienceMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', adminUpdateExperienceMediaRoute);
 
 export { app as adminExperienceRoutes };

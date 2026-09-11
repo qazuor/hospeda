@@ -43,7 +43,7 @@ import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.clie
 const PROPS = {
     accommodationId: 'acc-1',
     accommodationName: 'Casa del Río',
-    plansHref: '/es/suscriptores/turistas/',
+    plansHref: '/es/suscriptores/planes/turistas/',
     locale: 'es' as const
 };
 

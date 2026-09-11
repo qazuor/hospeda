@@ -50,6 +50,21 @@ vi.mock('@/lib/media/upload-entity', () => ({
     uploadEntityImage: mockUploadEntityImage
 }));
 
+// HOS-1024: the client-side gallery cap now comes from the plan (via
+// `useMyEntitlements`), not the flat entity ceiling. Fixed at 15 to match
+// `makeLimitReached()`'s `maxAllowed: 15` below — this suite is about the
+// SERVER's LIMIT_REACHED response, not the client-side cap resolution
+// itself (covered by `PhotoSection.plan-cap.test.tsx`).
+vi.mock('@/hooks/useMyEntitlements', () => ({
+    useMyEntitlements: () => ({
+        has: () => false,
+        limit: () => 15,
+        plan: null,
+        isLoading: false,
+        error: null
+    })
+}));
+
 const ACC_ID = 'acc-uuid-123';
 
 const defaultProps: PhotoSectionProps = { locale: 'es', accommodationId: ACC_ID };

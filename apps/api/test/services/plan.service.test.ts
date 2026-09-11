@@ -18,7 +18,7 @@
  * @module test/services/plan.service
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { ProductDomainEnum, ServiceErrorCode } from '@repo/schemas';
 import { mapDbToPlan, PlanService } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -470,6 +470,7 @@ describe('PlanService', () => {
             name: 'Nuevo Plan',
             description: 'Descripción del nuevo plan',
             category: 'owner' as const,
+            productDomain: ProductDomainEnum.ACCOMMODATION,
             monthlyPriceArs: 600000,
             annualPriceArs: 6000000,
             monthlyPriceUsdRef: 6,

@@ -13,6 +13,16 @@
  * discipline already established for the paid-checkout-create helper
  * (`paid-subscription-create.ts`).
  *
+ * HOS-348 reuses this function UNCHANGED for a third pairing flavor —
+ * replacing a `past_due` subscription's failing payment method
+ * (`past-due-payment-method-replacement.service.ts` mints the new
+ * preapproval; this function still does the cancel-on-confirm). Nothing
+ * here assumes the superseded row is `canceled`: Step 4's re-verify already
+ * treats `past_due` as non-terminal (see {@link CONFIRMED_TERMINAL_STATUSES}),
+ * which is exactly what makes this generalize safely — see `triggerSource`'s
+ * JSDoc on {@link CompleteSupersessionPairingInput} for the one place that
+ * DOES differ per flavor (the audit row's own metadata).
+ *
  * ### T-015a hardening (adversarial-review MEDIUM finding, then corrected
  * again by a second adversarial pass — see below)
  *
@@ -155,8 +165,22 @@ export interface CompleteSupersessionPairingInput {
     readonly newSubscription: SupersessionNewSubscription;
     /** The old subscription this reactivation supersedes. */
     readonly supersededId: string;
-    /** Which reactivation flavor this was — preserved verbatim on the audit row. */
-    readonly triggerSource: 'trial-reactivation' | 'subscription-reactivation';
+    /**
+     * Which flavor of supersession this was — preserved verbatim on the
+     * audit row. `'payment-method-replacement'` (HOS-348) is mechanically
+     * identical to `'subscription-reactivation'` (mint new, cancel old on
+     * confirm) but supersedes an ACTIVE-preapproval `past_due` row instead
+     * of an already-`canceled` one, and forgives the unpaid period by
+     * design — see `past-due-payment-method-replacement.service.ts`'s
+     * module JSDoc — so it gets its own value rather than being folded into
+     * `'subscription-reactivation'`'s audit metadata (which would wrongly
+     * write `reactivatedFromCanceled: 'true'` for a row that was never
+     * canceled at mint time).
+     */
+    readonly triggerSource:
+        | 'trial-reactivation'
+        | 'subscription-reactivation'
+        | 'payment-method-replacement';
     /**
      * MP webhook event id when called from the webhook, or a stable sentinel
      * (e.g. `'reactivation-supersession-reconcile-cron'`) when called from
@@ -394,7 +418,19 @@ export async function completeSupersessionPairing(
                     planId: newSubscription.planId,
                     ...(triggerSource === 'trial-reactivation'
                         ? { convertedFromTrial: 'true' }
-                        : { reactivatedFromCanceled: 'true' })
+                        : triggerSource === 'payment-method-replacement'
+                          ? {
+                                // HOS-348 (owner decision, 2026-09-02): the
+                                // superseded row was `past_due`, not
+                                // `canceled` — `reactivatedFromCanceled`
+                                // would misdescribe it. Its unpaid period was
+                                // deliberately forgiven, not collected or
+                                // tracked as a debt — see
+                                // `past-due-payment-method-replacement.service.ts`.
+                                pastDuePaymentMethodReplaced: 'true',
+                                unpaidPeriodForgiven: 'true'
+                            }
+                          : { reactivatedFromCanceled: 'true' })
                 }
             })
             .onConflictDoNothing();

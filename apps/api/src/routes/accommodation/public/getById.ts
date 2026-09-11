@@ -13,6 +13,7 @@ import { AccommodationIdSchema, AccommodationPublicSchema } from '@repo/schemas'
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -65,7 +66,15 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             return null;
         }
 
-        const accommodation = result.data;
+        // HOS-929: public read treats holding either the admin-curated
+        // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
+        // flag as featured. `featuredByEntitlement` itself is stripped by
+        // `AccommodationPublicSchema` (never in its pick), so only the OR'd
+        // `isFeatured` reaches the response.
+        const accommodation = {
+            ...result.data,
+            isFeatured: resolvePublicIsFeatured(result.data)
+        };
 
         // SPEC-187 owner-entitlement gate: resolve the owning host's entitlements
         // and pass them to filterAccommodationByEntitlements. When the owner lacks

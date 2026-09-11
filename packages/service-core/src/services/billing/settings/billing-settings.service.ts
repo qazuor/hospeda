@@ -44,8 +44,21 @@ export interface BillingSettings {
 
     /** Send reminder notification before trial expiry */
     sendTrialExpiryReminder: boolean;
-    /** Days before trial expiry to send reminder */
-    trialExpiryReminderDays: number;
+    /*
+     * `trialExpiryReminderDays` was removed by HOS-1012 T-016. The trial email
+     * series now sends at nine fixed offsets (−10, −5, −1, 0, +1, +5, +10, +30,
+     * +60) declared in `apps/api/src/services/billing/trial-notification-offsets.ts`.
+     *
+     * It is not coming back as a setting. Each of the nine emails names its own
+     * distance in its copy ("todavía te quedan diez días", "Pasaron diez días"),
+     * so an admin able to move the distance is an admin able to make the copy
+     * lie — and the old value could not express three independent offsets
+     * anyway, only a contiguous pair.
+     *
+     * Live `billing_settings` rows may still carry the key inside their JSONB
+     * value. It is inert: `getSettings` spreads the stored object over the
+     * defaults and the route's Zod schema strips what it does not declare.
+     */
     /** Send notification when payment fails */
     sendPaymentFailedNotification: boolean;
     /** Send notification when subscription is cancelled */
@@ -66,7 +79,6 @@ const DEFAULT_SETTINGS: BillingSettings = {
     maxPaymentRetries: 3,
     retryIntervalHours: 24,
     sendTrialExpiryReminder: true,
-    trialExpiryReminderDays: 3,
     sendPaymentFailedNotification: true,
     sendSubscriptionCancelledNotification: true
 };
@@ -336,11 +348,6 @@ export class BillingSettingsService {
         }
         if (settings.retryIntervalHours < 1 || settings.retryIntervalHours > 168) {
             errors.push('retryIntervalHours must be between 1 and 168 (1 week)');
-        }
-
-        // Validate reminder days
-        if (settings.trialExpiryReminderDays < 1 || settings.trialExpiryReminderDays > 30) {
-            errors.push('trialExpiryReminderDays must be between 1 and 30');
         }
 
         if (errors.length > 0) {

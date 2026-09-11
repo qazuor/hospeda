@@ -7,9 +7,25 @@
  *
  * Shape: a single toggle button that expands an inline form BELOW the photo
  * it belongs to — never a modal, never a route change (this editor lives
- * inside the single-page photo section, per owner decision). Used by both
- * `PhotoSection.client.tsx` (the portada slot) and `PhotoGalleryItem.client.tsx`
- * (each gallery thumbnail).
+ * inside the single-page photo section, per owner decision).
+ *
+ * ## Shared by four galleries, despite living under `host/`
+ *
+ * HOS-1036 found the same gap in every other gallery on the site — post,
+ * event, gastronomy and experience photos had the columns and no way to write
+ * them — so this panel is now mounted by four surfaces:
+ *
+ *  - `host/editor/PhotoSection.client.tsx` (the accommodation portada slot),
+ *  - `host/editor/PhotoGalleryItem.client.tsx` (each accommodation thumbnail),
+ *  - `account/editor/ContentMediaSection.client.tsx` (post + event),
+ *  - `commerce/editor/MediaSection.client.tsx` (gastronomy + experience).
+ *
+ * It stayed in this directory rather than moving to a neutral one: the styles
+ * it uses live in `PhotoSection.module.css`, and moving the component without
+ * them would only relocate the awkwardness. What DID change is its `item`
+ * type — it is generic over `PhotoMetadataEditableItem`, the five-field
+ * intersection of the four callers' local row shapes, so no caller has to
+ * adopt another's item type to reuse the panel.
  *
  * `alt` is presented as the PRIMARY field — bigger label, explanatory copy
  * in plain language, first in the form — because it's what a screen reader
@@ -27,20 +43,22 @@
  */
 
 import { type FormEvent, useState } from 'react';
-import type { AccommodationMediaItem } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './PhotoSection.module.css';
 import {
     buildPhotoMetadataUpdateBody,
+    type PhotoMetadataEditableItem,
     type PhotoMetadataFieldErrors,
     type PhotoMetadataUpdateBody,
     validatePhotoMetadataFields
 } from './photo-section-helpers';
 
-export interface PhotoMetadataEditorProps {
+export interface PhotoMetadataEditorProps<
+    TItem extends PhotoMetadataEditableItem = PhotoMetadataEditableItem
+> {
     readonly locale: SupportedLocale;
-    readonly item: AccommodationMediaItem;
+    readonly item: TItem;
     /** True while any other op is in flight, hydration is pending, or the item lacks a DB id yet. */
     readonly disabled: boolean;
     /** Gallery thumbnails need a wider floating panel than their own narrow column. */
@@ -49,10 +67,7 @@ export interface PhotoMetadataEditorProps {
     readonly toggleAriaLabel: string;
     /** Accessible label for the toggle button while the panel is open. */
     readonly closeAriaLabel: string;
-    readonly onSave: (
-        item: AccommodationMediaItem,
-        body: PhotoMetadataUpdateBody
-    ) => Promise<boolean>;
+    readonly onSave: (item: TItem, body: PhotoMetadataUpdateBody) => Promise<boolean>;
 }
 
 /**
@@ -61,7 +76,7 @@ export interface PhotoMetadataEditorProps {
  * field values, validation errors, saving/saved status) — persistence is
  * fully owned by the `onSave` callback passed in.
  */
-export function PhotoMetadataEditor({
+export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     locale,
     item,
     disabled,
@@ -69,7 +84,7 @@ export function PhotoMetadataEditor({
     toggleAriaLabel,
     closeAriaLabel,
     onSave
-}: PhotoMetadataEditorProps) {
+}: PhotoMetadataEditorProps<TItem>) {
     const { t } = createTranslations(locale);
     const canOperate = !disabled && Boolean(item.id);
 
@@ -113,7 +128,10 @@ export function PhotoMetadataEditor({
         setJustSaved(false);
         // The row's existing credit is passed along so a stock import keeps its
         // provider and licence when the host only corrects the photographer.
-        const ok = await onSave(item, buildPhotoMetadataUpdateBody(values, item.attribution));
+        const ok = await onSave(
+            item,
+            buildPhotoMetadataUpdateBody(values, item.attribution ?? undefined)
+        );
         setIsSaving(false);
         if (ok) {
             setJustSaved(true);

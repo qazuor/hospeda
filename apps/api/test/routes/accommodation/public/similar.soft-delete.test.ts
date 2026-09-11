@@ -27,6 +27,8 @@ import type { AppBindings } from '../../../../src/types';
 
 const mockSelect = vi.fn();
 const mockFindMany = vi.fn();
+/** HOS-963: batch media loader the route now calls after `findMany`. */
+const mockFindByAccommodations = vi.fn().mockResolvedValue(new Map());
 
 /** Sentinel used as the `accommodations.deletedAt` column stub. */
 const DELETED_AT_COLUMN = 'acc.deletedAt';
@@ -40,6 +42,9 @@ vi.mock('@repo/db', () => ({
             }
         }
     })),
+    accommodationMediaModel: {
+        findByAccommodations: mockFindByAccommodations
+    },
     accommodations: {
         id: 'acc.id',
         slug: 'acc.slug',

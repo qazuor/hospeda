@@ -16,16 +16,19 @@ const experienceReviewService = new ExperienceReviewService({ logger: apiLogger 
  * DELETE /api/v1/admin/experiences/reviews/:id
  * Soft delete experience review — Admin endpoint.
  *
- * Requires COMMERCE_MODERATE_REVIEW permission. The service layer
+ * Requires EXPERIENCE_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW) permission. The service layer
  * (`_canSoftDelete`) also accepts the review author.
  */
 export const adminDeleteExperienceReviewRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}',
     summary: 'Soft delete experience review (admin)',
-    description: 'Soft deletes an experience review. Requires COMMERCE_MODERATE_REVIEW permission.',
+    description:
+        'Soft deletes an experience review. Requires EXPERIENCE_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW) permission.',
     tags: ['Experience Reviews', 'Admin'],
-    requiredPermissions: [PermissionEnum.COMMERCE_MODERATE_REVIEW],
+    anyOfPermissions: [
+        [PermissionEnum.EXPERIENCE_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
+    ],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

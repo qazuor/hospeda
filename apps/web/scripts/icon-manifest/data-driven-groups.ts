@@ -96,6 +96,24 @@ const DATA_DRIVEN_GROUPS: ReadonlyArray<DataDrivenGroup> = [
         sourceHint: 'apps/web/src/components/sections/AnimatedCounter.client.tsx'
     },
     {
+        id: 'PLAN_WATERMARK_ICONS (resolvePlanWatermarkIcon)',
+        file: 'apps/web/src/components/billing/plan-watermark-icon.ts',
+        constNames: ['PLAN_WATERMARK_ICONS', 'PLAN_WATERMARK_FALLBACK_ICON'],
+        weights: ['fill'],
+        sourceHint:
+            'apps/web/src/components/billing/PricingCardsGrid.astro ' +
+            '(<WatermarkIcon size={168} weight="fill" />)'
+    },
+    {
+        id: 'AUDIENCE_CARD_ICONS (plan index)',
+        file: 'apps/web/src/lib/billing/audience-card-content.ts',
+        constNames: ['AUDIENCE_CARD_ICONS'],
+        weights: ['bold'],
+        sourceHint:
+            'apps/web/src/pages/[lang]/suscriptores/planes/index.astro ' +
+            '(<AudienceIcon size="md" weight="bold" />)'
+    },
+    {
         id: 'ATTRACTION_ICONS (getAttractionIcon)',
         file: 'packages/icons/src/domain/attraction-icon.ts',
         constNames: ['ATTRACTION_ICONS'],

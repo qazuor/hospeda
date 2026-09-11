@@ -14,6 +14,13 @@
  * uses — hashing the pinned source with the pinned hasher would only prove the
  * module agrees with itself. Same reasoning as `csp-hash-emission.test.ts`,
  * which sources its expectations from `node:crypto` for exactly this reason.
+ *
+ * On the 7.1.6 → 7.3.1 bump the version pin below fired and every payload was
+ * re-derived from the installed 7.3.1 package (prebuilt client literals for the
+ * four IIFEs; astro's own template plus its own transform for
+ * `replaceServerIsland`) and re-hashed with `node:crypto`. All five came out
+ * identical, so these digests are unchanged and still describe what Astro
+ * actually emits — see the version-pin note in the module for the detail.
  */
 
 import { readFileSync } from 'node:fs';

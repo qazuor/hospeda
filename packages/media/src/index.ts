@@ -23,6 +23,13 @@ export {
     mbToBytes,
     PROVIDER_MAX_IMAGE_FILE_SIZE_MB
 } from './limits.js';
+export {
+    isLocalMediaPlaceholderMode,
+    isRemoteMediaUrl,
+    LOCAL_MEDIA_PLACEHOLDER,
+    LOCAL_MEDIA_PLACEHOLDERS_ENV_VAR,
+    resolveLocalMediaPlaceholder
+} from './local-media-placeholders.js';
 export type { MediaPreset } from './presets.js';
 export { MEDIA_PRESETS } from './presets.js';
 

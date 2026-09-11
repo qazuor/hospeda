@@ -18,10 +18,10 @@
  *   SPEC-253 D2=b). The per-section `COMMERCE_*_EDIT_OWN` perms are removed.
  */
 
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
-import { hasPermission } from '../../utils/permission';
+import type { CommerceVertical } from '../commerce/commerce.permissions';
 import {
     checkCanAdminListCommerce,
     checkCanCreateCommerce,
@@ -30,8 +30,18 @@ import {
     checkCanEditOwn,
     checkCanEditOwnOrAll,
     checkCanModerateReview,
-    checkCanViewAll
+    checkCanViewAll,
+    hasCommercePermission
 } from '../commerce/commerce.permissions';
+
+/**
+ * The vertical every check in this file resolves against (HOS-1077).
+ *
+ * Passing it is what makes `gastronomy.*` permissions pass here while the
+ * other vertical's do not — the whole point of the split. The legacy
+ * `commerce.*` family still passes too (dual-read) until release 2.
+ */
+const VERTICAL: CommerceVertical = 'gastronomy';
 
 // Re-export generic helpers under gastronomy-scoped names so callers inside
 // the gastronomy directory can import from one place.
@@ -58,7 +68,7 @@ export function checkGastronomyCanCreate(actor: Actor, data: unknown): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_EDIT_ALL`.
  */
 export function checkGastronomyCanEditAll(actor: Actor, entity: unknown): void {
-    checkCanEditAll(actor, entity);
+    checkCanEditAll(actor, entity, VERTICAL);
 }
 
 /**
@@ -78,7 +88,7 @@ export function checkGastronomyCanEditOwnOrAll(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
-    checkCanEditOwnOrAll(actor, entity);
+    checkCanEditOwnOrAll(actor, entity, VERTICAL);
 }
 
 /**
@@ -91,15 +101,10 @@ export function checkGastronomyCanEditOwnOrAll(
  *
  * @param actor - The actor performing the action.
  * @param entity - The gastronomy entity being updated (must carry `ownerId`).
- * @param _ownSectionPermission - Ignored since SPEC-253 D2=b (kept for compatibility).
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
-export function checkGastronomyCanEditOwn(
-    actor: Actor,
-    entity: { ownerId?: string | null },
-    _ownSectionPermission?: PermissionEnum
-): void {
-    checkCanEditOwn(actor, entity);
+export function checkGastronomyCanEditOwn(actor: Actor, entity: { ownerId?: string | null }): void {
+    checkCanEditOwn(actor, entity, VERTICAL);
 }
 
 /**
@@ -111,7 +116,7 @@ export function checkGastronomyCanEditOwn(
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_DELETE`.
  */
 export function checkGastronomyCanDelete(actor: Actor, entity: unknown): void {
-    checkCanDeleteCommerce(actor, entity);
+    checkCanDeleteCommerce(actor, entity, VERTICAL);
 }
 
 /**
@@ -122,15 +127,14 @@ export function checkGastronomyCanDelete(actor: Actor, entity: unknown): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_VIEW_ALL`.
  */
 export function checkGastronomyCanViewAll(actor: Actor): void {
-    checkCanViewAll(actor);
+    checkCanViewAll(actor, VERTICAL);
 }
 
 /**
  * Checks if the actor may use the admin-list path for gastronomy listings.
  *
- * Accepts either `COMMERCE_VIEW_ALL` (staff, unscoped) or
- * `COMMERCE_VIEW_ALL` as view-own fallback (forward-compatible; a dedicated
- * `COMMERCE_GASTRONOMY_VIEW_OWN` can be plugged in when added to the enum).
+ * Requires `gastronomy.viewAll` — or, until release 2, the legacy
+ * `COMMERCE_VIEW_ALL` (HOS-1077 dual-read).
  *
  * Delegates to {@link checkCanAdminListCommerce}.
  *
@@ -138,9 +142,7 @@ export function checkGastronomyCanViewAll(actor: Actor): void {
  * @throws {ServiceError} FORBIDDEN when the actor holds neither permission.
  */
 export function checkGastronomyCanAdminList(actor: Actor): void {
-    // Forward-compatible: pass COMMERCE_VIEW_ALL as viewOwnPermission until
-    // a per-type COMMERCE_GASTRONOMY_VIEW_OWN enum value is added.
-    checkCanAdminListCommerce(actor, PermissionEnum.COMMERCE_VIEW_ALL);
+    checkCanAdminListCommerce(actor, VERTICAL);
 }
 
 /**
@@ -151,7 +153,7 @@ export function checkGastronomyCanAdminList(actor: Actor): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_MODERATE_REVIEW`.
  */
 export function checkGastronomyCanModerateReview(actor: Actor): void {
-    checkCanModerateReview(actor);
+    checkCanModerateReview(actor, VERTICAL);
 }
 
 /**
@@ -168,7 +170,7 @@ export function checkGastronomyCanEditFaqs(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
-    checkCanEditOwn(actor, entity);
+    checkCanEditOwn(actor, entity, VERTICAL);
 }
 
 /**
@@ -188,7 +190,7 @@ export function checkGastronomyCanEditMedia(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
-    checkCanEditOwn(actor, entity);
+    checkCanEditOwn(actor, entity, VERTICAL);
 }
 
 /**
@@ -215,7 +217,7 @@ export function checkGastronomyCanView(_actor: Actor): void {
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_DELETE`.
  */
 export function checkGastronomyCanHardDelete(actor: Actor, _entity: unknown): void {
-    if (!hasPermission(actor, PermissionEnum.COMMERCE_DELETE)) {
+    if (!hasCommercePermission(actor, 'delete', VERTICAL)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to permanently delete gastronomy listing'
@@ -232,5 +234,5 @@ export function checkGastronomyCanHardDelete(actor: Actor, _entity: unknown): vo
  * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_EDIT_ALL`.
  */
 export function checkGastronomyCanRestore(actor: Actor, _entity: unknown): void {
-    checkCanEditAll(actor, _entity);
+    checkCanEditAll(actor, _entity, VERTICAL);
 }

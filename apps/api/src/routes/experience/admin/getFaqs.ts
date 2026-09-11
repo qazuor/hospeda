@@ -16,16 +16,17 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * GET /api/v1/admin/experiences/:id/faqs
  * Get experience FAQs — Admin endpoint.
  *
- * Requires COMMERCE_VIEW_ALL. Uses the standalone `listExperienceFaqs` helper
+ * Requires EXPERIENCE_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL). Uses the standalone `listExperienceFaqs` helper
  * that mirrors the protected/public FAQ list pattern.
  */
 export const adminGetExperienceFaqsRoute = createAdminRoute({
     method: 'get',
     path: '/{id}/faqs',
     summary: 'Get experience listing FAQs (admin)',
-    description: 'Retrieve all FAQs for an experience listing. Requires COMMERCE_VIEW_ALL.',
+    description:
+        'Retrieve all FAQs for an experience listing. Requires EXPERIENCE_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL).',
     tags: ['Experience', 'FAQs'],
-    requiredPermissions: [PermissionEnum.COMMERCE_VIEW_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -7,6 +7,7 @@ import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } f
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { captureServerAnalyticsEvent } from '../../../lib/posthog';
+import { getQZPayBilling } from '../../../middlewares/billing';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
@@ -18,7 +19,7 @@ const accommodationService = new AccommodationService(
     undefined,
     null,
     undefined,
-    buildAccommodationPublishDeps()
+    buildAccommodationPublishDeps(() => getQZPayBilling())
 );
 
 /**
@@ -29,24 +30,24 @@ const accommodationService = new AccommodationService(
  * HTTP path) because the general PATCH schema (`AccommodationUpdateHttpSchema`,
  * derived from the create schema) has no `lifecycleState` field, so Zod would
  * silently strip it and the request would be a no-op (HOS-110 bugfix). This
- * dedicated endpoint mirrors `/unpublish`. It does NOT start a trial: since
- * card-first (HOS-171) the trial is a MercadoPago preapproval created at
- * checkout, so an ineligible owner is rejected and sent to the plans page.
+ * dedicated endpoint mirrors `/unpublish`. It DOES start the free trial when
+ * the owner still has one in this vertical: HOS-1012 took the trial back off
+ * MercadoPago, so it is a local row with `mp_subscription_id = NULL` inserted in
+ * the same transaction as the lifecycle flip. The clock starts when the listing
+ * goes live, not at signup (D-1).
  *
  * Protected endpoint with ownership check. No entitlement gate at the route
  * level — `publish()` itself resolves the owner's billing eligibility
- * (`first_publish` / `has_active_sub` / `subscription_required`) and rejects
- * with `FORBIDDEN: subscription_required` when the owner has no active
- * subscription — including the `first_publish` case, which card-first also
- * rejects so the card can be collected at checkout before any free days
- * exist.
+ * (`first_publish` / `has_active_sub` / `subscription_required`): the first two
+ * publish, the third rejects with `FORBIDDEN: subscription_required` and sends
+ * the owner to the plans page.
  */
 export const protectedPublishAccommodationRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/publish',
     summary: 'Publish accommodation',
     description:
-        'Transitions an accommodation from DRAFT (or INACTIVE) to ACTIVE. Requires an active subscription (the trial is created at checkout, not here), plus ownership or ACCOMMODATION_UPDATE_ANY permission.',
+        'Transitions an accommodation from DRAFT (or INACTIVE) to ACTIVE. Requires either an active owner subscription or an unused free trial for this vertical (which this endpoint starts), plus ownership or ACCOMMODATION_UPDATE_ANY permission.',
     tags: ['Accommodations'],
     requestParams: {
         id: AccommodationIdSchema

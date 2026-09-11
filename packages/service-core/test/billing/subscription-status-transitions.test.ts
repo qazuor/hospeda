@@ -70,7 +70,8 @@ const LEGAL_TRANSITIONS: ReadonlyMap<
             SubscriptionStatusEnum.PAST_DUE,
             SubscriptionStatusEnum.PAUSED,
             SubscriptionStatusEnum.CANCELLED,
-            SubscriptionStatusEnum.EXPIRED
+            SubscriptionStatusEnum.EXPIRED,
+            SubscriptionStatusEnum.COURTESY
         ])
     ],
     [
@@ -92,7 +93,16 @@ const LEGAL_TRANSITIONS: ReadonlyMap<
     [SubscriptionStatusEnum.CANCELLED, new Set([SubscriptionStatusEnum.ACTIVE])],
     [SubscriptionStatusEnum.EXPIRED, new Set<SubscriptionStatusEnum>()],
     [SubscriptionStatusEnum.ABANDONED, new Set<SubscriptionStatusEnum>()],
-    [SubscriptionStatusEnum.COMP, new Set([SubscriptionStatusEnum.CANCELLED])]
+    [SubscriptionStatusEnum.COMP, new Set([SubscriptionStatusEnum.CANCELLED])],
+    [
+        SubscriptionStatusEnum.COURTESY,
+        new Set([
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.TRIALING,
+            SubscriptionStatusEnum.CANCELLED,
+            SubscriptionStatusEnum.PAST_DUE
+        ])
+    ]
 ]);
 
 /** All status values for exhaustive matrix loops. */
@@ -443,7 +453,8 @@ describe('getAllowedTransitions — utility', () => {
         expect(result?.has(SubscriptionStatusEnum.PAUSED)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.CANCELLED)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.EXPIRED)).toBe(true);
-        expect(result?.size).toBe(4);
+        expect(result?.has(SubscriptionStatusEnum.COURTESY)).toBe(true);
+        expect(result?.size).toBe(5);
     });
 
     it('returns the correct set for past_due', () => {
@@ -840,5 +851,63 @@ describe('Structural rule — a source that reaches ACTIVE must also reach TRIAL
             const allowed = getAllowedTransitions(from);
             expect(allowed?.has(SubscriptionStatusEnum.TRIALING)).toBe(false);
         }
+    });
+});
+
+describe('courtesy edges (HOS-180)', () => {
+    it('allows ACTIVE → COURTESY — the grant', () => {
+        expect(
+            checkSubscriptionStatusTransition({
+                from: SubscriptionStatusEnum.ACTIVE,
+                to: SubscriptionStatusEnum.COURTESY
+            }).valid
+        ).toBe(true);
+    });
+
+    it('allows COURTESY → CANCELLED — the subscriber may leave mid-gift (OQ-2)', () => {
+        expect(
+            checkSubscriptionStatusTransition({
+                from: SubscriptionStatusEnum.COURTESY,
+                to: SubscriptionStatusEnum.CANCELLED
+            }).valid
+        ).toBe(true);
+    });
+
+    it('REFUSES COURTESY → PAUSED — self-service pause is blocked during a gift', () => {
+        // Not an oversight: OQ-2 blocks self-service pause during a courtesy, so
+        // no code path produces this edge. Were it legal, a subscriber could
+        // land in a paused state that silently cuts the entitlements they were
+        // just given.
+        const result = checkSubscriptionStatusTransition({
+            from: SubscriptionStatusEnum.COURTESY,
+            to: SubscriptionStatusEnum.PAUSED
+        });
+        expect(result.valid).toBe(false);
+    });
+
+    it('ALLOWS COURTESY → TRIALING — the resume can derive TRIALING (HOS-913)', () => {
+        // Counter-intuitive but load-bearing. When the cron resumes the
+        // preapproval, MP reports it authorized and deriveTrialingStatus resolves
+        // TRIALING rather than ACTIVE if `trial_end` still sits in the future —
+        // reachable when the gift was granted over an active row whose trial had
+        // been extended. Without this edge the write is discarded silently with
+        // a 200 and the subscriber never leaves the gift.
+        expect(
+            checkSubscriptionStatusTransition({
+                from: SubscriptionStatusEnum.COURTESY,
+                to: SubscriptionStatusEnum.TRIALING
+            }).valid
+        ).toBe(true);
+    });
+
+    it('REFUSES TRIALING → COURTESY — a gift is for someone already paying', () => {
+        // A trialing subscriber is not being charged yet; gifting them cycles is
+        // a trial extension, which is a different mechanism entirely.
+        expect(
+            checkSubscriptionStatusTransition({
+                from: SubscriptionStatusEnum.TRIALING,
+                to: SubscriptionStatusEnum.COURTESY
+            }).valid
+        ).toBe(false);
     });
 });

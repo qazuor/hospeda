@@ -4,9 +4,15 @@ import { join } from 'node:path';
 import { extractPublicId } from '@repo/media';
 import type { ImageProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CacheEntry, ImageCache } from '../../src/utils/cloudinary-cache.js';
-import { uploadSeedImage } from '../../src/utils/cloudinary-upload.js';
+import {
+    REQUIRED_FALLBACK_HINT,
+    SEED_UPLOAD_MAX_ATTEMPTS,
+    SEED_UPLOAD_TIMEOUT_MS,
+    uploadSeedImage
+} from '../../src/utils/cloudinary-upload.js';
+import { logger } from '../../src/utils/logger.js';
 
 /**
  * Builds a seeded {@link CacheEntry} with sane defaults for tests.
@@ -465,6 +471,329 @@ describe('uploadSeedImage — SPEC-078-GAPS T-064', () => {
             // Assert
             expect(outcome.status).toBe('uploaded');
             expect(fetchSpy).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-397 — error serialization, upload retries, and flag discoverability
+    // -----------------------------------------------------------------------
+    describe('HOS-397: Cloudinary plain-object rejections', () => {
+        /**
+         * The exact shape the Cloudinary SDK rejects with on a timed-out upload:
+         * a plain object, not an `Error`. `String(value)` on it yields
+         * `[object Object]`, which is what used to reach the operator.
+         */
+        function makeCloudinaryTimeoutRejection(): Record<string, unknown> {
+            return { message: 'Request Timeout', http_code: 499, name: 'TimeoutError' };
+        }
+
+        /** Builds an ImageProvider whose `upload` runs the supplied mock. */
+        function makeProvider(upload: ReturnType<typeof vi.fn>): ImageProvider {
+            return {
+                upload,
+                delete: vi.fn(),
+                deleteByPrefix: vi.fn(),
+                healthCheck: vi.fn()
+            } as unknown as ImageProvider;
+        }
+
+        // A timeout is retryable, so these cases walk the backoff. Fake timers keep
+        // them off the wall clock.
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('serializes a plain-object rejection instead of reporting [object Object]', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const provider = makeProvider(
+                vi.fn().mockRejectedValue(makeCloudinaryTimeoutRejection())
+            );
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: '017-destination-san-justo',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev',
+                throwOnFailure: false
+            });
+            await vi.runAllTimersAsync();
+            const outcome = await pending;
+
+            // Assert
+            expect(outcome.status).toBe('failed');
+            if (outcome.status !== 'failed') throw new Error('unreachable');
+            expect(outcome.errorMessage).not.toContain('[object Object]');
+            expect(outcome.errorMessage).toContain('Request Timeout');
+            expect(outcome.errorMessage).toContain('499');
+            expect(outcome.errorMessage).toContain('TimeoutError');
+        });
+
+        it('throws a real Error carrying the serialized cause when throwOnFailure=true', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const rejection = makeCloudinaryTimeoutRejection();
+            const provider = makeProvider(vi.fn().mockRejectedValue(rejection));
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: '017-destination-san-justo',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev',
+                throwOnFailure: true
+            }).catch((error: unknown) => error);
+            await vi.runAllTimersAsync();
+            const thrown = await pending;
+
+            // Assert
+            expect(thrown).toBeInstanceOf(Error);
+            const error = thrown as Error;
+            expect(error.message).not.toContain('[object Object]');
+            expect(error.message).toContain('Request Timeout');
+            // The original rejection stays reachable for further inspection.
+            expect(error.cause).toBe(rejection);
+        });
+
+        it('names --allow-required-fallback when an image failure aborts the seed', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+            const provider = makeProvider(
+                vi.fn().mockRejectedValue(makeCloudinaryTimeoutRejection())
+            );
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: '017-destination-san-justo',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev',
+                throwOnFailure: true
+            }).catch(() => undefined);
+            await vi.runAllTimersAsync();
+            await pending;
+
+            // Assert
+            const logged = errorSpy.mock.calls.map((call) => String(call[0])).join('\n');
+            expect(logged).toContain('--allow-required-fallback');
+            expect(logged).toContain(REQUIRED_FALLBACK_HINT);
+            errorSpy.mockRestore();
+        });
+
+        it('names --allow-required-fallback when the source fetch aborts the seed', async () => {
+            // Arrange
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({ ok: false, status: 503 } as Response)
+            );
+            const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
+
+            // Act
+            await uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: '017-destination-san-justo',
+                role: 'featured',
+                provider: new InMemoryImageProvider(),
+                cache: {},
+                cachePath,
+                env: 'dev',
+                throwOnFailure: true
+            }).catch(() => undefined);
+
+            // Assert
+            const logged = errorSpy.mock.calls.map((call) => String(call[0])).join('\n');
+            expect(logged).toContain('--allow-required-fallback');
+            errorSpy.mockRestore();
+        });
+    });
+
+    describe('HOS-397: transient upload retries', () => {
+        /** Builds an ImageProvider whose `upload` runs the supplied mock. */
+        function makeProvider(upload: ReturnType<typeof vi.fn>): ImageProvider {
+            return {
+                upload,
+                delete: vi.fn(),
+                deleteByPrefix: vi.fn(),
+                healthCheck: vi.fn()
+            } as unknown as ImageProvider;
+        }
+
+        const uploadOk = {
+            url: 'https://res.cloudinary.com/demo/image/upload/v1/ok.jpg',
+            publicId: 'hospeda/dev/seed/destinations/d-1/featured',
+            width: 1,
+            height: 1
+        };
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('retries a timeout and succeeds on a later attempt', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const upload = vi
+                .fn()
+                .mockRejectedValueOnce({
+                    message: 'Request Timeout',
+                    http_code: 499,
+                    name: 'TimeoutError'
+                })
+                .mockResolvedValueOnce(uploadOk);
+            const provider = makeProvider(upload);
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: 'd-1',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev',
+                throwOnFailure: true
+            });
+            await vi.runAllTimersAsync();
+            const outcome = await pending;
+
+            // Assert
+            expect(outcome.status).toBe('uploaded');
+            expect(upload).toHaveBeenCalledTimes(2);
+        });
+
+        it('gives up after SEED_UPLOAD_MAX_ATTEMPTS on a persistent timeout', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const upload = vi.fn().mockRejectedValue({
+                message: 'Request Timeout',
+                http_code: 499,
+                name: 'TimeoutError'
+            });
+            const provider = makeProvider(upload);
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: 'd-2',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev',
+                throwOnFailure: false
+            });
+            await vi.runAllTimersAsync();
+            const outcome = await pending;
+
+            // Assert
+            expect(outcome.status).toBe('failed');
+            expect(upload).toHaveBeenCalledTimes(SEED_UPLOAD_MAX_ATTEMPTS);
+        });
+
+        it('retries a 5xx from Cloudinary', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const upload = vi
+                .fn()
+                .mockRejectedValueOnce({ message: 'Server Error', http_code: 500 })
+                .mockResolvedValueOnce(uploadOk);
+            const provider = makeProvider(upload);
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: 'd-3',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev'
+            });
+            await vi.runAllTimersAsync();
+            const outcome = await pending;
+
+            // Assert
+            expect(outcome.status).toBe('uploaded');
+            expect(upload).toHaveBeenCalledTimes(2);
+        });
+
+        it('does NOT retry a permanent failure', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const upload = vi
+                .fn()
+                .mockRejectedValue({ message: 'Invalid image file', http_code: 400 });
+            const provider = makeProvider(upload);
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: 'd-4',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev'
+            });
+            await vi.runAllTimersAsync();
+            const outcome = await pending;
+
+            // Assert
+            expect(outcome.status).toBe('failed');
+            expect(upload).toHaveBeenCalledTimes(1);
+        });
+
+        it('hands the provider a bounded per-attempt timeout', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', makeFetchOk());
+            const upload = vi.fn().mockResolvedValue(uploadOk);
+            const provider = makeProvider(upload);
+
+            // Act
+            const pending = uploadSeedImage({
+                originalUrl: 'https://images.unsplash.com/x.jpg',
+                entityType: 'destinations',
+                entityId: 'd-5',
+                role: 'featured',
+                provider,
+                cache: {},
+                cachePath,
+                env: 'dev'
+            });
+            await vi.runAllTimersAsync();
+            await pending;
+
+            // Assert
+            expect(upload).toHaveBeenCalledWith(
+                expect.objectContaining({ timeoutMs: SEED_UPLOAD_TIMEOUT_MS })
+            );
         });
     });
 });

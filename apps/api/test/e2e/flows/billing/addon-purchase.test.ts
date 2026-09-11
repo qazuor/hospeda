@@ -777,4 +777,240 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
         // unrelated limits leaked in.
         expect(postBody.limits.ads_per_month).toBe(5);
     });
+
+    // -----------------------------------------------------------------------
+    // Product-domain gate (HOS-1178)
+    //
+    // The purchase route is SHARED between accommodation and commerce, and
+    // only accommodation has live subscriptions in production. So these tests
+    // assert BOTH directions against the real route, deliberately: the refuse
+    // that closes the leak, and the host who must keep being able to buy.
+    //
+    // Asserted here rather than against `createAddonCheckout` in isolation on
+    // purpose. The unit-level call proves the comparison; only the route
+    // proves the status the buyer actually receives, that the guard runs ahead
+    // of any MercadoPago side effect, and that the field survives the response
+    // contract.
+    // -----------------------------------------------------------------------
+
+    /** The whitelisted `error.reason` the 422 forwards (HOS-602 / HOS-1178). */
+    const readReason = async (response: Response): Promise<string | undefined> => {
+        const body = (await response.json()) as { readonly error?: { readonly reason?: string } };
+        return body.error?.reason;
+    };
+
+    /** Stamps a commerce `product_domain` on the subscription seeded by beforeEach. */
+    const makeSubscriptionCommerce = async (domain: 'gastronomy' | 'experience') => {
+        await testDb
+            .getDb()
+            .update(billingSubscriptions)
+            .set({ productDomain: domain })
+            .where(eq(billingSubscriptions.customerId, customerId));
+    };
+
+    /** Seeds one catalogue add-on row by slug, with no targetCategories guard. */
+    const seedAddonRow = async (input: {
+        slug: string;
+        name: string;
+        limitKey?: string;
+        increase?: number;
+    }) => {
+        await createTestAddon({
+            slug: input.slug,
+            name: input.name,
+            description: `${input.name} (domain-gate fixture)`,
+            billingType: 'recurring',
+            unitAmount: 1_500_000,
+            active: true,
+            entitlements: [],
+            limits: input.limitKey && input.increase ? { [input.limitKey]: input.increase } : {},
+            metadata: {
+                slug: input.slug,
+                durationDays: null,
+                // Filtered to empty by the mapper, which switches the
+                // plan-category guard off — see the beforeEach fixture's own
+                // note. This suite is about the DOMAIN gate, and a category
+                // refusal would mask it.
+                targetCategories: ['test-baseline'],
+                sortOrder: 9
+            }
+        });
+    };
+
+    it('lets a HOST buy an accommodation add-on — the regression that must never fire', async () => {
+        // The worst outcome of this change would be blocking the only people
+        // who actually buy add-ons today. The seeded subscription carries the
+        // `product_domain` column's own default, and `visibility-boost-7d`
+        // declares `accommodation`, so `subscriptionMatchesDomain`'s fail-OPEN
+        // reading for accommodation is what has to hold here.
+        mpStub.config.setSuccess(
+            'checkout.create',
+            providerResponseFixtures.checkout({
+                id: 'chk_domain_ok',
+                url: 'https://stub.example/checkout/chk_domain_ok',
+                status: 'pending'
+            })
+        );
+
+        const response = await client.post(
+            `/api/v1/protected/billing/addons/${ADDON_SLUG}/purchase`,
+            { addonId: ADDON_SLUG }
+        );
+
+        expect(response.status).toBe(201);
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(1);
+    });
+
+    it('reads a host subscription as accommodation because the column DEFAULTS to it', async () => {
+        // Why the host path is safe, pinned rather than assumed. Measured on
+        // this schema: `billing_subscriptions.product_domain` is
+        // `varchar(32) NOT NULL DEFAULT 'accommodation'`, so a row nobody
+        // stamped reads as accommodation — a genuinely NULL row cannot even be
+        // written any more (an UPDATE to NULL is rejected by the constraint).
+        //
+        // That is the whole reason this gate cannot lock out the hosts who are
+        // the only people buying add-ons in production today, and it is a
+        // property of the SCHEMA, not of the gate — so it is asserted here
+        // instead of being trusted.
+        const [row] = await testDb
+            .getDb()
+            .select({ productDomain: billingSubscriptions.productDomain })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.customerId, customerId));
+
+        expect(row?.productDomain).toBe('accommodation');
+
+        mpStub.config.setSuccess(
+            'checkout.create',
+            providerResponseFixtures.checkout({
+                id: 'chk_domain_default',
+                url: 'https://stub.example/checkout/chk_domain_default',
+                status: 'pending'
+            })
+        );
+
+        const response = await client.post(
+            `/api/v1/protected/billing/addons/${ADDON_SLUG}/purchase`,
+            { addonId: ADDON_SLUG }
+        );
+
+        expect(response.status).toBe(201);
+    });
+
+    it('refuses a GASTRONOMY owner buying the experience add-on — the leak itself', async () => {
+        // The exact purchase HOS-974 D-C set out to stop and HOS-1060's
+        // declared field did not: `targetCategories` cannot separate them,
+        // because all six commerce plans declare category 'owner' — the same
+        // value the accommodation plans carry.
+        await seedAddonRow({
+            slug: 'extra-experiences-1',
+            name: 'Extra Experience Listing (+1)',
+            limitKey: 'max_experiences',
+            increase: 1
+        });
+        await makeSubscriptionCommerce('gastronomy');
+
+        const response = await client.post(
+            '/api/v1/protected/billing/addons/extra-experiences-1/purchase',
+            { addonId: 'extra-experiences-1' }
+        );
+
+        expect(response.status).toBe(422);
+        // The REASON, not just the status. Both refusals in this gate answer
+        // 422, so a status-only assertion cannot tell "wrong vertical" apart
+        // from "no declared vertical" — it stays green with the gate's
+        // undefined-domain branch deleted, which is exactly the mutation that
+        // survived when this test asserted only the number.
+        expect(await readReason(response)).toBe('ADDON_NOT_AVAILABLE_FOR_DOMAIN');
+        // No provider call: the refusal happens before anything can charge.
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+    });
+
+    it('refuses a COMMERCE owner buying an accommodation add-on (the other direction)', async () => {
+        await makeSubscriptionCommerce('gastronomy');
+
+        const response = await client.post(
+            `/api/v1/protected/billing/addons/${ADDON_SLUG}/purchase`,
+            { addonId: ADDON_SLUG }
+        );
+
+        expect(response.status).toBe(422);
+        expect(await readReason(response)).toBe('ADDON_NOT_AVAILABLE_FOR_DOMAIN');
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+    });
+
+    it('evaluates the ADD-ON\'s domain, not "the" subscription: a host who is also a restaurateur may buy either', async () => {
+        // An owner can hold an accommodation AND a commerce subscription at
+        // once (`host-provider@local.test` is seeded to prove it). The code
+        // this replaced took `subscriptions.find(isEntitlementGrantingStatus)`
+        // — the FIRST granting row, whichever it happened to be — so the
+        // outcome depended on insertion order rather than on the add-on.
+        await seedAddonRow({
+            slug: 'extra-gastronomies-1',
+            name: 'Extra Gastronomy Listing (+1)',
+            limitKey: 'max_gastronomies',
+            increase: 1
+        });
+
+        // Second subscription, gastronomy domain, alongside the accommodation
+        // one beforeEach already created.
+        const gastroSub = await createTestSubscription({
+            customerId,
+            planId: _seed.cheap.planId,
+            status: 'active',
+            billingInterval: 'month',
+            intervalCount: 1,
+            metadata: { source: 'test-factory-addon-purchase-gastronomy' }
+        });
+        await testDb
+            .getDb()
+            .update(billingSubscriptions)
+            .set({ productDomain: 'gastronomy' })
+            .where(eq(billingSubscriptions.id, gastroSub.subscriptionId));
+
+        mpStub.config.setSuccess(
+            'checkout.create',
+            providerResponseFixtures.checkout({
+                id: 'chk_domain_dual',
+                url: 'https://stub.example/checkout/chk_domain_dual',
+                status: 'pending'
+            })
+        );
+
+        const response = await client.post(
+            '/api/v1/protected/billing/addons/extra-gastronomies-1/purchase',
+            { addonId: 'extra-gastronomies-1' }
+        );
+
+        expect(response.status).toBe(201);
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(1);
+    });
+
+    it('refuses an add-on whose slug the catalogue does not know, rather than assuming accommodation', async () => {
+        // An add-on an operator created through the SPEC-168 admin UI. It
+        // declares no vertical, and answering `'accommodation'` for it is the
+        // `?? ACCOMMODATION` HOS-1078 deleted one layer down — it would sell
+        // an unclassified add-on to every host on the platform.
+        await seedAddonRow({
+            slug: 'operator-invented-addon',
+            name: 'Operator Invented Addon',
+            limitKey: 'max_accommodations',
+            increase: 1
+        });
+
+        const response = await client.post(
+            '/api/v1/protected/billing/addons/operator-invented-addon/purchase',
+            { addonId: 'operator-invented-addon' }
+        );
+
+        expect(response.status).toBe(422);
+        // ADDON_DOMAIN_UNKNOWN, not ADDON_NOT_AVAILABLE_FOR_DOMAIN — and the
+        // distinction is the whole test. Deleting the undefined-domain branch
+        // still yields a 422 (the caller matches no domain either way), so a
+        // status-only assertion is blind to it. The two are also different
+        // remedies: one is "buy the right subscription", the other is
+        // "an operator has to fix this catalogue row".
+        expect(await readReason(response)).toBe('ADDON_DOMAIN_UNKNOWN');
+        expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+    });
 });

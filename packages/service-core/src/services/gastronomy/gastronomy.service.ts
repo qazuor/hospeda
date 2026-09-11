@@ -30,6 +30,7 @@
 
 import {
     AmenityModel,
+    buildGastronomyCatalogConditions,
     FeatureModel,
     type GastronomyMediaModel,
     type GastronomyModel,
@@ -69,6 +70,8 @@ import type {
     CommerceJunctionModel
 } from '../commerce/base-commerce-listing.service';
 import { BaseCommerceListingService } from '../commerce/base-commerce-listing.service';
+import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
+import { QrCodeService } from '../qr-code/qr-code.service';
 import {
     attachComposedGastronomyMedia,
     attachComposedGastronomyMediaList
@@ -86,6 +89,12 @@ import {
 } from './gastronomy.permissions';
 import { projectGastronomyOwnerAvatar, projectGastronomyPublic } from './gastronomy.projections';
 import type { GastronomyHookState } from './gastronomy.types';
+import {
+    buildGastronomyMenuQrTargetUrl,
+    GASTRONOMY_MENU_QR_ENTITY_TYPE,
+    GASTRONOMY_MENU_QR_PURPOSE,
+    resolveGastronomyMenuQrLangFromTargetUrl
+} from './gastronomy-qr';
 
 /**
  * Business-logic service for gastronomy commerce listings.
@@ -148,7 +157,21 @@ export class GastronomyService extends BaseCommerceListingService<
      */
     private _gastronomyMediaModelInstance: GastronomyMediaModel;
 
-    constructor(config: ServiceConfig, mediaModel?: GastronomyMediaModel) {
+    /**
+     * The QR service used to keep a venue's menu QR pointing at a page that
+     * exists (HOS-1044 §6.3), mirroring `HostTradeService.qrCodeService`.
+     * Constructed by default rather than injected as a nullable port: a
+     * missing sync would silently reintroduce the dead-sticker defect on a
+     * slug rename. The parameter exists so a unit test can substitute a
+     * double, not so a caller can opt out.
+     */
+    private readonly qrCodeService: QrCodeService;
+
+    constructor(
+        config: ServiceConfig,
+        mediaModel?: GastronomyMediaModel,
+        qrCodeService?: QrCodeService
+    ) {
         super(config, GastronomyService.ENTITY_NAME);
         this.model = gastronomyModel;
         this._gastronomyMediaModelInstance = mediaModel ?? gastronomyMediaModel;
@@ -161,6 +184,7 @@ export class GastronomyService extends BaseCommerceListingService<
         // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic CommerceJunctionModel contract
         this._featureJunctionModelInstance =
             rGastronomyFeatureModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
+        this.qrCodeService = qrCodeService ?? new QrCodeService(config);
     }
 
     // -----------------------------------------------------------------------
@@ -415,11 +439,17 @@ export class GastronomyService extends BaseCommerceListingService<
      * Scalar filters forwarded to the model: `type`, `priceRange`, `destinationId`,
      * `ownerId`, `isFeatured`.
      *
-     * NOTE: `amenities` / `features` (array filters requiring junction-table
-     * JOINs) and `minRating` / `maxRating` are stripped here and NOT applied —
-     * they require a custom SQL query that the current `GastronomyModel.findAll`
-     * does not support.  Junction-level and rating range filtering is tracked as
-     * a follow-up task for the search route layer.
+     * `amenities` / `features` are junction-table filters and are applied as
+     * `additionalConditions` built by `@repo/db`'s
+     * `buildGastronomyCatalogConditions` (HOS-1054). They are what backs the
+     * public "apto" filter — sin TACC, vegano, sin lactosa and the rest are
+     * `features` catalog rows, so filtering by apto IS filtering by feature.
+     * Semantics are intersection: two aptos selected means the listing must
+     * declare BOTH.
+     *
+     * NOTE: `minRating` / `maxRating` are still stripped here and NOT applied —
+     * they read a derived aggregate the current model query does not expose,
+     * and remain a follow-up.
      *
      * @param params - Validated search parameters from `GastronomySearchSchema`.
      * @param _actor - The actor performing the action (public path; unused).
@@ -436,14 +466,16 @@ export class GastronomyService extends BaseCommerceListingService<
             pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            amenities: _amenities,
-            features: _features,
+            amenities,
+            features,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
             includeFeatures: _includeFeatures,
             ...scalarFilters
         } = params;
+
+        const catalogConditions = buildGastronomyCatalogConditions({ amenities, features });
 
         // Public search MUST only surface listings with an active subscription
         // (AC-6.2 / AC-4.3): force visibility=PUBLIC + lifecycleState=ACTIVE AFTER
@@ -471,7 +503,10 @@ export class GastronomyService extends BaseCommerceListingService<
                 sortBy: ctx?.pagination?.sortBy,
                 sortOrder: ctx?.pagination?.sortOrder
             },
-            undefined,
+            // `undefined` rather than an empty array when no catalog filter is
+            // active: the base query builder branches on presence, and handing it
+            // `[]` would be a second, needless shape to reason about.
+            catalogConditions.length > 0 ? catalogConditions : undefined,
             ctx?.tx
         );
         return result as unknown as PaginatedListOutput<Gastronomy>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
@@ -495,14 +530,20 @@ export class GastronomyService extends BaseCommerceListingService<
             pageSize: _ps,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            amenities: _amenities,
-            features: _features,
+            amenities,
+            features,
             minRating: _minRating,
             maxRating: _maxRating,
             includeAmenities: _includeAmenities,
             includeFeatures: _includeFeatures,
             ...scalarFilters
         } = params;
+
+        // Mirror _executeSearch, INCLUDING the catalog conditions: a count that
+        // ignored the apto filter would report a total for a different result set
+        // than the one being paginated, so page 2 of "sin TACC" would exist and be
+        // empty.
+        const catalogConditions = buildGastronomyCatalogConditions({ amenities, features });
 
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
@@ -513,7 +554,7 @@ export class GastronomyService extends BaseCommerceListingService<
                 visibility: VisibilityEnum.PUBLIC,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             },
-            { tx: ctx?.tx }
+            { additionalConditions: catalogConditions, tx: ctx?.tx }
         );
         return { count };
     }
@@ -642,5 +683,92 @@ export class GastronomyService extends BaseCommerceListingService<
                 }
             };
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Menu QR target repointing on slug change (HOS-1044 §6.3)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Post-update hook: keeps a venue's `purpose = MENU` QR code pointing at
+     * its CURRENT slug.
+     *
+     * Copies the shape — and the four decisions — of
+     * {@link HostTradeService._afterUpdate} rather than reinventing them:
+     *
+     * 1. **Reconcile, do not detect.** Always recompute the expected target;
+     *    never try to spot that the slug changed.
+     * 2. **Never mint here.** `if (!code) return updated` — a venue with no
+     *    QR yet stays without one. The code is created when it is asked for
+     *    (`routes/gastronomy/protected/menuQr.ts`), never during an
+     *    unrelated edit.
+     * 3. **`siteUrl` and the locale come from the CURRENT `targetUrl`**, via
+     *    {@link resolveSiteUrlFromTargetUrl} and
+     *    {@link resolveGastronomyMenuQrLangFromTargetUrl} — never from
+     *    config or from the request. A stored target that is not a
+     *    parseable, recognizable menu URL is left untouched rather than
+     *    rewritten against a guess.
+     * 4. **Log the failure, never throw.** The listing row is already
+     *    written and there is no transaction to roll back; a repointing
+     *    failure must not fail the update that triggered it.
+     *
+     * Delegates to `super._afterUpdate` FIRST so the inherited junction sync
+     * and edge-cache revalidation still run — this override adds to that
+     * hook, it does not replace it.
+     *
+     * @param entity - The entity as passed into the hook.
+     * @param actor - The actor performing the update.
+     * @param ctx - Service execution context (may carry a transaction).
+     * @returns The entity, unchanged.
+     */
+    protected override async _afterUpdate(
+        entity: Gastronomy,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Gastronomy> {
+        const updated = await super._afterUpdate(entity, actor, ctx);
+
+        try {
+            const found = await this.qrCodeService.findLiveCodeForEntity({
+                actor,
+                entityType: GASTRONOMY_MENU_QR_ENTITY_TYPE,
+                entityId: updated.id,
+                purpose: GASTRONOMY_MENU_QR_PURPOSE,
+                ctx
+            });
+
+            // No code minted for this venue yet: a silent no-op, by decision.
+            const code = found.data;
+            if (!code) return updated;
+
+            const siteUrl = resolveSiteUrlFromTargetUrl({ targetUrl: code.targetUrl });
+            const lang = resolveGastronomyMenuQrLangFromTargetUrl({ targetUrl: code.targetUrl });
+            if (!siteUrl || !lang) {
+                this.logger.error(
+                    { gastronomyId: updated.id, qrCodeId: code.id },
+                    'Menu QR target URL is not a recognizable absolute carta URL; cannot repoint it'
+                );
+                return updated;
+            }
+
+            await this.qrCodeService.setEntityTargetUrl({
+                actor,
+                entityType: GASTRONOMY_MENU_QR_ENTITY_TYPE,
+                entityId: updated.id,
+                purpose: GASTRONOMY_MENU_QR_PURPOSE,
+                targetUrl: buildGastronomyMenuQrTargetUrl({ siteUrl, lang, slug: updated.slug }),
+                ctx
+            });
+        } catch (error) {
+            this.logger.error(
+                {
+                    gastronomyId: updated.id,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                'Could not repoint the venue’s menu QR code; the listing update stands'
+            );
+        }
+
+        return updated;
     }
 }

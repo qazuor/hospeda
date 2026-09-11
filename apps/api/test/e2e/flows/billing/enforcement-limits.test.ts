@@ -596,18 +596,21 @@ describe('SPEC-145 T-014 — N+1 limit-reached coverage over real routes', () =>
                 entityType: 'ACCOMMODATION'
             });
 
-            await expectLimitReached(res);
+            const body = await expectLimitReached(res);
 
-            // NOTE: details are NOT asserted here because assertFavoritesLimitOrThrow
-            // is called INSIDE the route handler (not as a middleware), so the error
-            // bubbles up to the route-factory catch block which calls handleRouteError
-            // (apps/api/src/utils/response-helpers.ts). That function suppresses
-            // ServiceError.details when HOSPEDA_API_DEBUG_ERRORS=false (the test env
-            // default), unlike the global onError handler which only suppresses for 5xx
-            // in production. Middleware-thrown LIMIT_REACHED errors (accommodations,
-            // promotions) reach the global onError and DO surface their details.
-            // This is a known asymmetry; fixing it would require changing handleRouteError
-            // to apply the same details policy as onError for non-5xx errors.
+            // Details DO survive here, same as the middleware-thrown cases
+            // above (accommodations, promotions). Outdated as of HOS-700:
+            // `PUBLIC_DETAILS_ERROR_CODES` in `response-helpers.ts` exposes
+            // `LIMIT_REACHED`'s `details` unconditionally on EVERY path —
+            // `handleRouteError` (handler-thrown, this route) and the global
+            // `onError` handler (middleware-thrown) both honor it, so a
+            // handler-thrown LIMIT_REACHED (assertFavoritesLimitOrThrow is
+            // called inside the route handler, not as a middleware) is no
+            // longer suppressed. There is no asymmetry left to fix.
+            expect(body.error.details).toBeDefined();
+            expect(body.error.details?.limitKey).toBe(L.MAX_FAVORITES);
+            expect(body.error.details?.currentCount).toBe(3);
+            expect(body.error.details?.maxAllowed).toBe(3);
         });
 
         it('UNDER-CAP — 2 bookmarks → toggle-ON → limit gate passes (creates bookmark)', async () => {

@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+    CommerceListingAmenityPublicSchema,
+    CommerceListingFeaturePublicSchema
+} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
@@ -98,6 +102,36 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     priceUnit: true,
     isPriceOnRequest: true,
 
+    // Where the experience starts (HOS-1048). PUBLIC by owner decision: knowing
+    // where you have to show up cannot be a paid feature — without it the ficha
+    // does not do its job. The coordinates travel with the text because they are
+    // the same fact expressed twice; what HOS-1049 gates is the MAP that draws
+    // them and the how-to-get-there instructions, not the data.
+    //
+    // HOS-1049 honours that split verbatim: these three stay picked and ungated.
+    // `meetingPointDirections` is deliberately NOT picked — it is re-declared in
+    // the `.extend()` below as OPTIONAL, because the public route WITHHOLDS it
+    // from a provider whose plan does not grant it, and a picked
+    // `.default([])` array has no way to say "withheld" as opposed to "empty".
+    meetingPoint: true,
+    meetingPointLat: true,
+    meetingPointLong: true,
+
+    // Practical ficha data (HOS-898 / HOS-1046 / HOS-1047 / HOS-1056). All four
+    // are PUBLIC and none is entitlement-gated — owner decision (2026-09-01):
+    // they ship from the basic tier.
+    //
+    // Their presence HERE is the whole point of the exercise. HOS-924 measured
+    // the opposite case: a field the write validator accepts but this schema
+    // omits gets dropped by `stripWithSchema` on the way out, so it is saved,
+    // never shown, and nothing anywhere reports an error. A field added to the
+    // editor and forgotten here would repeat that bug exactly.
+    durationMinutes: true,
+    whatToBring: true,
+    requirements: true,
+    cancellationPolicy: true,
+    acceptsPrivateGroups: true,
+
     // Subscription visibility gate
     hasActiveSubscription: true,
 
@@ -183,7 +217,51 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      * Nullish: a listing may reference an unresolvable destination FK in edge cases.
      * Used by the web card transform to show the destination name without an N+1.
      */
-    destination: z.object({ id: z.string().uuid(), name: z.string(), slug: z.string() }).nullish()
+    destination: z.object({ id: z.string().uuid(), name: z.string(), slug: z.string() }).nullish(),
+    /**
+     * Amenities the provider ticked, joined with the shared catalog (HOS-1072).
+     *
+     * This is where "incluye transporte", "incluye guía" and the rest of the
+     * eight `*_included` catalog rows finally reach a reader: they were
+     * storable, editable and typed long before anything rendered them.
+     *
+     * Populated by the public `getBySlug` route only, which is why this is
+     * `.optional()` rather than defaulted: a list payload that never ran the
+     * join must say "not loaded", not "this experience includes nothing".
+     */
+    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    /** Features the provider ticked, joined with the shared catalog (HOS-1072). */
+    features: z.array(CommerceListingFeaturePublicSchema).optional(),
+    /**
+     * How to GET to the meeting point (HOS-1049) — the paid half.
+     *
+     * `.optional()` and NOT defaulted, unlike the `.default([])` shape the base
+     * schema gives this column: `undefined` here means WITHHELD (the provider's
+     * plan does not grant `manage_experience_directions`), which is a different
+     * fact from "they wrote none". Same convention `menuSections` uses on
+     * `GastronomyPublicSchema`, and for the same reason.
+     *
+     * The rows are never deleted on a downgrade — the public route re-reads the
+     * CURRENT subscription and simply stops emitting them.
+     */
+    meetingPointDirections: z.array(z.string()).optional(),
+    /**
+     * Whether the provider's CURRENT experience plan grants the how-to-get-there
+     * presentation (HOS-1049) — BOTH the instructions above and the map drawn
+     * from `meetingPointLat`/`meetingPointLong`.
+     *
+     * A separate flag rather than "the map renders when there are directions":
+     * the two halves are one entitlement but they are filled in independently,
+     * and an entitled provider who pinned the spot without typing a word must
+     * still get their map. Conversely the coordinates ship to EVERYONE
+     * (HOS-1048, deliberately not moved to the paid side), so without this flag
+     * the page could not tell an entitled provider from an unentitled one and
+     * would draw the paid map for both.
+     *
+     * `.optional()` because list payloads never resolve it — only the two
+     * public detail routes do.
+     */
+    meetingPointDirectionsEnabled: z.boolean().optional()
 });
 
 /** TypeScript type for {@link ExperiencePublicSchema}. */
@@ -215,6 +293,10 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     descriptionI18n: true,
     richDescriptionI18n: true,
     isFeatured: true,
+    // HOS-1286: the owner's own editor sees both featuring sources separately,
+    // like the accommodation protected tier. Never added to the PUBLIC pick —
+    // public reads get the OR under `isFeatured` and nothing else.
+    featuredByEntitlement: true,
     destinationId: true,
     media: true,
     videos: true,
@@ -229,6 +311,28 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     isPriceOnRequest: true,
     hasActiveSubscription: true,
     openingHours: true,
+    // HOS-1048: owner-editable, so it must round-trip to the owner editor —
+    // omitting it here would make the form re-open with the field blank and
+    // silently clear the meeting point on the next save.
+    meetingPoint: true,
+    meetingPointLat: true,
+    meetingPointLong: true,
+    // HOS-1049: owner-editable too, and picked here UNCONDITIONALLY — the
+    // protected tier is the owner reading their own row, so it round-trips even
+    // for a provider whose plan no longer grants the entitlement. Withholding it
+    // here would make the editor re-open blank and the next save would silently
+    // erase instructions the owner is one upgrade away from publishing again.
+    // The public tier is where it is withheld; this one is not public.
+    meetingPointDirections: true,
+    // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056: owner-editable, so they must
+    // round-trip to the owner editor for the same reason the meeting point
+    // does — a field the form cannot read back re-opens blank and the next save
+    // clears it silently.
+    durationMinutes: true,
+    whatToBring: true,
+    requirements: true,
+    cancellationPolicy: true,
+    acceptsPrivateGroups: true,
 
     // Protected: ownership
     ownerId: true,
@@ -273,7 +377,23 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
      */
     amenityIds: z.array(z.string().uuid()).optional(),
     /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
-    featureIds: z.array(z.string().uuid()).optional()
+    featureIds: z.array(z.string().uuid()).optional(),
+    /**
+     * Whether the provider's CURRENT experience plan grants
+     * `manage_experience_directions` (HOS-1049).
+     *
+     * The owner editor needs this to know whether to OFFER the directions
+     * field, and the protected tier is the only place it can learn it: the
+     * stored `meetingPointDirections` round-trip above says what was written,
+     * never whether it may still be written. Without the flag the editor would
+     * present the control to a `-basico` provider and collect a 403 on save —
+     * a refusal the person only discovers after typing.
+     *
+     * `.optional()` because only the protected `getById` route resolves it; the
+     * owner LIST route does not, and a missing flag must read as "not entitled"
+     * rather than as permission.
+     */
+    meetingPointDirectionsEnabled: z.boolean().optional()
 });
 
 /** TypeScript type for {@link ExperienceProtectedSchema}. */

@@ -12,12 +12,15 @@
  * are still returned rather than failing the whole page.
  */
 import type {
+    CommerceDowngradePreview,
+    CommerceKeepSelections,
     CommerceListingCompletenessListing,
     CommerceOwnerListingSummary,
     ExperienceOwnerCreateInput,
     ExperienceProtected,
     GastronomyOwnerCreateInput,
     GastronomyProtected,
+    PlanChangeResponse,
     ResolveListingCompletenessResult,
     StartPaidSubscriptionResponse
 } from '@repo/schemas';
@@ -210,19 +213,132 @@ export function createOwnerListing(
  * Status contract (spec §7.1): `201` with `{checkoutUrl, localSubscriptionId,
  * expiresAt}`; `422` with `{error: {code: 'LISTING_INCOMPLETE', missing}}`
  * when the listing is not publish-ready; `409` when already subscribed;
- * `403` on a non-owner or a still-`mustChangePassword` caller.
+ * `403` on a non-owner or a still-`mustChangePassword` caller. HOS-1119 added
+ * `400` when `planSlug` names a tier that does not belong to this vertical.
  *
- * @param params - Vertical + listing id to start a subscription for.
+ * `payerEmail` (HOS-1008) is the address the owner confirmed on the
+ * pre-redirect screen. `planSlug` (HOS-1119) is the tier the owner picked on
+ * the {@link CommercePlanOption} picker, when the vertical has more than one
+ * active tier and the owner is choosing their FIRST subscription. Each is
+ * sent ONLY when defined — with BOTH omitted **no body is sent at all** and
+ * the request is byte-identical to the pre-HOS-1008 one; the backend already
+ * defaults an absent `planSlug` to the vertical's default tier, so this
+ * function must never invent one.
+ *
+ * @param params - Vertical + listing id, plus the confirmed payer email
+ *   and/or chosen tier slug when the owner went through those screens.
  */
 export function startOwnerListingCheckout({
     vertical,
-    listingId
+    listingId,
+    payerEmail,
+    planSlug
 }: {
     readonly vertical: CommerceVertical;
     readonly listingId: string;
+    readonly payerEmail?: string;
+    readonly planSlug?: string;
 }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
+    const body: { payerEmail?: string; planSlug?: string } = {};
+    if (payerEmail !== undefined) {
+        body.payerEmail = payerEmail;
+    }
+    if (planSlug !== undefined) {
+        body.planSlug = planSlug;
+    }
+    const hasBody = payerEmail !== undefined || planSlug !== undefined;
+
     return apiClient.postProtected<StartPaidSubscriptionResponse>({
         path: `${COMMERCE_LISTINGS_PATH}/${vertical}/${listingId}/start-subscription`,
-        headers: { 'X-Idempotency-Key': crypto.randomUUID() }
+        headers: { 'X-Idempotency-Key': crypto.randomUUID() },
+        ...(hasBody ? { body } : {})
+    });
+}
+
+// ---------------------------------------------------------------------------
+// HOS-1119 — owner self-service tier change
+// ---------------------------------------------------------------------------
+
+const COMMERCE_SUBSCRIPTIONS_PATH = '/api/v1/protected/commerce/subscriptions';
+
+/**
+ * Moves the caller's own commerce subscription for one vertical to another
+ * tier (HOS-1119, both directions since HOS-1122).
+ *
+ * `POST /api/v1/protected/commerce/subscriptions/{vertical}/change-plan`.
+ * Mirrors {@link startOwnerListingCheckout}'s idempotency-key pattern — a
+ * fresh `X-Idempotency-Key` per call, so a retried click cannot open two
+ * changes.
+ *
+ * Only `422` is now reserved for a target priced IDENTICALLY to the current
+ * tier: it is neither direction. A cheaper target answers `scheduled`, and
+ * `CommercePlanChange.client.tsx` offers those tiers — it filtered to dearer
+ * ones only until HOS-1122, which is what made "puede subir pero no bajar"
+ * true from the owner's side even after the API accepted the move.
+ *
+ * Other error codes: `400` (malformed/foreign-vertical slug), `404` (no live
+ * subscription for this vertical, or the target plan does not exist), `409`
+ * (a cancellation is already pending, or the subscription moved mid-request),
+ * `410` (target plan retired), `503` (billing unavailable).
+ *
+ * @param params - Vertical to act on, and the target tier's slug.
+ * @returns A discriminated `PlanChangeResponse`: `pending_payment` (redirect
+ *   to `checkoutUrl` to pay the prorated delta), `active` (applied at once,
+ *   no charge — the subscription was still trialing), or `scheduled` (a
+ *   downgrade, effective at period end, carrying a
+ *   `commerceRestrictionPreview` of the listings the smaller cap stops
+ *   covering).
+ */
+export function changeCommercePlan({
+    vertical,
+    planSlug,
+    keepSelections
+}: {
+    readonly vertical: CommerceVertical;
+    readonly planSlug: string;
+    /**
+     * Which listings to keep public when this is a DOWNGRADE (HOS-1122).
+     * Omitted for an upgrade — the API ignores it there, and sending it would
+     * suggest a choice was made where none exists.
+     */
+    readonly keepSelections?: CommerceKeepSelections;
+}): Promise<ApiResult<PlanChangeResponse>> {
+    return apiClient.postProtected<PlanChangeResponse>({
+        path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/change-plan`,
+        headers: { 'X-Idempotency-Key': crypto.randomUUID() },
+        body: { planSlug, ...(keepSelections === undefined ? {} : { keepSelections }) }
+    });
+}
+
+/**
+ * Reads which listings a cheaper tier would stop covering — WITHOUT scheduling
+ * anything (HOS-1122).
+ *
+ * `GET /api/v1/protected/commerce/subscriptions/{vertical}/downgrade-preview`.
+ *
+ * The read that has to happen BEFORE {@link changeCommercePlan} on a
+ * downgrade, so the owner picks what to keep while nothing is written yet.
+ * Mirrors `billingApi.previewDowngrade`, which plays the same part in the
+ * accommodation flow.
+ *
+ * `422` here is not "no excess": it means the target tier's listing cap could
+ * not be resolved, and the caller must NOT fall through to a zero-excess
+ * assumption — that is precisely the reading the whole feature is built to
+ * avoid. `404` means the caller holds no subscription for this vertical.
+ *
+ * @param params - Vertical to preview, and the target tier's slug.
+ * @returns The preview: the cap, how many listings exceed it, and every
+ *   covered listing ordered by default-keep priority.
+ */
+export function fetchCommerceDowngradePreview({
+    vertical,
+    planSlug
+}: {
+    readonly vertical: CommerceVertical;
+    readonly planSlug: string;
+}): Promise<ApiResult<CommerceDowngradePreview>> {
+    return apiClient.getProtected<CommerceDowngradePreview>({
+        path: `${COMMERCE_SUBSCRIPTIONS_PATH}/${vertical}/downgrade-preview`,
+        params: { targetPlan: planSlug }
     });
 }

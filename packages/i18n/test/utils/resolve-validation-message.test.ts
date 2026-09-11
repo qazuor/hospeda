@@ -175,6 +175,61 @@ describe('resolveValidationMessage', () => {
         });
     });
 
+    describe('when params include a numeric count (HOS-898 plural resolution)', () => {
+        it('should call t with the _other suffixed key when count is not 1', () => {
+            // Arrange
+            const mockT = createMockT();
+            const key = 'zodError.experience.durationMinutes.max';
+            const params = { max: 5, count: 5 };
+
+            // Act
+            const result = resolveValidationMessage({ key, t: mockT, params });
+
+            // Assert
+            expect(mockT).toHaveBeenCalledWith('validation.experience.durationMinutes.max_other', {
+                max: 5,
+                count: 5
+            });
+            expect(result).toBe('translated:validation.experience.durationMinutes.max_other');
+        });
+
+        it('should call t with the _one suffixed key when count is 1', () => {
+            // Arrange
+            const mockT = createMockT();
+            const key = 'zodError.experience.durationMinutes.max';
+            const params = { max: 1, count: 1 };
+
+            // Act
+            const result = resolveValidationMessage({ key, t: mockT, params });
+
+            // Assert
+            expect(mockT).toHaveBeenCalledWith('validation.experience.durationMinutes.max_one', {
+                max: 1,
+                count: 1
+            });
+            expect(result).toBe('translated:validation.experience.durationMinutes.max_one');
+        });
+
+        it('should fall back to the base key when no _one/_other sibling exists for the count', () => {
+            // Arrange — most `.max()` messages have no plural pair; `pluralize()`
+            // must fall back to the base key exactly as a plain `t()` call would.
+            const mockT = vi.fn((k: string, _p?: Record<string, unknown>) => {
+                if (k === 'validation.experience.meetingPoint.max') {
+                    return 'translated:validation.experience.meetingPoint.max';
+                }
+                return `[MISSING: ${k}]`;
+            });
+            const key = 'zodError.experience.meetingPoint.max';
+            const params = { max: 300, count: 300 };
+
+            // Act
+            const result = resolveValidationMessage({ key, t: mockT, params });
+
+            // Assert
+            expect(result).toBe('translated:validation.experience.meetingPoint.max');
+        });
+    });
+
     describe('when key is empty', () => {
         it('should return an empty string without calling t', () => {
             // Arrange

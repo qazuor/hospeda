@@ -14,6 +14,7 @@
  */
 
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 /**
  * Set of roles that grant access to property-management navigation
@@ -42,11 +43,25 @@ import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
  */
 export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>(['HOST', 'ADMIN', 'SUPER_ADMIN']);
 
-/** Owner (host) pricing page, locale-agnostic. */
-const OWNER_PLANS_PATH = 'suscriptores/planes';
+/**
+ * Owner (host) pricing page, locale-agnostic.
+ *
+ * HOS-942 pointed both constants one level deeper than they used to be:
+ * `suscriptores/planes` became the five-audience INDEX rather than owner
+ * pricing, and `suscriptores/turistas` became a 301. Every caller of
+ * {@link resolveSubscriptionPlansPath} is answering "which catalogue can this
+ * person actually buy from" — a chooser, or a redirect through one, is the wrong
+ * answer to that question.
+ *
+ * HOS-1032 moved the two pages again, into the `/planes/` namespace, and this
+ * is now READ from `PRICING_PAGE_PATH_BY_AUDIENCE` instead of spelled here. Two
+ * literals were two things to update on a move, and the previous move had
+ * already proved they get updated at different times: the URLs are one fact.
+ */
+const OWNER_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.owner;
 
 /** Tourist pricing page, locale-agnostic. Also the anonymous default. */
-const TOURIST_PLANS_PATH = 'suscriptores/turistas';
+const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
 
 /**
  * Set of roles that grant access to commerce-owner navigation
@@ -62,58 +77,141 @@ const TOURIST_PLANS_PATH = 'suscriptores/turistas';
  * Mirrored by `PERMISSION_ROLE_MAP[COMMERCE_EDIT_OWN]` in `nav-gating.ts`.
  *
  * Roles:
- * - COMMERCE_OWNER: merchant who owns one or more commerce listings.
+ * - COMMERCE_OWNER: merchant who owns one or more commerce listings. RETIRING
+ *   (HOS-1077) — kept here for the expand window, dropped in release 2.
+ * - GASTRONOMY_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
+ *   (HOS-1077). Both reach the same `/mi-cuenta/comercio` area; which listings
+ *   they can actually edit is decided per listing by the API, not by this set.
+ *   Listing them here is what stops an account holding ONLY a vertical role
+ *   from losing the nav — a set that named just `COMMERCE_OWNER` would send
+ *   the first gastronomy-only owner to an empty sidebar.
  * - ADMIN / SUPER_ADMIN: platform staff (can reach every area).
  */
-export const ROLES_WITH_COMMERCE_NAV = new Set<string>(['COMMERCE_OWNER', 'ADMIN', 'SUPER_ADMIN']);
+export const ROLES_WITH_COMMERCE_NAV = new Set<string>([
+    'COMMERCE_OWNER',
+    'GASTRONOMY_OWNER',
+    'EXPERIENCE_OWNER',
+    'ADMIN',
+    'SUPER_ADMIN'
+]);
+
+/**
+ * Which commerce-vertical pricing page a COMMERCE-only account (no
+ * accommodation "host" hat) belongs on, or `null` when it holds neither
+ * commerce role (HOS-1293).
+ *
+ * Checked only AFTER {@link hasAccommodationsNavAccess} has already failed in
+ * both callers below — a dual-hat host who also runs a restaurant still lands
+ * on the owner plans page, same precedence HOS-296 established for
+ * host-vs-tourist.
+ *
+ * `GASTRONOMY_OWNER` wins over `EXPERIENCE_OWNER` when an account somehow
+ * holds both with no host role — an arbitrary but deterministic tie-break,
+ * documented rather than silent, since a single pricing-page redirect cannot
+ * name two verticals at once. The retiring `COMMERCE_OWNER` role (HOS-1077)
+ * predates the per-vertical split and carries no vertical of its own, so it
+ * degrades to the same gastronomy default rather than falling through to
+ * tourist — still a stronger signal than "no commerce role at all".
+ *
+ * @param params.roles - Every role the user holds, or `null` for
+ *   unauthenticated visitors.
+ * @returns `'gastronomy'` or `'experience'`, or `null` when the account holds
+ *   no commerce role.
+ */
+function resolveCommercePricingAudience({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): 'gastronomy' | 'experience' | null {
+    if (!roles || roles.length === 0) {
+        return null;
+    }
+    const roleSet = new Set(roles);
+    if (roleSet.has('GASTRONOMY_OWNER') || roleSet.has('COMMERCE_OWNER')) {
+        return 'gastronomy';
+    }
+    if (roleSet.has('EXPERIENCE_OWNER')) {
+        return 'experience';
+    }
+    return null;
+}
 
 /**
  * Resolves which subscription pricing page a role-aware upsell or redirect
  * should target: a user holding any host-level hat belongs on the owner plans
- * page, while tourists and unauthenticated visitors belong on the tourist
- * plans page.
+ * page, a commerce-only owner (gastronomy or experience, HOS-1293) belongs on
+ * their own vertical's plans page, and tourists / unauthenticated visitors
+ * belong on the tourist plans page.
  *
- * Centralizes the host-vs-tourist pricing decision shared across role-aware
- * surfaces (BETA-165 dashboard/addons, BETA-201 checkout return pages). An
- * empty or `null` role set (anonymous, e.g. a MercadoPago redirect without a
- * session cookie) resolves to the tourist page — the safe default.
+ * Centralizes the audience pricing decision shared across role-aware surfaces
+ * (BETA-165 dashboard/addons, BETA-201 checkout return pages). An empty or
+ * `null` role set (anonymous, e.g. a MercadoPago redirect without a session
+ * cookie) resolves to the tourist page — the safe default.
  *
  * HOS-296: a user who is BOTH a host and a tourist-tier subscriber lands on
  * the owner page, because holding the host hat is the stronger signal about
- * which catalog they can actually buy from.
+ * which catalog they can actually buy from. HOS-1293 extends the same
+ * precedence one level: host beats commerce beats tourist — before this fix a
+ * commerce-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
+ * fell all the way through to the tourist page from `/mi-cuenta/addons/` and
+ * the bare `/suscriptores/checkout/` root, because this function recognized
+ * only the host-vs-everyone-else split.
  *
  * @param params.roles - Every role the user holds, or `null` for
  *   unauthenticated visitors.
- * @returns The locale-agnostic path segment: `'suscriptores/planes'` (owner) or
- *          `'suscriptores/turistas'` (tourist / anonymous).
+ * @returns The locale-agnostic path segment: the owner, gastronomy,
+ *          experience, or tourist plans page — see
+ *          {@link PRICING_PAGE_PATH_BY_AUDIENCE}.
  */
 export function resolveSubscriptionPlansPath({
     roles
 }: {
     readonly roles: readonly string[] | null;
 }): string {
-    return hasAccommodationsNavAccess({ roles }) ? OWNER_PLANS_PATH : TOURIST_PLANS_PATH;
+    if (hasAccommodationsNavAccess({ roles })) {
+        return OWNER_PLANS_PATH;
+    }
+    const commerceAudience = resolveCommercePricingAudience({ roles });
+    if (commerceAudience !== null) {
+        return PRICING_PAGE_PATH_BY_AUDIENCE[commerceAudience];
+    }
+    return TOURIST_PLANS_PATH;
 }
 
 /**
- * Same decision as {@link resolveSubscriptionPlansPath}, but driven by the
- * `upgradeAudience` the API attaches to an entitlement error instead of by the
- * caller's own roles.
+ * Same decision as {@link resolveSubscriptionPlansPath}, but driven by an
+ * explicit audience the caller already knows (e.g. the `upgradeAudience` the
+ * API attaches to an entitlement error, or an add-on's own `productDomain`)
+ * instead of by the caller's own roles.
  *
- * **How much to trust the field depends on which gate sent it.** On a
- * `LIMIT_REACHED` 403 it is computed per limit, so it really is the server's
- * verdict. On an `ENTITLEMENT_REQUIRED` 402 it is not: `trialMiddleware`
- * hardcodes `'host'` on its trial-expired throws and omits the field entirely on
- * `NO_BILLING_ACCOUNT` / `NO_ACTIVE_SUBSCRIPTION`. Callers on the 402 path should
- * treat it as a hint and keep a default that suits their own surface (HOS-283).
+ * **How much to trust an API-sourced `'host' | 'tourist'` value depends on
+ * which gate sent it.** On a `LIMIT_REACHED` 403 it is computed per limit, so
+ * it really is the server's verdict. On an `ENTITLEMENT_REQUIRED` 402 it is
+ * not: `trialMiddleware` hardcodes `'host'` on its trial-expired throws and
+ * omits the field entirely on `NO_BILLING_ACCOUNT` / `NO_ACTIVE_SUBSCRIPTION`.
+ * Callers on the 402 path should treat it as a hint and keep a default that
+ * suits their own surface (HOS-283).
  *
- * @param params.audience - `'host'` or `'tourist'`, from `details.upgradeAudience`.
+ * `'gastronomy'` / `'experience'` (HOS-1293) exist for callers that already
+ * know the vertical directly — e.g. `AddonsPurchasePanel.client.tsx` resolving
+ * one CTA per add-on card from that add-on's own `productDomain` — and were
+ * never reachable from the API's `upgradeAudience` field above, which only
+ * ever sends `'host'` or `'tourist'`.
+ *
+ * @param params.audience - `'host'`, `'tourist'`, `'gastronomy'`, or
+ *   `'experience'`.
  * @returns The locale-agnostic path segment for the matching pricing page.
  */
 export function resolveSubscriptionPlansPathForAudience({
     audience
 }: {
-    audience: 'host' | 'tourist';
+    audience: 'host' | 'tourist' | 'gastronomy' | 'experience';
 }): string {
-    return audience === 'host' ? OWNER_PLANS_PATH : TOURIST_PLANS_PATH;
+    if (audience === 'host') {
+        return OWNER_PLANS_PATH;
+    }
+    if (audience === 'tourist') {
+        return TOURIST_PLANS_PATH;
+    }
+    return PRICING_PAGE_PATH_BY_AUDIENCE[audience];
 }

@@ -68,6 +68,24 @@ export const HOSPEDA_ENV_VARS = [
             'Donde corre el dashboard de admin (TanStack Start). Local: http://localhost:3000. Producción: https://admin.hospeda.com.ar (o tu subdominio real). La API la usa para CORS.'
     },
     {
+        name: 'HOSPEDA_BRAND_PHONE',
+        description:
+            "Hospeda's brand contact phone number (HOS-364), in call/display form — WITHOUT the AR mobile 9 (e.g. '+54 3442 453797'). Single source of truth for every phone surface in apps/web: the footer, the contact page, the FAQ WhatsApp CTA, the six presentation pages, and the schema.org Organization telephone. web derives the display text, the tel: href, and the wa.me WhatsApp link (which inserts the AR mobile 9) all from this one value via apps/web/src/lib/brand-phone.ts — no call site should hardcode the number again.",
+        descriptionEs:
+            "Teléfono de contacto de la marca Hospeda (HOS-364), en formato de llamada/display — SIN el 9 móvil argentino (ej: '+54 3442 453797'). Fuente única para toda superficie de teléfono en apps/web: el footer, la página de contacto, el CTA de WhatsApp de las FAQ, las seis páginas de presentación y el telephone del Organization de schema.org. web deriva el texto a mostrar, el href tel: y el link de WhatsApp wa.me (que inserta el 9 móvil) a partir de este único valor vía apps/web/src/lib/brand-phone.ts — ningún call site debería volver a hardcodear el número.",
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '+54 3442 453797',
+        exampleValue: '+54 3442 453797',
+        apps: ['web'],
+        category: 'core',
+        howToObtain:
+            "Hospeda's own published contact number, in '+<country code> <area> <number>' form, WITHOUT the AR mobile 9 — apps/web/src/lib/brand-phone.ts inserts it only for the wa.me link. Change this ONE value (and redeploy) to change the number everywhere it is shown.",
+        howToObtainEs:
+            "El número de contacto publicado por Hospeda, en formato '+<código país> <área> <número>', SIN el 9 móvil argentino — apps/web/src/lib/brand-phone.ts lo inserta solo para el link de wa.me. Cambiar este ÚNICO valor (y redeployar) cambia el número en todos lados donde se muestra."
+    },
+    {
         name: 'HOSPEDA_INTERNAL_API_URL',
         description:
             'Internal API base URL for the web app server-to-server SSR fetches (HOS-103). When set, SSR GETs use this instead of PUBLIC_API_URL, keeping traffic off the public Cloudflare hostname. Server-only; browser calls always use the public URL. Leave unset in local dev.',
@@ -932,6 +950,50 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // Own-preapproval checkout (HOS-937 step 1)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED',
+        description:
+            'Feature flag for the own-preapproval accommodation-monthly checkout (HOS-937 step 1). Ships dark (default false): while false, initiatePaidMonthlySubscription keeps redirecting to the shared MercadoPago preapproval_plan share link (Path C, HOS-191), whose external_reference MercadoPago silently discards. Set to "true" to create a per-user POST /preapproval instead, whose external_reference (the local subscription id) survives in the body of the server-to-server call and closes the orphan class this issue targets.',
+        descriptionEs:
+            'Feature flag del checkout de preapproval propio para accommodation mensual (HOS-937 paso 1). Se entrega apagado (default false): mientras esté en false, initiatePaidMonthlySubscription sigue redirigiendo al share link compartido del preapproval_plan de MercadoPago (Path C, HOS-191), cuyo external_reference MercadoPago descarta en silencio. Poné "true" para crear en su lugar un POST /preapproval propio por usuario, cuyo external_reference (el id de suscripción local) sobrevive en el body de la llamada servidor-a-servidor y cierra la clase de huérfanos que este issue ataca.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Leave unset or "false" to keep the shared share-link checkout (safe default, unchanged behavior). Set "true" ONLY after a staging smoke of the accommodation-monthly checkout against the real MP sandbox has passed. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it. Scoped to accommodation monthly only (HOS-937 step 1) — annual, commerce and partner checkouts are unaffected regardless of this flag.',
+        howToObtainEs:
+            'Dejalo sin setear o en "false" para mantener el checkout con share link compartido (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que un smoke en staging del checkout de accommodation mensual contra el sandbox real de MP haya pasado. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa. Alcanza sólo a accommodation mensual (HOS-937 paso 1) — anual, commerce y partner no se ven afectados por este flag.'
+    },
+
+    // -------------------------------------------------------------------------
+    // Recurring add-on charging (HOS-847)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED',
+        description:
+            'Feature flag for recurring add-on charging via a dedicated MercadoPago preapproval per add-on (HOS-847). Ships dark (default false) across the whole PR chain: while unset/false, add-on checkout keeps using the one-time Preference path (mode: "payment") byte-for-byte, regardless of billingType: "recurring" on the add-on. Set to "true" ONLY once the full chain is merged (checkout, webhook activation/renewal, hard-cancel on cancellation, and the reconciler cron) — turning this on before PR 5\'s webhook handler exists does NOT merely leave the purchase stuck pending: the add-on\'s own billing_subscriptions row carries a real mp_subscription_id, and the generic MercadoPago handler resolves incoming preapproval events against that column with no product-domain filter, so it matches the add-on row and runs the full PLAN activation over something that is not a plan. The buyer is charged either way; what they do not get is the add-on.',
+        descriptionEs:
+            'Feature flag del cobro recurrente de add-ons vía un preapproval de MercadoPago dedicado por add-on (HOS-847). Se entrega apagado (default false) durante toda la cadena de PRs: mientras esté sin setear o en false, el checkout de add-ons sigue usando el camino de pago único vía Preference (mode: "payment") sin cambios, sin importar el billingType: "recurring" del add-on. Poné "true" SOLO una vez que toda la cadena esté mergeada (checkout, activación/renovación por webhook, hard-cancel en la cancelación, y el cron reconciliador) — activarlo antes de que exista el handler de webhook del PR 5 NO deja solamente la compra trabada en pending: la fila de billing_subscriptions del propio add-on lleva un mp_subscription_id real, y el handler genérico de MercadoPago resuelve los eventos de preapproval contra esa columna sin filtrar por product_domain, así que matchea la fila del add-on y corre la activación de PLAN completa sobre algo que no es un plan. Al cliente se le cobra igual; lo que no recibe es el add-on.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Leave unset or "false" to keep the one-time add-on checkout (safe default, unchanged behavior). Set "true" ONLY after the entire HOS-847 PR chain (checkout, webhook, cancellation hard-cancel, reconciler) is merged AND both the staging and prod smoke checklists (SPEC-143) have signed off — this is billing CORE. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it.',
+        howToObtainEs:
+            'Dejalo sin setear o en "false" para mantener el checkout de add-ons de pago único (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que toda la cadena de PRs de HOS-847 (checkout, webhook, hard-cancel en cancelación, reconciliador) esté mergeada Y de que los smokes de staging y prod (SPEC-143) hayan firmado — esto es billing CORE. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa.'
+    },
+
+    // -------------------------------------------------------------------------
     // Auth lockout (brute-force protection)
     // -------------------------------------------------------------------------
     {
@@ -1561,6 +1623,28 @@ export const HOSPEDA_ENV_VARS = [
     // -------------------------------------------------------------------------
     // Testing
     // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS',
+        description:
+            'CI cost guard (HOS-1144). When enabled, every REMOTE media URL is replaced by a placeholder the site serves itself (/assets/images/placeholder.svg), so a run makes zero requests to res.cloudinary.com or any other image CDN. Set ONLY in the CI workflows that boot apps/web (a11y-sweep, e2e-pr, e2e-nightly, lighthouse). MUST stay unset in staging and production: enabling it there would serve grey placeholders instead of real photographs to visitors.',
+        descriptionEs:
+            'Guarda de costo de CI (HOS-1144). Cuando está activa, toda URL de medios REMOTA se reemplaza por un placeholder que sirve el propio sitio (/assets/images/placeholder.svg), de modo que una corrida no hace ni un request a res.cloudinary.com ni a ningún otro CDN de imágenes. Se setea SOLO en los workflows de CI que levantan apps/web (a11y-sweep, e2e-pr, e2e-nightly, lighthouse). DEBE quedar sin setear en staging y producción: activarla ahí serviría placeholders grises en vez de fotos reales a los visitantes.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['web'],
+        category: 'testing',
+        // `stage` is deliberately left at its 'runtime' default even though CI
+        // also exports it for `astro build`: marking it 'build'/'both' tells the
+        // deploy tooling it must be supplied as a Coolify build-arg, and this
+        // variable must never be set on a deployment at all.
+        howToObtain:
+            'Leave unset everywhere except CI. Set to "true" (the only accepted values are "true" and "1"; anything else — including "false" — leaves it off) in a workflow-level env block so it reaches BOTH the `astro build` and the web server process: the URL rewrite happens at resolution time in @repo/media getMediaUrl and apps/web/src/lib/media.ts, and both stages resolve URLs. Playwright and the a11y sweep additionally read it to make res.cloudinary.com unresolvable for Chromium, as a second layer. Deliberately NOT keyed off CI, which production build pipelines also set.',
+        howToObtainEs:
+            'Dejala sin setear en todos lados salvo CI. Poné "true" (los únicos valores aceptados son "true" y "1"; cualquier otro — incluido "false" — la deja apagada) en el bloque env del workflow para que llegue TANTO al `astro build` como al proceso del server web: la reescritura de URLs ocurre en tiempo de resolución, en getMediaUrl de @repo/media y en apps/web/src/lib/media.ts, y ambas etapas resuelven URLs. Playwright y el a11y sweep además la leen para que res.cloudinary.com no resuelva en Chromium, como segunda capa. A propósito NO se apoya en CI, que los pipelines de build de producción también setean.'
+    },
     {
         name: 'HOSPEDA_TRIAL_DAYS_OVERRIDE',
         description:

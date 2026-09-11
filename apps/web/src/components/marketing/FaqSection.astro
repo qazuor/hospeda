@@ -1,0 +1,100 @@
+---
+/**
+ * @file FaqSection.astro
+ * @description The objection-handling block of a sales page: a list of
+ * native `<details>` disclosures.
+ *
+ * Extracted for HOS-985 (H6 of HOS-941) from four hand-rolled copies. All four
+ * already used `<details>`/`<summary>` — none had built a custom disclosure —
+ * so the accessible behaviour here is the platform's, not ours, and stays that
+ * way: keyboard operation, the open/closed state exposed to assistive tech and
+ * in-page find all come for free and cannot regress in a refactor.
+ *
+ * ## Why questions and answers arrive resolved
+ *
+ * The four copies disagreed on the item shape: the owner surfaces pass
+ * `{qKey, qFb}` plus a resolver invoked per item (it interpolates the trial
+ * length, which HOS-941 R-2 requires be read from the plan catalogue and never
+ * written into a string), while the two commerce landings pass `{q, a}` already
+ * translated in the frontmatter. Taking the resolved shape gives this component
+ * ONE contract; the caller that needs interpolation does it where it already
+ * has the plan data.
+ *
+ * ## This component does not emit JSON-LD
+ *
+ * Every page that renders a FAQ also hand-builds an `FAQPage` structured-data
+ * object and passes it to `<JsonLd>`. That stays with the page on purpose: the
+ * structured data must describe the whole document, and a page may render this
+ * component more than once or alongside questions that live elsewhere. Emitting
+ * it from here would produce two competing `FAQPage` blocks on one URL.
+ */
+
+import SalesSection from './SalesSection.astro';
+
+/** One question and its answer, both already translated. */
+export interface FaqItem {
+    /** Translated question. */
+    readonly q: string;
+    /** Translated answer. */
+    readonly a: string;
+}
+
+interface Props {
+    readonly tagline: string;
+    readonly title: string;
+    readonly items: readonly FaqItem[];
+    readonly warm?: boolean;
+}
+
+const { tagline, title, items, warm = false } = Astro.props;
+---
+
+<SalesSection tagline={tagline} title={title} warm={warm}>
+    <slot name="decoration" slot="decoration" />
+    <div class="faq__list" data-reveal="up">
+        {
+            items.map((item) => (
+                <details class="faq__item">
+                    <summary class="faq__question">{item.q}</summary>
+                    <p class="faq__answer">{item.a}</p>
+                </details>
+            ))
+        }
+    </div>
+</SalesSection>
+
+<style>
+    .faq__list {
+        max-width: 700px;
+        margin: 0 auto;
+        text-align: left;
+    }
+
+    .faq__item {
+        border-bottom: 1px solid var(--border);
+        padding: var(--space-4) 0;
+    }
+
+    .faq__question {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-body-lg);
+        color: var(--core-foreground);
+        cursor: pointer;
+        list-style: none;
+        padding: var(--space-2) 0;
+    }
+
+    .faq__question::-webkit-details-marker {
+        display: none;
+    }
+
+    .faq__answer {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        padding: var(--space-2) 0 var(--space-4);
+        margin: 0;
+    }
+</style>

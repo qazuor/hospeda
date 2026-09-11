@@ -12,6 +12,7 @@ import { COMMERCE_FIELD_PREFIX } from '@/components/commerce/editor/field-ids';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import { addToast } from '@/store/toast-store';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
+import type { CommerceEditorFormSectionId } from '../../../src/components/commerce/editor/commerce-section-payload';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
@@ -91,7 +92,9 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
 }));
 
 vi.mock('../../../src/lib/api/client', () => ({
-    apiClient: { patch: vi.fn() }
+    apiClient: {
+        patch: vi.fn()
+    }
 }));
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
@@ -126,19 +129,18 @@ const WORK_EMAIL_ID = buildFieldId({
 });
 
 const mockPatch = vi.mocked(apiClient.patch);
-const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
-const mockListMedia = vi.mocked(commerceMediaApi.listMedia);
-const mockAddMedia = vi.mocked(commerceMediaApi.addMedia);
-const mockSetFeaturedMedia = vi.mocked(commerceMediaApi.setFeaturedMedia);
 
-/** A Cloudinary-shaped image (ImageSchema-compatible) for media tests. */
-const galleryImage = {
-    url: 'http://cdn.test/g1.jpg',
-    publicId: 'commerce/g1',
-    width: 800,
-    height: 600,
-    moderationState: 'APPROVED' as const
-};
+/**
+ * The media endpoints stay MOCKED even though HOS-1080 moved photos to their own
+ * route and no test here drives them any more.
+ *
+ * They are asserted, not just stubbed: this island must not reach the media API
+ * at all now, and a real module would make that failure a network call in jsdom
+ * rather than a failed expectation. Their coverage lives in
+ * `editor/MediaSection.test.tsx`.
+ */
+const mockListMedia = vi.mocked(commerceMediaApi.listMedia);
+const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
 
 // destinationId is `.uuid()`-validated on the domain schema (mirrors the
 // amenityIds/featureIds UUID requirement in the seeding test below) — use
@@ -161,10 +163,14 @@ const destinationOptions = [
     { id: DESTINATION_2, name: 'Colón' }
 ];
 
-function renderEditor(vertical: 'gastronomy' | 'experience') {
+function renderEditor(
+    vertical: 'gastronomy' | 'experience',
+    sectionId: CommerceEditorFormSectionId = 'basicInfo'
+) {
     return render(
         <CommerceListingEditor
             vertical={vertical}
+            sectionId={sectionId}
             listingId="abc"
             locale="es"
             initialData={baseData}
@@ -183,8 +189,6 @@ describe('CommerceListingEditor', () => {
         mockDeleteMedia.mockClear();
         mockListMedia.mockClear();
         mockListMedia.mockResolvedValue({ ok: true, data: { media: [] } });
-        mockAddMedia.mockClear();
-        mockSetFeaturedMedia.mockClear();
     });
 
     /*
@@ -195,6 +199,49 @@ describe('CommerceListingEditor', () => {
      * no request. Asserting only the toast would pass just as well if the editor
      * PATCHed an empty body alongside it.
      */
+    it('marks the form hydrated only from a mount effect, never in the markup (HOS-1080)', async () => {
+        // The E2E suite's hydration gate. Every control in every section is
+        // server-rendered, so "visible and editable" is true long before React
+        // attaches a handler — the HOS-371 class of bug, where an edit lands on
+        // a node React is not listening to and Save silently sends nothing.
+        //
+        // Two halves, and both matter. The attribute must be ABSENT from what
+        // the component renders (otherwise it ships in the SSR HTML and gates
+        // nothing), and PRESENT once mounted. `renderToStaticMarkup` is the only
+        // way to observe the first half: `render()` runs effects, so it can
+        // never tell a server-rendered attribute from an effect-set one.
+        const { renderToStaticMarkup } = await import('react-dom/server');
+
+        const ssr = renderToStaticMarkup(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                sectionId="basicInfo"
+                listingId="abc"
+                locale="es"
+                initialData={baseData}
+                destinations={destinationOptions}
+            />
+        );
+        expect(ssr).not.toContain('data-hydrated');
+
+        const { container } = renderEditor('gastronomy');
+        await waitFor(() =>
+            expect(container.querySelector('form')).toHaveAttribute('data-hydrated', 'true')
+        );
+    });
+
+    it('never touches the media endpoints from a form section (HOS-1080)', async () => {
+        // Photos are their own route now, mounting `MediaSection` directly. A
+        // form section that still hydrated media would be paying for two extra
+        // requests per page and could overwrite rows the owner just saved —
+        // the HOS-372 failure, reintroduced by the split rather than fixed by it.
+        renderEditor('gastronomy');
+
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar' })));
+        expect(mockListMedia).not.toHaveBeenCalled();
+        expect(mockDeleteMedia).not.toHaveBeenCalled();
+    });
+
     it('answers a no-op save with a toast instead of a request', () => {
         renderEditor('gastronomy');
 
@@ -287,7 +334,7 @@ describe('CommerceListingEditor', () => {
             ok: false,
             error: { status: 500, message: 'Ese teléfono ya está en uso' }
         });
-        renderEditor('gastronomy');
+        renderEditor('gastronomy', 'contact');
 
         // HOS-371: the phone is a country-code combobox + local number pair now,
         // so the editable control is the "Número" input; the dial code comes
@@ -322,6 +369,7 @@ describe('CommerceListingEditor', () => {
         render(
             <CommerceListingEditor
                 vertical="experience"
+                sectionId="price"
                 listingId="abc"
                 locale="es"
                 initialData={{ ...baseData, priceFrom: 50000 } as unknown as CommerceListingDetail}
@@ -342,7 +390,7 @@ describe('CommerceListingEditor', () => {
 
     it('PATCHes only the priceRange field group when the price tier changes (gastronomy)', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy');
+        renderEditor('gastronomy', 'price');
 
         fireEvent.change(screen.getByLabelText('Rango de precios'), { target: { value: 'MID' } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
@@ -356,7 +404,7 @@ describe('CommerceListingEditor', () => {
 
     it('PATCHes the contactInfo group when a contact field changes', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy');
+        renderEditor('gastronomy', 'contact');
 
         // HOS-371: the local number is recomposed with the combobox's dial code
         // (defaulting to Argentina) into the single `mobilePhone` string the
@@ -368,13 +416,17 @@ describe('CommerceListingEditor', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        // HOS-1190: `contactInfo` is MERGED server-side now, so an empty member
+        // travels as an explicit `null` — under merge an omitted key means
+        // "keep the stored value", which would make a clear un-saveable.
+        // `website` is not part of this owner surface (SPEC-253 AC-4) and is
+        // therefore absent rather than nulled.
         expect(mockPatch).toHaveBeenCalledWith({
             path: '/api/v1/protected/gastronomies/abc',
             body: {
                 contactInfo: {
                     mobilePhone: '+54 9 11 1234 5678',
-                    workEmail: undefined,
-                    website: undefined
+                    workEmail: null
                 }
             }
         });
@@ -382,7 +434,7 @@ describe('CommerceListingEditor', () => {
 
     it('lets the owner pick a different country code and recomposes the stored phone (HOS-371)', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy');
+        renderEditor('gastronomy', 'contact');
 
         // The combobox trigger leads with the field name, then the selection.
         fireEvent.click(screen.getByRole('button', { name: /País: Argentina/ }));
@@ -402,7 +454,7 @@ describe('CommerceListingEditor', () => {
 
     describe('contact email accessibility (HOS-371)', () => {
         it('labels the email input with a real <label>, not just an aria-label', () => {
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('gastronomy', 'contact');
 
             // An `aria-label` alone leaves a sighted user staring at an
             // anonymous empty box (WCAG 3.3.2). `getByLabelText` matches both
@@ -421,7 +473,7 @@ describe('CommerceListingEditor', () => {
 
         it('still PATCHes the contactInfo group from the labelled email input', async () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-            renderEditor('gastronomy');
+            renderEditor('gastronomy', 'contact');
 
             fireEvent.change(screen.getByLabelText('Email'), {
                 target: { value: 'hola@laparrilla.test' }
@@ -437,14 +489,14 @@ describe('CommerceListingEditor', () => {
     });
 
     it('shows the price-on-request toggle for the experience vertical (no price select)', () => {
-        renderEditor('experience');
+        renderEditor('experience', 'price');
         expect(screen.queryByLabelText('Rango de precios')).toBeNull();
         expect(screen.getByLabelText('Precio a consultar')).toBeInTheDocument();
     });
 
     it('PATCHes the socialNetworks group when a social URL changes', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy');
+        renderEditor('gastronomy', 'contact');
 
         fireEvent.change(screen.getByLabelText('facebook'), {
             target: { value: 'https://facebook.com/x' }
@@ -466,9 +518,40 @@ describe('CommerceListingEditor', () => {
         });
     });
 
-    it('PATCHes openingHours when a day is toggled closed', async () => {
+    it('PATCHes openingHours when an open day is toggled closed', async () => {
+        // HOS-906: an untouched day now defaults to CLOSED (dayOf()'s
+        // honest default — see OpeningHoursSection.client.tsx), so a listing
+        // must already carry an OPEN day to exercise toggling it closed. A
+        // real saved listing always has a full, valid week after HOS-906,
+        // so this fixture mirrors that instead of the never-configured
+        // `openingHours: null` `baseData` starts from.
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy');
+        const withOpenMonday = {
+            ...baseData,
+            openingHours: {
+                timezone: 'America/Argentina/Buenos_Aires',
+                days: {
+                    mon: { closed: false, shifts: [{ open: '09:00', close: '18:00' }] },
+                    tue: { closed: true, shifts: [] },
+                    wed: { closed: true, shifts: [] },
+                    thu: { closed: true, shifts: [] },
+                    fri: { closed: true, shifts: [] },
+                    sat: { closed: true, shifts: [] },
+                    sun: { closed: true, shifts: [] }
+                }
+            }
+        } as unknown as CommerceListingDetail;
+
+        render(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                sectionId="openingHours"
+                listingId="abc"
+                locale="es"
+                initialData={withOpenMonday}
+                destinations={destinationOptions}
+            />
+        );
 
         fireEvent.click(screen.getByLabelText('Lun cerrado'));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
@@ -480,159 +563,57 @@ describe('CommerceListingEditor', () => {
         expect(call.body.openingHours?.days?.mon?.closed).toBe(true);
     });
 
-    it('HOS-372: uploading a featured image persists immediately via commerceMediaApi, NOT deferred to Save', async () => {
-        // The bug this migration fixes: uploading used to hit Cloudinary right
-        // away but the DB association waited for the parent's PATCH, so an
-        // owner who uploaded and navigated away without pressing "Guardar"
-        // lost the association. MediaField is now self-contained — the add +
-        // set-featured calls must fire as soon as the upload settles, well
-        // before (and independent of) any click on the Save button.
-        const uploaded = {
-            url: 'http://cdn.test/featured.jpg',
-            publicId: 'commerce/featured',
-            width: 1024,
-            height: 768,
-            moderationState: 'APPROVED'
-        };
-        const fetchMock = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({ success: true, data: uploaded })
-        });
-        vi.stubGlobal('fetch', fetchMock);
-        mockAddMedia.mockResolvedValueOnce({
-            ok: true,
-            data: {
-                media: {
-                    id: 'media-new',
-                    url: uploaded.url,
-                    publicId: uploaded.publicId,
-                    isFeatured: false,
-                    sortOrder: 0,
-                    state: 'visible',
-                    moderationState: 'APPROVED'
-                }
-            }
-        });
-        mockSetFeaturedMedia.mockResolvedValueOnce({
-            ok: true,
-            data: {
-                media: {
-                    id: 'media-new',
-                    url: uploaded.url,
-                    publicId: uploaded.publicId,
-                    isFeatured: true,
-                    sortOrder: 0,
-                    state: 'visible',
-                    moderationState: 'APPROVED'
-                }
-            }
-        });
-
-        renderEditor('gastronomy');
-        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
-
-        const file = new File(['x'], 'featured.png', { type: 'image/png' });
-        fireEvent.change(screen.getByLabelText('Imagen principal'), {
-            target: { files: [file] }
-        });
-
-        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-        expect(fetchMock.mock.calls[0]?.[0]).toBe(
-            'http://api.test/api/v1/protected/media/upload-entity'
-        );
-
-        // The DB association already happened — no Save click yet.
-        await waitFor(() => {
-            expect(mockAddMedia).toHaveBeenCalledWith({
-                vertical: 'gastronomy',
-                id: 'abc',
-                body: expect.objectContaining({ url: uploaded.url, publicId: uploaded.publicId })
-            });
-            expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
-                vertical: 'gastronomy',
-                id: 'abc',
-                mediaId: 'media-new'
-            });
-        });
-        expect(mockPatch).not.toHaveBeenCalled();
-
-        vi.unstubAllGlobals();
-    });
-
-    it('HOS-372 regression guard: the PATCH payload never contains a `media` key, even after an upload', async () => {
-        // This is the actual regression guard for HOS-372: reverting
-        // `buildPayload` to re-include `payload.media` would overwrite the
-        // relational state MediaField just wrote with stale buffered values.
-        // Verified by temporarily reintroducing that line locally — this test
-        // fails as expected when it's present.
-        const uploaded = {
-            url: 'http://cdn.test/featured.jpg',
-            publicId: 'commerce/featured',
-            width: 1024,
-            height: 768,
-            moderationState: 'APPROVED'
-        };
-        vi.stubGlobal(
-            'fetch',
-            vi.fn().mockResolvedValue({
-                ok: true,
-                json: async () => ({ success: true, data: uploaded })
-            })
-        );
-        mockAddMedia.mockResolvedValueOnce({
-            ok: true,
-            data: {
-                media: {
-                    id: 'media-new',
-                    url: uploaded.url,
-                    publicId: uploaded.publicId,
-                    isFeatured: false,
-                    sortOrder: 0,
-                    state: 'visible',
-                    moderationState: 'APPROVED'
-                }
-            }
-        });
-        mockSetFeaturedMedia.mockResolvedValueOnce({
-            ok: true,
-            data: {
-                media: {
-                    id: 'media-new',
-                    url: uploaded.url,
-                    publicId: uploaded.publicId,
-                    isFeatured: true,
-                    sortOrder: 0,
-                    state: 'visible',
-                    moderationState: 'APPROVED'
-                }
-            }
-        });
+    /**
+     * HOS-906 regression — the bug this whole spec closes: a host who opens
+     * the editor on a listing that never had opening hours configured
+     * (`baseData` carries no `openingHours`, so every day starts at
+     * `dayOf()`'s default), touches exactly ONE day, and saves. Before the
+     * fix, the untouched six days rebuilt from `withDay()` as
+     * `{ closed: false, shifts: [] }` and saved that ambiguous state
+     * silently. Now every untouched day resolves CLOSED, so the save must
+     * go through and every day in the payload must be a valid resolution —
+     * never open with zero shifts.
+     */
+    it('HOS-906: touching a single day and saving succeeds, with every other day resolving closed', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy', 'openingHours');
 
-        renderEditor('gastronomy');
-        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
-
-        // Upload a featured photo through the child (proves it does NOT
-        // funnel back into this editor's dirty state).
-        fireEvent.change(screen.getByLabelText('Imagen principal'), {
-            target: { files: [new File(['x'], 'featured.png', { type: 'image/png' })] }
-        });
-        await waitFor(() => expect(mockSetFeaturedMedia).toHaveBeenCalled());
-
-        // Change an unrelated field and save — the only way this editor's
-        // PATCH ever fires.
-        fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
-            target: { value: 'unrelated change' }
-        });
+        // Open Monday and give it a shift — the minimal real "configure one
+        // day" flow. Every other day is left untouched.
+        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByLabelText('Agregar turno Lun'));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
-        const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;
-        expect(body).not.toHaveProperty('media');
-        expect(body).toEqual({ richDescription: 'unrelated change' });
-
-        vi.unstubAllGlobals();
+        const call = mockPatch.mock.calls[0]?.[0] as {
+            body: {
+                openingHours?: {
+                    days?: Record<string, { closed: boolean; shifts: Array<unknown> }>;
+                };
+            };
+        };
+        const days = call.body.openingHours?.days ?? {};
+        expect(days.mon).toEqual({ closed: false, shifts: [{ open: '09:00', close: '18:00' }] });
+        for (const [key, day] of Object.entries(days)) {
+            if (key === 'mon') continue;
+            expect(day).toEqual({ closed: true, shifts: [] });
+        }
     });
+    /*
+     * The three HOS-372 media tests that lived here (featured upload, the
+     * `media`-never-in-the-PATCH guard, and gallery removal) were retired by
+     * HOS-1080, not weakened. Photos moved to their own route, which mounts
+     * `MediaSection` directly with no form and no Save — so this island cannot
+     * reach media at all any more, and every behaviour they covered is asserted
+     * where it now lives:
+     *
+     *  - upload / remove / featured, and the absence of a client-side Cloudinary
+     *    delete: `editor/MediaSection.test.tsx`;
+     *  - `media` never travelling in the PATCH body, and `listMedia` never being
+     *    called from a form section: `CommerceListingEditor.payload.test.tsx`;
+     *  - `MediaSection` being imported by the `fotos` route and by no other:
+     *    `test/pages/commerce-editor-routes.test.ts`.
+     */
 
     it('seeds amenity selection and PATCHes amenityIds/featureIds when toggled', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
@@ -649,6 +630,7 @@ describe('CommerceListingEditor', () => {
         render(
             <CommerceListingEditor
                 vertical="gastronomy"
+                sectionId="amenities"
                 listingId="abc"
                 locale="es"
                 initialData={
@@ -708,6 +690,7 @@ describe('CommerceListingEditor', () => {
         const { container } = render(
             <CommerceListingEditor
                 vertical="gastronomy"
+                sectionId="amenities"
                 listingId="abc"
                 locale="es"
                 initialData={
@@ -746,6 +729,7 @@ describe('CommerceListingEditor', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
+                    sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
                     initialData={baseData}
@@ -765,6 +749,7 @@ describe('CommerceListingEditor', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
+                    sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
                     initialData={baseData}
@@ -789,6 +774,7 @@ describe('CommerceListingEditor', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
+                    sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
                     initialData={baseData}
@@ -813,6 +799,7 @@ describe('CommerceListingEditor', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
+                    sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
                     initialData={baseData}
@@ -839,6 +826,7 @@ describe('CommerceListingEditor', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
+                    sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
                     initialData={baseData}
@@ -866,6 +854,7 @@ describe('CommerceListingEditor', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
+                    sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
                     initialData={baseData}
@@ -884,6 +873,7 @@ describe('CommerceListingEditor', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
+                    sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
                     initialData={baseData}
@@ -898,71 +888,5 @@ describe('CommerceListingEditor', () => {
             );
             expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
         });
-    });
-
-    it('HOS-372: removes a gallery image via commerceMediaApi immediately, with no Save click and no media in any PATCH', async () => {
-        mockListMedia.mockResolvedValueOnce({
-            ok: true,
-            data: {
-                media: [
-                    {
-                        id: 'g1',
-                        url: galleryImage.url,
-                        publicId: galleryImage.publicId,
-                        isFeatured: false,
-                        sortOrder: 0,
-                        state: 'visible',
-                        moderationState: 'APPROVED'
-                    }
-                ]
-            }
-        });
-        const mockRemoveMedia = vi.mocked(commerceMediaApi.removeMedia);
-        mockRemoveMedia.mockResolvedValueOnce({ ok: true, data: {} });
-
-        render(
-            <CommerceListingEditor
-                vertical="gastronomy"
-                listingId="abc"
-                locale="es"
-                initialData={
-                    {
-                        id: 'abc',
-                        ownerId: 'owner-1',
-                        name: 'La Parrilla',
-                        slug: 'la-parrilla',
-                        media: { gallery: [galleryImage] }
-                    } as unknown as CommerceListingDetail
-                }
-            />
-        );
-
-        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
-        await waitFor(() => expect(screen.getByRole('button', { name: 'Eliminar' })).toBeEnabled());
-
-        fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-
-        await waitFor(() => {
-            expect(mockRemoveMedia).toHaveBeenCalledWith({
-                vertical: 'gastronomy',
-                id: 'abc',
-                mediaId: 'g1'
-            });
-        });
-        // Cloudinary cleanup is server-side since HOS-372: `removeMedia` deletes
-        // the binary before dropping the row. The client-side call this replaced
-        // was unreachable anyway — `media/protected/delete-entity` rejects
-        // `gastronomy`/`experience` with a 400, so any call here is a regression.
-        expect(mockDeleteMedia).not.toHaveBeenCalled();
-
-        // No Save click occurred, and nothing in this editor was ever marked
-        // dirty by the removal. Pressing Save now proves that directly: a clean
-        // form issues no request. (It used to be read off the button's disabled
-        // attribute, which the shared `ActionBar` no longer sets — Save stays
-        // enabled so it can always answer, per HOS-190.)
-        expect(mockPatch).not.toHaveBeenCalled();
-
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-        expect(mockPatch).not.toHaveBeenCalled();
     });
 });

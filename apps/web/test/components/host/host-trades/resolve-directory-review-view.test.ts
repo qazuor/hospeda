@@ -46,9 +46,7 @@ function buildRow(overrides: {
                 ? null
                 : {
                       id: 'reply-1',
-                      reviewId: 'review-1',
                       content: 'Gracias por avisar.',
-                      moderationState: 'APPROVED',
                       reviewEditedAfterReply: false,
                       createdAt: '2026-08-02T10:00:00Z',
                       updatedAt: '2026-08-02T10:00:00Z',

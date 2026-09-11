@@ -281,3 +281,7 @@ export type AccommodationOccupancyIdType = z.infer<typeof AccommodationOccupancy
 // === Calendar Sync IDs (HOS-157 Phase 2) ===
 export const AccommodationCalendarSyncIdSchema = BaseIdSchema;
 export type AccommodationCalendarSyncIdType = z.infer<typeof AccommodationCalendarSyncIdSchema>;
+
+// === Redirectable QR codes (HOS-981) ===
+export const QrCodeIdSchema = BaseIdSchema;
+export type QrCodeIdType = z.infer<typeof QrCodeIdSchema>;

@@ -1,3 +1,5 @@
+import { normalizeStoredSubscriptionStatus } from './subscription-status-normalize.js';
+
 /**
  * Canonical set of subscription statuses that grant a plan's entitlements
  * *right now*, independent of any date/grace-window consideration.
@@ -35,15 +37,28 @@
  *   comped subscriber retains the full entitlements of the plan they were
  *   comped on. Omitting it is exactly what stranded comp subscribers on
  *   `plan: null` / wrong entitlements (HOS-238 / HOS-239).
+ * - `'courtesy'` — a finite run of gifted cycles (HOS-180). The whole point of
+ *   the gift is that the subscriber loses nothing, so it grants the full plan
+ *   entitlements. This is the single line that separates a courtesy from the
+ *   `paused` preapproval underneath it: `'paused'` is NOT in this list and must
+ *   never be added, because a real pause is meant to cut access.
  */
-export const ENTITLEMENT_GRANTING_STATUSES = ['active', 'trialing', 'comp'] as const;
+export const ENTITLEMENT_GRANTING_STATUSES = ['active', 'trialing', 'comp', 'courtesy'] as const;
 
 /**
  * Whether a subscription status grants its plan's entitlements right now
  * (status-only, date-agnostic). See {@link ENTITLEMENT_GRANTING_STATUSES}.
  *
- * @param status - The billing subscription status string.
- * @returns `true` for `'active'`, `'trialing'`, or `'comp'`; `false` otherwise.
+ * The argument is normalized through {@link normalizeStoredSubscriptionStatus}
+ * before the comparison, because `billing_subscriptions.status` holds two
+ * vocabularies (HOS-1310). No qzpay alias maps into the granting set today, so
+ * this changes no answer — it is here so that the day one does, this predicate
+ * is not the one place that missed it.
+ *
+ * @param status - The billing subscription status string, in either the Hospeda
+ *   or the qzpay vocabulary.
+ * @returns `true` for `'active'`, `'trialing'`, `'comp'`, or `'courtesy'`;
+ *   `false` otherwise.
  *
  * @example
  * ```ts
@@ -53,6 +68,12 @@ export const ENTITLEMENT_GRANTING_STATUSES = ['active', 'trialing', 'comp'] as c
  * ```
  */
 export function isEntitlementGrantingStatus(status: string): boolean {
+    const normalized = normalizeStoredSubscriptionStatus(status);
+    if (normalized === null) {
+        // Unknown vocabulary — fail closed, exactly as an unmatched literal did
+        // before normalization existed.
+        return false;
+    }
     // Derive from the const set so the two can never drift out of sync.
-    return (ENTITLEMENT_GRANTING_STATUSES as readonly string[]).includes(status);
+    return (ENTITLEMENT_GRANTING_STATUSES as readonly string[]).includes(normalized);
 }

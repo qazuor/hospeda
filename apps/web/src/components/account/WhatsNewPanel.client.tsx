@@ -76,7 +76,7 @@ export function WhatsNewPanel({ locale, open, onOpenChange }: WhatsNewPanelProps
 
     return (
         <dialog
-            className={styles.overlay}
+            className={`${styles.overlay} dialog-viewport`}
             onClick={(e) => {
                 if (e.target === e.currentTarget) onOpenChange(false);
             }}
@@ -92,7 +92,7 @@ export function WhatsNewPanel({ locale, open, onOpenChange }: WhatsNewPanelProps
             }}
         >
             <div
-                className={styles.panel}
+                className={`${styles.panel} dialog-panel`}
                 ref={panelRef}
                 tabIndex={-1}
             >
@@ -163,7 +163,7 @@ function ListView({
                 </div>
             </div>
 
-            <div className={styles.panelBody}>
+            <div className={`${styles.panelBody} dialog-panel-scroll`}>
                 {items.length === 0 ? (
                     <p className={styles.emptyState}>
                         {t('account.whatsNewPanel.empty', 'No hay novedades aun')}
@@ -275,7 +275,7 @@ function DetailView({ entry, locale, onBack, onClose }: DetailViewProps) {
                 </button>
             </div>
 
-            <div className={styles.panelBody}>
+            <div className={`${styles.panelBody} dialog-panel-scroll`}>
                 {entry.image && (
                     <img
                         src={entry.image}

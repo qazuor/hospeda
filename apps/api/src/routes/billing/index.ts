@@ -35,12 +35,16 @@ import type { AppOpenAPI } from '../../types';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
+import { checkoutRetryRouter } from './checkout-retry';
 import { createCollectionListingBlocker } from './collection-listing-block';
 import { downgradePreviewRouter } from './downgrade-preview';
 import { linkPreapprovalRouter } from './link-preapproval';
+import { payerEmailKnownRouter } from './payer-email-known';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
+import { protectedPlanByIdRouter } from './protected-plan-by-id';
 import { protectedPlansListRouter } from './protected-plans-list';
+import { replacePaymentMethodRouter } from './replace-payment-method';
 import { startPaidRouter } from './start-paid';
 import { subscriptionCancelRouter } from './subscription-cancel';
 import { subscriptionPauseRouter } from './subscription-pause';
@@ -182,6 +186,39 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // admin guard is needed here.
     router.route('/subscriptions', linkPreapprovalRouter);
 
+    // Mount the past-due payment-method-replacement recovery route (HOS-348
+    // Part B) immediately after link-preapproval and for the SAME measured
+    // reason: `cancelWrapper`/`qzpayWrapper` below apply
+    // `billingAdminGuardMiddleware` via `.use('*')`, which Hono composes for
+    // ANY request under the mount prefix — and the guard's `allowedSubPaths`
+    // for the `subscriptions` segment does not list `replace-payment-method`.
+    // While this router sat below those wrappers, every non-admin POST to
+    // `/subscriptions/:id/replace-payment-method` answered 403 "Billing admin
+    // guard" before the handler ever ran (measured in staging, HOS-1244): the
+    // exact past-due customer the route exists for could not reach it.
+    // `allowedSubPaths` is NOT the remedy here: past the guard, the request
+    // would next hit `qzpayWrapper`'s `billingOwnershipMiddleware`, which
+    // answers 403 for a row owned by someone else — while this route's
+    // contract (error-contract doc + endpoint gate matrix) is 404, never 403,
+    // because a 403 confirms the id exists. Ownership is enforced by the
+    // handler itself (`row.customerId !== billingCustomerId` → 404), so no
+    // wrapper middleware is needed. The router stays exempt from
+    // `pastDueGraceMiddleware` (GRACE_EXEMPT_PATH_SUFFIXES) regardless of
+    // mount position — it IS the customer's own recovery path. Regression
+    // coverage: `test/routes/billing/replace-payment-method-routing.test.ts`.
+    router.route('/subscriptions', replacePaymentMethodRouter);
+
+    // Mount the checkout-retry recovery route (HOS-937 step 3) immediately
+    // after replace-payment-method, for the IDENTICAL measured reason: the
+    // composed `billingAdminGuardMiddleware` below rejects every non-admin
+    // POST to `/subscriptions/:id/checkout-retry` with 403 (measured by the
+    // HOS-1244 probe in `replace-payment-method-routing.test.ts`). This is a
+    // user-facing recovery path a cancelled-checkout customer hits when
+    // returning from MercadoPago, so it must be reachable without admin.
+    // Ownership is enforced by the handler (`row.customerId !==
+    // billingCustomerId` → 404), so it mounts BEFORE both guard wrappers.
+    router.route('/subscriptions', checkoutRetryRouter);
+
     // Mount user self-service soft-cancel route (SPEC-147 T-006) BEFORE the
     // qzpay wrapper. qzpay-hono's prebuilt routes include
     // `POST /subscriptions/:id/cancel`; since Hono uses first-match routing,
@@ -220,10 +257,20 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // qzpay-hono's prebuilt `GET /plans` exposes every storage plan —
     // including the hidden daily test plan — to any authenticated user.
     // Hono first-match routing means this exact `GET /plans` registration
-    // wins; `POST /plans`, `GET /plans/:id`, etc. are untouched and fall
+    // wins; `POST /plans`, `PUT /plans/:id`, etc. are untouched and fall
     // through to the qzpay wrapper below. Same ordering rule the
     // soft-cancel / downgrade-preview / promo-codes overrides above rely on.
     router.route('/plans', protectedPlansListRouter);
+
+    // Mount the single-plan READ overrides — `GET /plans/:id` and
+    // `GET /plans/:id/prices` (`protected-plan-by-id.ts`) — BEFORE the qzpay
+    // wrapper, for the same reason and by the same rule (HOS-1186).
+    // Filtering the two LISTINGS left these two open: qzpay's prebuilt
+    // single-plan read answers the whole storage row — `metadata` and the
+    // attached `prices[]` included — to any authenticated caller, so a
+    // negotiated plan was published by id while both catalogues withheld it.
+    // They apply the same `isServablePlan` verdict the listing above does.
+    router.route('/plans', protectedPlanByIdRouter);
 
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing
@@ -259,6 +306,11 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // starts, extends, or reactivates anything, it only answers a question).
     router.route('/trial-eligibility', trialEligibilityRouter);
 
+    // Mount the read-only payer-email-known check (HOS-1234) — lets the
+    // pricing page's own-preapproval checkout skip the pre-redirect
+    // payer-email confirm dialog once a prior charge already confirmed one.
+    router.route('/payer-email-known', payerEmailKnownRouter);
+
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);
 
@@ -283,7 +335,7 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, trial-eligibility, plan-change, subscription status, start-paid, link-preapproval, subscription-cancel, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, trial-eligibility, plan-change, subscription status, checkout-retry, replace-payment-method, start-paid, link-preapproval, subscription-cancel, and usage routes'
     );
 
     return router;

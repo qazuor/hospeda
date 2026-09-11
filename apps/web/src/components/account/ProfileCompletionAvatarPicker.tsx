@@ -22,11 +22,19 @@
 import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
+import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import styles from './ProfileCompletion.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+/**
+ * Accepted image MIME types.
+ *
+ * HOS-332: `image/heic` was added by owner decision — the server already
+ * accepted it; the compression pipeline (`@/lib/media/compress-image`) falls
+ * back to uploading it as-is on a browser that cannot decode HEIC (Chrome).
+ */
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
 const MAX_FILE_BYTES = mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -76,7 +84,13 @@ export function ProfileCompletionAvatarPicker({
 }: ProfileCompletionAvatarPickerProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
+    /**
+     * Whether the selected file is currently being resized/recompressed
+     * client-side (HOS-332), BEFORE the upload itself starts.
+     */
+    const [isCompressing, setIsCompressing] = useState(false);
     const [pickerError, setPickerError] = useState<string | null>(null);
+    const isBusy = isUploading || isCompressing;
 
     function reportError(message: string): void {
         setPickerError(message);
@@ -84,7 +98,7 @@ export function ProfileCompletionAvatarPicker({
     }
 
     function handleButtonClick(): void {
-        if (disabled || isUploading) return;
+        if (disabled || isBusy) return;
         setPickerError(null);
         fileInputRef.current?.click();
     }
@@ -100,11 +114,28 @@ export function ProfileCompletionAvatarPicker({
             return;
         }
 
-        if (file.size > MAX_FILE_BYTES) {
+        setPickerError(null);
+
+        // HOS-332: resize/recompress before the size cap is checked, so a
+        // heavy original that shrinks under the cap is accepted. Any failure
+        // to compress (unsupported format, no canvas support) falls back to
+        // the original file — never blocks the upload.
+        setIsCompressing(true);
+        const compression = await compressImageForUpload({ file });
+        setIsCompressing(false);
+
+        const uploadableFile = compression.file;
+        if (uploadableFile.size > MAX_FILE_BYTES) {
             reportError(
-                t('account.profileCompletion.avatar.errors.fileTooLarge', undefined, {
-                    maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
-                })
+                isCompressionUnavailable(compression)
+                    ? t(
+                          'account.profileCompletion.avatar.errors.compressionUnsupportedTooLarge',
+                          undefined,
+                          { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
+                      )
+                    : t('account.profileCompletion.avatar.errors.fileTooLarge', undefined, {
+                          maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+                      })
             );
             return;
         }
@@ -115,7 +146,7 @@ export function ProfileCompletionAvatarPicker({
         try {
             const base = apiUrl.replace(/\/$/, '');
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', uploadableFile);
 
             const response = await fetch(`${base}/api/v1/protected/media/upload`, {
                 method: 'POST',
@@ -164,23 +195,25 @@ export function ProfileCompletionAvatarPicker({
                 type="button"
                 className={styles.avatarChangeBtn}
                 onClick={handleButtonClick}
-                disabled={disabled || isUploading}
-                aria-busy={isUploading}
+                disabled={disabled || isBusy}
+                aria-busy={isBusy}
             >
-                {isUploading
-                    ? t('account.profileCompletion.avatar.uploading')
-                    : t('account.profileCompletion.avatar.change', 'Cambiar foto')}
+                {isCompressing
+                    ? t('account.profileCompletion.avatar.processing', 'Optimizando…')
+                    : isUploading
+                      ? t('account.profileCompletion.avatar.uploading')
+                      : t('account.profileCompletion.avatar.change', 'Cambiar foto')}
             </button>
             <input
                 ref={fileInputRef}
                 id="pc-avatar-upload"
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,image/heic"
                 className={styles.srOnly}
                 onChange={handleFileChange}
                 aria-hidden="true"
                 tabIndex={-1}
-                disabled={disabled || isUploading}
+                disabled={disabled || isBusy}
             />
             {pickerError && (
                 <p

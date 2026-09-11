@@ -6,6 +6,7 @@ import { EventByLocationHttpSchema, EventLocationIdSchema, EventPublicSchema } f
 import { EventService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
@@ -28,15 +29,25 @@ export const publicGetEventsByLocationRoute = createPublicListRoute({
     handler: async (ctx, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { locationId } = params as { locationId: string };
-        const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
+        const { page, pageSize } = extractPaginationParams(query || {});
         const result = await eventService.getByLocation(actor, {
             // TYPE-WORKAROUND: service input expects branded EventLocationId but route params arrive as plain string; cast bypasses brand-narrowing since EventLocationIdSchema already validated upstream.
             locationId: locationId as unknown as never,
-            page: page ?? 1,
-            pageSize: pageSize ?? 20
+            page,
+            pageSize
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return result.data as never;
+
+        // The service returns `{ items, total }`; `createPublicListRoute`
+        // requires `{ items, pagination }` and throws "Paginated result must
+        // have items and pagination properties" otherwise. Returning the
+        // service output directly made this route answer 500 for EVERY
+        // location — mirrors the fix applied to the sibling public event
+        // list routes (getByAuthor, getByOrganizer).
+        return {
+            items: result.data?.items ?? [],
+            pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
+        } as never;
     },
     options: {
         cacheTTL: 60

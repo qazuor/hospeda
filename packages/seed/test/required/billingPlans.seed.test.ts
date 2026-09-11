@@ -16,6 +16,7 @@
 
 import type { PlanDefinition } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -184,6 +185,7 @@ function makePlan(overrides: Partial<PlanDefinition> = {}): PlanDefinition {
         name: 'Test Plan',
         description: 'Test plan',
         category: 'owner',
+        productDomain: ProductDomainEnum.ACCOMMODATION,
         monthlyPriceArs: 1_000_000,
         annualPriceArs: 10_000_000,
         monthlyPriceUsdRef: 10,
@@ -224,6 +226,7 @@ function makeMatchingDbRow(plan: PlanDefinition, id = 'existing-plan-uuid') {
         displayName: plan.name,
         monthlyPriceArs: plan.monthlyPriceArs,
         annualPriceArs: plan.annualPriceArs,
+        productDomain: plan.productDomain,
         metadata: {
             slug: plan.slug,
             category: plan.category,
@@ -253,6 +256,24 @@ describe('ensurePlan', () => {
         expect(state.updateCalls).toHaveLength(0);
     });
 
+    it('HOS-1233: a tourist plan is inserted as tourist, not as the default', async () => {
+        // The sibling of the accommodation assertion below, and not redundant
+        // with it: a seed that hardcoded `accommodation` — or simply omitted
+        // the column and let the default answer — satisfies that one and fails
+        // this one. Two domains is what a single hardcode cannot satisfy.
+        const state = freshState();
+        state.selectQueue.push([]);
+        state.returningResults.push([{ id: 'tourist-plan-uuid' }]);
+
+        await _internals.ensurePlan(
+            makePlan({ slug: 'tourist-vip', productDomain: ProductDomainEnum.TOURIST }),
+            false,
+            makeStubDb(state)
+        );
+
+        expect(state.insertCalls[0]?.values.productDomain).toBe(ProductDomainEnum.TOURIST);
+    });
+
     it('inserts a new row when no plan exists and returns its id', async () => {
         const state = freshState();
         state.selectQueue.push([]); // no existing plan
@@ -271,6 +292,10 @@ describe('ensurePlan', () => {
         // plans by it). The human label travels in metadata.displayName.
         expect(inserted?.name).toBe('plan-test');
         expect(inserted?.active).toBe(true);
+        // HOS-1233 T-034: stamped from the definition. Asserted as a VALUE and
+        // not merely as present — the column defaults to `accommodation`, so a
+        // presence check would pass against the very omission this replaces.
+        expect(inserted?.productDomain).toBe(ProductDomainEnum.ACCOMMODATION);
         expect(inserted?.livemode).toBe(false);
         const metadata = inserted?.metadata as Record<string, unknown>;
         expect(metadata.slug).toBe('plan-test');
@@ -343,7 +368,7 @@ describe('ensurePrice', () => {
         expect(state.insertCalls).toHaveLength(0);
     });
 
-    it('inserts a monthly price with trialDays when the plan declares a trial', async () => {
+    it('inserts a monthly price and NEVER a trialDays, even for a trial plan', async () => {
         const state = freshState();
         state.selectQueue.push([]);
 
@@ -352,8 +377,6 @@ describe('ensurePrice', () => {
                 planId: 'plan-uuid',
                 unitAmount: 1_500_000,
                 billingInterval: 'month',
-                trialDays: 14,
-                hasTrial: true,
                 livemode: false
             },
             makeStubDb(state)
@@ -368,7 +391,12 @@ describe('ensurePrice', () => {
         expect(inserted?.intervalCount).toBe(1);
         expect(inserted?.active).toBe(true);
         expect(inserted?.livemode).toBe(false);
-        expect(inserted?.trialDays).toBe(14);
+        // HOS-1224: the monthly row used to mirror the plan's trialDays here.
+        // It never does now — qzpay-core inherits `price.trialDays` when a
+        // caller of `subscriptions.create` omits `trialDays`, which is how a
+        // PAID subscription was born marked `trialing` (HOS-1221 bug D3).
+        expect(inserted?.trialDays).toBeUndefined();
+        expect(Object.hasOwn(inserted ?? {}, 'trialDays')).toBe(false);
     });
 
     it('omits trialDays on annual prices (Hospeda model: trial belongs to monthly preapproval only)', async () => {
@@ -380,8 +408,6 @@ describe('ensurePrice', () => {
                 planId: 'plan-uuid',
                 unitAmount: 15_000_000,
                 billingInterval: 'year',
-                trialDays: 14,
-                hasTrial: true,
                 livemode: true
             },
             makeStubDb(state)
@@ -393,7 +419,7 @@ describe('ensurePrice', () => {
         expect(inserted?.trialDays).toBeUndefined();
     });
 
-    it('omits trialDays on monthly prices when hasTrial=false (e.g., free plans)', async () => {
+    it('omits trialDays on a free monthly price too (HOS-1224: on every price)', async () => {
         const state = freshState();
         state.selectQueue.push([]);
 
@@ -402,8 +428,6 @@ describe('ensurePrice', () => {
                 planId: 'plan-uuid',
                 unitAmount: 0,
                 billingInterval: 'month',
-                trialDays: 0,
-                hasTrial: false,
                 livemode: false
             },
             makeStubDb(state)
@@ -456,6 +480,7 @@ describe('detectDivergences', () => {
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -470,6 +495,70 @@ describe('detectDivergences', () => {
         expect(diffs).toHaveLength(0);
     });
 
+    it('HOS-1233: flags a row whose domain disagrees, as a CAPABILITY divergence', () => {
+        // The tourist misclassification in the shape it actually has in the
+        // live databases: the config says `tourist`, the row says
+        // `accommodation` because nothing ever wrote it. It has to surface as
+        // a divergence config WINS, or a seed run would preserve the wrong
+        // value forever as if an operator had chosen it.
+        const plan = makePlan({ productDomain: ProductDomainEnum.TOURIST });
+        const dbRow = {
+            description: plan.description,
+            active: plan.isActive,
+            entitlements: plan.entitlements,
+            limits: {},
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
+            productDomain: ProductDomainEnum.ACCOMMODATION,
+            metadata: {
+                category: plan.category,
+                isDefault: plan.isDefault,
+                sortOrder: plan.sortOrder,
+                trialDays: plan.trialDays,
+                hasTrial: plan.hasTrial
+            }
+        };
+
+        const diffs = _internals.detectDivergences(plan, dbRow);
+
+        const domainDiff = diffs.find((d) => d.field === 'productDomain');
+        expect(domainDiff).toBeDefined();
+        expect(domainDiff?.config).toBe(ProductDomainEnum.TOURIST);
+        expect(domainDiff?.db).toBe(ProductDomainEnum.ACCOMMODATION);
+        expect(domainDiff?.layer).toBe('capability');
+    });
+
+    it('HOS-1233: flags a row whose domain was never written at all', () => {
+        // Distinct from the case above and not covered by it: a row created
+        // before the column existed reads `null`, which must diverge rather
+        // than be treated as "nothing to compare".
+        const plan = makePlan({ productDomain: ProductDomainEnum.GASTRONOMY });
+        const dbRow = {
+            description: plan.description,
+            active: plan.isActive,
+            entitlements: plan.entitlements,
+            limits: {},
+            displayName: plan.name,
+            monthlyPriceArs: plan.monthlyPriceArs,
+            annualPriceArs: plan.annualPriceArs,
+            productDomain: null,
+            metadata: {
+                category: plan.category,
+                isDefault: plan.isDefault,
+                sortOrder: plan.sortOrder,
+                trialDays: plan.trialDays,
+                hasTrial: plan.hasTrial
+            }
+        };
+
+        const diffs = _internals.detectDivergences(plan, dbRow);
+
+        expect(diffs.find((d) => d.field === 'productDomain')?.config).toBe(
+            ProductDomainEnum.GASTRONOMY
+        );
+    });
+
     it('detects divergence in description and classifies it as commercial', () => {
         const plan = makePlan({ description: 'Config description' });
         const dbRow = {
@@ -480,6 +569,7 @@ describe('detectDivergences', () => {
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -508,6 +598,7 @@ describe('detectDivergences', () => {
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -536,6 +627,7 @@ describe('detectDivergences', () => {
             displayName: plan.name,
             monthlyPriceArs: 1_500_000, // price changed via admin UI
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -564,6 +656,7 @@ describe('detectDivergences', () => {
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -595,6 +688,7 @@ describe('detectDivergences', () => {
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -630,6 +724,7 @@ describe('detectDivergences', () => {
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -661,6 +756,7 @@ describe('detectDivergences', () => {
             displayName: 'Edited Display Name',
             monthlyPriceArs: 999_000,
             annualPriceArs: plan.annualPriceArs,
+            productDomain: plan.productDomain,
             metadata: {
                 category: plan.category,
                 isDefault: plan.isDefault,
@@ -705,6 +801,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: 9_999_999, // operator-edited — commercial
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,
@@ -748,6 +845,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: plan.monthlyPriceArs,
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,
@@ -778,6 +876,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: plan.monthlyPriceArs,
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,
@@ -813,6 +912,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: plan.monthlyPriceArs,
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,
@@ -866,6 +966,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: plan.monthlyPriceArs,
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,
@@ -904,6 +1005,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: plan.monthlyPriceArs,
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,
@@ -946,6 +1048,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: plan.monthlyPriceArs,
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,
@@ -989,6 +1092,7 @@ describe('ensurePlan — Model C divergence policy (SPEC-211 T-010)', () => {
                 displayName: plan.name,
                 monthlyPriceArs: 5_000_000, // operator-edited (commercial)
                 annualPriceArs: plan.annualPriceArs,
+                productDomain: plan.productDomain,
                 metadata: {
                     category: plan.category,
                     isDefault: plan.isDefault,

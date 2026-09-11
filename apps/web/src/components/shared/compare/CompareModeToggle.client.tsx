@@ -45,6 +45,7 @@ import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import {
     loadCompareModeFromStorage,
     toggleCompareMode,
@@ -125,13 +126,24 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({ locale = 'es', c
         : t('accommodations.comparison.mode.off', 'Modo comparación desactivado');
 
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
-    const pricingHref = `/${locale}/suscriptores/turistas/`;
+    const pricingHref = `/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`;
 
     /**
-     * Safely resolves the current page URL for the auth return-redirect.
+     * Safely resolves the current page's path for the auth return-redirect.
      * Guarded by typeof window check for SSR safety (mirrors FavoriteButton).
+     *
+     * Deliberately `pathname + search + hash`, NOT `.href`: this value is
+     * eventually passed to `resolveSafeReturnPath` (via
+     * `AuthRequiredPopover` -> the signin page), which only accepts a
+     * same-origin relative path and rejects anything starting with a scheme
+     * (HOS-1170's open-redirect guard). A `.href` absolute URL always fails
+     * that check and silently falls back to `/mi-cuenta/` instead of
+     * returning here (HOS-1185).
      */
-    const returnUrl = typeof window === 'undefined' ? '' : window.location.href;
+    const returnUrl =
+        typeof window === 'undefined'
+            ? ''
+            : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
     const handleClick = (): void => {
         if (canCompare) {

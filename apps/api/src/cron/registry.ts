@@ -7,6 +7,7 @@
 import {
     abandonedPendingSubsJob,
     addonExpiryJob,
+    addonSubscriptionReconcileJob,
     alertsDigestJob,
     appLogPurgeJob,
     applyScheduledPlanChangesJob,
@@ -18,9 +19,11 @@ import {
     conversationNotificationJob,
     conversationTokenCleanupJob,
     conversationTokenReminderJob,
+    courtesyExpiryJob,
     cronRunPurgeJob,
     destinationWeatherFetchJob,
     dunningJob,
+    entitySubscriptionCacheReconcileJob,
     entityViewsPurgeJob,
     exchangeRateFetchJob,
     featuredByEntitlementReconcileJob,
@@ -35,6 +38,7 @@ import {
     notificationScheduleJob,
     pageRevalidationJob,
     partnerExpiryJob,
+    partnerPaymentReviewJob,
     partnerUnpaidReaperJob,
     pollApifyReputationRunsJob,
     preapprovalLessExpiryJob,
@@ -43,8 +47,10 @@ import {
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
+    subscriptionDriftReconcileJob,
     subscriptionPollJob,
     trialExpiryJob,
+    viewMonthlyRollupJob,
     webhookRetryJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -58,6 +64,12 @@ export const cronJobs: CronJobDefinition[] = [
     webhookRetryJob,
     notificationScheduleJob,
     addonExpiryJob,
+    // Registered next to addon-expiry, not later: it is the only thing that
+    // notices when addon-expiry stops ending soft-cancelled add-ons, and the
+    // only thing that reaps the 'pending' rows addon-expiry never looks at
+    // (HOS-847 PR 7c).
+    addonSubscriptionReconcileJob,
+    courtesyExpiryJob,
     alertsDigestJob,
     exchangeRateFetchJob,
     destinationWeatherFetchJob,
@@ -87,14 +99,24 @@ export const cronJobs: CronJobDefinition[] = [
     hostTradeUsageExpiryJob,
     hostTradeUsageReminderJob,
     entityViewsPurgeJob,
+    // Must be registered alongside the purge, not later: it is the only thing
+    // that survives it (HOS-1063 A-6, R-4).
+    viewMonthlyRollupJob,
     refreshExternalReputationJob,
     socialPublishDispatchJob,
     pollApifyReputationRunsJob,
     partnerExpiryJob,
+    partnerPaymentReviewJob,
     partnerUnpaidReaperJob,
+    entitySubscriptionCacheReconcileJob,
     featuredByEntitlementReconcileJob,
     reactivationSupersessionReconcileJob,
-    preapprovalLessExpiryJob
+    preapprovalLessExpiryJob,
+    // Registered next to preapproval-less-expiry because the two are exact
+    // complements: that job owns rows with NO preapproval, this one owns the
+    // rows that HAVE one and whose provider status nothing else re-reads
+    // (HOS-914).
+    subscriptionDriftReconcileJob
 ];
 
 /**

@@ -119,7 +119,14 @@ const HOST_PERMISSION = 'accommodation.create' as const;
  * Permission that marks a user as a commerce listing owner (gastronomy /
  * experience self-service, SPEC-253). Fed to PostHog as `is_commerce_owner`.
  */
-const COMMERCE_OWNER_PERMISSION = 'commerce.editOwn' as const;
+const COMMERCE_OWNER_PERMISSIONS = [
+    'commerce.editOwn',
+    // HOS-1077: the per-vertical replacements. An account holding only one of
+    // these is a commerce owner too — reading just the legacy value would have
+    // filed every gastronomy-only owner as a `tourist` in PostHog.
+    'gastronomy.editOwn',
+    'experience.editOwn'
+] as const;
 
 function resolveAnalyticsUserType(input: {
     readonly permissions: readonly string[] | null;
@@ -130,7 +137,7 @@ function resolveAnalyticsUserType(input: {
     }
     if (
         permissions?.includes(HOST_PERMISSION) ||
-        permissions?.includes(COMMERCE_OWNER_PERMISSION)
+        COMMERCE_OWNER_PERMISSIONS.some((permission) => permissions?.includes(permission))
     ) {
         return 'owner';
     }
@@ -224,7 +231,9 @@ export function UserMenu({
                       user_type: resolveAnalyticsUserType({ permissions }),
                       roles: rolesKey.length > 0 ? rolesKey.split(',') : [],
                       is_host: permissions.includes(HOST_PERMISSION),
-                      is_commerce_owner: permissions.includes(COMMERCE_OWNER_PERMISSION),
+                      is_commerce_owner: COMMERCE_OWNER_PERMISSIONS.some((permission) =>
+                          permissions.includes(permission)
+                      ),
                       is_staff: permissions.includes(STAFF_DISCRIMINATOR_PERMISSION)
                   };
         identifyUser(user.id, props);

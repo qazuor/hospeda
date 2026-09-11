@@ -28,7 +28,15 @@ src/
 - Default currency: ARS (Argentine Peso)
 - Config names and descriptions always in English (UI localization handled by i18n)
 - Plans use UUID for `id`
-- Trial: 14 days, HOST role only
+- Trial: **30 days on almost everything, and NOT host-only.** The four literals live
+  in `src/constants/billing.constants.ts`: `OWNER_TRIAL_DAYS = 30` (owner-basico /
+  -pro / -premium), `TOURIST_TRIAL_DAYS = 30` (`tourist-vip`; `tourist-free` has
+  none), `COMMERCE_TRIAL_DAYS = 30` (the six gastronomy-*/ experience-* plans),
+  and `COMPLEX_TRIAL_DAYS = 14` — `complex-*` is the ONLY tier still at 14.
+  All three partner plans (`partner-listing`, `partner-silver`, `partner-gold`) are
+  `hasTrial: false`. They are deliberately four separate
+  literals, not aliases, so one tier can move without dragging the others; do not
+  re-alias them. Ground truth is `src/config/plans.config.ts`, not this line.
 - AFIP invoicing deferred to v2 (manual via accountant)
 - Dispute handling: manual in v1 (webhooks logged, resolved via dashboard)
 
@@ -38,8 +46,8 @@ src/
 
 | Set | Count | Definition file |
 |-----|-------|-----------------|
-| `EntitlementKey` enum members | 38 | `src/types/entitlement.types.ts` |
-| `LimitKey` enum members | 20 | `src/types/plan.types.ts` |
+| `EntitlementKey` enum members | 53 | `src/types/entitlement.types.ts` |
+| `LimitKey` enum members | 22 | `src/types/plan.types.ts` |
 | Runtime guards | 2 (`isEntitlementKey`, `isLimitKey`) | `src/types/guards.ts` |
 
 Guards use `Object.values(...)` to build `ReadonlySet` look-up tables at
@@ -159,4 +167,4 @@ correct state from the seed directly.
 - [ADR-005: MercadoPago Payments](../../docs/decisions/ADR-005-mercadopago-payments.md)
 - [ADR-006: Integer Monetary Values](../../docs/decisions/ADR-006-integer-monetary-values.md)
 - [ADR-008: AFIP Deferred to v2](../../docs/decisions/ADR-008-afip-deferred-v2.md)
-- [ADR-009: Trial Host-Only](../../docs/decisions/ADR-009-trial-host-only.md)
+- [ADR-009: Trial Host-Only](../../docs/decisions/ADR-009-trial-host-only.md) — **historical; both its numbers are dead.** See the trial bullet above for the live values.

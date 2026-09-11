@@ -1,95 +1,46 @@
 ---
 /**
  * @file mi-cuenta/comercio/nuevo/[vertical].astro
- * @description Owner self-service commerce-listing create page (HOS-166
- * §7.2, §8 point 2). Fetches the destination catalog SSR (mirrors
- * `publicar-restaurante/index.astro`) and mounts `CommerceCreateForm`.
+ * @description Permanent redirect to `/{lang}/publicar/{vertical}/`, the
+ * vertical's publish page (HOS-1156 D-6).
  *
- * HOS-693 §6.2 removed the HOS-257 pre-fill (the SSR fetch of the caller's
- * own commerce lead, sourced from a protected read endpoint that scoped by
- * the lead's provisioned-owner column) along with the admin provisioning
- * path that was its only writer — the form now always renders empty, which
- * was already its behaviour for the common case (AC-10/AC-11 predate this
- * and still hold).
+ * ## What was here
  *
- * ## Access (HOS-687)
+ * The owner self-service commerce create form, inside `AccountLayout` and behind
+ * an in-page login redirect. D-2 moved it to `MarketingLayout` so the three
+ * publish pages look alike, and D-1 replaced the login redirect with a signup
+ * CTA — a page reached from a PUBLIC navbar button must not bounce a cold
+ * visitor to a login screen before they have read what they are signing up for.
+ * The form ISLAND is unchanged; it never depended on the layout.
  *
- * A session, and nothing else. This page no longer requires a commerce role —
- * submitting its form is what GRANTS one. See the guard comment below.
+ * ## An unknown vertical still 404s
  *
- * @route     /[lang]/mi-cuenta/comercio/nuevo/[vertical]/
- * @rendering SSR (prerender = false — authenticated, any signed-in account)
+ * The old page answered 404 for anything that was not `gastronomy` or
+ * `experience`, and so does this. Redirecting an unknown segment to a publish
+ * page would turn a typo into a 301 and advertise a URL that never existed.
+ *
+ * @route     /{lang}/mi-cuenta/comercio/nuevo/{vertical}/
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import { CommerceCreateForm } from '@/components/commerce/CommerceCreateForm.client';
-import type { CommerceVertical } from '@/lib/commerce/owner-listings';
-import { destinationsApi } from '@/lib/api/endpoints';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { buildLoginRedirect } from '@/lib/middleware-helpers';
+
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 
 export const prerender = false;
 
-const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
-
-// HOS-687: a SESSION is the only thing this page requires. The shared
-// commerce nav-access predicate that used to gate it here is gone on purpose:
-// it demanded COMMERCE_EDIT_OWN, which only a COMMERCE_OWNER holds — so the
-// one page that grants that role turned away everyone who did not already
-// have it. The listing index and the editor keep their role gate; they list
-// and edit listings that must already exist. This mirrors
-// `publicar/nueva.astro`, which requires a session and nothing else.
-//
-// The return URL is carried through sign-in (`buildLoginRedirect`) so an
-// anonymous visitor lands back on THIS vertical's form, not on /mi-cuenta
-// (HOS-589 AC-18). Note `mi-cuenta` is in `PROTECTED_SEGMENTS`, so the
-// middleware normally redirects first with the same helper — this in-page
-// guard is the belt to that suspenders, and it must not lose the URL either.
-const user = Astro.locals.user;
-if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
-}
+const locale = Astro.locals.locale;
 
 const verticalParam = Astro.params.vertical;
-const isVertical = verticalParam === 'gastronomy' || verticalParam === 'experience';
-if (!isVertical) {
+if (verticalParam !== 'gastronomy' && verticalParam !== 'experience') {
     return new Response(null, { status: 404 });
 }
-const vertical = verticalParam as CommerceVertical;
 
-const title =
-    vertical === 'gastronomy'
-        ? t('commerce.owner.create.title.gastronomy', 'Crear ficha de gastronomía')
-        : t('commerce.owner.create.title.experience', 'Crear ficha de experiencia');
-const subtitle = t(
-    'commerce.owner.create.subtitle',
-    'Completá lo básico ahora — vas a poder sumar fotos, horarios y más detalles después.'
+return Astro.redirect(
+    buildPricingRedirectTarget({
+        locale,
+        path: PUBLISH_PAGE_PATH_BY_VERTICAL[verticalParam],
+        search: Astro.url.search
+    }),
+    301
 );
-
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
-const destinations = destinationsResult.ok
-    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
-    : [];
-// HOS-166 judgment-day fix: distinguish "the catalog fetch failed" from "the
-// catalog genuinely has zero destinations" so the form can surface an error
-// instead of silently omitting a REQUIRED completeness field — see
-// `CommerceCreateForm`'s `destinationsLoadFailed` prop doc.
-const destinationsLoadFailed = !destinationsResult.ok;
 ---
-
-<AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
-    <AccountPageHeader title={title} description={subtitle} />
-
-    <AccountSectionCard>
-        <CommerceCreateForm
-            client:load
-            vertical={vertical}
-            locale={locale}
-            destinations={destinations}
-            destinationsLoadFailed={destinationsLoadFailed}
-        />
-    </AccountSectionCard>
-</AccountLayout>

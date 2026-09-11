@@ -28,9 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
-    type AiFeatureId,
     type AiProviderId,
-    type AiSettingsValue,
     FEATURE_LABELS,
     useAiCredentialsQuery,
     useAiSettingsQuery,
@@ -38,6 +36,11 @@ import {
 } from '@/features/ai-settings';
 import { useToast } from '@/hooks/use-toast';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
+import {
+    ALL_FEATURES,
+    DEFAULT_SETTINGS,
+    toFormValues
+} from './-components/ai-settings-features.utils';
 import {
     applyProviderToAllFeatures,
     buildProviderOptions,
@@ -49,106 +52,6 @@ export const Route = createFileRoute('/_authed/ai/settings')({
 });
 
 // ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const ALL_FEATURES: AiFeatureId[] = [
-    'text_improve',
-    'chat',
-    'search',
-    'support',
-    'translate',
-    'accommodation_import',
-    'post_generate'
-];
-
-/** Default settings blob used when the API returns an empty/missing value. */
-const DEFAULT_SETTINGS: AiSettingsValue = {
-    providers: {
-        openai: { enabled: false },
-        anthropic: { enabled: false },
-        stub: { enabled: true }
-    },
-    features: {
-        text_improve: {
-            enabled: false,
-            primaryProvider: 'stub',
-            fallbackChain: [],
-            model: 'gpt-4o-mini',
-            params: {}
-        },
-        chat: {
-            enabled: false,
-            primaryProvider: 'stub',
-            fallbackChain: [],
-            model: 'gpt-4o-mini',
-            params: {}
-        },
-        search: {
-            enabled: false,
-            primaryProvider: 'stub',
-            fallbackChain: [],
-            model: 'gpt-4o-mini',
-            params: {}
-        },
-        support: {
-            enabled: false,
-            primaryProvider: 'stub',
-            fallbackChain: [],
-            model: 'gpt-4o-mini',
-            params: {}
-        },
-        translate: {
-            enabled: false,
-            primaryProvider: 'stub',
-            fallbackChain: [],
-            model: 'gpt-4o-mini',
-            params: {}
-        },
-        accommodation_import: {
-            enabled: false,
-            primaryProvider: 'stub',
-            fallbackChain: [],
-            model: 'gpt-4o-mini',
-            params: {}
-        },
-        post_generate: {
-            enabled: false,
-            primaryProvider: 'stub',
-            fallbackChain: [],
-            model: 'gpt-4o-mini',
-            params: {}
-        }
-    }
-};
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Merge server settings with defaults, ensuring every field exists.
- * The API may omit optional fields; this fills them from DEFAULT_SETTINGS.
- */
-function toFormValues(settings: AiSettingsValue | undefined): AiSettingsValue {
-    if (!settings) return DEFAULT_SETTINGS;
-
-    return {
-        providers: settings.providers ?? DEFAULT_SETTINGS.providers,
-        features: {
-            text_improve: settings.features.text_improve ?? DEFAULT_SETTINGS.features.text_improve,
-            chat: settings.features.chat ?? DEFAULT_SETTINGS.features.chat,
-            search: settings.features.search ?? DEFAULT_SETTINGS.features.search,
-            support: settings.features.support ?? DEFAULT_SETTINGS.features.support,
-            translate: settings.features.translate ?? DEFAULT_SETTINGS.features.translate,
-            accommodation_import:
-                settings.features.accommodation_import ??
-                DEFAULT_SETTINGS.features.accommodation_import,
-            post_generate:
-                settings.features.post_generate ?? DEFAULT_SETTINGS.features.post_generate
-        }
-    };
-}
 
 // ---------------------------------------------------------------------------
 // Component

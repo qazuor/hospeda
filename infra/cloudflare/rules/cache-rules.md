@@ -10,6 +10,18 @@ Current state: **4 active rules** — the two staging rules below, plus a
 production twin of each, activated on 2026-08-12 once production started
 emitting `Cache-Tag` (see [Production twins](#production-twins) at the end).
 
+**Pending edit (HOS-519, drafted 2026-09-04, not yet applied):** rule 1
+(staging) and its twin rule 4 (production) are each missing the `/partners`
+prefix — see [W2-5 (HOS-519)](#w2-5-hos-519--partner-gold-pages) for the
+three lines to paste in and why.
+
+**Pending edit (HOS-519 scope extension, drafted 2026-09-04, not yet
+applied):** the same two rules are also missing `/planes`, `/presentacion`
+and `/autores` — seventeen more cacheable pages the original HOS-519 sweep
+did not cover. See [W2-6 (HOS-519)](#w2-6-hos-519--pricing-static-presentation-and-author-pages)
+for the nine lines to paste in, the length budget that decided their shape,
+and a drift found along the way in the existing `suscriptores` prefixes.
+
 ---
 
 ## What needs a rule, and what does not
@@ -100,13 +112,59 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/gastronomia")
    or starts_with(http.request.uri.path, "/es/experiencias")
    or starts_with(http.request.uri.path, "/en/experiencias")
-   or starts_with(http.request.uri.path, "/pt/experiencias")))
+   or starts_with(http.request.uri.path, "/pt/experiencias")
+   or starts_with(http.request.uri.path, "/es/partners")
+   or starts_with(http.request.uri.path, "/en/partners")
+   or starts_with(http.request.uri.path, "/pt/partners")
+   or starts_with(http.request.uri.path, "/es/planes")
+   or starts_with(http.request.uri.path, "/en/planes")
+   or starts_with(http.request.uri.path, "/pt/planes")
+   or starts_with(http.request.uri.path, "/es/presentacion")
+   or starts_with(http.request.uri.path, "/en/presentacion")
+   or starts_with(http.request.uri.path, "/pt/presentacion")
+   or starts_with(http.request.uri.path, "/es/autores")
+   or starts_with(http.request.uri.path, "/en/autores")
+   or starts_with(http.request.uri.path, "/pt/autores")))
 ```
 
-The live rule stores this on a single line (2419 characters since W2-4; it was
-2074 after W2-3, 1576 after W2-2, and 796 before that). The twenty-four
-`starts_with` terms are written out rather than expressed as a regex because the
-`matches` operator requires a Business plan.
+**Applied and verified, 2026-09-04.** Both rules now carry all thirty-six
+`starts_with` terms above — see
+[W2-5 (HOS-519)](#w2-5-hos-519--partner-gold-pages) and
+[W2-6 (HOS-519)](#w2-6-hos-519--pricing-static-presentation-and-author-pages)
+below for why each family was added, and
+[Verified after application (2026-09-04)](#verified-after-application-2026-09-04)
+for the measurements taken immediately afterwards.
+
+Two corrections to what this document claimed while W2-6 was being drafted,
+both found by reading the dashboard rather than by trusting the note:
+
+- **W2-5 was already live before this session applied anything.** The three
+  `partners` clauses were in rules 1 and 4 when the dashboard was opened, and
+  rule 1's stored expression measured exactly 2,581 characters — the figure
+  this document predicted for the post-W2-5 state. Somebody applied them
+  between the 2026-08-15 measurement and 2026-09-04 without updating this file.
+  That is precisely the drift the README warns about: a rule that exists only
+  in the dashboard is a rule that will be wrong within a quarter.
+- **Only W2-6's nine clauses were actually pasted in this session**, appended
+  before the closing `))` of each rule. Rule 1 went 2,581 → 3,070 characters
+  and rule 4 went 2,573 → 3,062; the eight-character difference between the
+  twins is exactly the length of `staging.` in the hostname, which is what
+  confirms nothing else diverged.
+
+**Read the dashboard before editing it.** Had these nine clauses been applied
+by pasting the full expression from this document instead of by appending to
+what was actually stored, the `partners` clauses would have been fine by
+coincidence — but any other undocumented dashboard edit would have been
+silently reverted.
+
+The live rule stores this on a single line (2419 characters through W2-4, 2581
+once W2-5 is applied, 3070 once W2-6 is also applied — verified character by
+character, not estimated; see W2-6 for the arithmetic). It was 2074 after
+W2-3, 1576 after W2-2, and 796 before that. The thirty-six `starts_with` terms
+are written out rather than expressed as a regex because the `matches`
+operator requires a Business plan — and because the Ruleset Engine's own
+4,096-character expression cap (`https://developers.cloudflare.com/ruleset-engine/rules-language/expressions/`)
+is the harder constraint here regardless of plan; see W2-6.
 
 The home is matched with `in { … }` — an **exact** path set, not a prefix.
 `starts_with(path, "/es/")` would match every Spanish page in the app, including
@@ -145,6 +203,408 @@ vocabulary, no `entity-tag-mapper` case, and their services never called the
 revalidation service at all. **W2-4 built that chain and all six now cache**,
 which is why this wave added the `gastronomia`/`experiencias` prefixes: the
 other two already sat under `/destinos`.
+
+### W2-5 (HOS-519) — partner gold pages
+
+`/{lang}/partners/<slug>/` (a gold partner's own page, HOS-294) called
+`applyCacheHeaders({ cacheClass: 'detail', ... })` from the day it shipped —
+see `apps/web/src/pages/[lang]/partners/[slug].astro` — but no rule on this
+page ever matched `/partners`, so every response answered `cf-cache-status:
+DYNAMIC` regardless of what the origin sent. Measured in production on
+2026-08-15 against `cache-control: public, s-maxage=3600,
+stale-while-revalidate=3600` — byte-identical to `/es/alojamientos/`, which
+cached correctly over the same window — which is what places the cause here
+and not in the origin.
+
+Added as a **prefix**, like `destinos`/`eventos`/`publicaciones`, not as an
+exact path set like the W2-2 copy-only pages: `<slug>` is open-ended, so there
+is no finite set to enumerate. Unlike those three families, though, partners
+have no listing page (see the comment in `[slug].astro`: "partners have no
+listing page, so there is no `list-partner` to purge"), so this wave adds
+exactly one path family, not two — there is no `/{lang}/partners/` collection
+route to also decide on.
+
+The safety property is unchanged: `edge_ttl.mode = "bypass_by_default"` means
+matching the prefix does nothing by itself. A silver partner's URL (which
+never renders — HOS-294 restricts the page to gold), a partner mid-DRAFT, or
+one whose subscription lapsed all return non-cacheable responses today, and
+will keep doing so after this rule ships: `applyCacheHeaders` in
+`[slug].astro` only sets `cacheable: true` when the API call actually resolved
+a partner (see `apps/web/src/pages/[lang]/partners/[slug].astro`,
+`cacheable: Astro.url.search === '' && primaryCacheTag !== undefined`). A 404
+or 410 response never reaches that call, so it is never cached — matching the
+prefix only makes a *cacheable* response eligible; it does not make an
+uncacheable one cache.
+
+**Investigated as part of HOS-519 and worth recording here**: as of
+2026-09-04, `GET /api/v1/public/partners` returns zero rows in production —
+both partners named in the original HOS-519 report
+(`autoservice-litoral`, `fundacion-entre-rios-sustentable`) were HARD-DELETED
+by the seed data-migration `0059-purge-test-and-commerce-example.ts`
+(`PARTNER_SLUGS`, `packages/seed/src/data-migrations/0059-purge-test-and-commerce-example.ts:260-262`),
+an intentional 2026-08-23 owner decision to clear commerce example data before
+launch. So this rule currently has **nothing to verify against in production**
+— `curl` against either slug answers 404, not 200, and will keep doing so
+until a real gold partner is onboarded. Verify against **staging** instead
+(seed data there is unaffected), or re-run the `curl` checks below once a real
+partner exists in production.
+
+#### Expression (partners clauses only, for diffing against the dashboard)
+
+```
+   or starts_with(http.request.uri.path, "/es/partners")
+   or starts_with(http.request.uri.path, "/en/partners")
+   or starts_with(http.request.uri.path, "/pt/partners")
+```
+
+Paste these three lines into the existing big `or (...)` group inside rule 1's
+expression (staging) — right after the `experiencias` clauses, before the
+final `))` — and, separately, into rule 4's expression (its production twin,
+same three lines, `http.host` unchanged at `"hospeda.com.ar"`). Do NOT create
+a fifth rule: this is an edit to the two existing rules, matching how W2-2,
+W2-3 and W2-4 each extended the same expression rather than adding a new one.
+
+#### Verifying (once applied, on staging — see the production note above)
+
+```bash
+# eligibility + hit — use a real staging gold-partner slug
+curl -sS -o /dev/null -D - https://staging.hospeda.com.ar/es/partners/<slug>/ \
+  | grep -iE '^(cf-cache-status|age|cf-ray|cache-control):'
+```
+
+Expected on the second request: `cf-cache-status: HIT`, non-zero `age`, and
+`Cache-Control` **without** the injected `max-age=14400` (see the Browser TTL
+note under Settings below — its absence is what proves *this* rule, not the
+zone default, produced the hit).
+
+Purge scoping follows the same two-direction pattern used for attractions/POIs
+above: purge `preview:partner-<slug>` (or `prod:partner-<slug>`) and confirm
+that partner's page goes `MISS` while a second, unrelated partner's page
+survives as `HIT`. No such two-partner pair exists on staging as of
+2026-09-04, so this check is not yet run — do it once a second gold partner is
+seeded there.
+
+### W2-6 (HOS-519) — pricing, static-presentation, and author pages
+
+The owner widened HOS-519's scope past partners to cover every other
+cacheable page a repo sweep found with no matching rule. A sweep of every
+`.astro` under `apps/web/src/pages/[lang]/` that calls `applyCacheHeaders`
+confirmed seventeen pages, matching the original report exactly (nothing
+missing, nothing extra):
+
+- **`/{lang}/planes/{anfitriones,turistas,aliados,gastronomia,experiencias}/`
+  and their `/precios/` siblings** — 5 audiences × 2 pages × 3 locales = 10
+  paths, `cacheClass: 'pricing'` (`s-maxage=3600`), `cacheable: true`
+  unconditionally in every one of the ten files.
+- **`/{lang}/presentacion/{proveedores,gastronomia,alojamientos,aliados,editores,experiencias}/`**
+  — 6 pages × 3 locales, `cacheClass: 'static'` (`s-maxage=86400`),
+  `cacheable: true` unconditionally.
+- **`/{lang}/autores/<slug>/`** — `cacheClass: 'catalog'` (`s-maxage=3600`),
+  `cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams })`
+  (`apps/web/src/pages/[lang]/autores/[slug]/index.astro`), the same
+  pagination-only gate used elsewhere on this page.
+  `/{lang}/autores/<slug>/page/N/` is an `Astro.rewrite` into that same file
+  (identical shape to `alojamientos/page/[page].astro`), so it inherits
+  caching with no rule edit of its own — and needs none, `starts_with` already
+  covers it. `/{lang}/autores/<slug>/eventos/` and its own `page/N/` are
+  redirects back to the profile, not cacheable content, and were left out of
+  the count on purpose.
+
+None of these three families were missing by oversight of *this* wave — they
+simply postdate the last time this file's prefix list was extended.
+
+#### The doctrine says exact list. The character budget forces prefix instead
+
+`planes` and `presentacion` are each a **closed, enumerable set** — five
+audiences and six roles, not a slug/category/tag namespace like `destinos` or
+`eventos`. By the rule this file states under [W2-3](#hos-369-w1-2---staging-catalog--subscriber),
+that shape calls for an exact `in { … }` list: fail-closed, so a sixth
+audience or a seventh presentation role stays excluded until someone adds it
+here on purpose. That is the doctrine's default, and it was the first thing
+tried.
+
+It does not fit. The Ruleset Engine's expression-length cap is a hard,
+plan-independent limit — **4,096 characters**, per
+[Cloudflare's own docs](https://developers.cloudflare.com/ruleset-engine/rules-language/expressions/)
+("The maximum length of a rule expression is 4,096 characters. This limit
+applies whether you use the visual Expression Builder... or write the
+expression manually"). No Free-plan-specific override was found for Cache
+Rules expressions in particular — the only Free-tier number documented for
+Cache Rules is a cap of **10 rules per zone**
+(`https://developers.cloudflare.com/cache/how-to/cache-rules/`), which is a
+different limit and not the one in play here. The 4,096 figure is stated
+plainly enough, and matched independently by reconstructing and measuring the
+current live expression byte-for-byte (2,581 characters through W2-5 — see
+below), that it is treated as authoritative rather than re-verified against a
+second source.
+
+The regex cap (64 `matches` expressions per rule) does not apply either way:
+this rule has always used zero `matches`/regex terms, only `in {}` and
+`starts_with`, precisely because `matches` requires a Business plan (noted
+above). So the only ceiling that matters here is the 4,096-character one.
+
+**The arithmetic, computed character-by-character against the live 2,581-char
+expression (post-W2-5), not estimated:**
+
+| Option | What gets added | New characters | New total | Fits in 4,096? |
+|---|---|---|---|---|
+| Exact list | 48 literal paths (30 `planes` + 18 `presentacion`) joined into the existing `in {}` set, **plus** the 3 `autores` `starts_with` clauses (autores is open — a prefix regardless of which way the other two go) | 1,425 + 159 = 1,584 | **4,165** | **No — 69 over the cap** |
+| Prefix | 6 `starts_with` clauses (`/planes`, `/presentacion` × 3 locales) + 3 `autores` clauses | 330 + 159 = 489 | **3,070** | Yes — 1,026 characters of headroom |
+
+Both totals were produced by reconstructing the entire expression as Cloudflare
+stores it (one line, single-space-separated tokens, no formatting whitespace)
+and taking `len()` of the result — not a per-entry estimate multiplied out.
+The exact-list total was cross-checked by building the actual 48-entry list
+and 3-entry prefix set and measuring the concatenation, not by assuming
+"48 × ~30 chars".
+
+**Decision: prefix, for `planes` and `presentacion` too — a deliberate
+departure from the doctrine, not a preference.** The exact-list form is what
+the fail-closed argument prefers, and it does not fit; 4,165 characters
+against a 4,096-character hard cap is not a rounding‑error miss that a shorter
+locale code or dropped space would rescue; it needed the doctrine reconsidered,
+not squeezed. Three things make the departure honest rather than a shortcut:
+
+1. **The safety mechanism doctrine relies on elsewhere still applies.**
+   `edge_ttl.mode = "bypass_by_default"` (see [Settings](#settings) below)
+   means matching a `/planes` or `/presentacion` prefix does nothing by
+   itself — a future seventh `presentacion` role or sixth `planes` audience
+   only starts caching once its own page calls `applyCacheHeaders({
+   cacheable: true, … })`, exactly the same backstop already relied on for
+   `destinos`/`eventos`/`publicaciones`/`partners`.
+2. **What the fail-closed exact-list guards against here is smaller than
+   what it guards against for the W2-2 copy-only pages.** `/es/legal` or
+   `/es/colaborar` as prefixes would have pre-approved a page that might read
+   a session (the doc's own words). `/planes` and `/presentacion` are
+   unauthenticated marketing/pricing pages by construction — every existing
+   page in both families is server-rendered from `@repo/i18n` copy and
+   catalogue data, none of them reads `Astro.locals.session` or renders
+   per-visitor state. A new sibling under either prefix inherits that same
+   class of page; the "reads a session" risk the doctrine names is
+   structurally close to zero here, not merely mitigated by
+   `bypass_by_default`.
+3. **The honest cost, stated rather than hidden**: unlike `destinos`/
+   `eventos` (genuinely open, no finite set exists to enumerate), `planes`
+   and `presentacion` really are closed sets, and prefix does trade away the
+   doctrine's "a new sibling is excluded until added on purpose" guarantee
+   for them. A sixth `/planes/<new-audience>/` page ships pre-approved for
+   caching the moment a developer adds `applyCacheHeaders({ cacheable: true
+   })` to it, with no corresponding cache-rule edit required or reviewed.
+   That is a real, not hypothetical, weakening of the posture this file
+   otherwise defends — accepted here because the character budget leaves no
+   alternative once `autores` (unavoidably a prefix) and the existing 2,581
+   characters are accounted for, and because point 2 above shrinks the
+   specific harm ("reads a session") that made the doctrine matter in the
+   first place.
+
+`autores/<slug>/` needs no such argument: it is keyed by author slug, an open
+set exactly like `destinos`/`eventos`/`publicaciones`, so `starts_with` is
+what the existing doctrine already prescribes for it independent of the
+character budget.
+
+#### A drift found while measuring: `/es/suscriptores/turistas` is now dead weight
+
+The existing expression already carries a `/{lang}/suscriptores/turistas`
+prefix (added before this wave). No `.astro` file lives under that path
+today, which looked at first like a missing page — it is not. `git log`
+shows commit `fed10a7af` ("retire seven pricing URLs behind one-hop 301s",
+2026-09-04, same day, HOS-1032 AC-51) turned every page under that prefix
+into a redirect stub:
+
+- `/{lang}/suscriptores/turistas/` → `Astro.redirect(…, 301)` to
+  `/{lang}/planes/turistas/precios/`
+- `/{lang}/suscriptores/turistas/comparar/` → same 301, same destination
+
+Neither file calls `applyCacheHeaders` any more — confirmed by grep, zero
+matches in either file. So the prefix still matches real pages, but every
+page under it now returns a 301 with no `Cache-Control`, which
+`bypass_by_default` correctly leaves as `DYNAMIC` (harmless, matching the
+"matching a prefix is not sufficient" pattern this file already documents for
+partners and the six W2-3 exclusions). The clause is not wrong, just inert:
+it costs 3 × ~50 = ~150 characters of the budget for a prefix that can never
+produce a cache hit again.
+
+The sibling prefix, `/{lang}/suscriptores/planes`, is **not** in the same
+situation and must stay: `/{lang}/suscriptores/planes/` itself is still a
+live page (the audience-picker index, HOS-942/HOS-1032, `cacheable: true,
+cacheClass: 'pricing'`) even though its three children
+(`planes/turistas/`, `planes/anfitriones/`, `planes/comparar/`) were retired
+to 301s by the same commit. These are not declared in
+[`redirect-rules.md`](./redirect-rules.md) — they are in-app `Astro.redirect`
+calls, not Cloudflare Bulk/Single Redirects, which is why that file has no
+`suscriptores` entries to reconcile.
+
+**Recommendation, not applied**: drop the three `/{lang}/suscriptores/turistas`
+`starts_with` clauses (es/en/pt) from both rules the next time either is
+edited — they reclaim ~150 characters and remove a prefix that can no longer
+match anything cacheable. Left in place for now at the owner's call; this
+wave only documents the finding, per instruction not to remove without
+sign-off.
+
+#### Expression (new clauses only, for diffing against the dashboard)
+
+```
+   or starts_with(http.request.uri.path, "/es/planes")
+   or starts_with(http.request.uri.path, "/en/planes")
+   or starts_with(http.request.uri.path, "/pt/planes")
+   or starts_with(http.request.uri.path, "/es/presentacion")
+   or starts_with(http.request.uri.path, "/en/presentacion")
+   or starts_with(http.request.uri.path, "/pt/presentacion")
+   or starts_with(http.request.uri.path, "/es/autores")
+   or starts_with(http.request.uri.path, "/en/autores")
+   or starts_with(http.request.uri.path, "/pt/autores")
+```
+
+Paste these nine lines into the existing big `or (...)` group inside rule 1's
+expression (staging) — right after the `partners` clauses (added by W2-5,
+above), before the final `))` — and, separately, into rule 4's expression
+(production twin, same nine lines, `http.host` unchanged at
+`"hospeda.com.ar"`). Do NOT create a new rule and do NOT apply W2-5's three
+`partners` lines twice if both waves are pasted in together — check what is
+already in the dashboard rule before pasting either.
+
+#### Full expression (complete, final, for diffing against the dashboard)
+
+This is the entire rule 1 (staging) expression once **both** W2-5 and W2-6
+are applied — 3,070 characters on one line, verified by reconstructing and
+measuring it, not estimated. Compare this against the dashboard control by
+control before pasting anything; do not trust that the two diffs above compose
+correctly without checking the result.
+
+```
+(http.host eq "staging.hospeda.com.ar"
+ and http.request.method in {"GET" "PURGE"}
+ and http.request.uri.query eq ""
+ and not http.cookie contains "better-auth.session_token"
+ and (http.request.uri.path in {"/es/" "/en/" "/pt/"
+        "/es/nosotros/" "/es/beneficios/" "/es/funcionalidades/" "/es/contacto/"
+        "/es/preguntas-frecuentes/" "/es/legal/cookies/" "/es/legal/privacidad/"
+        "/es/legal/terminos/" "/es/colaborar/" "/es/colaborar/editores/"
+        "/es/colaborar/fotos/" "/es/colaborar/reportar/"
+        "/en/nosotros/" "/en/beneficios/" "/en/funcionalidades/" "/en/contacto/"
+        "/en/preguntas-frecuentes/" "/en/legal/cookies/" "/en/legal/privacidad/"
+        "/en/legal/terminos/" "/en/colaborar/" "/en/colaborar/editores/"
+        "/en/colaborar/fotos/" "/en/colaborar/reportar/"
+        "/pt/nosotros/" "/pt/beneficios/" "/pt/funcionalidades/" "/pt/contacto/"
+        "/pt/preguntas-frecuentes/" "/pt/legal/cookies/" "/pt/legal/privacidad/"
+        "/pt/legal/terminos/" "/pt/colaborar/" "/pt/colaborar/editores/"
+        "/pt/colaborar/fotos/" "/pt/colaborar/reportar/"}
+   or starts_with(http.request.uri.path, "/es/alojamientos")
+   or starts_with(http.request.uri.path, "/en/alojamientos")
+   or starts_with(http.request.uri.path, "/pt/alojamientos")
+   or starts_with(http.request.uri.path, "/es/suscriptores/planes")
+   or starts_with(http.request.uri.path, "/en/suscriptores/planes")
+   or starts_with(http.request.uri.path, "/pt/suscriptores/planes")
+   or starts_with(http.request.uri.path, "/es/suscriptores/turistas")
+   or starts_with(http.request.uri.path, "/en/suscriptores/turistas")
+   or starts_with(http.request.uri.path, "/pt/suscriptores/turistas")
+   or starts_with(http.request.uri.path, "/es/destinos")
+   or starts_with(http.request.uri.path, "/en/destinos")
+   or starts_with(http.request.uri.path, "/pt/destinos")
+   or starts_with(http.request.uri.path, "/es/eventos")
+   or starts_with(http.request.uri.path, "/en/eventos")
+   or starts_with(http.request.uri.path, "/pt/eventos")
+   or starts_with(http.request.uri.path, "/es/publicaciones")
+   or starts_with(http.request.uri.path, "/en/publicaciones")
+   or starts_with(http.request.uri.path, "/pt/publicaciones")
+   or starts_with(http.request.uri.path, "/es/gastronomia")
+   or starts_with(http.request.uri.path, "/en/gastronomia")
+   or starts_with(http.request.uri.path, "/pt/gastronomia")
+   or starts_with(http.request.uri.path, "/es/experiencias")
+   or starts_with(http.request.uri.path, "/en/experiencias")
+   or starts_with(http.request.uri.path, "/pt/experiencias")
+   or starts_with(http.request.uri.path, "/es/partners")
+   or starts_with(http.request.uri.path, "/en/partners")
+   or starts_with(http.request.uri.path, "/pt/partners")
+   or starts_with(http.request.uri.path, "/es/planes")
+   or starts_with(http.request.uri.path, "/en/planes")
+   or starts_with(http.request.uri.path, "/pt/planes")
+   or starts_with(http.request.uri.path, "/es/presentacion")
+   or starts_with(http.request.uri.path, "/en/presentacion")
+   or starts_with(http.request.uri.path, "/pt/presentacion")
+   or starts_with(http.request.uri.path, "/es/autores")
+   or starts_with(http.request.uri.path, "/en/autores")
+   or starts_with(http.request.uri.path, "/pt/autores")))
+```
+
+For rule 4 (production), the only difference is the first line:
+`http.host eq "hospeda.com.ar"`. Everything else is byte-identical.
+
+#### Verifying (once applied)
+
+Run on **staging** first — production has real content for every one of
+these seventeen pages (unlike the partner pages in W2-5, which currently have
+none), so both environments can be checked once the edit ships:
+
+```bash
+# planes (pricing) — pick one audience, check both the sales page and /precios/
+curl -sS -o /dev/null -D - https://staging.hospeda.com.ar/es/planes/turistas/ \
+  | grep -iE '^(cf-cache-status|age|cf-ray|cache-control):'
+curl -sS -o /dev/null -D - https://staging.hospeda.com.ar/es/planes/turistas/precios/ \
+  | grep -iE '^(cf-cache-status|age|cf-ray|cache-control):'
+
+# presentacion (static)
+curl -sS -o /dev/null -D - https://staging.hospeda.com.ar/es/presentacion/alojamientos/ \
+  | grep -iE '^(cf-cache-status|age|cf-ray|cache-control):'
+
+# autores (catalog) — use a real author slug with published posts
+curl -sS -o /dev/null -D - https://staging.hospeda.com.ar/es/autores/<slug>/ \
+  | grep -iE '^(cf-cache-status|age|cf-ray|cache-control):'
+
+# the two dead suscriptores/turistas paths, for completeness — expect a 301,
+# never a cache hit, on both requests
+curl -sSI https://staging.hospeda.com.ar/es/suscriptores/turistas/
+```
+
+Expected on the second request for each cacheable path: `cf-cache-status:
+HIT`, non-zero `age`, and `Cache-Control` without the injected
+`max-age=14400` (see the Browser TTL note under [Settings](#settings) — its
+absence is what proves this rule, not the zone default, produced the hit).
+
+### Verified after application (2026-09-04)
+
+Measured against **staging** immediately after saving both rules, two requests
+per URL, two seconds apart:
+
+| URL | HTTP | `cf-cache-status` | `age` (req 2) | `Cache-Control` |
+|---|---|---|---|---|
+| `/es/partners/autoservice-litoral/` | 200 | **HIT** | 2 | `s-maxage=3600, swr=3600` |
+| `/es/planes/anfitriones/` | 200 | **HIT** | 2 | `s-maxage=3600, swr=3600` |
+| `/es/presentacion/aliados/` | 200 | **HIT** | 2 | `s-maxage=86400, swr=3600` |
+| `/es/alojamientos/` (control) | 200 | **HIT** | 2 | `s-maxage=3600, swr=3600` |
+
+Three things make this a real verification rather than four green ticks:
+
+- **`presentacion` came back with `s-maxage=86400` while the other three
+  returned `3600`.** Those are different `cacheClass` values in the origin —
+  `static` versus `pricing`/`detail`. A rule matching a path it was not meant
+  to match would not reproduce that split; the edge is honoring what each page
+  actually declares.
+- **No response carried the injected `max-age=14400`.** Per the Browser TTL
+  note under [Settings](#settings), its absence is what distinguishes a hit
+  produced by *this* rule from one produced by the zone default.
+- **`/es/partners/<slug>/` answered 200 on staging**, closing out HOS-519's
+  original finding. It answers 404 in production for the reason recorded in
+  [W2-5](#w2-5-hos-519--partner-gold-pages) — the `0059` seed data-migration
+  hard-deleted both partners there, and that migration is gated to
+  `NODE_ENV === 'production'`, so staging kept them.
+
+The `planes` and `presentacion` families also answer **404 in production**
+today: those pages ship from `staging` and have not been promoted to `main`
+yet. The rules are already in place for when they are, and matching a prefix
+whose pages do not exist costs nothing — `bypass_by_default` means a 404 is
+never cached.
+
+Still not verified, and deliberately so: the two-partner purge-scoping check
+described in [W2-5](#w2-5-hos-519--partner-gold-pages), which needs a second
+gold partner on staging before it can distinguish a scoped purge from a
+zone-wide one.
+The `suscriptores/turistas` probe should show `HTTP/2 301` on every request,
+never `cf-cache-status: HIT` — confirming the drift finding above rather than
+contradicting it.
+
+Repeat against `https://hospeda.com.ar` once satisfied on staging, substituting
+a real production author slug and plan audience.
 
 ### Settings
 
@@ -248,6 +708,11 @@ the response cacheable. Measured on 2026-08-04:
 | `/{lang}/destinos/{atraccion,lugar}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `attr-<slug>` / `poi-<slug>` (no collection tag exists) |
 | `/{lang}/{gastronomia,experiencias}/` | yes — **since 2026-08-04** (W2-4), tagged `list-gastro` / `list-exp` |
 | `/{lang}/{gastronomia,experiencias}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `gastro-<slug>` / `exp-<slug>` + id |
+| `/{lang}/partners/<slug>/` (detail, HOS-294) | origin has cached since launch, but the rule matches **only once W2-5 (HOS-519) is applied** — pending as of 2026-09-04. Tagged by `buildEntityCacheTags({ entity: 'partner', slug, id })`; no collection tag exists, same as attractions/POIs |
+| `/{lang}/planes/{anfitriones,turistas,aliados,gastronomia,experiencias}/` and their `/precios/` siblings | origin has cached (`cacheClass: 'pricing'`) since these pages shipped, but the rule matches **only once W2-6 (HOS-519) is applied** — pending as of 2026-09-04 |
+| `/{lang}/presentacion/{proveedores,gastronomia,alojamientos,aliados,editores,experiencias}/` | origin has cached (`cacheClass: 'static'`) since launch, but the rule matches **only once W2-6 (HOS-519) is applied** — pending as of 2026-09-04 |
+| `/{lang}/autores/<slug>/` and `/page/N/` | origin has cached (`cacheClass: 'catalog'`, pagination-only) since launch, but the rule matches **only once W2-6 (HOS-519) is applied** — pending as of 2026-09-04 |
+| `/{lang}/suscriptores/turistas/` and `/comparar/` | **no** — retired to a 301 redirect by HOS-1032 (commit `fed10a7af`, 2026-09-04); the `/{lang}/suscriptores/turistas` prefix in the expression now matches nothing cacheable (see [W2-6](#w2-6-hos-519--pricing-static-presentation-and-author-pages)) |
 | `/{lang}/alojamientos/` and `/page/N/` | yes |
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |

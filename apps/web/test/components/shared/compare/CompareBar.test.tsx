@@ -272,6 +272,62 @@ describe('CompareBar — thumbnails and removal', () => {
     });
 });
 
+describe('CompareBar — thumbnail preset (HOS-881)', () => {
+    it("re-applies the 'thumbnail' preset (200x200) over whatever preset the stored URL already carries", () => {
+        setItems([
+            {
+                id: 'a',
+                name: 'Cabaña A',
+                // Simulates a URL saved by `DetailCompareButton` with the accommodation
+                // detail page's `og` preset (1200x630, HOS-881) baked in — the wrong
+                // size for this 48px thumbnail cell.
+                thumbnailUrl:
+                    'https://res.cloudinary.com/demo/image/upload/w_1200,h_630,c_fill,q_auto,f_auto,dpr_auto/v1/hotel.jpg'
+            }
+        ]);
+
+        render(<CompareBar locale="es" />);
+
+        const src = screen.getAllByRole('img')[0]?.getAttribute('src') ?? '';
+        // Anchored on the concrete transform tokens, not a lax `toContain` that
+        // would also pass with the baked-in preset left untouched.
+        expect(src).toContain('w_200,h_200,c_thumb,g_auto');
+        expect(src).not.toContain('w_1200,h_630');
+    });
+
+    it('leaves a non-Cloudinary thumbnailUrl unchanged', () => {
+        setItems([{ id: 'a', name: 'Cabaña A', thumbnailUrl: 'https://img/a.jpg' }]);
+
+        render(<CompareBar locale="es" />);
+
+        const src = screen.getAllByRole('img')[0]?.getAttribute('src') ?? '';
+        expect(src).toBe('https://img/a.jpg');
+    });
+
+    it("leaves an Astro '/_image/' endpoint URL unchanged instead of corrupting it (HOS-881 B-1)", () => {
+        // A THIRD `thumbnailUrl` producer beyond `DetailCompareButton` (og
+        // preset) and the listing cards (card preset):
+        // `AccommodationsListingMap.client.tsx` proxies a Cloudinary photo
+        // through Astro's own `/_image/?href=<encoded-url>&...` endpoint
+        // before `MapCardsSidebar.client.tsx` hands it to `CompareButton`.
+        // This is not a Cloudinary URL at all, but its query string still
+        // contains the literal, percent-encoded text `res.cloudinary.com` —
+        // enough to fool a plain `.includes()` check. Regression measured
+        // before the fix: `/_imagew_200,h_200,c_thumb,g_auto,q_auto,f_auto,
+        // dpr_auto//?href=...` — a 404'ing thumbnail in the compare bar for
+        // every Cloudinary photo added from the map sidebar.
+        const mapProducedUrl =
+            '/_image/?href=https%3A%2F%2Fres.cloudinary.com%2Fhospeda%2Fimage%2Fupload%2Fv1%2Fhotel.jpg&w=300&f=webp';
+        setItems([{ id: 'a', name: 'Cabaña A', thumbnailUrl: mapProducedUrl }]);
+
+        render(<CompareBar locale="es" />);
+
+        const src = screen.getAllByRole('img')[0]?.getAttribute('src') ?? '';
+        expect(src).toBe(mapProducedUrl);
+        expect(src).not.toContain('/_imagew_200');
+    });
+});
+
 describe('CompareBar — mobile z-index (HOS-85 post-review fix)', () => {
     // The CSS module is mocked (proxy of class names) above, so the z-index
     // value itself is asserted via source text — the project's documented

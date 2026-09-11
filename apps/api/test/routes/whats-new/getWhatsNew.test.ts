@@ -38,9 +38,11 @@ vi.mock('../../../src/data/whats-new/whats-new', () => ({
             id: 'entry-all-roles',
             publishedAt: '2026-05-20T00:00:00Z',
             highlight: false,
-            // no roles → universal
-            title: { es: 'Título ES', en: 'Title EN' },
-            body: { es: 'Cuerpo ES', en: 'Body EN' }
+            // no roles → universal. Carries all three locales so the
+            // `?locale=` query param test (HOS-964 follow-up) can assert
+            // against `pt` too, not just the pre-existing `en`.
+            title: { es: 'Título ES', en: 'Title EN', pt: 'Título PT' },
+            body: { es: 'Cuerpo ES', en: 'Body EN', pt: 'Corpo PT' }
         },
         {
             id: 'entry-before-baseline',
@@ -57,6 +59,17 @@ vi.mock('../../../src/data/whats-new/whats-new', () => ({
             // No 'en' key — used to test es fallback when languageAdmin = 'en'
             title: { es: 'Solo HOST' },
             body: { es: 'Cuerpo HOST' }
+        },
+        {
+            // HOS-1216: scheduled far in the future relative to any real
+            // clock this suite could run under. `highlight: true` and no
+            // `roles` (universal) so it would, absent the fix, appear for
+            // every actor, inflate unseenCount, and trip the auto-modal.
+            id: 'entry-future-highlight',
+            publishedAt: '2099-01-01T00:00:00Z',
+            highlight: true,
+            title: { es: 'Del futuro' },
+            body: { es: 'Todavía no debería verse' }
         }
     ]
 }));
@@ -88,11 +101,18 @@ const buildAdminActor = () => ({
     permissions: [PermissionEnum.USER_SETTINGS_UPDATE] as string[]
 });
 
-/** Build a Hono context stub with the given actor. */
-const buildCtx = (actor: ReturnType<typeof buildHostActor>) =>
-    ({ get: (key: string) => (key === 'actor' ? actor : undefined) }) as Parameters<
-        typeof getWhatsNewHandler
-    >[0];
+/**
+ * Build a Hono context stub with the given actor.
+ *
+ * `req.query` mirrors Hono's real `ctx.req.query(name)` signature closely
+ * enough for `getWhatsNewHandler`'s manual `?locale=` read (HOS-964
+ * follow-up) — returns `undefined` when no query params were supplied.
+ */
+const buildCtx = (actor: ReturnType<typeof buildHostActor>, query: Record<string, string> = {}) =>
+    ({
+        get: (key: string) => (key === 'actor' ? actor : undefined),
+        req: { query: (name: string) => query[name] }
+    }) as Parameters<typeof getWhatsNewHandler>[0];
 
 /** Build a minimal UserService stub returning the given user settings. */
 const buildSvc = ({
@@ -370,6 +390,109 @@ describe('getWhatsNewHandler (SPEC-175 T-006)', () => {
             const allRoles = result.items.find((i) => i.id === 'entry-all-roles');
             expect(allRoles?.title).toBe('Título ES');
         });
+
+        // HOS-964 follow-up (2026-09-07 smoke finding): the endpoint is shared
+        // by apps/admin and apps/web, but locale was only ever read from
+        // `languageAdmin` — a web account has none, so it always fell back to
+        // 'es' regardless of which `/en/` or `/pt/` page requested it. The
+        // `?locale=` query param lets the CLIENT say which language it is
+        // actually rendering.
+        it('resolves en field when ?locale=en is passed, even without languageAdmin', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(
+                buildCtx(actor, { locale: 'en' }),
+                svc as never
+            );
+
+            const allRoles = result.items.find((i) => i.id === 'entry-all-roles');
+            expect(allRoles?.title).toBe('Title EN');
+            expect(allRoles?.body).toBe('Body EN');
+        });
+
+        it('resolves pt field when ?locale=pt is passed', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(
+                buildCtx(actor, { locale: 'pt' }),
+                svc as never
+            );
+
+            const allRoles = result.items.find((i) => i.id === 'entry-all-roles');
+            expect(allRoles?.title).toBe('Título PT');
+            expect(allRoles?.body).toBe('Corpo PT');
+        });
+
+        it('?locale= takes precedence over languageAdmin when both are present', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    languageAdmin: 'es',
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(
+                buildCtx(actor, { locale: 'pt' }),
+                svc as never
+            );
+
+            const allRoles = result.items.find((i) => i.id === 'entry-all-roles');
+            expect(allRoles?.title).toBe('Título PT');
+        });
+
+        it('ignores an unsupported ?locale= value and falls back to languageAdmin', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    languageAdmin: 'en',
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(
+                buildCtx(actor, { locale: 'fr' }),
+                svc as never
+            );
+
+            const allRoles = result.items.find((i) => i.id === 'entry-all-roles');
+            expect(allRoles?.title).toBe('Title EN');
+        });
+
+        it('falls back to languageWeb when languageAdmin is absent and no ?locale= is passed', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    languageWeb: 'pt',
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            const allRoles = result.items.find((i) => i.id === 'entry-all-roles');
+            expect(allRoles?.title).toBe('Título PT');
+        });
     });
 
     describe('sort order', () => {
@@ -388,6 +511,80 @@ describe('getWhatsNewHandler (SPEC-175 T-006)', () => {
             const dates = result.items.map((i) => new Date(i.publishedAt).getTime());
             const sorted = [...dates].sort((a, b) => b - a);
             expect(dates).toEqual(sorted);
+        });
+    });
+
+    describe('future publishedAt filtering (HOS-1216)', () => {
+        it('excludes an entry scheduled for the future from items', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            const ids = result.items.map((i) => i.id);
+            expect(ids).not.toContain('entry-future-highlight');
+        });
+
+        it('does not let the future entry inflate unseenCount', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            // unseenCount must equal a manual recount over the (already
+            // future-filtered) items — proves the future entry never
+            // participated in the count at all, not even as a false-seen.
+            const manualCount = result.items.filter((i) => !i.seen).length;
+            expect(result.unseenCount).toBe(manualCount);
+            expect(result.items.some((i) => i.id === 'entry-future-highlight')).toBe(false);
+        });
+
+        it('excludes the future highlighted entry so it cannot trip the auto-modal downstream', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            // apps/admin's hasUnseenHighlights (`item.highlight && !item.seen`)
+            // only ever reads `items` — an entry excluded here can never
+            // reach it, regardless of its `highlight` flag.
+            const futureEntry = result.items.find((i) => i.id === 'entry-future-highlight');
+            expect(futureEntry).toBeUndefined();
+        });
+
+        it('still returns a past entry unaffected by the future filter (no regression)', async () => {
+            const actor = buildHostActor();
+            const svc = buildSvc({
+                settings: {
+                    onboarding: {
+                        whatsNew: { baselineAt: BASELINE_AT, seenIds: [] }
+                    }
+                }
+            });
+
+            const result = await getWhatsNewHandler(buildCtx(actor), svc as never);
+
+            const ids = result.items.map((i) => i.id);
+            expect(ids).toContain('entry-before-baseline');
+            expect(ids).toContain('entry-all-roles');
         });
     });
 

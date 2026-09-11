@@ -19,13 +19,22 @@
  *
  * **One function decides (HOS-685)**: {@link subscriptionMatchesDomain} is the
  * only place in the codebase that compares a subscription's `productDomain`
- * against a value. Everything else — the two exported predicates below and the
- * two dispatch sites in `apps/api` — goes through it. This is not tidiness:
- * billing has twice grown a canonical helper and left call sites behind
+ * against a value. Everything else — the exported predicates in this module
+ * ({@link isAccommodationSubscription}, {@link isAddonSubscription},
+ * {@link excludeAddonDomainCondition}) and the dispatch sites across
+ * `apps/api` — goes through it. This is not tidiness: billing has twice grown
+ * a canonical helper and left call sites behind
  * (`normalizeStoredSubscriptionStatus`, `isEntitlementGrantingStatus`), which
  * is how two endpoints ended up disagreeing about the same subscription.
  * `scripts/check-product-domain-vocabulary.sh` fails CI on a new call site that
  * compares the domain itself.
+ *
+ * **Add-on isolation (HOS-847)**: a recurring add-on's MercadoPago preapproval
+ * gets its own `billing_subscriptions` row (`product_domain = 'addon'`),
+ * separate from the customer's real plan subscription. Every sweep that
+ * assumed one row per customer per relevant domain must exclude these rows —
+ * see {@link isAddonSubscription} (post-fetch, JS objects) and
+ * {@link excludeAddonDomainCondition} (SQL-level, direct Drizzle queries).
  *
  * @module services/billing/subscription/subscription-product-domain
  */
@@ -37,25 +46,13 @@ import {
     type DrizzleClient,
     eq,
     getDb,
+    inArray,
     isNull,
+    ne,
+    or,
     sql
 } from '@repo/db';
 import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
-
-/**
- * The product-domain values that denote a commerce vertical.
- *
- * HOS-695 (release C) retired the transitional `COMMERCE` umbrella: every
- * commerce row was rewritten to its own vertical in release B (HOS-692), and
- * the value no longer exists in {@link ProductDomainEnum} at all. A row that
- * still somehow carries the old `'commerce'` string (it should not, past
- * release B) is no longer recognised as a commerce subscription by anything
- * in this file — that is the narrowing this release exists to make.
- */
-const COMMERCE_DOMAINS: readonly ProductDomainValue[] = [
-    ProductDomainEnum.GASTRONOMY,
-    ProductDomainEnum.EXPERIENCE
-];
 
 /**
  * Discount-relevant state for a single subscription, as loaded by
@@ -85,8 +82,15 @@ export interface SubscriptionDiscountState {
  * - `undefined` (column not yet in SELECT) → include
  * - `null` (legacy row, column exists but value is NULL) → include
  * - `'accommodation'` (explicit default) → include
- * - `'commerce'` / `'partner'` → **exclude**
+ * - `'commerce'` / `'partner'` / `'tourist'` → **exclude**
  * - anything else (future domains) → exclude (fail-closed)
+ *
+ * `'tourist'` needed no code change to be excluded — the fail-open above is
+ * reached only when the CALLER asks for accommodation, so any explicit
+ * non-accommodation value already fails closed. What it did need was the enum
+ * member itself: until HOS-1233 there was none, so the tourist plans fell to
+ * the column's `'accommodation'` default and landed on the include side of this
+ * very rule, in staging and production alike.
  *
  * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
  * @returns `true` when the subscription should be visible to the accommodation engine.
@@ -102,6 +106,73 @@ export interface SubscriptionDiscountState {
  */
 export function isAccommodationSubscription(sub: unknown): boolean {
     return subscriptionMatchesDomain(sub, ProductDomainEnum.ACCOMMODATION);
+}
+
+/**
+ * Returns `true` when the subscription backs a recurring add-on's own
+ * MercadoPago preapproval (HOS-847), never a customer's real plan.
+ *
+ * **Why this exists**: a recurring add-on cannot share the customer's plan
+ * preapproval — a MercadoPago preapproval carries exactly one
+ * `auto_recurring.transaction_amount` and no line items — so it gets its own
+ * `billing_subscriptions` row, tagged `product_domain = 'addon'`. Every
+ * subsystem that sweeps `billing_subscriptions` assuming one row IS "the"
+ * customer's subscription (dunning, polling, expiry crons, entitlement
+ * resolution, the add-on checkout's own "find my active subscription" scan)
+ * MUST exclude rows this returns `true` for, or an add-on row gets treated as
+ * the owner's accommodation subscription — exactly the contamination
+ * `subscriptionMatchesDomain`'s accommodation fail-open was built to avoid
+ * for legacy rows, now aimed at a row it was never meant to cover.
+ *
+ * Unlike {@link isAccommodationSubscription}, this is fail-CLOSED by
+ * construction: `subscriptionMatchesDomain` only returns `true` for a
+ * non-accommodation domain on an exact string match, never on a
+ * missing/`null`/`undefined` value. A legacy row with no `productDomain` is
+ * correctly never mistaken for an add-on.
+ *
+ * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`
+ *   or a typed `billing_subscriptions` row.
+ * @returns `true` when the subscription is a recurring add-on's own preapproval.
+ *
+ * @example
+ * ```ts
+ * const realPlanSubs = subscriptions.filter((sub) => !isAddonSubscription(sub));
+ * ```
+ */
+export function isAddonSubscription(sub: unknown): boolean {
+    return subscriptionMatchesDomain(sub, ProductDomainEnum.ADDON);
+}
+
+/**
+ * SQL-level mirror of `!isAddonSubscription(sub)`, for a sweep that queries
+ * `billing_subscriptions` directly via Drizzle rather than through qzpay-core's
+ * `billing.subscriptions.*` API (HOS-847).
+ *
+ * Excludes only rows explicitly tagged `product_domain = 'addon'`; a `NULL`
+ * column (legacy row, predates the column) still passes, matching
+ * {@link subscriptionMatchesDomain}'s accommodation fail-open so this never
+ * drops a real customer subscription. Mirrors the same
+ * `isNull(...) OR ne(...)` shape `trial-supersede-on-activation.ts` already
+ * uses for the accommodation-only case — this is the general "not an add-on"
+ * version, useful anywhere a sweep must not load every subscription just to
+ * filter it in JS afterward.
+ *
+ * @returns A Drizzle SQL condition to `and()` into a `billing_subscriptions`
+ *   query's `WHERE` clause.
+ *
+ * @example
+ * ```ts
+ * const rows = await db
+ *   .select(...)
+ *   .from(billingSubscriptions)
+ *   .where(and(eq(billingSubscriptions.status, 'past_due'), excludeAddonDomainCondition()));
+ * ```
+ */
+export function excludeAddonDomainCondition() {
+    return or(
+        isNull(billingSubscriptions.productDomain),
+        ne(billingSubscriptions.productDomain, ProductDomainEnum.ADDON)
+    );
 }
 
 /**
@@ -126,10 +197,6 @@ export function isAccommodationSubscription(sub: unknown): boolean {
  * Fail-closed everywhere except accommodation means the failure mode of an
  * unrecognised value is **a dark listing, never a granted entitlement** — the
  * isolation SPEC-239 exists to guarantee.
- *
- * To test membership across every commerce vertical at once, use
- * {@link isCommerceSubscription} rather than re-deriving that union at the
- * call site.
  *
  * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
  * @param domain - The domain to test membership of.
@@ -165,39 +232,92 @@ export function subscriptionMatchesDomain(sub: unknown, domain: ProductDomainVal
 }
 
 /**
- * Returns `true` when the subscription belongs to **any** commerce vertical
- * (SPEC-239 commerce-listing subscriptions).
+ * Hydrates `productDomain` onto a list of subscriptions fetched via
+ * `billing.subscriptions.getByCustomerId()`, before any of them reach
+ * {@link subscriptionMatchesDomain} (HOS-934).
  *
- * Unlike {@link isAccommodationSubscription}, this predicate is deliberately
- * **fail-closed**: `null`/`undefined`/non-object input, or a `productDomain`
- * outside {@link COMMERCE_DOMAINS}, returns `false`. A commerce subscription is
- * always created with an explicit domain (there is no legacy-row ambiguity to
- * resolve in this domain's favor the way there is for accommodation), so
- * silently including an unrelated row here would leak an accommodation/partner
- * subscription into a commerce-scoped read (HOS-259).
+ * **Why this exists**: `getByCustomerId()` returns
+ * `QZPaySubscriptionWithHelpers` objects built by qzpay-core's mapper
+ * field-by-field from the fields `QZPaySubscription` itself declares — there
+ * is no spread of the underlying row, so a column qzpay-drizzle adds beyond
+ * core's interface never reaches the object. `productDomain` is exactly such
+ * a column (like `courtesyStartsAt`/`courtesyEndsAt`, see
+ * `readCourtesyFields`'s module doc for the same mechanism), so every one of
+ * these objects arrives with `productDomain` `undefined` — never `null`,
+ * never the real string. Handed straight to `subscriptionMatchesDomain`,
+ * that `undefined` reads as "legacy row, fail open to accommodation" for
+ * EVERY subscription regardless of its real vertical: a gastronomy-only
+ * subscription would match a caller scoped to `accommodation` and vanish
+ * from a caller scoped to `gastronomy`/`experience`. This function closes
+ * that gap once, centrally, so every caller that resolves "the" subscription
+ * for a domain reads the same, correct value.
  *
- * Answers `true` for `'gastronomy'` and `'experience'` — the two live
- * verticals — by delegating to {@link subscriptionMatchesDomain} for each and
- * OR-ing the results, so this stays a thin composition rather than a second
- * place that reads `productDomain` itself. **Narrowed in HOS-695 (release
- * C)**: it no longer answers `true` for the retired `'commerce'` umbrella —
- * that string is not a member of {@link ProductDomainEnum} any more, and a
- * row still carrying it (it should not, past release B / HOS-692) is treated
- * as unrecognised, not as commerce. To scope a read to **one** vertical, call
- * {@link subscriptionMatchesDomain} with that vertical instead.
+ * A single batched `SELECT` recovers the column for every subscription that
+ * is missing it. Subscriptions that already carry a `productDomain` (e.g. a
+ * caller that hydrated already, or a future qzpay-core release that includes
+ * the column) are left untouched — an explicit value, even `null`, is a real
+ * answer and not a gap to fill.
  *
- * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
- * @returns `true` when the row's `productDomain` is any commerce vertical.
+ * Returns NEW subscription objects (does not mutate the input array or its
+ * elements) — `QZPaySubscriptionWithHelpers` instances are plain object
+ * literals with their helper methods as own properties (not on a
+ * prototype), so `{ ...sub, productDomain }` preserves every method
+ * unchanged.
+ *
+ * @param subscriptions - Subscriptions as returned by `getByCustomerId()`.
+ * @param tx - Optional Drizzle client (e.g. a caller-provided transaction) so
+ *   the read participates in the caller's boundary. Defaults to a standalone
+ *   `getDb()` connection.
+ * @returns A new array, same order, each element carrying a real
+ *   `productDomain` value (the stored string, or `null` for a legacy row
+ *   whose column is genuinely `NULL`).
  *
  * @example
  * ```ts
- * const commerceSub = subscriptions.find(
- *   (sub) => isEntitlementGrantingStatus(sub.status) && isCommerceSubscription(sub)
+ * const rawSubscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+ * const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+ * const match = subscriptions.find(
+ *   (sub) => isEntitlementGrantingStatus(sub.status) && subscriptionMatchesDomain(sub, domain)
  * );
  * ```
  */
-export function isCommerceSubscription(sub: unknown): boolean {
-    return COMMERCE_DOMAINS.some((domain) => subscriptionMatchesDomain(sub, domain));
+export async function hydrateSubscriptionProductDomains<T extends { id: string }>(
+    subscriptions: readonly T[],
+    tx?: DrizzleClient
+): Promise<(T & { productDomain: string | null })[]> {
+    if (subscriptions.length === 0) {
+        return [];
+    }
+
+    const idsNeedingHydration = subscriptions
+        .filter((sub) => (sub as Record<string, unknown>).productDomain === undefined)
+        .map((sub) => sub.id);
+
+    let domainById = new Map<string, string | null>();
+
+    if (idsNeedingHydration.length > 0) {
+        const db = tx ?? getDb();
+        const rows = await db
+            .select({
+                id: billingSubscriptions.id,
+                productDomain: billingSubscriptions.productDomain
+            })
+            .from(billingSubscriptions)
+            .where(inArray(billingSubscriptions.id, idsNeedingHydration));
+
+        domainById = new Map(rows.map((row) => [row.id, row.productDomain ?? null]));
+    }
+
+    return subscriptions.map((sub) => {
+        const existing = (sub as Record<string, unknown>).productDomain;
+        if (existing !== undefined) {
+            return sub as T & { productDomain: string | null };
+        }
+        return {
+            ...sub,
+            productDomain: domainById.get(sub.id) ?? null
+        };
+    });
 }
 
 /**

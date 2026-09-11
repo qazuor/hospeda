@@ -27,7 +27,9 @@
  * answer is deliberately identical for every actor — nothing about the caller
  * can be inferred from it. (The separate question of 403-vs-404 for a FOREIGN
  * resource that does exist is a repo-wide criterion still pending in H-72; this
- * module does not settle it and does not touch the `:id` routes that raise it.)
+ * module does not settle it and does not touch the `:id` routes that raise it.
+ * The `plans/:id` pair is the one `:id` case that has since been settled, in
+ * `protected-plan-by-id.ts` — 404, and the same 404 a missing plan gets.)
  *
  * @module routes/billing/collection-listing-block
  */
@@ -49,9 +51,25 @@ interface RegisteredRoute {
  * Collection segments that are legitimately served at the protected tier and
  * must therefore NOT be blocked.
  *
- * - `plans` is catalog data, not customer data. Hospeda already overrides
- *   `GET /plans` with `protectedPlansListRouter`, which filters out hidden test
- *   plans; blocking the segment here would shadow that override.
+ * - `plans` is served here by Hospeda's own `GET /plans` override
+ *   (`protected-plans-list.ts`), which withholds the hidden test plan and any
+ *   plan marked `publicListing: 'unlisted'`. The exemption keeps this module from
+ *   registering a SECOND handler for a path that is already answered: the
+ *   override is registered first (see `routes/billing/index.ts`) and Hono
+ *   resolves by first match, so a `/plans` entry here would never run today —
+ *   and would turn into a live 404 withdrawing the catalogue the day the
+ *   override moved or was renamed.
+ *
+ * Two things the original reason for this entry got wrong, corrected here rather
+ * than left to be re-read as true:
+ *
+ * - it justified the exemption with "blocking the segment here would shadow that
+ *   override", which the registration order above contradicts;
+ * - it called `plans` "catalog data, not customer data". HOS-1062 ended that: a
+ *   negotiated plan IS one customer's commercial terms. That is why the SINGLE-
+ *   plan reads are now gated too — by `protected-plan-by-id.ts`, with the same
+ *   predicate as the listing, rather than by a flat block here, which could not
+ *   tell a published plan from a withheld one (HOS-1186).
  *
  * Every entry needs a reason: an exemption is the one way a listing gets back
  * onto the user tier.

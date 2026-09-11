@@ -178,8 +178,18 @@ describe('HOS-854 guard — billing whole-table reads use listAll()', () => {
             readonly file: string;
             readonly atLeast: number;
         }> = [
-            { file: 'cron/jobs/dunning.job.ts', atLeast: 2 },
-            { file: 'cron/jobs/notification-schedule.job.ts', atLeast: 2 },
+            // HOS-847 consolidated the dry-run and observe-only branches'
+            // near-identical `listAll({filters:{status:'past_due'}})` +
+            // domain-exclusion-hydrate call into one shared
+            // `loadPastDueNonAddonSubscriptions` helper, called from both
+            // branches — so the literal `.listAll(` text now appears once,
+            // not twice, even though both call sites still go through it.
+            { file: 'cron/jobs/dunning.job.ts', atLeast: 1 },
+            // HOS-847 did the same consolidation here: the dry-run and real
+            // renewal-reminder branches now share one
+            // `loadActiveNonAddonSubscriptions` helper instead of each
+            // calling `listAll` inline.
+            { file: 'cron/jobs/notification-schedule.job.ts', atLeast: 1 },
             { file: 'cron/jobs/trial-expiry.ts', atLeast: 1 },
             { file: 'routes/billing/start-paid.ts', atLeast: 1 },
             { file: 'services/billing/reactivation-plan-guard.ts', atLeast: 1 },

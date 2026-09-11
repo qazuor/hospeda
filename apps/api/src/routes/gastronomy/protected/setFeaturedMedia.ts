@@ -21,10 +21,14 @@
  * Hono resolves the static `featured` segment regardless of insertion order
  * (mirrors the reorder-route note).
  */
-import { GastronomyMediaSingleOutputSchema } from '@repo/schemas';
+import { EntitlementKey } from '@repo/billing';
+import { GastronomyMediaSingleOutputSchema, ProductDomainEnum } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -44,8 +48,8 @@ export const protectedSetFeaturedGastronomyMediaRoute = createCRUDRoute({
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires COMMERCE_EDIT_OWN (listing owner) or ' +
-        'COMMERCE_EDIT_ALL (staff). No request body — ids come from URL params.',
+        'photo to visible first. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2. ' +
+        'No request body — ids come from URL params.',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -71,5 +75,14 @@ export const protectedSetFeaturedGastronomyMediaRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
+        // `addFaq.ts` for why the vertical loader must be first.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('gastronomy'),
+            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
+            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
+        ]
     }
 });

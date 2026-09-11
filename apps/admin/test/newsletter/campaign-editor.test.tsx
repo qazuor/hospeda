@@ -512,9 +512,13 @@ describe('CampaignEditor', () => {
             expect(screen.getByTestId('cancel-send-btn')).toBeInTheDocument();
         });
 
-        it('calls cancelMutation when cancel-send is clicked and window.confirm returns true', async () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(true);
-
+        // HOS-1198: the click on "Cancel send" used to gate cancelMutation
+        // behind a blocking window.confirm(). It now opens a controlled
+        // DeleteConfirmDialog instead, so these three tests assert the gate
+        // itself — a click alone must never reach cancelMutation — rather
+        // than a window.confirm() return value that no longer exists in the
+        // component.
+        it('opens the cancel-send confirm dialog on click and does NOT call cancelMutation yet', () => {
             renderWithProviders(
                 <CampaignEditor
                     mode="readonly"
@@ -523,17 +527,28 @@ describe('CampaignEditor', () => {
             );
 
             fireEvent.click(screen.getByTestId('cancel-send-btn'));
+
+            expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument();
+            expect(mockCancelMutateAsync).not.toHaveBeenCalled();
+        });
+
+        it('calls cancelMutation only after confirming in the dialog', async () => {
+            renderWithProviders(
+                <CampaignEditor
+                    mode="readonly"
+                    campaign={SENDING_CAMPAIGN}
+                />
+            );
+
+            fireEvent.click(screen.getByTestId('cancel-send-btn'));
+            fireEvent.click(screen.getByTestId('delete-confirm-confirm'));
 
             await waitFor(() => {
                 expect(mockCancelMutateAsync).toHaveBeenCalled();
             });
-
-            vi.restoreAllMocks();
         });
 
-        it('does NOT call cancelMutation when confirm dialog is dismissed', () => {
-            vi.spyOn(window, 'confirm').mockReturnValue(false);
-
+        it('does NOT call cancelMutation when the dialog is dismissed via cancel', () => {
             renderWithProviders(
                 <CampaignEditor
                     mode="readonly"
@@ -542,10 +557,10 @@ describe('CampaignEditor', () => {
             );
 
             fireEvent.click(screen.getByTestId('cancel-send-btn'));
+            fireEvent.click(screen.getByTestId('delete-confirm-cancel'));
 
             expect(mockCancelMutateAsync).not.toHaveBeenCalled();
-
-            vi.restoreAllMocks();
+            expect(screen.queryByTestId('delete-confirm-dialog')).not.toBeInTheDocument();
         });
     });
 

@@ -1,9 +1,22 @@
 /**
  * @file publicar-restaurante-index.test.ts
- * @description Source-read tests for the public gastronomy vertical landing
- * (HOS-690). Rebuilt from "hero + CommerceLead lead form" into a full
- * marketing page: hero, benefits, how-it-works, price, FAQ — the lead form is
- * gone from this page (retiring the underlying component/route is HOS-693).
+ * @description Source-read tests for `/publicar-restaurante/`, which HOS-1032
+ * turned from the gastronomy vertical's full marketing page (hero, benefits,
+ * how-it-works, price, FAQ — see the previous revision of this file) into a
+ * permanent redirect to `/planes/gastronomia/`, the new level-2 sales page.
+ *
+ * ## Where the retired content coverage lives now
+ *
+ * Every assertion this file used to make about the page's CONTENT (hero copy,
+ * benefits/how-it-works/FAQ sections, the trial-aware price block, the
+ * `applyCacheHeaders` pricing class) moved with the content itself: the
+ * shared-section family guard in `test/pages/sales-pages-family.guard.test.ts`
+ * covers `/planes/gastronomia/index.astro` alongside its four siblings, and
+ * `test/pages/commerce-landing-cta.guard.test.ts` covers the vertical's
+ * checkout CTA wiring on both the sales page and its own `/precios/` page
+ * (`test/pages/pricing-ssr-runtime.test.ts`). Nothing here duplicates that
+ * coverage — this file only asserts the one thing left that is genuinely a
+ * property of THIS URL: that it forwards rather than serves.
  */
 
 import { readFileSync } from 'node:fs';
@@ -16,73 +29,34 @@ const src = readFileSync(
 );
 
 describe('publicar-restaurante/index.astro', () => {
-    it('reads locale from Astro.locals.locale, not Astro.params.lang', () => {
-        expect(src).toContain('Astro.locals.locale');
-        expect(src).not.toContain('Astro.params.lang');
+    it('renders on demand, so the redirect is actually executed', () => {
+        // Without `prerender = false` this would be built once at compile
+        // time and could not read the request-scoped locale.
+        expect(src).toContain('export const prerender = false;');
     });
 
-    it('uses createTranslations for i18n', () => {
-        expect(src).toContain('createTranslations(locale)');
+    it('redirects rather than serving a 200 body', () => {
+        // Catches a regression back to a rendered landing page: no layout,
+        // no plan fetch, no lead-form island — just the redirect statement.
+        expect(src).toContain('return Astro.redirect(');
+        expect(src).not.toContain('<MarketingLayout');
+        expect(src).not.toContain('<BaseLayout');
+        expect(src).not.toContain('fetchPublicPlans');
     });
 
-    it('does NOT mount the CommerceLead island (HOS-690 removed the lead form)', () => {
-        // The component itself is not deleted (HOS-693's job), so its name can
-        // still appear in a doc comment explaining why — what must be gone is
-        // the import and the JSX mount.
-        expect(src).not.toContain("from '@/components/gastronomy/CommerceLead.client'");
-        expect(src).not.toContain('<CommerceLead');
-        expect(src).not.toContain('client:load');
+    it('answers 301, the status that transfers ranking signal for a moved page', () => {
+        // 302 or a bare 404 would both be wrong here: the content moved
+        // location, it did not disappear or become temporary.
+        expect(src).toMatch(/Astro\.redirect\([\s\S]*?,\s*301\s*\)/);
     });
 
-    it('no longer forwards the session or fetches destinations (HOS-690)', () => {
-        expect(src).not.toContain('Astro.locals.user');
-        expect(src).not.toContain('destinationsApi.list');
-        expect(src).not.toContain('currentUser');
-    });
-
-    it('does NOT redirect unauthenticated visitors (public page)', () => {
-        expect(src).not.toContain('if (!user)');
-    });
-
-    it('does NOT set prerender=true (must be SSR)', () => {
-        expect(src).not.toContain('prerender = true');
-    });
-
-    it('uses the commerce.lead.* namespace for the hero (not commerce.plans.*)', () => {
-        expect(src).toContain('commerce.lead.title');
-        expect(src).not.toContain('commerce.plans');
-    });
-
-    it('fetches the gastronomy plan scoped by domain (HOS-685/HOS-690)', () => {
-        expect(src).toContain('fetchPublicPlans');
-        expect(src).toContain("domain: 'gastronomy'");
-        expect(src).toContain('filterPlansByCategory');
-    });
-
-    it('is edge-cacheable via applyCacheHeaders with the pricing class (AC-37)', () => {
-        expect(src).toContain('applyCacheHeaders');
-        expect(src).toContain("cacheClass: 'pricing'");
-        expect(src).toContain('CACHE_TAG_PRICING');
-    });
-
-    it('renders benefits, how-it-works, price and FAQ blocks', () => {
-        expect(src).toContain('commerce.landing.gastronomy.benefits.title');
-        expect(src).toContain('commerce.landing.gastronomy.howItWorks.title');
-        expect(src).toContain('commerce.landing.gastronomy.price.title');
-        expect(src).toContain('commerce.landing.gastronomy.faq.title');
-    });
-
-    it('degrades gracefully when the plan fetch fails', () => {
-        expect(src).toContain('commerce.landing.gastronomy.price.unavailable');
-    });
-
-    it('renders a breadcrumb, BaseLayout and SEOHead', () => {
-        expect(src).toContain('Breadcrumbs');
-        expect(src).toContain('BaseLayout');
-        expect(src).toContain('SEOHead');
-    });
-
-    it('uses CSS custom properties for spacing', () => {
-        expect(src).toContain('var(--');
+    it('targets the gastronomy PUBLISH page, overriding HOS-941 D-8', () => {
+        // This redirect pointed at `/planes/gastronomia/` — a SALES page — and the
+        // reasoning was correct while no publish page existed for this vertical.
+        // One does now, and it carries the argument AND the form, so it is a
+        // superset of what the sales page offers an arriving visitor. The URL's
+        // own name said *publicar*; it finally leads there (HOS-1156 D-6).
+        expect(src).toContain('PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy');
+        expect(src).not.toContain("path: 'planes/gastronomia'");
     });
 });

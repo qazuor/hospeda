@@ -5,15 +5,20 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * displayOrder is auto-assigned by addGastronomyFaq() as max(existing)+1.
  */
+import { EntitlementKey } from '@repo/billing';
 import {
-    FaqCreatePayloadSchema,
-    type FaqCreatePayloadType,
+    FaqWithChannelVisibilityCreatePayloadSchema,
+    type FaqWithChannelVisibilityCreatePayloadType,
     type GastronomyFaqAddInput,
-    GastronomyFaqSingleOutputSchema
+    GastronomyFaqSingleOutputSchema,
+    ProductDomainEnum
 } from '@repo/schemas';
 import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -35,7 +40,7 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: FaqCreatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityCreatePayloadSchema,
     responseSchema: GastronomyFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -46,7 +51,7 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
 
         const input: GastronomyFaqAddInput = {
             gastronomyId: params.id as string,
-            faq: body as FaqCreatePayloadType
+            faq: body as FaqWithChannelVisibilityCreatePayloadType
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
@@ -60,5 +65,18 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. The
+        // vertical loader MUST come first — the global `entitlementMiddleware`
+        // has already put the ACCOMMODATION set in the context, and that set
+        // never carries a gastronomy key, so a gate mounted without this ahead
+        // of it refuses every caller, including the ones whose plan grants
+        // exactly this.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('gastronomy'),
+            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
+            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
+        ]
     }
 });

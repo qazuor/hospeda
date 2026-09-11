@@ -43,10 +43,22 @@ import {
     type LimitKey
 } from '@repo/billing';
 import { accommodations, getDb, userRole as userRoleTable } from '@repo/db';
-import { getUserRoles, isAccommodationSubscription, type RoleEnum } from '@repo/service-core';
+import {
+    getUserRoles,
+    hydrateSubscriptionProductDomains,
+    isAccommodationSubscription,
+    type RoleEnum
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
+import { OWNER_SIDE_PRODUCT_DOMAINS } from '../services/billing/addon-grant-domain';
+import {
+    loadDeferredAddonGrants,
+    mergeDeferredAddonGrants
+} from '../services/deferred-addon-grants.service';
+import type { CachedOwnerSubscription } from '../services/entity-subscription-cache.service';
+import { readAccommodationSubscriptionCacheByOwnerIds } from '../services/entity-subscription-cache.service';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { apiLogger } from '../utils/logger';
@@ -114,10 +126,19 @@ async function loadOwnerCustomerId(ownerId: string): Promise<string | null> {
 /**
  * Resolve the plan entitlements for a given billing customer ID.
  *
- * Shares the SUBSCRIPTION SELECTION contract with `loadEntitlements`
- * (entitlement.ts): entitlement-granting status (`active | trialing | comp`,
- * HOS-291) AND accommodation product domain (SPEC-239 T-034). It is a
- * deliberately reduced re-implementation of the rest: it does NOT carry the
+ * Selects on entitlement-granting status (`active | trialing | comp`, HOS-291)
+ * AND accommodation product domain (SPEC-239 T-034).
+ *
+ * This used to be documented as SHARING the subscription-selection contract with
+ * `loadEntitlements` (entitlement.ts). It no longer does, and saying so hid a
+ * real divergence (HOS-1303): since HOS-1233 that loader resolves the
+ * accommodation subscription OR the tourist one, through the ordered
+ * `selectAccommodationSubscription`. This one is accommodation-only and
+ * unordered — correctly, because the surfaces it gates are an owner's listings,
+ * which a tourist plan grants nothing about. Two different questions, and the
+ * word "shares" invited the next reader to keep them in step by copying.
+ *
+ * It is a deliberately reduced re-implementation of the rest: it does NOT carry the
  * viewer-only concerns (caller-keyed cache, staff bypass, actor-role defaults),
  * NOR the HOS-217 HOST tourist-plan discard, NOR the customer-level entitlement
  * merge (`billing.entitlements.getByCustomerId`) that the consumer-side loader
@@ -128,6 +149,66 @@ async function loadOwnerCustomerId(ownerId: string): Promise<string | null> {
  * @returns A set of entitlement keys. Empty if no entitlement-granting
  *   accommodation subscription exists, or the plan carries no entitlements.
  */
+/**
+ * Resolve the entitlement set a PLAN grants, by plan id.
+ *
+ * Split out of {@link loadCustomerEntitlements} by HOS-1084 so the cached read
+ * path — which already knows the plan id, because `entity_subscriptions` stores
+ * it — can reach the plan without first walking customer → subscriptions.
+ *
+ * @param planId - `billing_plans.id`.
+ * @param memo - Optional per-batch memo. A listing page routinely resolves the
+ *   same handful of plans for a dozen different owners; the memo collapses that
+ *   to one lookup per DISTINCT plan. Deliberately NOT a module-level cache:
+ *   this is request-scoped dedup, not a staleness window.
+ * @returns The plan's known entitlement keys. Empty on any failure, matching
+ *   the fail-closed contract of the caller.
+ */
+async function loadPlanEntitlements(
+    planId: string,
+    memo?: Map<string, Promise<Set<EntitlementKey>>>
+): Promise<Set<EntitlementKey>> {
+    const memoized = memo?.get(planId);
+    if (memoized) {
+        return await memoized;
+    }
+
+    const load = (async (): Promise<Set<EntitlementKey>> => {
+        const entitlements = new Set<EntitlementKey>();
+        const billing = getQZPayBilling();
+        if (!billing) {
+            return entitlements;
+        }
+        try {
+            const plan = await billing.plans.get(planId);
+            if (!plan?.entitlements) {
+                return entitlements;
+            }
+            // Filter to known keys — unknown strings from a mis-configured plan
+            // are silently dropped (same approach as the existing loader).
+            for (const key of plan.entitlements) {
+                if (isEntitlementKey(key)) {
+                    entitlements.add(key);
+                }
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            apiLogger.warn(
+                { planId, error: message },
+                'ownerEntitlementMiddleware: failed to load plan entitlements; returning empty set'
+            );
+            Sentry.captureException(error, {
+                tags: { subsystem: 'owner-entitlements', action: 'plan-lookup' },
+                extra: { planId }
+            });
+        }
+        return entitlements;
+    })();
+
+    memo?.set(planId, load);
+    return await load;
+}
+
 async function loadCustomerEntitlements(customerId: string): Promise<Set<EntitlementKey>> {
     const billing = getQZPayBilling();
     if (!billing) {
@@ -135,7 +216,7 @@ async function loadCustomerEntitlements(customerId: string): Promise<Set<Entitle
     }
     const entitlements = new Set<EntitlementKey>();
     try {
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
         // HOS-291: route through the shared predicate (active | trialing | comp)
         // instead of re-deriving the status set inline. The inline check omitted
         // `comp` (SPEC-262), so an admin-comped owner resolved to an EMPTY
@@ -155,28 +236,43 @@ async function loadCustomerEntitlements(customerId: string): Promise<Set<Entitle
         // null/undefined productDomain as 'accommodation' (legacy rows + column
         // default), so it can never drop a real accommodation sub.
         //
+        // HOS-847: `getByCustomerId()` returns qzpay-core-mapped objects that never
+        // carry `productDomain` (HOS-934 gap) — without hydration the domain
+        // filter above was a silent no-op, which would have let a recurring
+        // add-on's own preapproval row (product_domain = 'addon') shadow the
+        // owner's real accommodation subscription. Hydrate before filtering.
+        //
         // There should only ever be ONE live accommodation subscription per
         // customer (`start-paid.ts` rejects a second one with this same predicate
         // pair), so `find` order is not load-bearing.
-        const active = subscriptions?.find(
-            (sub: { status: string }) =>
-                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
+        const active = subscriptions.find(
+            (sub) => isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
         if (!active) {
-            return entitlements;
+            // HOS-847 PR 7b: no live plan, but an add-on the cancellation flow
+            // deferred may still be inside the period it was charged for. This
+            // early return is one of the two cuts that made PR 7a's deferral
+            // deliver nothing — the customer-level merge lives past it.
+            // HOS-1303: accommodation ALONE, because the selection twelve lines
+            // up is `isAccommodationSubscription` alone. A deferred add-on of any
+            // other vertical — `tourist` included, the domain this epic created —
+            // grants nothing about an owner's listings, so it must not reach this
+            // set. The scope is passed rather than defaulted: the consumer-side
+            // loader serves a WIDER pair, and a shared default is how this call
+            // site silently inherited it.
+            const grants = await loadDeferredAddonGrants({
+                customerId,
+                servedDomains: OWNER_SIDE_PRODUCT_DOMAINS,
+                reporter: 'owner-entitlements'
+            });
+            return mergeDeferredAddonGrants({
+                grants,
+                entitlements,
+                limits: new Map<LimitKey, number>()
+            }).entitlements;
         }
-        const plan = await billing.plans.get(active.planId);
-        if (!plan?.entitlements) {
-            return entitlements;
-        }
-        // Filter to known keys — unknown strings from a mis-configured plan
-        // are silently dropped (same approach as the existing loader).
-        for (const key of plan.entitlements) {
-            if (isEntitlementKey(key)) {
-                entitlements.add(key);
-            }
-        }
-        return entitlements;
+        return await loadPlanEntitlements(active.planId);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         apiLogger.warn(
@@ -233,12 +329,49 @@ async function resolveOwnerRoles(ownerId: string): Promise<readonly RoleEnum[]> 
     }
 }
 
+/**
+ * Resolve an owner's entitlement set, preferring the denormalized
+ * `entity_subscriptions` cache when the caller already read it (HOS-1084).
+ *
+ * The cache stores exactly the two things this resolver's live path spends
+ * three QZPay round trips to rediscover: the status of the owner's
+ * accommodation subscription and the plan it runs on. So a HIT skips straight
+ * to the plan, and the selection contract is unchanged — an
+ * entitlement-granting status (`active | trialing | comp`) on an
+ * accommodation-domain subscription, or nothing.
+ *
+ * A MISS is not "no subscription": it falls through to the live path, which is
+ * exactly what this function did before the cache existed. That is what makes
+ * an incomplete cache a performance question rather than a correctness one.
+ *
+ * @param ownerId - `users.id` of the accommodation owner.
+ * @param ownerRoles - Roles the owner holds (staff bypass, INV-6).
+ * @param cached - The cached row for this owner, or `null`/`undefined` on a miss.
+ * @param planMemo - Optional per-batch plan-lookup memo.
+ */
 async function resolveOwnerEntitlementSet(
     ownerId: string,
-    ownerRoles: readonly RoleEnum[]
+    ownerRoles: readonly RoleEnum[],
+    cached?: CachedOwnerSubscription | null,
+    planMemo?: Map<string, Promise<Set<EntitlementKey>>>
 ): Promise<Set<EntitlementKey>> {
     if (isStaffBypassRole(ownerRoles)) {
         return buildStaffUnlimitedEntitlements();
+    }
+
+    // The cache mirrors billing, so it can only answer while billing is up. With
+    // billing uninitialised the live path below returns the free-tier defaults,
+    // and a cache hit must not quietly answer something else.
+    if (cached && getQZPayBilling()) {
+        if (!isEntitlementGrantingStatus(cached.status)) {
+            return new Set<EntitlementKey>();
+        }
+        if (cached.planId) {
+            return await loadPlanEntitlements(cached.planId, planMemo);
+        }
+        // Granting status with no plan id: the sync never writes that pair, so
+        // treat it as an unusable row and resolve live rather than answer with
+        // an empty — silently wrong — set.
     }
 
     const customerId = await loadOwnerCustomerId(ownerId);
@@ -381,8 +514,35 @@ export function getOwnerEntitlements(c: {
 export async function resolveOwnerEntitlementsForOwnerId(
     ownerId: string
 ): Promise<readonly EntitlementKey[]> {
-    const ownerRoles = await resolveOwnerRoles(ownerId);
-    return Array.from(await resolveOwnerEntitlementSet(ownerId, ownerRoles));
+    const [ownerRoles, cacheMap] = await Promise.all([
+        resolveOwnerRoles(ownerId),
+        readOwnerSubscriptionCache([ownerId])
+    ]);
+    return Array.from(
+        await resolveOwnerEntitlementSet(ownerId, ownerRoles, cacheMap.get(ownerId) ?? null)
+    );
+}
+
+/**
+ * Read the denormalized owner-subscription cache, never throwing.
+ *
+ * A cache read that fails must degrade to "every owner is a MISS" — which is
+ * the pre-HOS-1084 live path — rather than propagate. Losing the cache costs
+ * latency; losing the request costs the page.
+ */
+async function readOwnerSubscriptionCache(
+    ownerIds: readonly string[]
+): Promise<Map<string, CachedOwnerSubscription>> {
+    try {
+        return await readAccommodationSubscriptionCacheByOwnerIds(ownerIds);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        apiLogger.warn(
+            { count: ownerIds.length, error: message },
+            'owner-entitlement: entity_subscriptions cache read failed; resolving every owner live'
+        );
+        return new Map<string, CachedOwnerSubscription>();
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -500,7 +660,7 @@ async function loadCustomerLimits(
     }
 
     try {
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
         // HOS-291: same selection contract as `loadCustomerEntitlements` above
         // (entitlement-granting status AND accommodation domain) — a comp owner
         // must resolve the limits of the plan they were comped on, not the
@@ -508,9 +668,12 @@ async function loadCustomerLimits(
         // more here: a commerce plan is FOUND but carries no limits, so the
         // resolver would cache an empty map for 5 minutes (`shouldCache: true`)
         // instead of falling back to owner-basico.
-        const active = subscriptions?.find(
-            (sub: { status: string }) =>
-                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+        //
+        // HOS-847: hydrate before filtering — see loadCustomerEntitlements's doc
+        // for why the un-hydrated domain filter is a silent no-op.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
+        const active = subscriptions.find(
+            (sub) => isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
 
         if (!active) {
@@ -659,8 +822,27 @@ export async function resolveOwnerLimitsForOwnerId(
     // When the owner has no entitlement-granting accommodation subscription
     // (result.limits is empty and shouldCache is false from loadCustomerLimits),
     // fall back to owner-basico.
+    //
+    // HOS-847 PR 7b: plus the increase of any add-on still inside the period it
+    // was charged for. `loadCustomerLimits` returns before its own
+    // customer-level merge on this branch, so without this the owner-basico
+    // baseline was the whole answer and a deferred add-on raised nothing.
     if (result.limits.size === 0 && !result.shouldCache) {
-        return await buildOwnerBasicoFallbackLimits();
+        const fallbackLimits = await buildOwnerBasicoFallbackLimits();
+        // HOS-1303: accommodation alone, the same scope as the entitlement cut
+        // above and for the same reason. A deferred `extra-gastronomies-1` raised
+        // `max_gastronomies` inside the OWNER limits map before this — a cap the
+        // accommodation enforcement has no business carrying.
+        const grants = await loadDeferredAddonGrants({
+            customerId,
+            servedDomains: OWNER_SIDE_PRODUCT_DOMAINS,
+            reporter: 'owner-entitlements'
+        });
+        return mergeDeferredAddonGrants({
+            grants,
+            entitlements: new Set<EntitlementKey>(),
+            limits: fallbackLimits
+        }).limits;
     }
 
     if (result.shouldCache) {
@@ -675,62 +857,31 @@ export async function resolveOwnerLimitsForOwnerId(
 // ---------------------------------------------------------------------------
 
 /**
- * Per-owner entitlement cache for the batch badge resolver.
- *
- * Shared across all listing routes that need to gate `isVerified` by owner
- * entitlement. The cache is keyed by `ownerId` and expires after
- * {@link OWNER_ENTITLEMENT_TTL_MS} (5 minutes — matching the owner-limits TTL).
- * A 5-minute-stale badge on a listing card is purely cosmetic; the real
- * verification gate lives on the detail endpoint which uses the uncached single
- * resolver.
- */
-interface OwnerEntitlementCacheEntry {
-    readonly entitlements: readonly EntitlementKey[];
-    readonly timestamp: number;
-}
-const OWNER_ENTITLEMENT_TTL_MS = 5 * 60 * 1000;
-const OWNER_ENTITLEMENT_CACHE_MAX = 2000;
-const ownerEntitlementBadgeCache = new Map<string, OwnerEntitlementCacheEntry>();
-
-/** Read from cache. Returns `null` on miss or expiry (eager eviction). */
-function getOwnerEntitlementBadgeCacheEntry(ownerId: string): readonly EntitlementKey[] | null {
-    const entry = ownerEntitlementBadgeCache.get(ownerId);
-    if (!entry) return null;
-    if (Date.now() - entry.timestamp > OWNER_ENTITLEMENT_TTL_MS) {
-        ownerEntitlementBadgeCache.delete(ownerId);
-        return null;
-    }
-    return entry.entitlements;
-}
-
-/** Write to cache with FIFO eviction at capacity. */
-function setOwnerEntitlementBadgeCacheEntry(
-    ownerId: string,
-    entitlements: readonly EntitlementKey[]
-): void {
-    if (ownerEntitlementBadgeCache.size >= OWNER_ENTITLEMENT_CACHE_MAX) {
-        const firstKey = ownerEntitlementBadgeCache.keys().next().value;
-        if (firstKey !== undefined) ownerEntitlementBadgeCache.delete(firstKey);
-    }
-    ownerEntitlementBadgeCache.set(ownerId, { entitlements, timestamp: Date.now() });
-}
-
-/**
  * Batch variant of {@link resolveOwnerEntitlementsForOwnerId}.
  *
- * Resolves entitlement arrays for a set of owner IDs with the **minimum
- * number of database queries**:
+ * Resolves entitlement arrays for a page's worth of owner IDs in the **minimum
+ * number of round trips**:
  *
- * 1. Cache hits are served immediately (zero DB round trips).
- * 2. A **single** `SELECT id, role FROM users WHERE id IN (...)` fetches
- *    roles for all cache-cold owners in one round trip.
- * 3. Billing lookups run in **parallel** (`Promise.all`) across cache-cold
- *    owners — the same lookups as the single resolver, just fanned out
- *    concurrently instead of sequentially.
+ * 1. TWO batched `SELECT`s, issued in parallel — one for every owner's roles
+ *    (`user_role`, HOS-296) and one for the denormalized `entity_subscriptions`
+ *    cache (HOS-1084).
+ * 2. Per-owner resolution then runs in parallel. A cache HIT costs one plan
+ *    lookup, deduplicated across the whole batch by {@link loadPlanEntitlements}'s
+ *    memo — so a page of twenty listings on four distinct plans makes four
+ *    lookups, not twenty. A MISS costs the pre-HOS-1084 live walk.
  *
- * Fail-open: DB query failures → empty entitlements for all affected owners
- * (badge hidden). Per-owner billing failures → empty entitlements for that
- * owner (badge hidden). Errors are logged and captured by Sentry.
+ * **HOS-1084 removed the 5-minute in-process `Map` this function used to keep.**
+ * It was invisible to every other API instance and thrown away on each deploy,
+ * which meant a host who upgraded their plan could see the new badge on one
+ * instance and not the next, for five minutes, with nothing in the system able
+ * to explain the difference. `entity_subscriptions` is the shared, webhook-fresh
+ * replacement: it is written the moment the status moves, it is the same row
+ * every instance reads, and the reconcile cron re-derives it. A cache miss is
+ * never a wrong answer — it is the live path, unchanged.
+ *
+ * Fail-open: a failed role query → empty entitlements for every affected owner
+ * (badge hidden). A failed cache read → every owner resolved live. A per-owner
+ * billing failure → empty entitlements for that owner. All logged, all captured.
  *
  * **Use case**: listing endpoints that render a page of accommodation cards.
  * Collect the unique `ownerId` values for the page, call this once, then pass
@@ -754,66 +905,59 @@ export async function resolveOwnerEntitlementsForOwnerIds(
     ownerIds: readonly string[]
 ): Promise<Map<string, readonly EntitlementKey[]>> {
     const result = new Map<string, readonly EntitlementKey[]>();
-    if (ownerIds.length === 0) return result;
+    const unique = [...new Set(ownerIds)];
+    if (unique.length === 0) return result;
 
-    // ── 1. Split into cache hits vs cache misses ───────────────────────────
-    const seen = new Set<string>();
-    const missing: string[] = [];
-    for (const ownerId of ownerIds) {
-        if (seen.has(ownerId)) continue;
-        seen.add(ownerId);
-        const cached = getOwnerEntitlementBadgeCacheEntry(ownerId);
-        if (cached === null) {
-            missing.push(ownerId);
-        } else {
-            result.set(ownerId, cached);
-        }
-    }
-
-    if (missing.length === 0) return result;
-
-    // ── 2. ONE batched SELECT for the hats of all cache-cold owners ────────
-    // HOS-296: reads `user_role` instead of the dropped `users.role`. One row
-    // per (owner, hat) pair now, so the result is grouped rather than mapped
-    // 1:1 — still a single round trip.
+    // ── 1. Roles and the subscription-status cache, in parallel ────────────
+    // HOS-296: roles come from `user_role`, one row per (owner, hat) pair, so
+    // the result is grouped rather than mapped 1:1 — still a single round trip.
     const ownerRoleMap = new Map<string, RoleEnum[]>();
+    let subscriptionCache: Map<string, CachedOwnerSubscription>;
     try {
         const db = getDb();
-        const rows = await db
-            .select({ id: userRoleTable.userId, role: userRoleTable.role })
-            .from(userRoleTable)
-            .where(inArray(userRoleTable.userId, missing));
+        const [rows, cacheMap] = await Promise.all([
+            db
+                .select({ id: userRoleTable.userId, role: userRoleTable.role })
+                .from(userRoleTable)
+                .where(inArray(userRoleTable.userId, unique)),
+            readOwnerSubscriptionCache(unique)
+        ]);
         for (const row of rows) {
             const held = ownerRoleMap.get(row.id) ?? [];
             held.push(row.role as RoleEnum);
             ownerRoleMap.set(row.id, held);
         }
+        subscriptionCache = cacheMap;
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         apiLogger.warn(
-            { count: missing.length, error: message },
+            { count: unique.length, error: message },
             'resolveOwnerEntitlementsForOwnerIds: batch role query failed; failing open with empty entitlements for all affected owners'
         );
         Sentry.captureException(error, {
             tags: { subsystem: 'owner-entitlements', action: 'batch-role-lookup' },
-            extra: { count: missing.length }
+            extra: { count: unique.length }
         });
         // Fail-open: no entitlements for owners whose roles we could not load.
-        for (const ownerId of missing) {
+        for (const ownerId of unique) {
             result.set(ownerId, []);
         }
         return result;
     }
 
-    // ── 3. Parallel billing resolution for all cache-cold owners ──────────
+    // ── 2. Per-owner resolution, in parallel, sharing one plan memo ───────
+    const planMemo = new Map<string, Promise<Set<EntitlementKey>>>();
     await Promise.all(
-        missing.map(async (ownerId) => {
+        unique.map(async (ownerId) => {
             try {
                 const ownerRoles = ownerRoleMap.get(ownerId) ?? [];
-                const entitlementSet = await resolveOwnerEntitlementSet(ownerId, ownerRoles);
-                const entitlements: readonly EntitlementKey[] = Array.from(entitlementSet);
-                setOwnerEntitlementBadgeCacheEntry(ownerId, entitlements);
-                result.set(ownerId, entitlements);
+                const entitlementSet = await resolveOwnerEntitlementSet(
+                    ownerId,
+                    ownerRoles,
+                    subscriptionCache.get(ownerId) ?? null,
+                    planMemo
+                );
+                result.set(ownerId, Array.from(entitlementSet));
             } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
                 apiLogger.warn(

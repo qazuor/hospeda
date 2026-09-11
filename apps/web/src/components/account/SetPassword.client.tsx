@@ -40,6 +40,15 @@ export interface SetPasswordProps {
     /** API base URL (PUBLIC_API_URL from env). */
     readonly apiUrl: string;
     /**
+     * Where to land once this step is done.
+     *
+     * Resolved and validated server-side by the page (HOS-838): it is the
+     * destination the onboarding gate interrupted, or `/{locale}/mi-cuenta/`
+     * when there was none. Never build it here — the open-redirect guard lives
+     * on the server and an island must not re-implement it.
+     */
+    readonly returnUrl: string;
+    /**
      * OAuth provider the user authenticated with, used for context message.
      * Defaults to 'unknown' which uses a generic message.
      */
@@ -57,7 +66,12 @@ export interface SetPasswordProps {
  *
  * @param props - Component props (see {@link SetPasswordProps})
  */
-export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPasswordProps) {
+export function SetPassword({
+    locale,
+    apiUrl,
+    returnUrl,
+    oauthProvider = 'unknown'
+}: SetPasswordProps) {
     const { t } = createTranslations(locale);
 
     // ── Form state ────────────────────────────────────────────────────────────
@@ -188,7 +202,7 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
 
             await refreshBetterAuthSession();
 
-            window.location.href = `/${locale}/mi-cuenta/`;
+            window.location.href = returnUrl;
         } catch {
             setGlobalError(
                 t(
@@ -236,7 +250,7 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
 
             await refreshBetterAuthSession();
 
-            window.location.href = `/${locale}/mi-cuenta/`;
+            window.location.href = returnUrl;
         } catch {
             setShowSkipModal(false);
             setGlobalError(

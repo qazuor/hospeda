@@ -71,13 +71,13 @@ const visibilityBoost = getAddonBySlug('visibility-boost-7d');
 ### Import Promo Codes
 
 ```typescript
-import { DEFAULT_PROMO_CODES, HOSPEDA_FREE_CODE } from '@repo/billing';
+import { DEFAULT_PROMO_CODES, LANZAMIENTO_50_CODE } from '@repo/billing';
 
 // Get all default promo codes
 const promoCodes = DEFAULT_PROMO_CODES;
 
 // Use specific promo code
-const freeCode = HOSPEDA_FREE_CODE;
+const launchCode = LANZAMIENTO_50_CODE;
 ```
 
 ### Import Constants
@@ -180,9 +180,12 @@ Each plan includes:
 
 ### Tourist Plans
 
-1. **tourist-free** - Free - 3 favorites, basic features
-2. **tourist-plus** - ARS $5,000/month - 20 favorites, no ads, price alerts
-3. **tourist-vip** - ARS $15,000/month - Unlimited favorites, concierge service
+1. **tourist-free** - Free - 5 favorites, basic features
+2. **tourist-vip** - ARS $15,000/month - Unlimited favorites, concierge service
+
+`tourist-plus` sat between these two until HOS-1224 retired it (cancelled as a
+product by HOS-301 D1, zero subscriptions in production). `tourist-vip` is the
+only paid tourist tier.
 
 ## Entitlements
 
@@ -222,9 +225,13 @@ Value of `-1` means unlimited.
 
 Default promo codes included:
 
-- **HOSPEDA_FREE** - 100% discount, permanent (internal use)
 - **LANZAMIENTO50** - 50% discount for 3 months (first 100 users)
 - **BIENVENIDO30** - 30% discount for 1 month (first 500 users)
+
+`HOSPEDA_FREE` (the only `comp` code that ever existed) was RETIRED by HOS-1171:
+it is out of this baseline and deactivated in every seeded environment. Nothing
+redeems a `comp` code any more — a complimentary subscription is granted by
+`POST /api/v1/admin/billing/subscriptions/grant-comp`.
 
 ## Development
 

@@ -35,9 +35,16 @@ function makeModel(
         moderationState?: string | null;
     } | null
 ): CommerceEntityModel {
+    // `slug`/`destinationId` defaults: the widened `CommerceEntityModel`
+    // read (HOS-1337) supplies the purge payload. No existing test asserts
+    // on them, so a fixed value is enough here — the purge itself has its
+    // own suite (commerce-visibility-revalidation.test.ts).
+    const row = existingEntity
+        ? { slug: 'entity-slug', destinationId: null, ...existingEntity }
+        : null;
     return {
-        findById: vi.fn().mockResolvedValue(existingEntity),
-        update: vi.fn().mockResolvedValue(existingEntity)
+        findById: vi.fn().mockResolvedValue(row),
+        update: vi.fn().mockResolvedValue(row)
     };
 }
 
@@ -363,6 +370,106 @@ describe('reconcileCommerceListingVisibility', () => {
                 expect.objectContaining({ visibility: VisibilityEnum.PUBLIC }),
                 fakeTx
             );
+        });
+    });
+    // ── planRestricted (HOS-1122) ─────────────────────────────────────────
+
+    describe('plan-restricted listing stays PRIVATE however healthy the subscription is', () => {
+        it('refuses to publish a complete, unmoderated listing on an ACTIVE subscription', async () => {
+            // The state a commerce downgrade leaves behind: the owner is still
+            // paying, the listing is still complete, and the tier they moved to
+            // no longer covers it. Every other term of the predicate says
+            // PUBLIC — this term is the only thing between the reconciler and
+            // republishing a listing the platform just cut.
+            const model = makeModel({
+                id: ENTITY_ID,
+                visibility: VisibilityEnum.PRIVATE,
+                lifecycleState: LifecycleStatusEnum.INACTIVE
+            });
+            const resolveCompleteness = makeAlwaysCompleteResolver();
+
+            const result = await reconcileCommerceListingVisibility(
+                {
+                    entityType: ENTITY_TYPE,
+                    entityId: ENTITY_ID,
+                    subscriptionStatus: 'active',
+                    planRestricted: true
+                },
+                model,
+                resolveCompleteness
+            );
+
+            expect(result.visibility).toBe(VisibilityEnum.PRIVATE);
+            expect(result.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
+            expect(result.updated).toBe(false);
+        });
+
+        it('takes a currently-PUBLIC listing down when the flag is set', async () => {
+            const model = makeModel({
+                id: ENTITY_ID,
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+
+            const result = await reconcileCommerceListingVisibility(
+                {
+                    entityType: ENTITY_TYPE,
+                    entityId: ENTITY_ID,
+                    subscriptionStatus: 'active',
+                    planRestricted: true
+                },
+                model,
+                makeAlwaysCompleteResolver()
+            );
+
+            expect(result.updated).toBe(true);
+            expect(model.update).toHaveBeenCalledWith(
+                { id: ENTITY_ID },
+                {
+                    visibility: VisibilityEnum.PRIVATE,
+                    lifecycleState: LifecycleStatusEnum.INACTIVE
+                },
+                undefined
+            );
+        });
+
+        it('does not ask for completeness at all — the answer cannot change the outcome', async () => {
+            const resolveCompleteness = makeAlwaysCompleteResolver();
+
+            await reconcileCommerceListingVisibility(
+                {
+                    entityType: ENTITY_TYPE,
+                    entityId: ENTITY_ID,
+                    subscriptionStatus: 'active',
+                    planRestricted: true
+                },
+                makeModel({
+                    id: ENTITY_ID,
+                    visibility: VisibilityEnum.PRIVATE,
+                    lifecycleState: LifecycleStatusEnum.INACTIVE
+                }),
+                resolveCompleteness
+            );
+
+            expect(resolveCompleteness).not.toHaveBeenCalled();
+        });
+
+        it('publishes normally when the flag is absent — the default must stay permissive', async () => {
+            // Guards the other direction: a term that read `planRestricted !==
+            // false` would hide every listing whose caller has not been updated.
+            const model = makeModel({
+                id: ENTITY_ID,
+                visibility: VisibilityEnum.PRIVATE,
+                lifecycleState: LifecycleStatusEnum.INACTIVE
+            });
+
+            const result = await reconcileCommerceListingVisibility(
+                { entityType: ENTITY_TYPE, entityId: ENTITY_ID, subscriptionStatus: 'active' },
+                model,
+                makeAlwaysCompleteResolver()
+            );
+
+            expect(result.visibility).toBe(VisibilityEnum.PUBLIC);
         });
     });
 });

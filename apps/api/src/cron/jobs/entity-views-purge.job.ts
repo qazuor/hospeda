@@ -64,23 +64,39 @@ export const entityViewsPurgeJob: CronJobDefinition = {
         try {
             // Lazy import keeps the singleton out of the module top-level, preventing
             // Vitest fork contamination when tests partially mock @repo/db.
-            const { entityViewModel } = await import('@repo/db');
+            const { entityViewModel, partnerLogoClickModel } = await import('@repo/db');
             const deleted = await entityViewModel.purgeOlderThan({
+                days: ENTITY_VIEWS_RETENTION_DAYS
+            });
+
+            // `partner_logo_clicks` is purged HERE, on the same horizon, rather
+            // than by a second cron (HOS-1063 A-3). It carries the same
+            // `visitor_hash` fingerprint and therefore the same data-minimisation
+            // obligation, and two crons on the same horizon are two things that
+            // can fall out of step. What survives the purge is the monthly
+            // rollup, which is exactly why that rollup had to ship with the
+            // counting rather than after it.
+            const deletedClicks = await partnerLogoClickModel.purgeOlderThan({
                 days: ENTITY_VIEWS_RETENTION_DAYS
             });
 
             const durationMs = Date.now() - startedAt.getTime();
 
-            logger.info('Entity views purge job completed', { deleted, durationMs });
+            logger.info('Entity views purge job completed', {
+                deleted,
+                deletedClicks,
+                durationMs
+            });
 
             return {
                 success: true,
-                message: `Purged ${deleted} entity_views rows older than ${ENTITY_VIEWS_RETENTION_DAYS} days`,
-                processed: deleted,
+                message: `Purged ${deleted} entity_views rows and ${deletedClicks} partner_logo_clicks rows older than ${ENTITY_VIEWS_RETENTION_DAYS} days`,
+                processed: deleted + deletedClicks,
                 errors: 0,
                 durationMs,
                 details: {
                     deleted,
+                    deletedClicks,
                     retentionDays: ENTITY_VIEWS_RETENTION_DAYS
                 }
             };

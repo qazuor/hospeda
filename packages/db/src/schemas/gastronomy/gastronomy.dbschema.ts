@@ -13,6 +13,7 @@ import {
     integer,
     jsonb,
     numeric,
+    pgEnum,
     pgTable,
     text,
     timestamp,
@@ -27,10 +28,30 @@ import {
     VisibilityPgEnum
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
+import { gastronomyEvents } from './gastronomy_event.dbschema.ts';
 import { gastronomyFaqs } from './gastronomy_faq.dbschema.ts';
+import { gastronomyMenuSections } from './gastronomy_menu_section.dbschema.ts';
 import { gastronomyReviews } from './gastronomy_review.dbschema.ts';
 import { rGastronomyAmenity } from './r_gastronomy_amenity.dbschema.ts';
 import { rGastronomyFeature } from './r_gastronomy_feature.dbschema.ts';
+
+/**
+ * What kind of file a venue uploaded as its menu (HOS-895).
+ *
+ * - `image` — a photo or scan of the printed menu, the overwhelmingly common
+ *   case for a small restaurant.
+ * - `pdf` — the same thing, already digital, and the only one of the two that
+ *   can carry several pages in one file.
+ *
+ * An enum rather than a MIME string or an extension sniffed off the URL: the
+ * public page has to decide between an `<img>` and a document link, and a
+ * decision taken from the tail of a Cloudinary URL is a decision that breaks
+ * the first time a delivery transformation is appended to it.
+ */
+export const GastronomyMenuFileKindPgEnum = pgEnum('gastronomy_menu_file_kind_enum', [
+    'image',
+    'pdf'
+]);
 
 /**
  * Gastronomy table — commerce listings for food and beverage venues (SPEC-239).
@@ -59,8 +80,38 @@ export const gastronomies = pgTable(
         type: GastronomyTypePgEnum('type').notNull(),
         /** Price-range tier for the venue (BUDGET/MID/HIGH/PREMIUM). Nullable until owner sets it. */
         priceRange: PriceRangePgEnum('price_range'),
-        /** Optional URL to the venue's online menu. */
+        /**
+         * Optional URL to the venue's online menu — the link the owner already
+         * publishes somewhere else.
+         *
+         * Since HOS-895 this is ONE of three ways a venue can show its menu,
+         * not the only one. The other two are the structured carta
+         * (`gastronomy_menu_sections` + `gastronomy_menu_items`) and the
+         * uploaded file below. All three may be set at once and none is
+         * mandatory: an owner who does not want to type forty dishes must
+         * still be able to publish.
+         */
         menuUrl: text('menu_url'),
+        /**
+         * Public URL of an uploaded photo or PDF of the menu (HOS-895).
+         *
+         * Written by the upload route in the SAME request that stores the file,
+         * which is the whole reason the column is written server-side rather
+         * than diffed into the editor's PATCH body: an owner who uploads and
+         * then walks away without saving used to leave the asset billing in
+         * Cloudinary with nothing pointing at it — the orphan HOS-372 built
+         * `gastronomy_media` to stop.
+         */
+        menuFileUrl: text('menu_file_url'),
+        /**
+         * Provider-side identifier of {@link menuFileUrl}, kept so the delete
+         * route can destroy the asset instead of merely forgetting its URL.
+         * Nullable for the same reason the URL is; the two are set and cleared
+         * together.
+         */
+        menuFilePublicId: text('menu_file_public_id'),
+        /** Whether {@link menuFileUrl} is an image or a PDF. */
+        menuFileKind: GastronomyMenuFileKindPgEnum('menu_file_kind'),
         // Jsonb grouped columns (matching accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
@@ -92,6 +143,47 @@ export const gastronomies = pgTable(
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         isFeatured: boolean('is_featured').notNull().default(false),
+        /**
+         * Denormalized billing-state flag (HOS-1286) — mirror of
+         * `accommodations.featured_by_entitlement`. True while a
+         * `visibility-boost-gastronomy-*` addon purchase grants an active
+         * FEATURED_LISTING entitlement for THIS listing. Written only by the
+         * billing sync primitives, never by admin curation, and deliberately
+         * independent of {@link isFeatured}: the effective public value is the
+         * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
+         * routes only (`resolvePublicIsFeatured`).
+         *
+         * **Only one source feeds it, unlike accommodation.** No commerce plan
+         * grants FEATURED_LISTING (`commerce-entitlements.config.ts` grants
+         * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
+         * column has exactly one writer — the addon — where accommodation has
+         * two (plan owner-wide + addon per-listing). A future commerce plan that
+         * grants featuring must add the plan-driven half; it does not exist yet
+         * and is not stubbed here.
+         *
+         * ---
+         * ## Why a denormalized column rather than deriving on read
+         *
+         * Deriving would join `featured_listing_addon_grants` →
+         * `billing_addon_purchases` on every public read. The honest argument
+         * FOR deriving is not performance: **a derived value cannot desync**,
+         * while this column needs sync primitives and a reconcile cron — more
+         * code, and more surface where the stored state can lie.
+         *
+         * It still loses, for a reason specific to this epic: `accommodations`
+         * already denormalizes. Deriving here would leave TWO different
+         * mechanisms answering one question, which is the asymmetry HOS-1257
+         * exists to close — fixing one by creating another. And the cost of
+         * being wrong is not symmetric: the column is a pattern this repo has
+         * already validated, indexes, sync primitives and backstop cron
+         * included, whereas the join would put a new query on a hot public path
+         * with no precedent to consult when it misbehaves.
+         *
+         * If this is ever unified for real, the question is not "should commerce
+         * derive?" but "should BOTH derive?" — recorded here so whoever asks it
+         * knows the alternative was considered and why it lost.
+         */
+        featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         // Denormalized aggregate stats (updated by trigger / service)
         reviewsCount: integer('reviews_count').notNull().default(0),
         /** Average rating across all review criteria (0.00–5.00). mode:'number' for JS coercion. */
@@ -114,6 +206,13 @@ export const gastronomies = pgTable(
         ),
         gastronomies_visibility_idx: index('gastronomies_visibility_idx').on(table.visibility),
         gastronomies_isFeatured_idx: index('gastronomies_isFeatured_idx').on(table.isFeatured),
+        // HOS-1286: parallel index for featuredByEntitlement, mirroring the
+        // accommodations pair. A BitmapOr of (isFeatured_idx,
+        // featuredByEntitlement_idx) serves "isFeatured OR featuredByEntitlement"
+        // without an expression index over the disjunction.
+        gastronomies_featuredByEntitlement_idx: index('gastronomies_featuredByEntitlement_idx').on(
+            table.featuredByEntitlement
+        ),
         gastronomies_type_idx: index('gastronomies_type_idx').on(table.type),
         gastronomies_ownerId_idx: index('gastronomies_ownerId_idx').on(table.ownerId),
         gastronomies_deletedAt_idx: index('gastronomies_deletedAt_idx').on(table.deletedAt),
@@ -155,7 +254,10 @@ export const gastronomiesRelations = relations(gastronomies, ({ one, many }) => 
     amenities: many(rGastronomyAmenity, { relationName: 'gastronomyToAmenity' }),
     features: many(rGastronomyFeature, { relationName: 'gastronomyToFeature' }),
     reviews: many(gastronomyReviews),
-    faqs: many(gastronomyFaqs)
+    faqs: many(gastronomyFaqs),
+    menuSections: many(gastronomyMenuSections),
+    /** The venue's own agenda — HOS-1042. */
+    venueEvents: many(gastronomyEvents)
 }));
 
 /** Type-inferred insert type for gastronomy rows. */

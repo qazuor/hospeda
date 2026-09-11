@@ -25,6 +25,7 @@ import {
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import type { Actor } from '../../../src/types';
@@ -422,6 +423,101 @@ describe('GastronomyService search filter forwarding', () => {
             expect.objectContaining({ deletedAt: null }),
             expect.anything()
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1054 — the "apto" filter reaches the query instead of being discarded
+//
+// What these assert: that `features` / `amenities` arrive at the model as
+// `additionalConditions` carrying the right junction table, and that the COUNT
+// query gets the SAME conditions (a total computed over a wider set than the
+// page would make page 2 of "sin TACC" exist and be empty).
+//
+// What they cannot assert: that the SQL returns the right rows. The model is
+// mocked here — no database is involved. Row-level behaviour is the clause's own
+// suite (`packages/db/test/utils/gastronomy-catalog-filters.test.ts`, which
+// compiles the SQL) plus the staging smoke.
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
+    const GLUTEN_FREE = '11111111-1111-4111-8111-111111111111';
+    const LACTOSE_FREE = '22222222-2222-4222-8222-222222222222';
+    const dialect = new PgDialect();
+
+    /** Compile one `additionalConditions` entry back to SQL text. */
+    const sqlOf = (condition: unknown): string =>
+        dialect.sqlToQuery(condition as Parameters<typeof dialect.sqlToQuery>[0]).sql;
+
+    it('forwards the features filter as an additionalCondition on the feature junction', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch(
+            { page: 1, pageSize: 10, features: [GLUTEN_FREE, LACTOSE_FREE] },
+            staffActor,
+            {}
+        );
+
+        const additionalConditions = mockFindAllWithRelations.mock.calls[0][3];
+        expect(additionalConditions).toHaveLength(1);
+        expect(sqlOf(additionalConditions[0])).toContain('"r_gastronomy_feature"');
+    });
+
+    it('never leaks the filter into the scalar where clause', async () => {
+        // `features` is an array against a junction table; if it slipped into the
+        // `where` object the base builder would try to compare a `features` COLUMN
+        // that does not exist on `gastronomies`.
+        const service = makeService(makeGastronomyEntity());
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10, features: [GLUTEN_FREE] }, staffActor, {});
+
+        expect(mockFindAllWithRelations.mock.calls[0][1]).not.toHaveProperty('features');
+        expect(mockFindAllWithRelations.mock.calls[0][1]).not.toHaveProperty('amenities');
+    });
+
+    it('applies the SAME conditions to the count query', async () => {
+        const service = makeService();
+        const mockCount = (service as AnyService).model.count;
+
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount({ page: 1, pageSize: 10, features: [GLUTEN_FREE] }, staffActor, {});
+
+        const options = mockCount.mock.calls[0][1] as { additionalConditions?: unknown[] };
+        expect(options.additionalConditions).toHaveLength(1);
+        expect(sqlOf((options.additionalConditions as unknown[])[0])).toContain(
+            '"r_gastronomy_feature"'
+        );
+    });
+
+    it('forwards the amenities filter on the amenity junction', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10, amenities: [GLUTEN_FREE] }, staffActor, {});
+
+        const additionalConditions = mockFindAllWithRelations.mock.calls[0][3];
+        expect(additionalConditions).toHaveLength(1);
+        expect(sqlOf(additionalConditions[0])).toContain('"r_gastronomy_amenity"');
+    });
+
+    it('passes undefined — not an empty array — when no catalog filter is active', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+
+        expect(mockFindAllWithRelations.mock.calls[0][3]).toBeUndefined();
     });
 });
 

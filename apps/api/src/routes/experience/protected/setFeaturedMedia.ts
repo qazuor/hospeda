@@ -21,10 +21,14 @@
  * Hono resolves the static `featured` segment regardless of insertion order
  * (mirrors the reorder-route note).
  */
-import { ExperienceMediaSingleOutputSchema } from '@repo/schemas';
+import { EntitlementKey } from '@repo/billing';
+import { ExperienceMediaSingleOutputSchema, ProductDomainEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -44,8 +48,8 @@ export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires COMMERCE_EDIT_OWN (listing owner) or ' +
-        'COMMERCE_EDIT_ALL (staff). No request body — ids come from URL params.',
+        'photo to visible first. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2. ' +
+        'No request body — ids come from URL params.',
     tags: ['Experience', 'Experience Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -71,5 +75,15 @@ export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1275: mirrors the gastronomy twin. See
+        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
+        // first.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('experience'),
+            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
+            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
+        ]
     }
 });

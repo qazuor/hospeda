@@ -1,3 +1,8 @@
+import {
+    isLocalMediaPlaceholderMode,
+    isRemoteMediaUrl,
+    resolveLocalMediaPlaceholder
+} from './local-media-placeholders.js';
 import type { MediaPreset } from './presets.js';
 import { MEDIA_PRESETS } from './presets.js';
 
@@ -255,6 +260,10 @@ export function stripCloudinaryTransform(url: string): string {
  * It MUST NOT make any network call.
  *
  * Behavior:
+ * - ANY remote URL, while `HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS` is enabled
+ *   (HOS-1144): returns a locally-served placeholder instead, honouring
+ *   `options.fallback` when that fallback is itself local. This branch runs
+ *   first, so no other rule below can produce an outbound image request.
  * - Cloudinary URL (contains 'res.cloudinary.com'): inserts transform string
  *   from the named preset between '/upload/' and the version/path segment.
  * - Cloudinary URL with a `/image/fetch/`, `/image/private/`, or
@@ -310,6 +319,20 @@ export function getMediaUrl(url: string | null | undefined, options?: GetMediaUr
             return FALLBACK_PLACEHOLDER;
         }
         return getMediaUrl(fallbackUrl, rest);
+    }
+
+    // CI cost guard (HOS-1144). When local-placeholder mode is on, ANY remote
+    // URL — Cloudinary or otherwise — is swapped for an image this app serves
+    // itself, so no CI run can bill a third-party CDN. Placed BEFORE the
+    // non-Cloudinary pass-through on purpose: Unsplash/Pexels/wp.com URLs are
+    // remote fetches too, and the mode's whole promise is "zero outbound image
+    // requests", not "zero Cloudinary requests".
+    //
+    // Off by default and enabled ONLY by HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS —
+    // never by `CI`, which production build pipelines also set. See
+    // `local-media-placeholders.ts` for the full rationale.
+    if (isLocalMediaPlaceholderMode() && isRemoteMediaUrl(url)) {
+        return resolveLocalMediaPlaceholder({ fallback: options?.fallback });
     }
 
     // Non-Cloudinary URLs pass through unchanged.
@@ -375,6 +398,21 @@ export function getMediaUrl(url: string | null | undefined, options?: GetMediaUr
     // intent explicitly via indexOf + slice so reviewers don't assume the
     // behavior depends on replacing the path verbatim.
     const uploadIdx = url.indexOf('/upload/');
+    // The `res.cloudinary.com` substring check above (line ~339) is a plain
+    // `.includes()`, not a parsed-hostname check — it also matches a
+    // percent-encoded Cloudinary URL embedded in another URL's query string
+    // (e.g. Astro's `/_image/?href=<encoded-cloudinary-url>` endpoint, where
+    // `%2F` hides the slashes but the literal `res.cloudinary.com` text
+    // survives encoding). Such a URL has no literal `/upload/` segment, so
+    // `uploadIdx` is `-1` here; without this guard the slice/splice below
+    // still runs with a bogus index and corrupts the URL (HOS-881 incident:
+    // it produced `/_imagew_200,.../?href=...`, dropping the leading slash
+    // Cloudinary needs and destroying the `href` query param). Bail out
+    // unchanged instead — the same pass-through semantics as every other
+    // "this isn't a real Cloudinary upload URL" branch above.
+    if (uploadIdx === -1) {
+        return url;
+    }
     const uploadEnd = uploadIdx + '/upload/'.length;
     return `${url.slice(0, uploadEnd)}${transforms}/${url.slice(uploadEnd)}`;
 }

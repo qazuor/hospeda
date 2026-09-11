@@ -75,6 +75,8 @@
         "REVIEW_ALREADY_EXISTS": "Voce já avaliou este fornecedor. Voce pode editar a sua avaliação.",
         "PROVIDER_REVOKED": "Este fornecedor não faz mais parte do diretório.",
         "ALREADY_EXISTS": "Esse recurso já existe.",
+        "ALREADY_SUBSCRIBED": "Você já tem uma assinatura ativa. Em Minha conta → Assinatura você pode mudar de plano dentro dela, ou cancelá-la para contratar uma diferente.",
+        "TRIAL_REQUIRES_CHECKOUT": "Você está no seu período de teste gratuito, então ainda não há uma assinatura para mudar. Escolha o plano que quiser e ative a sua assinatura: o teste se encerra sozinho quando o pagamento for confirmado.",
         "INTERNAL_ERROR": "Algo deu errado do nosso lado. Tente novamente em instantes.",
         "NETWORK_ERROR": "Não conseguimos conectar ao servidor. Tente novamente.",
         "TIMEOUT": "A solicitação demorou demais. Tente novamente.",
@@ -104,7 +106,9 @@
         "PROVIDER_RATE_LIMITED": "O serviço de pagamento está ocupado. Aguarde alguns segundos e tente novamente.",
         "PROVIDER_TIMEOUT": "O serviço de pagamento demorou muito para responder. Tente novamente.",
         "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar.",
-        "SUBSCRIPTION_CANCEL_PENDING": "Sua assinatura está programada para ser cancelada no fim do período. Você não pode mudar de plano até o período atual terminar."
+        "SUBSCRIPTION_CANCEL_PENDING": "Sua assinatura está programada para ser cancelada no fim do período. Você não pode mudar de plano até o período atual terminar.",
+        "NO_ACTIVE_TRIAL": "Você não tem um período de teste grátis em andamento, então não há nada para estender. O código não foi usado — guarde-o.",
+        "PROMO_CODE_COMP_NOT_SELF_SERVICE": "Este código não pode ser resgatado. Uma assinatura de cortesia é concedida pela equipe — fale com a gente se prometeram uma a você."
     },
     "filters": "Filtros",
     "filterChips": {
@@ -144,6 +148,15 @@
     "pagination": "Paginação",
     "noImage": "Sem imagem",
     "removing": "Removendo...",
+    "richText": {
+        "linkDialog": {
+            "title": "Link",
+            "label": "URL do link",
+            "hint": "Deixe o campo vazio para remover o link.",
+            "placeholder": "https://exemplo.com",
+            "submit": "Aplicar"
+        }
+    },
     "retry": "Tentar novamente",
     "saving": "Salvando...",
     "untitled": "Sem título",
@@ -203,13 +216,39 @@
             "title": "Alterações não salvas",
             "confirm": "Sim, descartar",
             "cancel": "Continuar editando"
+        },
+        "unsavedChangesAndPhotoAlt": {
+            "title": "Alterações não salvas e fotos sem texto alternativo",
+            "message": "Você tem alterações não salvas nesta página: se sair agora, elas se perdem. Além disso, {{count}} foto continua sem texto alternativo, o que os leitores de tela leem em voz alta e os buscadores usam para entender suas imagens. Quer sair mesmo assim?",
+            "message_one": "Você tem alterações não salvas nesta página: se sair agora, elas se perdem. Além disso, {{count}} foto continua sem texto alternativo, o que os leitores de tela leem em voz alta e os buscadores usam para entender suas imagens. Quer sair mesmo assim?",
+            "message_other": "Você tem alterações não salvas nesta página: se sair agora, elas se perdem. Além disso, {{count}} fotos continuam sem texto alternativo, o que os leitores de tela leem em voz alta e os buscadores usam para entender suas imagens. Quer sair mesmo assim?",
+            "confirm": "Sair e descartar as alterações",
+            "cancel": "Continuar editando"
         }
     },
     "modal": {
-        "close": "Cerrar"
+        "close": "Fechar"
     },
-    "back": "Volver",
-    "close": "Cerrar",
-    "deleting": "Eliminando...",
-    "anonymous": "Usuario"
+    "back": "Voltar",
+    "close": "Fechar",
+    "deleting": "Excluindo...",
+    "anonymous": "Usuário",
+    "qrSheet": {
+        "headline": "Escaneie o código",
+        "invite": "Aponte a câmera do seu telefone para o código e veja a página completa: fotos, contato e como chegar.",
+        "brandTagline": "Hospedagens, gastronomia e experiências do Litoral",
+        "help": "Uma folha A4 com o código da sua página, pronta para imprimir e colar na porta ou deixar no balcão.",
+        "download": "Baixar a folha QR (PDF)",
+        "working": "Gerando a folha…",
+        "ready": "Pronto, baixamos a sua folha QR.",
+        "unpublished": "Você vai poder baixar a folha QR quando a sua página estiver publicada.",
+        "errorNotFound": "Não conseguimos gerar a folha. Confira se a sua página continua publicada.",
+        "errorRateLimited": "Você pediu a folha várias vezes seguidas. Espere um minuto e tente de novo.",
+        "errorSignedOut": "Sua sessão expirou. Entre de novo para baixar a folha.",
+        "error": "Não conseguimos gerar a folha. Tente de novo em um instante.",
+        "codeAlt": "Código QR da sua página",
+        "codeLoading": "Carregando o código…",
+        "codeError": "Não conseguimos mostrar o código aqui, mas você pode baixar a folha assim mesmo.",
+        "encodes": "O código leva a: {{url}}"
+    }
 }

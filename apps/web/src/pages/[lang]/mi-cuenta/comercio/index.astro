@@ -17,10 +17,21 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CommerceListingActions } from '@/components/commerce/CommerceListingActions.client';
+import { CommercePlanChange } from '@/components/commerce/CommercePlanChange.client';
+import { CommerceViewsWidget } from '@/components/commerce/CommerceViewsWidget.client';
+import { GastronomyMenuQrWidget } from '@/components/commerce/GastronomyMenuQrWidget.client';
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
+import {
+    fetchCommerceTrialVerdictByVertical,
+    readTrialVerdict
+} from '@/lib/commerce/trial-verdict';
 import { fetchCommerceUsageByVertical } from '@/lib/commerce/usage-badge';
+import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
+import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { toCommercePlanOption, type CommercePlanOption } from '@/lib/commerce/plan-options';
+import { userApi } from '@/lib/api/endpoints-protected';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -67,7 +78,66 @@ const verticalsWithSubscription = new Set<CommerceVertical>(
     verticalsWithListings.filter((vertical) => usageByVertical.get(vertical) !== null)
 );
 
-const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
+// HOS-1184: what publishing would actually DO, per vertical — which the usage
+// reading above cannot answer any more. Its `null` means "no subscription", and
+// since commerce got its trial back that covers two opposite outcomes: starting
+// a free trial, or opening a checkout. The set above is still exactly right for
+// the three other questions it answers on this page (the plan-change CTA and
+// the tier catalogue), so it stays; only the publish CTA moved off it.
+const trialVerdictByVertical = await fetchCommerceTrialVerdictByVertical({
+    verticals: verticalsWithListings,
+    cookieHeader
+});
+
+// HOS-1008: gates the payer-email confirmation screen on the commerce
+// checkout. Same source and same fail-closed default the pricing pages use for
+// `PlanPurchaseButton` — on any fetch error this resolves `false`, which is
+// the flag being off, which is today's behavior.
+const { ownPreapprovalEnabled } = await fetchCheckoutConfig();
+
+// ── HOS-1119: the tier catalogue, ONE fetch per vertical the owner actually
+// holds a listing in (never per listing) — feeds BOTH the checkout-time
+// picker (`CommerceListingActions.availablePlans`, only relevant for a
+// vertical with no subscription yet) and the tier-upgrade CTA
+// (`CommercePlanChange`, only relevant for a vertical that already has one).
+// On a failed fetch this degrades to `[]` for that vertical — with 0 or 1
+// tiers neither the picker nor the upgrade CTA render, so checkout and the
+// page both behave exactly as they did before HOS-1119. ──
+const plansByVertical = new Map<CommerceVertical, readonly CommercePlanOption[]>(
+    await Promise.all(
+        verticalsWithListings.map(async (vertical) => {
+            const result = await fetchPublicPlans({ domain: vertical });
+            const plans = result.ok
+                ? filterPlansByCategory(result.plans, 'owner').map(toCommercePlanOption)
+                : [];
+            return [vertical, plans] as const;
+        })
+    )
+);
+
+// One subscription read per vertical the owner already subscribes to —
+// needed for `CommercePlanChange`'s current-plan slug + display name. Kept
+// separate from `usageByVertical` (which only proves a subscription EXISTS,
+// via a non-null reading) because that endpoint does not carry the plan
+// itself.
+const subscriptionByVertical = new Map(
+    await Promise.all(
+        [...verticalsWithSubscription].map(async (vertical) => {
+            const result = await userApi.getSubscription({ productDomain: vertical, cookieHeader });
+            return [vertical, result.ok ? result.data.subscription : null] as const;
+        })
+    )
+);
+
+// HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
+// button used to open. Its replacement for a SIGNED-IN owner is the publish hub,
+// which lists all three verticals with their own CTAs and already knows which
+// ones this account has acquired — the picker's job, done by a page that exists.
+//
+// The retired URL's own 301 goes to `/publicar/` per D-6; that is the right
+// landing for an old inbound link and the wrong one for this button, which a
+// commerce owner presses expecting to choose a commerce vertical.
+const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 const addonsUrl = buildUrl({ locale, path: 'mi-cuenta/addons' });
 
 /** Usage badges to render — pre-filtered so the template stays a plain `.map()`. */
@@ -108,6 +178,74 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
         </div>
     )}
 
+    {
+        /*
+         * HOS-1119: one "cambiar de plan" CTA per vertical the owner already
+         * subscribes to. `CommercePlanChange` itself renders nothing when
+         * there is no OTHER tier to move to (a single-tier vertical, or a
+         * catalogue whose every other tier costs exactly the same) — so this
+         * loop can render it unconditionally for every subscribed vertical
+         * without duplicating that check here.
+         *
+         * HOS-1122 passes `currentPeriodEnd` because a downgrade takes effect
+         * THEN, not now, and a screen that does not say when leaves the owner
+         * believing their plan already changed. `null` is a legitimate value
+         * here (the subscription read can omit it) and the component degrades
+         * to date-less copy rather than guessing.
+         */
+        [...verticalsWithSubscription].map((vertical) => {
+            const subscription = subscriptionByVertical.get(vertical);
+            const plans = plansByVertical.get(vertical) ?? [];
+            if (!subscription) {
+                return null;
+            }
+            return (
+                <CommercePlanChange
+                    client:visible
+                    vertical={vertical}
+                    currentPlanSlug={subscription.planSlug}
+                    currentPlanName={subscription.planName}
+                    plans={plans}
+                    currentPeriodEnd={subscription.currentPeriodEnd}
+                    locale={locale}
+                />
+            );
+        })
+    }
+
+    {/* HOS-788: welcome-tour anchor shared by the gastronomy and experience
+        welcome tours — both verticals get `VIEW_BASIC_STATS`. See
+        `src/config/tours.ts`. */}
+    <div data-tour="commerce-views">
+        <CommerceViewsWidget
+            client:visible
+            locale={locale}
+            listings={listings.map((listing) => ({
+                id: listing.id,
+                vertical: listing.vertical,
+                name: listing.name
+            }))}
+        />
+    </div>
+
+    {/* HOS-788: welcome-tour anchor for the gastronomy welcome tour only —
+        the menu QR/scan-analytics panel is gastronomy-exclusive. A
+        GASTRONOMY_OWNER always holds at least one gastronomy listing (the
+        role is granted alongside the listing's creation, never before), so
+        this is never empty for the audience that tour targets. */}
+    <div data-tour="gastronomy-qr">
+        <GastronomyMenuQrWidget
+            client:visible
+            locale={locale}
+            listings={listings
+                .filter((listing) => listing.vertical === 'gastronomy')
+                .map((listing) => ({ id: listing.id, name: listing.name }))}
+        />
+    </div>
+
+    {/* HOS-788: welcome-tour anchor for the listings list, shared by the
+        gastronomy and experience welcome tours. */}
+    <div data-tour="commerce-listings">
     <AccountSectionCard>
         {
             listings.length === 0 ? (
@@ -140,7 +278,10 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                                 client:visible
                                 listing={listing}
                                 locale={locale}
-                                hasVerticalSubscription={verticalsWithSubscription.has(listing.vertical)}
+                                trialVerdict={readTrialVerdict(trialVerdictByVertical, listing.vertical).verdict}
+                                trialDays={readTrialVerdict(trialVerdictByVertical, listing.vertical).trialDays}
+                                ownPreapprovalEnabled={ownPreapprovalEnabled}
+                                availablePlans={plansByVertical.get(listing.vertical) ?? []}
                             />
 
                             <a
@@ -158,6 +299,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
             )
         }
     </AccountSectionCard>
+    </div>
 </AccountLayout>
 
 <style>

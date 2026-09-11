@@ -119,3 +119,90 @@ export function deriveTrialingStatus(input: DeriveTrialingStatusInput): Subscrip
 
     return trialEnd.getTime() > now.getTime() ? SubscriptionStatusEnum.TRIALING : mappedStatus;
 }
+
+/**
+ * Input for {@link deriveCourtesyStatus}.
+ */
+export interface DeriveCourtesyStatusInput {
+    /**
+     * The status already mapped from the provider's vocabulary into Hospeda's.
+     * For a courtesy this is `PAUSED`, because pausing the preapproval is the
+     * mechanism that makes MercadoPago skip the gifted cycles.
+     */
+    readonly mappedStatus: SubscriptionStatusEnum;
+    /**
+     * End of the local courtesy window. `null`/`undefined` means the
+     * subscription was never gifted anything — same nullish tolerance and same
+     * reason as {@link DeriveTrialingStatusInput.trialEnd}: this runs on the
+     * webhook hot path, where throwing would dead-letter the event.
+     */
+    readonly courtesyEndsAt: Date | null | undefined;
+    /** Injected clock, so the derivation is deterministic under test. */
+    readonly now: Date;
+}
+
+/**
+ * Derives {@link SubscriptionStatusEnum.COURTESY} from a provider-reported
+ * `PAUSED` plus a local courtesy window that has not yet elapsed (HOS-180).
+ *
+ * The exact mirror of {@link deriveTrialingStatus}, one status over: MercadoPago
+ * has no vocabulary for "this month is on us" any more than it has one for
+ * "trial", so both are local readings of a provider state. Pure and I/O-free.
+ *
+ * | `mappedStatus` | `courtesyEndsAt` | Result | Why |
+ * | -------------- | ---------------- | ------ | --- |
+ * | `PAUSED`       | in the future    | **`COURTESY`** | Inside the gift; entitlements stay on |
+ * | `PAUSED`       | `null`           | `PAUSED` | A real pause; entitlements are cut |
+ * | `PAUSED`       | in the past      | `PAUSED` | The gift lapsed. The cron is resuming it |
+ * | anything else  | any              | unchanged | Never derive off a non-paused status |
+ *
+ * Two rows carry the weight. The second is the whole point: **one provider state,
+ * two local readings.** `paused` means "paused" or "courtesy" depending solely on
+ * this column, and a real pause must keep cutting entitlements. The last row stops
+ * a cancelled or expired subscription being resurrected into a live status by a
+ * courtesy column nobody cleared.
+ *
+ * The boundary is exclusive (`>` not `>=`): at the exact instant the window
+ * closes the gift is over. Deriving `COURTESY` there would keep the subscriber
+ * one tick past their gift and race the cron resuming the preapproval.
+ *
+ * Order relative to {@link deriveTrialingStatus} does not matter — trialing keys
+ * off `ACTIVE`, courtesy off `PAUSED`, so they can never both fire on one input.
+ * That independence is asserted by a test rather than left to inspection.
+ *
+ * @param input - The mapped provider status, the local courtesy end, and the clock.
+ * @returns `COURTESY` when the subscription is inside a live courtesy window;
+ *   otherwise `mappedStatus` unchanged.
+ *
+ * @example
+ * ```ts
+ * // Admin gifted two cycles; MP reports the preapproval paused
+ * deriveCourtesyStatus({
+ *   mappedStatus: SubscriptionStatusEnum.PAUSED,
+ *   courtesyEndsAt: new Date('2026-11-01'),
+ *   now: new Date('2026-09-15'),
+ * }); // => SubscriptionStatusEnum.COURTESY
+ *
+ * // Someone paused their own subscription — not a gift, entitlements cut
+ * deriveCourtesyStatus({
+ *   mappedStatus: SubscriptionStatusEnum.PAUSED,
+ *   courtesyEndsAt: null,
+ *   now: new Date('2026-09-15'),
+ * }); // => SubscriptionStatusEnum.PAUSED
+ * ```
+ */
+export function deriveCourtesyStatus(input: DeriveCourtesyStatusInput): SubscriptionStatusEnum {
+    const { mappedStatus, courtesyEndsAt, now } = input;
+
+    if (mappedStatus !== SubscriptionStatusEnum.PAUSED) {
+        return mappedStatus;
+    }
+
+    if (courtesyEndsAt === null || courtesyEndsAt === undefined) {
+        return mappedStatus;
+    }
+
+    return courtesyEndsAt.getTime() > now.getTime()
+        ? SubscriptionStatusEnum.COURTESY
+        : mappedStatus;
+}

@@ -21,8 +21,26 @@ describe('RoleEnum', () => {
             expect(RoleEnum.GUEST).toBe('GUEST');
         });
 
-        it('should have exactly 10 roles (including SYSTEM and COMMERCE_OWNER)', () => {
-            expect(Object.values(RoleEnum)).toHaveLength(10);
+        it('should have exactly 12 roles (10 + the two HOS-1077 vertical owners)', () => {
+            expect(Object.values(RoleEnum)).toHaveLength(12);
+        });
+
+        // HOS-1077: the per-vertical owner roles.
+        it('should define GASTRONOMY_OWNER and EXPERIENCE_OWNER', () => {
+            expect(RoleEnum.GASTRONOMY_OWNER).toBe('GASTRONOMY_OWNER');
+            expect(RoleEnum.EXPERIENCE_OWNER).toBe('EXPERIENCE_OWNER');
+        });
+
+        it('the two vertical owner roles are distinct from each other and from COMMERCE_OWNER', () => {
+            // The whole product point: "owns a restaurant" and "owns an
+            // excursion" have to be expressible apart. If any two of these
+            // collapse, the split bought nothing.
+            const owners = [
+                RoleEnum.GASTRONOMY_OWNER,
+                RoleEnum.EXPERIENCE_OWNER,
+                RoleEnum.COMMERCE_OWNER
+            ];
+            expect(new Set(owners).size).toBe(3);
         });
 
         // SPEC-239: COMMERCE_OWNER role

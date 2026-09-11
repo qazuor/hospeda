@@ -67,10 +67,22 @@ const DAYS = [
 type DayKey = (typeof DAYS)[number]['key'];
 type DaySchedule = { closed: boolean; shifts: Array<{ open: string; close: string }> };
 
-/** Read the schedule for a day, defaulting to an open day with no shifts. */
+/**
+ * Read the schedule for a day, defaulting to CLOSED with no shifts (HOS-906).
+ *
+ * The default used to be `{ closed: false, shifts: [] }` — "open" with no
+ * hours — which is the exact intermediate state `DayScheduleSchema` now
+ * rejects: neither open (no shifts to be open DURING) nor closed. Every day
+ * the host never touches falls through this default, and `withDay()` below
+ * rebuilds the full week from it on every edit, so the old default meant
+ * saving after editing just ONE day silently persisted that invalid state on
+ * the other six. Defaulting to closed is the honest read: better to show
+ * "closed" for a day nobody configured than to claim it is open with no
+ * stated hours.
+ */
 function dayOf(value: OpeningHours | null, key: DayKey): DaySchedule {
     const days = (value?.days ?? {}) as Record<string, DaySchedule | undefined>;
-    return days[key] ?? { closed: false, shifts: [] };
+    return days[key] ?? { closed: true, shifts: [] };
 }
 
 /** Rebuild the full OpeningHours with one day replaced. */

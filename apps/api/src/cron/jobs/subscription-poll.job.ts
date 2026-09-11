@@ -31,6 +31,7 @@ import {
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
+    excludeAddonDomainCondition,
     getPromoCodeById,
     resolveFullPlanPriceCentavos
 } from '@repo/service-core';
@@ -44,6 +45,7 @@ import {
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
 import type { SyntheticMpPaymentPayload } from '../../routes/webhooks/mercadopago/types.js';
 import { env } from '../../utils/env.js';
+import { fetchLivePreapprovalAmountMajor } from '../../utils/mp-preapproval-amount-lookup.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 /**
@@ -393,7 +395,14 @@ async function runOneTimePaymentPoll(params: {
                 transaction_amount: toMajor(asCentavos(succeeded.amount)),
                 currency_id: succeeded.currency,
                 metadata: syntheticMetadata,
-                external_reference: locked.providerResourceId
+                external_reference: locked.providerResourceId,
+                // HOS-1234: forwarded for the same reason as in the live webhook
+                // handler — this producer holds a `QZPayProviderPayment` too, so
+                // a charge first observed by the poll (webhook dropped, MP late)
+                // records the payer email exactly like one seen live. Leaving it
+                // out here would have made the column's population depend on
+                // WHICH producer noticed the payment first.
+                payer_email: succeeded.payerEmail ?? null
             };
 
             try {
@@ -551,7 +560,12 @@ async function reconcileActiveDiscountAmounts(params: {
                     eq(billingSubscriptions.status, SubscriptionStatusEnum.ACTIVE),
                     isNotNull(billingSubscriptions.promoCodeId),
                     isNotNull(billingSubscriptions.mpSubscriptionId),
-                    isNull(billingSubscriptions.deletedAt)
+                    isNull(billingSubscriptions.deletedAt),
+                    // HOS-847: a recurring add-on's own preapproval row is never
+                    // promo-eligible today, but this sweep must not depend on that
+                    // staying true — exclude it explicitly so a discount-amount
+                    // mutation is never issued against an add-on's preapproval.
+                    excludeAddonDomainCondition()
                 )
             );
         // The WHERE clause guarantees promoCodeId/mpSubscriptionId are non-null
@@ -596,26 +610,38 @@ async function reconcileActiveDiscountAmounts(params: {
             }
 
             // Retrieve live MP amount.
-            const livePreapproval = await paymentAdapter.subscriptions.retrieve(
-                row.mpSubscriptionId
-            );
-            // The MP preapproval (subscription) object stores the recurring amount
-            // under `auto_recurring.transaction_amount` (MAJOR units), NOT at the
-            // top level — top-level `transaction_amount` only exists on payment
-            // objects. Reading the wrong path yields undefined → -1 → a spurious
-            // mutation on every tick. See spike doc §2.2.
-            // TYPE-WORKAROUND: the qzpay adapter returns the raw MP preapproval as
-            // its typed SDK shape; we read dynamic `auto_recurring` fields not on
-            // that type, so a Record cast is required to access them safely.
-            const liveRecord = livePreapproval as unknown as Record<string, unknown>;
-            const autoRecurring =
-                typeof liveRecord.auto_recurring === 'object' && liveRecord.auto_recurring !== null
-                    ? (liveRecord.auto_recurring as Record<string, unknown>)
-                    : {};
-            const liveAmountMajor: number =
-                typeof autoRecurring.transaction_amount === 'number'
-                    ? autoRecurring.transaction_amount
-                    : -1;
+            //
+            // HOS-991: `paymentAdapter.subscriptions.retrieve()` NEVER returns
+            // `auto_recurring` — its typed SDK shape is closed to id/status/period
+            // fields (see `mp-preapproval-amount-lookup.ts`'s module doc). Reading
+            // `auto_recurring.transaction_amount` off its result always yielded
+            // `undefined` → the `-1` fallback below → a spurious mutation on EVERY
+            // tick, for every discounted subscription. Fixed by reading the live
+            // amount via a direct `GET /preapproval/{id}` call instead (the same
+            // primitive `mp-preapproval-plan-lookup.ts` uses for a different field).
+            const accessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
+            if (!accessToken) {
+                logger.warn(
+                    'subscription-poll reconcile: HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN not configured, skipping row',
+                    { subscriptionId: row.id }
+                );
+                continue;
+            }
+            const lookup = await fetchLivePreapprovalAmountMajor({
+                preapprovalId: row.mpSubscriptionId,
+                accessToken
+            });
+            if (lookup.kind !== 'ok' || lookup.transactionAmountMajor === null) {
+                // Best-effort reconciler: cannot determine the live amount, so
+                // do NOT blindly re-issue a mutation — skip this row this tick.
+                logger.warn('subscription-poll reconcile: could not read live preapproval amount', {
+                    subscriptionId: row.id,
+                    mpSubscriptionId: row.mpSubscriptionId,
+                    lookup
+                });
+                continue;
+            }
+            const liveAmountMajor = lookup.transactionAmountMajor;
 
             // Tolerance ±1 ARS major (avoid rounding false positives).
             if (Math.abs(liveAmountMajor - expectedAmountMajor) <= 1) {

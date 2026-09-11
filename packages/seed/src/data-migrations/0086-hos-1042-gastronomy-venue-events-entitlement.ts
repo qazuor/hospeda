@@ -1,0 +1,158 @@
+/**
+ * @fileoverview
+ * Data migration: 0086-hos-1042-gastronomy-venue-events-entitlement
+ *
+ * Dual-write counterpart (HOS-25) for HOS-1042. The baseline gains one
+ * `EntitlementKey` member — `manage_gastronomy_events`, the venue's own agenda —
+ * and grants it on the PRO and PREMIUM gastronomy plans; this migration applies
+ * the same delta to an already-seeded database.
+ *
+ * ## Why it is load-bearing
+ *
+ * The same reason `0082` gives for `manage_gastronomy_menu`, and for the same
+ * shape of key. `manage_gastronomy_events` is a TIER differentiator, so it is
+ * deliberately absent from `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is
+ * the floor EVERY tier of a vertical receives, and a paid capability placed
+ * there would be handed to `gastronomy-basico` too. The grant therefore lives on
+ * the plan ROW and reaches the gate through the union
+ * `resolveCommerceVerticalGrants` performs over the subscribed plan's
+ * `entitlements` column.
+ *
+ * The window to be honest about, and it is NOT empty this time: between this
+ * deploying and this migration running, a `gastronomy-pro` subscriber is refused
+ * the agenda editor. `0082` could truthfully say the equivalent window was empty
+ * because `-pro` shipped `isActive: false`; `0083` then activated it and
+ * HOS-1119 made it reachable, so `-pro` is now a real, buyable plan that real
+ * people can be sitting on. It still fails CLOSED — a refused editor, never a
+ * capability given away — and the fix is the ordinary one: run
+ * `pnpm db:seed:migrate` as part of the release, in the documented order.
+ *
+ * ## Why BOTH tiers and not only pro
+ *
+ * `-premium` outranks `-pro` in price and sort order. These `entitlements`
+ * arrays are literal per plan — nothing composes a tier out of the one below it
+ * — so granting only `-pro` would leave the dearer plan missing a feature its
+ * cheaper neighbour has. Same reasoning as `plans.config.ts` and `0082`.
+ *
+ * ## Idempotency
+ *
+ * - Lookup row: inserted only when no `billing_entitlements` row holds the key.
+ * - Plan grants: the `entitlements` array is rewritten to the UNION of what the
+ *   row holds and the key, guarded on the row not already containing it. A
+ *   re-run affects zero rows.
+ *
+ * ## OR-PRESERVE semantics
+ *
+ * Union, never replacement — same rule as `0077`, `0080` and `0082`. An operator
+ * who granted an extra key through the SPEC-168 admin editor keeps it, and the
+ * keys those migrations granted are read back and preserved rather than
+ * overwritten.
+ *
+ * ## No `requiresColumns`
+ *
+ * This migration reads and writes only columns that predate it
+ * (`billing_entitlements.key`, `billing_plans.entitlements`). The
+ * `gastronomy_events` table that ships in the same release is created by the
+ * structural carril and is never touched here — this migration grants a
+ * capability, it does not move data into the new table, so the HOS-433 hazard
+ * (a backfill whose source column the same release drops) has no analogue.
+ *
+ * ## `destructive` flag decision
+ *
+ * `false`. One additive lookup insert and two additive array unions. Nothing is
+ * deleted and no row is rewritten to a narrower value.
+ */
+import { billingEntitlements, billingPlans, eq, inArray } from '@repo/db';
+import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
+
+export const meta = {
+    name: '0086-hos-1042-gastronomy-venue-events-entitlement',
+    group: 'required',
+    destructive: false
+} as const satisfies SeedMigrationModule['meta'];
+
+/**
+ * The lookup row, spelled as a literal.
+ *
+ * Literal rather than a lookup into `ENTITLEMENT_DEFINITIONS`: a migration
+ * records the delta it applied on the day it ran, and must keep describing that
+ * delta even after a later baseline change edits the array underneath it (the
+ * rule `0071`'s `TIER_PAIRS`, `0080`'s and `0082`'s `NEW_ENTITLEMENT` all
+ * state).
+ */
+const NEW_ENTITLEMENT = {
+    key: 'manage_gastronomy_events',
+    name: 'Venue events agenda',
+    description:
+        'Allows publishing the venue’s own events — live music night, happy hour, dinner show — on a date or repeating every week'
+} as const;
+
+/**
+ * Which plan rows (by `billing_plans.name`, i.e. the slug) receive the key.
+ *
+ * Gastronomy only, and for a sharper reason than the carta's: an experience IS
+ * an event with a date, so it has no second agenda to hang off itself. Same
+ * asymmetry with `0080`, which touched both verticals.
+ */
+const GRANTED_PLAN_NAMES = ['gastronomy-pro', 'gastronomy-premium'] as const;
+
+export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
+    let entitlementsCreated = 0;
+    let plansGranted = 0;
+
+    // ── 1. The `billing_entitlements` lookup row ─────────────────────────────
+    const existing = await ctx.db
+        .select({ id: billingEntitlements.id })
+        .from(billingEntitlements)
+        .where(eq(billingEntitlements.key, NEW_ENTITLEMENT.key))
+        .limit(1);
+
+    if (existing.length === 0) {
+        await ctx.db.insert(billingEntitlements).values({
+            key: NEW_ENTITLEMENT.key,
+            name: NEW_ENTITLEMENT.name,
+            description: NEW_ENTITLEMENT.description
+        });
+        entitlementsCreated += 1;
+    }
+
+    // ── 2. The plan grants ──────────────────────────────────────────────────
+    // Read first rather than issuing a blind UPDATE: `entitlements` is a jsonb
+    // array and the union has to be computed against whatever the row actually
+    // holds — including the keys 0077, 0080, 0081 and 0082 granted, and anything
+    // an operator added through the admin editor.
+    const rows = await ctx.db
+        .select({
+            id: billingPlans.id,
+            name: billingPlans.name,
+            entitlements: billingPlans.entitlements
+        })
+        .from(billingPlans)
+        .where(inArray(billingPlans.name, [...GRANTED_PLAN_NAMES]));
+
+    for (const row of rows) {
+        const current = Array.isArray(row.entitlements) ? (row.entitlements as string[]) : [];
+        if (current.includes(NEW_ENTITLEMENT.key)) {
+            continue;
+        }
+
+        await ctx.db
+            .update(billingPlans)
+            .set({
+                entitlements: [...current, NEW_ENTITLEMENT.key],
+                updatedAt: new Date()
+            })
+            .where(eq(billingPlans.id, row.id));
+
+        plansGranted += 1;
+    }
+
+    const counts = { entitlementsCreated, plansGranted };
+    const changed = entitlementsCreated + plansGranted > 0;
+
+    const summary = changed
+        ? `HOS-1042: created ${entitlementsCreated} billing_entitlements row(s) and granted manage_gastronomy_events on ${plansGranted} gastronomy plan row(s).`
+        : 'HOS-1042: manage_gastronomy_events already granted on every pro/premium gastronomy plan — no change.';
+
+    return { summary, counts };
+}

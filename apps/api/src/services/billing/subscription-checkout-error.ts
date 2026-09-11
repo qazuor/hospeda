@@ -52,6 +52,27 @@ export type SubscriptionCheckoutErrorCode =
     // to a free plan (e.g. TOURIST_FREE_PLAN) — reactivation is only
     // meaningful onto a paid plan.
     | 'INVALID_REACTIVATION_PLAN'
+    // HOS-917: the initial-checkout price guards in
+    // `subscription-checkout.service.ts` (monthly, annual, commerce, partner)
+    // reject a checkout whose resolved price is `unitAmount === 0` (e.g.
+    // TOURIST_FREE_PLAN) BEFORE any MercadoPago provisioning is attempted.
+    // Mirrors `INVALID_REACTIVATION_PLAN` below, which closes the same gap
+    // for the reactivation flows — a free plan is granted at signup, never
+    // purchased through checkout, and MP's `prices.create` rejects a
+    // `transaction_amount` of 0 outright (previously surfaced as a bare 502
+    // `MP_PLAN_PROVISIONING_FAILED` instead of a clear validation error).
+    | 'PLAN_NOT_PURCHASABLE'
+    // HOS-1287: `replacePastDuePaymentMethod` cannot carry the past-due row's
+    // product domain onto the fresh preapproval it is about to mint — the
+    // domain is one no mint reproduces faithfully (`addon`, whose real price is
+    // an override on a BORROWED plan's price row; the retired pre-HOS-685
+    // umbrella value; anything unrecognized), or a listing-owning row's entity
+    // pointer is missing or disagrees with its own domain column. A well-formed
+    // request against a real row whose state this flow cannot process -> 422,
+    // same family as `PLAN_NOT_PURCHASABLE`. Deliberately an ERROR rather than
+    // a silent best effort: minting anyway is what left a paying commerce
+    // customer with a dark listing and nothing in the logs.
+    | 'DOMAIN_NOT_REPLACEABLE'
     // HOS-114 T-004: the reactivation plan-resolution guard rejects a
     // monthly reactivation request (`billingInterval` omitted or `'monthly'`)
     // against a plan with no active monthly price (e.g. an annual-only
@@ -107,7 +128,32 @@ export type SubscriptionCheckoutErrorCode =
     // (server-side inconsistency, not an upstream provider failure). The MP
     // mutation failing on its own reuses MP_PREAPPROVAL_MUTATION_FAILED (502),
     // fail-closed — nothing was applied locally.
-    | 'IMMEDIATE_SWAP_LOCAL_APPLY_FAILED';
+    | 'IMMEDIATE_SWAP_LOCAL_APPLY_FAILED'
+    // HOS-937 step 2: the resolved payer email (user-typed, the customer's
+    // last-working `mp_payer_email`, or their signup `email` — see
+    // `billing/payer-email.ts`) contains a `+`, which MercadoPago rejects
+    // outright with an opaque "User bad request". Product decision on how
+    // to handle this is deliberately deferred (spec §11 OQ-1); until it
+    // resolves, the checkout fails loudly instead of silently rewriting the
+    // email. Maps to HTTP 400 — the resolved value is not something
+    // MercadoPago will accept, closer to a validation failure than a
+    // provider or business-rule error.
+    | 'PAYER_EMAIL_UNSUPPORTED_CHARACTER'
+    // HOS-1271: the accommodation/tourist paid-checkout entry points
+    // (`initiatePaidMonthlySubscription` / `initiatePaidAnnualSubscription`)
+    // resolve a plan slug against the WHOLE catalogue with no domain filter
+    // (`resolvePlanBySlug`), so a gastronomy/experience/partner slug used to
+    // resolve just as happily as an accommodation one and proceed to create a
+    // subscription with no domain stated — landing on the column's
+    // `'accommodation'` default regardless of which plan was actually
+    // purchased. This code is thrown by
+    // `assertAccommodationOrTouristPlanDomain` the moment such a plan
+    // resolves, before any price/promo/MP work. Not a 404: the plan itself
+    // exists, it just cannot be purchased through THIS checkout — same
+    // reasoning `assertAccommodationPlanChangeTarget`
+    // (`billing/plan-domain-guard.ts`) already applies to the plan-change
+    // route's mirror-image case.
+    | 'PLAN_DOMAIN_MISMATCH';
 
 /**
  * Domain-level error thrown across the paid-subscription checkout and

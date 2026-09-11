@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { SetPasswordBodySchema } from '../../src/entities/user/user.profile-completion.schema.js';
+import {
+    CompleteProfileBodySchema,
+    SetPasswordBodySchema
+} from '../../src/entities/user/user.profile-completion.schema.js';
 
 /**
  * SetPasswordBodySchema (POST /api/v1/protected/profile/set-password).
@@ -33,5 +36,35 @@ describe('SetPasswordBodySchema', () => {
         expect(
             SetPasswordBodySchema.safeParse({ password: 'Secure1234!', extra: true }).success
         ).toBe(false);
+    });
+});
+
+/**
+ * CompleteProfileBodySchema — `theme` field (HOS-313).
+ *
+ * `theme` is optional, mirroring `locale` right beside it: the profile can be
+ * completed without choosing one (default stays untouched), and both are
+ * applied only on save — never live — per the ticket's explicit requirement.
+ */
+describe('CompleteProfileBodySchema — theme (HOS-313)', () => {
+    const baseBody = {
+        firstName: 'Maria',
+        lastName: 'Fernanda',
+        acceptedTerms: true as const
+    };
+
+    it('accepts a body without theme (optional field)', () => {
+        const result = CompleteProfileBodySchema.safeParse(baseBody);
+        expect(result.success).toBe(true);
+    });
+
+    it.each(['system', 'light', 'dark'] as const)('accepts theme=%s', (theme) => {
+        const result = CompleteProfileBodySchema.safeParse({ ...baseBody, theme });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects an invalid theme value', () => {
+        const result = CompleteProfileBodySchema.safeParse({ ...baseBody, theme: 'purple' });
+        expect(result.success).toBe(false);
     });
 });

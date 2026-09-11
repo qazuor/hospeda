@@ -70,8 +70,11 @@ vi.mock('@repo/db', async () => {
     const desc = (column: string) => ({ column, direction: 'desc' as const });
 
     /**
-     * Minimal Drizzle-shaped builder: `.from().where().orderBy().limit()`.
-     * `limit()` resolves to the filtered rows, so `await ... .limit(1)` works.
+     * Minimal Drizzle-shaped builder: `.from().where().orderBy().limit()`,
+     * AND directly awaitable after `.orderBy()` (real Drizzle query builders
+     * are thenable) since HOS-1066 made `resolveUserPlanSummary` read every
+     * live subscription (grouped by product domain) rather than
+     * `.limit()`-ing the subscriptions query to the single newest row.
      */
     const createBuilder = () => {
         let rows: Row[] = [];
@@ -96,6 +99,10 @@ vi.mock('@repo/db', async () => {
             },
             limit(count: number) {
                 return Promise.resolve(rows.slice(0, count));
+            },
+            // biome-ignore lint/suspicious/noThenProperty: intentional thenable — mirrors Drizzle's own awaitable query builder so the production code under test can `await` this mock without a trailing `.limit()`.
+            then(onFulfilled: (rows: Row[]) => unknown, onRejected?: (reason: unknown) => unknown) {
+                return Promise.resolve(rows).then(onFulfilled, onRejected);
             }
         };
 
@@ -160,7 +167,10 @@ describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows'
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: { name: 'plan-owner-premium', status: 'active' } });
+        expect(result).toEqual({
+            plan: { name: 'plan-owner-premium', status: 'active' },
+            activeSubscriptionsCount: 1
+        });
     });
 
     it('returns no plan when the only subscription is soft-deleted', async () => {
@@ -180,7 +190,7 @@ describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows'
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: null });
+        expect(result).toEqual({ plan: null, activeSubscriptionsCount: 0 });
     });
 
     it('returns no plan when a comped subscription is soft-deleted', async () => {
@@ -198,7 +208,7 @@ describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows'
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: null });
+        expect(result).toEqual({ plan: null, activeSubscriptionsCount: 0 });
     });
 
     it('picks the live subscription over a newer soft-deleted one', async () => {
@@ -224,7 +234,10 @@ describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows'
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: { name: 'plan-owner-basico', status: 'active' } });
+        expect(result).toEqual({
+            plan: { name: 'plan-owner-basico', status: 'active' },
+            activeSubscriptionsCount: 1
+        });
     });
 
     it('returns no plan when the billing customer itself is soft-deleted', async () => {
@@ -244,7 +257,7 @@ describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows'
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: null });
+        expect(result).toEqual({ plan: null, activeSubscriptionsCount: 0 });
     });
 
     it('prefers the live customer row over a soft-deleted duplicate (external_id is not UNIQUE)', async () => {
@@ -273,6 +286,9 @@ describe('HOS-755 — resolveUserPlanSummary excludes soft-deleted billing rows'
 
         const result = await resolveUserPlanSummary({ userId: USER_ID });
 
-        expect(result).toEqual({ plan: { name: 'plan-owner-basico', status: 'active' } });
+        expect(result).toEqual({
+            plan: { name: 'plan-owner-basico', status: 'active' },
+            activeSubscriptionsCount: 1
+        });
     });
 });

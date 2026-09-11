@@ -40,7 +40,25 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    // HOS-1286: server-managed billing flag. Written ONLY by the
+    // featured-by-entitlement sync primitives — never from a request body, not
+    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
+    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
+    featuredByEntitlement: true,
+    // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // request that stores or destroys the Cloudinary asset — never
+    // from a listing body. Omitted here because these schemas are
+    // built with `.omit(...)`, so a field is accepted unless it is
+    // named: leaving them in let a request body set `menuFileUrl`
+    // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+    // does not restrict the scheme) and set `menuFilePublicId` to
+    // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+    // would then destroy. Same rule, same reason as `media` below.
+    menuFileUrl: true,
+    menuFilePublicId: true,
+    menuFileKind: true
 }).extend({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
@@ -238,12 +256,53 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true,
+    // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // request that stores or destroys the Cloudinary asset — never
+    // from a listing body. Omitted here because these schemas are
+    // built with `.omit(...)`, so a field is accepted unless it is
+    // named: leaving them in let a request body set `menuFileUrl`
+    // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+    // does not restrict the scheme) and set `menuFilePublicId` to
+    // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+    // would then destroy. Same rule, same reason as `media` below.
+    menuFileUrl: true,
+    menuFilePublicId: true,
+    menuFileKind: true,
+    // HOS-1113: three more that the owner PATCH already refuses and this
+    // create silently accepted, because a `.omit()` schema takes every base
+    // field it does not name. The owner-create body is spread verbatim into
+    // `GastronomyAdminCreateInputSchema.parse(...)` by the route handler and
+    // inserted, so "accepted here" means "written to the row".
+    //
+    // - `adminInfo` — the `admin_info` jsonb column: internal staff notes plus
+    //   a `favorite` flag. It has its own permission-gated write path
+    //   (`BaseCrudAdminService.setAdminInfo`) and is stripped from every public
+    //   projection, so a merchant filling it in on create is writing into the
+    //   staff surface from an unauthenticated-role body.
+    // - `translationMeta` — SPEC-212 curation metadata, written by the AI
+    //   translation pipeline and documented "exposed on admin responses only".
+    //   No `translation_meta` column exists on `gastronomies` today, so this is
+    //   inert rather than live — it is omitted so it cannot become live the day
+    //   the column lands.
+    // - `media` — the `media` jsonb column was DROPPED (HOS-372); photos live in
+    //   `gastronomy_media`. `GastronomyUpdateInputSchema` omits it for exactly
+    //   this reason (see HOS-382 below); accepting it here reproduces the same
+    //   silently-vanishing-photo path on the owner's first save.
+    adminInfo: true,
+    translationMeta: true,
+    media: true,
     // Server-forced — never accepted from the owner's request body.
     ownerId: true,
     slug: true,
     lifecycleState: true,
     visibility: true,
     isFeatured: true,
+    // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
+    // primitives, never through create/update — the same treatment
+    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
+    // which admin still controls manually.
+    featuredByEntitlement: true,
     moderationState: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
@@ -313,12 +372,35 @@ export const GastronomyUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
+                // Server-managed (HOS-1286): written ONLY by the
+                // featured-by-entitlement sync primitives, the addon checkout
+                // confirmation and the reconcile cron — never through the generic
+                // PATCH path. Omitted here because these schemas are built with
+                // `.omit(...)`, so a field is accepted unless it is named: leaving
+                // it in would let an owner send `featuredByEntitlement: true` in
+                // their own update and feature their listing without buying the
+                // add-on, which is the exact product HOS-1286 exists to sell.
+                // `isFeatured`, the admin-curated flag beside it, stays writable.
+                featuredByEntitlement: true,
                 // Server-managed: ownership change requires a dedicated admin action,
                 // not a generic PATCH body (mirrors accommodation's ownerSuspended omit).
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.
                 reviewsCount: true,
                 averageRating: true,
+                // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+                // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+                // request that stores or destroys the Cloudinary asset — never
+                // from a listing body. Omitted here because these schemas are
+                // built with `.omit(...)`, so a field is accepted unless it is
+                // named: leaving them in let a request body set `menuFileUrl`
+                // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+                // does not restrict the scheme) and set `menuFilePublicId` to
+                // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+                // would then destroy. Same rule, same reason as `media` below.
+                menuFileUrl: true,
+                menuFilePublicId: true,
+                menuFileKind: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
                 // `gastronomy_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which

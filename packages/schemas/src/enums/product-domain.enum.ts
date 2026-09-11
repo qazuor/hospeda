@@ -5,6 +5,25 @@
  * - gastronomy: Gastronomy listings, independently subscribable and capped.
  * - experience: Experience listings, independently subscribable and capped.
  * - partner: Partner directory subscriptions.
+ * - tourist: Consumer-side plans (`tourist-free`, `tourist-vip`) — a vertical
+ *   with its own catalogue and entitlements but no listings of its own. Added
+ *   by HOS-1233 to correct a live misfiling: with no member to assign, the
+ *   tourist plans fell to the column's `'accommodation'` default, and
+ *   `subscriptionMatchesDomain` counts that value as accommodation (it fails
+ *   OPEN there, for legacy rows). Measured 2026-09-08, `tourist-vip` carried
+ *   `product_domain = 'accommodation'` on the PLAN row in staging AND
+ *   production, which made a paying tourist indistinguishable from an
+ *   accommodation subscriber to the entitlement engine. Fails CLOSED like every
+ *   other non-accommodation domain.
+ * - addon: A recurring add-on's own MercadoPago preapproval (HOS-847). A
+ *   MercadoPago preapproval carries exactly one `auto_recurring.transaction_amount`
+ *   and no line items, so a recurring add-on gets its OWN `billing_subscriptions`
+ *   row and its OWN preapproval, separate from the customer's real plan
+ *   subscription. Explicit, never omitted: `subscriptionMatchesDomain` fails
+ *   OPEN for `accommodation` (a missing/`null`/`undefined` value counts as
+ *   accommodation, see that function's doc), so an add-on row with no explicit
+ *   domain would silently be counted as the owner's accommodation subscription
+ *   — the exact contamination this member exists to prevent.
  *
  * **`commerce` is retired (HOS-695, release C).** It used to be the single
  * pre-HOS-685 transitional value covering both gastronomy and experience,
@@ -28,7 +47,7 @@
  *
  * The `gastronomy` / `experience` values collide by name with
  * `CommerceEntityTypeEnum`, which uses the same two strings for
- * `commerce_listing_subscriptions.entity_type`. That is deliberate: it makes a
+ * `entity_subscriptions.entity_type`. That is deliberate: it makes a
  * link row's `product_domain` a pure function of its own `entity_type`. The
  * hazard is querying the wrong column and getting plausible results, so any
  * hand-written SQL touching either column names it explicitly.
@@ -37,5 +56,50 @@ export enum ProductDomainEnum {
     ACCOMMODATION = 'accommodation',
     GASTRONOMY = 'gastronomy',
     EXPERIENCE = 'experience',
-    PARTNER = 'partner'
+    PARTNER = 'partner',
+    TOURIST = 'tourist',
+    ADDON = 'addon'
 }
+
+/**
+ * The subset of {@link ProductDomainEnum} members that represent an actual
+ * subscribable BUSINESS VERTICAL — a product with its own catalogue,
+ * listings and entitlements — as opposed to a domain that exists purely as a
+ * BILLING MECHANISM.
+ *
+ * `ADDON` (HOS-847) is the first non-vertical member: it tags a recurring
+ * add-on's OWN MercadoPago preapproval row, never a customer's real plan
+ * subscription (see `subscriptionMatchesDomain`'s doc in
+ * `@repo/service-core`). Any call site that asks "how many distinct
+ * verticals does this customer hold an active subscription in" — e.g. the
+ * `/mi-cuenta/` plan-summary widget (`resolveUserPlanSummary` in
+ * `apps/api/src/routes/user/protected/stats.ts`, HOS-1066) — MUST iterate
+ * this list, never `Object.values(ProductDomainEnum)` directly. Object.values
+ * silently absorbs every future member as "one more vertical", which is
+ * exactly how `ADDON` almost turned "one active plan + one active add-on"
+ * into a 2-domain summary with no plan name at all (found in review before
+ * merge, HOS-847 PR 2).
+ *
+ * A caller that genuinely wants EVERY domain value — e.g. an admin filter
+ * dropdown that must let staff filter subscriptions by `'addon'` too
+ * (`apps/admin/src/features/billing-subscriptions/SubscriptionFilters.tsx`)
+ * — should keep using `Object.values(ProductDomainEnum)` directly; this
+ * constant is not a blanket replacement for it, only for "count distinct
+ * verticals" call sites.
+ */
+export const BUSINESS_VERTICAL_PRODUCT_DOMAINS = [
+    ProductDomainEnum.ACCOMMODATION,
+    ProductDomainEnum.GASTRONOMY,
+    ProductDomainEnum.EXPERIENCE,
+    ProductDomainEnum.PARTNER,
+    // TOURIST belongs here despite owning no listings (HOS-1233). The test this
+    // list actually serves is "is this a distinct vertical the customer holds a
+    // subscription in", and a paying `tourist-vip` is exactly that — it is only
+    // ADDON, a billing mechanism rather than a product, that the list excludes.
+    // Leaving it out would be a regression rather than a no-op: before HOS-1233
+    // the tourist plans were filed as `accommodation`, so `resolveUserPlanSummary`
+    // did count them; reclassifying them without adding the member here would
+    // make the "mi plan" widget stop seeing a live subscription and show "no
+    // plan" to somebody who is paying.
+    ProductDomainEnum.TOURIST
+] as const;

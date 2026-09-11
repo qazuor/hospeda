@@ -105,6 +105,37 @@ export function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
 }
 
 /**
+ * Landing URL for the "your checkout was cancelled" recovery notification
+ * (HOS-937 step 3, spec 6.5/8.3).
+ *
+ * Deliberately NOT a MercadoPago `init_point`: the webhook that sends this
+ * link no longer mints a fresh preapproval itself (spec 6.5 redesign) — it
+ * only records the terminal state and points the user somewhere in OUR
+ * domain. The actual mint happens later, at CLICK time, inside the
+ * checkout-retry endpoint (`routes/billing/checkout-retry.ts`), which is
+ * what turns "deferred" from a 350ms guess into the real minutes/hours R-3
+ * needs: nothing irreversible happens until the user's own click triggers a
+ * fresh MercadoPago read.
+ *
+ * Points at the existing account subscription page rather than a dedicated
+ * one-click retry page — the latter does not exist yet (front-end wiring is
+ * tracked as a follow-up, not part of this change). The `retryCheckoutId`
+ * query param is inert today; it exists so that follow-up can read it
+ * without another notification-copy change.
+ *
+ * @param locale - User's preferred return-URL locale (e.g. `'es'`, `'en'`, `'pt'`).
+ * @param localSubscriptionId - The `billing_subscriptions.id` that was
+ *   cancelled, so a future landing page can call the checkout-retry endpoint
+ *   for the right row without the user having to find it themselves.
+ */
+export function buildCheckoutRetryLandingUrl(
+    locale: ReturnUrlLocale,
+    localSubscriptionId: string
+): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/mi-cuenta/suscripcion/?retryCheckoutId=${localSubscriptionId}`;
+}
+
+/**
  * MercadoPago `back_url` for a PARTNER preapproval.
  *
  * A partner is an external brand, not a Hospeda account: an admin generates the

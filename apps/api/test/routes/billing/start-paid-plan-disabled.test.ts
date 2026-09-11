@@ -85,8 +85,66 @@ vi.mock('../../../src/utils/env', () => ({
 vi.mock('@repo/db', () => {
     const insertChain = { values: vi.fn().mockResolvedValue(undefined) };
     return {
-        getDb: vi.fn(() => ({ insert: vi.fn(() => insertChain) })),
-        billingSubscriptions: { __table: 'billing_subscriptions' }
+        getDb: vi.fn(() => ({
+            insert: vi.fn(() => insertChain),
+            // HOS-937 step 2: see the identical stub in
+            // `test/routes/start-paid.test.ts` — `getMpPayerEmail` reads
+            // `billing_customers.mp_payer_email` via raw SQL before the
+            // checkout decision logic this suite exercises.
+            execute: vi.fn().mockResolvedValue({ rows: [] }),
+            // HOS-1271: `resolvePlanProductDomain`'s `.select()` chain, needed
+            // by the "does NOT throw PLAN_DISABLED for an active plan" tests
+            // below, which proceed past the route-level gate into the real
+            // `initiatePaidMonthlySubscription`/`initiatePaidAnnualSubscription`.
+            // Every plan fixture here is accommodation.
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: vi.fn(() => {
+                        const limit = vi.fn(() =>
+                            Promise.resolve([
+                                { productDomain: 'accommodation', createdAt: new Date() }
+                            ])
+                        );
+                        return { limit, orderBy: vi.fn(() => ({ limit })) };
+                    })
+                }))
+            }))
+        })),
+        billingSubscriptions: {
+            __table: 'billing_subscriptions',
+            id: '__id',
+            customerId: '__customer_id',
+            status: '__status',
+            productDomain: '__product_domain',
+            createdAt: '__created_at'
+        },
+        // HOS-1271: `resolvePlanProductDomain` (`paid-subscription-create.ts`)
+        // builds its query as `.where(eq(billingPlans.id, planId))` — both
+        // symbols must exist on this wholesale mock (no `...actual` spread)
+        // for that expression to evaluate at all, even though the `select`
+        // stub above ignores the actual predicate.
+        billingPlans: { id: '__billing_plans_id', productDomain: '__product_domain' },
+        // HOS-1272: see the identical addition in `test/routes/start-paid.test.ts`
+        // — `loadAccommodationBridge`/`loadCorrelationRow`
+        // (checkout-idempotency.ts) need `and`/`desc`/`billingPendingCheckouts`
+        // to exist on this wholesale mock for their query expressions to
+        // evaluate, even though the fake `where`/`select` never inspects them.
+        and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
+        desc: vi.fn((col: unknown) => ({ op: 'desc', col })),
+        billingPendingCheckouts: {
+            localSubscriptionId: '__local_subscription_id',
+            customerId: '__customer_id',
+            planId: '__plan_id',
+            mpPreapprovalPlanId: '__mp_preapproval_plan_id',
+            nonce: '__nonce',
+            status: '__status',
+            createdAt: '__created_at',
+            expiresAt: '__expires_at',
+            pendingDiscount: '__pending_discount',
+            pendingTrialExtension: '__pending_trial_extension'
+        },
+        eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+        sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values })
     };
 });
 

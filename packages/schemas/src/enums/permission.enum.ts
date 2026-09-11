@@ -65,8 +65,20 @@ export enum PermissionCategoryEnum {
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
-    /** Commerce listings (gastronomy, experience). Added in SPEC-239. */
+    /**
+     * Commerce listings (gastronomy, experience). Added in SPEC-239.
+     *
+     * RETIRING (HOS-1077): a category that names two verticals at once is the
+     * reason gastronomy could not be granted without experience. Split into
+     * {@link PermissionCategoryEnum.GASTRONOMY} and
+     * {@link PermissionCategoryEnum.EXPERIENCE}; kept through the expand release
+     * because the `commerce.*` permissions it classifies are still live.
+     */
     COMMERCE = 'COMMERCE',
+    /** Gastronomy listings — the gastronomy half of the commerce split (HOS-1077). */
+    GASTRONOMY = 'GASTRONOMY',
+    /** Experience listings — the experience half of the commerce split (HOS-1077). */
+    EXPERIENCE = 'EXPERIENCE',
     HOST_TRADE = 'HOST_TRADE',
     /** Partners program (SPEC-271). */
     PARTNER = 'PARTNER',
@@ -83,7 +95,20 @@ export enum PermissionCategoryEnum {
     SOCIAL_SETTINGS = 'SOCIAL_SETTINGS',
     SOCIAL_AUDIT = 'SOCIAL_AUDIT',
     /** Third-party integrations (e.g. MercadoLibre OAuth) (HOS-45 / SPEC-278). */
-    INTEGRATION = 'INTEGRATION'
+    INTEGRATION = 'INTEGRATION',
+    /**
+     * Redirectable QR codes (HOS-981).
+     *
+     * Declared even though `FEATURE_FLAG_MANAGE` — the value these permissions
+     * are modelled on — has no category of its own. Category assignment is a
+     * longest-prefix match on the enum KEY with a silent `SYSTEM` fallback, so
+     * without this the four `QR_CODE_*` permissions land in the catch-all and
+     * become near-impossible to find in the admin's categorized picker. That
+     * picker is precisely how an operator would delegate the QR manager to
+     * somebody without granting them settings wholesale, which is the reason
+     * the family exists at all.
+     */
+    QR_CODE = 'QR_CODE'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -853,6 +878,7 @@ export enum PermissionEnum {
     BILLING_PROMO_CODE_MANAGE = 'billing.promoCode.manage', // Allows creating, updating, and deleting promo codes.
     BILLING_METRICS_READ = 'billing.metrics.read', // Allows viewing billing metrics and analytics.
     BILLING_MANAGE = 'billing.manage', // Allows managing billing records (expire, activate add-ons, etc.).
+    BILLING_RECONCILIATION_MANAGE = 'billing.reconciliation.manage', // Allows using the orphan-payment rescue tool (HOS-765): reading the MercadoPago<->local divergence report, force-linking a preapproval to a local subscription, and backfilling a billing_payments row for a charge that already settled. Deliberately NOT folded into BILLING_MANAGE: those two verbs write MONEY into the ledger and bind a real payer's charge to a subscription, so the gate that opens them is its own, auditable grant. SUPER_ADMIN-only.
 
     // REVALIDATION: Permissions related to on-demand ISR revalidation management
     REVALIDATION_TRIGGER = 'revalidation.trigger', // Allows triggering on-demand revalidation of cached pages.
@@ -924,6 +950,41 @@ export enum PermissionEnum {
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
 
+    // REDIRECTABLE QR CODES (HOS-981): the Plataforma → Códigos QR manager.
+    //
+    // ## Why a family of its own rather than the borrowed SETTINGS_MANAGE
+    //
+    // PR 1 leaned on `SETTINGS_MANAGE` because no route existed yet, and a
+    // permission with nothing behind it is a `role_permission` row nobody can
+    // explain later. Six routes exist now, and the borrowed gate has a concrete
+    // cost: handing the QR manager to somebody in marketing means also handing
+    // them SEO defaults, system tags and everything else `SETTINGS_MANAGE`
+    // opens. These four are what make that delegation possible without it.
+    //
+    // ## Spelling
+    //
+    // `platform.qrCode.*`, following `platform.featureFlag.manage` directly
+    // above — same area of the panel, same shape. Note that
+    // `permission-naming-convention.guard.test.ts` freezes 13 values whose
+    // `first.second` segments merge into an EXISTING family prefix
+    // (`event.organizer.*` shadowing `eventOrganizer.*`). `platform.qrCode.*`
+    // merges to `platformqrcode`, which is nobody's family prefix, so it does
+    // not join that list — exactly like the feature-flag value above.
+    //
+    // ## Four verbs, not one `manage`
+    //
+    // The read half is what a marketing or content person needs to find a
+    // printed code and download its image, and it is worth being able to grant
+    // that WITHOUT the ability to repoint every sticker in the province.
+    // `view` covers list, detail AND download: a download renders an existing
+    // row and writes nothing. There is no `hardDelete` because the delete route
+    // is soft-only by construction — the slug stays reserved forever (it is
+    // already printed) and the recorded scans stay attached to it.
+    QR_CODE_VIEW = 'platform.qrCode.view', // Allows listing, viewing and downloading redirectable QR codes (HOS-981).
+    QR_CODE_CREATE = 'platform.qrCode.create', // Allows creating a redirectable QR code (HOS-981).
+    QR_CODE_UPDATE = 'platform.qrCode.update', // Allows editing a QR code — above all its target URL, which is the entity's whole purpose (HOS-981).
+    QR_CODE_DELETE = 'platform.qrCode.delete', // Allows soft-deleting a QR code (HOS-981). No hard delete exists: the slug is already printed.
+
     // MODERATION: Content auto-moderation permissions (SPEC-195)
     MODERATION_TERM_VIEW = 'moderation.term.view', // Allows viewing moderation terms and the term list.
     MODERATION_TERM_CREATE = 'moderation.term.create', // Allows creating a new moderation term (word or domain).
@@ -959,6 +1020,56 @@ export enum PermissionEnum {
     // third segment here would add a fourteenth dual-spelled family to the
     // baseline frozen by `permission-naming-convention.guard.test.ts`.
     COMMERCE_MODERATION_CHANGE = 'commerce.moderationChange', // Allows changing the moderation state of a commerce LISTING (gastronomy/experience).
+
+    // GASTRONOMY / EXPERIENCE: the per-vertical split of the `commerce.*` family (HOS-1077).
+    //
+    // ## Why these exist
+    //
+    // `commerce.*` names TWO product verticals at once, so it is impossible to
+    // grant edit rights over gastronomy without also granting them over
+    // experiences: a restaurant moderator moderates excursions, by construction.
+    // Accommodation never had that problem — it is one vertical with its own
+    // family. These 14 give gastronomy and experience the same vocabulary.
+    //
+    // ## Deliberate shape: 7 each, NOT 64 each
+    //
+    // This is a SPLIT of the seven, not an alignment with accommodation's 64.
+    // Roughly 14 of accommodation's 64 are per-SECTION listing permissions
+    // (`amenities.edit`, `basicInfo.edit`, `faqs.edit`, `gallery.manage`, …)
+    // that SPEC-253 D2=b deliberately collapsed into the single
+    // `COMMERCE_EDIT_OWN` — re-creating them here would revert that decision.
+    // Others correspond to functionality commerce does not have
+    // (`occupancy.manage`, `iaContent.approve`, `location.exact.view`), and a
+    // permission no route ever demands is dead letter.
+    //
+    // ## Spelling
+    //
+    // Two segments, camelCase second segment — identical to the `commerce.*`
+    // family they mirror, and for the same reason: a dotted third segment would
+    // add a dual-spelled family to the baseline frozen by
+    // `permission-naming-convention.guard.test.ts`.
+    //
+    // ## Migration state (HOS-1077 release 1 = EXPAND)
+    //
+    // These coexist with `commerce.*`. Every gate reads BOTH (the vertical value
+    // OR the legacy one), so nobody loses access while live `role_permission`
+    // rows are backfilled. Release 2 (contract) removes the `commerce.*` seven,
+    // the `COMMERCE_OWNER` role and the dual-read.
+    GASTRONOMY_EDIT_OWN = 'gastronomy.editOwn', // Allows a GASTRONOMY_OWNER to edit their own gastronomy listing.
+    GASTRONOMY_CREATE = 'gastronomy.create', // Allows creating a new gastronomy listing.
+    GASTRONOMY_VIEW_ALL = 'gastronomy.viewAll', // Allows viewing all gastronomy listings (including private/draft).
+    GASTRONOMY_EDIT_ALL = 'gastronomy.editAll', // Allows editing any gastronomy listing regardless of ownership.
+    GASTRONOMY_DELETE = 'gastronomy.delete', // Allows soft-deleting any gastronomy listing.
+    GASTRONOMY_MODERATE_REVIEW = 'gastronomy.moderateReview', // Allows moderating reviews written ABOUT a gastronomy listing.
+    GASTRONOMY_MODERATION_CHANGE = 'gastronomy.moderationChange', // Allows changing the moderation state of a gastronomy LISTING.
+
+    EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
+    EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.
+    EXPERIENCE_VIEW_ALL = 'experience.viewAll', // Allows viewing all experience listings (including private/draft).
+    EXPERIENCE_EDIT_ALL = 'experience.editAll', // Allows editing any experience listing regardless of ownership.
+    EXPERIENCE_DELETE = 'experience.delete', // Allows soft-deleting any experience listing.
+    EXPERIENCE_MODERATE_REVIEW = 'experience.moderateReview', // Allows moderating reviews written ABOUT an experience listing.
+    EXPERIENCE_MODERATION_CHANGE = 'experience.moderationChange', // Allows changing the moderation state of an experience LISTING.
 
     // PARTNER: Partners program (SPEC-271)
     PARTNER_CREATE = 'partner.create', // Allows creating a new partner.

@@ -1942,3 +1942,20 @@ HOS-589 carries `status-needs-smoke-staging` and, because issues 4, 5 and 9 touc
 the billing core, `status-needs-smoke-prod`. Neither may be removed, and the
 issue may not be marked Done, until the corresponding sections of the staging and
 prod smoke checklists are signed off.
+
+---
+
+## Addendum (2026-09-05) — `isCommerceSubscription` no longer exists
+
+Two statements in the body above have expired, and the body is deliberately left
+as written — it records what was decided at the time.
+
+This spec describes `isCommerceSubscription` in the present tense, as "the only"
+union-of-verticals predicate and as fail-closed. **HOS-1081 (`ebfd413e0`,
+2026-09-02) deleted it**, along with its `COMMERCE_DOMAINS` backing constant, for
+having zero callers outside its own file and tests. Both descriptions were
+accurate when written.
+
+A caller that needs the union today calls `subscriptionMatchesDomain()` once per
+domain. `isAccommodationSubscription()` is NOT a substitute: it answers a
+different question and, unlike every other domain, fails OPEN.

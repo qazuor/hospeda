@@ -324,6 +324,39 @@ describe('T-008: adminGetPlanRoute handler', () => {
         // Act + Assert
         await expect(handler({}, { id: '00000000-0000-0000-0000-000000000099' })).rejects.toThrow();
     });
+
+    it('HOS-1186: still returns an UNLISTED plan in full — this is the admin door', async () => {
+        // Arrange: the protected tier now answers 404 for a plan marked
+        // `publicListing: 'unlisted'` (a negotiated price), for every actor
+        // including an admin — see `test/routes/billing/protected-plan-by-id.test.ts`.
+        // THIS endpoint is where an operator sees those plans, so withholding here
+        // would hide from them exactly the plans they administer. The pair of tests
+        // is the whole invariant: withheld at the user tier, whole at the admin one.
+        const config = findRouteCall(mockCreateAdminRoute, 'get', '/{id}');
+        const handler = config?.handler as (c: unknown, params: unknown) => Promise<unknown>;
+
+        const unlistedPlan = {
+            ...SAMPLE_PLAN,
+            id: '22222222-2222-4222-8222-222222222222',
+            slug: 'partner-municipalidad-cdu',
+            publicListing: 'unlisted' as const,
+            monthlyPriceArs: 4_200_000
+        };
+        mockPlanGetById.mockResolvedValue({ success: true, data: unlistedPlan });
+
+        // Act
+        const result = await handler({}, { id: unlistedPlan.id });
+
+        // Assert — the mark and the negotiated amount both reach the operator.
+        expect(result).toEqual(
+            expect.objectContaining({
+                id: unlistedPlan.id,
+                slug: 'partner-municipalidad-cdu',
+                publicListing: 'unlisted',
+                monthlyPriceArs: 4_200_000
+            })
+        );
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -359,6 +392,7 @@ describe('T-009: adminCreatePlanRoute handler', () => {
         name: 'Nuevo Plan',
         description: 'Desc',
         category: 'owner' as const,
+        productDomain: 'accommodation' as const,
         monthlyPriceArs: 100000,
         annualPriceArs: null,
         monthlyPriceUsdRef: 1,
@@ -392,6 +426,36 @@ describe('T-009: adminCreatePlanRoute handler', () => {
             expect.objectContaining({ slug: 'owner-nuevo' }),
             expect.objectContaining({ actorId: 'actor-00000000-0000-0000-0000-000000000001' })
         );
+    });
+
+    it("HOS-1233: forwards the body's productDomain instead of deriving it from category", async () => {
+        // The route enumerates every field by hand, so the realistic defect is
+        // not "it forgot the field" but "it computed one". A domain derived
+        // from `category` is right for accommodation and tourist and WRONG for
+        // all three commerce verticals, which share the `owner` category — so
+        // the case that catches it is a gastronomy plan sold to an owner.
+        const config = findRouteCall(mockCreateAdminRoute, 'post', '/');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanCreate.mockResolvedValue({ success: true, data: SAMPLE_PLAN });
+
+        await handler(
+            createMockContext(),
+            {},
+            {
+                ...createInput,
+                slug: 'gastronomy-basico',
+                category: 'owner' as const,
+                productDomain: 'gastronomy' as const
+            }
+        );
+
+        const [passedInput] = mockPlanCreate.mock.calls[0] as [{ productDomain?: unknown }];
+        expect(passedInput.productDomain).toBe('gastronomy');
     });
 
     it('should call auditLog on successful create', async () => {

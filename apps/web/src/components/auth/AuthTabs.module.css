@@ -1,0 +1,105 @@
+/* AuthTabs.module.css — Scoped styles for the unified sign-in/sign-up island. */
+
+.authTabs {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.heading {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-h3);
+    font-weight: 600;
+    color: var(--core-foreground);
+    text-align: center;
+}
+
+.error {
+    padding: 0.75rem;
+    border-radius: var(--radius-button);
+    background-color: var(--destructive-a10);
+    color: var(--destructive);
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+}
+
+.tablist {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem;
+    border-radius: var(--radius-button);
+    border: 1px solid var(--border);
+    background-color: var(--muted);
+}
+
+.tab {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    /*
+     * Transparent border, not `none`: the selected tab paints this border in
+     * the brand colour, and reserving the 1px here keeps the strip from
+     * shifting by a pixel on every switch.
+     */
+    border: 1px solid transparent;
+    border-radius: var(--radius-button);
+    background-color: transparent;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition:
+        background-color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
+}
+
+.tab:hover:not([aria-selected="true"]) {
+    background-color: var(--brand-primary-a05);
+    color: var(--core-foreground);
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/*
+ * The selected tab is marked by BORDER and TEXT colour, not by background
+ * lightness. The surface tokens are nearly identical on both themes — light
+ * has --muted at oklch(0.95) against --core-card at oklch(1), a 5% gap; dark
+ * has 0.255 against 0.275, a 2% one — so a white-pill-on-grey-strip treatment
+ * reads as washed out and all but vanishes in dark mode. --brand-primary is
+ * theme-aware and carries chroma, which survives both.
+ */
+.tab[aria-selected="true"] {
+    background-color: var(--core-card);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    box-shadow: var(--shadow-card);
+}
+
+/*
+ * Reserve the taller tab's height so switching tabs does not jolt the page.
+ *
+ * The sign-up form is one field taller than sign-in (the password
+ * confirmation). Measured in the browser at 480px, 360px and 320px card
+ * widths: sign-in 215px, sign-up 302px, an 87px delta that stays constant
+ * because none of the labels wrap at any of those widths. Spanish is the
+ * longest of the three locales, so it sets the ceiling.
+ *
+ * 19rem ≈ 304px at the default root size, and rem rather than px so the
+ * reservation scales with the user's text size the same way the content does.
+ * Re-measure if a field is added to either form.
+ *
+ * Content stays top-aligned rather than centred, so the fields the two forms
+ * share (email, password) sit at the same vertical position on both tabs and
+ * do not drift when switching.
+ */
+.tabpanel {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: 19rem;
+}

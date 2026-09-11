@@ -43,13 +43,16 @@
 import { describe, expect, it } from 'vitest';
 import accountEn from '../src/locales/en/account.json';
 import adminEn from '../src/locales/en/admin-pages.json';
+import partnersEn from '../src/locales/en/partners.json';
 import accountEs from '../src/locales/es/account.json';
 import adminEs from '../src/locales/es/admin-pages.json';
+import partnersEs from '../src/locales/es/partners.json';
 import accountPt from '../src/locales/pt/account.json';
 import adminPt from '../src/locales/pt/admin-pages.json';
+import partnersPt from '../src/locales/pt/partners.json';
 
 /**
- * Every partner-mentions copy subtree, across both surfaces and all locales.
+ * Every partner-mentions copy subtree, across every surface and all locales.
  *
  * Adding a locale or a surface means adding a row here. That is deliberate: an
  * auto-discovering version would silently cover nothing if a namespace were
@@ -65,7 +68,19 @@ const SUBTREES: ReadonlyArray<{
     { label: 'pt admin-pages.partnerMentions', tree: adminPt.partnerMentions },
     { label: 'es account.partnerMentions', tree: accountEs.partnerMentions },
     { label: 'en account.partnerMentions', tree: accountEn.partnerMentions },
-    { label: 'pt account.partnerMentions', tree: accountPt.partnerMentions }
+    { label: 'pt account.partnerMentions', tree: accountPt.partnerMentions },
+    // HOS-985 — the partner SALES page (`/planes/aliados/`), added because it
+    // makes the same promise to a wider audience: it names the mentions log as
+    // a reason to become a partner, and it is read by prospects rather than by
+    // partners who already signed. The whole `landing` subtree is covered, not
+    // just the two strings that speak about the log today, for the same reason
+    // the subtrees above are: a key added tomorrow has to be covered the moment
+    // it is added. Anyone who needs one of these words in a future CTA is
+    // welcome to restructure — the failure will say exactly which string and
+    // which word, which is the conversation worth having before shipping it.
+    { label: 'es partners.landing', tree: partnersEs.landing },
+    { label: 'en partners.landing', tree: partnersEn.landing },
+    { label: 'pt partners.landing', tree: partnersPt.landing }
 ];
 
 /**
@@ -143,10 +158,12 @@ describe('HOS-377 AC-3 — the mentions log never speaks of metrics', () => {
         });
     }
 
-    it('covers every locale of both surfaces', () => {
+    it('covers every locale of every surface', () => {
         // A subtree that went missing (renamed namespace, dropped locale) would
         // otherwise make this suite pass by checking nothing.
-        expect(SUBTREES).toHaveLength(6);
+        // Three surfaces × three locales: admin, the partner's own dashboard,
+        // and the public sales page (HOS-985).
+        expect(SUBTREES).toHaveLength(9);
         for (const { label, tree } of SUBTREES) {
             expect(tree, `${label} is missing — the guard would check nothing`).toBeDefined();
             expect(collectStrings(tree).length, `${label} has no strings`).toBeGreaterThan(0);

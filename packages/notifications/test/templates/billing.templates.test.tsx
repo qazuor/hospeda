@@ -10,6 +10,7 @@
  * @module test/templates/billing.templates.test
  */
 
+import { asMajor } from '@repo/billing';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
@@ -35,9 +36,11 @@ import {
 
 describe('Billing Email Templates', () => {
     describe('PaymentSuccess', () => {
+        // `amount` is MAJOR units (pesos), matching `PaymentNotificationPayload`'s
+        // only producer, `sendPaymentSuccessNotification` — see HOS-839.
         const validProps: PaymentSuccessProps = {
             recipientName: 'Juan Pérez',
-            amount: 10000, // $100.00 ARS
+            amount: asMajor(100), // $100,00 ARS
             currency: 'ARS',
             planName: 'Plan Standard',
             baseUrl: 'https://hospeda.com.ar',
@@ -94,7 +97,7 @@ describe('Billing Email Templates', () => {
             // Arrange
             const props: PaymentSuccessProps = {
                 ...validProps,
-                amount: 150050, // $1,500.50
+                amount: asMajor(1500.5), // $1.500,50
                 currency: 'ARS'
             };
 
@@ -109,7 +112,7 @@ describe('Billing Email Templates', () => {
             // Arrange
             const props: PaymentSuccessProps = {
                 ...validProps,
-                amount: 5000, // USD 50.00
+                amount: asMajor(50), // USD 50.00
                 currency: 'USD'
             };
 
@@ -128,12 +131,33 @@ describe('Billing Email Templates', () => {
             expect(html).toContain('Ver recibo');
             expect(html).toContain('/es/mi-cuenta/suscripcion');
         });
+
+        it('renders the exact pesos amount without dividing by 100 (regression, HOS-839)', () => {
+            // Arrange — a four-figure charge is where the /100 bug hid: a
+            // two-figure amount reads plausibly under both the correct value
+            // and the amount/100 bug, which is exactly how this went
+            // unnoticed until an annual-plan-sized charge exposed it.
+            const props: PaymentSuccessProps = {
+                ...validProps,
+                amount: asMajor(5000), // $5.000 pesos
+                currency: 'ARS'
+            };
+
+            // Act
+            const html = renderToStaticMarkup(PaymentSuccess(props));
+
+            // Assert — must read the real charge, not amount / 100
+            expect(html).toContain('$5.000,00');
+            expect(html).not.toContain('$50,00');
+        });
     });
 
     describe('PaymentFailure', () => {
+        // `amount` is MAJOR units (pesos), matching `PaymentNotificationPayload`'s
+        // only producer, `sendPaymentFailureNotifications` — see HOS-839.
         const validProps: PaymentFailureProps = {
             recipientName: 'María González',
-            amount: 15000,
+            amount: asMajor(150), // $150,00 ARS
             currency: 'ARS',
             baseUrl: 'https://hospeda.com.ar',
             failureReason: 'Fondos insuficientes'
@@ -189,6 +213,25 @@ describe('Billing Email Templates', () => {
 
             // Assert
             expect(render).not.toThrow();
+        });
+
+        it('renders the exact pesos amount without dividing by 100 (regression, HOS-839)', () => {
+            // Arrange — a four-figure charge is where the /100 bug hid: a
+            // two-figure amount reads plausibly under both the correct value
+            // and the amount/100 bug, which is exactly how this went
+            // unnoticed until an annual-plan-sized charge exposed it.
+            const props: PaymentFailureProps = {
+                ...validProps,
+                amount: asMajor(5000), // $5.000 pesos
+                currency: 'ARS'
+            };
+
+            // Act
+            const html = renderToStaticMarkup(PaymentFailure(props));
+
+            // Assert — must read the real charge, not amount / 100
+            expect(html).toContain('$5.000,00');
+            expect(html).not.toContain('$50,00');
         });
     });
 
@@ -247,6 +290,62 @@ describe('Billing Email Templates', () => {
             // Assert
             // Renewal reminders are REMINDER category, so should have unsubscribe
             expect(html).toContain('preferencias');
+        });
+
+        describe('productDomain footer (HOS-1283)', () => {
+            // Regression: RENEWAL_REMINDER fires for an active subscription in
+            // ANY of the five business verticals (`notification-schedule.job.ts`
+            // does not scope its sweep to accommodation), so a gastronomy
+            // renewal used to close with "gracias por confiar en Hospeda para
+            // tus necesidades de alojamiento turístico" — the same defect the
+            // trial series had.
+            it('defaults to the accommodation sentence when productDomain is omitted', () => {
+                const html = renderToStaticMarkup(RenewalReminder(validProps));
+                expect(html).toContain('tus necesidades de alojamiento turístico');
+            });
+
+            it('names the local for a gastronomy renewal, never alojamiento', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'gastronomy' })
+                );
+                expect(html).toContain('tu local gastronómico');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('names the experience for an experience renewal', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'experience' })
+                );
+                expect(html).toContain('tu experiencia turística');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('has its own line for a tourist plan renewal', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'tourist' })
+                );
+                expect(html).toContain('tus próximos viajes');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('has its own line for a partner renewal', () => {
+                const html = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'partner' })
+                );
+                expect(html).toContain('tu alianza comercial');
+                expect(html).not.toContain('alojamiento turístico');
+            });
+
+            it('fails open to the accommodation sentence for null or an unrecognized value', () => {
+                const nullDomain = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: null })
+                );
+                const unrecognized = renderToStaticMarkup(
+                    RenewalReminder({ ...validProps, productDomain: 'addon' })
+                );
+                expect(nullDomain).toContain('tus necesidades de alojamiento turístico');
+                expect(unrecognized).toContain('tus necesidades de alojamiento turístico');
+            });
         });
     });
 

@@ -67,6 +67,7 @@ import {
 } from '../../lib/billing/checkout-poll-schedule';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 import styles from './CheckoutStatusPoller.module.css';
 
 // ---------------------------------------------------------------------------
@@ -250,6 +251,18 @@ export function CheckoutStatusPoller({
                     // Network/transient error calling link-preapproval — non-fatal,
                     // fall through to the normal poll (same treatment as a 422).
                 }
+            } else {
+                // HOS-276 follow-up: the Tier-1 link is skipped silently when
+                // either half is missing, and the two halves fail for opposite
+                // reasons — a missing `preapprovalId` means MercadoPago returned
+                // nothing usable, a missing `localId` means this browser lost the
+                // stashed id (cleared storage, different device). Staging showed
+                // the skip happening on every checkout with no way to tell which,
+                // so it had to be established by elimination. Say which.
+                webLogger.warn('checkout return: skipped the Tier-1 link', {
+                    hasPreapprovalId: preapprovalId !== null,
+                    hasLocalId: localId !== null
+                });
             }
             if (cancelled) {
                 return;

@@ -5,7 +5,7 @@
  *
  * Both domain link tables encode only the ENTITY → SUBSCRIPTION direction and
  * are UPSERTED on a per-entity unique key
- * (`commerce_listing_subscriptions` UNIQUE `(entity_type, entity_id)`,
+ * (`entity_subscriptions` UNIQUE `(entity_type, entity_id)`,
  * `partner_subscriptions` UNIQUE `partner_id`). Path C creates one
  * `pending_provider` subscription per checkout CLICK rather than per payment,
  * so a second click silently overwrites the only pointer to the first
@@ -85,7 +85,30 @@ export async function readSubscriptionDomainMetadata(input: {
         .where(eq(billingSubscriptions.id, input.subscriptionId))
         .limit(1);
 
-    const metadata = rows[0]?.metadata;
+    return parseSubscriptionDomainMetadata(rows[0]?.metadata);
+}
+
+/**
+ * The pure half of {@link readSubscriptionDomainMetadata}: parses the same
+ * coordinates out of a `billing_subscriptions.metadata` value the caller
+ * ALREADY holds, with no database round-trip of its own.
+ *
+ * HOS-1287 extracted it because both mint-a-fresh-preapproval flows
+ * (`preapproval-recovery.service.ts`'s retry and
+ * `past-due-payment-method-replacement.service.ts`'s card swap) read the
+ * source row through their own injectable Drizzle client — one they must not
+ * bypass with this module's `getDb()` — and both already carry the row's
+ * `metadata` in memory by the time they need the coordinates.
+ *
+ * @param metadata - A `billing_subscriptions.metadata` value (JSONB, so
+ *   `unknown` rather than a typed record).
+ * @returns The coordinates found, or `null` when the value is not an object
+ *   or carries none of them (the accommodation/tourist path, and every
+ *   subscription created before this stamping existed).
+ */
+export function parseSubscriptionDomainMetadata(
+    metadata: unknown
+): SubscriptionDomainMetadata | null {
     if (!metadata || typeof metadata !== 'object') {
         return null;
     }

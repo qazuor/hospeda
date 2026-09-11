@@ -1557,6 +1557,14 @@ export class PostService extends BaseCrudService<
      * on each transition impossible to sidestep by bundling a second state
      * change into the same payload.
      *
+     * `maskForeignRow` defaults to `false`, preserving the pre-HOS-1037 shape
+     * for `setPublishState`/`setLifecycleState`: only `moderate()` opts in, so
+     * a trusted editor probing a post they do not own gets 404 (HOS-706's
+     * `maskForeignRowRefusal`) instead of a 403 that would confirm the id is
+     * real. A refusal aimed at the actor's OWN post (they hold no
+     * `POST_PUBLISH_OWN`, or requested a non-`APPROVED` verdict) stays 403 —
+     * they already know the row exists.
+     *
      * @param input - actor, post id, the patch to apply, and the authorization check
      * @param methodName - name reported to the service logger
      * @param ctx - optional service context for transaction propagation
@@ -1567,11 +1575,12 @@ export class PostService extends BaseCrudService<
             readonly id: string;
             readonly patch: Partial<Post>;
             readonly authorize: (actor: Actor, post: Post) => void;
+            readonly maskForeignRow?: boolean;
         },
         methodName: string,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<Post>> {
-        const { actor, id, patch, authorize } = input;
+        const { actor, id, patch, authorize, maskForeignRow = false } = input;
         return this.runWithLoggingAndValidation({
             methodName,
             input: { actor, id },
@@ -1586,7 +1595,16 @@ export class PostService extends BaseCrudService<
                     );
                 }
 
-                authorize(validatedActor, existing as Post);
+                if (maskForeignRow) {
+                    await this._assertWritePermission({
+                        actor: validatedActor,
+                        entity: existing as Post,
+                        entityName: this.entityName,
+                        check: authorize
+                    });
+                } else {
+                    authorize(validatedActor, existing as Post);
+                }
 
                 const updated = await this.model.update(
                     { id: validated.id },
@@ -1623,12 +1641,16 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Applies the platform's moderation verdict to a post.
+     * Applies a moderation verdict to a post.
      *
-     * Gated by `POST_MODERATION_CHANGE`, which finally gates something. Touches
-     * `moderationState` and nothing else — the author's `visibility` switch is
-     * deliberately untouched, so approving does not publish and rejecting does
-     * not unpublish (HOS-374 §7.6.1).
+     * Gated by `checkCanModeratePost`, which accepts either `POST_MODERATION_CHANGE`
+     * (any post, any verdict — the admin queue) or, since HOS-1037, authorship
+     * plus `POST_PUBLISH_OWN` when the requested verdict is `APPROVED` (the
+     * trusted-editor self-approve path). Touches `moderationState` and nothing
+     * else — the author's `visibility` switch is deliberately untouched, so
+     * approving does not publish and rejecting does not unpublish (HOS-374
+     * §7.6.1). `maskForeignRow: true` so a caller probing someone else's post
+     * gets 404, never a 403 that would confirm the id is real.
      *
      * @param input - actor, post id, and the new moderation state
      * @param ctx - optional service context for transaction propagation
@@ -1643,7 +1665,9 @@ export class PostService extends BaseCrudService<
                 actor: input.actor,
                 id: input.id,
                 patch: { moderationState: input.moderationState },
-                authorize: (actor) => checkCanModeratePost(actor)
+                authorize: (actor, post) =>
+                    checkCanModeratePost(actor, post, input.moderationState),
+                maskForeignRow: true
             },
             'moderate',
             ctx

@@ -34,13 +34,15 @@
  * @see SPEC-197 §4.2
  */
 
-import type { AccommodationModel } from '@repo/db';
+import type { AccommodationModel, ExperienceModel, GastronomyModel } from '@repo/db';
 import {
     AccommodationModel as AccommodationModelClass,
     type AdminSummaryTotalsRow,
     type DailySeriesRow,
     type EntityViewModel,
+    ExperienceModel as ExperienceModelClass,
     entityViewModel,
+    GastronomyModel as GastronomyModelClass,
     type HostDailySeriesRow
 } from '@repo/db';
 import {
@@ -54,6 +56,7 @@ import {
     ServiceErrorCode,
     type TrackableEntityType
 } from '@repo/schemas';
+import { getLocalDayWindow } from '@repo/utils';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceOutput } from '../../types/index.js';
@@ -223,6 +226,23 @@ const GetDailySeriesForHostAccommodationsSchema = z.object({
     window: EntityViewWindowSchema
 });
 
+/**
+ * Input schema for {@link EntityViewService.getStatsForOwnCommerceListings}
+ * and {@link EntityViewService.getDailySeriesForOwnCommerceListings} (HOS-734).
+ *
+ * Only `entityType` (GASTRONOMY or EXPERIENCE) and `window` are accepted —
+ * `actor.id` resolves owned listing IDs internally, mirroring
+ * {@link GetStatsForHostAccommodationsSchema}'s anti-peeking design.
+ */
+const GetStatsForOwnCommerceListingsSchema = z.object({
+    /** Commerce vertical to aggregate. Only GASTRONOMY and EXPERIENCE are allowed. */
+    entityType: z.enum([EntityTypeEnum.GASTRONOMY, EntityTypeEnum.EXPERIENCE] as const, {
+        message: 'zodError.entityView.commerceStats.entityType.invalid'
+    }),
+    /** Rolling window. Defaults to '30d' when omitted from query params. */
+    window: EntityViewWindowSchema
+});
+
 // ---------------------------------------------------------------------------
 // Public input/output types
 // ---------------------------------------------------------------------------
@@ -356,6 +376,29 @@ export interface GetDailySeriesForHostAccommodationsInput {
 }
 
 /**
+ * Input for {@link EntityViewService.getStatsForOwnCommerceListings} and
+ * {@link EntityViewService.getDailySeriesForOwnCommerceListings} (HOS-734).
+ *
+ * The actor's own listing IDs are resolved internally (via
+ * `GastronomyModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
+ * accepted, preventing cross-owner peeking. There is no dedicated
+ * `PermissionEnum` for gastronomy/experience "own listing" access (unlike
+ * accommodation's `ACCOMMODATION_VIEW_OWN`) — ownership scoping alone is the
+ * gate here, matching the existing convention of
+ * `protectedListMyGastronomyRoute` (`GastronomyService.listOwn`). The
+ * `view_basic_stats` entitlement gate lives at the route layer instead
+ * (`commerceVerticalEntitlementMiddleware` + `requireEntitlement`).
+ */
+export interface GetStatsForOwnCommerceListingsInput {
+    /** Authenticated actor performing the request. */
+    readonly actor: Actor;
+    /** Commerce vertical to aggregate: GASTRONOMY or EXPERIENCE. */
+    readonly entityType: EntityTypeEnum.GASTRONOMY | EntityTypeEnum.EXPERIENCE;
+    /** Rolling window for the aggregation ('7d' or '30d'). */
+    readonly window: EntityViewWindow;
+}
+
+/**
  * The daily-series output item produced by
  * {@link EntityViewService.getDailySeriesForHostAccommodations}.
  *
@@ -395,11 +438,17 @@ export class EntityViewService extends BaseService {
     private readonly modelOverride: EntityViewModel | undefined;
     private readonly accommodationModelOverride: AccommodationModel | undefined;
     private accommodationModelLazy: AccommodationModel | undefined;
+    private readonly gastronomyModelOverride: GastronomyModel | undefined;
+    private gastronomyModelLazy: GastronomyModel | undefined;
+    private readonly experienceModelOverride: ExperienceModel | undefined;
+    private experienceModelLazy: ExperienceModel | undefined;
 
     constructor(
         ctx: ServiceConfig,
         model?: EntityViewModel,
-        accommodationModel?: AccommodationModel
+        accommodationModel?: AccommodationModel,
+        gastronomyModel?: GastronomyModel,
+        experienceModel?: ExperienceModel
     ) {
         super(ctx, EntityViewService.ENTITY_NAME);
         // IMPORTANT: do NOT dereference @repo/db exports here. The singleton
@@ -409,6 +458,8 @@ export class EntityViewService extends BaseService {
         // to undefined exports). Resolution is deferred to the lazy getters.
         this.modelOverride = model;
         this.accommodationModelOverride = accommodationModel;
+        this.gastronomyModelOverride = gastronomyModel;
+        this.experienceModelOverride = experienceModel;
     }
 
     /**
@@ -430,6 +481,44 @@ export class EntityViewService extends BaseService {
                 this.accommodationModelOverride ?? new AccommodationModelClass();
         }
         return this.accommodationModelLazy;
+    }
+
+    /**
+     * Lazily resolves the gastronomy model used for owner ownership lookups
+     * (HOS-734). Instantiated once on first use (or the injected override) —
+     * mirrors {@link accommodationModel}.
+     */
+    private get gastronomyModel(): GastronomyModel {
+        if (!this.gastronomyModelLazy) {
+            this.gastronomyModelLazy = this.gastronomyModelOverride ?? new GastronomyModelClass();
+        }
+        return this.gastronomyModelLazy;
+    }
+
+    /**
+     * Lazily resolves the experience model used for owner ownership lookups
+     * (HOS-734). Instantiated once on first use (or the injected override) —
+     * mirrors {@link accommodationModel}.
+     */
+    private get experienceModel(): ExperienceModel {
+        if (!this.experienceModelLazy) {
+            this.experienceModelLazy = this.experienceModelOverride ?? new ExperienceModelClass();
+        }
+        return this.experienceModelLazy;
+    }
+
+    /**
+     * Resolves the commerce listing model for a given vertical (HOS-734).
+     * Single dispatch point so `getStatsForOwnCommerceListings` and
+     * `getDailySeriesForOwnCommerceListings` share the same lookup instead of
+     * each re-deriving the GASTRONOMY/EXPERIENCE branch.
+     */
+    private commerceListingModelFor(
+        entityType: EntityTypeEnum.GASTRONOMY | EntityTypeEnum.EXPERIENCE
+    ): GastronomyModel | ExperienceModel {
+        return entityType === EntityTypeEnum.GASTRONOMY
+            ? this.gastronomyModel
+            : this.experienceModel;
     }
 
     /**
@@ -943,6 +1032,99 @@ export class EntityViewService extends BaseService {
             }
         });
     }
+
+    // -------------------------------------------------------------------------
+    // HOS-734: commerce vertical aggregation methods (GASTRONOMY / EXPERIENCE)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns view-count statistics for every gastronomy or experience listing
+     * owned by the actor (SPEC-159's "basic stats" extended to commerce —
+     * HOS-734).
+     *
+     * **Ownership, not a `PermissionEnum`:** unlike
+     * `getStatsForHostAccommodations`, there is no gastronomy/experience "view
+     * own" permission — `actor.id` resolving owned IDs IS the security
+     * boundary, matching `protectedListMyGastronomyRoute`'s existing
+     * convention. The `view_basic_stats` entitlement gate is enforced at the
+     * route layer (`commerceVerticalEntitlementMiddleware` +
+     * `requireEntitlement`), not here.
+     *
+     * **Zero-view normalization:** DB omits entities with no rows in the window;
+     * this method adds them back as `{ unique: 0, total: 0 }`.
+     *
+     * @param input - Actor + commerce vertical (GASTRONOMY/EXPERIENCE) + rolling window.
+     * @returns One `EntityViewStats` entry per owned listing.
+     */
+    public async getStatsForOwnCommerceListings(
+        input: GetStatsForOwnCommerceListingsInput
+    ): Promise<ServiceOutput<EntityViewStats[]>> {
+        const { actor, ...params } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'getStatsForOwnCommerceListings',
+            input: { actor, ...params },
+            schema: GetStatsForOwnCommerceListingsSchema,
+            execute: async (validated, validatedActor) => {
+                const ownedIds = await this.commerceListingModelFor(
+                    validated.entityType
+                ).findIdsByOwnerId(validatedActor.id);
+
+                if (ownedIds.length === 0) {
+                    return [];
+                }
+
+                const windowDays = WINDOW_DAYS[validated.window];
+                const modelStats = await this.model.getStatsForEntities({
+                    entityType: validated.entityType,
+                    entityIds: ownedIds,
+                    windowDays
+                });
+
+                return normalizeStats(ownedIds, modelStats);
+            }
+        });
+    }
+
+    /**
+     * Returns a gap-filled daily view-count series for every gastronomy or
+     * experience listing owned by the actor (HOS-734). Mirrors
+     * {@link getDailySeriesForHostAccommodations}.
+     *
+     * See {@link getStatsForOwnCommerceListings} for the ownership/entitlement
+     * split rationale — identical here.
+     *
+     * @param input - Actor + commerce vertical (GASTRONOMY/EXPERIENCE) + rolling window.
+     * @returns Gap-filled array of exactly `windowDays` items ordered by date ASC.
+     */
+    public async getDailySeriesForOwnCommerceListings(
+        input: GetStatsForOwnCommerceListingsInput
+    ): Promise<ServiceOutput<HostViewDailySeriesOutputItem[]>> {
+        const { actor, ...params } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'getDailySeriesForOwnCommerceListings',
+            input: { actor, ...params },
+            schema: GetStatsForOwnCommerceListingsSchema,
+            execute: async (validated, validatedActor) => {
+                const windowDays = WINDOW_DAYS[validated.window];
+                const ownedIds = await this.commerceListingModelFor(
+                    validated.entityType
+                ).findIdsByOwnerId(validatedActor.id);
+
+                // Zero-listing owner: return a fully gap-filled all-zero series
+                // without making any model call for view data.
+                if (ownedIds.length === 0) {
+                    return gapFillHostDailySeries([], windowDays);
+                }
+
+                const modelRows = await this.model.getDailySeriesForEntityIds({
+                    windowDays,
+                    entityIds: ownedIds
+                });
+
+                return gapFillHostDailySeries(modelRows, windowDays);
+            }
+        });
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -993,12 +1175,16 @@ function normalizeAdminSummary(
 
 /**
  * Gap-fills a daily series result so that every (date, entityType) combination
- * in the last `windowDays` calendar days (UTC) has an entry.
+ * in the last `windowDays` LOCAL calendar days (`MARKET_TIMEZONE`) has an
+ * entry.
  *
- * The date range is generated in UTC to match the `DATE_TRUNC('day', viewed_at)`
- * bucketing used by the model SQL query. "Today" is the current UTC date; the
- * range includes `windowDays` dates: from `today - (windowDays - 1) days` through
- * `today` inclusive (so a 30-day window yields exactly 30 distinct dates).
+ * The date range is generated via {@link getLocalDayWindow} to match the
+ * `DATE_TRUNC('day', viewed_at AT TIME ZONE MARKET_TIMEZONE)` bucketing used
+ * by the model SQL query (HOS-1169 — both sides MUST derive "today" and "N
+ * days ago" from the same helper, or the fill produces gaps/duplicates).
+ * "Today" is the current local date; the range includes `windowDays` dates:
+ * from `today - (windowDays - 1) days` through `today` inclusive (so a
+ * 30-day window yields exactly 30 distinct dates).
  *
  * Missing (date, entityType) pairs are emitted as `{ date, entityType, total: 0 }`.
  *
@@ -1016,23 +1202,11 @@ function gapFillDailySeries(
         modelRows.map((r) => [`${r.date}|${r.entityType}`, r])
     );
 
-    // Generate the date list in UTC. Today = UTC midnight of the current day.
-    // The window is [today - (windowDays - 1) days .. today] inclusive.
-    const nowUtc = new Date();
-    const todayUtc = new Date(
-        Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-    );
+    const { dates } = getLocalDayWindow({ windowDays });
 
     const result: DailySeriesRow[] = [];
 
-    for (let dayOffset = windowDays - 1; dayOffset >= 0; dayOffset--) {
-        const dayMs = todayUtc.getTime() - dayOffset * 24 * 60 * 60 * 1000;
-        const d = new Date(dayMs);
-        const year = d.getUTCFullYear();
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
+    for (const dateStr of dates) {
         for (const entityType of TRACKABLE_ENTITY_TYPES) {
             const key = `${dateStr}|${entityType}`;
             result.push(rowMap.get(key) ?? { date: dateStr, entityType, total: 0 });
@@ -1043,11 +1217,13 @@ function gapFillDailySeries(
 }
 
 /**
- * Gap-fills a per-host daily series result so that every calendar day in the
- * last `windowDays` days (UTC) has an entry, even if no views were recorded.
+ * Gap-fills a per-host daily series result so that every LOCAL calendar day
+ * (`MARKET_TIMEZONE`) in the last `windowDays` days has an entry, even if no
+ * views were recorded.
  *
- * The date range is generated in UTC to match the `DATE_TRUNC('day', viewed_at)`
- * bucketing used by the model SQL query. "Today" is the current UTC date; the
+ * The date range is generated via {@link getLocalDayWindow} to match the
+ * `DATE_TRUNC('day', viewed_at AT TIME ZONE MARKET_TIMEZONE)` bucketing used
+ * by the model SQL query (HOS-1169). "Today" is the current local date; the
  * range includes `windowDays` dates: from `today - (windowDays - 1)` through
  * `today` inclusive.
  *
@@ -1064,21 +1240,11 @@ function gapFillHostDailySeries(
     // Build a lookup keyed by 'YYYY-MM-DD' for O(1) access.
     const rowMap = new Map<string, number>(modelRows.map((r) => [r.date, r.total]));
 
-    const nowUtc = new Date();
-    const todayUtc = new Date(
-        Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
-    );
+    const { dates } = getLocalDayWindow({ windowDays });
 
     const result: HostViewDailySeriesOutputItem[] = [];
 
-    for (let dayOffset = windowDays - 1; dayOffset >= 0; dayOffset--) {
-        const dayMs = todayUtc.getTime() - dayOffset * 24 * 60 * 60 * 1000;
-        const d = new Date(dayMs);
-        const year = d.getUTCFullYear();
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
+    for (const dateStr of dates) {
         result.push({ date: dateStr, total: rowMap.get(dateStr) ?? 0 });
     }
 

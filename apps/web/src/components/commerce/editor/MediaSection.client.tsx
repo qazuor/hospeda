@@ -35,9 +35,11 @@
  * photo removal orphaned its asset regardless of this call.
  */
 
-import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
 import { getGalleryCap, type Image } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
+import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
+import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
 import { type CommerceMediaRow, commerceMediaApi } from '@/lib/api/endpoints-protected';
 import type { ApiError } from '@/lib/api/types';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
@@ -45,17 +47,18 @@ import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import type { MediaAttribution } from '@/lib/media';
+import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
 import fieldStyles from './editor-fields.module.css';
 import styles from './MediaSection.module.css';
-
-/** Translator function shape (matches the editor's `createTranslations().t`). */
-type Translate = (
-    key: string,
-    fallback?: string,
-    params?: Record<string, string | number>
-) => string;
+import {
+    buildMediaCompressionUnsupportedTooLargeMessage,
+    type Translate,
+    validateMediaFileSize,
+    validateMediaFileType
+} from './media-section-helpers';
 
 /**
  * Display item used by this component's local state. Extends the DB row's
@@ -66,8 +69,16 @@ interface CommerceMediaItem {
     readonly id: string;
     readonly url: string;
     readonly publicId?: string;
-    readonly caption?: string;
-    readonly alt?: string;
+    readonly caption: string | undefined;
+    /**
+     * Longer photo description. Added by HOS-1036 alongside `attribution`:
+     * both columns existed on the media tables from HOS-372 and were simply
+     * never read here, because nothing in this section could write them.
+     */
+    readonly description: string | undefined;
+    readonly alt: string | undefined;
+    /** Photo credit, when the owner declared one. */
+    readonly attribution: MediaAttribution | undefined;
     readonly isFeatured: boolean;
 }
 
@@ -89,9 +100,6 @@ export interface MediaSectionProps {
      */
     readonly initialGallery?: readonly Image[];
 }
-
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_SIZE_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
 
 /**
  * Thrown when the upload exceeds its client-side budget.
@@ -116,7 +124,9 @@ function rowToItem(row: CommerceMediaRow): CommerceMediaItem {
         url: row.url,
         publicId: row.publicId ?? undefined,
         caption: row.caption ?? undefined,
+        description: row.description ?? undefined,
         alt: row.alt ?? undefined,
+        attribution: row.attribution ?? undefined,
         isFeatured: row.isFeatured
     };
 }
@@ -133,7 +143,9 @@ function legacyToDisplay(img: Image, isFeatured: boolean): CommerceMediaItem {
         url: img.url,
         publicId: img.publicId ?? undefined,
         caption: img.caption ?? undefined,
+        description: img.description ?? undefined,
         alt: img.alt ?? undefined,
+        attribution: img.attribution ?? undefined,
         isFeatured
     };
 }
@@ -288,6 +300,11 @@ export function MediaSection({
 
     const [isHydrated, setIsHydrated] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    /**
+     * Whether a selected file is currently being resized/recompressed
+     * client-side (HOS-332), BEFORE the upload itself starts.
+     */
+    const [isCompressing, setIsCompressing] = useState(false);
     /** "Uploading photo X of Y" marker for a multi-file gallery batch (HOS-832). */
     const [uploadBatch, setUploadBatch] = useState<{
         readonly current: number;
@@ -337,27 +354,6 @@ export function MediaSection({
         };
     }, [vertical, listingId]);
 
-    /** Validate a selected file; returns a localized error message or null. */
-    const validateFile = useCallback(
-        (file: File): string | null => {
-            if (!ALLOWED_TYPES.includes(file.type)) {
-                return t(
-                    'commerce.owner.editor.media.invalidType',
-                    'Solo se permiten archivos JPG, PNG o WebP'
-                );
-            }
-            if (file.size > MAX_SIZE_BYTES) {
-                return t(
-                    'commerce.owner.editor.media.tooLarge',
-                    'El archivo no puede superar {{maxSize}}MB',
-                    { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                );
-            }
-            return null;
-        },
-        [t]
-    );
-
     /**
      * Report a failure both inline (existing behavior) and via the global
      * toast store, mirroring PhotoSection's BETA-144 behavior.
@@ -382,16 +378,36 @@ export function MediaSection({
             if (!file) {
                 return;
             }
-            const validationError = validateFile(file);
-            if (validationError) {
-                reportError(validationError);
+            const typeError = validateMediaFileType(file, t);
+            if (typeError) {
+                reportError(typeError);
                 return;
             }
             setError(null);
+
+            // HOS-332: resize/recompress before the size cap is checked, so a
+            // heavy original that shrinks under the cap is accepted. Any
+            // failure to compress (unsupported format, no canvas support)
+            // falls back to the original file — never blocks the upload.
+            setIsCompressing(true);
+            const compression = await compressImageForUpload({ file });
+            setIsCompressing(false);
+
+            const uploadFile = compression.file;
+            const sizeError = validateMediaFileSize(uploadFile, t);
+            if (sizeError) {
+                reportError(
+                    isCompressionUnavailable(compression)
+                        ? buildMediaCompressionUnsupportedTooLargeMessage(t)
+                        : sizeError
+                );
+                return;
+            }
+
             setIsUploading(true);
             try {
                 const uploaded = await uploadEntityImage({
-                    file,
+                    file: uploadFile,
                     vertical,
                     listingId,
                     role: 'featured'
@@ -447,7 +463,7 @@ export function MediaSection({
                 }
             }
         },
-        [validateFile, vertical, listingId, featuredItem, t, reportError]
+        [vertical, listingId, featuredItem, t, reportError]
     );
 
     /**
@@ -518,18 +534,41 @@ export function MediaSection({
             }
 
             for (const file of files) {
-                const validationError = validateFile(file);
-                if (validationError) {
-                    reportError(validationError);
+                const typeError = validateMediaFileType(file, t);
+                if (typeError) {
+                    reportError(typeError);
                     return;
                 }
             }
 
             setError(null);
+
+            // HOS-332: resize/recompress the whole batch BEFORE checking the
+            // size cap, so a heavy original that shrinks under the cap is
+            // accepted — mirrors `handleFeaturedSelect`. Run concurrently
+            // since compression is CPU-bound (decode + canvas draw), not I/O.
+            setIsCompressing(true);
+            const compressions = await Promise.all(
+                files.map((file) => compressImageForUpload({ file }))
+            );
+            setIsCompressing(false);
+
+            for (const compression of compressions) {
+                const sizeError = validateMediaFileSize(compression.file, t);
+                if (sizeError) {
+                    reportError(
+                        isCompressionUnavailable(compression)
+                            ? buildMediaCompressionUnsupportedTooLargeMessage(t)
+                            : sizeError
+                    );
+                    return;
+                }
+            }
+
             setIsUploading(true);
 
-            for (let index = 0; index < files.length; index += 1) {
-                const file = files[index];
+            for (let index = 0; index < compressions.length; index += 1) {
+                const file = compressions[index]?.file;
                 if (!file) {
                     continue;
                 }
@@ -581,16 +620,7 @@ export function MediaSection({
                 galleryInputRef.current.value = '';
             }
         },
-        [
-            galleryItems.length,
-            validateFile,
-            vertical,
-            listingId,
-            t,
-            reportError,
-            galleryCap,
-            tPlural
-        ]
+        [galleryItems.length, vertical, listingId, t, reportError, galleryCap, tPlural]
     );
 
     /**
@@ -621,7 +651,62 @@ export function MediaSection({
         [vertical, listingId, t, reportError]
     );
 
-    const anyOpInFlight = isUploading || opLoading;
+    /**
+     * Persist a photo's text metadata (alt / caption / description / credit).
+     *
+     * Immediate and per-photo like every other op here: `updateMedia` PATCHes
+     * only this row, and the listing editor's Save button never carries photo
+     * data. A blank field arrives as `null` (clear) rather than `''` — see
+     * `buildPhotoMetadataUpdateBody`, which is what the panel builds the body
+     * with.
+     *
+     * On success the row is replaced in local state so re-opening the panel
+     * shows the CURRENT values rather than the ones it mounted with.
+     *
+     * @returns `true` when the PATCH succeeded — the panel shows its saved
+     *   badge only then.
+     */
+    const handleUpdateText = useCallback(
+        async (item: CommerceMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
+            // An SSR placeholder carries `id: ''` and has no row to patch yet.
+            if (!item.id) {
+                return false;
+            }
+            setError(null);
+            setOpLoading(true);
+
+            const result = await commerceMediaApi.updateMedia({
+                vertical,
+                id: listingId,
+                mediaId: item.id,
+                body
+            });
+
+            setOpLoading(false);
+
+            if (!result.ok) {
+                reportError(
+                    result.error.message ??
+                        t(
+                            'commerce.owner.editor.media.metadataSaveFailed',
+                            'No se pudieron guardar los datos de la foto'
+                        )
+                );
+                return false;
+            }
+
+            const updated = rowToItem(result.data.media);
+            if (updated.isFeatured) {
+                setFeaturedItem(updated);
+            } else {
+                setGalleryItems((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
+            }
+            return true;
+        },
+        [vertical, listingId, t, reportError]
+    );
+
+    const anyOpInFlight = isUploading || isCompressing || opLoading;
     // Ops require hydrated DB ids; SSR placeholders (id='') cannot be operated on
     const opsReady = isHydrated;
 
@@ -639,27 +724,49 @@ export function MediaSection({
                         {t('commerce.owner.editor.media.featured', 'Imagen principal')}
                     </span>
                     {featuredItem ? (
-                        <div className={`${styles.mediaThumb} ${styles.mediaThumbFeatured}`}>
-                            <img
-                                src={featuredItem.url}
-                                alt={t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                                className={styles.mediaImage}
+                        <div className={styles.mediaItem}>
+                            <div className={`${styles.mediaThumb} ${styles.mediaThumbFeatured}`}>
+                                <img
+                                    src={featuredItem.url}
+                                    alt={
+                                        featuredItem.alt ??
+                                        t(
+                                            'commerce.owner.editor.media.featured',
+                                            'Imagen principal'
+                                        )
+                                    }
+                                    className={styles.mediaImage}
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.mediaRemove}
+                                    aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
+                                    disabled={anyOpInFlight || !opsReady || !featuredItem.id}
+                                    onClick={handleFeaturedRemove}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <PhotoMetadataEditor
+                                locale={locale}
+                                item={featuredItem}
+                                disabled={anyOpInFlight || !opsReady}
+                                toggleAriaLabel={t(
+                                    'host.properties.editor.photo.editFeaturedDetailsAria',
+                                    'Editar textos de la portada'
+                                )}
+                                closeAriaLabel={t(
+                                    'host.properties.editor.photo.closeFeaturedDetailsAria',
+                                    'Cerrar edición de textos de la portada'
+                                )}
+                                onSave={handleUpdateText}
                             />
-                            <button
-                                type="button"
-                                className={styles.mediaRemove}
-                                aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                                disabled={anyOpInFlight || !opsReady || !featuredItem.id}
-                                onClick={handleFeaturedRemove}
-                            >
-                                ×
-                            </button>
                         </div>
                     ) : (
                         <button
                             type="button"
                             className={`${styles.mediaAdd} ${styles.mediaAddFeatured}`}
-                            disabled={isUploading}
+                            disabled={isUploading || isCompressing}
                             onClick={() => featuredInputRef.current?.click()}
                         >
                             {t('commerce.owner.editor.media.add', 'Agregar foto')}
@@ -668,7 +775,7 @@ export function MediaSection({
                     <input
                         ref={featuredInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp"
+                        accept="image/jpeg,image/png,image/webp,image/heic"
                         aria-label={t('commerce.owner.editor.media.featured', 'Imagen principal')}
                         className={styles.mediaFileInput}
                         onChange={handleFeaturedSelect}
@@ -680,35 +787,60 @@ export function MediaSection({
                         {t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
                     </span>
                     <div className={styles.mediaGallery}>
-                        {galleryItems.map((image) => (
+                        {galleryItems.map((image, index) => (
                             <div
                                 key={image.id || image.url}
-                                className={styles.mediaThumb}
+                                className={styles.mediaItem}
                             >
-                                <img
-                                    src={image.url}
-                                    alt={t(
-                                        'commerce.owner.editor.media.gallery',
-                                        'Galería de fotos'
+                                <div className={styles.mediaThumb}>
+                                    <img
+                                        src={image.url}
+                                        alt={
+                                            image.alt ??
+                                            t(
+                                                'commerce.owner.editor.media.gallery',
+                                                'Galería de fotos'
+                                            )
+                                        }
+                                        className={styles.mediaImage}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={styles.mediaRemove}
+                                        aria-label={t(
+                                            'commerce.owner.editor.media.remove',
+                                            'Eliminar'
+                                        )}
+                                        disabled={anyOpInFlight || !opsReady || !image.id}
+                                        onClick={() => handleGalleryRemove(image)}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                                <PhotoMetadataEditor
+                                    locale={locale}
+                                    item={image}
+                                    disabled={anyOpInFlight || !opsReady}
+                                    compactLayout={true}
+                                    toggleAriaLabel={t(
+                                        'host.properties.editor.photo.editDetailsAria',
+                                        'Editar textos de la foto {{index}}',
+                                        { index: index + 1 }
                                     )}
-                                    className={styles.mediaImage}
+                                    closeAriaLabel={t(
+                                        'host.properties.editor.photo.closeDetailsAria',
+                                        'Cerrar edición de textos de la foto {{index}}',
+                                        { index: index + 1 }
+                                    )}
+                                    onSave={handleUpdateText}
                                 />
-                                <button
-                                    type="button"
-                                    className={styles.mediaRemove}
-                                    aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                                    disabled={anyOpInFlight || !opsReady || !image.id}
-                                    onClick={() => handleGalleryRemove(image)}
-                                >
-                                    ×
-                                </button>
                             </div>
                         ))}
                         {!isGalleryFull && (
                             <button
                                 type="button"
                                 className={styles.mediaAdd}
-                                disabled={isUploading}
+                                disabled={isUploading || isCompressing}
                                 aria-label={t('commerce.owner.editor.media.add', 'Agregar foto')}
                                 onClick={() => galleryInputRef.current?.click()}
                             >
@@ -719,7 +851,7 @@ export function MediaSection({
                     <input
                         ref={galleryInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp"
+                        accept="image/jpeg,image/png,image/webp,image/heic"
                         multiple={remainingGallerySlots > 1}
                         aria-label={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
                         className={styles.mediaFileInput}
@@ -728,10 +860,18 @@ export function MediaSection({
                     <span className={styles.mediaHint}>
                         {t(
                             'commerce.owner.editor.media.uploadHint',
-                            'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                            'JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB',
                             { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                         )}
                     </span>
+                    {isCompressing && (
+                        <p className={styles.mediaUploadBatchStatus}>
+                            {t(
+                                'commerce.owner.editor.media.processingImage',
+                                'Optimizando imagen…'
+                            )}
+                        </p>
+                    )}
                     {isUploading && uploadBatch && uploadBatch.total > 1 && (
                         <p className={styles.mediaUploadBatchStatus}>
                             {t(

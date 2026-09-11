@@ -14,9 +14,14 @@
  *  - experience `priceFrom` REJECTS `null` (T-021) and must omit the key
  *    entirely when cleared; `priceUnit` no longer does — H-156 made the column
  *    nullable, so it clears to an explicit `null` like the gastronomy fields;
- *  - `contactInfo`/`socialNetworks`/the four i18n fields are replaced WHOLESALE,
- *    so the payload must carry the untouched members too — the JSONB block is
- *    overwritten server-side, not merged;
+ *  - `socialNetworks` and the four i18n fields are replaced WHOLESALE, so the
+ *    payload must carry the untouched members too — the block is overwritten
+ *    server-side, not merged;
+ *  - `contactInfo` also ships whole, but it is MERGED server-side since
+ *    HOS-1190 (`GastronomyModel`/`ExperienceModel` declare it in
+ *    `mergeableJsonbColumns`), so the contract that matters there is the
+ *    opposite one: an emptied member must travel as an explicit `null`,
+ *    because an omitted key now means "keep the stored value";
  *  - `media` is never sent at all since HOS-372: photos are persisted per
  *    operation by `MediaSection` against the relational media endpoints.
  *
@@ -29,25 +34,18 @@ import { ExperiencePriceUnitEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
+import type { CommerceI18nValues } from '../../../src/components/commerce/CommerceTranslationPanel.client';
+import type { CommerceEditorFormSectionId } from '../../../src/components/commerce/editor/commerce-section-payload';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
 
-const { I18N_INITIAL, I18N_EDITED } = vi.hoisted(() => {
-    const blank = () => ({ es: '', en: '', pt: '' });
-    return {
-        I18N_INITIAL: {
-            nameI18n: blank(),
-            summaryI18n: blank(),
-            descriptionI18n: blank(),
-            richDescriptionI18n: blank()
-        },
-        I18N_EDITED: {
-            nameI18n: { es: 'Nombre ES', en: 'Name EN', pt: '' },
-            summaryI18n: { es: 'Resumen ES', en: '', pt: '' },
-            descriptionI18n: { es: 'Descripción ES', en: '', pt: '' },
-            richDescriptionI18n: { es: 'Ampliada ES', en: '', pt: '' }
-        }
-    };
-});
+const { I18N_EDITED } = vi.hoisted(() => ({
+    I18N_EDITED: {
+        nameI18n: { es: 'Nombre ES', en: 'Name EN', pt: '' },
+        summaryI18n: { es: 'Resumen ES', en: '', pt: '' },
+        descriptionI18n: { es: 'Descripción ES', en: '', pt: '' },
+        richDescriptionI18n: { es: 'Ampliada ES', en: '', pt: '' }
+    }
+}));
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
@@ -55,21 +53,87 @@ vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () 
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-// Shallow-stub the translation panel: its own behaviour is covered by
-// CommerceTranslationPanel.test.tsx. Here it only needs to be able to FIRE an
-// i18n change, so the editor's four-keys-at-once payload rule can be asserted.
-vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () => ({
-    CommerceTranslationPanel: ({ onChange }: { onChange: (next: unknown) => void }) => (
-        <button
-            type="button"
-            data-testid="i18n-trigger"
-            onClick={() => onChange(I18N_EDITED)}
-        >
-            i18n
-        </button>
-    ),
-    parseCommerceI18nValues: () => I18N_INITIAL
-}));
+// Shallow-stub the translation panel's UI (its own rendering behaviour,
+// including the ES display fallback, is covered by
+// CommerceTranslationPanel.test.tsx) but keep `parseCommerceI18nValues`
+// REAL — not stubbed. It seeds `initialValues` here exactly as the real panel
+// would receive it (fallback-free, HOS-902), which is what lets these tests
+// assert on the real diff behaviour of `buildPatchPayload` rather than a
+// canned stand-in.
+//
+// Three triggers, each firing `onChange` the way the real panel would from a
+// single field edit:
+//  - `i18n-trigger` replaces the WHOLE i18n state at once (the pre-existing
+//    "every field actually edited" test below).
+//  - `i18n-summary-en-trigger` changes ONLY `summaryI18n.en`, built from
+//    `initialValues` — proves an untouched sibling FIELD never reaches the
+//    wire (HOS-902, field-level).
+//  - `i18n-name-en-trigger` changes ONLY `nameI18n.en`, built from
+//    `initialValues` — proves editing one LOCALE of a field never re-sends a
+//    fabricated value for its untouched `es` locale (HOS-902, locale-level —
+//    the gap the field-level fix alone did not close: `nameI18n` still ships
+//    whole across its three locales since the DB column is replaced, not
+//    merged per locale — see `sameValue`'s JSDoc in
+//    `CommerceListingEditor.client.tsx`).
+vi.mock(
+    '../../../src/components/commerce/CommerceTranslationPanel.client',
+    async (importOriginal) => {
+        const actual =
+            await importOriginal<
+                typeof import('../../../src/components/commerce/CommerceTranslationPanel.client')
+            >();
+        return {
+            ...actual,
+            CommerceTranslationPanel: ({
+                initialValues,
+                onChange
+            }: {
+                initialValues: CommerceI18nValues;
+                onChange: (next: CommerceI18nValues) => void;
+            }) => (
+                <>
+                    <button
+                        type="button"
+                        data-testid="i18n-trigger"
+                        onClick={() => onChange(I18N_EDITED)}
+                    >
+                        i18n
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="i18n-summary-en-trigger"
+                        onClick={() =>
+                            onChange({
+                                ...initialValues,
+                                summaryI18n: {
+                                    ...initialValues.summaryI18n,
+                                    en: 'Nuevo resumen EN'
+                                }
+                            })
+                        }
+                    >
+                        edit summary en only
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="i18n-name-en-trigger"
+                        onClick={() =>
+                            onChange({
+                                ...initialValues,
+                                nameI18n: {
+                                    ...initialValues.nameI18n,
+                                    en: 'The Grill'
+                                }
+                            })
+                        }
+                    >
+                        edit name en only
+                    </button>
+                </>
+            )
+        };
+    }
+);
 
 // HOS-371: `richDescription` is a TipTap editor now. This suite pins PATCH body
 // shapes, so booting a real editor per render would only add runtime — the
@@ -112,7 +176,11 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
-vi.mock('../../../src/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
+vi.mock('../../../src/lib/api/client', () => ({
+    apiClient: {
+        patch: vi.fn()
+    }
+}));
 
 // `MediaSection` hydrates itself from `commerceMediaApi.listMedia` on mount
 // (HOS-372), so the editor cannot render without it stubbed.
@@ -185,13 +253,22 @@ function buildListing(overrides: Record<string, unknown> = {}): CommerceListingD
     } as unknown as CommerceListingDetail;
 }
 
+/**
+ * Renders ONE section of the editor (HOS-1080).
+ *
+ * The section is explicit in every call because it decides both what renders
+ * and which keys the save may carry — a payload assertion made against the
+ * wrong section would pass vacuously with an empty body.
+ */
 function renderEditor(
     vertical: 'gastronomy' | 'experience',
-    initialData: CommerceListingDetail = buildListing()
+    initialData: CommerceListingDetail = buildListing(),
+    sectionId: CommerceEditorFormSectionId = 'basicInfo'
 ) {
     return render(
         <CommerceListingEditor
             vertical={vertical}
+            sectionId={sectionId}
             listingId="abc"
             locale="es"
             initialData={initialData}
@@ -257,7 +334,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('gastronomy price fields clear to null', () => {
         it('sends priceRange as an explicit null when the tier is cleared', async () => {
-            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }));
+            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }), 'price');
 
             const select = screen.getByLabelText('Rango de precios');
             expect(select).toHaveValue('MID');
@@ -271,7 +348,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends menuUrl as an explicit null when the link is cleared', async () => {
-            renderEditor('gastronomy', buildListing({ menuUrl: 'https://old.test/menu' }));
+            renderEditor('gastronomy', buildListing({ menuUrl: 'https://old.test/menu' }), 'price');
 
             const input = screen.getByLabelText('Enlace al menú');
             expect(input).toHaveValue('https://old.test/menu');
@@ -284,7 +361,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends menuUrl as the new value when set', async () => {
-            renderEditor('gastronomy');
+            renderEditor('gastronomy', buildListing(), 'price');
 
             fireEvent.change(screen.getByLabelText('Enlace al menú'), {
                 target: { value: 'https://menu.test/carta' }
@@ -328,7 +405,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
     describe('experience price fields omit the key instead of sending null (T-021)', () => {
         it('omits priceFrom from the wire body when cleared', async () => {
             // HOS-809: 50000 centavos on the row, $ 500 in the field.
-            renderEditor('experience', buildListing({ priceFrom: 50000 }));
+            renderEditor('experience', buildListing({ priceFrom: 50000 }), 'price');
 
             const input = screen.getByLabelText(/Precio desde/);
             expect(input).toHaveValue(500);
@@ -351,7 +428,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         // `priceRange` already did.
         it('sends priceUnit as an explicit null when cleared (H-156)', async () => {
             const seededUnit = Object.values(ExperiencePriceUnitEnum)[0] as string;
-            renderEditor('experience', buildListing({ priceUnit: seededUnit }));
+            renderEditor('experience', buildListing({ priceUnit: seededUnit }), 'price');
 
             const select = screen.getByLabelText('Unidad de precio');
             // Guard against a vacuous pass: the field must genuinely start with a
@@ -367,7 +444,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends priceFrom as centavos for a price typed in pesos (HOS-809)', async () => {
-            renderEditor('experience');
+            renderEditor('experience', buildListing(), 'price');
 
             // The owner types $ 750. The column is centavos, so the wire body
             // must carry 75000 — sending 750 published a $ 7,50 experience.
@@ -383,7 +460,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             // multiplies on save without dividing on load would show 350000 in
             // the field here, and every open-and-save would inflate the stored
             // price by another factor of 100.
-            renderEditor('experience', buildListing({ priceFrom: 350000 }));
+            renderEditor('experience', buildListing({ priceFrom: 350000 }), 'price');
 
             const input = screen.getByLabelText(/Precio desde/);
             expect(input).toHaveValue(3500);
@@ -396,7 +473,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends priceUnit as the selected enum value when set', async () => {
-            renderEditor('experience');
+            renderEditor('experience', buildListing(), 'price');
 
             const select = screen.getByLabelText('Unidad de precio');
             const unit = firstRealOption(select);
@@ -408,7 +485,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends isPriceOnRequest as a boolean when toggled', async () => {
-            renderEditor('experience');
+            renderEditor('experience', buildListing(), 'price');
 
             fireEvent.click(screen.getByLabelText('Precio a consultar'));
             fireEvent.click(saveButton());
@@ -427,7 +504,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                         mobilePhone: '+5491100000000',
                         workEmail: 'dueno@test.com'
                     }
-                })
+                }),
+                'contact'
             );
 
             // HOS-371: the editable control is the local-number input; the
@@ -440,11 +518,44 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            // The server REPLACES the contactInfo JSONB block. Sending only the
-            // changed leaf would wipe workEmail.
-            expect(body.contactInfo).toEqual({
+            // The block travels whole. `toStrictEqual`, not `toEqual`: the
+            // latter treats a key explicitly set to `undefined` as absent,
+            // which is precisely the distinction HOS-1190 turned into a bug
+            // class (an omitted key is now "keep the stored value").
+            expect(body.contactInfo).toStrictEqual({
                 mobilePhone: '+54 91199999999',
                 workEmail: 'dueno@test.com'
+            });
+        });
+
+        it('sends an emptied contact field as an explicit null, never by omitting the key', async () => {
+            // HOS-1190 regression: `contactInfo` is a MERGED JSONB column now,
+            // so expressing the clear by omission (the old `nonEmpty` mapping to
+            // `undefined`) made an emptied field silently un-saveable — the
+            // request succeeded and the stale value stayed on the row.
+            renderEditor(
+                'gastronomy',
+                buildListing({
+                    contactInfo: {
+                        mobilePhone: '+5491100000000',
+                        workEmail: 'dueno@test.com'
+                    }
+                }),
+                'contact'
+            );
+
+            fireEvent.change(screen.getByLabelText('Email'), { target: { value: '' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            // `wireBody` is a JSON round-trip, so an `undefined` member would
+            // have vanished from the body entirely — this assertion is what
+            // separates "cleared" from "not part of the patch".
+            expect(body.contactInfo).toStrictEqual({
+                // Untouched, so it travels verbatim (the phone field only
+                // recomposes `"<dialCode> <number>"` when it is edited).
+                mobilePhone: '+5491100000000',
+                workEmail: null
             });
         });
 
@@ -456,7 +567,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                         facebook: 'https://facebook.com/old',
                         instagram: 'https://instagram.com/keepme'
                     }
-                })
+                }),
+                'contact'
             );
 
             fireEvent.change(screen.getByLabelText('facebook'), {
@@ -471,8 +583,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             });
         });
 
-        it('sends all four i18n fields together when any locale is edited', async () => {
-            renderEditor('gastronomy');
+        it('sends all four i18n fields together when EVERY one of them was actually edited', async () => {
+            renderEditor('gastronomy', buildListing(), 'translations');
 
             fireEvent.click(screen.getByTestId('i18n-trigger'));
             fireEvent.click(saveButton());
@@ -483,6 +595,96 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                 summaryI18n: I18N_EDITED.summaryI18n,
                 descriptionI18n: I18N_EDITED.descriptionI18n,
                 richDescriptionI18n: I18N_EDITED.richDescriptionI18n
+            });
+        });
+
+        // HOS-902, field-level: editing one FIELD must not re-send its untouched
+        // siblings at all. `nameI18n`/`descriptionI18n`/`richDescriptionI18n`
+        // must be entirely ABSENT from the payload when only `summaryI18n`
+        // changed — not merely unchanged in value, but not sent.
+        it('does not send an untouched i18n field when only a sibling field changed (HOS-902)', async () => {
+            renderEditor(
+                'gastronomy',
+                buildListing({ name: 'La Parrilla Original' }),
+                'translations'
+            );
+
+            fireEvent.click(screen.getByTestId('i18n-summary-en-trigger'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toStrictEqual({
+                summaryI18n: { es: '', en: 'Nuevo resumen EN', pt: '' }
+            });
+            expect(body).not.toHaveProperty('nameI18n');
+            expect(body).not.toHaveProperty('descriptionI18n');
+            expect(body).not.toHaveProperty('richDescriptionI18n');
+        });
+
+        // Same, `experience` vertical (HOS-902 scope explicitly covers both —
+        // `CommerceListingEditor` serves gastronomy and experience through the
+        // same `buildPatchPayload`/i18n code path, which is vertical-agnostic;
+        // the price/practical-info branches are the only ones that fork on
+        // `vertical`).
+        it('does not send an untouched i18n field for the experience vertical either (HOS-902)', async () => {
+            renderEditor('experience', buildListing({ name: 'Paseo Original' }), 'translations');
+
+            fireEvent.click(screen.getByTestId('i18n-summary-en-trigger'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toStrictEqual({
+                summaryI18n: { es: '', en: 'Nuevo resumen EN', pt: '' }
+            });
+            expect(body).not.toHaveProperty('nameI18n');
+            expect(body).not.toHaveProperty('descriptionI18n');
+            expect(body).not.toHaveProperty('richDescriptionI18n');
+        });
+
+        // HOS-902, LOCALE-level — the key regression test, and the gap the
+        // field-level fix alone did NOT close.
+        //
+        // `nameI18n` is a single JSONB column, replaced wholesale on save (not
+        // merged per locale — `gastronomy.model.ts`/`experience.model.ts` do
+        // not list it in `mergeableJsonbColumns`, only `contactInfo` is there).
+        // So editing only `nameI18n.en` still sends the WHOLE `nameI18n` object,
+        // `es` included. The listing here has a plain `name` but an EMPTY
+        // `nameI18n` — the ES tab would show "La Parrilla Original" as a
+        // FALLBACK (HOS-902's original fix). If that fallback ever leaked into
+        // `formData`/`baseline` (an earlier version of this fix baked it into
+        // `parseCommerceI18nValues`), this save would silently write "La
+        // Parrilla Original" into `nameI18n.es` — a value the owner never
+        // typed — and the public ficha (which PREFERS `nameI18n` over `name`,
+        // see `apps/web/src/lib/api/transforms.ts`) would freeze on that text
+        // forever, impossible to fix by renaming the plain `name` field again.
+        it('does not leak the ES display fallback into nameI18n.es when only nameI18n.en changed (HOS-902)', async () => {
+            renderEditor(
+                'gastronomy',
+                buildListing({ name: 'La Parrilla Original' }),
+                'translations'
+            );
+
+            fireEvent.click(screen.getByTestId('i18n-name-en-trigger'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            // The whole nameI18n object DOES travel (column replaces wholesale)
+            // — but `es` must be the real stored value (empty), never the
+            // plain-column fallback text.
+            expect(body).toStrictEqual({
+                nameI18n: { es: '', en: 'The Grill', pt: '' }
+            });
+        });
+
+        it('does not leak the ES display fallback for the experience vertical either (HOS-902)', async () => {
+            renderEditor('experience', buildListing({ name: 'Paseo Original' }), 'translations');
+
+            fireEvent.click(screen.getByTestId('i18n-name-en-trigger'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toStrictEqual({
+                nameI18n: { es: '', en: 'The Grill', pt: '' }
             });
         });
     });
@@ -518,13 +720,19 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('never fires the client-side Cloudinary delete', async () => {
-            renderEditor('gastronomy', buildListing({ media: { gallery: [galleryImage] } }));
+            renderEditor(
+                'gastronomy',
+                buildListing({ media: { gallery: [galleryImage] } }),
+                'basicInfo'
+            );
 
-            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
             // Removal goes through `commerceMediaApi.removeMedia`, which deletes
             // the binary server-side. `delete-entity` rejects commerce verticals
-            // with a 400, so any call here is a regression.
+            // with a 400, so any call here is a regression. Since HOS-1080 the
+            // photos live on their own route, which makes the guarantee stronger
+            // rather than weaker: no section but `fotos` can reach media at all.
             expect(mockDeleteMedia).not.toHaveBeenCalled();
+            expect(mockListMedia).not.toHaveBeenCalled();
         });
     });
 
@@ -624,26 +832,51 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             expect(mockPatch).not.toHaveBeenCalled();
         });
 
-        it('carries every dirty group in a single PATCH', async () => {
-            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }));
+        it('carries every dirty field of the section in a single PATCH', async () => {
+            renderEditor('gastronomy');
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Nueva Parrilla' }
             });
-            fireEvent.change(screen.getByLabelText('Número'), {
-                target: { value: '91100000000' }
-            });
-            fireEvent.change(screen.getByLabelText('Rango de precios'), {
-                target: { value: '' }
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Un resumen suficientemente largo para validar.' }
             });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
             expect(body).toEqual({
                 name: 'La Nueva Parrilla',
-                contactInfo: { mobilePhone: '+54 91100000000' },
-                priceRange: null
+                summary: 'Un resumen suficientemente largo para validar.'
             });
+        });
+    });
+
+    describe('section isolation (HOS-1080)', () => {
+        it('renders no foreign control, so a save cannot carry a foreign key', async () => {
+            // The FIRST of the two guarantees behind the split, and the one this
+            // suite can observe: a page that does not render another section's
+            // control cannot produce a diff for it, whatever the form state
+            // holds. Measured deliberately as an absence plus a body, not as a
+            // claim about `restrictPayloadToSection` — removing that call does
+            // NOT make this fail, precisely because the rendering already
+            // prevents the case. The restriction is the second guarantee, and it
+            // is asserted where it can actually be broken:
+            // `editor/commerce-section-payload.test.ts` unit-tests the function
+            // and statically guards that the editor still routes the payload
+            // through it.
+            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }), 'price');
+
+            expect(screen.queryByLabelText('Nombre del comercio')).toBeNull();
+            expect(screen.queryByLabelText('Resumen')).toBeNull();
+            expect(screen.queryByLabelText('Número')).toBeNull();
+
+            fireEvent.change(screen.getByLabelText('Rango de precios'), {
+                target: { value: '' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toEqual({ priceRange: null });
         });
     });
 });

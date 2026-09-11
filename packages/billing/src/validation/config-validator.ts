@@ -5,11 +5,12 @@
  */
 
 import { createLogger } from '@repo/logger';
-import { ALL_ADDONS, ALL_PLANS, DEFAULT_PROMO_CODES } from '../config/index.js';
+import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
+import { ALL_ADDONS, ALL_PLAN_CATALOGS, DEFAULT_PROMO_CODES } from '../config/index.js';
 import type { PromoCodeDefinition } from '../config/promo-codes.config.js';
 import type { AddonDefinition } from '../types/addon.types.js';
 import { EntitlementKey } from '../types/entitlement.types.js';
-import type { PlanCategory, PlanDefinition } from '../types/plan.types.js';
+import type { PlanDefinition } from '../types/plan.types.js';
 
 const logger = createLogger('billing:config-validator');
 
@@ -26,41 +27,48 @@ export interface BillingConfigValidationResult {
 }
 
 /**
- * Plan categories allowed to have zero plans in {@link PlanCategory}, i.e. no
- * "must have exactly one default plan" requirement applies to them.
+ * Product domains whose catalogue legitimately carries NO default plan
+ * (HOS-1290).
  *
- * `'complex'` (HOS-692, spec §6.9): the 3 `complex-*` plans were removed —
- * zero live subscriptions, and the multi-property vertical they were for was
- * never built. This is an explicit, narrow allowlist rather than a blanket
- * "skip any empty category" rule, so an ACCIDENTALLY empty `owner` or
- * `tourist` category (e.g. a broken config load) still fails validation
- * loudly, exactly as it always has.
+ * The commerce verticals (`gastronomy`, `experience`) and `partner` resolve
+ * their sellable/fallback tier through a per-vertical mechanism of their own
+ * (`DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL`, `PARTNER_LISTING_PLAN` staying
+ * active) rather than through `getDefaultPlan(category)` — every plan in
+ * these catalogues declares `isDefault: false` on purpose, via
+ * `commerceVerticalTier()` / the partner plan literals. `accommodation` and
+ * `tourist` are deliberately NOT on this list: each MUST keep exactly one
+ * default plan, same as always — an accidentally-empty default there (e.g. a
+ * broken config load) must still fail loudly.
  */
-const CATEGORIES_ALLOWED_EMPTY: ReadonlySet<PlanCategory> = new Set(['complex']);
+const DOMAINS_ALLOWED_ZERO_DEFAULT: ReadonlySet<ProductDomainValue> = new Set([
+    ProductDomainEnum.GASTRONOMY,
+    ProductDomainEnum.EXPERIENCE,
+    ProductDomainEnum.PARTNER
+]);
 
 /**
- * Validates all plan configurations.
+ * Validates all plan configurations, across every vertical's catalogue.
  * Checks prices, trial days, entitlement references, slugs, defaults, and sort order.
  *
- * @param plans - Array of plan definitions to validate
+ * Grouped by {@link PlanDefinition.productDomain}, not by `PlanCategory`
+ * (HOS-1290): every commerce/partner tier declares `category: 'owner'` only
+ * to satisfy the `PlanCategory` type (which has no commerce member), so
+ * `category` can no longer tell those verticals apart from accommodation —
+ * grouping by it would collide gastronomy/experience/partner's own
+ * `sortOrder: 1/2/3` ladders with accommodation's. `productDomain` can tell
+ * them apart, and every `PlanDefinition` is required to declare it.
+ *
+ * @param plans - Every plan definition to validate, across every catalogue
+ *   (see {@link ALL_PLAN_CATALOGS}).
  * @returns Array of error messages (empty if valid)
  */
-function validatePlans(plans: PlanDefinition[]): string[] {
+function validatePlans(plans: readonly PlanDefinition[]): string[] {
     const errors: string[] = [];
     const slugsSeen = new Set<string>();
-    const categoryCounts: Record<
-        PlanCategory,
-        { planCount: number; defaultCount: number; sortOrders: Set<number> }
-    > = {
-        owner: { planCount: 0, defaultCount: 0, sortOrders: new Set() },
-        // HOS-692 (spec §6.9): the complex-* plans were removed (zero live
-        // subscriptions, vertical never built), so this category is
-        // deliberately empty. `planCount` below is what lets the "must have
-        // exactly one default" check skip a category with no plans instead
-        // of demanding a default plan that no longer exists.
-        complex: { planCount: 0, defaultCount: 0, sortOrders: new Set() },
-        tourist: { planCount: 0, defaultCount: 0, sortOrders: new Set() }
-    };
+    const domainData = new Map<
+        ProductDomainValue,
+        { defaultCount: number; sortOrders: Set<number> }
+    >();
 
     // All valid entitlement keys
     const validEntitlements = new Set(Object.values(EntitlementKey));
@@ -68,7 +76,8 @@ function validatePlans(plans: PlanDefinition[]): string[] {
     for (const plan of plans) {
         const prefix = `Plan "${plan.slug}"`;
 
-        // Check for duplicate slugs
+        // Check for duplicate slugs (global — a slug must be unique across
+        // every catalogue, not merely within its own vertical).
         if (slugsSeen.has(plan.slug)) {
             errors.push(`${prefix}: Duplicate slug found`);
         }
@@ -103,37 +112,42 @@ function validatePlans(plans: PlanDefinition[]): string[] {
             }
         }
 
-        // Track category-specific data
-        const categoryData = categoryCounts[plan.category];
-        categoryData.planCount++;
+        // Track product-domain-specific data. Only domains that actually
+        // appear in `plans` get an entry, so a domain with no plan catalogue
+        // at all (e.g. `addon`, which is a billing mechanism, not a
+        // sellable vertical) never needs an "allowed empty" carve-out.
+        let domainStats = domainData.get(plan.productDomain);
+        if (!domainStats) {
+            domainStats = { defaultCount: 0, sortOrders: new Set() };
+            domainData.set(plan.productDomain, domainStats);
+        }
         if (plan.isDefault) {
-            categoryData.defaultCount++;
+            domainStats.defaultCount++;
         }
 
-        // Check for duplicate sortOrder within category
-        if (categoryData.sortOrders.has(plan.sortOrder)) {
+        // Check for duplicate sortOrder within the same product domain
+        if (domainStats.sortOrders.has(plan.sortOrder)) {
             errors.push(
-                `${prefix}: Duplicate sortOrder ${plan.sortOrder} in category "${plan.category}"`
+                `${prefix}: Duplicate sortOrder ${plan.sortOrder} in product domain "${plan.productDomain}"`
             );
         }
-        categoryData.sortOrders.add(plan.sortOrder);
+        domainStats.sortOrders.add(plan.sortOrder);
     }
 
-    // Check that each category has exactly one default plan — except a
-    // category on the explicit CATEGORIES_ALLOWED_EMPTY allowlist with ZERO
-    // plans, which has nothing to default and is skipped rather than
-    // flagged. Deliberately an allowlist, not a blanket "planCount === 0"
-    // skip: an accidentally empty `owner`/`tourist` category (e.g. a broken
-    // config load) must still fail loudly, the same as it always has.
-    for (const [category, data] of Object.entries(categoryCounts)) {
-        if (data.planCount === 0 && CATEGORIES_ALLOWED_EMPTY.has(category as PlanCategory)) {
-            continue;
-        }
+    // Check that each product domain that appears has exactly one default
+    // plan — except a domain on the explicit DOMAINS_ALLOWED_ZERO_DEFAULT
+    // allowlist, which has no default plan by design (see its doc) and is
+    // skipped rather than flagged for zero. `> 1` is NOT exempted for those
+    // domains: two commerce plans both claiming `isDefault: true` is still a
+    // real config bug.
+    for (const [domain, data] of domainData.entries()) {
         if (data.defaultCount === 0) {
-            errors.push(`Category "${category}": No default plan found`);
+            if (!DOMAINS_ALLOWED_ZERO_DEFAULT.has(domain)) {
+                errors.push(`Product domain "${domain}": No default plan found`);
+            }
         } else if (data.defaultCount > 1) {
             errors.push(
-                `Category "${category}": Multiple default plans found (${data.defaultCount})`
+                `Product domain "${domain}": Multiple default plans found (${data.defaultCount})`
             );
         }
     }
@@ -269,16 +283,23 @@ export function validateBillingConfig(): BillingConfigValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validate plans
-    const planErrors = validatePlans(ALL_PLANS);
+    // Validate plans — across EVERY vertical's catalogue (HOS-1290), not just
+    // `ALL_PLANS` (accommodation + tourist). A commerce/partner plan with a
+    // duplicate slug or a negative price used to start the API without a
+    // complaint; now it fails exactly like an accommodation plan would.
+    const allPlansAcrossDomains = ALL_PLAN_CATALOGS.flat();
+    const planErrors = validatePlans(allPlansAcrossDomains);
     errors.push(...planErrors);
 
     // Validate addons
     const addonErrors = validateAddons(ALL_ADDONS);
     errors.push(...addonErrors);
 
-    // Validate promo codes (needs plan slugs for reference checking)
-    const planSlugs = new Set(ALL_PLANS.map((p) => p.slug));
+    // Validate promo codes (needs plan slugs for reference checking) — also
+    // across every catalogue (HOS-1290): a promo restricted to a commerce
+    // plan used to fail startup outright because the validator only knew
+    // `ALL_PLANS`'s slugs.
+    const planSlugs = new Set(allPlansAcrossDomains.map((p) => p.slug));
     const promoResult = validatePromoCodes(DEFAULT_PROMO_CODES, planSlugs);
     errors.push(...promoResult.errors);
     warnings.push(...promoResult.warnings);

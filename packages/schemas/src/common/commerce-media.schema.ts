@@ -20,8 +20,10 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
  *
  * Mirrors `AccommodationMediaStateSchema`
  * (`packages/schemas/src/entities/accommodation/subtypes/accommodation.media.schema.ts`)
- * by value, but is intentionally a SEPARATE schema instance: the accommodation
- * file is mid-change in another task and must not be imported from here.
+ * by value, but is intentionally a SEPARATE schema instance: commerce
+ * (gastronomy/experience) media is its own domain per ADR-035, and importing
+ * from the accommodation entity file would couple two verticals that must be
+ * able to evolve independently.
  */
 export const CommerceMediaStateSchema = z.enum(['visible', 'archived'], {
     message: 'zodError.common.commerceMedia.state.invalid'
@@ -45,7 +47,7 @@ export type CommerceMediaState = z.infer<typeof CommerceMediaStateSchema>;
  *
  * Field-for-field mirror of `AccommodationMediaSchema`'s row shape (same
  * validation rules), kept as a SEPARATE object (not imported from the
- * accommodation subtype file, which is mid-change in another task):
+ * accommodation subtype file, per the domain-isolation rule in ADR-035):
  * - `attribution` is nullable JSONB, matching the DB column type.
  * - Audit timestamps use `z.coerce.date()` to accept both `Date` and ISO
  *   strings (pg driver may return either).
@@ -148,3 +150,57 @@ export const BaseCommerceMediaSchema = z.object({
 
 /** Type inferred from `BaseCommerceMediaSchema` (row fields, no id/FK). */
 export type BaseCommerceMedia = z.infer<typeof BaseCommerceMediaSchema>;
+
+// ============================================================================
+// Command payload — shared text-metadata PATCH input (HOS-1036)
+// ============================================================================
+
+/**
+ * Shared HTTP payload for `PATCH /<gastronomies|experiences>/:id/media/:mediaId`.
+ *
+ * The commerce twin of `AccommodationMediaUpdatePayloadSchema` (HOS-388) and of
+ * `ContentMediaUpdatePayloadSchema` (`common/content-media.schema.ts`). The
+ * three are field-for-field identical and differ only in the `zodError.*`
+ * namespace their messages carry — same reason the three ROW schemas are
+ * separate copies today (see {@link BaseCommerceMediaSchema}'s JSDoc: collapse
+ * all of them together, payloads included, once that follow-up lands).
+ *
+ * Text metadata ONLY. `url`, `publicId`, `moderationState`, `state`,
+ * `isFeatured`, `sortOrder` and the parent FK are server-controlled and
+ * intentionally absent, so extra keys in the body cannot smuggle them through.
+ *
+ * All four fields are NULLABLE as well as optional: omit to leave unchanged,
+ * `null` to clear, a value to replace.
+ *
+ * NO `.refine()` here on purpose — see the accommodation twin for the Zod 4
+ * `.shape` gotcha. The "at least one field" rule is refined on the per-vertical
+ * service INPUT schemas, via `hasAtLeastOneMediaTextField`.
+ */
+export const CommerceMediaUpdatePayloadSchema = z.object({
+    /** Short display caption (max 100 chars). `null` clears it; omit to leave unchanged. */
+    caption: z
+        .string()
+        .min(3, { message: 'zodError.common.commerceMedia.caption.min' })
+        .max(100, { message: 'zodError.common.commerceMedia.caption.max' })
+        .nullable()
+        .optional(),
+    /** Longer photo description (max 300 chars). `null` clears it; omit to leave unchanged. */
+    description: z
+        .string()
+        .min(10, { message: 'zodError.common.commerceMedia.description.min' })
+        .max(300, { message: 'zodError.common.commerceMedia.description.max' })
+        .nullable()
+        .optional(),
+    /** Accessible alt text (max 200 chars). `null` clears it; omit to leave unchanged. */
+    alt: z
+        .string()
+        .min(1, { message: 'zodError.common.commerceMedia.alt.min' })
+        .max(200, { message: 'zodError.common.commerceMedia.alt.max' })
+        .nullable()
+        .optional(),
+    /** Optional credits/source metadata. `null` clears it; omit to leave unchanged. */
+    attribution: ImageAttributionSchema.nullable().optional()
+});
+
+/** Inferred type for the shared commerce text-metadata PATCH payload. */
+export type CommerceMediaUpdatePayload = z.infer<typeof CommerceMediaUpdatePayloadSchema>;

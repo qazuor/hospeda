@@ -22,7 +22,7 @@
  * the guard only ensures nobody skips that step.
  */
 
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -134,5 +134,42 @@ describe('static sitemap page classification', () => {
         const home = STATIC_SITEMAP_PAGES.find((page) => page.path === '/');
 
         expect(home?.priority).toBe(1.0);
+    });
+
+    /**
+     * HOS-985 — a page turned into a redirect has to leave the CSP verifier too,
+     * and that is a fifth list nothing pointed at.
+     *
+     * `scripts/verify-csp-over-the-wire.mjs` asserts that a set of routes emits
+     * the `content-security-policy` header, and it fetches them with
+     * `redirect: 'manual'`. So a path that becomes a 301 arrives as a bodiless
+     * redirect with no header and fails — but only in the `CSP Headers` job,
+     * which needs a full build and a booted server, and whose annotation reads
+     * `Process completed with exit code 1` and names nothing.
+     *
+     * The contradiction is decidable here, instantly, because `transactional` in
+     * the exclusion map above already means "a redirect or a payment-return
+     * target, never a landing page". Retiring `/suscriptores/propietarios/` hit
+     * this exact failure; the point of the assertion is that the NEXT retirement
+     * is told which file to edit instead of being handed an opaque exit code.
+     */
+    it('never asks the CSP verifier to check a redirect-only path', () => {
+        const verifierSource = readFileSync(
+            resolve(__dirname, '../../../scripts/verify-csp-over-the-wire.mjs'),
+            'utf8'
+        );
+
+        const redirectOnly = Object.entries(NON_SITEMAP_STATIC_PAGES)
+            .filter(([, reason]) => reason === 'transactional')
+            .map(([path]) => path)
+            // The verifier writes locale-prefixed paths, since middleware
+            // enforces the locale and the trailing slash before anything else.
+            .filter((path) => verifierSource.includes(`'/es${path}'`));
+
+        expect(
+            redirectOnly,
+            'These paths are classified as redirects but MUST_HAVE_CSP still lists them; ' +
+                'a 301 carries no CSP header, so scripts/verify-csp-over-the-wire.mjs will fail.'
+        ).toEqual([]);
     });
 });

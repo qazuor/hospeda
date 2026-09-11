@@ -637,3 +637,188 @@ describe('ExperienceRestoreInputSchema', () => {
         expect(result.success).toBe(false);
     });
 });
+
+// ============================================================================
+// HOS-1048 — the owner writes the meeting point
+// ============================================================================
+
+/**
+ * The write side of the meeting point.
+ *
+ * The owner is the only person who knows where their group gathers, so the
+ * field has to be on the OWNER update schema — not just on the admin one. These
+ * parse the real `ExperienceOwnerUpdateInputSchema`, which is the exact schema
+ * `PATCH /api/v1/protected/experiences/:id` validates its body against; a field
+ * missing there is silently stripped and the PATCH still answers 200.
+ */
+describe('ExperienceOwnerUpdateInputSchema — meeting point (HOS-1048)', () => {
+    const MEETING_POINT = 'Muelle 3 del puerto, frente a la caseta azul';
+
+    it('should accept a meeting point with its coordinates', () => {
+        // Arrange
+        const input = {
+            meetingPoint: MEETING_POINT,
+            meetingPointLat: -32.4825,
+            meetingPointLong: -58.2333
+        };
+
+        // Act
+        const result = ExperienceOwnerUpdateInputSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPoint).toBe(MEETING_POINT);
+            expect(result.data.meetingPointLat).toBe(-32.4825);
+            expect(result.data.meetingPointLong).toBe(-58.2333);
+        }
+    });
+
+    it('should accept the text alone, with no coordinates', () => {
+        // A landmark the owner never pinned is a complete answer.
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            meetingPoint: MEETING_POINT
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPointLat).toBeUndefined();
+        }
+    });
+
+    it('should accept an explicit null, which is how the editor CLEARS the field', () => {
+        // The editor sends `null` rather than omitting the key, because an
+        // omitted key means "no change" and would leave the stale meeting point
+        // on the row — the bug H-156 had to fix for `priceUnit`.
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            meetingPoint: null,
+            meetingPointLat: null,
+            meetingPointLong: null
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPoint).toBeNull();
+            expect(result.data.meetingPointLat).toBeNull();
+            expect(result.data.meetingPointLong).toBeNull();
+        }
+    });
+
+    it('should reject coordinates outside the WGS84 ranges', () => {
+        expect(ExperienceOwnerUpdateInputSchema.safeParse({ meetingPointLat: -90.5 }).success).toBe(
+            false
+        );
+        expect(
+            ExperienceOwnerUpdateInputSchema.safeParse({ meetingPointLong: 180.5 }).success
+        ).toBe(false);
+    });
+
+    it('should reject a meeting point over 300 characters', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            meetingPoint: 'x'.repeat(301)
+        });
+
+        expect(result.success).toBe(false);
+    });
+
+    it('should keep a coordinate of 0 instead of dropping it as falsy', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            meetingPointLat: 0,
+            meetingPointLong: 0
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.meetingPointLat).toBe(0);
+            expect(result.data.meetingPointLong).toBe(0);
+        }
+    });
+});
+
+// ============================================================================
+// HOS-898 / HOS-1046 / HOS-1047 / HOS-1056 — the owner writes the practical data
+// ============================================================================
+
+/**
+ * The write side of the four practical ficha fields.
+ *
+ * These parse the real `ExperienceOwnerUpdateInputSchema` — the exact schema
+ * `PATCH /api/v1/protected/experiences/:id` validates its body against. A field
+ * missing there is stripped in silence and the PATCH still answers 200, so
+ * asserting on the parsed OUTPUT (never on `success` alone) is what makes the
+ * assertions mean anything.
+ */
+describe('ExperienceOwnerUpdateInputSchema — practical ficha data', () => {
+    it('should accept all four fields in one patch', () => {
+        // Arrange
+        const input = {
+            durationMinutes: 150,
+            whatToBring: ['Repelente', 'Calzado cerrado'],
+            requirements: ['Edad mínima 12 años'],
+            cancellationPolicy: 'Si hay alerta de viento reprogramamos sin cargo.',
+            acceptsPrivateGroups: true
+        };
+
+        // Act
+        const result = ExperienceOwnerUpdateInputSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.durationMinutes).toBe(150);
+        expect(result.data.whatToBring).toEqual(['Repelente', 'Calzado cerrado']);
+        expect(result.data.requirements).toEqual(['Edad mínima 12 años']);
+        expect(result.data.cancellationPolicy).toBe(
+            'Si hay alerta de viento reprogramamos sin cargo.'
+        );
+        expect(result.data.acceptsPrivateGroups).toBe(true);
+    });
+
+    it('should treat an omitted key as "no change", injecting no defaults', () => {
+        // `stripShapeDefaults` is what makes this true: without it, Zod 4's
+        // `.partial()` keeps the `.default([])` on the checklists and every
+        // unrelated PATCH would silently wipe both lists on the row.
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({ durationMinutes: 60 });
+
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.whatToBring).toBeUndefined();
+        expect(result.data.requirements).toBeUndefined();
+        expect(result.data.acceptsPrivateGroups).toBeUndefined();
+    });
+
+    it('should accept an empty array as the way to CLEAR a checklist', () => {
+        // Distinct from the case above: `[]` is present and means "remove every
+        // item", while an absent key means "leave them alone".
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({ whatToBring: [] });
+
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.whatToBring).toEqual([]);
+    });
+
+    it('should accept an explicit null, which is how the editor clears the text fields', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            durationMinutes: null,
+            cancellationPolicy: null
+        });
+
+        expect(result.success).toBe(true);
+        if (!result.success) return;
+        expect(result.data.durationMinutes).toBeNull();
+        expect(result.data.cancellationPolicy).toBeNull();
+    });
+
+    it('should reject a duration in fractional minutes', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({ durationMinutes: 90.5 });
+
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject a cancellation policy past the column contract', () => {
+        const result = ExperienceOwnerUpdateInputSchema.safeParse({
+            cancellationPolicy: 'x'.repeat(1501)
+        });
+
+        expect(result.success).toBe(false);
+    });
+});

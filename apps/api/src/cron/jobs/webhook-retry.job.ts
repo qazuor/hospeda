@@ -29,7 +29,7 @@
  */
 
 import type { QZPayWebhookEvent } from '@qazuor/qzpay-core';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { asMajor, createMercadoPagoAdapter } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     and,
@@ -46,21 +46,33 @@ import {
 import * as Sentry from '@sentry/node';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+// HOS-847 PR 5: this cron reimplements the authorized-payment handler, so it
+// needs the add-on interception too — see the call site for why the live
+// handler's fail-closed policy makes this path the one that matters.
+import { routeAddonAuthorizedPayment } from '../../routes/webhooks/mercadopago/addon-recurring-handler.js';
 import {
     WEBHOOK_RETRY_MAX_ATTEMPTS,
     webhookRetryDueCondition
 } from '../../routes/webhooks/mercadopago/dead-letter.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
+// HOS-1238: a re-settled recurring charge owes the same receipt the live handler
+// sends, keyed the same way so only one of the two ever goes out.
+import { dispatchSubscriptionChargeReceipt } from '../../routes/webhooks/mercadopago/subscription-charge-receipt.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
 import {
     findLocalSubscriptionByPreapprovalId,
     paymentAlreadyRecorded
 } from '../../routes/webhooks/mercadopago/subscription-payment-handler.js';
 import { linkPreapprovalToLocalSub } from '../../services/billing/link-preapproval.service.js';
+import { recordOrphanPayment } from '../../services/billing/orphan-payment-queue.service.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchAuthorizedPaymentDetails } from '../../utils/mp-authorized-payment.js';
+// HOS-1238: the same status mapper the live handler uses. It is a leaf module for
+// exactly this reason — more than one consumer must reach one mapping rather than
+// each assuming a disposition.
+import { mapMpStatusToQZPayStatus } from '../../utils/mp-payment-status.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
@@ -186,6 +198,14 @@ async function retrySubscriptionUpdated(
  * permanent condition (returns true — no point retrying) while `error` results
  * return false so the retry cron increments attempts and tries again later.
  *
+ * HOS-847 PR 5: a preapproval belonging to a recurring ADD-ON is intercepted
+ * before the local-subscription lookup and settled by the add-on handler, for
+ * the same reason the live handler intercepts it there. This function is the
+ * live handler's second implementation, and the live handler's fail-closed
+ * routing policy makes it the retry of record: a routing lookup that fails
+ * there marks the event failed and answers 2xx, so this cron is the ONLY thing
+ * that will see the charge again.
+ *
  * HOS-276: when no local subscription is found for the preapproval, this
  * mirrors the linking fallback the live handler (`subscription-payment-handler.ts`)
  * already performs — attempting `linkPreapprovalToLocalSub` before giving up.
@@ -270,6 +290,46 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         apiLogger.info(
             { authorizedPaymentId, status: details.status },
             'Authorized payment has no settled payment ID during dead-letter retry — resolving'
+        );
+        return true;
+    }
+
+    // HOS-847 PR 5: is this preapproval an ADD-ON's rather than a plan's?
+    //
+    // This is a SECOND implementation of `handleSubscriptionAuthorizedPayment`,
+    // and it has to make the same decision in the same place — before
+    // `findLocalSubscriptionByPreapprovalId`, which carries no product-domain
+    // filter and resolves an add-on's own `billing_subscriptions` row perfectly
+    // happily.
+    //
+    // It is not a hypothetical door: it is the one the live handler's own
+    // failure policy opens. That routing lookup fails CLOSED, its catch marks
+    // the event failed and answers 2xx, so MercadoPago never redelivers and
+    // THIS cron is the only retry there is. Left unrouted, it would resolve the
+    // add-on's purchase as a plan, record the charge with a hardcoded
+    // `status: 'succeeded'`, no `flow`, no `addonSlug` and no `purchaseId`, and
+    // burn the payment id — after which a legitimate delivery hits the dedupe
+    // and the add-on's period never advances again.
+    //
+    // A failure here propagates to `processDeadLetterEvent`'s catch, which
+    // returns `false` and leaves the entry retryable. Fail closed, retry later,
+    // never guess "plan" — same policy as the live handler, now with a retry
+    // that honours it.
+    const addonRouting = await routeAddonAuthorizedPayment({
+        details,
+        billing,
+        triggerSource: 'webhook-retry-dead-letter'
+    });
+
+    if (addonRouting.handled) {
+        apiLogger.info(
+            {
+                authorizedPaymentId,
+                preapprovalId: details.preapprovalId,
+                mpPaymentId: details.paymentId,
+                purchaseId: addonRouting.purchaseId
+            },
+            'HOS-847: dead-lettered charge belonged to a recurring add-on — settled by the add-on handler, resolving the dead-letter entry'
         );
         return true;
     }
@@ -373,16 +433,35 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         return true;
     }
 
+    // HOS-1238: the provider's OWN disposition for this charge, mapped through the
+    // same leaf the live handler uses.
+    //
+    // Both this and the receipt below used to assert the literal `'succeeded'`, on
+    // the reasoning that a dead-lettered authorized payment is only re-settled once
+    // it carries a real `payment.id`. That confuses "has a payment id" with "the
+    // charge cleared": a REJECTED charge carries one too (`paymentStatus:
+    // 'rejected'` leaves `paymentId` populated), and the only early return on this
+    // path is `if (!details.paymentId)` — nothing anywhere filters on status.
+    //
+    // So a restaurant owner's REJECTED ARS 18.000 renewal, whose live handler
+    // dead-lettered on a DB hiccup in the add-on routing read (which fails closed on
+    // purpose), was booked as revenue here and — once the receipt landed — also told
+    // "we received your payment", while dunning mailed them the failure notice for
+    // the same charge. The live handler does not dispatch in that case, so the two
+    // settlement sites had begun to disagree, in the direction of the customer.
+    const chargeStatus = mapMpStatusToQZPayStatus(details);
+
     try {
-        // Record the payment via the billing facade, mirroring the live handler exactly:
-        // real customerId and subscriptionId from the resolved local subscription row.
+        // Record the payment via the billing facade, mirroring the live handler
+        // exactly: real customerId and subscriptionId from the resolved local
+        // subscription row, and the provider's real status rather than an assumed one.
         await billing.payments.record({
             id: crypto.randomUUID(),
             customerId: sub.customerId,
             subscriptionId: sub.id,
             amount: Math.round(details.transactionAmount * 100),
             currency: (details.currencyId as 'ARS') || 'ARS',
-            status: 'succeeded',
+            status: chargeStatus,
             provider: 'mercadopago',
             providerPaymentId: details.paymentId,
             metadata: {
@@ -401,13 +480,65 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
             'Subscription authorized payment recorded during dead-letter retry'
         );
 
+        // HOS-1238: the second site that settles a recurring charge, and so the
+        // second that owes the customer a receipt. This retry only runs when the
+        // live handler failed, which is precisely when a customer is most likely
+        // to have been charged and told nothing. Shares the live handler's
+        // dispatcher and its per-`paymentId` idempotency key, so whichever of the
+        // two gets there first, exactly one receipt goes out.
+        //
+        // `chargeStatus` is the MAPPED provider status — see the binding above for
+        // what asserting it cost. The dispatcher's own cleared-charge gate can only
+        // protect a caller that hands it the truth. Never throws.
+        await dispatchSubscriptionChargeReceipt({
+            customerId: sub.customerId,
+            planId: sub.planId,
+            providerPaymentId: details.paymentId,
+            // MAJOR units, as MercadoPago reports it — the same value the
+            // `Math.round(x * 100)` above converts for the ledger.
+            amountMajor: asMajor(details.transactionAmount),
+            currency: details.currencyId || 'ARS',
+            chargeStatus,
+            billing,
+            localSubscriptionId: sub.id,
+            source: 'webhook-retry-dead-letter'
+        });
+
         return true;
     } catch (error) {
         const errMessage = error instanceof Error ? error.message : String(error);
-        apiLogger.error(
-            { authorizedPaymentId, error: errMessage },
-            'Failed to record subscription authorized payment during dead-letter retry'
-        );
+
+        // HOS-1001: MercadoPago already took this charge and the ledger row did
+        // not land. Returning `false` leaves the dead-letter event unresolved so
+        // the cron tries again, and that retry is real — but it is bounded, and
+        // when it runs out the payment is stranded with nothing but this log to
+        // show for it. Queue it now rather than at the last attempt: enqueuing
+        // is idempotent on `(provider, providerPaymentId)`, so every subsequent
+        // retry is a no-op skip, and there is no attempt counter reachable from
+        // here that could tell us which attempt is the last one.
+        //
+        // The queue row therefore appears while retries are still in flight and
+        // may be made moot by one of them succeeding. That is the intended
+        // direction of the error: a visible row a human dismisses in ten seconds
+        // costs less than a charge nobody ever learns about.
+        await recordOrphanPayment({
+            providerPaymentId: details.paymentId,
+            flow: 'subscription-authorized-payment-retry',
+            reason: 'ledger-write-failed',
+            // `transaction_amount` is MercadoPago's own field, in MAJOR units —
+            // the same value the `Math.round(x * 100)` above converts.
+            amountMajor: asMajor(details.transactionAmount),
+            currency: details.currencyId || 'ARS',
+            subscriptionId: sub.id,
+            customerId: sub.customerId,
+            source: 'webhook-retry-cron',
+            metadata: {
+                mpAuthorizedPaymentId: details.authorizedPaymentId,
+                mpDebitDate: details.debitDate ?? null,
+                ledgerWriteError: errMessage
+            }
+        });
+
         return false;
     }
 }

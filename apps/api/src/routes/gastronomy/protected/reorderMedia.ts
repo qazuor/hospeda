@@ -16,14 +16,19 @@
  * mutation on the post/event twin, `test/routes/post-protected-media.test.ts`;
  * there is no commerce-side route test to re-run it against).
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     GastronomyMediaListOutputSchema,
     type GastronomyMediaReorderPayload,
-    GastronomyMediaReorderPayloadSchema
+    GastronomyMediaReorderPayloadSchema,
+    ProductDomainEnum
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -43,7 +48,7 @@ export const protectedReorderGastronomyMediaRoute = createCRUDRoute({
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).',
+        'exactly. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -71,5 +76,14 @@ export const protectedReorderGastronomyMediaRoute = createCRUDRoute({
         }
 
         return { media: result.data?.media ?? [] };
+    },
+    options: {
+        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
+        // `addFaq.ts` for why the vertical loader must be first.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('gastronomy'),
+            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
+            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
+        ]
     }
 });

@@ -17,6 +17,7 @@
 
 import {
     BILLING_CRON_LAG_GRACE_HOURS,
+    composeTrialGrants,
     type EntitlementKey,
     getDefaultEntitlements,
     getUnlimitedEntitlements,
@@ -24,11 +25,13 @@ import {
     isEntitlementKey,
     isLimitKey,
     isSubscriptionLive,
-    type LimitKey
+    type LimitKey,
+    readTrialComposition,
+    type TrialGrantSource
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import {
-    isAccommodationSubscription,
+    hydrateSubscriptionProductDomains,
     isOwnerCategorySubscription,
     RoleEnum,
     ServiceError
@@ -36,6 +39,24 @@ import {
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { captureBillingError } from '../lib/sentry';
+import {
+    type AddonGrantDomainResidue,
+    CONSUMER_SIDE_PRODUCT_DOMAINS,
+    classifyAddonGrantDomain,
+    reportAddonGrantDomainOutcome,
+    resolveAddonPurchaseSlugs
+} from '../services/billing/addon-grant-domain';
+import { selectAccommodationSubscription } from '../services/billing/plan-domain-guard';
+import {
+    mergeTouristVipGift,
+    resolveTouristVipGift,
+    selectGiftBearingSubscription,
+    type TouristVipGift
+} from '../services/billing/tourist-vip-inheritance';
+import {
+    loadDeferredAddonGrants,
+    mergeDeferredAddonGrants
+} from '../services/deferred-addon-grants.service';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
@@ -59,6 +80,33 @@ interface EntitlementCacheEntry {
  * In-memory FIFO cache for user entitlements
  * Key: billingCustomerId
  * Value: EntitlementCacheEntry
+ *
+ * ## Why the key carries no product domain (HOS-1303)
+ *
+ * The issue asked for one, on the reading that a single key serving "all
+ * requests of that customer" must be serving several verticals. Measured, it is
+ * not, and adding the component would be worse than a no-op:
+ *
+ * - this cache has exactly ONE writer, {@link entitlementMiddleware}, which
+ *   resolves the consumer-side pair and nothing else. `commerce-entitlement.ts`
+ *   and `owner-entitlement.ts` keep their own separate caches
+ *   (`baseLimitsCache`, `ownerLimitsCache`), so no commerce-scoped value can
+ *   collide here;
+ * - the resolved domain is DERIVED from the customer's own rows, so for a given
+ *   customer at a given moment it has one value. A key of
+ *   `${customerId}::${domain}` would therefore never vary, and the middleware
+ *   cannot know the domain before the load it is trying to avoid anyway;
+ * - {@link EntitlementCache.invalidate} is an exact-key delete, and
+ *   `clearEntitlementCache(customerId)` is called from ~15 sites across the
+ *   billing lifecycle. Any composite key silently stops matching all of them —
+ *   turning a documented invalidation contract into a 5-minute stale window,
+ *   which is the failure this cache is most dangerous for.
+ *
+ * The dimension the value DOES depend on and the key does not carry is the
+ * actor's HOST role (it selects the fallback plan and arms the HOS-217
+ * discard). A user promoted to HOST mid-TTL is served their pre-promotion set
+ * for up to five minutes. That is a real, separate bug; closing it needs
+ * prefix-aware invalidation first, and it is not a product-domain problem.
  */
 class EntitlementCache {
     private cache: Map<string, EntitlementCacheEntry> = new Map();
@@ -340,6 +388,142 @@ async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
 }
 
 /**
+ * Fold any still-running DEFERRED add-on onto a no-live-subscription fallback
+ * (HOS-847 PR 7b).
+ *
+ * Both fallback branches of {@link loadEntitlements} return BEFORE the
+ * customer-level merge below, so an add-on the cancellation flow deliberately
+ * kept alive — `status = 'active'`, `cancel_at_period_end = true`, its QZPay
+ * grant untouched — reached the request as nothing at all. This is the merge for
+ * exactly those rows, and only those: see
+ * `services/deferred-addon-grants.service.ts` for why it is not the generic
+ * customer-level merge.
+ *
+ * Returns a NEW result. `buildHostDraftDefaultsResult` hands back a memoized
+ * object shared by every HOST request in the TTL window; folding one customer's
+ * add-on into it in place would grant it to all of them.
+ *
+ * @param customerId - QZPay customer id whose deferred add-ons to fold in.
+ * @param base - The fallback entitlements/limits already resolved.
+ * @returns The same result with the deferred grants added, uncacheable if the
+ *   lookup degraded.
+ */
+async function withDeferredAddonGrants(
+    customerId: string,
+    base: LoadEntitlementsResult
+): Promise<LoadEntitlementsResult> {
+    // HOS-1303: this loader serves accommodation OR tourist, so that is the scope
+    // a deferred add-on has to fall inside. The owner-side resolver passes a
+    // narrower set from its own call sites.
+    const grants = await loadDeferredAddonGrants({
+        customerId,
+        servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS,
+        reporter: 'consumer-entitlements'
+    });
+
+    if (grants.degraded) {
+        // Never cache an under-grant: the next request must retry rather than
+        // deny a paid-for feature for the whole TTL.
+        return { ...base, shouldCache: false };
+    }
+
+    if (grants.entitlements.size === 0 && grants.limitIncrements.size === 0) {
+        return base;
+    }
+
+    const { entitlements, limits } = mergeDeferredAddonGrants({
+        grants,
+        entitlements: base.entitlements,
+        limits: base.limits
+    });
+
+    return { ...base, entitlements, limits };
+}
+
+/**
+ * Resolves a composed trial plan's grants from its SOURCE plans, live
+ * (HOS-1012 D-5, spec §6.8).
+ *
+ * A trial plan grants nothing of its own. It declares a composition —
+ * entitlements from its vertical's `pro` tier, limits from its `basico` tier —
+ * and both halves are read from the database on every entitlement load. The
+ * `entitlements` / `limits` stored on the trial plan row itself are a SNAPSHOT
+ * for display, and the invariant runs one way only: **the snapshot is for
+ * showing, the composition is for gating**. If the two ever diverge, what goes
+ * stale is a screen, never a door.
+ *
+ * Resolving live rather than copying is not a preference. HOS-39's Model C
+ * makes `entitlements` and `limitsValues` COMMERCIAL fields: the database wins,
+ * the seed deliberately does not sync them from config, and the admin
+ * `PlanDialog` edits them. A copied value would therefore be right in the repo
+ * and wrong in production from the first operator edit to `pro` or `basico`,
+ * with nothing red anywhere.
+ *
+ * Driven by `metadata.trialComposition`, never by a slug comparison against the
+ * accommodation trial plan's name:
+ * with three verticals a hardcoded chain is three chances to forget one, and the
+ * third is always the one forgotten. All three trial plans run this same code;
+ * only the two slugs on their rows differ.
+ *
+ * Precedent, not invention: this module already resolves `owner-basico` by slug
+ * as the draft-phase fallback ({@link buildHostDraftDefaultsResult}).
+ * `planService.getBySlug` is the same lookup, and it mirrors `getPlanBySlug`'s
+ * filter exactly — `billing_plans.name` IS the slug (the table has no `slug`
+ * column) and soft-deleted rows are excluded, while `active` is deliberately
+ * NOT filtered.
+ *
+ * Cost: two extra plan reads, only inside the trial branch, behind the existing
+ * 5-minute entitlement cache.
+ *
+ * @param plan - The resolved plan row for the active subscription.
+ * @returns The composed grants, or `null` when the plan declares no composition
+ *   (the ordinary case) or when a source could not be resolved.
+ */
+async function resolveComposedTrialGrants(
+    plan: TrialGrantSource & { readonly metadata?: unknown; readonly id?: string }
+): Promise<TrialGrantSource | null> {
+    const composition = readTrialComposition(plan.metadata);
+    if (!composition) {
+        return null;
+    }
+
+    try {
+        const [entitlementsResult, limitsResult] = await Promise.all([
+            planService.getBySlug(composition.entitlementsFrom),
+            planService.getBySlug(composition.limitsFrom)
+        ]);
+
+        if (!entitlementsResult.success || !limitsResult.success) {
+            apiLogger.error(
+                {
+                    planId: plan.id,
+                    entitlementsFrom: composition.entitlementsFrom,
+                    limitsFrom: composition.limitsFrom,
+                    entitlementsResolved: entitlementsResult.success,
+                    limitsResolved: limitsResult.success
+                },
+                'HOS-1012: trial plan composition could not be resolved — falling back to the plan snapshot'
+            );
+            return null;
+        }
+
+        return composeTrialGrants({
+            entitlementsSource: entitlementsResult.data,
+            limitsSource: limitsResult.data
+        });
+    } catch (error) {
+        apiLogger.error(
+            {
+                planId: plan.id,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'HOS-1012: trial plan composition lookup threw — falling back to the plan snapshot'
+        );
+        return null;
+    }
+}
+
+/**
  * Whether the actor holds the HOST hat (HOS-296).
  *
  * Also a deliberate role check rather than a `PermissionEnum` one, for a
@@ -373,6 +557,37 @@ function buildStaffUnlimitedResult(): LoadEntitlementsResult {
         limits: new Map<LimitKey, number>(unlimited.limits.map((l) => [l.key, l.value])),
         shouldCache: true
     };
+}
+
+/**
+ * Applies the tourist-VIP gift (HOS-1323) onto an already-built result.
+ *
+ * Clones first, on purpose. {@link withDeferredAddonGrants} returns its `base`
+ * object UNCHANGED when there is nothing to add, and on the HOST path that
+ * object is the one memoised inside {@link buildHostDraftDefaultsResult} for
+ * five minutes. Merging in place would write the gift into that memo and hand it
+ * to the next HOST who has no gifted subscription at all.
+ *
+ * @param base - The result the ordinary resolution produced.
+ * @param gift - The resolved gift, or `null` when this customer holds no
+ *   subscription in a gifted vertical.
+ * @returns `base` untouched when there is no gift; otherwise a merged clone.
+ */
+function withTouristVipGift(
+    base: LoadEntitlementsResult,
+    gift: TouristVipGift | null
+): LoadEntitlementsResult {
+    if (gift === null) {
+        return base;
+    }
+
+    const merged: LoadEntitlementsResult = {
+        ...base,
+        entitlements: new Set<EntitlementKey>(base.entitlements),
+        limits: new Map<LimitKey, number>(base.limits)
+    };
+    mergeTouristVipGift({ grants: merged, gift });
+    return merged;
 }
 
 /**
@@ -424,34 +639,103 @@ async function loadEntitlements(
         }
 
         // Get customer's active subscription
-        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
 
-        if (!subscriptions || subscriptions.length === 0) {
+        if (!rawSubscriptions || rawSubscriptions.length === 0) {
             // No subscription at all — fall back to role-appropriate defaults.
             // HOST actors who were just promoted (before first publish) receive
             // owner-basico defaults so they can access host features during the
             // draft phase (SPEC-143 Block 1). All other roles receive tourist-free
             // defaults (SPEC-143 T-143-58).
-            if (isHost) {
-                return await buildHostDraftDefaultsResult();
-            }
-            return buildDefaultEntitlementsResult();
+            //
+            // HOS-847 PR 7b: plus whatever a deferred add-on is still paid up
+            // for. The customer-level merge further down never runs on this
+            // branch, which is what made PR 7a's deferral deliver nothing.
+            return await withDeferredAddonGrants(
+                customerId,
+                isHost ? await buildHostDraftDefaultsResult() : buildDefaultEntitlementsResult()
+            );
         }
 
-        // Find active accommodation subscription (there should only be one).
-        // SPEC-239 T-034: exclude commerce-domain subscriptions so a customer
-        // with BOTH an accommodation sub and a commerce sub always resolves
-        // accommodation entitlements from the correct sub. Treats null/undefined
-        // productDomain as 'accommodation' (legacy rows and the column default).
-        let activeSubscription = subscriptions.find(
-            (sub: { status: string }) =>
-                // HOS-239: single source of truth for the "entitlement-granting
-                // status" set (active | trialing | comp). SPEC-262 T-012 P2:
-                // 'comp' (free-forever) is an ACTIVE entitlement state — a comped
-                // subscriber retains the full entitlements of the plan they were
-                // comped on (see SubscriptionStatusEnum.COMP doc).
-                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
+        // HOS-1104: `getByCustomerId()` never populates `productDomain` (it is a
+        // qzpay-drizzle column outside core's mapped interface — see
+        // `hydrateSubscriptionProductDomains`'s doc). Without this, every
+        // subscription below reaches `isAccommodationSubscription` with
+        // `productDomain = undefined`, which fails OPEN to accommodation for ALL
+        // of them regardless of their real vertical — the exact bug that made the
+        // SPEC-239 T-034 exclusion below a documented no-op.
+        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        // Narrow to the statuses that grant anything, then pick the consumer-side
+        // subscription through the repo's ONE selector for that pair.
+        //
+        // HOS-239: single source of truth for the "entitlement-granting status"
+        // set (active | trialing | comp). SPEC-262 T-012 P2: 'comp'
+        // (free-forever) is an ACTIVE entitlement state — a comped subscriber
+        // retains the full entitlements of the plan they were comped on (see
+        // SubscriptionStatusEnum.COMP doc).
+        const grantingSubscriptions = subscriptions.filter((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
+
+        // ── HOS-1323: the tourist-VIP gift ────────────────────────────────────
+        // Owner decision, 2026-09-10: accommodation, gastronomy and experience
+        // inherit every entitlement and limit of a tourist-VIP without
+        // subscribing to one. Partners do not.
+        //
+        // Only gastronomy and experience are resolved HERE. Accommodation
+        // inherits the identical block through its own plan row, which
+        // `plans.config.ts` builds from the same constants, so it already
+        // arrives by the ordinary path — re-adding it would be a second delivery
+        // of the same set to the same people on the hot path. That split is
+        // DERIVED from which domains this loader already selects a plan for, not
+        // configured twice: see `RUNTIME_GIFTED_DOMAINS`.
+        //
+        // This is resolved from the customer's whole granting set, NOT from the
+        // one subscription selected below. That is the entire fix: a gastronomy
+        // owner's subscription is invisible to `selectAccommodationSubscription`
+        // (commerce never matches, by design — SPEC-239 isolation), so before
+        // this they fell through to the tourist-FREE defaults: of the FIFTEEN VIP
+        // keys their own plan row declares, twelve reached nothing (the other
+        // three — save/write/read reviews — happen to be in the free baseline
+        // too, which is why the shortfall is twelve and the block is fifteen).
+        // `price-alert/protected/create.ts` gates on `PRICE_ALERTS` and answered
+        // 403 to an owner whose plan grants it.
+        //
+        // The selection below is deliberately left alone. It answers "which plan
+        // is this customer's own consumer plan" — accommodation first, tourist as
+        // an ORDERED fallback (HOS-1233/HOS-1303) — and widening it to admit
+        // commerce would put a gastronomy plan back where an accommodation plan
+        // belongs, which is the HOS-1213 ambiguity in a third set of clothes. The
+        // gift is a separate, additive question with a separate answer.
+        const giftedSubscription = await selectGiftBearingSubscription(grantingSubscriptions);
+        const touristVipGift = giftedSubscription ? await resolveTouristVipGift() : null;
+
+        // HOS-1303: this used to be a single `find` matching
+        // `isAccommodationSubscription(sub) || subscriptionMatchesDomain(sub,
+        // TOURIST)` — one pass, one OR, so whichever row the storage adapter
+        // yielded FIRST won.
+        //
+        // That is the unordered match HOS-1213 was written to close, wearing a
+        // new domain. A host auto-promoted by host-onboarding (HOS-217) holds
+        // BOTH an accommodation subscription and the tourist one they signed up
+        // with, and both satisfy the OR. When the tourist row came back first,
+        // a paying `owner-pro` host resolved their TOURIST plan here — and the
+        // HOS-217 discard twenty lines below, seeing a non-owner-category plan,
+        // then threw it away and served them `owner-basico` DRAFT defaults. A
+        // paid accommodation plan silently reduced to the free baseline, decided
+        // by row order.
+        //
+        // `selectAccommodationSubscription` is the ordered pair the plan-change
+        // route already uses for exactly this ambiguity: accommodation FIRST,
+        // tourist only as a fallback, commerce never. Reusing it rather than
+        // ordering the OR by hand is deliberate — a second implementation of the
+        // same precedence is a second thing to keep in step, and this epic exists
+        // because those drift. It hydrates internally too, which is free here:
+        // `hydrateSubscriptionProductDomains` short-circuits any row whose
+        // `productDomain` is already defined, and the call above defined all of
+        // them.
+        let activeSubscription = await selectAccommodationSubscription(grantingSubscriptions);
 
         // HOS-217: a HOST actor can reach role=HOST without ever subscribing to
         // an owner plan (auto-promoted by the host-onboarding flow). If the
@@ -468,7 +752,7 @@ async function loadEntitlements(
         // this HOST on a specific plan via SPEC-262), not an incidental leftover
         // tourist sub dragged in by host-onboarding. Exempt it from the discard
         // so the comped plan's real entitlements resolve (e.g. a HOST comped on
-        // tourist-plus keeps SAVE_FAVORITES/WRITE_REVIEWS and does NOT gain
+        // the paid tourist tier keeps SAVE_FAVORITES/WRITE_REVIEWS and does NOT gain
         // owner-basico's free PUBLISH_ACCOMMODATIONS + VIP tier). Without this
         // exemption the discard fires (tourist category) and substitutes the
         // owner-basico draft defaults — the exact over/under-entitlement bug.
@@ -489,10 +773,33 @@ async function loadEntitlements(
             // Only cancelled / past_due / paused subscriptions — fall back to
             // role-appropriate defaults. Same rationale as the no-subscriptions
             // branch above (SPEC-143 Block 1 / T-143-58).
-            if (isHost) {
-                return await buildHostDraftDefaultsResult();
-            }
-            return buildDefaultEntitlementsResult();
+            //
+            // HOS-847 PR 7b: this is THE branch a host lands on the day after
+            // their plan is cancelled, and the one where a deferred add-on has
+            // to keep paying out until its own period ends.
+            //
+            // HOS-1323: it is ALSO the branch a gastronomy- or experience-only
+            // owner lands on every single request — they have a live
+            // subscription, it just is not one this selector can return. The
+            // gift is what makes their plan's consumer half arrive.
+            //
+            // ORDER CAVEAT: the add-on's `limitIncrements` are applied FIRST and
+            // the gift then REPLACES on its own keys, so an add-on raising a
+            // tourist key would be silently undone here. Unreachable today — no
+            // add-on's `affectsLimitKey` names one of the seven
+            // (`addons.config.ts`) — and note this was harmless under the old
+            // `moreGenerousLimit`, which would have kept the raised value. The
+            // swap to replacement is what made the order matter, which is
+            // exactly the kind of coupling that leaves no trace in a diff. If an
+            // add-on ever targets a tourist key, merge the gift BEFORE the
+            // add-on grants rather than after.
+            return withTouristVipGift(
+                await withDeferredAddonGrants(
+                    customerId,
+                    isHost ? await buildHostDraftDefaultsResult() : buildDefaultEntitlementsResult()
+                ),
+                touristVipGift
+            );
         }
 
         // ── SPEC-148 T-002: Cron-lag grace detection ──────────────────────────
@@ -558,41 +865,160 @@ async function loadEntitlements(
             };
         }
 
-        // Extract entitlements from plan. QZPay returns string[]; filter to known
+        // ── HOS-1012 D-5: composed trial plans (spec §6.8) ────────────────
+        // This is the ONE place a resolved `plan` becomes `entitlements` +
+        // `limits`, which is why the composition is applied here and nowhere
+        // else. For every ordinary plan `composedGrants` is null and the plan
+        // speaks for itself, exactly as before. For a trial plan the two halves
+        // come from two OTHER plans, resolved live — see
+        // {@link resolveComposedTrialGrants}.
+        const composedGrants = await resolveComposedTrialGrants(plan);
+        // A composition that was declared but could not be resolved degrades to
+        // the trial plan's own snapshot — never to an empty grant set, because
+        // an empty `limits` map reads as UNLIMITED downstream. It must not be
+        // cached, though: the next request has to retry rather than serve a
+        // stale-by-construction result for the full 5-minute TTL.
+        const trialCompositionDegraded =
+            composedGrants === null && readTrialComposition(plan.metadata) !== undefined;
+        const grantSource: TrialGrantSource = composedGrants ?? plan;
+
+        // Extract entitlements. QZPay returns string[]; filter to known
         // EntitlementKey values — unexpected strings from a mis-configured plan are
         // silently dropped (filter-out strategy, matching prior cast behaviour for
         // valid values without blindly trusting garbage).
         const entitlements = new Set<EntitlementKey>(
-            (plan.entitlements ?? []).filter(isEntitlementKey)
+            (grantSource.entitlements ?? []).filter(isEntitlementKey)
         );
 
-        // Extract limits from plan. QZPay returns Record<string, number>; filter to
+        // Extract limits. QZPay returns Record<string, number>; filter to
         // known LimitKey values — unknown keys are silently dropped.
         const limits = new Map<LimitKey, number>();
-        if (plan.limits) {
-            for (const [key, value] of Object.entries(plan.limits)) {
+        if (grantSource.limits) {
+            for (const [key, value] of Object.entries(grantSource.limits)) {
                 if (isLimitKey(key)) {
                     limits.set(key, value);
                 }
             }
         }
 
+        // HOS-1323 — the gift, merged onto the resolved plan rather than instead
+        // of it. Applied HERE, before the customer-level merge, so a
+        // customer-level override still has the last word.
+        //
+        // It matters on this path too, not only on the fallback above. A
+        // customer who holds BOTH an accommodation (or tourist) subscription and
+        // a commerce one resolves their consumer plan here, and that plan can be
+        // the FREE tier: without this, `tourist-free`'s small `max_favorites`
+        // would be the whole answer for someone who also runs a paid restaurant.
+        // `mergeTouristVipGift` REPLACES on the tourist axis and touches no
+        // other key: the gift's seven limit keys are disjoint from every
+        // vertical's own (frozen by `tourist-vip-axis-disjointness.test.ts`), so
+        // the only value it can overwrite is a TOURIST one the caller already
+        // resolved — `tourist-free`'s three, or the same block inherited on an
+        // owner plan. Both are the same axis at a lower or equal tier, and the
+        // paid tier supersedes them.
+        //
+        // This replaced `moreGenerousLimit` (owner redesign, 2026-09-10) — a
+        // sentinel-aware comparison, not a bare `Math.max`: it read `-1` as
+        // unlimited rather than as less than 5. It agreed with replacement on
+        // every value in today's catalogue and would have diverged the first
+        // time a VIP key was LOWERED: it would have returned `tourist-free`'s
+        // number and left a gastronomy owner holding MORE than a tourist who
+        // pays for VIP.
+        //
+        // `entitlements` and `limits` are freshly built locals here, so merging
+        // in place is safe (unlike the fallback branch — see
+        // {@link withTouristVipGift}).
+        if (touristVipGift !== null) {
+            mergeTouristVipGift({ grants: { entitlements, limits }, gift: touristVipGift });
+        }
+
         // Attempt to merge customer-level entitlements and limits.
         // These calls are wrapped in try-catch for graceful degradation:
         // if they fail, plan-only values are returned with shouldCache=false
         // so the next request retries instead of serving stale plan-only data.
-        let shouldCache = true;
+        let shouldCache = !trialCompositionDegraded;
 
         try {
             // Fetch customer-level entitlements and merge with plan entitlements (union).
             // QZPay returns QZPayCustomerEntitlement where entitlementKey is string —
             // filter to known keys; unknown keys are silently dropped.
             const customerEntitlements = await billing.entitlements.getByCustomerId(customerId);
+
+            // HOS-1303: a customer-level grant carries no vertical, so this union
+            // handed a host every entitlement any of their verticals had bought.
+            // The provenance the row DOES carry is `source`/`sourceId`; for an
+            // add-on grant that resolves to a purchase, a slug, and the
+            // catalogue's declared `productDomain`. Only a PROVABLY foreign one
+            // is dropped — see `addon-grant-domain.ts` for why this
+            // fails open where its HOS-1279 sibling fails closed.
+            const addonSlugByPurchaseId = await resolveAddonPurchaseSlugs({
+                purchaseIds: customerEntitlements
+                    .filter((ce) => ce.source === 'addon' && ce.sourceId !== null)
+                    .map((ce) => ce.sourceId as string)
+            });
+
+            const dropped: AddonGrantDomainResidue[] = [];
+            const admittedUnplaceable: AddonGrantDomainResidue[] = [];
+
             for (const ce of customerEntitlements) {
-                if (isEntitlementKey(ce.entitlementKey)) {
-                    entitlements.add(ce.entitlementKey);
+                if (!isEntitlementKey(ce.entitlementKey)) {
+                    continue;
                 }
+
+                const isAddonSourced = ce.source === 'addon' && ce.sourceId !== null;
+                const addonSlug = isAddonSourced
+                    ? addonSlugByPurchaseId.get(ce.sourceId as string)
+                    : undefined;
+
+                if (isAddonSourced && addonSlug === undefined) {
+                    // The purchase behind the grant did not come back. Admitted —
+                    // refusing would strip a paid feature on the strength of a row
+                    // we failed to read — but recorded, because a steady stream of
+                    // these means the gate has gone no-op.
+                    admittedUnplaceable.push({
+                        entitlementKey: ce.entitlementKey,
+                        purchaseId: ce.sourceId ?? undefined
+                    });
+                } else if (addonSlug !== undefined) {
+                    const verdict = classifyAddonGrantDomain({
+                        addonSlug,
+                        servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS
+                    });
+
+                    if (verdict.kind === 'foreign') {
+                        dropped.push({
+                            entitlementKey: ce.entitlementKey,
+                            purchaseId: ce.sourceId ?? undefined,
+                            addonSlug,
+                            addonDomain: verdict.domain
+                        });
+                        continue;
+                    }
+
+                    if (verdict.kind === 'unplaceable') {
+                        admittedUnplaceable.push({
+                            entitlementKey: ce.entitlementKey,
+                            purchaseId: ce.sourceId ?? undefined,
+                            addonSlug
+                        });
+                    }
+                }
+
+                entitlements.add(ce.entitlementKey);
             }
+
+            // One `info` line, only when the gate did something. The per-grant
+            // `debug` this replaced was never emitted outside local dev:
+            // `LOG_LEVEL` defaults to `info` (`packages/config/src/env.ts`), so a
+            // host reporting "my featuring disappeared" left no trace at all.
+            reportAddonGrantDomainOutcome({
+                resolver: 'consumer-entitlements',
+                customerId,
+                servedDomains: CONSUMER_SIDE_PRODUCT_DOMAINS,
+                dropped,
+                admittedUnplaceable
+            });
 
             // Fetch customer-level limits and override plan-level values (customer takes precedence).
             // QZPay returns QZPayCustomerLimit where limitKey is string — filter to known keys.
@@ -1086,6 +1512,17 @@ export function hasEntitlement(c: Context<AppBindings>, key: EntitlementKey): bo
  * ```
  */
 export function getRemainingLimit(c: Context<AppBindings>, key: LimitKey): number {
+    // NAMING HAZARD (HOS-803 I-3): despite "Remaining", this returns the PLAN'S
+    // ALLOWANCE — the raw value from `userLimits` — and subtracts no consumption.
+    // Callers pair it with a count they take themselves (see `checkLimit`, which
+    // does `currentCount < maxAllowed`).
+    //
+    // Do NOT "fix" it to honour its name. `addFeaturedMedia` passes this value
+    // as `planGalleryCap`, where `0` means "this plan includes no photos at
+    // all". If this started returning allowance-minus-usage, a host with a full
+    // gallery would get `0`, the cover upload would answer LIMIT_REACHED, and
+    // HOS-803 would be back in full — the very bug that endpoint exists to fix.
+    // Renaming it is safe; changing its arithmetic is not.
     const limits = c.get('userLimits');
 
     if (!limits || !limits.has(key)) {

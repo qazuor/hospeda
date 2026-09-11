@@ -16,16 +16,19 @@ const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger 
  * DELETE /api/v1/admin/gastronomies/reviews/:id
  * Soft delete gastronomy review — Admin endpoint.
  *
- * Requires COMMERCE_MODERATE_REVIEW permission. The service layer
+ * Requires GASTRONOMY_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW) permission. The service layer
  * (`_canSoftDelete`) also accepts the review author.
  */
 export const adminDeleteGastronomyReviewRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}',
     summary: 'Soft delete gastronomy review (admin)',
-    description: 'Soft deletes a gastronomy review. Requires COMMERCE_MODERATE_REVIEW permission.',
+    description:
+        'Soft deletes a gastronomy review. Requires GASTRONOMY_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW) permission.',
     tags: ['Gastronomy Reviews', 'Admin'],
-    requiredPermissions: [PermissionEnum.COMMERCE_MODERATE_REVIEW],
+    anyOfPermissions: [
+        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
+    ],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

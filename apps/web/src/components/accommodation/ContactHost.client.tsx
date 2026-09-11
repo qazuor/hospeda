@@ -275,6 +275,21 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         e.preventDefault();
         if (isSubmitDisabled) return;
 
+        // HOS-816/HOS-837: retire the previous attempt's verdict as this one
+        // STARTS. This form carries its banner in a state machine rather than a
+        // `formError` string, and the reset used to happen implicitly at
+        // `setSubmitState({ phase: 'submitting' })` below — AFTER the anonymous
+        // validation gate. So a second submit that failed client-side
+        // validation returned at that gate with the previous attempt's `error`
+        // (or `duplicate`) banner still on screen, next to the freshly marked
+        // fields, reading as if the server had just rejected the form again.
+        //
+        // Safe to run unconditionally here: `isSubmitDisabled` already returned
+        // above for `submitting` and `rateLimit` (so the countdown this would
+        // otherwise cancel is unreachable), and the form is not rendered at all
+        // once the phase is `success`.
+        setSubmitState({ phase: 'idle' });
+
         // Mode A (anonymous): validate against the same schema the API
         // validates the request body with — catches an invalid email format,
         // an over-limit name/phone, etc. BEFORE hitting the network, and

@@ -38,7 +38,9 @@ import {
     OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
     PartnerContentReviewStateEnum,
+    PartnerLogoClickDestinationEnum,
     PartnerMentionChannelEnum,
+    PartnerPaymentReviewStateEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
@@ -53,6 +55,10 @@ import {
     PriceCurrencyEnum,
     PriceRangeEnum,
     ProductTypeEnum,
+    QrCodePurposeEnum,
+    QrCodeSourceEnum,
+    QrScanDeviceTypeEnum,
+    QrScanOsEnum,
     RecurrenceTypeEnum,
     RefundStatusEnum,
     RoleEnum,
@@ -436,6 +442,18 @@ export const PartnerMentionChannelPgEnum = pgEnum(
 );
 
 /**
+ * Where a click on a partner's carousel logo took the visitor (HOS-1063).
+ *
+ * Mirrors the three-branch resolution in `resolvePartnerLogoLink`, minus the
+ * branch that produces no link — that one produces no click either, so it needs
+ * no value here.
+ */
+export const PartnerLogoClickDestinationPgEnum = pgEnum(
+    'partner_logo_click_destination_enum',
+    enumToTuple(PartnerLogoClickDestinationEnum)
+);
+
+/**
  * Review state of a partner's self-authored content (HOS-278 D2).
  *
  * A real Postgres enum rather than the `varchar` its `host_trades` counterpart
@@ -445,6 +463,19 @@ export const PartnerMentionChannelPgEnum = pgEnum(
 export const PartnerContentReviewStatePgEnum = pgEnum(
     'partner_content_review_state_enum',
     enumToTuple(PartnerContentReviewStateEnum)
+);
+
+/**
+ * Whether an admin has been asked to confirm a partner's payment (HOS-1299).
+ *
+ * A SEPARATE type from `partner_subscription_status_enum`, not a fifth value of
+ * it: every visibility surface in the platform reads that column, so suspecting
+ * a partner of not having paid would, by itself, take them down. See
+ * `PartnerPaymentReviewStateEnum` for the full list of what would have moved.
+ */
+export const PartnerPaymentReviewStatePgEnum = pgEnum(
+    'partner_payment_review_state_enum',
+    enumToTuple(PartnerPaymentReviewStateEnum)
 );
 
 /**
@@ -465,3 +496,45 @@ export const CalendarSyncStatusPgEnum = pgEnum(
     'calendar_sync_status_enum',
     enumToTuple(CalendarSyncStatusEnum)
 );
+
+/**
+ * PostgreSQL enum for how a `qr_codes` row came into existence (HOS-981).
+ * Values: MANUAL, GENERATED.
+ */
+export const QrCodeSourcePgEnum = pgEnum('qr_code_source_enum', enumToTuple(QrCodeSourceEnum));
+
+/**
+ * PostgreSQL enum for WHICH code a `qr_codes` row is, when its subject carries
+ * more than one (HOS-981 PR 4).
+ *
+ * Values: HOST_TRADE_USAGE, LISTING, MENU, CERTIFICATE, BROCHURE. All five ship
+ * together even though only the first is written today — adding a value later
+ * is a migration over a table that will hold production rows by then.
+ *
+ * An enum rather than a varchar, and the reason binds harder than it does for
+ * `entity_type`: this value is part of the uniqueness key, so two spellings of
+ * one purpose mint two permanent slugs for one subject. See
+ * `QrCodePurposeEnum`.
+ */
+export const QrCodePurposePgEnum = pgEnum('qr_code_purpose_enum', enumToTuple(QrCodePurposeEnum));
+
+/**
+ * PostgreSQL enum for what kind of device scanned a code (HOS-1141).
+ *
+ * Values: MOBILE, TABLET, DESKTOP. Deliberately no `UNKNOWN` — the column is
+ * nullable, and `NULL` is what "we could not tell" means. See
+ * `QrScanDeviceTypeEnum` for why keeping those two apart is load-bearing.
+ */
+export const QrScanDeviceTypePgEnum = pgEnum(
+    'qr_scan_device_type_enum',
+    enumToTuple(QrScanDeviceTypeEnum)
+);
+
+/**
+ * PostgreSQL enum for the operating system that scanned a code (HOS-1141).
+ *
+ * Values: IOS, ANDROID, OTHER. `OTHER` means a User-Agent was presented and
+ * named neither platform; a missing or unreadable User-Agent is `NULL` on the
+ * column. See `QrScanOsEnum`.
+ */
+export const QrScanOsPgEnum = pgEnum('qr_scan_os_enum', enumToTuple(QrScanOsEnum));

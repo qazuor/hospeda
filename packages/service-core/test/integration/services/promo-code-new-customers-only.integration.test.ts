@@ -44,7 +44,7 @@ function uniqueCode(prefix: string): string {
 /** Inserts a billing plan row and returns its generated UUID. */
 async function seedPlan(tx: TestDb, slug: string): Promise<string> {
     const rows = await tx.execute<{ id: string }>(sql`
-        INSERT INTO billing_plans (name, description, active, entitlements, limits, livemode, metadata)
+        INSERT INTO billing_plans (name, description, active, entitlements, limits, livemode, metadata, product_domain)
         VALUES (
             ${slug},
             ${`Description for ${slug}`},
@@ -52,7 +52,8 @@ async function seedPlan(tx: TestDb, slug: string): Promise<string> {
             ARRAY[]::text[],
             '{}'::jsonb,
             false,
-            ${JSON.stringify({ slug, displayName: slug, category: 'owner', sortOrder: 1 })}::jsonb
+            ${JSON.stringify({ slug, displayName: slug, category: 'owner', sortOrder: 1 })}::jsonb,
+            'accommodation'
         )
         RETURNING id
     `);
@@ -85,7 +86,7 @@ async function seedSubscription(
     await tx.execute(sql`
         INSERT INTO billing_subscriptions (
             customer_id, plan_id, status, billing_interval,
-            current_period_start, current_period_end, livemode
+            current_period_start, current_period_end, product_domain, livemode
         )
         VALUES (
             ${options.customerId},
@@ -94,6 +95,7 @@ async function seedSubscription(
             'month',
             now(),
             now() + interval '30 days',
+            (SELECT product_domain FROM billing_plans WHERE id = ${options.planId}),
             false
         )
     `);

@@ -34,7 +34,8 @@ import type { CronJobContext } from '../../src/cron/types.js';
 
 vi.mock('../../src/utils/env.js', () => ({
     env: {
-        HOSPEDA_BILLING_POLLING_ENABLED: true
+        HOSPEDA_BILLING_POLLING_ENABLED: true,
+        HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'TEST-token'
     }
 }));
 
@@ -60,6 +61,16 @@ vi.mock('@repo/billing', async (importOriginal) => ({
     createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args)
 }));
 
+// HOS-991: the discount reconciler no longer reads the live amount via
+// paymentAdapter.subscriptions.retrieve() (that typed method never returns
+// auto_recurring) — it calls fetchLivePreapprovalAmountMajor (a direct
+// GET /preapproval/{id}) instead. Mocked at that boundary; its own
+// real-response behavior is covered by test/utils/mp-preapproval-amount-lookup.test.ts.
+const mockFetchLiveAmount = vi.fn();
+vi.mock('../../src/utils/mp-preapproval-amount-lookup.js', () => ({
+    fetchLivePreapprovalAmountMajor: (...args: unknown[]) => mockFetchLiveAmount(...args)
+}));
+
 const mockExecute = vi.fn();
 // mockSelectWhere backs reconcileActiveDiscountAmounts's typed bulk
 // db.select({...}).from(billingSubscriptions).where(and(...)) call (HOS-75
@@ -83,12 +94,17 @@ vi.mock('@repo/db', () => ({
         mpSubscriptionId: 'MP_SUBSCRIPTION_ID',
         promoCodeId: 'PROMO_CODE_ID',
         promoEffectRemainingCycles: 'PROMO_EFFECT_REMAINING_CYCLES',
-        deletedAt: 'DELETED_AT'
+        deletedAt: 'DELETED_AT',
+        productDomain: 'PRODUCT_DOMAIN'
     },
     eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
     isNotNull: (a: unknown) => ({ _isNotNull: a }),
     isNull: (a: unknown) => ({ _isNull: a }),
-    and: (...args: unknown[]) => ({ _and: args })
+    and: (...args: unknown[]) => ({ _and: args }),
+    // HOS-847: excludeAddonDomainCondition() (called for real from
+    // @repo/service-core, unmocked) needs ne()/or() too.
+    ne: (a: unknown, b: unknown) => ({ _ne: [a, b] }),
+    or: (...args: unknown[]) => ({ _or: args })
 }));
 
 // @repo/service-core functions used by reconcileActiveDiscountAmounts.
@@ -1161,22 +1177,26 @@ describe('subscription-poll cron job', () => {
     });
 
     // ---------------------------------------------------------------------------
-    // SPEC-262 S1: reconcileActiveDiscountAmounts — reads auto_recurring.transaction_amount
+    // SPEC-262 S1 / HOS-991: reconcileActiveDiscountAmounts — reads auto_recurring.transaction_amount
     // ---------------------------------------------------------------------------
     //
     // These tests cover the discount reconciler that runs after each poll batch.
     // The reconciler loads active subs with promo_code_id + mp_subscription_id via
-    // getDb().execute() (NOT withTransaction), then retrieves the live MP preapproval
-    // via paymentAdapter.subscriptions.retrieve(), and re-issues
-    // paymentAdapter.subscriptions.update() only when the live amount drifts from
-    // the expected amount by more than ±1 ARS (major units).
+    // getDb().execute() (NOT withTransaction), then reads the live MP preapproval
+    // amount via fetchLivePreapprovalAmountMajor (GET /preapproval/{id} directly),
+    // and re-issues paymentAdapter.subscriptions.update() only when the live amount
+    // drifts from the expected amount by more than ±1 ARS (major units).
     //
-    // Key S1 bug: the old code read `livePreapproval.transaction_amount` (top-level,
-    // exists on PAYMENT objects), but MP preapproval (subscription) objects store the
-    // recurring amount under `auto_recurring.transaction_amount`. Reading the wrong
-    // field yields `undefined` → mapped to -1 → every tick triggered a spurious
-    // mutation, and a sync-check test against the real field shape would have caught it.
-    describe('SPEC-262 S1: reconcileActiveDiscountAmounts', () => {
+    // Key S1 bug (fixed, then regressed, then fixed again as HOS-991): the amount
+    // lives under `auto_recurring.transaction_amount`, not top-level (that only
+    // exists on PAYMENT objects). The code used to read this off
+    // paymentAdapter.subscriptions.retrieve()'s result, but that typed method NEVER
+    // returns `auto_recurring` at all — its mapper output is a closed set of
+    // id/status/period fields. Reading it yielded `undefined` → mapped to -1 →
+    // every tick triggered a spurious mutation, for every discounted subscription,
+    // forever. HOS-991 fixed it by reading the live amount from a direct
+    // GET /preapproval/{id} call instead, which really does carry `auto_recurring`.
+    describe('SPEC-262 S1 / HOS-991: reconcileActiveDiscountAmounts', () => {
         // Sub fixture shared across reconciler tests.
         const RECONCILE_SUB = {
             id: 'sub-promo-1',
@@ -1215,19 +1235,13 @@ describe('subscription-poll cron job', () => {
                 type: 'apply-discount',
                 finalAmount: FULL_PRICE_CENTAVOS * (1 - DISCOUNT_PERCENT / 100) // 5000
             });
-            // mockRetrieve returns the MP preapproval shaped with auto_recurring
-            // (as the real MP API returns). The reconciler reads
-            // auto_recurring.transaction_amount — NOT top-level transaction_amount.
-            mockRetrieve.mockResolvedValueOnce({
-                id: RECONCILE_SUB.mpSubscriptionId,
-                status: 'active',
-                auto_recurring: {
-                    transaction_amount: liveAmountMajor
-                }
-                // NOTE: top-level transaction_amount intentionally ABSENT here
-                // (it does not exist on preapproval objects). If the reconciler
-                // read the top-level field it would see `undefined` → -1, and
-                // the in-sync case below would trigger a spurious update.
+            // mockFetchLiveAmount stands in for the raw GET /preapproval/{id}
+            // response the reconciler actually reads (fetchLivePreapprovalAmountMajor),
+            // NOT paymentAdapter.subscriptions.retrieve() — see the describe-block
+            // doc above for why that distinction is the whole point of HOS-991.
+            mockFetchLiveAmount.mockResolvedValueOnce({
+                kind: 'ok',
+                transactionAmountMajor: liveAmountMajor
             });
         }
 
@@ -1235,6 +1249,33 @@ describe('subscription-poll cron job', () => {
             // Ensure no polling jobs interfere with the reconciler-only tests.
             mockFindDuePending.mockResolvedValue([]);
             mockAdapterSubsUpdate.mockResolvedValue(undefined);
+        });
+
+        // HOS-847: a recurring add-on's own preapproval row is never
+        // promo-eligible today (promo codes apply to plans, not add-ons), but
+        // this sweep must not depend on that staying true. Asserts the actual
+        // EFFECT — the WHERE clause handed to the DB genuinely excludes an
+        // add-on row — not just that the helper builds SOME condition.
+        it("excludes a recurring add-on's own row from the discount-reconcile WHERE clause", async () => {
+            setupReconcilerMocks(EXPECTED_DISCOUNTED_MAJOR);
+
+            await subscriptionPollJob.handler(buildContext({ dryRun: false }));
+
+            expect(mockSelectWhere).toHaveBeenCalledOnce();
+            const whereCondition = mockSelectWhere.mock.calls[0]?.[0] as {
+                _and: Array<{ _or?: unknown[] }>;
+            };
+            const excludeAddonCondition = whereCondition._and.find((c): c is { _or: unknown[] } =>
+                Array.isArray(c._or)
+            );
+
+            // The condition is OR(productDomain IS NULL, productDomain != 'addon') —
+            // reject an actual add-on row, accept a legacy/accommodation one.
+            expect(excludeAddonCondition).toBeDefined();
+            expect(excludeAddonCondition?._or).toContainEqual({
+                _ne: ['PRODUCT_DOMAIN', 'addon']
+            });
+            expect(excludeAddonCondition?._or).toContainEqual({ _isNull: 'PRODUCT_DOMAIN' });
         });
 
         it('S1 in-sync: when live auto_recurring.transaction_amount matches expected, subscriptions.update is NOT called', async () => {

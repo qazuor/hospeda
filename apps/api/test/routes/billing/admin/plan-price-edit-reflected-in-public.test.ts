@@ -137,6 +137,15 @@ const ORIGINAL_PLAN = {
     entitlements: ['ACCOMMODATION_LIST'],
     limits: { MAX_ACCOMMODATIONS: 1 },
     isActive: true,
+    // The catalogue withholds on doubt (HOS-1062): isPubliclyListedPlan tests
+    // positively for 'listed', so a fixture that omits the mark disappears from
+    // the public listing. This one is an ordinary owner plan and belongs there.
+    //
+    // The mark sits at the top level, not under `metadata`: this fixture stands
+    // in for what PlanService.list RETURNS, which is the mapped DTO. The raw
+    // `metadata.publicListing` shape is what the protected endpoint reads,
+    // through isPubliclyListedStoragePlan.
+    publicListing: 'listed' as const,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-02T00:00:00.000Z'
 };

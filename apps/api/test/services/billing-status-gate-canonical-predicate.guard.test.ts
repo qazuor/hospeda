@@ -102,14 +102,50 @@ const BILLING_STATUS_GATE_FILES = [
 ] as const;
 
 /**
- * Matches an actual use of the canonical export — either a predicate
- * invocation or a reference to the const set — not just a mention in a comment.
+ * The canonical exports this guard accepts, and why there are two pairs
+ * (HOS-1275).
+ *
+ * - `isEntitlementGrantingStatus` / `ENTITLEMENT_GRANTING_STATUSES` — the
+ *   original canonical set (`active | trialing | comp | courtesy`).
+ * - `isLiveSubscriptionStatus` / `LIVE_SUBSCRIPTION_STATUSES` — that same set
+ *   **plus `past_due`**, for the call sites asking a different question: not
+ *   "does this grant entitlements" but "is this subscription still an
+ *   unfinished thing at the provider". A past-due subscription is mid-dunning,
+ *   not gone, so a checkout must not be duplicated over it and its owner must
+ *   not be treated as having walked away.
+ *
+ * **Accepting the second pair is sound ONLY because it is built by SPREADING
+ * the first**, so it can never drift out of sync with it — a status added to
+ * `ENTITLEMENT_GRANTING_STATUSES` is picked up by both. That derivation is the
+ * entire justification, so it is not left to a comment: the
+ * "derives from the canonical set" test below asserts it against the source,
+ * and if anyone ever rewrites `LIVE_SUBSCRIPTION_STATUSES` as a hand-typed list
+ * that test fails and this widening stops being safe.
+ *
+ * This guard used to be anchored on the two original names alone, which made it
+ * report a migration TO a strictly-more-canonical export as a hand-rolled
+ * comparison — a guard anchored on a symbol name dying at the rename, and
+ * accusing the correct change while it died (HOS-1311).
  */
-const PREDICATE_USE = /(isEntitlementGrantingStatus\s*\(|ENTITLEMENT_GRANTING_STATUSES\b)/g;
+const CANONICAL_PREDICATE_NAMES = [
+    'isEntitlementGrantingStatus',
+    'ENTITLEMENT_GRANTING_STATUSES',
+    'isLiveSubscriptionStatus',
+    'LIVE_SUBSCRIPTION_STATUSES'
+] as const;
 
-/** Matches importing either canonical export from the canonical package. */
-const PREDICATE_IMPORT =
-    /(isEntitlementGrantingStatus|ENTITLEMENT_GRANTING_STATUSES)[\s\S]{0,200}?from\s+['"]@repo\/billing['"]/;
+/** `isFoo` → must be CALLED; `FOO_BAR` → a reference to the const set is enough. */
+const PREDICATE_USE = new RegExp(
+    CANONICAL_PREDICATE_NAMES.map((name) =>
+        name.startsWith('is') ? `${name}\\s*\\(` : `${name}\\b`
+    ).join('|'),
+    'g'
+);
+
+/** Matches importing any canonical export from the canonical package. */
+const PREDICATE_IMPORT = new RegExp(
+    `(${CANONICAL_PREDICATE_NAMES.join('|')})[\\s\\S]{0,200}?from\\s+['"]@repo\\/billing['"]`
+);
 
 /**
  * How close two quoted status literals may sit before we treat their
@@ -232,6 +268,10 @@ const HAND_ROLLED_SCAN_EXCLUSIONS: ReadonlyArray<{
         why: 'Its own docstring: comp has no preapproval and must never be reaped — excluded by the status filter, deliberately.'
     },
     {
+        file: 'cron/jobs/subscription-drift-reconcile.job.ts',
+        why: 'Its entire population is "rows that HAVE a MercadoPago preapproval" (isNotNull(mpSubscriptionId)): it GETs the preapproval and re-applies the provider verdict. A comp has none by design, so it is not a dropped entitlement but a row that cannot occur in this set. The allowlist is also not the entitlement-granting set wearing a disguise — it carries paused and past_due, which that set does not and must not contain (HOS-914).'
+    },
+    {
         file: 'routes/billing/admin/qzpay-admin-hooks.ts',
         why: 'Guards on "MercadoPago only accepts pausing an active preapproval".'
     },
@@ -268,10 +308,6 @@ const HAND_ROLLED_SCAN_EXCLUSIONS: ReadonlyArray<{
     {
         file: 'services/plan-disable-lifecycle.service.ts',
         why: 'LIVE_STATUSES omits comp, but this path never calls MercadoPago (verified: zero preapproval/qzpay references) — it only flips cancelAtPeriodEnd and notifies. So a comped subscriber is invisible to plan retirement: never told, never migrated. That is the INVERSE of the historical bug (benefits kept, not denied) and is a product decision, not something a guard should force. Tracked as an owner decision.'
-    },
-    {
-        file: 'services/commerce-subscription-attach.service.ts',
-        why: 'SLOT_OCCUPYING_STATUSES omits comp while findOwnerVerticalSubscription in the same file uses the canonical predicate. Unreachable today — subscription-comp-create rejects non-accommodation plans — so it is a latent gap, not a live bug.'
     }
 ] as const;
 
@@ -295,6 +331,57 @@ function collectSourceFiles(dir: string, base: string): string[] {
 function readSrc(relativePath: string): string {
     return readFileSync(resolve(SRC_ROOT, relativePath), 'utf-8');
 }
+
+/** Where the widened pair is defined, read to prove it derives (HOS-1275). */
+const LIVE_STATUS_PREDICATE_SRC = resolve(
+    __dirname,
+    '../../../../packages/billing/src/predicates/is-live-subscription-status.ts'
+);
+
+describe('HOS-1275: the widened predicate pair is canonical BY CONSTRUCTION', () => {
+    /*
+     * This guard accepts `isLiveSubscriptionStatus` / `LIVE_SUBSCRIPTION_STATUSES`
+     * as canonical. That is only defensible while they are DERIVED from
+     * `ENTITLEMENT_GRANTING_STATUSES` rather than typed out. Rewritten as a
+     * literal list, they would be exactly the hand-rolled set this whole file
+     * exists to reject — and every call site using them would keep passing,
+     * silently, because the name would not have changed. So the derivation is
+     * asserted, not assumed.
+     */
+    it('LIVE_SUBSCRIPTION_STATUSES is built by spreading ENTITLEMENT_GRANTING_STATUSES', () => {
+        const source = readFileSync(LIVE_STATUS_PREDICATE_SRC, 'utf-8');
+        const liveCode = stripComments(source);
+
+        expect(
+            liveCode,
+            'LIVE_SUBSCRIPTION_STATUSES must SPREAD the canonical set. Typed out as ' +
+                'a literal list it becomes the hand-rolled reconstruction this guard ' +
+                'rejects everywhere else, while every call site keeps passing because ' +
+                'the export name did not change (HOS-702 shipped that bug three times).'
+        ).toMatch(/\.\.\.ENTITLEMENT_GRANTING_STATUSES\b/);
+    });
+
+    it('and imports that canonical set rather than redeclaring it', () => {
+        const source = readFileSync(LIVE_STATUS_PREDICATE_SRC, 'utf-8');
+        expect(stripComments(source)).toMatch(
+            /import\s*\{[^}]*ENTITLEMENT_GRANTING_STATUSES[^}]*\}\s*from/
+        );
+    });
+
+    it('adds past_due and nothing else to it', () => {
+        // Pins the ONLY legitimate difference between the two sets. A third
+        // status appearing here would widen every gate that accepts this pair,
+        // and would do it invisibly.
+        const source = readFileSync(LIVE_STATUS_PREDICATE_SRC, 'utf-8');
+        const liveCode = stripComments(source);
+        const setBody = liveCode.slice(
+            liveCode.indexOf('LIVE_SUBSCRIPTION_STATUSES'),
+            liveCode.indexOf(']', liveCode.indexOf('LIVE_SUBSCRIPTION_STATUSES'))
+        );
+        const literals = [...setBody.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+        expect(literals).toEqual(['past_due']);
+    });
+});
 
 describe('HOS-702 guard: API billing status gates use the canonical entitlement predicate', () => {
     it.each(

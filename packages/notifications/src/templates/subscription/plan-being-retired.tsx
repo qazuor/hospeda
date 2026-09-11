@@ -92,7 +92,7 @@ export function PlanBeingRetired({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/precios/propietarios`}>Choose a new plan</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Choose a new plan</Button>
             </Section>
 
             <Text style={styles.footer}>

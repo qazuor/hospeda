@@ -1,5 +1,28 @@
 # Billing v1 Launch Strategy
 
+> **HISTORICAL — the v1 plan as written, not how billing works now (HOS-1302,
+> 2026-09-09).** Five statements in the "Trial Management" and "Known
+> limitations" sections were checked against the code and are false today. Do
+> not decide anything from this file; use the root `CLAUDE.md` billing sections
+> and `packages/billing/`.
+>
+> - "14-day trial for all HOST users" — `OWNER_TRIAL_DAYS = 30`
+>   (`packages/billing/src/constants/billing.constants.ts:17`). 14 is
+>   `COMPLEX_TRIAL_DAYS`, a different tier. Tourist and the commerce verticals
+>   have trials too, so it is not HOST-only either.
+> - "Auto-start on registration (via Better Auth user.create hook)" — the trial
+>   starts at FIRST PUBLISH. `createTrialSubscription` is called from
+>   `accommodation-publish-deps.ts:254` and `commerce-trial-start.service.ts:335`,
+>   never from an auth hook.
+> - "Expired trials are cancelled" — the `trial-reconcile` cron CONVERTS
+>   (HOS-171): it converts paid ones, routes failed charges to dunning and
+>   mirrors provider cancellations. It never auto-cancels.
+> - The extend route is not `PATCH .../trial/:id/extend`. The two that exist are
+>   `POST /api/v1/protected/billing/trial/extend` (admin-only) and
+>   `POST /api/v1/admin/billing/subscriptions/:id/apply-trial-extension`.
+> - "Limit enforcement is a stub" — `apps/api/src/middlewares/limit-enforcement.ts`
+>   is live and returns real 403s.
+
 ## Overview
 
 This document defines the billing features included in the v1 launch of Hospeda,

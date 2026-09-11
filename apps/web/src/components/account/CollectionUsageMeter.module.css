@@ -1,0 +1,47 @@
+/**
+ * CollectionUsageMeter.module.css
+ * Scoped styles for the CollectionUsageMeter React island.
+ * ALL values use CSS custom properties from global.css — no hardcoded values.
+ * Moved verbatim from the `.collection-usage*` rules that used to live in
+ * `favoritos/index.astro`'s scoped <style> block (HOS-999) — Astro's scoped
+ * CSS only applies to markup literally in that .astro file, not to a React
+ * island's rendered output, so the rules had to move here with the markup.
+ */
+
+.root {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.text {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
+.warning .text {
+    color: var(--warning, oklch(0.72 0.15 60));
+}
+
+.barTrack {
+    width: 80px;
+    height: 6px;
+    background-color: var(--core-muted-foreground-a15);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.barFill {
+    height: 100%;
+    background-color: var(--brand-primary);
+    border-radius: var(--radius-pill);
+    transition: width 0.3s ease;
+}
+
+.warning .barFill {
+    background-color: var(--warning, oklch(0.72 0.15 60));
+}

@@ -4,6 +4,18 @@
 > owner, in order, after reading it. Every step names what to verify afterwards,
 > and every verification is a read that does **not** go through the thing that
 > did the work.
+>
+> **Three of its follow-ups have since been FIXED in code (HOS-1302,
+> 2026-09-09).** Re-check before acting on them; the runbook still describes them
+> as open:
+>
+> - FU-2, "admin full-refund never contacts MP and leaves a live preapproval" —
+>   fixed by HOS-753; `apps/api/src/services/refund-lifecycle.service.ts` now
+>   hard-cancels the preapproval.
+> - "`accommodation-publish-deps.ts` has no `deleted_at` filter" — it does now
+>   (`apps/api/src/services/accommodation-publish-deps.ts:144-148`).
+> - "`promo-code.validation.ts` guards are unfiltered by `deleted_at`" — both
+>   filter `isNull(billingCustomers.deletedAt)` now (lines 369 and 450-452).
 
 **Why the order matters.** Deleting the local row does not cancel the
 MercadoPago preapproval. A live preapproval keeps charging the card next month,
@@ -345,7 +357,7 @@ WHERE a.deleted_at IS NULL AND s.deleted_at IS NOT NULL;
 ### 4.7 The tables with no `deleted_at` are inert
 
 ```sql
-SELECT 'commerce_listing_subscriptions' t, count(*) FROM commerce_listing_subscriptions
+SELECT 'entity_subscriptions' t, count(*) FROM entity_subscriptions
   WHERE status IN ('active','trialing','comp')
 UNION ALL SELECT 'partner_subscriptions', count(*) FROM partner_subscriptions
   WHERE status IN ('active','trialing','comp')
@@ -473,7 +485,8 @@ free defence:
   safe to leave live. Nobody has analysed that for these three.
 - `partners` is exactly the shape of thing the guard exists to catch. A partner
   row pointing at a swept subscription is the same failure mode as
-  `commerce_listing_subscriptions` and `partner_subscriptions`, both of which
+  `entity_subscriptions` (then named `commerce_listing_subscriptions`) and
+  `partner_subscriptions`, both of which
   needed a dedicated `assertRetainedTablesAreInert` probe precisely because a
   public surface reads them **without** joining `billing_subscriptions`. Note
   `partner_subscriptions` is already classified and asserted inert;

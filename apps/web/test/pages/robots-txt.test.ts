@@ -242,14 +242,20 @@ describe('robots.txt — GET handler', () => {
             expect(body).toContain('Disallow: /feedback/');
         });
 
-        it('SITEMAP_EXCLUDED_PATHS contains exactly the 3 expected paths', () => {
+        it('SITEMAP_EXCLUDED_PATHS contains exactly the 4 expected paths', () => {
             // This test locks the shared constant content so any accidental
             // drift is caught immediately. `/busqueda/` was dropped when the
             // global site-search feature was cut from the product.
-            expect(SITEMAP_EXCLUDED_PATHS).toHaveLength(3);
+            // `/presentacion/` joined in HOS-978: the six commercial
+            // presentations carry negotiable prices and competitor comparisons,
+            // so keeping them out of the sitemap is a requirement, not a
+            // precaution. The prefix is also what
+            // `NON_SITEMAP_STATIC_PAGES` relies on to cover all six at once.
+            expect(SITEMAP_EXCLUDED_PATHS).toHaveLength(4);
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/auth/');
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/mi-cuenta/');
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/feedback/');
+            expect(SITEMAP_EXCLUDED_PATHS).toContain('/presentacion/');
             expect(SITEMAP_EXCLUDED_PATHS).not.toContain('/busqueda/');
         });
     });

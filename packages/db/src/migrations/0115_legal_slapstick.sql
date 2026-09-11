@@ -1,0 +1,2 @@
+CREATE TYPE "public"."qr_code_purpose_enum" AS ENUM('HOST_TRADE_USAGE', 'LISTING', 'MENU', 'CERTIFICATE', 'BROCHURE');--> statement-breakpoint
+ALTER TABLE "qr_codes" ADD COLUMN "purpose" "qr_code_purpose_enum";

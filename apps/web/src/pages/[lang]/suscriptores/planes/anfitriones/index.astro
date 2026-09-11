@@ -1,0 +1,47 @@
+---
+/**
+ * @file suscriptores/planes/anfitriones/index.astro
+ * @description Permanent redirect to the host pricing page's new home,
+ * `/planes/anfitriones/precios/` (HOS-1032 AC-51).
+ *
+ * This page's content moved into the `/planes/` namespace HOS-941 D-8 settled
+ * on. It changes LOCATION, so 301 — the status that transfers the ranking
+ * signal — rather than a 302 or a 404.
+ *
+ * ONE hop, and the count matters. This URL is itself where HOS-942 moved the
+ * page from `/suscriptores/planes/`, so the alternative — pointing it at some
+ * intermediate URL that redirects again — would have made a link from before
+ * that move spend three requests to land. Every legacy pricing URL in this
+ * family targets its FINAL destination directly.
+ *
+ * Contrast `/suscriptores/planes/` itself, which still deliberately carries no
+ * redirect: that URL changed CONTENT, not location — it serves the audience
+ * index, and H8 (HOS-1033) is what moves it.
+ *
+ * @route     /{lang}/suscriptores/planes/anfitriones/
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
+ */
+
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale;
+
+// Read from the map rather than spelled here: it is the one place that knows
+// where each audience's catalogue lives, and a literal would be a second one
+// that could disagree with the page it points at.
+// The query string is FORWARDED, not rebuilt away. `?interval=` on the
+// trial-ending nudge is the live case: dropping it shows monthly prices to a
+// customer who chose annual, and nothing about the redirect looks wrong when it
+// happens. See `lib/pricing-redirect.ts`.
+return Astro.redirect(
+    buildPricingRedirectTarget({
+        locale,
+        path: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
+        search: Astro.url.search
+    }),
+    301
+);
+---

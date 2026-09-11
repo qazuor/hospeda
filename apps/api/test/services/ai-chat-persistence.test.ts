@@ -113,7 +113,8 @@ const META: StreamTextFinalMeta = {
 function makeInput(overrides: Partial<Parameters<typeof persistChatTurn>[0]> = {}) {
     return {
         userId: USER_ID,
-        accommodationId: ACCOMMODATION_ID,
+        entityType: 'accommodation' as const,
+        entityId: ACCOMMODATION_ID,
         conversationId: null,
         userMessage: USER_MESSAGE,
         assistantMessage: ASSISTANT_MESSAGE,
@@ -161,7 +162,15 @@ describe('persistChatTurn', () => {
         expect(convValues.userId).toBe(USER_ID);
         expect(convValues.feature).toBe('chat');
         expect(convValues.title).toBeNull();
-        expect(convValues.contextNote).toBe(JSON.stringify({ accommodationId: ACCOMMODATION_ID }));
+        // HOS-400: the note now carries entityType + entityId, and keeps
+        // `accommodationId` as a compatibility echo for accommodation rows only.
+        expect(convValues.contextNote).toBe(
+            JSON.stringify({
+                entityType: 'accommodation',
+                entityId: ACCOMMODATION_ID,
+                accommodationId: ACCOMMODATION_ID
+            })
+        );
 
         // User message values
         const userValues = nthValues(1);
@@ -239,14 +248,19 @@ describe('persistChatTurn', () => {
         // apiLogger.error fired exactly once with structured context.
         // Since SPEC-212 T-007, persistChatTurn delegates to persistConversationTurn
         // which logs `feature` plus the opaque `contextNote` (carrying the
-        // accommodationId for chat) for the conversation row error.
+        // entityType + entityId for chat since HOS-400) for the conversation
+        // row error.
         expect(mockApiLogger.error).toHaveBeenCalledTimes(1);
         const [logPayload, logMessage] = mockApiLogger.error.mock.calls[0] ?? [];
         expect(logMessage).toContain('ai-chat-persistence');
         expect(logPayload).toMatchObject({
             userId: USER_ID,
             feature: 'chat',
-            contextNote: JSON.stringify({ accommodationId: ACCOMMODATION_ID })
+            contextNote: JSON.stringify({
+                entityType: 'accommodation',
+                entityId: ACCOMMODATION_ID,
+                accommodationId: ACCOMMODATION_ID
+            })
         });
         expect((logPayload as { error: string }).error).toContain('connection refused');
 

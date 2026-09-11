@@ -9,14 +9,21 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboard.client';
+import { CheckoutRetryBanner } from '@/components/billing/CheckoutRetryBanner.client';
+import StripCheckoutReturnParams from '@/components/billing/StripCheckoutReturnParams.astro';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { userApi } from '@/lib/api/endpoints-protected';
 import {
+	type AccommodationSubscriptionReading,
+	planChangeWouldResolveAnotherSubscription,
+	resolveAccommodationSubscriptionReading,
 	resolveActiveSubscriptionDomain,
+	resolveDashboardPlanSource,
 	SUBSCRIPTION_DASHBOARD_DOMAINS,
 	type SubscriptionDashboardDomain
 } from '@/lib/billing/subscription-domain';
@@ -31,9 +38,9 @@ if (!user) {
 const { t } = createTranslations(locale);
 
 /**
- * HOS-259 / HOS-689: `?domain=<domain>` scopes the dashboard to one of the
- * owner's (up to three) independent subscriptions — accommodation,
- * gastronomy, experience (HOS-688 retired the old binary
+ * HOS-259 / HOS-689 / HOS-1321: `?domain=<domain>` scopes the dashboard to one
+ * of the caller's (up to four) independent subscriptions — accommodation,
+ * gastronomy, experience, tourist (HOS-688 retired the old binary
  * `'accommodation' | 'commerce'` union: commerce billing is per-VERTICAL
  * now, so `'commerce'` is no longer a real subscription scope). Used by the
  * commerce SUSPENDED recover CTA (`CommerceListingActions.client.tsx`,
@@ -45,6 +52,13 @@ const { t } = createTranslations(locale);
  * `?domain=` is given (HOS-689 AC-21: a commerce-only owner must land on
  * THEIR subscription, not an accommodation "no subscription" empty state),
  * and the domain switcher rendered below when the owner holds more than one.
+ *
+ * Every read here NAMES its domain, so none of them picks up the unqualified
+ * caller's accommodation→tourist fallback (HOS-1233). That is what keeps
+ * `heldDomains` honest: a tourist-only holder answers `null` for
+ * `?productDomain=accommodation` and a subscription for
+ * `?productDomain=tourist`, so they resolve to the tourist tab instead of an
+ * accommodation tab that reports a subscription it cannot manage.
  */
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 const domainSubscriptionResults = await Promise.all(
@@ -62,6 +76,45 @@ const heldDomains: SubscriptionDashboardDomain[] = SUBSCRIPTION_DASHBOARD_DOMAIN
 const rawDomain = Astro.url.searchParams.get('domain');
 const productDomain = resolveActiveSubscriptionDomain({ rawDomain, heldDomains });
 
+/**
+ * What we could establish about the caller's ACCOMMODATION subscription
+ * (HOS-1321).
+ *
+ * Deliberately NOT derived from `heldDomains`. That list answers a NAVIGATION
+ * question — which tabs to show, which one to land on — and a failed read there
+ * costs a tab. This answers a SAFETY question: may the tourist tab offer a plan
+ * change whose route resolves accommodation first? A failed read must not read
+ * as "they have no accommodation subscription" there, or the guard is re-opened
+ * by the failure mode of its own input.
+ *
+ * `'absent'` is narrower than "no subscription": `change-plan` filters to
+ * `active | trialing` before selecting, so a paused, past-due, courtesy or
+ * complimentary accommodation subscription is invisible to it and cannot be the
+ * row it mutates — withholding for one would be withholding for nothing.
+ *
+ * The classification lives in `resolveAccommodationSubscriptionReading`, not
+ * inline here: a `comp` subscription reaches this layer spelled `'active'`
+ * (`QZPAY_STATUS_MAP`), so a status check written by hand reads it as held.
+ */
+const accommodationResult =
+	domainSubscriptionResults[SUBSCRIPTION_DASHBOARD_DOMAINS.indexOf('accommodation')];
+const accommodationSubscription: AccommodationSubscriptionReading =
+	resolveAccommodationSubscriptionReading({
+		// `undefined` when the read FAILED — the distinction the three-state
+		// reading exists to carry; `null` when it reported no subscription.
+		subscription: accommodationResult?.ok ? accommodationResult.data.subscription : undefined
+	});
+
+/**
+ * HOS-937 step 4: `?retryCheckoutId=<localSubscriptionId>` is the card-
+ * rejection notification link (spec §6.5/§8.3, `buildCheckoutRetryLandingUrl`).
+ * Read SERVER-SIDE so `CheckoutRetryBanner` never has to fall back to
+ * `window.location` — `StripCheckoutReturnParams` below scrubs it from the
+ * visible URL before the island hydrates (mirrors the HOS-209
+ * `preapproval_id` pattern on the checkout success page).
+ */
+const retryCheckoutId = Astro.url.searchParams.get('retryCheckoutId');
+
 const TITLE_KEY_BY_DOMAIN: Record<SubscriptionDashboardDomain, { key: string; fallback: string }> = {
 	accommodation: { key: 'account.pages.subscription.title', fallback: 'Suscripción' },
 	gastronomy: {
@@ -71,6 +124,10 @@ const TITLE_KEY_BY_DOMAIN: Record<SubscriptionDashboardDomain, { key: string; fa
 	experience: {
 		key: 'account.pages.subscription.titleExperience',
 		fallback: 'Suscripción de experiencias'
+	},
+	tourist: {
+		key: 'account.pages.subscription.titleTourist',
+		fallback: 'Suscripción de turista'
 	}
 };
 const title = t(TITLE_KEY_BY_DOMAIN[productDomain].key, TITLE_KEY_BY_DOMAIN[productDomain].fallback);
@@ -78,7 +135,8 @@ const title = t(TITLE_KEY_BY_DOMAIN[productDomain].key, TITLE_KEY_BY_DOMAIN[prod
 const DOMAIN_SWITCHER_LABEL_KEY: Record<SubscriptionDashboardDomain, { key: string; fallback: string }> = {
 	accommodation: { key: 'account.pages.subscription.domainSwitcher.accommodation', fallback: 'Alojamiento' },
 	gastronomy: { key: 'account.pages.subscription.domainSwitcher.gastronomy', fallback: 'Gastronomía' },
-	experience: { key: 'account.pages.subscription.domainSwitcher.experience', fallback: 'Experiencias' }
+	experience: { key: 'account.pages.subscription.domainSwitcher.experience', fallback: 'Experiencias' },
+	tourist: { key: 'account.pages.subscription.domainSwitcher.tourist', fallback: 'Turista' }
 };
 
 /** Link to this page scoped to one domain — accommodation omits `?domain=` (its historical default). */
@@ -103,22 +161,112 @@ const islandUser = {
 };
 
 /**
- * Fetch plans server-side so the PlanChangeFlow island has the full plan
- * catalog without an extra client-side request. Degrades gracefully on error
- * (island falls back to the plain pricing-page link).
+ * Fetch plans server-side so the plan-change island has the full catalogue
+ * without an extra client-side request. Degrades gracefully on error (the
+ * island falls back to the plain pricing-page link).
  *
- * The plan category depends on the user's audience (BETA-173): a host sees
- * owner plans (Basic/Professional/Premium), a tourist sees tourist plans
- * (Plus/VIP) — matching the same host-tier split used for the "Ver
- * planes" CTA (BETA-165).
+ * ## The catalogue follows `productDomain`, not the caller's roles (HOS-1213)
+ *
+ * This page resolved `productDomain` fifty lines up and then fetched the plan
+ * catalogue with NO `?domain=` at all, so the endpoint served its
+ * `accommodation` default — for all three dashboards. The category was then
+ * picked by ROLE, and a commerce owner has no accommodation nav access, so it
+ * resolved to `'tourist'`: the "Cambiar plan" dialog of a $30.000 gastronomy
+ * subscription offered `tourist-free` ($0) and `tourist-vip` ($15.000), both
+ * labelled as upgrades. Choosing either scheduled a real downgrade of a paid
+ * commerce subscription onto a tourist plan.
+ *
+ * The role-based split is still right for the accommodation dashboard, and only
+ * there: a host sees owner plans, a tourist sees tourist plans (BETA-173,
+ * matching the "Ver planes" CTA of BETA-165). It has no meaning in a commerce
+ * vertical, whose tiers are all `category: 'owner'` and are separated from every
+ * other catalogue by their product domain instead.
+ *
+ * ## Every tab fetches ITS OWN domain's catalogue (HOS-1321)
+ *
+ * Which `?domain=` to send is `resolveDashboardPlanSource`'s answer, per domain,
+ * and the tourist tab's answer is `tourist` — not "no domain". Since HOS-1233
+ * the tourist tiers carry `product_domain = 'tourist'`, and `listPlans.ts`
+ * excludes every out-of-domain plan, so a no-domain fetch returns a catalogue
+ * with NO tourist tiers in it: `filterPlansByCategory(…, 'tourist')` yields `[]`
+ * and the tab renders no "Cambiar plan" button at all. This replaced a
+ * `productDomain !== 'accommodation'` negation, which had the opposite failure —
+ * it classified the tourist tab as a COMMERCE vertical and posted to
+ * `/protected/commerce/tourist/change-plan`.
  */
-const planCategory = hasAccommodationsNavAccess({ roles: islandUser.roles }) ? 'owner' : 'tourist';
-const plansResult = await fetchPublicPlans();
-const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, planCategory) : [];
+const planSource = resolveDashboardPlanSource({ domain: productDomain });
+const isCommerceDomain = planSource.flow === 'commerce';
+/**
+ * The tourist dashboard PINS its category instead of deferring to roles: the
+ * owner's 2026-09-10 ruling is that a `tourist-vip` holder's "Cambiar plan"
+ * offers tourist plans only. Without the pin, a host who also holds a tourist
+ * subscription (host-onboarding auto-promotes travellers) would be offered the
+ * OWNER catalogue on their tourist tab — a plan change that would move the
+ * wrong subscription.
+ */
+const planCategory =
+	planSource.category ??
+	(hasAccommodationsNavAccess({ roles: islandUser.roles }) ? 'owner' : 'tourist');
+const plansResult = await fetchPublicPlans(
+	planSource.planDomain ? { domain: planSource.planDomain } : {}
+);
+
+/**
+ * Whether this tab may offer a plan change at all (HOS-1321).
+ *
+ * `POST /billing/subscriptions/change-plan` takes no domain: it resolves the
+ * row to mutate accommodation-first, tourist-as-fallback. For a holder of BOTH
+ * (host-onboarding auto-promotes travellers without touching their tourist
+ * subscription) the tourist tab's plan change would therefore mutate their
+ * OWNER subscription onto a tourist tier — a silent downgrade of a paid plan.
+ * `SubscriptionDashboard` degrades an empty `plans` list to the
+ * "Ver planes disponibles" link, which for a dual holder is their OWNER pricing
+ * page (`resolveSubscriptionPlansPath` reads the HOST role). Cancel and pause
+ * are unaffected: they act on the subscription id this tab already read.
+ *
+ * Fed the three-state reading, not `heldDomains`: an accommodation read that
+ * failed must withhold, not wave through. See the predicate's own note.
+ */
+const canOfferPlanChange = !planChangeWouldResolveAnotherSubscription({
+	domain: productDomain,
+	accommodationSubscription
+});
+
+/** Accommodation-catalogue tiers for `PlanChangeFlow` — empty on a commerce dashboard. */
+const availablePlans =
+	!isCommerceDomain && canOfferPlanChange && plansResult.ok
+		? filterPlansByCategory(plansResult.plans, planCategory)
+		: [];
+
+/**
+ * This vertical's tiers for `CommercePlanChange` — empty on the accommodation
+ * dashboard.
+ *
+ * Selected exactly the way `mi-cuenta/comercio/index.astro` selects them (the
+ * other surface that mounts this component), so the two cannot offer different
+ * catalogues for the same vertical.
+ */
+const commercePlans =
+	isCommerceDomain && plansResult.ok
+		? filterPlansByCategory(plansResult.plans, 'owner').map(toCommercePlanOption)
+		: [];
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
+	{/* HOS-937 step 4 / HOS-209 pattern: strip `retryCheckoutId` (and any
+	   future provider return-secret) from the visible URL synchronously,
+	   before PostHog captures `$current_url` and before any cross-origin
+	   subresource sends a Referer. CheckoutRetryBanner already has the id
+	   via its SSR prop, so removing it from the client URL never breaks
+	   the retry flow. */}
+	<StripCheckoutReturnParams slot="head-early" />
 	<AccountPageHeader title={title} />
+
+	<CheckoutRetryBanner
+		locale={locale}
+		retryCheckoutId={retryCheckoutId}
+		client:load
+	/>
 
 	{heldDomains.length > 1 && (
 		<nav
@@ -144,6 +292,7 @@ const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans,
 		locale={locale}
 		user={islandUser}
 		plans={availablePlans}
+		commercePlans={commercePlans}
 		productDomain={productDomain}
 		client:load
 	/>

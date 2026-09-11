@@ -59,6 +59,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Expire addons whose subscription term has ended.'
     },
     {
+        name: 'addon-subscription-reconcile',
+        displayName: 'Reconciliación de add-ons recurrentes',
+        category: 'billing',
+        schedule: '45 */6 * * *',
+        description:
+            "Closes abandoned 'pending' recurring add-on checkouts (cancelling and VERIFYING their MercadoPago preapproval first — nothing else sweeps them: every add-on cron filters status='active' and every subscription sweep excludes the add-on domain), and reports soft-cancelled add-ons that addon-expiry left active past the period they paid for (HOS-847 PR 7c)."
+    },
+    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',
@@ -183,7 +191,15 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '30 3 * * *',
         description:
-            'Hard-delete entity_views telemetry rows older than 95 days (30d analytics window + 65d buffer, GDPR-lite data minimisation, SPEC-159 T-011).'
+            'Hard-delete entity_views and partner_logo_clicks telemetry rows older than 95 days (30d analytics window + 65d buffer, GDPR-lite data minimisation, SPEC-159 T-011 / HOS-1063 A-3).'
+    },
+    {
+        name: 'view-monthly-rollup',
+        displayName: 'Consolidado mensual de vistas y clics',
+        category: 'system',
+        schedule: '10 4 * * *',
+        description:
+            'Aggregate entity_views and partner_logo_clicks into their monthly rollups before the 95-day purge deletes them. Runs daily and rewrites the previous month plus the current month-to-date, so a single missed run cannot leave a permanent hole (HOS-1063 A-6).'
     },
     {
         name: 'exchange-rate-fetch',
@@ -268,6 +284,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Poll MercadoPago /preapproval/{id} for pending subscriptions to flip them to active when the subscription_preapproval webhook is delayed or lost (SPEC-143 Finding #17 fallback).'
     },
     {
+        name: 'courtesy-expiry',
+        displayName: 'Cierre de períodos de cortesía',
+        category: 'billing',
+        schedule: '0 * * * *',
+        description:
+            'Resume the MercadoPago preapproval of subscriptions whose gifted courtesy window has ended, and notify subscribers when a gift starts and when it ends (HOS-180). Load-bearing, not a backstop: nothing else resumes a paused preapproval, so a run that fails leaves the subscriber without service.'
+    },
+    {
         name: 'trial-reconcile',
         displayName: 'Reconciliación de pruebas',
         category: 'billing',
@@ -338,12 +362,36 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Expire active/trialing subscriptions that have no MercadoPago preapproval and whose period elapsed (H-21). Without a preapproval they are invisible to subscription-poll and to dunning, so nothing else ever moves them out of active.'
     },
     {
+        name: 'subscription-drift-reconcile',
+        displayName: 'Divergencias con MercadoPago',
+        category: 'billing',
+        schedule: '17 * * * *',
+        description:
+            'Re-read every non-terminal subscription that holds a MercadoPago preapproval and re-apply the provider verdict through the webhook transition (HOS-914). Catches the divergence a lost webhook leaves behind, which no other sweep looks for. A preapproval MercadoPago cannot resolve is reported for a human, never cancelled.'
+    },
+    {
+        name: 'partner-payment-review',
+        displayName: 'Aliados sin pago registrado',
+        category: 'billing',
+        schedule: '30 4 * * *',
+        description:
+            'Ask an admin whether a partner activated outside MercadoPago, whose confirmed period lapsed, should be taken down (HOS-1299). Flags and emails only — it never changes the partner status, lifecycle or visibility, because cutting off somebody who did pay is the expensive mistake.'
+    },
+    {
         name: 'partner-unpaid-reaper',
         displayName: 'Aliados sin pagar',
         category: 'billing',
         schedule: '45 4 * * *',
         description:
             'Nudge unpaid provisioned partners at 30 days and archive them at 90 (HOS-278 R-3). Never deletes: archiving flips lifecycleState and an admin can reverse it.'
+    },
+    {
+        name: 'entity-subscription-cache-reconcile',
+        displayName: 'Reconciliación de la caché de estado de suscripción',
+        category: 'billing',
+        schedule: '30 */6 * * *',
+        description:
+            'Re-derive entity_subscriptions from live billing (HOS-1084 / HOS-1292 backstop): rebuilds every accommodation row (stale status/plan, missing rows, orphans) and corrects the mirrored status of every commerce row, reconciling the listing visibility that follows from it.'
     },
     {
         name: 'featured-by-entitlement-reconcile',

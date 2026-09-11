@@ -31,19 +31,27 @@ vi.mock('@repo/db', () => ({
         planId: 'planId',
         mpSubscriptionId: 'mpSubscriptionId',
         promoCodeId: 'promoCodeId',
-        promoEffectRemainingCycles: 'promoEffectRemainingCycles'
+        promoEffectRemainingCycles: 'promoEffectRemainingCycles',
+        productDomain: 'productDomain'
     },
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
     getDb: vi.fn(),
+    inArray: vi.fn((col: unknown, values: unknown[]) => ({ inArray: col, values })),
     isNull: vi.fn((col: unknown) => ({ isNull: col })),
+    // HOS-847: excludeAddonDomainCondition() needs real ne()/or() builders (not
+    // just markers) so the assembled condition object can be inspected by shape.
+    ne: vi.fn((col: unknown, val: unknown) => ({ ne: [col, val] })),
+    or: vi.fn((...conditions: unknown[]) => ({ or: conditions })),
     sql: vi.fn()
 }));
 
 import type { DrizzleClient } from '@repo/db';
 import * as dbModule from '@repo/db';
 import {
+    excludeAddonDomainCondition,
+    hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
-    isCommerceSubscription,
+    isAddonSubscription,
     isOwnerCategorySubscription,
     loadSubscriptionDiscountState,
     subscriptionMatchesDomain
@@ -272,41 +280,30 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
             expect(isAccommodationSubscription({ productDomain: 'accommodation' })).toBe(true);
         });
 
-        it('still keeps a partner row out of both domains', () => {
+        it('still keeps a partner row out of the accommodation domain', () => {
             expect(isAccommodationSubscription({ productDomain: 'partner' })).toBe(false);
-            expect(isCommerceSubscription({ productDomain: 'partner' })).toBe(false);
         });
 
-        it('still treats a legacy row with no domain as accommodation, never as commerce', () => {
+        it('still treats a legacy row with no domain as accommodation', () => {
             for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
                 expect(isAccommodationSubscription(legacy)).toBe(true);
-                expect(isCommerceSubscription(legacy)).toBe(false);
             }
         });
 
-        it('still answers accommodation-open / commerce-closed for a non-object', () => {
+        it('still answers accommodation-open for a non-object', () => {
             for (const value of [null, undefined, 42, 'commerce']) {
                 expect(isAccommodationSubscription(value)).toBe(true);
-                expect(isCommerceSubscription(value)).toBe(false);
             }
         });
 
         it('still rejects a non-string productDomain in every domain', () => {
             const row = { productDomain: 42 };
             expect(isAccommodationSubscription(row)).toBe(false);
-            expect(isCommerceSubscription(row)).toBe(false);
             expect(subscriptionMatchesDomain(row, 'gastronomy')).toBe(false);
         });
     });
 
     describe('HOS-695 — the retired commerce umbrella is no longer recognised', () => {
-        it('does NOT recognise a legacy commerce row as a commerce subscription any more', () => {
-            // Pre-HOS-695 this was `true` (the transitional umbrella). Release C
-            // narrows it: a row still carrying the retired string (it should not,
-            // past release B / HOS-692) is now unrecognised, not commerce.
-            expect(isCommerceSubscription({ productDomain: 'commerce' })).toBe(false);
-        });
-
         it('still keeps a commerce-stringed row out of the accommodation domain too', () => {
             // Fails closed both ways: an unrecognised value grants nothing.
             expect(isAccommodationSubscription({ productDomain: 'commerce' })).toBe(false);
@@ -319,14 +316,46 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
         });
     });
 
-    describe('the live verticals', () => {
-        it.each([
-            'gastronomy',
-            'experience'
-        ] as const)('counts a %s row as a commerce subscription', (domain) => {
-            expect(isCommerceSubscription({ productDomain: domain })).toBe(true);
+    describe('HOS-1233 — tourist fails CLOSED, and the accommodation fail-open is untouched', () => {
+        it('keeps a tourist row OUT of the accommodation domain', () => {
+            // The whole point of the enum member. Before HOS-1233 there was no
+            // `tourist` value to assign, so the tourist plans carried the
+            // column's `'accommodation'` default and this returned TRUE —
+            // measured on the live `tourist-vip` plan row in staging and
+            // production alike, which made a paying tourist indistinguishable
+            // from an accommodation subscriber to the entitlement engine.
+            expect(isAccommodationSubscription({ productDomain: 'tourist' })).toBe(false);
         });
 
+        it('matches a tourist row only against its own domain', () => {
+            const touristRow = { productDomain: 'tourist' };
+            expect(subscriptionMatchesDomain(touristRow, 'tourist')).toBe(true);
+            for (const other of ['accommodation', 'gastronomy', 'experience', 'partner'] as const) {
+                expect(subscriptionMatchesDomain(touristRow, other)).toBe(false);
+            }
+        });
+
+        it('does NOT let a legacy row satisfy the tourist domain (fail-closed)', () => {
+            // The mirror of the accommodation fail-open: a row with no domain is
+            // accommodation by default, never tourist. Getting this backwards
+            // would hand every legacy subscriber a tourist verdict.
+            for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
+                expect(subscriptionMatchesDomain(legacy, 'tourist')).toBe(false);
+            }
+        });
+
+        it('leaves the accommodation fail-open exactly as it was', () => {
+            // Guards the direction that matters if somebody "tidies" the
+            // predicate while adding a domain: a legacy row must STILL count as
+            // accommodation, or every pre-column host loses their entitlements.
+            for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
+                expect(isAccommodationSubscription(legacy)).toBe(true);
+            }
+            expect(isAccommodationSubscription(null)).toBe(true);
+        });
+    });
+
+    describe('the live verticals', () => {
         it.each([
             'gastronomy',
             'experience'
@@ -351,11 +380,10 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
             // never a granted entitlement.
             const unknownRow = { productDomain: 'retail' };
             expect(isAccommodationSubscription(unknownRow)).toBe(false);
-            expect(isCommerceSubscription(unknownRow)).toBe(false);
         });
     });
 
-    describe('the two exported predicates are wrappers, not copies', () => {
+    describe('the exported predicate is a wrapper, not a copy', () => {
         it('agrees with the canonical helper on every domain value', () => {
             const rows = [
                 {},
@@ -372,14 +400,228 @@ describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
                 expect(isAccommodationSubscription(row)).toBe(
                     subscriptionMatchesDomain(row, 'accommodation')
                 );
-                // isCommerceSubscription ORs the canonical helper across both live
-                // verticals (COMMERCE_DOMAINS) — it is no longer a single-value
-                // lookup, since 'commerce' is not a domain that exists any more.
-                expect(isCommerceSubscription(row)).toBe(
-                    subscriptionMatchesDomain(row, 'gastronomy') ||
-                        subscriptionMatchesDomain(row, 'experience')
-                );
             }
+        });
+    });
+});
+
+describe('hydrateSubscriptionProductDomains (HOS-934)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /** Wires `mockGetDb` to resolve the batched recovery SELECT with `rows`. */
+    function mockRecoveryQuery(rows: Array<{ id: string; productDomain: string | null }>) {
+        mockGetDb.mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockResolvedValue(rows)
+                })
+            })
+        });
+    }
+
+    it(
+        'recovers productDomain for subscriptions that arrive without it — ' +
+            'the qzpay-core mapper shape (HOS-934 root cause)',
+        async () => {
+            // Arrange — objects shaped exactly like `getByCustomerId()`'s real
+            // return value: no `productDomain` key at all, only the fields
+            // `QZPaySubscription` declares.
+            const rawSubscriptions = [
+                { id: 'sub-gastronomy', status: 'active', planId: 'plan-1' },
+                { id: 'sub-accommodation', status: 'active', planId: 'plan-2' }
+            ];
+            mockRecoveryQuery([
+                { id: 'sub-gastronomy', productDomain: 'gastronomy' },
+                { id: 'sub-accommodation', productDomain: 'accommodation' }
+            ]);
+
+            // Act
+            const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+            // Assert
+            expect(hydrated.find((s) => s.id === 'sub-gastronomy')?.productDomain).toBe(
+                'gastronomy'
+            );
+            expect(hydrated.find((s) => s.id === 'sub-accommodation')?.productDomain).toBe(
+                'accommodation'
+            );
+        }
+    );
+
+    it('does NOT re-query for a subscription that already carries a productDomain', async () => {
+        // Arrange
+        const selectMock = vi.fn();
+        mockGetDb.mockReturnValue({ select: selectMock });
+        const rawSubscriptions = [
+            {
+                id: 'sub-already-hydrated',
+                status: 'active',
+                planId: 'plan-1',
+                productDomain: 'gastronomy'
+            }
+        ];
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        // Assert — the existing value is preserved, and no query was issued at all.
+        expect(hydrated[0]?.productDomain).toBe('gastronomy');
+        expect(selectMock).not.toHaveBeenCalled();
+    });
+
+    it('resolves to null (not undefined) for a row genuinely missing from the recovery query', async () => {
+        // Arrange — the recovery SELECT found no matching row (e.g. the
+        // subscription was deleted between the two reads).
+        mockRecoveryQuery([]);
+        const rawSubscriptions = [{ id: 'sub-vanished', status: 'active', planId: 'plan-1' }];
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        // Assert
+        expect(hydrated[0]?.productDomain).toBeNull();
+    });
+
+    it(
+        'is transparent when the recovery query returns no rows at all — every ' +
+            'original field survives unchanged, only productDomain is added (HOS-934 CI incident)',
+        async () => {
+            // Arrange — an EMPTY result set for the whole batch, not a
+            // per-subscription miss: this is what an under-mocked getDb() in a
+            // consuming test suite produces (no rows configured for the
+            // recovery query at all), and what caused two apps/api suites to
+            // regress when this function shipped — the caller's own catch-all
+            // swallowed the resulting shape mismatch as "no subscription".
+            // Hydration itself must stay a pure ADD: the object that goes in
+            // comes out with every field intact, never truncated.
+            mockRecoveryQuery([]);
+            const isPastDue = () => false;
+            const rawSubscriptions = [
+                {
+                    id: 'sub-1',
+                    status: 'active',
+                    planId: 'plan-1',
+                    currentPeriodStart: null,
+                    currentPeriodEnd: null,
+                    trialEnd: null,
+                    isPastDue
+                }
+            ];
+
+            // Act
+            const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+            // Assert — every original field present and unchanged...
+            expect(hydrated[0]?.id).toBe('sub-1');
+            expect(hydrated[0]?.status).toBe('active');
+            expect(hydrated[0]?.planId).toBe('plan-1');
+            expect(hydrated[0]?.currentPeriodStart).toBeNull();
+            expect(hydrated[0]?.currentPeriodEnd).toBeNull();
+            expect(hydrated[0]?.trialEnd).toBeNull();
+            expect(hydrated[0]?.isPastDue).toBe(isPastDue);
+            // ...plus the one field hydration is responsible for adding.
+            expect(hydrated[0]?.productDomain).toBeNull();
+            expect(Object.keys(hydrated[0] as object).sort()).toEqual(
+                [...Object.keys(rawSubscriptions[0] as object), 'productDomain'].sort()
+            );
+        }
+    );
+
+    it('returns an empty array without querying when given an empty input', async () => {
+        // Arrange
+        const selectMock = vi.fn();
+        mockGetDb.mockReturnValue({ select: selectMock });
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains([]);
+
+        // Assert
+        expect(hydrated).toEqual([]);
+        expect(selectMock).not.toHaveBeenCalled();
+    });
+
+    it('preserves helper methods on the hydrated objects (QZPaySubscriptionWithHelpers shape)', async () => {
+        // Arrange — `qzpayCreateSubscriptionWithHelpers` builds a plain object
+        // literal with its helper methods as OWN properties (no class/prototype
+        // involved), so `{ ...sub, productDomain }` must carry them through
+        // unchanged.
+        const isPastDue = () => false;
+        const rawSubscriptions = [
+            { id: 'sub-with-helpers', status: 'past_due', planId: 'plan-1', isPastDue }
+        ];
+        mockRecoveryQuery([{ id: 'sub-with-helpers', productDomain: 'accommodation' }]);
+
+        // Act
+        const hydrated = await hydrateSubscriptionProductDomains(rawSubscriptions);
+
+        // Assert
+        expect(hydrated[0]?.isPastDue).toBe(isPastDue);
+        expect(hydrated[0]?.isPastDue()).toBe(false);
+        expect(hydrated[0]?.productDomain).toBe('accommodation');
+    });
+
+    it('uses the caller-provided tx instead of a standalone getDb() connection', async () => {
+        // Arrange
+        const whereMock = vi.fn().mockResolvedValue([{ id: 'sub-1', productDomain: 'gastronomy' }]);
+        const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+        const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+        const fakeTx = { select: selectMock } as unknown as DrizzleClient;
+
+        // Act
+        await hydrateSubscriptionProductDomains(
+            [{ id: 'sub-1', status: 'active', planId: 'plan-1' }],
+            fakeTx
+        );
+
+        // Assert — the standalone getDb() connection was never touched.
+        expect(mockGetDb).not.toHaveBeenCalled();
+        expect(selectMock).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ============================================================================
+// HOS-847 — recurring add-on isolation
+// ============================================================================
+
+describe('isAddonSubscription (HOS-847)', () => {
+    it('recognises an explicit addon row', () => {
+        expect(isAddonSubscription({ productDomain: 'addon' })).toBe(true);
+    });
+
+    it('does NOT treat a legacy row (no domain) as an addon — fail-closed, not fail-open', () => {
+        for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
+            expect(isAddonSubscription(legacy)).toBe(false);
+        }
+    });
+
+    it('does not treat any other domain as an addon', () => {
+        // Every non-addon member, recounted against ProductDomainEnum rather
+        // than appended to — `tourist` joined in HOS-1233.
+        for (const domain of ['accommodation', 'gastronomy', 'experience', 'partner', 'tourist']) {
+            expect(isAddonSubscription({ productDomain: domain })).toBe(false);
+        }
+    });
+
+    it('a real add-on row never satisfies isAccommodationSubscription', () => {
+        // The exact contamination this member exists to prevent: an add-on row
+        // must never be mistaken for the owner's accommodation subscription.
+        const addonRow = { productDomain: 'addon' };
+        expect(isAccommodationSubscription(addonRow)).toBe(false);
+        expect(isAddonSubscription(addonRow)).toBe(true);
+    });
+});
+
+describe('excludeAddonDomainCondition (HOS-847)', () => {
+    it('builds an OR(isNull, ne(addon)) condition over billingSubscriptions.productDomain', () => {
+        // Arrange / Act
+        const condition = excludeAddonDomainCondition();
+
+        // Assert — shape produced by this file's real-predicate or()/ne()/isNull()
+        // mocks: an OR of "column is NULL" (legacy row) and "column != 'addon'".
+        expect(condition).toEqual({
+            or: [{ isNull: 'productDomain' }, { ne: ['productDomain', 'addon'] }]
         });
     });
 });

@@ -1,0 +1,50 @@
+---
+/**
+ * @file datos-practicos.astro
+ * @description Practical-info section of the commerce editor (HOS-898 / HOS-1046 /
+ * HOS-1047 / HOS-1056, routed in HOS-1080).
+ *
+ * EXPERIENCE ONLY on the same schema-shape gate as the meeting point. NOT an
+ * entitlement gate: all four fields ship from the basic tier by owner decision
+ * (2026-09-01), so there is no plan check here and there must not be one.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/datos-practicos/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({
+	astro: Astro,
+	sectionSlug: 'datos-practicos',
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="datos-practicos"
+	title={t('commerce.owner.editor.sectionNav.practicalInfo', 'Datos prácticos')}
+>
+	<CommerceListingEditor
+		client:load
+		sectionId="practicalInfo"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+	/>
+</CommerceEditorSectionLayout>

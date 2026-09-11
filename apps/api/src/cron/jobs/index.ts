@@ -16,6 +16,7 @@
 // Import job definitions
 export { abandonedPendingSubsJob } from './abandoned-pending-subs.job.js';
 export { addonExpiryJob } from './addon-expiry.job.js';
+export { addonSubscriptionReconcileJob } from './addon-subscription-reconcile.job.js';
 export { alertsDigestJob } from './alerts-digest.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
 export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js';
@@ -27,9 +28,11 @@ export { cloudinaryE2eCleanupJob } from './cloudinary-e2e-cleanup.job.js';
 export { conversationNotificationJob } from './conversation-notification.job.js';
 export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js';
 export { conversationTokenReminderJob } from './conversation-token-reminder.job.js';
+export { courtesyExpiryJob } from './courtesy-expiry.job.js';
 export { cronRunPurgeJob } from './cron-run-purge.job.js';
 export { destinationWeatherFetchJob } from './destination-weather-fetch.job.js';
 export { dunningJob } from './dunning.job.js';
+export { entitySubscriptionCacheReconcileJob } from './entity-subscription-cache-reconcile.job.js';
 export { entityViewsPurgeJob } from './entity-views-purge.job.js';
 export { exchangeRateFetchJob } from './exchange-rate-fetch.job.js';
 export { featuredByEntitlementReconcileJob } from './featured-by-entitlement-reconcile.job.js';
@@ -44,6 +47,7 @@ export { notificationLogPurgeJob } from './notification-log-purge.job.js';
 export { notificationScheduleJob } from './notification-schedule.job.js';
 export { pageRevalidationJob } from './page-revalidation.job.js';
 export { partnerExpiryJob } from './partner-expiry.job.js';
+export { partnerPaymentReviewJob } from './partner-payment-review.job.js';
 export { partnerUnpaidReaperJob } from './partner-unpaid-reaper.job.js';
 export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';
 export { preapprovalLessExpiryJob } from './preapproval-less-expiry.job.js';
@@ -52,6 +56,8 @@ export { reactivationSupersessionReconcileJob } from './reactivation-supersessio
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
+export { subscriptionDriftReconcileJob } from './subscription-drift-reconcile.job.js';
 export { subscriptionPollJob } from './subscription-poll.job.js';
 export { trialExpiryJob } from './trial-expiry.js';
+export { viewMonthlyRollupJob } from './view-monthly-rollup.job.js';
 export { webhookRetryJob } from './webhook-retry.job.js';

@@ -6,13 +6,20 @@
  * `StrongPasswordSchema.safeParse` (adds the 128-char cap the old
  * `StrongPasswordRegex.test()` never enforced), and HOS-779's SSR-first
  * guarantee that the real sign-up form exists on the first paint.
+ *
+ * HOS-959: `email` is now a controlled prop owned by the parent (`AuthTabs`
+ * in production) instead of local state, so every render here goes through
+ * a tiny `Harness` wrapper that supplies `email`/`onEmailChange` the same
+ * way `AuthTabs` does. The OAuth block moved out entirely — see
+ * `AuthTabs.client.test.tsx` for that coverage.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { SignUp } from '../../../src/components/auth/SignUp.client';
+import { SignUp, type SignUpProps } from '../../../src/components/auth/SignUp.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -74,12 +81,28 @@ vi.mock('../../../src/components/ui/PasswordField.client', () => ({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+type HarnessProps = Omit<SignUpProps, 'email' | 'onEmailChange'> & {
+    readonly initialEmail?: string;
+};
+
+/** Owns the controlled `email` value the way `AuthTabs` does in production. */
+function Harness({ initialEmail = '', ...props }: HarnessProps) {
+    const [email, setEmail] = useState(initialEmail);
+    return (
+        <SignUp
+            {...props}
+            email={email}
+            onEmailChange={setEmail}
+        />
+    );
+}
+
 function renderIsland() {
     return render(
-        <SignUp
+        <Harness
             locale="es"
             redirectTo="/es/auth/verify-email-sent/"
-            showOAuth={false}
+            verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
         />
     );
 }
@@ -178,7 +201,8 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
             expect(signUpEmailMock).toHaveBeenCalledWith({
                 email: 'user@example.com',
                 password: VALID_PASSWORD,
-                name: ''
+                name: '',
+                callbackURL: 'https://hospeda.com.ar/es/mi-cuenta/'
             });
         });
     });
@@ -187,12 +211,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
 
     it('marks the email label as required, like the two password labels', () => {
         // Arrange / Act
-        render(
-            <SignUp
-                locale="es"
-                redirectTo="/es/auth/verify-email-sent/"
-            />
-        );
+        renderIsland();
 
         // Assert — the label's own text, not the input's attributes: `required`
         // and `aria-required` were ALREADY on this input, so an attribute check
@@ -207,12 +226,7 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
         // The input already announces itself via `aria-required`; a second,
         // literal "asterisk" in the accessible name is noise, which is why
         // `PasswordField` marks its own span `aria-hidden` too.
-        render(
-            <SignUp
-                locale="es"
-                redirectTo="/es/auth/verify-email-sent/"
-            />
-        );
+        renderIsland();
 
         const marker = screen
             .getByText('Correo electrónico')
@@ -231,6 +245,9 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
             <SignUp
                 locale="es"
                 redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
+                email=""
+                onEmailChange={() => {}}
             />
         );
 
@@ -243,7 +260,9 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
             <SignUp
                 locale="es"
                 redirectTo="/es/auth/verify-email-sent/"
-                showOAuth={false}
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
+                email=""
+                onEmailChange={() => {}}
             />
         );
 
@@ -251,5 +270,92 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
         expect(screen.getByLabelText(/Correo electrónico/)).toBeInTheDocument();
         expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
         expect(screen.getByLabelText('Confirmar contraseña')).toBeInTheDocument();
+    });
+});
+
+describe('SignUp controlled email (HOS-959)', () => {
+    beforeEach(() => {
+        // The SSR tests above write straight into document.body, which
+        // RTL's auto-cleanup does not own and therefore leaves behind —
+        // reset it or getByLabelText below can pick up stale SSR markup
+        // instead of this test's own render.
+        document.body.innerHTML = '';
+        signUpEmailMock.mockReset();
+        signUpEmailMock.mockResolvedValue({ error: null });
+    });
+
+    it('renders the value handed in via the email prop', async () => {
+        render(
+            <Harness
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
+                initialEmail="preset@example.com"
+            />
+        );
+        await readyForm();
+
+        expect(screen.getByLabelText(/Correo electrónico/)).toHaveValue('preset@example.com');
+    });
+
+    it('calls onEmailChange on every keystroke instead of managing its own state', async () => {
+        const onEmailChange = vi.fn();
+        render(
+            <SignUp
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/"
+                email=""
+                onEmailChange={onEmailChange}
+            />
+        );
+        await readyForm();
+
+        fireEvent.change(screen.getByLabelText(/Correo electrónico/), {
+            target: { value: 'typed@example.com' }
+        });
+
+        expect(onEmailChange).toHaveBeenCalledWith('typed@example.com');
+    });
+});
+
+describe('SignUp — HOS-838: the destination reaches the verification email', () => {
+    beforeEach(() => {
+        signUpEmailMock.mockReset();
+        signUpEmailMock.mockResolvedValue({ error: null });
+    });
+
+    it('sends the requested destination as Better Auth callbackURL', async () => {
+        // The browser cannot carry the destination across the inbox hop — the
+        // email may be opened on another device — so it has to travel inside
+        // the verification link.
+        // Arrange
+        render(
+            <SignUp
+                locale="es"
+                redirectTo="/es/auth/verify-email-sent/"
+                verificationCallbackUrl="https://hospeda.com.ar/es/mi-cuenta/comercios/nuevo/"
+                email="user@example.com"
+                onEmailChange={() => undefined}
+            />
+        );
+        fireEvent.change(screen.getByLabelText(/^Contraseña/), {
+            target: { value: VALID_PASSWORD }
+        });
+        fireEvent.change(screen.getByLabelText(/Confirmar contraseña/), {
+            target: { value: VALID_PASSWORD }
+        });
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+        // Assert
+        await waitFor(() => {
+            expect(signUpEmailMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    callbackURL: 'https://hospeda.com.ar/es/mi-cuenta/comercios/nuevo/'
+                })
+            );
+        });
     });
 });

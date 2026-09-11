@@ -20,7 +20,8 @@ import { describe, expect, it } from 'vitest';
 import { buildAddonFocusUrl } from '../../../src/lib/billing/addon-focus';
 import {
     buildFeaturedAddonOffers,
-    FEATURED_LISTING_ADDON_SLUGS
+    FEATURED_LISTING_ADDON_SLUGS,
+    isAccommodationAlreadyFeatured
 } from '../../../src/lib/billing/featured-addon-offer';
 
 describe('FEATURED_LISTING_ADDON_SLUGS', () => {
@@ -81,5 +82,38 @@ describe('buildFeaturedAddonOffers', () => {
 
         expect(offers[0]?.nameFallback).toBe('Visibility Boost (7 days)');
         expect(offers[1]?.nameFallback).toBe('Visibility Boost (30 days)');
+    });
+});
+
+/**
+ * HOS-929 — the addon upsell in the editor (`FeaturedAddonOffer.astro`) must
+ * self-hide once the listing is featured from EITHER source: pitching the
+ * add-on to an already-featured host makes no sense with the owner toggle
+ * gone (holding the entitlement now features automatically, so "not
+ * featured" is exactly "holds neither source").
+ */
+describe('isAccommodationAlreadyFeatured', () => {
+    it('is already featured when only isFeatured is true', () => {
+        expect(
+            isAccommodationAlreadyFeatured({ isFeatured: true, featuredByEntitlement: false })
+        ).toBe(true);
+    });
+
+    it('is already featured when only featuredByEntitlement is true', () => {
+        expect(
+            isAccommodationAlreadyFeatured({ isFeatured: false, featuredByEntitlement: true })
+        ).toBe(true);
+    });
+
+    it('is already featured when both are true', () => {
+        expect(
+            isAccommodationAlreadyFeatured({ isFeatured: true, featuredByEntitlement: true })
+        ).toBe(true);
+    });
+
+    it('is NOT featured when both are false — the offer must show', () => {
+        expect(
+            isAccommodationAlreadyFeatured({ isFeatured: false, featuredByEntitlement: false })
+        ).toBe(false);
     });
 });

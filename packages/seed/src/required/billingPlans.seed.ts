@@ -28,6 +28,7 @@ import { summaryTracker } from '../utils/summaryTracker.js';
 const SEED_CONTROLLED_FIELDS: ReadonlySet<string> = new Set<ModelCField>([
     'description',
     'active',
+    'productDomain',
     'entitlements',
     'limitsKeysPresent',
     'limitsValues',
@@ -99,6 +100,13 @@ interface DbRowSnapshot {
     readonly monthlyPriceArs: number | null;
     /** Typed column (HOS-39 T-003/T-005), promoted off metadata.annualPriceArs. */
     readonly annualPriceArs: number | null;
+    /**
+     * Typed column. NOT nullable in the DB, but read as nullable here for the
+     * same reason the others are: a snapshot is only ever as trustworthy as
+     * the row it came from, and a `null` must diverge rather than compare
+     * equal to a config value (HOS-1233).
+     */
+    readonly productDomain: string | null;
 }
 
 /**
@@ -149,6 +157,12 @@ function detectDivergences(
     }
     if (differs(dbRow.entitlements, plan.entitlements)) {
         push('entitlements', plan.entitlements, dbRow.entitlements);
+    }
+    // HOS-1233: a row whose domain does not match its config definition is
+    // exactly the tourist misclassification, and it must show up as a
+    // divergence rather than be left alone.
+    if (dbRow.productDomain !== plan.productDomain) {
+        push('productDomain', plan.productDomain, dbRow.productDomain);
     }
 
     // ── limits — two logical facets ─────────────────────────────────────────
@@ -228,7 +242,7 @@ const SEED_CURRENCY = 'ARS';
  *   config; commercial-layer fields were left as-is (DB wins). A summary
  *   of what was synced and what was skipped is logged.
  */
-interface EnsurePlanResult {
+export interface EnsurePlanResult {
     readonly planId: string;
     readonly status: 'created' | 'skipped' | 'synced';
 }
@@ -261,6 +275,12 @@ function buildCapabilitySyncPayload(
     // `entitlements` is COMMERCIAL as of HOS-39 (2026-07-02) — the admin
     // PlanDialog.tsx already lets operators edit it, so the seed must not
     // sync it from config. No handling here; DB wins.
+
+    if (capabilityFields.has('productDomain')) {
+        // Straight from config — unlike `limits`, there is no per-key merge to
+        // do and nothing operator-owned to preserve.
+        payload.productDomain = plan.productDomain;
+    }
 
     if (capabilityFields.has('limitsKeysPresent')) {
         // Merge: start from DB values (preserving commercial values), then
@@ -342,8 +362,17 @@ function buildCapabilitySyncPayload(
  *
  * `db` is injectable for tests; production callers omit it and the
  * default `getDb()` resolves the runtime client.
+ *
+ * **Exported (HOS-1290)** so `commercePlan.seed.ts` and `partnerPlan.seed.ts`
+ * can reuse the exact same Model C sync engine instead of a bespoke
+ * insert-only/re-stamp-domain routine that never propagated a config change
+ * (a new `LimitKey`, an entitlement, a description edit) to an
+ * already-seeded row. Every field this function syncs is generic across
+ * verticals — `plan.productDomain` already carries the right domain for
+ * whichever catalogue the caller passes in, so no vertical-specific branching
+ * is needed here.
  */
-async function ensurePlan(
+export async function ensurePlan(
     plan: PlanDefinition,
     livemode: boolean,
     db: DrizzleClient = getDb()
@@ -365,7 +394,8 @@ async function ensurePlan(
             metadata: billingPlans.metadata,
             displayName: billingPlans.displayName,
             monthlyPriceArs: billingPlans.monthlyPriceArs,
-            annualPriceArs: billingPlans.annualPriceArs
+            annualPriceArs: billingPlans.annualPriceArs,
+            productDomain: billingPlans.productDomain
         })
         .from(billingPlans)
         .where(eq(billingPlans.name, plan.slug))
@@ -441,6 +471,12 @@ async function ensurePlan(
             displayName: plan.name,
             monthlyPriceArs: plan.monthlyPriceArs,
             annualPriceArs: plan.annualPriceArs,
+            // HOS-1233 T-034: stamped from the plan's own definition, never
+            // from a slug list and never left to the column default. A plan
+            // added to `ALL_PLANS` cannot inherit somebody else's vertical,
+            // because `PlanDefinition.productDomain` is required — `tsc`
+            // refuses the definition before the seed ever runs.
+            productDomain: plan.productDomain,
             metadata: {
                 slug: plan.slug,
                 displayName: plan.name,
@@ -479,8 +515,6 @@ interface EnsurePriceInput {
     readonly planId: string;
     readonly unitAmount: number;
     readonly billingInterval: 'month' | 'year';
-    readonly trialDays: number;
-    readonly hasTrial: boolean;
     readonly livemode: boolean;
 }
 
@@ -490,9 +524,18 @@ interface EnsurePriceInput {
  * already matches; never updates an existing row (price changes go
  * through a separate flow, not the seed).
  *
- * `trialDays` is forwarded only when the plan declares a trial and the
- * interval is monthly. Annual plans don't carry a trial in Hospeda's
- * model (annual = one-time upfront charge, no MP preapproval).
+ * **Never writes `trialDays`** (HOS-1224). It used to mirror the plan's
+ * `trialDays` onto the monthly row. Nothing reads that column to decide the
+ * product — the real trial is `billing_plans.metadata.trialDays` on the
+ * dedicated `*-trial` plans, which carry no price row at all — but
+ * `@qazuor/qzpay-core` INHERITS `price.trialDays` whenever a caller of
+ * `subscriptions.create` omits `trialDays`, and `@qazuor/qzpay-drizzle` turns
+ * that inherited number into `trial_start`/`trial_end` on the new subscription.
+ * That is HOS-1221's bug D3: a PAID subscription born marked `trialing` for 30
+ * days with the customer already charged. A column nobody reads and that can
+ * poison a paid subscription should hold no value, so the mirror is gone from
+ * the baseline and `0102-hos-1224-*` nulls the rows already written.
+ * `scripts/check-no-price-trial-days.sh` keeps it from coming back.
  *
  * `db` is injectable for tests; production callers omit it.
  */
@@ -517,9 +560,6 @@ async function ensurePrice(
         return 'skipped';
     }
 
-    const shouldAttachTrial =
-        input.hasTrial && input.billingInterval === 'month' && input.trialDays > 0;
-
     await db.insert(billingPrices).values({
         planId: input.planId,
         currency: SEED_CURRENCY,
@@ -527,8 +567,7 @@ async function ensurePrice(
         billingInterval: input.billingInterval,
         intervalCount: 1,
         active: true,
-        livemode: input.livemode,
-        ...(shouldAttachTrial ? { trialDays: input.trialDays } : {})
+        livemode: input.livemode
     });
 
     return 'created';
@@ -597,8 +636,6 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                     planId: planResult.planId,
                     unitAmount: plan.monthlyPriceArs,
                     billingInterval: 'month',
-                    trialDays: plan.trialDays,
-                    hasTrial: plan.hasTrial,
                     livemode: isProduction
                 });
                 if (monthlyResult === 'created') {
@@ -613,8 +650,6 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                         planId: planResult.planId,
                         unitAmount: plan.annualPriceArs,
                         billingInterval: 'year',
-                        trialDays: plan.trialDays,
-                        hasTrial: plan.hasTrial,
                         livemode: isProduction
                     });
                     if (annualResult === 'created') {

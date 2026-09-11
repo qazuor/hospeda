@@ -92,6 +92,7 @@
             "neverRun": "No runs",
             "noNextRun": "—",
             "lastRunSuccess": "OK",
+            "lastRunPartial": "Partial",
             "lastRunFailed": "Failed",
             "lastRunTimeout": "Timeout"
         },
@@ -196,12 +197,13 @@
             "complex-pro": "Professional plan for complexes with consolidated analytics.",
             "complex-premium": "Premium plan for large complexes with all features.",
             "tourist-free": "Free plan for tourists. Basic features included.",
-            "tourist-plus": "Plus plan for frequent tourists. Comparison, search history, and price alerts.",
             "tourist-vip": "VIP plan for discerning tourists. All premium features included."
         },
         "statusActive": "Active",
         "statusInactive": "Inactive",
         "statusDefault": "Default",
+        "statusUnlisted": "Not publicly listed",
+        "statusUnlistedHint": "Active and charging — withheld from the public plan listings",
         "actionActivate": "Activate",
         "actionDeactivate": "Deactivate",
         "actionEdit": "Edit",
@@ -240,6 +242,8 @@
                 "name": "Name",
                 "namePlaceholder": "Basic Owner",
                 "category": "Category",
+                "productDomain": "Product domain",
+                "productDomainHint": "Which vertical counts a subscription to this plan. Cannot be changed after creation.",
                 "description": "Description",
                 "descriptionPlaceholder": "Describe the plan...",
                 "monthlyArs": "Monthly (ARS)",
@@ -264,7 +268,8 @@
                 "accommodation": "Accommodation",
                 "complex": "Complex",
                 "tourist": "Tourist",
-                "ai": "Artificial intelligence"
+                "ai": "Artificial intelligence",
+                "commerce": "Commerce"
             },
             "cancelButton": "Cancel",
             "saveButton": "Save changes",
@@ -309,6 +314,8 @@
         "confirmActivateDesc": "You will force the activation of the add-on",
         "confirmActivateDescSuffix": "for the customer",
         "confirmActivateDescEnd": "This action will immediately change the status to \"active\".",
+        "confirmToggleActivate": "Activate this add-on?",
+        "confirmToggleDeactivate": "Deactivate this add-on?",
         "forceExpire": "Force expiration",
         "forceActivate": "Force activation",
         "toastExpiredTitle": "Add-on expired",
@@ -497,8 +504,6 @@
             "receiptHint": "Automatically send receipt on payment",
             "trialReminderLabel": "Trial expiry reminder",
             "trialReminderHint": "Notify before the trial period expires",
-            "trialReminderDaysLabel": "Reminder days in advance",
-            "trialReminderDaysHint": "Send the reminder X days before expiry",
             "paymentFailedLabel": "Notify failed payment",
             "paymentFailedHint": "Notify the customer when a payment fails",
             "subscriptionCancelledLabel": "Notify subscription cancellation",
@@ -968,6 +973,170 @@
         "unknownUser": "Unknown user",
         "unknownPlan": "No plan"
     },
+    "reconciliation": {
+        "title": "Orphan payment rescue",
+        "description": "Compares MercadoPago against the local ledger and proposes links. The tool PROPOSES, a human DECIDES: nothing links automatically.",
+        "table": {
+            "title": "Divergences",
+            "loading": "Loading divergences...",
+            "errorLoading": "Error loading divergences",
+            "empty": "No divergences",
+            "emptyTitle": "No divergences found",
+            "emptyHint": "MercadoPago and the local ledger match for the queried range.",
+            "divergenceCount_one": "{{count}} divergence",
+            "divergenceCount_other": "{{count}} divergences",
+            "columns": {
+                "kind": "Type",
+                "identifier": "Identifier",
+                "payerEmail": "Payer email",
+                "amount": "Amount",
+                "date": "Date",
+                "mpStatus": "MP status",
+                "candidates": "Candidates",
+                "actions": "Actions"
+            },
+            "viewButton": "View details",
+            "backfillButton": "Record payment",
+            "forceLinkButton": "Link"
+        },
+        "kinds": {
+            "unrecordedPayment": "Unrecorded payment",
+            "orphanPreapproval": "Orphan preapproval"
+        },
+        "notAttributableYet": "Not attributable yet",
+        "matchedOn": {
+            "externalReference": "External reference",
+            "payerEmail": "Payer email",
+            "mpPlanId": "MP plan",
+            "preapprovalId": "Preapproval ID"
+        },
+        "detailDialog": {
+            "title": "Divergence detail",
+            "mpSection": "MercadoPago data",
+            "payerSection": "Payer identity",
+            "candidatesSection": "Local candidates",
+            "noCandidates": "No candidates found. There is nothing to propose: the operator must search manually.",
+            "localStatusLabel": "Local status:",
+            "useCandidateButton": "Use this one"
+        },
+        "fields": {
+            "mpPaymentId": "Payment ID (MP)",
+            "mpStatusDetail": "Status detail",
+            "approvedAt": "Approved at",
+            "payerId": "Payer ID (MP)",
+            "preapprovalId": "Preapproval ID (MP)",
+            "description": "Description",
+            "reason": "Reason (MP)",
+            "nextPaymentDate": "Next payment",
+            "preapprovalPlanId": "Preapproval plan ID",
+            "sourcePaymentId": "Source payment",
+            "amount": "Amount",
+            "mpStatus": "MP status",
+            "createdAt": "Created at",
+            "externalReference": "External reference",
+            "payerEmailRaw": "Payer email (raw, MP)",
+            "payerEmailFromPayment": "Payer email (from linked payment)"
+        },
+        "payerEmailRawEmptyHint": "MercadoPago returns this field empty on every real preapproval. This is not a tool failure.",
+        "actionDialog": {
+            "forceLinkTitle": "Link preapproval to a local subscription",
+            "forceLinkDescription": "Binds this MercadoPago preapproval to the local subscription you choose. This action is audited.",
+            "backfillTitle": "Record payment in the ledger",
+            "backfillDescription": "Creates the missing billing_payments row for this already-approved charge. This action is audited.",
+            "auditWarning": "This action writes to the ledger and is audited under your name. It cannot be undone with a click.",
+            "mpTargetLabel": "MercadoPago identifier",
+            "localSubscriptionIdLabel": "Local subscription ID",
+            "localSubscriptionIdPlaceholder": "Paste the local subscription ID...",
+            "localSubscriptionIdHint": "This field always starts empty. To copy a candidate here, open the detail view and use \"Use this one\".",
+            "reasonLabel": "Reason",
+            "reasonPlaceholder": "Explain why these two records are the same person/subscription (minimum 10 characters)...",
+            "reasonHint": "This text stays in the audit record. Be specific: it is the only thing that explains the link later.",
+            "processingButton": "Processing...",
+            "forceLinkConfirmButton": "Link",
+            "backfillConfirmButton": "Record payment",
+            "forceLinkSuccess": "Preapproval linked successfully",
+            "forceLinkError": "Error linking:",
+            "backfillSuccess": "Payment recorded successfully",
+            "backfillError": "Error recording payment:"
+        },
+        "truncatedBanner": {
+            "title": "Partial report",
+            "description": "The MercadoPago sweep hit its configured page ceiling. The total shown is a floor, not a full count: there may be more unlisted divergences."
+        },
+        "filters": {
+            "title": "Filters",
+            "kindLabel": "Type",
+            "allKinds": "All",
+            "sinceLabel": "Since",
+            "sinceHint": "Defaults to the last 90 days. Each query costs paced calls against MercadoPago."
+        },
+        "mpCallStats": "{{calls}} MercadoPago calls ({{rateLimited}} rate-limited)",
+        "pagination": {
+            "previous": "Previous",
+            "next": "Next",
+            "pageOf": "Page {{page}} of {{totalPages}}"
+        },
+        "queue": {
+            "title": "Orphan payment queue",
+            "loading": "Loading the queue...",
+            "errorLoading": "Failed to load the queue",
+            "emptyTitle": "No payments in the queue",
+            "emptyHint": "No charge went unbooked under this filter. The queue is written at the instant of the failure, so empty means empty.",
+            "unresolvedCount_one": "{{count}} unresolved payment in total",
+            "unresolvedCount_other": "{{count}} unresolved payments in total",
+            "resolveButton": "Resolve",
+            "livemodeReal": "Real money",
+            "livemodeSandbox": "Sandbox",
+            "columns": {
+                "detectedAt": "Detected",
+                "providerPaymentId": "Payment ID (MP)",
+                "flow": "Flow",
+                "reason": "Reason",
+                "amount": "Amount",
+                "livemode": "Environment",
+                "subscriptionId": "Local subscription",
+                "actions": "Actions"
+            },
+            "flows": {
+                "planChangeUpgrade": "Plan upgrade",
+                "annualUpfront": "Annual upfront",
+                "addonPurchase": "Add-on purchase",
+                "authorizedPaymentRetry": "Recurring charge retry"
+            },
+            "reasons": {
+                "subscriptionNotFound": "Subscription not found",
+                "statusNotApplicable": "Status not applicable",
+                "ledgerWriteFailed": "Ledger write failed"
+            },
+            "statuses": {
+                "unresolved": "Unresolved",
+                "resolved": "Resolved",
+                "dismissed": "Dismissed"
+            },
+            "resolutions": {
+                "resolved": "Resolved — the money was booked or refunded",
+                "dismissed": "Dismissed — nothing was owed"
+            },
+            "filters": {
+                "title": "Queue filters",
+                "statusLabel": "Status"
+            },
+            "resolveDialog": {
+                "title": "Record the verdict on this payment",
+                "description": "Record what was done about this charge. It does NOT book the payment: that is the “Backfill payment” action on the matching divergence.",
+                "auditWarning": "This action is audited with your user and your note. A closed row cannot be reopened from here.",
+                "resolutionLabel": "Verdict",
+                "resolutionHint": "“Resolved” means the money was accounted for or refunded. “Dismissed” means nothing was owed (a test charge, a duplicate).",
+                "noteLabel": "What was done",
+                "notePlaceholder": "e.g. backfilled through the rescue tool, MP reference 174625958196.",
+                "noteHint": "At least 10 characters. It is the only thing that will tell whoever reads this in six months whether the customer was made whole.",
+                "confirmButton": "Record verdict",
+                "processingButton": "Recording...",
+                "success": "Verdict recorded",
+                "error": "Could not record the verdict:"
+            }
+        }
+    },
     "subscriptions": {
         "title": "Subscriptions",
         "description": "Manage active user subscriptions",
@@ -980,7 +1149,8 @@
             "paused": "Paused",
             "comp": "Complimentary",
             "abandoned": "Abandoned",
-            "pendingProvider": "Awaiting provider"
+            "pendingProvider": "Awaiting provider",
+            "courtesy": "Cycles gifted"
         },
         "promoEffect": {
             "title": "Active promotion",
@@ -1065,7 +1235,9 @@
             "extendTrialButton": "Extend trial",
             "cancelSubscriptionButton": "Cancel subscription",
             "pauseButton": "Pause",
-            "resumeButton": "Resume"
+            "resumeButton": "Resume",
+            "grantCourtesyButton": "Gift cycles",
+            "grantCompButton": "Grant comp"
         },
         "paymentHistory": {
             "title": "Payment History",
@@ -1154,7 +1326,12 @@
             "paused": "Subscription paused",
             "resumed": "Subscription resumed",
             "pauseError": "Error pausing subscription:",
-            "resumeError": "Error resuming subscription:"
+            "resumeError": "Error resuming subscription:",
+            "courtesyGranted": "Cycles gifted",
+            "courtesyError": "Could not gift cycles:",
+            "compGranted": "Comp granted:",
+            "compError": "Could not grant the comp:",
+            "plansTruncated": "Could not load every plan for granting a comp, showing"
         },
         "unknownUser": "Unknown user",
         "unknownPlan": "Unknown plan",
@@ -1166,7 +1343,31 @@
             "gastronomy": "Gastronomy",
             "experience": "Experience",
             "partner": "Partner",
+            "tourist": "Tourist",
+            "addon": "Add-on",
             "unknown": "Other"
+        },
+        "courtesyDialog": {
+            "title": "Gift billing cycles",
+            "description": "Gift free cycles to",
+            "cyclesLabel": "How many cycles do you want to gift?",
+            "startsAtNotice": "The subscription is marked as gifted right away, and automatic billing stops immediately. The subscriber loses nothing: they keep everything until the period they already paid for ends, and that's when the gifted cycles start counting.",
+            "leadTimeWarning": "If the next charge is under 3 days away the grant is refused: pausing that close may not stop it, and they would be charged for exactly the cycle being gifted.",
+            "confirmButton": "Gift",
+            "backButton": "Back"
+        },
+        "compDialog": {
+            "title": "Grant permanent comp",
+            "description": "Choose a plan from any vertical for",
+            "planLabel": "Plan to grant",
+            "selectPlan": "Select a plan…",
+            "noPlans": "No active plans available.",
+            "perMonth": "/mo",
+            "intervalLabel": "Interval (audit only — a comp is never charged)",
+            "intervalMonthly": "Monthly",
+            "intervalAnnual": "Annual",
+            "permanentWarning": "This comp is permanent and carries no MercadoPago preapproval: it is never charged, and it does not return to full price on its own. It cannot be \"undone\" with a plan change — only by cancelling the resulting subscription.",
+            "confirmButton": "Grant comp"
         }
     },
     "exchangeRates": {

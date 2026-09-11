@@ -11,6 +11,7 @@ import { GastronomyPublicSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -50,7 +51,7 @@ export const publicGetGastronomiesByDestinationRoute = createPublicListRoute({
         }
 
         return {
-            items: result.data?.items || [],
+            items: withPublicIsFeaturedList(result.data?.items || []),
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },

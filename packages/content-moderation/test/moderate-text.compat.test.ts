@@ -16,7 +16,15 @@ describe('SPEC-195 public moderation API compatibility', () => {
         expect(publicApi.MODERATION_REJECT_THRESHOLD).toBe(0.85);
 
         const result = await publicApi.moderateText({ text: 'compat input', context: 'review' });
-        expect(Object.keys(result).sort()).toEqual(['categories', 'matchedTerms', 'score']);
+        // `degraded` joined the shape in HOS-1069: consumers must be able to
+        // tell "the engine judged this and it is clean" from "the engine could
+        // not judge it", which the score alone cannot express.
+        expect(Object.keys(result).sort()).toEqual([
+            'categories',
+            'degraded',
+            'matchedTerms',
+            'score'
+        ]);
         expect(Object.keys(result.categories).sort()).toEqual([
             'harassment',
             'hate',

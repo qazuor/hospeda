@@ -222,15 +222,40 @@ vi.mock('@repo/db', async (importOriginal) => {
             cancelAtPeriodEnd: 'CANCEL_AT_PERIOD_END',
             deletedAt: 'DELETED_AT',
             updatedAt: 'UPDATED_AT',
-            mpSubscriptionId: 'MP_SUBSCRIPTION_ID'
+            mpSubscriptionId: 'MP_SUBSCRIPTION_ID',
+            productDomain: 'PRODUCT_DOMAIN'
         },
         billingSubscriptionEvents: { _table: 'billing_subscription_events' },
+        // HOS-1084: finalize now reconciles through
+        // `subscription-linked-entities.service`, which reaches the shared
+        // `entity_subscriptions` status cache at module scope. Named explicitly
+        // because this file replaces the @repo/db mock wholesale.
+        ENTITY_SUBSCRIPTION_STATUS_NONE: 'none',
+        entitySubscriptions: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            productDomain: 'product_domain',
+            entityType: 'entity_type',
+            entityId: 'entity_id',
+            status: 'status',
+            planId: 'plan_id'
+        },
+        accommodations: { id: 'ACC_ID', ownerId: 'ACC_OWNER_ID', deletedAt: 'ACC_DELETED_AT' },
+        billingCustomers: {
+            id: 'CUST_ID',
+            externalId: 'CUST_EXTERNAL_ID',
+            deletedAt: 'CUST_DELETED_AT'
+        },
         eq: vi.fn((col, val) => ({ _eq: [col, val] })),
         and: vi.fn((...args) => ({ _and: args })),
         gte: vi.fn((col, val) => ({ _gte: [col, val] })),
         lte: vi.fn((col, val) => ({ _lte: [col, val] })),
         isNull: vi.fn((col) => ({ _isNull: col })),
         inArray: vi.fn((col, vals) => ({ _inArray: [col, vals] })),
+        // HOS-847: excludeAddonDomainCondition() (called for real from
+        // @repo/service-core, unmocked) needs ne()/or() too.
+        ne: vi.fn((col, val) => ({ _ne: [col, val] })),
+        or: vi.fn((...args) => ({ _or: args })),
         sql: mockSql
     };
 });
@@ -456,11 +481,19 @@ describe('handler: happy path — due soft-cancelled sub', () => {
         // Status flip via drizzle update
         expect(mockDbUpdate).toHaveBeenCalled();
 
-        // Addon revocation
+        // Addon revocation.
+        //
+        // HOS-847 PR 7a: `cause` is listed on purpose. This cron only ever
+        // finalizes a soft-cancel the customer (or a plan retirement) asked
+        // for, so each add-on keeps the period it was already charged for —
+        // and `expect.objectContaining` is blind to a field it does not name,
+        // so omitting it would let a `'non-payment'` slipped in here take those
+        // periods back with every assertion in this file still green.
         expect(mockHandleSubscriptionCancellationAddons).toHaveBeenCalledWith(
             expect.objectContaining({
                 subscriptionId: SUB_ID_1,
-                customerId: CUSTOMER_ID_1
+                customerId: CUSTOMER_ID_1,
+                cause: 'voluntary'
             })
         );
 
@@ -845,11 +878,23 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
             | { _gte?: unknown[] }
             | { _isNull?: unknown }
             | { _inArray?: unknown[] }
+            | { _or?: unknown[] }
         >;
 
-        // Should have 4 sub-predicates: inArray(status, ...), cancelAtPeriodEnd eq,
-        // currentPeriodEnd lte, deletedAt isNull.
-        expect(subPreds.length).toBe(4);
+        // Should have 5 sub-predicates: inArray(status, ...), cancelAtPeriodEnd eq,
+        // currentPeriodEnd lte, deletedAt isNull, and (HOS-847) the add-on
+        // domain exclusion.
+        expect(subPreds.length).toBe(5);
+
+        // HOS-847: a recurring add-on's own preapproval row must never be
+        // finalized by the plan-cancellation flow — the OR(productDomain IS
+        // NULL, productDomain != 'addon') condition must be present.
+        const excludeAddon = subPreds.find(
+            (p): p is { _or: unknown[] } => '_or' in p && Array.isArray(p._or)
+        );
+        expect(excludeAddon).toBeDefined();
+        expect(excludeAddon?._or).toContainEqual({ _ne: ['PRODUCT_DOMAIN', 'addon'] });
+        expect(excludeAddon?._or).toContainEqual({ _isNull: 'PRODUCT_DOMAIN' });
 
         // M2 regression guard: status must use inArray (not a bare eq('active')).
         // The prior 'active'-only eq would cause past_due/trialing soft-cancelled
@@ -1227,6 +1272,37 @@ describe('_internals.sendAccessEndingReminders', () => {
 
     it('exports sendAccessEndingReminders function', () => {
         expect(typeof _internals.sendAccessEndingReminders).toBe('function');
+    });
+
+    // HOS-847: an add-on's own preapproval row must never receive the
+    // customer-facing "your subscription access is ending" reminder email —
+    // it is not the customer's real plan subscription.
+    it("excludes a recurring add-on's own row from the D3 reminder window query (HOS-847)", async () => {
+        const capturedPredicates: unknown[] = [];
+        mockDbSelectChain.mockImplementation(function () {
+            const chain = {
+                from: () => chain,
+                where: (predicate: unknown) => {
+                    capturedPredicates.push(predicate);
+                    return chain;
+                },
+                limit: async () => []
+            };
+            return chain;
+        });
+
+        const fakeLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
+
+        await _internals.sendAccessEndingReminders(fakeLogger);
+
+        const predicate = capturedPredicates[0] as { _and: Array<Record<string, unknown>> };
+        const excludeAddon = predicate._and.find(
+            (p): p is { _or: unknown[] } => '_or' in p && Array.isArray(p._or)
+        );
+
+        expect(excludeAddon).toBeDefined();
+        expect(excludeAddon?._or).toContainEqual({ _ne: ['PRODUCT_DOMAIN', 'addon'] });
+        expect(excludeAddon?._or).toContainEqual({ _isNull: 'PRODUCT_DOMAIN' });
     });
 
     it('HOS-215: selects periodEnd and filters the window using the trial-aware effective end date, not the raw currentPeriodEnd column', async () => {

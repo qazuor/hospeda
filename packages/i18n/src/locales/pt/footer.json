@@ -8,8 +8,7 @@
     "listProperty": "Publique seu alojamento",
     "listGastronomy": "Publique seu local gastronômico",
     "listExperience": "Publique sua experiência",
-    "ownerPlans": "Planos para proprietários",
-    "touristPlans": "Planos para turistas",
+    "plans": "Planos e preços",
     "legal": "Legal",
     "aboutUs": "Quem somos",
     "collaborate": "Colabore",
@@ -31,8 +30,7 @@
     "destinationColon": "Colón",
     "destinationPaysandu": "Paysandú",
     "destinationFederation": "Federación",
-    "contactEmail": "info@hospeda.tur.ar",
-    "contactPhone": "+54 3442 000000",
+    "contactEmail": "info@hospeda.com.ar",
     "followUs": "Siga-nos",
     "contactTitle": "Contato",
     "newsletterEmailPlaceholder": "Seu e-mail",
@@ -97,6 +95,8 @@
         "guestLockLabel": "Entre para se inscrever",
         "invalidEmail": "Por favor, insira um endereço de e-mail válido.",
         "unsubscribeConfirm": "Tem certeza de que deseja cancelar a assinatura da newsletter?",
+        "unsubscribeConfirmTitle": "Cancelar a assinatura da newsletter",
+        "unsubscribeConfirmButton": "Cancelar assinatura",
         "unsubscribeSuccess": "Você cancelou a assinatura da newsletter.",
         "unsubscribeError": "Não conseguimos cancelar sua assinatura. Tente novamente em alguns minutos.",
         "unsubscribeBusy": "Cancelando inscrição...",
@@ -108,5 +108,5 @@
     },
     "experiences": "Experiências",
     "reportProblem": "Relatar um problema",
-    "allRightsReserved": "Todos los derechos reservados"
+    "allRightsReserved": "Todos os direitos reservados"
 }

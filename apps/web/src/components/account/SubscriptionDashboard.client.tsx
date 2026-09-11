@@ -7,7 +7,14 @@
  * SUPER_ADMIN sees an additional admin escalation button.
  */
 
-import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
+import {
+    ArrowRightIcon,
+    CancelIcon,
+    CreditCardIcon,
+    DownloadIcon,
+    PlayIcon,
+    PowerOffIcon
+} from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
@@ -15,15 +22,19 @@ import { billingApi, userApi } from '@/lib/api/endpoints-protected';
 import type { ProductDomainScope } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import type { CommercePlanOption } from '@/lib/commerce/plan-options';
 import { getAdminUrl } from '@/lib/env';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
+import { CommercePlanChange } from '../commerce/CommercePlanChange.client';
 import { PlanChangeFlow } from './PlanChangeFlow.client';
 import { PlanUsageSection } from './PlanUsageSection.client';
 import styles from './SubscriptionDashboard.module.css';
+import { TrialExtensionForm } from './TrialExtensionForm.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,7 +64,8 @@ type SubscriptionStatus =
     | 'expired'
     | 'past_due'
     | 'pending'
-    | 'paused';
+    | 'paused'
+    | 'courtesy';
 
 /** User shape passed from the Astro page */
 export interface SubscriptionDashboardUser {
@@ -75,6 +87,17 @@ export interface SubscriptionDashboardProps {
      */
     readonly plans?: readonly PublicPlanData[];
     /**
+     * This vertical's tiers, when `productDomain` is a commerce one (HOS-1213).
+     *
+     * A commerce subscription changes tiers through `CommercePlanChange` and its
+     * own `POST /protected/commerce/{vertical}/change-plan`, never through
+     * `PlanChangeFlow` — so its catalogue arrives as a separate prop rather than
+     * being squeezed into `plans`. Passing the two through one field is what
+     * produced the bug: with a single list, a commerce dashboard rendered the
+     * accommodation flow over whatever plans happened to be in it.
+     */
+    readonly commercePlans?: readonly CommercePlanOption[];
+    /**
      * Which of the caller's subscriptions to load (HOS-259). A dual-role
      * owner (accommodation host AND commerce-listing owner) can have TWO
      * subscriptions under the same billing customer; this scopes both the
@@ -82,6 +105,90 @@ export interface SubscriptionDashboardProps {
      * `'accommodation'` server-side when omitted (see `userApi.getSubscription`).
      */
     readonly productDomain?: ProductDomainScope;
+}
+
+/**
+ * Whether this dashboard is showing a COMMERCE vertical's subscription.
+ *
+ * Narrows `ProductDomainScope` to the two verticals `CommercePlanChange`
+ * accepts. Written as an inclusion list so a domain added later (`partner`, say)
+ * is excluded until somebody decides what its plan change looks like, rather
+ * than being handed to a component built for gastronomy and experience.
+ */
+function isCommerceVertical(domain: ProductDomainScope | undefined): domain is CommerceVertical {
+    return domain === 'gastronomy' || domain === 'experience';
+}
+
+/**
+ * Whether this dashboard is showing the ACCOMMODATION subscription (HOS-1321).
+ *
+ * Gates pause/resume, which are accommodation-specific in their copy AND in
+ * their effect. It exists because `commerceVertical === null` — the shape
+ * HOS-1278 used for the same job — is a NEGATION, and a fourth domain walks
+ * straight through it: `isCommerceVertical('tourist')` is `false`, so a
+ * `tourist-vip` holder was offered "Pausar" and a modal reading "tus
+ * alojamientos se ocultan del sitio y no podrás editarlos", about accommodation
+ * they do not have.
+ *
+ * ## The backend is NOT a backstop here — read that route per DIMENSION
+ *
+ * `POST /billing/subscriptions/pause` does two separable things and gates only
+ * one of them:
+ *
+ * - **Billing dimension** — `billing.subscriptions.pause(target.id)`
+ *   (`subscription-pause.ts:258`) pauses the MercadoPago preapproval and flips
+ *   the local status. It runs for EVERY domain, ungated.
+ * - **Service dimension** — `setOwnerServiceSuspension`, which hides the
+ *   owner's accommodations, is the only part wrapped in
+ *   `isAccommodationDomainSubscription` (`:414`), and that is what makes
+ *   `accommodationsUpdated` come back `0`.
+ *
+ * So a tourist pause was never impossible server-side: it really would have
+ * stopped their charges, and the modal's promise about hidden accommodation was
+ * the only part that could not happen. An earlier version of this comment said
+ * the route "fails closed for a non-accommodation domain", which is false —
+ * "fails closed" on a two-dimension route has to be read one dimension at a
+ * time.
+ *
+ * Known consequence, NOT introduced here: a `tourist-vip` who paused before
+ * HOS-1233 reclassified their row (while the accommodation dashboard still
+ * showed them a Pausar button) now lands on the tourist tab with
+ * `status: 'paused'`, where `canResume` is `false` and `canCancel` excludes
+ * `paused` — a paused subscription with no action on it. Strictly better than
+ * the "Sin suscripción activa" they saw before this spec, and commerce has
+ * carried the same gap since HOS-1278, so it is left alone rather than grown
+ * into this change.
+ *
+ * An INCLUSION list, so a fifth domain is excluded until somebody decides what
+ * pausing means for it and writes copy that is true.
+ *
+ * `undefined` counts as accommodation: the prop is optional and every caller
+ * that omits it is the accommodation dashboard (`userApi.getSubscription`
+ * defaults to that domain server-side).
+ */
+export function isAccommodationDashboard(domain: ProductDomainScope | undefined): boolean {
+    return domain === undefined || domain === 'accommodation';
+}
+
+/**
+ * Whether this dashboard changes plans through `PlanChangeFlow` and
+ * `POST /billing/subscriptions/change-plan` (HOS-1321).
+ *
+ * The accommodation AND tourist tabs do — `plan-domains.config.ts` files both
+ * catalogues under the accommodation plan-change machinery, and there is no
+ * second route for tourists the way commerce has one per vertical.
+ *
+ * Also an INCLUSION list, and for the same reason as
+ * {@link isAccommodationDashboard}: the two call sites below used to say
+ * `commerceVertical === null`, which hands the accommodation flow to every
+ * domain that is not one of the two commerce verticals — a fifth domain
+ * included. Listed instead, a fifth domain renders NO plan-change UI until
+ * somebody decides which flow it belongs to, which is dark rather than wrong.
+ */
+export function isAccommodationPlanChangeDashboard(
+    domain: ProductDomainScope | undefined
+): boolean {
+    return domain === undefined || domain === 'accommodation' || domain === 'tourist';
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +217,12 @@ function getBadgeClass(status: SubscriptionStatus): string {
             return styles.badgePending ?? '';
         case 'paused':
             return styles.badgePaused ?? '';
+        // HOS-180: a courtesy sits on a PAUSED MercadoPago preapproval, but
+        // nothing is suspended for the subscriber. It must never borrow the
+        // paused badge — AC-11 forbids "paused"/"suspended" wording anywhere on
+        // this screen for a gifted subscription.
+        case 'courtesy':
+            return styles.badgeActive ?? '';
         default:
             return styles.badgePending ?? '';
     }
@@ -243,7 +356,7 @@ function EmptyState({
 }
 
 /** Support email shown in the cancel-instructions modal. Matches footer.contactEmail. */
-const SUPPORT_EMAIL = 'info@hospeda.com';
+const SUPPORT_EMAIL = 'info@hospeda.com.ar';
 
 /** Possible UI states for the cancel modal flow. */
 type CancelModalStep = 'confirm' | 'success' | 'flag_off';
@@ -354,7 +467,7 @@ function CancelConfirmModal({
             onClick={handleBackdropClick}
         >
             <dialog
-                className={styles.modal}
+                className={`${styles.modal} dialog-panel`}
                 open
                 aria-labelledby="cancel-modal-title"
             >
@@ -543,7 +656,7 @@ function PauseConfirmModal({
             onClick={handleBackdropClick}
         >
             <dialog
-                className={styles.modal}
+                className={`${styles.modal} dialog-panel`}
                 open
                 aria-labelledby="pause-modal-title"
             >
@@ -606,9 +719,17 @@ export function SubscriptionDashboard({
     locale,
     user,
     plans,
+    commercePlans,
     productDomain
 }: SubscriptionDashboardProps) {
     const { t } = createTranslations(locale);
+
+    /**
+     * HOS-1213: a commerce vertical's subscription never uses the accommodation
+     * plan-change flow. Resolved once here so the CTA and the modal below cannot
+     * disagree about which flow this dashboard offers.
+     */
+    const commerceVertical = isCommerceVertical(productDomain) ? productDomain : null;
 
     // ── State ──────────────────────────────────────────────────────────────
 
@@ -621,6 +742,7 @@ export function SubscriptionDashboard({
     const [isPausing, setIsPausing] = useState(false);
     const [isUncancelling, setIsUncancelling] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isReplacingPaymentMethod, setIsReplacingPaymentMethod] = useState(false);
 
     const isBillingAdmin = user.roles.some((role) => BILLING_ADMIN_ROLES.has(role));
 
@@ -723,9 +845,12 @@ export function SubscriptionDashboard({
     }
 
     async function handlePause() {
+        if (!subscription) return;
         setIsPausing(true);
         try {
-            const result = await billingApi.pauseSubscription();
+            const result = await billingApi.pauseSubscription({
+                subscriptionId: subscription.id
+            });
             if (!result.ok) {
                 addToast({
                     type: 'error',
@@ -748,9 +873,12 @@ export function SubscriptionDashboard({
     }
 
     async function handleResume() {
+        if (!subscription) return;
         setIsPausing(true);
         try {
-            const result = await billingApi.resumeSubscription();
+            const result = await billingApi.resumeSubscription({
+                subscriptionId: subscription.id
+            });
             if (!result.ok) {
                 addToast({
                     type: 'error',
@@ -800,6 +928,62 @@ export function SubscriptionDashboard({
             await fetchData();
         } finally {
             setIsUncancelling(false);
+        }
+    }
+
+    // HOS-348 Part B: mints a fresh preapproval on the current plan for a
+    // past-due subscription and redirects to MercadoPago to authorize it.
+    // The old preapproval is cancelled server-side only once that new one
+    // confirms authorized (see `past-due-payment-method-replacement.service.ts`)
+    // — this call itself never cancels or charges anything.
+    //
+    // HOS-1244: on failure the toast must NOT be transient. A past-due
+    // customer reading a 5s toast that vanishes is exactly the silent
+    // failure this issue exists to kill — the message says what happened
+    // and what to do (retry, or write to support), and stays on screen
+    // until dismissed.
+    const showReplacePaymentMethodError = () => {
+        addToast({
+            type: 'error',
+            message: t(
+                'account.pages.subscription.replacePaymentMethodError',
+                'No pudimos iniciar la actualización de tu medio de pago. Volvé a intentarlo; si sigue fallando, escribinos a soporte.'
+            ),
+            duration: 0,
+            action: {
+                label: t(
+                    'account.pages.subscription.replacePaymentMethodContactSupport',
+                    'Escribir a soporte'
+                ),
+                href: `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+                    t(
+                        'account.pages.subscription.replacePaymentMethodEmailSubject',
+                        'No puedo actualizar mi medio de pago'
+                    )
+                )}`
+            }
+        });
+    };
+
+    async function handleReplacePaymentMethod() {
+        if (!subscription) return;
+        setIsReplacingPaymentMethod(true);
+        try {
+            const result = await billingApi.replacePaymentMethod({
+                localId: subscription.id
+            });
+            if (!result.ok || !result.data.checkoutUrl) {
+                showReplacePaymentMethodError();
+                setIsReplacingPaymentMethod(false);
+                return;
+            }
+            // Redirect to MercadoPago — no local state to update here, the
+            // subscription stays past_due locally until the webhook confirms
+            // the new preapproval, so no `finally` reset before navigating away.
+            window.location.href = result.data.checkoutUrl;
+        } catch {
+            showReplacePaymentMethodError();
+            setIsReplacingPaymentMethod(false);
         }
     }
 
@@ -879,17 +1063,28 @@ export function SubscriptionDashboard({
 
     // HOS-242: a comp has a ~100-year sentinel `currentPeriodEnd` and is never
     // charged — surface "no renewal" instead of a bogus far-future billing date.
-    const nextBillingLabel = isComplimentary
-        ? t('account.pages.subscription.complimentaryLabel', 'Plan de cortesía')
-        : isCancelScheduled
-          ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
-          : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
+    // HOS-180: during a gifted window the honest field is "you are not being
+    // charged until X", not "next billing". `courtesyEndsAt` is when billing
+    // actually resumes.
+    const isCourtesy = status === 'courtesy';
 
-    const nextBillingDate = isComplimentary
-        ? t('account.pages.subscription.complimentaryNoBilling', 'Sin vencimiento')
-        : effectiveNextBillingDate
-          ? formatDate({ date: effectiveNextBillingDate, locale })
-          : t('account.pages.subscription.noBillingDate', 'N/A');
+    const nextBillingLabel = isCourtesy
+        ? t('account.pages.subscription.courtesyUntilLabel', 'Sin cargo hasta')
+        : isComplimentary
+          ? t('account.pages.subscription.complimentaryLabel', 'Plan de cortesía')
+          : isCancelScheduled
+            ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
+            : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
+
+    const nextBillingDate = isCourtesy
+        ? subscription.courtesyEndsAt
+            ? formatDate({ date: subscription.courtesyEndsAt, locale })
+            : t('account.pages.subscription.noBillingDate', 'N/A')
+        : isComplimentary
+          ? t('account.pages.subscription.complimentaryNoBilling', 'Sin vencimiento')
+          : effectiveNextBillingDate
+            ? formatDate({ date: effectiveNextBillingDate, locale })
+            : t('account.pages.subscription.noBillingDate', 'N/A');
 
     const paymentMethodLabel = formatPaymentMethod(
         subscription.paymentMethod,
@@ -911,28 +1106,77 @@ export function SubscriptionDashboard({
         adminUrl = '';
     }
 
-    // Cancel/pause stop making sense once the cancellation is already
+    // HOS-1007: each of the three gates below mirrors exactly the status set its
+    // own backend accepts. They deliberately do NOT share one list — cancel takes
+    // `courtesy`, pause and change-plan do not:
+    //   - cancel      → `SOFT_CANCELLABLE_STATUSES` = active | trialing | courtesy
+    //                   (subscription-cancel.service.ts)
+    //   - pause       → active | trialing (subscription-pause.ts)
+    //   - change plan → active | trialing (plan-change.ts)
+    // (`trialing` is the backend spelling; this endpoint maps it to `'trial'`.)
+    // Cancel/pause also stop making sense once the cancellation is already
     // scheduled — there is no "undo cancel" endpoint, so hide both actions
     // rather than let the user re-trigger a cancel that already happened.
     const canCancel =
-        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
+        (status === 'active' || status === 'trial' || status === 'courtesy') &&
+        !isCancelScheduled &&
+        !isComplimentary;
+    // HOS-1278: the pause/resume flow is accommodation-specific
+    // (`PauseConfirmModal`'s copy literally says "tus alojamientos se ocultan",
+    // and the backend's `accommodationsUpdated` effect is scoped to that
+    // domain). Offering it on a commerce dashboard would show accommodation
+    // copy to a gastronomy/experience owner and doesn't fit
+    // `CommercePlanChange`'s per-vertical flow model. A dedicated commerce
+    // pause UI (with correct copy) is a separate follow-up, not this fix.
+    //
+    // HOS-1321: gated on `isAccommodationDashboard`, NOT on the
+    // `commerceVertical === null` this used to say. That was a negation, and
+    // `tourist` — the fourth domain — walked straight through it: a
+    // `tourist-vip` holder was offered "Pausar" and told their accommodation
+    // would be hidden. The backend refuses the domain and reports
+    // `accommodationsUpdated: 0`, so the modal described an effect that would
+    // not happen. An inclusion list cannot be widened by adding a domain.
     const canPause =
-        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
+        (status === 'active' || status === 'trial') &&
+        !isCancelScheduled &&
+        !isComplimentary &&
+        isAccommodationDashboard(productDomain);
     // HOS-236: a soft-cancelled subscription can end up `paused` (e.g. a
     // pre-existing stranded row). "Resume" must NOT be offered there — resuming
     // reactivates the MP preapproval and re-charges a subscription the user
     // already cancelled, while the "Cancelación programada" badge is shown right
     // next to it. Gate on `!isCancelScheduled`, mirroring canCancel/canPause.
-    const canResume = status === 'paused' && !isCancelScheduled;
+    // The domain gate mirrors `canPause` above (HOS-1278 / HOS-1321).
+    const canResume =
+        status === 'paused' && !isCancelScheduled && isAccommodationDashboard(productDomain);
+    // HOS-348 Part B: the ONE self-service action a past-due subscription
+    // offers — mint a replacement preapproval. `past_due` never carries
+    // `isComplimentary` (a comp is never charged, so it can never fail to
+    // charge), but the check is kept for defense-in-depth symmetry with the
+    // other action gates above.
+    const canReplacePaymentMethod = status === 'past_due' && !isComplimentary;
 
-    // A plan change is rejected by the backend (409 SUBSCRIPTION_CANCEL_PENDING)
-    // while a cancellation is already scheduled — there is no "undo cancel"
-    // endpoint, so it can only happen once the current period ends. Disable the
-    // entry point rather than let the user open the flow and hit an opaque error
-    // (BETA-194). HOS-242: also hidden for a comp — plan-change's find is
-    // `active | trialing` and a comp has no MP preapproval to mutate, so it would
-    // fail with "No active subscription found".
-    const canChangePlan = !isCancelScheduled && !isComplimentary;
+    // HOS-1007: expressed as an INCLUSION list, not a run of exclusions. The old
+    // `!isCancelScheduled && !isComplimentary` form defaulted every status to
+    // "allowed" and required someone to remember a new `!isX` for each status
+    // added — it already failed twice (`comp`, then `courtesy`), and it was
+    // silently wrong for `paused`/`past_due`/`expired`/`cancelled` too: those
+    // offered an enabled "Cambiar plan" against a backend whose find is
+    // `active | trialing` and answers 404 "No active subscription found".
+    // Mirroring plan-change.ts's own find closes all of them at once, and any
+    // future status is excluded by default instead of by memory.
+    //
+    // The two exclusions still layered on top of the inclusion list:
+    //   - `isCancelScheduled` — the backend answers 409
+    //     SUBSCRIPTION_CANCEL_PENDING while a cancellation is already scheduled
+    //     (there is no "undo cancel" endpoint), so disable the entry point
+    //     rather than let the user open the flow and hit an opaque error
+    //     (BETA-194).
+    //   - `isComplimentary` (HOS-242) — a comp is reported with status 'active'
+    //     but has no MP preapproval to mutate, so the inclusion list alone
+    //     cannot exclude it.
+    const canChangePlan =
+        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
 
     // ── JSX ────────────────────────────────────────────────────────────────
 
@@ -1051,40 +1295,71 @@ export function SubscriptionDashboard({
                     </div>
                 )}
 
-                {plans && plans.length > 0 ? (
-                    <button
-                        type="button"
-                        className={styles.btnSecondary}
-                        disabled={!canChangePlan}
-                        onClick={() => {
-                            if (!canChangePlan) return;
-                            setShowPlanChangeFlow(true);
-                        }}
-                        aria-label={t(
-                            'account.pages.subscription.changePlanAriaLabel',
-                            'Cambiar plan de suscripción'
-                        )}
-                    >
-                        <ArrowRightIcon
-                            size={16}
-                            weight="regular"
-                            aria-hidden="true"
-                        />
-                        {t('account.pages.subscription.changePlanButton', 'Cambiar plan')}
-                    </button>
-                ) : (
-                    <a
-                        href={plansHref}
-                        className={styles.upgradeLink}
-                    >
-                        <ArrowRightIcon
-                            size={16}
-                            weight="regular"
-                            aria-hidden="true"
-                        />
-                        {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
-                    </a>
-                )}
+                {/* HOS-1213: a commerce vertical brings its OWN CTA + flow.
+                    `CommercePlanChange` renders the button itself and returns
+                    null when the vertical has no other tier to move to, which is
+                    why this branch is not gated on a plan count the way the
+                    accommodation one is. `canChangePlan` still gates it: that
+                    predicate mirrors the backend's own `active | trialing` find,
+                    and the commerce route answers the same way.
+
+                    HOS-1321: the accommodation branch is now selected by an
+                    inclusion list, not by `commerceVertical === null`. Same
+                    class of bug as `canPause` above — a negation hands this
+                    flow to every domain that is merely not-commerce, so a fifth
+                    one would silently POST to the accommodation change-plan
+                    route. Listed, it renders neither branch until classified. */}
+                {isAccommodationPlanChangeDashboard(productDomain) ? (
+                    plans && plans.length > 0 ? (
+                        <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            disabled={!canChangePlan}
+                            onClick={() => {
+                                if (!canChangePlan) return;
+                                setShowPlanChangeFlow(true);
+                            }}
+                            aria-label={t(
+                                'account.pages.subscription.changePlanAriaLabel',
+                                'Cambiar plan de suscripción'
+                            )}
+                        >
+                            <ArrowRightIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {t('account.pages.subscription.changePlanButton', 'Cambiar plan')}
+                        </button>
+                    ) : (
+                        <a
+                            href={plansHref}
+                            className={styles.upgradeLink}
+                        >
+                            <ArrowRightIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
+                        </a>
+                    )
+                ) : commerceVertical !== null && canChangePlan && subscription ? (
+                    // HOS-1321: the two branches are now selected by two
+                    // INDEPENDENT inclusion lists, so "not the accommodation
+                    // flow" no longer implies "a commerce vertical" — a fifth
+                    // domain is neither, and renders no plan-change UI at all.
+                    // The null check is what makes that a rendered `null`
+                    // instead of `CommercePlanChange` handed a null vertical.
+                    <CommercePlanChange
+                        vertical={commerceVertical}
+                        currentPlanSlug={subscription.planSlug}
+                        currentPlanName={subscription.planName}
+                        plans={commercePlans ?? []}
+                        currentPeriodEnd={subscription.currentPeriodEnd}
+                        locale={locale}
+                    />
+                ) : null}
             </section>
 
             {/* ── Features card — rendered only when plan features are available ── */}
@@ -1097,6 +1372,39 @@ export function SubscriptionDashboard({
                 productDomain={productDomain}
             />
 
+            {/* ── Trial extension (HOS-1012 T-039) ──
+               Where a host spends a trial-extension code (FREEMONTH /
+               LANZAMIENTO60) while the trial is still running — the plan
+               purchase button is the PAID path, reached after the trial is
+               over. Rendered only for a live trial: the endpoint refuses (422,
+               code unburnt) in every other state, so offering the field here
+               would only produce a dead end.
+
+               HOS-1171: it is no longer the ONLY such surface. The standalone
+               redeem page (linked below) mounts this same component and is
+               reachable whatever the subscription's state — which is what makes
+               a code shareable by link. */}
+            {status === 'trial' && !isComplimentary ? (
+                <TrialExtensionForm
+                    locale={locale}
+                    userId={user.id}
+                    subscriptionId={subscription.id}
+                    plansHref={plansHref}
+                    onApplied={() => {
+                        void refreshSilently();
+                    }}
+                />
+            ) : (
+                /* HOS-1171: the entry point for every OTHER state — an active
+                   subscriber, or someone with no trial at all, who was handed a
+                   code and would otherwise have nowhere to type it. */
+                <p className={styles.redeemLink}>
+                    <a href={buildUrl({ locale, path: 'mi-cuenta/canjear' })}>
+                        {t('account.pages.redeem.dashboardLink', '¿Tenés un código promocional?')}
+                    </a>
+                </p>
+            )}
+
             {/* ── Actions card ── */}
             <section
                 className={styles.actionsCard}
@@ -1107,6 +1415,31 @@ export function SubscriptionDashboard({
                 </h3>
 
                 <div className={styles.actionsRow}>
+                    {/* Update payment method (past_due only, HOS-348 Part B) —
+                        rendered first: for a past-due customer this IS the
+                        action that matters, everything else is secondary. */}
+                    {canReplacePaymentMethod && (
+                        <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={() => void handleReplacePaymentMethod()}
+                            disabled={isReplacingPaymentMethod}
+                            aria-busy={isReplacingPaymentMethod}
+                        >
+                            <CreditCardIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {isReplacingPaymentMethod
+                                ? t('common.loading', 'Cargando...')
+                                : t(
+                                      'account.pages.subscription.replacePaymentMethodButton',
+                                      'Actualizar medio de pago'
+                                  )}
+                        </button>
+                    )}
+
                     {/* Download last invoice */}
                     <button
                         type="button"
@@ -1273,25 +1606,43 @@ export function SubscriptionDashboard({
                 />
             )}
 
-            {/* ── Plan-change flow modal (SPEC-203 T-005/T-007/T-008/T-009) ── */}
-            {showPlanChangeFlow && plans && plans.length > 0 && subscription && (
-                <PlanChangeFlow
-                    plans={plans}
-                    currentPlanSlug={subscription.planSlug}
-                    locale={locale}
-                    onChanged={() => {
-                        // Silent refresh (no loading spinner) so the flow's result
-                        // step stays mounted. fetchData() would set isLoading=true,
-                        // unmount the dashboard, and reset PlanChangeFlow's internal
-                        // step back to 'picker' — making a just-confirmed change look
-                        // like nothing happened. Mirrors the cancel-modal path.
-                        void refreshSilently();
-                    }}
-                    onDismiss={() => {
-                        setShowPlanChangeFlow(false);
-                    }}
-                />
-            )}
+            {/* ── Plan-change flow modal (SPEC-203 T-005/T-007/T-008/T-009) ──
+               The domain gate is defence in depth (HOS-1213): the CTA that sets
+               `showPlanChangeFlow` is not rendered on a commerce dashboard, so
+               this can only fire if a future edit reintroduces one. It is cheap,
+               and what it prevents is a commerce subscription being offered
+               accommodation plans — the exact bug this closes. HOS-1321 turned
+               it from `commerceVertical === null` into the same inclusion list
+               the CTA uses, so the two cannot disagree about a new domain. */}
+            {showPlanChangeFlow &&
+                isAccommodationPlanChangeDashboard(productDomain) &&
+                plans &&
+                plans.length > 0 &&
+                subscription && (
+                    <PlanChangeFlow
+                        plans={plans}
+                        currentPlanSlug={subscription.planSlug}
+                        locale={locale}
+                        // HOS-1236: where to send a host whose plan change is
+                        // refused because they are still on a Hospeda-owned
+                        // trial — there is nothing to change, so the remedy is
+                        // the checkout. Resolved here, from the viewer's own
+                        // roles, so the accommodation and tourist dashboards
+                        // each hand over their own catalogue.
+                        plansHref={plansHref}
+                        onChanged={() => {
+                            // Silent refresh (no loading spinner) so the flow's result
+                            // step stays mounted. fetchData() would set isLoading=true,
+                            // unmount the dashboard, and reset PlanChangeFlow's internal
+                            // step back to 'picker' — making a just-confirmed change look
+                            // like nothing happened. Mirrors the cancel-modal path.
+                            void refreshSilently();
+                        }}
+                        onDismiss={() => {
+                            setShowPlanChangeFlow(false);
+                        }}
+                    />
+                )}
         </div>
     );
 }

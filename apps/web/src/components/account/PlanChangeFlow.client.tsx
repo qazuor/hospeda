@@ -42,6 +42,20 @@ interface PlanSelection {
     readonly direction: 'upgrade' | 'downgrade' | 'current';
 }
 
+/**
+ * The API `reason` that means "this subscription is a Hospeda trial with no
+ * MercadoPago subscription behind it" (HOS-1236).
+ *
+ * Must match `TRIAL_REQUIRES_CHECKOUT_REASON` in
+ * `apps/api/src/services/billing/trialing-plan-upgrade.service.ts` and the
+ * `common.apiError.TRIAL_REQUIRES_CHECKOUT` key in each locale's `common.json`.
+ * The three cannot import from one another across the app boundary; a mismatch
+ * degrades quietly to the generic message and the plain "Close" action — which
+ * is precisely the dead end this exists to remove, so it fails soft rather than
+ * loudly, and that is why the string is named here rather than inlined.
+ */
+const TRIAL_REQUIRES_CHECKOUT_REASON = 'TRIAL_REQUIRES_CHECKOUT';
+
 /** Props for the PlanChangeFlow. */
 export interface PlanChangeFlowProps {
     /** Full list of available plans (passed from Astro page). */
@@ -50,6 +64,16 @@ export interface PlanChangeFlowProps {
     readonly currentPlanSlug: string;
     /** Active locale. */
     readonly locale: SupportedLocale;
+    /**
+     * Locale-aware URL of the pricing page for THIS dashboard's audience, as the
+     * dashboard already resolved it (`resolveSubscriptionPlansPath`). Optional:
+     * when absent, a refusal that would have offered "see plans" falls back to
+     * the plain "Close" action instead of guessing a destination — this flow is
+     * mounted for both the accommodation and the tourist domain, which have
+     * different pricing pages, so inventing one here would send half the callers
+     * to the wrong catalogue.
+     */
+    readonly plansHref?: string;
     /** Called after a non-redirect successful plan change to refresh dashboard. */
     readonly onChanged: () => void;
     /** Called when the host dismisses the flow. */
@@ -188,6 +212,7 @@ export function PlanChangeFlow({
     plans,
     currentPlanSlug,
     locale,
+    plansHref,
     onChanged,
     onDismiss
 }: PlanChangeFlowProps) {
@@ -204,9 +229,15 @@ export function PlanChangeFlow({
     // failures (network/5xx) get it. A non-transitory 4xx (e.g. the 409 raised
     // when a cancellation is already scheduled) shows the specific message and a
     // "Close" action instead — retrying it would always fail (BETA-194).
+    //
+    // `sendToPlans` (HOS-1236) is the third case, and neither of the first two
+    // serves it: a host on their Hospeda-owned trial has no subscription to
+    // change, so the answer is not "try again" and not merely "close" — it is a
+    // different page. The API says so with `reason: 'TRIAL_REQUIRES_CHECKOUT'`.
     const [error, setError] = useState<{
         readonly message: string;
         readonly retryable: boolean;
+        readonly sendToPlans?: boolean;
     } | null>(null);
     const backdropRef = useRef<HTMLDivElement>(null);
 
@@ -326,7 +357,16 @@ export function PlanChangeFlow({
                             'No se pudo cambiar el plan.'
                         )
                     }),
-                    retryable: isRetryableApiError(apiResult.error)
+                    retryable: isRetryableApiError(apiResult.error),
+                    // HOS-1236: the host is on a Hospeda-owned trial, so there is
+                    // no subscription to change and never will be until they buy.
+                    // Send them to the plans page rather than to a dead end.
+                    // Gated on `plansHref` being supplied: without a destination
+                    // this falls back to the plain "Close" action, which is still
+                    // correct — the message itself already says what to do.
+                    ...(apiResult.error?.reason === TRIAL_REQUIRES_CHECKOUT_REASON && plansHref
+                        ? { sendToPlans: true }
+                        : {})
                 });
                 return;
             }
@@ -361,7 +401,7 @@ export function PlanChangeFlow({
             onClick={handleBackdropClick}
         >
             <dialog
-                className={styles.modal}
+                className={`${styles.modal} dialog-panel`}
                 open
                 aria-modal="true"
                 aria-labelledby="plan-change-flow-title"
@@ -388,7 +428,24 @@ export function PlanChangeFlow({
                         role="alert"
                     >
                         {error.message}
-                        {error.retryable ? (
+                        {error.sendToPlans && plansHref ? (
+                            // HOS-1236 — the only branch that leads anywhere. A
+                            // trial has nothing to change and nothing to retry;
+                            // the remedy is the paid checkout, which lives on the
+                            // plans page. Checked FIRST so the retry/close pair
+                            // below cannot claim this case: a 409 is not
+                            // retryable, so it would otherwise render "Cerrar" and
+                            // leave the host to find the page themselves.
+                            <a
+                                className={styles.retryLink}
+                                href={plansHref}
+                            >
+                                {t(
+                                    'account.pages.subscription.planChangeFlow.goToPlans',
+                                    'Ver planes y suscribirme'
+                                )}
+                            </a>
+                        ) : error.retryable ? (
                             <button
                                 type="button"
                                 className={styles.retryLink}

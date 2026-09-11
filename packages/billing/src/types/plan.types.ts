@@ -1,3 +1,4 @@
+import type { ProductDomainValue } from '@repo/schemas';
 import type { EntitlementKey } from './entitlement.types.js';
 
 /**
@@ -70,7 +71,65 @@ export enum LimitKey {
      * The experience-side twin of {@link MAX_GASTRONOMIES} — see its doc for
      * why the two caps are separate rather than pooled.
      */
-    MAX_EXPERIENCES = 'max_experiences'
+    MAX_EXPERIENCES = 'max_experiences',
+
+    /**
+     * Monthly AI-chat quota borne by a GASTRONOMY listing's owner (HOS-400).
+     *
+     * The gastronomy twin of {@link MAX_AI_CHAT_PER_MONTH}, which stays
+     * accommodation-only. The caps are separate for the same reason
+     * {@link MAX_GASTRONOMIES} and {@link MAX_EXPERIENCES} are: commerce
+     * billing is per-OWNER and per-VERTICAL, and SPEC-239 isolates the domains
+     * on purpose. A single pooled AI-chat cap would let an owner who is at once
+     * a host and a restaurateur spend their accommodation plan's chat budget on
+     * gastronomy traffic (and the reverse) — exactly the cross-domain leak
+     * `subscriptionMatchesDomain()` exists to prevent.
+     *
+     * A separate cap is only HALF the isolation. The quota is enforced by
+     * counting `ai_usage` rows keyed by `(userId, feature)`, so each vertical's
+     * cap is paired with its own `AiFeature` (`chat_gastronomy`). Two limit keys
+     * over one shared `'chat'` counter would be two numbers reading the same
+     * bucket.
+     */
+    MAX_AI_CHAT_GASTRONOMY_PER_MONTH = 'max_ai_chat_gastronomy_per_month',
+    /**
+     * Monthly AI-chat quota borne by an EXPERIENCE listing's owner (HOS-400).
+     * The experience-side twin of {@link MAX_AI_CHAT_GASTRONOMY_PER_MONTH} — see
+     * its doc for why each vertical carries both its own cap AND its own
+     * `AiFeature` counter rather than sharing either.
+     */
+    MAX_AI_CHAT_EXPERIENCE_PER_MONTH = 'max_ai_chat_experience_per_month',
+
+    /**
+     * Maximum number of private galleries an experience provider may hold ALIVE
+     * at once (HOS-1060).
+     *
+     * ## Active, not created
+     *
+     * A gallery lives 30 days from its creation and a cron deletes it, so this
+     * counts what has not expired yet — the number of tourists who can still
+     * open their link today. A lifetime counter would make the cap a quota that
+     * runs out and never refills, which is not what was sold: the provider who
+     * ran twenty outings last month should be able to run twenty more.
+     *
+     * ## Why this key exists at all, when `MENU_ITEM_PHOTOS` has none
+     *
+     * `MENU_ITEM_PHOTOS` deliberately ships with no numeric limit because access
+     * is its whole gate. Galleries cannot do that: photo storage is the only
+     * recurring per-use cost in this epic, and the cap is what bounds it. It is
+     * also what the three `private-galleries-+N` add-ons sell more of.
+     *
+     * ## Experience-only, and declared as an explicit ZERO elsewhere
+     *
+     * `PRODUCT_DOMAIN_BY_LIMIT_KEY` maps it to the EXPERIENCE domain, so an
+     * accommodation or gastronomy subscription never supplies its base value.
+     * Even so, all six commerce tiers declare it — gastronomy at `0` — for the
+     * reason `commerceVerticalTier` states about `aiChatPerMonth`: an ABSENT key
+     * is resolved as UNLIMITED through five layers without raising, so "nobody
+     * thought about this tier" and "deliberately uncapped" would be the same
+     * row.
+     */
+    MAX_ACTIVE_PRIVATE_GALLERIES = 'max_active_private_galleries'
 }
 
 /**
@@ -174,6 +233,23 @@ export interface PlanDefinition {
     description: string;
     /** Target user category */
     category: PlanCategory;
+    /**
+     * Product domain the plan belongs to — which vertical's entitlement engine
+     * counts a subscription to it.
+     *
+     * Required, so that a plan added to this file cannot inherit somebody
+     * else's vertical by saying nothing. `billing_plans.product_domain` is
+     * `NOT NULL` with a default, so a seed that omits it does not produce a
+     * plan without a domain: it produces one filed under the default's
+     * vertical. That is how the two tourist plans right below came to claim
+     * `accommodation` in production and staging alike (HOS-1233 F-4b) — no
+     * line of code was wrong, the value was simply never stated.
+     *
+     * NOT derivable from {@link category}, which answers a different question
+     * (who the plan is sold to). The three commerce verticals all sit in one
+     * category and hold three distinct domains.
+     */
+    productDomain: ProductDomainValue;
     /** Monthly price in ARS cents (0 for free plans) */
     monthlyPriceArs: number;
     /** Annual price in ARS cents (0 for free, null if no annual option) */

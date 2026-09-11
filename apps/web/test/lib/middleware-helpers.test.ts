@@ -540,6 +540,17 @@ describe('buildCspHeader', () => {
         expect(imgSrc).toContain('https://platform-lookaside.fbsbx.com');
     });
 
+    // HOS-1022: the accommodation /fotos sub-page renders a YouTube poster via
+    // a plain <img src="https://img.youtube.com/vi/<id>/maxresdefault.jpg">
+    // (see getYoutubePosterUrl() in @/lib/video-embed). Without this host the
+    // poster is silently CSP-blocked — exactly the bug found while wiring up
+    // the video section (the host was never in img-src before this ticket).
+    it('should allowlist the YouTube poster-thumbnail host in img-src (HOS-1022)', () => {
+        const header = buildCspHeader({ ...NO_HASHES });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+        expect(imgSrc).toContain('https://img.youtube.com');
+    });
+
     it('should use exact cloudinary hostname, not a wildcard', () => {
         const header = buildCspHeader({ ...NO_HASHES });
         expect(header).not.toContain('https://*.cloudinary.com');
@@ -628,15 +639,21 @@ describe('buildCspHeader', () => {
         expect(header).not.toContain("'nonce-");
     });
 
-    // SPEC-046 GAP-046-12 + SPEC-301: lock the embed surface. The ONLY origin we
-    // embed is Cloudflare Turnstile's challenge iframe (feedback form), which must
-    // be allowlisted here because 'strict-dynamic' does not govern frames. Every
-    // other embed origin stays blocked, and frame-ancestors 'none' still stops
-    // others from embedding us — the frame story stays explicit in both directions.
-    it('must restrict frame-src to the Cloudflare Turnstile host only (GAP-046-12, SPEC-301)', () => {
+    // SPEC-046 GAP-046-12 + SPEC-301 + HOS-1022: lock the embed surface. The ONLY
+    // origins we embed are Cloudflare Turnstile's challenge iframe (feedback form)
+    // and the three video-embed hosts the accommodation video section's
+    // `resolveVideoEmbed()` can emit (YouTube, Vimeo, Dailymotion — see
+    // `apps/web/src/lib/video-embed.ts`), which must be allowlisted here because
+    // 'strict-dynamic' does not govern frames. Every other embed origin stays
+    // blocked (an extra host added here must fail this exact-equality check), and
+    // frame-ancestors 'none' still stops others from embedding us — the frame
+    // story stays explicit in both directions.
+    it('must restrict frame-src to Turnstile + the three video-embed hosts only (GAP-046-12, SPEC-301, HOS-1022)', () => {
         const header = buildCspHeader({ ...NO_HASHES });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
-        expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
+        expect(frameSrc).toBe(
+            'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com'
+        );
     });
 
     // SPEC-301 regression: the feedback form's Turnstile widget injects its
@@ -1530,5 +1547,119 @@ describe('isAdminBypassUser — role set (HOS-296)', () => {
         global.fetch = vi.fn().mockRejectedValue(new Error('boom')) as unknown as typeof fetch;
 
         await expect(isAdminBypassUser({ cookieHeader: COOKIE })).resolves.toBe(false);
+    });
+});
+
+describe('HOS-838: onboarding redirects carry the interrupted destination', () => {
+    // The gate interrupts whatever the user was trying to reach. Without
+    // carrying it forward, finishing the gate drops them on /mi-cuenta/ and the
+    // thing they came to do is lost.
+    const DESTINATION = '/es/mi-cuenta/comercios/nuevo/';
+
+    describe('buildProfileCompletionRedirect', () => {
+        it('appends the destination as an encoded returnUrl', () => {
+            // Act
+            const url = buildProfileCompletionRedirect({ locale: 'es', returnUrl: DESTINATION });
+
+            // Assert
+            expect(url).toBe(
+                '/es/mi-cuenta/completar-perfil/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+
+        it('preserves the destination query string', () => {
+            // Act
+            const url = buildProfileCompletionRedirect({
+                locale: 'es',
+                returnUrl: '/es/publicar/?tipo=gastronomia'
+            });
+
+            // Assert — the `?` and `=` must be encoded, or they would be read
+            // as params of the completar-perfil URL itself.
+            expect(url).toContain('%3Ftipo%3Dgastronomia');
+            expect(url.indexOf('?')).toBe(url.lastIndexOf('?'));
+        });
+
+        it('omits returnUrl entirely when there is no destination', () => {
+            // Act + Assert
+            expect(buildProfileCompletionRedirect({ locale: 'es' })).toBe(
+                '/es/mi-cuenta/completar-perfil/'
+            );
+        });
+
+        it('does NOT point the destination back at the form itself', () => {
+            // A self-referential returnUrl would bounce the user onto the form
+            // they just finished.
+            const url = buildProfileCompletionRedirect({
+                locale: 'es',
+                returnUrl: '/es/mi-cuenta/completar-perfil/'
+            });
+
+            // Assert
+            expect(url).toBe('/es/mi-cuenta/completar-perfil/');
+            expect(url).not.toContain('returnUrl');
+        });
+
+        it('carries the destination on every supported locale', () => {
+            // Assert
+            expect(buildProfileCompletionRedirect({ locale: 'en', returnUrl: '/en/x/' })).toBe(
+                '/en/mi-cuenta/completar-perfil/?returnUrl=%2Fen%2Fx%2F'
+            );
+            expect(buildProfileCompletionRedirect({ locale: 'pt', returnUrl: '/pt/x/' })).toBe(
+                '/pt/mi-cuenta/completar-perfil/?returnUrl=%2Fpt%2Fx%2F'
+            );
+        });
+    });
+
+    describe('buildSetPasswordRedirect', () => {
+        it('appends the destination as an encoded returnUrl', () => {
+            // Act + Assert
+            expect(buildSetPasswordRedirect({ locale: 'es', returnUrl: DESTINATION })).toBe(
+                '/es/mi-cuenta/agregar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+
+        it('omits returnUrl entirely when there is no destination', () => {
+            // Act + Assert
+            expect(buildSetPasswordRedirect({ locale: 'es' })).toBe(
+                '/es/mi-cuenta/agregar-contrasena/'
+            );
+        });
+
+        it('does NOT point the destination back at the form itself', () => {
+            // Act + Assert
+            expect(
+                buildSetPasswordRedirect({
+                    locale: 'es',
+                    returnUrl: '/es/mi-cuenta/agregar-contrasena/'
+                })
+            ).toBe('/es/mi-cuenta/agregar-contrasena/');
+        });
+    });
+
+    describe('buildChangePasswordRedirect', () => {
+        it('appends the destination as an encoded returnUrl', () => {
+            // Act + Assert
+            expect(buildChangePasswordRedirect({ locale: 'es', returnUrl: DESTINATION })).toBe(
+                '/es/mi-cuenta/cambiar-contrasena/?returnUrl=%2Fes%2Fmi-cuenta%2Fcomercios%2Fnuevo%2F'
+            );
+        });
+
+        it('omits returnUrl entirely when there is no destination', () => {
+            // Act + Assert
+            expect(buildChangePasswordRedirect({ locale: 'es' })).toBe(
+                '/es/mi-cuenta/cambiar-contrasena/'
+            );
+        });
+
+        it('does NOT point the destination back at the form itself', () => {
+            // Act + Assert
+            expect(
+                buildChangePasswordRedirect({
+                    locale: 'es',
+                    returnUrl: '/es/mi-cuenta/cambiar-contrasena/'
+                })
+            ).toBe('/es/mi-cuenta/cambiar-contrasena/');
+        });
     });
 });

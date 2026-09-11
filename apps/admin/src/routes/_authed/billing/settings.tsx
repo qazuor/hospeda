@@ -44,7 +44,6 @@ const DEFAULT_VALUES = {
     maxPaymentRetries: 3,
     retryIntervalHours: 24,
     sendTrialExpiryReminder: true,
-    trialExpiryReminderDays: 3,
     sendPaymentFailedNotification: true,
     sendSubscriptionCancelledNotification: true
 };
@@ -67,8 +66,6 @@ function toFormValues(settings: BillingSettings): typeof DEFAULT_VALUES {
         retryIntervalHours: settings.retryIntervalHours ?? DEFAULT_VALUES.retryIntervalHours,
         sendTrialExpiryReminder:
             settings.sendTrialExpiryReminder ?? DEFAULT_VALUES.sendTrialExpiryReminder,
-        trialExpiryReminderDays:
-            settings.trialExpiryReminderDays ?? DEFAULT_VALUES.trialExpiryReminderDays,
         sendPaymentFailedNotification:
             settings.sendPaymentFailedNotification ?? DEFAULT_VALUES.sendPaymentFailedNotification,
         sendSubscriptionCancelledNotification:
@@ -471,35 +468,6 @@ function BillingSettingsPage() {
                                             checked={field.state.value}
                                             onCheckedChange={field.handleChange}
                                         />
-                                    </div>
-                                )}
-                            </form.Field>
-
-                            <form.Field name="trialExpiryReminderDays">
-                                {(field) => (
-                                    <div className="pl-6">
-                                        <Label htmlFor="trialExpiryReminderDays">
-                                            {t(
-                                                'admin-billing.settings.notification.trialReminderDaysLabel'
-                                            )}
-                                        </Label>
-                                        <Input
-                                            id="trialExpiryReminderDays"
-                                            type="number"
-                                            min={1}
-                                            max={30}
-                                            value={field.state.value}
-                                            onChange={(e) =>
-                                                field.handleChange(Number(e.target.value))
-                                            }
-                                            onBlur={field.handleBlur}
-                                            className="mt-2"
-                                        />
-                                        <p className="mt-1 text-muted-foreground text-xs">
-                                            {t(
-                                                'admin-billing.settings.notification.trialReminderDaysHint'
-                                            )}
-                                        </p>
                                     </div>
                                 )}
                             </form.Field>

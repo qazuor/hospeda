@@ -151,3 +151,46 @@ describe('SearchableSelect — zero results keep the recovery path reachable (H-
         expect(listbox()).not.toBeVisible();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Local mode — diacritic-insensitive filtering (HOS-979)
+// ---------------------------------------------------------------------------
+
+describe('SearchableSelect — local mode diacritic-insensitive filtering (HOS-979)', () => {
+    const TYPES: readonly SelectableItem[] = [
+        { id: 'cabin', label: 'Cabaña' },
+        { id: 'hotel', label: 'Hotel' }
+    ];
+
+    function renderLocalPicker() {
+        return render(
+            <SearchableSelect
+                locale="es"
+                label="Tipo"
+                value={null}
+                onChange={vi.fn()}
+                items={TYPES}
+                testId="type-picker"
+            />
+        );
+    }
+
+    it('finds "Cabaña" when the visitor types "cabana" without the accent', async () => {
+        const user = userEvent.setup();
+        renderLocalPicker();
+
+        await user.type(screen.getByLabelText(/Tipo/), 'cabana');
+
+        expect(screen.getByRole('option', { name: /Cabaña/i })).toBeInTheDocument();
+        expect(screen.queryByRole('option', { name: /^Hotel$/i })).not.toBeInTheDocument();
+    });
+
+    it('negative control: a non-existent term still yields zero local results', async () => {
+        const user = userEvent.setup();
+        renderLocalPicker();
+
+        await user.type(screen.getByLabelText(/Tipo/), 'zzzzznoexiste');
+
+        expect(screen.queryAllByRole('option')).toHaveLength(0);
+    });
+});

@@ -7,15 +7,13 @@
     "subtitle": "¿Tenés alguna consulta o sugerencia? Completá el formulario y te responderemos a la brevedad.",
     "email": {
         "label": "Email",
-        "value": "info@hospeda.com"
+        "value": "info@hospeda.com.ar"
     },
     "phone": {
-        "label": "Teléfono",
-        "value": "+54 3442 453797"
+        "label": "Teléfono"
     },
     "whatsapp": {
-        "label": "WhatsApp",
-        "value": "+54 9 3442 453797"
+        "label": "WhatsApp"
     },
     "address": {
         "label": "Dirección",
@@ -84,7 +82,7 @@
         },
         "email": {
             "label": "Email",
-            "value": "info@hospeda.com"
+            "value": "info@hospeda.com.ar"
         }
     },
     "channels": {

@@ -7,6 +7,8 @@
  * @module ai-chat-stream
  */
 
+import type { AiChatEntityType } from '@repo/schemas';
+
 /** SSE event types emitted by the chat stream. */
 export type SseEvent =
     | { readonly type: 'token'; readonly delta: string }
@@ -28,7 +30,8 @@ export type SseEvent =
 /** Parameters for the streamChat function. */
 export interface StreamChatParams {
     readonly apiUrl: string;
-    readonly accommodationId: string;
+    readonly entityType: AiChatEntityType;
+    readonly entityId: string;
     readonly messages: ReadonlyArray<{
         readonly role: 'user' | 'assistant';
         readonly content: string;
@@ -52,7 +55,8 @@ export async function streamChat(params: StreamChatParams): Promise<void> {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-                accommodationId: params.accommodationId,
+                entityType: params.entityType,
+                entityId: params.entityId,
                 messages: params.messages,
                 locale: params.locale,
                 conversationId: params.conversationId

@@ -61,7 +61,7 @@ export function NewsletterWelcomeEmail({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/newsletter`}>Ver mis preferencias</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/newsletter/`}>Ver mis preferencias</Button>
             </Section>
 
             {waChannelUrl && (

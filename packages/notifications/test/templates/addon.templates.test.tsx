@@ -471,6 +471,74 @@ describe('Addon Email Templates', () => {
         });
     });
 
+    describe('AddonCancellation — accessUntil branch (HOS-847 PR 7c)', () => {
+        const baseProps: AddonCancellationProps = {
+            recipientName: 'Marcos Díaz',
+            addonName: 'Fotos extra',
+            canceledAt: '2026-03-17T10:00:00.000Z',
+            baseUrl: 'https://hospeda.com.ar'
+        };
+
+        /** The soft-cancel send: the customer paid through this date. */
+        const withAccess: AddonCancellationProps = {
+            ...baseProps,
+            accessUntil: '2026-04-15T23:59:59.000Z'
+        };
+
+        it('promises the benefit until the paid period ends when accessUntil is given', () => {
+            // Act
+            const html = renderToStaticMarkup(AddonCancellation(withAccess));
+
+            // Assert — the promise, its date, and the reassurance that no
+            // further charge is coming.
+            expect(html).toContain('Seguís teniendo el beneficio hasta el');
+            expect(html).toContain('Activo hasta');
+            expect(html).toContain('15 de abril de 2026');
+            expect(html).toContain('No se te va a cobrar de nuevo');
+        });
+
+        it('names the date in the preview text, not just the body', () => {
+            const html = renderToStaticMarkup(AddonCancellation(withAccess));
+            expect(html).toContain('sigue activo hasta el 15 de abril de 2026');
+        });
+
+        it('promises NOTHING about access when accessUntil is absent', () => {
+            // This is the assertion the whole optionality exists for: an add-on
+            // cancelled for non-payment or by an admin has ALREADY lost its
+            // benefit, and this email must not tell the customer otherwise.
+            const html = renderToStaticMarkup(AddonCancellation(baseProps));
+
+            // Anchored on the word any promise of continued access would have
+            // to use, not on one phrasing of it — a guard tied to a single
+            // sentence lets the next wording of the same lie through. The
+            // untouched template contains no "hasta" anywhere.
+            expect(html).not.toMatch(/hasta/i);
+            expect(html).not.toContain('Activo hasta');
+            expect(html).not.toContain('No se te va a cobrar de nuevo');
+        });
+
+        it('leaks no date other than the cancellation date when accessUntil is absent', () => {
+            const html = renderToStaticMarkup(AddonCancellation(baseProps));
+
+            // `canceledAt` still renders; the access date must be nowhere.
+            expect(html).toContain('17 de marzo de 2026');
+            expect(html).not.toContain('15 de abril de 2026');
+        });
+
+        it('keeps the no-access wording byte-identical to the pre-HOS-847 email', () => {
+            // The branch must be ADDITIVE. Anything the with-access render adds
+            // is exactly the promise; everything else has to be untouched, so a
+            // future edit cannot quietly reword the immediate-cancellation
+            // email while "only" touching the soft-cancel one.
+            const html = renderToStaticMarkup(AddonCancellation(baseProps));
+
+            expect(html).toContain('Tu complemento Fotos extra ha sido cancelado');
+            expect(html).toContain('ha sido cancelado');
+            expect(html).toContain('Si esto fue un error, podés reactivarlo');
+            expect(html).toContain('Cancelado el');
+        });
+    });
+
     describe('AddonPurchaseConfirmation — CTA destination (HOS-722)', () => {
         const validProps: AddonPurchaseConfirmationProps = {
             customerName: 'Valeria Ortiz',

@@ -456,6 +456,70 @@ A smoke session is COMPLETE only when total refunds equal total charges
 AND every flow has been signed off (PASS, PASS w/ notes, or FAIL with
 escalation path documented).
 
+### Filed sign-offs
+
+```text
+Prod smoke sign-off — release (HOS-854 renewal-reminder fix + qzpay 5.0 bump)
+- Date: 2026-08-29
+- Executor: qazuor
+- Prod commit: 9501e7d38 (PR #3056, staging -> main)
+- Test user: none — no checkout was exercised
+- Flows executed: NONE of 1 / 2 / 3. See scope note below.
+- Total charges: $0
+- Total refunds: $0
+- Refund verification window: n/a
+- Rollback notes: none needed; no money moved and no row was written.
+- Sentry events during smoke: none observed
+- Follow-ups created: see the UI-counter note below
+
+SCOPE — READ BEFORE TREATING THIS AS A FULL PROD SMOKE.
+  The three checkout flows this checklist defines were NOT run. This entry
+  covers only the cron surface, which is what the change actually touches, and
+  it is deliberately not a substitute for flows 1-3 on a future release that
+  alters checkout itself.
+
+WHY IT WAS RUN AT ALL
+  The defect stopped being preventive. Production sent the reminder to two real
+  customers on lapsed subscriptions:
+      2026-08-27 19:34  subscription lapses (abandoned)
+      2026-08-27 20:00  subscription_cancelled -> customer A
+      2026-08-28 08:00  renewal_reminder       -> customer A
+      2026-08-28 22:11  two more subscriptions lapse
+      2026-08-28 23:00  subscription_cancelled -> customer B
+      2026-08-29 08:00  renewal_reminder       -> customer A and customer B
+  Daily at 08:00 UTC, growing by accumulation. That is what made the deploy
+  urgent rather than routine.
+
+DEPLOY VERIFICATION (not the "queued" message, and not /health)
+  hops redeploy reported the job queued; neither that nor a 200 from /health
+  proves anything, since /health answered 200 throughout on the old code and the
+  per-minute crons never paused. The signal used was Coolify replacing the
+  container:
+      old j4luw9146ygzkxn7ugv9fuvi-213946631359
+      new j4luw9146ygzkxn7ugv9fuvi-113455041595
+  with two poll cycles finding no container at all in between — a real swap, not
+  a no-op. Health 200 confirmed afterwards on the new container.
+
+RESULT — the same rows that sent mail that morning
+  POST /api/v1/admin/cron/notification-schedule?dryRun=true
+      "dryRun": true, "details": { "renewalsSent": 0 }
+  Vacuity check: the three lapsed `abandoned` subscriptions were confirmed still
+  present in the table immediately afterwards, so the zero is the guard working,
+  not an empty dataset.
+
+      before deploy (08:00 UTC, old code)  ->  2 reminders sent, 2 real customers
+      after  deploy (11:4x, new code)      ->  renewalsSent 0
+  Identical data, identical rows, only the deploy changed. Stronger evidence than
+  the staging control, because production produced the case on its own.
+
+NOTE FOR WHOEVER RUNS THIS NEXT
+  Do not read the admin panel's "Procesados" figure to verify renewals. It shows
+  `processed`, which accumulates trials only (notification-schedule.job.ts:492),
+  and reads 0 whether renewals worked, matched nothing, or failed outright. The
+  real counter is `details.renewalsSent` in the API response, which the panel
+  does not display.
+```
+
 ---
 
 ## Cross-references

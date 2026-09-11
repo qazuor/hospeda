@@ -1,0 +1,163 @@
+---
+/**
+ * @file GastronomyDailySpecials.astro
+ * @description Renders a gastronomy listing's menú del día on the public detail
+ * page (HOS-1041).
+ *
+ * ## Why this is its own block, above the carta
+ *
+ * The carta answers "what does this place cook"; this answers "what is on today",
+ * and the second is the question a diner deciding where to have lunch in twenty
+ * minutes is actually asking. It renders FIRST for that reason, and it is
+ * visually distinct rather than a section of the carta — a menú del día folded
+ * in as one more course heading would read as permanent, which is precisely the
+ * confusion the feature exists to remove.
+ *
+ * ## No dates are rendered
+ *
+ * The component never shows `validFrom`/`validUntil`, and that is deliberate.
+ * What arrives here has ALREADY been filtered by the API to the specials valid
+ * today (`getBySlug.ts` passes `validOn` resolved in the AR market timezone), so
+ * everything on screen is on offer right now and a date could only contradict
+ * that or add noise. "Hoy" is the whole label the reader needs.
+ *
+ * Rendering the window would also be actively wrong at the edges: the page is
+ * edge-cached for five minutes, so a printed "hasta el 03/09" could outlive its
+ * own truth by longer than the dish does.
+ *
+ * ## The gate
+ *
+ * `dailySpecials` arrives PRE-FILTERED by the API in the other sense too:
+ * withheld, live, when the owner's CURRENT plan does not grant
+ * `manage_gastronomy_daily_special`. This component has no gate of its own —
+ * an owner without the entitlement simply never has non-empty props, exactly as
+ * `GastronomyMenu.astro` describes for the carta.
+ */
+
+import type { GastronomyDailySpecial } from '@/data/types';
+import { formatPrice } from '@/lib/format-utils';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly dailySpecials?: readonly GastronomyDailySpecial[];
+    readonly locale: SupportedLocale;
+}
+
+const { dailySpecials = [], locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (dailySpecials.length === 0) {
+    // Nothing on offer today. Renders nothing rather than an empty "Menú del
+    // día" heading, which would read as "this venue has none" when the truthful
+    // statement is "not today".
+    return;
+}
+
+const title = t('gastronomy.detail.dailySpecials.title', 'Menú del día');
+const intro = t('gastronomy.detail.dailySpecials.intro', 'Lo que se ofrece hoy');
+const consultLabel = t('gastronomy.detail.dailySpecials.consultPrice', 'A consultar');
+---
+
+<section class="gastro-specials" id="gastro-specials">
+    <div class="gastro-specials__head">
+        <h2 class="gastro-specials__title">{title}</h2>
+        <p class="gastro-specials__intro">{intro}</p>
+    </div>
+
+    <ul class="gastro-specials__items">
+        {dailySpecials.map((special) => (
+            <li class="gastro-specials__item">
+                <div class="gastro-specials__item-main">
+                    <span class="gastro-specials__item-title">{special.title}</span>
+                    <span class="gastro-specials__item-price">
+                        {special.priceCents == null
+                            ? consultLabel
+                            : formatPrice({ amount: special.priceCents / 100, locale })}
+                    </span>
+                </div>
+                {special.description && (
+                    <p class="gastro-specials__item-description">{special.description}</p>
+                )}
+            </li>
+        ))}
+    </ul>
+</section>
+
+<style>
+    .gastro-specials {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+        margin-bottom: var(--space-6, 24px);
+        padding: var(--space-5, 20px);
+        border: 1px solid var(--brand-primary);
+        border-radius: var(--radius-card, 24px);
+    }
+
+    .gastro-specials__head {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+    }
+
+    .gastro-specials__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-specials__intro {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .gastro-specials__items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .gastro-specials__item {
+        border-bottom: 1px dashed var(--border);
+        padding-bottom: var(--space-2, 8px);
+    }
+
+    .gastro-specials__item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .gastro-specials__item-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--space-3, 12px);
+        font-family: var(--font-sans);
+    }
+
+    .gastro-specials__item-title {
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .gastro-specials__item-price {
+        font-weight: 600;
+        color: var(--brand-primary);
+        white-space: nowrap;
+    }
+
+    .gastro-specials__item-description {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+        margin: 4px 0 0;
+    }
+</style>

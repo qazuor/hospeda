@@ -21,7 +21,8 @@ describe('hasActiveGastronomyListingFilters', () => {
                 type: undefined,
                 priceRange: undefined,
                 isFeatured: undefined,
-                minRating: undefined
+                minRating: undefined,
+                features: undefined
             })
         ).toBe(false);
     });
@@ -32,7 +33,12 @@ describe('hasActiveGastronomyListingFilters', () => {
         { type: 'RESTAURANT' },
         { priceRange: 'MID' },
         { isFeatured: true },
-        { minRating: 4 }
+        { minRating: 4 },
+        // HOS-1054: the apto filter narrows results like any other, so an empty
+        // grid reached with only an apto selected must say "nothing matched your
+        // filters", not "there are no restaurants published yet".
+        { features: '11111111-1111-4111-8111-111111111111' },
+        { features: 'id-a,id-b' }
     ])('returns true when a real gastronomy filter is active: %o', (filters) => {
         expect(
             hasActiveGastronomyListingFilters({
@@ -42,9 +48,31 @@ describe('hasActiveGastronomyListingFilters', () => {
                 priceRange: undefined,
                 isFeatured: undefined,
                 minRating: undefined,
+                features: undefined,
                 ...filters
             })
         ).toBe(true);
+    });
+
+    it.each([
+        '',
+        ',',
+        ' , '
+    ])('treats an empty features param (%p) as no filter at all', (features) => {
+        // A stray `?features=` is a malformed URL, not a request the visitor
+        // made — reporting it as an active filter would blame them for an
+        // empty catalog.
+        expect(
+            hasActiveGastronomyListingFilters({
+                q: undefined,
+                destinationId: undefined,
+                type: undefined,
+                priceRange: undefined,
+                isFeatured: undefined,
+                minRating: undefined,
+                features
+            })
+        ).toBe(false);
     });
 });
 

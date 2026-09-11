@@ -49,12 +49,32 @@ const PAGE_CHROME_RE =
     /<(nav|header|footer|aside|form|noscript|svg|iframe|select|button)\b[^>]{0,2000}>[\s\S]*?<\/\1\s*>/gi;
 
 /**
+ * Matches an HTML comment, including its content.
+ *
+ * This MUST be stripped before anything else in the pipeline — before even
+ * the body-scope (HOS-1029). Two independent reasons:
+ *
+ * 1. {@link BODY_CONTENT_RE} matches the first LITERAL `<body` in the
+ *    document. A `<head>` comment that merely mentions `<body>` in its prose
+ *    (a doc comment explaining layout behaviour, for instance) anchors the
+ *    scope tens of thousands of characters too early, dragging half the
+ *    `<head>` — including other comments with internal ticket numbers and
+ *    staging URLs — into the "content" that gets offered as the listing
+ *    description.
+ * 2. {@link HTML_TAG_RE} stops at the first `>`. A comment whose text
+ *    contains a `>` truncates the tag match there, leaving the remainder of
+ *    the comment — including the closing `-->` — as literal output text.
+ */
+const HTML_COMMENT_RE = /<!--[\s\S]*?-->/g;
+
+/**
  * Captures the contents of `<body>`.
  *
  * Scoping to the body is not cosmetic: `<head>` holds `<title>`, and without
  * this the title text lands in the extracted "content" — enough, on a thin
  * page, for a scrap of chrome to clear the description minimum and preempt a
- * better candidate.
+ * better candidate. Must run AFTER {@link HTML_COMMENT_RE} strips comments —
+ * see its doc comment for why.
  */
 const BODY_CONTENT_RE = /<body\b[^>]{0,2000}>([\s\S]*?)<\/body\s*>/i;
 
@@ -137,9 +157,10 @@ export function decodeHtmlEntities(text: string): string {
  * Converts raw HTML to a single-line plain-text string suitable for
  * AI-assisted extraction (Strategy B).
  *
- * Removes `<script>`/`<style>` blocks, strips all remaining tags, decodes
- * common entities, collapses EVERY run of whitespace (line breaks included)
- * into a single space, trims, and truncates to `maxChars`.
+ * Removes HTML comments FIRST (HOS-1029), then `<script>`/`<style>` blocks,
+ * strips all remaining tags, decodes common entities, collapses EVERY run of
+ * whitespace (line breaks included) into a single space, trims, and
+ * truncates to `maxChars`.
  *
  * Never throws. Empty or whitespace-only input returns an empty string.
  *
@@ -161,8 +182,11 @@ export function stripHtmlToText(input: {
         return '';
     }
 
+    HTML_COMMENT_RE.lastIndex = 0;
+    let text = html.replace(HTML_COMMENT_RE, ' ');
+
     SCRIPT_STYLE_RE.lastIndex = 0;
-    let text = html.replace(SCRIPT_STYLE_RE, ' ');
+    text = text.replace(SCRIPT_STYLE_RE, ' ');
 
     HTML_TAG_RE.lastIndex = 0;
     text = text.replace(HTML_TAG_RE, ' ');
@@ -183,17 +207,20 @@ export function stripHtmlToText(input: {
  * Converts raw HTML to plain text while PRESERVING paragraph structure.
  *
  * **Pipeline:**
- * 1. Remove `<script>` / `<style>` blocks and their content.
- * 2. Remove page chrome (`<nav>`, `<header>`, `<footer>`, `<aside>`, `<form>`,
+ * 0. Remove HTML comments (HOS-1029) — BEFORE anything else, including the
+ *    body-scope. See {@link HTML_COMMENT_RE} for why the ordering is load-bearing.
+ * 1. Scope to `<body>` (falls back to stripping `<head>` when there is none).
+ * 2. Remove `<script>` / `<style>` blocks and their content.
+ * 3. Remove page chrome (`<nav>`, `<header>`, `<footer>`, `<aside>`, `<form>`,
  *    …) so menus and cookie banners never reach the host's description.
- * 3. Turn `<br>` and every block-level CLOSING tag into a line break — this
+ * 4. Turn `<br>` and every block-level CLOSING tag into a line break — this
  *    step is what separates this function from {@link stripHtmlToText}, and it
  *    must run BEFORE the generic tag strip or the boundaries are gone.
- * 4. Strip the remaining tags.
- * 5. Decode common entities.
- * 6. Collapse spaces/tabs (but NOT line breaks), strip the padding around each
+ * 5. Strip the remaining tags.
+ * 6. Decode common entities.
+ * 7. Collapse spaces/tabs (but NOT line breaks), strip the padding around each
  *    break, and cap consecutive breaks at one blank line.
- * 7. Trim and truncate to `maxChars`.
+ * 8. Trim and truncate to `maxChars`.
  *
  * Never throws. Empty or whitespace-only input returns an empty string.
  *
@@ -216,20 +243,27 @@ export function stripHtmlToParagraphText(input: {
         return '';
     }
 
-    // Step 0 — scope to <body>. Falls back to stripping <head> when the markup
-    // has no explicit body element (fragments, malformed pages).
-    const bodyMatch = BODY_CONTENT_RE.exec(html);
-    const scoped = bodyMatch?.[1] ?? html.replace(HEAD_RE, ' ');
+    // Step 0 — remove HTML comments FIRST, before the body-scope or anything
+    // else (HOS-1029). See HTML_COMMENT_RE's doc comment: a <head> comment
+    // that merely mentions "<body>" in its prose would otherwise anchor the
+    // scope tens of thousands of characters too early.
+    HTML_COMMENT_RE.lastIndex = 0;
+    const withoutComments = html.replace(HTML_COMMENT_RE, ' ');
 
-    // Step 1 — drop scripts and styles.
+    // Step 1 — scope to <body>. Falls back to stripping <head> when the markup
+    // has no explicit body element (fragments, malformed pages).
+    const bodyMatch = BODY_CONTENT_RE.exec(withoutComments);
+    const scoped = bodyMatch?.[1] ?? withoutComments.replace(HEAD_RE, ' ');
+
+    // Step 2 — drop scripts and styles.
     SCRIPT_STYLE_RE.lastIndex = 0;
     let text = scoped.replace(SCRIPT_STYLE_RE, ' ');
 
-    // Step 2 — drop page chrome.
+    // Step 3 — drop page chrome.
     PAGE_CHROME_RE.lastIndex = 0;
     text = text.replace(PAGE_CHROME_RE, ' ');
 
-    // Step 3 — block boundaries become line breaks, BEFORE the tag strip.
+    // Step 4 — block boundaries become line breaks, BEFORE the tag strip.
     //
     // `<br>` is a break WITHIN a paragraph, so it emits one newline; a block
     // close ends a paragraph, so it emits two. Emitting two (rather than one,
@@ -242,14 +276,14 @@ export function stripHtmlToParagraphText(input: {
     BLOCK_END_RE.lastIndex = 0;
     text = text.replace(BLOCK_END_RE, '\n\n');
 
-    // Step 4 — strip whatever markup is left.
+    // Step 5 — strip whatever markup is left.
     HTML_TAG_RE.lastIndex = 0;
     text = text.replace(HTML_TAG_RE, ' ');
 
-    // Step 5 — decode entities.
+    // Step 6 — decode entities.
     text = decodeHtmlEntities(text);
 
-    // Step 6 — normalise whitespace WITHOUT touching the breaks we just made.
+    // Step 7 — normalise whitespace WITHOUT touching the breaks we just made.
     // Order matters: strip the padding around each break first, otherwise the
     // inline pass leaves a space between consecutive breaks and `\n{3,}` can
     // never match.
@@ -260,6 +294,6 @@ export function stripHtmlToParagraphText(input: {
         .replace(INLINE_WHITESPACE_RE, ' ')
         .trim();
 
-    // Step 7 — truncate.
+    // Step 8 — truncate.
     return text.length <= maxChars ? text : text.slice(0, maxChars);
 }

@@ -5,12 +5,13 @@
  *  - inserts a `status='pending_provider'` row with NO mp_subscription_id and
  *    no promo_code_id, mapping `billingInterval` to the qzpay storage shape
  *    (`'monthly' -> 'month'`, `'annual' -> 'year'`).
- *  - stamps `product_domain` (default `'accommodation'`, override respected)
- *    via a typed UPDATE, mirroring `createCompSubscription`'s two-step stamp.
- *  - persists `trialStart`/`trialEnd` from `freeTrialDays` at insert time
- *    (HOS-211 Option B) while `status` stays `pending_provider` regardless —
- *    a set `trial_end` on a pending row grants nothing until the webhook
- *    flips status (HOS-171 guard).
+ *  - stamps `product_domain` in the INSERT itself with EXACTLY what the caller
+ *    passes — the field is REQUIRED (HOS-1271: no `?? ACCOMMODATION` fallback
+ *    left to silently misfile a row when a caller forgets it).
+ *  - NEVER writes a trial window: `trialStart`/`trialEnd` are always NULL and
+ *    no `trialGranted` metadata key is stamped (HOS-1012). A checkout is the
+ *    paid path and nothing else; the local trial row is opened at the owner's
+ *    first publish instead.
  *  - inserts the `billing_pending_checkouts` correlation row, INSIDE the same
  *    transaction, carrying `mpPreapprovalPlanId` / `payerEmail` /
  *    `pendingDiscount` (when supplied) / a 32-hex-char `nonce`.
@@ -40,11 +41,22 @@ const updateWhereMock = vi.fn();
 const updateSetMock = vi.fn(() => ({ where: updateWhereMock }));
 const txExecuteMock = vi.fn().mockResolvedValue(undefined);
 
+/**
+ * The customer's existing `billing_subscriptions` rows, as the HOS-1322
+ * duplicate guard reads them ON THE TRANSACTION CLIENT — the guard runs inside
+ * the same transaction as the insert on purpose, so the check and the write see
+ * one snapshot. Mutable so a test can seed a live subscription.
+ */
+let existingSubscriptionRows: Array<Record<string, unknown>> = [];
+
 /** A fake tx object passed to the withTransaction callback. */
 const txStub = {
     insert: vi.fn(() => ({ values: insertValuesMock })),
     update: vi.fn(() => ({ set: updateSetMock })),
-    execute: txExecuteMock
+    execute: txExecuteMock,
+    select: vi.fn(() => ({
+        from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(existingSubscriptionRows)) }))
+    }))
 };
 
 const withTransactionMock = vi.fn(
@@ -52,13 +64,24 @@ const withTransactionMock = vi.fn(
 );
 
 const pendingCheckoutCreateMock = vi.fn();
+const supersedePendingMock = vi.fn().mockResolvedValue([]);
 
 vi.mock('@repo/db', () => ({
-    billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
-    billingPendingCheckoutModel: {
-        create: (...args: unknown[]) => pendingCheckoutCreateMock(...args)
+    billingSubscriptions: {
+        __table: 'billing_subscriptions',
+        id: 'id',
+        customerId: 'customer_id',
+        status: 'status',
+        productDomain: 'product_domain',
+        deletedAt: 'deleted_at'
     },
+    billingPendingCheckoutModel: {
+        create: (...args: unknown[]) => pendingCheckoutCreateMock(...args),
+        supersedePendingForCustomerPlan: (...args: unknown[]) => supersedePendingMock(...args)
+    },
+    and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
     withTransaction: (...args: unknown[]) =>
         (withTransactionMock as (...a: unknown[]) => unknown)(...args)
 }));
@@ -69,9 +92,22 @@ vi.mock('@repo/db', () => ({
 vi.mock('@repo/schemas', async () => {
     const actual = await vi.importActual('@repo/schemas');
     return {
-        ...actual,
-        ProductDomainEnum: { ACCOMMODATION: 'accommodation', COMMERCE: 'commerce' },
-        SubscriptionStatusEnum: { PENDING_PROVIDER: 'pending_provider' }
+        ...actual
+        // HOS-1322: both enums come from the real module now.
+        //
+        // `SubscriptionStatusEnum` used to be stubbed as
+        // `{ PENDING_PROVIDER: 'pending_provider' }`, and a one-member enum
+        // silently defeats `normalizeStoredSubscriptionStatus` — which maps the
+        // stored status string through it — so `isLiveSubscriptionStatus('active')`
+        // answered FALSE and the duplicate guard found no conflict in any row.
+        // Every one of its cases would have passed while blocking nothing.
+        //
+        // `ProductDomainEnum` used to carry `COMMERCE: 'commerce'`, a value the
+        // enum has not held since release B, and to omit `ADDON` — which the
+        // guard compares against by identity.
+        //
+        // Both now come from the spread above, so there is nothing left to
+        // override here.
     };
 });
 
@@ -91,7 +127,10 @@ const BASE_INPUT = {
     billingInterval: 'monthly' as const,
     mpPreapprovalPlanId: 'mp-plan-1',
     payerEmail: 'host@hospeda.test',
-    trialGranted: false,
+    // HOS-1271: REQUIRED on the real input type now — no default left to fall
+    // back on. Every fixture in this suite states it explicitly, the same way
+    // every real caller must.
+    productDomain: 'accommodation',
     livemode: false
 };
 
@@ -101,6 +140,105 @@ describe('createPendingProviderSubscription', () => {
         insertValuesMock.mockResolvedValue(undefined);
         updateWhereMock.mockResolvedValue(undefined);
         pendingCheckoutCreateMock.mockResolvedValue({ id: 'pending-checkout-1' });
+        // Default: the customer holds no subscription at all (HOS-1322).
+        existingSubscriptionRows = [];
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1322 — the duplicate guard, inside the primitive
+    // -----------------------------------------------------------------------
+    describe('the duplicate guard (HOS-1322)', () => {
+        it('refuses a second share-link checkout when a live subscription exists in the SAME domain', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_live', status: 'active', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+            // Refused before the row and its correlation row are written.
+            expect(insertValuesMock).not.toHaveBeenCalled();
+            expect(pendingCheckoutCreateMock).not.toHaveBeenCalled();
+        });
+
+        it('still opens the checkout when the live subscription is in ANOTHER domain (the dual owner)', async () => {
+            // A host who already pays for accommodation, opening a gastronomy
+            // checkout. Without this pair the case above passes just as well
+            // with a customer-wide check that refuses a legitimate purchase.
+            existingSubscriptionRows = [
+                { id: 'sub_accommodation', status: 'active', productDomain: 'accommodation' }
+            ];
+
+            const result = await createPendingProviderSubscription({
+                ...BASE_INPUT,
+                productDomain: 'gastronomy'
+            });
+
+            expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/);
+            expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('refuses on a past_due row — a preapproval mid-dunning is not a walked-away customer', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_moroso', status: 'past_due', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+        });
+
+        it('refuses on qzpay’s spelling of past_due too (`unpaid`)', async () => {
+            // The status column holds two vocabularies. A raw `IN (...)` list
+            // would miss this row and let the moroso open a second preapproval.
+            existingSubscriptionRows = [
+                { id: 'sub_moroso', status: 'unpaid', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+        });
+
+        it('exempts the named superseded trial — the start-paid conversion shape (HOS-1335)', async () => {
+            // THE HOS-1335 regression, one gate down. The route-level guards
+            // let a Hospeda-owned local trial through to the checkout; without
+            // the route naming that row in `supersedesSubscriptionIds`, THIS
+            // guard re-refuses the conversion from inside the primitive —
+            // `trialing` IS live for `isLiveSubscriptionStatus` — and the
+            // route-level suites cannot see it because they stub this whole
+            // service. The discriminating halves: the same trialing row
+            // refuses without the list, proceeds with it.
+            existingSubscriptionRows = [
+                { id: 'sub_trial', status: 'trialing', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+
+            const result = await createPendingProviderSubscription({
+                ...BASE_INPUT,
+                supersedesSubscriptionIds: ['sub_trial']
+            });
+
+            expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/);
+            expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('still refuses a trialing row that is NOT on the supersedes list — a list, never an off switch', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_trial_a', status: 'trialing', productDomain: 'accommodation' },
+                { id: 'sub_trial_b', status: 'trialing', productDomain: 'accommodation' }
+            ];
+
+            await expect(
+                createPendingProviderSubscription({
+                    ...BASE_INPUT,
+                    supersedesSubscriptionIds: ['sub_trial_a']
+                })
+            ).rejects.toThrow(/already have a live 'accommodation' subscription/);
+        });
     });
 
     it('inserts a pending_provider row (no mp id, no promo id) + the correlation row atomically', async () => {
@@ -143,15 +281,21 @@ describe('createPendingProviderSubscription', () => {
         expect(metadata.intendedInterval).toBe('monthly');
         expect(metadata.priceId).toBe('price-m');
         expect(metadata.mpPreapprovalPlanId).toBe('mp-plan-1');
-        expect(metadata.trialGranted).toBe('false');
+        // HOS-1012: the key is gone entirely, not written as 'false'.
+        expect(metadata).not.toHaveProperty('trialGranted');
 
-        // product_domain stamped via a typed UPDATE, defaulting to accommodation.
-        expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'accommodation' });
-        expect(updateWhereMock).toHaveBeenCalledWith({
-            op: 'eq',
-            col: 'id',
-            val: result.localSubscriptionId
-        });
+        // HOS-1233 T-035 / HOS-1271: product_domain is stated in the INSERT,
+        // with EXACTLY the value the caller passes — REQUIRED since HOS-1271,
+        // no `?? ACCOMMODATION` fallback left for a caller to omit.
+        //
+        // This used to assert a follow-up `UPDATE ... SET product_domain`, which
+        // is a weaker claim wearing the same words: it says the row ENDS UP
+        // right, not that it was BORN right. In between, the row existed filed
+        // under the column's own default — which is how every tourist plan came
+        // to report `accommodation` in prod and staging alike (spec F-4b) — and
+        // once T-036 drops that default the INSERT is rejected before its
+        // correction can run at all.
+        expect(inserted.productDomain).toBe('accommodation');
 
         // Correlation row created INSIDE the same tx.
         expect(pendingCheckoutCreateMock).toHaveBeenCalledOnce();
@@ -198,7 +342,8 @@ describe('createPendingProviderSubscription', () => {
     it('respects an explicit productDomain override', async () => {
         await createPendingProviderSubscription({ ...BASE_INPUT, productDomain: 'commerce' });
 
-        expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'commerce' });
+        const [inserted] = insertValuesMock.mock.calls[0] ?? [];
+        expect((inserted as Record<string, unknown>).productDomain).toBe('commerce');
     });
 
     it('stamps domainMetadata into the subscription metadata (the subscription → entity path)', async () => {
@@ -231,42 +376,17 @@ describe('createPendingProviderSubscription', () => {
         expect(metadata).not.toHaveProperty('partnerId');
     });
 
-    it('stamps trialGranted=true into metadata when the checkout granted a trial', async () => {
-        await createPendingProviderSubscription({ ...BASE_INPUT, trialGranted: true });
-
-        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        const metadata = inserted.metadata as Record<string, unknown>;
-        expect(metadata.trialGranted).toBe('true');
-    });
-
-    it('persists trialStart/trialEnd from freeTrialDays, status stays pending_provider (HOS-211 Option B)', async () => {
-        const before = Date.now();
-        await createPendingProviderSubscription({
-            ...BASE_INPUT,
-            trialGranted: true,
-            freeTrialDays: 14
-        });
-        const after = Date.now();
-
-        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
-        // A set trialEnd on a pending row must NOT change status — entitlements
-        // gate on status only (HOS-171 guard); the webhook is still the one
-        // that flips it once the preapproval is confirmed.
-        expect(inserted.status).toBe('pending_provider');
-
-        const trialStart = inserted.trialStart as Date;
-        const trialEnd = inserted.trialEnd as Date;
-        expect(trialStart.getTime()).toBeGreaterThanOrEqual(before - 2000);
-        expect(trialStart.getTime()).toBeLessThanOrEqual(after + 2000);
-
-        const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-        expect(trialEnd.getTime() - trialStart.getTime()).toBe(fourteenDaysMs);
-    });
-
-    it('leaves trialStart/trialEnd null when freeTrialDays is not provided', async () => {
+    // HOS-1012: the pre-written trial window is GONE. `freeTrialDays` and
+    // `trialGranted` were removed from this helper's input, so a checkout row is
+    // born with a null window no matter what the caller does — the reason being
+    // that MercadoPago reports a spent free trial identically to a live one
+    // (HOS-522: ARS 18.000 charged 118 seconds after promising 14 free days).
+    // `status` still stays `pending_provider`, unchanged.
+    it('never writes a trial window, whatever the caller passes (HOS-1012)', async () => {
         await createPendingProviderSubscription(BASE_INPUT);
 
         const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(inserted.status).toBe('pending_provider');
         expect(inserted.trialStart).toBeNull();
         expect(inserted.trialEnd).toBeNull();
     });
@@ -336,14 +456,17 @@ describe('createPendingProviderSubscription', () => {
     it('HOS-240: snapshots pendingTrialExtension on the correlation row (redemption deferred to link time)', async () => {
         await createPendingProviderSubscription({
             ...BASE_INPUT,
-            trialGranted: true,
-            freeTrialDays: 44,
             pendingTrialExtension: { promoCodeId: 'pc-trial-1', code: 'FREEMONTH' }
         });
 
-        // Deferred: no promo_code_id stamped here (only product_domain) — the
-        // stamp + redemption happen at link time (link-preapproval.service.ts).
-        expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'accommodation' });
+        // Deferred: no promo_code_id on the row — the stamp + redemption happen
+        // at link time (link-preapproval.service.ts). The claim used to be made
+        // as "the only UPDATE is the product_domain one"; since HOS-1233 T-035
+        // states the domain in the INSERT and removed that UPDATE, it is made
+        // directly instead: the inserted row carries no promo id at all.
+        const [inserted] = insertValuesMock.mock.calls[0] ?? [];
+        expect(inserted as Record<string, unknown>).not.toHaveProperty('promoCodeId');
+        expect(updateSetMock).not.toHaveBeenCalled();
 
         // The promo identity is snapshotted on the correlation row, like pendingDiscount.
         const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];
@@ -358,5 +481,50 @@ describe('createPendingProviderSubscription', () => {
 
         const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];
         expect(correlationArg).not.toHaveProperty('pendingTrialExtension');
+    });
+    /**
+     * REGRESSION (HOS-276 follow-up).
+     *
+     * A customer who retries checkout after a declined card used to leave TWO
+     * live correlation rows for the same customer + MercadoPago plan. The
+     * webhook fallback (Tier 3) can only tell candidates apart by
+     * `mp_preapproval_plan_id` + payer email + a 24h window, on which the two
+     * rows are identical — so it refused to link, and the approved payment had
+     * nowhere to land. Measured in staging on 2026-08-29 ($35.000 unrecorded).
+     *
+     * Retiring the earlier attempt at creation time is what keeps the candidate
+     * set unambiguous, so this must happen on EVERY checkout, inside the same
+     * transaction, and BEFORE the new row exists (otherwise it would supersede
+     * itself).
+     */
+    it('supersedes the customer earlier in-flight checkouts for the same MP plan, in the same tx', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        expect(supersedePendingMock).toHaveBeenCalledOnce();
+        const [args, txArg] = supersedePendingMock.mock.calls[0] ?? [];
+        expect(args).toEqual({ customerId: 'cust-1', mpPreapprovalPlanId: 'mp-plan-1' });
+        expect(txArg).toBe(txStub);
+    });
+
+    it('supersedes BEFORE inserting the new correlation row (never supersedes itself)', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        const supersedeOrder = supersedePendingMock.mock.invocationCallOrder[0];
+        const createOrder = pendingCheckoutCreateMock.mock.invocationCallOrder[0];
+        expect(supersedeOrder).toBeDefined();
+        expect(createOrder).toBeDefined();
+        expect(supersedeOrder as number).toBeLessThan(createOrder as number);
+    });
+
+    it('scopes the supersede to the MP plan actually being checked out', async () => {
+        await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            mpPreapprovalPlanId: 'mp-plan-other'
+        });
+
+        expect(supersedePendingMock).toHaveBeenCalledWith(
+            { customerId: 'cust-1', mpPreapprovalPlanId: 'mp-plan-other' },
+            txStub
+        );
     });
 });

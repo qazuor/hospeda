@@ -97,6 +97,12 @@ export function useVideoSection({
 
     useUnsavedChangesGuard({
         isDirty,
+        // This widget shares its page with `PhotoSection`'s alt-text nudge
+        // (HOS-1018). Passing the locale is what lets the leave-warning
+        // registry translate the COMBINED dialog when both are active; while
+        // this guard is alone on a page it is unused and the copy below shows
+        // verbatim, exactly as before.
+        locale,
         title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
         confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
         cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),

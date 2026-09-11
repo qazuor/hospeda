@@ -317,6 +317,7 @@ export function BasicInfoSection({
                 </span>
                 <RichTextEditor
                     id={RICH_DESCRIPTION_ID}
+                    locale={locale}
                     value={data.richDescription}
                     ariaLabel={t(
                         'commerce.owner.editor.sections.richDescription',

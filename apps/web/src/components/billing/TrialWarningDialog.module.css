@@ -1,19 +1,39 @@
 /* TrialWarningDialog.module.css
- * Content-specific styles for the trial-warning confirmation dialog. Outer
- * chrome (overlay, panel, header, scroll lock, ESC, focus management) lives
- * in the shared <Dialog> component (`@/components/shared/ui/Dialog.client`).
- * All values reference design tokens from global.css — no hardcoded colours. */
+ * Content-specific styles for the trial warn-and-confirm dialog (HOS-1233
+ * T-016). Outer chrome (overlay, panel, header, scroll lock, ESC, focus
+ * management) lives in the shared <Dialog> component
+ * (`@/components/shared/ui/Dialog.client`), which renders a <div> panel — so
+ * nothing here declares `max-height` or `overflow`, per HOS-958: the panel's
+ * height is decided in exactly one place and a second opinion races it on
+ * source order. Buttons mirror `PayerEmailConfirmDialog.module.css` so the two
+ * dialogs this button can open look like one family. All values reference
+ * design tokens from global.css — no hardcoded colours. */
 
 .body {
-    margin: 0;
+    margin: 0 0 var(--space-3, 0.75rem);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
+    font-weight: 600;
     line-height: 1.6;
     color: var(--core-foreground);
 }
 
+/* The "you are charged now" sentence. Muted rather than alarmed: it states a
+ * fact the visitor is about to act on, and a destructive red here would read
+ * as an error on a screen where nothing has gone wrong. */
+.charge {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+    color: var(--core-muted-foreground);
+}
+
 /* ── Footer buttons ──────────────────────────────────────────────────────── */
 
+/* Cancel is the LOW-emphasis control and still the safe one: it costs the
+ * visitor nothing and leaves the trial running. It is rendered first so it is
+ * the first tab stop inside the footer. */
 .cancelButton {
     display: inline-flex;
     align-items: center;

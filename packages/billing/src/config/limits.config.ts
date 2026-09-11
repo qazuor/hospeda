@@ -127,5 +127,22 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
         name: 'Experience listings',
         description:
             'Maximum number of experience listings the owner may hold. Counted per OWNER and per VERTICAL, so it says nothing about gastronomies — those carry their own cap.'
+    },
+    // Commerce per-vertical AI-chat quotas (HOS-400)
+    [LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH]: {
+        name: 'AI chat interactions per month (gastronomy owner)',
+        description:
+            "Monthly AI chat quota borne by a gastronomy listing's owner. Separate from the accommodation-side MAX_AI_CHAT_PER_MONTH and from the experience cap: commerce billing is per OWNER and per VERTICAL, and the quota is metered against its own ai_usage feature (chat_gastronomy) so the counts cannot pool."
+    },
+    [LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH]: {
+        name: 'AI chat interactions per month (experience owner)',
+        description:
+            "Monthly AI chat quota borne by an experience listing's owner. Separate from the accommodation-side MAX_AI_CHAT_PER_MONTH and from the gastronomy cap: commerce billing is per OWNER and per VERTICAL, and the quota is metered against its own ai_usage feature (chat_experience) so the counts cannot pool."
+    },
+    // Private per-tourist galleries (HOS-1060)
+    [LimitKey.MAX_ACTIVE_PRIVATE_GALLERIES]: {
+        name: 'Active private galleries',
+        description:
+            'Maximum number of private per-tourist photo galleries an experience provider may hold alive at once. Counts galleries that have not expired yet (each lives 30 days from creation), not galleries ever created, so the cap refills as they lapse. Raised by the private-galleries-+5/+10/+20 add-ons.'
     }
 };

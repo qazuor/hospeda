@@ -116,11 +116,13 @@ describe('ORGANIZATION_INFO constant', () => {
         );
     });
 
-    it('has the AR mobile telephone with country+mobile prefix (549)', () => {
-        // Commit 9727ae935 (fix: use AR mobile WhatsApp number) intentionally added
-        // the mobile 9 prefix: +549 is the correct E.164 form for AR mobile numbers
-        // on WhatsApp. +543442... was the landline form and is now wrong.
-        expect(ORGANIZATION_INFO.telephone).toBe('+5493442453797');
+    it('has the E.164 telephone WITHOUT the AR mobile 9 (HOS-364)', () => {
+        // The AR mobile `9` is required for a wa.me link to reach a mobile over
+        // WhatsApp, but does not belong on this field: schema.org `telephone`
+        // represents a plain phone call, and +549... degrades that call (see
+        // apps/web/src/lib/whatsapp.ts's docblock). Derived from
+        // HOSPEDA_BRAND_PHONE via getBrandPhoneE164() — see @/lib/brand-phone.
+        expect(ORGANIZATION_INFO.telephone).toBe('+543442453797');
     });
 
     it('has the public contact email', () => {

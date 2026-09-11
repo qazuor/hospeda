@@ -25,6 +25,14 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.EXPERIENCE).toBe('experience');
         });
 
+        it('should define ADDON', () => {
+            expect(ProductDomainEnum.ADDON).toBe('addon');
+        });
+
+        it('should define TOURIST', () => {
+            expect(ProductDomainEnum.TOURIST).toBe('tourist');
+        });
+
         // HOS-685 — this count is a frozen baseline, not a formality. Nothing in
         // the type system reacts to a member appearing or disappearing (no
         // `Record<ProductDomainEnum, …>`, no exhaustive `switch`, no `satisfies`),
@@ -34,8 +42,21 @@ describe('ProductDomainEnum', () => {
         // HOS-695 (release C) retired COMMERCE, dropping the count from 5 to 4 —
         // the last of the three releases (A widened it, B rewrote every row off
         // it, C removes the member itself).
-        it('should have exactly 4 values', () => {
-            expect(Object.values(ProductDomainEnum)).toHaveLength(4);
+        //
+        // HOS-847 PR 2 added ADDON, raising the count back to 5 — a recurring
+        // add-on's MercadoPago preapproval gets its own `billing_subscriptions`
+        // row, explicitly tagged so it can never fall into
+        // `subscriptionMatchesDomain`'s accommodation fail-open. Every sweep
+        // that assumed one row per customer was updated in the same PR — see
+        // `subscription-product-domain.ts` and its call sites.
+        // HOS-1233 added TOURIST, raising the count to 6. RECOUNTED against the
+        // members below, not incremented: accommodation, gastronomy, experience,
+        // partner, tourist, addon. The tourist plans had been filed as
+        // `accommodation` in staging AND production because no member existed to
+        // assign, which made a paying tourist indistinguishable from an
+        // accommodation subscriber to the entitlement engine.
+        it('should have exactly 6 values', () => {
+            expect(Object.values(ProductDomainEnum)).toHaveLength(6);
         });
 
         it('should NOT define COMMERCE (HOS-695 — retired)', () => {
@@ -68,6 +89,16 @@ describe('ProductDomainEnum', () => {
 
         it('should accept "experience"', () => {
             const result = ProductDomainEnumSchema.safeParse('experience');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "addon"', () => {
+            const result = ProductDomainEnumSchema.safeParse('addon');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "tourist"', () => {
+            const result = ProductDomainEnumSchema.safeParse('tourist');
             expect(result.success).toBe(true);
         });
 

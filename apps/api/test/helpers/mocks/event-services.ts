@@ -172,26 +172,38 @@ export class EventService {
         return { data: { items: [], total: 0 } };
     }
 
+    /**
+     * Mirrors the REAL `EventService.getByLocation`, which returns the
+     * model's `{ items, total }` — NOT `{ items, pagination }`.
+     *
+     * This mock used to return a `pagination` envelope the service never
+     * produces (same defect the `getByAuthor` mock had), which made the
+     * route look correct in tests while answering 500 in production for
+     * every location. Building the envelope is the ROUTE's job, so the mock
+     * must not do it for free.
+     *
+     * @see apps/api/src/routes/event/public/getByLocation.ts
+     */
     async getByLocation(
         _actor: unknown,
-        input: { locationId: string; page?: number; pageSize?: number }
+        _input: { locationId: string; page?: number; pageSize?: number }
     ) {
-        const page = input.page ?? 1;
-        const pageSize = input.pageSize ?? 10;
-        return {
-            data: { items: [], pagination: { page, pageSize, total: 0, totalPages: 0 } }
-        };
+        return { data: { items: [], total: 0 } };
     }
 
+    /**
+     * Mirrors the REAL `EventService.getByOrganizer`, which returns the
+     * model's `{ items, total }` — NOT `{ items, pagination }`. See
+     * {@link getByLocation} for why this mock cannot be kinder than the
+     * real service.
+     *
+     * @see apps/api/src/routes/event/public/getByOrganizer.ts
+     */
     async getByOrganizer(
         _actor: unknown,
-        input: { organizerId: string; page?: number; pageSize?: number }
+        _input: { organizerId: string; page?: number; pageSize?: number }
     ) {
-        const page = input.page ?? 1;
-        const pageSize = input.pageSize ?? 10;
-        return {
-            data: { items: [], pagination: { page, pageSize, total: 0, totalPages: 0 } }
-        };
+        return { data: { items: [], total: 0 } };
     }
 
     async getByCategory(

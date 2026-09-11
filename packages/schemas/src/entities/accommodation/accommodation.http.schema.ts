@@ -320,9 +320,12 @@ export const AccommodationCreateHttpSchema = z.object({
     // (accommodations.featuredByEntitlement, renamed from featuredByPlan —
     // SPEC-309 OQ-1), grantable via plan OR an accommodation-scoped addon
     // (SPEC-309 OQ-3). The admin path keeps manual isFeatured control via
-    // AccommodationPatchInputSchema in accommodation.crud.schema.ts (SPEC-292);
-    // an entitled owner sets isFeatured via the dedicated self-service toggle
-    // (PATCH .../featured-toggle, SPEC-309 T-019), not this schema.
+    // AccommodationPatchInputSchema in accommodation.crud.schema.ts (SPEC-292).
+    // HOS-929 (2026-08-29 owner decision) retired the owner self-service
+    // toggle entirely: holding the entitlement now features the listing
+    // automatically (public read ORs `isFeatured` with `featuredByEntitlement`,
+    // see `apps/api/src/utils/accommodation-featured.ts`) — there is no owner
+    // write path for this field anywhere, this schema included.
     isAvailable: z.coerce.boolean().default(true),
     allowsPets: z.coerce.boolean().default(false),
 
@@ -855,8 +858,9 @@ export const httpToDomainAccommodationCreate = (
     // Not settable at creation — it is derived from the FEATURED_LISTING
     // entitlement (accommodations.featuredByEntitlement, renamed from
     // featuredByPlan — SPEC-309 OQ-1). Admin keeps manual control via the admin
-    // path; an entitled owner can flip it post-creation via the dedicated
-    // self-service toggle (PATCH .../featured-toggle, SPEC-309 T-019).
+    // path. HOS-929 retired the owner self-service toggle: holding the
+    // entitlement now features the listing automatically post-creation, with
+    // no owner write path anywhere for this field.
     isFeatured: false,
 
     // Required fields with sensible defaults using proper enums

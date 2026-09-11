@@ -785,7 +785,7 @@ For full details, constraint definitions, and verification queries see:
 - `billing_subscription_addons` has no `livemode` or `deleted_at` columns
 - `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar. Despite the varchar type, `plan_id` stores the plan **UUID** (`billing_plans.id`), NOT the slug — verified against real data (SPEC-168 D1). Plan mutations therefore target the `id` (UUID), and the slug (`billing_plans.name`) is **immutable** after creation (config/web/entitlements resolve by slug). Plans are now **runtime-editable** from the admin (SPEC-168); the `@repo/billing` config is seed-only.
 - `billing_customers` uses `segment` column, not `category`
-- `billing_subscriptions.mp_subscription_id` stores the **MercadoPago preapproval ID** for monthly recurring subscriptions. It is `NULL` for annual one-time charges (those use a one-time payment object, not a preapproval). Use this column when looking up a subscription in the MP sandbox dashboard (Subscriptions → search by preapproval ID). See [`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md) for inspection steps.
+- `billing_subscriptions.mp_subscription_id` stores the **MercadoPago preapproval ID** for **every** subscription — monthly and annual alike since HOS-171. Annual is a recurring preapproval at MP `frequency: 12, frequency_type: 'months'`, not a one-time charge; `create-annual-subscription.ts` no longer exists. (This bullet used to say the column is `NULL` for annual because "those use a one-time payment object" — both the conclusion and the reason are dead.) It IS legitimately `NULL` for `status = 'comp'` rows, which are direct DB inserts with no preapproval at all (SPEC-262). Use this column when looking up a subscription in the MP sandbox dashboard (Subscriptions → search by preapproval ID). See [`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md) for inspection steps.
 - `numeric()` columns use `mode: 'number'` for runtime JS number coercion (SPEC-056). For monetary values, prefer `integer` storage in centavos (see ADR-006)
 - Always use soft delete (deletedAt timestamp) by default
 - **`drizzle-kit push` is dev-only** — NEVER run it against a VPS. Use `db:migrate` (real
@@ -799,6 +799,59 @@ For full details, constraint definitions, and verification queries see:
 - **Two carriles, never mix** — structural changes go to `src/migrations/` (Drizzle-generated),
   Drizzle-invisible objects go to `src/migrations/extras/` (hand-written, idempotent, NNN prefix).
 - **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike(col, term)` from `@repo/db`, which automatically escapes `%`, `_`, and `\` before calling `ilike()`. The only file that may import `ilike` directly is `src/utils/drizzle-helpers.ts`. CI enforces this.
+- **A bare JS array inside an `sql` template is not an array** — see below
+- **Drizzle wraps every query failure and drops the SQLSTATE `code`** — see below
+
+## A bare JS array in an `sql` template is never a Postgres array
+
+Interpolating a plain JS array into a Drizzle `sql` template expands it as a
+**comma-separated placeholder list**, never as a Postgres array. `= ANY(${ids}::uuid[])`
+is broken for **any** non-empty input, and the two failure modes differ, which makes
+it look like an edge case when it is not:
+
+| `ids` | generates | Postgres says |
+| --- | --- | --- |
+| 2 or more | `($1, $2)::uuid[]` — row constructor | `cannot cast type record to uuid[]` |
+| exactly 1 | `($1)::uuid[]` — **scalar** cast | `malformed array literal: "<uuid>"` |
+
+The fix is `sql.param([...ids])`, which binds the array as ONE parameter.
+
+**Why it hides so well** (HOS-749, 2026-08-23): call sites usually have an
+`if (ids.length === 0) return` above, so the broken query only runs **when it has real
+work** — it fails 100% of the times that matter and 0% on empty fixtures. In
+`assertNoUnclassifiedReferrers` that meant the guard **never once ran successfully
+against a real database**: 19 mocked tests green over an assertion that never
+executed, because a mocked `db.execute()` cannot produce a parse error.
+
+**`ANY(${x})` is not always the bug**: when the interpolated value is a Postgres array
+*column* (`ANY(${amenities.applicableVerticals})`) the usage is correct. The sweep that
+separates them is `rg -t ts '\$\{[^}]*\}::[a-z_]+\[\]'`.
+
+## Drizzle wraps every query error and does not copy `code`
+
+Any predicate over a SQLSTATE (`23505` duplicate key, `23503` FK violation, `40001`
+serialization failure, `57014` timeout) that reads a top-level `err.code` **always
+fails**.
+
+`drizzle-orm/pg-core/session.cjs:62-92` rethrows `new DrizzleQueryError(query, params, e)`
+in **all four** branches of `queryWithCache`, including the no-cache one — it is neither
+optional nor configurable. And `errors.cjs:35-45` stores `query`/`params`/`cause` but
+**does not copy `code`**. The wrapper's message is `Failed query: insert into "..."`,
+which contains neither "duplicate key" nor "unique constraint", so a text fallback does
+not rescue it either. You must **walk the `cause` chain** (bounded and cycle-safe),
+checking `code` at each link.
+
+**Why it matters** (HOS-596): `isDuplicateKeyError` had been broken forever but stayed
+harmless while nothing raised 23505. Adding a UNIQUE index made it a hot path, and the
+loser of the race returned `null` → a 400 "No billing account found", the very symptom
+the PR was meant to kill. The repo already knew
+(`test/integration/tx-propagation.test.ts:33-42`) but the knowledge did not live in a
+shared helper, so it was lost again.
+
+**How to apply**: (1) when you add a constraint, test the error handler that constraint
+has just started producing; (2) before writing a SQLSTATE predicate, look for the
+canonical helper; (3) the test fixture must use the **production** error shape (wrapped),
+not a flat object with `code` on top, or the test goes green with the bug in place.
 
 ## Related Documentation
 

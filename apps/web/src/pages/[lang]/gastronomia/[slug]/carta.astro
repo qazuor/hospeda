@@ -1,0 +1,253 @@
+---
+/**
+ * @file gastronomia/[slug]/carta.astro
+ * @description Dedicated public page for one venue's menu (HOS-1044 §6.1,
+ * G-1). A stable URL fit to be the destination of a printed QR — reuses
+ * `GastronomyMenu.astro` verbatim (never reimplemented, per the spec's own
+ * warning), with the venue's name, its opening hours when the listing
+ * already has them at hand, and a link back to the full listing.
+ *
+ * ## Coexists with `[slug].astro`, does not collide
+ *
+ * `[lang]/alojamientos/[slug].astro` already coexists with
+ * `[lang]/alojamientos/[slug]/fotos.astro` (same param name, a top-level
+ * dynamic file plus a same-named dynamic directory) — this file follows that
+ * exact, already-proven pattern rather than moving the listing to
+ * `[slug]/index.astro`.
+ *
+ * ## Public, no entitlement gate
+ *
+ * The menu is already public inside the listing (`[slug].astro` →
+ * `GastronomyMenu.astro`); this is a second presentation of the SAME
+ * content, not a new thing to sell. What HOS-1044 gates is the QR and its
+ * scan metric — minted and read by a separate, gated owner endpoint this
+ * file has nothing to do with. Never mint or read anything QR-related here
+ * (NG-1, R-2).
+ *
+ * ## 404, not an empty shell
+ *
+ * Two independent conditions 404, mirroring the listing's own rules plus
+ * one of its own:
+ * - the slug does not resolve to a public venue (same rule as `[slug].astro`:
+ *   `!result.ok` → 404, non-`PUBLIC` visibility → 404, soft-deleted → 410);
+ * - the venue has no menu content at all — neither a structured carta nor an
+ *   uploaded file. Mirrors `GastronomyMenu.astro`'s own render gate
+ *   (`hasStructuredMenu || hasFile`) so the two can never disagree about
+ *   whether there is a menu (AC-1).
+ *
+ * ## SEO: out of the index on purpose
+ *
+ * `noindex` (via `DetailLayout`) + a canonical pointing at the LISTING, never
+ * at itself. It is also NOT added to `sitemap-dynamic.xml.ts` — that file
+ * builds gastronomy entries from `ENTITY_PUBLIC_PATHS.gastronomy`
+ * (`/gastronomia/{slug}/`) alone, a fixed template with no filesystem
+ * globbing, so this page is excluded from the sitemap by construction, with
+ * nothing extra to switch off (R-1, OQ-2).
+ *
+ * @route /{lang}/gastronomia/{slug}/carta/
+ * @rendering SSR (on-demand)
+ */
+
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro';
+import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
+import { gastronomyApi } from '@/lib/api/endpoints';
+import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GastronomyOpeningHoursEntry } from '@/data/types';
+
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+// --- Fetch main record (same rules as the listing, [slug].astro) ---
+const result = await gastronomyApi.getBySlug({ slug });
+
+if (!result.ok) {
+    // Propagate 410 Gone for soft-deleted entities; any other failure 404s.
+    return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
+}
+
+const raw = result.data as unknown as Record<string, unknown>;
+
+// --- Visibility gate (same as the listing) ---
+const visibility = raw.visibility as string | undefined;
+if (visibility && visibility !== 'PUBLIC') {
+    return new Response(null, { status: 404 });
+}
+
+const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
+
+// --- The 404 that makes this a valid QR destination (AC-1) ---
+// A carta page with nothing to show is not "empty content" — it is a broken
+// printed sticker. Mirrors GastronomyMenu.astro's own render gate exactly so
+// the two can never disagree about whether there is a menu to show.
+const hasMenuContent =
+    (gastronomy.menuSections?.length ?? 0) > 0 ||
+    Boolean(gastronomy.menuFileUrl && gastronomy.menuFileKind);
+
+if (!hasMenuContent) {
+    return new Response(null, { status: 404 });
+}
+
+// --- Edge cacheability (HOS-369 W2-4 pattern, same tags as the listing) ---
+// Sharing the listing's own entity tags is deliberate: a menu edit must purge
+// BOTH pages together. `list-gastronomy` stays excluded for the same reason
+// the listing excludes it — a detail page (this one included) is not a
+// listing, and the collection tag would evict every other venue's page too.
+const gastronomyCacheTags = buildEntityCacheTags({
+    entity: 'gastronomy',
+    slug,
+    id: String(raw.id || '')
+});
+const [primaryGastronomyTag, ...extraGastronomyTags] = gastronomyCacheTags;
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: primaryGastronomyTag !== undefined,
+    cacheClass: 'detail',
+    tags:
+        primaryGastronomyTag !== undefined
+            ? [primaryGastronomyTag, ...extraGastronomyTags]
+            : [CACHE_TAG_COLLECTIONS.gastronomy]
+});
+
+// --- SEO ---
+const listingPath = `gastronomia/${gastronomy.slug}`;
+const listingUrl = buildUrl({ locale, path: listingPath });
+
+const pageTitleWord = t('gastronomy.detail.menuCarta.title', 'Carta');
+const seoTitle = `${pageTitleWord} - ${gastronomy.name} | Hospeda`;
+const seoDescription = t('gastronomy.detail.menuCarta.seoDescription', 'Carta de {{name}}', {
+    name: gastronomy.name
+});
+const backToListingLabel = t('gastronomy.detail.menuCarta.backToListing', '← Volver a la ficha');
+
+// --- Opening hours (only when the listing already has them at hand) ---
+const hasOpeningHours =
+    gastronomy.openingHours !== null && Object.keys(gastronomy.openingHours).length > 0;
+---
+
+<DetailLayout
+    locale={locale}
+    title={seoTitle}
+    description={seoDescription}
+    canonicalPath={listingUrl}
+    noindex={true}
+    showBreadcrumbs={true}
+    showSidebar={false}
+>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            { label: t('gastronomy.listing.title', 'Gastronomía'), path: 'gastronomia/' },
+            { label: gastronomy.name, path: listingPath },
+            { label: pageTitleWord }
+        ]}
+    />
+
+    <Fragment slot="page-header">
+        <h1 class="carta__title">{pageTitleWord} - {gastronomy.name}</h1>
+    </Fragment>
+
+    <div class="carta">
+        <div class="carta__back-row">
+            {/* data-astro-reload: full page load back to the listing so
+            GastronomyMenu's own inline language-switcher script (and any
+            other island on the listing) re-runs cleanly — same fix as
+            alojamientos/[slug]/fotos.astro's back link, same reason: the
+            ClientRouter head swap does not re-execute component scripts. */}
+            <a href={listingUrl} class="carta__back" data-astro-reload>
+                {backToListingLabel}
+            </a>
+        </div>
+
+        {hasOpeningHours && (
+            <OpeningHoursSection
+                openingHours={gastronomy.openingHours as Record<string, GastronomyOpeningHoursEntry>}
+                locale={locale}
+            />
+        )}
+
+        <GastronomyMenu
+            menuSections={gastronomy.menuSections}
+            fileUrl={gastronomy.menuFileUrl}
+            fileKind={gastronomy.menuFileKind}
+            locale={locale}
+        />
+
+        <div class="carta__footer">
+            <a href={listingUrl} class="carta__back carta__back--footer" data-astro-reload>
+                {backToListingLabel}
+            </a>
+        </div>
+    </div>
+</DetailLayout>
+
+<style>
+    .carta {
+        max-width: var(--container-max, 1350px);
+        margin: 0 auto;
+        padding: var(--space-6, 24px) var(--space-4, 16px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6, 24px);
+    }
+
+    .carta__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.3rem, 3vw, 2rem);
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .carta__back-row {
+        margin-bottom: 0;
+    }
+
+    .carta__back {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--brand-primary);
+        text-decoration: none;
+    }
+
+    .carta__back:hover {
+        text-decoration: underline;
+    }
+
+    .carta__footer {
+        display: flex;
+        justify-content: center;
+        padding-top: var(--space-6, 24px);
+        border-top: 1px solid var(--border, oklch(0.9 0 0));
+    }
+
+    .carta__back--footer {
+        padding: var(--space-2, 8px) var(--space-5, 20px);
+        border: 1px solid var(--border, oklch(0.8 0 0));
+        border-radius: var(--radius-button, 8px);
+        transition: all var(--duration-normal, 0.4s) ease;
+    }
+
+    .carta__back--footer:hover {
+        background-color: var(--brand-primary);
+        color: white;
+        border-color: var(--brand-primary);
+        text-decoration: none;
+    }
+</style>

@@ -11,7 +11,65 @@ export enum NotificationType {
     ADDON_EXPIRATION_WARNING = 'addon_expiration_warning',
     ADDON_EXPIRED = 'addon_expired',
     ADDON_RENEWAL_CONFIRMATION = 'addon_renewal_confirmation',
+    /**
+     * The FIRST charge of a recurring add-on subscription (HOS-847 PR 5).
+     *
+     * Distinct from {@link NotificationType.ADDON_PURCHASE}, which says "you
+     * bought this once" — the wrong thing to tell someone who has just
+     * authorised a MercadoPago preapproval that will charge their card again
+     * next month. This one names the cadence, the next charge date and how to
+     * stop it. Distinct from {@link NotificationType.ADDON_RENEWAL_CONFIRMATION}
+     * too: that one is the second charge onwards.
+     */
+    ADDON_SUBSCRIPTION_STARTED = 'addon_subscription_started',
+    /**
+     * @deprecated HOS-1012 T-016 replaces this with the three offset-specific
+     * types below. Kept until that task retires the cron path that still emits
+     * it, so this addition does not break a live sender.
+     */
     TRIAL_ENDING_REMINDER = 'trial_ending_reminder',
+
+    // ── HOS-1012: the nine sends of the Hospeda-owned trial series ───────────
+    //
+    // Nine explicit types rather than three with an offset discriminator, for
+    // two reasons.
+    //
+    // The convention this file already documents (H-62/H-148, below) is that
+    // ONE type serves several senders when what the reader gets is identical,
+    // and separate types when it differs. Here it differs deliberately: each
+    // send carries its own tone, and that difference IS the requirement (spec
+    // section 4). One type per send keeps each template, subject and category
+    // bound to its own value, with no dispatch mechanism in between.
+    //
+    // It also removes a collision by construction. The idempotency key is
+    // `(type, customerId, daysAhead)`, so a pre-expiry send at 1 day out and a
+    // win-back at 1 day after would both suffix `:d1` and be told apart by the
+    // type alone. With a type per offset, two sends can never collapse into one
+    // no matter how the offsets are refactored later.
+
+    /** T−10: friendly, not selling. "Is it working for you? Need a hand?" */
+    TRIAL_ENDING_10D = 'trial_ending_10d',
+    /** T−5: friendly, but names the risk — the listing may be unpublished. */
+    TRIAL_ENDING_5D = 'trial_ending_5d',
+    /** T−1: direct. "If you do not pay, tomorrow it comes down." */
+    TRIAL_ENDING_1D = 'trial_ending_1d',
+    /**
+     * Day 0: the listing HAS come down. The only send in the series that
+     * reports a fact instead of warning about one — which is why its copy has
+     * to differ in kind from the T−1 warning a day earlier and the +1 win-back
+     * a day later. Those three land inside 48 hours.
+     */
+    TRIAL_EXPIRED = 'trial_expired',
+    /** +1 day after expiry. */
+    TRIAL_WIN_BACK_1D = 'trial_win_back_1d',
+    /** +5 days after expiry. */
+    TRIAL_WIN_BACK_5D = 'trial_win_back_5d',
+    /** +10 days after expiry. */
+    TRIAL_WIN_BACK_10D = 'trial_win_back_10d',
+    /** +30 days after expiry. */
+    TRIAL_WIN_BACK_30D = 'trial_win_back_30d',
+    /** +60 days after expiry. Nothing is sent after this one. */
+    TRIAL_WIN_BACK_60D = 'trial_win_back_60d',
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
     /**
@@ -29,11 +87,39 @@ export enum NotificationType {
      * type exists to close.
      */
     ADMIN_LEAD_RECEIVED = 'admin_lead_received',
+    /**
+     * A partner is active with no record of payment for the current period, and
+     * an admin has to decide whether to take them down (HOS-1299).
+     *
+     * ADMIN category, like the lead alert above and for the same reason: it goes
+     * to the operations list and is not opt-out-able. What it is NOT is a
+     * notice of something already done — nothing changes state when this is
+     * sent. The owner's decision (2026-09-09) is that the two possible mistakes
+     * are asymmetric: leaving a non-payer published costs a month of product,
+     * cutting off somebody who paid costs the customer. So the system asks and
+     * waits, and this email is the asking.
+     */
+    ADMIN_PARTNER_PAYMENT_REVIEW = 'admin_partner_payment_review',
     FEEDBACK_REPORT = 'feedback_report',
     CONTACT_SUBMISSION = 'contact_submission',
     SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
     SUBSCRIPTION_PAUSED = 'subscription_paused',
     SUBSCRIPTION_REACTIVATED = 'subscription_reactivated',
+    /** A courtesy was granted: N cycles gifted, starting when the paid period ends (HOS-180). */
+    COURTESY_GRANTED = 'courtesy_granted',
+    /** The gifted window began — the paid period ran out and the free cycles start now. */
+    COURTESY_STARTED = 'courtesy_started',
+    /** The gifted window closed and normal billing resumed. */
+    COURTESY_ENDED = 'courtesy_ended',
+    /**
+     * An operator granted a permanently-complimentary subscription (HOS-1171).
+     *
+     * Deliberately NOT a fourth `COURTESY_*` member. A courtesy is finite and
+     * keeps the preapproval; a comp destroys it and never ends. "Billing
+     * resumes when the gift ends" is false for a comp, and sharing the type
+     * with courtesy is the shortest path to that sentence being mailed.
+     */
+    COMP_GRANTED = 'comp_granted',
     PLAN_DOWNGRADE_LIMIT_WARNING = 'plan_downgrade_limit_warning',
     PAYMENT_RETRY_WARNING = 'payment_retry_warning',
     ADDON_CANCELLATION = 'addon_cancellation',
@@ -273,11 +359,39 @@ export interface PurchaseConfirmationPayload extends BaseNotificationPayload {
 /** Payment success/failure */
 export interface PaymentNotificationPayload extends BaseNotificationPayload {
     type: NotificationType.PAYMENT_SUCCESS | NotificationType.PAYMENT_FAILURE;
+    /**
+     * Amount in MAJOR units (ARS pesos), NOT centavos. Its only producers —
+     * `sendPaymentSuccessNotification` and `sendPaymentFailureNotifications`
+     * in `apps/api/src/routes/webhooks/mercadopago/notifications.ts` — type
+     * their `amount` parameter `Major` (from `@repo/billing`) for exactly
+     * this reason (HOS-713/HOS-720).
+     *
+     * Left `number` here rather than `Major` because this field belongs to
+     * the shared `NotificationPayload` union, constructed as plain numeric
+     * literals across ~20 call sites in tests and retry rebuilding that have
+     * nothing to do with money units. The brand is enforced where it matters:
+     * at the two producers above, and again where `NotificationService`
+     * hands this value to the `PaymentSuccess`/`PaymentFailure` templates
+     * (`asMajor(p.amount)` in `selectTemplate`, HOS-839) — those templates'
+     * props DO require `Major`, so a future caller passing centavos into the
+     * template layer fails to compile.
+     */
     amount: number;
     currency: string;
     planName: string;
     failureReason?: string;
     paymentMethod?: string;
+    /**
+     * HOS-937 step 3 — set only on `PAYMENT_FAILURE`, only when the failure is
+     * a checkout that never activated (MercadoPago cancelled the preapproval
+     * over a card rejection before day 1, spec §6.5/§8.3): the fresh
+     * preapproval's own `init_point`, so the user is not left staring at a
+     * "pay with another method" button that can never work (`cancelled ->
+     * authorized` is a forbidden MP transition). Absent for a REAL payment
+     * failure on an already-active subscription — that case is handled by
+     * automatic dunning retries, not a fresh checkout link.
+     */
+    retryUrl?: string;
 }
 
 /** Subscription events (renewal, plan change) */
@@ -293,6 +407,17 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
     daysRemaining?: number;
     oldPlanName?: string;
     newPlanName?: string;
+    /**
+     * The subscription's billing vertical (HOS-1283) — the raw
+     * `billing_subscriptions.product_domain` string (`'accommodation'`,
+     * `'gastronomy'`, `'experience'`, `'tourist'`, `'partner'`, or `null` on a
+     * pre-domain row), never the `@repo/schemas` enum: this package does not
+     * depend on `@repo/schemas` (see {@link PartnerMentionEntryPayload}'s doc).
+     * Only `RENEWAL_REMINDER` reads it today, to pick the right footer noun in
+     * `RenewalReminder` — a plan change already names both plans by their
+     * display name and needs no vertical wording of its own.
+     */
+    productDomain?: string | null;
 }
 
 /**
@@ -350,6 +475,54 @@ export interface AddonPurchaseConfirmationPayload extends BaseNotificationPayloa
     readonly locale?: AddonLinkLocale;
 }
 
+/**
+ * The first charge of a recurring add-on subscription (HOS-847 PR 5).
+ *
+ * Its own payload rather than a reuse of {@link AddonPurchaseConfirmationPayload}
+ * because the two say opposite things. A one-time receipt names an amount and,
+ * at most, an expiry; a subscription notice has to name the CADENCE and the
+ * NEXT CHARGE DATE, and both are required here rather than optional — an email
+ * that omits them is the "you bought this once" message the buyer must not
+ * receive.
+ *
+ * @example
+ * ```ts
+ * const payload: AddonSubscriptionStartedPayload = {
+ *   type: NotificationType.ADDON_SUBSCRIPTION_STARTED,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   addonName: 'Alojamientos extra',
+ *   amount: 500000,
+ *   currency: 'ARS',
+ *   billingInterval: 'monthly',
+ *   nextChargeAt: '2026-06-10T12:00:00.000Z',
+ *   addonSlug: 'extra-accommodations-5',
+ *   locale: 'es'
+ * };
+ * ```
+ */
+export interface AddonSubscriptionStartedPayload extends BaseNotificationPayload {
+    type: NotificationType.ADDON_SUBSCRIPTION_STARTED;
+    /** Human-readable add-on name, in the recipient's own locale. */
+    readonly addonName: string;
+    /** Short description of what the add-on provides. Empty string when unknown. */
+    readonly addonDescription?: string;
+    /** Amount charged now, in centavos. Also the amount of each future charge. */
+    readonly amount: number;
+    /** ISO 4217 currency code. Defaults to `'ARS'` at render time. */
+    readonly currency?: string;
+    /** How often the card will be charged. */
+    readonly billingInterval: 'monthly' | 'annual';
+    /** ISO 8601 timestamp of the NEXT charge. Required — see the type's doc. */
+    readonly nextChargeAt: string;
+    /** Add-on catalog slug, used to deep-link the CTA to this add-on (HOS-722). */
+    readonly addonSlug?: string;
+    /** Recipient's preferred locale. Falls back to `'es'`. */
+    readonly locale?: AddonLinkLocale;
+}
+
 /** Add-on lifecycle events */
 export interface AddonEventPayload extends BaseNotificationPayload {
     type:
@@ -384,6 +557,51 @@ export interface TrialEventPayload extends BaseNotificationPayload {
     trialEndDate: string;
     daysRemaining?: number;
     upgradeUrl: string;
+}
+
+/**
+ * One of the nine sends of the Hospeda-owned trial series (HOS-1012 §4).
+ *
+ * ONE payload shape across all nine, unlike the nine separate `type` values it
+ * discriminates on. The distinction the series needs is in the copy, and the
+ * copy lives in nine templates; what each of them needs from the caller is the
+ * same four facts. A payload per send would add nine identical interfaces and
+ * nine assembly branches in the dispatch switch without expressing anything.
+ *
+ * Note there is no `daysRemaining`: the offset is already carried by the `type`
+ * itself, and a template whose distance came from a field could be dispatched
+ * at the wrong distance — the exact desynchronisation between copy and distance
+ * that made the offsets constants instead of settings.
+ */
+export interface TrialSeriesPayload extends BaseNotificationPayload {
+    type:
+        | NotificationType.TRIAL_ENDING_10D
+        | NotificationType.TRIAL_ENDING_5D
+        | NotificationType.TRIAL_ENDING_1D
+        | NotificationType.TRIAL_EXPIRED
+        | NotificationType.TRIAL_WIN_BACK_1D
+        | NotificationType.TRIAL_WIN_BACK_5D
+        | NotificationType.TRIAL_WIN_BACK_10D
+        | NotificationType.TRIAL_WIN_BACK_30D
+        | NotificationType.TRIAL_WIN_BACK_60D;
+    /** Display name of the plan the trial was running on. */
+    planName: string;
+    /** ISO date at which the trial ends (or ended). */
+    trialEndDate: string;
+    /** Vertical-specific pricing page, carrying the interval the customer originally chose. */
+    upgradeUrl: string;
+    /**
+     * The trial's billing vertical (HOS-1283) — the raw
+     * `billing_subscriptions.product_domain` string, never the `@repo/schemas`
+     * enum (this package does not depend on it, see
+     * {@link PartnerMentionEntryPayload}'s doc). Every one of the nine
+     * templates uses it to render vertical-appropriate copy instead of always
+     * assuming accommodation ("tu alojamiento", "tus fotos") — see
+     * `resolveTrialSeriesCopy` in `utils/product-domain-copy.ts`. `null` or an
+     * unrecognized value fails open to the accommodation copy, matching this
+     * repo's standing convention for that domain.
+     */
+    productDomain?: string | null;
 }
 
 /** Feedback report notifications (Linear API fallback) */
@@ -483,6 +701,48 @@ export interface ContactSubmissionPayload extends BaseNotificationPayload {
     readonly accommodationId?: string;
     /** ISO 8601 timestamp of when the form was submitted */
     readonly submittedAt: string;
+}
+
+/**
+ * Payload for the three courtesy-cycle notifications (HOS-180).
+ *
+ * Kept separate from {@link SubscriptionLifecyclePayload} on purpose: a gift is
+ * not a lifecycle event, and sharing the payload would make it far too easy for
+ * a courtesy to be routed to `subscription-paused.tsx`, which announces a
+ * suspension. HOS-926 neutralized that template's copy (it no longer blames
+ * the payment method), but "your subscription has been paused" is still the
+ * wrong framing for a gift regardless of wording.
+ */
+export interface CourtesyPayload extends BaseNotificationPayload {
+    readonly type:
+        | NotificationType.COURTESY_GRANTED
+        | NotificationType.COURTESY_STARTED
+        | NotificationType.COURTESY_ENDED;
+    readonly planName: string;
+    /** Cycles gifted. Only meaningful on COURTESY_GRANTED. */
+    readonly cycles?: number;
+    /** Localised date the gift begins. Only meaningful on COURTESY_GRANTED. */
+    readonly startsAt?: string;
+    /** Localised date the gift ends. Absent on COURTESY_ENDED. */
+    readonly endsAt?: string;
+    /** Localised date of the next charge. Only meaningful on COURTESY_ENDED. */
+    readonly nextBillingDate?: string;
+}
+
+/**
+ * Payload for the complimentary-subscription grant email (HOS-1171).
+ *
+ * One field beyond the plan name, and it is the one that matters: whether the
+ * customer had a live MercadoPago preapproval that this grant cancelled. A
+ * paying customer needs to be told their card will not be charged again — a
+ * customer who never had one must not read a sentence about a card they never
+ * gave us.
+ */
+export interface CompGrantedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.COMP_GRANTED;
+    readonly planName: string;
+    /** True when a live preapproval was hard-cancelled as part of this grant. */
+    readonly hadActiveBilling: boolean;
 }
 
 /** Payload for subscription lifecycle notifications (cancellation, pause, reactivation) */
@@ -658,6 +918,23 @@ export interface AddonCancellationPayload extends BaseNotificationPayload {
     readonly addonSlug?: string;
     /** Recipient's preferred locale for the CTA link (HOS-722). Falls back to `'es'`. */
     readonly locale?: AddonLinkLocale;
+    /**
+     * ISO 8601 date-time until which the benefit SURVIVES the cancellation —
+     * the end of the period the customer already paid for (HOS-847 PR 7c).
+     *
+     * OPTIONAL, unlike its counterparts on
+     * {@link SubscriptionCancelConfirmedPayload} and
+     * {@link SubscriptionAccessEndingSoonPayload} where it is required, and the
+     * difference is deliberate. A plan soft-cancel always leaves the subscriber
+     * a paid period to run out; an add-on cancellation does not. Non-payment
+     * and an admin cancel end the benefit on the spot, and the immediate path
+     * in `addon.user-addons.ts` removes the entitlements BEFORE it mails
+     * anything. Those sends must promise nothing, so they omit the field and
+     * the template says nothing about access. Only `softCancelRecurringAddon`,
+     * which leaves the row `active` precisely so the benefit continues,
+     * supplies it.
+     */
+    readonly accessUntil?: string;
 }
 
 /** Admin notifications */
@@ -1189,15 +1466,48 @@ export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
     readonly submittedAtLabel: string;
 }
 
+/**
+ * Payload for the ADMIN_PARTNER_PAYMENT_REVIEW notification (HOS-1299).
+ *
+ * The question, not a verdict. Sent by the `partner-payment-review` cron when a
+ * partner activated outside MercadoPago has run past the period an admin last
+ * confirmed, and NEVER as the record of an action — the partner's status,
+ * lifecycle and visibility are all untouched when this goes out.
+ *
+ * It carries the date the clock ran from so the operator can tell "we never
+ * confirmed anything since they started" from "the period we confirmed has
+ * lapsed"; those need different answers, and the first is the far more common
+ * one on a listing that predates this feature.
+ */
+export interface AdminPartnerPaymentReviewPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW;
+    /** Display name of the partner in question. */
+    readonly partnerName: string;
+    /**
+     * Date the review clock ran from — the last confirmation, or the day the
+     * alliance began when there has never been one. Already formatted.
+     */
+    readonly coveredThroughLabel: string;
+    /** Days elapsed since that date. */
+    readonly daysSinceCovered: number;
+    /** Deep link to the partner's admin detail, where the question is answered. */
+    readonly adminUrl: string;
+}
+
 export type NotificationPayload =
     | AdminLeadReceivedPayload
+    | AdminPartnerPaymentReviewPayload
     | PurchaseConfirmationPayload
     | AddonPurchaseConfirmationPayload
+    | AddonSubscriptionStartedPayload
     | PaymentNotificationPayload
     | SubscriptionEventPayload
     | SubscriptionLifecyclePayload
+    | CourtesyPayload
+    | CompGrantedPayload
     | AddonEventPayload
     | TrialEventPayload
+    | TrialSeriesPayload
     | AdminNotificationPayload
     | FeedbackReportPayload
     | ContactSubmissionPayload

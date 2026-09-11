@@ -29,7 +29,7 @@ const experienceReviewService = new ExperienceReviewService({ logger: apiLogger 
  * Returns the updated review.
  *
  * @throws 400 if `decision` is not `APPROVED` or `REJECTED`.
- * @throws 403 if the actor lacks `COMMERCE_MODERATE_REVIEW`.
+ * @throws 403 if the actor lacks both EXPERIENCE_MODERATE_REVIEW and COMMERCE_MODERATE_REVIEW.
  * @throws 404 if the review does not exist.
  */
 export const adminModerateExperienceReviewRoute = createAdminRoute({
@@ -39,9 +39,11 @@ export const adminModerateExperienceReviewRoute = createAdminRoute({
     description:
         'Approves or rejects an experience review. Sets moderationState, moderatedById, ' +
         'moderatedAt, and optionally moderationReason. Triggers rating recompute on the listing. ' +
-        'Requires COMMERCE_MODERATE_REVIEW.',
+        'Requires EXPERIENCE_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW).',
     tags: ['Experience Reviews', 'Admin'],
-    requiredPermissions: [PermissionEnum.COMMERCE_MODERATE_REVIEW],
+    anyOfPermissions: [
+        [PermissionEnum.EXPERIENCE_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
+    ],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -23,8 +23,15 @@ import { getRevalidationService } from '../../revalidation/revalidation-init.js'
 /** Logger for the media entry point, which has no service instance to borrow one from. */
 const mediaRevalidationLogger = createLogger('commerce-media-revalidation');
 
-/** The commerce entity types that have a cached public detail page. */
-export type CommerceRevalidationEntityType = 'gastronomy' | 'experience';
+/**
+ * The commerce entity types that have a cached public detail page.
+ *
+ * Not exported: every consumer of {@link scheduleCommerceListingRevalidation}
+ * and {@link scheduleCommerceMediaRevalidation} passes a `'gastronomy'` /
+ * `'experience'` literal directly rather than importing this type — it exists
+ * only to name the parameter here.
+ */
+type CommerceRevalidationEntityType = 'gastronomy' | 'experience';
 
 /**
  * The listing fields a purge needs. Typed structurally rather than against a
@@ -78,7 +85,13 @@ export function isCommerceListingPubliclyVisible(entity: RevalidatableCommerceLi
  * purge beats a failed write.
  *
  * @param entityType - `'gastronomy'` or `'experience'`.
- * @param entity - The listing as it stands after the write.
+ * @param entity - The listing a public footprint is being purged for.  That
+ *   is the POST-write row when the write published the listing or kept it
+ *   public, and the PRE-write row when the write UNPUBLISHED it (HOS-1337):
+ *   the post-write row is PRIVATE and the guard below would skip it, but the
+ *   cached PUBLIC pages are exactly what must be evicted — the same rule the
+ *   accommodation `_afterUpdate` path applies to an ACTIVE→DRAFT unpublish.
+ *   In both cases the row passed satisfies the publicly-visible guard.
  * @param resolveDestinationSlug - Resolver for the parent destination's slug.
  * @param logger - Where a scheduling failure is reported.
  */
@@ -112,8 +125,36 @@ export async function scheduleCommerceListingRevalidation({
 }
 
 // ---------------------------------------------------------------------------
-// Media-path entry point
+// Standalone entry points (no service instance in hand)
 // ---------------------------------------------------------------------------
+
+/**
+ * Looks a destination's slug up for a caller that holds no `DestinationModel`.
+ *
+ * Extracted (HOS-1286) so the media path and the billing-driven featured sync
+ * share ONE lookup instead of two copies of the same best-effort try/catch —
+ * the failure this module's own header describes ("three copies of a
+ * best-effort side effect… one gets a fix the others never see").
+ *
+ * @param destinationId - The listing's parent destination.
+ * @returns The destination's slug, or `undefined` when it cannot be resolved.
+ *   Never throws: a partial purge beats a failed write.
+ */
+export async function resolveCommerceDestinationSlug(
+    destinationId: string
+): Promise<string | undefined> {
+    try {
+        const destination = await new DestinationModel().findById(destinationId);
+        const slug = (destination as { slug?: unknown } | null)?.slug;
+        return typeof slug === 'string' && slug.length > 0 ? slug : undefined;
+    } catch {
+        // Best-effort enrichment: a partial purge beats a failed write.
+        return undefined;
+    }
+}
+
+/** Logger reused by every standalone entry point in this module. */
+export const standaloneCommerceRevalidationLogger = mediaRevalidationLogger;
 
 /**
  * Purges a commerce listing after one of its gallery mutations (HOS-389 §4).
@@ -122,10 +163,11 @@ export async function scheduleCommerceListingRevalidation({
  * service, so they cannot reach `_scheduleListingRevalidation`. This is their
  * door into the same mechanism — one implementation, two entry points.
  *
- * It resolves the destination slug itself through a `DestinationModel`, since
- * the media modules have no such dependency of their own; a lookup failure
- * degrades to purging the listing's own tags rather than throwing, matching
- * every other revalidation path.
+ * It resolves the destination slug itself through
+ * {@link resolveCommerceDestinationSlug}, since the media modules have no
+ * `DestinationModel` dependency of their own; a lookup failure degrades to
+ * purging the listing's own tags rather than throwing, matching every other
+ * revalidation path.
  *
  * @param entityType - `'gastronomy'` or `'experience'`.
  * @param listing - The listing whose gallery just changed.
@@ -140,16 +182,7 @@ export async function scheduleCommerceMediaRevalidation({
     await scheduleCommerceListingRevalidation({
         entityType,
         entity: listing,
-        resolveDestinationSlug: async (destinationId) => {
-            try {
-                const destination = await new DestinationModel().findById(destinationId);
-                const slug = (destination as { slug?: unknown } | null)?.slug;
-                return typeof slug === 'string' && slug.length > 0 ? slug : undefined;
-            } catch {
-                // Best-effort enrichment: a partial purge beats a failed write.
-                return undefined;
-            }
-        },
+        resolveDestinationSlug: resolveCommerceDestinationSlug,
         logger: mediaRevalidationLogger
     });
 }

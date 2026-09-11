@@ -22,11 +22,16 @@ import {
     ReactivateTrialRequestSchema,
     ReactivateTrialResponseSchema
 } from '@repo/schemas';
+import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
+import {
+    type ProductDomainScope,
+    ProductDomainScopeEnumSchema
+} from '../../schemas/product-domain-query.schema';
 import { SubscriptionCheckoutError } from '../../services/billing/subscription-checkout-error';
 import { mapSubscriptionCheckoutErrorToHttp } from '../../services/billing/subscription-checkout-error-http';
 import { TrialService } from '../../services/trial.service';
@@ -60,6 +65,41 @@ const trialStatusResponseSchema = z.object({
      */
     intendedInterval: z.enum(['monthly', 'annual']).nullable()
 });
+
+/**
+ * Read and validate an OPTIONAL `?productDomain=` (HOS-1282).
+ *
+ * `createSimpleRoute` declares no `request.query` (unlike the tiered
+ * factories `usage.ts` / `subscription.ts` use), so this is validated in the
+ * handler rather than by the factory — same tradeoff and same pattern as
+ * `routes/billing/public/listPlans.ts`'s `resolveRequestedDomain`: the
+ * parameter won't appear in the generated OpenAPI document.
+ *
+ * Returns `undefined` on an omitted param, deliberately NOT defaulted to
+ * `'accommodation'`: `TrialService.getTrialStatus` reads `undefined` as "stay
+ * domain-blind", which is this route's own pre-existing behavior and must
+ * not change for a caller that never asks for a domain (e.g. the account
+ * page trial banner). Validate against {@link ProductDomainScopeEnumSchema}
+ * rather than the full `ProductDomainEnumSchema` — `partner`/`addon` can
+ * never back a local trial (`createTrialSubscription` has exactly two call
+ * sites: accommodation and commerce), so there is nothing for either value to
+ * scope this endpoint to.
+ */
+function resolveOptionalTrialProductDomain(ctx: Context): ProductDomainScope | undefined {
+    const raw = ctx.req.query('productDomain');
+    if (raw === undefined || raw === '') {
+        return undefined;
+    }
+
+    const parsed = ProductDomainScopeEnumSchema.safeParse(raw);
+    if (!parsed.success) {
+        throw new HTTPException(400, {
+            message: `Unknown product domain '${raw}'`
+        });
+    }
+
+    return parsed.data;
+}
 
 /**
  * Start trial request schema.
@@ -101,7 +141,11 @@ export const getTrialStatusRoute = createSimpleRoute({
     method: 'get',
     path: '/status',
     summary: 'Get trial status',
-    description: 'Returns current trial status for the authenticated user',
+    description:
+        'Returns current trial status for the authenticated user. Accepts an optional ' +
+        '`?productDomain=` (accommodation | gastronomy | experience | tourist, HOS-1282) to ' +
+        'scope the resolution to one vertical; omitted, the check stays domain-blind, matching ' +
+        'the global trial paywall it also backs.',
     tags: ['Billing', 'Trial'],
     responseSchema: trialStatusResponseSchema,
     handler: async (c) => {
@@ -121,11 +165,14 @@ export const getTrialStatusRoute = createSimpleRoute({
             });
         }
 
+        const productDomain = resolveOptionalTrialProductDomain(c);
+
         const billing = getQZPayBilling();
         const trialService = new TrialService(billing);
 
         const status = await trialService.getTrialStatus({
-            customerId: billingCustomerId
+            customerId: billingCustomerId,
+            productDomain
         });
 
         return status;

@@ -32,6 +32,16 @@ export const serverEnvBaseSchema = z.object({
     HOSPEDA_API_URL: z.url().optional(),
     PUBLIC_API_URL: z.url().optional(),
     /**
+     * Hospeda's brand contact phone number (HOS-364), in call/display form —
+     * WITHOUT the AR mobile 9. Single source of truth for every phone surface
+     * in the web app (footer, contact page, FAQ WhatsApp CTA, the six
+     * presentation pages, the schema.org Organization telephone). See
+     * `src/lib/brand-phone.ts` for the derived display / `tel:` / `wa.me`
+     * forms — nothing else should hardcode this number again. Defaults to the
+     * currently published number so the app runs locally with no env var set.
+     */
+    HOSPEDA_BRAND_PHONE: z.string().min(1).default('+54 3442 453797'),
+    /**
      * Internal API base URL for server-to-server SSR fetches (HOS-103).
      *
      * When set, the API client uses it as the base URL for GET requests issued
@@ -203,5 +213,24 @@ export const serverEnvBaseSchema = z.object({
      * if migrating to EU Cloud or self-hosted PostHog.
      */
     PUBLIC_POSTHOG_HOST: z.url().optional(),
+    /**
+     * CI cost guard (HOS-1144): when `'true'` (or `'1'`), every REMOTE media
+     * URL is replaced by a placeholder this site serves itself, so a CI run
+     * makes zero requests to `res.cloudinary.com` or any other image CDN.
+     *
+     * The value is CONSUMED through `isLocalMediaPlaceholderMode()` in
+     * `@repo/media`, which reads `process.env` directly — it has to, because
+     * the same rewrite runs inside a shared package that `apps/admin` and the
+     * seed also use, and none of them share this schema. Declaring it here is
+     * what keeps `pnpm env:check:registry` green and puts the variable in the
+     * generated `.env.example`, so a reader discovers it where they discover
+     * every other web variable.
+     *
+     * Kept as a raw optional string rather than `z.coerce.boolean()`: that
+     * coercion is `Boolean(str)`, which treats the string `'false'` as TRUE —
+     * the worst possible failure mode for a switch that hides real
+     * photographs. The single truthiness decision lives in `@repo/media`.
+     */
+    HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS: z.string().optional(),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });

@@ -17,6 +17,7 @@ import { protectedGetPostByIdRoute } from './getById';
 import { protectedGetPostMediaRoute } from './getMedia';
 import { protectedLikePostRoute } from './like';
 import { protectedListOwnPostsRoute } from './list';
+import { protectedModeratePostRoute } from './moderate';
 import { protectedPatchPostRoute } from './patch';
 import { protectedSetPostPublishStateRoute } from './publishState';
 import { protectedRemovePostMediaRoute } from './removeMedia';
@@ -25,6 +26,7 @@ import { protectedSetFeaturedPostMediaRoute } from './setFeaturedMedia';
 import { protectedSoftDeletePostRoute } from './softDelete';
 import { protectedUnlikePostRoute } from './unlike';
 import { protectedUpdatePostRoute } from './update';
+import { protectedUpdatePostMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -55,6 +57,9 @@ app.route('/', protectedUnlikePostRoute);
 // POST /:id/publish-state - Publish or unpublish own post (HOS-374)
 app.route('/', protectedSetPostPublishStateRoute);
 
+// POST /:id/moderate - Approve own post, trusted editor only (HOS-1037)
+app.route('/', protectedModeratePostRoute);
+
 // POST /:postId/comments - Create comment (SPEC-165)
 app.route('/', protectedPostCommentRoutes);
 
@@ -75,5 +80,9 @@ app.route('/', protectedSetFeaturedPostMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery.
 app.route('/', protectedRemovePostMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdatePostMediaRoute);
 
 export { app as protectedPostRoutes };

@@ -44,9 +44,12 @@ import { getActorFromContext } from '../../../middlewares/actor';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
+import { closeAddonPreapproval } from '../../../services/addon-preapproval-cancel';
+import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service';
 import { applyDowngradeRestrictionsOrWarn } from '../../../services/plan-downgrade-remediation.service';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
+import { reconcileSubscriptionLinkedEntities } from '../../../services/subscription-linked-entities.service';
 import {
     resolveOwnerUserId,
     setOwnerServiceSuspension
@@ -87,6 +90,13 @@ interface ActiveAddonPurchase {
     readonly id: string;
     readonly addonSlug: string;
     readonly customerId: string;
+    /**
+     * The add-on's OWN MercadoPago preapproval (HOS-847 PR 6), `null` for every
+     * one-time add-on. Read in the BEFORE hook because that is where a refusal
+     * can still abort the cancel with a 422; by the after-hook the subscription
+     * is already cancelled in QZPay and nothing can be rolled back.
+     */
+    readonly mpSubscriptionId: string | null;
 }
 
 interface AddonRevocationSummary {
@@ -178,7 +188,8 @@ const onBeforeSubscriptionCancel: NonNullable<
         .select({
             id: billingAddonPurchases.id,
             addonSlug: billingAddonPurchases.addonSlug,
-            customerId: billingAddonPurchases.customerId
+            customerId: billingAddonPurchases.customerId,
+            mpSubscriptionId: billingAddonPurchases.mpSubscriptionId
         })
         .from(billingAddonPurchases)
         .where(
@@ -208,6 +219,32 @@ const onBeforeSubscriptionCancel: NonNullable<
             const catalogResult = await catalogService.getBySlug(purchase.addonSlug);
             const addonDef = catalogResult.success ? catalogResult.data : undefined;
             try {
+                // HOS-847 PR 6: stop MercadoPago charging this add-on before
+                // anything else. This hook runs BEFORE the subscription cancel
+                // commits, so a refusal here still aborts the whole operation
+                // with a 422 — the strongest fail-closed position available on
+                // the admin path, and the reason the close lives in the before
+                // hook rather than beside the `status: 'canceled'` write in the
+                // after hook, which can no longer refuse anything.
+                const providerClose = await closeAddonPreapproval({
+                    purchase: {
+                        id: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        mpSubscriptionId: purchase.mpSubscriptionId
+                    },
+                    source: 'admin-subscription-cancel',
+                    billing
+                });
+
+                if (!providerClose.closed) {
+                    return {
+                        purchaseId: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        outcome: 'failed',
+                        error: `MercadoPago preapproval could not be cancelled: ${providerClose.reason}`
+                    };
+                }
+
                 await revokeAddonForSubscriptionCancellation({
                     customerId,
                     purchase: { id: purchase.id, addonSlug: purchase.addonSlug },
@@ -345,6 +382,27 @@ const onAfterSubscriptionCancel: NonNullable<
     });
 
     clearEntitlementCache(subscription.customerId);
+
+    // HOS-1280: this hook runs AFTER qzpay has committed the cancel (per this
+    // file's module docblock), so the write is durable and the bridge sees the
+    // real post-cancel status. Without this, a hard-cancelled commerce
+    // subscription's listing stayed PUBLIC forever — the accommodation cache
+    // has the 6-hourly `entity-subscription-cache-reconcile` cron as a
+    // backstop, but commerce visibility has no backstop at all.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.CANCELLED,
+        source: 'admin-cancel'
+    });
+    // This admin surface is generic to every `billing_subscriptions` row
+    // (`createAdminRoutes` is mounted once, unscoped by `product_domain`), so a
+    // partner subscription can be hard-cancelled here too — a no-op for any
+    // other domain (no linked `partner_subscriptions` row to update).
+    await reconcilePartnerForSubscription({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.CANCELLED,
+        source: 'admin-cancel'
+    });
 
     apiLogger.info(
         { subscriptionId: subscription.id, customerId: subscription.customerId, adminUserId },
@@ -921,6 +979,20 @@ const onAfterSubscriptionPause: NonNullable<
 
     clearEntitlementCache(subscription.customerId);
 
+    // HOS-1280: same bridge call as the cancel hook above, same reasoning — the
+    // write already committed at qzpay, and a paused commerce subscription's
+    // listing must go PRIVATE the same way a cancelled one does.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.PAUSED,
+        source: 'admin-pause'
+    });
+    await reconcilePartnerForSubscription({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.PAUSED,
+        source: 'admin-pause'
+    });
+
     apiLogger.info(
         {
             subscriptionId: subscription.id,
@@ -987,6 +1059,19 @@ const onAfterSubscriptionResume: NonNullable<
     });
 
     clearEntitlementCache(subscription.customerId);
+
+    // HOS-1280: same bridge call as cancel/pause above — a resumed commerce
+    // subscription's listing must go back PUBLIC.
+    await reconcileSubscriptionLinkedEntities({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+        source: 'admin-resume'
+    });
+    await reconcilePartnerForSubscription({
+        subscriptionId: subscription.id,
+        subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+        source: 'admin-resume'
+    });
 
     apiLogger.info(
         {

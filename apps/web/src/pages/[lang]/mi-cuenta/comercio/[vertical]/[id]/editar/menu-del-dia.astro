@@ -1,0 +1,60 @@
+---
+/**
+ * @file menu-del-dia.astro
+ * @description Menú del día section of the commerce editor (HOS-1041).
+ *
+ * Gastronomy only. The section is absent from the experience registry rather
+ * than hidden from its nav, so `resolveCommerceEditorPage` sends an experience
+ * request for this slug to the hub — the same mechanism that refuses
+ * `punto-de-encuentro` to a restaurant, pointing the other way.
+ *
+ * `CommerceDailySpecialsManager` owns its own endpoints — `GET`/`PUT
+ * .../daily-specials` — so this page mounts it directly, with no form and no
+ * save button, exactly as `carta.astro` mounts the carta manager and
+ * `preguntas.astro` mounts the FAQ manager. Nothing here reaches the listing
+ * PATCH or its dirty tracking.
+ *
+ * ## Why the specials are NOT preloaded server-side
+ *
+ * Same reason `carta.astro` gives: they are not part of the listing detail
+ * payload, so preloading would need a second server-side request. The panel is
+ * reached only by navigating to this route, so that is one fetch on the one
+ * page that shows it — preloading would move the request, not remove it.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/menu-del-dia/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { CommerceDailySpecialsManager } from '@/components/commerce/CommerceDailySpecialsManager.client';
+import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
+import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveCommerceEditorPage({
+	astro: Astro,
+	sectionSlug: 'menu-del-dia'
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { detail, locale, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<CommerceEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="menu-del-dia"
+	title={t('commerce.owner.editor.sectionNav.dailySpecials', 'Menú del día')}
+>
+	<CommerceDailySpecialsManager
+		client:load
+		listingId={listingId}
+		locale={locale}
+	/>
+</CommerceEditorSectionLayout>

@@ -19,6 +19,7 @@
             "forbidden": "You don't have permission to import from a URL. Check that your plan includes it.",
             "rateLimit": "You've made too many imports in a row. Please wait a moment and try again.",
             "entitlementCta": "View plans",
+            "pastDueCta": "Update payment method",
             "failure": {
                 "invalidUrl": "Check that the URL is valid and points to an accommodation.",
                 "sourceBlocked": "The source is temporarily unavailable. Wait a few minutes and try again, or enter the details manually.",
@@ -226,6 +227,8 @@
                 "deleteYes": "Yes, delete",
                 "publishConfirmTitle": "Publish this accommodation?",
                 "publishConfirmNote": "It will appear on the site, visible to travellers.",
+                "publishConfirmTrialNote_one": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
+                "publishConfirmTrialNote_other": "Publishing starts your free {{trialDays}}-day trial. No card needed.",
                 "publishYes": "Yes, publish",
                 "choosePlan": "Choose a host plan"
             },
@@ -234,8 +237,7 @@
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
-            "publishSubscriptionRequiredMessage_one": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free day.",
-            "publishSubscriptionRequiredMessage_other": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
+            "publishSubscriptionRequiredMessage": "You need an active plan to publish.",
             "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request",
             "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
@@ -255,8 +257,8 @@
                 "photosDescription": "Upload up to {{cap}} photos of your property to attract more guests",
                 "photosDescription_one": "Upload up to {{cap}} photo of your property to attract more guests",
                 "photosDescription_other": "Upload up to {{cap}} photos of your property to attract more guests",
+                "photosDescriptionLoading": "Loading your photo limit…",
                 "externalReputation": "External reputation",
-                "featuredToggle": "Destacado",
                 "calendar": "Calendar",
                 "capacityPricing": "Capacity and price",
                 "contactSocial": "Contact and social",
@@ -267,9 +269,9 @@
                 "ariaLabel": "Form section navigation"
             },
             "slugRefresh": {
-                "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it.",
+                "notice": "This listing is already published. By default, the current web address stays as it is even if you rename it or change its type.",
                 "warning": "If you change the web address, you may affect how it appears in Google today or in links you already shared.",
-                "checkbox": "Change the web address too so it follows this new name"
+                "checkbox": "Change the web address too so it follows these changes"
             },
             "field": {
                 "name": "Name",
@@ -342,13 +344,14 @@
                 "featured": "Featured image",
                 "featuredAlt": "Featured image",
                 "featuredFailed": "The photo could not be set as the cover",
-                "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
+                "formats": "JPG, PNG, WebP or HEIC — max {{maxSize}}MB",
                 "gallery": "Photo gallery (max {{cap}})",
                 "galleryAlt": "Photo {{index}}",
                 "galleryCapExceededOnSelect": "You picked {{pickedPhrase}} but only {{remainingPhrase}} free (max. {{cap}} in total)",
                 "galleryCapLabel": "Gallery full",
                 "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
-                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "galleryLoading": "Photo gallery",
+                "invalidType": "Only JPG, PNG, WebP or HEIC files are allowed",
                 "metadataSaveFailed": "Couldn't save the photo's details",
                 "metadataSavedConfirmation": "Saved",
                 "moveDownAria": "Move photo {{index}} down",
@@ -360,7 +363,6 @@
                 "photographerTooLong": "The credit can't be longer than {{max}} characters",
                 "promoteFailed": "This photo could not be set as the cover",
                 "promoteToFeaturedAria": "Use photo {{index}} as the cover",
-                "promoteToFeaturedShort": "Cover",
                 "remove": "Remove",
                 "removeFailed": "The photo could not be removed",
                 "reorderFailed": "The new order could not be saved",
@@ -372,7 +374,15 @@
                 "galleryCapExceededOnSelectPicked_one": "{{count}} photo",
                 "galleryCapExceededOnSelectPicked_other": "{{count}} photos",
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} slot is",
-                "galleryCapExceededOnSelectRemaining_other": "{{count}} slots are"
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} slots are",
+                "processingImage": "Optimizing image…",
+                "compressionUnsupportedTooLarge": "We couldn't automatically optimize this image (your browser can't process this format) and it exceeds the {{maxSize}}MB limit. Try converting it to JPG before uploading, or pick a lighter photo.",
+                "altWarningTitle": "Photos without alt text",
+                "altWarningMessage": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
+                "altWarningMessage_one": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photo without that text filled in.",
+                "altWarningMessage_other": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photos without that text filled in.",
+                "altWarningGoBack": "Go back and fill them in",
+                "altWarningContinue": "Continue without filling them in"
             },
             "video": {
                 "sectionTitle": "Videos",
@@ -426,7 +436,8 @@
             "action": {
                 "save": "Save",
                 "saving": "Saving...",
-                "cancel": "Cancel"
+                "cancel": "Cancel",
+                "back": "Back"
             },
             "validation": {
                 "nameRequired": "Name is required",
@@ -441,6 +452,13 @@
                 "network": "Network error"
             },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+            "publishReady": {
+                "title": "Your listing is ready",
+                "body": "You have completed everything that was missing. If you publish now, it will appear on the site, visible to travellers.",
+                "publishNow": "Publish now",
+                "keepEditing": "Keep editing",
+                "blockedTitle": "You need an active plan"
+            },
             "toast": {
                 "saveSuccess": "Changes saved",
                 "saveError": "We couldn't save your changes. Please try again.",
@@ -532,11 +550,6 @@
                 "textUnavailable": "Just generated. Refresh the page to read it.",
                 "expandText": "Show full text",
                 "collapseText": "Show less"
-            },
-            "featuredToggle": {
-                "label": "Destacar mi alojamiento",
-                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
-                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             },
             "calendar": {
                 "title": "Occupancy calendar",
@@ -692,11 +705,8 @@
         "heroSubheadline": "List it in minutes and start welcoming guests",
         "primaryCta": "List your property",
         "secondaryCta": "View my properties",
-        "trialCallout_one": "Try Hospeda free for {{trialDays}} day on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends.",
-        "trialCallout_other": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
-    },
-    "fromAdminBanner": {
-        "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
+        "trialCallout_one": "Try Hospeda free for {{trialDays}} day, no card needed. The trial starts on its own when you publish your first property, and there is only one for accommodation.",
+        "trialCallout_other": "Try Hospeda free for {{trialDays}} days, no card needed. The trial starts on its own when you publish your first property, and there is only one for accommodation."
     },
     "miniForm": {
         "fields": {
@@ -909,23 +919,41 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle_one": "{{trialDays}} free day on your first subscription",
-            "trialCalloutTitle_other": "{{trialDays}} free days on your first subscription",
+            "trialCalloutTitle_one": "{{trialDays}} free day, no card — only one for accommodation",
+            "trialCalloutTitle_other": "{{trialDays}} free days, no card — only one for accommodation",
             "trialCalloutTitleIneligible": "Set up your property",
-            "trialNote_one": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
-            "trialNote_other": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNote_one": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
+            "trialNote_other": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
             "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "pickCta": "Edit an existing draft",
+                    "title": "You have several drafts, but you've reached your plan's limit",
+                    "upgradeCta": "Upgrade plan"
+                },
+                "pickDraftOrCreate": {
+                    "body": "Pick one of your existing drafts to carry on, or start a new property from scratch.",
+                    "createCta": "Create a new one",
+                    "pickCta": "Edit an existing draft",
+                    "title": "You have several unpublished drafts"
+                },
                 "resumeDeleteOrUpgrade": {
                     "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
                     "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
                     "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
-                    "deleteCta": "Borrar borrador"
+                    "deleteCta": "Borrar borrador",
+                    "resumeCta": "Resume draft",
+                    "title": "You have a draft, but you've reached your plan's limit",
+                    "upgradeCta": "Upgrade plan"
                 },
-                "pickDraftDeleteOrUpgrade": {
-                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
-                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one."
+                "resumeOrCreate": {
+                    "body": "You have an unpublished property. You can pick it up where you left off or start a new one from scratch.",
+                    "createCta": "Create a new one",
+                    "resumeCta": "Resume draft",
+                    "title": "You already have a draft in progress"
                 }
             }
         }

@@ -34,6 +34,7 @@ export interface ProfileCompletionPayload {
     readonly imageUrl?: string;
     readonly phone?: string;
     readonly locale?: string;
+    readonly theme?: string;
     readonly newsletterOptIn?: boolean;
     readonly bio?: string;
     readonly website?: string;
@@ -50,6 +51,14 @@ export type SocialPlatform =
     | 'linkedIn'
     | 'tiktok'
     | 'youtube';
+
+/**
+ * Supported theme preference values (mirrors `ThemeEnumSchema` in
+ * `@repo/schemas`). Kept as a local literal union — like `SocialPlatform`
+ * above — rather than importing the schema-derived type, since this file has
+ * no other dependency on `@repo/schemas`.
+ */
+export type SupportedTheme = 'system' | 'light' | 'dark';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

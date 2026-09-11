@@ -16,7 +16,9 @@
  */
 
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
-import { PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { normalizeStoredSubscriptionStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
+import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
@@ -65,7 +67,27 @@ const GRACE_EXEMPT_PATH_SUFFIXES = [
     '/trial/reactivate-subscription',
     '/checkout',
     '/subscriptions/reactivate',
-    '/payment-methods',
+    // HOS-348 Part A: read-only. `GET /users/me/subscription` is the ONLY
+    // endpoint that renders `apps/web`'s `/mi-cuenta/suscripcion` page
+    // (`SubscriptionDashboard.client.tsx`'s `fetchData`) — without this
+    // exemption a past-due customer whose grace period expired got a 402 on
+    // the one screen that could show them *why* and let them act, and the
+    // page's `<ErrorState>` "Reintentar" button just re-issued the same
+    // request into the same 402 forever. This is a READ: it reports status,
+    // it does not grant anything the gate is meant to withhold. There used
+    // to be a `/payment-methods` suffix here too, added for the same
+    // "let them fix it" intent, but no route in this codebase ever matched
+    // it (grep confirmed) — an exemption that matches nothing is worse than
+    // no exemption, so it was removed rather than kept as decoration.
+    '/me/subscription',
+    // HOS-348 Part B: the actual remedy `/me/subscription` above only lets
+    // the customer SEE. `POST .../subscriptions/:id/replace-payment-method`
+    // (`replace-payment-method.ts`) mints a fresh preapproval on their
+    // current plan — it does not skip payment, it IS the payment path this
+    // whole gate exists to funnel a past-due customer toward. Safe as a bare
+    // suffix for the same reason `/start-subscription` below is: this
+    // middleware only runs on `/api/v1/protected/*`.
+    '/replace-payment-method',
     // HOS-166: commerce owner self-checkout. `billing_customers` is one row
     // per user shared across accommodation + commerce (ADR-035), so a host
     // whose ACCOMMODATION subscription is past-due/grace-expired must still
@@ -110,18 +132,96 @@ const GRACE_EXEMPT_PATH_PREFIXES = ['/api/v1/protected/alliance/'] as const;
 const GRACE_DAYS_HEADER = 'X-Grace-Period-Days-Remaining';
 
 /**
- * Resolves the most urgent past-due subscription for a given billing customer.
+ * Path-prefix rules mapping a `/api/v1/protected/*` request to the product
+ * domain whose past-due status should gate it (HOS-1277).
  *
- * Fetches all subscriptions and returns the past-due one with the fewest
- * grace days remaining (most urgent). When multiple past-due subscriptions
- * exist, the one closest to (or most beyond) grace expiry controls access.
- * Returns `null` if the customer has no past-due subscription.
+ * **The bug this closes**: {@link findPastDueSubscription} used to scan the
+ * customer's ENTIRE subscription set — every vertical at once — and block on
+ * whichever one was most urgent, regardless of what the request was actually
+ * for. A dual-owner with a paid, up-to-date ACCOMMODATION subscription and a
+ * past-due GASTRONOMY one got 402'd on every `/protected/*` route, including
+ * the accommodation ones they were current on. That is the platform-wide
+ * lockout this middleware exists to prevent, not cause.
+ *
+ * The first matching rule wins; a path matching none of them defaults to
+ * {@link ProductDomainEnum.ACCOMMODATION} — the ONLY domain this middleware
+ * gated before the per-vertical billing split (HOS-688), and still the right
+ * default for a domain-agnostic route (posts, destinations, whats-new, ...): a
+ * gastronomy debtor must not be blocked from a feature that has nothing to do
+ * with gastronomy. This mirrors `subscriptionMatchesDomain`'s own asymmetry —
+ * accommodation is the fail-open answer, every other domain is an explicit,
+ * narrow match.
+ *
+ * Commerce (`gastronomy`/`experience`) self-service checkout/plan-change
+ * routes mount under `/protected/commerce/...` keyed by an `:entityType` path
+ * segment rather than their own prefix (see
+ * `routes/commerce/protected/index.ts`), so those are matched by segment
+ * rather than by a fixed prefix.
+ *
+ * Known gap, not attempted here: tourist-tier-gated routes (e.g.
+ * `/protected/price-alerts`, `/protected/recommendations`) fall through to the
+ * ACCOMMODATION default rather than their own `tourist` domain, so a past-due
+ * TOURIST subscription is currently never gated by this middleware at all —
+ * matching this middleware's pre-existing (domain-blind) behavior for that
+ * case rather than fixing it. Scoping every tourist-gated route correctly
+ * needs a fuller route inventory than this fix's bounded scope covers.
+ */
+const GRACE_DOMAIN_PATH_RULES: ReadonlyArray<{
+    readonly test: (path: string) => boolean;
+    readonly domain: ProductDomainValue;
+}> = [
+    {
+        test: (path) => path.includes('/protected/gastronomies'),
+        domain: ProductDomainEnum.GASTRONOMY
+    },
+    {
+        test: (path) => path.includes('/protected/experiences'),
+        domain: ProductDomainEnum.EXPERIENCE
+    },
+    { test: (path) => path.includes('/protected/partners'), domain: ProductDomainEnum.PARTNER },
+    {
+        test: (path) => /\/protected\/commerce\/.*gastronomy/.test(path),
+        domain: ProductDomainEnum.GASTRONOMY
+    },
+    {
+        test: (path) => /\/protected\/commerce\/.*experience/.test(path),
+        domain: ProductDomainEnum.EXPERIENCE
+    }
+];
+
+/**
+ * Resolves which product domain's past-due status should gate a request path.
+ *
+ * @param path - `c.req.path` of the incoming request.
+ * @returns The domain to check, defaulting to {@link ProductDomainEnum.ACCOMMODATION}.
+ */
+function resolveGraceCheckDomain(path: string): ProductDomainValue {
+    return (
+        GRACE_DOMAIN_PATH_RULES.find((rule) => rule.test(path))?.domain ??
+        ProductDomainEnum.ACCOMMODATION
+    );
+}
+
+/**
+ * Resolves the most urgent past-due subscription, SCOPED to `domain`, for a
+ * given billing customer (HOS-1277).
+ *
+ * Fetches all subscriptions, hydrates their `productDomain` (qzpay's mapper
+ * never populates it — see `hydrateSubscriptionProductDomains`'s doc), filters
+ * to the requested domain, and returns the past-due one with the fewest grace
+ * days remaining (most urgent) among THAT domain's subscriptions only. When
+ * multiple past-due subscriptions exist in the same domain, the one closest to
+ * (or most beyond) grace expiry controls access. Returns `null` if the
+ * customer has no past-due subscription in `domain`.
  *
  * @param customerId - QZPay billing customer identifier
- * @returns The most urgent past-due subscription with helpers, or `null`
+ * @param domain - The product domain this request belongs to (see
+ *   {@link resolveGraceCheckDomain}).
+ * @returns The most urgent past-due subscription with helpers, in `domain`, or `null`
  */
 async function findPastDueSubscription(
-    customerId: string
+    customerId: string,
+    domain: ProductDomainValue
 ): Promise<QZPaySubscriptionWithHelpers | null> {
     const billing = getQZPayBilling();
 
@@ -129,9 +229,34 @@ async function findPastDueSubscription(
         return null;
     }
 
-    const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+    const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
+    const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
+    const domainSubscriptions = subscriptions.filter((sub) =>
+        subscriptionMatchesDomain(sub, domain)
+    );
 
-    const pastDueSubs = subscriptions.filter((sub) => sub.isPastDue());
+    // HOS-1310: normalized, NOT `sub.isPastDue()`. That qzpay helper compares the
+    // RAW status against `'past_due'`, so it is blind to qzpay's own `unpaid` —
+    // a value the repo's alias map calls the same state, and one
+    // `isLiveSubscriptionStatus` now accepts as live.
+    //
+    // Leaving this side on the raw spelling is the asymmetry that bites: an
+    // `unpaid` row would pass the content-editing gate (`edit-eligibility`) and
+    // block a second checkout (`start-paid`) FOREVER, because the 7-day
+    // `GRACE_PERIOD_EXPIRED` this middleware owns is the only thing that ever
+    // ends that state, and it would never fire. The side that grants and the side
+    // that revokes have to read the same vocabulary, or the grace has no exit.
+    //
+    // No writer produces `unpaid` today — which is exactly the argument for
+    // keeping `past_due` in the live set in the first place: the day the write
+    // appears is not the day anyone remembers to add it here.
+    //
+    // The `deletedAt === null` half of `isPastDue()` is preserved explicitly.
+    const pastDueSubs = domainSubscriptions.filter(
+        (sub) =>
+            normalizeStoredSubscriptionStatus(sub.status) === SubscriptionStatusEnum.PAST_DUE &&
+            sub.deletedAt === null
+    );
     if (pastDueSubs.length === 0) return null;
     if (pastDueSubs.length === 1) return pastDueSubs[0] ?? null;
 
@@ -199,7 +324,8 @@ export function pastDueGraceMiddleware(): AppMiddleware {
         }
 
         try {
-            const pastDueSub = await findPastDueSubscription(billingCustomerId);
+            const requestDomain = resolveGraceCheckDomain(requestPath);
+            const pastDueSub = await findPastDueSubscription(billingCustomerId, requestDomain);
 
             // No past-due subscription found - pass through normally (the
             // single `next()` at the bottom, outside the try).

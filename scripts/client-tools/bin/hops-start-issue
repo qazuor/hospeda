@@ -1,0 +1,6 @@
+#!/usr/bin/env bun
+// Standalone alias for `hops start-issue`. Everything funnels through the same
+// dispatcher, so this binary and the sub-command cannot drift apart.
+import { runCommand } from '../src/index.ts';
+
+process.exit(await runCommand({ name: 'start-issue', argv: process.argv.slice(2) }));

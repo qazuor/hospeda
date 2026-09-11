@@ -1,15 +1,29 @@
 /**
- * Unit tests for the self-serve subscription pause handler (SPEC-194 T-023).
+ * Unit tests for the self-serve subscription pause/resume handlers.
  *
  * Covers:
  * - Happy path: monthly active subscription is paused successfully.
- * - Annual guard: annual subscription → 400 PAUSE_NOT_SUPPORTED_FOR_ANNUAL.
+ * - Annual (HOS-995): an annual subscription with a preapproval is paused like
+ *   any other. This block previously asserted the reverse — a 400
+ *   PAUSE_NOT_SUPPORTED_FOR_ANNUAL — on a premise HOS-171 retired.
+ * - No-preapproval guard (HOS-995): the real "nothing to pause" condition.
+ * - Provider refusal (HOS-995): fail-closed 502, plus a durable audit seat.
  * - 503 when billing is not configured.
  * - 400 when no billing account found.
- * - 404 when no active subscription exists.
+ * - 400 when the request body is missing/invalid `subscriptionId` (HOS-1278).
+ * - 404 when the named subscription does not exist, is not owned by the
+ *   caller, or is not in a pausable/resumable status (HOS-1278).
  * - Soft-cancel guard (HOS-246): a soft-cancelled (cancelAtPeriodEnd=true)
  *   active/trialing sub → 409 PAUSE_NOT_ALLOWED_CANCELLATION_SCHEDULED, and the
  *   409 takes precedence over the 400 annual error when both apply.
+ * - HOS-1278: the route resolves the subscription by the id the caller sent —
+ *   never by scanning `getByCustomerId()` — and gates the accommodation
+ *   service-suspension effect on the target's product domain.
+ * - HOS-1240: MercadoPago can accept the pause PUT (200, no throw) and still
+ *   not actually pause the preapproval. A same-request verification read must
+ *   catch that, roll back the misleading local `paused` write, and fail loud
+ *   — otherwise a later webhook silently reactivates the subscription and
+ *   nobody is told.
  *
  * @module test/routes/subscription-pause
  */
@@ -22,7 +36,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('../../src/middlewares/billing', () => ({
-    getQZPayBilling: vi.fn()
+    getQZPayBilling: vi.fn(),
+    // HOS-1240: the route re-fetches the LIVE preapproval right after pausing
+    // to catch MercadoPago silently no-op'ing the status change. Defaulted in
+    // `beforeEach` below to confirm 'paused' — i.e. the ordinary case where
+    // the pause genuinely landed — so every pre-existing happy-path test in
+    // this file exercises the verification read too, not just the new ones.
+    getBillingPaymentAdapter: vi.fn()
 }));
 
 vi.mock('../../src/middlewares/actor', () => ({
@@ -35,6 +55,31 @@ vi.mock('../../src/middlewares/entitlement', () => ({
 
 vi.mock('../../src/services/subscription-pause.service', () => ({
     setOwnerServiceSuspension: vi.fn().mockResolvedValue({ accommodationsUpdated: 0 })
+}));
+
+// HOS-1278: gates the service-suspension effect on the target subscription's
+// product domain. Mocked as a controllable spy — its own hydration/fail-open
+// behavior is covered by `plan-domain-guard.test.ts`; what this file tests is
+// that the ROUTE only calls `setOwnerServiceSuspension` when this answers true.
+vi.mock('../../src/services/billing/plan-domain-guard', () => ({
+    isAccommodationDomainSubscription: vi.fn().mockResolvedValue(true)
+}));
+
+vi.mock('../../src/services/billing/pause-refusal-audit', () => ({
+    recordPauseProviderRefusal: vi.fn().mockResolvedValue(true)
+}));
+
+// HOS-1280: the bridge (and partner reconciler) that this fix wires into both
+// handlers. Mocked as spies — the reconciler's own behavior (flip a linked
+// gastronomy/experience listing's visibility) is already covered by
+// commerce-reconcile.test.ts; what regressed here was that these handlers
+// never called it at all.
+vi.mock('../../src/services/subscription-linked-entities.service', () => ({
+    reconcileSubscriptionLinkedEntities: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../src/services/partner-reconcile.service', () => ({
+    reconcilePartnerForSubscription: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -86,6 +131,8 @@ vi.mock('@repo/schemas', async (importOriginal) => {
             ACTIVE: 'active'
         },
         SubscriptionPauseResumeResponseSchema: {}
+        // SubscriptionPauseResumeRequestSchema is the REAL schema (not mocked):
+        // these tests rely on it actually rejecting a missing subscriptionId.
     };
 });
 
@@ -105,30 +152,44 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 
 import { BILLING_EVENT_TYPES } from '@repo/service-core';
-import { getQZPayBilling } from '../../src/middlewares/billing';
+import { getBillingPaymentAdapter, getQZPayBilling } from '../../src/middlewares/billing';
 import {
     handleSelfServePause,
     handleSelfServeResume
 } from '../../src/routes/billing/subscription-pause';
+import { recordPauseProviderRefusal } from '../../src/services/billing/pause-refusal-audit';
+import { isAccommodationDomainSubscription } from '../../src/services/billing/plan-domain-guard';
+import { reconcilePartnerForSubscription } from '../../src/services/partner-reconcile.service';
+import { reconcileSubscriptionLinkedEntities } from '../../src/services/subscription-linked-entities.service';
+import { setOwnerServiceSuspension } from '../../src/services/subscription-pause.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 const CUSTOMER_ID = 'cust-abc';
+/** A different billing customer — used for the ownership-mismatch tests. */
+const OTHER_CUSTOMER_ID = 'cust-someone-else';
 
 interface ContextOptions {
     billingEnabled?: boolean;
     billingCustomerId?: string | null;
+    /** JSON body the mock `c.req.json()` resolves to. Defaults to `{}` (fails validation). */
+    body?: unknown;
 }
 
 function createMockContext(opts: ContextOptions = {}) {
-    const { billingEnabled = true, billingCustomerId = CUSTOMER_ID } = opts;
+    const { billingEnabled = true, billingCustomerId = CUSTOMER_ID, body = {} } = opts;
     const store = new Map<string, unknown>([
         ['billingEnabled', billingEnabled],
         ['billingCustomerId', billingCustomerId]
     ]);
-    return { get: vi.fn((key: string) => store.get(key)) };
+    return {
+        get: vi.fn((key: string) => store.get(key)),
+        req: {
+            json: vi.fn().mockResolvedValue(body)
+        }
+    };
 }
 
 interface SubFixture {
@@ -136,16 +197,39 @@ interface SubFixture {
     status?: string;
     metadata?: Record<string, unknown>;
     cancelAtPeriodEnd?: boolean;
+    /** Defaults to `CUSTOMER_ID` — override to simulate a foreign subscription. */
+    customerId?: string;
+    /**
+     * The provider ids qzpay carries on every subscription. `mercadopago` is the
+     * preapproval the pause acts on; its absence is the only real "there is
+     * nothing to pause" condition (HOS-995), so fixtures that expect to be
+     * paused must declare one.
+     */
+    providerSubscriptionIds?: Record<string, string>;
 }
 
+/** The preapproval id every pausable fixture carries. */
+const MP_PREAPPROVAL = { mercadopago: 'mp-preapproval-1' };
+
+/**
+ * Builds the billing mock. `subs` are looked up by id via `.get()` — HOS-1278
+ * replaced the old `getByCustomerId()` scan, so `.get()` (not `getByCustomerId`)
+ * is now the single source these handlers read from.
+ */
 function makeBillingMock(subs: SubFixture[] = []) {
+    const withCustomerId = subs.map((sub) => ({ customerId: CUSTOMER_ID, ...sub }));
     return {
         subscriptions: {
-            getByCustomerId: vi.fn().mockResolvedValue(subs),
+            get: vi.fn((id: string) => Promise.resolve(withCustomerId.find((s) => s.id === id))),
             pause: vi.fn().mockResolvedValue({ id: subs[0]?.id ?? 'sub-1', status: 'paused' }),
             resume: vi
                 .fn()
-                .mockImplementation((id: string) => Promise.resolve({ id, status: 'active' }))
+                .mockImplementation((id: string) => Promise.resolve({ id, status: 'active' })),
+            // HOS-1240: the rollback path calls this directly (pure local —
+            // never a second MercadoPago call) to undo the misleading
+            // 'paused' write when the verification read shows MP never
+            // actually paused the preapproval.
+            update: vi.fn().mockResolvedValue(undefined)
         }
     };
 }
@@ -156,6 +240,20 @@ function mockBilling(billing: ReturnType<typeof makeBillingMock> | null) {
     );
 }
 
+/**
+ * Builds the raw MercadoPago payment-adapter mock the HOS-1240 verification
+ * read calls directly (`getBillingPaymentAdapter().subscriptions.retrieve`).
+ * Defaults to reporting the preapproval as genuinely `paused` — the ordinary
+ * case where MercadoPago's PUT actually took effect.
+ */
+function makePaymentAdapterMock(liveStatus = 'paused') {
+    return {
+        subscriptions: {
+            retrieve: vi.fn().mockResolvedValue({ status: liveStatus })
+        }
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -163,6 +261,13 @@ function mockBilling(billing: ReturnType<typeof makeBillingMock> | null) {
 describe('handleSelfServePause', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(true);
+        // HOS-1240: default to "MercadoPago genuinely paused it" so every
+        // pre-existing test below (which never mentions this mock) keeps
+        // exercising the verification read on the ordinary, successful path.
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('paused') as never
+        );
     });
 
     // -----------------------------------------------------------------------
@@ -173,10 +278,11 @@ describe('handleSelfServePause', () => {
         const sub = {
             id: 'sub-monthly-1',
             status: 'active',
-            metadata: { billingInterval: 'monthly' }
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
         };
         mockBilling(makeBillingMock([sub]));
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-monthly-1' } });
 
         const result = await handleSelfServePause(ctx as never);
 
@@ -194,11 +300,234 @@ describe('handleSelfServePause', () => {
         });
     });
 
-    it('pauses a monthly trialing subscription successfully', async () => {
-        const sub = { id: 'sub-trial-1', status: 'trialing', metadata: {} };
+    // -----------------------------------------------------------------------
+    // HOS-1278: the route resolves by the id the caller sent, not by scanning
+    // getByCustomerId(). This is the fix for the ambiguity a dual owner (or a
+    // host auto-promoted from a paying tourist) hit before — the customer can
+    // hold several subscriptions and the route must act on exactly the one
+    // named, never on "whichever one the storage adapter returns first".
+    // -----------------------------------------------------------------------
+
+    describe('HOS-1278: explicit subscriptionId resolution', () => {
+        it('400s when subscriptionId is missing from the body', async () => {
+            mockBilling(makeBillingMock([]));
+            const ctx = createMockContext({ body: {} });
+
+            try {
+                await handleSelfServePause(ctx as never);
+                expect.unreachable('must reject a body with no subscriptionId');
+            } catch (err) {
+                expect(err).toBeInstanceOf(HTTPException);
+                expect((err as HTTPException).status).toBe(400);
+            }
+        });
+
+        it('404s when the named subscription does not belong to the caller (ownership check)', async () => {
+            const foreignSub = {
+                id: 'sub-foreign-1',
+                status: 'active',
+                metadata: {},
+                customerId: OTHER_CUSTOMER_ID,
+                providerSubscriptionIds: MP_PREAPPROVAL
+            };
+            const billing = makeBillingMock([foreignSub]);
+            mockBilling(billing);
+            const ctx = createMockContext({ body: { subscriptionId: 'sub-foreign-1' } });
+
+            try {
+                await handleSelfServePause(ctx as never);
+                expect.unreachable('must refuse a foreign subscription');
+            } catch (err) {
+                expect(err).toBeInstanceOf(HTTPException);
+                expect((err as HTTPException).status).toBe(404);
+            }
+            expect(billing.subscriptions.pause).not.toHaveBeenCalled();
+        });
+
+        it('404s when the named subscription id does not exist at all', async () => {
+            mockBilling(makeBillingMock([]));
+            const ctx = createMockContext({ body: { subscriptionId: 'sub-does-not-exist' } });
+
+            await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+        });
+
+        it('the dual-owner case (host auto-promoted from tourist): two active subscriptions exist, and the named accommodation one is the only one acted on', async () => {
+            const accommodationSub = {
+                id: 'sub-accommodation-dual',
+                status: 'active',
+                metadata: { billingInterval: 'monthly' },
+                providerSubscriptionIds: MP_PREAPPROVAL
+            };
+            const touristSub = {
+                id: 'sub-tourist-dual',
+                status: 'active',
+                metadata: { billingInterval: 'monthly' },
+                providerSubscriptionIds: { mercadopago: 'mp-preapproval-tourist' }
+            };
+            const billing = makeBillingMock([accommodationSub, touristSub]);
+            mockBilling(billing);
+            const ctx = createMockContext({
+                body: { subscriptionId: 'sub-accommodation-dual' }
+            });
+
+            const result = await handleSelfServePause(ctx as never);
+
+            expect(result.subscriptionId).toBe('sub-accommodation-dual');
+            expect(billing.subscriptions.pause).toHaveBeenCalledWith('sub-accommodation-dual');
+            expect(billing.subscriptions.pause).not.toHaveBeenCalledWith('sub-tourist-dual');
+            expect(billing.subscriptions.get).toHaveBeenCalledWith('sub-accommodation-dual');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1278: the service-suspension dimension is gated on product domain.
+    // The dual host/commerce owner (`host-provider@local.test`) is the real
+    // scenario this closes: pausing their gastronomy subscription must never
+    // touch `users.serviceSuspended`, or it silently suspends the accommodations
+    // they pay for separately.
+    // -----------------------------------------------------------------------
+
+    describe('HOS-1278: service-suspension gated by product domain', () => {
+        it('calls setOwnerServiceSuspension for an ACCOMMODATION-domain subscription', async () => {
+            const sub = {
+                id: 'sub-accommodation-1',
+                status: 'active',
+                metadata: {},
+                providerSubscriptionIds: MP_PREAPPROVAL
+            };
+            mockBilling(makeBillingMock([sub]));
+            vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(true);
+            const ctx = createMockContext({ body: { subscriptionId: 'sub-accommodation-1' } });
+
+            const result = await handleSelfServePause(ctx as never);
+
+            expect(isAccommodationDomainSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'sub-accommodation-1' })
+            );
+            expect(setOwnerServiceSuspension).toHaveBeenCalledWith({
+                userId: 'user-123',
+                suspended: true,
+                db: expect.anything()
+            });
+            expect(result.accommodationsUpdated).toBe(0); // mocked setOwnerServiceSuspension default
+        });
+
+        it('does NOT call setOwnerServiceSuspension for a GASTRONOMY-domain subscription (dual-owner regression)', async () => {
+            const gastronomySub = {
+                id: 'sub-gastronomy-1',
+                status: 'active',
+                metadata: {},
+                providerSubscriptionIds: { mercadopago: 'mp-preapproval-gastro' }
+            };
+            mockBilling(makeBillingMock([gastronomySub]));
+            vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(false);
+            const ctx = createMockContext({ body: { subscriptionId: 'sub-gastronomy-1' } });
+
+            const result = await handleSelfServePause(ctx as never);
+
+            expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+            expect(result.accommodationsUpdated).toBe(0);
+            // The bridge (commerce visibility) still runs unconditionally.
+            expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+                subscriptionId: 'sub-gastronomy-1',
+                subscriptionStatus: 'paused',
+                source: 'host-pause'
+            });
+        });
+
+        it('does NOT call setOwnerServiceSuspension for a PARTNER subscription', async () => {
+            const partnerSub = {
+                id: 'sub-partner-1',
+                status: 'active',
+                metadata: {},
+                providerSubscriptionIds: { mercadopago: 'mp-preapproval-partner' }
+            };
+            mockBilling(makeBillingMock([partnerSub]));
+            vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(false);
+            const ctx = createMockContext({ body: { subscriptionId: 'sub-partner-1' } });
+
+            await handleSelfServePause(ctx as never);
+
+            expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+            // Partner reconciliation still runs (this route is not host-exclusive).
+            expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+                subscriptionId: 'sub-partner-1',
+                subscriptionStatus: 'paused',
+                source: 'host-pause'
+            });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1280 regression: the pause must call the shared bridge, or a
+    // commerce (gastronomy/experience) listing paused this way stays PUBLIC
+    // forever — unlike accommodation, there is no backstop cron for it.
+    // -----------------------------------------------------------------------
+
+    it('HOS-1280: calls reconcileSubscriptionLinkedEntities and reconcilePartnerForSubscription with the paused status, after the write commits', async () => {
+        const sub = {
+            id: 'sub-monthly-1',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
         const billing = makeBillingMock([sub]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-monthly-1' } });
+
+        await handleSelfServePause(ctx as never);
+
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: 'sub-monthly-1',
+            subscriptionStatus: 'paused',
+            source: 'host-pause'
+        });
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledTimes(1);
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+            subscriptionId: 'sub-monthly-1',
+            subscriptionStatus: 'paused',
+            source: 'host-pause'
+        });
+
+        // Ordering: the bridge must run only AFTER qzpay's write actually
+        // committed (billing.subscriptions.pause resolved), never before.
+        const pauseOrder = billing.subscriptions.pause.mock.invocationCallOrder[0] as number;
+        const bridgeOrder = vi.mocked(reconcileSubscriptionLinkedEntities).mock
+            .invocationCallOrder[0] as number;
+        expect(pauseOrder).toBeLessThan(bridgeOrder);
+    });
+
+    it('HOS-1280: does NOT call the bridge when the pause is refused before anything commits', async () => {
+        const annualSub = {
+            id: 'sub-annual-refused-2',
+            status: 'active',
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual' }
+        };
+        const billing = makeBillingMock([annualSub]);
+        billing.subscriptions.pause.mockRejectedValue(new Error('MP: cannot pause preapproval'));
+        mockBilling(billing);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-annual-refused-2' } });
+
+        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+
+        expect(reconcileSubscriptionLinkedEntities).not.toHaveBeenCalled();
+        expect(reconcilePartnerForSubscription).not.toHaveBeenCalled();
+    });
+
+    it('pauses a monthly trialing subscription successfully', async () => {
+        // Card-first (HOS-171): a trialing subscription is a real preapproval,
+        // so it carries a `mercadopago` id and is pausable.
+        const sub = {
+            id: 'sub-trial-1',
+            status: 'trialing',
+            metadata: {},
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-trial-1' } });
 
         const result = await handleSelfServePause(ctx as never);
 
@@ -207,43 +536,293 @@ describe('handleSelfServePause', () => {
     });
 
     // -----------------------------------------------------------------------
-    // Annual guard (SPEC-194 T-023)
+    // Annual: pausable like any other preapproval (HOS-995)
+    //
+    // This block used to assert the OPPOSITE — a 400 PAUSE_NOT_SUPPORTED_FOR_ANNUAL
+    // and `pause` never being called (SPEC-194 T-023). That guard rested on
+    // "annual subscriptions are backed by a single MP payment, not a recurring
+    // preapproval", which HOS-171 (card-first) retired: an annual subscription
+    // IS a recurring preapproval today, at MP `frequency: 12,
+    // frequency_type: 'months'`, and `create-annual-subscription.ts` was
+    // deleted. The old tests were green while freezing a refusal the
+    // architecture no longer justifies, on a button the web dashboard offers to
+    // annual subscribers (`canPause` never looked at the interval).
     // -----------------------------------------------------------------------
 
-    it('rejects with 400 PAUSE_NOT_SUPPORTED_FOR_ANNUAL for annual active subscription', async () => {
+    it('pauses an annual active subscription, like any other preapproval', async () => {
         const annualSub = {
             id: 'sub-annual-1',
             status: 'active',
-            metadata: { billingInterval: 'annual' }
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual' }
         };
         const billing = makeBillingMock([annualSub]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-annual-1' } });
 
-        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+        const result = await handleSelfServePause(ctx as never);
+
+        expect(result.success).toBe(true);
+        expect(result.subscriptionId).toBe('sub-annual-1');
+        expect(billing.subscriptions.pause).toHaveBeenCalledWith('sub-annual-1');
+    });
+
+    // -----------------------------------------------------------------------
+    // The real "there is nothing to pause" condition (HOS-995)
+    //
+    // Not the interval — the absence of a preapproval. This is what the old
+    // guard was reaching for and missed: a legacy annual one-time row has no
+    // `mercadopago` provider id, and so does a Hospeda-owned trial, and so does
+    // any pre-HOS-171 leftover. Pausing one of those would suspend the owner's
+    // listings while changing nothing on the billing side, precisely the
+    // "misleading state" the original comment warned about, attached at last to
+    // the condition that actually produces it.
+    // -----------------------------------------------------------------------
+
+    it.each([
+        ['no providerSubscriptionIds at all', undefined],
+        ['an empty providerSubscriptionIds map', {}],
+        ['provider ids without a mercadopago entry', { stripe: 'sub_x' }]
+    ])('refuses to pause a subscription with %s', async (_label, providerSubscriptionIds) => {
+        const sub = {
+            id: 'sub-no-preapproval',
+            status: 'active',
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-no-preapproval' } });
 
         try {
             await handleSelfServePause(ctx as never);
+            expect.unreachable('the handler must refuse a subscription with no preapproval');
         } catch (err) {
             expect(err).toBeInstanceOf(HTTPException);
             const httpErr = err as HTTPException;
             expect(httpErr.status).toBe(400);
-            expect(httpErr.message).toContain('PAUSE_NOT_SUPPORTED_FOR_ANNUAL');
+            expect(httpErr.message).toContain('PAUSE_NO_PREAPPROVAL');
         }
+
+        // Refused before the provider is touched, and before anything local moves.
+        expect(billing.subscriptions.pause).not.toHaveBeenCalled();
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
     });
 
-    it('does not call billing.subscriptions.pause for annual subscriptions', async () => {
+    // -----------------------------------------------------------------------
+    // Provider refusal: fail-closed AND observable (HOS-995)
+    //
+    // Nobody has verified against the MercadoPago sandbox that pause behaves on
+    // a twelve-month preapproval. That is a manual observation, so what code can
+    // do is guarantee the failure mode: nothing local changes, the caller gets a
+    // typed error rather than an opaque 500, and a durable row records the
+    // interval and the provider's own message.
+    // -----------------------------------------------------------------------
+
+    it('fails closed and records a seat when MercadoPago refuses the pause', async () => {
         const annualSub = {
-            id: 'sub-annual-2',
+            id: 'sub-annual-refused',
             status: 'active',
-            metadata: { billingInterval: 'annual' }
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual' }
+        };
+        const billing = makeBillingMock([annualSub]);
+        billing.subscriptions.pause.mockRejectedValue(new Error('MP: cannot pause preapproval'));
+        mockBilling(billing);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-annual-refused' } });
+
+        try {
+            await handleSelfServePause(ctx as never);
+            expect.unreachable('a refused pause must not resolve successfully');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
+            const httpErr = err as HTTPException;
+            expect(httpErr.status).toBe(502);
+            expect(httpErr.message).toContain('PAUSE_PROVIDER_REFUSED');
+        }
+
+        // Fail-closed: the listings are NOT suspended and no PAUSED row is
+        // written for a pause that never happened.
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
+
+        // Observable: the refusal is seated with the interval that caused it.
+        expect(recordPauseProviderRefusal).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(recordPauseProviderRefusal).mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: 'sub-annual-refused',
+            triggerSource: 'host-pause',
+            billingInterval: 'annual'
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1240: MercadoPago can accept the pause PUT (200, no throw) and
+    // still not actually pause the preapproval — the exact silent-no-op shape
+    // already measured for other preapproval fields (dates, `free_trial`).
+    // qzpay-core's `pause()` only guards on a THROWN error, so it happily
+    // writes `status: 'paused'` locally regardless. Left uncaught, a later
+    // `subscription_preapproval.updated` webhook reads the still-`authorized`
+    // preapproval and legitimately reactivates the row — reverting the pause
+    // behind the user's back with no one told. The fix is this same-request
+    // verification read: re-fetch the live preapproval right after `pause()`
+    // resolves and treat "still not paused" as a refusal qzpay-core missed.
+    // -----------------------------------------------------------------------
+
+    it('HOS-1240: rolls back the local write and fails loud when MercadoPago silently does not pause a MONTHLY preapproval', async () => {
+        const sub = {
+            id: 'sub-monthly-silent-refusal',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        // qzpay-core's pause() resolves normally — MercadoPago's PUT returned
+        // 200, so nothing throws. This is precisely the silent-refusal shape.
+        mockBilling(billing);
+        // But the live preapproval never actually transitioned.
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('active') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-monthly-silent-refusal' } });
+
+        try {
+            await handleSelfServePause(ctx as never);
+            expect.unreachable('a silently-refused pause must not resolve successfully');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
+            const httpErr = err as HTTPException;
+            expect(httpErr.status).toBe(502);
+            expect(httpErr.message).toContain('PAUSE_PROVIDER_REFUSED');
+        }
+
+        // The misleading local write qzpay-core already committed is undone.
+        expect(billing.subscriptions.update).toHaveBeenCalledWith('sub-monthly-silent-refusal', {
+            status: 'active'
+        });
+
+        // Fail-closed exactly like a THROWN refusal: no suspension, no audit
+        // row for a pause that never really happened, no downstream bridges.
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
+        expect(reconcileSubscriptionLinkedEntities).not.toHaveBeenCalled();
+        expect(reconcilePartnerForSubscription).not.toHaveBeenCalled();
+
+        // Observable, same seat a thrown refusal uses.
+        expect(recordPauseProviderRefusal).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(recordPauseProviderRefusal).mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: 'sub-monthly-silent-refusal',
+            triggerSource: 'host-pause',
+            billingInterval: 'monthly'
+        });
+    });
+
+    it('HOS-1240: rolls back the local write and fails loud when MercadoPago silently does not pause an ANNUAL preapproval', async () => {
+        // HOS-995's own smoke measured this exact bug on an ANNUAL
+        // subscription — the fix must cover both cadences, not just monthly.
+        const annualSub = {
+            id: 'sub-annual-silent-refusal',
+            status: 'active',
+            metadata: { billingInterval: 'annual' },
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-annual-silent' }
         };
         const billing = makeBillingMock([annualSub]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('active') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-annual-silent-refusal' } });
+
+        try {
+            await handleSelfServePause(ctx as never);
+            expect.unreachable('a silently-refused pause must not resolve successfully');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
+            expect((err as HTTPException).status).toBe(502);
+            expect((err as HTTPException).message).toContain('PAUSE_PROVIDER_REFUSED');
+        }
+
+        expect(billing.subscriptions.update).toHaveBeenCalledWith('sub-annual-silent-refusal', {
+            status: 'active'
+        });
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(insertSpy).not.toHaveBeenCalled();
+        expect(vi.mocked(recordPauseProviderRefusal).mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: 'sub-annual-silent-refusal',
+            triggerSource: 'host-pause',
+            billingInterval: 'annual'
+        });
+    });
+
+    it('HOS-1240: rolls back to TRIALING (not hardcoded to active) when a silently-refused pause targeted a trialing subscription', async () => {
+        const trialSub = {
+            id: 'sub-trial-silent-refusal',
+            status: 'trialing',
+            metadata: {},
+            providerSubscriptionIds: { mercadopago: 'mp-preapproval-trial-silent' }
+        };
+        const billing = makeBillingMock([trialSub]);
+        mockBilling(billing);
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('active') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-trial-silent-refusal' } });
 
         await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
-        expect(billing.subscriptions.pause).not.toHaveBeenCalled();
+
+        // The rollback must restore whatever the subscription's status
+        // actually was — 'trialing' here — not a status literal.
+        expect(billing.subscriptions.update).toHaveBeenCalledWith('sub-trial-silent-refusal', {
+            status: 'trialing'
+        });
+    });
+
+    it('HOS-1240: does NOT call billing.subscriptions.update when the verification read confirms the pause landed', async () => {
+        const sub = {
+            id: 'sub-monthly-confirmed',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        // beforeEach already defaults the payment adapter to 'paused', but
+        // this is asserted explicitly here so the happy path stays pinned.
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue(
+            makePaymentAdapterMock('paused') as never
+        );
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-monthly-confirmed' } });
+
+        const result = await handleSelfServePause(ctx as never);
+
+        expect(result.success).toBe(true);
+        expect(billing.subscriptions.update).not.toHaveBeenCalled();
+        expect(recordPauseProviderRefusal).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1240: does not treat an unreachable verification read as a refusal (trusts the write instead of blocking a legitimate pause)', async () => {
+        const sub = {
+            id: 'sub-monthly-verify-unreachable',
+            status: 'active',
+            metadata: { billingInterval: 'monthly' },
+            providerSubscriptionIds: MP_PREAPPROVAL
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        vi.mocked(getBillingPaymentAdapter).mockReturnValue({
+            subscriptions: {
+                retrieve: vi.fn().mockRejectedValue(new Error('ETIMEDOUT'))
+            }
+        } as never);
+        const ctx = createMockContext({
+            body: { subscriptionId: 'sub-monthly-verify-unreachable' }
+        });
+
+        const result = await handleSelfServePause(ctx as never);
+
+        expect(result.success).toBe(true);
+        expect(billing.subscriptions.update).not.toHaveBeenCalled();
+        expect(recordPauseProviderRefusal).not.toHaveBeenCalled();
     });
 
     // -----------------------------------------------------------------------
@@ -279,9 +858,9 @@ describe('handleSelfServePause', () => {
     // No active subscription
     // -----------------------------------------------------------------------
 
-    it('throws 404 when no active or trialing subscription exists', async () => {
+    it('throws 404 when the named subscription is paused, not active/trialing', async () => {
         mockBilling(makeBillingMock([{ id: 'sub-paused', status: 'paused', metadata: {} }]));
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-paused' } });
 
         await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
 
@@ -293,11 +872,40 @@ describe('handleSelfServePause', () => {
     });
 
     // -----------------------------------------------------------------------
+    // Courtesy guard (HOS-180 AC-14 / OQ-2) — a courtesy subscription is
+    // excluded by omission, same as any other non-active/trialing status. No
+    // new gate was added; this pins the omission so a future addition of
+    // 'courtesy' to the filter above regresses silently otherwise.
+    // -----------------------------------------------------------------------
+
+    it('throws 404 when the named subscription is courtesy (HOS-180)', async () => {
+        mockBilling(makeBillingMock([{ id: 'sub-courtesy', status: 'courtesy', metadata: {} }]));
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-courtesy' } });
+
+        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+
+        try {
+            await handleSelfServePause(ctx as never);
+        } catch (err) {
+            expect((err as HTTPException).status).toBe(404);
+        }
+    });
+
+    it('does not call billing.subscriptions.pause for a courtesy subscription (HOS-180)', async () => {
+        const billing = makeBillingMock([{ id: 'sub-courtesy', status: 'courtesy', metadata: {} }]);
+        mockBilling(billing);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-courtesy' } });
+
+        await expect(handleSelfServePause(ctx as never)).rejects.toThrow(HTTPException);
+        expect(billing.subscriptions.pause).not.toHaveBeenCalled();
+    });
+
+    // -----------------------------------------------------------------------
     // Soft-cancel guard (HOS-246) — mirror of the resume guard from HOS-236
     // -----------------------------------------------------------------------
 
     // ── THE regression guard: a soft-cancelled active sub must NOT be pausable ──
-    it('rejects with 409 when the only active sub is scheduled for cancellation (HOS-246)', async () => {
+    it('rejects with 409 when the named active sub is scheduled for cancellation (HOS-246)', async () => {
         const softCancelled = {
             id: 'sub-softcancel-1',
             status: 'active',
@@ -306,7 +914,7 @@ describe('handleSelfServePause', () => {
         };
         const billing = makeBillingMock([softCancelled]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-softcancel-1' } });
 
         try {
             await handleSelfServePause(ctx as never);
@@ -331,7 +939,7 @@ describe('handleSelfServePause', () => {
         };
         const billing = makeBillingMock([softCancelledTrial]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-softcancel-trial' } });
 
         try {
             await handleSelfServePause(ctx as never);
@@ -345,49 +953,22 @@ describe('handleSelfServePause', () => {
         expect(billing.subscriptions.pause).not.toHaveBeenCalled();
     });
 
-    it('pauses the genuinely-active sub and skips the soft-cancelled one when both exist', async () => {
-        const softCancelled = {
-            id: 'sub-softcancel-2',
-            status: 'active',
-            metadata: { billingInterval: 'monthly' },
-            cancelAtPeriodEnd: true
-        };
-        const pausable = {
-            id: 'sub-active-2',
-            status: 'active',
-            metadata: { billingInterval: 'monthly' },
-            cancelAtPeriodEnd: false
-        };
-        // Ordered soft-cancelled first so the filter must actively skip it.
-        const billing = makeBillingMock([softCancelled, pausable]);
-        // pause() resolves the id it was called with so the assertion is exact.
-        billing.subscriptions.pause = vi
-            .fn()
-            .mockImplementation((id: string) => Promise.resolve({ id, status: 'paused' }));
-        mockBilling(billing);
-        const ctx = createMockContext();
-
-        const result = await handleSelfServePause(ctx as never);
-
-        expect(result.subscriptionId).toBe('sub-active-2');
-        expect(billing.subscriptions.pause).toHaveBeenCalledWith('sub-active-2');
-        expect(billing.subscriptions.pause).not.toHaveBeenCalledWith('sub-softcancel-2');
-    });
-
-    // Precedence: a sub that is BOTH annual AND soft-cancelled must surface the
-    // 409 cancellation-scheduled error, NOT the 400 annual error. The soft-cancel
-    // guard runs first, so the annual sub is excluded from target selection before
-    // the annual check is ever reached. Documented decision (HOS-246), not accident.
-    it('returns 409 (not 400 annual) for a subscription that is both annual and soft-cancelled', async () => {
-        const annualSoftCancelled = {
+    // Precedence: a sub that is BOTH unpausable-for-lack-of-preapproval AND
+    // soft-cancelled must surface the 409 cancellation-scheduled error, not the
+    // 400. The soft-cancel guard runs first. Documented decision (HOS-246), not
+    // accident. HOS-995 re-aimed this from the retired annual error onto the
+    // guard that replaced it — the precedence is the invariant, the specific
+    // 400 underneath it was not.
+    it('returns 409 (not the 400) for a soft-cancelled sub that also has no preapproval', async () => {
+        const softCancelledNoPreapproval = {
             id: 'sub-annual-softcancel',
             status: 'active',
             metadata: { billingInterval: 'annual' },
             cancelAtPeriodEnd: true
         };
-        const billing = makeBillingMock([annualSoftCancelled]);
+        const billing = makeBillingMock([softCancelledNoPreapproval]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-annual-softcancel' } });
 
         try {
             await handleSelfServePause(ctx as never);
@@ -397,7 +978,7 @@ describe('handleSelfServePause', () => {
             const httpErr = err as HTTPException;
             expect(httpErr.status).toBe(409);
             expect(httpErr.message).toContain('PAUSE_NOT_ALLOWED_CANCELLATION_SCHEDULED');
-            expect(httpErr.message).not.toContain('PAUSE_NOT_SUPPORTED_FOR_ANNUAL');
+            expect(httpErr.message).not.toContain('PAUSE_NO_PREAPPROVAL');
         }
         expect(billing.subscriptions.pause).not.toHaveBeenCalled();
     });
@@ -410,6 +991,7 @@ describe('handleSelfServePause', () => {
 describe('handleSelfServeResume', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(true);
     });
 
     it('resumes a genuinely user-paused subscription (no pending cancellation)', async () => {
@@ -421,7 +1003,7 @@ describe('handleSelfServeResume', () => {
         };
         const billing = makeBillingMock([sub]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-paused-1' } });
 
         const result = await handleSelfServeResume(ctx as never);
 
@@ -439,8 +1021,108 @@ describe('handleSelfServeResume', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // HOS-1278: explicit id resolution + ownership + domain gate, mirroring
+    // the pause suite above.
+    // -----------------------------------------------------------------------
+
+    it('400s when subscriptionId is missing from the body', async () => {
+        mockBilling(makeBillingMock([]));
+        const ctx = createMockContext({ body: {} });
+
+        await expect(handleSelfServeResume(ctx as never)).rejects.toThrow(HTTPException);
+    });
+
+    it('404s when the named subscription does not belong to the caller', async () => {
+        const foreignSub = {
+            id: 'sub-foreign-paused',
+            status: 'paused',
+            metadata: {},
+            customerId: OTHER_CUSTOMER_ID
+        };
+        const billing = makeBillingMock([foreignSub]);
+        mockBilling(billing);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-foreign-paused' } });
+
+        try {
+            await handleSelfServeResume(ctx as never);
+            expect.unreachable('must refuse a foreign subscription');
+        } catch (err) {
+            expect((err as HTTPException).status).toBe(404);
+        }
+        expect(billing.subscriptions.resume).not.toHaveBeenCalled();
+    });
+
+    it('calls setOwnerServiceSuspension(suspended: false) for an ACCOMMODATION-domain subscription', async () => {
+        const sub = { id: 'sub-accommodation-paused', status: 'paused', metadata: {} };
+        mockBilling(makeBillingMock([sub]));
+        vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(true);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-accommodation-paused' } });
+
+        await handleSelfServeResume(ctx as never);
+
+        expect(setOwnerServiceSuspension).toHaveBeenCalledWith({
+            userId: 'user-123',
+            suspended: false,
+            db: expect.anything()
+        });
+    });
+
+    it('does NOT call setOwnerServiceSuspension for a GASTRONOMY-domain subscription (dual-owner regression)', async () => {
+        const gastronomySub = { id: 'sub-gastronomy-paused', status: 'paused', metadata: {} };
+        mockBilling(makeBillingMock([gastronomySub]));
+        vi.mocked(isAccommodationDomainSubscription).mockResolvedValue(false);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-gastronomy-paused' } });
+
+        await handleSelfServeResume(ctx as never);
+
+        expect(setOwnerServiceSuspension).not.toHaveBeenCalled();
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: 'sub-gastronomy-paused',
+            subscriptionStatus: 'active',
+            source: 'host-resume'
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1280 regression: resume must call the bridge too, so a commerce
+    // listing paused earlier comes back PUBLIC.
+    // -----------------------------------------------------------------------
+
+    it('HOS-1280: calls reconcileSubscriptionLinkedEntities and reconcilePartnerForSubscription with the active status, after resume commits', async () => {
+        const sub = {
+            id: 'sub-paused-1',
+            status: 'paused',
+            metadata: {},
+            cancelAtPeriodEnd: false
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-paused-1' } });
+
+        await handleSelfServeResume(ctx as never);
+
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        expect(reconcileSubscriptionLinkedEntities).toHaveBeenCalledWith({
+            subscriptionId: 'sub-paused-1',
+            subscriptionStatus: 'active',
+            source: 'host-resume'
+        });
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledTimes(1);
+        expect(reconcilePartnerForSubscription).toHaveBeenCalledWith({
+            subscriptionId: 'sub-paused-1',
+            subscriptionStatus: 'active',
+            source: 'host-resume'
+        });
+
+        const resumeOrder = billing.subscriptions.resume.mock.invocationCallOrder[0] as number;
+        const bridgeOrder = vi.mocked(reconcileSubscriptionLinkedEntities).mock
+            .invocationCallOrder[0] as number;
+        expect(resumeOrder).toBeLessThan(bridgeOrder);
+    });
+
     // ── THE regression guard: a soft-cancelled paused sub must NOT be resumable ──
-    it('rejects with 409 when the only paused sub is scheduled for cancellation (HOS-236)', async () => {
+    it('rejects with 409 when the named paused sub is scheduled for cancellation (HOS-236)', async () => {
         const softCancelled = {
             id: 'sub-softcancel-1',
             status: 'paused',
@@ -449,7 +1131,7 @@ describe('handleSelfServeResume', () => {
         };
         const billing = makeBillingMock([softCancelled]);
         mockBilling(billing);
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-softcancel-1' } });
 
         try {
             await handleSelfServeResume(ctx as never);
@@ -464,33 +1146,9 @@ describe('handleSelfServeResume', () => {
         expect(billing.subscriptions.resume).not.toHaveBeenCalled();
     });
 
-    it('resumes the genuinely-paused sub and skips the soft-cancelled one when both exist', async () => {
-        const softCancelled = {
-            id: 'sub-softcancel-2',
-            status: 'paused',
-            metadata: {},
-            cancelAtPeriodEnd: true
-        };
-        const resumable = {
-            id: 'sub-paused-2',
-            status: 'paused',
-            metadata: {},
-            cancelAtPeriodEnd: false
-        };
-        const billing = makeBillingMock([softCancelled, resumable]);
-        mockBilling(billing);
-        const ctx = createMockContext();
-
-        const result = await handleSelfServeResume(ctx as never);
-
-        expect(result.subscriptionId).toBe('sub-paused-2');
-        expect(billing.subscriptions.resume).toHaveBeenCalledWith('sub-paused-2');
-        expect(billing.subscriptions.resume).not.toHaveBeenCalledWith('sub-softcancel-2');
-    });
-
-    it('throws 404 when no paused subscription exists', async () => {
+    it('throws 404 when the named subscription is active, not paused', async () => {
         mockBilling(makeBillingMock([{ id: 'sub-active', status: 'active', metadata: {} }]));
-        const ctx = createMockContext();
+        const ctx = createMockContext({ body: { subscriptionId: 'sub-active' } });
 
         try {
             await handleSelfServeResume(ctx as never);

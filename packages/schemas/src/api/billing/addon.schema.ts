@@ -16,6 +16,7 @@
 import { z } from 'zod';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
 import { queryBooleanParam } from '../../common/query-helpers.js';
+import { ProductDomainEnumSchema } from '../../enums/product-domain.schema.js';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 
@@ -43,9 +44,26 @@ export const PurchaseAddonSchema = z.object({
         .max(50, { message: 'validation.billing.addon.purchase.promoCode.max' })
         .optional(),
     /**
-     * The accommodation this purchase targets (SPEC-309 OQ-3). Required when
-     * the addon's `requiresAccommodationTarget` flag is true (e.g.
-     * `visibility-boost-7d`/`-30d`); ignored for all other addons.
+     * The LISTING this purchase targets (SPEC-309 OQ-3, generalised to the three
+     * verticals by HOS-1286). Required when the addon's
+     * `requiresAccommodationTarget` flag is true (the six `visibility-boost-*`
+     * entries); ignored for all other addons.
+     *
+     * Only the id is accepted. WHICH table it belongs to is derived server-side
+     * from the addon's own `productDomain` — a client that could name the
+     * vertical could pair a gastronomy addon with an accommodation target.
+     *
+     * Validated with `AccommodationIdSchema` because all three listing tables use
+     * `uuid` primary keys and that schema is a UUID check; existence and
+     * ownership are settled by `resolveAddonTargetListing` against the right
+     * table, which is where they belong.
+     */
+    entityId: AccommodationIdSchema.optional(),
+    /**
+     * @deprecated Since HOS-1286 — send {@link entityId} instead.
+     *
+     * Accepted for one release so a client built before the change keeps
+     * working. The server reads `entityId` first and falls back to this.
      */
     accommodationId: AccommodationIdSchema.optional()
 });
@@ -110,8 +128,64 @@ export const AddonResponseSchema = z.object({
      * response validation (`stripWithSchema`) for every addon that predates
      * this field.
      */
-    requiresAccommodationTarget: z.boolean().default(false)
+    requiresAccommodationTarget: z.boolean().default(false),
+    /**
+     * The billing product domain this add-on belongs to (HOS-1060 / HOS-1178).
+     *
+     * Carried on the wire so a consumer READS the domain instead of deriving
+     * it. `apps/web` used to derive it from `affectsLimitKey`
+     * (`lib/billing/addon-domain.ts`, HOS-689) — a second source of truth for
+     * the same fact, able to disagree with the catalogue: it had nothing to
+     * read for an add-on whose `affectsLimitKey` is `null` (coerced to
+     * accommodation by hand) and could not tell apart two add-ons raising the
+     * same cap for different verticals.
+     *
+     * `null` — never a domain guessed on the consumer's behalf — means the
+     * add-on's slug is not in the catalogue (one an operator created through
+     * the admin UI). **Consumers MUST fail CLOSED on `null`**: do not offer
+     * it, do not sell it. `.default(null)` is what turns the
+     * `AddonDefinition`'s `undefined` into an explicit wire value, so the
+     * field is never simply ABSENT from the JSON — an absent field is exactly
+     * what would send a consumer back to deriving.
+     */
+    productDomain: ProductDomainEnumSchema.nullable().default(null)
 });
+
+// ─── Purchasable Addon Response (buyer-facing catalog) ──────────────────────
+
+/**
+ * The buyer-facing add-on catalog shape — {@link AddonResponseSchema} plus the
+ * one fact only the server can answer about how this add-on will actually be
+ * charged (HOS-847).
+ *
+ * A separate schema rather than a field on the public one, because the answer
+ * is only computed on the two protected routes a BUYER reads
+ * (`GET /protected/billing/addons` and `/{slug}`). The admin DTO extends
+ * `AddonResponseSchema` too, and a field it never computes would be a claim
+ * nobody made, answered `false` for every row.
+ */
+export const PurchasableAddonResponseSchema = AddonResponseSchema.extend({
+    /**
+     * Whether buying this add-on TODAY opens a recurring charge.
+     *
+     * Not the raw feature flag — the flag is one of three conditions the server
+     * gate applies, and the other two are per-add-on (its `billingType`, and
+     * the real `billing_addons.billing_interval` behind it, which is read
+     * POSITIVELY because `billingType` is derived by exclusion). This is that
+     * gate's own answer for this row, so a consumer can say "you will be
+     * charged every month" exactly where the checkout would in fact charge
+     * every month, and stay silent everywhere else.
+     *
+     * `false` means the purchase falls to the one-time path: charged once, and
+     * the benefit does not expire. `.default(false)` makes an uncomputed value
+     * fail CLOSED — which is also the production behaviour today, with the
+     * recurring charging path off.
+     */
+    recurringChargingEnabled: z.boolean().default(false)
+});
+
+/** TypeScript type inferred from {@link PurchasableAddonResponseSchema} */
+export type PurchasableAddonResponse = z.infer<typeof PurchasableAddonResponseSchema>;
 
 // ─── User Addon Response ────────────────────────────────────────────────────
 

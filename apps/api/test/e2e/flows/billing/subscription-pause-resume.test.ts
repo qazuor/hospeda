@@ -364,8 +364,14 @@ describe('SPEC-143 trial pause/resume e2e', () => {
          * handlers read: billingEnabled, billingCustomerId, and the actor
          * (getActorFromContext reads `c.get('actor')`). No HTTP layer needed —
          * the handlers are plain async functions.
+         *
+         * HOS-1278: the body now MUST carry `subscriptionId` — the route
+         * resolves by id + ownership instead of guessing via
+         * `getByCustomerId()`. Defaults to the outer `subscriptionId` (the
+         * seeded accommodation-domain subscription); pass a different id to
+         * exercise a foreign/other subscription.
          */
-        function makeSelfServeCtx() {
+        function makeSelfServeCtx(targetSubscriptionId: string = subscriptionId) {
             const store: Record<string, unknown> = {
                 billingEnabled: true,
                 billingCustomerId: customerId,
@@ -373,7 +379,7 @@ describe('SPEC-143 trial pause/resume e2e', () => {
             };
             return {
                 get: (key: string) => store[key],
-                req: { json: async () => ({}) }
+                req: { json: async () => ({ subscriptionId: targetSubscriptionId }) }
             } as unknown as Parameters<typeof handleSelfServePause>[0];
         }
 

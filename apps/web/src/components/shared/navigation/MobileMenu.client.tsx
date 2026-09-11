@@ -15,9 +15,18 @@
  * business-panel shortcut + Suscripción) renders the SAME curated set as
  * the avatar dropdown (`UserMenu.client.tsx`), via `getCuratedAccountNav`
  * (HOS-131 §6.5 mobile "option A" — one curated set, not two divergent
- * lists). The session zone (language, theme, sign-out, and — staff only —
- * the admin-panel link built by the shared `buildAdminPanelItem`,
- * `@/lib/admin-panel-link`) mirrors UserMenu's session zone too.
+ * lists). The session zone (sign-out, and — staff only — the admin-panel
+ * link built by the shared `buildAdminPanelItem`, `@/lib/admin-panel-link`)
+ * mirrors UserMenu's session zone too.
+ *
+ * **HOS-312**: the language/theme selectors are GUEST-ONLY (gated by
+ * `showGuestPreferences`), unlike UserMenu's desktop session zone which
+ * deliberately keeps them for every visitor (see that file's JSDoc). A
+ * signed-in visitor's preferences belong to their profile, not a menu
+ * toggle whose persistence (account vs. this session/device) would be
+ * ambiguous. See `showGuestPreferences` below for why gating on `!user`
+ * alone would flash the selectors for a signed-in visitor on a page whose
+ * middleware didn't parse the session.
  *
  * Auth state (user, permissions) resolves the SAME way UserMenu's does:
  * `useAccountPermissions` (`@/hooks/use-account-permissions`) in
@@ -36,7 +45,7 @@
  * sourced from `PUBLISH_CTA_OPTIONS` — see that file's JSDoc), so this
  * component no longer needs the resolved `roles` set at all.
  *
- * Tasks: T-074, HOS-311, HOS-691
+ * Tasks: T-074, HOS-311, HOS-691, HOS-312
  */
 
 import { CloseIcon } from '@repo/icons';
@@ -223,6 +232,27 @@ export function MobileMenu({
         if (permissions === null) return null;
         return buildAdminPanelItem({ locale, adminPanelUrl, permissions });
     }, [locale, adminPanelUrl, permissions]);
+
+    // ------------------------------------------------------------------
+    // HOS-312: the language/theme selectors are guest-only. A signed-in
+    // visitor's preferences belong to their profile now, not a menu
+    // toggle whose persistence (account vs. this session/device) would be
+    // ambiguous.
+    //
+    // `user === null` alone is NOT a safe gate: `initialUser` is only an
+    // SSR HINT and reads `null` both for a real guest AND for a
+    // signed-in visitor on a page whose middleware didn't parse the
+    // session (see the file JSDoc) — gating on `!user` would flash the
+    // selectors for the latter until `useAccountPermissions` resolves and
+    // corrects `user`. `permissions` starts `null` and only settles (to
+    // `[]` for a guest, populated for a signed-in user) in the very same
+    // resolution step that also corrects `user`, so waiting for
+    // `permissions !== null` guarantees `user` is trustworthy by the time
+    // this flips. Fail-closed while indeterminate — same contract as
+    // `adminPanelItem` above: better a guest waits an instant than a
+    // signed-in user sees the selectors flash.
+    // ------------------------------------------------------------------
+    const showGuestPreferences = user === null && permissions !== null;
 
     // ------------------------------------------------------------------
     // Toggle handler — listens for a window-level CustomEvent dispatched
@@ -493,24 +523,26 @@ export function MobileMenu({
                 onLinkClick={handleLinkClick}
             />
 
-            {/* Language + theme controls — shared primitives */}
-            <div className={styles.preferencesSection}>
-                <div className={styles.preferencesGroup}>
-                    <span className={styles.preferencesLabel}>{t('nav.language')}</span>
-                    <LanguageSwitcher
-                        locale={locale}
-                        currentPath={currentPath}
-                        variant="mobile"
-                    />
+            {/* Language + theme controls — guest-only, HOS-312 (see showGuestPreferences) */}
+            {showGuestPreferences && (
+                <div className={styles.preferencesSection}>
+                    <div className={styles.preferencesGroup}>
+                        <span className={styles.preferencesLabel}>{t('nav.language')}</span>
+                        <LanguageSwitcher
+                            locale={locale}
+                            currentPath={currentPath}
+                            variant="mobile"
+                        />
+                    </div>
+                    <div className={styles.preferencesGroup}>
+                        <span className={styles.preferencesLabel}>{t('nav.theme')}</span>
+                        <ThemeControl
+                            variant="mobile"
+                            showLabels
+                        />
+                    </div>
                 </div>
-                <div className={styles.preferencesGroup}>
-                    <span className={styles.preferencesLabel}>{t('nav.theme')}</span>
-                    <ThemeControl
-                        variant="mobile"
-                        showLabels
-                    />
-                </div>
-            </div>
+            )}
 
             {/* Session zone: admin panel link (staff/host only, HOS-131 §6.5) */}
             {adminPanelItem && (

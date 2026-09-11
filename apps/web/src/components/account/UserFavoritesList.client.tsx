@@ -36,10 +36,13 @@ import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import type { BookmarkItem, BookmarksApiResponse, DeleteApiResponse } from './BookmarkGrid';
 import { BookmarkGrid, EmptyFavorites } from './BookmarkGrid';
 import { CollectionCard } from './CollectionCard';
+import { COLLECTION_CREATED_EVENT } from './collection-created-event';
 import type { CollectionOption } from './MoveToCollectionModal.client';
 import { MoveToCollectionModal } from './MoveToCollectionModal.client';
 import styles from './UserFavoritesList.module.css';
@@ -179,8 +182,16 @@ interface CollectionsApiResponse {
         readonly items: readonly BookmarkCollectionItem[];
         readonly total: number;
     };
-    readonly error?: { readonly message: string };
+    readonly error?: { readonly code?: string | null; readonly message: string };
 }
+
+/**
+ * View state of the "Mis colecciones" section.
+ * `'upgrade'` means the collections list endpoint answered 403
+ * `ENTITLEMENT_REQUIRED` — the actor's plan doesn't include collections at
+ * all, as opposed to an empty list they're free to fill (HOS-899).
+ */
+type CollectionsAccess = 'ok' | 'upgrade';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -223,6 +234,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     // ── Collections state (fetched once on mount) ──────────────────────────
     const [collections, setCollections] = useState<readonly BookmarkCollectionItem[]>([]);
     const [collectionsLoading, setCollectionsLoading] = useState(true);
+    const [collectionsAccess, setCollectionsAccess] = useState<CollectionsAccess>('ok');
 
     // ── Move-to-collection modal state ─────────────────────────────────────
     const [bookmarkToMove, setBookmarkToMove] = useState<BookmarkItem | null>(null);
@@ -311,10 +323,34 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 const res = await fetch(`${base}${COLLECTIONS_API_BASE}?${params.toString()}`, {
                     credentials: 'include'
                 });
-                if (!res.ok || cancelled) return;
+                if (cancelled) return;
+
+                if (!res.ok) {
+                    // Plan-gate detection: the API signals "collections not
+                    // included in your plan" as a 403 with
+                    // error.code === 'ENTITLEMENT_REQUIRED' (see
+                    // apps/api/src/middlewares/tourist-entitlements.ts#gateCollections).
+                    // Without this the section fell back to the ordinary empty
+                    // state, indistinguishable from "no collections yet"
+                    // (HOS-899).
+                    if (res.status === 403) {
+                        try {
+                            const errorBody = (await res.json()) as CollectionsApiResponse;
+                            if (errorBody.error?.code === 'ENTITLEMENT_REQUIRED') {
+                                if (!cancelled) setCollectionsAccess('upgrade');
+                                return;
+                            }
+                        } catch {
+                            // Non-JSON error body — fall through to the generic failure below.
+                        }
+                    }
+                    return;
+                }
+
                 const body = (await res.json()) as CollectionsApiResponse;
                 if (!cancelled && body.success && body.data && Array.isArray(body.data.items)) {
                     setCollections(body.data.items);
+                    setCollectionsAccess('ok');
                 }
             } catch {
                 // Non-critical: collections section will be empty but won't break the page
@@ -489,15 +525,45 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
             const res = await fetch(`${base}${COLLECTIONS_API_BASE}?${params.toString()}`, {
                 credentials: 'include'
             });
-            if (!res.ok) return;
+
+            if (!res.ok) {
+                // Same plan-gate detection as the initial fetch (see there for
+                // why this matters) — a mid-session entitlement change (e.g.
+                // a downgrade) must flip the section to the upgrade cartel
+                // instead of silently leaving stale data on screen.
+                if (res.status === 403) {
+                    try {
+                        const errorBody = (await res.json()) as CollectionsApiResponse;
+                        if (errorBody.error?.code === 'ENTITLEMENT_REQUIRED') {
+                            setCollectionsAccess('upgrade');
+                        }
+                    } catch {
+                        // Non-JSON error body — best-effort refetch, ignore.
+                    }
+                }
+                return;
+            }
+
             const body = (await res.json()) as CollectionsApiResponse;
             if (body.success && body.data && Array.isArray(body.data.items)) {
                 setCollections(body.data.items);
+                setCollectionsAccess('ok');
             }
         } catch {
             // Non-critical: refetch is a best-effort sync after a move
         }
     }, [base]);
+
+    // Broadcast by CreateCollectionCTA and MoveToCollectionModal after a
+    // successful collection create (HOS-999) — refresh "Mis colecciones" the
+    // same way a move does, without a full page reload.
+    useEffect(() => {
+        const onCollectionCreated = () => {
+            void refetchCollections();
+        };
+        window.addEventListener(COLLECTION_CREATED_EVENT, onCollectionCreated);
+        return () => window.removeEventListener(COLLECTION_CREATED_EVENT, onCollectionCreated);
+    }, [refetchCollections]);
 
     /**
      * Called after a successful move. Updates local state, refreshes the
@@ -657,6 +723,44 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
 
     function renderCollectionsSection() {
         const collectionsTitle = t('account.favorites.collections.title', 'Mis colecciones');
+
+        // Plan-gate: the actor's entitlement doesn't include collections at
+        // all. Rendered instead of the section body — showing the ordinary
+        // empty state here would read as "you haven't created one yet",
+        // which is false and hides that this is a paid feature (HOS-899).
+        if (collectionsAccess === 'upgrade') {
+            const upgradeHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
+            return (
+                <section
+                    className={styles.sectionBlock}
+                    aria-label={collectionsTitle}
+                >
+                    <div className={styles.sectionHeading}>
+                        <h3 className={styles.sectionHeadingTitle}>{collectionsTitle}</h3>
+                    </div>
+                    <div
+                        className={styles.collectionsUpgrade}
+                        aria-live="polite"
+                    >
+                        <p className={styles.collectionsUpgradeTitle}>
+                            {t('account.favorites.collections.upgrade.title', 'Colecciones')}
+                        </p>
+                        <p className={styles.collectionsUpgradeMessage}>
+                            {t(
+                                'account.favorites.collections.upgrade.message',
+                                'Las colecciones están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
+                            )}
+                        </p>
+                        <a
+                            href={upgradeHref}
+                            className={styles.collectionsUpgradeCta}
+                        >
+                            {t('account.favorites.collections.upgrade.cta', 'Ver planes')}
+                        </a>
+                    </div>
+                </section>
+            );
+        }
 
         return (
             <section

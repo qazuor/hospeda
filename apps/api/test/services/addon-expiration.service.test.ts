@@ -36,6 +36,9 @@ vi.mock('@repo/db/schemas', () => ({
         entitlementAdjustments: 'entitlement_adjustments',
         metadata: 'metadata',
         entitlementRemovalPending: 'entitlement_removal_pending',
+        // HOS-847 PR 6: the soft-cancel window's two columns.
+        cancelAtPeriodEnd: 'cancel_at_period_end',
+        currentPeriodEnd: 'current_period_end',
         createdAt: 'created_at',
         updatedAt: 'updated_at'
     }
@@ -43,6 +46,10 @@ vi.mock('@repo/db/schemas', () => ({
 
 vi.mock('drizzle-orm', () => ({
     and: vi.fn((...args) => ({ type: 'and', args })),
+    // HOS-847 PR 6: `findExpiredAddons` now unions two windows. A missing `or`
+    // here is not a mock detail — it throws inside the query and every
+    // findExpiredAddons test reports `success: false`.
+    or: vi.fn((...args) => ({ type: 'or', args })),
     eq: vi.fn((col, val) => ({ type: 'eq', col, val })),
     lte: vi.fn((col, val) => ({ type: 'lte', col, val })),
     gte: vi.fn((col, val) => ({ type: 'gte', col, val })),
@@ -52,6 +59,12 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 vi.mock('../../src/services/addon-entitlement.service');
+// HOS-847 PR 6: `expired` is a terminal status, so a recurring add-on's own
+// MercadoPago preapproval has to be closed before it is written. Defaults to
+// `no-preapproval` (every one-time add-on) so the rest of the suite is unchanged.
+vi.mock('../../src/services/addon-preapproval-cancel', () => ({
+    closeAddonPreapproval: vi.fn()
+}));
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
         info: vi.fn(),
@@ -66,6 +79,7 @@ import { getDb } from '@repo/db';
 import { isNull } from 'drizzle-orm';
 import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { AddonExpirationService } from '../../src/services/addon-expiration.service';
+import { closeAddonPreapproval } from '../../src/services/addon-preapproval-cancel';
 
 // Get typed mock references
 const mockGetDb = vi.mocked(getDb);
@@ -150,6 +164,13 @@ describe('AddonExpirationService', () => {
     beforeEach(() => {
         // Reset mocks
         vi.clearAllMocks();
+
+        // HOS-847 PR 6: re-established after clearAllMocks, which wipes
+        // implementations set in the vi.mock factory.
+        vi.mocked(closeAddonPreapproval).mockResolvedValue({
+            closed: true,
+            kind: 'no-preapproval'
+        });
 
         // Setup mock database
         mockDb = {
@@ -315,6 +336,84 @@ describe('AddonExpirationService', () => {
             expect(expired?.entitlementAdjustments).toBeDefined();
 
             vi.useRealTimers();
+        });
+    });
+
+    describe('expireAddon — HOS-847 PR 6: the preapproval closes first', () => {
+        /** A recurring add-on: it has a preapproval of its own. */
+        const recurringPurchase = () => ({
+            ...createMockAddonPurchase({ status: 'active' }),
+            mpSubscriptionId: 'preapproval-expiring'
+        });
+
+        it('refuses to expire the row when MercadoPago will not close the preapproval', async () => {
+            mockDb.where.mockReturnThis();
+            mockDb.limit.mockResolvedValue([recurringPurchase()]);
+            vi.mocked(closeAddonPreapproval).mockResolvedValue({
+                closed: false,
+                reason: 'MP 502'
+            });
+
+            const result = await service.expireAddon({ purchaseId: 'purchase_123' });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('SERVICE_UNAVAILABLE');
+            // `expired` is as terminal as `canceled` — it takes the row out of
+            // the `status = 'active'` filter every sweep uses, including the one
+            // that would have retried the close.
+            expect(mockDb.update).not.toHaveBeenCalled();
+            expect(mockEntitlementService.removeAddonEntitlements).not.toHaveBeenCalled();
+        });
+
+        it('does NOT re-cancel the preapproval of a soft-cancelled row', async () => {
+            // Its preapproval was already hard-cancelled at cancellation time,
+            // under a fail-closed guarantee. Asking MercadoPago to cancel it
+            // again can answer with an error, which `closeAddonPreapproval`
+            // reports as `closed: false` — and this function reads that as "do
+            // not expire", stranding the row `active` forever with a benefit
+            // nobody pays for. Being over-careful here produces exactly the
+            // state the whole design exists to avoid.
+            mockDb.where.mockReturnThis();
+            mockDb.limit.mockResolvedValue([
+                { ...recurringPurchase(), cancelAtPeriodEnd: true, expiresAt: null }
+            ]);
+
+            const result = await service.expireAddon({ purchaseId: 'purchase_123' });
+
+            expect(result.success).toBe(true);
+            expect(closeAddonPreapproval).not.toHaveBeenCalled();
+            expect(mockDb.set).toHaveBeenCalledWith(expect.objectContaining({ status: 'expired' }));
+        });
+
+        it('CONTROL: a recurring row that was NOT soft-cancelled still goes through the close', async () => {
+            // Keeps the exemption above narrow. If it widened to "any recurring
+            // row", an add-on expiring for any other reason would be revoked
+            // while MercadoPago kept charging it — HOS-751 again.
+            mockDb.where.mockReturnThis();
+            mockDb.limit.mockResolvedValue([{ ...recurringPurchase(), cancelAtPeriodEnd: false }]);
+
+            await service.expireAddon({ purchaseId: 'purchase_123' });
+
+            expect(closeAddonPreapproval).toHaveBeenCalledTimes(1);
+        });
+
+        it('CONTROL: the same purchase IS expired once the preapproval closes', async () => {
+            // Without this, the assertions above would also hold against an
+            // expireAddon that had stopped doing anything at all.
+            mockDb.where.mockReturnThis();
+            mockDb.limit.mockResolvedValue([recurringPurchase()]);
+            vi.mocked(closeAddonPreapproval).mockResolvedValue({
+                closed: true,
+                kind: 'cancelled'
+            });
+
+            const result = await service.expireAddon({ purchaseId: 'purchase_123' });
+
+            expect(result.success).toBe(true);
+            expect(mockDb.set).toHaveBeenCalledWith(expect.objectContaining({ status: 'expired' }));
+            expect(closeAddonPreapproval).toHaveBeenCalledWith(
+                expect.objectContaining({ source: 'expiry' })
+            );
         });
     });
 

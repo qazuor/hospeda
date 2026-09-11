@@ -294,7 +294,35 @@ export default defineConfig({
             // `tiptap-markdown`, a runtime dependency of this app, so the bridge is
             // live rather than build-time tooling.
             noExternal: ['sanitize-html', 'recharts', 'markdown-it'],
-            external: ['cloudinary', 'image-size']
+            external: ['cloudinary', 'image-size'],
+            // `noExternal` alone fixes the BUILD and leaves DEV broken (HOS-1166).
+            //
+            // In `vite build`, Rollup resolves the CommonJS -> ESM interop while
+            // bundling, so no `require()` survives into the server chunk — which is
+            // why production has been healthy since HOS-370 and why the list above
+            // was believed to be the whole fix.
+            //
+            // The dev server never bundles. It loads each `noExternal` package
+            // through `ssrLoadModule` -> `ssrTransform`, which rewrites ESM import
+            // syntax but does NOT convert CommonJS: the module is executed as ESM
+            // with its `require` calls intact. `sanitize-html/index.js` calls
+            // `require` on its first line, so EVERY page that reaches it answers 500
+            // with `ReferenceError: require is not defined` — in practice every
+            // detail page of the site, while listing pages stay green.
+            //
+            // Only esbuild's dependency pre-bundling performs that CommonJS -> ESM
+            // conversion, and for the SSR graph it has to be asked for by name.
+            // Hence this list, which mirrors `noExternal` above: same packages, same
+            // reason, the half that dev needs.
+            //
+            // Verified by mutation on 2026-09-04, not by reasoning: with these three
+            // entries `/es/alojamientos/{slug}/` and `/es/gastronomia/{slug}/` return
+            // 200; removing them and reloading returns both to 500. A dev-server
+            // restart alone does NOT fix it, so the entries are the cause and not a
+            // cleared cache.
+            optimizeDeps: {
+                include: ['sanitize-html', 'recharts', 'markdown-it']
+            }
         },
         define: {
             'import.meta.env.PUBLIC_API_URL': JSON.stringify(HOSPEDA_API_URL),

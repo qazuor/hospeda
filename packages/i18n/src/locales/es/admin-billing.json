@@ -92,6 +92,7 @@
             "neverRun": "Sin corridas",
             "noNextRun": "—",
             "lastRunSuccess": "OK",
+            "lastRunPartial": "Parcial",
             "lastRunFailed": "Falló",
             "lastRunTimeout": "Timeout"
         },
@@ -196,12 +197,13 @@
             "complex-pro": "Plan profesional para complejos con analíticas consolidadas.",
             "complex-premium": "Plan premium para grandes complejos con todas las funcionalidades.",
             "tourist-free": "Plan gratuito para turistas. Funcionalidades básicas incluidas.",
-            "tourist-plus": "Plan Plus para turistas frecuentes. Comparador, historial de búsquedas y alertas de precio.",
             "tourist-vip": "Plan VIP para turistas exigentes. Todas las funcionalidades premium incluidas."
         },
         "statusActive": "Activo",
         "statusInactive": "Inactivo",
         "statusDefault": "Por defecto",
+        "statusUnlisted": "No figura en el listado público",
+        "statusUnlistedHint": "Activo y cobrando: no aparece en los listados públicos de planes",
         "actionActivate": "Activar",
         "actionDeactivate": "Desactivar",
         "actionEdit": "Editar",
@@ -240,6 +242,8 @@
                 "name": "Nombre",
                 "namePlaceholder": "Basico Propietario",
                 "category": "Categoria",
+                "productDomain": "Dominio de producto",
+                "productDomainHint": "Qué vertical cuenta esta suscripción. No se puede cambiar después de crear el plan.",
                 "description": "Descripcion",
                 "descriptionPlaceholder": "Describe el plan...",
                 "monthlyArs": "Mensual (ARS)",
@@ -264,7 +268,8 @@
                 "accommodation": "Alojamiento",
                 "complex": "Complejo",
                 "tourist": "Turista",
-                "ai": "Inteligencia artificial"
+                "ai": "Inteligencia artificial",
+                "commerce": "Comercio"
             },
             "cancelButton": "Cancelar",
             "saveButton": "Guardar cambios",
@@ -309,6 +314,8 @@
         "confirmActivateDesc": "Vas a forzar la activación del add-on",
         "confirmActivateDescSuffix": "para el cliente",
         "confirmActivateDescEnd": "Esta acción cambiará el estado a \"activo\" de forma inmediata.",
+        "confirmToggleActivate": "¿Activar este add-on?",
+        "confirmToggleDeactivate": "¿Desactivar este add-on?",
         "forceExpire": "Forzar expiración",
         "forceActivate": "Forzar activación",
         "toastExpiredTitle": "Add-on expirado",
@@ -497,8 +504,6 @@
             "receiptHint": "Enviar recibo automáticamente al procesar pago",
             "trialReminderLabel": "Recordatorio de fin de prueba",
             "trialReminderHint": "Avisar antes de que venza el período de prueba",
-            "trialReminderDaysLabel": "Días de anticipación del recordatorio",
-            "trialReminderDaysHint": "Enviar el recordatorio X días antes del vencimiento",
             "paymentFailedLabel": "Notificar pago fallido",
             "paymentFailedHint": "Avisar al cliente cuando un pago falla",
             "subscriptionCancelledLabel": "Notificar cancelación de suscripción",
@@ -968,6 +973,170 @@
         "unknownUser": "Usuario no identificado",
         "unknownPlan": "Sin plan"
     },
+    "reconciliation": {
+        "title": "Rescate de pagos huérfanos",
+        "description": "Compara MercadoPago contra el libro contable local y propone vínculos. La herramienta PROPONE, un humano DECIDE: nada se vincula automáticamente.",
+        "table": {
+            "title": "Divergencias",
+            "loading": "Cargando divergencias...",
+            "errorLoading": "Error al cargar divergencias",
+            "empty": "No hay divergencias",
+            "emptyTitle": "No se encontraron divergencias",
+            "emptyHint": "MercadoPago y el libro contable local coinciden en el rango consultado.",
+            "divergenceCount_one": "{{count}} divergencia",
+            "divergenceCount_other": "{{count}} divergencias",
+            "columns": {
+                "kind": "Tipo",
+                "identifier": "Identificador",
+                "payerEmail": "Email del pagador",
+                "amount": "Monto",
+                "date": "Fecha",
+                "mpStatus": "Estado en MP",
+                "candidates": "Candidatos",
+                "actions": "Acciones"
+            },
+            "viewButton": "Ver detalle",
+            "backfillButton": "Registrar pago",
+            "forceLinkButton": "Vincular"
+        },
+        "kinds": {
+            "unrecordedPayment": "Pago sin registrar",
+            "orphanPreapproval": "Preapproval huérfano"
+        },
+        "notAttributableYet": "Todavía no se puede atribuir",
+        "matchedOn": {
+            "externalReference": "Referencia externa",
+            "payerEmail": "Email del pagador",
+            "mpPlanId": "Plan de MP",
+            "preapprovalId": "ID de preapproval"
+        },
+        "detailDialog": {
+            "title": "Detalle de la divergencia",
+            "mpSection": "Datos de MercadoPago",
+            "payerSection": "Identidad del pagador",
+            "candidatesSection": "Candidatos locales",
+            "noCandidates": "No se encontraron candidatos. No hay nada para proponer: el operador debe buscar manualmente.",
+            "localStatusLabel": "Estado local:",
+            "useCandidateButton": "Usar este"
+        },
+        "fields": {
+            "mpPaymentId": "ID de pago (MP)",
+            "mpStatusDetail": "Detalle del estado",
+            "approvedAt": "Aprobado el",
+            "payerId": "ID del pagador (MP)",
+            "preapprovalId": "ID de preapproval (MP)",
+            "description": "Descripción",
+            "reason": "Motivo (MP)",
+            "nextPaymentDate": "Próximo cobro",
+            "preapprovalPlanId": "ID de plan de preapproval",
+            "sourcePaymentId": "Pago de origen",
+            "amount": "Monto",
+            "mpStatus": "Estado en MP",
+            "createdAt": "Creado el",
+            "externalReference": "Referencia externa",
+            "payerEmailRaw": "Email del pagador (crudo, MP)",
+            "payerEmailFromPayment": "Email del pagador (del pago vinculado)"
+        },
+        "payerEmailRawEmptyHint": "MercadoPago devuelve este campo vacío en todos los preapprovals reales. No es un error de la herramienta.",
+        "actionDialog": {
+            "forceLinkTitle": "Vincular preapproval a una suscripción local",
+            "forceLinkDescription": "Une este preapproval de MercadoPago a la suscripción local que elijas. Esta acción queda auditada.",
+            "backfillTitle": "Registrar pago en el libro contable",
+            "backfillDescription": "Crea la fila de billing_payments que falta para este cobro ya aprobado. Esta acción queda auditada.",
+            "auditWarning": "Esta acción escribe en el libro contable y queda auditada a tu nombre. No se puede deshacer con un click.",
+            "mpTargetLabel": "Identificador de MercadoPago",
+            "localSubscriptionIdLabel": "ID de suscripción local",
+            "localSubscriptionIdPlaceholder": "Pegá el ID de la suscripción local...",
+            "localSubscriptionIdHint": "Este campo arranca vacío siempre. Para copiar un candidato acá, abrí el detalle y usá \"Usar este\".",
+            "reasonLabel": "Motivo",
+            "reasonPlaceholder": "Explicá por qué estos dos registros son la misma persona/suscripción (mínimo 10 caracteres)...",
+            "reasonHint": "Este texto queda en el registro de auditoría. Sé específico: es lo único que explica el vínculo a futuro.",
+            "processingButton": "Procesando...",
+            "forceLinkConfirmButton": "Vincular",
+            "backfillConfirmButton": "Registrar pago",
+            "forceLinkSuccess": "Preapproval vinculado correctamente",
+            "forceLinkError": "Error al vincular:",
+            "backfillSuccess": "Pago registrado correctamente",
+            "backfillError": "Error al registrar el pago:"
+        },
+        "truncatedBanner": {
+            "title": "Reporte parcial",
+            "description": "El barrido de MercadoPago llegó al techo de páginas configurado. El total mostrado es un piso, no un conteo completo: puede haber más divergencias sin listar."
+        },
+        "filters": {
+            "title": "Filtros",
+            "kindLabel": "Tipo",
+            "allKinds": "Todos",
+            "sinceLabel": "Desde",
+            "sinceHint": "Por defecto se consultan los últimos 90 días. Cada consulta cuesta llamadas paceadas a MercadoPago."
+        },
+        "mpCallStats": "{{calls}} llamadas a MercadoPago ({{rateLimited}} limitadas por rate limit)",
+        "pagination": {
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "pageOf": "Página {{page}} de {{totalPages}}"
+        },
+        "queue": {
+            "title": "Cola de pagos huérfanos",
+            "loading": "Cargando la cola...",
+            "errorLoading": "Error al cargar la cola",
+            "emptyTitle": "No hay pagos en la cola",
+            "emptyHint": "Ningún cobro quedó sin asentar con este filtro. La cola se escribe en el momento de la falla, así que vacía significa vacía.",
+            "unresolvedCount_one": "{{count}} pago sin resolver en total",
+            "unresolvedCount_other": "{{count}} pagos sin resolver en total",
+            "resolveButton": "Resolver",
+            "livemodeReal": "Plata real",
+            "livemodeSandbox": "Sandbox",
+            "columns": {
+                "detectedAt": "Detectado",
+                "providerPaymentId": "ID de pago (MP)",
+                "flow": "Flujo",
+                "reason": "Motivo",
+                "amount": "Monto",
+                "livemode": "Entorno",
+                "subscriptionId": "Suscripción local",
+                "actions": "Acciones"
+            },
+            "flows": {
+                "planChangeUpgrade": "Upgrade de plan",
+                "annualUpfront": "Anual por adelantado",
+                "addonPurchase": "Compra de add-on",
+                "authorizedPaymentRetry": "Reintento de cobro recurrente"
+            },
+            "reasons": {
+                "subscriptionNotFound": "Suscripción inexistente",
+                "statusNotApplicable": "Estado no aplicable",
+                "ledgerWriteFailed": "Falló la escritura del asiento"
+            },
+            "statuses": {
+                "unresolved": "Sin resolver",
+                "resolved": "Resueltos",
+                "dismissed": "Descartados"
+            },
+            "resolutions": {
+                "resolved": "Resuelto — la plata quedó asentada o devuelta",
+                "dismissed": "Descartado — no había nada que hacer"
+            },
+            "filters": {
+                "title": "Filtros de la cola",
+                "statusLabel": "Estado"
+            },
+            "resolveDialog": {
+                "title": "Registrar el veredicto sobre este pago",
+                "description": "Deja constancia de qué se hizo con este cobro. NO asienta el pago: para eso está «Registrar pago» sobre la divergencia correspondiente.",
+                "auditWarning": "Esta acción queda auditada con tu usuario y tu nota. Una fila cerrada no se puede volver a abrir desde acá.",
+                "resolutionLabel": "Veredicto",
+                "resolutionHint": "«Resuelto» significa que la plata quedó contabilizada o devuelta. «Descartado» significa que no se debía nada (un cobro de prueba, un duplicado).",
+                "noteLabel": "Qué se hizo",
+                "notePlaceholder": "Ej: asenté el pago con la herramienta de rescate, referencia MP 174625958196.",
+                "noteHint": "Mínimo 10 caracteres. Es lo único que le va a explicar a quien lea esto en seis meses si el cliente quedó cubierto.",
+                "confirmButton": "Registrar veredicto",
+                "processingButton": "Registrando...",
+                "success": "Veredicto registrado",
+                "error": "No se pudo registrar el veredicto:"
+            }
+        }
+    },
     "subscriptions": {
         "title": "Suscripciones",
         "description": "Gestiona las suscripciones activas de los usuarios",
@@ -980,7 +1149,8 @@
             "paused": "Pausada",
             "comp": "Cortesía",
             "abandoned": "Abandonada",
-            "pendingProvider": "Esperando al proveedor"
+            "pendingProvider": "Esperando al proveedor",
+            "courtesy": "Períodos regalados"
         },
         "promoEffect": {
             "title": "Promoción activa",
@@ -1065,7 +1235,9 @@
             "extendTrialButton": "Extender prueba",
             "cancelSubscriptionButton": "Cancelar suscripción",
             "pauseButton": "Pausar",
-            "resumeButton": "Reanudar"
+            "resumeButton": "Reanudar",
+            "grantCourtesyButton": "Regalar períodos",
+            "grantCompButton": "Otorgar cortesía"
         },
         "paymentHistory": {
             "title": "Historial de pagos",
@@ -1154,7 +1326,12 @@
             "paused": "Suscripción pausada",
             "resumed": "Suscripción reanudada",
             "pauseError": "Error al pausar suscripción:",
-            "resumeError": "Error al reanudar suscripción:"
+            "resumeError": "Error al reanudar suscripción:",
+            "courtesyGranted": "Períodos regalados",
+            "courtesyError": "No se pudo regalar:",
+            "compGranted": "Cortesía otorgada:",
+            "compError": "No se pudo otorgar la cortesía:",
+            "plansTruncated": "No se pudieron cargar todos los planes para otorgar cortesía, se ven"
         },
         "unknownUser": "Usuario no identificado",
         "unknownPlan": "Plan no identificado",
@@ -1166,7 +1343,31 @@
             "gastronomy": "Gastronomía",
             "experience": "Experiencia",
             "partner": "Partner",
+            "tourist": "Turista",
+            "addon": "Complemento",
             "unknown": "Otro"
+        },
+        "courtesyDialog": {
+            "title": "Regalar períodos",
+            "description": "Regalar períodos sin cargo a",
+            "cyclesLabel": "¿Cuántos períodos querés regalar?",
+            "startsAtNotice": "La suscripción queda marcada como regalada desde ahora, y el cobro automático se corta de inmediato. El suscriptor no pierde nada: conserva todo hasta que termine el período que ya pagó, y ahí es cuando empiezan a correr los períodos regalados.",
+            "leadTimeWarning": "Si faltan menos de 3 días para el próximo cobro, el regalo se rechaza: pausar tan cerca puede no frenar ese cobro y le terminaríamos cobrando justo el período regalado.",
+            "confirmButton": "Regalar",
+            "backButton": "Volver"
+        },
+        "compDialog": {
+            "title": "Otorgar cortesía permanente",
+            "description": "Elegí un plan de cualquier vertical para",
+            "planLabel": "Plan a otorgar",
+            "selectPlan": "Seleccionar un plan…",
+            "noPlans": "No hay planes activos disponibles.",
+            "perMonth": "/mes",
+            "intervalLabel": "Intervalo (solo a fines de auditoría — la cortesía nunca se cobra)",
+            "intervalMonthly": "Mensual",
+            "intervalAnnual": "Anual",
+            "permanentWarning": "Esta cortesía es permanente y no tiene preapproval de MercadoPago: nunca se cobra, y no vuelve al precio completo sola. No se puede \"deshacer\" con un cambio de plan — solo cancelando la suscripción resultante.",
+            "confirmButton": "Otorgar cortesía"
         }
     },
     "exchangeRates": {

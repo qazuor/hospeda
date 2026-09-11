@@ -7,11 +7,14 @@ export * from './array';
 export * from './calendar-date';
 export * from './currency';
 export * from './date';
+export * from './local-day';
 export * from './markdown-helpers';
 export * from './object';
 export * from './sentry';
+export * from './short-id';
 export * from './string';
 export * from './tiptap-renderer';
+export * from './utc-date-math';
 export * from './validation';
 
 // NOTE: `safe-fetch` and `safe-fetch-ip` are intentionally NOT re-exported from

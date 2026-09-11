@@ -241,11 +241,11 @@ describe('BasicInfoSection — summary label consistency (HOS-783 B6)', () => {
 });
 
 describe('BasicInfoSection — published slug refresh choice (HOS-784 stage 2)', () => {
-    it('renders the warning and checkbox when the published-rename choice is offered', () => {
+    it('renders the warning and checkbox next to name when only the name-position opt-in is offered', () => {
         render(
             <BasicInfoSection
                 {...buildProps()}
-                shouldOfferSlugRefresh={true}
+                shouldOfferSlugRefreshNearName={true}
                 refreshSlugFromName={false}
                 onRefreshSlugFromNameChange={vi.fn()}
             />
@@ -260,7 +260,7 @@ describe('BasicInfoSection — published slug refresh choice (HOS-784 stage 2)',
         render(
             <BasicInfoSection
                 {...buildProps()}
-                shouldOfferSlugRefresh={true}
+                shouldOfferSlugRefreshNearName={true}
                 refreshSlugFromName={false}
                 onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
             />
@@ -269,6 +269,99 @@ describe('BasicInfoSection — published slug refresh choice (HOS-784 stage 2)',
         fireEvent.click(screen.getByLabelText(/cambiar igual la dirección web/i));
 
         expect(onRefreshSlugFromNameChange).toHaveBeenCalledWith(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-879 UX follow-up: the opt-in must render next to whichever field(s)
+// actually changed, never pinned to `name` alone, and it must stay a SINGLE
+// shared control (one `refreshSlugFromName` state) even when rendered twice.
+// ---------------------------------------------------------------------------
+
+describe('BasicInfoSection — slug refresh opt-in placement (HOS-879 UX follow-up)', () => {
+    it('renders the opt-in only next to type when only the type-position flag is set', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefreshNearName={false}
+                shouldOfferSlugRefreshNearType={true}
+                refreshSlugFromName={false}
+                onRefreshSlugFromNameChange={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText(/tu ficha ya está publicada/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
+    });
+
+    it('renders nothing when neither position flag is set', () => {
+        render(<BasicInfoSection {...buildProps()} />);
+
+        expect(screen.queryByText(/tu ficha ya está publicada/i)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/cambiar igual la dirección web/i)).not.toBeInTheDocument();
+    });
+
+    it('renders the opt-in in BOTH positions when both name and type changed, with distinct ids and no duplicates', () => {
+        render(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefreshNearName={true}
+                shouldOfferSlugRefreshNearType={true}
+                refreshSlugFromName={false}
+                onRefreshSlugFromNameChange={vi.fn()}
+            />
+        );
+
+        const checkboxes = screen.getAllByLabelText(/cambiar igual la dirección web/i);
+        expect(checkboxes).toHaveLength(2);
+
+        // Two live instances of the same control MUST NOT share an id — that
+        // would break the label/input association for assistive tech.
+        const ids = checkboxes.map((el) => el.id);
+        expect(ids[0]).not.toBe('');
+        expect(ids[1]).not.toBe('');
+        expect(new Set(ids).size).toBe(2);
+    });
+
+    it('keeps the two rendered instances in lockstep — toggling one reflects in both', () => {
+        const onRefreshSlugFromNameChange = vi.fn();
+        const { rerender } = render(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefreshNearName={true}
+                shouldOfferSlugRefreshNearType={true}
+                refreshSlugFromName={false}
+                onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+            />
+        );
+
+        const [nameCheckbox, typeCheckbox] = screen.getAllByLabelText(
+            /cambiar igual la dirección web/i
+        );
+        expect(nameCheckbox).not.toBeChecked();
+        expect(typeCheckbox).not.toBeChecked();
+
+        // Clicking either instance reports through the SAME callback — there
+        // is only one `refreshSlugFromName` state, owned by the parent.
+        fireEvent.click(typeCheckbox);
+        expect(onRefreshSlugFromNameChange).toHaveBeenCalledWith(true);
+
+        // Simulate the parent flipping shared state: both instances update.
+        rerender(
+            <BasicInfoSection
+                {...buildProps()}
+                shouldOfferSlugRefreshNearName={true}
+                shouldOfferSlugRefreshNearType={true}
+                refreshSlugFromName={true}
+                onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+            />
+        );
+
+        const [nameCheckboxAfter, typeCheckboxAfter] = screen.getAllByLabelText(
+            /cambiar igual la dirección web/i
+        );
+        expect(nameCheckboxAfter).toBeChecked();
+        expect(typeCheckboxAfter).toBeChecked();
     });
 });
 

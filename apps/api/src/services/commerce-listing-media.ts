@@ -96,10 +96,38 @@ export async function loadCommerceListingMedia(
 ): Promise<Media> {
     const { entityType, entityId, tx } = input;
 
-    const grouped =
-        entityType === 'gastronomy'
-            ? await gastronomyMediaModel.findByGastronomies({ gastronomyIds: [entityId], tx })
-            : await experienceMediaModel.findByExperiences({ experienceIds: [entityId], tx });
+    // HOS-1079: an exhaustive switch, not a binary ternary — `entityType` is
+    // typed `CommerceEntityType` (exactly 'gastronomy' | 'experience'), so the
+    // `default` throw below is unreachable today by the compiler's own
+    // guarantee, but keeps this file's selection logic self-defending if that
+    // type is ever widened, instead of silently reading experience's media
+    // for anything that is not literally 'gastronomy'.
+    let grouped: Awaited<
+        ReturnType<
+            | typeof gastronomyMediaModel.findByGastronomies
+            | typeof experienceMediaModel.findByExperiences
+        >
+    >;
+    switch (entityType) {
+        case 'gastronomy':
+            grouped = await gastronomyMediaModel.findByGastronomies({
+                gastronomyIds: [entityId],
+                tx
+            });
+            break;
+        case 'experience':
+            grouped = await experienceMediaModel.findByExperiences({
+                experienceIds: [entityId],
+                tx
+            });
+            break;
+        default: {
+            const exhaustiveCheck: never = entityType;
+            throw new Error(
+                `loadCommerceListingMedia: unsupported entityType '${exhaustiveCheck}'`
+            );
+        }
+    }
 
     return composeCommerceMedia({ rows: grouped.get(entityId) ?? [], videos: null });
 }

@@ -3,9 +3,11 @@ import {
     BaseContentMediaSchema,
     ContentMediaAddPayloadSchema,
     ContentMediaReorderPayloadSchema,
-    ContentMediaStateSchema
+    ContentMediaStateSchema,
+    ContentMediaUpdatePayloadSchema
 } from '../../../common/content-media.schema.js';
 import { PostIdSchema, PostMediaIdSchema } from '../../../common/id.schema.js';
+import { hasAtLeastOneMediaTextField } from '../../../common/media.schema.js';
 
 /**
  * Zod schema for a single row in the `post_media` table (HOS-390).
@@ -134,3 +136,35 @@ export const PostMediaListOutputSchema = z.object({
 });
 /** Inferred type for a media list response. */
 export type PostMediaListOutput = z.infer<typeof PostMediaListOutputSchema>;
+
+// ----------------------------------------------------------------------------
+// Update Text Metadata (HOS-1036 — PATCH /posts/:id/media/:mediaId)
+// ----------------------------------------------------------------------------
+
+/** HTTP payload for `PATCH /posts/:id/media/:mediaId`. Alias of the shared content payload. */
+export const PostMediaUpdatePayloadSchema = ContentMediaUpdatePayloadSchema;
+/** Inferred type for the update-media HTTP payload. */
+export type PostMediaUpdatePayload = z.infer<typeof PostMediaUpdatePayloadSchema>;
+
+/**
+ * Service input for `updatePostMedia`.
+ *
+ * Combines the URL params (`postId`, `mediaId`) with the four payload fields
+ * spread from {@link PostMediaUpdatePayloadSchema}'s shape, then adds the
+ * cross-field rule the flat payload cannot express: at least one editable field
+ * must be present. An all-omitted body is a no-op PATCH and is rejected as
+ * `VALIDATION_ERROR` rather than silently answering 200.
+ */
+export const PostMediaUpdateInputSchema = z
+    .object({
+        /** UUID of the parent post (from URL param `/:id`). */
+        postId: PostIdSchema,
+        /** UUID of the media row to update (from URL param `/:mediaId`). */
+        mediaId: PostMediaIdSchema,
+        ...PostMediaUpdatePayloadSchema.shape
+    })
+    .refine(hasAtLeastOneMediaTextField, {
+        message: 'zodError.common.contentMedia.update.atLeastOneField'
+    });
+/** Inferred type for the update-media service input. */
+export type PostMediaUpdateInput = z.infer<typeof PostMediaUpdateInputSchema>;

@@ -157,6 +157,18 @@ export const AccommodationSchema = z.object({
 
     isFeatured: z.boolean().default(false),
 
+    /**
+     * Billing-derived denormalization (SPEC-292, renamed SPEC-309): whether an
+     * ACTIVE plan or addon FEATURED_LISTING entitlement currently covers this
+     * accommodation. Written ONLY by the sync primitives in
+     * `accommodation.sync-featured-by-entitlement.ts` — never by the general
+     * update path. Deliberately independent from `isFeatured` (admin-curated);
+     * see SPEC-309 OQ-3. Never exposed on `AccommodationPublicSchema` — public
+     * routes read it internally to compute the OR'd public `isFeatured` value
+     * (HOS-929) and strip the raw column before serialization.
+     */
+    featuredByEntitlement: z.boolean().default(false),
+
     // Base field groups
     ...BaseLifecycleFields,
     ...BaseModerationFields,
@@ -223,6 +235,23 @@ export const AccommodationSchema = z.object({
     verifiedAt: z.coerce.date().nullable().optional(),
     /** Admin user who performed the last verify/unverify action. */
     verifiedById: UserIdSchema.nullable().optional(),
+
+    /**
+     * HOS-1181: when BILLING took this listing down — today only the
+     * accommodation trial-expiry cron's unpublish (which passes
+     * `billingUnpublish: true`). Null when the listing is live, was taken down
+     * by its owner, or has been published again.
+     *
+     * `lifecycleState = INACTIVE` alone cannot tell a billing unpublish from
+     * an owner-initiated one (both write the same row shape), so this column is
+     * what the win-back republish selects on when the owner pays. Cleared by
+     * ANY publish, in the same write that flips `lifecycleState` to ACTIVE.
+     *
+     * Server-managed: never set through create/update input (it is omitted
+     * from those schemas); only the trial-expiry cron sets it and
+     * publish/win-back-republish clear it.
+     */
+    billingUnpublishedAt: z.date().nullable().optional(),
 
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),

@@ -71,8 +71,8 @@ vi.mock('../../src/middlewares/entitlement.js', () => ({
     clearEntitlementCache: vi.fn()
 }));
 
-vi.mock('../../src/services/commerce-reconcile.service.js', () => ({
-    reconcileCommerceListingForSubscription: vi.fn().mockResolvedValue(undefined)
+vi.mock('../../src/services/subscription-linked-entities.service.js', () => ({
+    reconcileSubscriptionLinkedEntities: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({

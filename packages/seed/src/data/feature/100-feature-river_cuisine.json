@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "100-feature-river_cuisine",
+    "slug": "river_cuisine",
+    "description": {
+        "es": "Cocina de río: pescados y platos típicos del litoral",
+        "en": "River cuisine: fish and dishes typical of the Litoral region",
+        "pt": "Cozinha de rio: peixes e pratos típicos do litoral"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "FishingEquipmentIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 64,
+    "lifecycleState": "ACTIVE"
+}

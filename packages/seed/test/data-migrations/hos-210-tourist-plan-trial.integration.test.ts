@@ -119,6 +119,51 @@ async function setTrialMetadata(
     `);
 }
 
+/**
+ * Materialises the two plan rows this migration operates on, inside the caller's
+ * rollback transaction.
+ *
+ * HOS-1224 retired `tourist-plus`, so the required seed no longer creates it and
+ * this suite can no longer READ it out of the seeded database — which is how it
+ * used to obtain both rows. That coupling was wrong even before it broke: this
+ * suite tests a HISTORICAL migration (`0017`) against the rows that existed WHEN
+ * IT RAN, and those are a fact about the past, not a query against today's
+ * catalog. So the fixture is constructed here, the way the sibling
+ * `hos-301-tourist-trial-30-days.integration.test.ts` already does it.
+ *
+ * Everything happens inside `withRollback`, so nothing survives the test.
+ */
+async function ensureTouristPlanFixtures(tx: DrizzleClient): Promise<void> {
+    for (const name of PLAN_NAMES) {
+        const existing = await tx
+            .select({ id: billingPlans.id })
+            .from(billingPlans)
+            .where(eq(billingPlans.name, name))
+            .limit(1);
+
+        if (existing[0]) {
+            continue;
+        }
+
+        await tx.insert(billingPlans).values({
+            // HOS-1233: derived from the slug, never hardcoded — several of these
+            // fixtures seed TOURIST plans, and stamping 'accommodation' would
+            // reproduce the misfiling the migration tests exist to check.
+            productDomain: name.startsWith('tourist') ? 'tourist' : 'accommodation',
+            name,
+            description: `Test fixture plan for ${name}`,
+            active: true,
+            entitlements: [],
+            limits: {},
+            livemode: true,
+            displayName: name,
+            monthlyPriceArs: 500000,
+            annualPriceArs: 5000000,
+            metadata: { slug: name, category: 'tourist' }
+        });
+    }
+}
+
 let pool: Pool;
 
 beforeAll(() => {
@@ -141,6 +186,7 @@ afterAll(async () => {
 describe('0017-hos-210-tourist-plan-trial', () => {
     it('flips both baseline (pre-HOS-210) tourist rows to hasTrial:true, trialDays:14', async () => {
         await withRollback(async (tx) => {
+            await ensureTouristPlanFixtures(tx);
             // Arrange — simulate the pre-HOS-210 baseline default this migration backfills.
             for (const name of PLAN_NAMES) {
                 await setTrialMetadata(tx, name, false, 0);
@@ -168,6 +214,7 @@ describe('0017-hos-210-tourist-plan-trial', () => {
 
     it('is idempotent: running up() again once both rows read hasTrial:true updates zero rows', async () => {
         await withRollback(async (tx) => {
+            await ensureTouristPlanFixtures(tx);
             for (const name of PLAN_NAMES) {
                 await setTrialMetadata(tx, name, false, 0);
             }
@@ -190,6 +237,7 @@ describe('0017-hos-210-tourist-plan-trial', () => {
 
     it('never overwrites an operator-edited trial config, and touches only the still-baseline row (OR-PRESERVE)', async () => {
         await withRollback(async (tx) => {
+            await ensureTouristPlanFixtures(tx);
             // Arrange — both start at the old baseline.
             for (const name of PLAN_NAMES) {
                 await setTrialMetadata(tx, name, false, 0);
@@ -224,6 +272,7 @@ describe('0017-hos-210-tourist-plan-trial', () => {
 
     it('backfills a legacy row missing both keys entirely (COALESCE default)', async () => {
         await withRollback(async (tx) => {
+            await ensureTouristPlanFixtures(tx);
             // Arrange — rows whose metadata predates either key (COALESCE branch).
             await tx.execute(sql`
                 UPDATE billing_plans

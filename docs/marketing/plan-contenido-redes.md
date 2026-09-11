@@ -99,7 +99,7 @@ Se usan los de Phosphor — <https://phosphoricons.com/>
 5. **Ningún destino se destaca sobre los demás.** Somos de Concepción del Uruguay y es por donde arrancamos a conseguir clientes, pero eso es un dato interno, no una línea editorial. Cuando hablamos del territorio, hablamos del **Litoral** o de **Entre Ríos**, no de una ciudad.
 6. **Los cuerpos van cortos.** Dos renglones como máximo. Si el texto obliga a achicar la tipografía o a apretar la diagramación, hay que recortarlo, no achicar la letra. Informativo pero breve: lo largo va en el pie de la publicación, no adentro de la imagen.
 7. **Nunca listamos todos los destinos.** Se nombran algunos y se cierra con "y muchos más". Una lista completa queda vieja apenas se suma uno nuevo, y hay que rehacer la placa.
-8. **Nunca decimos "sin tarjeta".** La tarjeta se carga al registrarse; lo que no se cobra es el primer mes. Se dice **"no se te cobra nada durante 30 días"**.
+8. **Decimos "sin tarjeta", porque es cierto** (HOS-1012, 01/09/2026). La prueba arranca sola al publicar la primera ficha y no pide medio de pago. Regla invertida: entre HOS-171 y HOS-1012 la tarjeta sí se pedía y esta línea prohibía la frase. Todo material anterior a esa fecha que diga "cargás tu tarjeta" está desactualizado.
 9. **Ninguna placa lleva cupones de descuento.** Los códigos se entregan a mano, a personas o momentos puntuales.
 
 ### Destinos
@@ -1960,7 +1960,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **CTA**: Sumá tu propiedad en hospeda.com.ar
 - **Idioma**: Español
 - **Nota**: la versión 2:3 es para mandarla por WhatsApp a los dueños, uno por uno. Va a ser la que más circule, más que la de las publicaciones.
-- **Cuidado con la tarjeta**: **no decir "sin tarjeta"**. Hoy la tarjeta se carga al registrarse, aunque no se cobre nada hasta el día 31. Prometer lo contrario genera un abandono seguro en el momento del alta, que es el peor lugar para perder a alguien. El mensaje correcto es *no se te cobra nada durante 30 días* — que es igual de fuerte y además es cierto.
+- **La tarjeta**: **sí se dice "sin tarjeta"** (HOS-1012). La prueba no pide medio de pago y arranca sola al publicar. Esto es lo contrario de lo que decía esta nota hasta el 01/09/2026, cuando la tarjeta sí se cargaba al registrarse. Para una placa que va por WhatsApp uno por uno, es probablemente el argumento más fuerte disponible: quita la única objeción que frena a alguien en el alta.
 
 ---
 
@@ -3077,7 +3077,7 @@ Decisiones ya cerradas. Se respetan salvo aviso.
 | **Cupones de descuento** | **No se publica ninguno.** Los cupones se entregan a personas puntuales o en momentos puntuales, nunca en una publicación abierta. Ninguna placa lleva código de descuento. |
 | **Nombrar otras plataformas — calendarios** | **Sí se nombran.** Google, Airbnb, Booking y cualquier otro calendario estándar, porque son los que efectivamente se conectan. |
 | **Nombrar otras plataformas — importar la ficha** | **No se nombran Airbnb ni Booking.** Se dice "Google, Mercado Libre y otras plataformas de alquiler". |
-| **Tarjeta de crédito** | **Se pide al registrarse**, antes de la prueba. No se cobra nada hasta que terminan los 30 días. Cambió respecto de antes: **nunca decir "sin tarjeta"**. |
+| **Tarjeta de crédito** | **NO se pide para la prueba** (HOS-1012, 01/09/2026). La prueba arranca sola al publicar la primera ficha y dura 30 días; la tarjeta recién aparece cuando el anfitrión elige un plan. **Se puede decir "sin tarjeta"** — cambió respecto de HOS-171, que exigía lo contrario. |
 | **Días de prueba** | 30 días. |
 | **Directorio de oficios** | Disponible. La pieza 12.13 quedó en prioridad 1. |
 

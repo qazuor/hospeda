@@ -1,0 +1,101 @@
+---
+/**
+ * @file PricingCardItem.astro
+ * @description One line of a pricing card's list: either an entitlement bullet
+ * or a numeric cap with its explanation.
+ *
+ * Extracted from `PricingCardsGrid.astro` when the card's list was cut into a
+ * visible summary plus a `<details>` disclosure. The two halves render the SAME
+ * markup, and duplicating twenty lines of it inside one template is how the two
+ * copies drift — a guard reading the source only ever matches the first one.
+ * One component, rendered twice, cannot drift.
+ *
+ * The markup itself is unchanged from HOS-943, and so are the two decisions
+ * baked into it:
+ *
+ * - A cap's explanation is a VISIBLE sibling line inside the same `<li>`, not a
+ *   `title` tooltip (AC-13). A tooltip has to be re-solved for keyboard and for
+ *   assistive tech, and a number nobody can interpret is worse than a slightly
+ *   longer card. Living in the same list item is what makes the explanation
+ *   part of what a screen reader announces with the value.
+ * - The check icon is decorative and `aria-hidden`; the bullet's meaning is its
+ *   text.
+ */
+
+import type { PricingCardItem } from '@/components/billing/pricing-card-items';
+
+interface Props {
+	/** The line to render. Its `kind` selects the shape. */
+	readonly item: PricingCardItem;
+}
+
+const { item } = Astro.props;
+---
+
+{item.kind === 'limit' ? (
+	<li class="pricing-card__limit">
+		<span class="pricing-card__limit-value">{item.text}</span>
+		<span class="pricing-card__limit-help">{item.help}</span>
+	</li>
+) : (
+	<li class="pricing-card__feature">
+		<svg
+			class="pricing-card__feature-icon"
+			xmlns="http://www.w3.org/2000/svg"
+			width="18"
+			height="18"
+			viewBox="0 0 24 24"
+			fill="none"
+			aria-hidden="true"
+		>
+			<path
+				d="M5 12.5l4.5 4.5L19 7"
+				stroke="currentColor"
+				stroke-width="2.5"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			/>
+		</svg>
+		<span>{item.label}</span>
+	</li>
+)}
+
+<style>
+	.pricing-card__feature {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-foreground);
+		line-height: 1.5;
+	}
+
+	.pricing-card__feature-icon {
+		flex-shrink: 0;
+		color: var(--success);
+		margin-top: 2px;
+	}
+
+	.pricing-card__limit {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-family: var(--font-sans);
+		padding-left: var(--space-3);
+		border-left: 2px solid var(--border);
+	}
+
+	.pricing-card__limit-value {
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--core-foreground);
+		line-height: 1.4;
+	}
+
+	.pricing-card__limit-help {
+		font-size: var(--text-caption);
+		color: var(--core-muted-foreground);
+		line-height: 1.45;
+	}
+</style>

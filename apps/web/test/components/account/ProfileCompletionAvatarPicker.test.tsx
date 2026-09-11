@@ -101,7 +101,7 @@ describe('ProfileCompletionAvatarPicker', () => {
         });
         expect(onUploaded).not.toHaveBeenCalled();
         expect(fetchMock).not.toHaveBeenCalled();
-        expect(screen.getByRole('alert')).toHaveTextContent(/imagen jpg, png o webp/i);
+        expect(screen.getByRole('alert')).toHaveTextContent(/imagen jpg, png, webp o heic/i);
     });
 
     it('reports an error and does NOT upload when the file exceeds 5 MB', async () => {

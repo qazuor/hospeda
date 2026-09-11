@@ -18,6 +18,7 @@ import {
     ProviderRateLimitedError,
     ProviderTimeoutError
 } from '../../src/engine/provider.js';
+import { LocalProvider } from '../../src/providers/local.provider.js';
 
 function createProvider(overrides: Partial<ModerationProvider>): ModerationProvider {
     return {
@@ -181,5 +182,40 @@ describe('ModerationOrchestrator', () => {
 
         // Provider must have been called twice — degraded results are never cached.
         expect(providerClassify).toHaveBeenCalledTimes(2);
+    });
+
+    /**
+     * REGRESSION — HOS-1069, and the one case the suite above could not see.
+     *
+     * Every other fallback test hands the orchestrator a MOCK local provider,
+     * so it only ever proves what the orchestrator does with an answer it is
+     * given. This one wires the REAL `LocalProvider` with the blocklist those
+     * three environments actually have — empty — and asserts the whole chain.
+     *
+     * Before the fix the chain ended in `source: 'local'` with `score: 0`: a
+     * clean bill of health issued by a judge holding no law, which published
+     * the text. It must end in `degraded` instead, which is what sends it to a
+     * human — and, not incidentally, the only branch that raises a Sentry
+     * event rather than a breadcrumb nobody will ever read.
+     */
+    it('degrades instead of clearing the text when the real local blocklist is empty', async () => {
+        initializeModerationCache(300);
+        invalidateModerationCache();
+        resetModerationEngineHealth();
+        setModerationEngineProvider('openai');
+
+        const orchestrator = new ModerationOrchestrator(
+            createProvider({
+                name: 'openai',
+                classify: vi.fn().mockRejectedValue(new ProviderTimeoutError())
+            }),
+            new LocalProvider({ termLoader: async () => [] })
+        );
+
+        const result = await orchestrator.classify({ text: `empty-blocklist-${Date.now()}` });
+
+        expect(result.source).toBe('degraded');
+        expect(result.score).not.toBe(0);
+        expect(getModerationEngineHealth().degradedCountLast24Hours).toBeGreaterThan(0);
     });
 });

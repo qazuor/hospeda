@@ -38,7 +38,13 @@ const { mockGetBySlug, mockWarn, mockGetAddonBySlug, mockPlanGetById, mockPlanGe
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('@repo/service-core', () => ({
+// HOS-1279: `importOriginal` so the REAL `classifyLimitKeyAgainstPlanDomain`
+// reaches the service — a whole-module factory leaves an unnamed symbol as
+// `undefined`, and stubbing this one would make the suite blind to the domain
+// filter it now runs through.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    classifyLimitKeyAgainstPlanDomain: (await importOriginal<typeof import('@repo/service-core')>())
+        .classifyLimitKeyAgainstPlanDomain,
     AddonCatalogService: vi.fn().mockImplementation(function () {
         return {
             getBySlug: mockGetBySlug,
@@ -111,7 +117,14 @@ vi.mock('../../src/utils/env', () => ({
     env: { HOSPEDA_ADDON_LIFECYCLE_ENABLED: true }
 }));
 
-vi.mock('../../src/services/addon-plan-change.helpers', () => ({
+// HOS-1279: the shim is mocked whole, so every symbol it does not name reaches
+// the service as `undefined`. `classifyLimitKeyAgainstPlanDomain` is therefore
+// pulled in for real — stubbing it would silently disable the domain filter and
+// leave this suite green while proving nothing about it.
+vi.mock('../../src/services/addon-plan-change.helpers', async (importOriginal) => ({
+    classifyLimitKeyAgainstPlanDomain: (
+        await importOriginal<typeof import('../../src/services/addon-plan-change.helpers')>()
+    ).classifyLimitKeyAgainstPlanDomain,
     hashCustomerId: vi.fn().mockReturnValue(12345),
     resolvePlanBaseLimit: vi.fn().mockReturnValue(5),
     sumIncrements: vi.fn().mockReturnValue(0),
@@ -252,11 +265,18 @@ function setupTx(activePurchaseRows: unknown[]) {
 describe('addon-plan-change.service cutover parity (SPEC-192 T-013)', () => {
     let billing: ReturnType<typeof buildBilling>;
 
-    /** Stub DB plan with max_accommodations=5 for the owner-basic plan */
+    /**
+     * Stub DB plan with max_accommodations=5 for the owner-basico plan.
+     *
+     * HOS-1279: the slug was `'owner-basic'`, which is in no catalogue. Domain
+     * isolation resolves the plan's domain from its slug, so an unknown slug
+     * took the negotiated-plan fail-open branch and this suite never exercised
+     * the filter at all — green, and blind. `'owner-basico'` is the real slug.
+     */
     const STUB_DB_PLAN = {
         id: 'plan-uuid-001',
-        slug: 'owner-basic',
-        name: 'Owner Basic',
+        slug: 'owner-basico',
+        name: 'Owner Basico',
         description: 'Basic plan',
         category: 'owner',
         monthlyPriceArs: 500,

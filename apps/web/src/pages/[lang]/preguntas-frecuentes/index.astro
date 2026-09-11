@@ -15,6 +15,7 @@ import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { getBrandPhoneWhatsAppUrl } from '@/lib/brand-phone';
 import { buildUrl } from '@/lib/urls';
 import {
 	ChevronDownIcon,
@@ -181,7 +182,10 @@ const faqSections = resolvedCategories.flatMap((cat) =>
 );
 
 const contactHref = buildUrl({ locale, path: '/contacto/' });
-const whatsappHref = 'https://wa.me/543442453797';
+// Brand WhatsApp number, single source of truth (HOS-364) — was previously a
+// hardcoded literal missing the AR mobile `9`, a dead CTA nobody's tests caught
+// because none of them checked the VALUE, only the shape of a wa.me URL.
+const whatsappHref = getBrandPhoneWhatsAppUrl();
 
 // Split titles to underline the last word with a handwritten accent.
 const splitLastWord = (full: string): { main: string; accent: string } => {

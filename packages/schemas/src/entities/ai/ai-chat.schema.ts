@@ -115,12 +115,28 @@ export type AiChatMessage = z.infer<typeof AiChatMessageSchema>;
 // ---------------------------------------------------------------------------
 
 /**
+ * The kinds of listing the AI chat can answer about (HOS-400).
+ *
+ * Absent on the wire means `'accommodation'`, matching the convention
+ * `AiTextImproveEntityTypeSchema` established in HOS-1075: the accommodation
+ * chat shipped first and its clients do not send the field, so treating absence
+ * as accommodation keeps every already-deployed caller valid.
+ */
+export const AiChatEntityTypeSchema = z.enum(['accommodation', 'gastronomy', 'experience']);
+
+/** TypeScript type for the entity a chat request targets. */
+export type AiChatEntityType = z.infer<typeof AiChatEntityTypeSchema>;
+
+/**
  * Request body for `POST /api/v1/protected/ai/chat`.
  *
  * Validation contract:
  *
- * - `accommodationId` is a required UUID — the route resolves it to a 404
- *   pre-stream when not found (AC-9).
+ * - `entityType` is optional; absent means `'accommodation'`.
+ * - The chat's target is `entityId`, with `accommodationId` accepted as its
+ *   LEGACY alias for the accommodation case only (see below). Exactly one
+ *   resolved target is required — the route turns it into a 404 pre-stream when
+ *   the row does not exist (AC-9).
  * - `messages` must contain 1 to 20 entries (Q-5 cap). The route returns
  *   HTTP 400 (not 422) when the array exceeds 20 (AC-11).
  * - `locale` is optional and defaults to `'es'`. The route forwards the
@@ -129,15 +145,42 @@ export type AiChatMessage = z.infer<typeof AiChatMessageSchema>;
  * - `conversationId` is optional and nullable. `null`/absent = first turn;
  *   a valid UUID = subsequent turn. Non-UUID strings are rejected.
  * - `.strict()` rejects unknown keys at the boundary.
+ *
+ * ## Why `accommodationId` survives as an alias
+ *
+ * It was required before HOS-400 and every deployed web client still sends it.
+ * Making it optional and adding `entityId` means the old shape and the new one
+ * are both valid during a rollout where the API deploys before the web app.
+ * The pair is constrained rather than merely permitted: `accommodationId` on a
+ * COMMERCE request is rejected outright instead of being silently ignored,
+ * because a body that names a restaurant in `entityId` and an accommodation in
+ * `accommodationId` is a client bug, and answering it about either one is worse
+ * than refusing it.
+ *
+ * Do NOT read these two fields at a call site — use {@link resolveAiChatTarget},
+ * which is the single place that knows the alias exists.
  */
 export const AiChatRequestSchema = z
     .object({
         /**
-         * UUID of the accommodation the chat is about.
-         * Drives context assembly (markdown block from accommodation + FAQs)
-         * and 404 handling pre-stream.
+         * Which kind of listing the chat is about (HOS-400).
+         * Absent means `'accommodation'`.
          */
-        accommodationId: z.string().uuid(),
+        entityType: AiChatEntityTypeSchema.optional(),
+        /**
+         * UUID of the listing the chat is about, whatever its `entityType`.
+         * Drives context assembly and 404 handling pre-stream.
+         */
+        entityId: z.string().uuid({ message: 'zodError.ai.chat.entityId.invalidUuid' }).optional(),
+        /**
+         * LEGACY alias of {@link entityId}, accepted only when `entityType` is
+         * `'accommodation'` or absent. Kept so clients deployed before HOS-400
+         * stay valid; new callers should send `entityId` + `entityType`.
+         */
+        accommodationId: z
+            .string()
+            .uuid({ message: 'zodError.ai.chat.accommodationId.invalidUuid' })
+            .optional(),
         /**
          * Ordered multi-turn message array.
          * Minimum 1 (a request with no messages is meaningless), maximum 20
@@ -161,10 +204,101 @@ export const AiChatRequestSchema = z
          */
         conversationId: z.string().uuid().nullable().optional()
     })
-    .strict();
+    .strict()
+    .superRefine((val, ctx) => {
+        const isAccommodation = val.entityType === undefined || val.entityType === 'accommodation';
+
+        if (!isAccommodation && val.accommodationId !== undefined) {
+            // A commerce request that also names an accommodation is refused
+            // rather than resolved. Ignoring the stray field would let a client
+            // bug read as a working chat about the wrong listing entirely.
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'zodError.ai.chat.accommodationId.notAllowedForEntityType',
+                path: ['accommodationId']
+            });
+            return;
+        }
+
+        const target = isAccommodation ? (val.entityId ?? val.accommodationId) : val.entityId;
+
+        if (target === undefined) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'zodError.ai.chat.entityId.required',
+                path: ['entityId']
+            });
+            return;
+        }
+
+        if (isAccommodation && val.entityId !== undefined && val.accommodationId !== undefined) {
+            if (val.entityId !== val.accommodationId) {
+                // Both spellings of the same field, disagreeing. Picking either
+                // one is a guess; neither is safe to make on the caller's behalf.
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: 'zodError.ai.chat.entityId.conflictsWithAccommodationId',
+                    path: ['entityId']
+                });
+            }
+        }
+    });
 
 /** TypeScript type for the chat request body. */
 export type AiChatRequest = z.infer<typeof AiChatRequestSchema>;
+
+/**
+ * The listing a validated chat request is about (HOS-400).
+ *
+ * Both fields are concrete: `AiChatRequestSchema`'s `superRefine` has already
+ * rejected any body that cannot produce them, so this never returns a partial
+ * target and callers need no fallback of their own.
+ */
+export interface AiChatTarget {
+    readonly entityType: AiChatEntityType;
+    readonly entityId: string;
+}
+
+/**
+ * Resolves a validated chat request to the listing it targets.
+ *
+ * The ONLY place that knows `accommodationId` is a legacy alias of `entityId`.
+ * Reading either field directly at a call site is how the two spellings drift:
+ * a route that checks `body.accommodationId` sees `undefined` for every new
+ * client, and one that checks `body.entityId` sees `undefined` for every old
+ * one — and both failures look like "no listing was requested" rather than like
+ * a missed alias.
+ *
+ * @param request - A body already parsed by {@link AiChatRequestSchema}.
+ *   Passing an UNVALIDATED object is a programming error: the alias/conflict
+ *   rules live in the schema's `superRefine`, not here.
+ * @returns The entity type (defaulted to `'accommodation'`) and its id.
+ * @throws {Error} When no id can be resolved, which can only happen if the
+ *   argument bypassed schema validation.
+ *
+ * @example
+ * ```ts
+ * resolveAiChatTarget({ accommodationId: 'abc', messages: [...] });
+ * // → { entityType: 'accommodation', entityId: 'abc' }
+ * resolveAiChatTarget({ entityType: 'gastronomy', entityId: 'xyz', messages: [...] });
+ * // → { entityType: 'gastronomy', entityId: 'xyz' }
+ * ```
+ */
+export function resolveAiChatTarget(request: AiChatRequest): AiChatTarget {
+    const entityType: AiChatEntityType = request.entityType ?? 'accommodation';
+    const entityId =
+        entityType === 'accommodation'
+            ? (request.entityId ?? request.accommodationId)
+            : request.entityId;
+
+    if (entityId === undefined) {
+        throw new Error(
+            'resolveAiChatTarget: request carries no entityId — it was not validated by AiChatRequestSchema.'
+        );
+    }
+
+    return { entityType, entityId };
+}
 
 // ---------------------------------------------------------------------------
 // `done` SSE event payload — extends StreamTextFinalMeta with conversationId?

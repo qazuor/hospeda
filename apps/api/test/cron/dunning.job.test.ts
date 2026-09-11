@@ -24,18 +24,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // @sentry/node requires @sentry/opentelemetry at import time, which is not
 // available in the test environment. Stub it so transitive imports from
-// commerce-reconcile.service.ts (which uses service-core → renewal module)
+// subscription-linked-entities.service.ts (which uses service-core → renewal module)
 // don't fail.
 vi.mock('@sentry/node', () => ({
     captureException: vi.fn(),
     captureMessage: vi.fn()
 }));
 
-// commerce-reconcile.service imports @repo/service-core which transitively
-// imports @sentry/node. We mock the whole module since dunning tests don't
-// test commerce reconciliation (that's tested in its own suite).
-vi.mock('../../src/services/commerce-reconcile.service', () => ({
-    reconcileCommerceListingForSubscription: vi.fn().mockResolvedValue(undefined)
+// The single reconciler (HOS-1084) imports @repo/service-core which
+// transitively imports @sentry/node. We mock the whole module since dunning
+// tests don't test entity reconciliation (that has its own suites).
+vi.mock('../../src/services/subscription-linked-entities.service', () => ({
+    reconcileSubscriptionLinkedEntities: vi.fn().mockResolvedValue(undefined)
 }));
 
 const {
@@ -45,6 +45,7 @@ const {
     mockDbExecute,
     mockDbSelect,
     mockSelectLimit,
+    mockHydrationRows,
     mockLoadBillingSettings,
     mockWithTransaction,
     mockClearEntitlementCache,
@@ -59,11 +60,30 @@ const {
     // .limit(1)) instead of a raw db.execute(sql`...`). SPEC-262 guard tests
     // override this per-test to return a comp / discounted subscription row.
     const selectLimit = vi.fn().mockResolvedValue([]);
+    // HOS-847: loadPastDueNonAddonSubscriptions calls the REAL
+    // hydrateSubscriptionProductDomains (from @repo/service-core, unmocked),
+    // which awaits `.where(...)` DIRECTLY with no `.limit()` call — a second,
+    // distinct caller of this same `billingSubscriptions` table. Making
+    // `selectChain` itself thenable (resolving to `hydrationRows()`) serves
+    // that shape without disturbing the existing `.limit(1)` chain used by
+    // loadSubscriptionDiscountState. Defaults to `[]`: every PRE-EXISTING
+    // fixture in this file has no productDomain, so an unmatched id hydrates
+    // to `null` — accommodation fail-open, unchanged prior behavior.
+    const hydrationRows = vi.fn().mockResolvedValue([]);
     const selectChain = {
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
         limit: selectLimit
     };
+    // Attached outside the object literal (not as a `then:` key biome's
+    // noThenProperty would flag) — intentional thenable so this chain
+    // doubles as a real Promise for hydrateSubscriptionProductDomains's
+    // no-`.limit()` await, while still supporting `.limit(1)` for
+    // loadSubscriptionDiscountState.
+    Object.defineProperty(selectChain, 'then', {
+        value: (resolve: (v: unknown) => void, reject?: (e: unknown) => void) =>
+            hydrationRows().then(resolve, reject)
+    });
     const tx = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     };
@@ -74,12 +94,12 @@ const {
         mockDbInsert: mockInsert,
         mockDbExecute: dbExecute,
         mockSelectLimit: selectLimit,
+        mockHydrationRows: hydrationRows,
         mockDbSelect: vi.fn().mockReturnValue(selectChain),
         mockLoadBillingSettings: vi.fn().mockResolvedValue({
             gracePeriodDays: 7,
             maxPaymentRetries: 4,
             retryIntervalHours: 24,
-            trialExpiryReminderDays: 3,
             sendTrialExpiryReminder: true,
             sendPaymentFailedNotification: true
         }),
@@ -138,9 +158,13 @@ vi.mock('@repo/db', () => ({
         customerId: 'CUSTOMER_ID',
         mpSubscriptionId: 'MP_SUBSCRIPTION_ID',
         promoCodeId: 'PROMO_CODE_ID',
-        promoEffectRemainingCycles: 'PROMO_EFFECT_REMAINING_CYCLES'
+        promoEffectRemainingCycles: 'PROMO_EFFECT_REMAINING_CYCLES',
+        productDomain: 'PRODUCT_DOMAIN'
     },
     eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
+    // HOS-847: backs hydrateSubscriptionProductDomains's recovery SELECT
+    // (called for real from @repo/service-core, unmocked).
+    inArray: (column: unknown, values: unknown[]) => ({ inArray: column, values }),
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
         __sql: true,
         strings,
@@ -354,6 +378,38 @@ describe('dunningJob', () => {
             });
         });
 
+        // HOS-847: a recurring add-on's own MercadoPago preapproval getting
+        // rejected must NEVER surface as "your subscription is past due" — it
+        // is an unrelated purchase, not the customer's real plan. Without
+        // domain isolation, an add-on row in past_due would be counted here
+        // (and, if HOS-191 F5's mutations kill switch is ever flipped back
+        // on, would trigger dunning mails and eventual cancellation of every
+        // add-on the customer holds).
+        it("excludes a recurring add-on's own past_due row from the count", async () => {
+            // Arrange
+            const billing = makeBillingMock([
+                { id: 'sub_real_plan', status: 'past_due' },
+                { id: 'sub_addon_extra_accommodations', status: 'past_due' }
+            ]);
+            mockGetQZPayBilling.mockReturnValue(billing);
+            mockCreateSubscriptionLifecycle.mockReturnValue(makeLifecycleMock());
+            // The hydration recovery SELECT resolves the add-on row's real domain.
+            mockHydrationRows.mockResolvedValueOnce([
+                { id: 'sub_real_plan', productDomain: 'accommodation' },
+                { id: 'sub_addon_extra_accommodations', productDomain: 'addon' }
+            ]);
+
+            const ctx = makeCronContext({ dryRun: true });
+
+            // Act
+            const result = await dunningJob.handler(ctx);
+
+            // Assert — only the real plan subscription counts.
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+            expect(result.details).toMatchObject({ pastDueCount: 1 });
+        });
+
         it('should handle empty subscription list in dry-run', async () => {
             // Arrange
             const billing = makeBillingMock([]);
@@ -449,6 +505,35 @@ describe('dunningJob', () => {
                 dunningMutationsEnabled: false,
                 pastDueCount: 2
             });
+        });
+
+        it('does NOT count a subscription that HOS-348 payment-method-replacement already cancelled', async () => {
+            // Arrange — `sub_2` was `past_due` and got superseded: once the
+            // customer's replacement preapproval confirmed authorized, the
+            // webhook (`completeSupersessionPairing`) cancelled the old
+            // preapproval and the local row's status flipped to `cancelled`
+            // (see `test/webhooks/subscription-logic.test.ts`'s "HOS-348
+            // Part B" cases). This job's observe-only pass filters by LIVE
+            // status, so it must never keep counting/chasing that row just
+            // because it was `past_due` at some earlier point — DUNNING_MUTATIONS_ENABLED
+            // is `false` today so nothing WOULD retry it anyway, but the
+            // count itself (which drives the "N subscriptions past due"
+            // visibility signal) has to reflect reality.
+            const billing = makeBillingMock([
+                { id: 'sub_still_past_due', status: 'past_due' },
+                { id: 'sub_replaced_by_hos348', status: 'cancelled' },
+                { id: 'sub_active', status: 'active' }
+            ]);
+            mockGetQZPayBilling.mockReturnValue(billing);
+            mockCreateSubscriptionLifecycle.mockReturnValue(makeLifecycleMock());
+
+            const ctx = makeCronContext();
+
+            // Act
+            const result = await dunningJob.handler(ctx);
+
+            // Assert — only the one row still genuinely past_due counts.
+            expect(result.details).toMatchObject({ pastDueCount: 1 });
         });
 
         it('should return zero counts when no subscriptions need processing', async () => {

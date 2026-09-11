@@ -40,6 +40,7 @@ export * from './post/index.js';
 export * from './postSponsor/index.js';
 export * from './postSponsorship/index.js';
 export * from './price-alert/index.js';
+export * from './qr-code/index.js';
 export * from './recommendation/index.js';
 export * from './revalidation/index.js';
 export * from './social/index.js';

@@ -52,7 +52,7 @@ Per `CLAUDE.md` project standard: tests are mandatory (Test-Informed Development
 
 | Layer | Available | Tool |
 | ----- | --------- | ---- |
-| Unit | yes | Vitest (apps/api, apps/admin, apps/web, apps/e2e, scripts/cli) |
+| Unit | yes | Vitest (apps/api, apps/admin, apps/web, apps/e2e, scripts) |
 | Integration | yes | Vitest with `vi.spyOn` (apps/api); Vitest helpers (apps/e2e) |
 | E2E | yes | Playwright 1.58.2 in `apps/e2e` (SPEC-092) |
 
@@ -60,7 +60,6 @@ Per `CLAUDE.md` project standard: tests are mandatory (Test-Informed Development
 
 - **Available**: yes (`pnpm test:coverage` via `@vitest/coverage-v8`)
 - **apps/api thresholds** (from `apps/api/vitest.config.ts`): lines 75 / statements 75 / functions 60 / branches 60
-- **scripts/cli thresholds**: lines 70 / functions 70 / branches 60 / statements 70
 
 ### Quality Tools
 
@@ -78,7 +77,6 @@ Per `CLAUDE.md` project standard: tests are mandatory (Test-Informed Development
 
 - `apps/api/vitest.config.ts`: `testTimeout: 30000`, `pool: 'forks'`, `maxForks: 3`, `setupFiles: ['./test/setup.ts']`. 30s bumped from 15s (SPEC-188 tracks the real fix).
 - `apps/api/vitest.config.e2e.ts`: separate config for e2e tests in api.
-- `scripts/cli/vitest.config.ts`: `testTimeout: 10000`.
 - `apps/api/vitest.config.ts` has heavy `@repo/*` alias block (pnpm hoisting workaround for `@better-auth/core`).
 
 Full detail: engram topic_key `sdd/hospeda/testing-capabilities`.

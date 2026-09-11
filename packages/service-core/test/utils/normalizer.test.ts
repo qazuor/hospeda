@@ -78,6 +78,26 @@ describe('normalizeContactInfo()', () => {
         expect(result.workPhone).toBe('+541155550003');
     });
 
+    it('should normalize whatsapp', () => {
+        const result = normalizeContactInfo({ whatsapp: '11 5555-0004' }) as Record<
+            string,
+            unknown
+        >;
+        expect(result.whatsapp).toBe('+541155550004');
+    });
+
+    it('should normalize mobilePhone and whatsapp to the exact same value when given the same input (regression HOS-1027)', () => {
+        // Arrange — a single submit with the same number typed in both fields, one with a
+        // separating space (as composePhoneValue produces) and the other without, mirroring
+        // what was measured in staging before the fix.
+        const result = normalizeContactInfo({
+            mobilePhone: '+543442453797',
+            whatsapp: '+54 3442453797'
+        }) as Record<string, unknown>;
+
+        expect(result.whatsapp).toBe(result.mobilePhone);
+    });
+
     it('should normalize personalEmail to lowercase trimmed', () => {
         const result = normalizeContactInfo({ personalEmail: '  USER@EXAMPLE.COM  ' }) as Record<
             string,
@@ -100,6 +120,7 @@ describe('normalizeContactInfo()', () => {
             mobilePhone: '+54 11 1111-1111',
             homePhone: '+54 11 2222-2222',
             workPhone: '+54 11 3333-3333',
+            whatsapp: '+54 11 4444-4444',
             personalEmail: ' PERSONAL@TEST.COM ',
             workEmail: ' WORK@TEST.COM ',
             otherField: 'preserved'
@@ -108,6 +129,7 @@ describe('normalizeContactInfo()', () => {
         expect(result.mobilePhone).toBe('+541111111111');
         expect(result.homePhone).toBe('+541122222222');
         expect(result.workPhone).toBe('+541133333333');
+        expect(result.whatsapp).toBe('+541144444444');
         expect(result.personalEmail).toBe('personal@test.com');
         expect(result.workEmail).toBe('work@test.com');
         expect(result.otherField).toBe('preserved');
@@ -116,10 +138,12 @@ describe('normalizeContactInfo()', () => {
     it('should not normalize fields that are not strings', () => {
         const result = normalizeContactInfo({
             mobilePhone: 123456,
-            homePhone: null
+            homePhone: null,
+            whatsapp: undefined
         }) as Record<string, unknown>;
         expect(result.mobilePhone).toBe(123456);
         expect(result.homePhone).toBeNull();
+        expect(result.whatsapp).toBeUndefined();
     });
 });
 

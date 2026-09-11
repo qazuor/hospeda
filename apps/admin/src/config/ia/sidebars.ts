@@ -189,7 +189,16 @@ const catalogoSidebar: SidebarInput = {
             label: { es: 'Gastronomía', en: 'Gastronomy', pt: 'Gastronomia' },
             icon: 'OffersIcon',
             defaultOpen: false,
-            permissions: ['COMMERCE_VIEW_ALL', 'COMMERCE_CREATE'],
+            // HOS-1077 dual-read. This gate is OR-semantics (see
+            // `isPermissionGateGranted`), so listing both families is all a
+            // dual-read needs here — no new mechanism. Release 2 drops the
+            // COMMERCE_* entries.
+            permissions: [
+                'GASTRONOMY_VIEW_ALL',
+                'GASTRONOMY_CREATE',
+                'COMMERCE_VIEW_ALL',
+                'COMMERCE_CREATE'
+            ],
             items: [
                 {
                     type: 'link',
@@ -197,7 +206,7 @@ const catalogoSidebar: SidebarInput = {
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
                     route: '/gastronomies',
-                    permissions: ['COMMERCE_VIEW_ALL']
+                    permissions: ['GASTRONOMY_VIEW_ALL', 'COMMERCE_VIEW_ALL']
                 },
                 {
                     type: 'link',
@@ -209,7 +218,7 @@ const catalogoSidebar: SidebarInput = {
                     },
                     icon: 'AddIcon',
                     route: '/gastronomies/new',
-                    permissions: ['COMMERCE_CREATE']
+                    permissions: ['GASTRONOMY_CREATE', 'COMMERCE_CREATE']
                 }
             ]
         },
@@ -221,7 +230,13 @@ const catalogoSidebar: SidebarInput = {
             label: { es: 'Experiencias', en: 'Experiences', pt: 'Experiências' },
             icon: 'OffersIcon',
             defaultOpen: false,
-            permissions: ['COMMERCE_VIEW_ALL', 'COMMERCE_CREATE'],
+            // HOS-1077 dual-read — see the gastronomy group above.
+            permissions: [
+                'EXPERIENCE_VIEW_ALL',
+                'EXPERIENCE_CREATE',
+                'COMMERCE_VIEW_ALL',
+                'COMMERCE_CREATE'
+            ],
             items: [
                 {
                     type: 'link',
@@ -229,7 +244,7 @@ const catalogoSidebar: SidebarInput = {
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
                     route: '/experiences',
-                    permissions: ['COMMERCE_VIEW_ALL']
+                    permissions: ['EXPERIENCE_VIEW_ALL', 'COMMERCE_VIEW_ALL']
                 },
                 {
                     type: 'link',
@@ -241,7 +256,7 @@ const catalogoSidebar: SidebarInput = {
                     },
                     icon: 'AddIcon',
                     route: '/experiences/new',
-                    permissions: ['COMMERCE_CREATE']
+                    permissions: ['EXPERIENCE_CREATE', 'COMMERCE_CREATE']
                 }
             ]
         },
@@ -573,7 +588,7 @@ const comercialSidebar: SidebarInput = {
             label: { es: 'Pagos', en: 'Payments', pt: 'Pagamentos' },
             icon: 'ReceiptIcon',
             defaultOpen: false,
-            permissions: ['PAYMENT_VIEW', 'INVOICE_VIEW'],
+            permissions: ['PAYMENT_VIEW', 'INVOICE_VIEW', 'BILLING_RECONCILIATION_MANAGE'],
             onMissing: 'hide',
             items: [
                 {
@@ -592,6 +607,19 @@ const comercialSidebar: SidebarInput = {
                     icon: 'FileTextIcon',
                     route: '/billing/invoices',
                     permissions: ['INVOICE_VIEW'],
+                    onMissing: 'hide'
+                },
+                {
+                    type: 'link',
+                    id: 'reconciliation',
+                    label: {
+                        es: 'Rescate de pagos huérfanos',
+                        en: 'Orphan payment rescue',
+                        pt: 'Resgate de pagamentos órfãos'
+                    },
+                    icon: 'ShieldAlertIcon',
+                    route: '/billing/reconciliation',
+                    permissions: ['BILLING_RECONCILIATION_MANAGE'],
                     onMissing: 'hide'
                 }
             ]
@@ -777,6 +805,18 @@ const plataformaSidebar: SidebarInput = {
                     icon: 'SearchIcon',
                     route: '/platform/configuration/seo',
                     permissions: ['SEO_MANAGE']
+                },
+                {
+                    type: 'link',
+                    id: 'qr-codes',
+                    label: { es: 'Códigos QR', en: 'QR codes', pt: 'Códigos QR' },
+                    icon: 'QrCodeIcon',
+                    route: '/platform/qr-codes',
+                    // The gate the LIST route demands, not a broader one
+                    // (HOS-981). A menu entry that declares a different
+                    // permission than its route enforces is an entry shown to
+                    // somebody who then eats a 403.
+                    permissions: ['QR_CODE_VIEW']
                 },
                 {
                     type: 'link',

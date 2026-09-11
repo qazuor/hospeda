@@ -7,7 +7,7 @@ import {
     formatCentsToArs,
     formatShortDate as formatShortDateHelper
 } from '@/lib/format-helpers';
-import type { SubscriptionStatus } from './types';
+import type { Subscription, SubscriptionStatus } from './types';
 
 /**
  * Format a date string as short date (DD/MM/YYYY). Returns "—" for
@@ -52,7 +52,12 @@ export function formatArsFromCents(cents: number, locale: string = defaultIntlLo
  * Covers every member of {@link AdminSubscriptionViewStatus}. `abandoned` and
  * `pending_provider` are real production values that previously fell through
  * to `undefined` (empty badge) because the local `SubscriptionStatus` union
- * omitted them.
+ * omitted them. `courtesy` (HOS-180) was ALSO missing until HOS-1245 — this
+ * map is a `Record`, so TypeScript would have caught it here the moment the
+ * schema widened, but the schema itself never declared `courtesy` in the
+ * first place (the actual HOS-1245 defect, one layer down in
+ * `admin-billing-view.shared.ts`'s `assertKnownStatus`, which THROWS on an
+ * unmapped status instead of falling through to `undefined`).
  */
 export function getStatusVariant(
     status: SubscriptionStatus
@@ -69,7 +74,8 @@ export function getStatusVariant(
         paused: 'secondary',
         pending_provider: 'outline',
         abandoned: 'destructive',
-        comp: 'secondary'
+        comp: 'secondary',
+        courtesy: 'secondary'
     };
     return variantMap[status];
 }
@@ -91,7 +97,8 @@ export function getStatusLabel(
         paused: 'admin-billing.subscriptions.statuses.paused',
         pending_provider: 'admin-billing.subscriptions.statuses.pendingProvider',
         abandoned: 'admin-billing.subscriptions.statuses.abandoned',
-        comp: 'admin-billing.subscriptions.statuses.comp'
+        comp: 'admin-billing.subscriptions.statuses.comp',
+        courtesy: 'admin-billing.subscriptions.statuses.courtesy'
     };
     return t(labels[status]);
 }
@@ -119,31 +126,115 @@ export function getPlanBySlug(slug: string): PlanDefinition | undefined {
  * cannot become an owner one — (2) different from the current plan, and (3)
  * **active**.
  *
- * `currentProductDomain` is a DEFENSE-IN-DEPTH guard, checked independently
- * of the `ALL_PLANS` category lookup (HOS-331 follow-up trap): `ALL_PLANS`
- * is accommodation-only by design, but `commerce-listing`, `partner-listing`,
- * `partner-silver`, and `partner-gold` are all stamped `category: 'owner'` in
- * `plans.config.ts` purely to satisfy the `PlanCategory` type — their REAL
- * discriminator is `product_domain`. If `currentPlan` is ever resolved from a
- * wider catalog than `ALL_PLANS` (or `ALL_PLANS`'s accommodation-only
- * invariant erodes), a category-only match would offer an operator
- * `owner-basico` as a "same family" destination for a `partner-gold`
- * subscription. `currentProductDomain` is read directly off the subscription
- * payload's `plan.productDomain` (served by the admin billing view contract)
- * and gates BEFORE the `ALL_PLANS` filter runs. A `null`/`undefined` domain
- * (unresolvable plan) is treated as "unknown, do not block" — the `!currentPlan`
- * guard above already covers that case.
+ * A destination must ALSO be in the same product domain, and that is now a
+ * real comparison rather than an allowlist of one (HOS-1233 T-039 / AC-15j).
+ *
+ * The trap it defends against is the HOS-331 follow-up: `commerce-listing`,
+ * `partner-listing`, `partner-silver` and `partner-gold` are all stamped
+ * `category: 'owner'` in `plans.config.ts` purely to satisfy the `PlanCategory`
+ * type — their REAL discriminator is `product_domain`. A category-only match
+ * would offer an operator `owner-basico` as a "same family" destination for a
+ * `partner-gold` subscription.
+ *
+ * This used to read `if (currentProductDomain !== 'accommodation') return []`,
+ * which closed that trap by refusing every non-accommodation subscription
+ * outright. It worked only because tourist subscriptions were MISFILED as
+ * accommodation and slipped through it (spec F-4b) — they passed the gate and
+ * were then correctly narrowed to tourist plans by the category filter. Once
+ * T-038 reclassifies those rows, that same gate returns **zero** destinations
+ * for every tourist subscription: a silent regression, in a surface nobody
+ * would think to re-test. Hence the two-sided comparison below.
+ *
+ * Two independent reads, both required, because they can disagree:
+ *
+ *   - **The catalog side** (`plan.productDomain === currentPlan.productDomain`)
+ *     is what actually closes the trap. Since T-034 every `PlanDefinition`
+ *     states its own domain, so `partner-gold` no longer matches an
+ *     accommodation destination even if it were resolvable here — no allowlist
+ *     needed, and a vertical added later is covered without editing this file.
+ *   - **The row side** (`currentProductDomain`, read off the subscription
+ *     payload's `plan.productDomain` served by the admin billing view contract)
+ *     is defense in depth against the catalog and the live row drifting apart.
+ *     When they disagree, this returns nothing — deliberately fail-closed: an
+ *     operator moving a subscription between plans on a stale reading of what
+ *     it IS is the failure worth preventing here.
+ *
+ * That fail-closed direction is why this task is ordered AFTER T-038 and not
+ * before: an un-migrated tourist row still claiming `accommodation` disagrees
+ * with its own tourist plan and would be offered no destinations. The backfill
+ * is what makes the two sides agree.
+ *
+ * A `null`/`undefined` row domain is NOT a disagreement. It is how every
+ * subscription predating the column reads, and `subscriptionMatchesDomain`
+ * treats it as accommodation for that reason; here the catalog plan's own
+ * domain answers instead, which is a real value rather than a bypass.
  */
 export function getChangePlanOptions(input: {
     readonly currentPlan: PlanDefinition | undefined;
     readonly currentSlug: string;
     readonly currentProductDomain?: string | null;
+    /**
+     * The catalog to choose destinations from. Defaults to `ALL_PLANS`;
+     * production callers omit it.
+     *
+     * Injectable because the `isActive` half of this filter can only be tested
+     * against a catalog that HAS a retired plan, and `ALL_PLANS` no longer does:
+     * HOS-692 removed the `complex-*` tiers and HOS-1224 removed `tourist-plus`,
+     * which was the last `isActive: false` entry. Over an all-active catalog
+     * every retired-plan assertion passes no matter what this filter does — a
+     * vacuous green, and precisely the bug HOS-331 was about. So the test
+     * supplies its own retired plan; the filter is not weakened to suit the
+     * catalog it happens to have today.
+     */
+    readonly plans?: readonly PlanDefinition[];
 }): PlanDefinition[] {
-    const { currentPlan, currentSlug, currentProductDomain } = input;
+    const { currentPlan, currentSlug, currentProductDomain, plans = ALL_PLANS } = input;
     if (!currentPlan) return [];
-    if (currentProductDomain && currentProductDomain !== 'accommodation') return [];
-    return ALL_PLANS.filter(
+
+    // A row that states no domain is a legacy row, not a contradicting one —
+    // the catalog plan's own domain answers for it. `currentPlan` is non-null
+    // here, so this never falls through to "no domain at all".
+    const domain = currentProductDomain ?? currentPlan.productDomain;
+    if (domain !== currentPlan.productDomain) return [];
+
+    return plans.filter(
         (plan) =>
-            plan.category === currentPlan.category && plan.slug !== currentSlug && plan.isActive
+            plan.productDomain === domain &&
+            plan.category === currentPlan.category &&
+            plan.slug !== currentSlug &&
+            plan.isActive
     );
+}
+
+/**
+ * Builds the `POST /api/v1/admin/billing/subscriptions/grant-comp` request
+ * body from the dialog's confirmed selection (HOS-1314).
+ *
+ * Extracted as its own pure function specifically so this mapping is
+ * directly unit-testable: `subscription.customerId` (a `billing_customers.id`)
+ * and `subscription.user?.id` (a Hospeda `users.id`) are both UUIDs sitting
+ * on the same row, and confusing the two is exactly the class of bug this
+ * whole feature exists to prevent — the grant would silently target the
+ * customer's LOGIN identity instead of their BILLING identity, which the
+ * `grant-comp` endpoint would 404 on for anyone whose two ids don't happen
+ * to collide, or worse, comp the wrong billing customer if they ever did.
+ *
+ * @param input.subscription - The subscription the dialog was opened from
+ *   (used only to resolve the target customer).
+ * @param input.planId - The plan UUID chosen in the dialog's selector.
+ * @param input.interval - The billing interval chosen in the dialog (audit
+ *   only — a comp is never charged either way).
+ * @returns The exact body `useGrantCompMutation` sends.
+ */
+export function buildGrantCompPayload(input: {
+    readonly subscription: Subscription;
+    readonly planId: string;
+    readonly interval: 'monthly' | 'annual';
+}): { customerId: string; planId: string; interval: 'monthly' | 'annual' } {
+    const { subscription, planId, interval } = input;
+    return {
+        customerId: subscription.customerId,
+        planId,
+        interval
+    };
 }

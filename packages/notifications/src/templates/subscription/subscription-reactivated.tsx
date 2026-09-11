@@ -70,7 +70,7 @@ export function SubscriptionReactivated({
             )}
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta`}>Ir al panel</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/`}>Ir al panel</Button>
             </Section>
         </EmailLayout>
     );

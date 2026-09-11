@@ -21,7 +21,11 @@ import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
 import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
 import { eventEditApi } from '@/lib/api/endpoints-protected';
-import type { EditorContentVisibility, EventEditDetail } from '@/lib/api/types';
+import type {
+    EditorContentModerationState,
+    EditorContentVisibility,
+    EventEditDetail
+} from '@/lib/api/types';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -100,6 +104,14 @@ export function EventEditor({
         buildEventEditFormData({ detail: initialData })
     );
     const [visibility, setVisibility] = useState<EditorContentVisibility>(initialData.visibility);
+    /*
+     * Mirrors `visibility`: kept as local state, resynced from a successful
+     * approve action, so the publication button re-derives its label/action
+     * without a full reload (HOS-1037).
+     */
+    const [moderationState, setModerationState] = useState<EditorContentModerationState>(
+        initialData.moderationState
+    );
     const [isSaving, setIsSaving] = useState(false);
 
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
@@ -400,14 +412,16 @@ export function EventEditor({
                                     visibility: next
                                 })
                             }
+                            onApprove={() => eventEditApi.moderate({ id: initialData.id })}
                             onDelete={() => eventEditApi.softDelete({ id: initialData.id })}
                             visibility={visibility}
-                            moderationState={initialData.moderationState}
+                            moderationState={moderationState}
                             lifecycleState={initialData.lifecycleState}
                             canPublish={canPublish}
                             canDelete={canDelete}
                             hasUnsavedChanges={isDirty || startDateCleared}
                             onVisibilityChange={setVisibility}
+                            onModerationStateChange={setModerationState}
                         />
                     </section>
 

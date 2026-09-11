@@ -274,11 +274,130 @@ describe('HOS-727: the offer is resolved from the limit, never hardcoded', () =>
 
     it('goes through the shared resolver rather than re-deriving the mapping', () => {
         expect(CODE).toContain('resolveLimitAddonOffer');
-        expect(CODE).toContain('LimitKey.MAX_ACCOMMODATIONS');
         // A second implementation of the limit→slug lookup here is exactly the
         // "canonical helper created, call sites not migrated" drift this repo
         // keeps re-introducing in billing.
         expect(CODE).not.toContain('addonSlugForLimit');
         expect(CODE).not.toContain('buildAddonFocusUrl');
+    });
+
+    it('takes the cap from the exhaustive vertical map, never from a literal', () => {
+        // HOS-1156 T-013 CHANGED THIS ASSERTION, deliberately. It used to read
+        // `expect(CODE).toContain('LimitKey.MAX_ACCOMMODATIONS')`, freezing the
+        // hardcoded accommodation cap — which is precisely what made the change
+        // an explicit decision instead of a silent drift: generalising the panel
+        // could not happen without a human coming here and rewriting this line.
+        //
+        // The RULE it protects is unchanged: the caller still may not choose
+        // which add-on this panel points at. What answers that question is now
+        // the vertical, through a map that is total and closed over
+        // `PublishVertical`, so the reachable set of caps is exactly three
+        // rather than the whole catalogue.
+        expect(CODE).toContain('LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical]');
+
+        // No literal cap may come back. A `LimitKey.SOMETHING` here would be a
+        // second, unmapped answer to the same question — the shape the map
+        // exists to prevent.
+        expect(CODE).not.toMatch(/LimitKey\.[A-Z_]+/);
+    });
+
+    it('does not let the caller pass a limit key directly', () => {
+        // The distinction the module docblock draws: a vertical is a closed
+        // choice among three, a `limitKey` parameter would be an open one among
+        // every cap in the catalogue.
+        expect(CODE).not.toMatch(/readonly\s+limitKey/);
+    });
+});
+
+describe('HOS-1156: each vertical speaks about its OWN cap', () => {
+    /**
+     * The add-on URL each vertical's at-cap panel must point at, written out BY
+     * HAND for the same reason the accommodation one above is: composing it with
+     * the call the code makes would keep this green whichever add-on the panel
+     * ended up linking to.
+     */
+    const EXPECTED_ADDON_HREF = {
+        accommodation:
+            '/es/mi-cuenta/addons/?focus=extra-accommodations-5#addon-extra-accommodations-5',
+        gastronomy: '/es/mi-cuenta/addons/?focus=extra-gastronomies-1#addon-extra-gastronomies-1',
+        experience: '/es/mi-cuenta/addons/?focus=extra-experiences-1#addon-extra-experiences-1'
+    } as const;
+
+    it.each([
+        'accommodation',
+        'gastronomy',
+        'experience'
+    ] as const)("offers %s its own add-on, not another vertical's", (vertical) => {
+        const content = resolvePrecheckPanelContent({
+            decision: 'upgrade_only',
+            vertical,
+            ...BASE_PARAMS
+        });
+
+        const addon = content.actions.find(
+            (a) => a.kind === 'link' && a.href.includes('/mi-cuenta/addons/')
+        );
+
+        expect(addon).toMatchObject({ href: EXPECTED_ADDON_HREF[vertical] });
+    });
+
+    it.each([
+        ['accommodation', 'max_accommodations'],
+        ['gastronomy', 'max_gastronomies'],
+        ['experience', 'max_experiences']
+    ] as const)('keys %s at-limit copy on %s', (vertical, limitKey) => {
+        const content = resolvePrecheckPanelContent({
+            decision: 'upgrade_only',
+            vertical,
+            ...BASE_PARAMS
+        });
+
+        expect(content.titleKey).toBe(`billing.limit.${limitKey}.atLimitPanel.title`);
+        expect(content.bodyKey).toBe(`billing.limit.${limitKey}.atLimitPanel.body`);
+    });
+
+    it('defaults to accommodation when no vertical is given', () => {
+        // Every caller that predates HOS-1156 must keep its exact behaviour.
+        const withDefault = resolvePrecheckPanelContent({
+            decision: 'upgrade_only',
+            ...BASE_PARAMS
+        });
+        const explicit = resolvePrecheckPanelContent({
+            decision: 'upgrade_only',
+            vertical: 'accommodation',
+            ...BASE_PARAMS
+        });
+
+        expect(withDefault).toEqual(explicit);
+    });
+
+    it('gives each vertical its own draft-copy namespace', () => {
+        const gastronomy = resolvePrecheckPanelContent({
+            decision: 'resume_or_create',
+            vertical: 'gastronomy',
+            ...BASE_PARAMS
+        });
+        const accommodation = resolvePrecheckPanelContent({
+            decision: 'resume_or_create',
+            vertical: 'accommodation',
+            ...BASE_PARAMS
+        });
+
+        expect(accommodation.titleKey).toBe('host.pages.nueva.precheck.resumeOrCreate.title');
+        expect(gastronomy.titleKey).toBe('publish.precheck.gastronomy.resumeOrCreate.title');
+    });
+
+    it('names the right thing in the untranslated fallback', () => {
+        // A fallback is what a reader sees when the key is missing. "Tenés una
+        // propiedad sin publicar" on the gastronomy page is worse than generic:
+        // it is wrong.
+        const gastronomy = resolvePrecheckPanelContent({
+            decision: 'resume_or_create',
+            vertical: 'gastronomy',
+            ...BASE_PARAMS
+        });
+
+        expect(gastronomy.bodyFallback).toContain('ficha');
+        expect(gastronomy.bodyFallback).not.toContain('propiedad');
     });
 });

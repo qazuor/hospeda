@@ -1,6 +1,7 @@
 export {
     type CompMutation,
     calculatePromoCodeEffect,
+    DISCOUNT_REDUCES_PRICE_TO_ZERO_MESSAGE,
     type DiscountMutation,
     type PromoMutation,
     type TrialExtensionMutation

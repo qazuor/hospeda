@@ -15,10 +15,12 @@ import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
     AUTH_SEGMENTS,
     CHANGE_PASSWORD_SEGMENT,
+    LANGUAGE_NEUTRAL_PREFIXES,
     PROFILE_COMPLETION_BYPASS_ROLES,
     PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
     PROFILE_COMPLETION_SEGMENT,
     PROTECTED_SEGMENTS,
+    PUBLIC_REDIRECT_PATHS,
     SESSION_OPTIONAL_SEGMENTS,
     SET_PASSWORD_SEGMENT,
     STATIC_PREFIXES
@@ -46,6 +48,23 @@ export interface LocaleExtractionResult {
  * is two letters. A future two-letter route segment would be swallowed by this
  * check — which is a reason to not create one, since it would collide with a
  * language tag for visitors regardless of what this function does.
+ *
+ * **That segment now exists: `/qr/` (HOS-981).** The warning above was right —
+ * `qr` matches this pattern, so this function classifies it as an unsupported
+ * LANGUAGE and returns a `restOfPath` with the `qr` REPLACED, which would send
+ * `/qr/Live2345/` to `/es/Live2345/` and a 404. It was created anyway, because
+ * the segment is printed on physical signs and cannot carry a locale.
+ *
+ * It is resolved OUTSIDE this function, by {@link isLanguageNeutralRoute} /
+ * `LANGUAGE_NEUTRAL_PREFIXES`, which makes the middleware skip the locale
+ * redirect for that prefix — so this pattern still matches `qr` and simply
+ * never gets to act on it. Do NOT "fix" the collision by special-casing `qr`
+ * here: the exemption is the fix, and narrowing this regex would change how
+ * every unsupported two-letter language tag behaves for every visitor.
+ *
+ * The constraint the warning states still holds for anything new: a two-letter
+ * top-level segment needs an entry in `LANGUAGE_NEUTRAL_PREFIXES`, or it is
+ * silently eaten.
  */
 const LOCALE_SHAPED_SEGMENT = /^[a-z]{2}(-[a-z]{2})?$/i;
 
@@ -129,7 +148,20 @@ export function isProtectedRoute({ path }: { path: string }): boolean {
         return false;
     }
 
-    return (PROTECTED_SEGMENTS as readonly string[]).includes(segments[1] ?? '');
+    if (!(PROTECTED_SEGMENTS as readonly string[]).includes(segments[1] ?? '')) {
+        return false;
+    }
+
+    // HOS-1156: a handful of paths under a protected segment hold nothing but a
+    // 301 to a public page. Gating those behind login makes an old bookmark ask
+    // for an account in order to learn that its destination no longer needs one.
+    // See `PUBLIC_REDIRECT_PATHS` for why the exemption is safe to grant only to
+    // pages whose entire body is a redirect.
+    const pathAfterLocale = `/${segments.slice(1).join('/')}`.replace(/\/$/, '');
+    return !(PUBLIC_REDIRECT_PATHS as readonly string[]).some(
+        (publicPath) =>
+            pathAfterLocale === publicPath || pathAfterLocale.startsWith(`${publicPath}/`)
+    );
 }
 
 /**
@@ -211,6 +243,33 @@ export function isProfileCompletionRequiredSessionOptionalRoute({
     return (PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS as readonly string[]).includes(
         segments[1] ?? ''
     );
+}
+
+/**
+ * Checks whether a URL path belongs to a route that deliberately lives outside
+ * the `/{lang}/` tree, and must therefore not be 301-redirected into it.
+ *
+ * Unlike {@link isStaticAssetRoute} this does NOT bypass the middleware: it
+ * suppresses the locale redirect and nothing else, so the trailing-slash
+ * normalisation, the 404 rewrite and the security headers all still apply. A
+ * language-neutral route that bypassed the pipeline would answer an unresolved
+ * slug with a blank 404 body instead of the site's 404 page.
+ *
+ * @param params - Object containing the URL path string.
+ * @returns True when the path must keep its locale-less form.
+ */
+export function isLanguageNeutralRoute({ path }: { readonly path: string }): boolean {
+    if (!path) {
+        return false;
+    }
+
+    for (const prefix of LANGUAGE_NEUTRAL_PREFIXES) {
+        if (path.startsWith(prefix)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -768,6 +827,17 @@ export function buildCspHeader({
     const oauthAvatarHosts =
         'https://lh3.googleusercontent.com https://platform-lookaside.fbsbx.com';
 
+    // HOS-1022: YouTube's static poster-thumbnail host. Used by the
+    // accommodation `/fotos` sub-page (`img.youtube.com/vi/<id>/maxresdefault.jpg`
+    // + `hqdefault.jpg` fallback — see `getYoutubePosterUrl()` in
+    // `@/lib/video-embed`) as a plain `<img src>`, never through Astro's
+    // `getImage()`, so — like the OAuth avatar hosts above — it does NOT belong
+    // in `ALLOWED_REMOTE_HOSTS` (that list doubles as the SSRF guard for
+    // server-side image fetches, which this isn't). Vimeo and Dailymotion have
+    // no equivalent free, predictable static-thumbnail URL (only an oEmbed API
+    // round-trip would give one), so only YouTube's poster host is added here.
+    const videoPosterImgHosts = 'https://img.youtube.com';
+
     // SPEC-181: PostHog analytics is proxied first-party under `/api/relay/*` (a
     // Cloudflare Worker forwards to PostHog Cloud US — see
     // infra/cloudflare/posthog-proxy/). Because the proxy path is same-origin,
@@ -845,7 +915,7 @@ export function buildCspHeader({
         //     used for tokenized inline colors and per-card transition delays)
         "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} ${videoPosterImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
         `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''}${sentryConnectSrc} https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
@@ -855,9 +925,22 @@ export function buildCspHeader({
         // Cloudflare Turnstile renders its challenge in an iframe served from
         // https://challenges.cloudflare.com. 'strict-dynamic' does NOT govern
         // frames, so this host MUST be allowlisted here or the widget can never
-        // mount and no token is produced (SPEC-301 feedback form). Every other
-        // embed origin stays blocked; frame-ancestors 'none' still stops others
-        // from embedding us.
+        // mount and no token is produced (SPEC-301 feedback form).
+        //
+        // HOS-1022: three more embed hosts, one per video provider the
+        // accommodation editor's "Videos" field promises support for
+        // (`VideoGalleryField.tsx`). The accommodation detail page's video
+        // section builds its `<iframe src>` from `resolveVideoEmbed()`
+        // (`apps/web/src/lib/video-embed.ts`), which ONLY ever emits one of
+        // these three fixed templates — never the host-authored URL verbatim —
+        // so widening this directive to exactly these three origins is safe:
+        //   - https://www.youtube-nocookie.com — YouTube, cookie-less embed.
+        //   - https://player.vimeo.com         — Vimeo's dedicated player host.
+        //   - https://www.dailymotion.com       — Dailymotion's embed path.
+        // Every other embed origin stays blocked; frame-ancestors 'none' still
+        // stops others from embedding us. Do NOT add a provider's bare/`watch`
+        // host here (e.g. `youtube.com`) — only the embed-specific host the
+        // resolver actually emits.
         //
         // `'self'` in dev ONLY: Astro's ClientRouter runs a dev-only code path,
         // `prepareForClientOnlyComponents()`, which appends a hidden same-origin
@@ -875,8 +958,8 @@ export function buildCspHeader({
         // dev-only `style-src` relaxation above, same root cause: dev-only
         // ClientRouter behaviour meeting an enforcing CSP.
         isDev
-            ? "frame-src 'self' https://challenges.cloudflare.com"
-            : 'frame-src https://challenges.cloudflare.com',
+            ? "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com"
+            : 'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com',
         // The same dev-only iframe needs BOTH sides of the embed relationship:
         // `frame-src` authorises the PARENT to embed, `frame-ancestors` (sent on
         // the iframe's own response, since it loads one of our pages) authorises
@@ -1009,23 +1092,78 @@ export function isProfileCompletionBypassRole({
 }
 
 /**
+ * Appends a `returnUrl` query param to an onboarding redirect target.
+ *
+ * The onboarding gates (profile completion, set-password, change-password)
+ * interrupt whatever the user was trying to reach. Without carrying that
+ * destination forward, finishing the gate drops them on `/mi-cuenta/` and the
+ * thing they came to do is lost — which is exactly the gap HOS-838 reports for
+ * a brand-new account arriving from a marketing landing.
+ *
+ * The value is a same-app path taken from the request being interrupted, so it
+ * is trustworthy at write time. It is re-validated with `resolveSafeReturnPath`
+ * on the way out, because by then the user could have edited the URL by hand.
+ *
+ * @param params - The base path to redirect to and the destination to carry.
+ * @returns `base` unchanged when there is nothing worth carrying, otherwise
+ * `base?returnUrl=<encoded>`.
+ */
+function withReturnUrl({
+    base,
+    returnUrl
+}: {
+    readonly base: string;
+    readonly returnUrl?: string;
+}): string {
+    // Nothing to carry, or the destination IS the gate we are redirecting to:
+    // a self-referential returnUrl would bounce the user back onto the form
+    // they just finished.
+    if (!returnUrl || returnUrl.startsWith(base)) {
+        return base;
+    }
+    return `${base}?returnUrl=${encodeURIComponent(returnUrl)}`;
+}
+
+/**
  * Builds the redirect URL for the profile completion form.
  *
- * @param params - Object with locale
- * @returns Absolute path to `/{locale}/mi-cuenta/completar-perfil/`
+ * @param params - Object with locale and, optionally, the destination the user
+ * was interrupted on — carried through as `returnUrl` (HOS-838).
+ * @returns Absolute path to `/{locale}/mi-cuenta/completar-perfil/`, with a
+ * `returnUrl` query param when a destination was supplied.
  */
-export function buildProfileCompletionRedirect({ locale }: { locale: SupportedLocale }): string {
-    return `/${locale}/mi-cuenta/${PROFILE_COMPLETION_SEGMENT}/`;
+export function buildProfileCompletionRedirect({
+    locale,
+    returnUrl
+}: {
+    readonly locale: SupportedLocale;
+    readonly returnUrl?: string;
+}): string {
+    return withReturnUrl({
+        base: `/${locale}/mi-cuenta/${PROFILE_COMPLETION_SEGMENT}/`,
+        returnUrl
+    });
 }
 
 /**
  * Builds the redirect URL for the set-password form.
  *
- * @param params - Object with locale
- * @returns Absolute path to `/{locale}/mi-cuenta/agregar-contrasena/`
+ * @param params - Object with locale and, optionally, the destination the user
+ * was interrupted on — carried through as `returnUrl` (HOS-838).
+ * @returns Absolute path to `/{locale}/mi-cuenta/agregar-contrasena/`, with a
+ * `returnUrl` query param when a destination was supplied.
  */
-export function buildSetPasswordRedirect({ locale }: { locale: SupportedLocale }): string {
-    return `/${locale}/mi-cuenta/${SET_PASSWORD_SEGMENT}/`;
+export function buildSetPasswordRedirect({
+    locale,
+    returnUrl
+}: {
+    readonly locale: SupportedLocale;
+    readonly returnUrl?: string;
+}): string {
+    return withReturnUrl({
+        base: `/${locale}/mi-cuenta/${SET_PASSWORD_SEGMENT}/`,
+        returnUrl
+    });
 }
 
 /**
@@ -1211,9 +1349,20 @@ export function isChangePasswordRoute({ path }: { path: string }): boolean {
 /**
  * Builds the redirect URL for the change-password form.
  *
- * @param params - Object with locale
- * @returns Absolute path to `/{locale}/mi-cuenta/cambiar-contrasena/`
+ * @param params - Object with locale and, optionally, the destination the user
+ * was interrupted on — carried through as `returnUrl` (HOS-838).
+ * @returns Absolute path to `/{locale}/mi-cuenta/cambiar-contrasena/`, with a
+ * `returnUrl` query param when a destination was supplied.
  */
-export function buildChangePasswordRedirect({ locale }: { locale: SupportedLocale }): string {
-    return `/${locale}/mi-cuenta/${CHANGE_PASSWORD_SEGMENT}/`;
+export function buildChangePasswordRedirect({
+    locale,
+    returnUrl
+}: {
+    readonly locale: SupportedLocale;
+    readonly returnUrl?: string;
+}): string {
+    return withReturnUrl({
+        base: `/${locale}/mi-cuenta/${CHANGE_PASSWORD_SEGMENT}/`,
+        returnUrl
+    });
 }

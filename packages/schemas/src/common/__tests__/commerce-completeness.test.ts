@@ -9,6 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { ExperiencePublicContactInfoSchema } from '../../entities/experience/experience.access.schema.js';
 import { CommerceEntityTypeEnum } from '../../enums/commerce-entity-type.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import {
@@ -72,7 +73,10 @@ function makeCompleteExperienceListing(): CommerceListingCompletenessListing {
                 moderationState: ModerationStatusEnum.APPROVED
             }
         },
-        contactInfo: { personalEmail: 'guide@example.com' },
+        // HOS-924: `workEmail`, not `personalEmail` — a personal address is
+        // never published on the experience page, so it cannot be the channel
+        // that makes the listing reachable.
+        contactInfo: { workEmail: 'guide@example.com' },
         priceFrom: 1500000,
         isPriceOnRequest: false
     };
@@ -417,5 +421,144 @@ describe('resolveListingCompleteness — experience', () => {
             expect(result.complete).toBe(true);
             expect(result.missing).not.toContain('priceFrom');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-924 — the publish gate must only accept channels the page publishes
+// ---------------------------------------------------------------------------
+
+/**
+ * The bug: `hasReachableContactChannel` accepted any of SIX channels, while
+ * `ExperiencePublicContactInfoSchema` publishes only four keys — of which only
+ * three are a phone or an email. So an operator whose only contact was a
+ * WhatsApp number (the natural channel for a guide or a boatman) passed every
+ * validator, paid the subscription, published, and got a listing with no way to
+ * be contacted. Nobody told him; the page looked complete.
+ *
+ * `homePhone` and `personalEmail` had the same problem — three fields, not one.
+ *
+ * These tests execute the gate rather than describing it, and the last block
+ * derives its expectations from the public schema itself, so the two lists
+ * cannot drift apart again without a red test.
+ */
+describe('HOS-924 — an experience cannot publish on a channel its page never shows', () => {
+    /** Every phone/email key `contact_info` can hold. `website` is not a channel. */
+    const ALL_CONTACT_CHANNELS = [
+        'homePhone',
+        'workPhone',
+        'mobilePhone',
+        'whatsapp',
+        'personalEmail',
+        'workEmail'
+    ] as const;
+
+    /** Values that satisfy the WRITE-side format for each key. */
+    const SAMPLE_VALUE: Readonly<Record<(typeof ALL_CONTACT_CHANNELS)[number], string>> = {
+        homePhone: '+543442111111',
+        workPhone: '+543442222222',
+        mobilePhone: '+5493447412233',
+        whatsapp: '+5493447412233',
+        personalEmail: 'guide.personal@gmail.com',
+        workEmail: 'contacto@kayakaventura.com.ar'
+    };
+
+    /** Resolves an experience whose ONLY contact channel is `key`. */
+    function resolveWithOnlyChannel(key: (typeof ALL_CONTACT_CHANNELS)[number]) {
+        return resolveListingCompleteness({
+            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            listing: {
+                ...makeCompleteExperienceListing(),
+                contactInfo: { [key]: SAMPLE_VALUE[key] }
+            }
+        });
+    }
+
+    it('refuses to publish an experience whose only contact is WhatsApp', () => {
+        const result = resolveWithOnlyChannel('whatsapp');
+
+        expect(result.missing).toContain('contactInfo');
+        expect(result.complete).toBe(false);
+    });
+
+    it('refuses to publish an experience whose only contact is a home phone', () => {
+        const result = resolveWithOnlyChannel('homePhone');
+
+        expect(result.missing).toContain('contactInfo');
+        expect(result.complete).toBe(false);
+    });
+
+    it('refuses to publish an experience whose only contact is a personal email', () => {
+        const result = resolveWithOnlyChannel('personalEmail');
+
+        expect(result.missing).toContain('contactInfo');
+        expect(result.complete).toBe(false);
+    });
+
+    it('publishes on a work phone alone', () => {
+        expect(resolveWithOnlyChannel('workPhone').complete).toBe(true);
+    });
+
+    it('publishes on a mobile phone alone', () => {
+        expect(resolveWithOnlyChannel('mobilePhone').complete).toBe(true);
+    });
+
+    it('publishes on a work email alone', () => {
+        expect(resolveWithOnlyChannel('workEmail').complete).toBe(true);
+    });
+
+    it('still refuses a website as the only contact', () => {
+        // Unchanged by HOS-924: it is published, but a site is not a channel
+        // that reaches a person, and it never counted before either.
+        const result = resolveListingCompleteness({
+            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            listing: {
+                ...makeCompleteExperienceListing(),
+                contactInfo: { website: 'https://kayakaventura.com.ar' }
+            }
+        });
+
+        expect(result.missing).toContain('contactInfo');
+    });
+
+    it('accepts a WhatsApp-only gastronomy listing — the narrowing is per-vertical', () => {
+        // Applying the experience rule to gastronomy would make EVERY
+        // gastronomy listing unpublishable: `GastronomyPublicSchema` publishes
+        // no `contactInfo` at all. That hole is wider than a mis-calibrated
+        // gate and is tracked separately.
+        const result = resolveListingCompleteness({
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            listing: {
+                ...makeCompleteGastronomyListing(),
+                contactInfo: { whatsapp: SAMPLE_VALUE.whatsapp }
+            }
+        });
+
+        expect(result.missing).not.toContain('contactInfo');
+        expect(result.complete).toBe(true);
+    });
+
+    describe('the gate and the public schema name the same channels', () => {
+        /**
+         * Read off the real schema, not restated here: this is the invariant
+         * that broke. A key added to (or removed from) the published set
+         * without the matching gate change turns one of these cases red.
+         */
+        const publishedKeys = new Set(Object.keys(ExperiencePublicContactInfoSchema.shape));
+
+        it('publishes at least one contactable channel at all', () => {
+            // Guards the loop below against a schema that published nothing:
+            // every case would then assert "incomplete" and pass vacuously.
+            const contactable = ALL_CONTACT_CHANNELS.filter((key) => publishedKeys.has(key));
+            expect(contactable.length).toBeGreaterThan(0);
+        });
+
+        for (const key of ALL_CONTACT_CHANNELS) {
+            it(`${key} alone ${publishedKeys.has(key) ? 'publishes' : 'does not publish'}`, () => {
+                const result = resolveWithOnlyChannel(key);
+
+                expect(result.complete).toBe(publishedKeys.has(key));
+            });
+        }
     });
 });

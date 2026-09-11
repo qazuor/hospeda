@@ -12,6 +12,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { getDb } from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 
 // ─── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -40,7 +41,20 @@ vi.mock('@repo/service-core', () => ({
     // subscriptions. All test stubs here are accommodation subs (no productDomain),
     // so this should always return true — matching the real function's no-op behaviour
     // on legacy/null productDomain rows.
-    isAccommodationSubscription: () => true
+    isAccommodationSubscription: () => true,
+    // HOS-1270: this suite is about the grant/revoke/limit-aggregation MECHANICS
+    // (T-010a/T-010b), not domain matching — that is
+    // `addon-entitlement-product-domain.test.ts`'s job, which deliberately uses
+    // the REAL `subscriptionMatchesDomain`. Stubbed to always match here so the
+    // ADDON_STUBS' `productDomain: ACCOMMODATION` (needed only to clear the
+    // fail-closed `!addon.productDomain` guard) never has to agree with a real
+    // subscription's domain for these tests to exercise their actual subject.
+    subscriptionMatchesDomain: () => true,
+    // HOS-1104: pass-through stub. Deliberately does NOT fabricate a
+    // `productDomain` value onto the fixtures (that would hide the exact bug
+    // this hydration exists to fix) — it mirrors the real function's own
+    // no-op behaviour when there is nothing to recover from the DB.
+    hydrateSubscriptionProductDomains: (subs: unknown[]) => Promise.resolve(subs)
 }));
 
 // ─── Addon stubs matching the shapes the service expects from AddonCatalogService ──
@@ -56,6 +70,10 @@ const ADDON_STUBS: Record<string, unknown> = {
         limitIncrease: null,
         grantsEntitlement: EntitlementKey.FEATURED_LISTING,
         targetCategories: ['owner', 'complex'],
+        // HOS-1270: required — `addon.productDomain` now gates
+        // `applyAddonEntitlements`/`removeAddonEntitlements` (fail-closed on
+        // `undefined`). Matches the real catalog's declared domain for this slug.
+        productDomain: ProductDomainEnum.ACCOMMODATION,
         isActive: true,
         sortOrder: 1
     },
@@ -69,6 +87,7 @@ const ADDON_STUBS: Record<string, unknown> = {
         limitIncrease: null,
         grantsEntitlement: EntitlementKey.FEATURED_LISTING,
         targetCategories: ['owner', 'complex'],
+        productDomain: ProductDomainEnum.ACCOMMODATION,
         isActive: true,
         sortOrder: 2
     },
@@ -82,6 +101,7 @@ const ADDON_STUBS: Record<string, unknown> = {
         limitIncrease: 20,
         grantsEntitlement: null,
         targetCategories: ['owner', 'complex'],
+        productDomain: ProductDomainEnum.ACCOMMODATION,
         isActive: true,
         sortOrder: 3
     },
@@ -95,6 +115,7 @@ const ADDON_STUBS: Record<string, unknown> = {
         limitIncrease: 5,
         grantsEntitlement: null,
         targetCategories: ['owner'],
+        productDomain: ProductDomainEnum.ACCOMMODATION,
         isActive: true,
         sortOrder: 4
     }
@@ -674,6 +695,7 @@ describe('AddonEntitlementService', () => {
                 limitIncrease: null,
                 grantsEntitlement: EntitlementKey.FEATURED_LISTING,
                 targetCategories: ['owner'] as Array<'owner' | 'complex'>,
+                productDomain: ProductDomainEnum.ACCOMMODATION,
                 isActive: true,
                 sortOrder: 99
             };

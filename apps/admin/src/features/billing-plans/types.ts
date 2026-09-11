@@ -1,5 +1,9 @@
 import type { EntitlementKey, LimitKey, PlanDefinition } from '@repo/billing';
-import type { PlanPriceChangeEffect } from '@repo/schemas';
+import type {
+    BillingPlanPublicListing,
+    PlanPriceChangeEffect,
+    ProductDomainValue
+} from '@repo/schemas';
 
 /**
  * Parsed plan record shape used by DataTable cells and column definitions.
@@ -34,6 +38,26 @@ export interface ParsedPlanRecord {
     readonly isDeleted: boolean;
     /** Count of live subscribers (active/trialing) referencing the plan */
     readonly activeSubscriptionCount: number;
+    /**
+     * Public-catalogue visibility (HOS-1062 F1). ORTHOGONAL to `isActive`: an
+     * `'unlisted'` plan is active and charging, it is simply withheld from the
+     * endpoints that list plans.
+     *
+     * It is here because the whole failure mode of that mark is "nobody notices
+     * anything". A plan is marked by hand today, and a typo (`'unlited'`) makes
+     * the system do the RIGHT thing — the resolver withholds on doubt — which
+     * looks identical to the operator to the case where they got it right. The
+     * table is where those two stop looking the same.
+     */
+    readonly publicListing: BillingPlanPublicListing;
+    /**
+     * Which vertical the plan belongs to (`billing_plans.product_domain`).
+     *
+     * Added for HOS-1314: the admin "grant comp subscription" dialog groups
+     * this list by vertical so an operator cannot mistake a gastronomy plan
+     * for an accommodation one.
+     */
+    readonly productDomain: ProductDomainValue;
 }
 
 /**
@@ -70,6 +94,13 @@ export interface CreatePlanPayload {
     readonly name: string;
     readonly description: string;
     readonly category: 'owner' | 'complex' | 'tourist';
+    /**
+     * Product domain the plan belongs to (HOS-1233). Required on create and
+     * WRITE-ONCE, like `slug`: it is a capability-layer field owned by config,
+     * so {@link UpdatePlanPayload} omits it and the update request must not
+     * carry it.
+     */
+    readonly productDomain: ProductDomainValue;
     readonly monthlyPriceArs: number;
     readonly annualPriceArs: number | null;
     readonly monthlyPriceUsdRef: number;
@@ -88,7 +119,8 @@ export interface CreatePlanPayload {
  * All fields from CreatePlanPayload except `slug` are optional; `id` is the UUID
  * mutation identifier. Matches UpdateBillingPlanSchema contract.
  */
-export interface UpdatePlanPayload extends Partial<Omit<CreatePlanPayload, 'slug'>> {
+export interface UpdatePlanPayload
+    extends Partial<Omit<CreatePlanPayload, 'slug' | 'productDomain'>> {
     readonly id: string;
 }
 

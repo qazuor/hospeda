@@ -1,4 +1,11 @@
 {
+    "aiChat": {
+        "fabLabel": "Preguntarle a la IA sobre este local",
+        "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el local.",
+        "panelLabel": "Chat con IA — Preguntas sobre el local",
+        "priceDisclaimer": "La carta, los precios y los horarios pueden haber cambiado. Contactá al local para confirmar.",
+        "unavailable": "El chat de IA no está disponible para este local"
+    },
     "listing": {
         "title": "Gastronomía",
         "subtitle": "Descubrí los mejores restaurantes, bares y sabores de la región",
@@ -13,6 +20,7 @@
         "type": "Tipo de establecimiento",
         "priceRange": "Rango de precio",
         "featured": "Solo destacados",
+        "features": "Aptos y características",
         "minRating": "Calificación mínima",
         "sort": {
             "featured": "Destacados primero",
@@ -47,6 +55,22 @@
             "wednesday": "Miércoles"
         },
         "menu": "Ver menú",
+        "menuCarta": {
+            "title": "Carta",
+            "attachmentImage": "Carta en imagen",
+            "attachmentPdf": "Carta en PDF",
+            "viewPdf": "Ver carta en PDF",
+            "consultPrice": "A consultar",
+            "unavailable": "No disponible",
+            "switchLanguage": "Ver la carta en:",
+            "seoDescription": "Carta de {{name}}",
+            "backToListing": "← Volver a la ficha"
+        },
+        "dailySpecials": {
+            "title": "Menú del día",
+            "intro": "Lo que se ofrece hoy",
+            "consultPrice": "A consultar"
+        },
         "reviews": {
             "title": "Reseñas",
             "empty": "Todavía no hay reseñas. ¡Sé el primero en opinar!",
@@ -59,6 +83,17 @@
         "social": "Redes sociales",
         "amenities": {
             "title": "Servicios y comodidades"
+        },
+        "eventsCta": {
+            "title": "¿Buscás salón para eventos?",
+            "description": "Este lugar acepta cumpleaños, eventos de empresa y casamientos. Contactanos para coordinar.",
+            "button": "Contactar"
+        },
+        "venueEvents": {
+            "title": "Agenda del local",
+            "weekly": "Todos los {{weekday}}",
+            "range": "{{when}}, {{start}} a {{end}}",
+            "fromOnly": "{{when}}, desde las {{start}}"
         }
     },
     "types": {

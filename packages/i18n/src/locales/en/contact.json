@@ -7,15 +7,13 @@
     "subtitle": "Have a question or suggestion? Fill out the form and we'll get back to you shortly.",
     "email": {
         "label": "Email",
-        "value": "info@hospeda.com"
+        "value": "info@hospeda.com.ar"
     },
     "phone": {
-        "label": "Phone",
-        "value": "+54 3442 453797"
+        "label": "Phone"
     },
     "whatsapp": {
-        "label": "WhatsApp",
-        "value": "+54 9 3442 453797"
+        "label": "WhatsApp"
     },
     "address": {
         "label": "Address",
@@ -84,7 +82,7 @@
         },
         "email": {
             "label": "Email",
-            "value": "info@hospeda.com"
+            "value": "info@hospeda.com.ar"
         }
     },
     "channels": {

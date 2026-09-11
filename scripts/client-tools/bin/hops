@@ -1,0 +1,7 @@
+#!/usr/bin/env bun
+// Calls main() explicitly rather than relying on src/index.ts's
+// `import.meta.main` guard: with this file as the entry point, that guard is
+// false and importing the module alone would run nothing and exit 0.
+import { main } from '../src/index.ts';
+
+process.exit(await main({ argv: process.argv.slice(2) }));

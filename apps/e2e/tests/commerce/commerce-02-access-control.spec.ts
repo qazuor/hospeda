@@ -16,7 +16,7 @@
  *   2. CROSS-OWNER BLOCKED — a logged-in COMMERCE_OWNER (Julieta) navigating
  *      to another owner's (Rodrigo's) gastronomy editor is redirected back to
  *      /es/mi-cuenta/comercio/ (her own listing index). The gate lives in:
- *        apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro (L51-55)
+ *        apps/web/src/lib/editor/resolve-commerce-editor-page.ts (the shared front door)
  *        `if (!ownsListing && !isStaff) → redirect('mi-cuenta/comercio')`
  *
  * Actors:
@@ -42,7 +42,7 @@
  *
  * @see SPEC-252 spec.md § T-004 negative commerce access-control E2E
  * @see apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro
- * @see apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro
+ * @see apps/web/src/lib/editor/resolve-commerce-editor-page.ts
  * @see apps/web/src/lib/account-roles.ts (isCommerceOwnerRole)
  */
 
@@ -169,7 +169,9 @@ test.describe('COMMERCE-02: access-control negative paths @p0 @commerce', () => 
 
         // ── Attempt to open Rodrigo's gastronomy editor ───────────────────
         // Julieta's role IS COMMERCE_OWNER so the role gate passes.
-        // The ownership gate in editar.astro checks detail.ownerId === user.id.
+        // The ownership gate in `resolveCommerceEditorPage` checks
+        // detail.ownerId === user.id, for the hub and every section alike
+        // (HOS-1080 moved it out of the single page into the shared resolver).
         // Rodrigo's listing ownerId !== Julieta's userId → redirect to /mi-cuenta/comercio/.
         const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${RODRIGO_GASTRONOMY_ID}/editar`;
         await page.goto(rivalEditorUrl, { waitUntil: 'domcontentloaded' });

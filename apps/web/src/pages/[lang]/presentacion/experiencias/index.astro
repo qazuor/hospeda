@@ -1,0 +1,502 @@
+---
+/**
+ * @file presentacion/experiencias/index.astro
+ * @description Commercial presentation for experience providers (HOS-978). It STARTED as a
+ * verbatim migration of the owner-approved artifact "Presentación Experiencias", and the
+ * stylesheet is still the artifact's own.
+ *
+ * THE COPY HAS DIVERGED FROM THE ARTIFACT, BY OWNER REQUEST (2026-09-05). The artifact is no
+ * longer the source of truth for the prose — this file is. The reason is the ladder: it described
+ * a vertical with ONE sellable plan, and HOS-975 put three on sale (`experience-basico` $15.000 /
+ * `-pro` $35.000 / `-premium` $50.000, caps 1 / 5 / 10; `packages/billing/src/config/plans.config.ts`).
+ * So the page carries a tier table it never had, and the per-feature "va en un escalón arriba"
+ * asides that stood in for one are gone: a feature's tier is stated in the table and nowhere else.
+ *
+ * SIX CLAIMS ARE AHEAD OF THE CODE. OWNER DECISION (2026-09-05): the page goes first and the
+ * issues follow. They are written in the present tense, without hedging, ON PURPOSE — do NOT
+ * "correct" any of them back to today's behaviour. Shipping the issue is what closes the gap:
+ *  1. THE 30-DAY TRIAL — masthead factsheet, step 03, closing paragraph. Commerce has no trial
+ *     today: `startCommerceCheckout` passes a literal `trialDays: 0` to MercadoPago and the first
+ *     charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave commerce the trial,
+ *     HOS-1012 removed it when it rebuilt the local trial for accommodation only. HOS-1184. Public
+ *     marketing already promises the 30 days, so the page agrees with the site, not with the code.
+ *  2. AI TRANSLATION TO ENGLISH AND PORTUGUESE — "Qué podés mostrar". Commerce listings have the
+ *     FOUR multilang columns but no AI path; the owner types every locale by hand. HOS-1192.
+ *  3. STATISTICS BY DAY — "Qué podés mostrar" and "Para ser justos". The daily-series route exists;
+ *     the commerce widget plots only uniques and totals over a 7d/30d window. HOS-1193.
+ *  4. THE PHOTO LADDER 15 / 30 / 50 — the tier table. Today all three tiers get a flat 30
+ *     (`MAX_PHOTOS_PER_EXPERIENCE`); HOS-1108, numbers fixed by the owner in a comment on it on
+ *     2026-09-05. Note that 50 also implies raising the per-entity ceiling from 30.
+ *  5. THAT YOU CAN MOVE DOWN A PLAN — the tier table's closing line. The plan-change route
+ *     answers 422 on a downgrade today (HOS-1122); the change is about to land.
+ *  6. ANNUAL PRICING ("pagás diez meses y tenés doce") — the paragraph above the tier table and its
+ *     "Por año" row. **MOSTLY SHIPPED by HOS-1285.** $150.000 / $350.000 / $500.000 are the
+ *     catalogue's own figures now (`commerceVerticalTier` takes `annualPriceArs` per tier instead of
+ *     sealing `null` for all six), the seed writes the `'year'` `billing_prices` row, and the
+ *     checkout — renamed `initiateCommerceSubscription`, because the old name said otherwise —
+ *     accepts `billingInterval: 'annual'` and resolves that row. What is NOT shipped is the
+ *     owner-facing PICKER: `CommercePlanPicker.client.tsx` still emits a slug and nothing else, so
+ *     nothing in the web app sends the field yet. True about the price, still ahead about the gesture.
+ *
+ * TWO PIECES OF COPY ARE FROZEN BY TESTS. Both were rewritten away once already, on 2026-09-05.
+ *  - THE CONTACT PARAGRAPHS, in "Acá no se vende el cupo": "El WhatsApp <strong>no</strong> se
+ *    muestra" and "el sistema no te va a dejar publicar" are asserted verbatim by
+ *    `test/pages/presentacion-experiencias-contact-copy.test.ts` (HOS-924), which also EXECUTES
+ *    `resolveListingCompleteness`, so the claim cannot pass by being merely well-worded. They moved
+ *    section (they used to own "Cómo te van a contactar") but not a character.
+ *  - THE "LO QUE CAMBIÁS SOLO Y LO QUE NO" TABLE: `test/pages/commerce-amenities-render.test.ts`
+ *    asserts its first row verbatim, ending `qué incluye, contacto y redes</td><td><strong>Vos,
+ *    cuando quieras</strong>`. It is a PRODUCT guard (HOS-1071): every vertical presentation must
+ *    tell the owner what they change alone, and gastronomía keeps the twin table. Dissolving this
+ *    section into the others is what broke it. The original's THIRD row was wrong and is now two:
+ *    the owner CAN change the slug (`commerce/editor/BasicInfoSection.client.tsx` — opt-in checkbox
+ *    plus a warning about Google and shared links); only `isFeatured` is the team's, being out of
+ *    the owner PATCH with no commerce plan granting `FEATURED_LISTING`.
+ *
+ * WHY IT IS NOT THE PUBLIC LANDING (/planes/experiencias/). That landing sells and is optimized to
+ * rank. This page is what the owner sends personally to one prospect over WhatsApp, or dictates by
+ * phone, and it carries things a public landing must not: negotiable pricing, comparisons against
+ * competitors, and operational detail. That is why `noindex, nofollow` is a requirement here rather
+ * than a precaution, and why the page is excluded from the sitemap (see `lib/seo-config.ts` →
+ * SITEMAP_EXCLUDED_PATHS, which also drives the robots.txt `Disallow`).
+ *
+ * WHY IT IS NOT TRANSLATED. The audience is local (owner decision, HOS-978). The page lives under
+ * `[lang]/` anyway so the short, dictable URL works: `hospeda.com.ar/presentacion/experiencias` is
+ * 301-redirected to `/es/presentacion/experiencias/` by the middleware's locale step, so no
+ * middleware exemption was needed. It therefore serves the same Spanish copy under `/en/` and
+ * `/pt/` BY DESIGN — unlike HOS-908, where that was a defect.
+ *
+ * WHY `StandaloneLayout`. The page owns 100% of its chrome, exactly like the `/funcionalidades/`
+ * brochure (HOS-119) it follows. No Header, no Footer, no site nav — it must look like the artifact
+ * it came from.
+ *
+ * WHY THE STYLESHEET IS A PLAIN `<style>` BLOCK. Astro extracts it to a real stylesheet. An
+ * `is:inline` block would be dropped in production: the CSP omits `'unsafe-inline'` from
+ * `style-src` outside dev (see `lib/middleware-helpers.ts`), so the page would render unstyled in
+ * prod while looking perfect locally. Do not add `is:inline` here.
+ *
+ * @route /{lang}/presentacion/experiencias/
+ * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ */
+
+import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+import '@/styles/presentacion.css';
+import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
+import { getSiteUrl } from '@/lib/env';
+import { buildUrl } from '@/lib/urls';
+
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+const locale = Astro.locals.locale as SupportedLocale;
+// Brand contact phone, single source of truth (HOS-364) — only the phone
+// digits are parameterized so a real number change does not require
+// re-editing prose.
+const brandPhone = getBrandPhoneLocalDisplay();
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session and no API call: the content is hardcoded copy, so it only
+// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
+
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/experiencias/`;
+---
+
+<StandaloneLayout locale={locale}>
+	<SEOHead
+		slot="head"
+		title="Presentación Experiencias"
+		description="Publicá lo que hacés hacer. Kayak, cabalgatas, pesca, avistaje de aves, visitas guiadas, termas y talleres: el que reserva alojamiento en el Litoral entra a Hospeda a decidir qué va a hacer. Sin comisión, con tres planes y 30 días de prueba."
+		canonical={canonical}
+		locale={locale}
+		noindex
+		nofollow
+	/>
+	<link
+		slot="head"
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap"
+	/>
+
+<PresentationThemeToggle />
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Hospeda &middot; Experiencias</p>
+    <h1>Publicá lo que hacés hacer</h1>
+    <div class="rule"></div>
+    <p class="masthead__lede">
+      Kayak, cabalgatas, pesca, avistaje de aves, visitas guiadas, paseos en lancha, termas,
+      talleres. El que reserva alojamiento en el Litoral entra a Hospeda a decidir
+      <strong>qué va a hacer los días que se queda</strong>. Ahí es donde conviene que estés.
+    </p>
+    <div class="factsheet">
+      <div class="fact">
+        <span class="fact__k">Comisión</span>
+        <span class="fact__v fact__v--free">Ninguna</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Prueba sin costo</span>
+        <span class="fact__v">30 días</span>
+      </div>
+      <div class="fact">
+        <span class="fact__k">Experiencias publicadas</span>
+        <span class="fact__v">1, 5 o 10</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Lo primero, sin vueltas</p>
+      <h2>Cómo ganamos plata</h2>
+    </div>
+    <div class="notice">
+      <h3>No nos quedamos con un peso de lo que cobrás.</h3>
+      <p>
+        <strong>No cobramos comisión.</strong> Ni por salida, ni por pasajero, ni por consulta.
+        Lo que cobrás por la excursión es tuyo, entero, y el precio lo arreglás vos con el
+        turista como lo hacés hoy.
+      </p>
+      <p>
+        Lo único que se paga es <strong>una cuota fija por mes</strong> por tener tu experiencia
+        publicada. Sabés todos los meses cuánto vas a pagar: es lo mismo si te contactan dos
+        personas o cincuenta.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Antes de que preguntes</p>
+      <h2>Acá no se vende el cupo</h2>
+    </div>
+    <p>
+      Hospeda <strong>no es una plataforma de reservas</strong>. No hay carrito, el turista no
+      paga por el sitio, y no manejamos tu cupo ni tu agenda. Tampoco hay mensajero interno: el
+      que se interesa <strong>te llama o te escribe</strong> al teléfono o al correo que
+      publicaste, y de ahí en adelante &mdash; el precio, la seña, el día &mdash; es entre esa
+      persona y vos.
+    </p>
+    <p>
+      Por eso el dato de contacto es la parte que no se puede dejar a medias. En la ficha
+      <strong>se muestran el teléfono, el celular, el correo de trabajo y tu sitio web</strong>.
+      Cualquiera de los tres primeros alcanza para publicar, y el que cargues es el que va a
+      aparecer.
+    </p>
+    <p>
+      El WhatsApp <strong>no</strong> se muestra en la ficha, así que <strong>no cuenta</strong>
+      como tu dato de contacto: si es lo único que cargaste, el sistema no te va a dejar
+      publicar y te lo va a pedir en la lista de lo que falta. Es a propósito, y te evita la
+      peor versión de este problema: estar publicado, pagando, y que nadie tenga cómo llamarte.
+    </p>
+    <p>
+      Si buscabas algo que le cobre la salida al turista y te la deposite, no somos eso. Si
+      buscabas que te llamen para salir, sin dejar una comisión en el camino, sí.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Paso a paso</p>
+      <h2>Cómo publicás</h2>
+    </div>
+    <ol class="steps">
+      <li>
+        <span class="num">01</span>
+        <div class="step__body">
+          <h3>Creás tu cuenta y cargás la experiencia</h3>
+          <p>
+            Sin esperar que te aprueben ni que te llamen: entrás, te registrás y la cargás vos
+            mismo, en el momento. Nombre, de qué se trata, qué tipo de salida es y en qué ciudad
+            arranca.
+          </p>
+          <p class="step__meta">Gratis &middot; No se pide tarjeta &middot; Se hace desde el celular</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <div class="step__body">
+          <h3>La completás con calma</h3>
+          <p>
+            Queda guardada como borrador, sin que nadie la vea, el tiempo que necesites. Vas
+            cargando las fotos, la descripción larga, la duración, el punto de encuentro, qué
+            llevar, tus datos de contacto y las preguntas frecuentes.
+          </p>
+          <p class="step__meta">Sin costo y sin tarjeta &middot; El borrador no vence</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <div class="step__body">
+          <h3>Le das publicar y arrancan los 30 días</h3>
+          <p>
+            Tu experiencia sale al aire <strong>en ese momento</strong> y ahí arranca la prueba:
+            <strong>30 días sin costo</strong>. No elegís plan todavía y no cargás nada.
+          </p>
+          <p class="step__meta">Para publicar hacen falta: nombre, resumen, descripción, ciudad, tipo, foto principal, un teléfono o un correo de trabajo, y el precio (o marcarlo "a consultar"). Los horarios no son obligatorios</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">04</span>
+        <div class="step__body">
+          <h3>Recién al final elegís plan y cargás la tarjeta</h3>
+          <p>
+            Te avisamos por mail antes de que se cumpla el mes. Si querés seguir, elegís tu plan
+            y cargás la tarjeta; recién ahí se cobra. Si no hacés nada, tu ficha sale del sitio
+            ese día &mdash; <strong>no se borra nada</strong>, y vuelve cuando elijas un plan.
+            Podés adelantarte y elegir plan antes, si preferís.
+          </p>
+          <p class="step__meta">Se paga con Mercado Pago &middot; La prueba es una sola, por única vez</p>
+        </div>
+      </li>
+      <li>
+        <span class="num">05</span>
+        <div class="step__body">
+          <h3>Ya publicado, el panel es tuyo</h3>
+          <p>Mirás tus números, y cambiás de plan, sumás adicionales, pausás o cancelás vos mismo, desde tu cuenta, sin llamar a nadie.</p>
+          <p class="step__meta">Publicar la segunda experiencia no vuelve a cobrarte ni te manda otra vez a Mercado Pago: se engancha a la suscripción que ya tenés</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Los planes</p>
+      <h2>Tres escalones, según cuántas salidas tengas y cuánto quieras mostrar</h2>
+    </div>
+    <p>
+      La cuota es fija en los tres. No es un cargo por salida ni por pasajero: no hay comisión ni
+      cargo por consulta. Pagás por mes, o por año: <strong>si pagás el año entero, pagás diez
+      meses y tenés doce</strong>. Los valores del día están siempre publicados en
+      <a href={buildUrl({ locale, path: 'planes/experiencias/precios' })}>el sitio</a>.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">&nbsp;</th>
+            <th scope="col">Básico</th>
+            <th scope="col">Profesional</th>
+            <th scope="col">Premium</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Por mes</td><td class="mono">$15.000</td><td class="mono">$35.000</td><td class="mono">$50.000</td></tr>
+          <tr><td>Por año <span class="mono">(pagás 10, tenés 12)</span></td><td class="mono">$150.000</td><td class="mono">$350.000</td><td class="mono">$500.000</td></tr>
+          <tr><td>Experiencias publicadas</td><td class="mono">1</td><td class="mono">5</td><td class="mono">10</td></tr>
+          <tr><td>Fotos por experiencia</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
+          <tr><td>Punto de encuentro en la ficha</td><td>sí</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Mapa del punto de encuentro y cómo llegar</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Certificado para quien hizo la salida</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Tu ficha en PDF con QR, para imprimir</td><td>—</td><td>—</td><td>sí</td></tr>
+          <tr><td>Chat con inteligencia artificial en tu ficha <span class="mono">(1250 consultas por mes)</span></td><td>—</td><td>—</td><td>sí</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="subhead">
+      <strong>En los tres escalones</strong> entran: editar toda tu ficha cuando quieras,
+      publicarla vos mismo y las estadísticas de visitas. Se cambia de escalón desde tu cuenta,
+      para arriba y también para abajo, sin llamar a nadie.
+    </p>
+    <div class="notice">
+      <h3>Además, sos turista VIP sin pagar un peso más.</h3>
+      <p>
+        Hospeda tiene una cuenta paga para viajeros que sale <strong>quince mil pesos por
+        mes</strong>: favoritos y alertas de precio sin límite, comparador, historial de
+        búsquedas, recomendaciones, ofertas exclusivas y &mdash;lo más útil&mdash; <strong>ver el
+        WhatsApp de los anfitriones</strong>.
+      </p>
+      <p>
+        <strong>Con cualquiera de los tres escalones eso viene incluido.</strong> No es un
+        descuento ni una promoción: el plan trae adentro el paquete completo de turista VIP.
+        Cuando salís vos a recorrer la zona, usás el sitio con todo desbloqueado.
+      </p>
+    </div>
+    <p class="subhead">
+      Si el tope te queda corto por una sola salida, no hace falta cambiar de escalón:
+      <strong>sumás una experiencia más por quince mil pesos por mes</strong>, aparte, y la sacás
+      cuando no la necesitás. Se contrata desde tu panel, en Mi cuenta &rsaquo; Complementos.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Tu ficha</p>
+      <h2>Qué podés mostrar</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span>Fotos y video, con una foto principal destacada, y la descripción con formato para contar la salida con tus palabras.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Precio de referencia</strong> &mdash; "desde tanto", por persona, por hora, por día o por grupo &mdash; o directamente <strong>"a consultar"</strong> si preferís no publicarlo.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Grupos privados</strong>: si hacés precio especial para una familia grande o una empresa, la ficha lo dice e invita a escribirte. Sin tarifario ni cotizador: la conversación cierra el trato.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Qué incluye</strong>, tildado de una lista: transporte, guía, comida, equipo, seguro, fotos, retiro por el hotel o guardado de cosas. Sale en la ficha con su ícono, sin que lo tengas que escribir en la descripción.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Horarios semanales</strong>, si trabajás con horarios fijos. No son obligatorios para publicar: si salís a demanda, dejás el campo vacío y listo.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Preguntas frecuentes propias</strong>, para todo lo que no entra en los campos: si van chicos, si se puede pagar en el momento, si hay baños en el lugar. De cada una decidís dos cosas: si se ve en la ficha, y si el asistente de inteligencia artificial la puede usar para contestar.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Tu ficha en español, inglés y portugués.</strong> Escribís en castellano y la inteligencia artificial la traduce. El turista brasileño te lee en portugués sin que vos hagas nada.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Reseñas</strong>, que deja cualquier persona con cuenta en Hospeda, una por persona. Ninguna se publica sola: las revisamos antes de que aparezcan.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Tus números</strong>: cuántas veces vieron tu ficha, día por día, y cuánta gente distinta llegó.</span></li>
+    </ul>
+    <p class="subhead">
+      Tu ficha vive en <strong>hospeda.com.ar/es/experiencias/tu-experiencia</strong>, entra en
+      el listado con buscador y filtros por ciudad y por tipo, y está escrita para que Google la
+      muestre como <strong>atracción turística</strong> de la zona. Estas son las categorías
+      entre las que elegís:
+    </p>
+    <div class="chips">
+      <span class="chip">Excursión</span>
+      <span class="chip">Paseo en lancha</span>
+      <span class="chip">Pesca deportiva</span>
+      <span class="chip">Avistamiento de aves</span>
+      <span class="chip">Guía turístico</span>
+      <span class="chip">Visita guiada</span>
+      <span class="chip">Tour cultural</span>
+      <span class="chip">Degustación de vinos</span>
+      <span class="chip">Aventura al aire libre</span>
+      <span class="chip">Alquiler de kayak</span>
+      <span class="chip">Alquiler de bicicletas</span>
+      <span class="chip">Alquiler de cuadriciclos</span>
+      <span class="chip">Alquiler de autos</span>
+      <span class="chip">Otro</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Lo que una salida necesita y una ficha común no tiene</p>
+      <h2>Lo propio de una salida</h2>
+    </div>
+    <p>
+      Un alojamiento se explica con fotos y un precio. Una salida no: el que la está mirando
+      quiere saber tres cosas antes de anotarse, y si no las encuentra, no pregunta &mdash; se va
+      a otra. Estos tres bloques son campos de verdad de tu ficha, no párrafos que tengas que
+      escribir vos en la descripción.
+    </p>
+    <div class="split">
+      <div class="panel">
+        <h3>Antes de salir</h3>
+        <ul class="plain">
+          <li><span class="tick">&check;</span><span><strong>Cuánto dura</strong>, al lado del precio. Es lo primero que pregunta cualquiera que está armando su día: una caminata de una hora no es lo mismo que una jornada entera.</span></li>
+          <li><span class="tick">&check;</span><span><strong>Qué llevar</strong>: repelente, calzado cerrado, traje de baño, gorra.</span></li>
+          <li><span class="tick">&check;</span><span><strong>Qué requisitos hay</strong>: edad mínima, saber nadar, estado físico. Va en una lista aparte de la anterior, porque una cosa es lo que se olvida y otra es lo que directamente no lo deja subir.</span></li>
+          <li><span class="tick">&check;</span><span><strong>Qué incluye</strong> y qué no. Entre las tres listas te ahorrás la mitad de las consultas previas, y evitás algo peor: que alguien se presente sin lo que necesitaba.</span></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>El punto de encuentro</h3>
+        <ul class="plain">
+          <li><span class="tick">&check;</span><span><strong>Dónde arranca</strong>, en los tres escalones. Puede ser una dirección o una referencia del lugar &mdash; "muelle 3 del puerto, frente a la caseta azul". Sin eso, tu ficha no le sirve a nadie.</span></li>
+          <li><span class="tick">&check;</span><span><strong>El mapa y cómo llegar</strong>, desde el escalón Profesional: dónde estacionar, qué colectivo tomar, cuánto se camina desde la ruta, qué referencia buscar.</span></li>
+          <li><span class="tick">&check;</span><span>Muchas salidas del Litoral arrancan en <strong>un camino vecinal, una bajada al río o un puesto sobre la ruta</strong>, sin dirección postal que sirva de nada. Ahí una indicación bien escrita vale más que la dirección, y es la diferencia entre que el turista llegue o que te llame perdido diez minutos tarde.</span></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Si el clima manda</h3>
+        <ul class="plain">
+          <li><span class="tick">&check;</span><span><strong>Qué pasa si la salida no sale</strong>: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.</span></li>
+          <li><span class="tick">&check;</span><span>Lo escribís una vez, con tus condiciones &mdash; se reprograma, se devuelve la seña, se avisa la noche anterior &mdash; y queda en la ficha.</span></li>
+          <li><span class="tick">&check;</span><span>Acá el clima manda, y <strong>ésa es la duda que todo el mundo tiene antes de anotarse</strong>. Contestarla en la ficha es lo que hace que te escriban para reservar en lugar de escribirte para preguntar.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Después de la salida</p>
+      <h2>El certificado que se llevan puesto</h2>
+    </div>
+    <p>
+      Ponés el nombre de la persona y el día, y sale un <strong>certificado en PDF</strong> para
+      imprimirle o mandárselo. En pesca, buceo, trekking o navegación la gente lo guarda, lo
+      cuelga y lo muestra.
+    </p>
+    <p>
+      Y cada vez que lo comparte lleva tu nombre y <strong>un QR que vuelve a tu página</strong>.
+      Es lo más parecido a que el turista te recomiende solo, meses después de la salida, sin que
+      vos hagas nada. <em>(Desde el escalón Profesional.)</em>
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Quién manda sobre qué</p>
+      <h2>Lo que cambiás solo y lo que no</h2>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Dato</th><th scope="col">Quién lo cambia</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Nombre, descripción, fotos, precio, horarios, qué incluye, contacto y redes</td><td><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td>Tus preguntas frecuentes</td><td><strong>Vos</strong></td></tr>
+          <tr><td>La dirección web de tu ficha</td><td><strong>Vos</strong>, tildando que siga al nombre nuevo. Te avisa antes, porque puede cambiar cómo aparecés en Google y en los enlaces que ya compartiste.</td></tr>
+          <tr><td>Si tu experiencia aparece destacada</td><td>El equipo. No se compra: se mira la ficha, no la factura.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">En camino</p>
+      <h2>Lo que se viene</h2>
+    </div>
+    <p>Sin fechas, porque no las prometemos. Es en lo que estamos trabajando.</p>
+    <ul class="plain">
+      <li><span class="tick">&rarr;</span><span><strong>Salidas con cupo.</strong> Que la ficha diga qué días salís y cuántos lugares quedan, en vez de que lo tengas que contestar uno por uno.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Una galería privada para cada turista.</strong> Armás la galería de las fotos de esa salida y le mandás el link a quien la hizo. Hospeda no toca la plata: si vendés las fotos, las cobrás vos, como cobrás la salida.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>El perfil del guía.</strong> Quién sos, hace cuánto que lo hacés, en qué te formaste. En este rubro la gente elige a la persona antes que a la excursión.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Combinar varias salidas en un paquete.</strong> Que dos o tres de tus experiencias se muestren juntas a precio de paquete, para el que se queda tres días y quiere llenarlos.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Para ser justos</p>
+      <h2>Lo que conviene que sepas antes</h2>
+    </div>
+    <ul class="plain">
+      <li><span class="tick tick--no">!</span><span><strong>Todavía no podés responder una reseña.</strong> Está en la lista de lo que viene, pero hoy no existe la pantalla. Si aparece una que te parece injusta, escribinos y la miramos.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>Las estadísticas son visitas, nada más fino.</strong> Cuántas veces vieron tu ficha y cuánta gente distinta llegó. De qué destino venían o qué buscaron antes, todavía no.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>Tu WhatsApp no se muestra y no alcanza para publicar.</strong> Cargá un teléfono o un correo de trabajo que puedas atender.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>La prueba es una sola, por única vez.</strong> Son 30 días desde que publicás tu primera experiencia, y no se renuevan: si la dejás pasar y volvés más adelante, ya entrás pagando.</span></li>
+      <li><span class="tick tick--no">!</span><span>Si dejás de pagar, tu ficha <strong>deja de verse pero no se borra</strong>: tus fotos, tus textos y tus reseñas quedan, y vuelven a estar en línea cuando reactivás.</span></li>
+    </ul>
+  </section>
+
+  <footer class="close">
+    <h2>Probalo</h2>
+    <p>
+      Cargar la experiencia es gratis y no te compromete. Recién decidís cuando la querés
+      publicar, y aun ahí tenés 30 días para arrepentirte sin que se te cobre un peso.
+    </p>
+    <a class="cta" href="https://hospeda.com.ar/es/planes/experiencias/precios/">hospeda.com.ar/es/planes/experiencias/precios/</a>
+    <div class="phone">
+      <span class="fact__k">¿Preferís que te acompañemos?</span>
+      <strong>Llamanos o escribinos por WhatsApp al {brandPhone}</strong>
+      <span class="finelines">Te ayudamos a cargar la ficha la primera vez, si querés.</span>
+    </div>
+    <div class="finelines">
+      Hospeda cobra una suscripción por tener la ficha publicada, nunca un porcentaje de lo que
+      cobrás, y no interviene entre el visitante y vos: el cupo, la seña y el pago se arreglan
+      directo entre ustedes. Los valores y los límites de cada escalón son los vigentes al día de
+      hoy y pueden cambiar; los del momento están siempre publicados en el sitio.
+    </div>
+  </footer>
+
+</div>
+
+</StandaloneLayout>

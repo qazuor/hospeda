@@ -4,12 +4,14 @@
  * Provisions a monthly commerce-listing subscription on behalf of a listing's
  * owner. The admin selects a commerce listing (`entityType` + `entityId`); the
  * route resolves the listing's owner, ensures a billing customer exists, and
- * delegates to {@link initiateCommerceMonthlySubscription} which (HOS-191
+ * delegates to {@link initiateCommerceSubscription} which (HOS-191
  * Path C — no preapproval is created server-side):
  *   - resolves/provisions the MercadoPago `preapproval_plan`,
  *   - materializes a `pending_provider` subscription + its correlation row,
- *     stamped `billing_subscriptions.product_domain = 'commerce'` (D3),
- *   - upserts the `commerce_listing_subscriptions` link row (D4),
+ *     stamped `billing_subscriptions.product_domain` with the listing's OWN
+ *     vertical (`'gastronomy'` / `'experience'`), never the retired
+ *     `'commerce'` umbrella (D3, narrowed by HOS-695),
+ *   - upserts the `entity_subscriptions` link row (D4),
  *   - returns MercadoPago's hosted share link as the checkout URL.
  *
  * Gated on `PermissionEnum.COMMERCE_EDIT_ALL` (D2, consistent with the
@@ -32,7 +34,7 @@ import {
     resolveCommercePlanSlug
 } from '../../../services/commerce-plan-resolver';
 import {
-    initiateCommerceMonthlySubscription,
+    initiateCommerceSubscription,
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
 import { getActorFromContext } from '../../../utils/actor';
@@ -201,7 +203,7 @@ export const adminStartCommerceSubscriptionRoute = createAdminRoute({
         }
 
         try {
-            const result = await initiateCommerceMonthlySubscription({
+            const result = await initiateCommerceSubscription({
                 customerId: customer.id,
                 planSlug,
                 entityType,

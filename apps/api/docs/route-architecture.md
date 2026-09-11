@@ -683,16 +683,31 @@ Commerce routes handle lead intake and subscription provisioning for the
 admin-sells flow. They are mounted at:
 
 - `/api/v1/public/commerce` — unauthenticated lead submission
+- `/api/v1/protected/commerce` — the owner's own self-service surface
 - `/api/v1/admin/commerce` — lead inbox, owner provisioning, subscription start
-
-There is no protected commerce tier (merchants operate exclusively through the
-protected gastronomy tier once provisioned as `COMMERCE_OWNER`).
 
 ### Public tier
 
 | Method | Path | Notes |
 |--------|------|-------|
 | `POST` | `/api/v1/public/commerce/leads` | Submit "Sumar mi negocio" lead form. No auth. Honeypot spam guard (`_hp` field). Rate-limited to 5 req/min per IP. Silent 200 on honeypot trigger. |
+
+### Protected tier
+
+Added by HOS-166 §6.3 — this section previously said no protected commerce tier
+existed, which stopped being true when the owner self-service surface shipped.
+
+Every route here authorises on **row ownership** (`actor.id === listing.ownerId`)
+on top of `COMMERCE_EDIT_OWN`. The permission says "may edit *a* listing of their
+own" and does not identify *which*, so on its own it would let any
+`COMMERCE_OWNER` act on any listing. A listing that is somebody else's answers the
+same **404** as one that does not exist (HOS-600).
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `POST` | `/api/v1/protected/commerce/listings/:entityType` | `COMMERCE_EDIT_OWN` | Owner self-service create. The listing is born `PRIVATE`/`DRAFT` and is filled in BEFORE any payment. |
+| `POST` | `/api/v1/protected/commerce/listings/:entityType/:entityId/start-subscription` | `COMMERCE_EDIT_OWN` | Owner self-checkout. `X-Idempotency-Key` required. Optional body `{ payerEmail?, planSlug?, billingInterval? }` — every field optional, and an ABSENT BODY is valid: that is the pre-HOS-1008 shape several callers still use. `planSlug` (HOS-1119) picks a tier **within the listing's own vertical**; one naming the other vertical's plan answers **400**. `billingInterval` (HOS-1285) is `monthly` (the default when absent) or `annual`; any other value answers **400**, and an `annual` request against a tier with no `'year'` price row answers `NO_ANNUAL_PRICE` rather than falling back to the monthly row. Deliberately NOT accepted on the ADMIN route below, for the same reason `payerEmail` is not: committing somebody else to a twelve-month charge is not an admin's call. 422 with `missing` when the listing is incomplete; 409 when it already has a live subscription, or when the owner already pays for this vertical on a DIFFERENT tier (change plan first). |
+| `POST` | `/api/v1/protected/commerce/subscriptions/:entityType/change-plan` | `COMMERCE_EDIT_OWN` | HOS-1119. Moves the caller's subscription for one vertical to a **dearer** tier. `X-Idempotency-Key` required. Body `{ planSlug }`. Keyed by VERTICAL rather than by listing, because since HOS-688 a commerce subscription belongs to an owner and a vertical with several listings attached to it. Answers `pending_payment` + a MercadoPago URL for the prorated delta on an `active` subscription, or `active` (applied at once, no charge) on a `trialing` one. **Both directions since HOS-1122** — a cheaper target answers `scheduled` (period end, with a `commerceRestrictionPreview`); only an EQUALLY priced one answers 422. The "upgrades only" note this row used to carry, and its reason (the scheduled-downgrade cron running accommodation restriction logic against the target plan's slug), both expired with that issue. **No `billingInterval` field, and that is not because commerce is monthly-only** (it is not, since HOS-1285): a tier change is not a cadence change, so the prices, the prorated delta and the scheduled downgrade are all resolved against the interval the subscription is ALREADY on. A target tier that does not sell that cadence answers 404 instead of falling back to the other one. |
 
 ### Admin tier
 

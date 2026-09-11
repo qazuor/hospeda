@@ -37,6 +37,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { QrCodeService } from '../qr-code/qr-code.service';
 import {
     checkCanAdminListHostTrades,
     checkCanCreateHostTrade,
@@ -47,6 +48,12 @@ import {
     checkCanViewHostTrade,
     checkCanViewOrViewAll
 } from './host-trade.permissions';
+import {
+    buildHostTradeUsageUrl,
+    HOST_TRADE_QR_ENTITY_TYPE,
+    HOST_TRADE_QR_PURPOSE,
+    resolveSiteUrlFromTargetUrl
+} from './host-trade-qr';
 
 /**
  * The `where` key that scopes a read to a single owner.
@@ -197,16 +204,28 @@ export class HostTradeService extends BaseCrudService<
      */
     private readonly revokeNotifier: HostTradeRevokeNotifyPort | null;
 
+    /**
+     * The QR service used to keep a listing's printed code pointing at a page
+     * that exists (HOS-981 PR 4). Constructed by default rather than injected
+     * as a nullable port, unlike {@link revokeNotifier}: a missing notifier only
+     * silences an email, whereas a missing QR sync silently reintroduces the
+     * dead-sticker defect this exists to prevent. The parameter is here so a
+     * test can substitute a double, not so a caller can opt out.
+     */
+    private readonly qrCodeService: QrCodeService;
+
     constructor(
         ctx: ServiceConfig,
         model?: HostTradeModel,
         accommodationModel?: AccommodationModel,
-        revokeNotifier?: HostTradeRevokeNotifyPort | null
+        revokeNotifier?: HostTradeRevokeNotifyPort | null,
+        qrCodeService?: QrCodeService
     ) {
         super(ctx, HostTradeService.ENTITY_NAME);
         this.model = model ?? new HostTradeModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
         this.revokeNotifier = revokeNotifier ?? null;
+        this.qrCodeService = qrCodeService ?? new QrCodeService(ctx);
     }
 
     // --- Permission hooks ---
@@ -358,6 +377,93 @@ export class HostTradeService extends BaseCrudService<
         }
 
         return { ...data, slug: newSlug };
+    }
+
+    /**
+     * After-update hook: keeps the listing's QR code pointing at a page that
+     * exists (HOS-981 PR 4).
+     *
+     * ## Why this is a requirement and not a nicety
+     *
+     * The printed QR encodes `/qr/{qrSlug}/`, and the platform 302s from there
+     * to `qr_codes.target_url`, which contains the LISTING's slug. Renaming the
+     * listing without repointing that row does not fix the original defect, it
+     * relocates it: every sticker already on a van keeps resolving, keeps
+     * counting scans, and lands every one of them on a 404.
+     *
+     * ## Why it reconciles rather than reacting to the change
+     *
+     * The hook receives the updated entity and nothing about what moved, so it
+     * does not try to detect a slug change: it computes what the target SHOULD
+     * be and writes only when the stored value disagrees. That is idempotent,
+     * it self-heals a row that drifted for any other reason, and it costs one
+     * indexed read on updates that changed nothing relevant.
+     *
+     * The site origin comes from the row's CURRENT target rather than from
+     * configuration — see {@link resolveSiteUrlFromTargetUrl} for why threading
+     * `HOSPEDA_SITE_URL` into this package would fail open.
+     *
+     * ## Why a failure here is logged and not thrown
+     *
+     * The listing row is ALREADY written by the time this runs, and the update
+     * is not wrapped in a transaction this hook could roll back. Throwing would
+     * hand the admin an error over a change that did happen, and would leave
+     * the same stale target behind either way. Logging keeps the edit
+     * consistent and leaves the drift visible; any later update reconciles it.
+     *
+     * @param entity - The listing as just written.
+     * @param actor - The actor that performed the update.
+     * @param ctx - Service execution context (may carry a transaction).
+     * @returns The entity, unchanged.
+     */
+    protected async _afterUpdate(
+        entity: HostTrade,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTrade> {
+        try {
+            const found = await this.qrCodeService.findLiveCodeForEntity({
+                actor,
+                entityType: HOST_TRADE_QR_ENTITY_TYPE,
+                entityId: entity.id,
+                purpose: HOST_TRADE_QR_PURPOSE,
+                ctx
+            });
+
+            // No code minted for this listing yet: a silent no-op, by decision.
+            // Codes are created when somebody first asks to SEE one, so minting
+            // here would burn a permanent slug during an unrelated edit.
+            const code = found.data;
+            if (!code) return entity;
+
+            const siteUrl = resolveSiteUrlFromTargetUrl({ targetUrl: code.targetUrl });
+            if (!siteUrl) {
+                this.logger.error(
+                    { hostTradeId: entity.id, qrCodeId: code.id },
+                    'QR target URL is not a parseable absolute URL; cannot repoint it'
+                );
+                return entity;
+            }
+
+            await this.qrCodeService.setEntityTargetUrl({
+                actor,
+                entityType: HOST_TRADE_QR_ENTITY_TYPE,
+                entityId: entity.id,
+                purpose: HOST_TRADE_QR_PURPOSE,
+                targetUrl: buildHostTradeUsageUrl({ slug: entity.slug, siteUrl }),
+                ctx
+            });
+        } catch (error) {
+            this.logger.error(
+                {
+                    hostTradeId: entity.id,
+                    error: error instanceof Error ? error.message : String(error)
+                },
+                'Could not repoint the listing’s QR code; the listing update stands'
+            );
+        }
+
+        return entity;
     }
 
     // --- Search / count ---

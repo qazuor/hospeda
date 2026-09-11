@@ -1,9 +1,26 @@
 /**
  * @file CommerceListingEditor.client.tsx
- * @description Operational + identity editor island for a commerce owner's
- * listing (SPEC-249 Part A, extended in SPEC-253 and HOS-166 D-1). Native
- * HTML form (no TanStack Form, per web conventions) that persists changes
- * through the vertical's protected PATCH endpoint (`updateOwn`).
+ * @description Editor island for ONE section of a commerce owner's listing
+ * (SPEC-249 Part A, extended in SPEC-253 and HOS-166 D-1; split one-page-per-
+ * section in HOS-1080). Native HTML form (no TanStack Form, per web
+ * conventions) that persists changes through the vertical's protected PATCH
+ * endpoint (`updateOwn`).
+ *
+ * ## One island, one section (HOS-1080)
+ *
+ * Until HOS-1080 this component rendered every field group at once on a single
+ * route, with an in-page scrollspy nav — the long form HOS-892 reported. It now
+ * takes a `sectionId` and renders exactly that section, one per route, matching
+ * the accommodation editor the two surfaces already shared their `ActionBar`
+ * and section styling with.
+ *
+ * What deliberately did NOT change is `buildPatchPayload`. Its per-field
+ * contracts (`priceFrom` omits, `priceUnit` nulls, `contactInfo` ships
+ * wholesale, the duration is diffed JOINED, `media` never ships) are the kind of
+ * thing a per-section rewrite flattens without anything failing. It still builds
+ * the full diff from the whole form state; `restrictPayloadToSection` then keeps
+ * only the keys this page owns, so a section can never persist another's data
+ * even if a future edit lets a foreign value into state.
  *
  * `slug` stays out of this form — the owner never edits it directly. The server
  * keeps it in sync with the name while the listing is still a draft, then stops
@@ -19,20 +36,21 @@
  *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
  *   T-014 structured fields (openingHours)
  *   T-014 price group (gastronomy: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
+ *   HOS-1048 meeting point (experience only: meetingPoint + optional lat/long)
  *   T-015 media gallery
  *   T-016 amenities / features
  */
 
-import type { Image, OpeningHours } from '@repo/schemas';
+import type { OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
-import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DestinationOption } from '@/components/commerce/destination-option';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
-import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
-import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
+import { buildCommerceEditorRegistry } from '@/lib/editor/commerce-editor-sections';
+import { buildEditorHubUrl } from '@/lib/editor/editor-registry';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -41,10 +59,7 @@ import {
     buildSlugRefreshPayload,
     shouldOfferPublishedSlugRefresh
 } from '@/lib/listing-slug-refresh';
-import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import type { CommerceFaq } from './CommerceFaqManager.client';
-import { CommerceFaqManager } from './CommerceFaqManager.client';
 import styles from './CommerceListingEditor.module.css';
 import {
     type CommerceI18nValues,
@@ -60,20 +75,33 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
-import fieldStyles from './editor/editor-fields.module.css';
+import {
+    type CommerceEditorFormSectionId,
+    restrictPayloadToSection
+} from './editor/commerce-section-payload';
 import {
     COMMERCE_FIELD_ID_SUFFIXES,
     COMMERCE_FIELD_PREFIX,
     OPENING_HOURS_AGGREGATE_FIELDS
 } from './editor/field-ids';
-import { MediaSection } from './editor/MediaSection.client';
+import { MeetingPointSection } from './editor/MeetingPointSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
+import {
+    joinDuration,
+    PracticalInfoSection,
+    splitDuration
+} from './editor/PracticalInfoSection.client';
 import { PriceSection } from './editor/PriceSection.client';
 import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
 
 export interface CommerceListingEditorProps {
     /** Which vertical this listing belongs to (drives the PATCH endpoint + price group). */
     readonly vertical: CommerceVertical;
+    /**
+     * Which section this page edits (HOS-1080). Decides what renders AND what
+     * the save may persist — see `commerce-section-payload.ts`.
+     */
+    readonly sectionId: CommerceEditorFormSectionId;
     /** UUID of the listing being edited. */
     readonly listingId: string;
     /** Active UI locale. */
@@ -99,35 +127,6 @@ export interface CommerceListingEditorProps {
      * callers/tests that omit it keep the prior behaviour.
      */
     readonly destinationsLoadFailed?: boolean;
-    /**
-     * `true` to render the commerce FAQ manager as a section of this editor,
-     * with the matching `editor-faqs` entry in the section nav.
-     *
-     * HOS-827 changed what this prop DOES, not what it means. It used to be a
-     * promise made by the hosting page — "I render the FAQ card below you and
-     * give it `id='editor-faqs'`" (H-153) — with the card living outside the
-     * form as a sibling of it. That split had two costs, both reported:
-     *
-     * - The card sat outside the form's grid, so it painted 202px wider and
-     *   227px further left than every other card, BELOW the save button
-     *   (HOS-827). It did not read as part of what was being edited.
-     * - It was a SEPARATE `client:idle` island. Anything that kept it from
-     *   hydrating turned the whole section into decoration — an "Agregar
-     *   pregunta" that opens nothing and a Guardar that fires no request, with
-     *   no error anywhere, which is exactly how HOS-811 was reported. Inside
-     *   this editor it shares the `client:load` island the rest of the form
-     *   already depends on, so the section is live whenever the form is.
-     *
-     * Still opt-in rather than always-on: the nav's contract is that every
-     * link resolves, and only a page that supplies `initialFaqs` should get a
-     * FAQ section. Defaults to `false`.
-     */
-    readonly hasFaqSection?: boolean;
-    /**
-     * FAQs already stored for this listing, pre-fetched SSR from the protected
-     * detail. Only read when {@link hasFaqSection} is `true`.
-     */
-    readonly initialFaqs?: readonly CommerceFaq[];
 }
 
 type SaveStatus =
@@ -155,9 +154,68 @@ function strField(source: Record<string, unknown>, key: string): string {
     return typeof value === 'string' ? value : '';
 }
 
-/** Drop empty-string entries, mapping them to undefined for the payload. */
+/**
+ * Read a nullable numeric field as `number | null` (HOS-1048).
+ *
+ * Deliberately NOT `Number(value) || null`: a persisted `0` is a legitimate
+ * coordinate and the falsy check would erase it into "no pin".
+ */
+function numField(source: Record<string, unknown>, key: string): number | null {
+    const value = source[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Read a `text[]` column as a readonly array of strings (HOS-1046).
+ *
+ * Anything that is not an array of strings collapses to `[]` — including the
+ * key being absent, which is what a listing saved before the column existed
+ * looks like. Non-string entries are dropped rather than coerced: `String(x)`
+ * would turn a stray `null` into the literal item `"null"` and publish it as a
+ * bullet on the ficha.
+ */
+function strArrayField(source: Record<string, unknown>, key: string): readonly string[] {
+    const value = source[key];
+    if (!Array.isArray(value)) return [];
+    return value.filter((entry): entry is string => typeof entry === 'string');
+}
+
+/** Shallow equality for the two checklist arrays, used by the PATCH diff. */
+function sameStringList(a: readonly string[], b: readonly string[]): boolean {
+    return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
+/**
+ * Drop empty-string entries, mapping them to undefined for the payload.
+ *
+ * Only correct for a block the API REPLACES wholesale (`socialNetworks`): there,
+ * an omitted key disappears from the stored object, which is exactly what
+ * "the owner cleared this field" has to mean. For a MERGED block use
+ * {@link nullWhenEmpty} instead — see its JSDoc.
+ */
 function nonEmpty(value: string): string | undefined {
     return value || undefined;
+}
+
+/**
+ * Map an emptied field to an explicit `null` rather than to `undefined`.
+ *
+ * `contactInfo` is a MERGEABLE JSONB column on `GastronomyModel` and
+ * `ExperienceModel` (HOS-1190, following the `users` precedent of HOS-375), so
+ * the PATCH is shallow-merged into the stored object with PostgreSQL `||`
+ * instead of replacing it. Under merge semantics an OMITTED key means "leave
+ * the stored value alone", so expressing a clear by omission — which is what
+ * {@link nonEmpty} produces — would make an emptied contact field silently
+ * un-saveable: the owner blanks their phone, the request succeeds, and the old
+ * phone is still on the ficha.
+ *
+ * `null` is the clear. Every field of the shared `ContactInfoSchema` is
+ * `.nullish()` for exactly this reason, so `null` validates while `''` does
+ * NOT (`zodError.common.contact.mobilePhone.international`) — the empty string
+ * is not an option here.
+ */
+function nullWhenEmpty(value: string): string | null {
+    return value || null;
 }
 
 /**
@@ -170,6 +228,21 @@ function nonEmpty(value: string): string | undefined {
  * cannot be produced by key reordering, only by equal content. Every value
  * compared here is rebuilt by spreading the previous object, so ordering is
  * stable in practice anyway.
+ *
+ * `i18nValues`'s four members are diffed and sent ONE AT A TIME (HOS-902), not
+ * as the single blob this used to be, so editing only `summaryI18n` never
+ * re-sends `nameI18n`/`descriptionI18n`/`richDescriptionI18n` at all. This
+ * matters because `parseCommerceI18nValues` is intentionally fallback-free —
+ * `current`/`baseline` always hold the REAL stored i18n values, nothing
+ * fabricated — but `nameI18n`/`summaryI18n`/`descriptionI18n`/
+ * `richDescriptionI18n` are each a single JSONB column replaced WHOLESALE on
+ * save, not merged per locale (`gastronomy.model.ts`/`experience.model.ts`
+ * do not list them in `mergeableJsonbColumns`, only `contactInfo` is there —
+ * see `packages/db/src/base/base.model.ts:387-393`). So a per-FIELD diff
+ * (not per-locale) is exactly right: it must still send the whole
+ * `I18nLocaleValues` object of a changed field (all three locales — the
+ * column can't be updated one locale at a time), while never touching a
+ * sibling field the owner did not edit.
  */
 function sameValue(a: unknown, b: unknown): boolean {
     return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -186,17 +259,39 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *
  * This is NOT a uniform per-leaf diff, and the asymmetries are load-bearing:
  *
- *  - `contactInfo` / `socialNetworks` are JSONB blocks the API REPLACES rather
- *    than merges, so the whole block ships whenever any member changed —
- *    sending only the changed leaf would wipe the others.
- *  - The four i18n fields travel together, as the translation panel edits them
- *    as one unit.
+ *  - `contactInfo` / `socialNetworks` are JSONB blocks that ship WHOLE whenever
+ *    any member changed, but for two different reasons since HOS-1190.
+ *    `socialNetworks` is still REPLACED by the API, so sending only the changed
+ *    leaf would wipe the others. `contactInfo` is now MERGED (`||`) at the DB
+ *    layer, so the whole block is no longer strictly required — it is kept
+ *    because it is what makes the clear explicit: every member is sent, and an
+ *    emptied one is sent as `null` via `nullWhenEmpty`, because under merge an
+ *    omitted key means "keep the stored value".
+ *  - The four i18n fields are diffed and sent INDEPENDENTLY, per field (HOS-902;
+ *    they used to travel together as one unit). Each field is still a single
+ *    JSONB column replaced wholesale (all three locales at once — see
+ *    `sameValue`'s JSDoc above for the DB-level reason), so editing
+ *    `nameI18n.en` sends the WHOLE `nameI18n` object including its untouched
+ *    `es`/`pt`. That is safe ONLY because `parseCommerceI18nValues` never
+ *    fabricates a value — the ES display fallback for an empty i18n field
+ *    lives exclusively in `CommerceTranslationPanel`'s render path
+ *    (`resolveDisplayValue`) and is never written into `current`/`baseline`.
+ *    An earlier version of this fix baked that fallback into
+ *    `parseCommerceI18nValues` itself, which broke exactly this case: editing
+ *    ONE locale of a field would re-send its OTHER locale's fallback display
+ *    text as if the owner had typed it, permanently overwriting the i18n
+ *    column with content the plain `name`/`summary`/`description`/
+ *    `richDescription` column held instead.
  *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
  *    and clear to an explicit `null`. `priceUnit` now joins them (H-156 made the
  *    column nullable), so clearing it sends `null` rather than omitting the key
  *    — the old omit-instead-of-null rule (T-021) meant the owner could never
  *    actually clear a unit once set. Experience's `priceFrom` is still NOT
  *    nullable and keeps omitting the key.
+ *  - Experience's three `meetingPoint*` fields (HOS-1048) follow the `priceUnit`
+ *    rule, not the `priceFrom` one: all three are `.nullish()`, so clearing one
+ *    sends an explicit `null`. They ship only on the experience branch, because
+ *    they exist only on `ExperienceOwnerUpdateInputSchema`.
  *  - `media` is absent by design (HOS-372): photos are persisted per operation
  *    by `MediaSection` against the relational media endpoints, so re-sending a
  *    buffered `media` block here would overwrite the rows the owner just saved.
@@ -242,17 +337,29 @@ function buildPatchPayload({
         payload.richDescription = current.richDescription;
     }
 
-    if (!sameValue(current.i18nValues, baseline.i18nValues)) {
+    // HOS-902: per-FIELD, NOT the whole `i18nValues` object at once — see the
+    // JSDoc above `buildPatchPayload` and above `sameValue` for why this keeps
+    // an untouched sibling field out of the payload entirely (each field is
+    // still sent whole across its three locales, never a fabricated value).
+    if (!sameValue(current.i18nValues.nameI18n, baseline.i18nValues.nameI18n)) {
         payload.nameI18n = current.i18nValues.nameI18n;
+    }
+    if (!sameValue(current.i18nValues.summaryI18n, baseline.i18nValues.summaryI18n)) {
         payload.summaryI18n = current.i18nValues.summaryI18n;
+    }
+    if (!sameValue(current.i18nValues.descriptionI18n, baseline.i18nValues.descriptionI18n)) {
         payload.descriptionI18n = current.i18nValues.descriptionI18n;
+    }
+    if (
+        !sameValue(current.i18nValues.richDescriptionI18n, baseline.i18nValues.richDescriptionI18n)
+    ) {
         payload.richDescriptionI18n = current.i18nValues.richDescriptionI18n;
     }
 
     if (!sameValue(current.contact, baseline.contact)) {
         payload.contactInfo = {
-            mobilePhone: nonEmpty(current.contact.mobilePhone),
-            workEmail: nonEmpty(current.contact.workEmail)
+            mobilePhone: nullWhenEmpty(current.contact.mobilePhone),
+            workEmail: nullWhenEmpty(current.contact.workEmail)
         };
     }
 
@@ -301,26 +408,99 @@ function buildPatchPayload({
             // silently dropped the change and the stale unit stayed on the row.
             payload.priceUnit = current.priceUnit || null;
         }
+        // HOS-1048: the meeting point clears to an explicit `null`, like the
+        // gastronomy price fields and unlike `priceFrom`. The column is nullable
+        // and the schema is `.nullish()`, so `null` is the only way to say "I
+        // removed the address I had" — omitting the key would mean "no change"
+        // and the stale meeting point would survive the save silently, which is
+        // exactly the bug H-156 had to fix for `priceUnit`.
+        if (current.meetingPoint !== baseline.meetingPoint) {
+            payload.meetingPoint = current.meetingPoint || null;
+        }
+        if (current.meetingPointLat !== baseline.meetingPointLat) {
+            payload.meetingPointLat = current.meetingPointLat;
+        }
+        if (current.meetingPointLong !== baseline.meetingPointLong) {
+            payload.meetingPointLong = current.meetingPointLong;
+        }
+        // HOS-1049: `[]` is a meaningful value, not an absence — it is how the
+        // owner removes every instruction, exactly as with `whatToBring`. The
+        // key ships whenever the list differs, empty or not.
+        //
+        // Deliberately NOT also guarded on `meetingPointDirectionsEnabled`. A
+        // first draft was, and the guard turned out to be unreachable: current
+        // and baseline are seeded from the same payload, so they can only differ
+        // after an edit, and an unentitled provider's control is `disabled` and
+        // cannot be edited. An unreachable branch that no test can kill is worse
+        // than no branch — it reads as protection and provides none. The
+        // affordance is `disabled`; the ENFORCEMENT is the API's field gate,
+        // which refuses this key with a 403 regardless of what any client sends.
+        if (!sameStringList(current.meetingPointDirections, baseline.meetingPointDirections)) {
+            payload.meetingPointDirections = [...current.meetingPointDirections];
+        }
+
+        // HOS-898: two boxes, one column. The diff has to be taken on the JOINED
+        // value, not on the two halves — a change from 90 minutes to 1 h 30 min
+        // moves both boxes and changes nothing the row can tell apart, and
+        // emitting it would mark the form dirty and trip the unsaved-changes
+        // guard over a no-op.
+        const currentDuration = joinDuration({
+            hours: current.durationHours,
+            minutes: current.durationMinutesPart
+        });
+        const baselineDuration = joinDuration({
+            hours: baseline.durationHours,
+            minutes: baseline.durationMinutesPart
+        });
+        if (currentDuration !== baselineDuration) {
+            // Explicit `null` when both boxes are emptied, for the same reason
+            // as the meeting point: omitting the key means "no change" and the
+            // stale duration would survive the save in silence.
+            payload.durationMinutes = currentDuration;
+        }
+
+        // HOS-1046: `[]` is a meaningful value here, not an absence — it is how
+        // the owner removes every item. So the key ships whenever the list
+        // differs, empty or not; only an UNCHANGED list is omitted.
+        if (!sameStringList(current.whatToBring, baseline.whatToBring)) {
+            payload.whatToBring = [...current.whatToBring];
+        }
+        if (!sameStringList(current.requirements, baseline.requirements)) {
+            payload.requirements = [...current.requirements];
+        }
+
+        // HOS-1047: nullable free text, so it clears to `null` like the meeting
+        // point rather than to `''` — the column and the schema both say "not
+        // declared" with null, and `''` would be a declared empty policy.
+        if (current.cancellationPolicy !== baseline.cancellationPolicy) {
+            payload.cancellationPolicy = current.cancellationPolicy || null;
+        }
+
+        // HOS-1056: NOT NULL with a false default, so it never sends null —
+        // turning the toggle off is `false`, a real value, not an absence.
+        if (current.acceptsPrivateGroups !== baseline.acceptsPrivateGroups) {
+            payload.acceptsPrivateGroups = current.acceptsPrivateGroups;
+        }
     }
 
     return payload;
 }
 
 /**
- * Owner operational editor. Tracks which field groups changed and PATCHes ONLY
- * the dirty subset, so an owner who edits one section never re-submits the rest.
+ * Owner editor for ONE section. Tracks which field groups changed and PATCHes
+ * only the dirty subset of the keys this section owns, so a save here can never
+ * re-submit — let alone clobber — another section's data.
  */
 export function CommerceListingEditor({
     vertical,
+    sectionId,
     listingId,
     locale,
     initialData,
     amenities = [],
     features = [],
     destinations = [],
-    destinationsLoadFailed = false,
-    hasFaqSection = false,
-    initialFaqs = []
+    destinationsLoadFailed = false
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -356,16 +536,13 @@ export function CommerceListingEditor({
     const data = initialData as unknown as Record<string, unknown>;
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
-    const initialMedia = (data.media ?? {}) as Record<string, unknown>;
 
-    // HOS-372: media is no longer buffered in this editor's state. MediaSection
-    // is now self-contained (per-operation persistence against the relational
+    // HOS-372: media is not buffered in this editor's state at all. MediaSection
+    // is self-contained (per-operation persistence against the relational
     // gastronomy_media / experience_media endpoints — see its file header) and
-    // hydrates its own state from the API. These two consts only feed its
-    // first-paint SSR placeholders (from the `media` response field); they are
-    // read once and never written back, so they stay outside `formData`.
-    const initialFeaturedImage = (initialMedia.featuredImage as Image | undefined) ?? null;
-    const initialGallery = (initialMedia.gallery as Image[] | undefined) ?? [];
+    // hydrates its own state from the API; since HOS-1080 it is mounted by its
+    // own route rather than by this island, so nothing about photos reaches
+    // here.
 
     // HOS-166 D-1: name + destinationId + description are identity fields the
     // owner may edit (description was widened alongside name/destinationId on
@@ -403,6 +580,30 @@ export function CommerceListingEditor({
         // T-021: experience-only pricing fields
         priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,
         priceUnit: strField(data, 'priceUnit'),
+        // HOS-1048: experience-only; a gastronomy listing simply reads them as
+        // empty/null and `buildPatchPayload` never emits them for that vertical.
+        meetingPoint: strField(data, 'meetingPoint'),
+        meetingPointLat: numField(data, 'meetingPointLat'),
+        meetingPointLong: numField(data, 'meetingPointLong'),
+        // HOS-1049: the value round-trips for everyone; the flag beside it is
+        // what decides whether the control is editable. Absent reads as NOT
+        // entitled — the one direction where guessing gives the product away.
+        meetingPointDirections: strArrayField(data, 'meetingPointDirections'),
+        meetingPointDirectionsEnabled: data.meetingPointDirectionsEnabled === true,
+        // HOS-898: one stored column, two boxes. `splitDuration` runs ONCE here
+        // and never again on re-render, which is what stops the boxes from
+        // rewriting themselves while the owner types.
+        durationHours: splitDuration({ totalMinutes: numField(data, 'durationMinutes') }).hours,
+        durationMinutesPart: splitDuration({
+            totalMinutes: numField(data, 'durationMinutes')
+        }).minutes,
+        // HOS-1046 / HOS-1047 / HOS-1056: experience-only, same as the meeting
+        // point above — a gastronomy listing reads them as empty and
+        // `buildPatchPayload` never emits them for that vertical.
+        whatToBring: strArrayField(data, 'whatToBring'),
+        requirements: strArrayField(data, 'requirements'),
+        cancellationPolicy: strField(data, 'cancellationPolicy'),
+        acceptsPrivateGroups: data.acceptsPrivateGroups === true,
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
@@ -476,7 +677,12 @@ export function CommerceListingEditor({
         setStatus({ kind: 'idle' });
     }, []);
 
-    /** Handle i18n panel changes — the four i18n fields travel as one unit. */
+    /**
+     * Handle i18n panel changes. The callback always carries the FULL
+     * `CommerceI18nValues` shape (that is the panel's state), but the PATCH
+     * diff (`buildPatchPayload`) still compares and sends each of the four
+     * fields independently — see its JSDoc (HOS-902).
+     */
     const handleI18nChange = useCallback((updated: CommerceI18nValues) => {
         setFormData((prev) => ({ ...prev, i18nValues: updated }));
         setStatus({ kind: 'idle' });
@@ -490,13 +696,16 @@ export function CommerceListingEditor({
      */
     const patchPayload = useMemo(
         () =>
-            buildPatchPayload({
-                current: formData,
-                baseline,
-                vertical,
-                lifecycleState: currentLifecycleState
+            restrictPayloadToSection({
+                payload: buildPatchPayload({
+                    current: formData,
+                    baseline,
+                    vertical,
+                    lifecycleState: currentLifecycleState
+                }),
+                sectionId
             }),
-        [formData, baseline, vertical, currentLifecycleState]
+        [formData, baseline, vertical, currentLifecycleState, sectionId]
     );
 
     const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
@@ -587,7 +796,40 @@ export function CommerceListingEditor({
     const isSaving = status.kind === 'saving';
 
     /**
-     * Leaves the editor for the listing index.
+     * Announces that this island has hydrated, by setting `data-hydrated` on the
+     * form once mounted (HOS-1080).
+     *
+     * Every control in every section is server-rendered, so "the input is
+     * visible and editable" is true long before React attaches a single
+     * handler — the false gate HOS-371 already had to fix once, when writing
+     * into a not-yet-listening node left the form clean and Save silent. Its fix
+     * was to wait for `.ProseMirror`, which TipTap creates at runtime; that
+     * worked while the editor was ONE page carrying the rich-text field. With
+     * one page per section, seven of the eight sections have no client-created
+     * DOM at all, so there is nothing on them to wait for.
+     *
+     * A parent effect is the strongest signal available and needs no per-section
+     * table: React runs child effects BEFORE parent effects, so by the time this
+     * fires every section component below has finished mounting — strictly later
+     * than `.ProseMirror` appearing, not merely equivalent to it.
+     *
+     * Set through a ref rather than through state so it costs no extra render.
+     * React never rewrites an attribute it does not itself render, so it
+     * survives every subsequent update.
+     */
+    const formRef = useRef<HTMLFormElement>(null);
+    useEffect(() => {
+        formRef.current?.setAttribute('data-hydrated', 'true');
+    }, []);
+
+    /**
+     * Leaves the section for the editor hub.
+     *
+     * HOS-1080 changed the destination, not the mechanism: with one page per
+     * section, "Cancelar" means "leave this section", and the hub is the page
+     * every section was reached from. Dropping the owner all the way back to
+     * `mi-cuenta/comercio` from a section page would discard their place in the
+     * editor as well as their edits.
      *
      * `ActionBar` renders Cancel as a `<button>`, so this navigates in JS. The
      * bespoke bar this replaced used an `<a href>`, which middle-click and
@@ -595,71 +837,12 @@ export function CommerceListingEditor({
      * exchange for the three content editors sharing one action bar.
      */
     const handleCancel = useCallback(() => {
-        window.location.href = buildUrl({ locale, path: 'mi-cuenta/comercio' });
-    }, [locale]);
-
-    // AmenitiesSection returns null when BOTH catalogs are empty (see its early
-    // return), so its nav entry has to disappear with it: a link to a section
-    // that is not on the page scrolls nowhere and reads as a broken control.
-    // Every other section always renders, so only this one is conditional.
-    const hasCatalogs = amenities.length > 0 || features.length > 0;
-
-    // Mirrors the render order below, because `EditorSectionNav`'s scrollspy
-    // resolves ties by taking the FIRST entry of this array that is currently
-    // visible — a list in a different order than the DOM would highlight the
-    // wrong link whenever two sections share the viewport. Ids are the ones the
-    // section components emit themselves (`id="editor-*"`), not ids assigned
-    // here; `editor-translations` is the exception (see the wrapper in the JSX).
-    const navSections = useMemo<EditorSectionNavItem[]>(() => {
-        const sections: EditorSectionNavItem[] = [
-            {
-                id: 'editor-basicInfo',
-                label: t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')
-            },
-            {
-                id: 'editor-contact',
-                label: t('commerce.owner.editor.sectionNav.contactInfo', 'Contacto')
-            },
-            {
-                id: 'editor-socialNetworks',
-                label: t('commerce.owner.editor.sectionNav.socialNetworks', 'Redes sociales')
-            },
-            {
-                id: 'editor-openingHours',
-                label: t('commerce.owner.editor.sectionNav.openingHours', 'Horarios')
-            },
-            { id: 'editor-media', label: t('commerce.owner.editor.sectionNav.media', 'Fotos') },
-            {
-                id: 'editor-translations',
-                label: t('commerce.owner.editor.sectionNav.translations', 'Traducciones')
-            }
-        ];
-
-        if (hasCatalogs) {
-            sections.push({
-                id: 'editor-amenities',
-                label: t('commerce.owner.editor.sectionNav.amenities', 'Servicios')
-            });
-        }
-
-        sections.push({
-            id: 'editor-price',
-            label: t('commerce.owner.editor.sectionNav.price', 'Precio')
+        window.location.href = buildEditorHubUrl({
+            locale,
+            registry: buildCommerceEditorRegistry({ vertical }),
+            entityId: listingId
         });
-
-        // H-153 added this entry; HOS-827 moved its target INTO this component,
-        // so the anchor and the link are now emitted by the same file and cannot
-        // drift apart. Appended last because the FAQ card renders last among the
-        // sections, which is what the scrollspy's first-match tie-break requires.
-        if (hasFaqSection) {
-            sections.push({
-                id: 'editor-faqs',
-                label: t('commerce.owner.editor.sectionNav.faqs', 'Preguntas frecuentes')
-            });
-        }
-
-        return sections;
-    }, [t, hasCatalogs, hasFaqSection]);
+    }, [locale, vertical, listingId]);
 
     // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
     // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
@@ -676,31 +859,72 @@ export function CommerceListingEditor({
 
     return (
         <form
+            ref={formRef}
             className={styles.editor}
             onSubmit={handleSubmit}
             aria-busy={isSaving}
             noValidate
         >
-            <div className={styles.layout}>
-                <div className={styles.navSlot}>
-                    <EditorSectionNav
-                        locale={locale}
-                        sections={navSections}
-                    />
-                </div>
+            {sectionId === 'basicInfo' && (
+                <BasicInfoSection
+                    locale={locale}
+                    vertical={vertical}
+                    data={formData}
+                    destinations={destinations}
+                    destinationsLoadFailed={destinationsLoadFailed}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                    shouldOfferSlugRefresh={shouldOfferSlugRefresh}
+                />
+            )}
 
-                <div className={styles.sectionsColumn}>
-                    <BasicInfoSection
-                        locale={locale}
-                        vertical={vertical}
-                        data={formData}
-                        destinations={destinations}
-                        destinationsLoadFailed={destinationsLoadFailed}
-                        errors={fieldErrors}
-                        onFieldChange={onFieldChange}
-                        shouldOfferSlugRefresh={shouldOfferSlugRefresh}
-                    />
+            {/*
+             * HOS-1048: experience-only. The gate is the SHAPE of the schema,
+             * not an entitlement — `meetingPoint` exists on
+             * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one,
+             * so rendering it for a restaurant would offer a field every save
+             * silently strips. Since HOS-1080 the vertical gate lives one level
+             * up as well: `buildCommerceEditorSections` leaves this section out
+             * of a gastronomy registry entirely, so the route redirects instead
+             * of rendering an empty page. The check stays here too because this
+             * island is what decides what to send. The meeting point itself is
+             * free from the basic tier; only the map that draws it is paid
+             * (HOS-1049).
+             */}
+            {sectionId === 'meetingPoint' && vertical === 'experience' && (
+                <MeetingPointSection
+                    locale={locale}
+                    data={formData}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                />
+            )}
 
+            {/*
+             * HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. Experience-only on the
+             * same SHAPE gate as the meeting point above — the keys live on
+             * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one.
+             * NOT an entitlement gate: all four ship from the basic tier by
+             * owner decision (2026-09-01), so there is no plan check here and
+             * there must not be one.
+             */}
+            {sectionId === 'practicalInfo' && vertical === 'experience' && (
+                <PracticalInfoSection
+                    locale={locale}
+                    data={formData}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                />
+            )}
+
+            {/*
+             * Contact and social networks share one page, exactly as the
+             * accommodation editor's `contacto` route does — they are the same
+             * question ("how does someone reach you?") and splitting them would
+             * have made two nav items out of one errand.
+             */}
+            {sectionId === 'contact' && (
+                <>
                     <ContactSection
                         locale={locale}
                         contact={formData.contact}
@@ -714,97 +938,75 @@ export function CommerceListingEditor({
                         errors={fieldErrors}
                         onSocialChange={updateSocial}
                     />
+                </>
+            )}
 
-                    <OpeningHoursSection
-                        locale={locale}
-                        value={openingHours}
-                        errors={fieldErrors}
-                        onChange={(next) => {
-                            onFieldChange('openingHours', next);
-                        }}
-                    />
+            {sectionId === 'openingHours' && (
+                <OpeningHoursSection
+                    locale={locale}
+                    value={openingHours}
+                    errors={fieldErrors}
+                    onChange={(next) => {
+                        onFieldChange('openingHours', next);
+                    }}
+                />
+            )}
 
-                    <MediaSection
-                        locale={locale}
-                        vertical={vertical}
-                        listingId={listingId}
-                        initialFeaturedImage={initialFeaturedImage}
-                        initialGallery={initialGallery}
-                    />
+            {sectionId === 'translations' && (
+                <CommerceTranslationPanel
+                    locale={locale}
+                    initialValues={i18nValues}
+                    // HOS-902: display-only ES fallback. Sourced from the SAME
+                    // `formData` the rest of this form edits, but this section
+                    // never renders BasicInfoSection (one-section-per-route,
+                    // HOS-1080), so these four are always the load-time values
+                    // — never live-changing under the translations page.
+                    plainTextValues={{
+                        name: formData.name,
+                        summary: formData.summary,
+                        description: formData.description,
+                        richDescription: formData.richDescription
+                    }}
+                    onChange={handleI18nChange}
+                />
+            )}
 
-                    {/*
-                     * T-023: i18n editing panel. Wrapped only to carry the nav anchor:
-                     * every other section emits its own `id="editor-*"`, but this panel
-                     * is shared with other surfaces and renders a bare `<fieldset>` with
-                     * no id prop, so the anchor has to live on a wrapper here.
-                     */}
-                    <div id="editor-translations">
-                        <CommerceTranslationPanel
-                            locale={locale}
-                            initialValues={i18nValues}
-                            onChange={handleI18nChange}
-                        />
-                    </div>
+            {sectionId === 'amenities' && (
+                <AmenitiesSection
+                    locale={locale}
+                    amenities={amenities}
+                    features={features}
+                    selectedAmenityIds={amenityIds}
+                    selectedFeatureIds={featureIds}
+                    onToggleAmenity={toggleAmenity}
+                    onToggleFeature={toggleFeature}
+                />
+            )}
 
-                    <AmenitiesSection
-                        locale={locale}
-                        amenities={amenities}
-                        features={features}
-                        selectedAmenityIds={amenityIds}
-                        selectedFeatureIds={featureIds}
-                        onToggleAmenity={toggleAmenity}
-                        onToggleFeature={toggleFeature}
-                    />
+            {sectionId === 'price' && (
+                <PriceSection
+                    locale={locale}
+                    vertical={vertical}
+                    data={formData}
+                    errors={fieldErrors}
+                    onFieldChange={onFieldChange}
+                />
+            )}
 
-                    <PriceSection
-                        locale={locale}
-                        vertical={vertical}
-                        data={formData}
-                        errors={fieldErrors}
-                        onFieldChange={onFieldChange}
-                    />
+            {formError && (
+                <p
+                    className={styles.error}
+                    role="alert"
+                >
+                    {formError}
+                </p>
+            )}
 
-                    {/*
-                     * HOS-827: a section of the form, above the save button and
-                     * inside the same column as every other card — not a
-                     * full-width sibling below it. The wrapper carries the card
-                     * recipe (`fieldStyles.section`) and the nav anchor, because
-                     * `CommerceFaqManager` renders a bare <section> with neither:
-                     * it is also mounted standalone elsewhere.
-                     *
-                     * The FAQ endpoints are its own; nothing here reaches the
-                     * form's PATCH payload or its dirty tracking (HOS-811).
-                     */}
-                    {hasFaqSection && (
-                        <div
-                            id="editor-faqs"
-                            className={fieldStyles.section}
-                        >
-                            <CommerceFaqManager
-                                vertical={vertical}
-                                listingId={listingId}
-                                locale={locale}
-                                initialFaqs={initialFaqs}
-                            />
-                        </div>
-                    )}
-
-                    {formError && (
-                        <p
-                            className={styles.error}
-                            role="alert"
-                        >
-                            {formError}
-                        </p>
-                    )}
-
-                    <ActionBar
-                        locale={locale}
-                        isSaving={isSaving}
-                        onCancel={handleCancel}
-                    />
-                </div>
-            </div>
+            <ActionBar
+                locale={locale}
+                isSaving={isSaving}
+                onCancel={handleCancel}
+            />
         </form>
     );
 }

@@ -10,5 +10,84 @@
         "contactHeading": "Contacto",
         "socialHeading": "Redes",
         "websiteLabel": "Sitio web"
+    },
+    "landing": {
+        "meta": {
+            "title": "Sumate como aliado de Hospeda",
+            "description": "Presencia estable en el portal donde se planifican los viajes al Litoral: tu logo en la portada, difusión en nuestras redes y en el newsletter, y una página propia según el nivel."
+        },
+        "hero": {
+            "tagline": "Para aliados",
+            "title": "Acompañá al turismo del Litoral",
+            "desc": "Hospeda es el portal donde se planifica el viaje: dónde dormir, dónde comer, qué hacer. Los aliados acompañan ese momento con presencia estable en el lugar donde se toma la decisión, no con un banner que la gente esquiva."
+        },
+        "benefits": {
+            "tagline": "Qué recibís",
+            "title": "Lo que te da la alianza",
+            "item1": {
+                "title": "Tu logo en la portada",
+                "desc": "Tu marca entra en el carrusel de aliados de la página principal, justo donde alguien está armando su viaje al Litoral. Es presencia estable, no una tanda que pasa."
+            },
+            "item2": {
+                "title": "Una página propia dentro de Hospeda",
+                "desc": "Según el nivel que acordemos, tu logo lleva a una página tuya en Hospeda con tus textos, tu contacto y tus redes. La indexan los buscadores, así que sumás un lugar más donde te encuentren."
+            },
+            "item3": {
+                "title": "Entrás en lo que comunicamos",
+                "desc": "Las publicaciones de las redes de Hospeda y los envíos del newsletter te incluyen, con la prioridad y la frecuencia que quede acordada."
+            },
+            "item4": {
+                "title": "Constancia de cada aparición",
+                "desc": "Cada publicación en la que aparecés queda anotada en tu panel con su fecha y su enlace, para que entres y la veas vos mismo."
+            },
+            "item5": {
+                "title": "Tu ficha la manejás vos",
+                "desc": "Cambiás el logo, los textos, el contacto y las redes desde tu panel cuando quieras. Y si preferís no entrar, nos lo pedís y lo dejamos hecho."
+            }
+        },
+        "steps": {
+            "tagline": "Paso a paso",
+            "title": "Cómo se suma un aliado",
+            "1": {
+                "title": "Nos escribís",
+                "desc": "Completás el formulario contando quién sos y qué tenés en mente, o nos llamás si preferís hablar antes de llenar nada."
+            },
+            "2": {
+                "title": "Conversamos y acordamos",
+                "desc": "El nivel no se elige en un formulario: sale de esa charla, junto con las condiciones y la forma de pago que le sirva a tu administración."
+            },
+            "3": {
+                "title": "Cargamos tu material",
+                "desc": "Subís el logo, los textos y el contacto desde tu panel, o nos los mandás y los cargamos nosotros. En los dos casos lo revisamos con vos antes de que salga."
+            },
+            "4": {
+                "title": "Salís publicado",
+                "desc": "Tu logo entra en la portada y, si tu nivel la incluye, tu página queda en línea. Desde ahí entrás en las publicaciones y en el newsletter."
+            }
+        },
+        "faq": {
+            "tagline": "Preguntas",
+            "title": "Lo que conviene saber antes",
+            "1": {
+                "q": "¿Quiénes pueden ser aliados?",
+                "a": "No es sólo para comercios. Entran municipios y secretarías de turismo, cámaras e instituciones, ONGs y asociaciones, medios de la zona y personas con trayectoria. Si tenés algo que ver con que al Litoral le vaya bien, tiene sentido conversar."
+            },
+            "2": {
+                "q": "¿Cuánto sale y cómo se paga?",
+                "a": "No publicamos una lista, y es a propósito: no se le cobra igual a un municipio que a un comercio de barrio, aunque tomen el mismo nivel y reciban lo mismo. Los valores vigentes te los pasamos en la charla. Se abona por suscripción de Mercado Pago, o en efectivo o cheque si a tu administración le sirve más."
+            },
+            "3": {
+                "q": "¿Qué números me pasan de las redes?",
+                "a": "Ninguno, y preferimos decirlo antes de firmar: lo que pasa dentro de Instagram o Facebook queda del lado de ellos, no del nuestro. Lo que sí te damos es constancia — la fecha y el enlace de cada publicación en la que apareciste, en tu panel, para que la compruebes vos mismo."
+            },
+            "4": {
+                "q": "¿Qué pasa si terminamos el acuerdo?",
+                "a": "Tu logo sale de la portada y tu página deja de estar disponible. Nada se borra: si más adelante volvés, vuelve como estaba."
+            }
+        },
+        "cta": {
+            "title": "¿Lo charlamos?",
+            "label": "Quiero ser aliado"
+        }
     }
 }

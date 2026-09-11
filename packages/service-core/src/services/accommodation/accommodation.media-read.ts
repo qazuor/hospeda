@@ -39,6 +39,17 @@
  *   - raw-JSONB readers outside this service: search cover-image, bookmark
  *     enrichment, billing limit/downgrade services.
  *
+ * Direct consumers: routes/services that bypass `AccommodationService` entirely
+ * (their own raw `getDb()` query, not `.search()`/`.findAll()`) cannot go through
+ * the chokepoints above either, but — unlike the deferred list — DO need composed
+ * media, so they call {@link composeAccommodationMedia} (or the batch model finder
+ * `findByAccommodations` + the composer) directly instead of these attach helpers,
+ * which expect a full `Accommodation` entity. Known direct consumers:
+ *   - `SocialPublicDataService.fetchAccommodations` (HOS-66 T-024).
+ *   - `apps/api/src/routes/accommodation/public/similar.ts` (HOS-963 — this route
+ *     was overlooked in the original P2 migration, not deliberately deferred; its
+ *     raw query never read the (dropped) `media` JSONB column at all).
+ *
  * @module accommodation.media-read
  */
 

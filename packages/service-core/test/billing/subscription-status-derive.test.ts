@@ -20,7 +20,10 @@
 
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { deriveTrialingStatus } from '../../src/services/billing/subscription/subscription-status-derive.js';
+import {
+    deriveCourtesyStatus,
+    deriveTrialingStatus
+} from '../../src/services/billing/subscription/subscription-status-derive.js';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -203,5 +206,103 @@ describe('deriveTrialingStatus — purity', () => {
         const second = deriveTrialingStatus(input);
         // Assert
         expect(first).toBe(second);
+    });
+});
+
+describe('deriveCourtesyStatus (HOS-180)', () => {
+    const NOW_C = new Date('2026-09-15T12:00:00Z');
+    const FUTURE = new Date('2026-10-15T12:00:00Z');
+    const PAST = new Date('2026-08-15T12:00:00Z');
+
+    it('derives COURTESY from a provider PAUSED inside a live courtesy window', () => {
+        // Arrange / Act
+        const result = deriveCourtesyStatus({
+            mappedStatus: SubscriptionStatusEnum.PAUSED,
+            courtesyEndsAt: FUTURE,
+            now: NOW_C
+        });
+        // Assert
+        expect(result).toBe(SubscriptionStatusEnum.COURTESY);
+    });
+
+    it('leaves PAUSED alone once the window has elapsed — a lapsed gift is a real pause', () => {
+        expect(
+            deriveCourtesyStatus({
+                mappedStatus: SubscriptionStatusEnum.PAUSED,
+                courtesyEndsAt: PAST,
+                now: NOW_C
+            })
+        ).toBe(SubscriptionStatusEnum.PAUSED);
+    });
+
+    it('leaves PAUSED alone when there is no courtesy window at all', () => {
+        expect(
+            deriveCourtesyStatus({
+                mappedStatus: SubscriptionStatusEnum.PAUSED,
+                courtesyEndsAt: null,
+                now: NOW_C
+            })
+        ).toBe(SubscriptionStatusEnum.PAUSED);
+        expect(
+            deriveCourtesyStatus({
+                mappedStatus: SubscriptionStatusEnum.PAUSED,
+                courtesyEndsAt: undefined,
+                now: NOW_C
+            })
+        ).toBe(SubscriptionStatusEnum.PAUSED);
+    });
+
+    it('never derives COURTESY off a non-PAUSED status, however live the window', () => {
+        // This is the guard that stops a cancelled or expired subscription from
+        // being resurrected into a live status by a stale courtesy column.
+        for (const status of Object.values(SubscriptionStatusEnum)) {
+            if (status === SubscriptionStatusEnum.PAUSED) continue;
+            expect(
+                deriveCourtesyStatus({
+                    mappedStatus: status,
+                    courtesyEndsAt: FUTURE,
+                    now: NOW_C
+                })
+            ).toBe(status);
+        }
+    });
+
+    it('treats the exact boundary instant as elapsed', () => {
+        // courtesyEndsAt === now means the last gifted cycle is over. Deriving
+        // COURTESY here would keep the subscriber one tick past their gift and
+        // race the cron that is resuming the preapproval at the same instant.
+        expect(
+            deriveCourtesyStatus({
+                mappedStatus: SubscriptionStatusEnum.PAUSED,
+                courtesyEndsAt: NOW_C,
+                now: NOW_C
+            })
+        ).toBe(SubscriptionStatusEnum.PAUSED);
+    });
+
+    it('does not compete with deriveTrialingStatus — they key off disjoint statuses', () => {
+        // trialing derives off ACTIVE, courtesy off PAUSED. Running both in
+        // sequence must be order-independent for any single input.
+        const trialingFirst = deriveCourtesyStatus({
+            mappedStatus: deriveTrialingStatus({
+                mappedStatus: SubscriptionStatusEnum.PAUSED,
+                trialEnd: FUTURE,
+                now: NOW_C
+            }),
+            courtesyEndsAt: FUTURE,
+            now: NOW_C
+        });
+        expect(trialingFirst).toBe(SubscriptionStatusEnum.COURTESY);
+
+        const courtesyFirst = deriveTrialingStatus({
+            mappedStatus: deriveCourtesyStatus({
+                mappedStatus: SubscriptionStatusEnum.PAUSED,
+                courtesyEndsAt: FUTURE,
+                now: NOW_C
+            }),
+            trialEnd: FUTURE,
+            now: NOW_C
+        });
+        expect(courtesyFirst).toBe(SubscriptionStatusEnum.COURTESY);
     });
 });

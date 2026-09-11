@@ -2,7 +2,17 @@
 
 **Fecha:** 2026-07-18
 **Ambiente de pruebas:** PRODUCCIÓN, MercadoPago real (cuenta `HOSPEDA_COM_AR`, id `3497516165`, `mp@hospeda.com.ar`, site MLA). Pagos con `qazuor@gmail.com` (payer real `5860436`).
-**Estado:** núcleo del camino elegido (C) validado en prod. Falta: cobro día-N (canario, mañana), multi-user, addons a fondo.
+**Estado:** HISTÓRICO — mediciones reales del 18/07/2026, conclusiones de diseño
+CADUCAS (HOS-1302, 09/09/2026). Las mediciones contra MercadoPago siguen siendo
+evidencia válida de ese día; el diseño que proponen ya no es el vigente:
+
+- El "trial en manos de MP" y la guarda de dos capas que describe **ya no
+  existen**. HOS-1012 retiró el card-first entero: el trial es local de Hospeda y
+  a MercadoPago no se le pide ni un día gratis. `scripts/check-no-trial-to-mercadopago.sh`
+  falla el CI si un payload de checkout vuelve a nombrar un trial.
+- "El share link ignora `external_reference` y el preapproval queda en `null`" ya
+  no aplica: HOS-209 lo manda como query param
+  (`mp-plan-provisioning.service.ts:557-565`).
 
 ---
 
@@ -75,7 +85,16 @@ Durante el smoke de lanzamiento, TODO checkout pago fallaba en prod. El error ev
 - **Server-to-server**: llegan **independiente de si el user vuelve** al sitio (confirmado: cerrar el tab NO impide el webhook).
 - **El webhook de cancelación es el MISMO tipo que el de creación** (`subscription_preapproval`) → el handler debe ramificar por el `status` que ve en el GET (authorized/trialing/cancelled), no por el tipo de evento.
 - **`subscription_authorized_payment`** = el signal del cobro (día N o inmediato). Confirmado en un cobro real.
-- Llegan a la webhook URL real de Hospeda (`/api/v1/webhooks/mercadopago`) y responden 200. Nota: llegaron **sin** el marker `?source_news=webhooks` y funcionaron — revisar la asunción de HOS-159.
+- Llegan a la webhook URL real de Hospeda (`/api/v1/webhooks/mercadopago`) y responden 200.
+  > **CORRECCIÓN (HOS-1281, 09/09/2026)**: este ítem decía que llegaron **sin** el
+  > marker `?source_news=webhooks` «y funcionaron», y pedía revisar la asunción de
+  > HOS-159. Es exactamente al revés, y el 200 es la razón del error de lectura: el
+  > middleware del router (`routes/webhooks/mercadopago/router.ts`) **descarta** toda
+  > entrega sin el marker y responde `200 {received:true, dropped:'legacy-ipn-duplicate'}`.
+  > Un 200 no distingue «procesado» de «descartado» — que es todo el problema. Una
+  > entrega sin marker no escribe `billing_webhook_events` ni `billing_payments`; si
+  > la suscripción igual terminó activándose, fue el cron de polling. La asunción de
+  > HOS-159 se mantiene: el marker es obligatorio.
 - Firma `x-signature` disponible para anti-spoofing (a validar en implementación).
 
 ### 3.5 Ciclo de vida
@@ -179,7 +198,10 @@ Lo que hay que cambiar respecto del código shippeado (HOS-191):
 4. **Provisioning idempotente** de planes por `(plan, intervalo, trial_days)` (MP no dedupe).
 5. **Guard de trial global por customer** en Hospeda (MP solo cubre por-plan).
 6. **Aumento de precio** = job que muta cada sub, no solo el plan.
-7. Revisar la asunción de **HOS-159** (los webhooks llegan sin `source_news` y responden 200).
+7. ~~Revisar la asunción de **HOS-159** (los webhooks llegan sin `source_news` y responden 200).~~
+   **RESUELTO EN CONTRA (HOS-1281, 09/09/2026)**: la asunción de HOS-159 era
+   correcta. El 200 que se observó era el del **descarte** del router, no el de un
+   procesamiento — ver la corrección en §3.4. El marker es obligatorio.
 
 ---
 

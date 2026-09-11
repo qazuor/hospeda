@@ -47,7 +47,15 @@ vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
     })
 }));
 
-// Mock @repo/db — withTransaction must execute the callback synchronously
+// Mock @repo/db — withTransaction must execute the callback synchronously.
+//
+// HOS-1176: every subscription in this file omits `productDomain` (see
+// `buildBilling()`), so `recalculateAddonLimitsForCustomer` always calls
+// `hydrateSubscriptionProductDomains()`, which reads `getDb`/`billingSubscriptions`/
+// `inArray` off `@repo/db`. Every `limitKey` this file exercises maps to the
+// `'accommodation'` domain, which fails OPEN on a `null`/missing result — so
+// an empty hydration read (the default here) is the correct behaviour for
+// every test in this file, not a shortcut around it.
 vi.mock('@repo/db', () => ({
     withTransaction: mockWithTransaction,
     sql: Object.assign(
@@ -57,7 +65,16 @@ vi.mock('@repo/db', () => ({
             values
         })),
         { raw: vi.fn() }
-    )
+    ),
+    getDb: vi.fn(() => ({
+        select: vi.fn(() => ({
+            from: vi.fn(() => ({
+                where: vi.fn(() => Promise.resolve([]))
+            }))
+        }))
+    })),
+    billingSubscriptions: { id: 'id', productDomain: 'productDomain' },
+    inArray: vi.fn((col: unknown, values: unknown[]) => ({ col, values }))
 }));
 
 // Mock PlanService — DB-backed after T-027 cutover

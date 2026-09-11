@@ -3,6 +3,7 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import { getDb } from '@repo/db';
 import { isOwnerCategorySubscription, PlanService, RoleEnum } from '@repo/service-core';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
@@ -560,6 +561,207 @@ describe('entitlementMiddleware', () => {
         });
     });
 
+    // HOS-1104: `getByCustomerId()` never populates `productDomain` on its own
+    // (qzpay-core's mapper builds objects field-by-field from the fields
+    // `QZPaySubscription` declares — see `hydrateSubscriptionProductDomains`'s
+    // doc in `@repo/service-core`). Without hydration, the SPEC-239 T-034
+    // "exclude commerce-domain subscriptions" comment a few lines above
+    // `loadEntitlements`'s `.find()` was a documented no-op: every subscription
+    // reached `isAccommodationSubscription` with `productDomain = undefined`,
+    // which fails OPEN to accommodation regardless of the subscription's real
+    // vertical.
+    describe('SPEC-239 domain isolation via HOS-1104 hydration', () => {
+        it('does NOT resolve a gastronomy-only subscription as the accommodation plan', async () => {
+            // Fixture omits `productDomain` — that shape never occurs on the
+            // real SDK object. Its real vertical is supplied via the mocked
+            // `getDb()` recovery SELECT, exactly like the HOS-934 precedent.
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-gastro', planId: 'plan-gastro', status: 'active' }
+            ]);
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi
+                            .fn()
+                            .mockResolvedValue([{ id: 'sub-gastro', productDomain: 'gastronomy' }])
+                    })
+                })
+            } as never);
+            // Deliberately DOES grant PUBLISH_ACCOMMODATIONS: without this the
+            // gastronomy plan resolving at all (bug or not) would leave the
+            // entitlement absent for an unrelated reason (no plan configured),
+            // making the assertion below pass regardless of whether the
+            // domain exclusion actually ran.
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-gastro',
+                name: 'Gastronomy Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({ entitlements: Array.from(c.get('userEntitlements')) })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Without hydration this would resolve the gastronomy plan and
+            // grant PUBLISH_ACCOMMODATIONS from an unrelated subscription — the
+            // exact HOS-1104 bug. The correct outcome is the tourist-free
+            // default (no active accommodation subscription found).
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        /**
+         * HOS-1233 — the read the reclassification BREAKS, and the spec's own
+         * §4b audit table filed as "indifferent".
+         *
+         * Tourist plans used to be MISFILED as `accommodation` (F-4b), so
+         * `isAccommodationSubscription` matched a `tourist-vip` row and its
+         * entitlements resolved correctly for the wrong reason. Once T-038
+         * reclassifies those rows the same predicate returns false, no active
+         * subscription is found, and the fallback below hands a PAYING
+         * subscriber the tourist-FREE defaults.
+         *
+         * Measured before the fix: a plan granting `vip_support` resolved to
+         * exactly `[save_favorites, write_reviews, read_reviews]` — the free
+         * baseline. The fixture states the CORRECTED shape (`productDomain:
+         * 'tourist'`) on purpose: one built with the misfiled value would have
+         * passed before the fix too, which §9 names as the way this suite could
+         * go green while the bug survived.
+         */
+        it('resolves a PAYING tourist subscription, not the free defaults', async () => {
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-tourist', planId: 'plan-tourist-vip', status: 'active' }
+            ]);
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi
+                            .fn()
+                            .mockResolvedValue([{ id: 'sub-tourist', productDomain: 'tourist' }])
+                    })
+                })
+            } as never);
+            // `VIP_SUPPORT` is in TOURIST_VIP_ENTITLEMENTS and NOT in the
+            // tourist-free baseline, so its absence is decisive: it cannot be
+            // explained by the plan simply not granting it.
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-tourist-vip',
+                name: 'tourist-vip',
+                entitlements: [EntitlementKey.VIP_SUPPORT],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({ entitlements: Array.from(c.get('userEntitlements')) })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            expect(data.entitlements).toContain(EntitlementKey.VIP_SUPPORT);
+        });
+
+        it('still excludes a partner subscription (the union is tourist, not everything)', async () => {
+            // The sibling of the test above: widening the predicate to accept
+            // tourist must not widen it to accept every domain. A partner
+            // subscription is not the customer's consumer plan.
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-partner', planId: 'plan-partner-gold', status: 'active' }
+            ]);
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi
+                            .fn()
+                            .mockResolvedValue([{ id: 'sub-partner', productDomain: 'partner' }])
+                    })
+                })
+            } as never);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-partner-gold',
+                name: 'partner-gold',
+                entitlements: [EntitlementKey.VIP_SUPPORT],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({ entitlements: Array.from(c.get('userEntitlements')) })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            expect(data.entitlements).not.toContain(EntitlementKey.VIP_SUPPORT);
+        });
+
+        it('still resolves a real accommodation subscription (fix must not invert the bug)', async () => {
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-accom', planId: 'plan-123', status: 'active' }
+            ]);
+            vi.mocked(getDb).mockReturnValueOnce({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi
+                            .fn()
+                            .mockResolvedValue([
+                                { id: 'sub-accom', productDomain: 'accommodation' }
+                            ])
+                    })
+                })
+            } as never);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-123',
+                name: 'Pro Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: {}
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({ entitlements: Array.from(c.get('userEntitlements')) })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+    });
+
     describe('when user has no active subscription', () => {
         beforeEach(() => {
             // Mock no active subscription
@@ -959,6 +1161,114 @@ describe('entitlementMiddleware', () => {
             // Tourist-plus compare cap (3), not owner-basico's VIP cap (5).
             expect(data.limits[LimitKey.MAX_COMPARE_ITEMS]).toBe(3);
             // No free host accommodation slot.
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBeUndefined();
+        });
+    });
+
+    describe('courtesy cycles retain plan entitlements via loadEntitlements (HOS-180 AC-2)', () => {
+        beforeEach(() => {
+            // Same plan shape as the "active subscription" suite above, so the
+            // only variable across these two tests is the subscription status.
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-123',
+                name: 'Pro Plan',
+                entitlements: [
+                    EntitlementKey.PUBLISH_ACCOMMODATIONS,
+                    EntitlementKey.EDIT_ACCOMMODATION_INFO,
+                    EntitlementKey.VIEW_BASIC_STATS
+                ],
+                limits: {
+                    [LimitKey.MAX_ACCOMMODATIONS]: 10,
+                    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 20
+                }
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+        });
+
+        it('retains the full plan entitlements for a subscription in status "courtesy" (HOS-180 AC-2)', async () => {
+            // Arrange — status:'courtesy' is what an admin-granted gift cycle
+            // looks like from the QZPay read side (derived, never a real MP
+            // status). isEntitlementGrantingStatus() must resolve it the same
+            // as 'active'/'trialing'/'comp'.
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-courtesy-123',
+                    planId: 'plan-123',
+                    status: 'courtesy'
+                }
+            ]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — full plan entitlements retained, exactly like 'active'.
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            expect(data.entitlements).toContain(EntitlementKey.VIEW_BASIC_STATS);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(10);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(20);
+        });
+
+        it('does NOT retain plan entitlements for the same subscription in status "paused" (mirror of AC-2)', async () => {
+            // Arrange — the preapproval underneath a courtesy window IS paused
+            // in MercadoPago; this proves the courtesy grant, not the raw
+            // 'paused' status, is what keeps access. Everything else (plan,
+            // subscription id, limits) is identical to the test above.
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-courtesy-123',
+                    planId: 'plan-123',
+                    status: 'paused'
+                }
+            ]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — 'paused' is not entitlement-granting, so no active
+            // accommodation subscription is found and the request falls back
+            // to tourist-free defaults, NOT the paused plan's entitlements.
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).not.toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
             expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBeUndefined();
         });
     });

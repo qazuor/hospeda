@@ -5,7 +5,7 @@
  * ---
  * THE CASE THAT DOES NOT EXIST UNDER PER-LISTING BILLING
  *
- * Until HOS-688, `commerce_listing_subscriptions` had one row per listing and
+ * Until HOS-688, `entity_subscriptions` had one row per listing and
  * that row stood in for a subscription of its own: two restaurants meant two
  * MercadoPago preapprovals. Under the per-owner model the same table maps each
  * listing to its VERTICAL's subscription for that owner, and the checkout route
@@ -26,33 +26,62 @@
  * @module services/commerce-subscription-attach
  */
 
-import { type CommerceVertical, isEntitlementGrantingStatus } from '@repo/billing';
-import { commerceListingSubscriptions, eq, getDb } from '@repo/db';
-import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
-import { subscriptionMatchesDomain } from '@repo/service-core';
+import {
+    type CommerceVertical,
+    commerceVerticalToProductDomain,
+    ENTITLEMENT_GRANTING_STATUSES,
+    isEntitlementGrantingStatus
+} from '@repo/billing';
+import { entitySubscriptions, eq, getDb } from '@repo/db';
+import { SubscriptionStatusEnum } from '@repo/schemas';
+import { hydrateSubscriptionProductDomains, subscriptionMatchesDomain } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
-import { reconcileCommerceListingForSubscription } from './commerce-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from './subscription-linked-entities.service.js';
 
 /**
  * Statuses under which a link row counts against the owner's cap.
  *
- * Deliberately WIDER than the visibility reconciler's `{active, trialing}`:
- * a `past_due` listing is still occupying a slot the owner is paying (late)
- * for, and `pending_provider` is an in-flight checkout that will occupy one the
- * moment it lands. Counting only the visible ones would let an owner hold N
- * listings by keeping N-1 of them mid-dunning.
+ * DERIVED from the canonical {@link ENTITLEMENT_GRANTING_STATUSES}
+ * (`active`, `trialing`, `comp`, `courtesy`) PLUS two statuses that are
+ * deliberately NOT entitlement-granting but still occupy a slot:
+ *
+ * - `past_due` — the listing is still occupying a slot the owner is paying
+ *   (late) for; entitlements are already cut elsewhere, but the slot itself
+ *   is not freed until dunning finalizes the subscription.
+ * - `pending_provider` — an in-flight checkout that will occupy a slot the
+ *   moment it lands. Counting only the granting ones would let an owner hold
+ *   N listings by keeping N-1 of them mid-checkout.
+ *
+ * Building this by SPREADING `ENTITLEMENT_GRANTING_STATUSES` (rather than
+ * listing `active`/`trialing`/`comp`/`courtesy` by hand) is the point, not a
+ * style preference: it is what closed HOS-1274, where a hand-rolled copy of
+ * this list silently fell out of sync with the shared predicate the moment
+ * `comp`/`courtesy` were added there, and let a courtesy commerce owner
+ * publish with zero slots ever counted as occupied. A future entitlement
+ * status added to the canonical set is picked up here automatically; only a
+ * genuinely NEW non-entitlement "occupies a slot anyway" status would need a
+ * manual addition to the two above.
  */
-const SLOT_OCCUPYING_STATUSES: readonly string[] = [
-    SubscriptionStatusEnum.ACTIVE,
-    SubscriptionStatusEnum.TRIALING,
+const SLOT_OCCUPYING_STATUSES: ReadonlySet<string> = new Set([
+    ...ENTITLEMENT_GRANTING_STATUSES,
     SubscriptionStatusEnum.PAST_DUE,
     SubscriptionStatusEnum.PENDING_PROVIDER
-];
+]);
 
 /** A live subscription the owner already holds for one vertical. */
 export interface OwnerVerticalSubscription {
     readonly id: string;
     readonly status: string;
+    /**
+     * The plan the subscription is currently on (`billing_plans.id`, a UUID).
+     *
+     * Added by HOS-1119, when a vertical stopped having exactly one sellable
+     * tier: the checkout has to be able to tell "you already pay for this
+     * vertical" apart from "you already pay for this vertical ON THIS TIER",
+     * because only the first of those is a listing to attach and the second is
+     * a plan change the caller has to make somewhere else.
+     */
+    readonly planId: string;
 }
 
 /**
@@ -77,16 +106,26 @@ export async function findOwnerVerticalSubscription(input: {
     vertical: CommerceVertical;
 }): Promise<OwnerVerticalSubscription | null> {
     const { billing, customerId, vertical } = input;
-    const domain =
-        vertical === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    const domain = commerceVerticalToProductDomain(vertical);
 
-    const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-    const match = (subscriptions ?? []).find(
+    const rawSubscriptions = await billing.subscriptions.getByCustomerId(customerId);
+    // HOS-934: hydrate `productDomain` before matching — `getByCustomerId()`
+    // never populates it (see hydrateSubscriptionProductDomains's doc), so
+    // without this every subscription would fail open to accommodation
+    // regardless of its real vertical.
+    const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
+    const match = subscriptions.find(
         (sub: { status: string }) =>
             isEntitlementGrantingStatus(sub.status) && subscriptionMatchesDomain(sub, domain)
     );
 
-    return match ? { id: match.id as string, status: match.status as string } : null;
+    return match
+        ? {
+              id: match.id as string,
+              status: match.status as string,
+              planId: match.planId as string
+          }
+        : null;
 }
 
 /**
@@ -102,11 +141,11 @@ export async function findOwnerVerticalSubscription(input: {
 export async function countAttachedListings(input: { subscriptionId: string }): Promise<number> {
     const db = getDb();
     const rows = await db
-        .select({ status: commerceListingSubscriptions.status })
-        .from(commerceListingSubscriptions)
-        .where(eq(commerceListingSubscriptions.subscriptionId, input.subscriptionId));
+        .select({ status: entitySubscriptions.status })
+        .from(entitySubscriptions)
+        .where(eq(entitySubscriptions.subscriptionId, input.subscriptionId));
 
-    return rows.filter((row) => SLOT_OCCUPYING_STATUSES.includes(row.status)).length;
+    return rows.filter((row) => SLOT_OCCUPYING_STATUSES.has(row.status)).length;
 }
 
 /**
@@ -118,7 +157,7 @@ export async function countAttachedListings(input: { subscriptionId: string }): 
  * 1. the link row, upserted on `(entity_type, entity_id)` — the same unique
  *    constraint the per-listing model used, now meaning "which subscription
  *    covers this listing" rather than "this listing's subscription";
- * 2. `reconcileCommerceListingForSubscription`, so an attach onto an already
+ * 2. `reconcileSubscriptionLinkedEntities`, so an attach onto an already
  *    `active` subscription publishes the listing immediately. Without it the
  *    listing sits PRIVATE until some unrelated webhook happens to fire for that
  *    subscription — the owner pays nothing extra, sees nothing appear, and has
@@ -136,11 +175,10 @@ export async function attachListingToSubscription(input: {
     const { subscription, entityType, entityId } = input;
     const db = getDb();
 
-    const productDomain =
-        entityType === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+    const productDomain = commerceVerticalToProductDomain(entityType);
 
     await db
-        .insert(commerceListingSubscriptions)
+        .insert(entitySubscriptions)
         .values({
             subscriptionId: subscription.id,
             productDomain,
@@ -149,13 +187,14 @@ export async function attachListingToSubscription(input: {
             status: subscription.status
         })
         .onConflictDoUpdate({
-            target: [
-                commerceListingSubscriptions.entityType,
-                commerceListingSubscriptions.entityId
-            ],
+            target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
             set: {
                 subscriptionId: subscription.id,
                 status: subscription.status,
+                // HOS-1122: a restriction belongs to ONE subscription.
+                // Re-pointing the row hands the listing to another, which has
+                // its own tier and has restricted nothing.
+                planRestricted: false,
                 updatedAt: new Date()
             }
         });
@@ -167,7 +206,7 @@ export async function attachListingToSubscription(input: {
 
     // Non-throwing by contract (see the reconcile service), so a reconcile
     // failure cannot turn a successful attach into an error the owner retries.
-    await reconcileCommerceListingForSubscription({
+    await reconcileSubscriptionLinkedEntities({
         subscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
         source: 'commerce-attach'

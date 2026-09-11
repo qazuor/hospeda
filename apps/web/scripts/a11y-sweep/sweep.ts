@@ -28,6 +28,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from '@playwright/test';
+import { isLocalMediaPlaceholderMode } from '@repo/media';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4321';
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
@@ -73,13 +74,49 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/nosotros/', name: 'About' },
     { url: '/es/preguntas-frecuentes/', name: 'FAQ' },
     { url: '/es/contacto/', name: 'Contact' },
-    { url: '/es/suscriptores/planes/', name: 'Pricing' },
-    // HOS-690: the two commerce vertical landings now carry benefits/price/FAQ
-    // content (rebuilt from hero+lead-form), and the new dropdown they sit
-    // behind in the header is exactly the kind of widget this baseline exists
-    // to police.
-    { url: '/es/publicar-restaurante/', name: 'Publish Restaurant Landing' },
-    { url: '/es/publicar-experiencia/', name: 'Publish Experience Landing' },
+    // HOS-942 split the pricing surface in three: an audience index plus the two
+    // pricing pages it now sits above. All three are swept — the index is a new
+    // card grid nothing had ever audited, and the two pricing pages are the same
+    // markup as before at new URLs, so dropping either would silently retire
+    // coverage this baseline already had.
+    { url: '/es/suscriptores/planes/', name: 'Plans Index' },
+    // HOS-985: the five level-2 sales pages, built from the same
+    // SalesSection-based components. `/publicar-restaurante/` and
+    // `/publicar-experiencia/` used to be audited here and were dropped by
+    // HOS-1032, which turned them into 301s — a redirect has no markup to audit
+    // and axe would run against whatever it lands on, double-counting the page
+    // that IS listed.
+    { url: '/es/planes/gastronomia/', name: 'Sales Gastronomy' },
+    { url: '/es/planes/experiencias/', name: 'Sales Experience' },
+    { url: '/es/planes/anfitriones/', name: 'Sales Host' },
+    { url: '/es/planes/turistas/', name: 'Sales Tourist' },
+    { url: '/es/planes/aliados/', name: 'Sales Partner' },
+    // HOS-1032: the five level-3 pricing pages, replacing the two
+    // `/suscriptores/planes/<audiencia>/` entries this list used to carry.
+    //
+    // All five are audited and not just the two that moved, because each one
+    // renders a DIFFERENT combination of the grid's branches: the annual toggle
+    // (a radiogroup) appears only where a plan has an annual price, the
+    // comparison table (a scrollable region with a sticky header) only where
+    // the audience has curated rows, and aliados renders neither — it is the
+    // only page where the card CTA is a plain link and the price is replaced by
+    // "Consultar". Auditing one and assuming the rest would leave the branches
+    // this change actually added uncovered.
+    { url: '/es/planes/anfitriones/precios/', name: 'Pricing Host' },
+    { url: '/es/planes/turistas/precios/', name: 'Pricing Tourist' },
+    { url: '/es/planes/gastronomia/precios/', name: 'Pricing Gastronomy' },
+    { url: '/es/planes/experiencias/precios/', name: 'Pricing Experience' },
+    { url: '/es/planes/aliados/precios/', name: 'Pricing Partner' },
+    // HOS-1156: the three publish pages. Swept SIGNED OUT, which is the state
+    // this sweep runs in and also the one worth auditing hardest — it is what a
+    // visitor arriving from the public "Publicar" button sees, and the signup
+    // CTA that stands in for the form is markup nothing had audited before.
+    // The two commerce pages are listed separately from accommodation's because
+    // each mounts a DIFFERENT create island behind that CTA, so a fix on one
+    // page's form proves nothing about the other two.
+    { url: '/es/publicar/', name: 'Publish Accommodation' },
+    { url: '/es/publicar/gastronomia/', name: 'Publish Gastronomy' },
+    { url: '/es/publicar/experiencias/', name: 'Publish Experience' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];
@@ -372,7 +409,18 @@ async function main() {
 
     mkdirSync(REPORT_DIR, { recursive: true });
 
-    const browser = await chromium.launch({ headless: true });
+    // HOS-1144 — second layer of the CI Cloudinary cost guard. The SSR side
+    // already rewrites remote media URLs to a local placeholder; this makes
+    // `res.cloudinary.com` unresolvable for the browser as well, so a URL that
+    // escaped the rewrite (a client island, which has no `process.env`) still
+    // cannot bill us. `~NOTFOUND` fails DNS, so the request never opens a
+    // socket — which also keeps the `networkidle` wait honest.
+    const browser = await chromium.launch({
+        headless: true,
+        args: isLocalMediaPlaceholderMode()
+            ? ['--host-resolver-rules=MAP res.cloudinary.com ~NOTFOUND']
+            : []
+    });
     const context = await browser.newContext({
         viewport: DESKTOP,
         locale: 'es-AR'

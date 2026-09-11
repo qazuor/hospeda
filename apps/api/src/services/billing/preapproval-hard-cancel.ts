@@ -83,7 +83,13 @@ export type HardCancelPreapprovalOutcome =
     | { readonly kind: 'failed'; readonly error: string };
 
 /** Which code path asked for the hard-cancel. */
-export type HardCancelPreapprovalSource = 'finalize-cancelled-subs' | 'refund-lifecycle';
+export type HardCancelPreapprovalSource =
+    | 'finalize-cancelled-subs'
+    | 'refund-lifecycle'
+    | 'courtesy-expiry'
+    | 'admin-comp-grant'
+    | 'addon-cancellation'
+    | 'own-preapproval-create-compensation';
 
 /**
  * Sentry `action` tag per source.
@@ -94,14 +100,41 @@ export type HardCancelPreapprovalSource = 'finalize-cancelled-subs' | 'refund-li
  */
 const SENTRY_ACTION_BY_SOURCE: Readonly<Record<HardCancelPreapprovalSource, string>> = {
     'finalize-cancelled-subs': 'finalize_hard_cancel_preapproval',
-    'refund-lifecycle': 'refund_hard_cancel_preapproval'
+    'refund-lifecycle': 'refund_hard_cancel_preapproval',
+    // HOS-180: a subscriber who cancelled mid-gift. The gift ends, the row goes
+    // terminal, and the preapproval has to go with it.
+    'courtesy-expiry': 'courtesy_hard_cancel_preapproval',
+    // HOS-1171: an admin declaring a paying customer free. This is the ONE
+    // caller that does not treat the outcome as best-effort — a `failed` here
+    // aborts the grant — so its Sentry tag fires only for a hard-cancel that
+    // also refused an operator's request, not for a silent background miss.
+    'admin-comp-grant': 'comp_grant_hard_cancel_preapproval',
+    // HOS-847 PR 6: a RECURRING ADD-ON's own preapproval, not a plan's. Every
+    // add-on cancellation path funnels through `closeAddonPreapproval`
+    // (`services/addon-preapproval-cancel.ts`), which is where the finer-grained
+    // "which add-on path asked" lands — in `extra.addonCancelSource` — rather
+    // than as five more members of this union. ONE tag means ops alerting reads
+    // "an add-on preapproval refused to close" without enumerating call sites.
+    'addon-cancellation': 'addon_hard_cancel_preapproval',
+    // HOS-1326: the HOS-937 "Hueco A" compensation — a preapproval that exists at
+    // MercadoPago while the local write meant to track it failed. Its own tag
+    // because a failure here leaves the exact untracked orphan HOS-937 targets,
+    // and ops needs to tell it apart from a background sweep's silent miss.
+    'own-preapproval-create-compensation': 'own_preapproval_create_hard_cancel_preapproval'
 };
 
 /**
  * Input for {@link hardCancelPreapprovalBestEffort}.
  */
 export interface HardCancelPreapprovalInput {
-    /** Local subscription id — for logs, Sentry context and correlation. */
+    /**
+     * Id of the LOCAL ROW that owns this preapproval — for logs, Sentry context
+     * and correlation. A `billing_subscriptions.id` for every plan-side caller;
+     * a `billing_addon_purchases.id` for `addon-cancellation`, whose preapproval
+     * is owned by the purchase row and NOT by any subscription (HOS-847 PR 6).
+     * That caller also passes {@link HardCancelPreapprovalInput.extra} so the
+     * Sentry payload names the id it actually carries.
+     */
     readonly subscriptionId: string;
     /**
      * The MercadoPago preapproval id. `null` is an expected, non-error input:
@@ -124,6 +157,13 @@ export interface HardCancelPreapprovalInput {
      * triggered it without reading a stack trace.
      */
     readonly source: HardCancelPreapprovalSource;
+    /**
+     * Extra correlation fields merged into the Sentry `extra` payload and the
+     * log lines. Exists because {@link HardCancelPreapprovalInput.subscriptionId}
+     * is a single opaque id and some subjects need naming (an add-on carries a
+     * purchase id and a slug, not a subscription id).
+     */
+    readonly extra?: Record<string, unknown>;
 }
 
 /**
@@ -153,6 +193,18 @@ export interface HardCancelPreapprovalInput {
  * manual admin hard-cancel clears it, and the Sentry capture is the signal ops
  * watch for that sweep.
  *
+ * **"Never throws" is not "always succeeded".** The `failed` outcome is a real
+ * outcome, and a caller that ignores the return value has silently opted into
+ * "the provider said no and we continued anyway". That is correct for the two
+ * background sweeps above and for the refund path, where the expensive half has
+ * already happened. It is WRONG for `admin-comp-grant`
+ * (`services/subscription-comp-grant.service.ts`), which is about to declare a
+ * customer free while MercadoPago may still be charging them: that caller
+ * branches on the outcome and aborts on `failed`. It is equally WRONG for every
+ * `addon-cancellation` caller (HOS-847 PR 6): those go through
+ * `closeAddonPreapproval`, which treats anything other than `cancelled` as "the
+ * provider is not closed" and refuses to write the terminal local row.
+ *
  * @param input - Subscription id, preapproval id, optional billing/logger, and source.
  * @returns The outcome — `cancelled`, `skipped` (with a reason), or `failed`.
  *
@@ -171,22 +223,32 @@ export async function hardCancelPreapprovalBestEffort(
 ): Promise<HardCancelPreapprovalOutcome> {
     const { subscriptionId, mpSubscriptionId, source } = input;
     const logger = input.logger ?? defaultHardCancelLogger;
+    const extra = input.extra ?? {};
 
     if (!mpSubscriptionId) {
         // Expected for `comp` subscriptions (no preapproval exists) — a clean
         // no-op, not a failure.
         logger.warn(`${source}: no mpSubscriptionId — skipping MP preapproval hard-cancel`, {
-            subscriptionId
+            subscriptionId,
+            ...extra
         });
         return { kind: 'skipped', reason: 'no-preapproval' };
     }
 
     const billing = input.billing ?? getQZPayBilling();
-    const paymentAdapter = billing?.getPaymentAdapter();
+    // `typeof` rather than an optional call: this function's contract is that it
+    // NEVER throws, and every caller is already on an error path relying on that.
+    // A billing object without the method — an incompletely constructed client,
+    // or one of this repo's deliberately-partial test doubles
+    // (`billing-mock-must-be-partial.guard.test.ts`) — would otherwise raise a
+    // TypeError out of a compensating path and mask the original failure with a
+    // second one. "No adapter reachable" is exactly the `skipped` outcome below.
+    const paymentAdapter =
+        typeof billing?.getPaymentAdapter === 'function' ? billing.getPaymentAdapter() : null;
     if (!paymentAdapter) {
         logger.warn(
             `${source}: payment adapter unavailable — skipping MP preapproval hard-cancel`,
-            { subscriptionId, mpSubscriptionId }
+            { subscriptionId, mpSubscriptionId, ...extra }
         );
         return { kind: 'skipped', reason: 'adapter-unavailable' };
     }
@@ -196,7 +258,8 @@ export async function hardCancelPreapprovalBestEffort(
         await paymentAdapter.subscriptions.cancel(mpSubscriptionId, false);
         logger.info(`${source}: MP preapproval hard-cancelled`, {
             subscriptionId,
-            mpSubscriptionId
+            mpSubscriptionId,
+            ...extra
         });
         return { kind: 'cancelled' };
     } catch (err) {
@@ -204,14 +267,15 @@ export async function hardCancelPreapprovalBestEffort(
         logger.error(`${source}: MP preapproval hard-cancel failed (non-blocking)`, {
             subscriptionId,
             mpSubscriptionId,
-            error: message
+            error: message,
+            ...extra
         });
         Sentry.captureException(err instanceof Error ? err : new Error(message), {
             tags: {
                 subsystem: 'billing-subscription-lifecycle',
                 action: SENTRY_ACTION_BY_SOURCE[source]
             },
-            extra: { subscriptionId, mpSubscriptionId }
+            extra: { subscriptionId, mpSubscriptionId, ...extra }
         });
         return { kind: 'failed', error: message };
     }

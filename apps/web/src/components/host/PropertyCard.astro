@@ -18,10 +18,12 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation } from '@repo/schemas';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { getMediaUrl } from '@repo/media';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import btn from '@/components/account/AccountButton.module.css';
+import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import { DeleteButton } from './DeleteButton.client';
 import { PublishButton } from './PublishButton.client';
 import { UnpublishButton } from './UnpublishButton.client';
@@ -35,19 +37,36 @@ export interface Props {
     /** Current locale for i18n and URL building. */
     readonly locale: SupportedLocale;
     /**
-     * Whether the owner holds a live host plan. Forwarded to `PublishButton`,
-     * which offers the plan instead of publishing when it is false (H-99).
+     * Whether the server would accept a publish for this owner right now.
+     * Forwarded to `PublishButton`, which offers the plan instead of publishing
+     * when it is false (H-99).
      *
-     * Defaults to `true` so a caller that has not resolved the plan keeps the
-     * previous behaviour: the page that renders this grid already fails OPEN on
-     * a failed entitlements fetch, deliberately, so a transient API blip never
-     * hides Publish from a paying host. The `/publish` endpoint stays the real
-     * enforcement point either way.
+     * Read from `GET /protected/accommodations/publish-eligibility`, once per
+     * page rather than once per card — billing eligibility is a property of the
+     * owner, so it cannot differ between two cards in this grid.
+     *
+     * It replaced `hasActivePlan` (HOS-1183), which asked the narrower question
+     * "is a plan loaded" and therefore hid Publish from every owner still
+     * holding an intact free trial — owners the server publishes.
+     *
+     * Defaults to `true` so a caller that has not resolved the verdict keeps
+     * failing OPEN: a transient API blip must never hide Publish from a paying
+     * host, and the `/publish` endpoint stays the real enforcement point.
      */
-    readonly hasActivePlan?: boolean;
+    readonly canPublish?: boolean;
     /**
-     * Generic owner trial length in days (H-98), shown in the "necesitás un
-     * plan activo" message when trying to publish without a subscription.
+     * Whether publishing would start the owner's free trial, from the same
+     * read. Forwarded to `PublishButton`, which announces it on the confirm
+     * step.
+     *
+     * Defaults to `false`: silence is the safe default here, in the opposite
+     * direction from `canPublish`. An unannounced trial costs the owner a
+     * surprise; an announced one that never starts is a promise broken.
+     */
+    readonly startsTrial?: boolean;
+    /**
+     * Generic owner trial length in days (H-98), shown on the publish confirm
+     * step when publishing would start the owner's trial.
      * Resolved by the caller from the live billing plans — the minimum
      * `trialDays` among active owner plans with `hasTrial`, via
      * `resolveGenericOwnerTrialDays` — and passed down, so this card never
@@ -62,14 +81,33 @@ export interface Props {
     readonly trialDays?: number;
 }
 
-const { property, locale, hasActivePlan = true, trialDays = OWNER_TRIAL_DAYS } = Astro.props;
+const {
+    property,
+    locale,
+    canPublish = true,
+    startsTrial = false,
+    trialDays = OWNER_TRIAL_DAYS
+} = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
-/** Resolve thumbnail: first gallery image url, or featured image url, or placeholder. */
-const thumbnailUrl: string =
+/**
+ * Resolve thumbnail: first gallery image url, or featured image url, or placeholder.
+ *
+ * HOS-637: the card renders this image at `width="400" height="220"` below —
+ * the ORIGINAL upload was rendered here unconditionally, so a 4000x2252 /
+ * ~6.8MB photo shipped to a 220px-tall card (measured: 465x the size of the
+ * same photo through the `card` transform). `getMediaUrl` is the single
+ * helper every other screen already uses to avoid exactly this (the public
+ * detail page's gallery, `OwnerCard`, `@/lib/media`'s `extractFeaturedImage`)
+ * — this card just never called it. The `card` preset is `w_400,h_300,...`;
+ * `height: 220` overrides it to match this card's actual rendered box instead
+ * of reusing the preset's own 400x300 crop verbatim.
+ */
+const rawThumbnailUrl: string =
     property.media?.gallery?.[0]?.url ??
     property.media?.featuredImage?.url ??
     '/assets/images/placeholder-accommodation.svg';
+const thumbnailUrl = getMediaUrl(rawThumbnailUrl, { preset: 'card', height: 220 });
 
 const thumbnailAlt: string =
     property.media?.gallery?.[0]?.caption ??
@@ -148,6 +186,21 @@ const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` }
 
 const isActive = lifecycleState === LifecycleStatusEnum.ACTIVE;
 const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
+
+/**
+ * Whether this property has a public page right now — BOTH clauses, HOS-982.
+ *
+ * `visibility === PUBLIC` alone is not "published": a DRAFT row can carry PUBLIC
+ * visibility and still have no page. The API's `qr-sheet` route checks exactly
+ * this pair before it will print a code (see `protected/qrSheet.ts`), so the card
+ * has to ask the same question — otherwise it would offer a download that can
+ * only ever answer 404.
+ *
+ * It is resolved HERE, from the row the page already fetched, and never from a
+ * failed request: that route answers one indistinguishable 404 for "not yours",
+ * "does not exist" and "not published", by design.
+ */
+const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLIC;
 ---
 
 <article class="prop-card">
@@ -244,14 +297,16 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                     label={t('host.properties.card.actions.publish', 'Publicar')}
                     confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '¿Publicar este alojamiento?')}
                     confirmNote={t('host.properties.card.actions.publishConfirmNote', 'Va a aparecer en el sitio, visible para los turistas.')}
+                    confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', trialDays, { trialDays })}
                     confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
                     confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
                     errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
-                    subscriptionRequiredMessage={tPlural('host.properties.card.publishSubscriptionRequiredMessage', trialDays, { trialDays })}
+                    subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar.')}
                     subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
                     missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', 'Para publicar falta completar: {{fields}}.')}
                     missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
-                    hasActivePlan={hasActivePlan}
+                    canPublish={canPublish}
+                    startsTrial={startsTrial}
                     choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
                 />
             )}
@@ -260,13 +315,35 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                  React island with inline confirmation) -->
             <DeleteButton
                 client:load
-                accommodationId={property.id}
+                listingId={property.id}
                 locale={locale}
                 label={t('host.properties.card.actions.delete', 'Eliminar')}
                 confirmText={t('host.properties.card.actions.deleteConfirm', '¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.')}
                 confirmYes={t('host.properties.card.actions.deleteYes', 'Sí, eliminar')}
                 confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
                 errorText={t('host.properties.card.deleteError', 'No se pudo eliminar. Intentá de nuevo.')}
+            />
+        </div>
+
+        <!-- HOS-982: the printable QR sheet. Its own block below the action row
+             rather than another chip inside it — it carries an explanatory line
+             and a status message, which the row of one-word actions has no shape
+             for. Rendered in EVERY lifecycle state on purpose: a draft's owner
+             reads what publishing unlocks instead of finding nothing at all.
+             `client:visible` (not `client:load` like the row's confirm-dialog
+             islands) because this is one card in a grid AND the panel fetches
+             its QR image on mount: hydrating eagerly would fire one request per
+             card in the whole grid on page load, most of them for cards nobody
+             scrolls to. Deferring to visibility is what keeps that proportional
+             to what is actually looked at. -->
+        <div class="prop-card__qr">
+            <ListingQrSheet
+                client:visible
+                vertical="accommodation"
+                listingId={property.id}
+                slug={property.slug}
+                locale={locale}
+                isPublished={canPrintQrSheet}
             />
         </div>
     </div>
@@ -436,6 +513,16 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
        frontmatter `btn` import). Kept for the mobile full-width rule below;
        the DeleteButton/UnpublishButton React islands render their own
        equivalent classes since Astro-scoped styles don't reach islands. */
+
+    /* HOS-982: the printable QR sheet block, separated from the action row the
+       same way that row is separated from the card body. Astro-scoped styles do
+       not reach an island, so this rule owns only the outer spacing — the panel
+       itself is styled by `ListingQrSheet.module.css`. */
+    .prop-card__qr {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+    }
 
     @media (max-width: 360px) {
         .prop-card__actions {

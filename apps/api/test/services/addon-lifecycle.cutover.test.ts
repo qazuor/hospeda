@@ -95,7 +95,13 @@ vi.mock('@repo/db/schemas/billing', () => ({
     }
 }));
 
-vi.mock('drizzle-orm', () => ({
+// Partial mock (HOS-702): a whole-module literal leaves every operator this
+// test does not name as `undefined`, so the day the service reaches for one
+// more — `isNotNull`, as HOS-847 PR 6 did — the suite fails on the import
+// rather than on the behaviour. Only the three operators whose stub shape the
+// assertions below read are overridden; the rest come from the real module.
+vi.mock('drizzle-orm', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('drizzle-orm')>()),
     and: vi.fn((...args: unknown[]) => ({ _and: args })),
     eq: vi.fn((a: unknown, b: unknown) => ({ _eq: [a, b] })),
     isNull: vi.fn((a: unknown) => ({ _isNull: a }))

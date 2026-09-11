@@ -22,10 +22,13 @@
  */
 import type { EntitlementKey, LimitKey } from '@repo/billing';
 import { isEntitlementGrantingStatus } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import {
+    hydrateSubscriptionProductDomains,
     isAccommodationSubscription,
     isOwnerCategorySubscription,
-    RoleEnum
+    RoleEnum,
+    subscriptionMatchesDomain
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -118,16 +121,48 @@ export const userEntitlementsRoute = createProtectedRoute({
             try {
                 const customer = await billing.customers.getByExternalId(actor.id);
                 if (customer) {
-                    const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+                    const rawSubscriptions = await billing.subscriptions.getByCustomerId(
+                        customer.id
+                    );
+                    // HOS-934: hydrate `productDomain` before it reaches
+                    // `isAccommodationSubscription` below — `getByCustomerId()`
+                    // never populates it (see hydrateSubscriptionProductDomains's
+                    // doc), so without this every subscription would fail open
+                    // to accommodation regardless of its real vertical.
+                    const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
                     // HOS-239: use the canonical entitlement-granting status set
                     // (active | trialing | comp) instead of the inline
                     // `active | trialing` that dropped `comp` — that omission is
                     // exactly what returned `plan: null` for comp subscribers even
                     // though loadEntitlements populated their entitlements/limits.
+                    // HOS-1233: accommodation OR tourist, the same widening
+                    // `loadEntitlements` carries (F-4f) and for the same reason
+                    // — this `find` looks for "the plan this person pays for",
+                    // and `ALL_PLANS` holds the owner tiers and the tourist
+                    // tiers together.
+                    //
+                    // Until this spec the distinction did not exist: tourist
+                    // plans were filed as `accommodation` (F-4b), so a
+                    // `tourist-vip` row matched `isAccommodationSubscription`
+                    // BY ACCIDENT and this endpoint answered correctly for the
+                    // wrong reason. Reclassified, no `activeSub` is found and
+                    // the response carries `plan: null` — to a paying customer,
+                    // from the endpoint whose entire job is "which plan am I
+                    // on". The HOS-217 note below already declared the intent
+                    // this then violated (F-4g #1).
+                    //
+                    // Two explicit calls rather than a union helper: HOS-1081
+                    // deleted `isCommerceSubscription()` for having no callers,
+                    // and this does not yet justify reintroducing that shape.
+                    // The asymmetry survives — accommodation still fails OPEN
+                    // for rows predating the column, tourist fails CLOSED like
+                    // every other named domain, and `partner`/`gastronomy`/
+                    // `experience` stay excluded on their own value.
                     let activeSub = subscriptions?.find(
                         (sub: { status: string }) =>
                             isEntitlementGrantingStatus(sub.status) &&
-                            isAccommodationSubscription(sub)
+                            (isAccommodationSubscription(sub) ||
+                                subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST))
                     );
 
                     // HOS-217: a HOST actor's resolved subscription must also be

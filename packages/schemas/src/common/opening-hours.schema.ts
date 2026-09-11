@@ -93,6 +93,24 @@ export type Shift = z.infer<typeof ShiftSchema>;
  * Operating schedule for a single day.
  * A day can be marked as closed (no service), or carry one or more shifts.
  *
+ * ## `closed: false` REQUIRES at least one shift (HOS-906)
+ *
+ * A day is never allowed to be neither open nor closed. `closed: true` means
+ * `shifts` MUST be empty; `closed: false` means `shifts` MUST have at least
+ * one entry. The intermediate state — `{ closed: false, shifts: [] }` — used
+ * to pass validation silently, because `closed` defaults to `false` and an
+ * untouched day in the editor never got a shift added. That default is what
+ * every UNTOUCHED day in the opening-hours editor persisted on save, which
+ * reads as "open with no hours" to anyone inspecting the row even though the
+ * host never made that choice. The public read side (`computeOpenNowStatus`
+ * in `apps/web/src/lib/gastronomy-hours.ts`) already treats an empty `shifts`
+ * array as closed regardless of the `closed` flag, so this refine makes the
+ * write side agree with the read side instead of persisting a value neither
+ * side can act on.
+ *
+ * A 24-hour day is NOT expressed as `closed: false` with an empty `shifts` —
+ * see {@link ShiftSchema}'s doc: it is one shift, `00:00`–`23:59`.
+ *
  * @example
  * // Open with two shifts
  * { closed: false, shifts: [{ open: "09:00", close: "13:00" }, { open: "17:00", close: "22:00" }] }
@@ -100,19 +118,36 @@ export type Shift = z.infer<typeof ShiftSchema>;
  * @example
  * // Closed
  * { closed: true, shifts: [] }
+ *
+ * @example
+ * // Rejected — neither open nor closed
+ * DayScheduleSchema.parse({ closed: false, shifts: [] }) // throws
  */
-export const DayScheduleSchema = z.object({
-    /**
-     * Whether the venue is closed on this day.
-     * Defaults to `false` (open).
-     */
-    closed: z.boolean().default(false),
-    /**
-     * Operating shifts for this day.
-     * An empty array means no defined shifts (e.g. venue is closed or open 24h with no slots).
-     */
-    shifts: z.array(ShiftSchema)
-});
+export const DayScheduleSchema = z
+    .object({
+        /**
+         * Whether the venue is closed on this day.
+         * Defaults to `false` (open) — but see the schema doc: an open day
+         * MUST carry at least one shift, so this default alone is never a
+         * valid final value.
+         */
+        closed: z.boolean().default(false),
+        /**
+         * Operating shifts for this day.
+         * Empty ONLY when `closed` is `true`; an open day (`closed: false`)
+         * must carry at least one shift (see the schema doc for why).
+         */
+        shifts: z.array(ShiftSchema)
+    })
+    .superRefine((schedule, ctx) => {
+        if (!schedule.closed && schedule.shifts.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'zodError.common.openingHours.day.notOpenOrClosed',
+                path: ['closed']
+            });
+        }
+    });
 
 export type DaySchedule = z.infer<typeof DayScheduleSchema>;
 

@@ -9,6 +9,7 @@ import type {
 import { relations } from 'drizzle-orm';
 import {
     boolean,
+    doublePrecision,
     index,
     integer,
     jsonb,
@@ -88,6 +89,148 @@ export const experiences = pgTable(
          */
         isPriceOnRequest: boolean('is_price_on_request').notNull().default(false),
         /**
+         * Where the experience starts — the address or the landmark the traveller
+         * has to show up at (HOS-1048).
+         *
+         * Neither `destinationId` nor `contactInfo` could answer this: the first
+         * is the CITY (it lists and filters, it does not tell anyone where to
+         * stand), and the second is the provider's own phone and mail. Before
+         * this column `experiences` carried no address and no coordinate at all.
+         *
+         * Free text on purpose: many meeting points in the region are a landmark
+         * rather than a street number ("muelle 3 del puerto", "la rotonda de
+         * acceso"), and a structured address would force the owner to invent a
+         * street for a place that has none.
+         *
+         * NOT gated by any entitlement — this is ficha data, available from the
+         * basic tier. Only the MAP that draws it and the how-to-get-there
+         * instructions are the paid half of the feature (HOS-1049).
+         */
+        meetingPoint: text('meeting_point'),
+        /**
+         * Latitude of the meeting point in decimal degrees (WGS84), nullable.
+         *
+         * Plain `double precision` following the `points_of_interest` precedent
+         * (HOS-138) — deliberately NOT the JSONB/string coordinate shape
+         * `accommodations` and `destinations` use, which costs a `::numeric`
+         * cast at every read and invites the `long`/`lng` confusion.
+         *
+         * Null means "no coordinate", not an error: an owner may describe the
+         * meeting point in words and never pin it. Consumers must render the
+         * text on its own in that case.
+         */
+        meetingPointLat: doublePrecision('meeting_point_lat'),
+        /**
+         * Longitude of the meeting point in decimal degrees (WGS84), nullable.
+         * Named `long` (not `lng`) for consistency with `@repo/db`'s `geo.ts`
+         * helpers and with `points_of_interest`. See {@link meetingPointLat}.
+         */
+        meetingPointLong: doublePrecision('meeting_point_long'),
+        /**
+         * HOW TO GET THERE — the paid half of the meeting point (HOS-1049).
+         * One free-text instruction per item: where to park, which bus, how far
+         * the walk is from the road, what landmark to look for.
+         *
+         * ## Why a list and not one prose block
+         *
+         * Same reasoning as {@link whatToBring} and {@link requirements}, which
+         * this column sits beside: "estacioná en la bajada municipal",
+         * "el colectivo 4 te deja en la rotonda" and "son 300 m por camino de
+         * tierra" are three independent facts a traveller reads one at a time,
+         * not a paragraph. A list also renders as a list on the ficha without a
+         * markdown pipeline, so this needs no sanitisation surface and does not
+         * overlap `richDescription`'s own entitlement.
+         *
+         * `text[]` with `NOT NULL DEFAULT '{}'`, following the same precedent:
+         * "no instructions" is an empty array, never NULL, so every consumer
+         * has exactly ONE empty value to test instead of two.
+         *
+         * ## This one IS entitlement-gated — the only ficha column that is
+         *
+         * `meeting_point` and its two coordinates are ficha data on every tier
+         * (HOS-1048). This column, and the MAP drawn from those coordinates,
+         * are `manage_experience_directions` — `experience-pro` and above
+         * (owner decision, 2026-09-01). The rows are never deleted on a
+         * downgrade: the public route withholds them live, exactly as
+         * `manage_gastronomy_menu` withholds a downgraded venue's carta.
+         */
+        meetingPointDirections: text('meeting_point_directions').array().notNull().default([]),
+        /**
+         * How long the experience lasts, in whole MINUTES (HOS-898).
+         *
+         * Structured rather than free text ("2 horas aprox") for one decisive
+         * reason: the ficha renders in es/en/pt, and a free-text duration is
+         * written once in one language and shown untranslated to the other two.
+         * An integer is formatted per locale at render time.
+         *
+         * Minutes, not hours, because a 45-minute city walk and a 90-minute
+         * boat ride are both real and neither is a whole number of hours. The
+         * editor asks for hours + minutes and multiplies; the column stores the
+         * sum, so there is exactly one number to compare, sort or filter on
+         * later.
+         *
+         * Nullable: an owner who has not declared a duration is not an error.
+         * NOT entitlement-gated — ficha data from the basic tier.
+         */
+        durationMinutes: integer('duration_minutes'),
+        /**
+         * What the traveller has to BRING — repellent, closed shoes, swimsuit
+         * (HOS-1046). One free-text line per item.
+         *
+         * A separate column from {@link requirements}, not one list with a
+         * `type` discriminator. The two answer different questions: this is a
+         * packing list the traveller acts on, `requirements` is an eligibility
+         * gate that may exclude them outright. They render under different
+         * headings with different tone, and a discriminator would exist only to
+         * re-derive at read time a split we already know at write time.
+         *
+         * `text[]` with `NOT NULL DEFAULT '{}'` following the
+         * `amenities.applicable_verticals` precedent: "no items" is an empty
+         * array, never NULL, so every consumer has exactly one empty value to
+         * test instead of two.
+         */
+        whatToBring: text('what_to_bring').array().notNull().default([]),
+        /**
+         * REQUIREMENTS to take part — minimum age, knowing how to swim, fitness
+         * level, health restrictions (HOS-1046). One free-text line per item.
+         *
+         * Free text rather than a catalog of tick-boxes: "edad mínima 12 años"
+         * and "no apto para embarazadas" carry a number and a nuance a fixed
+         * catalog row cannot hold, and every provider's threshold differs.
+         * See {@link whatToBring} for why this is its own column.
+         */
+        requirements: text('requirements').array().notNull().default([]),
+        /**
+         * What happens when the experience does not run — rain, wind, a low
+         * river, not reaching the minimum group size (HOS-1047).
+         *
+         * FREE TEXT, deliberately, not a structured (deadline + outcome)
+         * policy. A structured policy only earns its complexity once money has
+         * changed hands and something has to be computed from it — that is
+         * HOS-1050 (deposits), which is deferred. Until then the only consumer
+         * is a human reading the ficha, and prose says "si baja el río
+         * reprogramamos sin cargo" in a way no enum pair does.
+         *
+         * Nullable; NOT entitlement-gated.
+         */
+        cancellationPolicy: text('cancellation_policy'),
+        /**
+         * Whether the provider offers a special arrangement for private groups
+         * (HOS-1056). A single flag, on purpose: it turns on a CTA to contact
+         * the provider and nothing else — no rate card, no quote calculator, no
+         * group booking.
+         *
+         * A column rather than a catalog feature row (the issue offered both):
+         * a feature row renders as one more tick in the amenities grid, and a
+         * tick cannot carry a call to action. The behaviour attached to this
+         * value is what makes it a column.
+         *
+         * NOT NULL with a `false` default — "did not say" and "does not offer
+         * it" are the same answer for a CTA that only ever appears when the
+         * flag is on.
+         */
+        acceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
+        /**
          * Denormalized flag driven by the SPEC-239 binary-subscription lifecycle hook.
          * When false, the experience is hidden from public listing and detail pages.
          * Flipped by the subscription reconciler — never edited directly via CRUD.
@@ -127,6 +270,38 @@ export const experiences = pgTable(
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('DRAFT'),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         isFeatured: boolean('is_featured').notNull().default(false),
+        /**
+         * Denormalized billing-state flag (HOS-1286) — mirror of
+         * `accommodations.featured_by_entitlement`. True while a
+         * `visibility-boost-experience-*` addon purchase grants an active
+         * FEATURED_LISTING entitlement for THIS listing. Written only by the
+         * billing sync primitives, never by admin curation, and deliberately
+         * independent of {@link isFeatured}: the effective public value is the
+         * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
+         * routes only (`resolvePublicIsFeatured`).
+         *
+         * **Only one source feeds it, unlike accommodation.** No commerce plan
+         * grants FEATURED_LISTING (`commerce-entitlements.config.ts` grants
+         * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
+         * column has exactly one writer — the addon — where accommodation has
+         * two (plan owner-wide + addon per-listing).
+         *
+         * ---
+         * ## Why a denormalized column rather than deriving on read
+         *
+         * The honest argument FOR deriving (joining
+         * `featured_listing_addon_grants` → `billing_addon_purchases` per public
+         * read) is not performance: **a derived value cannot desync**, while this
+         * column needs sync primitives and a reconcile cron — more code, and more
+         * surface where the stored state can lie.
+         *
+         * It still loses because `accommodations` already denormalizes: deriving
+         * here would leave TWO mechanisms answering one question, the asymmetry
+         * HOS-1257 exists to close. The full argument, and the note that the
+         * right future question is "should BOTH derive?", is recorded once on
+         * `gastronomies.featuredByEntitlement`.
+         */
+        featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         // Denormalized aggregate stats (updated by trigger / service)
         reviewsCount: integer('reviews_count').notNull().default(0),
         /** Average rating across all review criteria (0.00–5.00). mode:'number' for JS coercion. */
@@ -149,6 +324,11 @@ export const experiences = pgTable(
         ),
         experiences_visibility_idx: index('experiences_visibility_idx').on(table.visibility),
         experiences_isFeatured_idx: index('experiences_isFeatured_idx').on(table.isFeatured),
+        // HOS-1286: parallel index for featuredByEntitlement — see the twin on
+        // `gastronomies` and the accommodations pair it mirrors.
+        experiences_featuredByEntitlement_idx: index('experiences_featuredByEntitlement_idx').on(
+            table.featuredByEntitlement
+        ),
         experiences_type_idx: index('experiences_type_idx').on(table.type),
         experiences_ownerId_idx: index('experiences_ownerId_idx').on(table.ownerId),
         experiences_deletedAt_idx: index('experiences_deletedAt_idx').on(table.deletedAt),

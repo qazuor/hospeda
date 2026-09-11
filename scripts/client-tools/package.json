@@ -1,0 +1,31 @@
+{
+    "name": "@hospeda/client-tools",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Developer CLI for the Hospeda monorepo — repo statistics, worktree cleanup and issue bootstrap behind a single `hops` command.",
+    "type": "module",
+    "bin": {
+        "hops": "./bin/hops",
+        "hops-stats": "./bin/hops-stats",
+        "hops-wt-clean": "./bin/hops-wt-clean",
+        "hops-start-issue": "./bin/hops-start-issue"
+    },
+    "scripts": {
+        "dev": "bun run src/index.ts",
+        "typecheck": "tsc --noEmit",
+        "test": "bun test"
+    },
+    "dependencies": {
+        "@clack/prompts": "^1.7.0",
+        "commander": "^15.0.0",
+        "picocolors": "^1.1.1"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.1.14",
+        "@types/node": "^22.10.0",
+        "typescript": "^5.7.2"
+    },
+    "engines": {
+        "bun": ">=1.1.0"
+    }
+}

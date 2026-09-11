@@ -119,8 +119,9 @@
     background-color: oklch(0 0 0 / 0.45);
     border: none;
     padding: 1rem;
-    max-width: 100%;
-    max-height: 100%;
+    /* `max-width` / `max-height` come from the shared `.dialog-viewport`
+     * class: this `<dialog>` is the full-viewport overlay, and the panel
+     * below it is what actually carries the height cap. */
     width: 100%;
     height: 100%;
 }
@@ -129,16 +130,19 @@
     display: none;
 }
 
+/* Composes the shared `.dialog-panel` class; the cap is retuned through the
+ * shared custom property rather than a second `max-height` declaration. This
+ * one stays deliberately shorter than the default so the chips list reads as
+ * a picker floating over the filters, not as a full-height sheet. */
 .iconChipsDialogPanel {
+    --dialog-max-height: 70dvh;
     background-color: var(--core-card);
     border-radius: 1rem;
     box-shadow: 0 4px 24px oklch(0 0 0 / 0.15);
     max-width: 480px;
     width: 100%;
-    max-height: 70vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .iconChipsDialogHeader {
@@ -188,9 +192,9 @@
     flex-shrink: 0;
 }
 
+/* Flex sizing + scrolling come from the shared `.dialog-panel-scroll` class,
+ * which keeps the header and search box above it in place. */
 .iconChipsDialogBody {
-    flex: 1;
-    overflow-y: auto;
     padding: 0.75rem 1.25rem 1rem;
     display: flex;
     flex-direction: column;

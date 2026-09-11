@@ -87,6 +87,7 @@ await import('../../../src/routes/event/admin/moderate');
 await import('../../../src/routes/event/admin/publishState');
 await import('../../../src/routes/event/admin/lifecycleState');
 await import('../../../src/routes/event/protected/publishState');
+await import('../../../src/routes/event/protected/moderate');
 
 const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
@@ -143,6 +144,13 @@ describe('event state-transition routes', () => {
             // the middleware cannot know. Declaring it here would let any holder
             // through on ANY event if the service check were ever relaxed.
             expect(getConfig('protected /{id}/publish-state').requiredPermissions).toBeUndefined();
+        });
+
+        it('protected moderate declares no route permission — the author rule needs the event (HOS-1037)', () => {
+            // EVENT_PUBLISH_OWN only authorizes on an event the actor authored, and
+            // only when the requested verdict is APPROVED, neither of which the
+            // middleware can know without the row.
+            expect(getConfig('protected /{id}/moderate').requiredPermissions).toBeUndefined();
         });
     });
 
@@ -284,6 +292,67 @@ describe('event state-transition routes', () => {
                     { visibility: VisibilityEnum.PUBLIC }
                 )
             ).rejects.toThrow(/publication state/);
+        });
+    });
+
+    describe('protected moderate (HOS-1037)', () => {
+        it('forwards the moderation state and the acting author to the service', async () => {
+            mockModerate.mockResolvedValue({ data: { id: EVENT_ID } });
+
+            await getConfig('protected /{id}/moderate').handler(
+                buildMockContext(),
+                { id: EVENT_ID },
+                { moderationState: ModerationStatusEnum.APPROVED }
+            );
+
+            expect(mockModerate.mock.calls[0]?.[0]).toEqual({
+                actor: ACTOR,
+                id: EVENT_ID,
+                moderationState: ModerationStatusEnum.APPROVED
+            });
+        });
+
+        it('surfaces the service FORBIDDEN for an author lacking EVENT_PUBLISH_OWN', async () => {
+            mockModerate.mockResolvedValue({
+                error: {
+                    code: ServiceErrorCode.FORBIDDEN,
+                    message: 'Permission denied to moderate event'
+                }
+            });
+
+            await expect(
+                getConfig('protected /{id}/moderate').handler(
+                    buildMockContext(),
+                    { id: EVENT_ID },
+                    { moderationState: ModerationStatusEnum.APPROVED }
+                )
+            ).rejects.toThrow(/moderate event/);
+        });
+
+        it('surfaces the service NOT_FOUND for an event authored by someone else', async () => {
+            // The route must never distinguish "does not exist" from "exists
+            // but is not mine" — both answer 404 (error-contract.md).
+            mockModerate.mockResolvedValue({
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Event not found' }
+            });
+
+            await expect(
+                getConfig('protected /{id}/moderate').handler(
+                    buildMockContext(),
+                    { id: EVENT_ID },
+                    { moderationState: ModerationStatusEnum.APPROVED }
+                )
+            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        });
+
+        it('throws when moderationState is missing', async () => {
+            await expect(
+                getConfig('protected /{id}/moderate').handler(
+                    buildMockContext(),
+                    { id: EVENT_ID },
+                    {}
+                )
+            ).rejects.toThrow();
         });
     });
 });

@@ -31,7 +31,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * PATCH /api/v1/admin/gastronomies/:id/media/reorder
  * Reorder gastronomy listing gallery photos — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `reorderGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminReorderGastronomyMediaRoute = createAdminRoute({
@@ -41,9 +41,9 @@ export const adminReorderGastronomyMediaRoute = createAdminRoute({
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires COMMERCE_EDIT_ALL.',
+        'exactly. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Gastronomy', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -1,7 +1,8 @@
 ---
 /**
  * @file EditorHub.astro
- * @description The editor's landing page: every section as a row (HOS-318 T-007).
+ * @description The editor's landing page: every section as a row (HOS-318 T-007;
+ * registry-driven across verticals since HOS-1080).
  *
  * Rendered at `…/editar/` on BOTH viewports (D-8). On narrow screens it IS the
  * navigation — there is no persistent sidebar there. On desktop it doubles as a
@@ -21,35 +22,38 @@
 
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import {
-	ACCOMMODATION_EDITOR_SECTIONS,
 	buildEditorSectionUrl,
-	EDITOR_SECTION_GROUP_LABEL_KEYS,
-	EDITOR_SECTION_GROUPS,
-} from '@/lib/editor/accommodation-editor-sections';
+	type EditorRegistry,
+	type EditorSectionVisibility,
+	getVisibleEditorSections,
+} from '@/lib/editor/editor-registry';
 import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
 	readonly locale: SupportedLocale;
-	readonly accommodationId: string;
-	readonly hasTranslations: boolean;
+	/** The vertical's section registry. */
+	readonly registry: EditorRegistry;
+	readonly entityId: string;
+	/** Runtime answers to the registry's visibility keys. */
+	readonly visibility?: EditorSectionVisibility;
 	/** Status lines keyed by section id. A missing key renders no second line. */
 	readonly statuses: Readonly<Record<string, EditorSectionStatus>>;
 }
 
-const { locale, accommodationId, hasTranslations, statuses } = Astro.props;
+const { locale, registry, entityId, visibility = {}, statuses } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
-const visible = ACCOMMODATION_EDITOR_SECTIONS.filter(
-	(section) => section.id !== 'translations' || hasTranslations,
-);
+const visible = getVisibleEditorSections({ registry, visibility });
 
-const groups = EDITOR_SECTION_GROUPS.map((group) => ({
-	group,
-	headingKey: EDITOR_SECTION_GROUP_LABEL_KEYS[group],
-	sections: visible.filter((section) => section.group === group),
-})).filter((entry) => entry.sections.length > 0);
+const groups = registry.groups
+	.map((group) => ({
+		group,
+		headingKey: registry.groupLabelKeys[group],
+		sections: visible.filter((section) => section.group === group),
+	}))
+	.filter((entry) => entry.sections.length > 0);
 ---
 
 <div class="editor-hub">
@@ -62,7 +66,7 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 						<li class="editor-hub__item">
 							<a
 								class="editor-hub__row"
-								href={buildEditorSectionUrl({ locale, accommodationId, section })}
+								href={buildEditorSectionUrl({ locale, registry, entityId, section })}
 							>
 								<span class="editor-hub__text">
 									<span class="editor-hub__title">{t(section.labelKey)}</span>
@@ -75,7 +79,7 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 											]}
 										>
 											{status.tone === 'blocking' && status.missingRequirementLabelKeys
-												? t('host.properties.editor.hub.status.blockedFromPublishing', undefined, {
+												? t(status.labelKey, undefined, {
 														fields: status.missingRequirementLabelKeys
 															.map((key) => t(key))
 															.join(', '),

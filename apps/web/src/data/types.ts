@@ -11,6 +11,7 @@
  */
 
 import type { MediaAttribution } from '../lib/media';
+import type { I18nTextLike } from '../lib/resolve-i18n-text';
 
 // Re-export UI types from split file for backward compatibility
 export type {
@@ -701,10 +702,12 @@ export interface AccommodationDetailData {
         }[];
         /**
          * Video entries carrying the URL plus optional caption and description.
-         * Aligned with `@repo/schemas` `VideoSchema` (drops `moderationState`,
-         * which is irrelevant for the public read). The transform also accepts
-         * a legacy `string[]` payload (a bare URL) and normalizes each entry
-         * to `{ url }` so older accommodation records keep rendering.
+         * Aligned with `@repo/schemas` `VideoSchema` minus `moderationState`
+         * (HOS-1022: read to filter — only `APPROVED` entries survive — then
+         * dropped from the output, since it is irrelevant to the public read
+         * once filtering is done). The transform also accepts a legacy
+         * `string[]` payload (a bare URL, predating `moderationState`); those
+         * entries are excluded rather than assumed approved (fail closed).
          */
         readonly videos: readonly {
             readonly url: string;
@@ -999,13 +1002,22 @@ export interface GastronomyOpeningHoursEntry {
 /**
  * Social networks map for a gastronomy listing.
  * Mirrors the `socialNetworks` field from the `GastronomyPublicSchema`.
+ *
+ * NOTE (HOS-1076): `whatsapp` was removed from this shape. It was never part
+ * of `SocialNetworkSchema` (the WRITE/READ shape backing the `socialNetworks`
+ * JSONB column — see `packages/schemas/src/common/social.schema.ts`), so the
+ * key can never be legitimately populated. Keeping it here was dead weight
+ * that would have rendered an ungated WhatsApp number the instant anything
+ * ever wrote that key into the JSONB column — gastronomy's public schema
+ * exposes no phone/WhatsApp channel by design. Do not re-add it; a gated
+ * WhatsApp channel for gastronomy belongs on its own dedicated path, mirroring
+ * accommodation's `CAN_CONTACT_WHATSAPP_DISPLAY` entitlement.
  */
 export interface GastronomySocialNetworks {
     readonly facebook?: string | null;
     readonly instagram?: string | null;
     readonly twitter?: string | null;
     readonly youtube?: string | null;
-    readonly whatsapp?: string | null;
     readonly tiktok?: string | null;
     readonly website?: string | null;
 }
@@ -1091,6 +1103,102 @@ export interface GastronomyCardData {
 }
 
 /**
+ * One dish or drink on a gastronomy listing's structured carta (HOS-895 PR2).
+ * Mirrors `GastronomyMenuItemPublic` (`@repo/schemas`) with only the fields
+ * the public detail page renders.
+ */
+export interface GastronomyMenuItem {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string | null;
+    /**
+     * Localized name (HOS-1043), or `null`.
+     *
+     * `null` covers both "never translated" and "withheld server-side for a
+     * plan that does not grant `multilingual_gastronomy_menu`" — the API
+     * decides, the renderer draws what it is given, the same collapse
+     * {@link photoUrl} documents for its own gate.
+     */
+    readonly nameI18n: I18nTextLike | null;
+    /** Localized description (HOS-1043), or `null`. Same collapse as {@link nameI18n}. */
+    readonly descriptionI18n: I18nTextLike | null;
+    /** Price in centavos, or `null` for "a consultar". */
+    readonly priceCents: number | null;
+    readonly isAvailable: boolean;
+    /**
+     * Delivery URL of the dish's photo (HOS-1045), or `null`.
+     *
+     * `null` covers THREE situations the page cannot and need not tell apart:
+     * the venue attached no photo to this dish, the owner's current plan does
+     * not grant `menu_item_photos`, or their plan no longer grants
+     * `manage_gastronomy_menu` (in which case the whole carta is withheld and
+     * this field never arrives at all). The API decides; the renderer draws
+     * what it is given.
+     */
+    readonly photoUrl: string | null;
+    /** Alt text for {@link photoUrl}. `null` falls back to the dish's name. */
+    readonly photoAlt: string | null;
+}
+
+/**
+ * One course heading with its dishes (HOS-895 PR2). Mirrors
+ * `GastronomyMenuSectionPublic` (`@repo/schemas`).
+ */
+export interface GastronomyMenuSection {
+    readonly id: string;
+    readonly name: string;
+    readonly description: string | null;
+    /** Localized heading (HOS-1043), or `null`. Same collapse as {@link GastronomyMenuItem.nameI18n}. */
+    readonly nameI18n: I18nTextLike | null;
+    /** Localized blurb (HOS-1043), or `null`. */
+    readonly descriptionI18n: I18nTextLike | null;
+    readonly items: readonly GastronomyMenuItem[];
+}
+
+/**
+ * One dish on a gastronomy listing's menú del día (HOS-1041). Mirrors
+ * `GastronomyDailySpecialPublic` (`@repo/schemas`) with only the fields the
+ * public detail page renders.
+ *
+ * Deliberately carries NO `validFrom`/`validUntil`. Everything that reaches
+ * this type has already been filtered by the API to the specials valid TODAY,
+ * so the window is not a fact the page has any use for — and shipping it would
+ * invite a component to re-derive the filter in the browser's timezone, which
+ * is how the same day gets two different answers.
+ */
+export interface GastronomyDailySpecial {
+    readonly id: string;
+    readonly title: string;
+    readonly description: string | null;
+    /** Price in centavos, or `null` for "a consultar". */
+    readonly priceCents: number | null;
+}
+
+/**
+ * One entry on a venue's own agenda (HOS-1042) — live music night, happy
+ * hour, the Tuesday deal. Mirrors `GastronomyEventPublic` (`@repo/schemas`)
+ * with only the fields the public detail page renders.
+ *
+ * `date` and `weekday` are mutually exclusive per `recurrence`, exactly as the
+ * schema enforces server-side: a `once` entry carries `date` and a `null`
+ * `weekday`; a `weekly` entry carries `weekday` and a `null` `date`.
+ */
+export interface GastronomyVenueEvent {
+    readonly id: string;
+    readonly title: string;
+    readonly description: string | null;
+    readonly recurrence: 'once' | 'weekly';
+    /** `YYYY-MM-DD`, for a `once` entry; `null` for a `weekly` one. */
+    readonly date: string | null;
+    /** `0` (Sunday) … `6` (Saturday), for a `weekly` entry; `null` for a `once` one. */
+    readonly weekday: number | null;
+    /** `HH:MM`, local venue time. */
+    readonly startTime: string;
+    /** `HH:MM`, or `null` when the venue does not say. */
+    readonly endTime: string | null;
+}
+
+/**
  * Typed data shape for the gastronomy detail page (SPEC-239).
  * Produced by `toGastronomyDetailPageProps()` in `transforms.ts`.
  *
@@ -1103,12 +1211,53 @@ export interface GastronomyDetailData extends GastronomyCardData {
     readonly richDescription?: string | null;
     /** External URL for the establishment's menu. Null when not provided. */
     readonly menuUrl?: string | null;
+    /**
+     * Delivery URL of an uploaded photo or PDF of the menu (HOS-895 PR2).
+     * `null` both when nothing was uploaded AND when the owner's current plan
+     * does not grant `manage_gastronomy_menu` — the API withholds it live, so
+     * the page cannot tell the two apart and does not need to.
+     */
+    readonly menuFileUrl?: string | null;
+    /** Whether {@link menuFileUrl} is an image or a PDF. */
+    readonly menuFileKind?: 'image' | 'pdf' | null;
+    /**
+     * The structured carta's sections, in order (HOS-895 PR2). Empty when the
+     * venue typed none, OR when the owner's current plan does not grant the
+     * entitlement — same withholding as {@link menuFileUrl}.
+     */
+    readonly menuSections?: readonly GastronomyMenuSection[];
+    /**
+     * The menú del día as it stands TODAY (HOS-1041). Empty when the venue is
+     * offering nothing today, when every special's window has passed, OR when
+     * the owner's current plan does not grant
+     * `manage_gastronomy_daily_special` — the API applies both the window
+     * filter and the entitlement gate, so the page cannot tell the three apart
+     * and does not need to.
+     */
+    readonly dailySpecials?: readonly GastronomyDailySpecial[];
+    /**
+     * The venue's own agenda, in order (HOS-1042). Empty/absent when the venue
+     * has none, OR when the owner's current plan does not grant
+     * `manage_gastronomy_events` — same withholding as {@link menuSections}.
+     */
+    readonly venueEvents?: readonly GastronomyVenueEvent[];
     /** Social network links provided by the owner. */
     readonly socialNetworks: GastronomySocialNetworks | null;
     /** SEO metadata fields. */
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */
     readonly tags?: readonly string[];
+    /**
+     * Amenities the owner ticked, catalog-joined (HOS-1072).
+     *
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * twin: both verticals read the SAME `amenities` catalog as accommodations
+     * and render through the same `AmenitiesGrid`, so `name` carries the slug
+     * here too (SPEC-266). Empty when the payload carried none.
+     */
+    readonly amenities: readonly DetailAmenity[];
+    /** Features the owner ticked, catalog-joined (HOS-1072). Empty when none. */
+    readonly features: readonly DetailFeature[];
     /** FAQ items configured by the owner. */
     readonly faqs: readonly DetailFaq[];
     /** Public owner data from the users table JOIN. */
@@ -1149,28 +1298,21 @@ export interface ExperienceSocialNetworks {
 }
 
 /**
- * Contact info subset this app WOULD read from an experience listing, if the
- * public tier exposed one (SPEC-240).
+ * The contact channels an experience listing publishes (HOS-815).
  *
- * NOT CURRENTLY POPULATED (HOS-363). The original JSDoc claimed
- * `ExperiencePublicSchema` surfaces `contactInfo.whatsapp`; it does not —
- * `contactInfo` is absent from that schema's `pick()` entirely
- * (`packages/schemas/src/entities/experience/experience.access.schema.ts`,
- * whose own header documents "Omits: ... contactInfo (direct)"), so every value
- * typed as `ExperienceContactInfo` in this app is `null` at runtime —
- * `normalizeExperienceContactInfo` in `lib/api/transforms.ts` returns `null`
- * for an absent payload, never `undefined` — and `ExperienceContactCTA.astro`
- * never renders. The type is kept so the CTA is already correct the day the
- * field is exposed.
+ * Exactly the keys of `ExperiencePublicContactInfoSchema`
+ * (`packages/schemas/src/entities/experience/experience.access.schema.ts`), and
+ * no more — Zod strips everything else before the payload leaves the API.
+ *
+ * `whatsapp` is deliberately NOT here (HOS-363). The public payload never
+ * carried it (the number is gated by the VIEWER's plan on a separate protected
+ * endpoint — HOS-19 — and this response is shared-cached with no auth in the
+ * cache key), so the CTA that read it never rendered and was deleted along with
+ * this field. HOS-924 is the other half: since a channel that is never shown
+ * cannot make a listing reachable, one of the keys BELOW is now what an
+ * experience needs to publish at all.
  */
 export interface ExperienceContactInfo {
-    /**
-     * WhatsApp number. STILL not exposed on the public tier and still gated by
-     * the VIEWER's plan on a separate protected endpoint (HOS-19) — HOS-815
-     * deliberately left it out of `ExperiencePublicContactInfoSchema`. Kept so
-     * `ExperienceContactCTA` stays correct the day that changes.
-     */
-    readonly whatsapp?: string | null;
     /** Business email — published (HOS-815). */
     readonly workEmail?: string | null;
     /** Business landline — published (HOS-815). */
@@ -1295,10 +1437,94 @@ export interface ExperienceDetailData extends ExperienceCardData {
     readonly contactInfo: ExperienceContactInfo | null;
     /** Social network links provided by the owner. */
     readonly socialNetworks: ExperienceSocialNetworks | null;
+    /**
+     * Where the experience starts — the address or the landmark the traveller
+     * has to show up at (HOS-1048). `null` when the owner has not declared one.
+     *
+     * NOT entitlement-gated: it ships from the basic tier, because a listing
+     * that never says where to be does not do its job. The paid half is the MAP
+     * that draws {@link meetingPointLat}/{@link meetingPointLong} plus the
+     * how-to-get-there instructions (HOS-1049).
+     */
+    readonly meetingPoint: string | null;
+    /**
+     * Latitude of the meeting point in decimal degrees, or `null` when the
+     * owner described the spot without pinning it.
+     *
+     * Drawn on a map since HOS-1049 — but only when
+     * {@link meetingPointDirectionsEnabled} is true. The coordinate itself
+     * still ships on every tier, so it is NOT what decides whether the map
+     * appears.
+     */
+    readonly meetingPointLat: number | null;
+    /** Longitude of the meeting point. See {@link meetingPointLat}. */
+    readonly meetingPointLong: number | null;
+    /**
+     * How to GET to the meeting point (HOS-1049) — one instruction per line:
+     * where to park, which bus, how far the walk is.
+     *
+     * `[]` both when the provider wrote none AND when the API withheld them
+     * because their plan does not grant `manage_experience_directions`. The
+     * view does not need to tell those apart: it renders the list when it is
+     * non-empty and nothing when it is not.
+     */
+    readonly meetingPointDirections: readonly string[];
+    /**
+     * Whether the provider's plan grants the how-to-get-there presentation
+     * (HOS-1049) — the instructions above AND the map.
+     *
+     * The map needs its own signal because the coordinates ride the public
+     * payload on every tier (HOS-1048, deliberately not moved to the paid
+     * side), so their presence says nothing about entitlement. An entitled
+     * provider who pinned the spot without typing a word still gets the map.
+     */
+    readonly meetingPointDirectionsEnabled: boolean;
+    /**
+     * How long the experience lasts, in whole minutes (HOS-898), or `null` when
+     * the owner has not declared it.
+     *
+     * A NUMBER all the way to the view, formatted per locale at render time by
+     * `formatDurationMinutes`. The alternative — a pre-formatted string from the
+     * API — would be written once in one language and shown untranslated on the
+     * English and Portuguese fichas.
+     */
+    readonly durationMinutes: number | null;
+    /**
+     * What the traveller has to bring (HOS-1046). `[]` when nothing was
+     * declared — never `null`, so the view has ONE empty value to test.
+     */
+    readonly whatToBring: readonly string[];
+    /** Requirements to take part (HOS-1046). See {@link whatToBring}. */
+    readonly requirements: readonly string[];
+    /**
+     * What happens if the experience does not run (HOS-1047) — free text,
+     * `null` when not declared. Trimmed to `null` by the transform, so a
+     * whitespace-only policy cannot render a heading over nothing.
+     */
+    readonly cancellationPolicy: string | null;
+    /**
+     * Whether the provider takes private groups (HOS-1056).
+     *
+     * Drives a CTA and nothing else — there is no rate card and no group
+     * booking. The CTA anchors into the contact block, so the page also has to
+     * know that block exists before linking to it (`hasPublicContactChannel`).
+     */
+    readonly acceptsPrivateGroups: boolean;
     /** SEO metadata fields. */
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */
     readonly tags?: readonly string[];
+    /**
+     * Amenities the owner ticked, catalog-joined (HOS-1072).
+     *
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * twin: both verticals read the SAME `amenities` catalog as accommodations
+     * and render through the same `AmenitiesGrid`, so `name` carries the slug
+     * here too (SPEC-266). Empty when the payload carried none.
+     */
+    readonly amenities: readonly DetailAmenity[];
+    /** Features the owner ticked, catalog-joined (HOS-1072). Empty when none. */
+    readonly features: readonly DetailFeature[];
     /** FAQ items configured by the owner. */
     readonly faqs: readonly DetailFaq[];
     /** Public owner data from the users table JOIN. */

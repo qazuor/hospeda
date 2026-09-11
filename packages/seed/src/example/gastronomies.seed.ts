@@ -5,7 +5,7 @@ import {
     billingCustomers,
     billingPlans,
     billingSubscriptions,
-    commerceListingSubscriptions,
+    entitySubscriptions,
     eq,
     GastronomyMediaModel,
     gastronomies,
@@ -299,7 +299,23 @@ async function ensureCommerceSubscription(
             billingInterval: 'month',
             livemode: false,
             currentPeriodStart: now,
-            currentPeriodEnd: periodEnd
+            currentPeriodEnd: periodEnd,
+            // HOS-692: this fixture is always a gastronomy listing (see
+            // `ensureListingSubscriptionLink` below, which hardcodes
+            // entityType: 'gastronomy' for the same reason) — stamp the typed
+            // vertical directly instead of the pre-HOS-685 'commerce' umbrella,
+            // or a fresh seed run would keep recreating rows Bloque B's rewrite
+            // has to clean up again.
+            //
+            // HOS-1233 T-035: written HERE, in the insert. It used to be a raw
+            // `UPDATE ... SET product_domain` issued a statement later, on the
+            // grounds that the column lived in the extras carril and not in the
+            // TS schema — true when that comment was written, and untrue since
+            // HOS-73 promoted it to a typed Drizzle column. The row therefore
+            // spent a moment filed under the column default, which is the exact
+            // shape that stops working once the default is dropped (T-036):
+            // this insert would be rejected before its correction ever ran.
+            productDomain: ProductDomainEnum.GASTRONOMY
         })
         .returning({ id: billingSubscriptions.id });
 
@@ -310,28 +326,16 @@ async function ensureCommerceSubscription(
         );
     }
 
-    // HOS-692: this fixture is always a gastronomy listing (see
-    // `ensureListingSubscriptionLink` below, which hardcodes
-    // entityType: 'gastronomy' for the same reason) — stamp the typed
-    // vertical directly instead of the pre-HOS-685 'commerce' umbrella, or a
-    // fresh seed run would keep recreating rows Bloque B's rewrite has to
-    // clean up again. Raw SQL because `product_domain` is an extras-carril
-    // column, not in the qzpay-drizzle TS schema — this is exactly the site
-    // AC-33's guard exists to catch, so it names the column explicitly.
-    await db.execute(
-        sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.GASTRONOMY} WHERE id = ${insertedRow.id}`
-    );
-
     return insertedRow.id;
 }
 
 /**
- * Ensures a `commerce_listing_subscriptions` link row exists for the given
+ * Ensures a `entity_subscriptions` link row exists for the given
  * entity + subscription.  Idempotent via onConflictDoNothing on the
  * UNIQUE(entityType, entityId) index.
  *
  * This link is what makes a listing publicly visible: the public-read layer
- * checks `commerce_listing_subscriptions` status for each listing returned.
+ * checks `entity_subscriptions` status for each listing returned.
  */
 /**
  * Inserts a listing's fixture photos as `gastronomy_media` rows (HOS-372).
@@ -382,7 +386,7 @@ async function ensureListingSubscriptionLink(
     db: DrizzleClient
 ): Promise<void> {
     await db
-        .insert(commerceListingSubscriptions)
+        .insert(entitySubscriptions)
         .values({
             subscriptionId,
             // HOS-692: matches entityType below — this fixture is always a
@@ -398,7 +402,7 @@ async function ensureListingSubscriptionLink(
 /**
  * Seeds the three COMMERCE_OWNER users, their billing subscriptions, the
  * gastronomy listings (via Drizzle insert), gastronomy FAQs, gastronomy
- * reviews, and the `commerce_listing_subscriptions` link rows.
+ * reviews, and the `entity_subscriptions` link rows.
  *
  * ### Ordering constraint
  * MUST run after destinations, example users, and the required `commercePlan`
@@ -408,7 +412,7 @@ async function ensureListingSubscriptionLink(
  *
  * ### Visibility model
  * - Listings 001–005: `visibility=PUBLIC` + `lifecycleState=ACTIVE` +
- *   active `commerce_listing_subscriptions` link → publicly visible on /gastronomia.
+ *   active `entity_subscriptions` link → publicly visible on /gastronomia.
  * - Listing 006: `visibility=PRIVATE` + `lifecycleState=DRAFT` + NO link →
  *   intentionally NOT visible; demonstrates the gating.
  *
@@ -509,7 +513,18 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             );
             // Heal: re-grant the hats. Idempotent, and required for databases
             // seeded before HOS-296 whose owners have no `user_role` rows yet.
-            for (const role of [RoleEnum.USER, RoleEnum.COMMERCE_OWNER]) {
+            // HOS-964 follow-up (2026-09-07 smoke finding): GASTRONOMY_OWNER
+            // added alongside the legacy COMMERCE_OWNER so this fixture
+            // matches what `createForOwner` (base-commerce-listing.service.ts)
+            // actually grants in production — BOTH hats in the same
+            // transaction. Without it, these seeded owners never receive any
+            // What's New entry targeted at GASTRONOMY_OWNER, because
+            // COMMERCE_OWNER is (correctly) excluded from that audience enum.
+            for (const role of [
+                RoleEnum.USER,
+                RoleEnum.COMMERCE_OWNER,
+                RoleEnum.GASTRONOMY_OWNER
+            ]) {
                 const healed = await grantRole({
                     userId: realUserId,
                     role,
@@ -554,8 +569,17 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             //
             // `USER` is granted alongside `COMMERCE_OWNER` because that is what
             // a real signup produces (Better Auth's create hook grants the
-            // baseline, everything else is layered on top).
-            for (const role of [RoleEnum.USER, RoleEnum.COMMERCE_OWNER]) {
+            // baseline, everything else is layered on top). `GASTRONOMY_OWNER`
+            // is granted too (HOS-964 follow-up, 2026-09-07) — production's
+            // `createForOwner` grants both the legacy and the vertical role in
+            // the same transaction (HOS-1077), and this fixture was drifting
+            // from that: it only ever held the legacy `COMMERCE_OWNER`, so a
+            // What's New entry targeted at `GASTRONOMY_OWNER` never reached it.
+            for (const role of [
+                RoleEnum.USER,
+                RoleEnum.COMMERCE_OWNER,
+                RoleEnum.GASTRONOMY_OWNER
+            ]) {
                 const granted = await grantRole({
                     userId: realUserId,
                     role,
@@ -793,7 +817,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 });
 
                 // ── Step 4: Subscription link (PUBLIC/ACTIVE only) ─────────────
-                // Listings 001–005 (PUBLIC + ACTIVE) get a `commerce_listing_subscriptions`
+                // Listings 001–005 (PUBLIC + ACTIVE) get a `entity_subscriptions`
                 // link so the public read layer considers them visible.
                 // Listing 006 (PRIVATE + DRAFT) is intentionally skipped.
                 if (item.visibility === 'PUBLIC' && item.lifecycleState === 'ACTIVE') {

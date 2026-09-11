@@ -286,6 +286,81 @@ describe('OpeningHoursSchema', () => {
     });
 });
 
+/**
+ * HOS-906 — a day must resolve to open-with-shifts or closed. Before this
+ * refine, `{ closed: false, shifts: [] }` — the exact default an untouched
+ * day in the commerce opening-hours editor persisted on save — validated
+ * successfully, so a host who edited only ONE day of the week ended up
+ * saving that intermediate, undecided state on every other day.
+ */
+describe('day validity (HOS-906)', () => {
+    it('should reject a day that is neither open nor closed (closed: false, shifts: [])', () => {
+        // Arrange
+        const day = { closed: false, shifts: [] };
+        // Act
+        const result = DayScheduleSchema.safeParse(day);
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('should report the rejection on `closed`, with the HOS-906 message key', () => {
+        // Arrange
+        const day = { closed: false, shifts: [] };
+        // Act
+        const result = DayScheduleSchema.safeParse(day);
+        // Assert
+        expect(result.success).toBe(false);
+        if (result.success) throw new Error('expected a rejection');
+        expect(result.error.issues[0]?.path).toEqual(['closed']);
+        expect(result.error.issues[0]?.message).toBe(
+            'zodError.common.openingHours.day.notOpenOrClosed'
+        );
+    });
+
+    it('should still accept a closed day with no shifts', () => {
+        // Arrange / Act
+        const result = DayScheduleSchema.safeParse(closedDay());
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('should still accept an open day with at least one shift', () => {
+        // Arrange / Act
+        const result = DayScheduleSchema.safeParse(openDay('09:00', '18:00'));
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('should reject a full-week schedule where a single untouched day is neither open nor closed', () => {
+        // Arrange — the real editor scenario: the host only ever touches
+        // `mon`; every other day keeps the raw `dayOf()` default.
+        const input = {
+            ...validFullWeek,
+            days: {
+                ...validFullWeek.days,
+                tue: { closed: false, shifts: [] }
+            }
+        };
+        // Act
+        const result = OpeningHoursSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (result.success) throw new Error('expected a rejection');
+        expect(
+            result.error.issues.some((issue) => issue.path.join('.') === 'days.tue.closed')
+        ).toBe(true);
+    });
+
+    it('should default `closed` to false and still reject a day with no shifts (default alone is not valid)', () => {
+        // Arrange — omit `closed` entirely to exercise the schema default.
+        const day = { shifts: [] };
+        // Act
+        const result = DayScheduleSchema.safeParse(day);
+        // Assert
+        expect(result.success).toBe(false);
+    });
+});
+
 describe('OpeningHoursFields', () => {
     it('should expose an openingHours field as a key', () => {
         // Assert

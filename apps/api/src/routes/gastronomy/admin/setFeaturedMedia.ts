@@ -27,7 +27,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
  * Set featured photo for gastronomy listing gallery — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
  * `setFeaturedGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
@@ -37,10 +37,10 @@ export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires COMMERCE_EDIT_ALL. No request body — ids ' +
+        'photo to visible first. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL). No request body — ids ' +
         'come from URL params.',
     tags: ['Gastronomy', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

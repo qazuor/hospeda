@@ -52,9 +52,93 @@ export const StartPaidSubscriptionRequestSchema = z.object({
         .string({ message: 'zodError.billing.startPaid.promoCode.invalidType' })
         .min(1, { message: 'zodError.billing.startPaid.promoCode.min' })
         .max(64, { message: 'zodError.billing.startPaid.promoCode.max' })
+        .optional(),
+    /**
+     * HOS-937 step 2: the email the user explicitly typed on the
+     * pre-redirect screen (spec §8.1), overriding the default MercadoPago
+     * will otherwise resolve (`billing_customers.mp_payer_email`, then
+     * `.email` — spec §6.3). Optional: omitted when the user accepts the
+     * pre-filled default.
+     */
+    payerEmail: z
+        .string({ message: 'zodError.billing.startPaid.payerEmail.invalidType' })
+        .email({ message: 'zodError.billing.startPaid.payerEmail.invalid' })
+        .max(255, { message: 'zodError.billing.startPaid.payerEmail.max' })
         .optional()
 });
 export type StartPaidSubscriptionRequest = z.infer<typeof StartPaidSubscriptionRequestSchema>;
+
+/**
+ * Request body for the commerce owner self-checkout
+ * (`POST /api/v1/protected/commerce/listings/{entityType}/{entityId}/start-subscription`).
+ *
+ * Carries `payerEmail` (HOS-1008), `planSlug` (HOS-1119) and `billingInterval`
+ * (HOS-1285). **Every field is optional and so is the body itself** — omitting
+ * it entirely keeps the exact pre-HOS-1008 behavior, which is what the
+ * `ownPreapprovalEnabled` flag being off must produce, and what a caller with no
+ * tier picker must keep producing.
+ *
+ * Deliberately NOT accepted on the ADMIN commerce start-subscription route:
+ * that route provisions on the OWNER's behalf, and the admin has no way to
+ * know which MercadoPago account the owner pays with — an editable field
+ * there would let one person bind another person's payer email. Same
+ * reasoning that keeps the partner flow on a synthetic address, and the same
+ * reasoning that keeps `billingInterval` off that route: committing somebody
+ * else to a twelve-month charge is not an admin's call either.
+ *
+ * The `payerEmail` field reuses the same validation and the same i18n error
+ * keys as its accommodation sibling on purpose: it is the same value, bound
+ * to the same MercadoPago field, and a second set of keys would drift.
+ */
+export const CommerceStartSubscriptionRequestSchema = z.object({
+    payerEmail: z
+        .string({ message: 'zodError.billing.startPaid.payerEmail.invalidType' })
+        .email({ message: 'zodError.billing.startPaid.payerEmail.invalid' })
+        .max(255, { message: 'zodError.billing.startPaid.payerEmail.max' })
+        .optional(),
+    /**
+     * HOS-1119: the tier the owner picked, when the vertical offers more than
+     * one. Omitted means "the vertical's default", i.e. the pre-HOS-1119
+     * behaviour exactly.
+     *
+     * Validated here only for SHAPE — a lowercase kebab slug, same pattern
+     * `parseCommercePlanSlugMap` accepts. **Whether the slug names a plan of
+     * this listing's vertical is decided by `resolveCommercePlanSlug`, and
+     * nowhere else** (HOS-688 AC-35): putting a per-vertical allowlist in this
+     * schema would make it a second place that maps a vertical to a set of
+     * plans, which is the thing the guard forbids. A well-formed slug that
+     * belongs to the other vertical therefore passes here and is refused there,
+     * with a 400 either way.
+     */
+    planSlug: z
+        .string({ message: 'zodError.billing.startPaid.planSlug.invalidType' })
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+            message: 'zodError.billing.startPaid.planSlug.invalid'
+        })
+        .max(100, { message: 'zodError.billing.startPaid.planSlug.max' })
+        .optional(),
+    /**
+     * HOS-1285: the cadence the owner picked. Omitted means `'monthly'`, i.e.
+     * the pre-HOS-1285 behaviour exactly — which is what every existing
+     * bodyless caller keeps getting.
+     *
+     * The SAME {@link StartPaidBillingIntervalSchema} the accommodation request
+     * uses, and the same i18n error key, on purpose: it is the same choice
+     * bound to the same `billing_prices.billing_interval` column, and a second
+     * enum would be free to drift into offering commerce a cadence the price
+     * lookups (`findMonthlyPrice` / `findAnnualPrice`) cannot resolve.
+     *
+     * Whether the named tier actually SELLS this cadence is decided by
+     * `initiateCommerceSubscription`, which answers `NO_ANNUAL_PRICE` when the
+     * plan has no `'year'` price row — the same division of labour that keeps
+     * the per-vertical slug check in `resolveCommercePlanSlug` and out of this
+     * schema.
+     */
+    billingInterval: StartPaidBillingIntervalSchema.optional()
+});
+export type CommerceStartSubscriptionRequest = z.infer<
+    typeof CommerceStartSubscriptionRequestSchema
+>;
 
 /**
  * Response body for `POST /api/v1/protected/billing/subscriptions/start-paid`.
@@ -98,19 +182,31 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      *   the one where a rename would quietly survive: opening a checkout here
      *   creates a SECOND MercadoPago preapproval and charges the owner twice for
      *   a plan that already covers them.
-     * There is no `'trial'` variant. Card-first (HOS-171) deleted the no-card
-     * trial that used to be granted INSTEAD of a paid checkout: a trial is now
-     * `free_trial` on the very preapproval a paid checkout creates, so it is a
-     * normal MP redirect and carries no marker of its own.
+     * - `'trial'` — HOS-1184, commerce only. The owner is eligible for their
+     *   vertical's free trial, so a Hospeda-owned `trialing` subscription was
+     *   created with NO MercadoPago preapproval and no card, and the listing was
+     *   attached to it. Like `'comp'` and `'attached'`, `checkoutUrl` is an
+     *   in-app sentinel rather than a payment page.
      *
-     * Narrowing this enum is a deliberate exception to the additive-only
-     * schema-compat policy, taken while the platform has no real customers and the
-     * API and web release together. The policy guards stored JSONB, cached
-     * responses and queued messages; `appliedEffect` is a transient response field
-     * that nothing persists, so no old value can be in flight to fail parsing.
+     * This variant existed before HOS-171, was deleted by it, and is back for the
+     * reason it was deleted — that reason stopped being true. Card-first removed
+     * the no-card trial, making a trial `free_trial` on the very preapproval a
+     * paid checkout creates: not an alternative to a checkout, so not an effect.
+     * HOS-1012 then reversed card-first (MercadoPago reports a spent trial
+     * identically to a live one, and charged ARS 18.000 in production 118 seconds
+     * after promising 14 free days — HOS-522), and a trial is once again exactly
+     * what this comment used to call "a separate no-card path" granted INSTEAD of
+     * a paid checkout. Re-widening is additive and needs no migration; it is the
+     * NARROWING that was the deliberate exception to the compat policy.
+     *
+     * The accommodation side never needed the marker back: its trial is granted
+     * by the publish flow, which does not go through a checkout route at all.
+     * Commerce grants it from `POST /commerce/listings/:id/start-subscription` —
+     * the same route that otherwise opens a checkout — so the response has to be
+     * able to say which of the two happened.
      */
     appliedEffect: z
-        .enum(['comp', 'discount', 'attached'], {
+        .enum(['comp', 'discount', 'attached', 'trial'], {
             message: 'zodError.billing.startPaid.appliedEffect.invalid'
         })
         .optional(),
@@ -152,6 +248,24 @@ export const StartPaidSubscriptionResponseSchema = z.object({
         .literal(true, {
             message: 'zodError.billing.startPaid.promoCodeIgnored.invalid'
         })
+        .optional(),
+    /**
+     * HOS-937 step 2: the resolved MercadoPago payer email (spec §6.3) —
+     * the email whoever authorizes this checkout at MercadoPago must use or
+     * type. The front-end shows this on the pre-redirect screen (spec
+     * §8.1), pre-filled and editable, before redirecting to `checkoutUrl`.
+     *
+     * Optional at the type level ONLY because this response schema is
+     * reused verbatim by the commerce/partner start-subscription routes
+     * (`apps/api/src/routes/commerce/.../start-subscription.ts`), which are
+     * untouched by HOS-937 (accommodation monthly/annual only — see spec
+     * §6.3) and do not resolve a payer email. Both accommodation branches
+     * of `/billing/subscriptions/start-paid` (monthly and annual) always
+     * populate it.
+     */
+    payerEmail: z
+        .string({ message: 'zodError.billing.startPaid.payerEmail.invalidType' })
+        .email({ message: 'zodError.billing.startPaid.payerEmail.invalid' })
         .optional()
 });
 export type StartPaidSubscriptionResponse = z.infer<typeof StartPaidSubscriptionResponseSchema>;

@@ -3,7 +3,6 @@ import { LIMIT_METADATA } from '../src/config/limits.config.js';
 import {
     OWNER_BASICO_PLAN,
     TOURIST_FREE_PLAN,
-    TOURIST_PLUS_PLAN,
     TOURIST_VIP_PLAN
 } from '../src/config/plans.config.js';
 import { LimitKey } from '../src/types/plan.types.js';
@@ -152,17 +151,6 @@ describe('Limits Configuration', () => {
             expect(limitEntry).toBeUndefined();
         });
 
-        it('tourist-plus plan should have MAX_SEARCH_HISTORY_ENTRIES = 50', () => {
-            // Arrange & Act
-            const limitEntry = TOURIST_PLUS_PLAN.limits.find(
-                (l) => l.key === LimitKey.MAX_SEARCH_HISTORY_ENTRIES
-            );
-
-            // Assert
-            expect(limitEntry).toBeDefined();
-            expect(limitEntry?.value).toBe(50);
-        });
-
         it('tourist-vip plan should have MAX_SEARCH_HISTORY_ENTRIES = 200', () => {
             // Arrange & Act
             const limitEntry = TOURIST_VIP_PLAN.limits.find(
@@ -196,17 +184,6 @@ describe('Limits Configuration', () => {
 
             // Assert — free plan is entitlement-gated; the limit key must be absent
             expect(limitEntry).toBeUndefined();
-        });
-
-        it('tourist-plus plan should have MAX_COLLECTIONS = 10', () => {
-            // Arrange & Act
-            const limitEntry = TOURIST_PLUS_PLAN.limits.find(
-                (l) => l.key === LimitKey.MAX_COLLECTIONS
-            );
-
-            // Assert
-            expect(limitEntry).toBeDefined();
-            expect(limitEntry?.value).toBe(10);
         });
 
         it('tourist-vip plan should have MAX_COLLECTIONS = 25', () => {

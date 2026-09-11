@@ -1,0 +1,37 @@
+---
+/**
+ * @file suscriptores/planes/turistas/index.astro
+ * @description Permanent redirect to the traveller pricing page's new home,
+ * `/planes/turistas/precios/` (HOS-1032 AC-51).
+ *
+ * See `/suscriptores/planes/anfitriones/index.astro` for the shared rationale.
+ * What is specific to this audience is the chain: `/suscriptores/turistas/`
+ * redirected HERE, and this URL now redirects onward, so that first URL was
+ * repointed at the final destination in the same change. Two 301s in a row is a
+ * link spending two requests to land and losing a slice of its ranking signal
+ * on the way; each of the three URLs now emits exactly one.
+ *
+ * @route     /{lang}/suscriptores/planes/turistas/
+ * @rendering SSR (prerender=false) — emits a 301 and no body.
+ */
+
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale;
+
+// The query string is FORWARDED, not rebuilt away. `?interval=` on the
+// trial-ending nudge is the live case: dropping it shows monthly prices to a
+// customer who chose annual, and nothing about the redirect looks wrong when it
+// happens. See `lib/pricing-redirect.ts`.
+return Astro.redirect(
+    buildPricingRedirectTarget({
+        locale,
+        path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
+        search: Astro.url.search
+    }),
+    301
+);
+---

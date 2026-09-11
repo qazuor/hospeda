@@ -20,16 +20,29 @@ import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
+import GastronomyDailySpecials from '@/components/gastronomy/GastronomyDailySpecials.astro';
+import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro';
+import GastronomyVenueEvents from '@/components/gastronomy/GastronomyVenueEvents.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
 import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
+// Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
+// `features` catalog as accommodations, so it shares the i18n namespace
+// (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
+// commerce copy would fork that contract for no gain.
+import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
+import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
+import GastronomyEventsCta from '@/components/gastronomy/GastronomyEventsCta.astro';
 import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
+import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildUrl } from '@/lib/urls';
 import { renderPlain } from '@/lib/render-plain';
 import type { GastronomyReviewPublicItem } from '@/lib/api/endpoints';
@@ -170,6 +183,44 @@ try {
 
 const descriptionText = renderPlain({ raw: gastronomy.description });
 
+// --- "Accepts events" CTA (HOS-1055) ---
+// Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
+// `gastronomy.amenities`) rather than a new DB column or public-schema field —
+// see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
+// the write side.
+//
+// The CTA has no external `href` of its own — it is an in-page anchor to
+// `GastronomyContactBlock` (see `GastronomyEventsCta.astro`'s header for why:
+// gastronomy has no single public contact channel to pick, especially since
+// HOS-1076 found `socialNetworks.whatsapp` never carried real data and
+// removed it — HOS-1088 tracks the open question of a real phone/WhatsApp
+// channel for gastronomy). That sidesteps picking a channel AND the outbound
+// href-sanitization guard (HOS-592/F-02): there is nothing external to
+// sanitize.
+//
+// `hasGastronomyContact` mirrors the exact condition `GastronomyContactBlock`
+// uses to decide whether it renders anything at all (`hasSocial || menuHref`)
+// — duplicated rather than imported so this file never has to trust that the
+// component's internal gate stayed in sync silently; if that condition ever
+// changes, this one has to change with it on purpose. Without it, the CTA
+// could point at an anchor with nothing behind it, which is worse than no CTA
+// (same principle as HOS-363/HOS-924: never promise a channel that isn't
+// there).
+const acceptsEventsAmenity = gastronomy.amenities.find((amenity) => amenity.name === 'private_events');
+const hasGastronomyContact =
+    Boolean(resolveSafeExternalUrl(gastronomy.menuUrl)) ||
+    (gastronomy.socialNetworks
+        ? Object.values(gastronomy.socialNetworks).some((value) =>
+              Boolean(resolveSafeExternalUrl(value))
+          )
+        : false);
+const showEventsCta = Boolean(acceptsEventsAmenity) && hasGastronomyContact;
+// Excluded from the generic grid ONLY when the dedicated CTA renders in its
+// place — otherwise both would say "accepts events" two centimeters apart.
+const amenitiesForGrid = showEventsCta
+    ? gastronomy.amenities.filter((amenity) => amenity.name !== 'private_events')
+    : gastronomy.amenities;
+
 const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/` });
 
 // Sign-in URL (with return path) for the anonymous review CTA.
@@ -271,6 +322,26 @@ const breadcrumbItems = [
             richDescription={gastronomy.richDescription}
         />
 
+        <!-- Menú del día (HOS-1041): what is on offer TODAY, above the carta
+             on purpose — it answers the question a diner choosing lunch in
+             twenty minutes is actually asking. Arrives already filtered to the
+             current day (in the AR market timezone) AND already
+             entitlement-gated by the API; renders nothing when empty. -->
+        <GastronomyDailySpecials
+            dailySpecials={gastronomy.dailySpecials}
+            locale={locale}
+        />
+
+        <!-- Menu (HOS-895 PR2): structured carta and/or the uploaded photo/PDF.
+             Both arrive pre-filtered by the API's live entitlement check —
+             see GastronomyMenu.astro's frontmatter for the hierarchy. -->
+        <GastronomyMenu
+            menuSections={gastronomy.menuSections}
+            fileUrl={gastronomy.menuFileUrl}
+            fileKind={gastronomy.menuFileKind}
+            locale={locale}
+        />
+
         <!-- Opening Hours (only when configured) -->
         {gastronomy.openingHours && Object.keys(gastronomy.openingHours).length > 0 && (
             <OpeningHoursSection
@@ -278,6 +349,29 @@ const breadcrumbItems = [
                 locale={locale}
             />
         )}
+
+        <!-- Venue's own agenda (HOS-1042): live music, happy hour, the Tuesday
+             deal. NOT the same as the "accepts events" CTA below — see
+             GastronomyVenueEvents.astro's frontmatter. Pre-filtered by the API
+             the same way menuSections is, so no gate is needed here. -->
+        <GastronomyVenueEvents
+            venueEvents={gastronomy.venueEvents}
+            locale={locale}
+        />
+
+        <!-- Amenities and features the owner ticked (HOS-1072): medios de pago,
+             delivery, takeaway, reservas, estacionamiento… Both grids self-hide
+             on an empty list, so no guard is needed here. `smokingAllowed` is an
+             accommodation-only column and is passed as null. `private_events` is
+             excluded from `amenitiesForGrid` when the dedicated events CTA below
+             renders instead (HOS-1055) — see the frontmatter comment. -->
+        <FeaturesGrid features={gastronomy.features} smokingAllowed={null} lang={locale} />
+        <AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />
+
+        <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement.
+             Anchors into GastronomyContactBlock below; no external href of
+             its own (see GastronomyEventsCta.astro's header). -->
+        {showEventsCta && <GastronomyEventsCta locale={locale} />}
 
         <!-- Contact block (menu URL + social networks) -->
         {(gastronomy.menuUrl || gastronomy.socialNetworks) && (
@@ -344,7 +438,31 @@ const breadcrumbItems = [
         {faqs.length > 0 && (
             <FaqAccordion faqs={faqs} lang={locale} />
         )}
+
+        <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
+             basic view stats in mi-cuenta/comercio. -->
+        <EntityViewTracker
+            client:idle
+            entityType="GASTRONOMY"
+            slug={slug}
+            entityId={gastronomy.id}
+            locale={locale}
+        />
     </div>
+    <!-- AI chat widget (HOS-400) — signed-in visitors only, resolved in the
+         browser. Mounted unconditionally, exactly as the accommodation page
+         does: the widget renders nothing until it resolves a session, and both
+         the FAB and the panel are position:fixed, so appearing after hydration
+         shifts nothing. Whether the OWNER's plan grants the chat is decided
+         server-side; an owner without it answers 403 with the vertical's own
+         copy rather than a message about an accommodation. -->
+    <AiChatWidget
+        client:idle
+        entityType="gastronomy"
+        entityId={gastronomy.id}
+        locale={locale}
+        apiUrl={getApiUrl()}
+    />
 </DetailLayout>
 
 <style>

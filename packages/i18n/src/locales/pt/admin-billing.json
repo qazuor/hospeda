@@ -92,6 +92,7 @@
             "neverRun": "Sem execuções",
             "noNextRun": "—",
             "lastRunSuccess": "OK",
+            "lastRunPartial": "Parcial",
             "lastRunFailed": "Falhou",
             "lastRunTimeout": "Timeout"
         },
@@ -196,12 +197,13 @@
             "complex-pro": "Plano profissional para complexos com análises consolidadas.",
             "complex-premium": "Plano premium para grandes complexos com todas as funcionalidades.",
             "tourist-free": "Plano gratuito para turistas. Funcionalidades básicas incluídas.",
-            "tourist-plus": "Plano Plus para turistas frequentes. Comparador, histórico de buscas e alertas de preço.",
             "tourist-vip": "Plano VIP para turistas exigentes. Todas as funcionalidades premium incluídas."
         },
         "statusActive": "Ativo",
         "statusInactive": "Inativo",
         "statusDefault": "Padrão",
+        "statusUnlisted": "Não aparece na listagem pública",
+        "statusUnlistedHint": "Ativo e cobrando: oculto nas listagens públicas de planos",
         "actionActivate": "Ativar",
         "actionDeactivate": "Desativar",
         "actionEdit": "Editar",
@@ -240,6 +242,8 @@
                 "name": "Nome",
                 "namePlaceholder": "Básico Proprietário",
                 "category": "Categoria",
+                "productDomain": "Domínio de produto",
+                "productDomainHint": "Qual vertical conta esta assinatura. Não pode ser alterado após a criação.",
                 "description": "Descrição",
                 "descriptionPlaceholder": "Descreva o plano...",
                 "monthlyArs": "Mensal (ARS)",
@@ -264,7 +268,8 @@
                 "accommodation": "Acomodação",
                 "complex": "Complexo",
                 "tourist": "Turista",
-                "ai": "Inteligência artificial"
+                "ai": "Inteligência artificial",
+                "commerce": "Comércio"
             },
             "cancelButton": "Cancelar",
             "saveButton": "Salvar alterações",
@@ -309,6 +314,8 @@
         "confirmActivateDesc": "Você vai forçar a ativação do add-on",
         "confirmActivateDescSuffix": "para o cliente",
         "confirmActivateDescEnd": "Esta ação mudará o status para \"ativo\" de forma imediata.",
+        "confirmToggleActivate": "Ativar este add-on?",
+        "confirmToggleDeactivate": "Desativar este add-on?",
         "forceExpire": "Forçar expiração",
         "forceActivate": "Forçar ativação",
         "toastExpiredTitle": "Add-on expirado",
@@ -497,8 +504,6 @@
             "receiptHint": "Enviar recibo automaticamente ao processar pagamento",
             "trialReminderLabel": "Lembrete de fim do teste",
             "trialReminderHint": "Avisar antes de o período de teste expirar",
-            "trialReminderDaysLabel": "Dias de antecedência do lembrete",
-            "trialReminderDaysHint": "Enviar o lembrete X dias antes do vencimento",
             "paymentFailedLabel": "Notificar pagamento falhado",
             "paymentFailedHint": "Avisar o cliente quando um pagamento falha",
             "subscriptionCancelledLabel": "Notificar cancelamento de assinatura",
@@ -968,6 +973,170 @@
         "unknownUser": "Usuário não identificado",
         "unknownPlan": "Sem plano"
     },
+    "reconciliation": {
+        "title": "Resgate de pagamentos órfãos",
+        "description": "Compara o MercadoPago com o livro contábil local e propõe vínculos. A ferramenta PROPÕE, um humano DECIDE: nada é vinculado automaticamente.",
+        "table": {
+            "title": "Divergências",
+            "loading": "Carregando divergências...",
+            "errorLoading": "Erro ao carregar divergências",
+            "empty": "Nenhuma divergência",
+            "emptyTitle": "Nenhuma divergência encontrada",
+            "emptyHint": "O MercadoPago e o livro contábil local coincidem no período consultado.",
+            "divergenceCount_one": "{{count}} divergência",
+            "divergenceCount_other": "{{count}} divergências",
+            "columns": {
+                "kind": "Tipo",
+                "identifier": "Identificador",
+                "payerEmail": "Email do pagador",
+                "amount": "Valor",
+                "date": "Data",
+                "mpStatus": "Status no MP",
+                "candidates": "Candidatos",
+                "actions": "Ações"
+            },
+            "viewButton": "Ver detalhe",
+            "backfillButton": "Registrar pagamento",
+            "forceLinkButton": "Vincular"
+        },
+        "kinds": {
+            "unrecordedPayment": "Pagamento não registrado",
+            "orphanPreapproval": "Preapproval órfão"
+        },
+        "notAttributableYet": "Ainda não é possível atribuir",
+        "matchedOn": {
+            "externalReference": "Referência externa",
+            "payerEmail": "Email do pagador",
+            "mpPlanId": "Plano do MP",
+            "preapprovalId": "ID do preapproval"
+        },
+        "detailDialog": {
+            "title": "Detalhe da divergência",
+            "mpSection": "Dados do MercadoPago",
+            "payerSection": "Identidade do pagador",
+            "candidatesSection": "Candidatos locais",
+            "noCandidates": "Nenhum candidato encontrado. Não há nada para propor: o operador deve buscar manualmente.",
+            "localStatusLabel": "Status local:",
+            "useCandidateButton": "Usar este"
+        },
+        "fields": {
+            "mpPaymentId": "ID do pagamento (MP)",
+            "mpStatusDetail": "Detalhe do status",
+            "approvedAt": "Aprovado em",
+            "payerId": "ID do pagador (MP)",
+            "preapprovalId": "ID do preapproval (MP)",
+            "description": "Descrição",
+            "reason": "Motivo (MP)",
+            "nextPaymentDate": "Próxima cobrança",
+            "preapprovalPlanId": "ID do plano do preapproval",
+            "sourcePaymentId": "Pagamento de origem",
+            "amount": "Valor",
+            "mpStatus": "Status no MP",
+            "createdAt": "Criado em",
+            "externalReference": "Referência externa",
+            "payerEmailRaw": "Email do pagador (bruto, MP)",
+            "payerEmailFromPayment": "Email do pagador (do pagamento vinculado)"
+        },
+        "payerEmailRawEmptyHint": "O MercadoPago retorna este campo vazio em todos os preapprovals reais. Isso não é uma falha da ferramenta.",
+        "actionDialog": {
+            "forceLinkTitle": "Vincular preapproval a uma assinatura local",
+            "forceLinkDescription": "Une este preapproval do MercadoPago à assinatura local que você escolher. Esta ação é auditada.",
+            "backfillTitle": "Registrar pagamento no livro contábil",
+            "backfillDescription": "Cria a linha de billing_payments que falta para esta cobrança já aprovada. Esta ação é auditada.",
+            "auditWarning": "Esta ação grava no livro contábil e é auditada em seu nome. Não pode ser desfeita com um clique.",
+            "mpTargetLabel": "Identificador do MercadoPago",
+            "localSubscriptionIdLabel": "ID da assinatura local",
+            "localSubscriptionIdPlaceholder": "Cole o ID da assinatura local...",
+            "localSubscriptionIdHint": "Este campo sempre começa vazio. Para copiar um candidato aqui, abra o detalhe e use \"Usar este\".",
+            "reasonLabel": "Motivo",
+            "reasonPlaceholder": "Explique por que esses dois registros são a mesma pessoa/assinatura (mínimo 10 caracteres)...",
+            "reasonHint": "Este texto permanece no registro de auditoria. Seja específico: é a única coisa que explica o vínculo no futuro.",
+            "processingButton": "Processando...",
+            "forceLinkConfirmButton": "Vincular",
+            "backfillConfirmButton": "Registrar pagamento",
+            "forceLinkSuccess": "Preapproval vinculado com sucesso",
+            "forceLinkError": "Erro ao vincular:",
+            "backfillSuccess": "Pagamento registrado com sucesso",
+            "backfillError": "Erro ao registrar o pagamento:"
+        },
+        "truncatedBanner": {
+            "title": "Relatório parcial",
+            "description": "A varredura do MercadoPago atingiu o teto de páginas configurado. O total exibido é um piso, não uma contagem completa: pode haver mais divergências não listadas."
+        },
+        "filters": {
+            "title": "Filtros",
+            "kindLabel": "Tipo",
+            "allKinds": "Todos",
+            "sinceLabel": "Desde",
+            "sinceHint": "Por padrão são consultados os últimos 90 dias. Cada consulta custa chamadas espaçadas ao MercadoPago."
+        },
+        "mpCallStats": "{{calls}} chamadas ao MercadoPago ({{rateLimited}} limitadas por rate limit)",
+        "pagination": {
+            "previous": "Anterior",
+            "next": "Próxima",
+            "pageOf": "Página {{page}} de {{totalPages}}"
+        },
+        "queue": {
+            "title": "Fila de pagamentos órfãos",
+            "loading": "Carregando a fila...",
+            "errorLoading": "Erro ao carregar a fila",
+            "emptyTitle": "Nenhum pagamento na fila",
+            "emptyHint": "Nenhuma cobrança ficou sem lançamento com este filtro. A fila é escrita no instante da falha, então vazia significa vazia.",
+            "unresolvedCount_one": "{{count}} pagamento não resolvido no total",
+            "unresolvedCount_other": "{{count}} pagamentos não resolvidos no total",
+            "resolveButton": "Resolver",
+            "livemodeReal": "Dinheiro real",
+            "livemodeSandbox": "Sandbox",
+            "columns": {
+                "detectedAt": "Detectado",
+                "providerPaymentId": "ID do pagamento (MP)",
+                "flow": "Fluxo",
+                "reason": "Motivo",
+                "amount": "Valor",
+                "livemode": "Ambiente",
+                "subscriptionId": "Assinatura local",
+                "actions": "Ações"
+            },
+            "flows": {
+                "planChangeUpgrade": "Upgrade de plano",
+                "annualUpfront": "Anual antecipado",
+                "addonPurchase": "Compra de add-on",
+                "authorizedPaymentRetry": "Nova tentativa de cobrança recorrente"
+            },
+            "reasons": {
+                "subscriptionNotFound": "Assinatura inexistente",
+                "statusNotApplicable": "Status não aplicável",
+                "ledgerWriteFailed": "Falha ao gravar o lançamento"
+            },
+            "statuses": {
+                "unresolved": "Não resolvidos",
+                "resolved": "Resolvidos",
+                "dismissed": "Descartados"
+            },
+            "resolutions": {
+                "resolved": "Resolvido — o dinheiro foi lançado ou devolvido",
+                "dismissed": "Descartado — nada era devido"
+            },
+            "filters": {
+                "title": "Filtros da fila",
+                "statusLabel": "Status"
+            },
+            "resolveDialog": {
+                "title": "Registrar o veredito sobre este pagamento",
+                "description": "Registre o que foi feito com esta cobrança. NÃO lança o pagamento: para isso existe “Registrar pagamento” na divergência correspondente.",
+                "auditWarning": "Esta ação é auditada com o seu usuário e a sua nota. Uma linha fechada não pode ser reaberta aqui.",
+                "resolutionLabel": "Veredito",
+                "resolutionHint": "“Resolvido” significa que o dinheiro foi contabilizado ou devolvido. “Descartado” significa que nada era devido (uma cobrança de teste, uma duplicata).",
+                "noteLabel": "O que foi feito",
+                "notePlaceholder": "ex.: lancei o pagamento pela ferramenta de resgate, referência MP 174625958196.",
+                "noteHint": "Mínimo de 10 caracteres. É a única coisa que vai explicar a quem ler isto daqui a seis meses se o cliente ficou coberto.",
+                "confirmButton": "Registrar veredito",
+                "processingButton": "Registrando...",
+                "success": "Veredito registrado",
+                "error": "Não foi possível registrar o veredito:"
+            }
+        }
+    },
     "subscriptions": {
         "title": "Assinaturas",
         "description": "Gerencie as assinaturas ativas dos usuários",
@@ -980,7 +1149,8 @@
             "paused": "Pausada",
             "comp": "Cortesia",
             "abandoned": "Abandonada",
-            "pendingProvider": "Aguardando provedor"
+            "pendingProvider": "Aguardando provedor",
+            "courtesy": "Períodos presenteados"
         },
         "promoEffect": {
             "title": "Promoção ativa",
@@ -1065,7 +1235,9 @@
             "extendTrialButton": "Estender teste",
             "cancelSubscriptionButton": "Cancelar assinatura",
             "pauseButton": "Pausar",
-            "resumeButton": "Retomar"
+            "resumeButton": "Retomar",
+            "grantCourtesyButton": "Presentear períodos",
+            "grantCompButton": "Conceder cortesia"
         },
         "paymentHistory": {
             "title": "Histórico de pagamentos",
@@ -1154,7 +1326,12 @@
             "paused": "Assinatura pausada",
             "resumed": "Assinatura retomada",
             "pauseError": "Erro ao pausar assinatura:",
-            "resumeError": "Erro ao retomar assinatura:"
+            "resumeError": "Erro ao retomar assinatura:",
+            "courtesyGranted": "Períodos presenteados",
+            "courtesyError": "Não foi possível presentear:",
+            "compGranted": "Cortesia concedida:",
+            "compError": "Não foi possível conceder a cortesia:",
+            "plansTruncated": "Não foi possível carregar todos os planos para conceder cortesia, mostrando"
         },
         "unknownUser": "Usuário não identificado",
         "unknownPlan": "Plano não identificado",
@@ -1166,7 +1343,31 @@
             "gastronomy": "Gastronomia",
             "experience": "Experiência",
             "partner": "Parceiro",
+            "tourist": "Turista",
+            "addon": "Complemento",
             "unknown": "Outro"
+        },
+        "courtesyDialog": {
+            "title": "Presentear períodos",
+            "description": "Presentear períodos sem cobrança a",
+            "cyclesLabel": "Quantos períodos você quer presentear?",
+            "startsAtNotice": "A assinatura já fica marcada como presenteada a partir de agora, e a cobrança automática é interrompida de imediato. O assinante não perde nada: mantém tudo até terminar o período já pago, e é aí que começam a contar os períodos presenteados.",
+            "leadTimeWarning": "Se faltarem menos de 3 dias para a próxima cobrança, o presente é recusado: pausar tão perto pode não impedi-la, e ele seria cobrado justamente pelo período presenteado.",
+            "confirmButton": "Presentear",
+            "backButton": "Voltar"
+        },
+        "compDialog": {
+            "title": "Conceder cortesia permanente",
+            "description": "Escolha um plano de qualquer vertical para",
+            "planLabel": "Plano a conceder",
+            "selectPlan": "Selecionar um plano…",
+            "noPlans": "Não há planos ativos disponíveis.",
+            "perMonth": "/mês",
+            "intervalLabel": "Intervalo (apenas para auditoria — a cortesia nunca é cobrada)",
+            "intervalMonthly": "Mensal",
+            "intervalAnnual": "Anual",
+            "permanentWarning": "Esta cortesia é permanente e não tem pré-aprovação do MercadoPago: nunca é cobrada, e não volta ao preço integral sozinha. Não pode ser \"desfeita\" com uma troca de plano — apenas cancelando a assinatura resultante.",
+            "confirmButton": "Conceder cortesia"
         }
     },
     "exchangeRates": {

@@ -1,3 +1,4 @@
+export * from './experience_certificate.dbschema.ts';
 export * from './experience_faq.dbschema.ts';
 export * from './experience_media.dbschema.ts';
 export * from './experience_review.dbschema.ts';

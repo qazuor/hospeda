@@ -19,6 +19,23 @@
  * destinations, events and posts. They are first-class domain entities
  * (SPEC-239 gastronomy, SPEC-240 experience) with their own tables, but had
  * never been added to this shared enum.
+ *
+ * `HOST_TRADE` was appended for HOS-981, so `qr_codes.entity_type` can name the
+ * subject a `GENERATED` code was derived from through this enum rather than
+ * free text. The other three subjects the QR system needs — `ACCOMMODATION`,
+ * `GASTRONOMY` and `EXPERIENCE`, the three verticals of HOS-982 — were already
+ * here; the provider was the only one missing.
+ *
+ * `PARTNER` was appended for HOS-1063, so `entity_views.entity_type` can name a
+ * gold partner's public page. Unlike HOS-734's GASTRONOMY/EXPERIENCE widening,
+ * which only had to widen the narrow Zod subset, this one pays a migration:
+ * PARTNER was absent from this enum, therefore absent from `entity_type_enum`.
+ *
+ * NOTE ON ORDER — values are APPENDED, never inserted. `packages/db/test/
+ * enum-consistency.test.ts` asserts `tsValues.join(',') === dbValues.join(',')`,
+ * i.e. the TypeScript order must match the Postgres order exactly, and
+ * `ALTER TYPE … ADD VALUE` appends at the end. Inserting a value mid-list would
+ * make that guard demand a full type rebuild instead of a one-line migration.
  */
 export enum EntityTypeEnum {
     ACCOMMODATION = 'ACCOMMODATION',
@@ -31,5 +48,7 @@ export enum EntityTypeEnum {
     BILLING_SUBSCRIPTION = 'BILLING_SUBSCRIPTION',
     PAYMENT = 'PAYMENT',
     EXPERIENCE = 'EXPERIENCE',
-    GASTRONOMY = 'GASTRONOMY'
+    GASTRONOMY = 'GASTRONOMY',
+    HOST_TRADE = 'HOST_TRADE',
+    PARTNER = 'PARTNER'
 }

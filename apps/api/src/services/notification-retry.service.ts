@@ -33,12 +33,26 @@ const RETRY_CONFIG = {
     RETRY_WINDOW_HOURS: 24,
     /** Wait N minutes between retry attempts */
     RETRY_COOLDOWN_MINUTES: 60,
-    /** Critical notification types that should be retried */
+    /**
+     * Critical notification types that should be retried.
+     *
+     * This list GATES the loop below: a type absent from it is logged as
+     * "skipping non-critical" and dropped before `reconstructPayload` is ever
+     * reached. Adding a case there without adding the type here yields a fix
+     * that cannot run.
+     */
     CRITICAL_TYPES: [
         NotificationType.TRIAL_ENDING_REMINDER,
         NotificationType.PAYMENT_FAILURE,
         NotificationType.ADDON_EXPIRED,
-        NotificationType.RENEWAL_REMINDER
+        NotificationType.RENEWAL_REMINDER,
+        // HOS-1171. A comp grant hard-cancels the customer's MercadoPago
+        // preapproval, and this email is the only notice they get that it
+        // happened — including the "write to us if a charge appears anyway"
+        // line, which is what makes a charge already in flight recoverable for
+        // them. Dropping it silently when Redis is unavailable is not an
+        // acceptable outcome for a message about someone's card.
+        NotificationType.COMP_GRANTED
     ] as string[]
 };
 
@@ -408,6 +422,30 @@ function reconstructPayload(record: FailedNotificationRecord): NotificationPaylo
                 amount: (metadata.amount as number) || 0,
                 currency: (metadata.currency as string) || 'ARS',
                 renewalDate: (metadata.renewalDate as string) || ''
+            } as NotificationPayload;
+
+        // HOS-1171: the same shape of bug as ADDON_EXPIRED above, with a worse
+        // payload. `CompGranted` branches on `hadActiveBilling`: TRUE says we
+        // cancelled the customer's automatic debit, that their card will not be
+        // charged again, and to write to us if a charge appears anyway. Falling
+        // through to `default` dropped both fields, so a retry sent the "you
+        // never gave us a card" variant to someone whose preapproval we had just
+        // hard-cancelled, and rendered `planName` as `undefined` beside it.
+        // `buildCompGrantMetadata` persists both on the way in; this reads them
+        // back out.
+        //
+        // `??` and NOT `||`: a persisted `false` is a real answer, and `||`
+        // would rewrite it to `true`, reintroducing the same lie from the other
+        // direction. The fallback for a genuinely absent value is `true`
+        // deliberately — of the two ways to be wrong, telling a never-subscribed
+        // customer about a debit they did not have is merely confusing, while
+        // withholding the cancellation notice from someone who WAS being charged
+        // is the harm this branch exists to prevent.
+        case NotificationType.COMP_GRANTED:
+            return {
+                ...basePayload,
+                planName: (metadata.planName as string) || 'tu plan',
+                hadActiveBilling: (metadata.hadActiveBilling as boolean | undefined) ?? true
             } as NotificationPayload;
 
         default:

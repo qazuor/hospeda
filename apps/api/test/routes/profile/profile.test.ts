@@ -138,6 +138,26 @@ describe('completeProfileHandler', () => {
         ).resolves.toBeDefined();
     });
 
+    it('passes theme through to userService.completeProfile (HOS-313)', async () => {
+        const userSvc = makeUserSvc();
+        const deps: CompleteProfileDeps = { userService: userSvc };
+        const ctx = buildCtx();
+        await completeProfileHandler(ctx, { ...body, theme: 'dark' }, deps);
+        expect(userSvc.completeProfile).toHaveBeenCalledWith(
+            expect.objectContaining({ id: ACTOR_ID }),
+            expect.objectContaining({ theme: 'dark' })
+        );
+    });
+
+    it('passes theme = undefined through when the field is omitted (optional)', async () => {
+        const userSvc = makeUserSvc();
+        const deps: CompleteProfileDeps = { userService: userSvc };
+        const ctx = buildCtx();
+        await completeProfileHandler(ctx, body, deps);
+        const callArgs = (userSvc.completeProfile as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(callArgs?.[1]).toMatchObject({ theme: undefined });
+    });
+
     it('throws ServiceError when userService.completeProfile returns an error', async () => {
         const deps: CompleteProfileDeps = {
             userService: {

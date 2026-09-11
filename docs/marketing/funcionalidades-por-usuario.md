@@ -128,7 +128,9 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 **El gancho**: 🟢 **30 días sin que se te cobre nada**. Los datos se conservan al vencer.
 
-> ⚠️ **La tarjeta SÍ se pide al registrarse**, antes de la prueba. Se carga al principio y recién se cobra cuando terminan los 30 días. Antes no se pedía; cambió. **Nunca comunicar "sin tarjeta"** — es una promesa que se rompe en el momento del alta, que es el peor lugar para perder a alguien.
+> ✅ **La prueba NO pide tarjeta** (HOS-1012, 01/09/2026). Arranca sola cuando el anfitrión publica su primera ficha, dura 30 días y no hay checkout de por medio. **"Sin tarjeta" se puede y se debe comunicar** — es cierto y es lo más fuerte que tenemos para decir.
+>
+> Esta regla estuvo invertida entre HOS-171 y HOS-1012: durante ese período la tarjeta sí se pedía al registrarse y prometer lo contrario rompía la promesa en el alta. Ya no. Si encontrás material viejo que dice "cargás tu tarjeta", está desactualizado.
 >
 > Los días de prueba se configuran en la base de datos, no en el código. Verificar ahí antes de imprimir nada.
 

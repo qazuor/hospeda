@@ -26,7 +26,7 @@ import type { DrizzleClient } from '@repo/db';
 import {
     and,
     billingPendingCheckouts,
-    commerceListingSubscriptions,
+    entitySubscriptions,
     eq,
     gt,
     inArray,
@@ -77,7 +77,7 @@ export const RETAINED_REFERENCING_TABLES: Readonly<Record<string, string>> = {
     billing_subscription_addons: 'inventory found 0 rows',
     featured_listing_addon_grants:
         'addon→accommodation grants; inventory found 0 rows, and the reconcile cron corrects drift',
-    commerce_listing_subscriptions: 'asserted inert by assertRetainedTablesAreInert',
+    entity_subscriptions: 'asserted inert by assertRetainedTablesAreInert',
     partner_subscriptions: 'asserted inert by assertRetainedTablesAreInert',
     billing_pending_checkouts: 'asserted inert by assertRetainedTablesAreInert'
 };
@@ -201,7 +201,7 @@ export async function assertNoUnclassifiedReferrers(args: {
  * read by a live "is this thing active?" decision are already inert for the
  * targeted rows. Throws naming the offending rows otherwise.
  *
- * - `commerce_listing_subscriptions` / `partner_subscriptions` carry their OWN
+ * - `entity_subscriptions` / `partner_subscriptions` carry their OWN
  *   `status` column, which `commerce-visibility.ts` and `checkout-idempotency.ts`
  *   read WITHOUT joining `billing_subscriptions`. Soft-deleting the subscription
  *   would not change what those paths see.
@@ -223,17 +223,17 @@ export async function assertRetainedTablesAreInert(args: {
 
     if (subscriptionIds.length > 0) {
         const liveCommerce = await db
-            .select({ id: commerceListingSubscriptions.id })
-            .from(commerceListingSubscriptions)
+            .select({ id: entitySubscriptions.id })
+            .from(entitySubscriptions)
             .where(
                 and(
-                    inArray(commerceListingSubscriptions.subscriptionId, [...subscriptionIds]),
-                    inArray(commerceListingSubscriptions.status, grantingStatuses)
+                    inArray(entitySubscriptions.subscriptionId, [...subscriptionIds]),
+                    inArray(entitySubscriptions.status, grantingStatuses)
                 )
             );
         if (liveCommerce.length > 0) {
             throw new BillingCleanupAbort(
-                `${liveCommerce.length} commerce_listing_subscriptions row(s) still hold an ` +
+                `${liveCommerce.length} entity_subscriptions row(s) still hold an ` +
                     `entitlement-granting status (${grantingStatuses.join('/')}) for a ` +
                     'subscription about to be soft-deleted. That table has no deleted_at and is ' +
                     'read WITHOUT joining billing_subscriptions, so the listing would stay ' +

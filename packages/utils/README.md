@@ -162,10 +162,7 @@ import {
   areDatesEqual,
   getDaysDifference,
   getHoursDifference,
-  getMinutesDifference,
-  addDaysToDate,
-  addMonthsToDate,
-  addYearsToDate
+  getMinutesDifference
 } from '@repo/utils';
 
 // Format date
@@ -201,11 +198,27 @@ areDatesEqual('2024-01-15', '2024-01-15');  // true
 getDaysDifference('2024-01-20', '2024-01-15');  // 5
 getHoursDifference('2024-01-15 14:00', '2024-01-15 10:00');  // 4
 getMinutesDifference(date1, date2);  // 120
+```
 
-// Add time periods
-addDaysToDate(new Date(), 7);  // Date 7 days from now
-addMonthsToDate('2024-01-15', 3);  // Date 3 months from Jan 15
-addYearsToDate(new Date(), 1);  // Date 1 year from now
+### UTC Date Math
+
+Calendar arithmetic on instants, with the answer independent of the process
+timezone. Use this instead of `setMonth`/`setFullYear`, which read and write in
+local time and therefore give a different result on a UTC server than on a
+developer machine in Argentina (HOS-1010).
+
+```typescript
+import { addCalendarMonths, addCalendarYears } from '@repo/utils';
+
+// `dayOverflow` is required: when the source day does not exist in the target
+// month there is no universally right answer, so the call site states its rule.
+addCalendarMonths({ from: new Date('2026-01-31T00:00:00Z'), months: 1, dayOverflow: 'clamp' });
+// 2026-02-28T00:00:00.000Z
+addCalendarMonths({ from: new Date('2026-01-31T00:00:00Z'), months: 1, dayOverflow: 'overflow' });
+// 2026-03-03T00:00:00.000Z
+
+addCalendarYears({ from: new Date('2028-02-29T00:00:00Z'), years: 1, dayOverflow: 'clamp' });
+// 2029-02-28T00:00:00.000Z
 ```
 
 ### Currency Utilities
@@ -398,9 +411,11 @@ isFunction(() => {});  // true
 - `getDaysDifference(date1: Date | string, date2: Date | string): number` - Days between
 - `getHoursDifference(date1: Date | string, date2: Date | string): number` - Hours between
 - `getMinutesDifference(date1: Date | string, date2: Date | string): number` - Minutes between
-- `addDaysToDate(date: Date | string, days: number): Date` - Add days
-- `addMonthsToDate(date: Date | string, months: number): Date` - Add months
-- `addYearsToDate(date: Date | string, years: number): Date` - Add years
+
+### UTC Date Math Functions
+
+- `addCalendarMonths({ from: Date, months: number, dayOverflow: 'clamp' | 'overflow' }): Date` - Add calendar months in UTC
+- `addCalendarYears({ from: Date, years: number, dayOverflow: 'clamp' | 'overflow' }): Date` - Add calendar years in UTC
 
 ### Currency Functions
 
@@ -559,7 +574,7 @@ export function validateSignup(data: SignupInput) {
 ### Working with Dates
 
 ```typescript
-import { formatDate, getDaysDifference, addDaysToDate } from '@repo/utils';
+import { formatDate, getDaysDifference, addCalendarMonths } from '@repo/utils';
 
 // Calculate booking duration
 const checkIn = new Date('2024-01-15');
@@ -569,8 +584,15 @@ const nights = getDaysDifference(checkOut, checkIn);  // 5
 // Format for display
 const displayDate = formatDate(checkIn, 'PPP');  // 'January 15, 2024'
 
-// Calculate cancellation deadline (e.g., 2 days before check-in)
-const cancellationDeadline = addDaysToDate(checkIn, -2);
+// Calculate cancellation deadline (e.g., 2 days before check-in).
+// A fixed number of days is a duration, so plain epoch arithmetic is correct
+// and timezone-independent — Argentina has had no DST since 2009, but this
+// does not rely on that.
+const DAY_MS = 86_400_000;
+const cancellationDeadline = new Date(checkIn.getTime() - 2 * DAY_MS);
+
+// Anything measured in MONTHS must not use raw Date arithmetic — see UTC Date Math.
+const yearlyRenewal = addCalendarMonths({ from: checkIn, months: 12, dayOverflow: 'clamp' });
 ```
 
 ## Related Packages

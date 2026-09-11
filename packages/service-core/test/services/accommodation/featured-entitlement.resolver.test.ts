@@ -56,7 +56,9 @@ vi.mock('@repo/db', () => {
         billingAddonPurchases: { id: 'id', status: 'status', expiresAt: 'expires_at' },
         featuredListingAddonGrants: {
             id: 'id',
-            accommodationId: 'accommodation_id',
+            // HOS-1286: polymorphic link columns, replacing `accommodation_id`.
+            entityType: 'entity_type',
+            entityId: 'entity_id',
             purchaseId: 'purchase_id'
         },
         eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
@@ -229,14 +231,17 @@ describe('resolveOwnerPlanGrantsFeatured', () => {
         expect(mockSelect).toHaveBeenCalledTimes(2);
     });
 
-    it('queries billing_subscriptions filtered to exactly the active/trialing/comp statuses', async () => {
+    it('queries billing_subscriptions filtered to exactly the entitlement-granting statuses', async () => {
         mockSelect
             .mockReturnValueOnce(makeChain([{ id: 'cust-1' }]))
             .mockReturnValueOnce(makeChain([]));
 
         await resolveOwnerPlanGrantsFeatured({ ownerId: 'owner-1' });
 
-        expect(inArray).toHaveBeenCalledWith('status', ['active', 'trialing', 'comp']);
+        // HOS-180 added `courtesy`. A gifted subscriber keeps every entitlement of
+        // their plan — FEATURED_LISTING included — so leaving it out would quietly
+        // un-feature their accommodations for the duration of the gift.
+        expect(inArray).toHaveBeenCalledWith('status', ['active', 'trialing', 'comp', 'courtesy']);
     });
 });
 
@@ -275,7 +280,11 @@ describe('resolveAccommodationHasActiveFeaturedAddon', () => {
 
         await resolveAccommodationHasActiveFeaturedAddon({ accommodationId: 'acc-1' });
 
-        expect(eq).toHaveBeenCalledWith('accommodation_id', 'acc-1');
+        // HOS-1286: BOTH grant columns, never the id alone. This pair is the
+        // dropped foreign key's guarantee relocated into the query — an id
+        // filter on its own would match a gastronomy grant carrying it.
+        expect(eq).toHaveBeenCalledWith('entity_type', 'accommodation');
+        expect(eq).toHaveBeenCalledWith('entity_id', 'acc-1');
         expect(eq).toHaveBeenCalledWith('status', 'active');
         expect(isNull).toHaveBeenCalledWith('expires_at');
         expect(gt).toHaveBeenCalledWith('expires_at', expect.any(Date));
@@ -294,10 +303,14 @@ describe('getOwnerAccommodationIdsWithActiveFeaturedAddon', () => {
         mockGetDb.mockReturnValue({ select: mockSelect });
     });
 
+    // HOS-1286 split this into TWO queries: the owner's non-deleted
+    // accommodation ids (still here, since only this vertical resolves listings
+    // from `owner_id`), then the shared grant read that narrows them. Each test
+    // below therefore primes `select` twice, in that order.
     it('returns exactly the protected accommodation ids for a mixed portfolio', async () => {
-        mockSelect.mockReturnValueOnce(
-            makeChain([{ accommodationId: 'acc-1' }, { accommodationId: 'acc-3' }])
-        );
+        mockSelect
+            .mockReturnValueOnce(makeChain([{ id: 'acc-1' }, { id: 'acc-2' }, { id: 'acc-3' }]))
+            .mockReturnValueOnce(makeChain([{ entityId: 'acc-1' }, { entityId: 'acc-3' }]));
 
         const result = await getOwnerAccommodationIdsWithActiveFeaturedAddon({
             ownerId: 'owner-1'
@@ -307,7 +320,9 @@ describe('getOwnerAccommodationIdsWithActiveFeaturedAddon', () => {
     });
 
     it('returns an empty array when the owner has no active featured-listing addon grants', async () => {
-        mockSelect.mockReturnValueOnce(makeChain([]));
+        mockSelect
+            .mockReturnValueOnce(makeChain([{ id: 'acc-1' }]))
+            .mockReturnValueOnce(makeChain([]));
 
         const result = await getOwnerAccommodationIdsWithActiveFeaturedAddon({
             ownerId: 'owner-1'
@@ -316,13 +331,33 @@ describe('getOwnerAccommodationIdsWithActiveFeaturedAddon', () => {
         expect(result).toEqual([]);
     });
 
-    it('filters by ownerId, non-deleted accommodations, and an active/unexpired grant', async () => {
+    it('never queries grants at all when the owner has no accommodations', async () => {
+        // `inArray(col, [])` is a SQL syntax error in Drizzle rather than an
+        // empty match, so the grant read is skipped entirely — one select, not
+        // two.
         mockSelect.mockReturnValueOnce(makeChain([]));
+
+        const result = await getOwnerAccommodationIdsWithActiveFeaturedAddon({
+            ownerId: 'owner-1'
+        });
+
+        expect(result).toEqual([]);
+        expect(mockSelect).toHaveBeenCalledTimes(1);
+    });
+
+    it('filters by ownerId, non-deleted accommodations, and an active/unexpired grant of THIS vertical', async () => {
+        mockSelect
+            .mockReturnValueOnce(makeChain([{ id: 'acc-1' }]))
+            .mockReturnValueOnce(makeChain([]));
 
         await getOwnerAccommodationIdsWithActiveFeaturedAddon({ ownerId: 'owner-1' });
 
         expect(eq).toHaveBeenCalledWith('owner_id', 'owner-1');
         expect(eq).toHaveBeenCalledWith('status', 'active');
+        // HOS-1286: the grant read is scoped to the accommodation vertical, so a
+        // gastronomy grant on a colliding id cannot protect an accommodation.
+        expect(eq).toHaveBeenCalledWith('entity_type', 'accommodation');
+        expect(inArray).toHaveBeenCalledWith('entity_id', ['acc-1']);
         expect(isNull).toHaveBeenCalledWith('deleted_at');
         expect(isNull).toHaveBeenCalledWith('expires_at');
         expect(gt).toHaveBeenCalledWith('expires_at', expect.any(Date));

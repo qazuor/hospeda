@@ -2,10 +2,56 @@
     "cta": "Empezar",
     "free": "Gratis",
     "recommended": "Recomendado",
-    "trial_one": "{{count}} día gratis",
-    "trial_other": "{{count}} días gratis",
+    "trial_one": "{{count}} día de prueba gratis",
+    "trial_other": "{{count}} días de prueba gratis",
     "trialNotEligible": "Sin período de prueba",
+    "trialWarning": {
+        "title": "Vas a perder tu prueba gratis",
+        "body_one": "Te queda {{count}} día de prueba gratis. Si contratás ahora, lo perdés.",
+        "body_other": "Te quedan {{count}} días de prueba gratis. Si contratás ahora, los perdés.",
+        "bodyUnknown": "Puede que tengas una prueba gratis en curso. Si contratás ahora, la perdés.",
+        "immediateCharge": "El cobro es inmediato: se hace ahora, no al terminar la prueba.",
+        "confirm": "Contratar igual",
+        "cancel": "Seguir con la prueba"
+    },
+    "trialBanner": {
+        "message_one": "Tu prueba gratis sigue activa: te queda {{count}} día.",
+        "message_other": "Tu prueba gratis sigue activa: te quedan {{count}} días.",
+        "hint": "Si contratás un plan ahora, el cobro es inmediato y perdés los días que te quedan."
+    },
+    "touristVipHeld": {
+        "cta": "Ya tenés estos beneficios",
+        "note": "Tu suscripción activa ya incluye todos los beneficios VIP de turista."
+    },
     "includesEverything": "Todo lo del plan {plan}, más:",
+    "includesAll": "Este plan incluye:",
+    "limitsLabel": "Límites de este plan",
+    "limitLine": "{label}: {value}",
+    "recommendedFor": {
+        "label": "Recomendado para",
+        "default": {
+            "owner": "quien publica su alojamiento en Hospeda",
+            "tourist": "quien viaja por el litoral y quiere aprovechar mejor la plataforma",
+            "gastronomy": "quien tiene un local gastronómico y quiere que lo encuentren",
+            "experience": "quien organiza salidas y actividades para visitantes",
+            "partner": "instituciones y comercios que quieren asociarse con Hospeda"
+        },
+        "plan": {
+            "owner-basico": "quien alquila una sola propiedad y recién empieza a publicarla",
+            "owner-pro": "quien maneja varias propiedades y ya recibe reservas seguido",
+            "owner-premium": "quien vive de alquilar y necesita todas las herramientas y el mayor alcance",
+            "tourist-free": "quien está empezando a mirar alojamientos y quiere guardar algunos favoritos",
+            "tourist-vip": "quien viaja seguido y quiere todos los beneficios y el contacto directo con el anfitrión",
+            "gastronomy-basico": "quien recién publica su local y quiere estar en el mapa",
+            "gastronomy-pro": "quien ya tiene clientela y quiere mostrar la carta al día",
+            "gastronomy-premium": "quien maneja el local con carta en varios idiomas y atención constante",
+            "experience-basico": "quien empieza a ofrecer sus salidas y quiere darse a conocer",
+            "experience-pro": "quien recibe visitantes seguido y necesita explicar bien cómo llegar",
+            "experience-premium": "quien vive de las salidas y quiere entregar certificados y atención permanente",
+            "partner-silver": "quien quiere estar presente en las campañas y el carrusel de aliados",
+            "partner-gold": "quien quiere además su propia página dentro de Hospeda"
+        }
+    },
     "inheritedSummary_one": "+{{count}} función del plan {{plan}}",
     "inheritedSummary_other": "+{{count}} funciones del plan {{plan}}",
     "baseHighlightTitle": "Ideal para empezar",
@@ -24,13 +70,82 @@
         "monthly": "Mensual",
         "annual": "Anual",
         "annualSaving": "Ahorrá {percent}%",
-        "ariaLabel": "Elegí la frecuencia de facturación"
+        "ariaLabel": "Elegí la frecuencia de facturación",
+        "question": "¿Cómo querés pagar?",
+        "annualBadge": "Ahorrá hasta {percent}%"
     },
     "period": {
         "month": "/mes",
         "year": "/año"
     },
     "monthlyOnly": "Solo plan mensual",
+    "promoEntry": {
+        "label": "¿Tenés un código de descuento? Vas a poder usarlo en el plan que elijas."
+    },
+    "index": {
+        "title": "Planes de Hospeda",
+        "description": "Elegí a qué audiencia pertenecés y mirá los planes pensados para vos.",
+        "tagline": "Planes y precios",
+        "heading": "Un plan para cada audiencia",
+        "subtitle": "Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá qué incluye cada una.",
+        "cardsHeading": "Elegí tu audiencia",
+        "highlightsLabel": "Qué obtenés",
+        "from": "Desde {{price}}",
+        "trial_one": "{{count}} día de prueba gratis",
+        "trial_other": "{{count}} días de prueba gratis",
+        "cards": {
+            "host": {
+                "title": "Alquilar mi alojamiento",
+                "audience": "Para anfitriones con casas, cabañas, departamentos u hoteles para alquilar.",
+                "cta": "Ver planes para anfitriones",
+                "highlights": {
+                    "item1": "Publicá tu alojamiento con fotos, servicios y calendario de disponibilidad.",
+                    "item2": "Recibí consultas por WhatsApp y respondé las reseñas de tus huéspedes.",
+                    "item3": "Seguí las visitas de tu ficha y creá promociones."
+                }
+            },
+            "tourist": {
+                "title": "Beneficios para viajar",
+                "audience": "Para viajeros que quieren comparar alojamientos, guardar favoritos y recibir alertas de precio.",
+                "cta": "Ver planes para viajeros",
+                "highlights": {
+                    "item1": "Guardá favoritos y organizalos en colecciones de viaje.",
+                    "item2": "Recibí alertas de precio y accedé a ofertas exclusivas.",
+                    "item3": "Compará alojamientos y escribí tus reseñas."
+                }
+            },
+            "gastronomy": {
+                "title": "Publicar mi local gastronómico",
+                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
+                "cta": "Ver planes de gastronomía",
+                "highlights": {
+                    "item1": "Ficha con fotos, menú, horarios y datos de contacto.",
+                    "item2": "Aparecé en la guía gastronómica que consultan los viajeros.",
+                    "item3": "Precio mensual fijo, sin comisión por consulta ni reserva."
+                }
+            },
+            "experience": {
+                "title": "Publicar mis experiencias",
+                "audience": "Para guías y operadores de excursiones, paseos y actividades.",
+                "cta": "Ver planes de experiencias",
+                "highlights": {
+                    "item1": "Publicá excursiones, paseos y actividades con fotos y horarios.",
+                    "item2": "Aparecé entre las experiencias que se buscan en el Litoral.",
+                    "item3": "Un monto mensual fijo: ninguna reserva te cobra comisión aparte."
+                }
+            },
+            "partner": {
+                "title": "Ser partner de Hospeda",
+                "audience": "Para marcas y comercios que quieren visibilidad en toda la plataforma.",
+                "cta": "Conocer el programa de partners",
+                "highlights": {
+                    "item1": "Presencia de marca en el carrusel de aliados de Hospeda.",
+                    "item2": "Visibilidad conjunta en nuestras campañas y canales de difusión.",
+                    "item3": "Condiciones comerciales a medida según el tipo de alianza."
+                }
+            }
+        }
+    },
     "owner": {
         "title": "Planes para propietarios",
         "description": "Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.",
@@ -44,7 +159,10 @@
             "title": "¿Listo para hacer crecer tu negocio?",
             "description_one": "Si es tu primera suscripción, empezás con {{count}} día de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas.",
             "description_other": "Si es tu primera suscripción, empezás con {{count}} días de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas."
-        }
+        },
+        "pageTitle": "Precios de los planes para publicar tu alojamiento",
+        "pageDescription": "Mirá cuánto sale cada plan para publicar tu alojamiento en Hospeda y elegí el tuyo.",
+        "ctaLabel": "Empezar"
     },
     "tourist": {
         "title": "Planes para turistas",
@@ -58,7 +176,56 @@
         "cta": {
             "description": "Registrate gratis y comienza a explorar los mejores alojamientos del Litoral argentino.",
             "title": "¿Listo para comenzar tu aventura?"
-        }
+        },
+        "hero": {
+            "tagline": "Para viajeros",
+            "title": "Todo el Litoral, en un solo lugar",
+            "desc": "Encontrá dónde dormir, dónde comer y qué hacer en la costa del Río Uruguay. Guardá lo que te gusta y hablá directo con quien te recibe."
+        },
+        "steps": {
+            "tagline": "Así funciona",
+            "title": "¿Cómo se usa Hospeda?",
+            "1": {
+                "title": "Explorá",
+                "desc": "Buscá alojamientos, gastronomía y experiencias por destino, tipo o servicios. Sin cuenta y sin costo."
+            },
+            "2": {
+                "title": "Guardá y compará",
+                "desc": "Marcá tus favoritos, organizalos en colecciones de viaje y poné hasta cinco alojamientos lado a lado."
+            },
+            "3": {
+                "title": "Hablá con el dueño",
+                "desc": "Escribile directo por WhatsApp. Hospeda no se mete en el medio: acordás con quien te recibe."
+            },
+            "4": {
+                "title": "Contá cómo te fue",
+                "desc": "Dejá tu reseña con fotos y ayudá a decidir al que viaja después."
+            }
+        },
+        "faq": {
+            "tagline": "Dudas frecuentes",
+            "title": "Antes de empezar",
+            "1": {
+                "q": "¿Cuánto cuesta usar Hospeda?",
+                "a_one": "Crear tu cuenta es gratis: guardás hasta 5 favoritos y escribís reseñas. El plan VIP suma favoritos y alertas de precio ilimitados, colecciones, comparador y contacto directo por WhatsApp, con {{count}} día de prueba.",
+                "a_other": "Crear tu cuenta es gratis: guardás hasta 5 favoritos y escribís reseñas. El plan VIP suma favoritos y alertas de precio ilimitados, colecciones, comparador y contacto directo por WhatsApp, con {{count}} días de prueba."
+            },
+            "2": {
+                "q": "¿Me cobran comisión por reservar?",
+                "a": "No. Hospeda no intermedia la reserva ni cobra comisión: te pone en contacto con el propietario y el acuerdo es entre ustedes."
+            },
+            "3": {
+                "q": "¿Necesito una cuenta para mirar?",
+                "a": "No. Podés recorrer todo el sitio sin registrarte. La cuenta hace falta recién para guardar favoritos, recibir alertas y escribir reseñas."
+            },
+            "4": {
+                "q": "¿Puedo cancelar cuando quiera?",
+                "a": "Sí, desde tu cuenta y sin trámite. Conservás el acceso hasta que termine el período que ya pagaste."
+            }
+        },
+        "pageTitle": "Precios de las suscripciones para viajeros",
+        "pageDescription": "Mirá cuánto sale cada suscripción de viajero en Hospeda y elegí la tuya.",
+        "ctaLabel": "Empezar"
     },
     "comparison": {
         "link": "Ver comparativa detallada",
@@ -74,6 +241,67 @@
             "heading": "Comparativa detallada de planes para turistas",
             "title": "Comparativa de planes para turistas",
             "description": "Compará todas las funciones, beneficios y límites de cada plan para turistas."
-        }
+        },
+        "sectionTitle": "Comparativa de planes"
+    },
+    "annualHint": "Pagando por año ahorrás {percent}%",
+    "seeAll": "Ver todo lo que incluye ({count} más)",
+    "seeLess": "Ver menos",
+    "select": {
+        "aria": "Seleccionar el plan {plan}"
+    },
+    "nav": {
+        "backToIndex": "Volver a todos los planes",
+        "ariaLabel": "Navegación del catálogo de planes",
+        "seePlans": "Ver planes y precios"
+    },
+    "consultPrice": "Consultar",
+    "gastronomy": {
+        "tagline": "Planes y precios",
+        "heading": "Precios para gastronomía",
+        "subtitle": "Todos los planes publican tu local. Cambia cuánto podés mostrar de él.",
+        "empty": "Planes no disponibles en este momento.",
+        "cardsHeading": "Comparativa de planes para gastronomía",
+        "pageTitle": "Precios para publicar tu local gastronómico",
+        "pageDescription": "Mirá cuánto sale publicar tu restaurante, parrilla, rotisería o carrito en Hospeda.",
+        "ctaLabel": "Empezar"
+    },
+    "experience": {
+        "tagline": "Planes y precios",
+        "heading": "Precios para experiencias",
+        "subtitle": "Todos los planes publican tu experiencia. Cambia cuánto podés contar de ella.",
+        "empty": "Planes no disponibles en este momento.",
+        "cardsHeading": "Comparativa de planes para experiencias",
+        "pageTitle": "Precios para publicar tus experiencias",
+        "pageDescription": "Mirá cuánto sale publicar tus salidas y actividades en Hospeda.",
+        "ctaLabel": "Empezar"
+    },
+    "partner": {
+        "tagline": "Niveles de alianza",
+        "heading": "Niveles de alianza",
+        "subtitle": "Elegí con qué nivel te imaginás, y lo terminamos de acordar juntos.",
+        "empty": "Niveles no disponibles en este momento.",
+        "cardsHeading": "Comparativa de niveles de alianza",
+        "pageTitle": "Niveles de alianza con Hospeda",
+        "pageDescription": "Dos niveles de alianza. Los valores los acordamos en una charla, porque no le cobramos lo mismo a todos.",
+        "ctaLabel": "Contactanos"
+    },
+    "billingFaq": {
+        "tagline": "Facturación",
+        "title": "Preguntas sobre el pago",
+        "trialQ": "¿Puedo probarlo antes de pagar?",
+        "trialA_one": "Sí. Empezás con {{count}} día de prueba gratis y recién después se cobra el primer mes.",
+        "trialA_other": "Sí. Empezás con {{count}} días de prueba gratis y recién después se cobra el primer mes.",
+        "trialANone": "Estos planes no incluyen período de prueba: el primer mes se cobra al contratar.",
+        "cancelQ": "¿Puedo cancelar cuando quiera?",
+        "cancelA": "Sí, desde tu cuenta y sin llamar a nadie. Seguís usando el plan hasta que termine el período que ya pagaste.",
+        "changeQ": "¿Puedo cambiar de plan más adelante?",
+        "changeA": "Sí. Podés subir o bajar de plan cuando quieras, y el cambio se ajusta en la siguiente factura.",
+        "methodQ": "¿Cómo se paga?",
+        "methodA": "Con tarjeta, a través de MercadoPago. El cobro se renueva solo cada mes hasta que lo canceles.",
+        "invoiceQ": "¿Emiten factura?",
+        "invoiceA": "Sí. Cada cobro genera su comprobante y lo tenés disponible en tu cuenta.",
+        "partnerPriceQ": "¿Por qué no figura el precio?",
+        "partnerPriceA": "Porque no le cobramos lo mismo a una institución que a un comercio de barrio, aunque tomen el mismo nivel. Los valores vigentes te los pasamos en la charla."
     }
 }

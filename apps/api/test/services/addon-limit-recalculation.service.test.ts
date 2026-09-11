@@ -82,13 +82,31 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// HOS-1176: this file's local `@repo/db` mock overrides the global one from
+// `apps/api/test/setup.ts` (which already carries `getDb`/`billingSubscriptions`/
+// `inArray` for this exact hydration read — see that file's mock). Every
+// subscription fixture here (`mockActiveSubscription`, `mockTrialingSubscription`)
+// omits `productDomain`, so `recalculateAddonLimitsForCustomer` always calls
+// `hydrateSubscriptionProductDomains()`. `LIMIT_KEY` is `'max_accommodations'`
+// throughout this file — the `'accommodation'` domain, which fails OPEN on a
+// `null`/missing result — so an empty hydration read is the correct behaviour
+// for every test here, not a shortcut around it.
 vi.mock('@repo/db', () => ({
     withTransaction: mockWithTransaction,
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
         strings,
         values,
         type: 'sql'
-    }))
+    })),
+    getDb: vi.fn(() => ({
+        select: vi.fn(() => ({
+            from: vi.fn(() => ({
+                where: vi.fn(() => Promise.resolve([]))
+            }))
+        }))
+    })),
+    billingSubscriptions: { id: 'id', productDomain: 'productDomain' },
+    inArray: vi.fn((col: unknown, values: unknown[]) => ({ col, values }))
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({

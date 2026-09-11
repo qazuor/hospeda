@@ -6,7 +6,7 @@
 |----------|-------|-------------|
 | `OWNER_TRIAL_DAYS` | `30` | Trial period in days for owner plans (owner-basico/pro/premium; raised from 14, owner decision 2026-08-15) |
 | `COMPLEX_TRIAL_DAYS` | `14` | Trial period in days for complex plans |
-| `TOURIST_TRIAL_DAYS` | `30` | Trial period in days for self-service tourist plans (tourist-plus / tourist-vip). A literal, independent of `OWNER_TRIAL_DAYS` since HOS-301 D1 (no longer aliased) |
+| `TOURIST_TRIAL_DAYS` | `30` | Trial period in days for self-service tourist plans (tourist-vip; tourist-plus retired by HOS-1224). A literal, independent of `OWNER_TRIAL_DAYS` since HOS-301 D1 (no longer aliased) |
 | `PAYMENT_GRACE_PERIOD_DAYS` | `3` | Reference constant for the initial-payment grace window; NOT enforced at runtime (qzpay-core uses `DUNNING_GRACE_PERIOD_DAYS` for both) |
 | `DUNNING_GRACE_PERIOD_DAYS` | `7` | Days of dunning process before subscription cancellation |
 | `DUNNING_RETRY_INTERVALS` | `[1, 3, 5, 7]` | Days after failure when retry attempts occur |
@@ -51,12 +51,11 @@
 | Slug | Export Name | Default |
 |------|-----------|---------|
 | `tourist-free` | `TOURIST_FREE_PLAN` | Yes |
-| `tourist-plus` | `TOURIST_PLUS_PLAN` | No |
 | `tourist-vip` | `TOURIST_VIP_PLAN` | No |
 
 ## EntitlementKey Enum
 
-All 39 entitlement keys organized by category. Keys pruned in SPEC-216
+All 44 entitlement keys organized by category. Keys pruned in SPEC-216
 (`API_ACCESS`, `DEDICATED_MANAGER`, `SOCIAL_MEDIA_INTEGRATION`, `WHITE_LABEL`,
 `MULTI_CHANNEL_INTEGRATION`, `EARLY_ACCESS_EVENTS`, `CONCIERGE_SERVICE`,
 `AIRPORT_TRANSFERS`) plus `AD_FREE` (pruned separately in HOS-16) are no longer
@@ -127,6 +126,23 @@ Owner and complex plans inherit all tourist-VIP entitlements (SPEC-216).
 | `AI_SUPPORT` | `'ai_support'` |
 | `AI_TRANSLATE` | `'ai_translate'` |
 | `AI_ACCOMMODATION_IMPORT` | `'ai_accommodation_import'` |
+
+### Commerce Entitlements (HOS-1074, HOS-1058)
+
+The first four are **vertical-wide**: every tier of a vertical grants its own
+pair, and the gate reads them from `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`
+(code), so a lagging plan row can never take them away. The fifth is a **tier
+differentiator** — granted by each vertical's premium plan row only, and
+deliberately absent from that map.
+
+| Key | Value | Granted by |
+|-----|-------|------------|
+| `EDIT_GASTRONOMY_INFO` | `'edit_gastronomy_info'` | every gastronomy tier |
+| `PUBLISH_GASTRONOMY` | `'publish_gastronomy'` | every gastronomy tier |
+| `EDIT_EXPERIENCE_INFO` | `'edit_experience_info'` | every experience tier |
+| `PUBLISH_EXPERIENCE` | `'publish_experience'` | every experience tier |
+| `DOWNLOAD_LISTING_PDF` | `'download_listing_pdf'` | `gastronomy-premium`, `experience-premium` |
+| `ISSUE_EXPERIENCE_CERTIFICATE` | `'issue_experience_certificate'` | `experience-pro`, `experience-premium` |
 
 ## LimitKey Enum
 

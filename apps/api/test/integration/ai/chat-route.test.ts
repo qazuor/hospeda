@@ -615,13 +615,16 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(debugFrames).toHaveLength(1);
 
         // The debug payload must carry the expected inspection fields.
+        // HOS-400 generalized the route to dispatch by `entityType`, so the
+        // debug frame now carries the vertical-agnostic `entityId` — not the
+        // accommodation-only `accommodationId` it used to.
         const debugPayload = JSON.parse(debugFrames[0]?.data ?? '{}') as Record<string, unknown>;
         expect(debugPayload).toMatchObject({
             contextBlock: '## Accommodation: Test Cabin',
             resolvedPrompt: 'Resolved prompt from admin/default.',
             systemMessage: 'SYSTEM MESSAGE',
             feature: 'chat',
-            accommodationId: ACCOMMODATION_ID
+            entityId: ACCOMMODATION_ID
         });
 
         // The debug frame must appear BEFORE any token frames (factory contract).
@@ -723,9 +726,14 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(call?.messages.some((m) => m.role === 'system')).toBe(false);
         expect(call?.locale).toBe('pt');
 
+        // HOS-400: `persistChatTurn` is called with the vertical-agnostic
+        // `entityType`/`entityId` pair, not the accommodation-only
+        // `accommodationId` the REQUEST body still accepts as a legacy alias
+        // (see `resolveAiChatTarget` — the request shape is unchanged).
         expect(vi.mocked(persistChatTurn)).toHaveBeenCalledWith(
             expect.objectContaining({
-                accommodationId: ACCOMMODATION_ID,
+                entityType: 'accommodation',
+                entityId: ACCOMMODATION_ID,
                 conversationId: CONVERSATION_ID,
                 userMessage: '¿Tiene pileta?',
                 assistantMessage: 'Hola mundo!',

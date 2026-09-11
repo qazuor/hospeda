@@ -44,6 +44,23 @@ describe('TrackableEntityTypeSchema', () => {
             const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.EVENT);
             expect(result.success).toBe(true);
         });
+
+        // HOS-734: gastronomy/experience basic view stats.
+        it('should accept GASTRONOMY', () => {
+            const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.GASTRONOMY);
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept EXPERIENCE', () => {
+            const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.EXPERIENCE);
+            expect(result.success).toBe(true);
+        });
+
+        // HOS-1063: the gold partner page at /{lang}/partners/<slug>/.
+        it('should accept PARTNER', () => {
+            const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.PARTNER);
+            expect(result.success).toBe(true);
+        });
     });
 
     describe('when given a non-trackable entity type', () => {
@@ -131,6 +148,52 @@ describe('EntityViewCaptureInputSchema', () => {
                 entityId: VALID_UUID
             });
             expect(result.success).toBe(true);
+        });
+
+        // HOS-734: gastronomy/experience basic view stats.
+        it('should accept GASTRONOMY + valid uuid', () => {
+            const result = EntityViewCaptureInputSchema.safeParse({
+                entityType: 'GASTRONOMY',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept EXPERIENCE + valid uuid', () => {
+            const result = EntityViewCaptureInputSchema.safeParse({
+                entityType: 'EXPERIENCE',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        // HOS-1063 / AC-1: the capture endpoint accepts PARTNER.
+        it('should accept PARTNER + valid uuid', () => {
+            const result = EntityViewCaptureInputSchema.safeParse({
+                entityType: 'PARTNER',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        /**
+         * AC-1's other direction. A route that accepts everything and a route
+         * that accepts nothing both pass a one-sided test, so the widening has to
+         * be shown to be a WIDENING and not a removal of the gate.
+         *
+         * HOST_TRADE is the sharpest counter-example available: HOS-981 added it
+         * to {@link EntityTypeEnum} (so it is a legal `entity_type_enum` value at
+         * the DB level) and it must STILL be rejected here, because
+         * `EntityViewCaptureInputSchema` validates against the narrow trackable
+         * subset and not against the wide enum. If this ever passes, someone
+         * swapped the gate for `EntityTypeEnumSchema`.
+         */
+        it('should still reject HOST_TRADE — a wide-enum member that is not trackable', () => {
+            const result = EntityViewCaptureInputSchema.safeParse({
+                entityType: 'HOST_TRADE',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(false);
         });
     });
 

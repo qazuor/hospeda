@@ -644,4 +644,175 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             expect(body.data.properties).toBeDefined();
         });
     });
+
+    // -----------------------------------------------------------------------
+    // HOS-1160 — the HOST dashboard reports the HOST's plan, not any plan
+    // -----------------------------------------------------------------------
+    //
+    // Found while measuring which sites treat `comp` specially. This resolver
+    // took the FIRST entitlement-granting subscription of ANY vertical, with no
+    // hydration and no domain filter — the only one of the four "which plan am
+    // I on" surfaces that did (`entitlements.ts`, `subscription.ts` and
+    // `trial.service.ts` all hydrate and match).
+    //
+    // It was reachable before this issue, with a paid commerce subscription.
+    // Opening comp to gastronomy and experiences adds a second way to reach it
+    // in the same release, which is why it is fixed here rather than filed as
+    // pre-existing.
+    //
+    // Rows carry `productDomain` explicitly so `hydrateSubscriptionProductDomains`
+    // short-circuits and the cases stay hermetic.
+    describe('HOS-1160: plan resolution is scoped to the host vertical', () => {
+        it("does NOT report a gastronomy subscription as the host's plan", async () => {
+            // Arrange — a dual owner: a comped restaurant, no accommodation plan.
+            // The honest answer is "no owner plan", which the frontend renders as
+            // Plan Gratuito. Reporting the restaurant here would tell a host they
+            // hold owner entitlements they never bought.
+            getQZPayBillingMock.mockReturnValue({
+                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
+                subscriptions: {
+                    getByCustomerId: vi.fn().mockResolvedValue([
+                        {
+                            id: 'sub-gastro',
+                            status: 'comp',
+                            planId: 'plan-gastronomy-pro',
+                            productDomain: 'gastronomy'
+                        }
+                    ])
+                },
+                plans: { get: vi.fn().mockResolvedValue({ name: 'gastronomy-pro' }) }
+            });
+            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+
+            // Act
+            const res = await app.request('/dashboard');
+            const body = await res.json();
+
+            // Assert
+            expect(body.data.plan).toBeNull();
+        });
+
+        it("does NOT report an experience or partner subscription as the host's plan", async () => {
+            // Both remaining commerce-side verticals, so a fix that happens to
+            // exclude only gastronomy does not pass.
+            for (const domain of ['experience', 'partner'] as const) {
+                getQZPayBillingMock.mockReturnValue({
+                    customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
+                    subscriptions: {
+                        getByCustomerId: vi.fn().mockResolvedValue([
+                            {
+                                id: `sub-${domain}`,
+                                status: 'comp',
+                                planId: `plan-${domain}`,
+                                productDomain: domain
+                            }
+                        ])
+                    },
+                    plans: { get: vi.fn().mockResolvedValue({ name: domain }) }
+                });
+                const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+
+                const res = await app.request('/dashboard');
+                const body = await res.json();
+
+                expect(body.data.plan).toBeNull();
+            }
+        });
+
+        it("picks the accommodation subscription over another vertical's, whatever the order", async () => {
+            // The gastronomy row is FIRST, so a resolver that merely takes the
+            // first entitlement-granting row returns the wrong one. This is the
+            // shape the bug actually had.
+            getQZPayBillingMock.mockReturnValue({
+                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
+                subscriptions: {
+                    getByCustomerId: vi.fn().mockResolvedValue([
+                        {
+                            id: 'sub-gastro',
+                            status: 'active',
+                            planId: 'plan-gastronomy-pro',
+                            productDomain: 'gastronomy'
+                        },
+                        {
+                            id: 'sub-accom',
+                            status: 'comp',
+                            planId: 'plan-owner-premium',
+                            productDomain: 'accommodation'
+                        }
+                    ])
+                },
+                plans: { get: vi.fn().mockResolvedValue({ name: 'owner-premium' }) }
+            });
+            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+
+            const res = await app.request('/dashboard');
+            const body = await res.json();
+
+            expect(body.data.plan).toEqual({
+                slug: 'owner-premium',
+                name: 'owner-premium',
+                status: 'active',
+                isTrial: false
+            });
+        });
+
+        it('still reports a legacy row with a NULL product_domain (accommodation fails OPEN)', async () => {
+            // The asymmetry has to survive the fix: the column post-dates most
+            // rows, so a null domain still counts as accommodation. Narrowing
+            // this to an equality check would blank the plan for every host whose
+            // subscription predates the column.
+            getQZPayBillingMock.mockReturnValue({
+                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
+                subscriptions: {
+                    getByCustomerId: vi.fn().mockResolvedValue([
+                        {
+                            id: 'sub-legacy',
+                            status: 'comp',
+                            planId: 'plan-owner-premium',
+                            productDomain: null
+                        }
+                    ])
+                },
+                plans: { get: vi.fn().mockResolvedValue({ name: 'owner-premium' }) }
+            });
+            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+
+            const res = await app.request('/dashboard');
+            const body = await res.json();
+
+            expect(body.data.plan).toEqual({
+                slug: 'owner-premium',
+                name: 'owner-premium',
+                status: 'active',
+                isTrial: false
+            });
+        });
+
+        it('still reports a tourist subscription (HOS-1233 reclassification)', async () => {
+            // `tourist` is the customer's own consumer plan and resolves here on
+            // purpose — the same pair `entitlements.ts` and `loadEntitlements`
+            // use. A fix that narrowed this to accommodation alone would hand a
+            // paying tourist-VIP subscriber a null plan.
+            getQZPayBillingMock.mockReturnValue({
+                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
+                subscriptions: {
+                    getByCustomerId: vi.fn().mockResolvedValue([
+                        {
+                            id: 'sub-tourist',
+                            status: 'active',
+                            planId: 'plan-tourist-vip',
+                            productDomain: 'tourist'
+                        }
+                    ])
+                },
+                plans: { get: vi.fn().mockResolvedValue({ name: 'tourist-vip' }) }
+            });
+            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+
+            const res = await app.request('/dashboard');
+            const body = await res.json();
+
+            expect(body.data.plan?.slug).toBe('tourist-vip');
+        });
+    });
 });

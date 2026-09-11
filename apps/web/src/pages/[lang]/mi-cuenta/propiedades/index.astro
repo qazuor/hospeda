@@ -21,6 +21,7 @@ import type { Accommodation } from '@repo/schemas';
 import { CreditCardIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
@@ -33,6 +34,7 @@ import {
 import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
+import { publishApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
@@ -40,6 +42,7 @@ import PropertyCard from '@/components/host/PropertyCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { BuildingIcon } from '@repo/icons';
 import btn from '@/components/account/AccountButton.module.css';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 export const prerender = false;
 
@@ -81,11 +84,28 @@ let fetchError = false;
 let usageData: { currentUsage: number; maxAllowed: number; threshold: string } | null = null;
 
 // ── HOS-217: does the owner have a REAL owner/complex plan? ──
-// Fail-open (`true`) on any fetch error — this only gates a proactive nag
-// banner, never actual publish capability (the `/publish` endpoint is the
-// enforcement point via `checkEligibility`), so a transient API failure
-// must not falsely nag a paying host.
+// Fail-open (`true`) on any fetch error, so a transient API failure never
+// falsely nags a paying host.
+//
+// HOS-1183: this value gates the "anfitrión en preparación" banner and NOTHING
+// else. It used to also decide whether each card offered Publish, and the
+// comment here asserted the opposite — "only gates a proactive nag banner,
+// never actual publish capability" — which stopped being true the moment H-99
+// wired it into the button. One value answering two questions is what let a
+// plan-shaped boolean decide publishability; the publish affordance now reads
+// the server's own verdict below.
 let hasOwnerPlan = true;
+
+// ── HOS-1183: what would the server do if this owner published? ──
+// Resolved ONCE for the whole grid: billing eligibility is a property of the
+// owner, so it cannot differ between two cards. Fail-open on any error for the
+// same reason as above — `/publish` is the real enforcement point, and hiding
+// the button on a blip strands a host who could publish.
+//
+// `startsTrial` fails the other way (silent). An unannounced trial costs a
+// surprise; an announced one that never starts is a broken promise.
+let canPublish = true;
+let publishStartsTrial = false;
 
 try {
     const apiUrl = getApiUrl();
@@ -97,13 +117,17 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodations + plan-aware usage badge context.
-        const [accomResponse, usageBadgeResult] = await Promise.all([
+        // Parallel fetch: accommodations + plan-aware usage badge context +
+        // the publish verdict. The third joins the existing Promise.all rather
+        // than awaiting after it — this is one extra billing read per page
+        // load, and serialising it would add its latency to every render.
+        const [accomResponse, usageBadgeResult, eligibilityResult] = await Promise.all([
             fetch(
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
-            fetchHostUsageBadge({ apiUrl, headers })
+            fetchHostUsageBadge({ apiUrl, headers }),
+            publishApi.accommodationEligibility({ cookieHeader })
         ]);
 
         if (accomResponse.ok) {
@@ -125,6 +149,18 @@ try {
             });
         }
         // Entitlements fetch failure is non-fatal — hasOwnerPlan stays true (fail-open)
+
+        if (eligibilityResult.ok) {
+            canPublish = eligibilityResult.data.canPublish;
+            publishStartsTrial = eligibilityResult.data.startsTrial;
+        } else {
+            // Both defaults already hold; logged so a systematic failure is
+            // visible rather than silently degrading every card to "publishable
+            // and no trial announced".
+            logger.warn('[propiedades] publish-eligibility fetch failed', {
+                error: eligibilityResult.error
+            });
+        }
     }
 } catch (err) {
     fetchError = true;
@@ -142,14 +178,21 @@ const subtitle = t('host.properties.list.subtitle', 'Gestioná tus publicaciones
 const emptyMessage = t('host.properties.empty.title', 'Aún no publicaste ninguna propiedad');
 const emptyCta = t('host.properties.empty.cta', 'Publicar ahora');
 
-const publishNewUrl = buildUrl({ locale, path: 'publicar/nueva' });
+// HOS-1156: `/publicar/nueva/` was absorbed into `/publicar/`, which now
+// carries the create form itself. Repointed here rather than left riding the
+// 301 — a link to a redirect is a link whose destination somebody else can move,
+// which is exactly how this issue was created.
+const publishNewUrl = buildUrl({
+    locale,
+    path: PUBLISH_PAGE_PATH_BY_VERTICAL.accommodation
+});
 // Owner plans page (NOT mi-cuenta/suscripcion): BETA-195 routes this page's
 // CTA to plan-change when the actor already has an active subscription
 // (e.g. a tourist plan), so it correctly handles the cross-category
 // tourist→owner upgrade this banner exists to prompt. Also matches the link
 // `PublishButton.client.tsx` renders on the reactive `subscription_required`
 // error, keeping the whole "publish" journey pointing at one place.
-const ownerPlansUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+const ownerPlansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
 const isEmpty = properties.length === 0;
 
@@ -246,7 +289,7 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
                 </a>
             )}
             {usageData.threshold !== 'ok' && (
-                <a href={buildUrl({ locale, path: 'suscriptores/planes' })} class="props-page__usage-upgrade">
+                <a href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })} class="props-page__usage-upgrade">
                     {t('host.properties.usage.upgrade', 'Mejorar plan')}
                 </a>
             )}
@@ -274,7 +317,7 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard property={property} locale={locale} hasActivePlan={hasOwnerPlan} trialDays={genericTrialDays} />
+                    <PropertyCard property={property} locale={locale} canPublish={canPublish} startsTrial={publishStartsTrial} trialDays={genericTrialDays} />
                 </div>
             ))}
         </div>

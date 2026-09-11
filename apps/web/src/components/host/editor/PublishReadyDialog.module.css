@@ -1,0 +1,84 @@
+/**
+ * Styles for the post-save "ready to publish" dialog (HOS-1183).
+ *
+ * Panel chrome, sizing and scrolling come from the shared `Dialog` component —
+ * this module declares no `max-height` or `overflow` (HOS-958: the panel's
+ * height is decided in exactly one place, `.dialog-panel`).
+ *
+ * The green accent mirrors `PublishButton.module.css`: publishing is the one
+ * positive action in a card whose siblings are Edit and Delete, and the two
+ * surfaces offering it should not disagree on what it looks like.
+ */
+
+.text {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--core-foreground);
+}
+
+.trialNote {
+    margin: var(--space-3, 12px) 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--core-muted-foreground);
+}
+
+.error {
+    margin: var(--space-3, 12px) 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--destructive);
+}
+
+.primary,
+.secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 18px;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        opacity 150ms ease-out,
+        background-color 150ms ease-out;
+}
+
+.primary {
+    background-color: oklch(0.55 0.18 145);
+    color: #ffffff;
+    border: 1px solid oklch(0.5 0.18 145);
+}
+
+.primary:hover:not(:disabled) {
+    background-color: oklch(0.5 0.18 145);
+}
+
+.secondary {
+    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+}
+
+.secondary:hover {
+    background-color: var(--muted, oklch(0.93 0.01 60));
+}
+
+.primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}

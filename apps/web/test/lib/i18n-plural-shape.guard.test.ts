@@ -128,7 +128,15 @@ const VOCAB_BLOCKLIST = new Set([
     // like "Ya tenés {{currentCount}} de..." / "...the plan allows {cap}" —
     // adjacent to a placeholder by chance, not a noun taking a plural form.
     'tenés',
-    'allows'
+    'allows',
+    // "The {plan} plan includes {cap} of your {active} listings" puts a verb
+    // ending in "es" immediately before a placeholder, so the vocabulary
+    // harvest reads "includes" as a noun — and from then on every string
+    // shaped like "Includes {{bonus}} extra from add-ons" looks like a missing
+    // plural pair. Blocked here rather than allowlisting the keys it hits:
+    // the defect is the harvest mistaking a verb for a noun, and an allowlist
+    // would leave the next such key to be discovered the same way.
+    'includes'
 ]);
 
 /**

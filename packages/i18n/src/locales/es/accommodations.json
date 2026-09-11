@@ -310,6 +310,16 @@
         "gluten_free_options": "Opciones sin TACC",
         "vegan_options": "Opciones veganas",
         "vegetarian_options": "Opciones vegetarianas",
+        "lactose_free_options": "Opciones sin lactosa",
+        "nut_free_options": "Opciones sin frutos secos",
+        "argentine_cuisine": "Cocina argentina",
+        "river_cuisine": "Cocina de río",
+        "italian_cuisine": "Cocina italiana",
+        "peruvian_cuisine": "Cocina peruana",
+        "international_cuisine": "Cocina internacional",
+        "asian_cuisine": "Cocina asiática",
+        "mediterranean_cuisine": "Cocina mediterránea",
+        "fusion_cuisine": "Cocina de fusión",
         "kids_menu": "Menú para niños",
         "family_friendly": "Apto para familias",
         "romantic_ambiance": "Ambiente romántico",
@@ -706,6 +716,11 @@
             "viewFullscreen": "Ver foto {n} en pantalla completa",
             "backToAccommodation": "← Volver al alojamiento",
             "photosSubpage": "Fotos"
+        },
+        "videos": {
+            "title": "Videos",
+            "play": "Reproducir video",
+            "playNamed": "Reproducir video: {{caption}}"
         },
         "pricing": {
             "from": "Desde",

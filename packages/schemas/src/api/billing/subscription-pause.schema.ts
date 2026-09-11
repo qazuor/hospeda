@@ -7,10 +7,22 @@
  * - `POST /api/v1/protected/billing/me/subscription-pause`
  * - `POST /api/v1/protected/billing/me/subscription-resume`
  *
- * A host self-pause is always "full": it stops billing (MercadoPago preapproval
- * paused) AND suspends service (hides the owner's accommodations from public
- * reads and edit-locks them). Resume reverts both. There is no request body —
- * the operation targets the caller's own active/paused subscription.
+ * A self-pause always stops billing (MercadoPago preapproval paused). The
+ * SERVICE-suspension side effect is domain-dependent (HOS-1278): an
+ * ACCOMMODATION-domain subscription hides/edit-locks the owner's
+ * accommodations (`accommodationsUpdated` below); a commerce
+ * (gastronomy/experience) subscription instead flips its linked listing's
+ * visibility through the shared `reconcileSubscriptionLinkedEntities` bridge,
+ * which does not touch `accommodationsUpdated` at all. Resume reverts
+ * whichever effect applied.
+ *
+ * `subscriptionId` is REQUIRED in the request body (HOS-1278). Before this,
+ * the route had no body at all and guessed the caller's "current" subscription
+ * via `getByCustomerId().find()` — ambiguous for anyone holding more than one
+ * subscription (a dual host/commerce owner, or a host auto-promoted from
+ * tourist), and unable to tell a partner's own subscription apart from
+ * anything else. The id makes the target explicit; the route still verifies
+ * it belongs to the caller.
  *
  * @module api/billing/subscription-pause
  */
@@ -19,11 +31,29 @@ import { z } from 'zod';
 import { SubscriptionStatusEnumSchema } from '../../enums/subscription-status.schema.js';
 
 /**
+ * Request body shared by the self-serve pause and resume endpoints (HOS-1278).
+ */
+export const SubscriptionPauseResumeRequestSchema = z.object({
+    subscriptionId: z
+        .string()
+        .min(1)
+        .describe(
+            'The id of the subscription to pause/resume. Required so the caller can ' +
+                "disambiguate among the customer's subscriptions — the route no longer " +
+                'guesses via getByCustomerId().find().'
+        )
+});
+export type SubscriptionPauseResumeRequest = z.infer<typeof SubscriptionPauseResumeRequestSchema>;
+
+/**
  * Response body shared by the self-serve pause and resume endpoints.
  *
  * `accommodationsUpdated` is the number of the owner's accommodations whose
  * denormalized `ownerSuspended` flag flipped as part of the service-suspension
- * side effect (0 when the owner has no listings).
+ * side effect. It is always `0` for a non-accommodation-domain subscription
+ * (gastronomy, experience, partner) — that domain's listing visibility is
+ * driven by the shared subscription-linked-entities bridge instead, which has
+ * no per-accommodation count to report (HOS-1278).
  */
 export const SubscriptionPauseResumeResponseSchema = z.object({
     success: z.boolean(),
@@ -32,6 +62,9 @@ export const SubscriptionPauseResumeResponseSchema = z.object({
     accommodationsUpdated: z
         .number()
         .int()
-        .describe("Count of the owner's accommodations whose ownerSuspended flag changed")
+        .describe(
+            "Count of the owner's accommodations whose ownerSuspended flag changed. " +
+                'Always 0 for a non-accommodation-domain subscription.'
+        )
 });
 export type SubscriptionPauseResumeResponse = z.infer<typeof SubscriptionPauseResumeResponseSchema>;

@@ -169,6 +169,12 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     'tag/user-tag/admin/entities.ts',
     // Shared read-route helpers (not registered as standalone routes)
     'comment/admin/comment-admin.helpers.ts',
+    // Pure public projection gate for the experience meeting-point directions
+    // (not a Hono route) — HOS-1049. It lands in the enumeration only because
+    // `experience/public/` is one of the public dirs the matrix DOES cover;
+    // the gastronomy twin (`gastronomy/public/menu-projection.ts`) never
+    // surfaces here because that dir is out of scope entirely.
+    'experience/public/directions-projection.ts',
     // Entity-level permission helper (used by media upload/delete handlers)
     'media/admin/permissions.ts',
     // Better Auth framework passthrough — not an application route handler
@@ -210,7 +216,27 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // route) — HOS-584. It lives beside its single caller so the accepted
     // entity-type list and the rule table cannot drift apart; the gate it runs
     // behind is the row for `ai/protected/translate.ts`.
-    'ai/protected/translate.authorization.ts'
+    'ai/protected/translate.authorization.ts',
+    // Pure payload predicate (`menuPayloadCarriesItemPhoto`) consumed by
+    // putMenu.ts — not a Hono route: it declares no route factory, no `new
+    // Hono()` and no `app.route`, and is exported only so the rule has a unit
+    // test surface that does not need a Hono context. HOS-1045.
+    //
+    // The same shape as `experience/public/directions-projection.ts` two dozen
+    // lines above, and it surfaces here for the same reason that one does: it
+    // sits in a directory the matrix DOES cover. Its own gastronomy twin
+    // (`gastronomy/public/menu-projection.ts`) never appears because that dir
+    // is out of scope entirely.
+    //
+    // Giving it a matrix row would be worse than excluding it — the row would
+    // describe an endpoint that does not exist, and the guard is presence-only
+    // (HOS-1114) so nothing would ever contradict it. The gate this predicate
+    // feeds is enforced by the row for `gastronomy/protected/putMenu.ts`.
+    'gastronomy/protected/menu-item-photo-gate.ts',
+    // Pure payload predicate (`menuPayloadCarriesTranslations`) consumed by
+    // putMenu.ts — not a Hono route, exact same shape and same reason as
+    // `menu-item-photo-gate.ts` right above it. HOS-1043.
+    'gastronomy/protected/menu-translations-gate.ts'
 ]);
 
 /**
@@ -268,7 +294,7 @@ const MULTI_ROUTE_INDEX_FILES: ReadonlySet<string> = new Set([
  *   - Specific multi-route index.ts files listed in MULTI_ROUTE_INDEX_FILES
  *   - Top-level handler files that appear in the matrix (auth/, billing/
  *     non-public, app-logs/, cron-admin/, event/comments/public/,
- *     experience/public/)
+ *     experience/public/, qr-code/public/)
  *
  * Excluded:
  *   - index.ts barrel files (unless explicitly listed in MULTI_ROUTE_INDEX_FILES)
@@ -337,6 +363,12 @@ function shouldIncludeRouteFile(relPath: string): boolean {
         'cron-admin/',
         'event/comments/public/',
         'experience/public/',
+        // HOS-981 — the public QR resolution route. Listed so the matrix and the
+        // filesystem agree in BOTH directions: without it the row added for
+        // `qr-code/public/resolve.ts` would be reported as a matrix reference to
+        // a file the walk never enumerates, and the route's gate decision would
+        // stop being enforced the day someone deletes the row.
+        'qr-code/public/',
         'integrations/mercadolibre-oauth/'
     ];
 

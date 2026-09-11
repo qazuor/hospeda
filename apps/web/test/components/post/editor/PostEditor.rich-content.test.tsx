@@ -29,7 +29,8 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     postEditApi: {
         update: vi.fn(),
         softDelete: vi.fn(),
-        setPublishState: vi.fn()
+        setPublishState: vi.fn(),
+        moderate: vi.fn()
     },
     /*
      * HOS-390: the editor now renders `ContentMediaSection`, which reaches for

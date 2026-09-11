@@ -22,7 +22,17 @@
  * page URL in the sitemap filter, and emitted as a `Disallow:` directive in
  * `robots.txt`. The leading `/` is mandatory.
  */
-export const SITEMAP_EXCLUDED_PATHS = ['/auth/', '/mi-cuenta/', '/feedback/'] as const;
+export const SITEMAP_EXCLUDED_PATHS = [
+    '/auth/',
+    '/mi-cuenta/',
+    '/feedback/',
+    // HOS-978: the commercial presentations. One prefix covers all six, and it
+    // is what makes their `noindex` real rather than cosmetic — the meta tag
+    // alone would still leave them advertised in the sitemap and crawlable.
+    // They must not compete in search with the public landing of the same
+    // audience, and they carry negotiable pricing that must not be indexed.
+    '/presentacion/'
+] as const;
 
 /** Inferred union type of all excluded path prefixes. */
 export type SitemapExcludedPath = (typeof SITEMAP_EXCLUDED_PATHS)[number];

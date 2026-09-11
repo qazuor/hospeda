@@ -4,24 +4,16 @@
  * Extracted from the TanStack Router `beforeLoad` callback so it can be unit
  * tested without mocking TanStack Router internals or the `redirect()` API.
  *
- * The guard differentiates between four classes of incoming users when the
- * admin permission `ACCESS_PANEL_ADMIN` is missing. HOS-296: an account holds
- * a SET of roles, not a single scalar, so the classification below checks set
- * membership/shape rather than equality against one value:
- *
- *   - Holds ONLY the `USER` hat (tourist) → external redirect to the public
- *     host-onboarding funnel (`/{lang}/publicar/?from=admin`). 90% of the
- *     cases — we send them straight to a friendly conversion surface instead
- *     of a cold wall. A user who ALSO holds `HOST` (or any other hat) is
- *     NOT "only a tourist" and falls through to the next branches.
- *   - Holds the `HOST` hat (with or without other non-panel hats) → internal
- *     redirect to forbidden with `reason=host-missing-permission`. Expected
- *     access boundary, not a config error — hosts manage their account from
- *     the main site, not the admin panel. This takes precedence over the
- *     "only USER" branch: someone holding both `USER` and `HOST` is treated
- *     as a host.
- *   - Anything else (guest, staff with wrong account, exotic roles, `USER`
- *     plus a staff hat) → internal redirect to forbidden with `reason=generic`.
+ * HOS-609: an authenticated user who lacks `ACCESS_PANEL_ADMIN` gets ONE
+ * outcome regardless of which roles they hold — an external redirect to the
+ * web app's access-denied page (`/{lang}/acceso-denegado/`), which explains
+ * why they can't enter and offers a way back to their account. This
+ * collapsed two previously distinct branches: the "tourist funnel" (a user
+ * holding ONLY `USER` used to be sent to the public host-onboarding page)
+ * and the admin's own internal forbidden page with
+ * `reason=host-missing-permission` (a `HOST` without panel access). Neither
+ * branch reads the role set any more — the decision no longer depends on
+ * which hats the account holds, only on whether panel access is granted.
  *
  * Authenticated users with full access continue normally, with the existing
  * `passwordChangeRequired` short-circuit honored before allow.
@@ -31,11 +23,6 @@
 
 import { PermissionEnum } from '@repo/schemas';
 import type { AuthState } from '@/lib/auth-session';
-
-/**
- * Reason variants the forbidden page knows how to render.
- */
-export type ForbiddenReason = 'host-missing-permission' | 'generic';
 
 /**
  * Arguments for {@link decideAuthedGuard}. RO-RO.
@@ -75,24 +62,28 @@ export type GuardDecision =
           readonly kind: 'redirect-change-password';
       }
     | {
-          readonly kind: 'redirect-tourist-funnel';
+          readonly kind: 'redirect-web-forbidden';
+          /**
+           * Absolute URL of the web app's access-denied page
+           * (`/{lang}/acceso-denegado/`). HOS-609: the single outcome for every
+           * authenticated visitor who lacks `ACCESS_PANEL_ADMIN`, regardless of
+           * role. No original path is carried — the page has no consumer for it.
+           */
           readonly href: string;
-      }
-    | {
-          readonly kind: 'redirect-forbidden';
-          readonly search: {
-              readonly reason: ForbiddenReason;
-              readonly redirect: string;
-          };
       };
 
-const HOST_ROLE = 'HOST';
-const USER_ROLE = 'USER';
-
-const buildTouristFunnelHref = (siteUrl: string, locale: string): string => {
-    const target = new URL(`/${locale}/publicar/`, siteUrl);
-    target.searchParams.set('from', 'admin');
-    return target.toString();
+/**
+ * Build the absolute web access-denied URL an authenticated admin visitor
+ * without `ACCESS_PANEL_ADMIN` is sent to (HOS-609). Mirrors
+ * {@link buildWebSigninHref}'s shape (absolute web URL built from `siteUrl` +
+ * locale) but carries no query params — the page has nothing to read back.
+ *
+ * @param siteUrl - The public web app origin (hosts the access-denied page)
+ * @param locale - The visitor's preferred locale
+ * @returns Absolute `{siteUrl}/{locale}/acceso-denegado/`
+ */
+const buildWebForbiddenHref = (siteUrl: string, locale: string): string => {
+    return new URL(`/${locale}/acceso-denegado/`, siteUrl).toString();
 };
 
 /**
@@ -143,23 +134,10 @@ export const decideAuthedGuard = (args: DecideAuthedGuardArgs): GuardDecision =>
     const hasPanelAccess = authState.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN);
 
     if (!hasPanelAccess) {
-        // Holds ONLY the USER hat — a plain tourist, no other role to consider.
-        const holdsOnlyUser = authState.roles.length === 1 && authState.roles[0] === USER_ROLE;
-        if (holdsOnlyUser) {
-            return {
-                kind: 'redirect-tourist-funnel',
-                href: buildTouristFunnelHref(siteUrl, preferredLocale)
-            };
-        }
-
-        // Holds the HOST hat (whether alone or alongside USER/other hats) —
-        // checked AFTER the "only USER" branch so USER+HOST is treated as host.
-        const holdsHost = authState.roles.includes(HOST_ROLE);
-        const reason: ForbiddenReason = holdsHost ? 'host-missing-permission' : 'generic';
-
+        // HOS-609: one outcome regardless of role — see this module's JSDoc.
         return {
-            kind: 'redirect-forbidden',
-            search: { reason, redirect: pathname }
+            kind: 'redirect-web-forbidden',
+            href: buildWebForbiddenHref(siteUrl, preferredLocale)
         };
     }
 

@@ -11,7 +11,7 @@
  * @module services/billing/plan/plan.crud
  */
 
-import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
+import { ENTITLEMENT_GRANTING_STATUSES, readTrialComposition } from '@repo/billing';
 import {
     and,
     asc,
@@ -35,7 +35,7 @@ import type {
     BillingPlanResponse,
     PlanPriceChangeEffect
 } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ProductDomainEnum, resolvePlanPublicListing, ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 import { findCapabilityFieldViolation } from './plan.types.js';
@@ -55,6 +55,13 @@ import { enqueuePlanPriceChange } from './plan-price-change.service.js';
  * - `monthlyPriceArs` ← monthly `billing_prices.unitAmount`
  * - `annualPriceArs` ← annual `billing_prices.unitAmount` (null if absent)
  * - `isActive` ← `active`
+ * - `publicListing` ← `metadata.publicListing` (HOS-1062 F1)
+ *
+ * `publicListing` travels ON the DTO rather than being resolved by a second
+ * query at the public endpoint. That is what makes the public filter fail closed
+ * with no failure mode of its own: the mark arrives with the row that carries
+ * the price, so there is no state in which a plan is served while its visibility
+ * is unknown.
  *
  * @param planRow - Raw DB row from `billing_plans`
  * @param prices - Associated `billing_prices` rows for this plan
@@ -86,6 +93,7 @@ export function mapDbToPlan(
         entitlements: Array.isArray(planRow.entitlements) ? (planRow.entitlements as string[]) : [],
         limits: (planRow.limits as Record<string, number>) ?? {},
         isActive: planRow.active ?? false,
+        publicListing: resolvePlanPublicListing({ metadata: planRow.metadata }).publicListing,
         createdAt: planRow.createdAt.toISOString(),
         updatedAt: planRow.updatedAt?.toISOString() ?? planRow.createdAt.toISOString()
     };
@@ -240,7 +248,27 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
             return {
                 ...base,
                 isDeleted: row.deletedAt != null,
-                activeSubscriptionCount: subCountByPlanId.get(row.id) ?? 0
+                activeSubscriptionCount: subCountByPlanId.get(row.id) ?? 0,
+                // HOS-1314: the admin grant-comp plan selector groups plans by
+                // vertical, so the field travels on the admin-only DTO (never
+                // on `mapDbToPlan`'s base shape, shared with the public
+                // endpoint).
+                //
+                // The `??` fallback is NOT the same asymmetry
+                // `createCompSubscription`/`subscriptionMatchesDomain` apply to
+                // `billing_subscriptions.product_domain` — that column really
+                // can hold NULL on a legacy row. `billing_plans.product_domain`
+                // cannot: it is `varchar(32) DEFAULT 'accommodation' NOT NULL`
+                // (`packages/db/src/migrations/0044_adorable_longshot.sql:16`),
+                // so every row, old or new, already has a value and this branch
+                // is unreachable against any real DB row today. Kept only as a
+                // defensive fallback for a hand-built row (e.g. a test fixture)
+                // that omits the field — do not read it as "some plans have no
+                // domain yet".
+                // The column is an untyped varchar (like `category` above), so
+                // the cast mirrors `mapDbToPlan`'s own `category` mapping.
+                productDomain: (row.productDomain ??
+                    ProductDomainEnum.ACCOMMODATION) as AdminBillingPlanResponse['productDomain']
             };
         });
 
@@ -472,7 +500,14 @@ export async function createPlan(
                     // migrating reads to the typed columns is a separate follow-up).
                     displayName: input.name,
                     monthlyPriceArs: input.monthlyPriceArs,
-                    annualPriceArs: input.annualPriceArs
+                    annualPriceArs: input.annualPriceArs,
+                    // HOS-1233 T-033: written from the caller, never left to
+                    // the column default. The column is NOT NULL with a
+                    // default, so an insert that omits it does not create a
+                    // plan with no domain — it creates one filed under the
+                    // default's vertical, which is how the tourist plans came
+                    // to claim `accommodation` in prod and staging alike.
+                    productDomain: input.productDomain
                 })
                 .returning();
 
@@ -480,7 +515,18 @@ export async function createPlan(
                 throw new Error('Plan insert returned no row');
             }
 
-            // Monthly price — always created
+            // Monthly price — always created.
+            //
+            // HOS-1224: `input.trialDays` is NOT mirrored onto the price row any
+            // more. It still lands on `billing_plans.metadata.trialDays` above,
+            // which is the field the product actually reads. The price-row copy
+            // was write-only for us but not for qzpay: `@qazuor/qzpay-core`
+            // inherits `price.trialDays` whenever a caller of
+            // `subscriptions.create` omits `trialDays`, and qzpay-drizzle turns
+            // that into `trial_start`/`trial_end` on the new row — so an
+            // operator creating a plan here could hand a future paid checkout a
+            // trial nobody asked for (HOS-1221 bug D3). Guarded by
+            // `scripts/check-no-price-trial-days.sh`.
             await db.insert(billingPrices).values({
                 planId: inserted.id,
                 currency: 'ARS',
@@ -488,8 +534,7 @@ export async function createPlan(
                 billingInterval: 'month',
                 intervalCount: 1,
                 active: true,
-                livemode,
-                ...(input.hasTrial && input.trialDays > 0 ? { trialDays: input.trialDays } : {})
+                livemode
             });
 
             // Annual price — only when declared
@@ -588,6 +633,42 @@ export async function updatePlan(
             }
 
             const existingMeta = (existingPlan.metadata ?? {}) as Record<string, unknown>;
+
+            // HOS-1012 T-038: a composed trial plan is not editable here.
+            //
+            // This dialog is precisely what makes `entitlements` and
+            // `limitsValues` commercial/DB-wins, and a trial plan's stored
+            // values are a SNAPSHOT of two OTHER plans — kept so the admin
+            // billing view and the downgrade preview show something sensible
+            // instead of an empty plan, which would read as unlimited. Editing
+            // it here would not change what the trial grants (gating resolves
+            // the composition live, every time); it would only make the screen
+            // lie about it. This is the last door through which the snapshot
+            // could be hand-edited into disagreeing with its sources.
+            //
+            // The refusal is the WRITE, not a list filter. Hiding these plans
+            // from the admin list is the cheap version and leaves the endpoint
+            // open: the id is still guessable, still returned by
+            // `GET /plans/{id}`, and still accepted by any caller that skips
+            // the UI. Refusing here covers every caller of `PlanService.update`,
+            // present and future, and it costs the operator nothing they should
+            // have been able to do — the trial's real values are edited on
+            // `owner-pro` / `owner-basico`, which stay fully editable and are
+            // reflected the moment they change.
+            //
+            // Keyed on the composition in metadata, never on a slug list, for
+            // the same reason the gating path is: three verticals means three
+            // chances to forget one.
+            if (readTrialComposition(existingMeta)) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        message:
+                            'This is a composed trial plan: its entitlements and limits are resolved live from its source plans, and the stored values are only a display snapshot. Edit the source plans instead.'
+                    }
+                };
+            }
 
             // HOS-176: collect the price-change propagation effect(s) triggered by this
             // update (monthly and/or annual) so the admin response can surface "affects N

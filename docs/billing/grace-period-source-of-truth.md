@@ -59,6 +59,21 @@ status stays `active` until the `finalize-cancelled-subs` cron flips it to `canc
 header. This is not a "grace period" in the traditional sense; it is the natural behavior of
 scheduled cancellation.
 
+### Not a fourth grace: the drift-reconcile latency tolerance (HOS-914)
+
+`subscription-drift-reconcile` skips any row touched within
+`DRIFT_TOLERANCE_MINUTES` (15) before re-reading its preapproval at MercadoPago.
+That window looks like a grace period and is not one, so it deliberately does
+**not** reuse `BILLING_CRON_LAG_GRACE_HOURS`.
+
+The three mechanisms above all answer *how long does a customer keep access*.
+This one answers *how long before a webhook that has not arrived is presumed
+lost* — it gates a READ, grants nobody anything, and changes no entitlement. The
+two must not be unified: widening the tolerance to the 6-hour cron-lag value
+would leave a real divergence uncorrected for most of a working day, and
+narrowing the cron-lag grace to 15 minutes would reap subscriptions whose renewal
+webhook is merely late.
+
 ---
 
 ## Past-due dunning grace
@@ -87,7 +102,14 @@ setting `current_period_end = now - 1d` returned `daysRemainingInGrace() = 6`
 |----------|----------|-------|--------|
 | QZPay (internal) | `DUNNING_GRACE_PERIOD_DAYS` | 7 | **Actual runtime enforcement** — used by `isInGracePeriod()` + `daysRemainingInGrace()` |
 | `@repo/billing` | `PAYMENT_GRACE_PERIOD_DAYS` | 3 | **Reference only, NOT enforced** — used by warning logs + this doc. Kept for backwards compatibility; flagged as historical reference in `packages/billing/src/constants/billing.constants.ts`. |
-| `billing_settings` DB table | `gracePeriodDays` | 3 | Stored for a future admin UI; currently unused at runtime. |
+| `billing_settings` DB table | `gracePeriodDays` | 3 | **Read and used at runtime, and the admin UI already exists.** `dunning.job.ts:283` loads it via `loadBillingSettings()` into `effectiveGracePeriod` and passes it on at lines 306, 331 and 612; the editor is `apps/admin/src/routes/_authed/billing/settings.tsx:318-325`. This row said "stored for a future admin UI; currently unused at runtime" until HOS-1302 — false on both counts. |
+
+> **`past_due` is currently unreachable end to end (HOS-1302).** The past-due
+> dunning grace this document describes is real code, but nothing writes a
+> subscription to `past_due` today: `DUNNING_MUTATIONS_ENABLED = false`
+> (`apps/api/src/cron/jobs/dunning.job.ts:245`, an owner decision — that file's
+> module JSDoc names this document and says so directly). Read the past-due
+> sections below as the design, not as live behaviour.
 
 ### Why two constants exist
 

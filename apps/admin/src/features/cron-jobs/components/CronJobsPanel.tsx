@@ -26,10 +26,11 @@ import { CronJobCard } from './CronJobCard';
 
 /** Numeric sort rank for a job based on its last-run status (lower = more urgent). */
 function urgencyRank(job: CronJobAdmin): number {
-    if (!job.lastRun) return 2; // never run
+    if (!job.lastRun) return 3; // never run
     if (job.lastRun.status === 'failed') return 0;
     if (job.lastRun.status === 'timeout') return 1;
-    return 3; // success
+    if (job.lastRun.status === 'partial') return 2;
+    return 4; // success
 }
 
 /** Sort jobs by urgency first, then by displayName (locale-aware). */
@@ -41,10 +42,14 @@ function sortJobs(jobs: CronJobAdmin[]): CronJobAdmin[] {
     });
 }
 
-/** Count of jobs whose last run failed or timed out. */
+/** Count of jobs whose last run failed, timed out, or completed with soft errors. */
 function failureCount(jobs: CronJobAdmin[]): number {
-    return jobs.filter((j) => j.lastRun?.status === 'failed' || j.lastRun?.status === 'timeout')
-        .length;
+    return jobs.filter(
+        (j) =>
+            j.lastRun?.status === 'failed' ||
+            j.lastRun?.status === 'timeout' ||
+            j.lastRun?.status === 'partial'
+    ).length;
 }
 
 export function CronJobsPanel() {

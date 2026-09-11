@@ -5,12 +5,16 @@
  * Orchestrator: owns ALL state and handlers, then delegates rendering to
  * four pure subcomponents (in render order):
  *   1. ProfileCompletionBasicFields   (avatar, name, displayName, birthDate)
- *   2. ProfileCompletionContactFields (phone, locale)
+ *   2. ProfileCompletionContactFields (phone, locale, theme)
  *   3. ProfileCompletionMoreDetails   (collapsible: bio, website, occupation, socials, location)
  *   4. ProfileCompletionConsentFields (newsletter opt-in, terms acceptance)
  *
  * Consent fields are kept at the END of the form so the user makes those
  * decisions after providing all profile data.
+ *
+ * Locale and theme (HOS-313) are both optional and both apply ONLY on a
+ * successful save, never live on selection — changing either mid-fill would
+ * re-render the page and disorient the user.
  *
  * On success, redirects to the set-password screen if `requiresSetPassword === true`,
  * otherwise to `/[lang]/mi-cuenta/`.
@@ -27,7 +31,8 @@ import { createTranslations } from '@/lib/i18n';
 import {
     computeDisplayName,
     computeInitialDisplayNameOverride,
-    type SocialPlatform
+    type SocialPlatform,
+    type SupportedTheme
 } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionBasicFields } from './ProfileCompletionBasicFields';
@@ -54,6 +59,20 @@ export interface ProfileCompletionProps {
     readonly initialLastName?: string;
     /** OAuth avatar URL from the provider (users.image). */
     readonly initialAvatarUrl?: string;
+    /**
+     * Where to land once the profile is complete and no further gate applies.
+     *
+     * Resolved and validated server-side by the page (HOS-838): it is the
+     * destination the onboarding gate interrupted, or `/{locale}/mi-cuenta/`
+     * when there was none. Never build it here — the open-redirect guard lives
+     * on the server and an island must not re-implement it.
+     */
+    readonly returnUrl: string;
+    /**
+     * Where to land when the API answers `requiresSetPassword`. Already carries
+     * `returnUrl` forward, so the destination survives that extra step too.
+     */
+    readonly setPasswordUrl: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -70,6 +89,32 @@ function ddmmyyyyToIso(value: string): string | null {
 }
 
 /**
+ * Applies `theme` by setting `data-theme` on the root `<html>` element and
+ * persisting it to `localStorage` (mirrors `PreferenceToggles.client.tsx`'s
+ * `applyTheme`, kept as a separate local copy since there is no shared
+ * theme-application module yet).
+ *
+ * Intentionally called ONLY after the profile-completion POST succeeds
+ * (HOS-313), never on the select's `onChange`: applying it live would
+ * re-render the page mid-fill and disorient the user filling out the form.
+ */
+function applyTheme(theme: SupportedTheme): void {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    if (theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    } else {
+        root.setAttribute('data-theme', theme);
+    }
+    try {
+        localStorage.setItem('theme', theme);
+    } catch {
+        // ignore storage errors
+    }
+}
+
+/**
  * Profile completion form island.
  *
  * Renders a form that collects baseline profile data for first-time users.
@@ -83,7 +128,9 @@ export function ProfileCompletion({
     initialDisplayName = '',
     initialFirstName = '',
     initialLastName = '',
-    initialAvatarUrl
+    initialAvatarUrl,
+    returnUrl,
+    setPasswordUrl
 }: ProfileCompletionProps) {
     const { t } = createTranslations(locale);
 
@@ -125,6 +172,10 @@ export function ProfileCompletion({
     const [phoneCode, setPhoneCode] = useState('+54');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [selectedLocale, setSelectedLocale] = useState<SupportedLocale>(locale);
+    // Defaults to 'system' (matches ThemeEnumSchema's default). Not applied
+    // live — see handleSubmit, which calls applyTheme only after the POST
+    // succeeds (HOS-313).
+    const [selectedTheme, setSelectedTheme] = useState<SupportedTheme>('system');
     // Newsletter defaults to TRUE — pre-checked so the user opts OUT explicitly.
     // The terms checkbox stays unchecked: acceptance must be an explicit action.
     const [newsletter, setNewsletter] = useState(true);
@@ -195,6 +246,7 @@ export function ProfileCompletion({
             displayName: derivedDisplayName,
             acceptedTerms,
             locale: selectedLocale,
+            theme: selectedTheme,
             newsletterOptIn: newsletter,
             ...(birthDateForValidation && { birthDate: birthDateForValidation }),
             ...(imageUrl && imageUrl !== initialAvatarUrl && { imageUrl }),
@@ -257,11 +309,18 @@ export function ProfileCompletion({
 
             await refreshBetterAuthSession();
 
-            if (result.data?.requiresSetPassword) {
-                window.location.href = `/${locale}/mi-cuenta/agregar-contrasena/`;
-            } else {
-                window.location.href = `/${locale}/mi-cuenta/`;
-            }
+            // Apply the chosen theme ONLY now that the profile is saved
+            // (HOS-313). The form has already served its purpose at this
+            // point, so there is no mid-fill re-render to disorient the user
+            // — unlike an on-change apply, which would. On failure (the
+            // `!response.ok` branch above returns early) nothing is applied.
+            applyTheme(selectedTheme);
+
+            // Both destinations are resolved server-side and carry the
+            // interrupted destination forward, so finishing here lands on what
+            // the user actually came to do instead of on `/mi-cuenta/`
+            // (HOS-838).
+            window.location.href = result.data?.requiresSetPassword ? setPasswordUrl : returnUrl;
         } catch {
             setFormError(
                 t(
@@ -337,12 +396,14 @@ export function ProfileCompletion({
                         phoneCode={phoneCode}
                         phoneNumber={phoneNumber}
                         selectedLocale={selectedLocale}
+                        selectedTheme={selectedTheme}
                         errors={fieldErrors}
                         submitting={submitting}
                         t={t}
                         onPhoneCodeChange={setPhoneCode}
                         onPhoneNumberChange={setPhoneNumber}
                         onLocaleChange={setSelectedLocale}
+                        onThemeChange={setSelectedTheme}
                     />
 
                     <ProfileCompletionMoreDetails

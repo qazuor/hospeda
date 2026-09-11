@@ -70,7 +70,7 @@ export function SubscriptionCancelled({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/precios/propietarios`}>Reactivar suscripcion</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivar suscripcion</Button>
             </Section>
         </EmailLayout>
     );

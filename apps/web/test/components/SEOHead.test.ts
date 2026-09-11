@@ -101,11 +101,22 @@ describe('SEOHead.astro — og:type article metadata', () => {
 });
 
 describe('SEOHead.astro — robots directive', () => {
-    it('emits noindex,follow (not nofollow) so crawlers still follow links on noindexed pages', () => {
+    it('keeps noindex,follow as the default so crawlers still follow links on noindexed pages', () => {
         // noindex,follow is the modern standard: the page itself stays out of
         // the index but link equity flows through to linked detail pages
         // (e.g. faceted listing pages link to indexable detail pages).
-        expect(src).toContain('content="noindex,follow"');
+        //
+        // HOS-978 added an opt-in `nofollow` prop for the six commercial
+        // presentations, so the rule is no longer "nofollow never appears" but
+        // "nofollow is reachable ONLY through that prop". Asserting the whole
+        // ternary is what pins both halves: flip either branch and this fails.
+        expect(src).toContain("nofollow ? 'noindex,nofollow' : 'noindex,follow'");
+    });
+
+    it('never hardcodes noindex,nofollow', () => {
+        // A literal `content="noindex,nofollow"` would strip `follow` from
+        // every noindexed page at once — the regression the original guard was
+        // written to catch, and which the opt-in prop must not reintroduce.
         expect(src).not.toContain('content="noindex,nofollow"');
     });
 });

@@ -90,6 +90,9 @@ export async function moderateText(input: ModerateTextInput): Promise<Moderation
     return {
         score: result.score,
         categories: result.categories,
-        matchedTerms: result.matchedTerms
+        matchedTerms: result.matchedTerms,
+        // Read, not recomputed from `source`: two derivations of the same fact
+        // can drift, and this is the one consumers get.
+        degraded: result.degraded
     };
 }

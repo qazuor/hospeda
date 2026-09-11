@@ -133,6 +133,9 @@ function mockDbReturning(params: { total: number; rows: readonly unknown[] }): v
 
 const SUBSCRIPTION_ROW = {
     id: '11111111-1111-4111-8111-111111111111',
+    // HOS-1314: the billing customer behind the row, distinct from `userId`
+    // below (a Hospeda `users.id`) — see AdminSubscriptionViewSchema's JSDoc.
+    customerId: '55555555-5555-4555-8555-555555555555',
     rawStatus: 'canceled',
     billingInterval: 'month',
     currentPeriodStart: new Date('2026-07-01T00:00:00.000Z'),
@@ -247,6 +250,19 @@ describe('listSubscriptions — row mapping', () => {
         expect(items[0]?.recurringAmountInCents).toBe(1_500_000);
     });
 
+    // HOS-1314: the admin grant-comp dialog needs the qzpay billing customer
+    // id, which is distinct from `user.id` (a Hospeda `users.id`). Regression
+    // test for the gap that made granting a comp from a subscription row
+    // require an operator to already know the qzpay customer UUID.
+    it('carries the billing customerId, distinct from the Hospeda user id', async () => {
+        mockDbReturning({ total: 1, rows: [SUBSCRIPTION_ROW] });
+
+        const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+        expect(items[0]?.customerId).toBe('55555555-5555-4555-8555-555555555555');
+        expect(items[0]?.customerId).not.toBe(items[0]?.user?.id);
+    });
+
     it('leaves recurringAmountInCents null — not 0 — when the plan is gone', async () => {
         mockDbReturning({
             total: 1,
@@ -284,6 +300,82 @@ describe('listSubscriptions — row mapping', () => {
         mockDbReturning({ total: 1, rows: [{ ...SUBSCRIPTION_ROW, rawStatus: 'weird' }] });
 
         await expect(listSubscriptions({ page: 1, pageSize: 20 })).rejects.toThrow(/weird/);
+    });
+
+    describe('HOS-1245 — a courtesy row must not take down the whole list', () => {
+        it('maps a single courtesy row instead of throwing (the reported 500)', async () => {
+            // Arrange — the exact reproduction from the issue: an admin grants a
+            // courtesy window, and `status` is written `courtesy` on that row.
+            mockDbReturning({
+                total: 1,
+                rows: [{ ...SUBSCRIPTION_ROW, rawStatus: 'courtesy' }]
+            });
+
+            // Act
+            const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+            // Assert — before the fix, `assertKnownStatus` threw here because
+            // `AdminSubscriptionViewStatusSchema` had no `courtesy` member, and
+            // that throw happens inside the `rows.map(...)` in
+            // `listSubscriptions`, so ONE such row failed the ENTIRE list.
+            expect(items[0]?.status).toBe('courtesy');
+            expect(items[0]?.rawStatus).toBe('courtesy');
+            expect(AdminSubscriptionViewSchema.safeParse(items[0]).success).toBe(true);
+        });
+
+        it('does not let one courtesy row poison the other rows in the same page', async () => {
+            // Arrange — the fail-open scenario the issue describes: "no se
+            // degrada una fila: se cae la lista completa". A page mixing a
+            // courtesy row with an ordinary active row must return BOTH.
+            mockDbReturning({
+                total: 2,
+                rows: [
+                    { ...SUBSCRIPTION_ROW, id: 'a', rawStatus: 'courtesy' },
+                    { ...SUBSCRIPTION_ROW, id: 'b', rawStatus: 'active' }
+                ]
+            });
+
+            // Act
+            const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+            // Assert
+            expect(items).toHaveLength(2);
+            expect(items.map((item) => item.status)).toEqual(['courtesy', 'active']);
+        });
+
+        it('maps a courtesy row correctly in every one of the five billed verticals', async () => {
+            // Arrange — the admin subscriptions screen lists all five things
+            // that charge (accommodation, gastronomy, experience, tourist,
+            // partner). A courtesy grant is not accommodation-specific, and
+            // this sweep is what the issue explicitly flagged as unmeasured
+            // ("no probé si otras pantallas... con la misma fila").
+            const verticals = [
+                'accommodation',
+                'gastronomy',
+                'experience',
+                'tourist',
+                'partner'
+            ] as const;
+            const rows = verticals.map((productDomain, index) => ({
+                ...SUBSCRIPTION_ROW,
+                id: `99999999-9999-4999-8999-99999999999${index}`,
+                rawStatus: 'courtesy',
+                productDomain,
+                planProductDomain: productDomain
+            }));
+            mockDbReturning({ total: rows.length, rows });
+
+            // Act
+            const { items } = await listSubscriptions({ page: 1, pageSize: 20 });
+
+            // Assert
+            expect(items).toHaveLength(verticals.length);
+            for (const item of items) {
+                expect(item.status).toBe('courtesy');
+                expect(AdminSubscriptionViewSchema.safeParse(item).success).toBe(true);
+            }
+            expect(items.map((item) => item.productDomain)).toEqual([...verticals]);
+        });
     });
 
     it('returns page/pageSize pagination — never limit/offset', async () => {

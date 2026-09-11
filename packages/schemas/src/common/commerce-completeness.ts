@@ -151,23 +151,73 @@ function meetsMinLength(value: string | null | undefined, minLength: number): bo
     return isNonEmptyString(value) && value.trim().length >= minLength;
 }
 
+/** The `contactInfo` keys this module can read as a reachable channel. */
+type ReachableContactChannel =
+    | 'homePhone'
+    | 'workPhone'
+    | 'mobilePhone'
+    | 'whatsapp'
+    | 'personalEmail'
+    | 'workEmail';
+
 /**
- * `true` when `contactInfo` carries at least one reachable channel — any
- * phone field (`homePhone` / `workPhone` / `mobilePhone` / `whatsapp`) or any
- * email field (`personalEmail` / `workEmail`).
+ * Which contact channels count as "reachable" for publish, PER VERTICAL.
+ *
+ * The rule the list encodes: a channel only makes the listing reachable if the
+ * vertical's PUBLIC page actually renders it. "Reachable" that the visitor
+ * cannot see is not reachable — it is a paid listing with no way to contact it
+ * (HOS-924).
+ *
+ * - `experience` — exactly the phone/email keys
+ *   `ExperiencePublicContactInfoSchema` publishes
+ *   (`packages/schemas/src/entities/experience/experience.access.schema.ts`),
+ *   which is what `ExperienceContactBlock.astro` renders. The three keys that
+ *   used to satisfy this gate and never reached the page are deliberately out:
+ *   `whatsapp` (gated by the VIEWER's plan on a separate protected endpoint —
+ *   HOS-19 — and this payload is shared-cached with no auth in the cache key),
+ *   `homePhone` and `personalEmail` (collected as personal/administrative
+ *   contact, not as the listing's published channel). `website` is published
+ *   too but is deliberately NOT accepted here: it was never accepted before
+ *   and a site is not a channel that reaches a person.
+ *
+ * - `gastronomy` — keeps the original six. Applying the experience rule here
+ *   would make EVERY gastronomy listing unpublishable, because
+ *   `GastronomyPublicSchema` publishes no `contactInfo` at all: its hole is
+ *   wider than a mis-calibrated gate and is tracked separately (HOS-924
+ *   "Relacionado"). Narrowing this row is the follow-up to exposing contact
+ *   there, not something to do first.
  */
-function hasReachableContactChannel(contactInfo: ContactInfo | null | undefined): boolean {
+const REACHABLE_CONTACT_CHANNELS: Readonly<
+    Record<CommerceEntityType, readonly ReachableContactChannel[]>
+> = {
+    [CommerceEntityTypeEnum.EXPERIENCE]: ['workPhone', 'mobilePhone', 'workEmail'],
+    [CommerceEntityTypeEnum.GASTRONOMY]: [
+        'homePhone',
+        'workPhone',
+        'mobilePhone',
+        'whatsapp',
+        'personalEmail',
+        'workEmail'
+    ]
+};
+
+/**
+ * `true` when `contactInfo` carries at least one channel the vertical's public
+ * page actually publishes — see {@link REACHABLE_CONTACT_CHANNELS}.
+ *
+ * Fails CLOSED on a vertical the map does not know. TypeScript makes that
+ * unreachable, but this function is fed rows read out of a database, and the
+ * wrong answer here publishes an unreachable listing — cheaper to refuse.
+ */
+function hasReachableContactChannel(
+    entityType: CommerceEntityType,
+    contactInfo: ContactInfo | null | undefined
+): boolean {
     if (!contactInfo) {
         return false;
     }
-    const phoneFields = [
-        contactInfo.homePhone,
-        contactInfo.workPhone,
-        contactInfo.mobilePhone,
-        contactInfo.whatsapp
-    ];
-    const emailFields = [contactInfo.personalEmail, contactInfo.workEmail];
-    return [...phoneFields, ...emailFields].some(isNonEmptyString);
+    const channels = REACHABLE_CONTACT_CHANNELS[entityType] ?? [];
+    return channels.some((key) => isNonEmptyString(contactInfo[key]));
 }
 
 /**
@@ -194,7 +244,13 @@ function hasAtLeastOneOpeningShift(openingHours: OpeningHours | null | undefined
  * Pure function — no DB access, no I/O. Evaluates the SHARED required-field
  * block (both verticals: `name`, `summary`, `description`, `destinationId`,
  * `ownerId`, `type`, `media.featuredImage`, `contactInfo`), then applies
- * per-vertical additions:
+ * per-vertical additions.
+ *
+ * `contactInfo` is in the shared block but its accepted channels are NOT
+ * shared: a channel only counts where the vertical's public page renders it
+ * (HOS-924). See {@link REACHABLE_CONTACT_CHANNELS}.
+ *
+ * Per-vertical additions:
  *
  * - `gastronomy` — additionally requires `openingHours` (≥ 1 day with ≥ 1
  *   shift) and `priceRange`.
@@ -251,7 +307,7 @@ export function resolveListingCompleteness(
     if (!listing.media?.featuredImage) {
         missing.push('media.featuredImage');
     }
-    if (!hasReachableContactChannel(listing.contactInfo)) {
+    if (!hasReachableContactChannel(entityType, listing.contactInfo)) {
         missing.push('contactInfo');
     }
 

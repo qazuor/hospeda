@@ -1,18 +1,42 @@
-import QRCode from 'qrcode';
+import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
+import { buildHostTradeUsageUrl } from '@repo/service-core';
+import { buildQrScanUrl } from './entity-qr.js';
+import { renderQrSvg } from './qr-render.js';
 
 /**
- * The provider's static usage QR (HOS-376 §6.2a, T-029).
+ * The provider's printable QR (HOS-376 §6.2a, HOS-981 PR 4).
  *
- * There is no table here, no token and no expiry, and that is the design rather
- * than a shortcut. The code encodes a plain URL carrying the listing's slug,
- * which is already UNIQUE, and the host who scans it is identified by his own
- * session — so the QR needs to prove nothing. What it buys is that the sticker
- * on a van, the one on a delivery note and the one on the provider's phone are
- * the same code, printed once, valid forever.
+ * ## What changed, and why the old design had to go
  *
- * The cost of that is the constraint every function here works under: the same
- * slug must always render the same image. Nothing in this module may depend on
- * the clock, on randomness, or on anything a redeploy could change.
+ * Until HOS-981 PR 4 this module drew the usage-registration URL directly, so
+ * the sticker on a van encoded `…/directorio-proveedores/{listingSlug}/…`. That
+ * made the printed code a hostage of a mutable field: rename the listing and
+ * every code already in the field points at a page that no longer exists, with
+ * nothing to correct — ink is not editable.
+ *
+ * Now the code draws `{siteUrl}/qr/{qrSlug}/`, an identifier the platform owns
+ * and resolves with a 302 to a row it can edit. Two things follow, and both are
+ * improvements on the old contract rather than compromises:
+ *
+ * 1. The image is stable across a listing RENAME, because it depends on the QR's
+ *    slug, which nothing updates. The old contract — "the same listing slug
+ *    always renders the same image" — was true and useless: the input it held
+ *    stable was the one that moves.
+ * 2. The scan becomes countable, because it now passes through us.
+ *
+ * The usage-registration route is untouched. It stopped being what the QR
+ * encodes and became where the redirect lands.
+ *
+ * ## What has NOT changed
+ *
+ * Determinism. Nothing here may read the clock, call a random source, or depend
+ * on anything a redeploy could move: the same QR slug must draw the same bytes
+ * forever, or a reprint stops matching the sticker beside it. The two options
+ * below are the SAME values the shared engine would default to, written out
+ * because this module's contract is that its output never moves and a default
+ * changed elsewhere must not reach a code already on a van.
+ *
+ * @module utils/host-trade-qr
  */
 
 /** Quiet zone, in modules, around the symbol. */
@@ -26,27 +50,37 @@ const QR_MARGIN = 4;
  * light. The extra modules cost print area, which is cheap; a code that stops
  * scanning once it is dirty costs the declaration the whole channel exists for.
  */
-const QR_ERROR_CORRECTION = 'M';
-
-/** Path the QR sends a host to, relative to the site root. */
-const USAGE_PATH_PREFIX = '/mi-cuenta/directorio-proveedores';
-const USAGE_PATH_SUFFIX = 'registrar-uso';
+const QR_ERROR_CORRECTION = QrCodeErrorCorrectionLevelEnum.M;
 
 /**
- * Builds the URL a provider's QR encodes.
+ * Re-exported so `apps/api` keeps one import site for the provider QR's two
+ * URLs. The builder itself lives in `@repo/service-core` because
+ * `HostTradeService` rebuilds the same string when a listing is renamed, and
+ * two spellings of that path would diverge into a silent 404.
+ */
+export { buildHostTradeUsageUrl };
+
+/**
+ * Builds the URL the QR actually encodes.
  *
- * @param input.slug - The listing's UNIQUE slug.
+ * A thin alias over {@link buildQrScanUrl} since HOS-1129, which gave the
+ * brochure and the certificate the same redirect. The path itself is spelled
+ * once, in `utils/entity-qr.ts`: a second spelling would not fail anywhere —
+ * it would quietly start sending one family of already-printed codes to a 404.
+ * The name survives so the provider's call sites still say which code they
+ * mean.
+ *
+ * @param input - Input parameters.
+ * @param input.qrSlug - The QR CODE's slug (`qr_codes.slug`), not the listing's.
  * @param input.siteUrl - Public base URL of the web app (`HOSPEDA_SITE_URL`).
  *   A trailing slash is tolerated.
- * @returns The absolute URL of the usage-registration page.
+ * @returns The absolute URL encoded in the symbol.
  */
-export function buildHostTradeUsageUrl(input: { slug: string; siteUrl: string }): string {
-    const base = input.siteUrl.replace(/\/$/, '');
-    // The slug is slug-shaped by construction, so this encodes nothing today.
-    // It is here so that a value carrying `?` or `#` truncates into a 404
-    // rather than into a different page than the one intended.
-    const slug = encodeURIComponent(input.slug);
-    return `${base}${USAGE_PATH_PREFIX}/${slug}/${USAGE_PATH_SUFFIX}`;
+export function buildHostTradeQrScanUrl(input: {
+    readonly qrSlug: string;
+    readonly siteUrl: string;
+}): string {
+    return buildQrScanUrl(input);
 }
 
 /**
@@ -56,17 +90,24 @@ export function buildHostTradeUsageUrl(input: { slug: string; siteUrl: string })
  * and the print stylesheet at sticker size, and a QR is the one image where
  * resampling costs scans.
  *
- * @param input.slug - The listing's UNIQUE slug.
+ * The parameter is named `qrSlug`, not `slug`, so that no call site can pass a
+ * listing slug by habit and have it silently drawn — the rename is what makes
+ * the compiler visit every caller.
+ *
+ * @param input - Input parameters.
+ * @param input.qrSlug - The QR CODE's slug (`qr_codes.slug`).
  * @param input.siteUrl - Public base URL of the web app (`HOSPEDA_SITE_URL`).
- * @returns The SVG markup, byte-identical for a given slug and site URL.
+ * @returns The SVG markup, byte-identical for a given QR slug and site URL.
  */
 export async function renderHostTradeQrSvg(input: {
-    slug: string;
-    siteUrl: string;
+    readonly qrSlug: string;
+    readonly siteUrl: string;
 }): Promise<string> {
-    return QRCode.toString(buildHostTradeUsageUrl(input), {
-        type: 'svg',
-        margin: QR_MARGIN,
-        errorCorrectionLevel: QR_ERROR_CORRECTION
+    return renderQrSvg({
+        data: buildHostTradeQrScanUrl(input),
+        options: {
+            margin: QR_MARGIN,
+            errorCorrectionLevel: QR_ERROR_CORRECTION
+        }
     });
 }

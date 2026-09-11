@@ -34,7 +34,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
 const homeUrl = new URL(buildUrl({ locale, path: '' }), siteBase).href;
 const policyUrl = buildUrl({ locale, path: '/legal/privacidad/' });
 const contactUrl = buildUrl({ locale, path: '/contacto/' });
-const ownerPlansUrl = buildUrl({ locale, path: '/suscriptores/propietarios/' });
+const ownerPlansUrl = buildUrl({ locale, path: '/planes/anfitriones/' });
 
 const inLanguageMap: Record<SupportedLocale, string> = {
     es: 'es-AR',

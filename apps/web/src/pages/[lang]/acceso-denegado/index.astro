@@ -1,0 +1,92 @@
+---
+/**
+ * @file acceso-denegado/index.astro
+ * @description Access-denied status page. Reached when an authenticated user
+ * without `ACCESS_PANEL_ADMIN` tries to open the admin panel — the admin's
+ * `/_authed` guard (HOS-609) redirects here instead of showing its own
+ * forbidden page. Explains the situation and offers three ways out: the
+ * user's own account, the homepage, or contact.
+ */
+
+export const prerender = false;
+
+import ErrorLayout from '@/layouts/ErrorLayout.astro';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { UserIcon, HomeIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations, DEFAULT_LOCALE } from '@/lib/i18n';
+import { extractLocaleFromPath } from '@/lib/middleware-helpers';
+import { buildUrl } from '@/lib/urls';
+
+// This page is reached via a direct external redirect from the admin app
+// (not an Astro rewrite), so `Astro.locals.locale` is populated normally by
+// this app's own middleware from the `/{lang}/` URL segment. Still fall back
+// to the original-path/url-path recovery used by 404/500 for consistency and
+// resilience if the locale segment is ever missing.
+const originalPath = Astro.originPathname ?? Astro.url.pathname;
+const { locale: pathLocale } = extractLocaleFromPath({ path: originalPath });
+const locale = (pathLocale ?? Astro.locals?.locale ?? DEFAULT_LOCALE) as SupportedLocale;
+const { t } = createTranslations(locale);
+const accountUrl = buildUrl({ locale, path: 'mi-cuenta' });
+const homeUrl = buildUrl({ locale, path: '/' });
+const contactUrl = buildUrl({ locale, path: 'contacto' });
+---
+
+<ErrorLayout locale={locale} title={t('error.forbidden.title')} description={t('error.forbidden.description')} noindex={true}>
+	<StatusPage
+		variant="warning"
+		title={t('error.forbidden.heading')}
+		description={t('error.forbidden.description')}
+		hideBlob
+	>
+		<svg
+			slot="illustration"
+			width="120"
+			height="120"
+			viewBox="0 0 120 120"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<circle cx="60" cy="60" r="54" stroke="var(--brand-accent)" stroke-width="1.5" opacity="0.12" />
+			<circle cx="60" cy="60" r="40" stroke="var(--brand-accent)" stroke-width="1.5" opacity="0.08" />
+			<!-- Shield outline -->
+			<path
+				d="M60 28 L84 38 V58 C84 74 74 86 60 92 C46 86 36 74 36 58 V38 Z"
+				stroke="var(--brand-accent)"
+				stroke-width="2.5"
+				fill="var(--brand-accent-a05)"
+			/>
+			<!-- Lock body inside the shield -->
+			<rect x="50" y="58" width="20" height="16" rx="2" stroke="var(--brand-accent)" stroke-width="2" fill="none" />
+			<path d="M53 58 V52 a7 7 0 0 1 14 0 V58" stroke="var(--brand-accent)" stroke-width="2" fill="none" />
+			<!-- Small decorative dots -->
+			<circle cx="60" cy="18" r="3" fill="var(--brand-accent)" opacity="0.15" />
+			<circle cx="26" cy="60" r="3" fill="var(--brand-accent)" opacity="0.15" />
+			<circle cx="94" cy="60" r="3" fill="var(--brand-accent)" opacity="0.15" />
+		</svg>
+
+		<GradientButton
+			slot="actions"
+			href={accountUrl}
+			label={t('error.forbidden.goToAccount')}
+			variant="primary"
+			shape="rounded"
+		>
+			<UserIcon slot="leading" size={18} />
+		</GradientButton>
+		<GradientButton
+			slot="actions"
+			href={homeUrl}
+			label={t('error.forbidden.goHome')}
+			variant="outline-primary"
+			shape="rounded"
+		>
+			<HomeIcon slot="leading" size={18} />
+		</GradientButton>
+
+		<a slot="footer" href={contactUrl}>
+			{t('error.forbidden.contact')}
+		</a>
+	</StatusPage>
+</ErrorLayout>

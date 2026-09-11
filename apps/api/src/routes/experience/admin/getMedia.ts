@@ -24,7 +24,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * GET /api/v1/admin/experiences/:id/media
  * List experience listing gallery photos — Admin endpoint.
  *
- * Requires COMMERCE_EDIT_ALL permission (mirrors the internal
+ * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission (mirrors the internal
  * `checkExperienceCanEditMedia` gate — media management has no separate
  * broader view-only permission). The service helper `getExperienceMedia`
  * enforces the same gate.
@@ -35,9 +35,9 @@ export const adminGetExperienceMediaRoute = createAdminRoute({
     summary: 'List experience listing gallery photos (admin)',
     description:
         'Retrieves all media rows for an experience listing, ordered by sortOrder ASC. ' +
-        'Supports an optional `state` query filter (default: visible). Requires COMMERCE_EDIT_ALL.',
+        'Supports an optional `state` query filter (default: visible). Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
     tags: ['Experience', 'Media'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

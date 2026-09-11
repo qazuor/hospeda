@@ -33,15 +33,11 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import {
-    billingPendingCheckoutModel,
-    billingSubscriptions,
-    type DrizzleClient,
-    eq
-} from '@repo/db';
-import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
+import { billingPendingCheckoutModel, billingSubscriptions, type DrizzleClient } from '@repo/db';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger.js';
+import { assertNoLiveSubscriptionForDomain } from './duplicate-subscription-guard.js';
 
 /**
  * How long a `billing_pending_checkouts` correlation row stays linkable — the
@@ -93,6 +89,21 @@ export interface PendingCheckoutDiscount {
 }
 
 /**
+ * A resolved-but-not-yet-redeemed `trial_extension` promo code (HOS-240),
+ * snapshotted at checkout time. Named/exported (rather than kept inline on
+ * {@link CreatePendingProviderSubscriptionInput}) so both checkout flows
+ * that snapshot it — the `billing_pending_checkouts` correlation row here,
+ * and `billing_subscriptions.metadata` for the HOS-937 own-preapproval flow
+ * — share the same shape instead of duplicating it structurally.
+ */
+export interface PendingTrialExtension {
+    /** The DB promo code id (for the redemption record + FK stamp). */
+    readonly promoCodeId: string;
+    /** The normalized promo code string (logging / redemption record). */
+    readonly code: string;
+}
+
+/**
  * Input for {@link createPendingProviderSubscription}.
  */
 export interface CreatePendingProviderSubscriptionInput {
@@ -126,27 +137,19 @@ export interface CreatePendingProviderSubscriptionInput {
      * `payer_email = X OR payer_email IS NULL`).
      */
     readonly payerEmail?: string;
-    /**
-     * Whether this checkout granted free trial days (baked into the MP plan
-     * referenced by {@link mpPreapprovalPlanId} — see `resolveCheckoutMpPlanId`).
-     * Stamped into `metadata` since the local subscription cannot carry a real
-     * `trialing` status until the preapproval is linked and confirmed (HOS-171:
-     * `TRIALING` is derived, never stored at creation).
+    /*
+     * HOS-1012: `trialGranted` and `freeTrialDays` are GONE from this input.
+     *
+     * They existed so a checkout could pre-write the trial window it had just
+     * asked MercadoPago for (HOS-211 Option B / HOS-812), because the provider's
+     * own `retrieve()` shape could not be trusted to report it. No checkout asks
+     * for a trial any more, so there is no window to pre-write and no provider
+     * answer to second-guess: a row created here is always born with
+     * `trialStart`/`trialEnd` NULL.
+     *
+     * Hospeda's trial is now local and starts elsewhere — at the owner's first
+     * publish, with no card and no MercadoPago object behind it.
      */
-    readonly trialGranted: boolean;
-    /**
-     * Free trial length in days, resolved once at checkout by
-     * `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
-     * `undefined` when no trial applies. Persisted here (HOS-211 Option B) as
-     * `trialStart`/`trialEnd` on the row itself, so the eventual webhook's
-     * preserve-if-set logic (`resolvedTrialEnd = localSubscription.trialEnd ?? ...`
-     * in `subscription-logic.ts`) can derive `trialing` WITHOUT depending on
-     * `auto_recurring.free_trial` being present on qzpay's `retrieve()` response
-     * — which it is not, on `@qazuor/qzpay-mercadopago@2.6.0`'s mapped shape.
-     * Does NOT change `status`, which stays `pending_provider` regardless (see
-     * the insert below) — entitlements gate on status only (HOS-171).
-     */
-    readonly freeTrialDays?: number;
     /** A resolved-but-not-yet-applied discount (SPEC-262), if a `discount` promo code was used. */
     readonly pendingDiscount?: PendingCheckoutDiscount;
     /**
@@ -160,19 +163,49 @@ export interface CreatePendingProviderSubscriptionInput {
      * Omitted for config-backed trials (no DB row), kill-switched/ineligible
      * trials, and non-trial checkouts.
      */
-    readonly pendingTrialExtension?: {
-        readonly promoCodeId: string;
-        readonly code: string;
-    };
-    /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
-    readonly productDomain?: string;
+    readonly pendingTrialExtension?: PendingTrialExtension;
+    /**
+     * Product domain to stamp on the subscription. REQUIRED (HOS-1271) — no
+     * default, and deliberately so.
+     *
+     * This was `productDomain?: string` with `input.productDomain ??
+     * ProductDomainEnum.ACCOMMODATION` inside the function, which is the exact
+     * shape of the bug HOS-1271 exists to close: the column carries the same
+     * default (`DEFAULT 'accommodation' NOT NULL`), so a caller that forgot to
+     * pass this parameter produced a row indistinguishable from a correctly
+     * classified accommodation subscription — no error, no log, and
+     * `subscriptionMatchesDomain` fails OPEN for accommodation, so the
+     * misfiled row then passed every downstream entitlement check too. This is
+     * precisely how `POST /start-paid` with `planSlug: 'gastronomy-pro'` used
+     * to create a subscription reported as ALOJAMIENTO (HOS-1271): the two
+     * accommodation/tourist checkout branches never passed this field.
+     *
+     * Requiring it is the guard, and deliberately a compiler one rather than a
+     * runtime check or a static grep: every call site is checked, a rename
+     * cannot defeat it, and it fails at the call rather than at file
+     * granularity — same reasoning `own-preapproval-subscription-create.ts`
+     * already applies to `trialDays`. Every caller resolves the plan being
+     * purchased BEFORE calling this function, so the value is always on hand;
+     * there is no legitimate case where it cannot be stated.
+     */
+    readonly productDomain: string;
+    /**
+     * The subscriptions this creation REPLACES, exempted from the duplicate
+     * guard (HOS-1335). Same semantics as
+     * {@link CreatePaidSubscriptionInput.supersedesSubscriptionIds}: the start-paid
+     * conversion path exempts a Hospeda-owned local trial it is converting,
+     * and the activation of the new row sweeps it
+     * (`trial-supersede-on-activation.ts`). A live subscription not on the list
+     * still refuses — a list of ids, never an off switch.
+     */
+    readonly supersedesSubscriptionIds?: readonly string[];
     /**
      * Domain coordinates merged into the subscription's `metadata` — the
      * SUBSCRIPTION → ENTITY path (`{ commerceEntityType, commerceEntityId }`
      * for commerce, `{ partnerId }` for partner).
      *
      * It exists because the domain link rows only encode the INVERSE direction
-     * and cannot be trusted to survive: `commerce_listing_subscriptions` is
+     * and cannot be trusted to survive: `entity_subscriptions` is
      * UNIQUE on `(entity_type, entity_id)` and `partner_subscriptions` on
      * `partner_id`, and both are UPSERTED. Path C creates one subscription per
      * checkout CLICK, so a second click overwrites the only pointer to the
@@ -192,7 +225,7 @@ export interface CreatePendingProviderSubscriptionInput {
      * subscription row and the correlation row.
      *
      * The commerce and partner checkouts each own a link table
-     * (`commerce_listing_subscriptions` / `partner_subscriptions`) whose row must
+     * (`entity_subscriptions` / `partner_subscriptions`) whose row must
      * exist for their reconcilers to find the listing/partner when the webhook
      * later activates the subscription. Writing it after this function returned
      * would leave a window in which a `pending_provider` commerce subscription
@@ -246,8 +279,7 @@ export interface CreatePendingProviderSubscriptionResult {
  *   billingInterval: 'monthly',
  *   mpPreapprovalPlanId: providerPriceId,
  *   payerEmail: customer.email,
- *   trialGranted: freeTrialDays !== undefined,
- *   freeTrialDays,
+ *   productDomain: resolvedPlanProductDomain,
  *   livemode: customer.livemode
  * });
  * ```
@@ -262,15 +294,13 @@ export async function createPendingProviderSubscription(
         billingInterval,
         mpPreapprovalPlanId,
         payerEmail,
-        trialGranted,
-        freeTrialDays,
         pendingDiscount,
         pendingTrialExtension,
         writeDomainLinkRow,
         domainMetadata,
-        livemode
+        livemode,
+        productDomain
     } = input;
-    const productDomain = input.productDomain ?? ProductDomainEnum.ACCOMMODATION;
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + PENDING_CHECKOUT_TTL_MS);
@@ -285,6 +315,34 @@ export async function createPendingProviderSubscription(
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
+
+        // 0. HOS-1322 — refuse a second live subscription for this customer in
+        //    this domain, INSIDE the primitive rather than in each caller.
+        //
+        //    Path C mints no preapproval synchronously, so the double charge it
+        //    can produce arrives later: the buyer completes MercadoPago's hosted
+        //    checkout against a subscription they never needed, on top of the one
+        //    they already pay. Reading inside the transaction is what makes the
+        //    check and the INSERT below see one snapshot.
+        //
+        //    Scoped by the domain the row states, so a host who also runs a
+        //    restaurant is not refused their gastronomy checkout over their
+        //    accommodation subscription.
+        await assertNoLiveSubscriptionForDomain({
+            customerId,
+            productDomain,
+            // HOS-1335: the trial-conversion exemption, forwarded verbatim.
+            // The start-paid route already exempted these rows at its own
+            // guards; without forwarding, THIS guard re-refuses one gate
+            // deeper — the exact "correct gate upstairs beside the same gate
+            // still broken twenty lines down" shape the route's own HOS-1260
+            // note warns about.
+            ...(input.supersedesSubscriptionIds === undefined
+                ? {}
+                : { supersedesSubscriptionIds: input.supersedesSubscriptionIds }),
+            db: tx,
+            source: 'createPendingProviderSubscription'
+        });
 
         // 1. Insert the pending_provider subscription row. No mp_subscription_id
         //    (the preapproval does not exist yet) and no promo_code_id — a
@@ -304,26 +362,34 @@ export async function createPendingProviderSubscription(
             // billing period; `current_period_end` is NOT NULL in the schema.
             currentPeriodEnd: expiresAt,
             status: SubscriptionStatusEnum.PENDING_PROVIDER,
-            // HOS-211 Option B: persist the trial window at creation time, from
-            // the checkout-time-resolved `freeTrialDays`, instead of relying on
-            // the webhook to derive it from a live `auto_recurring.free_trial`
-            // that qzpay's mapped subscription shape does not expose. `status`
-            // intentionally stays `pending_provider` above — a set `trialEnd` on
-            // a pending row grants nothing until the webhook flips status, per
-            // the HOS-171 guard (entitlements gate on status, never trial_end).
-            trialStart: freeTrialDays === undefined ? null : now,
-            trialEnd:
-                freeTrialDays === undefined
-                    ? null
-                    : new Date(now.getTime() + freeTrialDays * 24 * 60 * 60 * 1000),
+            // HOS-1012: a checkout NEVER opens a trial window. HOS-211 Option B
+            // wrote one here from the days the checkout had just asked
+            // MercadoPago for; HOS-936 then had to reconcile that promise back
+            // against the provider's real `next_payment_date`, because the
+            // provider was free to contradict it. Nothing is promised now, so
+            // there is nothing to reconcile: these are hard NULLs, not a
+            // conditional that happens to evaluate to null. Hospeda's own trial
+            // row is opened at the first publish, not here.
+            trialStart: null,
+            trialEnd: null,
             livemode,
+            // HOS-1233 T-035: stated in the INSERT, not corrected by a follow-up
+            // UPDATE. The column carries a default, so an omitted create does
+            // not fail — it files the row under the default's vertical, which is
+            // how every tourist plan came to claim `accommodation` (spec F-4b).
+            // A row that starts wrong and is fixed a statement later is also the
+            // one shape that does not survive the default's removal (T-036): the
+            // INSERT is rejected before its correction ever runs.
+            productDomain,
             metadata: {
                 source: 'start-paid-share-link',
                 createdBy: 'subscription-flow',
                 intendedInterval: billingInterval,
                 priceId,
                 mpPreapprovalPlanId,
-                trialGranted: String(trialGranted),
+                // HOS-1012: no `trialGranted` key. It could only ever read
+                // `'false'` now, and a metadata key that carries one constant is
+                // noise a reader has to disprove.
                 // Spread LAST so the domain coordinates are unmistakably part of
                 // the same immutable checkout snapshot; absent entirely when the
                 // caller has no domain entity (the accommodation path).
@@ -331,12 +397,43 @@ export async function createPendingProviderSubscription(
             }
         });
 
-        // 2. Stamp product_domain via a typed UPDATE — mirrors the commerce
-        //    flow's and the comp flow's identical two-step stamp.
-        await tx
-            .update(billingSubscriptions)
-            .set({ productDomain })
-            .where(eq(billingSubscriptions.id, localSubscriptionId));
+        // 2. Retire this customer's earlier in-flight checkouts for the SAME
+        //    MercadoPago plan (HOS-276 follow-up), inside the same transaction
+        //    so two live correlation rows for one pair can never coexist.
+        //
+        //    Why here and not in the linker: the webhook fallback (Tier 3) can
+        //    only tell candidates apart by `mp_preapproval_plan_id` + payer
+        //    email + a 24h window, and a customer who retries after a declined
+        //    card produces rows identical on all three. Tier 3 then refuses to
+        //    guess and a genuinely approved payment is left with nowhere to
+        //    land — measured in staging on 2026-08-29, where two rival rows
+        //    were refused 6ms apart and a $35.000 charge went unrecorded. The
+        //    ambiguity is removed at the source instead of taught to the
+        //    heuristic.
+        //
+        //    TRADEOFF, deliberate: if the superseded attempt had ALREADY been
+        //    paid and its webhook is still in flight, that payment now links to
+        //    this newer subscription (same customer, same plan, same price)
+        //    rather than to the attempt it was made against. Cross-customer
+        //    mislinking remains impossible — the ownership guard still checks
+        //    plan and payer. Landing a real payment on the customer's current
+        //    subscription is strictly better than the previous behaviour, which
+        //    dropped it entirely.
+        const superseded = await billingPendingCheckoutModel.supersedePendingForCustomerPlan(
+            { customerId, mpPreapprovalPlanId },
+            tx
+        );
+        if (superseded.length > 0) {
+            apiLogger.info(
+                {
+                    customerId,
+                    mpPreapprovalPlanId,
+                    localSubscriptionId,
+                    supersededCheckoutIds: superseded.map((row) => row.id)
+                },
+                'HOS-276: superseded earlier in-flight checkouts for this customer+plan so the webhook fallback keeps a single candidate'
+            );
+        }
 
         // 3. Insert the correlation row, INSIDE the same transaction so the
         //    pending_provider subscription can never exist without a way to

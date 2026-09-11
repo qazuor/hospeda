@@ -5,7 +5,11 @@
  * ADMIN or SUPER_ADMIN roles. Regular users can only read their own resources.
  *
  * Admin-only operations (blocked for non-admin users):
- * - Plan management: POST/PUT/DELETE /plans
+ * - Plan management: POST/PUT/DELETE /plans — PREVENTIVE. `createBillingRoutes`
+ *   registers no plan write at this tier (its `if (plans)` block is three GETs),
+ *   so today this rule gates requests that would answer 404 for want of a
+ *   handler. It stays for the qzpay version that adds them; the real plan writes
+ *   are `/api/v1/admin/billing/plans`, behind `BILLING_MANAGE`.
  * - Customer creation/deletion: POST/DELETE /customers
  * - Subscription creation/modification: POST/PUT/DELETE /subscriptions
  * - Invoice creation/voiding: POST /invoices, POST /invoices/:id/void
@@ -13,10 +17,30 @@
  * - Entitlement management: POST/DELETE /entitlements
  *
  * Allowed for all authenticated users:
- * - GET on any resource (filtered by ownership middleware)
+ * - GET on any resource
  * - POST /checkout (self-service checkout)
  * - POST /webhooks (system webhooks)
  * - POST /invoices/:id/pay (pay own invoice)
+ *
+ * WHAT "GET IS ALLOWED" DOES NOT MEAN
+ * ----------------------------------
+ * This used to say GETs were "filtered by ownership middleware", and for two
+ * whole route families that was not true. `billingOwnershipMiddleware` only acts
+ * on a path naming a resource it knows has a `customerId` — customers,
+ * subscriptions, invoices, payments, entitlements. Catalogue segments carry no
+ * owning customer, so nothing downstream filtered them and the pair of guards
+ * each deferred to the other: `GET /customers` served every customer's PII
+ * (H-66 / HOS-446) and `GET /plans/:id` served a negotiated plan's price to any
+ * authenticated caller (HOS-1186).
+ *
+ * What covers reads at this tier, then, is not this middleware and not the
+ * ownership one:
+ *   - `collection-listing-block.ts`  — qzpay's bare-collection listings;
+ *   - `protected-plans-list.ts`      — `GET /plans`;
+ *   - `protected-plan-by-id.ts`      — `GET /plans/:id` and its `/prices`.
+ * A new qzpay READ route is covered by NONE of them until someone says so. That
+ * is the reason to keep reading this guard as "it gates writes", and nothing
+ * more.
  *
  * @module middlewares/billing-admin-guard.middleware
  */
@@ -158,8 +182,9 @@ function isAdminOnlyOperation(path: string, method: string): boolean {
  * Billing admin guard middleware factory.
  *
  * Blocks non-admin users from performing write operations on billing resources
- * that should be admin-only. Read operations (GET) are always allowed (the
- * ownership middleware handles resource-level access control).
+ * that should be admin-only. Read operations (GET) are always allowed — see the
+ * module JSDoc for what does and does not filter them; the ownership middleware
+ * only covers the resources that carry a `customerId`.
  *
  * Must run AFTER `actorMiddleware` (sets `actor` on context).
  *
@@ -169,7 +194,9 @@ export function billingAdminGuardMiddleware(): AppMiddleware {
     return async (c, next) => {
         const method = c.req.method.toUpperCase();
 
-        // GET requests are always allowed (filtered by ownership middleware)
+        // GET requests are always allowed. This is a WRITE gate: what a read may
+        // answer is decided by the route overrides named in the module JSDoc, not
+        // here and not by the ownership middleware.
         if (method === 'GET') {
             await next();
             return;

@@ -35,23 +35,120 @@ export type PluralTranslate = (
     params?: Record<string, unknown>
 ) => string;
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+/**
+ * MIME types accepted from the file picker / drag-and-drop.
+ *
+ * HOS-332: `image/heic` was added by owner decision even though Chrome
+ * cannot DECODE it (no `createImageBitmap`/`ImageDecoder` support for HEIC —
+ * Safari can). That asymmetry is fine here: this list only gates which files
+ * are accepted at all, and the compression step
+ * (`@/lib/media/compress-image`) already falls back to uploading an
+ * undecodable file as-is. The server has accepted `image/heic` since before
+ * this change (`packages/media/src/server/validate-media-file.ts`); this list
+ * used to be the only thing standing in the way.
+ */
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
+
+// ----------------------------------------------------------------------------
+// Plan-derived gallery cap (HOS-1024)
+// ----------------------------------------------------------------------------
 
 /**
- * Validate a single file's MIME type and size against the shared entity
- * upload limits.
+ * Client-safe wire-value literal for `LimitKey.MAX_PHOTOS_PER_ACCOMMODATION`
+ * (`@repo/billing`). Kept as a plain string rather than importing the enum —
+ * this module is reachable from `PhotoSection.client.tsx`, a client island,
+ * and `@repo/billing`'s barrel is off-limits to any client-reachable module
+ * (its runtime closure pulls in `@repo/logger`, which reads `process.env` at
+ * module scope and throws during hydration — see
+ * `test/static-guards/billing-barrel-client-isolation.test.ts`). Same
+ * convention as `AnalyticsSection.client.tsx` / `PromotionList.client.tsx`.
+ */
+export const MAX_PHOTOS_LIMIT_KEY = 'max_photos_per_accommodation';
+
+/**
+ * Placeholder gallery cap used while the plan-derived limit is still in
+ * flight (HOS-1024). Large enough that `galleryItems.length >= cap` can never
+ * be true for a real gallery, so `usePhotoSection`'s `isGalleryFull` stays
+ * `false` during the loading window instead of falsely reporting the gallery
+ * as full. The actual gating during that window — disabling the upload
+ * control — is `PhotoSection.client.tsx`'s job, not this value's.
+ */
+export const GALLERY_CAP_PENDING_PLACEHOLDER = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Resolves the effective gallery cap shown to, and enforced against, the host
+ * (HOS-1024).
+ *
+ * Before this, every host saw the SAME number regardless of plan —
+ * `ENTITY_GALLERY_CAPS.accommodation` (50), the technical ceiling on the
+ * entity, unrelated to what any given plan actually grants (Owner Básico
+ * grants 15). That ceiling is untouched by this function and stays enforced
+ * server-side as a hard floor above the plan cap (`upload-entity.ts`'s
+ * `GALLERY_LIMIT_EXCEEDED` check) — this only decides what to show and what
+ * to enforce CLIENT-side, one layer below that ceiling.
+ *
+ * @param params.planLimit - The raw value from
+ *   `useMyEntitlements().limit(MAX_PHOTOS_LIMIT_KEY)`. `-1` is the hook's own
+ *   "loading or no data" sentinel (see its JSDoc); no plan in the current
+ *   catalogue grants `0` or a negative cap, so any non-positive value is
+ *   treated the same way — not actually resolved yet.
+ * @param params.isEntitlementsLoading - The hook's own `isLoading` flag.
+ * @returns `cap` — pass this to `usePhotoSection`'s `galleryCap` prop, and
+ *   display it only when `isResolved` is `true`.
+ *
+ * @example
+ * ```ts
+ * const { limit, isLoading } = useMyEntitlements();
+ * const { cap, isResolved } = resolveEffectiveGalleryCap({
+ *   planLimit: limit(MAX_PHOTOS_LIMIT_KEY),
+ *   isEntitlementsLoading: isLoading
+ * });
+ * ```
+ */
+export function resolveEffectiveGalleryCap({
+    planLimit,
+    isEntitlementsLoading
+}: {
+    readonly planLimit: number;
+    readonly isEntitlementsLoading: boolean;
+}): { readonly cap: number; readonly isResolved: boolean } {
+    const isResolved = !isEntitlementsLoading && planLimit > 0;
+    return {
+        cap: isResolved ? planLimit : GALLERY_CAP_PENDING_PLACEHOLDER,
+        isResolved
+    };
+}
+
+/**
+ * Validate a single file's MIME type against the shared entity upload
+ * allowlist.
  *
  * @param file - The file selected or dropped by the user
  * @param t - Active translator
- * @returns A localized error message, or `null` when the file is valid
+ * @returns A localized error message, or `null` when the type is accepted
  */
-export function validatePhotoFile(file: File, t: Translate): string | null {
+export function validatePhotoFileType(file: File, t: Translate): string | null {
     if (!ALLOWED_MIME_TYPES.includes(file.type as (typeof ALLOWED_MIME_TYPES)[number])) {
         return t(
             'host.properties.editor.photo.invalidType',
-            'Solo se permiten archivos JPG, PNG o WebP'
+            'Solo se permiten archivos JPG, PNG, WebP o HEIC'
         );
     }
+    return null;
+}
+
+/**
+ * Validate a single file's size against the shared entity upload limit.
+ *
+ * Called AFTER client-side compression (HOS-332) against the (possibly
+ * shrunk) file that will actually be uploaded — not the original — so a
+ * heavy original that compresses under the cap is accepted.
+ *
+ * @param file - The file to check (post-compression, when applicable)
+ * @param t - Active translator
+ * @returns A localized error message, or `null` when the size is within cap
+ */
+export function validatePhotoFileSize(file: File, t: Translate): string | null {
     if (file.size > mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB)) {
         return t(
             'host.properties.editor.photo.tooLarge',
@@ -60,6 +157,44 @@ export function validatePhotoFile(file: File, t: Translate): string | null {
         );
     }
     return null;
+}
+
+/**
+ * Full validation (type + size) for a file, in one call.
+ *
+ * Kept for callers that validate BEFORE any compression attempt (there are
+ * none left in this editor as of HOS-332, but the pairing is a natural unit
+ * worth keeping available and covered).
+ *
+ * @param file - The file selected or dropped by the user
+ * @param t - Active translator
+ * @returns A localized error message, or `null` when the file is valid
+ */
+export function validatePhotoFile(file: File, t: Translate): string | null {
+    return validatePhotoFileType(file, t) ?? validatePhotoFileSize(file, t);
+}
+
+/**
+ * Message shown when a file could not be compressed (the browser cannot
+ * decode its format — the canonical case is a HEIC photo on Chrome, which
+ * cannot decode HEIC at all, only Safari can) AND it still exceeds the
+ * upload size cap after that failed attempt.
+ *
+ * Deliberately distinct from the generic {@link validatePhotoFileSize}
+ * message: "the file is too large" reads as fixable by picking a smaller
+ * photo, but here the real fix is different (convert the format, or use a
+ * device/browser that can decode it) and the host deserves to be told that
+ * rather than left retrying the same rejected file.
+ *
+ * @param t - Active translator
+ * @returns A localized, actionable error message
+ */
+export function buildCompressionUnsupportedTooLargeMessage(t: Translate): string {
+    return t(
+        'host.properties.editor.photo.compressionUnsupportedTooLarge',
+        'No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.',
+        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+    );
 }
 
 /**
@@ -204,6 +339,37 @@ export const PHOTO_DESCRIPTION_MIN_LENGTH = 10;
 export const PHOTO_DESCRIPTION_MAX_LENGTH = 300;
 /** Mirrors `ImageAttributionSchema.photographer` in `@repo/schemas`. */
 export const PHOTO_PHOTOGRAPHER_MAX_LENGTH = 200;
+
+/**
+ * The minimum a photo row must expose to be edited by `PhotoMetadataEditor`.
+ *
+ * Widened out of `AccommodationMediaItem` by HOS-1036, when the same panel had
+ * to serve post/event galleries (`ContentMediaSection`) and commerce galleries
+ * (`MediaSection`) as well. Those three local item shapes agree on exactly
+ * these five fields and disagree on everything else (`publicId` required vs
+ * optional, `width`/`height`, `isFeatured`), so the panel depends on the
+ * intersection and nothing more.
+ *
+ * `null` is accepted alongside `undefined` on every text field because the API
+ * rows are nullable and the callers map them differently — one normalizes to
+ * `undefined`, another passes the row through.
+ *
+ * The four text keys are REQUIRED and nullable (`string | null | undefined`),
+ * not optional (`?: string | null`). The distinction is the whole safety of
+ * this interface: the panel always sends all four fields back, and a field it
+ * never received is sent as `null`, which CLEARS the column. With `?:`, a
+ * caller that forgets to map `description` compiles clean and erases that
+ * column on the first save; required-and-nullable makes the same omission a
+ * `tsc` error, while still accepting every value the callers actually produce.
+ */
+export interface PhotoMetadataEditableItem {
+    /** DB UUID. Empty string for an SSR placeholder that cannot be edited yet. */
+    readonly id: string;
+    readonly alt: string | null | undefined;
+    readonly caption: string | null | undefined;
+    readonly description: string | null | undefined;
+    readonly attribution: MediaAttribution | null | undefined;
+}
 
 /** Raw form field values for the photo metadata editor, always plain strings. */
 export interface PhotoMetadataFormValues {

@@ -771,6 +771,83 @@
 }
 
 /* ==========================================================================
+   Dialog panel — the height cap + scroll every dialog gets for free
+   --------------------------------------------------------------------------
+   THE one place this app decides how tall a dialog may grow and what happens
+   when its content is taller than that. Before HOS-958 each dialog decided
+   for itself — `90vh` here, `min(90vh, 48rem)` there, `70vh` somewhere else,
+   and nothing at all in six modules. The ones that decided nothing were fine
+   with the test account and unusable with a real one: no cap, no scrollbar,
+   the confirm button below the fold with no way to reach it.
+
+   Compose the class onto the surface, exactly like `.overlay-surface`:
+
+       <dialog className={cn(styles.dialog, 'dialog-panel')}>
+
+   Three classes, and which one you need follows from the markup:
+
+   - `.dialog-panel` — the surface that holds the content. Caps its height and
+     scrolls itself. This is the default: a dialog whose body is one flow of
+     content needs this and nothing else.
+   - `.dialog-panel-scroll` — the region that scrolls INSIDE a panel that
+     keeps a fixed header and/or footer. The panel stays capped by
+     `.dialog-panel`; this child takes the scrolling, so the header does not
+     scroll away with the body.
+   - `.dialog-viewport` — for a `<dialog>` that is not the panel at all: a
+     full-viewport overlay wrapping a centered card, or an edge-anchored
+     drawer. It fills the screen and hands the cap to a `.dialog-panel` child.
+
+   Retune ONE panel with `--dialog-max-height` (a drawer that must be exactly
+   full height sets `100%`), never by re-declaring `max-height` in the module.
+   A second declaration of the same property is how the cap drifted apart in
+   the first place, and it races the shared class on source order because both
+   selectors have identical specificity — whoever the bundler emits last wins,
+   which is not something a component should be betting on.
+
+   `scripts/check-dialog-max-height.sh` fails CI on a `<dialog>` that carries
+   none of these markers, and pins how many may use `.dialog-viewport` — that
+   is the one shape where the `<dialog>` itself carries no cap, so a new one
+   has to be argued for rather than typed.
+   ========================================================================== */
+
+.dialog-panel {
+    /* `dvh`, not `vh`: on mobile `vh` resolves against the LARGEST viewport,
+       so a panel sized in `vh` still runs under the address bar on the very
+       screens where the overflow bites hardest. */
+    max-height: var(--dialog-max-height, calc(100dvh - 2rem));
+    overflow-y: auto;
+    /* A scroll gesture that reaches the end of the panel must not hand the
+       remaining momentum to the page behind it. */
+    overscroll-behavior: contain;
+}
+
+/* REQUIRES A FLEX (or grid) PARENT. `.dialog-panel` deliberately does not
+   declare `display`, so a `<dialog>` stays `block` unless its own module says
+   otherwise — and `flex: 1 1 auto` on a child of a block parent does nothing
+   at all. The region then does not scroll, the whole panel scrolls instead,
+   and the header this arrangement exists to pin scrolls away with it. Nothing
+   about that shows up in a diff, a type or a test, so the parent's
+   `display: flex; flex-direction: column` is enforced by
+   `pnpm check:dialog-panel` instead. */
+.dialog-panel-scroll {
+    flex: 1 1 auto;
+    /* Without this a flex child refuses to shrink below its content height:
+       the panel overflows instead of the child scrolling, and the header the
+       whole arrangement exists to keep in place scrolls away anyway. */
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.dialog-viewport {
+    max-height: 100dvh;
+    /* Overrides the user-agent `dialog { max-width: calc(100% - 6px - 2em) }`,
+       which would otherwise inset a full-bleed overlay by a few pixels. */
+    max-width: 100vw;
+    overflow: hidden;
+}
+
+/* ==========================================================================
    Frosted surfaces
    --------------------------------------------------------------------------
    Translucent backgrounds with a backdrop blur for floating UI (toggles,
@@ -1216,4 +1293,56 @@ select[aria-invalid="true"] {
 
 .combobox__helper-link:hover {
     color: var(--brand-primary);
+}
+
+/* === Auth pages: secondary links (signin.astro / signup.astro) ===
+   HOS-959: single source for what used to be byte-identical `<style>`
+   blocks duplicated in both pages. Astro scoped styles cannot reach
+   markup rendered by a sibling page, so this lives in the shared
+   global stylesheet instead. `.auth-page` / `.auth-page__card` (an
+   older wrapper superseded by AuthLayout's own `.auth-card`) were
+   dropped here — grep confirmed neither class is referenced by any
+   markup, so carrying them forward would just be a THIRD dead copy. */
+.auth-page__links {
+    margin-top: var(--space-4, 1rem);
+    text-align: center;
+}
+
+.auth-page__footer {
+    margin-top: var(--space-6, 1.5rem);
+    text-align: center;
+}
+
+/* signin.astro's footer follows `.auth-page__links` (the forgot-password
+   link), which already carries its own margin-top — the extra top margin
+   the bare signup.astro footer needs would double up there. Preserves the
+   pre-HOS-959 per-page spacing (signin used var(--space-4), signup used
+   var(--space-6)) without duplicating the whole block. */
+.auth-page__footer--tight {
+    margin-top: var(--space-4, 1rem);
+}
+
+.auth-page__footer-text {
+    font-size: var(--text-body-sm);
+    color: var(--core-muted-foreground);
+}
+
+.auth-page__link {
+    font-size: var(--text-body-sm);
+    color: var(--brand-primary);
+    text-decoration: none;
+    transition: color var(--duration-fast) ease;
+}
+
+.auth-page__link:hover {
+    color: var(--brand-primary-l85);
+}
+
+.auth-page__link:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.auth-page__link--strong {
+    font-weight: 600;
 }

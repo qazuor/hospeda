@@ -25,6 +25,40 @@ const WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321'
 const ADMIN_BASE_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:18000';
 const API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 
+/**
+ * Belt-and-braces half of the CI Cloudinary cost guard (HOS-1144).
+ *
+ * The primary fix rewrites remote media URLs to a local placeholder at
+ * RESOLUTION time (`@repo/media`'s `getMediaUrl` / `isLocalMediaPlaceholderMode`,
+ * plus `apps/web/src/lib/media.ts`). This is the second layer: if any URL ever
+ * escapes that rewrite — a client island that never saw `process.env`, a new
+ * component, a hardcoded string — Chromium must still be unable to reach
+ * Cloudinary.
+ *
+ * Read straight from `process.env` on purpose: `apps/e2e` does not depend on
+ * `@repo/media`, and a Playwright config is exactly where a raw env read is
+ * legitimate. The name is the one canonicalised as
+ * `LOCAL_MEDIA_PLACEHOLDERS_ENV_VAR` in
+ * `packages/media/src/local-media-placeholders.ts`;
+ * `scripts/check-local-media-placeholders.sh` fails CI if the two drift apart.
+ */
+const useLocalMediaPlaceholders = (() => {
+    const raw = process.env.HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS?.trim().toLowerCase() ?? '';
+    return raw === 'true' || raw === '1';
+})();
+
+/**
+ * Chromium flags that make `res.cloudinary.com` unresolvable for the whole
+ * browser — every page, every context, every worker, with no per-spec wiring a
+ * test could forget. `~NOTFOUND` fails DNS outright, so the request dies before
+ * a socket is opened.
+ *
+ * Empty when the mode is off, so local runs still render real photographs.
+ */
+const cloudinaryBlockArgs: readonly string[] = useLocalMediaPlaceholders
+    ? ['--host-resolver-rules=MAP res.cloudinary.com ~NOTFOUND']
+    : [];
+
 // Repo root: two levels above apps/e2e/playwright.config.ts.
 // All `pnpm --filter` commands need cwd = repo root to resolve the workspace.
 // ESM-safe: use import.meta.url instead of __dirname (package type is "module").
@@ -53,6 +87,8 @@ export default defineConfig({
         : [['html', { open: 'on-failure', outputFolder: 'playwright-report' }], ['list']],
     use: {
         baseURL: WEB_BASE_URL,
+        // HOS-1144 — see `cloudinaryBlockArgs` above. No-op when the mode is off.
+        launchOptions: { args: [...cloudinaryBlockArgs] },
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'on-first-retry',

@@ -52,12 +52,88 @@ describe('recordCronRun', () => {
             executionMode: 'scheduled',
             dryRun: false,
             startedAt: new Date(),
-            result: { success: false, message: 'partial', processed: 1, errors: 2, durationMs: 10 }
+            result: {
+                success: false,
+                message: 'dunning failed hard',
+                processed: 1,
+                errors: 2,
+                durationMs: 10
+            }
         });
 
         const { data } = mockRecordRun.mock.calls[0]?.[0] as { data: Record<string, unknown> };
         expect(data.status).toBe('failed');
         expect(data.errors).toBe(2);
+    });
+
+    // HOS-918 regression: `errorMessage` was dropped for a non-thrown failure, so
+    // 45 production `failed` rows have `error_message = NULL` with nothing to
+    // investigate. A `success: false` result (no exception) must persist the job's
+    // own `message` as `errorMessage` instead of leaving it `null`.
+    it('persists result.message as errorMessage when success=false without a thrown error', async () => {
+        await recordCronRun({
+            jobName: 'dunning',
+            executionMode: 'scheduled',
+            dryRun: false,
+            startedAt: new Date(),
+            result: {
+                success: false,
+                message: 'dunning failed hard',
+                processed: 1,
+                errors: 2,
+                durationMs: 10
+            }
+        });
+
+        const { data } = mockRecordRun.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+        expect(data.errorMessage).toBe('dunning failed hard');
+    });
+
+    // HOS-918 regression: page-revalidation.job.ts returns `success: true` with
+    // `errors: 1` for a soft failure (purge failed but the job kept going). Before
+    // this fix, `record-run.ts` derived status purely from `result.success`, so this
+    // was persisted as `success` — indistinguishable from a clean run. Must be
+    // `partial`, and the job's message must be persisted so it can be investigated.
+    it('records a result with success=true and errors>0 as status=partial, with errorMessage set', async () => {
+        await recordCronRun({
+            jobName: 'page-revalidation',
+            executionMode: 'scheduled',
+            dryRun: false,
+            startedAt: new Date(),
+            result: {
+                success: true,
+                message: 'Revalidated 2 entity types (1 errors)',
+                processed: 2,
+                errors: 1,
+                durationMs: 100
+            }
+        });
+
+        const { data } = mockRecordRun.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+        expect(data.status).toBe('partial');
+        expect(data.errorMessage).toBe('Revalidated 2 entity types (1 errors)');
+    });
+
+    // Happy-path guard: a clean run (errors=0) must not regress to 'partial', and
+    // must keep errorMessage null — the column should not fill up with success noise.
+    it('records a result with success=true and errors=0 as status=success, with errorMessage null', async () => {
+        await recordCronRun({
+            jobName: 'page-revalidation',
+            executionMode: 'scheduled',
+            dryRun: false,
+            startedAt: new Date(),
+            result: {
+                success: true,
+                message: 'Revalidated 2 entity types (0 errors)',
+                processed: 2,
+                errors: 0,
+                durationMs: 100
+            }
+        });
+
+        const { data } = mockRecordRun.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+        expect(data.status).toBe('success');
+        expect(data.errorMessage).toBeNull();
     });
 
     it('maps a timeout error to status=timeout', async () => {

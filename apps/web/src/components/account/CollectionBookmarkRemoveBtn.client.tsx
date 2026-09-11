@@ -9,6 +9,7 @@
  */
 
 import { useState } from 'react';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CollectionBookmarkRemoveBtn.module.css';
@@ -47,11 +48,20 @@ export function CollectionBookmarkRemoveBtn({
     const [error, setError] = useState<string | null>(null);
 
     async function handleRemove() {
-        const confirmMessage = t(
-            'account.favorites.collections.removeConfirm',
-            '¿Quitar este favorito de la colección? Seguirá guardado en tus favoritos.'
-        );
-        if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) {
+        // HOS-957: the product-styled dialog, not `window.confirm()`. It
+        // resolves `false` when there is no DOM to render into, which is also
+        // the safe answer for a destructive action — the old native guard
+        // proceeded in that case.
+        const confirmed = await showConfirmationDialog({
+            title: t('account.favorites.collections.removeConfirmTitle', 'Quitar de la colección'),
+            message: t(
+                'account.favorites.collections.removeConfirm',
+                '¿Quitar este favorito de la colección? Seguirá guardado en tus favoritos.'
+            ),
+            confirmLabel: t('account.favorites.collections.removeConfirmButton', 'Quitar'),
+            cancelLabel: t('common.cancel', 'Cancelar')
+        });
+        if (!confirmed) {
             return;
         }
 

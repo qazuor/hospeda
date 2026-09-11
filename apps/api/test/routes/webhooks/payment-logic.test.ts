@@ -52,6 +52,19 @@ vi.mock('../../../src/routes/webhooks/mercadopago/notifications', () => ({
     sendPaymentFailureNotifications: vi.fn().mockResolvedValue(undefined)
 }));
 
+// HOS-1234. Spied rather than replaced wholesale: the module also exports
+// `resolvePayerEmail`, `getMpPayerEmail` and `clearMpPayerEmailBestEffort`, and
+// a whole-module factory would hand `undefined` to anything in the import graph
+// that reaches for one of those.
+const { mockPersistMpPayerEmail } = vi.hoisted(() => ({
+    mockPersistMpPayerEmail: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('../../../src/services/billing/payer-email', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    persistMpPayerEmailBestEffort: (...args: unknown[]) => mockPersistMpPayerEmail(...args)
+}));
+
 vi.mock('../../../src/routes/webhooks/mercadopago/utils', () => ({
     extractPaymentInfo: vi.fn().mockReturnValue(null),
     extractAddonMetadata: vi.fn().mockReturnValue(null),
@@ -492,6 +505,122 @@ describe('processPaymentUpdated', () => {
     });
 
     // ── PostHog subscription_payment_succeeded (this task) ─────────────────
+    // HOS-1234. `billing_customers.mp_payer_email` is defined as "the last email
+    // MercadoPago actually accepted", and its value is later used to STOP asking
+    // the user which address to bill. Every case here defends that definition:
+    // what may write it, and what must not.
+    describe('HOS-1234: recording the confirmed payer email', () => {
+        const clearedPayment = {
+            amount: asMajor(1000),
+            currency: 'ARS',
+            status: 'succeeded',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        };
+
+        beforeEach(() => {
+            mockPersistMpPayerEmail.mockClear();
+        });
+
+        it('records the payer email of a cleared payment against the metadata customer', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+
+            await processPaymentUpdated({
+                data: {
+                    metadata: { customerId: 'cust-1' },
+                    payer_email: 'quien.pago@example.com'
+                },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).toHaveBeenCalledWith({
+                customerId: 'cust-1',
+                payerEmail: 'quien.pago@example.com'
+            });
+        });
+
+        it('does NOT record it when the payment did not clear', async () => {
+            // The load-bearing guard. An address that failed to pay -- or, far
+            // more often, one whose payer walked away from MercadoPago's page
+            // without paying at all -- must never be stored: it would suppress
+            // the payer-email dialog on the next checkout while pointing at an
+            // account that cannot pay, and the abandonment case emits no failure
+            // event that could ever correct it.
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                ...clearedPayment,
+                status: 'failed'
+            });
+
+            await processPaymentUpdated({
+                data: {
+                    metadata: { customerId: 'cust-1' },
+                    payer_email: 'no.pudo.pagar@example.com'
+                },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT record anything when the provider reported no payer email', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' }, payer_email: null },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT record an empty string the adapter let through', async () => {
+            // Second line of defense behind qzpay's own `|| null`. MercadoPago
+            // spells "no email" as `''`, which is falsy enough to look handled
+            // and still a `string`, so it would type-check its way into the
+            // column.
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+
+            await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' }, payer_email: '' },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+
+        it('does NOT guess a customer when the payment metadata carries none', async () => {
+            // A recurring subscription charge arrives exactly like this --
+            // `metadata: {}`, measured on payment 177923168044 -- and it is
+            // deliberately NOT recorded here. `external_reference` is the only
+            // other identifier on the payload and it is overloaded three ways
+            // (anti-IDOR nonce, local subscription id, qzpay session id), two of
+            // them UUID-shaped; resolving a customer from it would be a guess.
+            // Subscription charges are recorded by `subscription-payment-handler`
+            // instead, which resolves the customer from
+            // `billing_subscriptions.mp_subscription_id`.
+            vi.mocked(extractPaymentInfo).mockReturnValue(clearedPayment);
+            annualDbState.subRows = [
+                { id: 'sub-1', customerId: 'must-not-be-used', status: 'active' }
+            ];
+
+            await processPaymentUpdated({
+                data: {
+                    metadata: {},
+                    external_reference: '54793281-f280-4a24-b2e3-8a02b5f38102',
+                    payer_email: 'quien.pago@example.com'
+                },
+                billing: mockBilling,
+                source: 'webhook'
+            });
+
+            expect(mockPersistMpPayerEmail).not.toHaveBeenCalled();
+        });
+    });
+
     describe('PostHog subscription_payment_succeeded capture', () => {
         it('captures subscription_payment_succeeded on an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
@@ -2380,6 +2509,92 @@ describe('processPaymentUpdated', () => {
                 );
             });
         });
+
+        // HOS-1001 — a failed ledger write used to be an `apiLogger.error` and
+        // nothing else: money collected, the plan granted, no accounting entry,
+        // and nothing anywhere recording that one was owed. These tests fail if
+        // that swallow comes back.
+        describe('HOS-1001: a failed billing_payments write is queued, not swallowed', () => {
+            it('queues the payment as ledger-write-failed when record() throws', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                annualDbState.paymentDedupeRows = [];
+                (mockBilling.payments.record as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+                    new Error('billing_payments insert exploded')
+                );
+
+                await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(mockRecordOrphanPayment).toHaveBeenCalledOnce();
+                const queued = mockRecordOrphanPayment.mock.calls[0]?.[0] as Record<
+                    string,
+                    unknown
+                >;
+                expect(queued.flow).toBe('annual-upfront');
+                expect(queued.reason).toBe('ledger-write-failed');
+                expect(queued.providerPaymentId).toBe(MP_PAYMENT_ID);
+                expect(queued.subscriptionId).toBe(ANNUAL_SUB_ID);
+                expect(queued.customerId).toBe('cust-1');
+                // MAJOR units, as the queue's branded parameter requires.
+                expect(queued.amountMajor).toBe(350_000);
+                expect((queued.metadata as Record<string, unknown>).ledgerWriteError).toBe(
+                    'billing_payments insert exploded'
+                );
+            });
+
+            it('still flips the subscription to active — the customer paid for the year', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                annualDbState.paymentDedupeRows = [];
+                (mockBilling.payments.record as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+                    new Error('billing_payments insert exploded')
+                );
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(result.annualSubscriptionConfirmed).toBe(true);
+                expect(annualDbState.updateCalls).toHaveLength(1);
+                const updateValues = annualDbState.updateCalls[0]?.values as Record<
+                    string,
+                    unknown
+                >;
+                expect(updateValues.status).toBe('active');
+            });
+
+            it('does NOT queue anything when the ledger write succeeds', async () => {
+                approvedAnnualPayment();
+                annualDbState.subRows = [
+                    { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'pending_provider' }
+                ];
+                annualDbState.paymentDedupeRows = [];
+
+                await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                    },
+                    billing: mockBilling
+                });
+
+                expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+            });
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -2534,6 +2749,66 @@ describe('processPaymentUpdated', () => {
             expect(recordArg.amount).toBe(100_000); // 1000 major → centavos
             expect(recordArg.subscriptionId).toBe(UPGRADE_SUB_ID);
             expect(recordArg.providerPaymentId).toBe(MP_PAYMENT_ID);
+        });
+
+        // HOS-1001 — the delta charge is real money; "non-blocking" was true of
+        // the plan change and false of the books. A failed ledger write is now
+        // an incident on the queue instead of a log line nobody reads.
+        describe('HOS-1001: a failed delta ledger write is queued, not swallowed', () => {
+            it('queues the delta as ledger-write-failed when record() throws', async () => {
+                approvedUpgradePayment();
+                annualDbState.subRows = [];
+                annualDbState.paymentDedupeRows = [];
+                const billing = makeUpgradeBilling();
+                billing.payments.record.mockRejectedValueOnce(
+                    new Error('delta insert hit a constraint')
+                );
+
+                const result = await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { planChangeUpgradeId: UPGRADE_SUB_ID, newPlanId: NEW_PLAN_ID }
+                    },
+                    billing
+                });
+
+                // The upgrade is NOT rolled back — the customer paid for it.
+                expect(result.planUpgradeConfirmed).toBe(true);
+                expect(billing.subscriptions.changePlan).toHaveBeenCalledOnce();
+
+                expect(mockRecordOrphanPayment).toHaveBeenCalledOnce();
+                const queued = mockRecordOrphanPayment.mock.calls[0]?.[0] as Record<
+                    string,
+                    unknown
+                >;
+                expect(queued.flow).toBe('plan-change-upgrade');
+                expect(queued.reason).toBe('ledger-write-failed');
+                expect(queued.providerPaymentId).toBe(MP_PAYMENT_ID);
+                expect(queued.subscriptionId).toBe(UPGRADE_SUB_ID);
+                expect(queued.customerId).toBe('cust-1');
+                expect(queued.amountMajor).toBe(1_000);
+                const queuedMetadata = queued.metadata as Record<string, unknown>;
+                expect(queuedMetadata.ledgerWriteError).toBe('delta insert hit a constraint');
+                expect(queuedMetadata.oldPlanId).toBe(OLD_PLAN_ID);
+                expect(queuedMetadata.newPlanId).toBe(NEW_PLAN_ID);
+            });
+
+            it('does NOT queue anything when the delta ledger write succeeds', async () => {
+                approvedUpgradePayment();
+                annualDbState.subRows = [];
+                annualDbState.paymentDedupeRows = [];
+                const billing = makeUpgradeBilling();
+
+                await processPaymentUpdated({
+                    data: {
+                        id: MP_PAYMENT_ID,
+                        metadata: { planChangeUpgradeId: UPGRADE_SUB_ID, newPlanId: NEW_PLAN_ID }
+                    },
+                    billing
+                });
+
+                expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+            });
         });
 
         // HOS-75 T-018: resolveDiscountAwareUpgradeAmount's SELECT now goes

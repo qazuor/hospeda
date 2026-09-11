@@ -24,6 +24,9 @@ export const adminNamespaces = [
     'admin-dashboard',
     'admin-menu',
     'admin-pages',
+    // Redirectable QR codes manager (HOS-981). Admin-only: 3.3 KB per locale of
+    // panel copy that no web visitor ever renders.
+    'admin-qr-codes',
     'admin-tables',
     'admin-common',
     'admin-entities',
@@ -49,6 +52,7 @@ import adminMenuEn from './locales/en/admin-menu.json';
 import adminNavEn from './locales/en/admin-nav.json';
 import adminNewsletterEn from './locales/en/admin-newsletter.json';
 import adminPagesEn from './locales/en/admin-pages.json';
+import adminQrCodesEn from './locales/en/admin-qr-codes.json';
 import adminTablesEn from './locales/en/admin-tables.json';
 import adminTabsEn from './locales/en/admin-tabs.json';
 import adminWhatsNewEn from './locales/en/admin-whats-new.json';
@@ -66,6 +70,7 @@ import adminMenuEs from './locales/es/admin-menu.json';
 import adminNavEs from './locales/es/admin-nav.json';
 import adminNewsletterEs from './locales/es/admin-newsletter.json';
 import adminPagesEs from './locales/es/admin-pages.json';
+import adminQrCodesEs from './locales/es/admin-qr-codes.json';
 import adminTablesEs from './locales/es/admin-tables.json';
 import adminTabsEs from './locales/es/admin-tabs.json';
 import adminWhatsNewEs from './locales/es/admin-whats-new.json';
@@ -84,6 +89,7 @@ import adminMenuPt from './locales/pt/admin-menu.json';
 import adminNavPt from './locales/pt/admin-nav.json';
 import adminNewsletterPt from './locales/pt/admin-newsletter.json';
 import adminPagesPt from './locales/pt/admin-pages.json';
+import adminQrCodesPt from './locales/pt/admin-qr-codes.json';
 import adminTablesPt from './locales/pt/admin-tables.json';
 import adminTabsPt from './locales/pt/admin-tabs.json';
 import adminWhatsNewPt from './locales/pt/admin-whats-new.json';
@@ -102,6 +108,7 @@ const rawAdminTranslations = {
         'admin-dashboard': adminDashboardEs,
         'admin-menu': adminMenuEs,
         'admin-pages': adminPagesEs,
+        'admin-qr-codes': adminQrCodesEs,
         'admin-tables': adminTablesEs,
         'admin-common': adminCommonEs,
         'admin-entities': adminEntitiesEs,
@@ -118,6 +125,7 @@ const rawAdminTranslations = {
         'admin-dashboard': adminDashboardEn,
         'admin-menu': adminMenuEn,
         'admin-pages': adminPagesEn,
+        'admin-qr-codes': adminQrCodesEn,
         'admin-tables': adminTablesEn,
         'admin-common': adminCommonEn,
         'admin-entities': adminEntitiesEn,
@@ -134,6 +142,7 @@ const rawAdminTranslations = {
         'admin-dashboard': adminDashboardPt,
         'admin-menu': adminMenuPt,
         'admin-pages': adminPagesPt,
+        'admin-qr-codes': adminQrCodesPt,
         'admin-tables': adminTablesPt,
         'admin-common': adminCommonPt,
         'admin-entities': adminEntitiesPt,

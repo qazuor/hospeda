@@ -5,15 +5,20 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified experience (enforced inside updateExperienceFaq).
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     ExperienceFaqSingleOutputSchema,
     type ExperienceFaqUpdateInput,
-    FaqUpdatePayloadSchema,
-    type FaqUpdatePayloadType
+    FaqWithChannelVisibilityUpdatePayloadSchema,
+    type FaqWithChannelVisibilityUpdatePayloadType,
+    ProductDomainEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceFaq } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import { requireEntitlement } from '../../../middlewares/entitlement';
+import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -36,7 +41,7 @@ export const protectedUpdateExperienceFaqRoute = createCRUDRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: FaqUpdatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: ExperienceFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -48,7 +53,7 @@ export const protectedUpdateExperienceFaqRoute = createCRUDRoute({
         const input: ExperienceFaqUpdateInput = {
             experienceId: params.id as string,
             faqId: params.faqId as string,
-            faq: body as FaqUpdatePayloadType
+            faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
@@ -62,5 +67,14 @@ export const protectedUpdateExperienceFaqRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // HOS-1275: mirrors the gastronomy twin. See `addFaq.ts` for why the
+        // vertical loader must be first.
+        middlewares: [
+            commerceVerticalEntitlementMiddleware('experience'),
+            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
+            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
+        ]
     }
 });

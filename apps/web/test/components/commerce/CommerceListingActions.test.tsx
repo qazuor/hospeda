@@ -18,7 +18,17 @@ import type { CommerceOwnerListingSummaryWithState } from '../../../src/lib/comm
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (_key: string, fallback?: string) => fallback ?? _key,
+        // Signature matches the real `PluralTranslationFn`: `(key, count,
+        // params?)` and NO fallback parameter. A stub that accepted a fallback
+        // would let a call site pass one and look fine here while the real
+        // function silently treated it as `params`.
+        //
+        // The key and count are both rendered so the test asserting the trial
+        // CTA names its days can tell itself apart from the one asserting it
+        // names none — a stub that dropped `count` would make those two cases
+        // produce identical output and one of them would be vacuous.
+        tPlural: (key: string, count: number) => `${key} [${count}]`
     })
 }));
 
@@ -47,6 +57,16 @@ vi.mock('../../../src/lib/commerce/owner-listings', () => ({
     startOwnerListingCheckout: vi.fn()
 }));
 
+// HOS-982 PR 2. The published branch mounts `ListingQrSheet`, which fetches its
+// symbol on mount. Without these two the suite made REAL network calls: the
+// vitest env sets `PUBLIC_API_URL` to `http://localhost:3001`, so a machine with
+// the dev API running had these tests talking to it, and they passed either way
+// because the panel swallows a failed image on purpose. A test that is green
+// whether or not it reached a live server is not testing anything about it.
+vi.mock('../../../src/lib/env', () => ({
+    getApiUrl: () => 'https://api.test'
+}));
+
 import { storePendingCheckoutSubId } from '../../../src/lib/billing/checkout-pending';
 import { startOwnerListingCheckout } from '../../../src/lib/commerce/owner-listings';
 
@@ -69,6 +89,15 @@ function buildListing(
 }
 
 beforeEach(() => {
+    // Nothing in this suite asserts on the QR panel's own request; the stub is
+    // here so it never leaves the process. `vi.stubGlobal` is reset per test by
+    // the shared setup, so it is installed for each one.
+    vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+            throw new Error('network disabled in this suite');
+        })
+    );
     mockStartCheckout.mockReset();
     mockStorePending.mockReset();
     Object.defineProperty(window, 'location', {
@@ -98,9 +127,92 @@ describe('CommerceListingActions', () => {
                 '/es/gastronomia/la-parrilla/'
             );
         });
+
+        /*
+         * HOS-982. The QR sheet rides in the published branch, next to the
+         * brochure and for the same reason the brochure is there: the sheet
+         * prints a code that resolves to the PUBLIC ficha, so a draft's code
+         * would be a permanent 404 on a piece of paper somebody taped to a door.
+         * The API enforces that rule itself; this pair only proves the card does
+         * not offer a download that could never work.
+         */
+        it('offers the printable QR sheet on a published listing', () => {
+            render(
+                <CommerceListingActions
+                    listing={buildListing({
+                        isPublic: true,
+                        hasPublicPage: true,
+                        completeness: null
+                    })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.getByTestId('listing-qr-sheet')).toBeInTheDocument();
+            expect(screen.getByTestId('listing-qr-sheet-download')).toBeInTheDocument();
+        });
+
+        /*
+         * HOS-982 PR 2. `isPublic` is visibility ALONE; the API also requires
+         * `lifecycleState === ACTIVE`. A staff PATCH to INACTIVE that leaves
+         * visibility standing produces this row, and it renders the published
+         * badge and the public link (both pre-existing, both out of this change's
+         * scope) — but the QR panel must not join them, because every request it
+         * would make answers 404. Before this fix the card carried three
+         * contradictory sentences and no possible action.
+         */
+        it('does NOT offer it when the listing is PUBLIC but not ACTIVE', () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+
+            render(
+                <CommerceListingActions
+                    listing={buildListing({
+                        isPublic: true,
+                        hasPublicPage: false,
+                        completeness: null
+                    })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.getByTestId('listing-qr-sheet-unpublished')).toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
+            // And nothing was asked of the API: the panel does not learn this
+            // from a 404, it is told.
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('treats an older answer with no hasPublicPage as NOT published', () => {
+            // Fail closed. Falling back to `isPublic` is precisely the
+            // single-clause bug the field was added to remove.
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ isPublic: true, completeness: null })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.getByTestId('listing-qr-sheet-unpublished')).toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
+        });
     });
 
     describe('draft-incomplete state (AC-21)', () => {
+        it('does NOT offer the printable QR sheet — its code would resolve to a 404', () => {
+            render(
+                <CommerceListingActions
+                    listing={buildListing({
+                        completeness: { complete: false, missing: ['summary'] }
+                    })}
+                    locale="es"
+                />
+            );
+
+            expect(screen.queryByTestId('listing-qr-sheet')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
+        });
+
         it('renders the missing checklist and disables the publish button', () => {
             render(
                 <CommerceListingActions
@@ -180,7 +292,7 @@ describe('CommerceListingActions', () => {
                 <CommerceListingActions
                     listing={buildListing({ completeness: { complete: true, missing: [] } })}
                     locale="es"
-                    hasVerticalSubscription={true}
+                    trialVerdict="has_active_sub"
                 />
             );
 
@@ -188,6 +300,55 @@ describe('CommerceListingActions', () => {
             expect(screen.getByTestId('commerce-publish-button')).not.toHaveTextContent(
                 'Publicar y pagar'
             );
+        });
+
+        it('offers the free days instead of a payment when a trial is available (HOS-1184)', () => {
+            // The bug in one assertion. Before HOS-1184 this owner read
+            // "Publicar y pagar" and was sent to MercadoPago, which charges on
+            // card authorization — while /planes/gastronomia promised them
+            // thirty free days reading the same database column.
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ completeness: { complete: true, missing: [] } })}
+                    locale="es"
+                    trialVerdict="trial_available"
+                    trialDays={30}
+                />
+            );
+
+            const button = screen.getByTestId('commerce-publish-button');
+            // Asserted as the KEY plus the count, because `tPlural` takes no
+            // fallback: this file's stub renders `<key> [<count>]`. The Spanish
+            // string itself (`Publicar gratis 30 días`) lives in
+            // `packages/i18n` and is pinned by the i18n guards, not here — a
+            // component test that hardcoded it would just be re-asserting its
+            // own stub.
+            expect(button).toHaveTextContent('publishCtaTrial');
+            expect(button).toHaveTextContent('30');
+            expect(button).not.toHaveTextContent('Publicar y pagar');
+            // Owner copy decision (HOS-1183, applied to both verticals): the CTA
+            // announces the free days and NEVER claims no card is needed — the
+            // card is asked for at signup.
+            expect(button).not.toHaveTextContent('sin tarjeta');
+        });
+
+        it('names no number rather than a wrong one when trialDays is absent', () => {
+            // A verdict that arrives without a length still publishes free; it
+            // just cannot say for how long. Rendering "0 días" or a hardcoded 30
+            // would be the promise drifting from the grant, which is the whole
+            // failure mode this issue is about.
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ completeness: { complete: true, missing: [] } })}
+                    locale="es"
+                    trialVerdict="trial_available"
+                />
+            );
+
+            const button = screen.getByTestId('commerce-publish-button');
+            expect(button).toHaveTextContent('Publicar gratis');
+            expect(button).not.toHaveTextContent('0');
+            expect(button).not.toHaveTextContent('Publicar y pagar');
         });
 
         it('reloads instead of navigating when the backend attaches without a checkout (appliedEffect: attached)', async () => {
@@ -210,7 +371,7 @@ describe('CommerceListingActions', () => {
                 <CommerceListingActions
                     listing={buildListing({ completeness: { complete: true, missing: [] } })}
                     locale="es"
-                    hasVerticalSubscription={true}
+                    trialVerdict="has_active_sub"
                 />
             );
 
@@ -335,7 +496,7 @@ describe('CommerceListingActions', () => {
                         subscriptionStatus: SubscriptionStatusEnum.PAST_DUE
                     })}
                     locale="es"
-                    hasVerticalSubscription={true}
+                    trialVerdict="has_active_sub"
                 />
             );
 

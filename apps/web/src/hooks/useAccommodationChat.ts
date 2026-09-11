@@ -8,6 +8,7 @@
  * @module useAccommodationChat
  */
 
+import type { AiChatEntityType } from '@repo/schemas';
 import { useCallback, useRef, useState } from 'react';
 import type { SseEvent } from '@/lib/api/ai-chat-stream';
 import { streamChat } from '@/lib/api/ai-chat-stream';
@@ -40,7 +41,8 @@ export interface ChatState {
 }
 
 export interface UseAccommodationChatParams {
-    readonly accommodationId: string;
+    readonly entityType: AiChatEntityType;
+    readonly entityId: string;
     readonly locale: 'es' | 'en' | 'pt';
     readonly apiUrl: string;
 }
@@ -98,7 +100,8 @@ export function useAccommodationChat(
 
             void streamChat({
                 apiUrl: params.apiUrl,
-                accommodationId: params.accommodationId,
+                entityType: params.entityType,
+                entityId: params.entityId,
                 messages: updatedMessages,
                 locale: params.locale,
                 conversationId: current.conversationId,
@@ -171,7 +174,7 @@ export function useAccommodationChat(
                 // streamChat handles errors internally; this is a safety net
             });
         },
-        [params.accommodationId, params.apiUrl, params.locale]
+        [params.entityType, params.entityId, params.apiUrl, params.locale]
     );
 
     const abort = useCallback(() => {

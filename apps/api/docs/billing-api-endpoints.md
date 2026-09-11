@@ -149,7 +149,20 @@ Get details of a specific plan.
 
 **Response:** Single plan object (same structure as list)
 
-**Status:** ✅ Fully implemented (QZPay pre-built)
+**Visibility (HOS-1186):** a plan this tier withholds — `metadata.testPlan`, or
+`metadata.publicListing: 'unlisted'` (a negotiated price) — answers **404
+`NOT_FOUND`**, with the same body a plan that does not exist gets, for every actor
+including an admin; a distinguishable answer would still confirm the id exists.
+The same rule covers `GET /plans/:id/prices`, which is a second door to the same
+amount rather than a necessary second step: the Drizzle adapter attaches prices
+inside `findById`, so they travel in this response too.
+
+Admin plan reads are unaffected — `GET /api/v1/admin/billing/plans/:id`
+(`BILLING_READ_ALL`) serves every plan in full, and is the endpoint the admin
+panel calls.
+
+**Status:** ✅ Fully implemented (Hospeda override in
+`routes/billing/protected-plan-by-id.ts`, shadowing the QZPay pre-built handler)
 
 ---
 
@@ -696,6 +709,39 @@ Apply a promo code to a checkout session.
 - Validates promo code first
 - Updates checkout session with discount
 - Increments redemption count
+
+**Which effect kinds this endpoint accepts (HOS-1195 / HOS-1171):**
+
+| `effect_kind`     | Every caller, admin or not                          |
+|-------------------|------------------------------------------------------|
+| `trial_extension` | ✅ applied to the caller's running trial              |
+| `discount`        | ✅ T-007 seam when a `subscriptionId` is named, plain `service.apply` otherwise |
+| `comp`            | ❌ `403` `reason: PROMO_CODE_COMP_NOT_SELF_SERVICE`   |
+| untyped (legacy)  | ✅ treated as a discount — it is one whose `value_kind` was never backfilled |
+
+There is no admin/non-admin split on the effect kind. An earlier draft of the
+gate restricted `discount` to admins; the owner reversed that (HOS-1171),
+because a subscribed customer lowering the price of the subscription they pay
+for is exactly what the T-007 seam is for. `ACCESS_API_ADMIN` still matters on
+this route, but only for the AC-6.2 ownership guard (acting on another
+customer's `customerId`).
+
+The `comp` refusal happens BEFORE any redemption: the code is not spent,
+`used_count` is not incremented, and no usage row is written.
+
+`comp` is refused for everyone, admins included, and it is refused at the
+self-serve checkout too (`services/subscription-checkout-promo.service.ts`
+answers `invalid`). The one path that grants a complimentary subscription is
+`POST /api/v1/admin/billing/subscriptions/grant-comp`
+(`routes/billing/admin/subscription-comp.ts`, `BILLING_MANAGE`), sibling to
+`grant-courtesy`. It is the only caller of
+`services/subscription-comp-create.service.ts`.
+
+Refusals carry a machine-readable `error.reason` (whitelisted in
+`utils/entitlement-cause.ts`) because a 422's status-derived `error.code`
+collapses every rejection into `VALIDATION_ERROR`. `NO_ACTIVE_TRIAL` — a valid
+trial-extension code with no trial to extend — is forwarded the same way, and
+also leaves the code unspent.
 
 **Status:** ⚠️ Partially implemented (returns placeholder data)
 
@@ -1644,9 +1690,13 @@ These endpoints are custom implementations:
 
 **Test promo codes:**
 
-- `HOSPEDA_FREE` - 100% discount (internal use)
 - `LANZAMIENTO50` - 50% discount for 3 months
 - `BIENVENIDO30` - 30% discount for 1 month
+
+`HOSPEDA_FREE` (the `comp` code) was RETIRED by HOS-1171: it is out of the seed
+baseline and deactivated in every seeded environment. Nothing redeems a `comp`
+code any more — use `POST /api/v1/admin/billing/subscriptions/grant-comp` to
+grant a complimentary subscription.
 
 **Sandbox environment:**
 

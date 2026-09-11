@@ -38,7 +38,15 @@ export const COMMERCE_FIELD_PREFIX = 'ce';
  * `document.getElementById`, so a miss is a no-op with no throw and no warning.
  */
 export const COMMERCE_FIELD_ID_SUFFIXES: Readonly<Record<string, string>> = {
-    'contactInfo.mobilePhone': 'number'
+    'contactInfo.mobilePhone': 'number',
+    /**
+     * `durationMinutes` is ONE Zod field rendered as TWO controls as well
+     * (HOS-898): an hours box and a minutes box that `buildPatchPayload` joins
+     * into the single stored integer. The MINUTES box is the focus target,
+     * because it is the one the schema's message describes — the column and the
+     * error are both in minutes.
+     */
+    durationMinutes: 'minutes'
 } as const;
 
 /**

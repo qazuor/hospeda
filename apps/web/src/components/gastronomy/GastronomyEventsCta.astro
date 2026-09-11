@@ -1,0 +1,126 @@
+---
+/**
+ * @file GastronomyEventsCta.astro
+ * @description "Accepts events" call-to-action for a gastronomy listing
+ * (HOS-1055) — birthdays, corporate events, weddings.
+ *
+ * Deliberately small: a toggle and a button, nothing else (no venue calendar,
+ * no quote form, no availability).
+ *
+ * ## Why this is an in-page anchor, not an external link
+ *
+ * Gastronomy has no single public "contact this business" channel to pick.
+ * `contactInfo` (phone/email) was never part of `GastronomyPublicSchema`, and
+ * `whatsapp` was removed from `GastronomySocialNetworks` entirely (HOS-1076) —
+ * it never carried real data (see that component's header, and HOS-1088 for
+ * the open question of whether gastronomy ever gets a phone/WhatsApp channel).
+ * What remains is a handful of owner-optional social links plus a menu URL,
+ * any subset of which may be set. Picking one of them (say, the first that
+ * resolves) would sometimes point an "accepts events" CTA at a restaurant's
+ * YouTube channel — technically a link, not a plausible way to ask about a
+ * birthday party.
+ *
+ * So this button does not carry an external `href` at all: it is a same-page
+ * anchor (`#gastro-contact`) to `GastronomyContactBlock`, which already
+ * renders every channel the owner actually set. That also means the outbound
+ * href-sanitization guard (HOS-592/F-02) does not apply here — there is no
+ * outbound link to sanitize, not an exemption from having to.
+ *
+ * The page only mounts this component when `GastronomyContactBlock` will
+ * itself have something to show (see `[slug].astro`'s `showEventsCta`) — a
+ * button anchored to an empty contact block would be worse than no button.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<section class="gastro-events-cta">
+    <div class="gastro-events-cta__text">
+        <h2 class="gastro-events-cta__title">
+            {t('gastronomy.detail.eventsCta.title', '¿Buscás salón para eventos?')}
+        </h2>
+        <p class="gastro-events-cta__description">
+            {t(
+                'gastronomy.detail.eventsCta.description',
+                'Este lugar acepta cumpleaños, eventos de empresa y casamientos. Contactanos para coordinar.'
+            )}
+        </p>
+    </div>
+    <a
+        href="#gastro-contact"
+        class="gastro-events-cta__button"
+    >
+        {t('gastronomy.detail.eventsCta.button', 'Contactar')}
+    </a>
+</section>
+
+<style>
+    .gastro-events-cta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4, 16px);
+        padding: var(--space-5, 20px);
+        border-radius: var(--radius-md, 0.625rem);
+        border: 1px solid var(--border);
+        background: var(--surface-warm, var(--core-card));
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .gastro-events-cta__text {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+        min-width: 0;
+    }
+
+    .gastro-events-cta__title {
+        font-family: var(--font-heading);
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-events-cta__description {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    /* Same button recipe as GastronomyContactBlock's menu CTA (SPEC-308: dark
+       ink on the vibrant orange fill — white fails AA). */
+    .gastro-events-cta__button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 24px;
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 200ms ease-out;
+    }
+
+    .gastro-events-cta__button:hover {
+        opacity: 0.85;
+    }
+
+    .gastro-events-cta__button:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

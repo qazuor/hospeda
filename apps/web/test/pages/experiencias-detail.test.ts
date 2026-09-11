@@ -74,8 +74,16 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('ExperienceInfo');
         });
 
-        it('renders ExperienceContactCTA with WhatsApp link', () => {
-            expect(src).toContain('ExperienceContactCTA');
+        it('renders ExperienceContactBlock with the provider channels', () => {
+            expect(src).toContain('ExperienceContactBlock');
+        });
+
+        it('no longer renders the dormant WhatsApp CTA (HOS-363)', () => {
+            // It read `contactInfo.whatsapp`, which the public payload never
+            // carries, so it never rendered. What remains is
+            // `ExperienceContactBlock`, and HOS-924 made one of the channels it
+            // shows a publish requirement.
+            expect(src).not.toContain('ExperienceContactCTA');
         });
 
         it('renders ExperienceReviews as an interactive island', () => {
@@ -89,6 +97,86 @@ describe('experiencias/[slug].astro', () => {
 
         it('renders ImageGallery for the photo gallery', () => {
             expect(src).toContain('ImageGallery');
+        });
+
+        // HOS-1048. A SOURCE read, so it proves only that the page IMPORTS the
+        // component and hands it the right prop — it cannot tell a rendered
+        // block from a declared one (Vitest does not render `.astro` here).
+        // Whether anything appears is decided by the VALUE of that prop, and
+        // that is covered where it executes: the null-collapsing in
+        // `test/lib/api/transform-experience-meeting-point.test.ts`, and whether
+        // the field survives the projection at all in the full public-tier parse
+        // under `packages/schemas`.
+        it('wires ExperienceMeetingPoint to the transformed meeting point', () => {
+            expect(src).toContain('ExperienceMeetingPoint');
+            expect(src).toContain('meetingPoint={experience.meetingPoint}');
+        });
+
+        // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. SOURCE reads, with the same
+        // limit as the meeting-point one above: they prove the page IMPORTS each
+        // component and hands it the right prop, never that a block appears.
+        // What appears is decided by the VALUE of the prop, covered in
+        // `test/lib/api/transform-experience-practical-info.test.ts`, and by
+        // whether the field survives the tier projection at all, covered by the
+        // full public parse under `packages/schemas`.
+        it('wires the two HOS-1046 checklists to the transformed lists', () => {
+            expect(src).toContain('ExperiencePreparation');
+            expect(src).toContain('whatToBring={experience.whatToBring}');
+            expect(src).toContain('requirements={experience.requirements}');
+        });
+
+        it('wires the cancellation policy (HOS-1047)', () => {
+            expect(src).toContain('ExperienceCancellationPolicy');
+            expect(src).toContain('cancellationPolicy={experience.cancellationPolicy}');
+        });
+
+        it('wires the private-groups block with the contact-block guard (HOS-1056)', () => {
+            // `hasContactBlock` is the load-bearing prop: the CTA anchors into
+            // `ExperienceContactBlock`, which self-hides when the listing
+            // publishes no usable channel. Passing the flag is what lets the CTA
+            // degrade to plain text instead of linking to an element that is not
+            // on the page — the HOS-363 failure mode, silent by construction.
+            expect(src).toContain('ExperiencePrivateGroups');
+            expect(src).toContain('acceptsPrivateGroups={experience.acceptsPrivateGroups}');
+            expect(src).toContain('hasContactBlock={hasContactBlock}');
+            expect(src).toContain('hasPublicContactChannel');
+        });
+
+        it('never gates the practical fields on an entitlement', () => {
+            // Owner decision (2026-09-01): all four ship from the basic tier.
+            // The HOS-974 audit found three entitlements granted and demanded by
+            // no route; a key per ficha field manufactures exactly that. This
+            // page carries no entitlement machinery at all, and must not start.
+            expect(src).not.toContain('EntitlementKey');
+            expect(src).not.toContain('loadEntitlements');
+        });
+
+        it('hands the map and the directions to ExperienceMeetingPoint (HOS-1049)', () => {
+            // HOS-1048 asserted the opposite here — no map, no coordinates on
+            // this page — because the paid half did not exist yet. It does now,
+            // and the page's job is to FORWARD it: the coordinates, the
+            // instructions, and the flag that says whether either may be drawn.
+            //
+            // Dropping any one of the four is silent. A page that forgets
+            // `meetingPointDirectionsEnabled` renders a component whose gate
+            // reads `undefined` and shows nothing, on every listing, for every
+            // tier — a paid feature that ships and never appears.
+            expect(src).toContain('meetingPointLat={experience.meetingPointLat}');
+            expect(src).toContain('meetingPointLong={experience.meetingPointLong}');
+            expect(src).toContain('meetingPointDirections={experience.meetingPointDirections}');
+            expect(src).toContain(
+                'meetingPointDirectionsEnabled={experience.meetingPointDirectionsEnabled}'
+            );
+        });
+
+        it('still runs no entitlement machinery of its own (HOS-1049)', () => {
+            // The gate is resolved by the API and arrives as a boolean. This
+            // page must not grow a second, local answer to the same question —
+            // two gates that can disagree are worse than one that can be wrong.
+            // The `EntitlementKey`/`loadEntitlements` assertion above covers the
+            // mechanism; this pins the reason it still holds after HOS-1049.
+            expect(src).not.toContain('resolveOwnerGrants');
+            expect(src).not.toContain('manage_experience_directions');
         });
     });
 
@@ -141,6 +229,18 @@ describe('experiencias/[slug].astro', () => {
 
         it('falls back to experience.summary for SEO description', () => {
             expect(src).toContain('experience.summary');
+        });
+    });
+
+    describe('view tracking (HOS-734)', () => {
+        it('mounts EntityViewTracker with entityType EXPERIENCE, client:idle', () => {
+            expect(src).toContain(
+                "import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';"
+            );
+            expect(src).toContain('<EntityViewTracker');
+            expect(src).toContain('client:idle');
+            expect(src).toContain('entityType="EXPERIENCE"');
+            expect(src).toContain('entityId={experience.id}');
         });
     });
 });

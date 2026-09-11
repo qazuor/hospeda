@@ -1,8 +1,10 @@
 /**
  * @file favoritos-collection-usage.test.ts
  * @description Source-reading tests for the favoritos page collection usage counter.
- * Verifies that the SSR fetch pattern, usage counter markup, and i18n keys
- * are present in the page source (T-UI-CL1, SPEC-098).
+ * Verifies that the SSR fetch pattern and the CollectionUsageMeter island wiring
+ * are present in the page source (T-UI-CL1, SPEC-098; island extraction HOS-999).
+ * The counter's own rendering behavior lives in
+ * test/components/account/CollectionUsageMeter.test.tsx.
  */
 
 import { readFileSync } from 'node:fs';
@@ -74,37 +76,30 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
         });
     });
 
-    describe('usage counter rendering', () => {
-        it('renders collection-usage element', () => {
-            expect(src).toContain('collection-usage');
+    // ── HOS-999: usage counter moved to the CollectionUsageMeter island ────────
+    // The "X / max" counter + progress bar markup (role="progressbar",
+    // account.favorites.collections.usage/limit_reached, the warning modifier,
+    // the null-collectionUsage skip) used to be rendered inline here and was
+    // covered by source-reading assertions in this file. It now lives in
+    // CollectionUsageMeter.client.tsx, covered by behavioral RTL tests in
+    // test/components/account/CollectionUsageMeter.test.tsx. This page only
+    // needs to wire the SSR-resolved usage into that island correctly.
+    describe('usage counter wiring (HOS-999)', () => {
+        it('imports the CollectionUsageMeter island', () => {
+            expect(src).toContain(
+                "import { CollectionUsageMeter } from '@/components/account/CollectionUsageMeter.client'"
+            );
         });
 
-        it('uses account.favorites.collections.usage i18n key', () => {
-            expect(src).toContain('account.favorites.collections.usage');
+        it('renders CollectionUsageMeter with client:load and the SSR-resolved usage as `initial`', () => {
+            expect(src).toContain('<CollectionUsageMeter');
+            expect(src).toContain('client:load');
+            expect(src).toContain('initial={collectionUsage}');
         });
 
-        it('uses account.favorites.collections.limit_reached i18n key', () => {
-            expect(src).toContain('account.favorites.collections.limit_reached');
-        });
-
-        it('renders a progress bar element', () => {
-            expect(src).toContain('role="progressbar"');
-            expect(src).toContain('aria-valuenow');
-            expect(src).toContain('aria-valuemax');
-        });
-
-        it('applies warning modifier when at limit', () => {
-            expect(src).toContain('collection-usage--warning');
+        it('still computes isAtLimit for CreateCollectionCTA', () => {
             expect(src).toContain('isAtLimit');
-        });
-
-        it('renders the usage bar fill with dynamic width', () => {
-            expect(src).toContain('collection-usage__bar-fill');
-            expect(src).toContain('usageRatio');
-        });
-
-        it('skips counter when collectionUsage is null (no auth cookie or API error)', () => {
-            expect(src).toContain('usageLabel !== null');
+            expect(src).toContain('isAtLimit={isAtLimit}');
         });
     });
 
@@ -115,20 +110,22 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
         });
     });
 
-    describe('styling', () => {
-        it('uses CSS custom properties for colors (no hardcoded values)', () => {
-            // Should use var(--brand-primary), var(--core-muted-foreground), etc.
-            expect(src).toContain('var(--brand-primary)');
-            expect(src).toContain('var(--core-muted-foreground)');
+    // ── HOS-899: entitlement-gate detection on the SSR usage fetch ─────────────
+    describe('collections entitlement gate (HOS-899)', () => {
+        it('declares a collectionsAccessDenied flag, initialised false', () => {
+            expect(src).toContain('let collectionsAccessDenied = false;');
         });
 
-        it('uses var(--radius-pill) for bar border-radius', () => {
-            expect(src).toContain('var(--radius-pill)');
+        it('branches on a 403 response before falling back to a generic warn', () => {
+            expect(src).toContain('response.status === 403');
         });
 
-        it('does not use Tailwind utility classes', () => {
-            // Web app uses vanilla CSS only (no Tailwind)
-            expect(src).not.toMatch(/className="[^"]*\b(flex|grid|text-)\w+/);
+        it('checks the error code for ENTITLEMENT_REQUIRED on a 403', () => {
+            expect(src).toContain("errorBody.error?.code === 'ENTITLEMENT_REQUIRED'");
+        });
+
+        it('passes accessDenied to CreateCollectionCTA instead of folding it into isAtLimit', () => {
+            expect(src).toContain('accessDenied={collectionsAccessDenied}');
         });
     });
 });

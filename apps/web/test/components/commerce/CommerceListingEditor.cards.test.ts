@@ -23,9 +23,18 @@ const read = (path: string) => readFileSync(path, 'utf8');
 const fieldsCss = read(resolve(EDITOR_DIR, 'editor-fields.module.css'));
 const editorCss = read(resolve(COMMERCE_DIR, 'CommerceListingEditor.module.css'));
 const translationPanelCss = read(resolve(COMMERCE_DIR, 'CommerceTranslationPanel.module.css'));
-const editorPage = read(
-    resolve(__dirname, '../../../src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro')
+/**
+ * Every route of the commerce editor (HOS-1080).
+ *
+ * Was a single `editar.astro`. The card rules below are properties of the pages
+ * as a set, so the sweep has to be over all of them — reading only one would
+ * leave ten unguarded.
+ */
+const ROUTES_DIR = resolve(
+    __dirname,
+    '../../../src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar'
 );
+const EDITOR_ROUTES = readdirSync(ROUTES_DIR).filter((name) => name.endsWith('.astro'));
 
 /**
  * Every client component under `editor/` — not just `*Section.client.tsx`.
@@ -171,18 +180,20 @@ describe('CommerceListingEditor — per-section cards (HOS-371)', () => {
         expect(rule).toContain('margin: 0;');
     });
 
-    it('the page no longer wraps the editor in an outer AccountSectionCard', () => {
-        // The editor renders its own cards now; an outer one would nest them —
-        // double border, double padding, two stacked brand accent bars.
-        expect(editorPage).not.toMatch(
-            /<AccountSectionCard>\s*(\{\s*\/\*[\s\S]*?\*\/\s*\}\s*)?<CommerceListingEditor/
-        );
-        // HOS-827: nor does it wrap the FAQ manager in one of its own any more.
-        // The manager is a section of the editor now, so it gets the SAME card
-        // recipe as its siblings; a page-level `AccountSectionCard` around it
-        // was what made it 202px wider and 227px further left than every other
-        // card on the page, and put it below the save button.
-        expect(editorPage).not.toContain('<AccountSectionCard');
-        expect(editorPage).not.toContain('<CommerceFaqManager');
+    it('no route wraps a section in an outer AccountSectionCard', () => {
+        // The sections render their own cards; an outer one would nest them —
+        // double border, double padding, two stacked brand accent bars. That was
+        // HOS-371 for the form and HOS-827 for the FAQ manager, which a
+        // page-level card made 202px wider and 227px further left than every
+        // other card on the page.
+        //
+        // The hub is not an exception: it renders `EditorHub`, which composes
+        // `AccountSectionCard` INSIDE itself, one per nav group.
+        for (const file of EDITOR_ROUTES) {
+            expect(read(resolve(ROUTES_DIR, file)), file).not.toContain('<AccountSectionCard');
+        }
+
+        // Non-vacuity: the sweep must have seen the real route set.
+        expect(EDITOR_ROUTES.length).toBeGreaterThanOrEqual(11);
     });
 });

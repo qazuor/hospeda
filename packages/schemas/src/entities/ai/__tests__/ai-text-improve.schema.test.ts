@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     AI_TEXT_IMPROVE_MAX_LENGTH,
+    AiTextImproveEntityTypeSchema,
     AiTextImproveFieldTypeSchema,
     AiTextImproveRequestSchema
 } from '../ai-text-improve.schema.js';
@@ -291,6 +292,85 @@ describe('AiTextImproveRequestSchema', () => {
             });
             expect(result.success).toBe(true);
         });
+    });
+
+    // ============================================================================
+    // entityType / entityId (HOS-1075)
+    // ============================================================================
+
+    describe('entityType / entityId (HOS-1075)', () => {
+        it('should accept a request without entityType or entityId (backward compat)', () => {
+            const result = AiTextImproveRequestSchema.safeParse(VALID_DESCRIPTION_REQUEST);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.entityType).toBeUndefined();
+                expect(result.data.entityId).toBeUndefined();
+            }
+        });
+
+        it.each([
+            'accommodation',
+            'gastronomy',
+            'experience'
+        ] as const)('should accept entityType "%s"', (entityType) => {
+            const result = AiTextImproveRequestSchema.safeParse({
+                ...VALID_DESCRIPTION_REQUEST,
+                entityType
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.entityType).toBe(entityType);
+            }
+        });
+
+        it('should reject an unknown entityType', () => {
+            const result = AiTextImproveRequestSchema.safeParse({
+                ...VALID_DESCRIPTION_REQUEST,
+                entityType: 'destination'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept a valid entityId alongside entityType', () => {
+            const result = AiTextImproveRequestSchema.safeParse({
+                ...VALID_DESCRIPTION_REQUEST,
+                entityType: 'gastronomy',
+                entityId: '11111111-1111-4111-a111-111111111111'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject a non-UUID entityId', () => {
+            const result = AiTextImproveRequestSchema.safeParse({
+                ...VALID_DESCRIPTION_REQUEST,
+                entityType: 'gastronomy',
+                entityId: 'not-a-uuid'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept entityId without entityType', () => {
+            // entityType defaults to 'accommodation' server-side (route boundary),
+            // not in the schema itself — the two fields validate independently.
+            const result = AiTextImproveRequestSchema.safeParse({
+                ...VALID_DESCRIPTION_REQUEST,
+                entityId: '11111111-1111-4111-a111-111111111111'
+            });
+            expect(result.success).toBe(true);
+        });
+    });
+});
+
+// ============================================================================
+// AiTextImproveEntityTypeSchema
+// ============================================================================
+
+describe('AiTextImproveEntityTypeSchema', () => {
+    it('should include all members (accommodation, gastronomy, experience)', () => {
+        const values = Object.values(AiTextImproveEntityTypeSchema.enum);
+        expect(values).toContain('accommodation');
+        expect(values).toContain('gastronomy');
+        expect(values).toContain('experience');
     });
 });
 

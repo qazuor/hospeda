@@ -21,6 +21,13 @@ export interface GastronomyListingEmptyStateFilters {
     readonly priceRange: string | undefined;
     readonly isFeatured: boolean | undefined;
     readonly minRating: number | undefined;
+    /**
+     * The "apto" filter (HOS-1054): a comma-separated list of feature UUIDs.
+     * It narrows results like any other filter, so a zero-result page reached
+     * with only an apto selected must read as "nothing matched" rather than as
+     * "there are no restaurants yet".
+     */
+    readonly features: string | undefined;
 }
 
 /** Parsed experience filters relevant to the listing empty-state copy. */
@@ -73,7 +80,8 @@ export function hasActiveGastronomyListingFilters({
     type,
     priceRange,
     isFeatured,
-    minRating
+    minRating,
+    features
 }: GastronomyListingEmptyStateFilters): boolean {
     return Boolean(
         hasNonEmptyText(q) ||
@@ -81,7 +89,8 @@ export function hasActiveGastronomyListingFilters({
             hasNonEmptyText(type) ||
             hasNonEmptyText(priceRange) ||
             isFeatured === true ||
-            hasFiniteNumber(minRating)
+            hasFiniteNumber(minRating) ||
+            hasNonEmptyCsv(features)
     );
 }
 

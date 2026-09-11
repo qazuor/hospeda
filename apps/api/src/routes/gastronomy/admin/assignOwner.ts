@@ -27,16 +27,16 @@ const AssignOwnerBodySchema = z.object({
  * Assign owner to gastronomy listing — Admin endpoint.
  *
  * Delegates to `GastronomyService.assignOwner(actor, id, ownerId)`.
- * Requires COMMERCE_EDIT_ALL permission.
+ * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
  */
 export const adminAssignGastronomyOwnerRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/assign-owner',
     summary: 'Assign owner to gastronomy listing (admin)',
     description:
-        'Sets or replaces the owner of a gastronomy listing. Requires COMMERCE_EDIT_ALL permission.',
+        'Sets or replaces the owner of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
     tags: ['Gastronomy'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

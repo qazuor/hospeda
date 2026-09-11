@@ -6,6 +6,19 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
+// Arbitrates Escape when another overlay (e.g. the feedback modal) opens on
+// top of this drawer (HOS-350). This drawer never claims a browser-history
+// entry — the listing page rewrites its own URL on every filter tap, which
+// would bury the claim — so it cannot use `useDialogHistoryBack` for this.
+// `useIsTopmostOverlay` arbitrates on presence alone, independent of history
+// claiming, which is exactly what a history-less surface like this needs.
+import { useIsTopmostOverlay } from '@/hooks/useIsTopmostOverlay';
+// Shared with every other modal-like surface (Dialog, the AI search drawer,
+// the AI chat widget). This file used to keep a private copy of the
+// selector + boundary-only Tab cycling, bound to the PANEL rather than
+// `document` — worse than the shared trap's own prior bug, because a panel
+// listener never runs once focus has fallen out to `<body>` (HOS-350).
+import { FOCUSABLE_SELECTORS, trapFocus } from '@/lib/focus-trap';
 import styles from './MobileDrawer.module.css';
 
 /** Props for the MobileDrawer component. */
@@ -33,6 +46,11 @@ export interface MobileDrawerProps {
 export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDrawerProps) {
     const panelRef = useRef<HTMLDialogElement>(null);
 
+    // HOS-350: only the topmost open overlay should react to a single Escape
+    // press. See the import comment above for why this drawer registers here
+    // instead of going through `useDialogHistoryBack`.
+    const isTopmost = useIsTopmostOverlay({ isOpen });
+
     // Lock body scroll while drawer is open + publish a flag on <html> so other
     // floating UI (e.g. the global feedback FAB) can hide itself while a drawer
     // overlay is active. Mirrors the existing `data-mobile-menu-open` /
@@ -51,39 +69,29 @@ export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDra
         };
     }, [isOpen]);
 
-    // Trap focus inside the drawer when open
+    // Trap focus inside the drawer when open. Bound to `document` (not the
+    // panel) so it still catches Tab once focus has fallen out to `<body>` —
+    // see `@/lib/focus-trap` for why that matters.
     useEffect(() => {
         if (!isOpen || !panelRef.current) return;
         const panel = panelRef.current;
-        const focusable = panel.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        first?.focus();
+        const focusable = panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS);
+        focusable[0]?.focus();
 
         const handleKeyDown = (e: KeyboardEvent) => {
+            // `isTopmost` (HOS-350): when a second overlay opens above this
+            // drawer (e.g. the feedback modal via Ctrl+Shift+F), only the
+            // outer surface may close on a single Escape press.
             if (e.key === 'Escape') {
-                onClose();
+                if (isTopmost) onClose();
                 return;
             }
-            if (e.key !== 'Tab') return;
-            if (e.shiftKey) {
-                if (document.activeElement === first) {
-                    e.preventDefault();
-                    last?.focus();
-                }
-            } else {
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first?.focus();
-                }
-            }
+            trapFocus(panel, e);
         };
 
-        panel.addEventListener('keydown', handleKeyDown);
-        return () => panel.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose, isTopmost]);
 
     return (
         <>
@@ -93,7 +101,7 @@ export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDra
                     className={styles.drawerOverlay}
                     onClick={onClose}
                     onKeyDown={(e) => {
-                        if (e.key === 'Escape') onClose();
+                        if (e.key === 'Escape' && isTopmost) onClose();
                     }}
                     aria-hidden="true"
                 />
@@ -101,7 +109,7 @@ export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDra
 
             <dialog
                 ref={panelRef}
-                className={`${styles.drawer}${isOpen ? ` ${styles.drawerOpen}` : ''}`}
+                className={`dialog-viewport ${styles.drawer}${isOpen ? ` ${styles.drawerOpen}` : ''}`}
                 aria-label={ariaLabel}
                 open={isOpen}
             >

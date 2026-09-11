@@ -5,12 +5,12 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "ai": 1,
   "api-config": 90,
   "auth": 11,
-  "billing": 12,
+  "billing": 14,
   "build": 5,
   "cache": 2,
   "client-admin": 28,
   "client-web": 14,
-  "core": 9,
+  "core": 10,
   "cron": 3,
   "database": 7,
   "debugging": 1,
@@ -25,6 +25,6 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "newsletter": 7,
   "social-automation": 1,
   "system": 5,
-  "testing": 8,
+  "testing": 9,
 }
 `;

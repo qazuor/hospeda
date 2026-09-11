@@ -19,6 +19,7 @@
             "forbidden": "Você não tem permissão para importar de uma URL. Verifique se seu plano inclui isso.",
             "rateLimit": "Você fez muitas importações seguidas. Aguarde um momento e tente novamente.",
             "entitlementCta": "Ver planos",
+            "pastDueCta": "Atualizar método de pagamento",
             "failure": {
                 "invalidUrl": "Verifique se a URL é válida e corresponde a uma acomodação.",
                 "sourceBlocked": "A fonte está temporariamente indisponível. Aguarde alguns minutos e tente novamente, ou preencha os dados manualmente.",
@@ -226,6 +227,8 @@
                 "deleteYes": "Sim, excluir",
                 "publishConfirmTitle": "Publicar esta acomodação?",
                 "publishConfirmNote": "Vai aparecer no site, visível para os turistas.",
+                "publishConfirmTrialNote_one": "Ao publicar começa sua avaliação gratuita de {{trialDays}} dia. Sem cartão.",
+                "publishConfirmTrialNote_other": "Ao publicar começa sua avaliação gratuita de {{trialDays}} dias. Sem cartão.",
                 "publishYes": "Sim, publicar",
                 "choosePlan": "Escolher plano de anfitrião"
             },
@@ -234,8 +237,7 @@
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
             "publishError": "Não foi possível publicar. Tente novamente.",
-            "publishSubscriptionRequiredMessage_one": "Você precisa de um plano ativo para publicar. Se for sua primeira assinatura, começa com {{trialDays}} dia grátis.",
-            "publishSubscriptionRequiredMessage_other": "Você precisa de um plano ativo para publicar. Se for sua primeira assinatura, começa com {{trialDays}} dias grátis.",
+            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar.",
             "publishSubscriptionRequiredCta": "Ver planos",
             "priceOnRequest": "Preço a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
@@ -255,8 +257,8 @@
                 "photosDescription": "Envie até {{cap}} fotos do seu imóvel para atrair mais hóspedes",
                 "photosDescription_one": "Envie até {{cap}} foto do seu imóvel para atrair mais hóspedes",
                 "photosDescription_other": "Envie até {{cap}} fotos do seu imóvel para atrair mais hóspedes",
+                "photosDescriptionLoading": "Carregando seu limite de fotos…",
                 "externalReputation": "Reputação externa",
-                "featuredToggle": "Destacado",
                 "calendar": "Calendário",
                 "capacityPricing": "Capacidade e preço",
                 "contactSocial": "Contato e redes",
@@ -267,9 +269,9 @@
                 "ariaLabel": "Navegação de seções do formulário"
             },
             "slugRefresh": {
-                "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome.",
+                "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome ou o tipo.",
                 "warning": "Se você mudar o endereço web, isso pode afetar como ele aparece hoje no Google ou em links que você já compartilhou.",
-                "checkbox": "Mudar também o endereço web para que ele siga este novo nome"
+                "checkbox": "Mudar também o endereço web para que ele siga essas mudanças"
             },
             "field": {
                 "name": "Nome",
@@ -342,13 +344,14 @@
                 "featured": "Imagem principal",
                 "featuredAlt": "Imagem principal",
                 "featuredFailed": "Não foi possível definir a imagem como capa",
-                "formats": "JPG, PNG ou WebP — máx. {{maxSize}}MB",
+                "formats": "JPG, PNG, WebP ou HEIC — máx. {{maxSize}}MB",
                 "gallery": "Galeria de fotos (máx. {{cap}})",
                 "galleryAlt": "Foto {{index}}",
                 "galleryCapExceededOnSelect": "Você escolheu {{pickedPhrase}}, mas resta(m) apenas {{remainingPhrase}} (máx. {{cap}} no total)",
                 "galleryCapLabel": "Galeria cheia",
                 "galleryCapReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
-                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "galleryLoading": "Galeria de fotos",
+                "invalidType": "Apenas arquivos JPG, PNG, WebP ou HEIC são permitidos",
                 "metadataSaveFailed": "Não foi possível salvar os dados da foto",
                 "metadataSavedConfirmation": "Salvo",
                 "moveDownAria": "Mover foto {{index}} para baixo",
@@ -360,7 +363,6 @@
                 "photographerTooLong": "O crédito não pode ter mais de {{max}} caracteres",
                 "promoteFailed": "Não foi possível usar esta foto como capa",
                 "promoteToFeaturedAria": "Usar foto {{index}} como capa",
-                "promoteToFeaturedShort": "Capa",
                 "remove": "Remover",
                 "removeFailed": "Não foi possível remover a imagem",
                 "reorderFailed": "Não foi possível salvar a nova ordem",
@@ -372,7 +374,15 @@
                 "galleryCapExceededOnSelectPicked_one": "{{count}} foto",
                 "galleryCapExceededOnSelectPicked_other": "{{count}} fotos",
                 "galleryCapExceededOnSelectRemaining_one": "{{count}} espaço livre",
-                "galleryCapExceededOnSelectRemaining_other": "{{count}} espaços livres"
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} espaços livres",
+                "processingImage": "Otimizando imagem…",
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}}MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
+                "altWarningTitle": "Fotos sem texto alternativo",
+                "altWarningMessage": "Quem navega com leitor de tela precisa desse texto para saber o que cada foto mostra, e os buscadores o usam para entender e indexar suas imagens. Você tem {{count}} foto sem esse texto preenchido.",
+                "altWarningMessage_one": "Quem navega com leitor de tela precisa desse texto para saber o que cada foto mostra, e os buscadores o usam para entender e indexar suas imagens. Você tem {{count}} foto sem esse texto preenchido.",
+                "altWarningMessage_other": "Quem navega com leitor de tela precisa desse texto para saber o que cada foto mostra, e os buscadores o usam para entender e indexar suas imagens. Você tem {{count}} fotos sem esse texto preenchido.",
+                "altWarningGoBack": "Voltar e preenchê-los",
+                "altWarningContinue": "Continuar sem preenchê-los"
             },
             "video": {
                 "sectionTitle": "Vídeos",
@@ -426,7 +436,8 @@
             "action": {
                 "save": "Salvar",
                 "saving": "Salvando...",
-                "cancel": "Cancelar"
+                "cancel": "Cancelar",
+                "back": "Voltar"
             },
             "validation": {
                 "nameRequired": "O nome é obrigatório",
@@ -441,6 +452,13 @@
                 "network": "Erro de conexão"
             },
             "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+            "publishReady": {
+                "title": "Sua ficha já está pronta",
+                "body": "Você completou tudo o que faltava. Se publicar agora, vai aparecer no site, visível para os turistas.",
+                "publishNow": "Publicar agora",
+                "keepEditing": "Continuar editando",
+                "blockedTitle": "Você precisa de um plano ativo"
+            },
             "toast": {
                 "saveSuccess": "Alterações salvas",
                 "saveError": "Não pudemos salvar suas alterações. Tente novamente.",
@@ -532,11 +550,6 @@
                 "textUnavailable": "Foi gerada agora. Atualize a página para lê-la.",
                 "expandText": "Ver completo",
                 "collapseText": "Ver menos"
-            },
-            "featuredToggle": {
-                "label": "Destacar mi alojamiento",
-                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
-                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             },
             "calendar": {
                 "title": "Calendário de ocupação",
@@ -692,11 +705,8 @@
         "heroSubheadline": "Publique em minutos e comece a receber hóspedes",
         "primaryCta": "Publicar sua propriedade",
         "secondaryCta": "Ver minhas propriedades",
-        "trialCallout_one": "Experimente o Hospeda gratis por {{trialDays}} dia na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar.",
-        "trialCallout_other": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
-    },
-    "fromAdminBanner": {
-        "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
+        "trialCallout_one": "Experimente o Hospeda grátis por {{trialDays}} dia, sem cartão. O teste começa sozinho quando você publica seu primeiro imóvel, e é uma só para hospedagens.",
+        "trialCallout_other": "Experimente o Hospeda grátis por {{trialDays}} dias, sem cartão. O teste começa sozinho quando você publica seu primeiro imóvel, e é uma só para hospedagens."
     },
     "miniForm": {
         "fields": {
@@ -909,23 +919,41 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle_one": "{{trialDays}} dia gratis na sua primeira assinatura",
-            "trialCalloutTitle_other": "{{trialDays}} dias gratis na sua primeira assinatura",
+            "trialCalloutTitle_one": "{{trialDays}} dia grátis, sem cartão — uma só para hospedagens",
+            "trialCalloutTitle_other": "{{trialDays}} dias grátis, sem cartão — uma só para hospedagens",
             "trialCalloutTitleIneligible": "Monte sua propriedade",
-            "trialNote_one": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dia começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
-            "trialNote_other": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dias começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
+            "trialNote_one": "Você pode montar sua propriedade agora, sem pressa e sem cartão. O teste gratuito de {{trialDays}} dia começa sozinho quando você publica; é uma só para hospedagens e, quando terminar, você escolhe um plano para continuar publicado.",
+            "trialNote_other": "Você pode montar sua propriedade agora, sem pressa e sem cartão. O teste gratuito de {{trialDays}} dias começa sozinho quando você publica; é uma só para hospedagens e, quando terminar, você escolhe um plano para continuar publicado.",
             "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo.",
             "subtitle": "Criamos o rascunho com esses dados. As fotos, os preços e o resto você carrega no passo 2, no painel.",
             "precheck": {
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo.",
+                    "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo.",
+                    "pickCta": "Editar um rascunho existente",
+                    "title": "Você tem vários rascunhos, mas atingiu o limite do seu plano",
+                    "upgradeCta": "Fazer upgrade do plano"
+                },
+                "pickDraftOrCreate": {
+                    "body": "Escolha um dos rascunhos que já tem para continuar, ou comece uma nova propriedade do zero.",
+                    "createCta": "Criar uma nova",
+                    "pickCta": "Editar um rascunho existente",
+                    "title": "Você tem vários rascunhos sem publicar"
+                },
                 "resumeDeleteOrUpgrade": {
                     "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Você pode retomar seu rascunho, excluí-lo para liberar espaço ou fazer upgrade do plano.",
                     "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Você pode retomar seu rascunho, excluí-lo para liberar espaço ou fazer upgrade do plano.",
                     "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
-                    "deleteCta": "Borrar borrador"
+                    "deleteCta": "Borrar borrador",
+                    "resumeCta": "Retomar rascunho",
+                    "title": "Você tem um rascunho, mas atingiu o limite do seu plano",
+                    "upgradeCta": "Fazer upgrade do plano"
                 },
-                "pickDraftDeleteOrUpgrade": {
-                    "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo.",
-                    "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo."
+                "resumeOrCreate": {
+                    "body": "Você tem uma propriedade sem publicar. Pode retomá-la de onde parou ou começar uma nova do zero.",
+                    "createCta": "Criar uma nova",
+                    "resumeCta": "Retomar rascunho",
+                    "title": "Você já tem um rascunho em andamento"
                 }
             }
         }

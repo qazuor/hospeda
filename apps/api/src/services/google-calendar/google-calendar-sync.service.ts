@@ -64,6 +64,7 @@
 
 import { accommodationCalendarSyncModel, accommodationOccupancyModel } from '@repo/db';
 import { CalendarSyncStatusEnum, OccupancySourceEnum } from '@repo/schemas';
+import { addCalendarMonths } from '@repo/utils';
 import { apiLogger } from '../../utils/logger.js';
 import {
     enumerateHalfOpenDates,
@@ -321,8 +322,17 @@ export const syncAccommodationCalendar = async (params: {
     const timeMin = windowStart.toISOString();
     // Upper bound: without it, `singleEvents=true` expands a yearly recurrence
     // for the life of its rule — decades of blocked days (H-131).
-    const windowEnd = new Date(windowStart);
-    windowEnd.setMonth(windowEnd.getMonth() + SYNC_WINDOW_MONTHS);
+    // Advanced in UTC rather than with setMonth(), which reads the month in the
+    // process's own timezone. This one was benign — `windowStart` is anchored to
+    // -03:00, so under UTC or AR it lands on the intended calendar day either
+    // way, and being a day off at the far end of a 24-month horizon changes
+    // nothing. It is converted because it is the same shape as the arithmetic
+    // that produced HOS-1010, not because it was breaking anything.
+    const windowEnd = addCalendarMonths({
+        from: windowStart,
+        months: SYNC_WINDOW_MONTHS,
+        dayOverflow: 'clamp'
+    });
     const timeMax = windowEnd.toISOString();
 
     // 3. FULL fetch of every live event inside the reconcile window.

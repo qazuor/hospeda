@@ -66,7 +66,7 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             const html = renderToStaticMarkup(SubscriptionCancelConfirmed(validProps));
 
             // Assert
-            expect(html).toContain('https://hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
 
         it('should include cancellation confirmed heading', () => {
@@ -96,7 +96,7 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             const html = renderToStaticMarkup(SubscriptionCancelConfirmed(propsWithStagingUrl));
 
             // Assert
-            expect(html).toContain('https://staging.hospeda.com.ar/es/precios/propietarios');
+            expect(html).toContain('https://staging.hospeda.com.ar/es/mi-cuenta/suscripcion/');
         });
     });
 

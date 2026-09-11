@@ -4,6 +4,7 @@ import { TagService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import requiredManifest from '../manifest-required.json';
 import { errorHistory } from '../utils/errorHistory.js';
+import { describeError } from '../utils/errorSerialization.js';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -213,7 +214,7 @@ export async function seedTagRelations(context: SeedContext): Promise<void> {
     } catch (error) {
         logger.info(`${subSeparator}`);
         logger.error(`${STATUS_ICONS.Error} Tag relations processing failed`);
-        logger.error(`   Error: ${(error as Error).message}`);
+        logger.error(`   Error: ${describeError(error).message}`);
 
         if (!context.continueOnError) {
             throw error;

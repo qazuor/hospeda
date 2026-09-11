@@ -88,10 +88,6 @@
             "goToSite": "Volver al sitio",
             "contactAdmin": "Contactar soporte",
             "reason": {
-                "host-missing-permission": {
-                    "title": "El panel de administración no es parte de tu cuenta",
-                    "message": "Los anfitriones gestionan sus alojamientos y reservas desde el sitio principal de Hospeda — el panel de administración es solo para el equipo de Hospeda. Esto no es un error, es simplemente la puerta equivocada. Volvé al sitio para seguir gestionando tu cuenta."
-                },
                 "generic": {
                     "title": "Zona reservada",
                     "message": "Esta zona es para administradores y anfitriones de Hospeda. Tu cuenta no tiene acceso. Si creés que es un error, contactanos o ingresá con otra cuenta."
@@ -734,6 +730,28 @@
                         "cap5": "Ver analíticas de su comercio"
                     }
                 },
+                "GASTRONOMY_OWNER": {
+                    "name": "Dueño de Gastronomía",
+                    "description": "Titular de un restaurante, bar o café que gestiona su propia ficha (sin acceso a experiencias)",
+                    "capabilities": {
+                        "cap1": "Gestionar su ficha gastronómica",
+                        "cap2": "Actualizar horarios y contacto",
+                        "cap3": "Subir fotos",
+                        "cap4": "Responder reseñas",
+                        "cap5": "Ver analíticas de su gastronomía"
+                    }
+                },
+                "EXPERIENCE_OWNER": {
+                    "name": "Dueño de Experiencia",
+                    "description": "Titular de una excursión o actividad que gestiona su propia ficha (sin acceso a gastronomía)",
+                    "capabilities": {
+                        "cap1": "Gestionar su ficha de experiencia",
+                        "cap2": "Actualizar horarios y contacto",
+                        "cap3": "Subir fotos",
+                        "cap4": "Responder reseñas",
+                        "cap5": "Ver analíticas de su experiencia"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Patrocinador",
                     "description": "Empresa externa con acceso a gestión y analíticas de patrocinios",
@@ -828,7 +846,7 @@
                 "grantOverrides": "Permisos Otorgados",
                 "denyOverrides": "Permisos Denegados",
                 "trustedEditor": "Editor de confianza",
-                "trustedEditorDesc": "Puede publicar y eliminar sus propias notas y eventos sin aprobación previa",
+                "trustedEditorDesc": "Puede aprobar, publicar y eliminar sus propias notas y eventos sin pasar por la revisión de un moderador",
                 "trustedEditorEnabled": "Marcado como editor de confianza",
                 "trustedEditorDisabled": "Editor de confianza desmarcado",
                 "addOverride": "Agregar override",
@@ -1289,6 +1307,7 @@
             "newAnnouncement": "Nuevo anuncio",
             "editAction": "Editar",
             "deleteAction": "Eliminar",
+            "cancelAction": "Cancelar",
             "deleteConfirm": "¿Eliminar este anuncio? No se puede deshacer.",
             "deleteError": "No pudimos eliminar el anuncio. Intentá de nuevo.",
             "deleteSuccess": "Anuncio eliminado"

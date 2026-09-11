@@ -98,6 +98,20 @@ describe('STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET', () => {
             expect(STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET).toContain(key);
         }
         expect(CHECKOUT_RETURN_PARAMS_TO_STRIP).toContain('preapproval_id');
+        // HOS-937 step 4: the card-rejection retry link's local subscription
+        // id must never linger in the visible URL, the Referer header, or
+        // analytics — same reasoning as `preapproval_id`.
+        expect(CHECKOUT_RETURN_PARAMS_TO_STRIP).toContain('retryCheckoutId');
+    });
+
+    it('removes retryCheckoutId from the visible URL (HOS-937 step 4)', () => {
+        const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
+        setUrl(`${SUBSCRIPTION_PATH}?retryCheckoutId=sub-local-001`);
+
+        runSnippet();
+
+        expect(window.location.search).not.toContain('retryCheckoutId');
+        expect(window.location.pathname).toBe(SUBSCRIPTION_PATH);
     });
 });
 
@@ -141,6 +155,10 @@ describe('head-early slot plumbing', () => {
         resolve(__dirname, '../../../src/layouts/MarketingLayout.astro'),
         'utf8'
     );
+    const accountLayout = readFileSync(
+        resolve(__dirname, '../../../src/layouts/AccountLayout.astro'),
+        'utf8'
+    );
 
     it('BaseLayout renders the head-early slot before the PostHog snippet', () => {
         expect(baseLayout).toContain('name="head-early"');
@@ -154,5 +172,30 @@ describe('head-early slot plumbing', () => {
 
     it('MarketingLayout forwards head-early into BaseLayout head-early (not head)', () => {
         expect(marketingLayout).toContain('name="head-early" slot="head-early"');
+    });
+
+    // HOS-937 step 4: AccountLayout had no head-early pass-through before this
+    // change — a page wrapped by it (like /mi-cuenta/suscripcion/) had no way
+    // to mount StripCheckoutReturnParams early enough to beat PostHog.
+    it('AccountLayout forwards head-early into BaseLayout head-early (not head)', () => {
+        expect(accountLayout).toContain('name="head-early" slot="head-early"');
+    });
+});
+
+describe('mi-cuenta/suscripcion page wiring (HOS-937 step 4)', () => {
+    const src = readFileSync(
+        resolve(__dirname, '../../../src/pages/[lang]/mi-cuenta/suscripcion/index.astro'),
+        'utf8'
+    );
+
+    it('mounts the scrubber via the head-early slot', () => {
+        expect(src).toContain('StripCheckoutReturnParams');
+        expect(src).toContain('slot="head-early"');
+    });
+
+    it('reads retryCheckoutId server-side and forwards it to CheckoutRetryBanner', () => {
+        expect(src).toContain("Astro.url.searchParams.get('retryCheckoutId')");
+        expect(src).toContain('CheckoutRetryBanner');
+        expect(src).toContain('retryCheckoutId={retryCheckoutId}');
     });
 });

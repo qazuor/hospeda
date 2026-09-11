@@ -1,3 +1,4 @@
+import { ProductDomainEnum } from '@repo/schemas';
 import {
     COMMERCE_TRIAL_DAYS,
     COMPLEX_TRIAL_DAYS,
@@ -6,6 +7,14 @@ import {
 } from '../constants/billing.constants.js';
 import { EntitlementKey } from '../types/entitlement.types.js';
 import { LimitKey, type PlanDefinition } from '../types/plan.types.js';
+import { ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL } from './commerce-entitlements.config.js';
+import {
+    AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL,
+    type CommerceVertical,
+    commerceVerticalToProductDomain,
+    LIMIT_KEY_BY_COMMERCE_VERTICAL,
+    PRIVATE_GALLERY_LIMIT_KEY
+} from './commerce-limits.config.js';
 import { LIMIT_METADATA } from './limits.config.js';
 
 /**
@@ -83,8 +92,8 @@ export const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
  * shared by tourist-VIP and every owner/complex plan as a CONSUMER
  * (SPEC-283 §5, OQ-4). They carry NO entitlement: `ai_search` is auth-baseline
  * and the consumer-side chat quota is gated by count only — having the limit
- * without the entitlement is the intended two-sided model. tourist-free/plus
- * override these with lower values.
+ * without the entitlement is the intended two-sided model. tourist-free
+ * overrides these with lower values.
  */
 const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     limit(LimitKey.MAX_FAVORITES, -1),
@@ -93,9 +102,11 @@ const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
     // AI consumer quotas — graduated top tier (SPEC-283).
     limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
     limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200),
-    // Search history cap — VIP tier (SPEC-289). tourist-plus overrides with 50.
+    // Search history cap — VIP tier (SPEC-289). Sole tourist tier that carries
+    // it since HOS-1224 retired tourist-plus (which overrode it with 50).
     limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 200),
-    // Favorites collections cap — VIP tier (SPEC-287). tourist-plus overrides with 10.
+    // Favorites collections cap — VIP tier (SPEC-287). Sole tourist tier that
+    // carries it since HOS-1224 retired tourist-plus (which overrode it with 10).
     limit(LimitKey.MAX_COLLECTIONS, 25)
 ];
 
@@ -106,6 +117,7 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
     name: 'Basic',
     description: 'Basic plan for individual property owners. Ideal for getting started.',
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 1800000, // ARS $18,000 (in cents) — HOS-301 D1
     annualPriceArs: 18000000, // ARS $180,000/year (2 months free) — HOS-301 D1
     monthlyPriceUsdRef: 18,
@@ -149,6 +161,7 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
     name: 'Professional',
     description: 'Professional plan with featured listing and more room to grow.',
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 3500000, // ARS $35,000
     annualPriceArs: 35000000, // ARS $350,000/year
     monthlyPriceUsdRef: 35,
@@ -198,6 +211,7 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
     name: 'Premium',
     description: 'Premium plan with all features, custom branding, and unlimited promotions.',
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 6500000, // ARS $65,000 — HOS-301 D1
     annualPriceArs: 65000000, // ARS $650,000/year (2 months free) — HOS-301 D1
     monthlyPriceUsdRef: 65,
@@ -256,6 +270,7 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
     name: 'Complex Basic',
     description: 'Basic plan for complexes and hotels. Multi-property management.',
     category: 'complex',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 5000000, // ARS $50,000
     annualPriceArs: 50000000, // ARS $500,000/year
     monthlyPriceUsdRef: 50,
@@ -300,6 +315,7 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
     name: 'Complex Professional',
     description: 'Professional plan for complexes with consolidated analytics.',
     category: 'complex',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 10000000, // ARS $100,000
     annualPriceArs: 100000000, // ARS $1,000,000/year
     monthlyPriceUsdRef: 100,
@@ -355,6 +371,7 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
     name: 'Complex Premium',
     description: 'Premium plan for large complexes with all features.',
     category: 'complex',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     monthlyPriceArs: 20000000, // ARS $200,000
     annualPriceArs: 200000000, // ARS $2,000,000/year
     monthlyPriceUsdRef: 200,
@@ -415,6 +432,7 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
     name: 'Free',
     description: 'Free plan for tourists. Basic features included.',
     category: 'tourist',
+    productDomain: ProductDomainEnum.TOURIST,
     monthlyPriceArs: 0,
     annualPriceArs: null,
     monthlyPriceUsdRef: 0,
@@ -427,7 +445,8 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
         EntitlementKey.READ_REVIEWS
-        // can_view_recommendations moved to tourist-plus (HOS-16)
+        // can_view_recommendations moved off this tier (HOS-16 moved it to
+        // tourist-plus; HOS-1224 retired that plan, so tourist-vip carries it)
         // ai_chat removed from tourist plans (SPEC-211 T-003)
         // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
@@ -441,59 +460,30 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
     ]
 };
 
-export const TOURIST_PLUS_PLAN: PlanDefinition = {
-    slug: 'tourist-plus',
-    name: 'Plus',
-    description:
-        'Plus plan for frequent tourists. Compare accommodations, search history, and price alerts.',
-    category: 'tourist',
-    monthlyPriceArs: 500000, // ARS $5,000
-    annualPriceArs: 5000000, // ARS $50,000/year
-    monthlyPriceUsdRef: 5,
-    hasTrial: true,
-    trialDays: TOURIST_TRIAL_DAYS,
-    isDefault: false,
-    sortOrder: 2,
-    // HOS-301 D1: the tourist tier ships with a single paid plan (tourist-vip).
-    // Deactivated rather than deleted, exactly like the complex-* plans: the
-    // definition stays in ALL_PLANS so existing subscriptions keep resolving
-    // their entitlements, and reversing the decision is a one-line change.
-    isActive: false,
-    entitlements: [
-        EntitlementKey.SAVE_FAVORITES,
-        EntitlementKey.WRITE_REVIEWS,
-        EntitlementKey.READ_REVIEWS,
-        EntitlementKey.PRICE_ALERTS,
-        EntitlementKey.EXCLUSIVE_DEALS,
-        EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-        EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
-        EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
-        EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_USE_COLLECTIONS
-        // ai_chat removed from tourist plans (SPEC-211 T-003)
-        // ai_search has NO entitlement — auth-baseline, gated by per-plan quota only (SPEC-283)
-        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
-        limit(LimitKey.MAX_FAVORITES, 25), // HOS-16: was 20
-        limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
-        limit(LimitKey.MAX_COMPARE_ITEMS, 3), // HOS-16: was 2 (coord SPEC-288)
-        // AI consumer quotas — mid tier (SPEC-283 §5).
-        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
-        limit(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 50),
-        // Search history cap — Plus tier (SPEC-289). VIP/owner/complex inherit 200.
-        limit(LimitKey.MAX_SEARCH_HISTORY_ENTRIES, 50),
-        // Favorites collections cap — Plus tier (SPEC-287). VIP/owner/complex inherit 25.
-        limit(LimitKey.MAX_COLLECTIONS, 10)
-    ]
-};
+// `tourist-plus` used to sit here, between free and VIP. It is GONE — the
+// definition, not merely the `isActive: false` flag (HOS-1224). HOS-301 D1
+// discarded it as a product: the tourist tier ships a single paid plan
+// (`tourist-vip`). `0052-hos-301-deactivate-tourist-plus` kept the definition
+// in `ALL_PLANS` so "existing subscriptions keep resolving", and that reason
+// expired — production carries ZERO subscriptions on the plan (measured
+// 2026-09-07, every status, soft-deleted rows included), and staging's only one
+// was the `tourist-plus@local.test` fixture, retired with it.
+//
+// Keeping the definition was not free. `ALL_PLANS` drives the seed loop, so a
+// `--reset` re-seed of staging RE-CREATED the row from this config with
+// `deleted_at = NULL`, silently undoing the soft-delete that
+// `0066-hos-692-domain-rewrite-and-plan-cleanup` had already applied — while
+// the `seed_migrations` ledger (excluded from `--reset`'s TRUNCATE by
+// `packages/seed/src/utils/dbReset.ts`) kept the migration marked applied so it
+// could never run again. Removing it from the baseline is what makes the
+// retirement survive a re-seed; `plans.test.ts` guards it staying out.
 
 export const TOURIST_VIP_PLAN: PlanDefinition = {
     slug: 'tourist-vip',
     name: 'VIP',
     description: 'VIP plan for discerning tourists. All premium features included.',
     category: 'tourist',
+    productDomain: ProductDomainEnum.TOURIST,
     monthlyPriceArs: 1500000, // ARS $15,000
     annualPriceArs: 15000000, // ARS $150,000/year
     monthlyPriceUsdRef: 15,
@@ -510,238 +500,564 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     limits: [...TOURIST_VIP_LIMITS]
 };
 
-// ─── COMMERCE PLAN (SPEC-239) ──────────────────────────────────
-
-/**
- * Commerce-listing plan (SPEC-239 T-049).
- *
- * A single flat subscription that makes a commerce listing (gastronomy,
- * experience, etc.) visible. It is **deliberately NOT part of {@link ALL_PLANS}**:
- * the accommodation seed loop, the public/accommodation plan list, and the
- * grant-matrix snapshot tests all operate on `ALL_PLANS` and must stay
- * accommodation-only. This plan is seeded by its own helper
- * (`seedCommercePlan`) which stamps `billing_plans.product_domain='commerce'`
- * so the public plans endpoint and the web pricing pages exclude it.
- *
- * `category` is set to `'owner'` ONLY to satisfy the {@link PlanCategory} type
- * (D-ISOLATION forbids widening `PlanCategory` to add `'commerce'`, which would
- * ripple through every `Record<PlanCategory>` usage). The real domain
- * discriminator is the `product_domain` column, not this field — nothing in the
- * accommodation flow ever reads this plan because it is excluded from
- * `ALL_PLANS` and filtered out by product_domain.
- *
- * NOTE (owner): `monthlyPriceArs` below is CONFIRMED at ARS 15,000.00 (owner
- * 2026-07-22, HOS-166 OQ-2). It is still a commercial-layer field — the seed
- * never overwrites it once a value exists in the DB — so any operator
- * override made afterward via the admin UI stands.
- *
- * `hasTrial=false`, `entitlements=[]`, `limits=[]`: commerce visibility is
- * driven by the subscription status via the `commerce_listing_subscriptions`
- * link table + the visibility reconciler, NOT by the billing entitlement engine.
- */
-export const COMMERCE_LISTING_PLAN: PlanDefinition = {
-    slug: 'commerce-listing',
-    name: 'Commerce Listing',
-    description: 'Subscription that makes a commerce listing visible (SPEC-239).',
-    // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain is
-    // the real discriminator. Do NOT widen PlanCategory to add 'commerce'.
-    category: 'owner',
-    // CONFIRMED price (owner 2026-07-22, HOS-166 OQ-2): ARS 15,000.00 in cents.
-    monthlyPriceArs: 1500000,
-    annualPriceArs: null,
-    monthlyPriceUsdRef: 15,
-    hasTrial: false,
-    trialDays: 0,
-    isDefault: false,
-    sortOrder: 1,
-    isActive: true,
-    entitlements: [],
-    limits: []
-};
-
 // ─── PER-VERTICAL COMMERCE PLANS (HOS-688) ─────────────────────
 
+//
+// ## Why there is no shared commerce price constant any more (HOS-975)
+//
+// Until HOS-975 the four tiers that were not `gastronomy-pro` all read one
+// exported `COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000` — the price the
+// single pre-HOS-688 `commerce-listing` plan charged (owner 2026-07-22,
+// HOS-166 OQ-2), which HOS-688 deliberately carried over when it split that
+// plan into one subscription-per-OWNER-per-VERTICAL.
+//
+// The owner priced the six tiers individually on 2026-09-03, and the two
+// verticals now diverge at every step of the ladder — gastronomy starts at
+// $30.000 where experiences start at $15.000. A constant whose name says
+// "the price of every enabled commerce tier" and which is true of exactly one
+// of the six is worse than no constant, so each tier now carries its own
+// literal with the JSDoc that explains it, exactly as `gastronomy-pro` has
+// since HOS-895 PR2.
+//
+// Like every price in this file these are `'commercial'` fields — the database
+// wins, so an operator override through the admin UI stands and moving a number
+// in production is a data-migration (`0090`), not a deploy.
+//
+
 /**
- * Monthly price of every ENABLED commerce tier, in centavos.
+ * Monthly AI-chat quota of a commerce tier that GRANTS the chat (HOS-400).
  *
- * ARS $15.000 — the exact amount {@link COMMERCE_LISTING_PLAN} charges today
- * (owner 2026-07-22, HOS-166 OQ-2). HOS-688 turns one subscription-per-LISTING
- * into one subscription-per-OWNER-per-VERTICAL, and deliberately keeps the
- * price: nobody paying today sees a change, they simply get one listing for the
- * same money under a plan that is theirs rather than the listing's.
+ * 1250 calls/month, borne by the listing's owner — owner decision, 2026-09-03.
  *
- * Like every price in this file it is a `'commercial'` field — the database
- * wins, so an operator override through the admin UI stands and moving the
- * number in production is a data-migration, not a deploy.
+ * The number is the accommodation PREMIUM rung of the existing ladder
+ * (50 / 250 / 1250 for básico / pro / premium) rather than a new scale. The
+ * alternative put to the owner was the `-pro` rung (250), on the argument that a
+ * commerce premium covers ONE listing while an accommodation premium covers an
+ * unlimited portfolio, so the same rung buys far more per listing here. They
+ * chose to match the premium rung regardless: premium is premium, whatever the
+ * vertical.
+ *
+ * Shared by both verticals on purpose. Nothing yet distinguishes what a diner
+ * asks a restaurant from what a traveller asks an excursion, so a single
+ * constant keeps the two catalogues from drifting apart for no reason. Split it
+ * the day one vertical's real usage says it should be.
+ *
+ * Like every cap in this file it is a `'commercial'` field: the database wins,
+ * so an operator override stands and changing it in production is a
+ * data-migration, not a deploy.
  */
-export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
+export const COMMERCE_AI_CHAT_PER_MONTH = 1250;
 
 /**
  * Builds one tier of a per-vertical commerce catalogue (HOS-688 §6.8).
  *
- * Every tier declares EXACTLY ONE limit — its own vertical's listing cap — and
- * nothing else. That absence is deliberate and is not the same as `-1`: both
- * resolve to unlimited downstream, but an absent key reads as "this plan does
- * not meter that", which is what is true here. A gastronomy plan has no opinion
- * about photos, promotions or AI quotas.
+ * Every tier declares TWO limits of its OWN, both scoped to its own vertical:
+ * the listing cap, and — since HOS-400 — the monthly AI-chat quota. On top of
+ * those it inherits {@link TOURIST_VIP_LIMITS} (HOS-975 D-A, see below), the
+ * same seven the six accommodation plans inherit. Everything beyond those nine
+ * is deliberately absent, and that absence is not the same as `-1`: both resolve
+ * to unlimited downstream, but an absent key reads as "this plan does not meter
+ * that", which is what is true here. A gastronomy plan still has no opinion
+ * about photos, promotions, or any owner-side AI quota other than its own chat.
+ *
+ * The chat quota was NOT left absent for exactly that reason. "This plan does
+ * not meter the chat" and "this plan grants an uncapped chat" are the same
+ * value downstream, and only one of them is true of a tier that does not sell
+ * the feature — so every tier states a number, and the tiers without the
+ * capability state `0`. See `input.aiChatPerMonth` below.
+ *
+ * ## Entitlements (HOS-1074)
+ *
+ * Every tier of a vertical grants that vertical's pair —
+ * `EDIT_<VERTICAL>_INFO` and `PUBLISH_<VERTICAL>` — read from
+ * {@link ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL} rather than spelled out per
+ * tier, so a tier can never be defined that silently grants nothing.
+ *
+ * Uniform across the three tiers ON PURPOSE, and the precedent is exact: all
+ * six accommodation plans grant `EDIT_ACCOMMODATION_INFO` and
+ * `PUBLISH_ACCOMMODATIONS`. Editing and publishing your own listing is not a
+ * tier differentiator in either catalogue — the cap is.
+ *
+ * This replaced the previous `entitlements: []`, whose stated reason was that
+ * commerce visibility runs through `entity_subscriptions` + the
+ * reconciler rather than the entitlement engine. That remains true of
+ * VISIBILITY; what changed (owner decision, 2026-09-01) is that the platform
+ * now wants ONE mechanism rather than two, so commerce gets real keys and the
+ * commerce routes get real gates.
+ *
+ * ## The tourist-VIP inheritance (HOS-975 D-A)
+ *
+ * On top of that pair, every commerce tier now spreads
+ * {@link TOURIST_VIP_ENTITLEMENTS} and {@link TOURIST_VIP_LIMITS} whole — the
+ * same two constants all six accommodation plans spread, reused rather than
+ * re-derived so a third list can never drift from them. A commerce owner is a
+ * tourist on this platform too; before this, commerce was the only owner
+ * catalogue whose floor excluded the tourist block, which made those 15 keys an
+ * accidental privilege of accommodation rather than anybody's decision.
+ *
+ * **The limits half is load-bearing, not symmetry.** Grant the entitlements
+ * without the limits and `MAX_AI_SEARCH_PER_MONTH` is simply not on the row —
+ * which the engine reads as UNLIMITED, through five layers, without raising. A
+ * commerce owner would then hold an uncapped AI-search quota that a paying
+ * tourist-VIP holds at 200. The two constants travel together for that reason.
+ *
+ * Two consequences worth carrying forward, both recorded when the audit chose
+ * this: `VIP_SUPPORT` is the one inherited key that costs real money (human
+ * support), and `CAN_ATTACH_REVIEW_PHOTOS` is enforced by no route anywhere, so
+ * commerce inherits one key that currently does nothing and resolves itself when
+ * that entitlement is eventually built.
  *
  * @param input.slug - Plan slug (`gastronomy-basico`, …).
  * @param input.name - Buyer-visible display name; becomes MercadoPago's `reason`.
  * @param input.description - Admin-facing description.
- * @param input.limitKey - The vertical's cap key.
- * @param input.maxListings - Value of that cap for this tier.
+ * @param input.vertical - The commerce vertical this tier belongs to. Supplies
+ *   BOTH the cap key and the entitlement pair, so the two can never name
+ *   different verticals.
+ * @param input.maxListings - Value of that cap for this tier. Per TIER since
+ *   HOS-975, and per VERTICAL: gastronomy runs 1 / 3 / 5 and experiences
+ *   1 / 5 / 10 (owner decision, 2026-09-04). Until then all six tiers passed
+ *   `1`, which left the cap — the one axis this factory's own doc calls the
+ *   differentiator — identical across a ladder whose prices were not.
  * @param input.sortOrder - Display order within the vertical.
- * @param input.isActive - Whether the tier is sellable. Only premium is today.
+ * @param input.isActive - Whether the tier is sellable AT ALL — a seeded,
+ *   priced, subscribable row. Does not by itself decide whether checkout ever
+ *   resolves TO it: see `GASTRONOMY_PRO_PLAN`'s doc for why an `isActive` tier
+ *   can still be unreachable while another vertical tier stays the default.
  * @param input.monthlyPriceArs - Monthly price in centavos; `0` for a tier that
  *   has not been priced yet, which is also why such a tier ships inactive.
+ * @param input.annualPriceArs - Annual price in centavos (HOS-1285). REQUIRED,
+ *   with no default, for the reason `aiChatPerMonth` and `privateGalleries` are:
+ *   until HOS-1285 this was hardcoded `null` INSIDE this factory, so all six
+ *   tiers lost their annual option at once and no tier declaration named the
+ *   fact. A default would put that back — "nobody priced this tier annually"
+ *   would read exactly like "this tier is deliberately monthly-only". Pass
+ *   `null` to mean the latter, and mean it.
+ *
+ *   **The six values, together** (owner rule: ten months charged for twelve
+ *   served, the same discount accommodation uses — the figures the two
+ *   `presentacion/` landing pages have published since 2026-09-05):
+ *
+ *   | Tier | Monthly | Annual |
+ *   | --- | --- | --- |
+ *   | `gastronomy-basico`  | $30.000 | **$300.000** |
+ *   | `gastronomy-pro`     | $65.000 | **$650.000** |
+ *   | `gastronomy-premium` | $80.000 | **$800.000** |
+ *   | `experience-basico`  | $15.000 | **$150.000** |
+ *   | `experience-pro`     | $35.000 | **$350.000** |
+ *   | `experience-premium` | $50.000 | **$500.000** |
+ *
+ *   Declared as a literal per tier rather than derived from `monthlyPriceArs`
+ *   times a shared multiplier: the discount is an owner decision per tier, not
+ *   an arithmetic identity, and a multiplier would silently reprice all six the
+ *   day one of them moves. Same reason the two verticals' monthly prices stopped
+ *   sharing a constant in HOS-975.
  * @param input.hasTrial - Whether the tier grants a free trial (HOS-590).
- *   Defaults to `false` — the two disabled tiers per vertical have no price
- *   and are not sellable, so a trial has nothing to precede.
+ *   Defaults to `false` — a disabled, unpriced tier has no price and is not
+ *   sellable, so a trial has nothing to precede. Every `isActive: true` tier
+ *   in this file passes `true` here.
  * @param input.trialDays - Trial length in days when `hasTrial` is `true`.
  *   Defaults to `0`.
+ * @param input.extraEntitlements - Keys this TIER grants on top of the
+ *   vertical's uniform set (HOS-1058). Empty for básico across both
+ *   verticals; populated for a tier that earns its dearer name (`-pro`'s
+ *   structured carta since HOS-895, `-premium`'s printable PDF since
+ *   HOS-1058). This is the one door through which a tier may differ
+ *   grantwise from its siblings, and it is deliberately additive: a tier can
+ *   add to the vertical's set and can never subtract from it, so the "every
+ *   tier of a vertical grants its own pair" invariant above survives whatever
+ *   is passed here.
+ * @param input.aiChatPerMonth - Monthly AI-chat quota for this tier (HOS-400).
+ *   REQUIRED, with no default, on purpose: the limit engine resolves an ABSENT
+ *   key as UNLIMITED rather than as zero, so a default would make "nobody
+ *   thought about this tier" indistinguishable from "deliberately uncapped".
+ *   Pass `0` for a tier that does not grant `AI_CHAT` — it is the belt to the
+ *   entitlement gate's braces, and it is what the owner-side check reads as
+ *   "feature disabled in this plan".
+ * @param input.privateGalleries - How many private galleries this tier may hold
+ *   ALIVE at once (HOS-1060). REQUIRED with no default, for exactly the reason
+ *   `aiChatPerMonth` is: an omitted key is resolved as UNLIMITED, not as zero,
+ *   so a default would make "nobody considered this tier" read identically to
+ *   "deliberately uncapped" — and this is the one cap in the file with a
+ *   recurring storage bill behind it. Every GASTRONOMY tier passes `0`: a
+ *   restaurant has no outing whose photos to hand over, and an explicit zero is
+ *   a decision where an absent key is an accident. `experience-basico` and
+ *   `experience-pro` also pass `0` — they do not grant the capability, and the
+ *   `private-galleries-+N` add-on that enables it raises this same key from
+ *   there.
  * @returns The tier's {@link PlanDefinition}.
  */
 function commerceVerticalTier(input: {
     slug: string;
     name: string;
     description: string;
-    limitKey: LimitKey;
+    vertical: CommerceVertical;
     maxListings: number;
     sortOrder: number;
     isActive: boolean;
     monthlyPriceArs: number;
+    annualPriceArs: number | null;
     hasTrial?: boolean;
     trialDays?: number;
+    extraEntitlements?: readonly EntitlementKey[];
+    aiChatPerMonth: number;
+    privateGalleries: number;
 }): PlanDefinition {
     return {
         slug: input.slug,
         name: input.name,
         description: input.description,
-        // See COMMERCE_LISTING_PLAN's JSDoc: 'owner' only satisfies the
-        // PlanCategory type. product_domain ('gastronomy' / 'experience') is the
-        // real discriminator, stamped by `seedCommercePlan`.
+        // 'owner' only satisfies the PlanCategory type (D-ISOLATION forbids
+        // widening it to add a commerce value). product_domain
+        // ('gastronomy' / 'experience') is the real discriminator, and as of
+        // HOS-1233 it is carried by the definition itself rather than only
+        // being stamped downstream by `seedCommercePlan`.
         category: 'owner',
+        // DERIVED from the tier's own vertical, never a slug list: a new
+        // vertical passed here cannot be filed under a neighbouring domain
+        // by omission. `commerceVerticalToProductDomain` composes the two
+        // existing exhaustive maps rather than restating the association.
+        productDomain: commerceVerticalToProductDomain(input.vertical),
         monthlyPriceArs: input.monthlyPriceArs,
-        annualPriceArs: null,
+        // HOS-1285 — declared BY TIER, never sealed here. The `null` this line
+        // used to hold applied to all six tiers at once and was invisible from
+        // every tier declaration, which is how the two `presentacion/` landing
+        // pages came to publish a "Por año" row (2026-09-05) while no commerce
+        // plan had an annual price row and the checkout could not have sold one.
+        annualPriceArs: input.annualPriceArs,
         monthlyPriceUsdRef: Math.round(input.monthlyPriceArs / 100000),
-        // HOS-590: the enabled (premium) tier of each vertical now declares the
-        // same 30-day trial every accommodation plan does; the two disabled
-        // tiers keep the prior no-trial defaults since they are not sellable.
+        // HOS-590: every sellable tier declares the same 30-day trial every
+        // accommodation plan does. Since HOS-975 all six tiers are sellable and
+        // all six pass `true`, so the `false` default now describes only a
+        // SEVENTH tier added later and not yet put on sale.
         hasTrial: input.hasTrial ?? false,
         trialDays: input.trialDays ?? 0,
         isDefault: false,
         sortOrder: input.sortOrder,
         isActive: input.isActive,
-        // Neither vertical grants any entitlement today (§6.8). Commerce
-        // visibility is driven by the subscription status through
-        // `commerce_listing_subscriptions` + the reconciler, not by the
-        // entitlement engine — so the limit check on the create route runs with
-        // no entitlement gate ahead of it, unlike accommodation's
-        // `requireEntitlement(PUBLISH_ACCOMMODATIONS)` + `enforceAccommodationLimit()`
-        // pair. There is simply nothing to put in the first half of that pattern.
-        entitlements: [],
-        limits: [limit(input.limitKey, input.maxListings)]
+        // HOS-1074 — see the "Entitlements" section of this function's doc.
+        // Derived from the vertical rather than passed per tier, so all three
+        // tiers of a vertical are grantwise identical by construction and a
+        // seventh tier cannot be added with an empty set by omission.
+        //
+        // HOS-1058 appends the tier's own keys AFTER the vertical's, never in
+        // place of them. A tier differentiator (the printable PDF ficha) cannot
+        // live in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the
+        // floor the gate reads from CODE for every tier at once, so putting a
+        // premium-only key there would hand it to básico as well.
+        entitlements: dedupe([
+            // HOS-975 D-A — the tourist-VIP block, whole, on all three tiers of
+            // both verticals. A commerce owner is also a tourist on this
+            // platform, exactly like an accommodation owner, and the six host
+            // plans already spread this same constant. Until this, commerce was
+            // the only owner catalogue whose floor excluded it — an accidental
+            // privilege of accommodation rather than a decision anyone made.
+            //
+            // `dedupe` collapses nothing TODAY — measured 2026-09-04, the three
+            // sources are disjoint and every commerce tier comes out at exactly
+            // 15 + its own keys. It is here because the overlap is one edit
+            // away and already real next door: `owner-basico` spreads the same
+            // constant and `dedupe` drops one duplicate
+            // (`CAN_CONTACT_WHATSAPP_DISPLAY`), which is why its 15 + 11 is 25
+            // and not 26. Both WhatsApp keys live inside these 15 and the H1
+            // matrix independently placed both at `TIER: basic`, so the day
+            // somebody spells one out per vertical, this is what keeps the row
+            // from carrying it twice.
+            ...TOURIST_VIP_ENTITLEMENTS,
+            ...ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL[input.vertical],
+            ...(input.extraEntitlements ?? [])
+        ]),
+        // HOS-975 D-A — the limits half of the same inheritance, and it is NOT
+        // optional once the entitlements above ship. The limit engine resolves
+        // an ABSENT key as UNLIMITED through five layers without raising, so
+        // granting `SAVE_FAVORITES` and the AI-consumer keys while omitting
+        // `TOURIST_VIP_LIMITS` would hand every commerce owner an uncapped
+        // `max_ai_search_per_month` — a quota a paying tourist-VIP holds at 200.
+        // The six host plans pair the two constants for this reason; commerce
+        // pairs them for the same one.
+        limits: mergeLimits(TOURIST_VIP_LIMITS, [
+            limit(LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.maxListings),
+            // HOS-400 — the vertical's AI-chat quota. Declared by EVERY tier,
+            // including the ones that do not grant AI_CHAT at all, and that is
+            // the point: `aiChatPerMonth` is a REQUIRED parameter rather than an
+            // optional one defaulting to zero. A tier that omitted the key would
+            // not be capped at zero, it would be UNLIMITED — the limit engine
+            // resolves an absent key as `-1` through five layers without raising
+            // (see `commerce-limits.config.ts`'s header). So básico and pro pass
+            // an explicit `0` ("disabled in this plan"), which is a decision
+            // somebody made, and a future seventh tier cannot inherit an
+            // uncapped chat by forgetting an argument.
+            limit(AI_CHAT_LIMIT_KEY_BY_COMMERCE_VERTICAL[input.vertical], input.aiChatPerMonth),
+            // HOS-1060 — the private-gallery cap. Declared by all SIX tiers,
+            // including the four that grant zero of it, on exactly the terms
+            // the AI-chat quota above is declared: an absent key reads as
+            // unlimited through five layers without raising, and this is the
+            // one cap in this file with a per-use storage bill behind it.
+            //
+            // Not a `Record<CommerceVertical, LimitKey>` like its two
+            // neighbours: only experiences have galleries, so there is no
+            // gastronomy key to look up — see `PRIVATE_GALLERY_LIMIT_KEY`.
+            limit(PRIVATE_GALLERY_LIMIT_KEY, input.privateGalleries)
+        ])
     };
 }
 
 /**
- * The gastronomy catalogue (HOS-688 §6.8, retiered by HOS-818).
+ * The gastronomy catalogue (HOS-688 §6.8, retiered by HOS-818, `-pro`
+ * activated by HOS-895 PR2).
  *
  * Built for the full three-tier shape so enabling a tier later is a
- * data-migration rather than a code change. **Only ONE tier is ever enabled at
- * a time**, and since HOS-818 that tier is BÁSICO, not premium: the owner
- * reserved the "premium" name for a future step that actually carries more
- * functionality, so today's buyers land on the entry tier instead of on the top
- * one with nowhere left to go.
+ * data-migration rather than a code change. **All three tiers are `isActive`
+ * as of HOS-975** — básico (HOS-818's entry tier), pro (HOS-895 PR2) and
+ * premium, which the owner priced and put back on sale on 2026-09-03 now that
+ * HOS-1058's printable ficha and HOS-1045's photo per dish give it something
+ * to carry that `-pro` does not.
  *
- * The disabled tiers carry `monthlyPriceArs: 0` when they have not been priced
- * — shipping them inactive is the same precedent {@link AI_SUPPORT_ADDON} set
- * for a definition whose price is still TBD, and `seedCommercePlan` skips the
- * `billing_prices` row for a tier priced at zero rather than seeding a free
- * one. The now-disabled premium tier is the exception: it keeps its price and
- * trial, because the row already exists (priced, with a live MercadoPago
- * `preapproval_plan` behind it) in every seeded environment and zeroing the
- * baseline would describe a state no real database is in.
+ * `isActive` here means "seeded, priced, and a valid subscription target" —
+ * and since HOS-1119 that is ALSO what makes a tier reachable. A commerce
+ * checkout still turns a vertical into a plan slug in exactly one place,
+ * `resolveCommercePlanSlug` (`apps/api/src/services/commerce-plan-resolver.ts`),
+ * but that resolver now takes the buyer's PICK and validates it against
+ * {@link COMMERCE_PLANS_BY_VERTICAL}; {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL}
+ * (or the `HOSPEDA_COMMERCE_PLAN_SLUGS` env override) is what a checkout that
+ * asks for nothing still gets.
  *
- * Deliberately excluded from {@link ALL_PLANS}, exactly like
- * {@link COMMERCE_LISTING_PLAN}: the accommodation seed loop, the public plan
- * list and the grant-matrix snapshot tests all operate on `ALL_PLANS` and must
- * stay accommodation-only.
+ * Until HOS-1119 the paragraph above said the opposite — commerce had no plan
+ * picker and no plan-change route, so a second `isActive` tier changed nothing
+ * about which plan a new owner landed on. That is the hole HOS-1119 closed:
+ * `gastronomy-pro` had been active, priced and trial-carrying since HOS-895 and
+ * nobody could buy it. There is now a tier picker on the checkout and a
+ * per-vertical upgrade route
+ * (`POST /api/v1/protected/commerce/subscriptions/{vertical}/change-plan`,
+ * upgrades only). See `GASTRONOMY_PRO_PLAN`'s own doc.
+ *
+ * **No commerce tier ships unpriced any more (HOS-975).** Until then, a tier
+ * that had not been priced carried `monthlyPriceArs: 0` and shipped inactive —
+ * the same precedent {@link AI_SUPPORT_ADDON} sets for a definition whose price
+ * is still TBD, and `seedCommercePlan` skips the `billing_prices` row for a tier
+ * priced at zero rather than seeding a free one. That is worth keeping in mind
+ * for a SEVENTH tier, and it is also the shape that made activating
+ * `experience-pro` two edits rather than one: a price alone would not have given
+ * it the `billing_prices` row checkout hard-throws `NO_MONTHLY_PRICE` without.
+ *
+ * Deliberately excluded from {@link ALL_PLANS}, same as every other
+ * commerce/partner plan in this file: the accommodation seed loop, the public
+ * plan list and the grant-matrix snapshot tests all operate on `ALL_PLANS` and
+ * must stay accommodation-only.
  *
  * ---
  *
- * Gastronomy basic tier — **the only sellable gastronomy plan today** (HOS-818).
+ * Gastronomy basic tier — **the DEFAULT sellable gastronomy plan** (HOS-818).
+ * Still the plan `resolveCommercePlanSlug` resolves by default; see the
+ * catalogue doc above for what activating `-pro` did and did not change.
  *
- * One listing for {@link COMMERCE_VERTICAL_MONTHLY_PRICE_ARS} — the exact price,
- * limits and (empty) entitlement set the premium tier carried before it, so the
- * swap changes nothing for anyone paying. What it changes is the NAME the buyer
- * sees, which is the entire point.
+ * One listing for ARS $30.000/mo (**HOS-975**, owner decision 2026-09-03).
+ * It inherited ARS $15.000 from the single pre-HOS-688 `commerce-listing` plan
+ * and kept it through two renames; this is the first time gastronomy's entry
+ * tier was priced as itself rather than as whatever the plan before it charged.
+ * Experiences stay at $15.000 — the two verticals are separate products and the
+ * owner priced them separately, which is why there is no shared constant here
+ * any more (see the section note above).
+ *
+ * Nobody's bill moves: production held ZERO commerce subscriptions when this
+ * was decided (measured 2026-09-03), so there is no old price to honour and no
+ * grandfathering to build.
  *
  * Carries the same 30-day trial as every accommodation plan
- * ({@link COMMERCE_TRIAL_DAYS}); checkout resolves it through
- * `resolveCheckoutFreeTrialDays`, the same canonical resolver the accommodation
- * paths use (HOS-590).
+ * ({@link COMMERCE_TRIAL_DAYS}) in its `billing_plans.metadata`. Note that the
+ * commerce CHECKOUT no longer reads it: since HOS-1012 every checkout passes a
+ * literal `trialDays: 0` to MercadoPago.
  */
 export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-basico',
     name: 'Gastronomía Básico',
     description: 'Gastronomy listing plan — one listing per owner (HOS-688, HOS-818).',
-    limitKey: LimitKey.MAX_GASTRONOMIES,
+    vertical: 'gastronomy',
     maxListings: 1,
     sortOrder: 1,
     isActive: true,
-    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    // HOS-975: ARS $30.000/mo. Was 1_500_000 (the shared pre-HOS-688 price).
+    monthlyPriceArs: 3_000_000,
+    // HOS-1285: ARS $300.000/yr — ten months charged for twelve served.
+    annualPriceArs: 30_000_000,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
-});
-
-/** Gastronomy professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
-export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
-    slug: 'gastronomy-pro',
-    name: 'Gastronomía Profesional',
-    description: 'Gastronomy listing plan — professional tier (not enabled yet, HOS-688).',
-    limitKey: LimitKey.MAX_GASTRONOMIES,
-    maxListings: 1,
-    sortOrder: 2,
-    isActive: false,
-    monthlyPriceArs: 0
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-400: the AI chat is premium-only in both verticals (owner decision),
+    // so básico declares an explicit zero rather than omitting the key.
+    aiChatPerMonth: 0,
+    // HOS-1060: gastronomy has no outing whose photos to hand a customer, so
+    // every tier of this vertical declares an explicit zero. Omitting the key
+    // would read as UNLIMITED, not as "not applicable".
+    privateGalleries: 0
 });
 
 /**
- * Gastronomy premium tier — **retired from sale by HOS-818, held for a real
- * premium step**.
+ * Gastronomy professional tier — **activated for sale by HOS-895 PR2 (owner
+ * decision, 2026-09-03)**, repriced to ARS $65.000/mo by HOS-975 the same day,
+ * once the owner set the whole six-tier ladder at once rather than one tier at
+ * a time. The $45.000 it shipped at was never charged to anyone: production
+ * held zero commerce subscriptions throughout.
  *
- * It was the only sellable gastronomy plan until HOS-818 moved that role to
- * {@link GASTRONOMY_BASICO_PLAN}, which is byte-for-byte identical in price,
- * limits and entitlements — so nothing changed for anyone paying, and the name
- * is now free for a tier that genuinely offers more.
+ * Until this change it shipped `isActive: false` / `monthlyPriceArs: 0`,
+ * "not enabled yet" — the first thing HOS-895 gave it a reason to exist for
+ * was the structured carta below, and the owner decided the same day to stop
+ * holding the tier back. See {@link GASTRONOMY_BASICO_PLAN} for the shape.
  *
- * Kept priced and trial-carrying rather than zeroed out, unlike the never-sold
- * `-pro` tier: the row exists in every seeded environment with a live
- * MercadoPago `preapproval_plan` behind it, and the live subscriptions hang off
- * that plan. Zeroing the baseline would describe a state no real database is in.
+ * Carries the same 30-day trial as its siblings ({@link COMMERCE_TRIAL_DAYS})
+ * — added along with activation, since the two disabled tiers' no-trial
+ * defaults only ever described "not sellable yet", not a deliberate choice to
+ * sell without one.
  *
- * One listing for {@link COMMERCE_VERTICAL_MONTHLY_PRICE_ARS}. The cap is the
- * entire commercial substance of §6.8, and every layer beneath it resolves an
- * unknown limit key to *unlimited* without raising anything — so the wiring on
- * the create route, not this value, is what actually makes it real.
+ * **Reachable since HOS-1119, and it was not before.** For one release this row
+ * was active, priced, trial-carrying and unbuyable: `resolveCommercePlanSlug`
+ * (`apps/api/src/services/commerce-plan-resolver.ts`) had exactly one answer per
+ * vertical, and no surface could ask for another. That is worth remembering as a
+ * shape rather than an anecdote — activating a plan row and making it sellable
+ * are two different changes, and the first one produces no error, no log and no
+ * failing test on its own (HOS-1118).
  *
- * HOS-590: carries the same 30-day trial as every accommodation plan
- * ({@link COMMERCE_TRIAL_DAYS}) — checkout resolves it through
- * `resolveCheckoutFreeTrialDays`, the same canonical resolver the
- * accommodation paths use.
+ * The resolver is still the ONE place a vertical becomes a plan slug. It now
+ * takes the buyer's pick and refuses any slug that is not a tier of the
+ * requesting vertical, which is what keeps gastronomy and experiences on
+ * separate MercadoPago `preapproval_plan`s. `DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy`
+ * (still `GASTRONOMY_BASICO_PLAN.slug`, and overridden by
+ * `HOSPEDA_COMMERCE_PLAN_SLUGS` on staging/production) remains what a checkout
+ * that picks nothing gets — so no environment moved when this became reachable.
+ */
+export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'gastronomy-pro',
+    name: 'Gastronomía Profesional',
+    description: 'Gastronomy listing plan — professional tier (HOS-688, activated HOS-895 PR2).',
+    vertical: 'gastronomy',
+    // HOS-975 (owner decision, 2026-09-04): the gastronomy ladder is 1 / 3 / 5.
+    // The cap is the one axis every tier of this vertical used to share, which
+    // is what made three differently-priced rows the same product.
+    maxListings: 3,
+    sortOrder: 2,
+    isActive: true,
+    // HOS-975: ARS $65.000/mo. Was 4_500_000 (HOS-895 PR2's activation price).
+    monthlyPriceArs: 6_500_000,
+    // HOS-1285: ARS $650.000/yr — ten months charged for twelve served.
+    annualPriceArs: 65_000_000,
+    hasTrial: true,
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-895 — the first thing that separates `-pro` from `-basico` by more
+    // than its name: the structured carta. Owner decision, `pro` and upwards.
+    //
+    // HOS-1041 — and the menú del día, which is the second. Owner decision,
+    // 2026-09-01, same tier: an operational feature used daily by whoever uses
+    // it. A separate key from the carta on purpose (see the enum member).
+    //
+    // HOS-1042 adds the venue's own events agenda as the third, on the same
+    // terms and by the same owner decision: `pro` and upwards, gastronomy only.
+    extraEntitlements: [
+        EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+        EntitlementKey.MANAGE_GASTRONOMY_EVENTS
+    ],
+    // HOS-400: the AI chat is PREMIUM in both verticals (owner decision), so
+    // `-pro` declares an explicit zero. It is the one capability in this file
+    // that pro does NOT inherit upward from.
+    aiChatPerMonth: 0,
+    // HOS-1060 — see `GASTRONOMY_BASICO_PLAN`: gastronomy-wide explicit zero.
+    privateGalleries: 0
+});
+
+/**
+ * Gastronomy premium tier — **back on sale, at ARS $80.000/mo (HOS-975, owner
+ * decision 2026-09-03)**.
+ *
+ * It was the only sellable gastronomy plan until HOS-818 retired it and moved
+ * that role to {@link GASTRONOMY_BASICO_PLAN} — a tier byte-for-byte identical
+ * to it in price, limits and entitlements at the time, which is exactly why the
+ * name was worth freeing: a "premium" that cost and carried the same as básico
+ * was a label, not a step.
+ *
+ * It is a step now, and that is what earns the reactivation rather than the
+ * price doing it: HOS-1058's printable PDF ficha and HOS-1045's photo per dish
+ * are held by this tier and by no cheaper one. The premium/pro gap
+ * ($80.000 vs $65.000) is the owner's, set alongside the other five.
+ *
+ * One listing — the cap is the entire commercial substance of §6.8, and every
+ * layer beneath it resolves an unknown limit key to *unlimited* without raising
+ * anything, so the wiring on the create route (not this value) is what makes it
+ * real.
+ *
+ * Carries the same 30-day trial as every accommodation plan
+ * ({@link COMMERCE_TRIAL_DAYS}) in its `billing_plans.metadata`; the commerce
+ * checkout has not read it since HOS-1012 (literal `trialDays: 0` to
+ * MercadoPago).
  */
 export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-premium',
     name: 'Gastronomía Premium',
-    description: 'Gastronomy listing plan — one listing per owner (HOS-688, retired by HOS-818).',
-    limitKey: LimitKey.MAX_GASTRONOMIES,
-    maxListings: 1,
+    description:
+        'Gastronomy listing plan — one listing per owner (HOS-688, reactivated by HOS-975).',
+    vertical: 'gastronomy',
+    // HOS-975 (owner decision, 2026-09-04): top of the gastronomy ladder, 1/3/5.
+    // Deliberately SHORTER than the experience ladder's 10 — the two verticals
+    // are priced and capped as separate products (the same reason básico's
+    // $30.000 no longer shares a constant with experiences' $15.000).
+    maxListings: 5,
     sortOrder: 3,
-    isActive: false,
-    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    // HOS-975: back on sale. Was `false` since HOS-818 retired it.
+    isActive: true,
+    // HOS-975: ARS $80.000/mo. Was 1_500_000 (the shared pre-HOS-688 price).
+    monthlyPriceArs: 8_000_000,
+    // HOS-1285: ARS $800.000/yr — ten months charged for twelve served.
+    annualPriceArs: 80_000_000,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-1058: the printable PDF ficha. Owner decision, 2026-09-01 — premium,
+    // in both verticals.
+    //
+    // HOS-895 adds the structured carta, which is a `-pro` capability. Repeated
+    // here rather than inherited, because these arrays are literal per plan and
+    // nothing composes a tier from the one below it: omitting it would mean the
+    // dearer plan silently lost a feature `-pro` has.
+    //
+    // HOS-1045 adds the photo per dish — the FIRST capability this tier holds
+    // that `-pro` does not, and what makes premium a step rather than a name
+    // (owner decision, 2026-09-01). It sits next to `MANAGE_GASTRONOMY_MENU`
+    // by necessity: a dish photo has nowhere to live without dishes, so the
+    // two are only ever useful together even though their gates are separate.
+    //
+    // HOS-1041's menú del día and HOS-1042's venue events agenda are repeated
+    // here for the reason the carta is: these arrays are literal per plan, so
+    // omitting one would leave the dearer tier missing a feature its cheaper
+    // neighbour has.
+    //
+    // HOS-1043 adds the multi-language carta, on the same terms as the photo
+    // per dish right above it: `-premium` alone, and layered on top of
+    // `MANAGE_GASTRONOMY_MENU` rather than replacing it — a translation has
+    // nowhere to live without a carta to translate.
+    extraEntitlements: [
+        EntitlementKey.DOWNLOAD_LISTING_PDF,
+        EntitlementKey.MANAGE_GASTRONOMY_MENU,
+        EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL,
+        EntitlementKey.MANAGE_GASTRONOMY_EVENTS,
+        EntitlementKey.MENU_ITEM_PHOTOS,
+        // HOS-400 — the AI chat on the public ficha. Owner decision: PREMIUM in
+        // both verticals. Note this is `AI_CHAT`, the SAME key the accommodation
+        // plans grant, not a gastronomy-specific one: what separates the two is
+        // the SUBSCRIPTION the key is read from (SPEC-239 domain isolation) and
+        // the per-vertical quota beside it, never a duplicated entitlement.
+        // Deliberately NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, which is
+        // the floor every tier receives — putting it there would hand the chat
+        // to básico and pro too.
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU,
+        // HOS-1044 — the table QR plus its scan-analytics panel, on the same
+        // terms as the translated carta right above it: `-premium` alone,
+        // and deliberately NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`,
+        // which is the floor every tier receives.
+        EntitlementKey.MENU_QR_SCAN_METRICS
+    ],
+    // HOS-400: the only commerce tier of this vertical that carries a nonzero
+    // chat quota, because it is the only one that grants the capability.
+    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH,
+    // HOS-1060: still zero on the dearest gastronomy tier — the capability is
+    // experience-only, not a premium perk this vertical is missing out on.
+    privateGalleries: 0
 });
 
 /**
@@ -754,49 +1070,165 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
  * so an owner who spends their trial on gastronomy still receives one when they
  * later add an experience. A single pooled commerce plan would have silently
  * charged them from day one while the page promised a trial.
+ *
+ * **The only one of the six tiers HOS-975 did not move**: ARS $15.000/mo, the
+ * price it inherited from the pre-HOS-688 `commerce-listing` plan. That it is
+ * unchanged is a decision, not an omission — the owner priced the six tiers
+ * together on 2026-09-03 and left the experiences entry point where it was
+ * while gastronomy's doubled to $30.000. The number is a literal here rather
+ * than a shared constant for exactly that reason: the two verticals no longer
+ * agree, so a constant would have to lie about one of them.
  */
 export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-basico',
     name: 'Experiencias Básico',
     description: 'Experience listing plan — one listing per owner (HOS-688, HOS-818).',
-    limitKey: LimitKey.MAX_EXPERIENCES,
+    vertical: 'experience',
     maxListings: 1,
     sortOrder: 1,
     isActive: true,
-    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    // HOS-975: ARS $15.000/mo — deliberately UNCHANGED, see the docblock.
+    monthlyPriceArs: 1_500_000,
+    // HOS-1285: ARS $150.000/yr — ten months charged for twelve served.
+    annualPriceArs: 15_000_000,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
-});
-
-/** Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
-export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
-    slug: 'experience-pro',
-    name: 'Experiencias Profesional',
-    description: 'Experience listing plan — professional tier (not enabled yet, HOS-688).',
-    limitKey: LimitKey.MAX_EXPERIENCES,
-    maxListings: 1,
-    sortOrder: 2,
-    isActive: false,
-    monthlyPriceArs: 0
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-400: the AI chat is premium-only in both verticals (owner decision),
+    // so básico declares an explicit zero rather than omitting the key.
+    aiChatPerMonth: 0,
+    // HOS-1060: the entry tier does not grant private galleries (owner
+    // decision, 2026-09-04) — a `private-galleries-+N` add-on is what enables
+    // them here, and it raises this key from the explicit zero below.
+    privateGalleries: 0
 });
 
 /**
- * Experience premium tier — **retired from sale by HOS-818**, on the same terms
- * and for the same reasons as {@link GASTRONOMY_PREMIUM_PLAN}: the sellable role
- * moved to {@link EXPERIENCE_BASICO_PLAN}, and this definition stays priced
- * because its row and its MercadoPago `preapproval_plan` both still exist.
+ * Experience professional tier — **activated and priced at ARS $35.000/mo by
+ * HOS-975 (owner decision, 2026-09-03)**.
+ *
+ * This is the second half of the two-step HOS-1118 names, and the equivalent
+ * decision gastronomy took a tier at a time: HOS-1049 and HOS-1057 granted this
+ * row `MANAGE_EXPERIENCE_DIRECTIONS` and `ISSUE_EXPERIENCE_CERTIFICATE` while it
+ * was still `isActive: false` and unpriced, so no subscriber could hold either
+ * key and the gates that read them refused everyone. Granting a capability and
+ * putting the tier that carries it on sale are two different decisions; this is
+ * the second one, and it is what makes those two gates draw a live tier line
+ * instead of a floor nobody stands on.
+ *
+ * **Activation is three edits, not one.** It moved from `monthlyPriceArs: 0`,
+ * and a tier priced at zero is one `seedCommercePlan` deliberately gives NO
+ * `billing_prices` row (a zero-amount price reads as a free plan rather than an
+ * unpriced one). Checkout resolves the PRICE row, not the plan column, and
+ * hard-throws `NO_MONTHLY_PRICE` without it — so pricing it is what actually
+ * makes it buyable, and the `0090` data-migration has to create that row for
+ * every already-seeded environment. It also gains the 30-day trial its four
+ * priced siblings carry: the `hasTrial: false` default it held only ever meant
+ * "not sellable yet", never a decision to sell without one. (The commerce
+ * checkout has not read that field since HOS-1012 — it passes a literal
+ * `trialDays: 0` to MercadoPago — but the metadata is what the admin surfaces
+ * and any future trial path read, and an asymmetry nobody decided is worth
+ * closing while the tier is being made sellable.)
+ */
+export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'experience-pro',
+    name: 'Experiencias Profesional',
+    description: 'Experience listing plan — professional tier (HOS-688, activated by HOS-975).',
+    vertical: 'experience',
+    // HOS-975 (owner decision, 2026-09-04): the experience ladder is 1 / 5 / 10,
+    // wider than gastronomy's 1/3/5. An operator running several excursions is
+    // ordinary; an owner of five restaurants is not. The caps are set per
+    // vertical for that reason and HOS-976 inherits these values rather than
+    // re-deciding them.
+    maxListings: 5,
+    sortOrder: 2,
+    // HOS-975: on sale. Was `false`/unpriced since HOS-688 created the row.
+    isActive: true,
+    // HOS-975: ARS $35.000/mo. Was 0 ("not priced yet").
+    monthlyPriceArs: 3_500_000,
+    // HOS-1285: ARS $350.000/yr — ten months charged for twelve served.
+    annualPriceArs: 35_000_000,
+    hasTrial: true,
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // The two things that separate `-pro` from `-basico` by more than its
+    // name, both owner decisions of 2026-09-01, both `pro` and upwards:
+    // HOS-1049 — how to GET to the meeting point (the instructions and the map
+    // that draws it); the meeting point itself stays on `-basico`.
+    // HOS-1057 — the certificate a provider issues to whoever did the
+    // experience.
+    extraEntitlements: [
+        EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+        EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE
+    ],
+    // HOS-400: the AI chat is PREMIUM in both verticals (owner decision), so
+    // `-pro` declares an explicit zero. It is the one capability in this file
+    // that pro does NOT inherit upward from.
+    aiChatPerMonth: 0,
+    // HOS-1060 — the SECOND capability `-pro` does not inherit upward from, and
+    // the second reason to buy an add-on rather than a tier. Explicit zero, see
+    // `EXPERIENCE_BASICO_PLAN`.
+    privateGalleries: 0
+});
+
+/**
+ * Experience premium tier — **back on sale at ARS $50.000/mo (HOS-975)**, on the
+ * same terms and for the same reasons as {@link GASTRONOMY_PREMIUM_PLAN}: HOS-818
+ * retired it when it was indistinguishable from básico, and HOS-1058's printable
+ * PDF ficha is what makes it a step this vertical's cheaper tiers do not reach.
  */
 export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'experience-premium',
     name: 'Experiencias Premium',
-    description: 'Experience listing plan — one listing per owner (HOS-688, retired by HOS-818).',
-    limitKey: LimitKey.MAX_EXPERIENCES,
-    maxListings: 1,
+    description:
+        'Experience listing plan — one listing per owner (HOS-688, reactivated by HOS-975).',
+    vertical: 'experience',
+    // HOS-975 (owner decision, 2026-09-04): top of the experience ladder, 1/5/10.
+    maxListings: 10,
     sortOrder: 3,
-    isActive: false,
-    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    // HOS-975: back on sale. Was `false` since HOS-818 retired it.
+    isActive: true,
+    // HOS-975: ARS $50.000/mo. Was 1_500_000 (the shared pre-HOS-688 price).
+    monthlyPriceArs: 5_000_000,
+    // HOS-1285: ARS $500.000/yr — ten months charged for twelve served.
+    annualPriceArs: 50_000_000,
     hasTrial: true,
-    trialDays: COMMERCE_TRIAL_DAYS
+    trialDays: COMMERCE_TRIAL_DAYS,
+    // HOS-1058 — R-1: the two verticals are separate domains, so the same
+    // capability is granted to each vertical's premium plan on its own. There
+    // is no "commerce" plan to grant it once.
+    //
+    // HOS-1049 and HOS-1057 each add a `-pro` capability. Repeated here rather
+    // than inherited, because these arrays are literal per plan and nothing
+    // composes a tier out of the one below it: omitting either would mean the
+    // dearer plan silently lost a feature `-pro` has. Same reasoning as
+    // {@link GASTRONOMY_PREMIUM_PLAN}.
+    extraEntitlements: [
+        EntitlementKey.DOWNLOAD_LISTING_PDF,
+        EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
+        EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE,
+        // HOS-400 — see the twin comment on GASTRONOMY_PREMIUM_PLAN. Same key,
+        // different subscription domain; the isolation comes from the domain and
+        // the per-vertical quota, not from a duplicated entitlement.
+        EntitlementKey.AI_CHAT,
+        // HOS-1060 — private per-tourist galleries. Owner decision
+        // (2026-09-04): the escalón that GRANTS the capability, with a cap the
+        // `private-galleries-+N` add-ons then raise. Experience-only, so unlike
+        // `DOWNLOAD_LISTING_PDF` right above it there is no gastronomy twin to
+        // keep in step.
+        EntitlementKey.MANAGE_EXPERIENCE_PRIVATE_GALLERIES
+    ],
+    // HOS-400: the only commerce tier of this vertical that carries a nonzero
+    // chat quota, because it is the only one that grants the capability.
+    aiChatPerMonth: COMMERCE_AI_CHAT_PER_MONTH,
+    // HOS-1060: the only tier in either vertical with a nonzero gallery cap,
+    // because it is the only one that grants the capability from the plan.
+    //
+    // TWENTY is a placeholder derived from the issue's own example ("un
+    // proveedor con dos salidas al mes no necesita lo mismo que uno con
+    // veinte") and from the add-on ladder that tops out at +20: a gallery lives
+    // 30 days, so the cap is roughly "outings per month". The owner set the
+    // pack SIZES on 2026-09-04 and did not set this base — it is confirmed
+    // alongside the pack prices when the packs are activated.
+    privateGalleries: 20
 });
 
 /** Every gastronomy-domain plan the seed maintains, in display order. */
@@ -832,6 +1264,56 @@ export const DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL = {
 } as const;
 
 /**
+ * Every tier of each commerce vertical, in display order (HOS-1119).
+ *
+ * {@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL} above answers "which ONE plan
+ * does a vertical fall back to"; this answers the question HOS-1119 needed and
+ * nothing could: "which plans is a vertical ALLOWED to be on at all". The two
+ * are complementary, not alternatives — the default is still exactly what a
+ * checkout that asks for nothing gets.
+ *
+ * Built from {@link ALL_GASTRONOMY_PLANS} / {@link ALL_EXPERIENCE_PLANS} rather
+ * than re-listing the tiers, so a seventh tier added to either array is
+ * selectable by construction and cannot be forgotten here.
+ */
+export const COMMERCE_PLANS_BY_VERTICAL: Readonly<
+    Record<CommerceVertical, readonly PlanDefinition[]>
+> = {
+    gastronomy: ALL_GASTRONOMY_PLANS,
+    experience: ALL_EXPERIENCE_PLANS
+} as const;
+
+/**
+ * Finds the commerce plan definition a vertical knows by that slug (HOS-1119).
+ *
+ * **This is a MEMBERSHIP test, not a sellability test, and the split is the
+ * point.** It answers only "does this slug name a tier of this vertical" — a
+ * structural fact fixed in this catalogue that no operator can change at
+ * runtime. Whether that tier is currently *sellable* is a `billing_plans.active`
+ * question, read from the DATABASE at checkout time, exactly as
+ * `loadVerticalBaseLimit` reads the cap from the database rather than from this
+ * file: activating or retiring a tier must take effect without a deploy.
+ *
+ * Keeping membership in code is what preserves HOS-688 AC-35's real invariant:
+ * a gastronomy checkout can never be pointed at an experience plan, and so never
+ * at the other vertical's MercadoPago `preapproval_plan`. That is the property
+ * the per-vertical free trial rests on, and it is now enforced by a lookup
+ * instead of by there having been only one possible answer.
+ *
+ * @param input.vertical - The vertical the request belongs to.
+ * @param input.slug - The plan slug the caller asked for.
+ * @returns The matching {@link PlanDefinition}, or `undefined` when the slug
+ *   names no tier of that vertical — including when it names a tier of the OTHER
+ *   vertical, which is the case that matters.
+ */
+export function findCommercePlanForVertical(input: {
+    vertical: CommerceVertical;
+    slug: string;
+}): PlanDefinition | undefined {
+    return COMMERCE_PLANS_BY_VERTICAL[input.vertical].find((plan) => plan.slug === input.slug);
+}
+
+/**
  * Dedicated partner-directory plan (SPEC-271).
  *
  * Seeded into `billing_plans` and stamped with `product_domain='partner'`, but
@@ -843,6 +1325,7 @@ export const PARTNER_LISTING_PLAN: PlanDefinition = {
     name: 'Partner Listing',
     description: 'Subscription that makes a partner visible in the public directory (SPEC-271).',
     category: 'owner',
+    productDomain: ProductDomainEnum.PARTNER,
     monthlyPriceArs: 500000,
     annualPriceArs: null,
     monthlyPriceUsdRef: 5,
@@ -889,6 +1372,7 @@ export const PARTNER_SILVER_PLAN: PlanDefinition = {
     // See PARTNER_LISTING_PLAN: 'owner' only satisfies the PlanCategory type;
     // product_domain is the real discriminator.
     category: 'owner',
+    productDomain: ProductDomainEnum.PARTNER,
     monthlyPriceArs: 1500000,
     annualPriceArs: 15000000,
     monthlyPriceUsdRef: 15,
@@ -897,8 +1381,8 @@ export const PARTNER_SILVER_PLAN: PlanDefinition = {
     isDefault: false,
     sortOrder: 2,
     isActive: true,
-    // Empty for the same reason COMMERCE_LISTING_PLAN's are: partner visibility
-    // is driven by the subscription status and the partner row's own
+    // Empty, same as every commerce-vertical tier: partner visibility is
+    // driven by the subscription status and the partner row's own
     // lifecycle/subscription columns, NOT by the entitlement engine.
     entitlements: [],
     limits: []
@@ -911,6 +1395,7 @@ export const PARTNER_GOLD_PLAN: PlanDefinition = {
     description:
         'Partner tier with carousel presence plus a dedicated /partners/<slug>/ page (HOS-278 §6.3).',
     category: 'owner',
+    productDomain: ProductDomainEnum.PARTNER,
     monthlyPriceArs: 3000000,
     annualPriceArs: 30000000,
     monthlyPriceUsdRef: 30,
@@ -973,9 +1458,10 @@ export const TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS = 1500;
  * gating.
  *
  * **Deliberately NOT part of {@link ALL_PLANS}** — same isolation precedent
- * as {@link COMMERCE_LISTING_PLAN} / {@link PARTNER_LISTING_PLAN}: the
- * accommodation seed loop, the public plan list, and the grant-matrix
- * snapshot tests all operate on `ALL_PLANS` and must never see this plan.
+ * as {@link PARTNER_LISTING_PLAN} and every commerce-vertical plan in this
+ * file: the accommodation seed loop, the public plan list, and the
+ * grant-matrix snapshot tests all operate on `ALL_PLANS` and must never see
+ * this plan.
  * It is seeded by its own dedicated helper (`seedTestDailyPlan` in
  * `@repo/seed`), which stamps `metadata.testPlan = true` in the DB row for
  * extra identifiability beyond the `owner-test-daily` slug alone.
@@ -1014,6 +1500,7 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
     // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain
     // (stamped by the seed as 'accommodation') is what makes entitlements load.
     category: 'owner',
+    productDomain: ProductDomainEnum.ACCOMMODATION,
     // PLACEHOLDER — never seeded as a 'month' price row (daily-only plan).
     monthlyPriceArs: TEST_DAILY_PLAN_UNIT_AMOUNT_CENTAVOS,
     annualPriceArs: null,
@@ -1059,13 +1546,20 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
  * public listing. This deliberately leaves the `complex` category of
  * {@link PLANS_BY_CATEGORY} empty — see `0066-hos-692-domain-rewrite-and-plan-cleanup`
  * for the data-migration that removes the already-seeded rows.
+ *
+ * `tourist-plus` was removed the same way by HOS-1224, but one step further:
+ * its `PlanDefinition` constant is deleted too, not merely unlisted. The
+ * complex-* tier is DEFERRED (the vertical may still be built, so its shape is
+ * worth keeping); `tourist-plus` was CANCELLED as a product by HOS-301 D1. See
+ * the note where its definition used to live, and
+ * `0102-hos-1224-retire-tourist-plus-and-null-price-trial-days` for the
+ * data-migration that retires the already-seeded rows.
  */
 export const ALL_PLANS: PlanDefinition[] = [
     OWNER_BASICO_PLAN,
     OWNER_PRO_PLAN,
     OWNER_PREMIUM_PLAN,
     TOURIST_FREE_PLAN,
-    TOURIST_PLUS_PLAN,
     TOURIST_VIP_PLAN
 ];
 
@@ -1073,7 +1567,7 @@ export const ALL_PLANS: PlanDefinition[] = [
 export const PLANS_BY_CATEGORY = {
     owner: [OWNER_BASICO_PLAN, OWNER_PRO_PLAN, OWNER_PREMIUM_PLAN],
     complex: [] as const,
-    tourist: [TOURIST_FREE_PLAN, TOURIST_PLUS_PLAN, TOURIST_VIP_PLAN]
+    tourist: [TOURIST_FREE_PLAN, TOURIST_VIP_PLAN]
 } as const;
 
 /**
@@ -1117,6 +1611,48 @@ export function getDefaultPlan(category: PlanDefinition['category']): PlanDefini
     }
     return plan;
 }
+
+/**
+ * Every plan catalogue the platform maintains, across every vertical
+ * (HOS-1290).
+ *
+ * **For cross-cutting DEFENSES only** — the startup config validator, the
+ * Model C DB-sync engine, and any "does every catalogue get covered"
+ * exhaustiveness guard. These are the only kinds of consumer that legitimately
+ * need to see every plan at once, regardless of vertical.
+ *
+ * **NEVER use this to drive a consumer-facing surface.** `ALL_PLANS` alone
+ * (accommodation + tourist) is what SPEC-239 isolates on purpose: the
+ * accommodation entitlement engine, `GET /api/v1/public/plans`, the
+ * `seedBillingPlans` loop and the grant-matrix snapshot tests all read
+ * `ALL_PLANS` directly and MUST keep doing so — folding the commerce/partner
+ * catalogues into `ALL_PLANS` itself would undo that isolation instead of
+ * fixing the gap this constant exists to close (HOS-1290's whole point: the
+ * three catalogue-wide defenses should walk every catalogue, not that every
+ * catalogue should look like `ALL_PLANS`).
+ *
+ * A catalogue added to `plans.config.ts` and not registered here is invisible
+ * to every one of those defenses — `plan-catalog-domain-coverage.guard.test.ts`
+ * is the guard that catches that omission by cross-checking the set of
+ * `productDomain` values this array actually covers against
+ * {@link BUSINESS_VERTICAL_PRODUCT_DOMAINS} in `@repo/schemas`.
+ *
+ * `[skip-seed-migration]: additive-code-only` — `plans.config.ts` is a
+ * `BILLING_CONFIG_FILES` entry in `scripts/check-seed-dual-write.sh`, so this
+ * declaration alone trips the seed dual-write guard. Reviewed: this array is
+ * a derived aggregation of the four catalogues already declared above; it
+ * adds no `PlanDefinition`, and changes no plan's price, entitlement, limit,
+ * slug, `isActive`, or `productDomain` — nothing here needs backfilling on an
+ * already-seeded environment. Same shape as HOS-1119 (PR #3177)'s
+ * `COMMERCE_PLANS_BY_VERTICAL` + `findCommercePlanForVertical`, the marker's
+ * first use in this repo.
+ */
+export const ALL_PLAN_CATALOGS: readonly (readonly PlanDefinition[])[] = [
+    ALL_PLANS,
+    ALL_GASTRONOMY_PLANS,
+    ALL_EXPERIENCE_PLANS,
+    ALL_PARTNER_PLANS
+];
 
 /**
  * Returns the entitlements and limits granted to authenticated users that do

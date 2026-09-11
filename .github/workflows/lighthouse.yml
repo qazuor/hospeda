@@ -58,6 +58,18 @@ env:
   HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
   HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
   HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
+  # HOS-1144 — replace every remote media URL with a placeholder the site
+  # serves itself, so this run downloads nothing from Cloudinary. Set at the
+  # workflow level so it reaches both `astro build` and the `astro preview`
+  # server Lighthouse measures.
+  # Caveat for whoever reads a score here afterwards: the measured page now
+  # carries tiny local SVGs instead of real photographs, so LCP and the
+  # performance category are NOT comparable to production. This workflow is
+  # report-only (`continue-on-error: true` on the Lighthouse step), so the
+  # shift cannot fail a PR — but do not treat its numbers as a field measure.
+  # Deliberately its own variable rather than `CI`, which production build
+  # pipelines also set.
+  HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS: 'true'
 
 jobs:
   lighthouse:

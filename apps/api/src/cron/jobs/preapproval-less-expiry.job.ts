@@ -47,13 +47,32 @@
  * ## Commerce listings
  *
  * A commerce listing's public visibility is driven by a DENORMALIZED copy of
- * the status on `commerce_listing_subscriptions`, not by `billing_subscriptions`
- * itself. `reconcileCommerceListingForSubscription` is the bridge that keeps
+ * the status on `entity_subscriptions`, not by `billing_subscriptions`
+ * itself. `reconcileSubscriptionLinkedEntities` is the bridge that keeps
  * the two in step, and every other status-changing path (MP webhook, dunning,
  * finalize-cancelled-subs) calls it. This job does too: expiring the
  * subscription while leaving its listing publicly visible against a mirror
  * that still reads `active` would be an expiry done half way — a worse state
  * than the bug being fixed. The call is a no-op for the non-commerce majority.
+ *
+ * ## Partners: deliberately NOT reconciled here (HOS-1306)
+ *
+ * There is a SECOND bridge — `reconcilePartnerForSubscription`, writing
+ * `partner_subscriptions` and `partners.subscriptionStatus` — which the one
+ * above never calls. This job does not call it, and that is a measured
+ * decision rather than the oversight it looks like: a partner subscription
+ * cannot hold this job's target shape (`active`/`trialing` with a NULL
+ * preapproval), so the call would be an invocation nothing ever exercises.
+ *
+ * The evidence, and the CAVEAT that it rests on the absence of a producing
+ * write rather than on a structural invariant, live in `BRIDGE_ONLY_SITES` in
+ * `test/services/subscription-linked-entities-bridge.guard.test.ts` — which
+ * fails if this file is neither wired for partners nor listed there. Do not
+ * restate the reasoning here; a second copy is what rots.
+ *
+ * If you are landing HOS-1062 (activating a partner without MercadoPago), you
+ * are creating that population: wire the partner reconciler here in the same
+ * change.
  *
  * @module cron/jobs/preapproval-less-expiry
  */
@@ -72,11 +91,12 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
     BILLING_EVENT_TYPES,
     checkSubscriptionStatusTransition,
+    excludeAddonDomainCondition,
     withServiceTransaction
 } from '@repo/service-core';
 import { lt } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
-import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -127,7 +147,11 @@ export function isOrphanedElapsedSubscription(input: {
 }): boolean {
     const { row, now, graceHours } = input;
 
-    // A preapproval means the normal reconcilers own this row. Anything
+    // A preapproval means another sweep owns this row — `subscription-poll`
+    // while the checkout is still resolving, and `subscription-drift-reconcile`
+    // (HOS-914) once it is live. That second half only became true with HOS-914:
+    // until then nothing re-read the provider status of an `active`/`paused` row,
+    // so this line's conclusion was right and its stated reason was not. Anything
     // non-null counts, including a blank string: an empty id is a data problem,
     // not a licence to expire someone's subscription. This mirrors the SQL
     // filter, which uses IS NULL and likewise never matches an empty string.
@@ -187,7 +211,12 @@ export const preapprovalLessExpiryJob: CronJobDefinition = {
                         isNull(billingSubscriptions.mpSubscriptionId),
                         isNull(billingSubscriptions.deletedAt),
                         eq(billingSubscriptions.cancelAtPeriodEnd, false),
-                        lt(billingSubscriptions.currentPeriodEnd, cutoff)
+                        lt(billingSubscriptions.currentPeriodEnd, cutoff),
+                        // HOS-847: a recurring add-on's own row briefly has
+                        // mp_subscription_id = NULL between checkout and the
+                        // webhook that links its preapproval — exclude it so this
+                        // reconciler never expires an add-on mid-activation.
+                        excludeAddonDomainCondition()
                     )
                 )
                 .limit(BATCH_LIMIT);
@@ -272,7 +301,7 @@ export const preapprovalLessExpiryJob: CronJobDefinition = {
 
                     // Commerce listings do not read `billing_subscriptions`.
                     // They read a denormalized copy of the status on
-                    // `commerce_listing_subscriptions`, and this bridge is what
+                    // `entity_subscriptions`, and this bridge is what
                     // keeps the two in step — the MP webhook, dunning and
                     // finalize-cancelled-subs all call it for the same reason.
                     // Skipping it here would expire the subscription while
@@ -280,7 +309,7 @@ export const preapprovalLessExpiryJob: CronJobDefinition = {
                     // still claims `active`: an expiry done half way, which is
                     // a worse state than the bug this job fixes. Non-throwing
                     // by contract, and a no-op for the non-commerce majority.
-                    await reconcileCommerceListingForSubscription({
+                    await reconcileSubscriptionLinkedEntities({
                         subscriptionId: row.id,
                         subscriptionStatus: SubscriptionStatusEnum.EXPIRED,
                         source: 'preapproval-less-expiry'

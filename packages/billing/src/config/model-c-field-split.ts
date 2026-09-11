@@ -93,6 +93,25 @@ export const MODEL_C_FIELD_SPLIT = {
     active: 'commercial',
 
     /**
+     * `billing_plans.product_domain` — which vertical's entitlement engine
+     * counts a subscription to this plan.
+     *
+     * CAPABILITY (HOS-1233): structural, and not an operator decision in any
+     * sense — it is not editable from the admin UI at all (the plan dialog
+     * disables it once the plan exists, and `UpdateBillingPlanSchema` rejects
+     * it), for the same reason `category` and `isDefault` are not: changing it
+     * silently re-points every subscription already sold on the plan at a
+     * different entitlement engine.
+     *
+     * Config winning here is load-bearing rather than incidental. The tourist
+     * plans spent their whole existence filed as `accommodation` in two live
+     * databases because nothing ever wrote the column; classifying the field
+     * capability is what lets a seed run correct such a row instead of
+     * preserving it forever as an "operator edit".
+     */
+    productDomain: 'capability',
+
+    /**
      * `billing_plans.entitlements` — the set of EntitlementKeys a plan grants.
      * COMMERCIAL (reclassified HOS-39, 2026-07-02): the admin `PlanDialog.tsx`
      * (SPEC-168) already lets operators toggle entitlements per plan. Before

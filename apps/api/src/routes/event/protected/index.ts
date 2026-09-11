@@ -16,6 +16,7 @@ import { protectedCreateEventRoute } from './create';
 import { protectedGetEventByIdRoute } from './getById';
 import { protectedGetEventMediaRoute } from './getMedia';
 import { protectedListOwnEventsRoute } from './list';
+import { protectedModerateEventRoute } from './moderate';
 import { protectedPatchEventRoute } from './patch';
 import { protectedSetEventPublishStateRoute } from './publishState';
 import { protectedRemoveEventMediaRoute } from './removeMedia';
@@ -23,6 +24,7 @@ import { protectedReorderEventMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedEventMediaRoute } from './setFeaturedMedia';
 import { protectedSoftDeleteEventRoute } from './softDelete';
 import { protectedUpdateEventRoute } from './update';
+import { protectedUpdateEventMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
@@ -47,6 +49,9 @@ app.route('/', protectedSoftDeleteEventRoute);
 // POST /:id/publish-state - Publish or unpublish own event (HOS-374)
 app.route('/', protectedSetEventPublishStateRoute);
 
+// POST /:id/moderate - Approve own event, trusted editor only (HOS-1037)
+app.route('/', protectedModerateEventRoute);
+
 // POST /:eventId/comments - Create comment (SPEC-165)
 app.route('/', protectedEventCommentRoutes);
 
@@ -67,5 +72,9 @@ app.route('/', protectedSetFeaturedEventMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove photo from gallery.
 app.route('/', protectedRemoveEventMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct a photo's text metadata
+// (caption/description/alt/attribution) — HOS-1036.
+app.route('/', protectedUpdateEventMediaRoute);
 
 export { app as protectedEventRoutes };

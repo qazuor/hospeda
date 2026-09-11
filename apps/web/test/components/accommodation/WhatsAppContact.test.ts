@@ -1,7 +1,8 @@
 /**
  * @file WhatsAppContact.test.ts
- * @description Source-read tests for WhatsAppContact (HOS-19), mirroring the
- * ExperienceContactCTA.astro convention. The authoritative VIEWER-gating logic
+ * @description Source-read tests for WhatsAppContact (HOS-19), following the
+ * source-read convention of the other component tests. The authoritative
+ * VIEWER-gating logic
  * is unit-tested server-side (`resolveWhatsAppPayload`); this asserts the
  * component's three render branches and key rendering details.
  *

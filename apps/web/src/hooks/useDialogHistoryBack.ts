@@ -7,12 +7,28 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
+import { useIsTopmostOverlay } from './useIsTopmostOverlay';
 
 interface UseDialogHistoryBackParams {
     /** Whether the modal surface is currently open. */
     readonly isOpen: boolean;
     /** Close handler, invoked when the user presses the system back button. */
     readonly onClose: () => void;
+}
+
+/** Return value of {@link useDialogHistoryBack}. */
+export interface UseDialogHistoryBackResult {
+    /**
+     * Whether THIS surface is the topmost currently-open modal-like surface,
+     * per `useIsTopmostOverlay`'s shared open-overlays registry (HOS-350).
+     * Consumers gate their own Escape-to-close on this so that when two
+     * overlays are stacked (e.g. the feedback modal opened via
+     * Ctrl+Shift+F over an already-open drawer), only the outer one closes
+     * on a single Escape press instead of both firing at once.
+     *
+     * See {@link useIsTopmostOverlay} for the fail-open default.
+     */
+    readonly isTopmost: boolean;
 }
 
 /**
@@ -37,7 +53,10 @@ interface UseDialogHistoryBackParams {
  * useDialogHistoryBack({ isOpen, onClose: () => setIsOpen(false) });
  * ```
  */
-export function useDialogHistoryBack({ isOpen, onClose }: UseDialogHistoryBackParams): void {
+export function useDialogHistoryBack({
+    isOpen,
+    onClose
+}: UseDialogHistoryBackParams): UseDialogHistoryBackResult {
     // `onClose` is almost always an inline arrow at the call site. Reading it
     // through a ref keeps it out of the effect below: a new identity on every
     // render would otherwise release and re-claim a history entry on every
@@ -63,4 +82,11 @@ export function useDialogHistoryBack({ isOpen, onClose }: UseDialogHistoryBackPa
         });
         return release;
     }, [isOpen, claimToken]);
+
+    // Topmost arbitration (HOS-350) is a presence concern, not a
+    // history-claiming one — see `useIsTopmostOverlay`'s module doc for why
+    // it is a separate registry rather than a read of `stack` above.
+    const isTopmost = useIsTopmostOverlay({ isOpen });
+
+    return { isTopmost };
 }

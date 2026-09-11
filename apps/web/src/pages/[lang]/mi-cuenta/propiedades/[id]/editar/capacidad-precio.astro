@@ -8,21 +8,30 @@
 
 import { CapacityPricingForm } from '@/components/host/editor/forms/CapacityPricingForm.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
+// HOS-1183: `media` joined the needs so the post-save publish prompt can tell
+// whether the listing is fully ready. This section owns four of the five
+// blocking requirements; the fifth is the main photo, and a prompt that fired
+// without it would offer a publish the server refuses.
 const resolution = await resolveEditorPage({
 	astro: Astro,
 	sectionSlug: 'capacidad-precio',
-	need: ['translations'],
+	need: ['media', 'translations'],
 });
 
 if (resolution.redirect) return resolution.redirect;
 
 const { data, locale, accommodationId, sectionId } = resolution;
 const { t } = createTranslations(locale);
+
+// Read from the live plan catalog, never a constant, so the number the prompt
+// promises is the number the grant will write (H-98).
+const trialDays = await resolveGenericOwnerTrialDays();
 ---
 
 <EditorSectionLayout
@@ -38,6 +47,8 @@ const { t } = createTranslations(locale);
 		locale={locale}
 		accommodationId={accommodationId}
 		initialData={data.accommodation}
+		hasMainImage={Boolean(data.featuredImage)}
+		trialDays={trialDays}
 		client:load
 	/>
 </EditorSectionLayout>

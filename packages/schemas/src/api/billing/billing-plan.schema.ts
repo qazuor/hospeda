@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { queryBooleanParam } from '../../common/query-helpers.js';
+import { ProductDomainEnumSchema } from '../../enums/product-domain.schema.js';
 
 /**
  * Plan category schema.
@@ -46,6 +47,130 @@ const limitsSchema = z.record(
         .min(-1, { message: 'zodError.billing.plan.limits.value.min' })
 );
 
+// ---------------------------------------------------------------------------
+// Public-catalogue visibility (HOS-1062 F1)
+// ---------------------------------------------------------------------------
+
+/**
+ * The `billing_plans.metadata` key that carries a plan's public-catalogue
+ * visibility (HOS-1062 F1).
+ *
+ * Lives in `metadata` on purpose: the column is already `jsonb NOT NULL DEFAULT
+ * '{}'`, so marking a plan needs no structural migration. Precedent in the same
+ * table: `metadata.testPlan`, read by `routes/billing/protected-plans-list.ts`.
+ *
+ * Nothing writes this key yet — a negotiated plan is marked by an operator
+ * (`UPDATE billing_plans SET metadata = metadata || '{"publicListing":"unlisted"}'::jsonb`)
+ * until the admin plan form grows the control. The READ side is what F1 ships,
+ * because that is the side whose absence is silent.
+ */
+export const PLAN_PUBLIC_LISTING_METADATA_KEY = 'publicListing';
+
+/**
+ * Whether a plan appears in the PUBLIC catalogue.
+ *
+ * Deliberately an enum and not a boolean named after a negation: `'unlisted'`
+ * says what it does — the plan is absent from the public listing — and cannot be
+ * misread as `isActive`, which it is orthogonal to. An unlisted plan is
+ * **active and charging**; it is a negotiated agreement (a municipality's price)
+ * that simply must not appear on the pricing page. An inactive plan, by
+ * contrast, is one nobody can buy.
+ *
+ * - `'listed'` — ordinary catalogue plan. The default for every plan that has
+ *   never been marked, which is every plan that exists today.
+ * - `'unlisted'` — never served by a public or user-facing plan endpoint: neither
+ *   the two that ENUMERATE (`GET /api/v1/public/plans`,
+ *   `GET /api/v1/protected/billing/plans`) nor the two single-plan READS
+ *   (`GET /api/v1/protected/billing/plans/:id` and its `/prices` sub-route,
+ *   closed by HOS-1186 — they answer the same 404 a missing plan gets, for every
+ *   actor).
+ *
+ * What `'unlisted'` still does NOT mean, written down because a promise stated
+ * more strongly than the code is what stops anyone from checking again:
+ *
+ * - **It is not an authorisation check.** Checkout resolves a plan by UUID on
+ *   purpose (`subscription-checkout.service.ts`) — that is what makes an
+ *   exclusive plan payable at all — so whoever holds the UUID can still BUY the
+ *   plan. What they can no longer do is read it back, or learn its price, through
+ *   the public or protected tier.
+ * - **It does not apply to the admin tier.**
+ *   `GET /api/v1/admin/billing/plans/:id` (`BILLING_READ_ALL`) serves every plan
+ *   in full, which is the point: those are the plans an operator administers.
+ */
+export const BillingPlanPublicListingSchema = z.enum(['listed', 'unlisted']);
+
+/** TypeScript type inferred from {@link BillingPlanPublicListingSchema} */
+export type BillingPlanPublicListing = z.infer<typeof BillingPlanPublicListingSchema>;
+
+/**
+ * Reads the public-listing mark off a raw `billing_plans.metadata` value.
+ *
+ * The resolution is deliberately asymmetric, and the asymmetry is the whole
+ * safety argument:
+ *
+ * - The key **absent** (or `metadata` itself `null`/`undefined`, the shape
+ *   `mapDbToPlan` already tolerates) resolves to `'listed'`. Absence means the
+ *   plan was never marked — true of every plan in production — not that a mark
+ *   failed to resolve.
+ * - The key **present but not a recognised value** resolves to `'unlisted'`.
+ *   So does a `metadata` that is not a plain object at all. If a mark exists and
+ *   cannot be read, the plan is withheld: a public catalogue missing a plan is
+ *   recoverable, a published negotiated price is not (spec §7, rule 2).
+ *
+ * @param input - RO-RO input carrying the raw metadata value from the DB row
+ * @returns The resolved public-listing value
+ *
+ * @example
+ * ```ts
+ * resolvePlanPublicListing({ metadata: {} });                          // 'listed'
+ * resolvePlanPublicListing({ metadata: { publicListing: 'unlisted' } }); // 'unlisted'
+ * resolvePlanPublicListing({ metadata: { publicListing: 'nope' } });     // 'unlisted'
+ * ```
+ */
+export function resolvePlanPublicListing(input: { readonly metadata: unknown }): {
+    readonly publicListing: BillingPlanPublicListing;
+} {
+    const { metadata } = input;
+
+    if (metadata === null || metadata === undefined) {
+        return { publicListing: 'listed' };
+    }
+
+    if (typeof metadata !== 'object' || Array.isArray(metadata)) {
+        // A metadata value that is not a plain object cannot be interrogated for
+        // a mark. Unreadable, therefore withheld.
+        return { publicListing: 'unlisted' };
+    }
+
+    const raw = (metadata as Record<string, unknown>)[PLAN_PUBLIC_LISTING_METADATA_KEY];
+    if (raw === undefined) {
+        return { publicListing: 'listed' };
+    }
+
+    const parsed = BillingPlanPublicListingSchema.safeParse(raw);
+    return { publicListing: parsed.success ? parsed.data : 'unlisted' };
+}
+
+/**
+ * Whether a plan may be served by a PUBLIC endpoint.
+ *
+ * Positive test on purpose (`=== 'listed'`, never `!== 'unlisted'`): a plan
+ * whose mark went missing somewhere between the DB row and this call — a mapper
+ * that forgot the field, a fixture that never had it — is withheld rather than
+ * published. That is the failure this predicate exists to make impossible, so it
+ * accepts a loose shape and answers `false` for anything that is not positively
+ * listed.
+ *
+ * Positional single argument, matching the sibling plan predicates it sits
+ * beside (`isTestPlan`, `isAccommodationSubscription`, `subscriptionMatchesDomain`).
+ *
+ * @param plan - Any object carrying (or missing) a `publicListing` field
+ * @returns `true` only when the plan is positively marked as publicly listed
+ */
+export function isPubliclyListedPlan(plan: { readonly publicListing?: unknown }): boolean {
+    return plan.publicListing === 'listed';
+}
+
 /**
  * Schema for creating a new billing plan (admin operation).
  *
@@ -77,6 +202,26 @@ export const CreateBillingPlanSchema = z
             .max(1000, { message: 'zodError.billing.plan.create.description.max' }),
         /** Target user category */
         category: BillingPlanCategoryEnumSchema,
+        /**
+         * Product domain the plan belongs to — which vertical's entitlement
+         * engine counts a subscription to it.
+         *
+         * REQUIRED, and this is the one field on this schema where an
+         * omission is worse than a rejection. `billing_plans.product_domain`
+         * is `NOT NULL` with a default, so a create request that leaves this
+         * out does not produce a plan with "no domain": it produces one
+         * silently filed under whichever vertical the column defaults to. An
+         * admin creating a tourist plan would get an accommodation plan, and
+         * nothing anywhere would say so (HOS-1233 F-4b — exactly how the
+         * tourist plans came to claim `accommodation` in two live databases).
+         *
+         * Deliberately NOT derivable from {@link category}: the two answer
+         * different questions. `category` is who the plan is sold to
+         * (`owner` / `complex` / `tourist`), the domain is which entitlement
+         * engine owns it — and the commerce verticals share one category
+         * while holding three different domains.
+         */
+        productDomain: ProductDomainEnumSchema,
         /** Monthly price in ARS cents (0 for free plans) */
         monthlyPriceArs: z
             .number({ message: 'zodError.billing.plan.create.monthlyPriceArs.invalidType' })
@@ -245,6 +390,29 @@ export const BillingPlanResponseSchema = z.object({
     limits: z.record(z.string(), z.number().int()),
     /** Whether the plan is active */
     isActive: z.boolean(),
+    /**
+     * Public-catalogue visibility (HOS-1062 F1), derived from
+     * `metadata.publicListing` by {@link resolvePlanPublicListing}. Orthogonal to
+     * `isActive`: an `'unlisted'` plan is active and charging, it just never
+     * appears in a public listing.
+     *
+     * REQUIRED, with no default — an owner decision (HOS-1062). A default would
+     * have absorbed the one deploy window in which this can fail: Coolify serves
+     * the old and new containers at once, so a new admin client can parse a
+     * payload from an API instance that predates the field and get a 502 on the
+     * plans list. That window was accepted, deliberately, in exchange for every
+     * response carrying the mark explicitly — nothing downstream ever has to
+     * assume what an absent field meant.
+     *
+     * The blast radius of that choice was enumerated before it was made: the
+     * only over-the-wire parses of this schema are the three in
+     * `apps/admin/src/features/billing-plans/hooks.ts`, all on the admin
+     * billing-plans screens. `apps/web` never imports it (it declares its own
+     * `PlanPublicItem` for `GET /public/plans`), and no checkout path parses it —
+     * the API's own `stripWithSchema` runs in the same process as `mapDbToPlan`,
+     * so it cannot see a payload without the field.
+     */
+    publicListing: BillingPlanPublicListingSchema,
     /** ISO 8601 creation timestamp */
     createdAt: z.string().datetime(),
     /** ISO 8601 last-update timestamp */
@@ -272,7 +440,19 @@ export const AdminBillingPlanResponseSchema = BillingPlanResponseSchema.extend({
     /** Whether the plan is soft-deleted (`deletedAt IS NOT NULL`) */
     isDeleted: z.boolean(),
     /** Count of live subscribers (status active/trialing, not soft-deleted) */
-    activeSubscriptionCount: z.number().int().nonnegative()
+    activeSubscriptionCount: z.number().int().nonnegative(),
+    /**
+     * Which vertical (`billing_plans.product_domain`) the plan belongs to.
+     *
+     * Admin-only, like the two fields above — deliberately NOT on the base
+     * {@link BillingPlanResponseSchema} shared with the public plans endpoint.
+     * Added for HOS-1314: the admin "grant comp subscription" plan selector
+     * groups the DB-backed plan list by vertical (an operator choosing the
+     * wrong plan grants the customer another vertical's entitlements), and
+     * without this field the list route already returned every domain's
+     * plans unfiltered but with no way for the UI to tell them apart.
+     */
+    productDomain: ProductDomainEnumSchema
 });
 
 /** TypeScript type inferred from {@link AdminBillingPlanResponseSchema} */

@@ -109,6 +109,7 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import type { SubscriptionStatusFull } from '@repo/service-core';
 import {
     BILLING_EVENT_TYPES,
+    excludeAddonDomainCondition,
     syncFeaturedByEntitlementForOwner,
     validateSubscriptionStatusTransition
 } from '@repo/service-core';
@@ -117,8 +118,8 @@ import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { hardCancelPreapprovalBestEffort } from '../../services/billing/preapproval-hard-cancel.js';
-import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
+import { reconcileSubscriptionLinkedEntities } from '../../services/subscription-linked-entities.service.js';
 import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
@@ -276,7 +277,11 @@ async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
                 inArray(billingSubscriptions.status, [...FINALIZE_ELIGIBLE_STATUSES]),
                 eq(billingSubscriptions.cancelAtPeriodEnd, true),
                 lte(effectiveEndDateExpr(), now),
-                isNull(billingSubscriptions.deletedAt)
+                isNull(billingSubscriptions.deletedAt),
+                // HOS-847: a recurring add-on's own preapproval row must never be
+                // finalized by the plan-cancellation flow below — cancelling one
+                // is PR 6's hard-cancel path, not this soft-cancel finalizer.
+                excludeAddonDomainCondition()
             )
         )
         .limit(MAX_ROWS_PER_TICK);
@@ -338,7 +343,10 @@ async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> 
                     eq(billingSubscriptions.cancelAtPeriodEnd, true),
                     isNull(billingSubscriptions.deletedAt),
                     gte(effectiveEndDateExpr(), windowStart),
-                    lte(effectiveEndDateExpr(), windowEnd)
+                    lte(effectiveEndDateExpr(), windowEnd),
+                    // HOS-847: an add-on's own row must never receive the
+                    // customer-facing "your subscription access is ending" email.
+                    excludeAddonDomainCondition()
                 )
             )
             .limit(MAX_ROWS_PER_TICK);
@@ -575,7 +583,16 @@ async function finalizeOne(
                     subscriptionId,
                     customerId,
                     billing,
-                    db: tx
+                    db: tx,
+                    // HOS-847 PR 7a: this cron only ever finalizes rows carrying
+                    // `cancel_at_period_end = true`, and the only writers of that
+                    // flag are the self-serve cancel (`subscription-cancel.service.ts`)
+                    // and the plan-retirement sweep (`plan-disable-lifecycle.service.ts`).
+                    // Neither is a punishment, so each add-on keeps the period it
+                    // was already charged for — its OWN period, which a recurring
+                    // add-on bills on a cycle of its own and rarely shares with
+                    // the plan's.
+                    cause: 'voluntary'
                 });
             } else {
                 logger.warn(
@@ -617,7 +634,7 @@ async function finalizeOne(
         // The sub was finalized to 'cancelled' → hide any linked commerce listing
         // (cancelled → PRIVATE). No-op for accommodation subs; non-blocking so a
         // reconcile failure never breaks the cron.
-        await reconcileCommerceListingForSubscription({
+        await reconcileSubscriptionLinkedEntities({
             subscriptionId,
             subscriptionStatus: 'cancelled',
             source: 'finalize-cancelled-cron'

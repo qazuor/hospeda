@@ -106,6 +106,39 @@ describe('useWhatsNew', () => {
         expect(result.current.isLoading).toBe(false);
     });
 
+    // HOS-964 follow-up (2026-09-07 smoke finding): the API resolves locale
+    // from `?locale=`, which only this hook can supply correctly for the web
+    // app (the server has no reliable way to know which `/xx/` page asked).
+    it('sends the page locale as a ?locale= query param (HOS-964 follow-up)', async () => {
+        vi.stubGlobal('location', { ...window.location, pathname: '/pt/mi-cuenta/' });
+        vi.mocked(fetch).mockResolvedValue(jsonResponse({ data: { items: [], unseenCount: 0 } }));
+
+        renderHook(() => useWhatsNew());
+
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 10));
+        });
+
+        const getCall = vi.mocked(fetch).mock.calls[0];
+        const requestedUrl = new URL(String(getCall?.[0]));
+        expect(requestedUrl.searchParams.get('locale')).toBe('pt');
+    });
+
+    it('omits ?locale= when the current path has no valid locale segment', async () => {
+        vi.stubGlobal('location', { ...window.location, pathname: '/' });
+        vi.mocked(fetch).mockResolvedValue(jsonResponse({ data: { items: [], unseenCount: 0 } }));
+
+        renderHook(() => useWhatsNew());
+
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 10));
+        });
+
+        const getCall = vi.mocked(fetch).mock.calls[0];
+        const requestedUrl = new URL(String(getCall?.[0]));
+        expect(requestedUrl.searchParams.has('locale')).toBe(false);
+    });
+
     it('computes unseenCount from items where seen is false', async () => {
         const items = [
             {

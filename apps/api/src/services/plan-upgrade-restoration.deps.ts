@@ -91,8 +91,20 @@ export const defaultDeps: UpgradeRestorationDeps = {
     getPlanCaps(planSlug: string): PlanCaps {
         const plan: PlanDefinition | undefined = getPlanBySlug(planSlug);
         if (!plan) {
-            // Unknown slug → treat as unlimited (safe fallback: restores everything)
-            return { accommodationsCap: -1, promotionsCap: -1, photosPerAccommodationCap: -1 };
+            // HOS-1122: an unknown slug used to answer `{-1, -1, -1}`, commented
+            // "safe fallback: restores everything". It is the opposite of safe —
+            // `-1` means UNLIMITED to `splitByHeadroom`, so the one branch that
+            // fires when the plan cannot be identified is the one that restores
+            // the owner's entire restricted portfolio, and it reports success.
+            // A commerce plan slug lands here by construction: `ALL_PLANS` is
+            // accommodation-only.
+            //
+            // `0` fails closed instead — nothing is restored, the owner keeps
+            // exactly what they have, and the upgrade itself is untouched.
+            // `assertAccommodationPlanSlug` in the caller means this branch
+            // should now be unreachable; it stays fail-closed rather than being
+            // deleted because "unreachable" is a claim about today's call sites.
+            return { accommodationsCap: 0, promotionsCap: 0, photosPerAccommodationCap: 0 };
         }
 
         const getLimit = (key: LimitKey): number => {

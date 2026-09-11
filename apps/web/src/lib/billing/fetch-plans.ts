@@ -63,8 +63,8 @@ export type FetchPlansResult =
 /**
  * Fetch all active billing plans from the public API endpoint at runtime.
  *
- * Used by the SSR pricing pages (`/suscriptores/planes/` and
- * `/suscriptores/turistas/`) so that price changes made via the admin panel
+ * Used by the SSR pricing pages (`/suscriptores/planes/anfitriones/` and
+ * `/suscriptores/planes/turistas/`) so that price changes made via the admin panel
  * are reflected without a site redeploy (SPEC-168 D3).
  *
  * @param params.domain - The product domain to scope the response to

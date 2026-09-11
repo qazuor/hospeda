@@ -10,6 +10,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
 import * as migration from '../../src/data-migrations/0067-hos-726-addon-purchase-permission.js';
+import { GRANTS as VERTICAL_GRANTS } from '../../src/data-migrations/0079-hos-1077-vertical-commerce-permissions.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -27,9 +28,34 @@ const STUB_ACTOR: Actor = {
  */
 const { ADDON_PURCHASE_PERMISSION, GRANTED_ROLES, GRANTS } = migration;
 
-/** Every role that must NOT receive the grant. */
+/**
+ * Roles that hold `BILLING_ADDON_PURCHASE` because a LATER data-migration
+ * granted it, not this one.
+ *
+ * HOS-1077 split `COMMERCE_OWNER` into `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`,
+ * and the vertical roles carry the add-on grant for the same reason
+ * `COMMERCE_OWNER` does: a restaurant owner buys `extra-gastronomies-1`. That
+ * delta ships in `0079`, which is where a live environment receives it — `0067`
+ * is ledgered and will never run again, so back-dating its `GRANTED_ROLES`
+ * would be a lie about what it did, and would still not reach any already-seeded
+ * environment.
+ *
+ * Read off `0079.GRANTS` rather than hard-coded, so a role that gains the
+ * permission in the seed with NO migration behind it still lands in
+ * `EXCLUDED_ROLES` below and fails — which is the drift this suite exists to
+ * catch.
+ */
+const LATER_MIGRATION_ROLES: readonly RoleEnum[] = [
+    ...new Set(
+        VERTICAL_GRANTS.filter(
+            (grant) => grant.permission === PermissionEnum.BILLING_ADDON_PURCHASE
+        ).map((grant) => grant.role)
+    )
+];
+
+/** Every role that must NOT hold the permission, from ANY migration. */
 const EXCLUDED_ROLES: readonly RoleEnum[] = Object.values(RoleEnum).filter(
-    (role) => !GRANTED_ROLES.includes(role)
+    (role) => !GRANTED_ROLES.includes(role) && !LATER_MIGRATION_ROLES.includes(role)
 );
 
 function buildFakeDb(insertedRows: unknown[]): {
@@ -119,6 +145,28 @@ describe('0067-hos-726 addon purchase permission — no drift against the seed',
         expect(perms, `seed ${role} must hold ${ADDON_PURCHASE_PERMISSION}`).toContain(
             ADDON_PURCHASE_PERMISSION
         );
+    });
+
+    it('the later-migration carve-out is exactly the two vertical owner roles', () => {
+        // Pins the escape so it cannot widen unnoticed. Without this, a future
+        // migration adding the permission to some unrelated role would enlarge
+        // `LATER_MIGRATION_ROLES`, quietly shrink `EXCLUDED_ROLES`, and the
+        // exclusion test below would stop asserting anything about that role.
+        expect([...LATER_MIGRATION_ROLES].sort()).toEqual(
+            [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER].sort()
+        );
+    });
+
+    it.each([
+        RoleEnum.GASTRONOMY_OWNER,
+        RoleEnum.EXPERIENCE_OWNER
+    ])('seed %s holds the grant, matching its 0079 delta', (role) => {
+        // The vertical roles replace COMMERCE_OWNER, which holds this
+        // permission — a restaurant owner must keep reaching the add-on
+        // catalog. Asserted against the seed AND against 0079 so a live
+        // environment and a fresh DB cannot diverge.
+        expect(ROLE_PERMISSIONS[role] ?? []).toContain(ADDON_PURCHASE_PERMISSION);
+        expect(LATER_MIGRATION_ROLES).toContain(role);
     });
 
     it('no other role holds it in the seed', () => {

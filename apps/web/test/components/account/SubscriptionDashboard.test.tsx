@@ -17,6 +17,7 @@
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import {
     SubscriptionDashboard,
     type SubscriptionDashboardUser
@@ -51,7 +52,8 @@ vi.mock('@repo/icons', () => ({
     DownloadIcon: () => <span data-testid="icon-download" />,
     CancelIcon: () => <span data-testid="icon-cancel" />,
     PlayIcon: () => <span data-testid="icon-play" />,
-    PowerOffIcon: () => <span data-testid="icon-power-off" />
+    PowerOffIcon: () => <span data-testid="icon-power-off" />,
+    CreditCardIcon: () => <span data-testid="icon-credit-card" />
 }));
 
 // Mock env helper — must match the RESOLVED path that @/lib/env points to
@@ -75,6 +77,7 @@ const mockResumeSubscription = vi.fn();
 // Plan-change flow methods (used by PlanChangeFlow — statically imported)
 const mockChangePlan = vi.fn();
 const mockPreviewDowngrade = vi.fn();
+const mockReplacePaymentMethod = vi.fn();
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     userApi: {
@@ -86,7 +89,8 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
         pauseSubscription: () => mockPauseSubscription(),
         resumeSubscription: () => mockResumeSubscription(),
         changePlan: (...args: unknown[]) => mockChangePlan(...args),
-        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args)
+        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args),
+        replacePaymentMethod: (...args: unknown[]) => mockReplacePaymentMethod(...args)
     }
 }));
 
@@ -101,7 +105,8 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         pauseSubscription: () => mockPauseSubscription(),
         resumeSubscription: () => mockResumeSubscription(),
         changePlan: (...args: unknown[]) => mockChangePlan(...args),
-        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args)
+        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args),
+        replacePaymentMethod: (...args: unknown[]) => mockReplacePaymentMethod(...args)
     }
 }));
 
@@ -153,10 +158,32 @@ const COMP_SUBSCRIPTION = {
     paymentMethod: null
 };
 
+// HOS-180: a courtesy subscription (admin-gifted cycles). The underlying
+// MercadoPago preapproval is PAUSED, but nothing is suspended for the
+// subscriber — the panel must show the courtesy end date, never
+// "paused"/"suspended" wording (AC-11). courtesyEndsAt is computed relative
+// to "now" (not a hardcoded string) so this fixture never drifts stale as
+// real time moves forward.
+const COURTESY_ENDS_AT_ISO = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString();
+const COURTESY_SUBSCRIPTION = {
+    ...ACTIVE_SUBSCRIPTION,
+    status: 'courtesy' as const,
+    courtesyEndsAt: COURTESY_ENDS_AT_ISO
+};
+
 const CANCELLED_SUBSCRIPTION = {
     ...ACTIVE_SUBSCRIPTION,
     status: 'cancelled' as const,
     cancelAtPeriodEnd: true
+};
+
+// HOS-348 Part B: a past-due subscription — the ONLY status that offers the
+// "Actualizar medio de pago" self-service action.
+const PAST_DUE_SUBSCRIPTION = {
+    ...ACTIVE_SUBSCRIPTION,
+    status: 'past_due' as const,
+    gracePeriodDaysRemaining: 3,
+    gracePeriodExpiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
 };
 
 // HOS-236: a genuinely user-paused subscription (no pending cancellation) —
@@ -327,7 +354,19 @@ beforeEach(() => {
             accommodationsUpdated: 0
         }
     });
+    mockReplacePaymentMethod.mockResolvedValue({
+        ok: true,
+        data: { checkoutUrl: 'https://mercadopago.example/checkout/sub-new-001', reused: false }
+    });
     vi.spyOn(window, 'open').mockImplementation(() => null);
+    // Stub window.location.href using Object.defineProperty — JSDOM does not
+    // allow direct assignment to location.href in strict mode (mirrors
+    // PlanPurchaseButton.test.tsx's identical setup).
+    Object.defineProperty(window, 'location', {
+        value: { href: '' },
+        writable: true,
+        configurable: true
+    });
 });
 
 describe('SubscriptionDashboard — loading state', () => {
@@ -452,7 +491,7 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         renderDashboard(USER_ROLE);
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
         });
     });
 
@@ -461,7 +500,7 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         renderDashboard(HOST_ROLE);
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`);
         });
     });
 
@@ -575,6 +614,151 @@ describe('SubscriptionDashboard — complimentary (comp) gating (HOS-242)', () =
         renderDashboard();
         await waitForLoaded();
         expect(screen.getByText(/mercadopago/i)).toBeInTheDocument();
+    });
+});
+
+describe('SubscriptionDashboard — courtesy status wording (HOS-180 AC-11)', () => {
+    // Positive half: the courtesy end date is shown under the honest
+    // "Sin cargo hasta" label, not a bogus "Próxima facturación".
+    it('shows "Sin cargo hasta" and the formatted courtesyEndsAt date', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.getByText(/sin cargo hasta/i)).toBeInTheDocument();
+        const expectedDate = formatDate({
+            date: COURTESY_SUBSCRIPTION.courtesyEndsAt,
+            locale: 'es'
+        });
+        expect(screen.getByText(expectedDate)).toBeInTheDocument();
+    });
+
+    it('does not show "próxima facturación" for a courtesy subscription', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.queryByText(/próxima facturación/i)).not.toBeInTheDocument();
+    });
+
+    // Negative half: AC-11 forbids "paused"/"suspended" wording anywhere on
+    // the panel for a courtesy subscription — a real, failable assertion
+    // (search for the pause copy and expect it absent), not an
+    // objectContaining that would stay blind to a missing/extra field.
+    //
+    // The regex anchors on the "pausa"/"pause"/"suspend" ROOTS, not just the
+    // adjective forms ("pausada"/"paused"/"suspendida"). The narrower form
+    // missed the pause BUTTON's own copy ("Pausar suscripción",
+    // SubscriptionDashboard.client.tsx pauseButton/pauseModal.title/confirm) —
+    // it doesn't render for courtesy today, but if that ever changed this
+    // guard would stay green while looking straight at the regression it
+    // exists to catch.
+    it('never shows "pausar"/"pausada"/"paused"/"suspendida" wording for a courtesy subscription', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.queryByText(/pausa|pause|suspend/i)).not.toBeInTheDocument();
+    });
+
+    it('renders the status badge as "De regalo", not the paused label', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.getByText(/de regalo/i)).toBeInTheDocument();
+    });
+});
+
+// ─── HOS-1007: self-service actions offered during a courtesy window ──────────
+
+/**
+ * Each gate must mirror the status set its own backend accepts, and the three
+ * backends do NOT agree on `courtesy`:
+ *
+ *   - cancel      → `SOFT_CANCELLABLE_STATUSES` = active | trialing | courtesy
+ *   - pause       → active | trialing
+ *   - change plan → active | trialing
+ *
+ * So a gifted subscriber must be offered Cancel and denied Pause / Change-plan.
+ * Before HOS-1007 they got the opposite on two of the three: no Cancel (a real
+ * capability hidden) and an enabled Change-plan (a button whose backend answers
+ * 404).
+ */
+describe('SubscriptionDashboard — courtesy self-service actions (HOS-1007)', () => {
+    it('offers the cancel action for a courtesy subscription (the backend accepts it)', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cancelar suscripción/i })).toBeInTheDocument();
+    });
+
+    it('does NOT offer the pause action for a courtesy subscription (the backend rejects it)', async () => {
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('button', { name: /pausar suscripción/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('disables the "Cambiar plan" button for a courtesy subscription', async () => {
+        // plan-change.ts finds `active | trialing` only — a courtesy row is
+        // neither, so the flow would open and then fail with 404 "No active
+        // subscription found".
+        mockSubscriptionSuccess(COURTESY_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        // Assert on the SETTLED render, not inside a waitFor — a waitFor would
+        // accept an intermediate frame in which the button is not yet enabled.
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeDisabled();
+    });
+
+    // Root cause, not just the courtesy symptom: `canChangePlan` used to be a
+    // list of exclusions, so every status it had not been taught about defaulted
+    // to "allowed". `paused` was the pre-existing casualty — the same backend
+    // find rejects it, and the button was enabled anyway. Inverting the gate to
+    // an inclusion list fixes courtesy and paused in one move; this test is what
+    // stops the exclusion form coming back.
+    it('disables the "Cambiar plan" button for a paused subscription (pre-existing leak)', async () => {
+        mockSubscriptionSuccess(PAUSED_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeDisabled();
+    });
+
+    it('still enables the "Cambiar plan" button for an ordinary active subscription', async () => {
+        // The inclusion list must not over-reach: the happy path stays intact.
+        mockSubscriptionSuccess(ACTIVE_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+        await waitForLoaded();
+
+        expect(screen.getByRole('button', { name: /cambiar plan de suscripción/i })).toBeEnabled();
     });
 });
 
@@ -729,7 +913,7 @@ describe('SubscriptionDashboard — cancel modal: 404 graceful degradation', () 
 
         // The mailto link must appear (degrade to email support)
         const supportLink = screen.getByRole('link', { name: /soporte/i });
-        expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\?subject=/);
+        expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\.ar\?subject=/);
     });
 
     it('does not show an error alert on 404 — uses fallback copy instead', async () => {
@@ -856,7 +1040,7 @@ describe('SubscriptionDashboard — empty state', () => {
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/turistas/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
         });
     });
 
@@ -866,7 +1050,7 @@ describe('SubscriptionDashboard — empty state', () => {
 
         await waitFor(() => {
             const link = screen.getByRole('link', { name: /mejorar plan|ver planes/i });
-            expect(link).toHaveAttribute('href', '/es/suscriptores/planes/');
+            expect(link).toHaveAttribute('href', `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`);
         });
     });
 });
@@ -982,6 +1166,86 @@ describe('SubscriptionDashboard — invoice download', () => {
         await waitFor(() => {
             expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'info' }));
         });
+    });
+});
+
+describe('SubscriptionDashboard — replace payment method (HOS-348 Part B)', () => {
+    it('renders the "Actualizar medio de pago" action for a past_due subscription', async () => {
+        mockSubscriptionSuccess(PAST_DUE_SUBSCRIPTION);
+        renderDashboard();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /actualizar medio de pago/i })
+            ).toBeInTheDocument();
+        });
+    });
+
+    it('does NOT render the action for an active subscription', async () => {
+        mockSubscriptionSuccess(ACTIVE_SUBSCRIPTION);
+        renderDashboard();
+
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('button', { name: /actualizar medio de pago/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('calls replacePaymentMethod with the subscription id and redirects to the returned checkoutUrl', async () => {
+        mockSubscriptionSuccess(PAST_DUE_SUBSCRIPTION);
+        renderDashboard();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /actualizar medio de pago/i })
+            ).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /actualizar medio de pago/i }));
+        });
+
+        expect(mockReplacePaymentMethod).toHaveBeenCalledWith({ localId: 'sub-uuid-1' });
+        await waitFor(() => {
+            expect(window.location.href).toBe('https://mercadopago.example/checkout/sub-new-001');
+        });
+    });
+
+    it('shows a PERSISTENT error toast with a support action and does NOT redirect when the API call fails', async () => {
+        mockSubscriptionSuccess(PAST_DUE_SUBSCRIPTION);
+        mockReplacePaymentMethod.mockResolvedValue({
+            ok: false,
+            error: { code: 'FORBIDDEN', message: 'nope' }
+        });
+        renderDashboard();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /actualizar medio de pago/i })
+            ).toBeInTheDocument();
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /actualizar medio de pago/i }));
+        });
+
+        // HOS-1244: a 4xx on this screen must not be a silent failure. The
+        // toast must persist (duration 0 — a 5s auto-dismiss re-creates the
+        // "nothing happened" bug for anyone reading slowly) and must tell the
+        // user what to do: retry, or write to support via a mailto action.
+        await waitFor(() => {
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'error',
+                    duration: 0,
+                    action: expect.objectContaining({
+                        href: expect.stringContaining('mailto:')
+                    })
+                })
+            );
+        });
+        expect(window.location.href).toBe('');
     });
 });
 

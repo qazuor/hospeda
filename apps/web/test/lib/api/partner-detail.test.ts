@@ -94,4 +94,25 @@ describe('toPartnerDetailProps', () => {
         // Assert
         expect(props.name).toBe('Acme Coast');
     });
+
+    // HOS-802 review F4: `partners/[slug].astro:171` does `partner.description &&
+    // <p>`, which treats `null` and `''` differently — a `null` skips the block
+    // entirely, an empty string still renders it (empty). The outer
+    // `item.description == null ? null : ...` ternary in the transform must
+    // keep returning `null` verbatim, even though `resolveI18nTextWithLegacyFallback`
+    // is now involved on the other branch — an i18n object present alongside a
+    // `null` legacy value must not smuggle a resolved string past the ternary.
+    it('keeps description as null (not an empty string) when the legacy field is null, even if descriptionI18n is populated', () => {
+        // Arrange
+        const props = toPartnerDetailProps({
+            item: {
+                ...apiPayload,
+                description: null,
+                descriptionI18n: { es: 'Debería ser ignorado' }
+            }
+        });
+
+        // Assert
+        expect(props.description).toBeNull();
+    });
 });

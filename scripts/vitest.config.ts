@@ -4,8 +4,9 @@ import { defineConfig } from 'vitest/config';
  * Vitest project for top-level scripts (scripts/*.ts) and their
  * companion tests under scripts/__tests__/.
  *
- * Tests under scripts/cli/__tests__/ are owned by scripts/cli/vitest.config.ts
- * — this config covers only the root scripts/__tests__/ directory.
+ * This config covers only the root scripts/__tests__/ directory. The two
+ * hops CLIs (scripts/server-tools, scripts/client-tools) live outside the
+ * pnpm workspace and run their own suites on bun.
  */
 export default defineConfig({
     test: {

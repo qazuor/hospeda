@@ -20,6 +20,7 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -118,6 +119,11 @@ export function GastronomyReviewForm({
             setSuccess(false);
         }, 200);
     }, []);
+
+    // Back button closes the dialog instead of leaving the page (HOS-334).
+    // This form uses a native <dialog>, not the shared `Dialog`, so it wires
+    // the hook directly — same pattern as AiChatWidget.
+    useDialogHistoryBack({ isOpen: open, onClose: handleClose });
 
     const handleSubmit = useCallback(
         async (event: FormEvent<HTMLFormElement>) => {
@@ -290,7 +296,7 @@ export function GastronomyReviewForm({
 
             <dialog
                 ref={dialogRef}
-                className={styles.dialog}
+                className={`${styles.dialog} dialog-panel`}
                 aria-labelledby="gastronomy-review-dialog-title"
                 onClose={() => setOpen(false)}
                 onClick={(event) => {

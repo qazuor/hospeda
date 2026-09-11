@@ -22,16 +22,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * Partial update gastronomy listing — Admin endpoint.
  *
  * Uses the same `GastronomyUpdateInputSchema` (all fields partial) as the PUT
- * endpoint. Requires COMMERCE_EDIT_ALL permission.
+ * endpoint. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
  */
 export const adminPatchGastronomyRoute = createAdminRoute({
     method: 'patch',
     path: '/{id}',
     summary: 'Partial update gastronomy listing (admin)',
     description:
-        'Updates specific fields of a gastronomy listing. Requires COMMERCE_EDIT_ALL permission.',
+        'Updates specific fields of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
     tags: ['Gastronomy'],
-    requiredPermissions: [PermissionEnum.COMMERCE_EDIT_ALL],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

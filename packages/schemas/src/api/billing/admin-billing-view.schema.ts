@@ -73,6 +73,15 @@ export type AdminPaymentViewStatus = z.infer<typeof AdminPaymentViewStatusSchema
  * `canceled` is served here as `cancelled`. `abandoned` and `pending_provider`
  * are included because they exist in production data and previously rendered as
  * an empty badge — the UI map had no entry for them.
+ *
+ * `courtesy` (HOS-180, {@link SubscriptionStatusEnum.COURTESY}) was MISSING
+ * here until HOS-1245: `assertKnownStatus` in `admin-billing-view.shared.ts`
+ * throws inside the row-mapping `Array.map`, so a single subscription granted
+ * a courtesy window took down the ENTIRE admin subscriptions list with a 500 —
+ * not a degraded row, the whole screen. Same class of bug HOS-1007 found on
+ * the subscriber-facing panel (there it fell back to a wrong default instead
+ * of throwing); see `CLAUDE.md` — "a new status must be in EVERY enum on the
+ * path".
  */
 export const AdminSubscriptionViewStatusSchema = z.enum([
     'active',
@@ -83,7 +92,8 @@ export const AdminSubscriptionViewStatusSchema = z.enum([
     'expired',
     'pending_provider',
     'abandoned',
-    'comp'
+    'comp',
+    'courtesy'
 ]);
 
 /** TypeScript type inferred from {@link AdminSubscriptionViewStatusSchema} */
@@ -186,6 +196,18 @@ export type AdminPaymentView = z.infer<typeof AdminPaymentViewSchema>;
 export const AdminSubscriptionViewSchema = z.object({
     /** `billing_subscriptions.id` */
     id: z.string().uuid(),
+    /**
+     * `billing_subscriptions.customer_id` — the qzpay billing customer id.
+     *
+     * Added for HOS-1314: the admin "grant comp subscription" action
+     * (`POST /admin/billing/subscriptions/grant-comp`) takes a
+     * `billing_customers.id`, never a Hospeda `users.id` (the `user.id` field
+     * below). Without this, granting a comp from a subscription row required
+     * an operator to already know the qzpay customer UUID by heart — exactly
+     * the API-only gap this issue closes. Admin-only DTO, so exposing an
+     * internal identifier here carries no public surface.
+     */
+    customerId: z.string().uuid(),
     /** Normalised subscription status. See {@link AdminSubscriptionViewStatusSchema}. */
     status: AdminSubscriptionViewStatusSchema,
     /**

@@ -77,7 +77,7 @@ export interface PostCreateFormProps {
 export function PostCreateForm({ locale }: PostCreateFormProps): JSX.Element {
     const { t } = createTranslations(locale);
 
-    const { fieldErrors, formError, validate, handleApiError } = useZodForm({
+    const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema: POST_CREATE_FORM_SCHEMA,
         t
     });
@@ -98,6 +98,14 @@ export function PostCreateForm({ locale }: PostCreateFormProps): JSX.Element {
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
+        // HOS-816/HOS-837: the previous attempt's banner belongs to the previous
+        // attempt. `handleApiError` only ever SETS a message and nothing here
+        // ever cleared it, so a rejected create left its banner on screen
+        // through every later attempt — including one that fails client-side
+        // validation and returns below, which then reads as if the server had
+        // rejected the form again. It runs before `validate()` for exactly that
+        // reason: the early return must not outlive the clear.
+        setFormError(null);
 
         const parsed = validate({
             title,

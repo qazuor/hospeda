@@ -17,7 +17,6 @@ import {
 	BuildingsIcon,
 	ChatIcon,
 	CompassIcon,
-	GlobeIcon,
 	EyeIcon,
 	FavoriteIcon,
 	ForkKnifeIcon,
@@ -121,14 +120,24 @@ const gastronomyBenefits = [
 
 /*
  * Partner is the one vertical whose landing does not publish its benefits in
- * this page's title+description shape: `/sumate/partner/` renders four flat
+ * this page's title+description shape: `/sumate/partner/` renders flat
  * sentences under a single shared icon. Those sentences are reused verbatim as
  * the card descriptions; the short titles are local to this page
  * (`benefits.partner.N.title`) because no equivalent existed to harvest, and
  * each condenses its own sentence rather than adding a claim of its own.
+ *
+ * THREE cards, starting at `2`. There was a fourth, first in order, promising
+ * "access to a network of verified stays and businesses" under the title "Red
+ * verificada" — the same claim said twice, long and short. Nothing implements
+ * it and the approved commercial presentation contradicts it outright ("no
+ * existe un directorio de aliados donde la gente los busque por rubro"), so
+ * HOS-941 D-13 retired it. The surviving keys keep their original numbers: the
+ * two families here (`benefits.partner.N.title` and
+ * `alliance-leads.…benefits.itemN`) are paired by ARRAY POSITION, not by a
+ * shared suffix, so renumbering would buy nothing and risk pairing a sentence
+ * with someone else's title across three locales.
  */
 const partnerBenefits = [
-	{ Icon: GlobeIcon, titleKey: 'benefits.partner.1.title', descKey: 'alliance-leads.partner.benefits.item1' },
 	{ Icon: MegaphoneIcon, titleKey: 'benefits.partner.2.title', descKey: 'alliance-leads.partner.benefits.item2' },
 	{ Icon: ReceiptIcon, titleKey: 'benefits.partner.3.title', descKey: 'alliance-leads.partner.benefits.item3' },
 	{ Icon: ChatIcon, titleKey: 'benefits.partner.4.title', descKey: 'alliance-leads.partner.benefits.item4' }
@@ -320,7 +329,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
-					href={buildUrl({ locale, path: 'suscriptores/propietarios' })}
+					href={buildUrl({ locale, path: 'planes/anfitriones' })}
 					label={t('benefits.owner.cta')}
 					variant="accent"
 				/>
@@ -392,7 +401,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
-					href={buildUrl({ locale, path: 'publicar-experiencia' })}
+					href={buildUrl({ locale, path: 'planes/experiencias' })}
 					label={t('benefits.experience.cta')}
 					variant="primary"
 				/>
@@ -464,7 +473,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
-					href={buildUrl({ locale, path: 'publicar-restaurante' })}
+					href={buildUrl({ locale, path: 'planes/gastronomia' })}
 					label={t('benefits.gastronomy.cta')}
 					variant="accent"
 				/>

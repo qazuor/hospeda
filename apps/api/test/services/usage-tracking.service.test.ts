@@ -26,15 +26,60 @@ import { UsageTrackingService } from '../../src/services/usage-tracking.service'
  * Mock the @repo/db module to prevent real database calls.
  * The mock select chain simulates Drizzle's fluent API:
  * select().from().where() -> Promise<rows[]>
+ *
+ * HOS-1104: `hydrateSubscriptionProductDomains` (a real, unmocked
+ * `@repo/service-core` function used by the service under test) ALSO reads
+ * `getDb()`, against `billingSubscriptions` rather than `billingAddonPurchases`.
+ * `mockFrom` routes by the table passed to `.from()` so the two queries don't
+ * share a result — `mockWhere` stays the addon-purchases resolver (unchanged
+ * name, to keep the existing test bodies below untouched), and
+ * `mockHydrationWhere` resolves the productDomain recovery lookup from
+ * `storedProductDomains` (default: empty, i.e. every subscription hydrates to
+ * `null` — a legacy row, matching the pre-HOS-1104 fixture shape exactly).
  */
-const mockWhere = vi.fn().mockResolvedValue([]);
-const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
-const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+// `vi.hoisted()` guarantees these run before the `vi.mock('@repo/db', ...)`
+// factory below, including the plain object literal — Vitest's implicit
+// "mock"-prefix hoisting only special-cases `vi.fn(...)` assignments, not a
+// bare `const mockXxx = {...}`, which threw "Cannot access ... before
+// initialization" here.
+const { mockWhere, mockBillingSubscriptionsTable, mockSelect } = vi.hoisted(() => {
+    const where = vi.fn().mockResolvedValue([]);
+    const billingSubscriptionsTable = { id: 'id', productDomain: 'product_domain' };
+    const hydrationWhere = vi.fn((clause: { values?: readonly string[] }) => {
+        const ids = clause?.values ?? [];
+        const rows = ids
+            .filter((id) => id in storedProductDomains)
+            .map((id) => ({ id, productDomain: storedProductDomains[id] ?? null }));
+        return Promise.resolve(rows);
+    });
+    const from = vi.fn((table: unknown) => ({
+        where: table === billingSubscriptionsTable ? hydrationWhere : where
+    }));
+    const select = vi.fn().mockReturnValue({ from });
+    return {
+        mockWhere: where,
+        mockBillingSubscriptionsTable: billingSubscriptionsTable,
+        mockSelect: select
+    };
+});
+
+/**
+ * HOS-1104: keyed by subscription id, read by `mockHydrationWhere` above.
+ * `mockHydrationWhere` only reads this from inside its own function body
+ * (invoked later, at test-run time), so closing over this `let` before its
+ * declaration line runs is safe — TDZ only trips on a synchronous read, and
+ * hoisting a plain object-literal `const` here (matching the `vi.fn(...)`
+ * bindings above) is exactly what threw before this was pulled into
+ * `vi.hoisted()`.
+ */
+let storedProductDomains: Record<string, string | null> = {};
 
 vi.mock('@repo/db', () => ({
     getDb: () => ({
         select: mockSelect
     }),
+    billingSubscriptions: mockBillingSubscriptionsTable,
+    inArray: vi.fn((column: unknown, values: unknown) => ({ column, values })),
     // EntityViewService singleton (service-core barrel) dereferences these at import.
     AccommodationModel: vi.fn(function () {
         return { findIdsByOwnerId: vi.fn(async () => []) };
@@ -103,6 +148,9 @@ describe('UsageTrackingService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // HOS-1104: no stored productDomain by default -> every subscription
+        // hydrates to `null` (a legacy row), matching the fixtures' shape.
+        storedProductDomains = {};
 
         // Create mock billing client
         mockBilling = {
@@ -781,7 +829,11 @@ describe('UsageTrackingService', () => {
             // Act
             const result = await service.getUsageSummary(mockCustomerId);
 
-            // Assert — the eight account-wide stocks plus the seven AI meters.
+            // Assert — the eight account-wide stocks plus the NINE AI meters.
+            // HOS-400 took the AI meters from seven to nine: each commerce
+            // vertical's chat cap is measured, because it has a real counter
+            // (its own AiFeature, via AI_FEATURE_BY_LIMIT_KEY). Recounted from
+            // USAGE_KIND_BY_LIMIT_KEY, not incremented from the old number.
             expect(result.success).toBe(true);
             const measured = result
                 .data!.limits.filter((l) => l.isMeasured)
@@ -801,6 +853,8 @@ describe('UsageTrackingService', () => {
                     LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
                     LimitKey.MAX_AI_CHAT_PER_MONTH,
                     LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
+                    LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH,
+                    LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH,
                     LimitKey.MAX_AI_SEARCH_PER_MONTH,
                     LimitKey.MAX_AI_SUPPORT_PER_MONTH,
                     LimitKey.MAX_AI_TRANSLATE_PER_MONTH,
@@ -890,19 +944,26 @@ describe('UsageTrackingService', () => {
         // 'gastronomy' in place of the old 'commerce' fixture.
         const gastronomyPlanId = 'plan_gastronomy_monthly';
 
+        // HOS-1104: neither fixture sets `productDomain` directly — the real
+        // `getByCustomerId()` never populates it (qzpay-core's mapper builds
+        // objects field-by-field from the fields `QZPaySubscription` declares;
+        // see `hydrateSubscriptionProductDomains`'s doc). Setting it inline
+        // here would fabricate a field the SDK never provides and mask the
+        // exact bug this hydration exists to fix (the HOS-934 precedent this
+        // suite used to repeat). The real value is supplied via
+        // `storedProductDomains`, simulating the recovery SELECT.
+
         /** A gastronomy-domain subscription living under the SAME billing customer. */
         const gastronomySubscription = {
             ...mockSubscription,
             id: 'sub_gastronomy_1',
-            planId: gastronomyPlanId,
-            productDomain: 'gastronomy'
+            planId: gastronomyPlanId
         };
 
         /** An explicitly accommodation-domain subscription. */
         const accommodationSubscription = {
             ...mockSubscription,
-            id: 'sub_accommodation_1',
-            productDomain: 'accommodation'
+            id: 'sub_accommodation_1'
         };
 
         const gastronomyPlan = {
@@ -917,6 +978,10 @@ describe('UsageTrackingService', () => {
             (mockBilling.plans.get as Mock).mockImplementation((planId: string) =>
                 Promise.resolve(planId === gastronomyPlanId ? gastronomyPlan : mockPlan)
             );
+            storedProductDomains = {
+                [gastronomySubscription.id]: 'gastronomy',
+                [accommodationSubscription.id]: 'accommodation'
+            };
         });
 
         it('should resolve the gastronomy subscription when the gastronomy domain is requested, even when the accommodation one is listed first', async () => {
@@ -1041,6 +1106,108 @@ describe('UsageTrackingService', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(result.data).toBeNull();
+        });
+    });
+
+    describe('cross-vertical stock counts (HOS-1282 pre-merge condition)', () => {
+        // HOS-1282's recalibration widened `?productDomain=` to accept
+        // `'tourist'` and required verifying, before merging that widening,
+        // that `GET /billing/usage?productDomain=tourist` for a DUAL-ROLE
+        // customer (host + tourist) produces acceptable "cross" stock counts.
+        //
+        // `getCurrentUsage` (usage-tracking.service.ts:704-844) counts by
+        // OWNER ID for every `LimitKey`, regardless of which domain the
+        // caller asked for — `getUsageSummary`'s `for (const limitKey of
+        // Object.values(LimitKey))` loop calls it unconditionally. This is
+        // NOT new and this PR does not fix it: the exact same thing already
+        // happens today for a host querying `?productDomain=gastronomy` with
+        // no gastronomy listings. Widening to `tourist` only makes an
+        // existing imperfection reachable from a third domain — this suite
+        // pins what that imperfection actually produces, so the "acceptable"
+        // verdict is verified against real service output, not assumed.
+        const touristPlanId = 'plan_tourist_vip';
+
+        /** A tourist-vip subscription living under the SAME billing customer. */
+        const touristSubscription = {
+            ...mockSubscription,
+            id: 'sub_tourist_1',
+            planId: touristPlanId
+        };
+
+        /** The host side of the same dual-role customer. */
+        const accommodationSubscription = {
+            ...mockSubscription,
+            id: 'sub_accommodation_dual'
+        };
+
+        /**
+         * Tourist plans do NOT declare `MAX_ACCOMMODATIONS` — that cap belongs
+         * to the accommodation vertical's own plans (`mockPlan` above), never
+         * a tourist tier. Only the 5 caps `TOURIST_VIP_LIMITS` actually grants
+         * are present (`packages/billing/test/config/commerce-limits.tourist-domain.test.ts`
+         * pins the full shared set; a subset is enough to prove this test's point).
+         */
+        const touristPlan = {
+            id: touristPlanId,
+            name: 'Tourist VIP',
+            limits: {
+                [LimitKey.MAX_FAVORITES]: 50,
+                [LimitKey.MAX_ACTIVE_ALERTS]: 10
+            }
+        };
+
+        beforeEach(() => {
+            (mockBilling.plans.get as Mock).mockImplementation((planId: string) =>
+                Promise.resolve(planId === touristPlanId ? touristPlan : mockPlan)
+            );
+            storedProductDomains = {
+                [touristSubscription.id]: 'tourist',
+                [accommodationSubscription.id]: 'accommodation'
+            };
+        });
+
+        it("REGRESSION/PIN: ?productDomain=tourist for a dual-role customer still reports the host's real MAX_ACCOMMODATIONS count under a 0-max entry, and never as 'exceeded'", async () => {
+            // Arrange — dual role: the customer owns 3 REAL accommodations (the
+            // host side) AND holds an active tourist-vip subscription.
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                accommodationSubscription,
+                touristSubscription
+            ]);
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn((limitKey: string) => {
+                // Mirrors the REAL getCurrentUsage: it counts by ownerId,
+                // oblivious to which domain the caller asked for.
+                if (limitKey === LimitKey.MAX_ACCOMMODATIONS) return Promise.resolve(3);
+                return Promise.resolve(0);
+            });
+
+            // Act — scoped to the tourist domain.
+            const result = await service.getUsageSummary(mockCustomerId, 'tourist');
+
+            // Assert — resolves the TOURIST plan/limits, not the accommodation one.
+            expect(result.success).toBe(true);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith(touristPlanId);
+
+            // The verdict this test exists to pin: MAX_ACCOMMODATIONS still
+            // carries the real owner-side count (3), because getCurrentUsage
+            // is not domain-scoped — but maxAllowed is 0 (the tourist plan
+            // declares no accommodation cap), and `calculateThreshold` treats
+            // max<=0 as 'ok' unconditionally, so this can never surface as an
+            // alarming "exceeded" badge to a tourist-scoped caller. No OTHER
+            // customer's data is involved — `ownerId` scopes to this same
+            // customer throughout — so this is a data-ACCURACY imperfection,
+            // not a privacy leak.
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.currentUsage).toBe(3);
+            expect(accommodationsLimit?.maxAllowed).toBe(0);
+            expect(accommodationsLimit?.threshold).toBe('ok');
+
+            // The tourist plan's OWN caps resolve correctly and are unaffected.
+            const favoritesLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_FAVORITES
+            );
+            expect(favoritesLimit?.maxAllowed).toBe(50);
         });
     });
 });

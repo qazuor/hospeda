@@ -113,23 +113,56 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'alliance-leads',
     'alliance-leads.form',
     'auth-ui.common',
+    // HOS-959: the tabbed auth island renders the active tab's page title as
+    // its <h1>, reusing `auth-ui.pages.signin.title` / `.signup.title`.
+    'auth-ui.pages',
     'auth-ui.signIn',
     'auth-ui.signOut',
     'auth-ui.signUp',
     'auth-ui.userMenu',
     'auth.forgotPassword',
+    // HOS-959: the OAuth block moved out of both password forms into one
+    // shared island above the tabs, so its labels left `auth.signIn`/
+    // `auth.signUp` for a namespace of their own.
+    'auth.oauth',
     'auth.resetPassword',
     'auth.signIn',
     'auth.signUp',
+    // HOS-959: the sign-in/sign-up tab strip.
+    'auth.tabs',
     'auth.verifyEmail',
     'billing.checkout',
+    // HOS-937 step 3 — the checkout-retry banner (CheckoutRetryBanner.client.tsx)
+    // named on `mi-cuenta/suscripcion` after a card-rejected preapproval.
+    'billing.checkoutRetry',
     'billing.limit',
     'blog.categories',
     'comments.form',
     'comments.thread',
+    // HOS-1058 — `BrochureDownloadButton.client.tsx` names all four states
+    // (`downloading`/`download`/`locked`/`error`) with an inline Spanish
+    // fallback, so a missing prefix does not render a raw key on an /en/ or
+    // /pt/ page — it silently prints Spanish there instead.
+    'commerce.brochure',
+    // HOS-1057 — `ExperienceCertificatePanel.client.tsx` names every state it
+    // renders with an inline Spanish fallback, so a missing prefix does not
+    // print a raw key on an /en/ or /pt/ page: it silently prints Spanish
+    // instead, which is the failure this list exists to prevent.
+    'commerce.certificate',
     'commerce.changePassword',
+    // NOT an i18n key — a `PermissionEnum` VALUE (`commerce.editOwn`), named as a
+    // string literal by `UserMenu.client.tsx` to decide the PostHog
+    // `user_type`. Nothing ever passes it to `t()`, and no `editOwn` key exists
+    // under this namespace in es/en/pt.
+    //
+    // It is declared anyway because the guard matches any literal whose head is
+    // a real namespace, on purpose: keys routinely reach `t()` through a data
+    // structure, so a call-site-only scan would miss them and ship a menu of raw
+    // dotted keys. That over-match is worth keeping — the cost here is zero
+    // bytes, since `pickClientNamespaces` copies only keys that exist, and this
+    // prefix matches none. See the `gastronomy.editOwn` / `experience.editOwn`
+    // siblings below, added by HOS-1077 for the same reason.
     'commerce.editOwn',
-    'commerce.lead',
     'commerce.owner',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
@@ -154,10 +187,26 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.pagination',
     'common.prev',
     'common.prevPage',
+    // HOS-982 — `ListingQrSheet.client.tsx` (the printable QR sheet download,
+    // shared by the three verticals) names this subtree. It also carries the
+    // three keys the PDF itself prints (`headline` / `invite` / `brandTagline`,
+    // resolved server-side by `qr-sheet-content.ts`): a prefix is two segments
+    // by design, so those ride along. ~150 bytes for one panel's copy.
+    'common.qrSheet',
     'common.removing',
     'common.retry',
+    // HOS-957 — the rich-text toolbar's link dialog, which replaced
+    // `window.prompt('URL del enlace', …)`. Named by `LinkUrlDialog.client.tsx`
+    // through `RichTextEditor.client.tsx`, so it is reachable from all four
+    // editors that mount it (accommodation, commerce, event, post).
+    'common.richText',
     'common.saving',
     'common.untitled',
+    // HOS-734 — `CommerceViewsWidget.client.tsx` names `common.window.7d` /
+    // `.30d` / `.ariaLabel` for its time-window toggle, reusing the same keys
+    // admin's `WindowToggle` already used (admin ships its own bundle, so this
+    // entry is new here specifically because a WEB client island now names it).
+    'common.window',
     'contact.form',
     'contributions.form',
     'conversations.actions',
@@ -181,6 +230,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'destinations.rating',
     'destinations.weather',
     'events.categories',
+    // HOS-1077: a `PermissionEnum` value, not a key — same as `commerce.editOwn`
+    // above, whose vertical split created it. `UserMenu.client.tsx` reads all
+    // three so a gastronomy-only or experience-only owner is still segmented as
+    // an `owner` in PostHog rather than a `tourist`.
+    'experience.editOwn',
     'experience.reviews',
     // HOS-822 — the commerce owner form and the public listing page now name
     // the SAME listing-type key (`experience.type.*` / `gastronomy.types.*`,
@@ -197,6 +251,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'external-reputation.snippets',
     'external-reputation.status',
     'footer.newsletter',
+    // HOS-1077: gastronomy half of the permission-value pair described at
+    // `experience.editOwn` above. Not an i18n key.
+    'gastronomy.editOwn',
     // HOS-822 — gastronomy half of the shared listing-type source above.
     'gastronomy.types',
     'home.featuredDestinations',
@@ -222,7 +279,13 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'host.dashboard',
     'host.form',
     'host.importFromUrl',
-    'host.landing',
+    // `host.landing` left this list with HOS-1156. Its only client-reachable
+    // namer was `HostLandingCta.client.tsx`, the island that chose between
+    // `/publicar/nueva/` and sign-in — both of which are `/publicar/` now, so
+    // the island was deleted. The keys themselves are alive and still rendered
+    // on that page's hero; they resolve SERVER-side, which reads the full
+    // catalog and is not affected by this list. Shipping the prefix anyway was
+    // download weight for every visitor, which is what the guard measures.
     'host.miniForm',
     'host.pages',
     'host.promotions',
@@ -246,7 +309,15 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'pricing.free',
     'pricing.monthlyOnly',
     'pricing.period',
+    // HOS-1233. The three the plans-page trial branch names from islands: the
+    // warn-and-confirm dialog, the remaining-days banner, and the already-VIP
+    // disabled state. All three sit on the last click before payment, so a
+    // missing prefix here does not degrade — it renders the raw key text at
+    // exactly the moment the visitor is deciding whether to be charged.
+    'pricing.touristVipHeld',
+    'pricing.trialBanner',
     'pricing.trialNotEligible',
+    'pricing.trialWarning',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',
