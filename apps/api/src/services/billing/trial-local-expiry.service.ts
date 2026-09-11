@@ -14,7 +14,11 @@
  * It is also NOT a restoration of `blockExpiredTrials`, which HOS-171 deleted.
  * That function CUT OFF access. D-3 does the opposite: the listing leaves the
  * site (T-011) and everything the owner loaded — photos, texts, prices — stays
- * intact and editable in the panel, coming back online the moment they pay.
+ * intact and editable in the panel, coming back online when they pay. The
+ * comeback is real since HOS-1181, not aspirational: the unpublish below stamps
+ * `billingUnpublishedAt`, and the win-back republish driven from the billing
+ * reconciler republishes exactly those rows once the owner's subscription is
+ * entitlement-granting again.
  * Only the two constants kept the old name (`BLOCK_EXPIRED_TRIALS_LOCK_KEY`,
  * `BLOCK_EXPIRED_TRIALS_BATCH_SIZE`) and those are reused as-is.
  *
@@ -95,7 +99,10 @@ export interface LocalTrialExpiryResult {
  * expired (HOS-1012 D-3, T-011).
  *
  * The listing leaves the site; the data stays. Photos, texts and prices remain
- * in the panel and come back online the moment the owner pays. This is
+ * in the panel and come back online when the owner pays (HOS-1181: every
+ * unpublish here stamps `billingUnpublishedAt`, which the win-back republish
+ * driven from `reconcileSubscriptionLinkedEntities` acts on once the owner's
+ * subscription is entitlement-granting again). This is
  * deliberately NOT `applyOwnerServiceSuspension` (`subscription-pause.service`),
  * which flips `owner_suspended` and takes the edit-lock with it — that is the
  * degraded mode D-3 explicitly rules out.
@@ -230,7 +237,15 @@ export async function unpublishListingsForExpiredTrial(input: {
     let failed = 0;
 
     for (const row of rows) {
-        const result = await service.unpublish(actor, row.id);
+        // HOS-1181: `billingUnpublish: true` stamps the marker that the win-back
+        // republish (driven from `reconcileSubscriptionLinkedEntities`) later
+        // uses to bring BACK exactly the rows this loop took down — and only
+        // those. An owner-initiated unpublish from the panel never passes it,
+        // which is what keeps a deliberately-paused listing from being
+        // republished just because its owner paid for another one.
+        const result = await service.unpublish(actor, row.id, undefined, {
+            billingUnpublish: true
+        });
 
         if (result.error) {
             failed++;
