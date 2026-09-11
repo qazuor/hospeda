@@ -153,11 +153,16 @@ describe('commerce edit/publish entitlement gates — allow side (HOS-1074)', ()
      * the negative assertions meaningless.
      *
      * @param service - The vertical's service class.
-     * @returns The `count` spy, which is the post-gate witness.
+     * @returns The `countOwn` spy, which is the post-gate witness.
      */
     function stubCountAtZero(service: typeof GastronomyService | typeof ExperienceService) {
         const zero = { data: { count: 0 }, error: undefined } as never;
-        return vi.spyOn(service.prototype, 'count').mockResolvedValue(zero);
+        // `countOwn`, not `count`, since HOS-1247: the enforcement middleware
+        // reads the OWNER-scoped count, because the public `count()` forces
+        // PUBLIC + ACTIVE and reported zero for every owner-created draft. The
+        // spy is the post-gate witness, so it has to sit on the call the
+        // middleware actually makes.
+        return vi.spyOn(service.prototype, 'countOwn').mockResolvedValue(zero);
     }
 
     it('lets a commerce owner with no subscription past the gastronomy create gate', async () => {
