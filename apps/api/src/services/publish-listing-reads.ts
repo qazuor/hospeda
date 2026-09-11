@@ -34,7 +34,7 @@
  * @module services/publish-listing-reads
  */
 
-import type { PublishVertical } from '@repo/billing';
+import { isCommercePublishVertical, type PublishVertical } from '@repo/billing';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import {
     AccommodationService,
@@ -125,14 +125,34 @@ function serviceFor(vertical: PublishVertical) {
 /**
  * Counts the listings one owner holds in one vertical.
  *
- * `ownerId` is a declared filter on all three search schemas — checked rather
- * than assumed, because a search schema that silently drops an undeclared filter
- * would count every listing on the platform and cap the first owner who tried to
- * create one.
- *
  * Counts across every lifecycle state, drafts included, because that is what the
  * cap counts: a DRAFT listing occupies a slot exactly as a published one does.
- * Soft-deleted rows are excluded by the service layer's own default.
+ * Soft-deleted rows are excluded.
+ *
+ * ## The two verticals reach that guarantee by DIFFERENT calls (HOS-1247)
+ *
+ * This used to be one `service.count(actor, { ownerId: actor.id })` for all
+ * three verticals, and the sentence above was FALSE for two of them. A commerce
+ * `_executeCount` mirrors its `_executeSearch` and forces `visibility: PUBLIC` +
+ * `lifecycleState: ACTIVE` (`gastronomy.service.ts:550`,
+ * `experience.service.ts:510`) so a public-search total matches the page it
+ * paginates. Every owner-created listing starts `PRIVATE`/`DRAFT`
+ * (`commerce/protected/create.ts` D-3) — so this function returned ZERO for
+ * precisely the rows the cap exists to count, `checkLimit` compared `0 <
+ * maxAllowed`, and three listings went onto a plan of one with nothing raised.
+ *
+ * So commerce now reads through `countOwn`, the counting twin of the `listOwn`
+ * that backs `GET /{vertical}/mine` — hard-scoped to `ownerId = actor.id`,
+ * across every visibility and lifecycle state. Accommodation keeps calling
+ * `count()`: its `_executeCount` already drops `activeOnly` when
+ * `params.ownerId === actor.id` (`accommodation.service.ts:2666`), which is why
+ * that cap has always counted drafts, and routing it through a new call would
+ * change the one vertical that bills correctly today.
+ *
+ * `ownerId` is a declared filter on the accommodation search schema — checked
+ * rather than assumed, because a search schema that silently drops an undeclared
+ * filter would count every listing on the platform and cap the first owner who
+ * tried to create one.
  *
  * ## A PLAN-RESTRICTED listing still counts (HOS-1122) — undecided, not chosen
  *
@@ -173,11 +193,16 @@ export async function countOwnListings(input: {
         return null;
     }
 
+    // The split the docblock above explains: a commerce vertical MUST NOT go
+    // through `count()`, whose forced PUBLIC+ACTIVE filter reports zero for
+    // every owner-created draft.
     // TYPE-WORKAROUND: BaseCrudService.count() takes z.infer<TSearchSchema> and
     // TypeScript cannot narrow the generic at a call site that is polymorphic
     // over three services. Mirrors the assertion the enforcement middleware and
     // the accommodation precheck both already make.
-    const result = await service.count(actor, { ownerId: actor.id } as never);
+    const result = isCommercePublishVertical(vertical)
+        ? await (service as GastronomyService | ExperienceService).countOwn(actor)
+        : await service.count(actor, { ownerId: actor.id } as never);
 
     if (result.error) {
         apiLogger.error(

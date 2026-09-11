@@ -423,6 +423,13 @@ export async function mintRetryPreapprovalAttempt({
         billingInterval,
         paymentMethodReturnUrl,
         notificationUrl,
+        // HOS-1322: the row this retry re-mints, named so the duplicate guard
+        // inside the primitive exempts it. The row being retried is
+        // `pending_provider`, which is not a LIVE status, so this changes no
+        // answer today — it is stated because the retry's whole subject is one
+        // named subscription, and a status change on that row would otherwise
+        // turn the guard into a refusal of the recovery itself.
+        supersedesSubscriptionIds: [localSubscription.id],
         // HOS-1221: RECORDED on the fresh row, never sent to MercadoPago. This
         // used to be `providerPriceId`, which rebuilt the plan-based request
         // MercadoPago answers with "card_token_id is required" — the retry

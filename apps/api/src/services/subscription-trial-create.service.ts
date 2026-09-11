@@ -29,6 +29,7 @@ import {
     billingPlans,
     billingSubscriptions,
     type DrizzleClient,
+    entitySubscriptions,
     eq,
     getDb,
     withTransaction
@@ -36,6 +37,7 @@ import {
 import { type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
+import { assertNoLiveSubscriptionForDomain } from './billing/duplicate-subscription-guard.js';
 
 /** Milliseconds in one day, for computing `trialEnd` from `trialStart`. */
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -89,6 +91,19 @@ export interface CreateTrialSubscriptionInput {
      * `new Date()` call, so the window cannot straddle a tick.
      */
     readonly now?: Date;
+    /**
+     * Optional listing to attach to this trial inside the SAME transaction.
+     *
+     * When set, the `entity_subscriptions` link row is upserted as part of the
+     * subscription insert, so the two writes commit together or neither commits.
+     * The visibility reconcile is deliberately NOT done here — it happens
+     * after-commit in the caller, because reconciling on uncommitted data would
+     * publish a listing that may still roll back.
+     */
+    readonly attachEntity?: {
+        readonly entityType: string;
+        readonly entityId: string;
+    };
 }
 
 /**
@@ -131,7 +146,7 @@ export interface CreateTrialSubscriptionResult {
 export async function createTrialSubscription(
     input: CreateTrialSubscriptionInput
 ): Promise<CreateTrialSubscriptionResult> {
-    const { customerId, planId, productDomain, livemode, tx } = input;
+    const { customerId, planId, productDomain, livemode, tx, attachEntity } = input;
     const trialDays = input.trialDays ?? OWNER_TRIAL_DAYS;
 
     if (!Number.isInteger(trialDays) || trialDays <= 0) {
@@ -167,6 +182,27 @@ export async function createTrialSubscription(
         );
     }
 
+    // HOS-1322 — refuse a trial on top of a live subscription in the same
+    // domain, INSIDE the primitive.
+    //
+    // Both callers already avoid it: `accommodation-publish-deps.ts` only
+    // reaches here when `resolveTrialEligibility` said the customer has no prior
+    // authorized subscription in this domain, and the commerce trial start does
+    // the same. That is precisely why it belongs here and not there — the
+    // property "a trial never lands on top of a live subscription" was true only
+    // for as long as every caller remembered, and the next caller is the one
+    // that forgets. A trial row grants entitlements, so a duplicate here is an
+    // ambiguous entitlement state and, once converted, a second preapproval.
+    //
+    // Runs on the caller's transaction when there is one, so the publish and its
+    // trial keep seeing one snapshot.
+    await assertNoLiveSubscriptionForDomain({
+        customerId,
+        productDomain,
+        db: readClient,
+        source: 'createTrialSubscription'
+    });
+
     const trialStart = input.now ?? new Date();
     const trialEnd = new Date(trialStart.getTime() + trialDays * MS_PER_DAY);
     const localSubscriptionId = crypto.randomUUID();
@@ -197,6 +233,32 @@ export async function createTrialSubscription(
                 trialDays
             }
         });
+
+        // HOS-1338: upsert the entity link row INSIDE the same transaction as
+        // the subscription insert, so the two writes commit together or neither
+        // commits. The visibility reconcile is deliberately NOT done here — it
+        // happens after-commit in the caller, because reconciling on uncommitted
+        // data would publish a listing that may still roll back.
+        if (attachEntity) {
+            await client
+                .insert(entitySubscriptions)
+                .values({
+                    subscriptionId: localSubscriptionId,
+                    productDomain,
+                    entityType: attachEntity.entityType,
+                    entityId: attachEntity.entityId,
+                    status: SubscriptionStatusEnum.TRIALING
+                })
+                .onConflictDoUpdate({
+                    target: [entitySubscriptions.entityType, entitySubscriptions.entityId],
+                    set: {
+                        subscriptionId: localSubscriptionId,
+                        status: SubscriptionStatusEnum.TRIALING,
+                        planRestricted: false,
+                        updatedAt: new Date()
+                    }
+                });
+        }
     }, tx ?? input.db);
 
     // INV-1: a local trial has no preapproval and therefore no webhook, so no

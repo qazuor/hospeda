@@ -23,11 +23,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mocks
 // ---------------------------------------------------------------------------
 
-const insertValuesMock = vi.fn();
+const onConflictDoUpdateMock = vi.fn();
+const insertValuesMock = vi.fn(() => ({ onConflictDoUpdate: onConflictDoUpdateMock }));
+
+/** Records which table each insert() was called on, in call order. */
+const insertTargets: unknown[] = [];
 
 /** The client handed to the withTransaction callback. */
 const txStub = {
-    insert: vi.fn(() => ({ values: insertValuesMock }))
+    insert: vi.fn((table: unknown) => {
+        insertTargets.push(table);
+        return { values: insertValuesMock };
+    })
 };
 
 /** Records (callback, existingTx) so a test can assert the tx was threaded. */
@@ -38,12 +45,52 @@ const withTransactionMock = vi.fn(
 const selectLimitMock = vi.fn();
 const selectWhereMock = vi.fn(() => ({ limit: selectLimitMock }));
 const selectFromMock = vi.fn(() => ({ where: selectWhereMock }));
-const selectMock = vi.fn(() => ({ from: selectFromMock }));
+
+/**
+ * The customer's existing `billing_subscriptions` rows, as the HOS-1322
+ * duplicate guard reads them. Mutable so a test can seed a live subscription
+ * (or one in another vertical) before calling the creator.
+ */
+let existingSubscriptionRows: Array<Record<string, unknown>> = [];
+
+/**
+ * TWO selects share this stub since HOS-1322, and they are told apart by the
+ * columns they project rather than by call order — the guard runs before the
+ * plan lookup on one path and after it on another, so ordering is not a
+ * property a test may rely on.
+ *
+ *  - the plan-domain lookup projects `{ productDomain }` and ends in `.limit(1)`;
+ *  - the duplicate guard's scan projects `status` too and ends at `.where()`.
+ */
+const selectMock = vi.fn((columns?: Record<string, unknown>) => {
+    if (columns !== undefined && 'status' in columns) {
+        return {
+            from: vi.fn(() => ({
+                where: vi.fn(() => Promise.resolve(existingSubscriptionRows))
+            }))
+        };
+    }
+    return { from: selectFromMock };
+});
 
 vi.mock('@repo/db', () => ({
-    billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
+    billingSubscriptions: {
+        __table: 'billing_subscriptions',
+        id: 'id',
+        customerId: 'customer_id',
+        status: 'status',
+        productDomain: 'product_domain',
+        deletedAt: 'deleted_at'
+    },
     billingPlans: { id: 'id', productDomain: 'product_domain' },
+    entitySubscriptions: {
+        __table: 'entity_subscriptions',
+        entityType: 'entity_type',
+        entityId: 'entity_id'
+    },
+    and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
     getDb: vi.fn(() => ({ select: selectMock })),
     withTransaction: (...args: unknown[]) =>
         (withTransactionMock as (...a: unknown[]) => unknown)(...args)
@@ -56,13 +103,24 @@ vi.mock('@repo/billing', async (importOriginal) => ({
 
 vi.mock('@repo/schemas', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/schemas')>()),
+    // All SIX members. `tourist` arrived with HOS-1233 and `addon` with HOS-847;
+    // a mock frozen at four makes the guard's `addon` exemption compare
+    // `undefined === undefined` and skip every domain (HOS-1322).
     ProductDomainEnum: {
         ACCOMMODATION: 'accommodation',
         GASTRONOMY: 'gastronomy',
         EXPERIENCE: 'experience',
-        PARTNER: 'partner'
-    },
-    SubscriptionStatusEnum: { TRIALING: 'trialing' }
+        PARTNER: 'partner',
+        TOURIST: 'tourist',
+        ADDON: 'addon'
+    }
+    // `SubscriptionStatusEnum` is deliberately NOT overridden any more
+    // (HOS-1322). It used to be stubbed as `{ TRIALING: 'trialing' }`, and a
+    // one-member enum silently defeats `normalizeStoredSubscriptionStatus`,
+    // which maps the stored string through it: `isLiveSubscriptionStatus('active')`
+    // answered FALSE under that stub, so the duplicate guard found no conflict
+    // and every one of its cases would have passed while blocking nothing. The
+    // real enum is spread in above.
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -93,13 +151,17 @@ function makeCallerTx() {
     return {
         marker: 'caller-tx',
         select: selectMock,
-        insert: vi.fn(() => ({ values: insertValuesMock }))
+        insert: vi.fn((table: unknown) => {
+            insertTargets.push(table);
+            return { values: insertValuesMock };
+        })
     } as never;
 }
 
 /** The row handed to `insert().values()` on the most recent call. */
 function insertedRow(): Record<string, unknown> {
-    return insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+    const calls = insertValuesMock.mock.calls as unknown[][];
+    return calls[0]?.[0] as Record<string, unknown>;
 }
 
 function baseInput() {
@@ -115,8 +177,84 @@ function baseInput() {
 describe('createTrialSubscription', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        insertTargets.length = 0;
         // Default: an accommodation plan exists.
         selectLimitMock.mockResolvedValue([{ productDomain: 'accommodation' }]);
+        // Default: the customer holds no subscription at all (HOS-1322).
+        existingSubscriptionRows = [];
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1322 — the duplicate guard, inside the primitive
+    // -----------------------------------------------------------------------
+    describe('the duplicate guard (HOS-1322)', () => {
+        it('refuses a second trial when the customer already holds a live subscription in the SAME domain', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_live', status: 'active', productDomain: 'accommodation' }
+            ];
+
+            await expect(createTrialSubscription(baseInput())).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+            // The refusal has to happen BEFORE the write, or the guard is a log line.
+            expect(insertValuesMock).not.toHaveBeenCalled();
+        });
+
+        it('still creates the trial when the live subscription is in ANOTHER domain (the dual owner)', async () => {
+            // A host who already pays for accommodation and now enters gastronomy.
+            // This is the pair that proves the guard filters by DOMAIN: without
+            // it, the case above passes just as well with a customer-wide check
+            // that blocks this legitimate purchase.
+            existingSubscriptionRows = [
+                { id: 'sub_accommodation', status: 'active', productDomain: 'accommodation' }
+            ];
+            selectLimitMock.mockResolvedValue([{ productDomain: 'gastronomy' }]);
+
+            await createTrialSubscription({
+                ...baseInput(),
+                productDomain: 'gastronomy' as never
+            });
+
+            expect(insertedRow().productDomain).toBe('gastronomy');
+        });
+
+        it('reads a NULL product_domain as accommodation, so a legacy row blocks an accommodation trial', async () => {
+            // The asymmetry `subscriptionMatchesDomain` documents: the column
+            // post-dates most rows, so accommodation fails OPEN. Inverting it
+            // would let every pre-column customer open a second subscription.
+            existingSubscriptionRows = [
+                { id: 'sub_legacy', status: 'active', productDomain: null }
+            ];
+
+            await expect(createTrialSubscription(baseInput())).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+        });
+
+        it('does NOT let a legacy NULL-domain row block a gastronomy trial', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_legacy', status: 'active', productDomain: null }
+            ];
+            selectLimitMock.mockResolvedValue([{ productDomain: 'gastronomy' }]);
+
+            await createTrialSubscription({
+                ...baseInput(),
+                productDomain: 'gastronomy' as never
+            });
+
+            expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('ignores a subscription whose status is terminal', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_gone', status: 'cancelled', productDomain: 'accommodation' },
+                { id: 'sub_gone_2', status: 'expired', productDomain: 'accommodation' }
+            ];
+
+            await createTrialSubscription(baseInput());
+
+            expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('the inserted row', () => {
@@ -268,6 +406,56 @@ describe('createTrialSubscription', () => {
                 /positive integer/
             );
             expect(insertValuesMock).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('entity attachment inside the transaction (HOS-1338)', () => {
+        it('upserts entity_subscriptions inside the SAME transaction as the subscription insert', async () => {
+            selectLimitMock.mockResolvedValue([{ productDomain: 'gastronomy' }]);
+
+            await createTrialSubscription({
+                ...baseInput(),
+                productDomain: 'gastronomy' as never,
+                attachEntity: { entityType: 'gastronomy', entityId: 'listing-42' }
+            });
+
+            // Two inserts inside the same transaction: billingSubscriptions first,
+            // entitySubscriptions second. If the second fails, the first rolls back.
+            expect(insertTargets).toHaveLength(2);
+            expect(insertTargets[0]).toHaveProperty('__table', 'billing_subscriptions');
+            expect(insertTargets[1]).toHaveProperty('__table', 'entity_subscriptions');
+
+            // The second call's values carry the entity coordinates.
+            const calls = insertValuesMock.mock.calls as unknown[][];
+            const entityRow = calls[1]?.[0] as Record<string, unknown>;
+            expect(entityRow.subscriptionId).toBeDefined();
+            expect(entityRow.entityType).toBe('gastronomy');
+            expect(entityRow.entityId).toBe('listing-42');
+            expect(entityRow.status).toBe('trialing');
+            expect(entityRow.productDomain).toBe('gastronomy');
+        });
+
+        it('does NOT upsert entity_subscriptions when attachEntity is absent', async () => {
+            await createTrialSubscription(baseInput());
+
+            expect(insertTargets).toHaveLength(1);
+            expect(insertTargets[0]).toHaveProperty('__table', 'billing_subscriptions');
+        });
+
+        it('upserts entity_subscriptions for the EXPERIENCE vertical too', async () => {
+            selectLimitMock.mockResolvedValue([{ productDomain: 'experience' }]);
+
+            await createTrialSubscription({
+                ...baseInput(),
+                productDomain: 'experience' as never,
+                attachEntity: { entityType: 'experience', entityId: 'exp-1' }
+            });
+
+            expect(insertTargets).toHaveLength(2);
+            const calls2 = insertValuesMock.mock.calls as unknown[][];
+            const entityRow = calls2[1]?.[0] as Record<string, unknown>;
+            expect(entityRow.entityType).toBe('experience');
+            expect(entityRow.entityId).toBe('exp-1');
         });
     });
 });

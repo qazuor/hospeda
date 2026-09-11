@@ -29,7 +29,7 @@ const fixtures = vi.hoisted(() => ({
 const mocks = vi.hoisted(() => ({
     createTrialSubscription: vi.fn(),
     resolveTrialEligibility: vi.fn(),
-    attachListingToSubscription: vi.fn(),
+    reconcileSubscriptionLinkedEntities: vi.fn(),
     findOwnerVerticalSubscription: vi.fn(),
     clearEntitlementCache: vi.fn()
 }));
@@ -79,8 +79,11 @@ vi.mock('../../src/services/billing/trial-eligibility.service.js', () => ({
 }));
 
 vi.mock('../../src/services/commerce-subscription-attach.service.js', () => ({
-    attachListingToSubscription: mocks.attachListingToSubscription,
     findOwnerVerticalSubscription: mocks.findOwnerVerticalSubscription
+}));
+
+vi.mock('../../src/services/subscription-linked-entities.service.js', () => ({
+    reconcileSubscriptionLinkedEntities: mocks.reconcileSubscriptionLinkedEntities
 }));
 
 vi.mock('../../src/middlewares/entitlement.js', () => ({
@@ -115,7 +118,7 @@ beforeEach(() => {
         trialEnd: TRIAL_END,
         entitlementCacheCleared: true
     });
-    mocks.attachListingToSubscription.mockResolvedValue(undefined);
+    mocks.reconcileSubscriptionLinkedEntities.mockResolvedValue(undefined);
 });
 
 describe('startCommerceListingTrial', () => {
@@ -160,7 +163,7 @@ describe('startCommerceListingTrial', () => {
         expect(grant.planId).toBe('plan-experience-trial');
     });
 
-    it('attaches the listing to the trial, which is what publishes it', async () => {
+    it('attaches the listing to the trial via createTrialSubscription, which is what publishes it', async () => {
         fixtures.plans = [{ id: 'plan-gastronomy-trial', metadata: { trialDays: 30 } }];
 
         await startCommerceListingTrial({
@@ -170,21 +173,22 @@ describe('startCommerceListingTrial', () => {
             entityId: 'listing-42'
         });
 
-        // Without the attach the subscription exists and the listing stays
-        // PRIVATE — invisible from the API and indistinguishable, to the owner,
-        // from the bug being fixed.
-        expect(mocks.attachListingToSubscription).toHaveBeenCalledTimes(1);
-        const attach = mocks.attachListingToSubscription.mock.calls[0]?.[0] as {
-            subscription: { id: string; status: string };
-            entityType: string;
-            entityId: string;
-        };
-        expect(attach.entityId).toBe('listing-42');
-        expect(attach.entityType).toBe('gastronomy');
-        expect(attach.subscription.id).toBe('sub-trial-1');
-        // `trialing` is what makes the visibility reconciler publish: its gate
-        // is `isEntitlementGrantingStatus`, which includes it.
-        expect(attach.subscription.status).toBe('trialing');
+        // The entity link row is upserted INSIDE the createTrialSubscription
+        // transaction (HOS-1338), so the subscription and link commit together.
+        const grant = mocks.createTrialSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(grant.attachEntity).toEqual({ entityType: 'gastronomy', entityId: 'listing-42' });
+
+        // The visibility reconciler runs AFTER the transaction commits —
+        // running it on uncommitted data would publish a listing that may
+        // still roll back.
+        expect(mocks.reconcileSubscriptionLinkedEntities).toHaveBeenCalledTimes(1);
+        const reconcile = mocks.reconcileSubscriptionLinkedEntities.mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(reconcile.subscriptionId).toBe('sub-trial-1');
+        expect(reconcile.subscriptionStatus).toBe('trialing');
+        expect(reconcile.source).toBe('commerce-trial-attach');
     });
 
     it('REFUSES to grant when the vertical trial is already spent, even though the caller did not check', async () => {
@@ -202,7 +206,7 @@ describe('startCommerceListingTrial', () => {
         // Nothing was created and nothing was attached — a second free trial is
         // free entitlements with no card and nothing in the response to reveal it.
         expect(mocks.createTrialSubscription).not.toHaveBeenCalled();
-        expect(mocks.attachListingToSubscription).not.toHaveBeenCalled();
+        expect(mocks.reconcileSubscriptionLinkedEntities).not.toHaveBeenCalled();
     });
 
     it('asks about eligibility in the LISTING vertical, never accommodation', async () => {
@@ -359,7 +363,7 @@ describe('resolveCommerceTrialVerdict', () => {
         });
 
         expect(mocks.createTrialSubscription).not.toHaveBeenCalled();
-        expect(mocks.attachListingToSubscription).not.toHaveBeenCalled();
+        expect(mocks.reconcileSubscriptionLinkedEntities).not.toHaveBeenCalled();
         expect(mocks.clearEntitlementCache).not.toHaveBeenCalled();
     });
 
@@ -417,7 +421,7 @@ describe('resolveCommerceTrialVerdict', () => {
         // tempting, and it would mint a billing record for anyone who merely
         // opened the page.
         expect(mocks.createTrialSubscription).not.toHaveBeenCalled();
-        expect(mocks.attachListingToSubscription).not.toHaveBeenCalled();
+        expect(mocks.reconcileSubscriptionLinkedEntities).not.toHaveBeenCalled();
         expect(mocks.clearEntitlementCache).not.toHaveBeenCalled();
     });
 

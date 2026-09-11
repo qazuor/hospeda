@@ -11,11 +11,27 @@ import { ServiceErrorCode } from '@repo/schemas';
 
 /**
  * Minimal ServiceError used within mock implementations.
+ *
+ * This class is what `test/setup.ts` publishes as `@repo/service-core`'s
+ * `ServiceError` for the WHOLE api suite, so its constructor is the contract
+ * every route test sees.
+ *
+ * **`details` and `reason` are not decoration (HOS-1247).** The real class takes
+ * four arguments and emits both of the last two to clients: `reason`
+ * unconditionally, and `details` on every `LIMIT_REACHED` /
+ * `ENTITLEMENT_REQUIRED` response (`PUBLIC_DETAILS_ERROR_CODES` in
+ * `utils/response-helpers.ts`). While this mock silently dropped them, EVERY
+ * `error.details` in the api suite read `undefined` — so no test could assert
+ * the payload the web app's `buildLimitReachedPayload` needs in order to
+ * resolve at-limit copy and link the right add-on, and a route that stopped
+ * sending it would have gone on passing.
  */
 export class ServiceError extends Error {
     constructor(
         public readonly code: string,
-        message: string
+        message: string,
+        public readonly details?: unknown,
+        public readonly reason?: string
     ) {
         super(message);
         this.name = 'ServiceError';

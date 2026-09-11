@@ -37,6 +37,7 @@ import { billingPendingCheckoutModel, billingSubscriptions, type DrizzleClient }
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger.js';
+import { assertNoLiveSubscriptionForDomain } from './duplicate-subscription-guard.js';
 
 /**
  * How long a `billing_pending_checkouts` correlation row stays linkable — the
@@ -304,6 +305,25 @@ export async function createPendingProviderSubscription(
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
+
+        // 0. HOS-1322 — refuse a second live subscription for this customer in
+        //    this domain, INSIDE the primitive rather than in each caller.
+        //
+        //    Path C mints no preapproval synchronously, so the double charge it
+        //    can produce arrives later: the buyer completes MercadoPago's hosted
+        //    checkout against a subscription they never needed, on top of the one
+        //    they already pay. Reading inside the transaction is what makes the
+        //    check and the INSERT below see one snapshot.
+        //
+        //    Scoped by the domain the row states, so a host who also runs a
+        //    restaurant is not refused their gastronomy checkout over their
+        //    accommodation subscription.
+        await assertNoLiveSubscriptionForDomain({
+            customerId,
+            productDomain,
+            db: tx,
+            source: 'createPendingProviderSubscription'
+        });
 
         // 1. Insert the pending_provider subscription row. No mp_subscription_id
         //    (the preapproval does not exist yet) and no promo_code_id — a
