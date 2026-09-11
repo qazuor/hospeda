@@ -38,7 +38,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
+        t: (key: string, fallback?: string) =>
+            // HOS-1236 B1: the reason-first chain resolves
+            // `common.apiError.TRIAL_REQUIRES_CHECKOUT` through this `t`. The
+            // suite's default `fallback ?? key` shape would echo the key back,
+            // read as a missing translation, and fall through to the generic
+            // copy — indistinguishable from the status-routed path the
+            // regression tests below must be able to tell apart.
+            key === 'common.apiError.TRIAL_REQUIRES_CHECKOUT'
+                ? 'REASON_COPY_WON'
+                : (fallback ?? key),
         // Returns a string, rather than a bare `vi.fn()` (i.e. `undefined`).
         // This suite renders `CommerceDowngradeKeepPanel`, whose intro is now
         // plural-resolved, and `undefined.replace(...)` threw before the panel
@@ -324,6 +333,47 @@ describe('CommercePlanChange — the downgrade flow (HOS-1122)', () => {
 
         expect(await screen.findByRole('alert')).toBeInTheDocument();
         expect(mockChangeCommercePlan).not.toHaveBeenCalled();
+    });
+});
+
+describe('CommercePlanChange — the trial refusal routes by reason, not status (HOS-1236 B1)', () => {
+    // The commerce change-plan route answers 409 TWICE, for two different
+    // truths: to a soft-cancelling owner ("you have a pending cancellation" —
+    // the status slot's copy) and to a trialing one (HOS-1236, reason
+    // TRIAL_REQUIRES_CHECKOUT — "there is no subscription to change yet, go
+    // subscribe"). Routing by status alone shows the SECOND owner the FIRST
+    // one's sentence: a false, terminal claim about a cancellation they never
+    // asked for. These two tests pin the discrimination.
+
+    async function pickPremium() {
+        openPicker();
+        fireEvent.click(screen.getByRole('radio', { name: /Gastronomía Premium/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    }
+
+    it('shows the TRIAL_REQUIRES_CHECKOUT copy, not the 409 cancellation sentence', async () => {
+        mockChangeCommercePlan.mockResolvedValue({
+            ok: false,
+            error: { status: 409, reason: 'TRIAL_REQUIRES_CHECKOUT' }
+        });
+        renderFlow();
+        await pickPremium();
+
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('REASON_COPY_WON');
+        expect(alert).not.toHaveTextContent(/cancelación pendiente/);
+    });
+
+    it('a 409 WITHOUT the reason keeps the status-routed copy — the soft-cancel truth', async () => {
+        // The discriminating half: reason absent → the status chain decides,
+        // exactly as before. A blanket "always show the friendly trial copy
+        // on 409" would put the lie back for the soft-cancelling owner.
+        mockChangeCommercePlan.mockResolvedValue({ ok: false, error: { status: 409 } });
+        renderFlow();
+        await pickPremium();
+
+        const alert = await screen.findByRole('alert');
+        expect(alert).not.toHaveTextContent('REASON_COPY_WON');
     });
 });
 
