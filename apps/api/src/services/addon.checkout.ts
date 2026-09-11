@@ -981,16 +981,90 @@ export async function confirmAddonPurchase(
         // hydrate and exclude a recurring add-on's own preapproval row so it can
         // never be confirmed as if it were the customer's real subscription.
         const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions);
-        const activeSubscription = subscriptions.find(
+        const grantingSubscriptions = subscriptions.filter(
             (sub) => isEntitlementGrantingStatus(sub.status) && !isAddonSubscription(sub)
         );
 
-        if (!activeSubscription) {
+        if (grantingSubscriptions.length === 0) {
             return {
                 success: false,
                 error: {
                     code: 'NO_ACTIVE_SUBSCRIPTION',
                     message: 'Customer has no active subscription'
+                }
+            };
+        }
+
+        // ── Product-domain gate (HOS-1252), mirroring checkout's own (HOS-1178) ──
+        //
+        // Until this existed, the confirmation picked the FIRST live non-add-on
+        // subscription with no domain filter at all. A dual subscriber —
+        // gastronomy + accommodation, which the seed file builds
+        // `host-provider@local.test` to prove — buying a gastronomy add-on got
+        // it attached to whichever row `getByCustomerId` returned first. Measured
+        // on staging 2026-09-08: the purchase hung off the ACCOMMODATION
+        // subscription's lifecycle (the gastronomy cap died if the owner
+        // cancelled their lodging, survived if they cancelled their restaurant)
+        // and its limit baseline was read from the accommodation plan, which
+        // declares no `max_gastronomies` — `previousValue: 0`, so the paid-for
+        // cap never moved. The checkout gate (HOS-1178) already resolves the
+        // subscription of the ADD-ON's domain; the confirmation must not be more
+        // lax than the sale that gated it.
+        const addonProductDomain = addon.productDomain;
+
+        if (!addonProductDomain) {
+            // Fail CLOSED, exactly as checkout does before selling and as the
+            // entitlement grant does before granting (HOS-1270): an add-on the
+            // catalogue cannot classify must not fall back to accommodation.
+            // The charge is already collected here, so the refusal is loud —
+            // ops needs to see it and refund.
+            apiLogger.error(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    paymentId: input.paymentId ?? null
+                },
+                'Add-on charge confirmed for an add-on that declares no product domain — purchase NOT recorded; ops must refund the collected charge',
+                { capture: true }
+            );
+            return {
+                success: false,
+                error: {
+                    code: 'ADDON_DOMAIN_UNKNOWN',
+                    message: `Add-on '${input.addonSlug}' does not declare a product domain and cannot be confirmed`
+                }
+            };
+        }
+
+        const activeSubscription = grantingSubscriptions.find((sub) =>
+            subscriptionMatchesDomain(sub, addonProductDomain)
+        );
+
+        if (!activeSubscription) {
+            // The customer has live subscriptions, but none in the add-on's own
+            // domain. Falling back to "any live subscription" here is precisely
+            // the HOS-1252 bug — the purchase would hang off the wrong
+            // lifecycle and read its limit baseline from the wrong plan. The
+            // charge is already collected, so the refusal is loud for ops to
+            // refund; the webhook/poll retry that follows will keep failing
+            // until the domain subscription is live again, which is the honest
+            // answer for money that bought something the owner no longer has.
+            apiLogger.error(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    productDomain: addonProductDomain,
+                    paymentId: input.paymentId ?? null,
+                    amountInCents: input.amountInCents ?? null
+                },
+                `Add-on charge confirmed but the customer has no live ${addonProductDomain} subscription — purchase NOT recorded; ops must refund the collected charge`,
+                { capture: true }
+            );
+            return {
+                success: false,
+                error: {
+                    code: 'ADDON_NOT_AVAILABLE_FOR_DOMAIN',
+                    message: `This add-on requires an active ${addonProductDomain} subscription`
                 }
             };
         }
@@ -1023,11 +1097,15 @@ export async function confirmAddonPurchase(
         // insert. The initial check at the top of this function happened earlier
         // in the request lifecycle; the subscription could have been cancelled
         // in the window between checkout creation and payment confirmation.
-        // HOS-847: same hydrate-then-filter-by-domain fix as the two selections
-        // above — this re-verification must not pass just because an unrelated
-        // recurring add-on preapproval happens to be active. Found beyond the
-        // two call sites the HOS-847 plan named explicitly (:367 / :950 in the
-        // pre-PR-2 file); same bug, same fix.
+        // HOS-847 added the hydrate + add-on-row exclusion here — a recurring
+        // add-on's own preapproval row must not pass the re-verification as
+        // "the" subscription. (Until HOS-1252 this comment claimed HOS-847 had
+        // also applied a "filter-by-domain fix"; it had not — the predicate below
+        // matched ANY live non-add-on subscription, which is exactly the
+        // HOS-1252 back door: a re-verify laxer than the selection above would
+        // re-admit the wrong-domain row the front gate just rejected.) So the
+        // re-verify asks for the SAME domain as the selection above: live,
+        // not an add-on row, and matching `addonProductDomain`.
         const rawCurrentSubscriptions = await billing.subscriptions.getByCustomerId(
             input.customerId
         );
@@ -1035,16 +1113,33 @@ export async function confirmAddonPurchase(
             rawCurrentSubscriptions ?? []
         );
         const stillActive = currentSubscriptions.find(
-            (sub) => isEntitlementGrantingStatus(sub.status) && !isAddonSubscription(sub)
+            (sub) =>
+                isEntitlementGrantingStatus(sub.status) &&
+                !isAddonSubscription(sub) &&
+                subscriptionMatchesDomain(sub, addonProductDomain)
         );
 
         if (!stillActive) {
+            // The domain-matching subscription was live at the top of this
+            // function but is no longer at insert time. The charge was already
+            // collected and NO purchase row is written — that combination needs
+            // a human (refund), so it is loud on purpose.
+            apiLogger.error(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    productDomain: addonProductDomain,
+                    paymentId: input.paymentId ?? null,
+                    amountInCents: input.amountInCents ?? null
+                },
+                `Add-on charge confirmed but the customer's ${addonProductDomain} subscription was cancelled during checkout — purchase NOT recorded; ops must refund the collected charge`,
+                { capture: true }
+            );
             return {
                 success: false,
                 error: {
                     code: 'SUBSCRIPTION_CANCELLED',
-                    message:
-                        'Cannot confirm addon purchase: subscription was cancelled during checkout'
+                    message: `Cannot confirm addon purchase: the customer's ${addonProductDomain} subscription was cancelled during checkout`
                 }
             };
         }
