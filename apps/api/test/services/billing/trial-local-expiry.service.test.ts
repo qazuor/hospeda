@@ -424,6 +424,21 @@ describe('expireLocalTrial — unpublishing the listings (D-3)', () => {
         expect(unpublishMock.mock.calls[1]?.[1]).toBe('accom-2');
     });
 
+    it('marks every takedown as billing-initiated (HOS-1181)', async () => {
+        // The flag is what the win-back republish later selects on: without it,
+        // a listing the trial took down is indistinguishable from one its
+        // owner paused on purpose, and neither can ever come back
+        // automatically. This is the write half of the fix; the clear half is
+        // pinned in service-core (publish clears the marker in the same
+        // write as the ACTIVE flip) and the read half in the win-back tests.
+        listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }, { id: 'accom-2' }]);
+
+        await expireLocalTrial({ subscription: localTrial(), now: NOW });
+
+        expect(unpublishMock.mock.calls[0]?.[3]).toEqual({ billingUnpublish: true });
+        expect(unpublishMock.mock.calls[1]?.[3]).toEqual({ billingUnpublish: true });
+    });
+
     it('records how many listings came down on the event', async () => {
         listingSelectWhereMock.mockResolvedValue([{ id: 'accom-1' }, { id: 'accom-2' }]);
 

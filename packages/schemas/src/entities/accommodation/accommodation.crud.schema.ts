@@ -64,7 +64,10 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     // by the featured-by-entitlement sync primitives, never through the
     // general create/update path — unlike `isFeatured`, which admin still
     // controls manually via `AccommodationPatchInputSchema`.
-    featuredByEntitlement: true
+    featuredByEntitlement: true,
+    // Server-managed (HOS-1181): only the trial-expiry cron sets this and only
+    // publish/win-back-republish clears it — never through create/update input.
+    billingUnpublishedAt: true
 }).extend({
     slug: z
         .string()
@@ -165,6 +168,10 @@ export const AccommodationUpdateInputSchema = z
                 // the general create/update path — unlike `isFeatured`, which admin
                 // still controls manually via `AccommodationPatchInputSchema`.
                 featuredByEntitlement: true,
+                // Server-managed (HOS-1181): only the trial-expiry cron sets this
+                // and only publish/win-back-republish clears it — never through
+                // create/update input.
+                billingUnpublishedAt: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
                 // `accommodation_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which

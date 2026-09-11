@@ -115,6 +115,22 @@ export const accommodations = pgTable(
         // the two states must NOT collide. Reversible: flipped back to false on
         // re-upgrade or manual restore by the host once back under cap.
         planRestricted: boolean('plan_restricted').notNull().default(false),
+        /**
+         * HOS-1181: set when BILLING took this listing down — today only the
+         * accommodation trial-expiry cron's unpublish (which passes
+         * `billingUnpublish: true`). Null when the listing is live, or was
+         * taken down by its owner, or has been published again.
+         *
+         * `lifecycleState = INACTIVE` alone cannot tell those apart: the owner's
+         * own unpublish and the cron's write the exact same row shape. This
+         * column is what distinguishes "the trial took it down and nothing has
+         * brought it back" (republish when the owner pays — HOS-1181) from "the
+         * owner paused it on purpose" (never republish). Cleared by ANY publish,
+         * in the same write that flips `lifecycleState` to ACTIVE, so it can
+         * never survive as a stale marker on a live row and republish a listing
+         * its owner has since deliberately unpublished.
+         */
+        billingUnpublishedAt: timestamp('billing_unpublished_at', { withTimezone: true }),
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),

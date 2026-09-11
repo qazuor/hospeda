@@ -1415,8 +1415,13 @@ export async function processSubscriptionUpdated({
         // `payment-logic.ts` for every other payment.
     }
 
-    // SPEC-239 T-050: reconcile any commerce listing linked to this subscription.
-    // No-op for accommodation subs (no entity_subscriptions row).
+    // SPEC-239 T-050: reconcile everything linked to this subscription.
+    // Commerce listings flip visibility from the status; the accommodation
+    // halves are keyed off the OWNER — the bridge re-derives their current
+    // subscription, refreshes their entity_subscriptions cache rows, and
+    // (HOS-1181) republishes whatever billing had taken down now that they
+    // pay again. There is no accommodation branch to maintain here and no
+    // second bridge to remember: every effect hangs off this one call.
     // Non-blocking: never breaks webhook processing.
     await reconcileSubscriptionLinkedEntities({
         subscriptionId: localSubscription.id,

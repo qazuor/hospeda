@@ -62,13 +62,14 @@
  * @module services/subscription-linked-entities.service
  */
 
+import { republishBillingUnpublishedAccommodations } from './accommodation-winback-republish.service.js';
 import { reconcileCommerceListingForSubscription } from './commerce-reconcile.service.js';
 import { syncAccommodationSubscriptionCacheForSubscription } from './entity-subscription-cache.service.js';
 
 /**
  * Propagate a subscription's new status to everything that depends on it.
  *
- * Two independent effects:
+ * Three independent effects:
  *
  * 1. **Commerce** — update the listing link rows and flip each linked
  *    listing's visibility. A no-op for a subscription with no commerce links.
@@ -81,14 +82,19 @@ import { syncAccommodationSubscriptionCacheForSubscription } from './entity-subs
  *    **`courtesy`**. Read literally, the old sentence claims a complimentary
  *    commerce listing goes dark; it sent this issue's own measurement looking
  *    for a bug that is not there.
- * 2. **Accommodation** — refresh the `entity_subscriptions` cache rows of the
- *    subscription's owner, so the public reads see the new status without
+ * 2. **Accommodation cache** — refresh the `entity_subscriptions` cache rows of
+ *    the subscription's owner, so the public reads see the new status without
  *    walking QZPay. A no-op for an owner with no accommodations.
+ * 3. **Accommodation win-back republish (HOS-1181)** — bring back the listings
+ *    billing took down (`billingUnpublishedAt`, stamped by the trial-expiry
+ *    cron) now that the owner's re-derived accommodation subscription is
+ *    entitlement-granting again. A no-op for an owner with no markers.
  *
- * The accommodation half deliberately ignores `subscriptionStatus` and
- * re-derives the owner's current subscription from the database instead. A
+ * The accommodation halves deliberately ignore `subscriptionStatus` and
+ * re-derive the owner's current subscription from the database instead. A
  * webhook that arrives late for a subscription the owner has already replaced
- * would otherwise stamp a dead status over the live one.
+ * would otherwise stamp a dead status over the live one — or, for the win-back,
+ * republish (or skip) off a status the owner no longer holds.
  *
  * @param input.subscriptionId - The billing subscription whose status changed.
  * @param input.subscriptionStatus - The new status (e.g. `'active'`,
@@ -109,4 +115,6 @@ export async function reconcileSubscriptionLinkedEntities(input: {
     });
 
     await syncAccommodationSubscriptionCacheForSubscription({ subscriptionId, source });
+
+    await republishBillingUnpublishedAccommodations({ subscriptionId, source });
 }

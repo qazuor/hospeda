@@ -143,11 +143,17 @@ const UPSERT_CHUNK_SIZE = 200;
  * other domain fails closed. Re-deriving that rule in SQL would silently drop
  * every pre-column row.
  *
+ * Exported since HOS-1181 for the win-back republish
+ * (`accommodation-winback-republish.service.ts`), which gates on the SAME
+ * re-derived status this module's write-through uses — a second, private copy
+ * would drift from the cache on the first edit, and the win-back would
+ * republish (or skip) against a status the platform no longer believes.
+ *
  * @param ownerId - `users.id` of the accommodation owner.
  * @returns The entitlement-granting subscription when there is one, else the
  *   most recent accommodation subscription, else {@link noSubscription}.
  */
-async function deriveOwnerAccommodationSubscription(
+export async function deriveOwnerAccommodationSubscription(
     ownerId: string
 ): Promise<OwnerAccommodationSubscription> {
     const db = getDb();
@@ -265,11 +271,14 @@ export async function syncAccommodationSubscriptionCacheForOwner(input: {
  * `billing_customers.external_id` is the `users.id` the signup hook stamped, so
  * this is the whole mapping: subscription → customer → owner.
  *
+ * Exported since HOS-1181 for the win-back republish, which resolves the owner
+ * exactly this way rather than growing a second subscription→owner mapping.
+ *
  * @param subscriptionId - `billing_subscriptions.id`.
  * @returns The owner's `users.id`, or `null` when the subscription or its
  *   customer cannot be resolved.
  */
-async function resolveSubscriptionOwnerId(subscriptionId: string): Promise<string | null> {
+export async function resolveSubscriptionOwnerId(subscriptionId: string): Promise<string | null> {
     const db = getDb();
     const [row] = await db
         .select({ ownerId: billingCustomers.externalId })

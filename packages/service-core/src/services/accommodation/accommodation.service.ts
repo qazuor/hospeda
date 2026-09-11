@@ -2086,6 +2086,16 @@ export class AccommodationService extends BaseCrudService<
                                 { id },
                                 {
                                     lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    // HOS-1181: cleared in the SAME write as the
+                                    // lifecycle flip — never a follow-up update.
+                                    // A marker that could outlive its publish (a
+                                    // crash between two writes) would later
+                                    // republish a listing its owner has since
+                                    // deliberately unpublished. Cleared on EVERY
+                                    // publish, not just the win-back republish,
+                                    // because "live" is what makes the marker
+                                    // meaningless, no matter who published.
+                                    billingUnpublishedAt: null,
                                     ...(shouldPromoteVisibility
                                         ? { visibility: VisibilityEnum.PUBLIC }
                                         : {}),
@@ -2212,9 +2222,21 @@ export class AccommodationService extends BaseCrudService<
      *   `ACCOMMODATION_UPDATE_ANY`.
      * - Owner-suspended accommodations are also blocked by `checkCanUpdate`.
      *
+     * HOS-1181: `opts.billingUnpublish` marks this unpublish as BILLING-initiated
+     * by stamping `billingUnpublishedAt` in the SAME write that flips
+     * `lifecycleState` to INACTIVE. Only the accommodation trial-expiry cron
+     * passes it today. An owner's own unpublish from the panel does not — the
+     * two write the same row shape otherwise, and the marker is what lets a
+     * later win-back republish (when the owner pays) tell them apart. The
+     * marker is cleared by the next `publish()`, in its own transactional
+     * write, so it never survives as a stale flag on a live row.
+     *
      * @param actor - The actor performing the unpublish action.
      * @param id    - The accommodation ID to unpublish.
      * @param ctx   - Optional service context (transaction / hookState).
+     * @param opts  - Optional unpublish options.
+     * @param opts.billingUnpublish - Set `billingUnpublishedAt` alongside the
+     *   lifecycle flip (billing-initiated unpublish, HOS-1181).
      * @returns A `ServiceOutput` containing the updated accommodation, or a
      *   `ServiceError` on permission / state / update failure.
      *
@@ -2226,7 +2248,8 @@ export class AccommodationService extends BaseCrudService<
     public async unpublish(
         actor: Actor,
         id: string,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        opts?: { readonly billingUnpublish?: boolean }
     ): Promise<ServiceOutput<Accommodation>> {
         return this.runWithLoggingAndValidation({
             methodName: `unpublish(id=${id})`,
@@ -2257,6 +2280,12 @@ export class AccommodationService extends BaseCrudService<
                     { id },
                     {
                         lifecycleState: LifecycleStatusEnum.INACTIVE,
+                        // HOS-1181: same write, not a second one — a marker that
+                        // could land after a failed follow-up update would republish
+                        // a listing whose lifecycle flip rolled back, and a lifecycle
+                        // flip without the marker would silently drop the listing
+                        // from every future win-back republish.
+                        ...(opts?.billingUnpublish ? { billingUnpublishedAt: new Date() } : {}),
                         updatedById: validatedActor.id
                     },
                     execCtx?.tx
