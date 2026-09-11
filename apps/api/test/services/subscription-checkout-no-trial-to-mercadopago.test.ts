@@ -172,7 +172,22 @@ const DB_STUB = {
                 const limit = vi.fn(() =>
                     Promise.resolve([{ productDomain: 'accommodation', createdAt: new Date() }])
                 );
-                return { limit, orderBy: vi.fn(() => ({ limit })) };
+                return {
+                    limit,
+                    orderBy: vi.fn(() => ({ limit })),
+                    // HOS-1322: the duplicate-subscription guard awaits
+                    // `.where()` DIRECTLY (its scan has no `.limit()`), so the
+                    // stub must be awaitable as well as chainable — same shape
+                    // as `test/helpers/plan-domain-read.ts`'s
+                    // `buildWhereResult`. Resolves to no existing
+                    // subscriptions: this suite's customers have nothing to
+                    // duplicate, and the guard must let every flow through.
+                    // biome-ignore lint/suspicious/noThenProperty: a query builder that can be awaited is exactly what this stub must imitate.
+                    then: (
+                        onFulfilled?: ((value: unknown[]) => unknown) | null,
+                        onRejected?: ((reason: unknown) => unknown) | null
+                    ) => Promise.resolve([]).then(onFulfilled, onRejected)
+                };
             })
         }))
     }))
