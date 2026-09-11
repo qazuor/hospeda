@@ -8,19 +8,10 @@
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
-
-/**
- * Minimal ServiceError used within mock implementations.
- */
-class ServiceError extends Error {
-    constructor(
-        public readonly code: string,
-        message: string
-    ) {
-        super(message);
-        this.name = 'ServiceError';
-    }
-}
+// One definition, in `mocks/service-error.ts` — see the note there and in
+// `content-services.ts` (HOS-1236). A third private copy here would drift the
+// same way the second one did.
+import { ServiceError } from './service-error';
 
 /** Non-existent UUID used to trigger 404 responses in tests. */
 const NOT_FOUND_UUID = '87654321-4321-4321-8765-876543218765';

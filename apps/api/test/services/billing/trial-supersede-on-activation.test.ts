@@ -26,6 +26,12 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
     ne: vi.fn((col: unknown, val: unknown) => ({ op: 'ne', col, val })),
     isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
+    // HOS-1335: the sweep now asks `@repo/db`'s canonical "nothing usable is
+    // linked" question instead of a bare `IS NULL`. Tagged rather than
+    // reimplemented here — what this suite can honestly assert is that the
+    // predicate DELEGATES; whether that predicate also covers the empty string
+    // is `@repo/db`'s own contract, documented and owned there.
+    hasNoLinkedPreapprovalCondition: vi.fn(() => ({ op: 'hasNoLinkedPreapproval' })),
     billingSubscriptions: {
         id: 'sub.id',
         customerId: 'sub.customer_id',
@@ -132,7 +138,17 @@ describe('supersedeLocalTrialsOnActivation', () => {
             expect(flat).toContainEqual({ op: 'eq', col: 'sub.status', val: 'trialing' });
             // The provider-less filter is what keeps this off a card-first trial
             // whose preapproval would go on charging.
-            expect(flat).toContainEqual({ op: 'isNull', col: 'sub.mp_subscription_id' });
+            //
+            // HOS-1335 replaced a bare `isNull(mp_subscription_id)` here with
+            // `@repo/db`'s shared predicate, and the pair of assertions below is
+            // the point rather than one restated twice. `mp_subscription_id` can
+            // hold the EMPTY STRING (HOS-1326), which `IS NULL` does not match —
+            // while every JS-side reader, `/start-paid`'s new trial exemption
+            // included, treats such a row as having no preapproval. The two sides
+            // disagreeing is how a customer ends up holding a paid row AND a live
+            // trial after one activation.
+            expect(flat).toContainEqual({ op: 'hasNoLinkedPreapproval' });
+            expect(flat).not.toContainEqual({ op: 'isNull', col: 'sub.mp_subscription_id' });
             expect(flat).toContainEqual({ op: 'isNull', col: 'sub.deleted_at' });
         });
 

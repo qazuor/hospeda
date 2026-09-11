@@ -1606,6 +1606,13 @@ export function SubscriptionDashboard({
                         plans={plans}
                         currentPlanSlug={subscription.planSlug}
                         locale={locale}
+                        // HOS-1236: where to send a host whose plan change is
+                        // refused because they are still on a Hospeda-owned
+                        // trial — there is nothing to change, so the remedy is
+                        // the checkout. Resolved here, from the viewer's own
+                        // roles, so the accommodation and tourist dashboards
+                        // each hand over their own catalogue.
+                        plansHref={plansHref}
                         onChanged={() => {
                             // Silent refresh (no loading spinner) so the flow's result
                             // step stays mounted. fetchData() would set isLoading=true,

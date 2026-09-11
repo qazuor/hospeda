@@ -390,6 +390,21 @@ export interface InitiatePaidMonthlySubscriptionInput {
      * it reaches here.
      */
     readonly payerEmail?: string;
+    /**
+     * The subscriptions this checkout REPLACES, exempted from the duplicate
+     * guard inside the creation primitives (HOS-1335).
+     *
+     * `start-paid.ts` exempts a Hospeda-owned local trial
+     * (`isHospedaOwnedLocalTrial`) at its own caller-side guards, but the
+     * HOS-1322 guard inside `createPaidSubscription` /
+     * `createPendingProviderSubscription` scans again and would refuse the
+     * conversion with ALREADY_SUBSCRIBED one gate deeper — which is also why
+     * the route-level tests that stub this service stayed green while the bug
+     * was live. The route hands the exempted rows' ids here; the activation of
+     * the new row still sweeps them (`trial-supersede-on-activation.ts`), so a
+     * list of ids is an exact statement, not an off switch.
+     */
+    readonly supersedesSubscriptionIds?: readonly string[];
 }
 
 /**
@@ -850,6 +865,11 @@ export async function initiatePaidMonthlySubscription(
             // `trial_extension` code is reported ignored above rather than
             // snapshotted for a deferred redemption that would grant nothing.
             ...(pendingDiscount ? { pendingDiscount } : {}),
+            // HOS-1335: the route's exempted trial rows, forwarded to the
+            // duplicate guard inside the primitive — see the input JSDoc.
+            ...(input.supersedesSubscriptionIds
+                ? { supersedesSubscriptionIds: input.supersedesSubscriptionIds }
+                : {}),
             ...(input.db ? { db: input.db } : {})
         });
 
@@ -871,6 +891,11 @@ export async function initiatePaidMonthlySubscription(
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
+        // HOS-1335: same forwarding as the branch above — the guard inside
+        // this primitive scans too.
+        ...(input.supersedesSubscriptionIds
+            ? { supersedesSubscriptionIds: input.supersedesSubscriptionIds }
+            : {}),
         billingInterval: 'monthly',
         mpPreapprovalPlanId: providerPriceId,
         // HOS-937 step 2: Path C creates no MercadoPago resource
@@ -1667,6 +1692,13 @@ export interface InitiatePaidAnnualSubscriptionInput {
      * resolution as {@link InitiatePaidMonthlySubscriptionInput.payerEmail}.
      */
     readonly payerEmail?: string;
+    /**
+     * Same semantics as
+     * {@link InitiatePaidMonthlySubscriptionInput.supersedesSubscriptionIds}
+     * (HOS-1335) — the exempted local-trial rows the annual conversion
+     * replaces, forwarded to the duplicate guard inside the primitives.
+     */
+    readonly supersedesSubscriptionIds?: readonly string[];
 }
 
 /**
@@ -1916,6 +1948,11 @@ export async function initiatePaidAnnualSubscription(
             // the monthly own-preapproval branch.
             // No `pendingDiscount` for annual — HOS-244 blocks discount codes
             // on annual checkout above (born-discounted is monthly-only).
+            // HOS-1335: the route's exempted trial rows, forwarded to the
+            // duplicate guard inside the primitive — see the monthly branch.
+            ...(input.supersedesSubscriptionIds
+                ? { supersedesSubscriptionIds: input.supersedesSubscriptionIds }
+                : {}),
             ...(input.db ? { db: input.db } : {})
         });
 
@@ -1934,6 +1971,10 @@ export async function initiatePaidAnnualSubscription(
         customerId,
         planId: plan.id,
         priceId: annualPrice.id,
+        // HOS-1335: same forwarding as the branch above.
+        ...(input.supersedesSubscriptionIds
+            ? { supersedesSubscriptionIds: input.supersedesSubscriptionIds }
+            : {}),
         billingInterval: 'annual',
         mpPreapprovalPlanId: providerPriceId,
         payerEmail,

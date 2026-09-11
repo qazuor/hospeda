@@ -28,9 +28,18 @@
  * The MP mutation runs BEFORE the local `changePlan` call, and BOTH halves of
  * the operation are hard-failed distinctly:
  *
- * - **MP mutation itself fails** (no live preapproval, no payment adapter, or
- *   MP rejects the call): throws `SubscriptionCheckoutError('MP_PREAPPROVAL_MUTATION_FAILED')`.
+ * - **MP mutation itself fails** (no payment adapter, or MP rejects the call):
+ *   throws `SubscriptionCheckoutError('MP_PREAPPROVAL_MUTATION_FAILED')`.
  *   Nothing was mutated anywhere — safe, retryable, maps to HTTP 502.
+ *
+ *   HOS-1236 removed "no live preapproval" from that list, and the removal is
+ *   the point rather than a tidy-up. Since HOS-1012 a Hospeda-owned trial has
+ *   `mp_subscription_id = NULL` **by construction**, so the missing-preapproval
+ *   branch stopped being an anomaly and became the state of every trial on the
+ *   platform — while still answering 502, i.e. "our payment provider is having
+ *   trouble, try again", to a request that no retry can ever satisfy. It now
+ *   throws `ServiceError(ALREADY_EXISTS, reason: 'TRIAL_REQUIRES_CHECKOUT')` →
+ *   **HTTP 409**, and the client routes that reason to `/start-paid`.
  * - **MP mutation SUCCEEDS but the local `changePlan` commit throws**: throws
  *   `SubscriptionCheckoutError('TRIALING_UPGRADE_LOCAL_APPLY_FAILED')`. This is
  *   a genuine drift state — MP is already charging the new price at trial end
@@ -64,8 +73,10 @@
 
 import type { QZPayBilling, QZPayChangePlanResult } from '@qazuor/qzpay-core';
 import { type DrizzleClient, getDb } from '@repo/db';
+import { ServiceErrorCode } from '@repo/schemas';
 import {
     resolveOwnerPlanGrantsFeatured,
+    ServiceError,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
@@ -78,6 +89,20 @@ import { resolveOwnerUserId } from '../subscription-pause.service.js';
 import { resolvePlanChangeReason } from './plan-change-reason.js';
 import { isAccommodationDomainSubscription } from './plan-domain-guard.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
+
+/**
+ * The machine-readable `reason` a plan change refused for want of a
+ * MercadoPago preapproval carries (HOS-1236).
+ *
+ * Exported rather than inlined because three places must agree on the exact
+ * string and none of them can see the others: this throw site, the API tests,
+ * and the web's `common.apiError.TRIAL_REQUIRES_CHECKOUT` translation key (in
+ * each locale's `common.json` under `packages/i18n/src/locales`), which is what
+ * turns the refusal into "go and pay" copy plus a link to the plans page. A typo in any one of
+ * them degrades silently to the generic error message, which is the failure
+ * this whole change exists to remove.
+ */
+export const TRIAL_REQUIRES_CHECKOUT_REASON = 'TRIAL_REQUIRES_CHECKOUT';
 
 /**
  * Input for {@link applyTrialingPlanUpgrade}.
@@ -115,9 +140,15 @@ export interface ApplyTrialingPlanUpgradeInput {
     readonly targetTransactionAmountMajor: number;
     /**
      * The live MercadoPago preapproval id for this subscription
-     * (`providerSubscriptionIds.mercadopago`). Required — a trialing
-     * subscription with no live preapproval cannot be mutated, so its
-     * absence is a fail-closed condition (see below).
+     * (`providerSubscriptionIds.mercadopago`).
+     *
+     * `undefined` is a normal, expected input — it is what every Hospeda-owned
+     * trial carries since HOS-1012 — and it refuses the whole operation with
+     * {@link TRIAL_REQUIRES_CHECKOUT_REASON} (HTTP 409) rather than attempting
+     * anything. qzpay's row→domain mapper hides an EMPTY-STRING column behind a
+     * truthiness check (see `@repo/db`'s `billing-subscription-conditions.ts`),
+     * so `undefined` here also covers `mp_subscription_id = ''` — the two
+     * "nothing usable is linked" shapes reach this parameter identically.
      */
     readonly mpSubscriptionId: string | undefined;
     /** Drizzle client override for tests. */
@@ -144,10 +175,13 @@ export interface ApplyTrialingPlanUpgradeResult {
  *   1. Idempotency guard — no-op ONLY if already on the exact same plan AND
  *      price/interval (`newPlanId === oldPlanId && newPriceId === currentPriceId`).
  *   2. Mutate the MP preapproval's `transaction_amount` (and `planId`) to the
- *      new plan's price. FAIL-CLOSED: on any failure (missing preapproval id,
- *      missing payment adapter, or MP rejecting the call), throws
- *      `SubscriptionCheckoutError('MP_PREAPPROVAL_MUTATION_FAILED')` and
- *      applies NOTHING locally.
+ *      new plan's price. FAIL-CLOSED: on a missing payment adapter or an MP
+ *      rejection, throws `SubscriptionCheckoutError('MP_PREAPPROVAL_MUTATION_FAILED')`
+ *      and applies NOTHING locally. A subscription with NO preapproval at all
+ *      never reaches the call — it is refused first with
+ *      `ServiceError(ALREADY_EXISTS, 'TRIAL_REQUIRES_CHECKOUT')` / HTTP 409
+ *      (HOS-1236), because that is a local precondition rather than a provider
+ *      failure.
  *   3. Commit the plan change locally via `billing.subscriptions.changePlan`
  *      with `prorationBehavior: 'none'` (there is no paid period to
  *      prorate) and `applyAt: 'immediately'`. FAIL-LOUD: if this throws AFTER
@@ -163,6 +197,10 @@ export interface ApplyTrialingPlanUpgradeResult {
  * Deliberately never touches `trialEnd` / `currentPeriodEnd` / `status` —
  * the webhook sync owns those. Only `planId` changes here.
  *
+ * @throws ServiceError `ALREADY_EXISTS` with reason
+ *   {@link TRIAL_REQUIRES_CHECKOUT_REASON} (HTTP 409) when the subscription has
+ *   no MercadoPago preapproval to mutate — a Hospeda-owned trial. Nothing is
+ *   attempted; the caller belongs at `/start-paid` (HOS-1236).
  * @throws SubscriptionCheckoutError with code `MP_PREAPPROVAL_MUTATION_FAILED`
  *   when the MP mutation itself cannot be applied — nothing was mutated,
  *   the local subscription is left untouched.
@@ -206,11 +244,44 @@ export async function applyTrialingPlanUpgrade(
 
     // Step 2: mutate the MP preapproval FIRST, fail-closed. The local plan
     // change below must never run unless this succeeds.
+    //
+    // HOS-1236 — the absence of a preapproval is a LOCAL PRECONDITION, not a
+    // provider failure. Since HOS-1012 a Hospeda-owned trial is a local row with
+    // `mp_subscription_id = NULL` by construction
+    // (`subscription-trial-create.service.ts`), so this branch is the NORMAL
+    // state of every trial on the platform, reached before any call to
+    // MercadoPago is made. It used to throw `MP_PREAPPROVAL_MUTATION_FAILED`,
+    // which both plan-change routes map to 502 — so the web rendered an
+    // infrastructure apology with a "Reintentar" that could never work: no
+    // number of retries mints a preapproval for a subscription that has none.
+    // `error-contract.md` is explicit that a business rule is never a 5xx.
+    //
+    // 409 + `reason` rather than a bare status, because the client has to be
+    // able to ROUTE on it: the remedy is `/start-paid` (a first paid checkout is
+    // an ALTA, not a change), and only a machine-readable discriminator can send
+    // the user there instead of at a retry button. Same shape as this route's
+    // own `SUBSCRIPTION_CANCEL_PENDING` guard, and the same shape
+    // `plan-domain-guard.ts` already uses from this very directory.
+    //
+    // `MP_PREAPPROVAL_MUTATION_FAILED` keeps its 502 for the two cases that
+    // really are upstream/infra failures: MercadoPago rejecting the mutation
+    // below, and a missing payment adapter.
     if (!mpSubscriptionId) {
         const message =
-            'Trialing subscription has no linked MercadoPago preapproval — cannot apply the upgrade without a live preapproval to mutate';
-        apiLogger.error({ subscriptionId, oldPlanId, newPlanId }, message);
-        throw new SubscriptionCheckoutError('MP_PREAPPROVAL_MUTATION_FAILED', message);
+            'This subscription is a Hospeda trial with no MercadoPago subscription behind it, so its plan cannot be changed. Start a paid subscription on the plan you want instead.';
+        // `info`, not `error`: a host clicking "change plan" during their trial
+        // is an ordinary, expected request. Logging it at error level paged
+        // Sentry for a user action with nothing wrong on our side.
+        apiLogger.info(
+            { subscriptionId, oldPlanId, newPlanId },
+            'Trialing plan change refused: the trial has no MercadoPago preapproval — the caller is sent to checkout (HOS-1236)'
+        );
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            message,
+            undefined,
+            TRIAL_REQUIRES_CHECKOUT_REASON
+        );
     }
 
     const paymentAdapter = billing.getPaymentAdapter();

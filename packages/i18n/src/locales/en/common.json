@@ -76,6 +76,7 @@
         "PROVIDER_REVOKED": "This provider is no longer part of the directory.",
         "ALREADY_EXISTS": "That resource already exists.",
         "ALREADY_SUBSCRIBED": "You already have an active subscription. In My account → Subscription you can switch tiers within it, or cancel it to take out a different one.",
+        "TRIAL_REQUIRES_CHECKOUT": "You're on your free trial, so there is no subscription to change yet. Pick the plan you want and activate your subscription: your trial closes on its own once the payment is confirmed.",
         "INTERNAL_ERROR": "Something went wrong on our side. Please try again in a moment.",
         "NETWORK_ERROR": "We couldn't reach the server. Please try again.",
         "TIMEOUT": "The request took too long. Please try again.",

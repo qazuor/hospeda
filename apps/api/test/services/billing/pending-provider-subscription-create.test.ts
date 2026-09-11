@@ -199,6 +199,46 @@ describe('createPendingProviderSubscription', () => {
                 /already have a live 'accommodation' subscription/
             );
         });
+
+        it('exempts the named superseded trial — the start-paid conversion shape (HOS-1335)', async () => {
+            // THE HOS-1335 regression, one gate down. The route-level guards
+            // let a Hospeda-owned local trial through to the checkout; without
+            // the route naming that row in `supersedesSubscriptionIds`, THIS
+            // guard re-refuses the conversion from inside the primitive —
+            // `trialing` IS live for `isLiveSubscriptionStatus` — and the
+            // route-level suites cannot see it because they stub this whole
+            // service. The discriminating halves: the same trialing row
+            // refuses without the list, proceeds with it.
+            existingSubscriptionRows = [
+                { id: 'sub_trial', status: 'trialing', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+
+            const result = await createPendingProviderSubscription({
+                ...BASE_INPUT,
+                supersedesSubscriptionIds: ['sub_trial']
+            });
+
+            expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/);
+            expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('still refuses a trialing row that is NOT on the supersedes list — a list, never an off switch', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_trial_a', status: 'trialing', productDomain: 'accommodation' },
+                { id: 'sub_trial_b', status: 'trialing', productDomain: 'accommodation' }
+            ];
+
+            await expect(
+                createPendingProviderSubscription({
+                    ...BASE_INPUT,
+                    supersedesSubscriptionIds: ['sub_trial_a']
+                })
+            ).rejects.toThrow(/already have a live 'accommodation' subscription/);
+        });
     });
 
     it('inserts a pending_provider row (no mp id, no promo id) + the correlation row atomically', async () => {

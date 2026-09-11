@@ -190,6 +190,16 @@ export interface CreatePendingProviderSubscriptionInput {
      */
     readonly productDomain: string;
     /**
+     * The subscriptions this creation REPLACES, exempted from the duplicate
+     * guard (HOS-1335). Same semantics as
+     * {@link CreatePaidSubscriptionInput.supersedesSubscriptionIds}: the start-paid
+     * conversion path exempts a Hospeda-owned local trial it is converting,
+     * and the activation of the new row sweeps it
+     * (`trial-supersede-on-activation.ts`). A live subscription not on the list
+     * still refuses — a list of ids, never an off switch.
+     */
+    readonly supersedesSubscriptionIds?: readonly string[];
+    /**
      * Domain coordinates merged into the subscription's `metadata` — the
      * SUBSCRIPTION → ENTITY path (`{ commerceEntityType, commerceEntityId }`
      * for commerce, `{ partnerId }` for partner).
@@ -321,6 +331,15 @@ export async function createPendingProviderSubscription(
         await assertNoLiveSubscriptionForDomain({
             customerId,
             productDomain,
+            // HOS-1335: the trial-conversion exemption, forwarded verbatim.
+            // The start-paid route already exempted these rows at its own
+            // guards; without forwarding, THIS guard re-refuses one gate
+            // deeper — the exact "correct gate upstairs beside the same gate
+            // still broken twenty lines down" shape the route's own HOS-1260
+            // note warns about.
+            ...(input.supersedesSubscriptionIds === undefined
+                ? {}
+                : { supersedesSubscriptionIds: input.supersedesSubscriptionIds }),
             db: tx,
             source: 'createPendingProviderSubscription'
         });

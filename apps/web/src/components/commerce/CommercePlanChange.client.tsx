@@ -41,6 +41,8 @@ import {
     DialogFooter,
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
+import type { ApiError } from '@/lib/api/types';
+import { translateApiError } from '@/lib/api-errors';
 import { storePendingCheckoutSubId } from '@/lib/billing/checkout-pending';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { changeCommercePlan, fetchCommerceDowngradePreview } from '@/lib/commerce/owner-listings';
@@ -57,6 +59,23 @@ type ChangeDirection = 'upgrade' | 'downgrade';
 
 /** Step discriminator for the flow. */
 type FlowStep = 'picker' | 'keep' | 'scheduled';
+
+/**
+ * The API `reason` that means "this subscription is a Hospeda trial with no
+ * MercadoPago subscription behind it" (HOS-1236).
+ *
+ * Must match `TRIAL_REQUIRES_CHECKOUT_REASON` in
+ * `apps/api/src/services/billing/trialing-plan-upgrade.service.ts` and the
+ * `common.apiError.TRIAL_REQUIRES_CHECKOUT` key in each locale's
+ * `common.json`. The commerce change-plan route answers 409 with this reason
+ * to a trialing owner, and the 409 slot of THIS component's status-routed
+ * copy says "you have a pending cancellation" — true for the soft-cancel
+ * refusal, FALSE and terminal for a trial owner, who cannot read what to do
+ * from it. Reason wins over status (B1, HOS-1236); a mismatch degrades
+ * quietly to the status copy rather than loudly, same trade as the account
+ * flow's mirrored constant.
+ */
+const TRIAL_REQUIRES_CHECKOUT_REASON = 'TRIAL_REQUIRES_CHECKOUT';
 
 /** Props for {@link CommercePlanChange}. */
 export interface CommercePlanChangeProps {
@@ -165,7 +184,8 @@ export function CommercePlanChange({
     }
 
     /**
-     * Maps an API failure onto the owner-facing copy for its status.
+     * Maps an API failure onto the owner-facing copy — REASON first, status
+     * second (HOS-1236 B1).
      *
      * `scope` matters because the two endpoints in this flow answer 422 for
      * DIFFERENT reasons, and the copy for one is a lie about the other. On
@@ -174,12 +194,28 @@ export function CommercePlanChange({
      * raises that second 422 rather than returning an empty preview precisely
      * so nobody reads it as "nothing is at stake" — rendering it as a
      * same-price message would put the lie back one layer up.
+     *
+     * The reason-first branch exists because the status slots are not
+     * exclusive: the commerce change-plan route answers 409 to a soft-cancelling
+     * owner AND to a trialing one (HOS-1236), and the 409 slot's copy — "you
+     * have a pending cancellation" — is true for the first and false for the
+     * second. The trialing 409 carries
+     * `reason: 'TRIAL_REQUIRES_CHECKOUT'`, whose shared copy says what the
+     * owner can actually do; routing by status alone shows a terminal sentence
+     * about a cancellation they never asked for. `translateApiError` resolves
+     * the shared `common.apiError.*` reason chain, so the copy stays
+     * consistent with the account flow's.
      */
-    function showApiError(status: number | undefined, scope: 'preview' | 'change'): void {
+    function showApiError(error: ApiError | undefined, scope: 'preview' | 'change'): void {
         const generic = t(
             'commerce.owner.planChange.error.generic',
             'No pudimos cambiar tu plan. Probá de nuevo más tarde.'
         );
+        if (error?.reason === TRIAL_REQUIRES_CHECKOUT_REASON) {
+            setErrorMessage(translateApiError({ error, t, fallback: generic }));
+            return;
+        }
+        const status = error?.status;
         if (status === undefined) {
             setErrorMessage(generic);
             return;
@@ -215,7 +251,7 @@ export function CommercePlanChange({
                 // cap is unresolvable. Falling through to "nothing is over the
                 // cap" here would restrict the owner's listings by the default
                 // order having told them nothing was at stake.
-                showApiError(result.error.status, 'preview');
+                showApiError(result.error, 'preview');
                 return;
             }
 
@@ -253,7 +289,7 @@ export function CommercePlanChange({
             const result = await changeCommercePlan({ vertical, planSlug, keepSelections });
 
             if (!result.ok) {
-                showApiError(result.error.status, 'change');
+                showApiError(result.error, 'change');
                 return;
             }
 
