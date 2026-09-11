@@ -354,6 +354,13 @@ export async function replacePastDuePaymentMethod(
         priceId,
         paymentMethodReturnUrl,
         notificationUrl,
+        // HOS-1322: the past-due row this replacement is FOR, named so the
+        // duplicate guard inside the primitive exempts it. `past_due` is a LIVE
+        // status — a preapproval mid-dunning, not a gone one — so without this
+        // the guard would refuse the very card replacement that is the way out
+        // of dunning. It exempts that ONE row: any other live subscription in
+        // the same domain still refuses.
+        supersedesSubscriptionIds: [pastDueSubscription.id],
         // HOS-1315: routes this mint through the SAME wrapper every other
         // self-serve preapproval flow uses (checkout, the recurring add-on,
         // and `mintRetryPreapprovalAttempt` in `preapproval-recovery.service.ts`)

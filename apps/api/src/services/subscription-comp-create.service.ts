@@ -59,6 +59,7 @@ import { ProductDomainEnum, type ProductDomainValue, SubscriptionStatusEnum } fr
 import { redeemAndRecordUsage } from '@repo/service-core';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
+import { assertNoLiveSubscriptionForDomain } from './billing/duplicate-subscription-guard.js';
 
 /**
  * Far-future period end for a comp subscription, in milliseconds from now.
@@ -157,6 +158,23 @@ export async function createCompSubscription(input: {
             `createCompSubscription: plan '${planId}' is domain '${planDomain}' but the comp was requested for '${productDomain}'`
         );
     }
+
+    // HOS-1322 — refuse a comp on top of a live subscription in the same domain,
+    // INSIDE the primitive.
+    //
+    // The one caller today already retires every live row in the granted domain
+    // before it gets here (`subscription-comp-grant.service.ts` supersedes them
+    // at MercadoPago first, then locally, and refuses outright when an existing
+    // `comp` is found). This guard therefore changes no answer on that path — it
+    // is here so the NEXT caller inherits the property instead of having to
+    // rebuild it. A comp is perpetual by construction, so a duplicate one is the
+    // hardest of these to walk back: there is no period end to wait out.
+    await assertNoLiveSubscriptionForDomain({
+        customerId,
+        productDomain,
+        ...(input.db === undefined ? {} : { db: input.db }),
+        source: 'createCompSubscription'
+    });
 
     const now = new Date();
     const periodEnd = new Date(now.getTime() + COMP_PERIOD_MS);

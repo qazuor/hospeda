@@ -147,9 +147,15 @@ describe('commerce edit/publish entitlement gates — block side (HOS-1074)', ()
         // Zero existing listings, so a refusal cannot have come from the limit
         // check — at this count the limit check would ALLOW. Any 403 below is
         // therefore the entitlement gate and nothing else.
+        //
+        // `countOwn`, not `count`, since HOS-1247: the enforcement middleware
+        // reads the OWNER-scoped count (the public `count()` forces
+        // PUBLIC + ACTIVE and reported zero for every owner-created draft).
+        // This spy is also the "never reached" witness below, so it must sit on
+        // the call the middleware actually makes.
         const zero = { data: { count: 0 }, error: undefined } as never;
-        gastronomyCount = vi.spyOn(GastronomyService.prototype, 'count').mockResolvedValue(zero);
-        experienceCount = vi.spyOn(ExperienceService.prototype, 'count').mockResolvedValue(zero);
+        gastronomyCount = vi.spyOn(GastronomyService.prototype, 'countOwn').mockResolvedValue(zero);
+        experienceCount = vi.spyOn(ExperienceService.prototype, 'countOwn').mockResolvedValue(zero);
     });
 
     afterEach(() => {

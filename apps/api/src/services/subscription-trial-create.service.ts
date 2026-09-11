@@ -37,6 +37,7 @@ import {
 import { type ProductDomainValue, SubscriptionStatusEnum } from '@repo/schemas';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
+import { assertNoLiveSubscriptionForDomain } from './billing/duplicate-subscription-guard.js';
 
 /** Milliseconds in one day, for computing `trialEnd` from `trialStart`. */
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -180,6 +181,27 @@ export async function createTrialSubscription(
             `createTrialSubscription: plan '${planId}' is domain '${planDomain}' but the trial was requested for '${productDomain}'`
         );
     }
+
+    // HOS-1322 — refuse a trial on top of a live subscription in the same
+    // domain, INSIDE the primitive.
+    //
+    // Both callers already avoid it: `accommodation-publish-deps.ts` only
+    // reaches here when `resolveTrialEligibility` said the customer has no prior
+    // authorized subscription in this domain, and the commerce trial start does
+    // the same. That is precisely why it belongs here and not there — the
+    // property "a trial never lands on top of a live subscription" was true only
+    // for as long as every caller remembered, and the next caller is the one
+    // that forgets. A trial row grants entitlements, so a duplicate here is an
+    // ambiguous entitlement state and, once converted, a second preapproval.
+    //
+    // Runs on the caller's transaction when there is one, so the publish and its
+    // trial keep seeing one snapshot.
+    await assertNoLiveSubscriptionForDomain({
+        customerId,
+        productDomain,
+        db: readClient,
+        source: 'createTrialSubscription'
+    });
 
     const trialStart = input.now ?? new Date();
     const trialEnd = new Date(trialStart.getTime() + trialDays * MS_PER_DAY);

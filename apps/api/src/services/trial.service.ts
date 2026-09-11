@@ -1395,10 +1395,15 @@ export class TrialService {
             // (unexpected) multi-sub case without losing any id.
             const existingSubscriptions =
                 await this.billing.subscriptions.getByCustomerId(customerId);
-            const supersedesSubscriptionId = (existingSubscriptions ?? [])
+            // HOS-1322: kept as a LIST as well as the comma-joined string. The
+            // string is the metadata contract the webhook reads; the list is what
+            // `createPaidSubscription`'s duplicate guard needs, and a guard that
+            // was handed `'id-a,id-b'` would match no row at all and refuse the
+            // very conversion this method exists to perform.
+            const supersededSubscriptionIds = (existingSubscriptions ?? [])
                 .filter((sub) => sub.status === 'trialing')
-                .map((sub) => sub.id)
-                .join(',');
+                .map((sub) => sub.id);
+            const supersedesSubscriptionId = supersededSubscriptionIds.join(',');
 
             if (interval === 'annual') {
                 // HOS-123: annual reactivation routes through the one-time
@@ -1426,6 +1431,13 @@ export class TrialService {
                     billingInterval: 'annual',
                     paymentMethodReturnUrl: urls.successUrl,
                     notificationUrl: urls.notificationUrl,
+                    // HOS-1322: the trialing rows this conversion replaces, named
+                    // so the primitive's duplicate guard exempts THEM and nothing
+                    // else. The old row deliberately stays live until the webhook
+                    // confirms the new preapproval (see below), so without this
+                    // the guard would read it as a duplicate and refuse the
+                    // conversion.
+                    supersedesSubscriptionIds: supersededSubscriptionIds,
                     metadata: {
                         convertedFromTrial: 'true',
                         convertedAt: new Date().toISOString(),
@@ -1479,6 +1491,11 @@ export class TrialService {
                 priceId,
                 paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
                 notificationUrl: urls.notificationUrl,
+                // HOS-1322: see the annual branch above — the trialing rows this
+                // conversion replaces stay live until the webhook confirms the
+                // new preapproval, so the primitive's duplicate guard has to be
+                // told which rows those are.
+                supersedesSubscriptionIds: supersededSubscriptionIds,
                 metadata: {
                     convertedFromTrial: 'true',
                     convertedAt: new Date().toISOString(),
@@ -1747,6 +1764,12 @@ export class TrialService {
                     billingInterval: 'annual',
                     paymentMethodReturnUrl: urls.successUrl,
                     notificationUrl: urls.notificationUrl,
+                    // HOS-1322: the row this reactivation replaces. A hard-cancelled
+                    // row is not live and would not have blocked, but the selector
+                    // above also accepts a SOFT-cancelled one, whose status is still
+                    // `active` until the finalization cron runs — naming it is what
+                    // keeps that case working.
+                    supersedesSubscriptionIds: [canceledSub.id],
                     metadata: {
                         reactivatedFromCanceled: 'true',
                         reactivatedAt: new Date().toISOString(),
@@ -1803,6 +1826,8 @@ export class TrialService {
                 priceId,
                 paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
                 notificationUrl: urls.notificationUrl,
+                // HOS-1322: see the annual branch above.
+                supersedesSubscriptionIds: [canceledSub.id],
                 metadata: {
                     reactivatedFromCanceled: 'true',
                     reactivatedAt: new Date().toISOString(),

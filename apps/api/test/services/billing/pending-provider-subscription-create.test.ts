@@ -41,11 +41,22 @@ const updateWhereMock = vi.fn();
 const updateSetMock = vi.fn(() => ({ where: updateWhereMock }));
 const txExecuteMock = vi.fn().mockResolvedValue(undefined);
 
+/**
+ * The customer's existing `billing_subscriptions` rows, as the HOS-1322
+ * duplicate guard reads them ON THE TRANSACTION CLIENT — the guard runs inside
+ * the same transaction as the insert on purpose, so the check and the write see
+ * one snapshot. Mutable so a test can seed a live subscription.
+ */
+let existingSubscriptionRows: Array<Record<string, unknown>> = [];
+
 /** A fake tx object passed to the withTransaction callback. */
 const txStub = {
     insert: vi.fn(() => ({ values: insertValuesMock })),
     update: vi.fn(() => ({ set: updateSetMock })),
-    execute: txExecuteMock
+    execute: txExecuteMock,
+    select: vi.fn(() => ({
+        from: vi.fn(() => ({ where: vi.fn(() => Promise.resolve(existingSubscriptionRows)) }))
+    }))
 };
 
 const withTransactionMock = vi.fn(
@@ -56,12 +67,21 @@ const pendingCheckoutCreateMock = vi.fn();
 const supersedePendingMock = vi.fn().mockResolvedValue([]);
 
 vi.mock('@repo/db', () => ({
-    billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
+    billingSubscriptions: {
+        __table: 'billing_subscriptions',
+        id: 'id',
+        customerId: 'customer_id',
+        status: 'status',
+        productDomain: 'product_domain',
+        deletedAt: 'deleted_at'
+    },
     billingPendingCheckoutModel: {
         create: (...args: unknown[]) => pendingCheckoutCreateMock(...args),
         supersedePendingForCustomerPlan: (...args: unknown[]) => supersedePendingMock(...args)
     },
+    and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    isNull: vi.fn((col: unknown) => ({ op: 'isNull', col })),
     withTransaction: (...args: unknown[]) =>
         (withTransactionMock as (...a: unknown[]) => unknown)(...args)
 }));
@@ -72,9 +92,22 @@ vi.mock('@repo/db', () => ({
 vi.mock('@repo/schemas', async () => {
     const actual = await vi.importActual('@repo/schemas');
     return {
-        ...actual,
-        ProductDomainEnum: { ACCOMMODATION: 'accommodation', COMMERCE: 'commerce' },
-        SubscriptionStatusEnum: { PENDING_PROVIDER: 'pending_provider' }
+        ...actual
+        // HOS-1322: both enums come from the real module now.
+        //
+        // `SubscriptionStatusEnum` used to be stubbed as
+        // `{ PENDING_PROVIDER: 'pending_provider' }`, and a one-member enum
+        // silently defeats `normalizeStoredSubscriptionStatus` — which maps the
+        // stored status string through it — so `isLiveSubscriptionStatus('active')`
+        // answered FALSE and the duplicate guard found no conflict in any row.
+        // Every one of its cases would have passed while blocking nothing.
+        //
+        // `ProductDomainEnum` used to carry `COMMERCE: 'commerce'`, a value the
+        // enum has not held since release B, and to omit `ADDON` — which the
+        // guard compares against by identity.
+        //
+        // Both now come from the spread above, so there is nothing left to
+        // override here.
     };
 });
 
@@ -107,6 +140,65 @@ describe('createPendingProviderSubscription', () => {
         insertValuesMock.mockResolvedValue(undefined);
         updateWhereMock.mockResolvedValue(undefined);
         pendingCheckoutCreateMock.mockResolvedValue({ id: 'pending-checkout-1' });
+        // Default: the customer holds no subscription at all (HOS-1322).
+        existingSubscriptionRows = [];
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-1322 — the duplicate guard, inside the primitive
+    // -----------------------------------------------------------------------
+    describe('the duplicate guard (HOS-1322)', () => {
+        it('refuses a second share-link checkout when a live subscription exists in the SAME domain', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_live', status: 'active', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+            // Refused before the row and its correlation row are written.
+            expect(insertValuesMock).not.toHaveBeenCalled();
+            expect(pendingCheckoutCreateMock).not.toHaveBeenCalled();
+        });
+
+        it('still opens the checkout when the live subscription is in ANOTHER domain (the dual owner)', async () => {
+            // A host who already pays for accommodation, opening a gastronomy
+            // checkout. Without this pair the case above passes just as well
+            // with a customer-wide check that refuses a legitimate purchase.
+            existingSubscriptionRows = [
+                { id: 'sub_accommodation', status: 'active', productDomain: 'accommodation' }
+            ];
+
+            const result = await createPendingProviderSubscription({
+                ...BASE_INPUT,
+                productDomain: 'gastronomy'
+            });
+
+            expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/);
+            expect(insertValuesMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('refuses on a past_due row — a preapproval mid-dunning is not a walked-away customer', async () => {
+            existingSubscriptionRows = [
+                { id: 'sub_moroso', status: 'past_due', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+        });
+
+        it('refuses on qzpay’s spelling of past_due too (`unpaid`)', async () => {
+            // The status column holds two vocabularies. A raw `IN (...)` list
+            // would miss this row and let the moroso open a second preapproval.
+            existingSubscriptionRows = [
+                { id: 'sub_moroso', status: 'unpaid', productDomain: 'accommodation' }
+            ];
+
+            await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
+                /already have a live 'accommodation' subscription/
+            );
+        });
     });
 
     it('inserts a pending_provider row (no mp id, no promo id) + the correlation row atomically', async () => {

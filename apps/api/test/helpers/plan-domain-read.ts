@@ -31,6 +31,57 @@ import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 import { vi } from 'vitest';
 
 /**
+ * The customer's existing `billing_subscriptions` rows, as HOS-1322's
+ * duplicate-subscription guard reads them.
+ *
+ * The guard's scan is the second SELECT `createPaidSubscription` now issues, and
+ * unlike the plan-domain lookup it does NOT end in `.limit()` — it awaits the
+ * `.where()` directly. This module's stub therefore has to be awaitable as well
+ * as chainable, or every suite that arms it dies on `rows.find is not a
+ * function`, which reads as a broken service rather than an unarmed query.
+ *
+ * Defaults to empty — no subscription, nothing to duplicate — which is what
+ * every pre-existing fixture means.
+ */
+let existingSubscriptionRows: ReadonlyArray<Record<string, unknown>> = [];
+
+/**
+ * Arms the customer's existing subscriptions for the HOS-1322 duplicate guard.
+ *
+ * Call it BEFORE the creator under test; {@link mockPlanDomainRead} resets it to
+ * empty, so arm it after (or instead of) that call.
+ *
+ * @param rows - Rows as the guard projects them: `{ id, status, productDomain }`.
+ *
+ * @example
+ * ```ts
+ * mockPlanDomainRead(ProductDomainEnum.GASTRONOMY);
+ * mockExistingSubscriptionsRead([
+ *     { id: 'sub_1', status: 'active', productDomain: 'accommodation' }
+ * ]);
+ * ```
+ */
+export function mockExistingSubscriptionsRead(rows: ReadonlyArray<Record<string, unknown>>): void {
+    existingSubscriptionRows = rows;
+}
+
+/**
+ * Builds the `.where()` result: chainable for the plan-domain lookup and
+ * AWAITABLE for the duplicate guard's scan (HOS-1322).
+ */
+function buildWhereResult(limit: ReturnType<typeof vi.fn>): Record<string, unknown> {
+    return {
+        limit,
+        orderBy: vi.fn(() => ({ limit })),
+        // biome-ignore lint/suspicious/noThenProperty: a query builder that can be awaited is exactly what this stub must imitate.
+        then: (
+            onFulfilled?: ((value: unknown[]) => unknown) | null,
+            onRejected?: ((reason: unknown) => unknown) | null
+        ) => Promise.resolve([...existingSubscriptionRows]).then(onFulfilled, onRejected)
+    };
+}
+
+/**
  * Points the mocked `getDb()` at a chain that answers the plan-domain SELECT
  * with a single row carrying `domain`.
  *
@@ -70,10 +121,12 @@ export function mockPlanDomainRead(
     // `row.createdAt.getTime()` unconditionally, BEFORE its own identity
     // guards run, so an `undefined` here throws instead of cleanly refusing.
     const limit = vi.fn(() => Promise.resolve([{ productDomain: domain, createdAt: new Date() }]));
-    const where = vi.fn(() => ({
-        limit,
-        orderBy: vi.fn(() => ({ limit }))
-    }));
+    // HOS-1322: arming the plan domain resets the duplicate guard's rows to
+    // empty. A suite that seeds a live subscription and then re-arms the plan
+    // read in a later `beforeEach` would otherwise carry the seed into every
+    // following test, which is the leakage `clearAllMocks` cannot undo.
+    existingSubscriptionRows = [];
+    const where = vi.fn(() => buildWhereResult(limit));
 
     // MERGED onto whatever the client already exposes, never substituted for it.
     // A helper that returned a select-only stub silently removed `.update()`,
@@ -109,11 +162,12 @@ export function mockPlanDomainReadMissing(): void {
     // above, for the identical reason — this stub answers every table's
     // select, including `loadAccommodationBridge`'s ordered query.
     const limit = vi.fn(() => Promise.resolve([]));
+    existingSubscriptionRows = [];
     vi.mocked(getDb).mockReturnValue({
         ...existing,
         select: vi.fn(() => ({
             from: vi.fn(() => ({
-                where: vi.fn(() => ({ limit, orderBy: vi.fn(() => ({ limit })) }))
+                where: vi.fn(() => buildWhereResult(limit))
             }))
         }))
     } as never);

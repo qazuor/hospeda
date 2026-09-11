@@ -85,7 +85,13 @@ export function isCommerceListingPubliclyVisible(entity: RevalidatableCommerceLi
  * purge beats a failed write.
  *
  * @param entityType - `'gastronomy'` or `'experience'`.
- * @param entity - The listing as it stands after the write.
+ * @param entity - The listing a public footprint is being purged for.  That
+ *   is the POST-write row when the write published the listing or kept it
+ *   public, and the PRE-write row when the write UNPUBLISHED it (HOS-1337):
+ *   the post-write row is PRIVATE and the guard below would skip it, but the
+ *   cached PUBLIC pages are exactly what must be evicted — the same rule the
+ *   accommodation `_afterUpdate` path applies to an ACTIVE→DRAFT unpublish.
+ *   In both cases the row passed satisfies the publicly-visible guard.
  * @param resolveDestinationSlug - Resolver for the parent destination's slug.
  * @param logger - Where a scheduling failure is reported.
  */

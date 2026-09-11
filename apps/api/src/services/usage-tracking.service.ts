@@ -728,23 +728,26 @@ export class UsageTrackingService {
                 }
 
                 case LimitKey.MAX_GASTRONOMIES: {
-                    // Counted exactly the way MAX_ACCOMMODATIONS is, and for the
-                    // same reason: the cap is per OWNER, so the owner's listing
-                    // count IS the usage. `ownerId` is a declared filter on
-                    // GastronomySearchSchema — a search schema that silently
-                    // dropped it would count every listing on the platform.
+                    // Per OWNER, like MAX_ACCOMMODATIONS — but NOT through
+                    // `count()`, which is where this used to read (HOS-1247 /
+                    // HOS-933). `GastronomyService._executeCount` forces
+                    // `visibility: PUBLIC` + `lifecycleState: ACTIVE` so a public
+                    // search's total matches its page, and every owner-created
+                    // listing starts PRIVATE/DRAFT — so this reported 0 for an
+                    // owner sitting on a full quota, and the "at cap" account
+                    // never reached its cap. `countOwn` is hard-scoped to
+                    // `ownerId = actor.id` across every visibility and lifecycle
+                    // state; `actor` here is the system actor with the owner's id
+                    // (see above), which is exactly that scope.
                     const gastronomyService = new GastronomyService({ logger: apiLogger });
-                    const result = await gastronomyService.count(actor, {
-                        ownerId: userId
-                    } as never);
+                    const result = await gastronomyService.countOwn(actor);
                     return result.data?.count || 0;
                 }
 
                 case LimitKey.MAX_EXPERIENCES: {
+                    // Same reasoning as MAX_GASTRONOMIES above.
                     const experienceService = new ExperienceService({ logger: apiLogger });
-                    const result = await experienceService.count(actor, {
-                        ownerId: userId
-                    } as never);
+                    const result = await experienceService.countOwn(actor);
                     return result.data?.count || 0;
                 }
 

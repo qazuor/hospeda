@@ -24,6 +24,10 @@
  * here.  This function is generic over `entityType` so both gastronomy and
  * experience entities are reconciled with the same code.
  *
+ * After its write the reconciler also schedules the edge-cache purge
+ * (`scheduleCommerceListingRevalidation`, HOS-1337), in BOTH directions of the
+ * transition — see the block after the `model.update` call.
+ *
  * @module commerce-visibility
  */
 
@@ -39,6 +43,13 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import { ServiceError } from '../../types';
+import type { RevalidatableCommerceListing } from './commerce-revalidation.js';
+import {
+    isCommerceListingPubliclyVisible,
+    resolveCommerceDestinationSlug,
+    scheduleCommerceListingRevalidation,
+    standaloneCommerceRevalidationLogger
+} from './commerce-revalidation.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,7 +61,15 @@ import { ServiceError } from '../../types';
 export interface ReconcileCommerceListingVisibilityInput {
     /**
      * Commerce entity discriminator.
-     * Current values: `'gastronomy'`.  Extended without a schema change.
+     * Current values: `'gastronomy'` and `'experience'`.  Extended without a
+     * schema change.
+     *
+     * The edge-cache purge scheduled after a write (HOS-1337) only fires for
+     * these two values — they are the verticals with cached public pages
+     * (see `CommerceRevalidationEntityType` in
+     * `commerce-revalidation.ts`).  A value outside the pair is reconciled
+     * but never purged, matching the cache-tag mapper, which emits no tags
+     * for an unknown commerce type.
      */
     readonly entityType: string;
     /** UUID of the commerce entity row (gastronomies.id, etc.). */
@@ -111,6 +130,12 @@ export interface ReconcileCommerceListingVisibilityResult {
  * widening this narrow read-only field costs every implementer nothing.
  * Contrast with completeness (see {@link ResolveCommerceListingCompleteness}),
  * which is business logic and stays a SEPARATE injected resolver on purpose.
+ *
+ * `slug` and `destinationId` are included for the same reason (HOS-1337):
+ * plain data on the same row, needed by the edge-cache purge the reconciler
+ * schedules after its write (`scheduleCommerceListingRevalidation` builds its
+ * purge payload from them).  Both columns exist on every commerce entity table
+ * (`gastronomies.slug` is `NOT NULL UNIQUE`, `destinationId` is nullable).
  */
 export interface CommerceEntityModel {
     findById: (
@@ -118,6 +143,8 @@ export interface CommerceEntityModel {
         tx?: DrizzleClient
     ) => Promise<{
         id: string;
+        slug: string;
+        destinationId?: string | null;
         visibility: string;
         lifecycleState: string;
         moderationState?: string | null;
@@ -177,7 +204,9 @@ const logger: ILogger = createLogger('commerce-visibility');
  *    from the extra query).
  * 3. Computes the desired `visibility` and `lifecycleState` from the predicate.
  * 4. Writes only when the current state differs (idempotent).
- * 5. Returns a typed result describing what happened.
+ * 5. Schedules an edge-cache purge for the listing's public surfaces when the
+ *    write crossed the public boundary in either direction (HOS-1337).
+ * 6. Returns a typed result describing what happened.
  *
  * **Incomplete + paid stays PRIVATE and logs loudly** (AC-6): a paid
  * subscription on an incomplete listing is a money-taken-nothing-delivered
@@ -308,6 +337,56 @@ export async function reconcileCommerceListingVisibility(
         },
         'Commerce listing visibility reconciled'
     );
+
+    // HOS-1337: purge the edge cache for the listing that just flipped.
+    //
+    // The write above is invisible to the public site until the `catalog`
+    // cache class expires (`s-maxage 3600` on /{lang}/gastronomia and
+    // /{lang}/experiencias), so a paid owner stares at a listing the index
+    // refuses to show for up to an hour.  Create, update and media already
+    // schedule this purge after their writes — the billing lifecycle is the
+    // fourth writer of `visibility` and must not be the only one that leaves
+    // the cache stale.
+    //
+    // The purge decision lives HERE, not inside the primitive, because this
+    // reconciler owns BOTH directions of the transition and they need
+    // different rows (the same rule the accommodation service applies, where
+    // `_afterUpdate` "also revalidates when it WAS public before"):
+    //
+    // - publish: pass the post-write PUBLIC row — the state the primitive's
+    //   public-visibility guard requires, and the one the index is about to
+    //   serve.
+    // - unpublish: pass the PRE-write row.  The post-write row is PRIVATE and
+    //   the guard would skip it, but the cached PUBLIC detail page and index
+    //   entry are exactly what must be evicted — a listing that stopped being
+    //   paid and stays on the public index is worse than the inverse.
+    //
+    // A listing with no public footprint on either side of the write is not
+    // purged: nothing cached ever showed it (the HOS-203 spurious-404 case).
+    const hadPublicFootprint = isCommerceListingPubliclyVisible(entity);
+    const purgeEntity: RevalidatableCommerceListing | undefined = shouldBePublic
+        ? {
+              id: entityId,
+              slug: entity.slug,
+              destinationId: entity.destinationId,
+              visibility: desiredVisibility,
+              lifecycleState: desiredLifecycleState
+          }
+        : hadPublicFootprint
+          ? entity
+          : undefined;
+
+    if (purgeEntity && (entityType === 'gastronomy' || entityType === 'experience')) {
+        // Fire-and-forget, exactly like the featured-sync path: the primitive
+        // swallows its own failures, and a purge must never break the
+        // webhook/cron callers this reconciler serves.
+        void scheduleCommerceListingRevalidation({
+            entityType,
+            entity: purgeEntity,
+            resolveDestinationSlug: resolveCommerceDestinationSlug,
+            logger: standaloneCommerceRevalidationLogger
+        });
+    }
 
     return { updated: true, visibility: desiredVisibility, lifecycleState: desiredLifecycleState };
 }

@@ -17,11 +17,21 @@
  *
  * ## What the fixtures pin down, and what they leave real
  *
- * Only the LISTING COUNT is stubbed (`count()` on each vertical's service),
+ * Only the LISTING COUNT is stubbed (`countOwn()` on each vertical's service),
  * because that is the request-specific input a test has to control. Everything
  * else runs: the route factory, auth, the permission gate,
  * `commerceVerticalEntitlementMiddleware`, `enforceGastronomyLimit`,
  * `checkLimit`, `getRemainingLimit`, and the ServiceError → HTTP mapping.
+ *
+ * HOS-1247 moved that count from `count()` to `countOwn()`: `count()` runs the
+ * PUBLIC `_executeCount`, which forces `visibility: PUBLIC` +
+ * `lifecycleState: ACTIVE` and therefore reported ZERO for every owner-created
+ * DRAFT — the whole cap, silently inert in production while this suite was
+ * green on a stubbed number the real system could not produce. What that means
+ * for THIS file is only which method the fixtures stub; every assertion below
+ * is unchanged. The count itself is asserted against the database predicate in
+ * `packages/service-core/test/services/commerce/commerce-own-listing-count.test.ts`,
+ * and end to end in `listing-cap-counts-drafts.e2e.test.ts`.
  *
  * The actor deliberately has **no billing customer and no subscription of any
  * kind**. That is not a shortcut — it IS AC-31: a commerce-only owner who has
@@ -155,10 +165,10 @@ function stubCount(
     service: typeof GastronomyService | typeof ExperienceService,
     count: number
 ): void {
-    // `as never`: BaseCrudService.count's Result generic is not nameable at the
-    // call site, and the shape asserted here is only the two fields it reads.
+    // `as never`: the Result generic is not nameable at the call site, and the
+    // shape asserted here is only the two fields the caller reads.
     const result = { data: { count }, error: undefined } as never;
-    vi.spyOn(service.prototype, 'count').mockResolvedValue(result);
+    vi.spyOn(service.prototype, 'countOwn').mockResolvedValue(result);
 }
 
 /**
@@ -392,7 +402,7 @@ describe('commerce listing cap — end to end (HOS-688 AC-30)', () => {
             data: undefined,
             error: { code: 'INTERNAL_ERROR', message: 'boom' }
         } as never;
-        vi.spyOn(GastronomyService.prototype, 'count').mockResolvedValue(failingCount);
+        vi.spyOn(GastronomyService.prototype, 'countOwn').mockResolvedValue(failingCount);
 
         const res = await app.request(GASTRONOMY_PATH, {
             method: 'POST',

@@ -325,6 +325,18 @@ export async function createOwnPreapprovalSubscription(
 
     const result = await createPaidSubscription({
         ...paidInput,
+        // HOS-1322: the domain the ROW will carry, handed to the duplicate guard
+        // inside `createPaidSubscription`. It is NOT sent to the provider — the
+        // preapproval still states the plan's own domain, resolved from the
+        // database there.
+        //
+        // Forwarding it matters for exactly one caller, and matters a lot: the
+        // recurring add-on borrows the OWNER's plan row for its price, so the
+        // plan-resolved domain of an add-on checkout is the owner's vertical
+        // while the row it writes is `addon`. Without this the guard would read
+        // an add-on as a duplicate of the plan whose price it borrowed, and
+        // refuse every add-on purchase by a subscribed host.
+        ...(productDomain === undefined ? {} : { subscriptionProductDomain: productDomain }),
         ...(Object.keys(mergedMetadata).length > 0 ? { metadata: mergedMetadata } : {})
     });
 
