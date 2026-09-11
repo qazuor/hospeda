@@ -44,9 +44,16 @@
  * (`deriveOwnerAccommodationSubscription`, the same single derivation the cache
  * write-through uses). A late webhook for a superseded subscription can no more
  * republish (or skip) than it could stamp the cache. And because the gate asks
- * "is the owner entitled NOW?", a dropped activation webhook self-heals: the
- * next poll, cron or admin reconcile that sees a granting subscription
- * republishes. `publish()` re-checks eligibility on its own, so the gate is a
+ * "is the owner entitled NOW?", the win-back does not depend on THIS event
+ * having arrived — any later lifecycle event that walks the bridge with a
+ * granting subscription republishes. That surface is NARROWER than it sounds,
+ * and pin it before promising more: `subscription-poll` does not call the
+ * bridge, no periodic cron handles active subscriptions (the 6-hourly cache
+ * reconcile covers only the commerce half), and `subscription-drift-reconcile`
+ * avoids the bridge on purpose — so a DROPPED activation webhook heals only at
+ * this subscription's next bridge-carrying event (the next renewal webhook),
+ * an admin reconcile through the bridge, or a manual publish.
+ * `publish()` re-checks eligibility on its own, so the gate is a
  * cheap outer filter, not the authority — an owner who is somehow not eligible
  * never gets a listing flipped by this path.
  *
