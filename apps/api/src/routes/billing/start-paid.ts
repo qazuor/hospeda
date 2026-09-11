@@ -32,6 +32,7 @@
 
 import { AnalyticsEvents } from '@repo/analytics';
 import {
+    ALL_PLANS,
     isEntitlementGrantingStatus,
     isLiveSubscriptionStatus,
     normalizeStoredSubscriptionStatus,
@@ -174,8 +175,49 @@ const isSubscriptionInASellableDomain = (sub: unknown): boolean =>
     isAccommodationSubscription(sub) || subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST);
 
 /**
- * Whether `sub` is a HOSPEDA-OWNED trial — `trialing`, with nothing linked at
- * MercadoPago (HOS-1335).
+ * The DECLARED product domain of the plan this checkout is about to sell, or
+ * `undefined` when the slug names no plan this endpoint knows (HOS-1335).
+ *
+ * ## Why not `productDomainForPlanSlug`
+ *
+ * That helper files every `ALL_PLANS` slug — the tourist tiers included — as
+ * `'accommodation'` (`plan-domains.config.ts`'s `buildProductDomainByPlanSlug`,
+ * a knowing divergence kept for the plan-change guards, HOS-1279). It therefore
+ * cannot answer the one question asked here, which is whether the row this
+ * checkout is about to mint will be `'accommodation'` or `'tourist'`. The plan's
+ * own `productDomain` field is the declared value, and the one the subscription
+ * ultimately carries.
+ *
+ * `TEST_DAILY_PLAN` is resolved explicitly because it is deliberately kept OUT
+ * of `ALL_PLANS` (that is what hides it from the public catalogue) while
+ * remaining a real, subscribable accommodation plan behind
+ * `HOSPEDA_SHOW_TEST_BILLING_PLAN`. Without this branch the QA fast-cycle plan
+ * would be the one plan a trialing host could not convert onto.
+ *
+ * An unknown slug yields `undefined`, which grants NO exemption — the guard then
+ * behaves exactly as it did before HOS-1335. Fail closed.
+ *
+ * @param planSlug - The requested catalogue slug.
+ * @returns The declared product domain, or `undefined` for an unknown slug.
+ */
+const declaredDomainForPlanSlug = (planSlug: string): ProductDomainEnum | undefined => {
+    if (planSlug === TEST_DAILY_PLAN.slug) {
+        return TEST_DAILY_PLAN.productDomain as ProductDomainEnum;
+    }
+    // `ALL_PLANS` types `productDomain` as `ProductDomainValue` (the enum's
+    // template literal), which is not assignable to the enum itself — same
+    // conversion precedent as `paid-subscription-create.ts`. The vocabulary is
+    // CI-guarded (`check-product-domain-vocabulary.sh`), so the cast cannot
+    // smuggle a retired value.
+    return ALL_PLANS.find((plan) => plan.slug === planSlug)?.productDomain as
+        | ProductDomainEnum
+        | undefined;
+};
+
+/**
+ * Whether `sub` is a HOSPEDA-OWNED trial that THIS purchase will supersede —
+ * `trialing`, nothing linked at MercadoPago, and in the same product domain as
+ * the plan being bought (HOS-1335).
  *
  * ## Why this row must not read as a duplicate
  *
@@ -185,8 +227,15 @@ const isSubscriptionInASellableDomain = (sub: unknown): boolean =>
  * told it exists, so when it lapses **nothing charges**. The only way that
  * customer becomes a paying one is for them to come here and buy — which is
  * precisely the gesture the already-subscribed guards below were refusing with
- * `409 ALREADY_SUBSCRIBED`, for the whole ~30 days of the trial, on the three
- * verticals that publish.
+ * `409 ALREADY_SUBSCRIBED`, for the whole ~30 days of the trial.
+ *
+ * Scope, stated exactly: this endpoint sells ACCOMMODATION and TOURIST, so what
+ * it unblocks is the ACCOMMODATION trial. A gastronomy or experience trial was
+ * never caught by these guards in the first place (`subscriptionMatchesDomain`
+ * fails closed for them), and converting one runs through
+ * `POST /protected/commerce/listings/:type/:id/start-subscription`, which has
+ * refusals of its own that this change does not touch — measured, and filed as
+ * follow-up work rather than claimed as fixed here.
  *
  * Neither guard was wrong, and `isLiveSubscriptionStatus` is not what to change:
  * `trialing` IS live for entitlements and for dunning, and narrowing that set
@@ -215,25 +264,57 @@ const isSubscriptionInASellableDomain = (sub: unknown): boolean =>
  * have nothing usable linked — the two-branch `IS NULL OR = ''` shape is only
  * needed when the question is asked in SQL.
  *
- * ## No second row can survive this
+ * ## The domain test is what makes the supersede a guarantee
  *
- * Letting the checkout through does not leave the customer holding two
- * subscriptions: `supersedeLocalTrialsOnActivation`
- * (`services/billing/trial-supersede-on-activation.ts`) ends every
- * preapproval-less trial in the activated row's product domain **inside the
- * activation's own transaction**, so the paid row and the dead trial commit
- * together or not at all. That mechanism pre-dates this change and is what makes
- * it safe; it is not a reconciler running later.
+ * Letting the checkout through must not leave the customer holding two granting
+ * rows, and what prevents that is `supersedeLocalTrialsOnActivation`
+ * (`services/billing/trial-supersede-on-activation.ts`), which ends every
+ * preapproval-less trial **inside the activation's own transaction** — so the
+ * paid row and the dead trial commit together or not at all.
  *
- * @param sub - A subscription from `getByCustomerId()`.
- * @returns `true` when the row is a trial Hospeda owns outright.
+ * That sweep is scoped to the ACTIVATED row's product domain, and it compares
+ * exactly (only accommodation fails open, on a NULL column). So an exemption
+ * granted across domains would hand out a checkout whose activation cannot reach
+ * the trial it exempted: an accommodation trial exempted for a TOURIST purchase
+ * survives the tourist row's activation and goes on granting for the rest of its
+ * ~30 days, which is precisely the two-granting-rows state this is supposed to
+ * make impossible.
+ *
+ * Hence the third condition. It is not defensive symmetry — it is the exact
+ * precondition under which the paragraph above is true. Whenever the domains
+ * differ the correct answer is the one the guard already gives:
+ * `ALREADY_SUBSCRIBED`, pointing at plan-change, which mutates the single row
+ * rather than minting a second (HOS-1260).
+ *
+ * Not reachable in production today — `ALL_TRIAL_PLANS`
+ * (`packages/billing/src/config/trial-plans.config.ts`) holds exactly three
+ * entries, ACCOMMODATION / GASTRONOMY / EXPERIENCE, so no TOURIST-domain trial
+ * row can be minted by any path in this repo, and the owner has shelved
+ * `tourist-vip` besides. The condition is cheap and closes the whole class
+ * rather than today's one instance of it.
+ *
+ * `subscriptionMatchesDomain` is called rather than reimplemented so the
+ * asymmetry survives: a legacy trial row with a NULL `product_domain` still
+ * counts as accommodation (fail OPEN) and is exempted by an accommodation
+ * purchase, while every other domain fails CLOSED.
+ *
+ * @param sub - A subscription from `getByCustomerId()`, already hydrated.
+ * @param purchaseDomain - The declared domain of the plan being bought;
+ *   `undefined` (an unknown slug) exempts nothing.
+ * @returns `true` when the row is a trial Hospeda owns outright AND this
+ *   purchase's activation will supersede it.
  */
-const isHospedaOwnedLocalTrial = (sub: {
-    status?: unknown;
-    providerSubscriptionIds?: { mercadopago?: string } | null;
-}): boolean =>
+const isHospedaOwnedLocalTrial = (
+    sub: {
+        status?: unknown;
+        providerSubscriptionIds?: { mercadopago?: string } | null;
+    },
+    purchaseDomain: ProductDomainEnum | undefined
+): boolean =>
+    purchaseDomain !== undefined &&
     normalizeStoredSubscriptionStatus(String(sub.status)) === SubscriptionStatusEnum.TRIALING &&
-    !sub.providerSubscriptionIds?.mercadopago;
+    !sub.providerSubscriptionIds?.mercadopago &&
+    subscriptionMatchesDomain(sub, purchaseDomain);
 
 /**
  * Handler for the start-paid endpoint.
@@ -361,12 +442,18 @@ export const handleStartPaidSubscription = async (
         // already owe. Unifying on the same widened predicate is the fix; see
         // that module's docblock (HOS-1275) for why the two sets differ.
         // HOS-1335: a Hospeda-owned trial (trialing, nothing linked at
-        // MercadoPago) is NOT a duplicate — this checkout is how it converts.
-        // See `isHospedaOwnedLocalTrial` for the full reasoning and for why
+        // MercadoPago) in the domain THIS purchase will supersede is NOT a
+        // duplicate — this checkout is how it converts. See
+        // `isHospedaOwnedLocalTrial` for the full reasoning, for why the domain
+        // test is load-bearing rather than defensive, and for why
         // `LIVE_SUBSCRIPTION_STATUSES` is deliberately left alone.
+        //
+        // Resolved once, from the static catalogue, before either guard runs: a
+        // pure array lookup with no I/O, and both guards must agree on it.
+        const purchaseDomain = declaredDomainForPlanSlug(body.planSlug);
         const hasLiveSellableDomainSub = existingSubscriptions.some((sub) => {
             if (!isSubscriptionInASellableDomain(sub)) return false;
-            if (isHospedaOwnedLocalTrial(sub)) return false;
+            if (isHospedaOwnedLocalTrial(sub, purchaseDomain)) return false;
             // A soft-cancelled sub (cancelAtPeriodEnd=true) is intentionally NOT
             // caught here — the dedicated SPEC-147 guard below handles it with the
             // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
@@ -417,7 +504,7 @@ export const handleStartPaidSubscription = async (
         const hasSoftCancelledSub = existingSubscriptions.some(
             (sub) =>
                 isSubscriptionInASellableDomain(sub) &&
-                !isHospedaOwnedLocalTrial(sub) &&
+                !isHospedaOwnedLocalTrial(sub, purchaseDomain) &&
                 isEntitlementGrantingStatus(sub.status as string) &&
                 sub.cancelAtPeriodEnd === true
         );
