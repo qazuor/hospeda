@@ -29,6 +29,7 @@ import {
     type DrizzleClient,
     eq,
     getDb,
+    inArray,
     isNull
 } from '@repo/db';
 import { LifecycleStatusEnum, SubscriptionStatusEnum } from '@repo/schemas';
@@ -70,6 +71,21 @@ export type LocalTrialExpiryOutcome =
     | 'expired'
     /** A `TRIAL_EXPIRED` event already exists — a previous run got there first. */
     | 'already-expired'
+    /**
+     * A `TRIAL_SUPERSEDED_BY_PAID` event exists — the owner PAID and the
+     * activation's own transaction already ended this trial
+     * (`trial-supersede-on-activation.ts`). Expiring it now would unpublish
+     * the whole portfolio of a host who just converted (HOS-1335 B2), and the
+     * seal would overwrite the superseded status.
+     */
+    | 'superseded'
+    /**
+     * The LIVE row's status is no longer `trialing` — some other lifecycle
+     * path took the row between the cron's claim and this attempt. The claimed
+     * snapshot is stale by construction; this re-read is the only status this
+     * function may act on (HOS-1335 B2).
+     */
+    | 'row-moved-on'
     /** The row acquired a provider id since it was claimed; it is not ours to expire. */
     | 'has-provider-id'
     /** `trial_end` is absent or still in the future. */
@@ -300,24 +316,64 @@ export async function expireLocalTrial(input: {
     const trialEnd = subscription.trialEnd;
 
     // Dedup guard. Between the claim commit and now, a concurrent run may have
-    // already expired this row.
+    // already expired this row — or the owner may have PAID and the activation
+    // superseded it. The supersede writes `TRIAL_SUPERSEDED_BY_PAID`, not
+    // `TRIAL_EXPIRED`, so a dedup that only knows the latter sails straight past
+    // a superseded trial and unpublishes the portfolio of a host who just
+    // converted (HOS-1335 B2) — measured shape: cron claims 02:00:00, webhook
+    // supersedes 02:00:05, cron processes 02:00:20.
     const existing = await db
-        .select({ id: billingSubscriptionEvents.id })
+        .select({
+            id: billingSubscriptionEvents.id,
+            eventType: billingSubscriptionEvents.eventType
+        })
         .from(billingSubscriptionEvents)
         .where(
             and(
                 eq(billingSubscriptionEvents.subscriptionId, subscription.id),
-                eq(billingSubscriptionEvents.eventType, BILLING_EVENT_TYPES.TRIAL_EXPIRED)
+                inArray(billingSubscriptionEvents.eventType, [
+                    BILLING_EVENT_TYPES.TRIAL_EXPIRED,
+                    BILLING_EVENT_TYPES.TRIAL_SUPERSEDED_BY_PAID
+                ])
             )
         )
         .limit(1);
 
     if (existing.length > 0) {
+        const alreadySuperseded =
+            existing[0]?.eventType === BILLING_EVENT_TYPES.TRIAL_SUPERSEDED_BY_PAID;
         apiLogger.debug(
-            { subscriptionId: subscription.id },
-            'expireLocalTrial: TRIAL_EXPIRED event already exists, skipping (idempotent)'
+            { subscriptionId: subscription.id, eventType: existing[0]?.eventType },
+            alreadySuperseded
+                ? 'expireLocalTrial: trial was superseded by a payment — skipping (the owner converted)'
+                : 'expireLocalTrial: TRIAL_EXPIRED event already exists, skipping (idempotent)'
         );
-        return { outcome: 'already-expired' };
+        return { outcome: alreadySuperseded ? 'superseded' : 'already-expired' };
+    }
+
+    // The LIVE status is the only status this function may act on. The claimed
+    // snapshot can be up to a whole claim-process window old, and the
+    // transition guard below reads `subscription.status` — stale by
+    // construction. Re-reading here closes the window the event dedup cannot:
+    // every non-trialing live status (a supersede, a hard-cancel, anything)
+    // means another lifecycle path owns this row now, and none of them leaves
+    // the listings up to THIS function to take down (HOS-1335 B2).
+    const [liveRow] = await db
+        .select({ status: billingSubscriptions.status })
+        .from(billingSubscriptions)
+        .where(eq(billingSubscriptions.id, subscription.id))
+        .limit(1);
+
+    if (!liveRow || liveRow.status !== SubscriptionStatusEnum.TRIALING) {
+        apiLogger.info(
+            {
+                subscriptionId: subscription.id,
+                claimedStatus: subscription.status,
+                liveStatus: liveRow?.status ?? 'row-gone'
+            },
+            'expireLocalTrial: the live row moved on from trialing since the claim — skipping (HOS-1335)'
+        );
+        return { outcome: 'row-moved-on' };
     }
 
     // The claimed row may be stale. `trialing -> expired` is the documented
@@ -361,11 +417,20 @@ export async function expireLocalTrial(input: {
         return { outcome: 'unpublish-failed' };
     }
 
+    let sealed = false;
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
 
-        await tx
+        // HOS-1335 B2 — the seal is a COMPARE-AND-SWAP, not a blind write. The
+        // live-status check above ran before the unpublish loop, and that loop
+        // can take seconds for a whole portfolio; a payment confirming in that
+        // window supersedes this row inside the activation's own transaction.
+        // Overwriting `superseded` with `expired` here would corrupt the row
+        // the owner is now paying on, so the update only lands while the row is
+        // still `trialing` — and a supersede that got there first wins the race
+        // by construction.
+        const sealedRows = await tx
             .update(billingSubscriptions)
             .set({
                 status: SubscriptionStatusEnum.EXPIRED,
@@ -375,7 +440,23 @@ export async function expireLocalTrial(input: {
                 trialConverted: false,
                 trialConvertedAt: now
             })
-            .where(eq(billingSubscriptions.id, subscription.id));
+            .where(
+                and(
+                    eq(billingSubscriptions.id, subscription.id),
+                    eq(billingSubscriptions.status, SubscriptionStatusEnum.TRIALING)
+                )
+            )
+            .returning({ id: billingSubscriptions.id });
+
+        if (sealedRows.length === 0) {
+            apiLogger.warn(
+                { subscriptionId: subscription.id },
+                'expireLocalTrial: the row moved on between the live check and the seal — not sealing, not writing the expiry event (HOS-1335)'
+            );
+            return;
+        }
+
+        sealed = true;
 
         await tx.insert(billingSubscriptionEvents).values({
             subscriptionId: subscription.id,
@@ -390,6 +471,14 @@ export async function expireLocalTrial(input: {
             }
         });
     });
+
+    if (!sealed) {
+        // The listings already came down — D-3's ordering makes that
+        // irreversible. What is NOT done is the seal: the row stays owned by
+        // whichever transition won the race, and the reconcile bridge on that
+        // transition re-publishes for it.
+        return { outcome: 'row-moved-on' };
+    }
 
     // `expired` is not in ENTITLEMENT_GRANTING_STATUSES, so the owner loses the
     // plan's entitlements right here. A local expiry has no webhook behind it,
