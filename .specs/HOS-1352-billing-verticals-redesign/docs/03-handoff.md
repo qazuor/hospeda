@@ -28,48 +28,62 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-15
+## Última actualización: 2026-09-15 (segunda sesión)
 
 ### Último punto completado
 
-**FASE 0 completa** y **FASE 1A entregada**.
+**FASE 0 completa**, **FASE 1A entregada y respondida**: el owner cerró **36 decisiones**.
 
 ### Estado por fase
 
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | ✅ entregada, **esperando respuestas del owner** |
-| FASE 1B — discovery del sistema actual | 🔒 **bloqueada por orden del PDR §67** |
-| FASE 1C — experimentación con MP | ⬜ no empezada |
-| FASE 2 — Master Spec | 🔒 bloqueada por 7 decisiones estructurales |
+| FASE 1A — análisis de dominio | ✅ **cerrada** — 36 decisiones tomadas |
+| FASE 1B — discovery del sistema actual | 🟢 **desbloqueada** |
+| FASE 1C — experimentación con MP | 🟢 **desbloqueada, y es la que más urge** |
+| FASE 2 — Master Spec | 🟡 1 bloqueante abierta (`BD-MP-04`), depende de 1C |
 | FASE 3-10 | ⬜ no empezadas |
 
 ### Próximo paso exacto
 
-**El owner responde las preguntas de la sección 16 de
-[`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md)** — 21 en total, 7 de
-ellas `[BLOCKING]`.
+**Arrancar FASE 1C**, y 1B en paralelo si hay capacidad.
 
-Cuando eso pase:
+1C va primero porque hay seis cosas esperando su resultado:
 
-1. Registrar cada respuesta como `DEC-*` en [`01-decision-log.md`](./01-decision-log.md).
-2. Cerrar los ítems correspondientes en [`04-open-decisions.md`](./04-open-decisions.md).
-3. Anotar la sesión en [`02-worklog.md`](./02-worklog.md).
-4. Recién entonces arrancar **FASE 1B**.
+| Espera | Filas de la matriz |
+|---|---|
+| `BD-MP-01` mecanismo de pausa | `PA-1`…`PA-7` |
+| `BD-MP-02` cortesía sobre suscripción viva | `CO-1`…`CO-3` |
+| `BD-MP-03` cambio de precio sobre vigentes | `PR-1`…`PR-3` |
+| `BD-MP-04` addons recurrentes (**la última bloqueante**) | `AD-1`, `AD-2` |
+| Plan B de `DEC-SUB-001`: ¿se puede correr la primera fecha de cobro? | `PA-5`, `PA-6`, `F-5` |
+| `DEC-LEGAL-001`: ¿se pueden emitir reembolsos? | (agregar fila) |
 
-**No arranques FASE 1B antes de eso.** Es una instrucción explícita del owner (§67), no una
-preferencia de estilo.
+Reglas de 1C, del PDR §58-61: nada se completa desde documentación ni memoria — **sólo con un
+experimento ejecutado**, con request, response y webhook registrados. Las sondas van
+versionadas en `docs/mp-probes/`, marcadas como no productivas.
 
 ### Lo que NO hay que rehacer
 
 - El PDR ya está guardado verbatim. No lo edites por ningún motivo.
-- El análisis 1A ya está hecho. Si encontrás algo nuevo, **agregalo con un ID nuevo**; no
-  reescribas los existentes, porque el owner va a responder por número.
-- Los conteos de producción ya se hicieron el 2026-09-15. Volvé a medirlos sólo si pasó
-  tiempo o si una decisión depende de un número que pudo moverse (el primer trial vence el
+- **Las 36 decisiones ya están tomadas.** No las re-litigues ni le vuelvas a preguntar al
+  owner lo que ya respondió: está todo en [`01-decision-log.md`](./01-decision-log.md). Si una
+  decisión resulta inviable por lo que aparezca en 1B o 1C, se crea una **nueva** que marque
+  la anterior `SUPERSEDED` — no se edita la vieja.
+- El análisis 1A es el registro de lo que se encontró. Si aparece algo nuevo, **agregalo con
+  un ID nuevo**; no reescribas los existentes.
+- Los conteos de producción se hicieron el 2026-09-15. Volvé a medirlos sólo si pasó tiempo o
+  si una decisión depende de un número que pudo moverse (el primer trial vence el
   **2026-09-26**).
 - El issue paraguas ya existe: **HOS-1352**. No crees otro.
+
+### Cinco decisiones con riesgo declarado
+
+No son errores: son decisiones del owner con su costo anotado. Están en la tabla "Para revisar
+más adelante" de [`04-open-decisions.md`](./04-open-decisions.md). La que más conviene volver
+a mirar es **`DEC-METH-004`** (sin criterio fijo para KEEP vs REWRITE) al empezar FASE 5, con
+las piezas concretas a la vista.
 
 ### Dónde está el trabajo
 

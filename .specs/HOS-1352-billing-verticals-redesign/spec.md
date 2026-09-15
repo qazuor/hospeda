@@ -51,10 +51,10 @@ vigente es una de las causas de que estemos acá.
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | ✅ entregada, esperando al owner |
-| FASE 1B — discovery del sistema actual | 🔒 bloqueada por §67 del PDR |
-| FASE 1C — experimentación con MP | ⬜ |
-| FASE 2 — Master Spec | 🔒 bloqueada por 7 decisiones estructurales |
+| FASE 1A — análisis de dominio | ✅ **cerrada** — 36 decisiones tomadas |
+| FASE 1B — discovery del sistema actual | 🟢 desbloqueada |
+| FASE 1C — experimentación con MP | 🟢 desbloqueada, y es la que más urge |
+| FASE 2 — Master Spec | 🟡 1 bloqueante abierta (`BD-MP-04`), depende de 1C |
 | FASE 3 — épicas | ⬜ |
 | FASE 4 — spec por épica | ⬜ |
 | FASE 5 — gap analysis contra legacy | ⬜ |
@@ -66,9 +66,9 @@ vigente es una de las causas de que estemos acá.
 
 ## Próximo paso
 
-El owner responde las 21 preguntas de la sección 16 de
-[`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md), o al menos
-las 7 marcadas `[BLOCKING]`.
+**Arrancar FASE 1C** (experimentación contra MercadoPago), y 1B en paralelo si hay capacidad.
+1C va primero porque hay seis cosas esperando su resultado, incluida la última decisión
+bloqueante de FASE 2. Detalle en [`docs/03-handoff.md`](./docs/03-handoff.md).
 
 ## Épicas
 

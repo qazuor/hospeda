@@ -9,8 +9,17 @@ phase: 1A
 
 # FASE 1A — Análisis crítico del dominio
 
-**Entregado**: 2026-09-15 · **Estado**: esperando respuestas del owner ·
-**Bloquea**: FASE 1B (por orden explícito del PDR §67) y FASE 2 (por las 7 decisiones estructurales).
+**Entregado**: 2026-09-15 · **Estado**: **respondido por el owner el 2026-09-15**.
+
+> **36 de las decisiones planteadas acá están cerradas.** Este documento se conserva como el
+> análisis original, sin editar los hallazgos: lo que el owner decidió sobre cada uno vive en
+> [`01-decision-log.md`](./01-decision-log.md), y el estado de cada ID en
+> [`04-open-decisions.md`](./04-open-decisions.md).
+>
+> Queda **una** decisión bloqueante abierta (`BD-MP-04`, addons recurrentes) y **tres**
+> dependientes de MercadoPago, todas condicionadas a FASE 1C.
+>
+> **FASE 1B está desbloqueada.**
 
 ## Cómo se produjo esto
 
@@ -645,6 +654,21 @@ Opt-out, rebote duro, cuenta borrada, tope diario. Y sobre todo: distinguir los 
 **comerciales suprimibles** (recuperación de trial). Mezclarlos es a la vez un problema legal
 y de reputación del dominio de envío.
 
+### M-MAIL-04 — El correo que manda MercadoPago y no controlamos
+
+> Hallazgo aportado por el owner el 2026-09-15, durante el cierre de 1A. No estaba en la
+> entrega original.
+
+Cuando cancelamos, pausamos o modificamos un preapproval, **MercadoPago le manda al cliente su
+propio correo**: "tu suscripción fue cancelada", sin contexto y sin nuestra explicación. El
+cliente lo recibe y no entiende nada.
+
+No es un caso particular de un flujo: **es transversal a toda operación del motor sobre un
+preapproval**. Cancelar un VIP duplicado, pausar, cambiar de ciclo, mutar un monto, otorgar un
+Free Forever — todas disparan un correo que nosotros no escribimos.
+
+Lo único que controlamos es llegar antes. Cerrado en `DEC-MAIL-002`.
+
 ### E-MAIL-01 — Schedules que cambian después de haberse disparado
 
 §10.7 prevé ignorar thresholds mayores a la duración del trial. Falta el caso inverso: el trial
@@ -792,7 +816,7 @@ Para leer 1A según la estructura que pide el PDR §"Entrega 1A".
 
 **Risks**: `R-TRIAL-01` · `R-DATA-01` · `R-OBS-01` · `R-MIG-01`
 
-**Missing Requirements**: `M-ARCH-01` · `M-ARCH-02` · `M-ARCH-03` · `M-TRIAL-01` · `M-TRIAL-02` · `M-TRIAL-03` · `M-SUB-01` · `M-SUB-02` · `M-SUB-03` · `M-MP-01` · `M-MP-02` · `M-ENT-01` · `M-ENT-02` · `M-ENT-03` · `M-ADDON-01` · `M-PROMO-01` · `M-PROMO-02` · `M-GRANT-01` · `M-AUTH-01` · `M-AUTH-02` · `M-LEGAL-01` · `M-LEGAL-02` · `M-DATA-01` · `M-MAIL-01` · `M-MAIL-02` · `M-MAIL-03` · `M-CONC-01` · `M-CONC-02` · `M-ADMIN-01` · `M-OBS-01` · `M-MIG-01`
+**Missing Requirements**: `M-ARCH-01` · `M-ARCH-02` · `M-ARCH-03` · `M-TRIAL-01` · `M-TRIAL-02` · `M-TRIAL-03` · `M-SUB-01` · `M-SUB-02` · `M-SUB-03` · `M-MP-01` · `M-MP-02` · `M-ENT-01` · `M-ENT-02` · `M-ENT-03` · `M-ADDON-01` · `M-PROMO-01` · `M-PROMO-02` · `M-GRANT-01` · `M-AUTH-01` · `M-AUTH-02` · `M-LEGAL-01` · `M-LEGAL-02` · `M-DATA-01` · `M-MAIL-01` · `M-MAIL-02` · `M-MAIL-03` · `M-MAIL-04` · `M-CONC-01` · `M-CONC-02` · `M-ADMIN-01` · `M-OBS-01` · `M-MIG-01`
 
 **Objections**: `O-LEGAL-01` · `O-METH-01` · `O-METH-02`
 
@@ -803,6 +827,13 @@ Para leer 1A según la estructura que pide el PDR §"Entrega 1A".
 ---
 
 ## 16. Preguntas concretas para el owner
+
+> **RESPONDIDAS el 2026-09-15.** Las 21 de abajo se conservan tal como se formularon.
+> Cada respuesta está registrada como `DEC-*` en
+> [`01-decision-log.md`](./01-decision-log.md); el mapeo pregunta → decisión está en
+> [`04-open-decisions.md`](./04-open-decisions.md).
+>
+> Única excepción: la **5** (addons recurrentes) quedó condicionada a FASE 1C.
 
 Ordenadas por impacto. Las **[BLOCKING]** frenan FASE 2. Se pueden responder por número.
 

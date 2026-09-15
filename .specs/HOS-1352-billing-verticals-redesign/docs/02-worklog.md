@@ -81,10 +81,72 @@ Se analizó el PDR contra sí mismo, sin mirar código. Resultado en
 `DEC-METH-001`, `DEC-METH-002`, `DEC-METH-003`. Ver
 [`01-decision-log.md`](./01-decision-log.md).
 
+---
+
+## 2026-09-15 (más tarde) — Cierre de 1A: 36 decisiones
+
+### Qué se hizo
+
+El owner pidió resolver, en una sola sesión, todo lo que dependiera de su decisión y no
+necesitara investigación previa. Se recorrieron **30 decisiones suyas en siete tandas**, más
+seis que aparecieron durante la conversación.
+
+**Resultado: 36 decisiones cerradas.** Detalle completo en
+[`01-decision-log.md`](./01-decision-log.md); el mapeo pregunta → decisión, en
+[`04-open-decisions.md`](./04-open-decisions.md).
+
+De las 7 bloqueantes de FASE 2, **quedaron cerradas 6**. La séptima (`BD-MP-04`, addons
+recurrentes) el owner la dejó **deliberadamente condicionada a FASE 1C**, porque la opción
+buena para el cliente — cobrarlos junto al plan — depende de lo que permita MercadoPago.
+
+### Lo que se verificó en el camino
+
+Para responder `BD-SUB-02` no alcanzaba con opinar, así que se consultó la **documentación
+oficial de Stripe** vía Context7, de donde copia el resto de la industria. Lo que encontró
+corrigió mi propia recomendación previa:
+
+- Cambio de precio con el mismo intervalo: se prorratea en la próxima factura, sin mover la
+  fecha de cobro.
+- Downgrades: se agendan a fin de período con *subscription schedules* (su portal lo llama
+  literalmente "Manage downgrades").
+- **Cambio de intervalo: es la excepción explícita.** Se acredita el tiempo no usado, se cobra
+  el precio nuevo de inmediato y el ciclo se reinicia.
+
+Yo había recomendado que el cambio de ciclo esperara siempre a la renovación. La industria
+hace lo contrario. Se adoptó la regla de la industria (`DEC-SUB-001`), con la salvedad de que
+**la compensación se hace en días y no en pesos** — corriendo la primera fecha de cobro del
+preapproval nuevo — porque prorratear dinero es justamente lo que MP probablemente no soporta.
+El plan B quedó declarado por si 1C dice que no.
+
+### Hallazgo aportado por el owner
+
+**`M-MAIL-04`**: cuando el motor cancela, pausa o modifica un preapproval, **MercadoPago le
+manda al cliente su propio correo**, que nosotros no escribimos ni controlamos. El cliente
+recibe "tu suscripción fue cancelada" sin contexto.
+
+No es un caso de un flujo: es transversal a toda operación sobre un preapproval. Se agregó al
+análisis 1A y se cerró como `DEC-MAIL-002`: **todo lo que toque un preapproval va precedido de
+un correo nuestro**.
+
+### Decisiones que se apartaron de la recomendación
+
+Cinco, todas del owner y todas con su riesgo declarado en el log:
+
+- `DEC-METH-004` — sin criterio fijo para KEEP vs REWRITE, caso por caso. Es la que más
+  tensión guarda con el §2 del propio PDR; conviene revisarla al empezar FASE 5.
+- `DEC-ENT-003` y `DEC-GRANT-001` — cancelar sin reembolso. Riesgo bajo hoy (todas las
+  suscripciones vivas son mensuales), alto si aparece un ciclo anual.
+- `DEC-ADDON-004` y `DEC-ADDON-005` — el reloj del addon corre igual, y el addon se pierde con
+  la ficha. Ambas necesitan que la UI avise explícitamente.
+- `DEC-MAIL-001` — campañas de recuperación en paralelo sin control. Riesgo teórico hoy: sólo
+  una vertical tiene contenido.
+- `DEC-PROMO-003` — scope "verticales futuras" sin restricción.
+
 ### Próximo paso exacto
 
-**El owner responde las 21 preguntas** de la sección 16 de
-[`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md), o al menos las 7
-marcadas `[BLOCKING]`.
+**FASE 1B está desbloqueada** (discovery del sistema actual), y **FASE 1C también** —
+son independientes entre sí.
 
-Hasta entonces, por orden explícito del PDR §67: **no se arranca FASE 1B**.
+Conviene **arrancar por 1C**: hay 4 decisiones esperando su resultado (`BD-MP-01`, `BD-MP-02`,
+`BD-MP-03`, `BD-MP-04`), más el plan B de `DEC-SUB-001` y el reembolso que necesita
+`DEC-LEGAL-001`. Mientras 1C corre, 1B puede avanzar en paralelo.

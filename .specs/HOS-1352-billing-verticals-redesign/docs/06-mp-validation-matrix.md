@@ -173,6 +173,28 @@ response y webhook observado) · **Conclusión**.
 | AD-1 | ¿Un preapproval puede cubrir más de un ítem? | `UNKNOWN` | — | — | — | — |
 | AD-2 | N preapprovals del mismo pagador conviviendo | `UNKNOWN` | — | — | — | — |
 
+### Reembolsos — `DEC-LEGAL-001`
+
+> Agregado el 2026-09-15: la revocación de 10 días con devolución total, que el owner
+> incorporó al alcance, necesita poder reembolsar.
+
+| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
+|---|---|---|---|---|---|---|
+| RF-1 | Reembolso total de un cobro de preapproval | `UNKNOWN` | — | — | — | — |
+| RF-2 | Reembolso parcial | `UNKNOWN` | — | — | — | — |
+| RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | — |
+
+### Compensación en días — `DEC-SUB-001`
+
+> Agregado el 2026-09-15: la regla de cambio de plan que eligió el owner compensa los días ya
+> pagados corriendo la primera fecha de cobro, en vez de prorratear dinero. Si esto no se
+> puede, el plan B declarado es que el cambio de ciclo espere a la renovación.
+
+| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
+|---|---|---|---|---|---|---|
+| CD-1 | Crear un preapproval con la primera fecha de cobro corrida N días | `UNKNOWN` | — | — | — | — |
+| CD-2 | ¿Esa fecha se respeta, o MP la recalcula? | `UNKNOWN` | — | — | — | — |
+
 ---
 
 ## Resumen
@@ -182,7 +204,20 @@ response y webhook observado) · **Conclusión**.
 | `VERIFIED` | 0 |
 | `PARTIALLY_SUPPORTED` | 0 |
 | `NOT_SUPPORTED` | 0 |
-| `UNKNOWN` | **41** |
+| `UNKNOWN` | **46** |
+
+## Qué espera cada decisión
+
+| Decisión | Filas que la desbloquean |
+|---|---|
+| `BD-MP-01` mecanismo de pausa | `PA-1`…`PA-7` |
+| `BD-MP-02` cortesía sobre suscripción viva | `CO-1`…`CO-3` |
+| `BD-MP-03` cambio de precio sobre vigentes | `PR-1`…`PR-3` |
+| `BD-MP-04` addons recurrentes (**última bloqueante de FASE 2**) | `AD-1`, `AD-2` |
+| `DEC-SUB-001` plan B del cambio de ciclo | `CD-1`, `CD-2`, `F-5` |
+| `DEC-LEGAL-001` revocación con devolución | `RF-1`, `RF-3` |
+| `M-CONC-02` no-retroceso de estado | `WH-6` |
+| `M-SUB-01` estado `PENDING_AUTHORIZATION` | `P-6` |
 
 **Ninguna capability de billing puede implementarse hoy.** Es lo esperable: FASE 1C no
 empezó.
