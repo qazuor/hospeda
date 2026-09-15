@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (60 filas: 21 `VERIFIED`, 11 parciales, 4 `NOT_SUPPORTED`, 24 `UNKNOWN`).
+   (60 filas: 23 `VERIFIED`, 10 parciales, 4 `NOT_SUPPORTED`, 23 `UNKNOWN`).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
 ---
@@ -36,7 +36,7 @@ status: CURRENT
 ### Último punto completado
 
 **FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.
-FASE 1C en curso: 36 de 60 filas medidas, EL RELOJ CORRIENDO, y los webhooks POR FIN OBSERVABLES.**
+FASE 1C en curso: 37 de 60 filas medidas, EL RELOJ CORRIENDO, y los webhooks observables Y VERIFICABLES.**
 
 El programa se reseteó hoy: el único documento heredado es el PDR (`DEC-METH-001`). Todo lo
 demás se escribió de cero contra ese texto.
@@ -53,7 +53,7 @@ owner.
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 29 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 36 de 60 filas medidas · reloj corriendo, leer el 2026-09-16** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 37 de 60 filas medidas · reloj corriendo, leer el 2026-09-16** |
 | FASE 2 — Master Spec | ⛔ bloqueada por `BD-MP-01` (pausa) y `BD-MP-02` (cortesía) |
 | FASE 3 a 10 | ⬜ no empezadas |
 
@@ -131,8 +131,7 @@ SINK_URL=https://hos1352-webhook-sink.qazuor.workers.dev bash probe-08-leer-webh
 - **`WH-4` y `WH-5`** se fuerzan con el interruptor: `probe-08-leer-webhooks.sh --fail`
   hace que el receptor responda `500` y el proveedor reintente. **Acordarse de
   volver con `--ok`.**
-- **`EX-13`** necesita la clave secreta del panel: sin ella la firma se ve pero
-  no se verifica.
+- **`EX-13`** ✅ cerrado: `bash probe-10-verificar-firma.sh` reproduce el `v1`.
 - **Espaciar las acciones más de 32 s**, que es la demora máxima medida. Con
   menos, la atribución de un evento a una acción es una inferencia, no una
   lectura.
@@ -154,7 +153,8 @@ ausencia de mecanismo es, ella misma, un hallazgo que hay que registrar.
 |---|---|
 | Las **credenciales** de prueba | ✅ **entregadas y cargadas.** Viven en `~/.config/hospeda/mp-sandbox-creds.sh`, fuera del repo y `chmod 600`. **Ojo con un supuesto que era falso**: el modo de pruebas actual de Mercado Pago **no usa el prefijo `TEST-`** — se arma con un usuario vendedor de prueba y una app propia, cuyas credenciales empiezan con `APP_USR-` igual que las productivas. Lo que distingue, y lo dice el proveedor, es `GET /users/me` → `tags:["test_user",…]`, y eso es lo que verifica el guard antes de dejar correr nada |
 | ⚠️ **El webhook de la app de prueba está repuntado a la sonda** | El owner lo cambió el 2026-09-15 a `https://hos1352-webhook-sink.qazuor.workers.dev`. **Mientras siga así, el billing de staging no recibe nada de esa app.** La URL a restaurar es `https://staging-api.hospeda.com.ar/api/v1/webhooks/mercadopago?source_news=webhooks`, y **se restaura a mano**: el `PUT` por API da `403` |
-| La **clave secreta de webhook** del panel | Es lo único que falta para cerrar `EX-13`. Hoy la firma se **ve** (`x-signature: ts=…,v1=…`) pero no se puede **verificar** |
+| ✅ La **clave secreta de webhook** | Entregada. Cerró `EX-13`: la firma se verifica con HMAC-SHA256 sobre `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`. Guardada en `~/.config/hospeda/mp-webhook-secret.txt`, fuera del repo |
+| **Habilitar reembolsos**, o decidir sin ellos | `RF-1`/`RF-2` dan `401` por **las dos** vías, mientras el mismo token lee y escribe. No es el token: son las operaciones de reembolso las vedadas para esta cuenta. Deja a `M-LEGAL-01` (derecho de revocación con devolución) **sin respuesta técnica** |
 | Qué credenciales habilitan **reembolsos** en sandbox | `RF-1`/`RF-2` dieron `401 "Unauthorized use of live credentials"`. Eso no dice que el proveedor no reembolse: dice que estas credenciales no lo pueden pedir |
 | Acceso a la **casilla del comprador de prueba** | `EX-3`: qué le comunica el proveedor al cliente por su cuenta |
 

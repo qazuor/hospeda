@@ -10,7 +10,7 @@ phase: 1C
 # Matriz de validación de Mercado Pago
 
 **FASE 1C en curso.** Tras las [sondas 01 a 07](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **21 filas `VERIFIED`, 11 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 24 `UNKNOWN`**.
+2026-09-15: **23 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 23 `UNKNOWN`**.
 
 > **El reloj está corriendo.** Siete suscripciones de **ciclo diario** quedaron vivas en el
 > sandbox el 2026-09-15 a las 12:26–12:29 (manifiesto en `/tmp/mp-probe-05/manifiesto.json`).
@@ -18,9 +18,10 @@ phase: 1C
 > [sonda 06](./mp-probes/probe-06-leer-el-reloj.sh) **a partir del 2026-09-16 ~11:30**.
 
 > **El hallazgo que atraviesa todo lo demás**: Mercado Pago **acepta cambios que no aplica, y
-> responde `2xx`**. **Cinco** casos confirmados — el campo `items`, dos intentos aislados de
-> cambiar `frequency`, un token de tarjeta guardada sin código de seguridad, y una
-> `notification_url` por suscripción. **Un `2xx` no significa que el cambio se haya aplicado**:
+> responde `2xx`**. **Seis** casos confirmados — el campo `items`, dos intentos aislados de
+> cambiar `frequency`, un token de tarjeta guardada sin código de seguridad, una
+> `notification_url` por suscripción, y un `end_date` fijado sobre una suscripción ya
+> autorizada. **Un `2xx` no significa que el cambio se haya aplicado**:
 > toda mutación exige relectura y comparación campo por campo.
 
 ## Reglas
@@ -122,7 +123,7 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| CN-1 | Cancelación programada a fin de período | `UNKNOWN` | — | — | — | — |
+| CN-1 | Cancelación programada a fin de período | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 12](./mp-probes/RESULTS-2026-09-15.md) | **Existe, pero sólo se puede fijar AL CREAR.** `auto_recurring.end_date` en la creación: `201` y **sobrevive a la relectura**. El mismo campo sobre una suscripción **ya autorizada**: `200` y **no aparece en la relectura** — sexto caso del §0. Consecuencia: una baja a fin de período **pedida después** hay que **emularla** con un cron, y un cron que se cae deja cobrando a quien pidió la baja |
 | CN-2 | Comportamiento inmediato del proveedor | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | Cancelación inmediata e **irreversible**, igual que `PA-5` |
 
 ## Cambios de precio — `BD-MP-03` (§29)
@@ -168,7 +169,7 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| WH-1 | Duplicados | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Ocurren, pero no en el camino feliz.** Con receptor propio y entregas exitosas: **cero duplicados en tres corridas**. El duplicado observado antes (1,5 s de diferencia, dos ids) fue sobre una entrega que había **fallado**, o sea reintento. Falta forzarlo con el interruptor `mode=fail` de la sonda 08 |
+| WH-1 | Duplicados | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Ocurren, y no en el camino feliz.** Con entregas exitosas: cero duplicados en tres corridas. Con el receptor en `mode=fail`: el **mismo evento** —misma `version`— llegó **dos veces a ~0,5 s**, con **ids de notificación distintos**. Eso cierra el círculo con `EX-2`: el id del evento no sirve para deduplicar y **la `version` sí**, porque en el duplicado es la misma |
 | WH-2 | Demorados | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Sí, y la demora es muy variable**: medida entre **0,6 s y 32 s** sobre la misma secuencia de acciones, con receptor propio. Consecuencia de método: cualquier experimento que atribuya un evento a una acción necesita espaciarlas **más que la demora máxima** — con 20 s la atribución quedaba ambigua |
 | WH-3 | Fuera de orden | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **No se observó desorden** en tres corridas contra una secuencia de orden conocido: las entregas llegaron en el orden causal. No prueba que no pueda pasar — las demoras van de 0,6 s a 32 s (`WH-2`), así que dos acciones juntas podrían invertirse. **Pero ya no importa tanto**: `EX-2` da un `version` monótono que permite detectar y descartar el desorden |
 | WH-4 | Reintentos | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01-05](./mp-probes/RESULTS-2026-09-15.md) | **Reintenta ante un `500`, con backoff creciente**: 4 entregas del mismo recurso a **1,5 s · 18 min · 35 min**. **Cada reentrega trae un `provider_event_id` NUEVO** |
@@ -197,8 +198,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RF-1 | Reembolso total de un cobro | `UNKNOWN` | 2026-09-15 | sandbox | [sondas 01/02/03/05](./mp-probes/RESULTS-2026-09-15.md) | **Bloqueado por credenciales, no por el proveedor**: `POST /v1/payments/{id}/refunds` → `401 "Unauthorized use of live credentials"`. **No se midió si MP soporta el reembolso**: se midió que estas credenciales no pueden pedirlo |
-| RF-2 | Reembolso parcial | `UNKNOWN` | 2026-09-15 | sandbox | [sondas 01/02/03/05](./mp-probes/RESULTS-2026-09-15.md) | Ídem `RF-1`: `401` por credenciales. La capacidad sigue **sin medir** |
+| RF-1 | Reembolso total de un cobro | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | **Reintentado con las credenciales del vendedor de prueba: mismo `401 "Unauthorized use of live credentials"`.** Ahora **caracterizado**, con controles: el mismo token **lee** ese pago (`200`) y **escribe** en `/v1` (`201` al tokenizar), y **las dos** vías de reembolso fallan igual (`POST /refunds` y `PUT {status:"refunded"}`). No es el token: son **las operaciones de reembolso** las vedadas para esta cuenta. Sigue `UNKNOWN` — no se midió si MP reembolsa, se midió que acá no se puede pedir |
+| RF-2 | Reembolso parcial | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | Ídem `RF-1`, con `{"amount":100}`: `401`. La capacidad sigue **sin medir** |
 | RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | — |
 
 ## ✚ Huecos estructurales
@@ -217,7 +218,7 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | EX-8 | ¿Se respeta esa primera fecha **después** de autorizar? | `BD-SUB-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **Sí se respeta tras autorizar.** Además **no cobra al crearse**. El proveedor lo modela como un `free_trial` de 20 días que nosotros no pedimos |
 | EX-11 | ¿Qué se puede hacer sobre una suscripción **pausada**? | `BD-MP-01`, acota `DEC-MP-001` | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 07](./mp-probes/RESULTS-2026-09-15.md) | **Estando pausada NO se puede modificar nada**: cambiar el monto da `400 "You can not modify a paused preapproval."` y el monto no se mueve. **Con control**: el mismo payload, sobre la misma suscripción ya reanudada, entra (`200`, monto cambiado) — o sea que **bloquea el estado, no la operación**. **Cancelar SÍ funciona estando pausada** (`200` → `cancelled`): la pausa no atrapa al cliente |
 | EX-12 | ¿Un `card_token` sirve para más de una suscripción? | `DEC-SUB-005`, reintentos | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 05](./mp-probes/RESULTS-2026-09-15.md) | **Un solo uso.** Del segundo en adelante: `400 "Card token was used, please generate new"`. Todo reintento de creación tiene que **tokenizar de nuevo**, y el mensaje de error no se parece en nada a "reintentaste" |
-| EX-13 | ¿Los eventos vienen **firmados**, y se puede verificar la firma? | §51, `M-CONC-01` | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Llega firma en todas las entregas reales**: `x-signature: ts=<epoch>,v1=<hex64>` más `x-request-id`. **Falta la parte que decide**: la clave secreta de webhook vive en el panel de desarrolladores, así que hoy la firma se puede **ver** pero no **verificar**. Ver no es verificar |
+| EX-13 | ¿Los eventos vienen **firmados**, y se puede verificar la firma? | §51, `M-CONC-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 10](./mp-probes/RESULTS-2026-09-15.md) | **La firma se verifica.** `x-signature: ts=<epoch>,v1=<hex64>` + `x-request-id`, y el `v1` es **HMAC-SHA256** con la clave de la aplicación sobre el manifiesto `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` — **el punto y coma final incluido**: sin él no coincide. Reproducido sobre **tres** entregas reales de tipos distintos, con control de la propia herramienta (vector RFC 4231). La URL del receptor no es un agujero abierto |
 | EX-14 | ¿Se puede distinguir **sandbox de producción** mirando el evento? | `M-MP-01`, riesgo operativo | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **No.** Un `payment.created` de la cuenta de prueba (`tags:["test_user"]`) llega con **`live_mode: true`**. Un handler que filtre por ese campo trata los eventos de sandbox como productivos |
 | EX-15 | ¿Qué operaciones **NO** emiten webhook? | `DEC-MP-001`, §23, §51 | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Mutar el monto NO emite ninguna entrega.** Medido con 90 s entre acciones: ventana de 91 s sin eventos, con la mutación aplicada — y la `version` del recurso saltó de 5 a 9, o sea que **el recurso cambió y el proveedor no avisó**. Crear, pausar, reanudar y cancelar **sí** notifican. Consecuencia: un cambio de precio **no tiene vía de confirmación asincrónica** y sólo se puede comprobar releyendo |
 
@@ -231,10 +232,10 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **21** |
-| `PARTIALLY_SUPPORTED` | **11** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `UP-1`, `UP-2`, `WH-1`, `WH-3`, `WH-4`, `EX-9`, `EX-13` |
+| `VERIFIED` | **23** |
+| `PARTIALLY_SUPPORTED` | **10** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `WH-3`, `WH-4`, `EX-9` |
 | `NOT_SUPPORTED` | **4** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno) |
-| **`UNKNOWN`** | **24** |
+| **`UNKNOWN`** | **23** |
 
 Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no hay:
 
