@@ -89,11 +89,13 @@ Corresponden a las preguntas **9 a 25** del §16.
 
 | # | ID | Pregunta | Estado |
 |---|---|---|---|
-| 9 | `M-TRIAL-01` | ¿Turista tiene trial? ¿Qué lo dispara? | 🔴 abierta |
-| 10 | `M-TRIAL-02` | Qué puede hacer quien entró y todavía no publicó | 🔴 abierta |
-| 11 | `A-TRIAL-01` | ¿La publicación de una ficha es inmediata o mediada? | 🔴 abierta |
-| 12 | `R-TRIAL-01` · `OD-ENT-01` | ¿El trial regala los entitlements que cuestan por uso? | 🔴 abierta |
-| 13 | `A-ENT-01` | Alcance de la herencia Turista VIP, y el VIP pagado en paralelo | 🔴 abierta |
+| 9 | `M-TRIAL-01` | ¿Turista tiene trial? ¿Qué lo dispara? | ✅ `DEC-TRIAL-006` — sí; el botón `Empezar` del §47 |
+| 10 | `M-TRIAL-02` | Qué puede hacer quien entró y todavía no publicó | ✅ `DEC-TRIAL-007` — borradores ilimitados, archivado por inactividad |
+| 11 | `A-TRIAL-01` | ¿La publicación de una ficha es inmediata o mediada? | ✅ `DEC-TRIAL-005` — inmediata: publicar es quedar visible |
+| 12 | `R-TRIAL-01` · `OD-ENT-01` | ¿El trial regala los entitlements que cuestan por uso? | ✅ `DEC-ENT-001` — todas las funciones, con cuota propia de trial |
+| 12b | `OD-ENT-01` | ¿Cuándo se resetea una cuota de consumo? | ✅ `DEC-ENT-002` — mensual siempre, sin arrastre |
+| 13 | `A-ENT-01` | Alcance de la herencia Turista VIP | ✅ `DEC-ENT-003` — entitlements y limits; no puede comprar VIP |
+| 13b | `A-ENT-01` (b) | Qué pasa con un VIP previo ya pago | ✅ `DEC-ENT-004` — se cancela ya, sin reembolso |
 | 14 | `C-SUB-01` | ¿El grace de 10 días es constante o configurable? | 🔴 abierta |
 | 15 | `E-SUB-03` | ¿Se puede cambiar de plan estando en grace? | 🔴 abierta |
 | 16 | `OD-SUB-01` | ¿La ventana de pausa se cuenta por user+vertical o por suscripción? | 🔴 abierta |
@@ -134,7 +136,9 @@ de claves de configuración comercial · `O-ARCH-01` falta criterio para disting
 Eje 2 · `S-ARCH-02` lista cerrada de decisiones por vertical · `M-ARCH-01` glosario de estados ·
 `M-ARCH-02` caché e invalidación · `OD-ARCH-01` retiro de un plan del catálogo
 
-**Trial** · `E-TRIAL-01` trial consumido sin contraprestación · `E-TRIAL-02` publicar y
+**Trial** · ~~`E-TRIAL-01`~~ **disuelto por `DEC-TRIAL-005`** (sin revisión previa no hay
+rechazo posterior) · **`E-TRIAL-04` baja reactiva de una ficha publicada** (nuevo, residuo de
+`DEC-TRIAL-005`) · `E-TRIAL-02` publicar y
 despublicar enseguida · `A-TRIAL-02` "solamente en trial" para un usuario multi-vertical ·
 `S-TRIAL-01` cuota de trial por entitlement medido · `OD-TRIAL-01` techo de extensiones ·
 `M-TRIAL-03` anti-spam de la campaña de recuperación · `E-TRIAL-03` la campaña se dispara y
@@ -149,7 +153,7 @@ precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelaci�
 checkout pendiente · `S-MP-01` capacidades por método de pago · `S-MP-02` caducidad de un
 resultado verificado · `S-MP-03` sondas reproducibles · `M-MP-03` los seis huecos del §60
 
-**Entitlements y limits** · `M-ENT-01` estrategia de agregación por limit · `M-ENT-02`
+**Entitlements y limits** · **`E-ENT-01` suspensión y beneficios de turista heredados** (nuevo, residuo de `DEC-ENT-003`) · `M-ENT-01` estrategia de agregación por limit · `M-ENT-02`
 enforcement transversal de excedentes · `A-ENT-02` qué tiene el visitante sin cuenta ·
 `M-ENT-03` scope global de entitlements
 
@@ -192,6 +196,21 @@ convivencia durante el rewrite · `M-MIG-01` criterio de corte del trial ya cons
 
 ---
 
+## Para revisar más adelante
+
+Decisiones tomadas cuyo riesgo está declarado y acotado **hoy**, pero que hay que volver a
+mirar cuando cambie la condición que las hacía tolerables. No son errores: son decisiones del
+owner con su costo anotado.
+
+| Decisión | Cuándo revisarla |
+|---|---|
+| `DEC-ENT-004` — cancelar un VIP previo sin reembolso | **El día que exista un ciclo anual de Turista VIP.** Hoy se retiene un mes parcial como máximo porque todas las suscripciones vivas son mensuales; con anual serían hasta once meses |
+| `DEC-TRIAL-004` — sólo el email bloquea la identidad | Cuando la base crezca dos órdenes de magnitud. Hoy se optimiza contra perder clientes reales porque son 22 |
+| `DEC-SUB-001` — el cambio de ciclo compensa en días | **Apenas cierre `EX-8`.** Si resulta `NOT_SUPPORTED`, entra su plan B sin volver a preguntar |
+| `DEC-TRIAL-003` — Partner con el trial en cero | Si alguna vez se pone en distinto de cero: hay que declarar su evento de activación (§10.4) |
+
+---
+
 ## Índice por categoría (§"Entrega 1A")
 
 | Categoría | Cantidad |
@@ -200,10 +219,10 @@ convivencia durante el rewrite · `M-MIG-01` criterio de corte del trial ya cons
 | Ambiguities (`A-`) | 13 |
 | Blocking Decisions | 12 (10 `BD-` + `C-TRIAL-01` + `C-PARTNER-01`) |
 | Open Decisions (`OD-`) | 5 |
-| Edge Cases (`E-`) | 12 |
+| Edge Cases (`E-`) | 14 |
 | Risks (`R-`) | 5 |
 | Missing Requirements (`M-`) | 35 |
 | Objections (`O-`) | 6 |
 | Suggested Improvements (`S-`) | 9 |
 | Pending MP Validation | `MP-01` más toda la sección 4 y las 53 filas de la matriz |
-| **Total de hallazgos** | **101** |
+| **Total de hallazgos** | **103** (`E-TRIAL-04` y `E-ENT-01` agregados el 2026-09-15) |

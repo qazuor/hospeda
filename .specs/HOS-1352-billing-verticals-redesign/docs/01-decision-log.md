@@ -369,6 +369,200 @@ Cada entrada lleva, según §3.4:
      clientes reales porque hay 22; el cálculo cambia con dos órdenes de magnitud más.
 - **Origen**: `BD-TRIAL-02` (BLOCKING).
 
+### DEC-TRIAL-005 — La publicación es inmediata: publicar es quedar visible
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §10.4 fija el disparador del trial en *"PUBLICAR la primera ficha"* y cierra
+  con *"La publicación **efectiva** dispara el consumo del trial"*. Si publicar y quedar
+  visible son el mismo instante no hay nada que decidir; si media algo entre la acción de la
+  persona y la visibilidad pública son dos eventos, y hay que elegir cuál consume el trial —
+  que es único de por vida y no se devuelve (§10.2).
+- **Alternativas**: (1) hay revisión y el trial arranca al quedar visible; (2) publicación
+  inmediata; (3) hay revisión y el trial arranca al enviar.
+- **Decisión**: **(2)**. **No hay paso intermedio.** La persona publica, la ficha se ve y el
+  trial arranca: un solo evento.
+- **Motivo**: cero fricción, cero espera y ningún proceso operativo que sostener. El §10.4 se
+  cumple literalmente, porque "publicar" es un acto único.
+- **Implicaciones**:
+  1. **`E-TRIAL-01` queda disuelto**: no existe el rechazo posterior a la publicación, porque
+     no hay revisión previa.
+  2. **Nada filtra el contenido antes de que sea público.** Una ficha mal cargada, spam o
+     contenido inapropiado sale al sitio y se corrige después.
+  3. **Consecuencia nueva, registrada como `E-TRIAL-04`**: toda moderación pasa a ser
+     reactiva, y bajar una ficha ya publicada **no devuelve el trial** (§10.2). Alguien puede
+     quedarse sin ficha **y** sin trial. Si eso amerita una excepción al §10.2 es una decisión
+     aparte y **sigue abierta**.
+  4. El evento de dominio del trial para las verticales con ficha es la publicación, sin
+     ambigüedad.
+- **Origen**: `A-TRIAL-01`.
+
+### DEC-TRIAL-006 — El disparador del trial se declara por vertical; Turista usa "Empezar"
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §10.4 cierra diciendo que *"Partner y cualquier vertical futura sin Listing
+  deberán definir su evento funcional equivalente explícitamente"*. **Turista no es ninguna de
+  las dos**: es una vertical actual (§6) y sin ficha (§6: *"Turista NO tiene ficha/listing
+  comercial"*). La frase no la cubre, y §64.1 habla de trial *"por user + vertical"* sin
+  excluir a ninguna.
+- **Alternativas**: (1) Turista sin trial, configurado en cero como Partner; (2) sí tiene, y
+  lo dispara el botón `Empezar` del §47; (3) sí tiene, y arranca al usar una capacidad VIP.
+- **Decisión**: **(2)**. Y con eso queda establecida la forma general: **cada vertical declara
+  su evento de activación en configuración**, de un catálogo cerrado de eventos de dominio.
+
+  | vertical | evento de activación |
+  |---|---|
+  | alojamiento · gastronomía · experiencia | la ficha queda publicada (`DEC-TRIAL-005`) |
+  | turista | el botón `Empezar` del §47 |
+  | partner | ninguno declarado — trial en cero hoy (`DEC-TRIAL-003`) |
+
+- **Motivo**: el evento no se inventa, ya está escrito en el §47, y es el único que el PDR le
+  da a Turista. Un click consciente evita el reclamo de *"me lo gastaron sin avisar"*, que es
+  grave porque el trial es irreversible.
+- **Implicaciones**:
+  1. **Cero condiciones especiales en el motor** (§7): una vertical sin evento declarado
+     simplemente no otorga trial, y falla cerrado en vez de abierto.
+  2. **El click de `Empezar` debe decir explícitamente que consume el trial.** Es un botón de
+     baja fricción en una página de precios y el trial es de por vida: sin ese aviso, el
+     reclamo es legítimo.
+  3. Turista entra en la campaña de recuperación del §10.7 como cualquier otra vertical, lo
+     que suma una secuencia más al problema de superposición (`M-TRIAL-03`, sigue abierto).
+  4. Si algún día Partner enciende su trial, tiene que sumar su evento a esta misma tabla.
+- **Origen**: `M-TRIAL-01`.
+
+### DEC-TRIAL-007 — Pre-trial: borradores ilimitados, sin capacidades, archivado por inactividad
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §10.4 enumera qué **no** dispara el trial — registrarse, crear draft, entrar
+  al onboarding, guardar un formulario parcial — con lo cual reconoce explícitamente un estado
+  *"entró a la vertical y todavía no publicó"*, y después no le da ninguna regla. Es donde va
+  a estar la mayor parte de la gente.
+- **Alternativas**: (1) borradores ilimitados, sin capacidades, archivado por inactividad;
+  (2) un solo borrador hasta publicar; (3) ilimitados y sin vencimiento.
+- **Decisión**: **(1)**. Borradores **ilimitados**, **sin ninguna capacidad comercial**, **sin
+  consumir trial**. Tras **N meses sin actividad se archivan automáticamente**.
+- **Motivo**: cero fricción justo donde más conviene evitarla — antes de que la persona haya
+  visto valor — y el trial arranca cuando hay valor real, que es lo que el §10.4 busca al
+  excluir el registro y el draft.
+- **Implicaciones**:
+  1. **`N` es configuración**, no una constante (§9).
+  2. **Archivar no es borrar.** Qué significa exactamente y cómo se relaciona con la retención
+     del §25 lo define `C-DATA-01`, que **sigue abierta**. Esta decisión depende de esa.
+  3. Se puede sostener contenido indefinidamente sin consumir nada, pero **sin obtener nada a
+     cambio**: no se publica y no hay capacidades. El costo es de almacenamiento, no de
+     entitlements regalados.
+  4. El estado pre-trial es un estado real del modelo y entra en el glosario que pide
+     `M-ARCH-01`.
+- **Origen**: `M-TRIAL-02`.
+
+### DEC-ENT-001 — Existen entitlements medidos, y el trial tiene cuota propia en ellos
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §10.3 ordena que el Trial Plan otorgue *"exactamente los entitlements del plan
+  comercial más premium"*. Si alguno tiene costo marginal real por uso — el chat con IA del
+  §36.2 es el candidato obvio — el trial lo regala sin tope, por vertical, y con cinco
+  verticales (§6) una misma persona puede consumir cinco veces. El PDR no distingue
+  entitlements booleanos de medidos ni le da cuota propia al trial.
+- **Alternativas**: (1) todas las funciones, con cuota propia de trial en las medidas;
+  (2) todo ilimitado, como dice la letra del §10.3; (3) las funciones caras no entran en el
+  trial.
+- **Decisión**: **(1)**. El trial muestra **todas** las funciones de Premium. Los entitlements
+  **medidos** declaran **dos cuotas**: la del plan y la del trial, menor.
+- **Motivo**: demuestra el producto completo, que es el punto del trial, y acota el costo. Se
+  cumple el espíritu del §10.3 sin su consecuencia económica literal.
+- **Implicaciones**:
+  1. **Apartamiento declarado del §10.3**, que dice *"exactamente"*. El PDR no se edita
+     (§3.1): queda registrado acá.
+  2. **`OD-ENT-01` queda respondido en su mitad**: **sí existen entitlements medidos**, no son
+     todos booleanos. Eso obliga a construir un subsistema de consumo que el PDR no menciona
+     en ningún lado — contador, ventana, momento de reset y qué pasa con lo no usado.
+  3. **Queda abierto cómo se resetea la cuota**, y tiene una trampa concreta: si se reseteara
+     "por período de facturación", un plan anual entregaría doce meses de cuota el primer día.
+     Se decide aparte.
+  4. Cada entitlement medido lleva su cuota **en la versión de plan** (`DEC-ARCH-001`), porque
+     cambiarla tiene efecto.
+  5. La cuota de trial no participa del trinquete de `DEC-TRIAL-002` como si fuera un limit
+     derivado: es un valor propio del trial, no una derivación de Premium.
+- **Origen**: `R-TRIAL-01`, `OD-ENT-01`.
+
+### DEC-ENT-002 — Las cuotas de consumo son mensuales, independientes del ciclo de pago
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: `DEC-ENT-001` estableció que existen entitlements medidos, pero el PDR no
+  menciona cuotas en ningún lado y por lo tanto no dice cuándo se resetean. Si el reset
+  acompañara al período de facturación, **un plan anual entregaría doce meses de cuota el
+  primer día**.
+- **Alternativas**: (1) mensual siempre, lo no usado se pierde; (2) mensual con acumulación
+  del sobrante; (3) por período de facturación.
+- **Decisión**: **(1)**. La cuota se resetea **todos los meses**, sea cual sea el ciclo de
+  pago. **Lo no usado se pierde**, no se acumula.
+- **Motivo**: desactiva la trampa del plan anual y mantiene el costo por uso parejo en el
+  tiempo, que es como se comporta el gasto real. Sin acumulación no hay saldo que administrar,
+  mostrar ni discutir al cancelar.
+- **Implicaciones**:
+  1. **Dos relojes distintos conviven**: el del ciclo de facturación y el de la cuota. No hay
+     que confundirlos en ningún cálculo.
+  2. **Falta definir si el mes corre por calendario o por aniversario de la suscripción.** Es
+     un detalle de FASE 2 y no cambia el fondo de esta decisión.
+  3. **Consecuencia aceptada**: quien pagó un año por adelantado y no usó su cuota la pierde
+     igual, y el uso concentrado choca contra el tope mensual. Conviene que la UI muestre la
+     cuota restante del mes para que no sea una sorpresa.
+  4. Se cruza con `M-MAIL-01`: el momento exacto del reset es una ventana temporal y tiene que
+     computarse en el huso del mercado, no en UTC.
+- **Origen**: `OD-ENT-01` (segunda mitad).
+
+### DEC-ENT-003 — La herencia de Turista VIP cubre entitlements y limits, y bloquea la compra
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §16 dice que un plan comercial *"puede configurar desde DB si hereda beneficios
+  de Turista VIP"*, sin precisar qué son "beneficios" — el PDR trata entitlements (§36) y
+  limits (§37) como cosas distintas en todos lados — ni qué pasa si además paga VIP por su
+  cuenta.
+- **Alternativas**: (1) hereda entitlements y limits, y no puede comprar VIP; (2) hereda sólo
+  entitlements; (3) hereda todo y puede comprar VIP igual.
+- **Decisión**: **(1)**. Hereda **entitlements y limits**. Mientras su plan comercial se lo dé,
+  **no puede comprar Turista VIP**: la UI no lo ofrece y la API lo rechaza. Al perder el plan
+  comercial, recupera la posibilidad de comprarlo.
+- **Motivo**: nunca cobrarle dos veces lo mismo. El problema se evita en vez de resolverse
+  después.
+- **Implicaciones**:
+  1. **No resuelve al que ya lo paga** en el momento de contratar el plan comercial. Ese caso
+     se decide aparte.
+  2. Cuando los limits de turista y los de la vertical se superponen hay que declarar cuál
+     gana. Lo resuelve la estrategia de agregación de `M-ENT-01`, que **sigue abierta**.
+  3. **Consecuencia nueva, registrada como `E-ENT-01`**: si su plan comercial cae en
+     `SUSPENDED` (§21), pierde beneficios que usaba **como turista**, en una parte del producto
+     ajena a su impago — y por esta misma decisión tampoco pudo haberlos comprado. **Sigue
+     abierta.**
+- **Origen**: `A-ENT-01`.
+
+### DEC-ENT-004 — Un VIP previo se cancela de inmediato, sin reembolso
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: `DEC-ENT-003` impide comprar Turista VIP mientras un plan comercial lo regale,
+  pero no dice qué pasa con quien **ya lo está pagando** en el momento de contratar ese plan.
+- **Contexto medido** (2026-09-15): hoy **no existe ningún caso**. La única suscripción de
+  turista en producción está `abandoned` y nunca se cobró nada. Se decide en frío.
+- **Alternativas**: (1) no se renueva, conservando el período pagado; (2) se cancela ya, con
+  reembolso proporcional; (3) se cancela ya, sin reembolso.
+- **Decisión**: **(3)**. Se corta el VIP en el acto y **no se devuelve lo ya pagado**. El
+  beneficio lo sigue teniendo gratis por el plan nuevo.
+- **Motivo**: decisión del owner. Es la más simple de implementar, el servicio no se
+  interrumpe, y no depende de ninguna fila de la matriz.
+- **Implicaciones y riesgo declarado**:
+  1. **Retener dinero de un servicio que cancelamos nosotros, unilateralmente, es discutible
+     bajo la ley de defensa del consumidor.** Queda asumido explícitamente.
+  2. **Hoy el riesgo es bajo porque todas las suscripciones vivas son mensuales** (medido): se
+     retendría un mes parcial como máximo. **El día que exista un ciclo anual de Turista VIP,
+     el monto retenido puede ser de hasta once meses y esta decisión debe revisarse.** Queda
+     anotada con su disparador de revisión.
+  3. Si después cancela el plan comercial, **se queda sin VIP y sin la suscripción que tenía**:
+     hay que pedirle que autorice una nueva.
+  4. **Conviene —no forma parte de la decisión— avisarle por correo antes de cancelar.** Al
+     cancelar contra el proveedor, es posible que éste le escriba por su cuenta un *"tu
+     suscripción fue cancelada"* sin contexto; eso es `M-MAIL-04`, y su fila `EX-3` está en
+     `UNKNOWN`. Llegar antes es lo único que se puede controlar.
+- **Origen**: `A-ENT-01` (b).
+
 ---
 
 ## Resumen

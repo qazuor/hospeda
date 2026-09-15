@@ -238,6 +238,17 @@ ya no se ve. Probablemente sea lo querido, pero **no está escrito**, y es la pr
 que va a hacer un usuario molesto y la primera que un agente sin regla va a resolver por su
 cuenta.
 
+### E-TRIAL-04 — Baja reactiva de una ficha ya publicada
+
+> Agregado el 2026-09-15, derivado de `DEC-TRIAL-005`. No estaba en la entrega original.
+
+Con la publicación inmediata, toda moderación es **reactiva**: una ficha inapropiada se baja
+después de haber estado visible. Pero §10.2 dice que el trial no se reinicia por despublicar,
+sin excepciones, así que esa persona queda **sin ficha y sin trial**.
+
+Falta decidir si eso amerita una excepción al §10.2 y, si la amerita, quién la autoriza y cómo
+se audita — o si se acepta como consecuencia de haber publicado algo que no correspondía.
+
 ### M-TRIAL-01 — Turista no tiene disparador de trial
 
 §10.4 cierra diciendo: *"Partner y cualquier vertical futura sin Listing deberán definir su
@@ -685,6 +696,17 @@ pregunta de diseño escondida: **si la cuota se resetea "por período de factura
 anual entregaría doce meses de cuota el primer día.**
 
 Es la respuesta que hace implementable o no a `S-TRIAL-01`.
+
+### E-ENT-01 — Suspensión del plan comercial y beneficios de turista heredados
+
+> Agregado el 2026-09-15, derivado de `DEC-ENT-003`. No estaba en la entrega original.
+
+Si el plan comercial cae en `SUSPENDED` por impago (§21), la persona pierde los beneficios VIP
+que estaba usando **como turista**, en una parte del producto que no tiene nada que ver con su
+deuda. Y por `DEC-ENT-003` tampoco pudo haberlos comprado mientras el plan se los daba.
+
+Falta decidir si la herencia sobrevive a la suspensión, si se le ofrece comprar VIP en ese
+momento, o si simplemente los pierde.
 
 ### M-ENT-03 — Los entitlements no tienen scope global; los addons sí
 
