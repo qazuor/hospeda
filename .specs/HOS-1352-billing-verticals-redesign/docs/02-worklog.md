@@ -142,6 +142,27 @@ Cinco, todas del owner y todas con su riesgo declarado en el log:
   una vertical tiene contenido.
 - `DEC-PROMO-003` — scope "verticales futuras" sin restricción.
 
+### Revisión de DEC-METH-004, el mismo día
+
+El owner pidió volver sobre la única decisión que había quedado en tensión con su propio PDR:
+clasificar KEEP vs REWRITE caso por caso, sin criterio.
+
+Al discutirla aparecieron las dos caras:
+
+- **A favor de tener criterio**: FASE 5 son decenas de clasificaciones (42 tablas de billing
+  medidas, más al menos siete motores de entitlements detectados). El §2 pone la carga de la
+  prueba del lado de conservar, pero eso sólo funciona si hay algo concreto que rendir; sin
+  eso la carga se invierte sola, porque conservar nunca requiere defensa. Y con el programa
+  atravesando varias ventanas de contexto (§3.3), dos piezas equivalentes se clasifican al
+  revés sin que nadie lo note.
+- **En contra del criterio que yo había propuesto**: era **defectuoso**. Su punto 2 exigía que
+  el código no nombrara ninguna vertical, pero el §8 define el Eje 2 como *comportamiento
+  específico de vertical*. Ese criterio mandaba todo el Eje 2 a `REWRITE` por definición.
+
+**Resultado**: `DEC-METH-004` queda `SUPERSEDED` por **`DEC-METH-005`** — la decisión se toma
+al empezar FASE 5, con el inventario real de 1B enfrente, y es el **gate de entrada** de esa
+fase: no se clasifica ninguna pieza antes de haberla tomado.
+
 ### Próximo paso exacto
 
 **FASE 1B está desbloqueada** (discovery del sistema actual), y **FASE 1C también** —

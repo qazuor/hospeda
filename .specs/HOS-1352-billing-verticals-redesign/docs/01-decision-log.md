@@ -75,7 +75,7 @@ Reglas:
 
 ### DEC-METH-004 — No hay criterio fijo para KEEP vs REWRITE: se decide caso por caso
 
-- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-15 · **Estado**: **SUPERSEDED por `DEC-METH-005`** · **Decide**: owner
 - **Problema**: §2 dice que la carga de la prueba está del lado de conservar, pero sin un
   criterio escrito cada agente lo interpreta distinto y FASE 5 produce clasificaciones
   incomparables.
@@ -88,6 +88,45 @@ Reglas:
   la decisión es irreproducible. El riesgo declarado en `O-METH-02` sigue vigente: dos
   agentes pueden clasificar la misma pieza al revés. Conviene revisar esta decisión al
   empezar FASE 5, con las piezas concretas a la vista.
+- **Origen**: `O-METH-02`.
+- **Reemplazada**: el mismo día, tras revisar el tema. Ver `DEC-METH-005`.
+
+### DEC-METH-005 — El criterio de FASE 5 se define al empezar FASE 5, y es su gate de entrada
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Reemplaza a**: `DEC-METH-004`.
+- **Problema**: `DEC-METH-004` resolvió no tener criterio fijo. Al revisarlo aparecieron dos
+  cosas.
+
+  **Una a favor de tener criterio**: FASE 5 no es una decisión sino decenas (sólo en DB hay
+  **42 tablas** de billing, y el análisis ya detectó al menos siete motores de entitlements
+  conviviendo). El §2 dice que la carga de la prueba está del lado de conservar, y esa frase
+  sólo tiene efecto si existe algo concreto que rendir: sin eso, la carga se invierte sola,
+  porque conservar nunca requiere defensa y reescribir siempre sí. Con el programa
+  atravesando varias ventanas de contexto (§3.3), dos piezas equivalentes se clasifican al
+  revés en sesiones distintas y nadie lo nota.
+
+  **Una en contra del criterio propuesto**: el criterio de 4 puntos que se había ofrecido
+  era **defectuoso**. Su punto 2 exigía "no nombra commerce ni ninguna vertical en su
+  lógica", pero el **§8 define el Eje 2 como comportamiento específico de vertical**: hay
+  código que nombra una vertical porque ése es exactamente su trabajo. Ese criterio mandaba
+  todo el Eje 2 a `REWRITE` por definición.
+
+- **Alternativas**: (1) ficha obligatoria con veredicto libre; (2) criterio vinculante
+  corregido por eje; (3) sostener `DEC-METH-004`; (4) diferir la decisión al inicio de
+  FASE 5.
+- **Decisión**: (4). Se define con el inventario real de FASE 1B a la vista.
+- **Motivo**: con las piezas concretas enfrente se puede juzgar si un criterio ayuda o
+  estorba, en vez de diseñarlo a ciegas. El criterio ofrecido ya demostró que diseñarlo sin
+  el material delante produce reglas que no encajan con el propio PDR.
+- **Implicaciones** — **esto es un gate, no un pendiente**:
+  1. **No se clasifica ninguna pieza antes de haber tomado esta decisión.** Empezar a
+     clasificar "mientras tanto" equivale a elegir la opción (3) sin decirlo.
+  2. La decisión se toma **con el inventario de 1B terminado**, no con una muestra.
+  3. Si el criterio que se elija excluye o trata distinto al Eje 2, tiene que decirlo
+     explícitamente: es el defecto que ya se detectó una vez.
+  4. Sea cual sea el resultado, **toda clasificación lleva su argumento escrito**. Eso no
+     está en discusión y vale también si se elige no tener criterio.
 - **Origen**: `O-METH-02`.
 
 ---
@@ -633,7 +672,8 @@ Reglas:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **39** (3 de metodología en FASE 0 + 36 del owner) |
+| Decisiones tomadas | **40** (3 de metodología en FASE 0 + 36 del owner + 1 revisión) |
+| Superseded | 1 — `DEC-METH-004`, reemplazada por `DEC-METH-005` el mismo día |
 | Bloqueantes cerradas | 6 de 7 |
 | Bloqueantes abiertas | **1** — `DEC-ADDON-001`, condicionada a FASE 1C |
 | Dependientes de MP, sin decidir | 3 — `BD-MP-01`, `BD-MP-02`, `BD-MP-03` |

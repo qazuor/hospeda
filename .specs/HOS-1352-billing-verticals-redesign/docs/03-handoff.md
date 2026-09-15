@@ -78,12 +78,23 @@ versionadas en `docs/mp-probes/`, marcadas como no productivas.
   **2026-09-26**).
 - El issue paraguas ya existe: **HOS-1352**. No crees otro.
 
-### Cinco decisiones con riesgo declarado
+### Gate de FASE 5 — leer antes de clasificar nada
+
+`DEC-METH-005`: **el criterio para clasificar KEEP / ADAPT / REWRITE se define al empezar
+FASE 5**, con el inventario de 1B terminado a la vista.
+
+**No clasifiques ninguna pieza antes de haberlo definido.** Hacerlo "mientras tanto" es elegir
+no tener criterio, sin decirlo. Y si el criterio que se elija trata distinto al Eje 2
+(comportamiento específico de vertical, §8), tiene que decirlo explícitamente: un criterio
+anterior fallaba justamente ahí, porque exigía que el código no nombrara ninguna vertical y
+eso mandaba todo el Eje 2 a `REWRITE` por definición.
+
+Sea cual sea el resultado, **toda clasificación lleva su argumento escrito**.
+
+### Cuatro decisiones con riesgo declarado
 
 No son errores: son decisiones del owner con su costo anotado. Están en la tabla "Para revisar
-más adelante" de [`04-open-decisions.md`](./04-open-decisions.md). La que más conviene volver
-a mirar es **`DEC-METH-004`** (sin criterio fijo para KEEP vs REWRITE) al empezar FASE 5, con
-las piezas concretas a la vista.
+más adelante" de [`04-open-decisions.md`](./04-open-decisions.md).
 
 ### Dónde está el trabajo
 

@@ -20,6 +20,15 @@ estuvo abierto es parte del registro.
 > Queda **1 bloqueante** condicionada a FASE 1C, **3 dependientes de MP**, y
 > **23 huecos técnicos** que resuelve la Master Spec sin intervención del owner.
 
+## Gate de FASE 5
+
+`O-METH-02` — **el criterio para clasificar KEEP / ADAPT / REWRITE se define al empezar
+FASE 5** (`DEC-METH-005`), con el inventario de 1B terminado a la vista.
+
+**No se clasifica ninguna pieza antes de haberlo definido.** Empezar a clasificar "mientras
+tanto" es elegir no tener criterio, sin decirlo. Sea cual sea el resultado, toda clasificación
+lleva su argumento escrito.
+
 ---
 
 ## Bloqueantes de FASE 2
@@ -83,7 +92,7 @@ No las decide el owner: las decide el experimento. **No se pueden cerrar mientra
 | `OD-ARCH-01` | Jerarquía entre planes | ✅ `DEC-ARCH-002` — rank explícito, sólo planes vendibles |
 | `M-ARCH-03` | Retiro de un plan con clientes vigentes | ✅ `DEC-ARCH-003` — archivado con fecha de fin obligatoria |
 | `M-MAIL-04` | El correo que manda MP y no controlamos | ✅ `DEC-MAIL-002` — aviso nuestro antes de toda acción sobre un preapproval |
-| `O-METH-02` | Criterio KEEP vs REWRITE | ✅ `DEC-METH-004` — sin criterio fijo, caso por caso |
+| `O-METH-02` | Criterio KEEP vs REWRITE | 🔴 **reabierta** — `DEC-METH-005`: se define al empezar FASE 5, y es su **gate de entrada** |
 
 ## Huecos técnicos — los resuelve la Master Spec
 
@@ -113,7 +122,6 @@ cuando cambien las condiciones:
 | Decisión | Cuándo revisarla |
 |---|---|
 | `DEC-ENT-003` · `DEC-GRANT-001` — cancelar sin reembolso | El día que exista un ciclo anual: hoy se retiene un mes parcial como máximo, entonces serían hasta once meses |
-| `DEC-METH-004` — sin criterio fijo KEEP/REWRITE | Al empezar FASE 5, con las piezas concretas a la vista |
 | `DEC-MAIL-001` — campañas sin control de superposición | Cuando haya más de una vertical con contenido real |
 | `DEC-SUB-004` — ventana de pausa por suscripción | Si se detecta que alguien cancela y re-suscribe para resetear el contador |
 | `DEC-PROMO-003` — scope "futuras" sin restricción | Al crear cada vertical nueva: hay que listar qué grants la alcanzan automáticamente |
