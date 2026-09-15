@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (**69 filas: 31 `VERIFIED`, 11 parciales, 7 `NOT_SUPPORTED`, 20 `UNKNOWN`**, recontadas con
+   (**71 filas: 33 `VERIFIED`, 11 parciales, 8 `NOT_SUPPORTED`, 19 `UNKNOWN`**, recontadas con
    [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
@@ -37,8 +37,13 @@ status: CURRENT
 ### Último punto completado
 
 **FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.
-FASE 1C en curso: 49 de 69 filas medidas, EL RELOJ CORRIENDO, y TODO LO MEDIBLE SIN ESPERAR,
-MEDIDO — LA MITAD DE ESO CONTRA PRODUCCIÓN.**
+FASE 1C en curso: 52 de 71 filas medidas, DOS RELOJES CORRIENDO —sandbox y PRODUCCIÓN—, y TODO
+LO MEDIBLE SIN ESPERAR, MEDIDO.**
+
+**Ya no falta ningún permiso, ninguna credencial ni ningún endpoint.** De las 19 filas abiertas,
+**16 esperan que un ciclo SE EJECUTE** y se leen mañana. Las otras tres son `WH-5` (se fuerza con
+el interruptor del receptor, **pero hacerlo rompe la lectura del reloj**), `RC-3` (más pregunta
+de diseño que de proveedor) y `RF-3` (necesita un pago de más de 180 días que todavía no existe).
 
 **De las 20 filas que siguen abiertas, 16 sólo esperan el reloj.** Las otras cuatro son `WH-5`
 (se fuerza con el interruptor del receptor, **pero hacerlo hoy rompe la lectura del reloj de
@@ -61,7 +66,7 @@ owner.
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 29 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 49 de 69 filas medidas · reloj corriendo, leer el 2026-09-16** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 52 de 71 filas medidas · DOS relojes corriendo, leer el 2026-09-16** |
 | FASE 2 — Master Spec | ⛔ bloqueada por `BD-MP-01` (pausa) y `BD-MP-02` (cortesía) |
 | FASE 3 a 10 | ⬜ no empezadas |
 
@@ -77,7 +82,32 @@ sobrevivió una elección de diseño**, planteada con su cuadro y una recomendac
 cambios que no aplica y responde `2xx`. Cinco casos medidos. **Toda mutación exige relectura y
 comparación campo por campo**; ninguna fila de la matriz se marca por el código de estado.
 
-### EL RELOJ ESTÁ CORRIENDO — lo primero que hay que hacer mañana
+### HAY DOS RELOJES, Y LOS DOS SE LEEN MAÑANA
+
+| reloj | arrancado | leer a partir de | sujetos |
+|---|---|---|---|
+| **sandbox** | 2026-09-15 12:26 (-03) | **2026-09-16 ~11:30** | 8 |
+| **producción** | 2026-09-15 20:35 (-03) | **2026-09-16 ~20:40** | 7 |
+
+```bash
+# sandbox
+cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
+source ~/.config/hospeda/mp-sandbox-creds.sh && OUT_DIR=/tmp/mp-probe-05 bash probe-06-leer-el-reloj.sh
+
+# producción — corre adentro del contenedor de la API en el VPS
+ssh -p 2222 qazuor@216.238.103.219 'bash -lc "hops --target=prod exec api -- sh -c \"LEER=1 node /tmp/p29.mjs\""'
+```
+
+**Si el contenedor se redeployó, `/tmp/p29.mjs` se perdió**: hay que volver a ponerlo con el
+base64 de [`probe-29`](./mp-probes/probe-29-el-reloj-de-produccion.mjs). El manifiesto sí está
+versionado ([`manifiesto-reloj-produccion-2026-09-15.json`](./mp-probes/manifiesto-reloj-produccion-2026-09-15.json)),
+y sin él se pierde el experimento: `RC-1` midió que el `search` **ignora `external_reference`**.
+
+**La primera pregunta que contesta el reloj de producción no es ninguna fila**: es si
+`PA-3` diverge. Autorizar allá **no cobró nada** (ver abajo). Si mañana hay **un** cobro por
+sujeto, el primer ciclo no se cobra al autorizar; si hay **dos**, el primero simplemente tardó.
+
+### El reloj de SANDBOX — lo primero que hay que hacer mañana
 
 El 2026-09-15 quedaron **ocho sujetos vivos** de ciclo diario en el sandbox. El
 ciclo diario funciona y está verificado por relectura. Lo que sigue sólo
@@ -136,6 +166,45 @@ source ~/.config/hospeda/mp-sandbox-creds.sh && OUT_DIR=/tmp/mp-probe-05 REANUDA
 es un error de la sonda, **es el hallazgo**. Y al revés: un `429 local_rate_limited` **no**
 significa que algo esté prohibido, significa que no llegó a evaluarse. La sonda 07 casi
 concluye un `NOT_SUPPORTED` inexistente por eso.
+
+### La noche del 2026-09-15 — con la tarjeta real del owner (sondas 27 a 29)
+
+El owner autorizó usar su tarjeta. **Los datos de la tarjeta nunca pasaron por el chat**: se
+tipearon una sola vez en su sesión SSH, adentro del contenedor de la API de producción, donde
+ya vive el access token. La sonda 27 mintió los tokens y escribió **sólo los ids**.
+`hops exec api -- node X` **no da TTY** — va `hops exec api --shell` y el script adentro.
+
+**La batería entera salió gratis**: con `start_date` a +30 días una suscripción autorizada no
+cobra, así que se crearon seis, se les corrió todo encima y se cancelaron. **Cero cobros**,
+verificado sujeto por sujeto. El primer sujeto fue un **canario** que abortaba la corrida si
+tenía un cobro.
+
+| Qué | Resultado |
+|---|---|
+| `EX-4`, `EX-11`, `EX-12`, `PC-1/2/3`, `CN-1`, `PS-1/PS-3`, `EX-6` | **confirmados en producción**. `EX-6` pasó de dos autorizadas conviviendo a **seis** |
+| **`EX-20`** nueva | **un `PUT` con varios campos se aplica A MEDIAS, con un solo `200`**. Releer "la" mutación no alcanza: hay que comparar **campo por campo cada campo que se mandó** |
+| **`EX-19`** nueva | **`external_reference` se puede reescribir** sobre una autorizada (también `reason` y `back_url`; `payer_email` no). **Es una vía de reparación** para el `SubscriptionNotResolvedError` vivo en producción |
+| **`EX-3`** cerrada | leyendo la **casilla real del owner**: 43 correos del proveedor en un día. Ver abajo |
+| **`PA-3`** | **DIVERGE**: en producción autorizar **no cobra en el acto**, sólo deja un `card_validation`. Y el owner confirmó que **su tarjeta no vio ningún cargo**, ni de $15 ni de $0 |
+
+#### `EX-3` — y son seis consecuencias de diseño, no un dato de color
+
+Mercado Pago le escribe al cliente por su cuenta en el alta, el cambio de monto, la pausa y la
+cancelación. Lo que sale de ahí:
+
+1. **El `reason` ES la copy que ve el cliente** (asunto y encabezado), y `EX-19` lo hace
+   reescribible. **Nunca va un slug interno ahí.**
+2. **Un cambio de precio no se puede hacer en silencio** — y como `EX-15` midió que no emite
+   webhook, **el proveedor le avisa al cliente y NO nos avisa a nosotros**.
+3. Los cuatro correos mandan al cliente a **nuestra** puerta: no hay autogestión.
+4. **`paused` y `cancelled` le llegan AMBIGUOS** (*"por un pago no realizado o por opción del
+   vendedor"*): una pausa de cortesía y una por mora son idénticas para el cliente.
+5. El proveedor afirma que **una pausa la levanta el vendedor**, contra el supuesto de
+   reanudación automática del §26.2.
+6. **Tres textos del proveedor contradicen sus propios datos**: el `2084` que dice que el pago
+   no se puede reembolsar cuando sí se puede, el *"Pagaste la suscripción"* de un alta que no
+   cobró, y el *"Cobramos $15"* de un cargo que no existió. **Ninguna decisión de soporte puede
+   apoyarse en la copy de Mercado Pago.**
 
 ### Lo que se midió la tarde del 2026-09-15, sin esperar nada (sondas 14 a 18)
 
@@ -236,7 +305,8 @@ ausencia de mecanismo es, ella misma, un hallazgo que hay que registrar.
 | Qué credenciales habilitan **reembolsos** en sandbox | `RF-1`/`RF-2` dieron `401 "Unauthorized use of live credentials"`. Eso no dice que el proveedor no reembolse: dice que estas credenciales no lo pueden pedir |
 | ~~Acceso a la casilla del comprador de prueba~~ | ❌ **YA NO SIRVE.** `EX-3` se midió **inmedible en sandbox** (sonda 17): el dominio del comprador tiene un MX a `localhost` —un agujero negro— y ni siquiera es de Mercado Pago. Ese correo no se puede haber enviado. La única vía que queda es observarlo en producción sobre un cliente real |
 | ✅ Los cuatro experimentos que movían plata | **EJECUTADOS el 2026-09-15**, autorizados por el owner, contra producción. Los cuatro pagos reembolsables eran todos **suyos** (verificado antes de tocar nada), así que la plata volvió a su propia tarjeta. Resultados en [`04-open-decisions.md`](./04-open-decisions.md) |
-| 📬 **Mirar la casilla de `qazuor@gmail.com`** | `EX-3`. El 2026-09-15 22:38 se creó en producción un preapproval `pending` con esa dirección como pagador y se canceló 45 s después. Si Mercado Pago mandó algún correo, **ése es el dato**, y es la única vía viva: en sandbox la casilla del comprador no existe |
+| ✅ `EX-3` | **CERRADA** el 2026-09-15 leyendo su casilla: 43 correos del proveedor. Seis consecuencias de diseño, arriba |
+| 🔍 **Volver a mirar la tarjeta mañana** | A los 75 min de las seis autorizaciones **no había entrado ningún cargo**, ni de $15 ni de $0. Eso y la API (`card_validation` de ARS 0) coinciden; el que queda afuera es el correo del proveedor. Un resumen puede tardar, así que se re-mira junto con el reloj |
 | ⚠️ **Un error vivo en producción, encontrado de paso** | Webhooks de suscripción que fallan con `500` y se encolan hasta 5 veces, sobre suscripciones reales. **Registrado y no tocado** por el §4 |
 | ⚠️ **Preguntarle a soporte de MP por `R-MP-01`** | El panel avisa que **la API de Payments se descontinúa** y la documentación no lo formaliza. Tres preguntas que **no se pueden medir** porque son sobre el futuro del proveedor: (1) ¿alcanza también a las **lecturas** de `/v1/payments`? (2) ¿**cuándo**? (3) si se retira, **¿cómo se reembolsa un cobro originado por un `preapproval`?**. Tardan días: conviene preguntarlas ya |
 
