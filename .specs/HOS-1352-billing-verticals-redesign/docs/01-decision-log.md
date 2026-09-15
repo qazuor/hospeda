@@ -55,11 +55,17 @@ Reglas:
 ### DEC-METH-002 — Issue paraguas nuevo, no se reusa HOS-1257
 
 - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
-- **Problema**: existía HOS-1257 (paridad de billing) más ~20 issues puntuales de billing.
+- **Problema**: existía HOS-1257 (paridad de billing) más otros issues de billing abiertos.
 - **Decisión**: se creó **HOS-1352** como paraguas.
 - **Motivo**: HOS-1257 tiene su propio alcance; colgar un rediseño integral de un issue de
   paridad confunde ambos.
 - **Implicaciones**: qué issues abiertos quedan absorbidos se clasifica en **FASE 5**.
+- **Corrección (2026-09-15, FASE 1B)**: esta decisión se escribió diciendo "~20 issues
+  puntuales de billing". **Está mal por un orden de magnitud**: son **462** con label
+  `area-billing` en el team `Hospeda`, de los cuales **308 están abiertos** (170 Backlog +
+  138 Started). El número salió de una búsqueda parcial en FASE 0, no de una paginación
+  completa. FASE 3 debe dimensionarse contra 308, no contra 20. Ver
+  [`08-phase-1b-discovery.md`](./08-phase-1b-discovery.md) §12.
 - **Origen**: FASE 0.
 
 ### DEC-METH-003 — Conteos de DB permitidos en FASE 0, sin mirar código
