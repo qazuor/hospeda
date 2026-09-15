@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (**65 filas: 29 `VERIFIED`, 10 parciales, 6 `NOT_SUPPORTED`, 20 `UNKNOWN`**, recontadas con
+   (**69 filas: 31 `VERIFIED`, 11 parciales, 7 `NOT_SUPPORTED`, 20 `UNKNOWN`**, recontadas con
    [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
@@ -37,8 +37,8 @@ status: CURRENT
 ### Último punto completado
 
 **FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.
-FASE 1C en curso: 45 de 65 filas medidas, EL RELOJ CORRIENDO, webhooks verificables, LOS REEMBOLSOS
-CERRADOS, y TODO LO QUE NO DEPENDÍA DEL TIEMPO, MEDIDO.**
+FASE 1C en curso: 49 de 69 filas medidas, EL RELOJ CORRIENDO, y TODO LO MEDIBLE SIN ESPERAR,
+MEDIDO — LA MITAD DE ESO CONTRA PRODUCCIÓN.**
 
 **De las 20 filas que siguen abiertas, 16 sólo esperan el reloj.** Las otras cuatro son `WH-5`
 (se fuerza con el interruptor del receptor, **pero hacerlo hoy rompe la lectura del reloj de
@@ -61,7 +61,7 @@ owner.
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 29 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 45 de 65 filas medidas · reloj corriendo, leer el 2026-09-16** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 49 de 69 filas medidas · reloj corriendo, leer el 2026-09-16** |
 | FASE 2 — Master Spec | ⛔ bloqueada por `BD-MP-01` (pausa) y `BD-MP-02` (cortesía) |
 | FASE 3 a 10 | ⬜ no empezadas |
 
@@ -162,6 +162,38 @@ Detalle completo en [`mp-probes/RESULTS-2026-09-15.md`](./mp-probes/RESULTS-2026
    `"Cannot pay an amount lower than $ 15.00"` no dice nada sobre si la moneda era válida.
    Lo que lo resolvió en los dos casos fue **el control que distingue**, no otra hipótesis.
 
+### La tanda de PRODUCCIÓN (sondas 19 a 26) — pedido del owner
+
+*"Ya tuvimos el problema de algo que pensamos que no se podía hacer, y la realidad era que no
+andaba en sandbox, pero en producción sí."* Se re-midió contra la cuenta real todo lo que se
+podía medir sin cobrarle a nadie.
+
+**La respuesta corta: esta vez el sandbox no mintió.** Diez comparaciones, las diez coinciden
+(`EX-17`, `EX-18`, `PC-2` piso y techo, `FR-4`, `EX-5` array e `items`, `CN-1`). Lo único que
+el sandbox falseaba se puede nombrar con precisión: **el vendedor de prueba no puede ESCRIBIR
+sobre `/v1/payments`** —ni crear un pago ni reembolsar—, y eso fue lo que dejó `RF-1`/`RF-2` en
+`UNKNOWN` con un `401` que sólo existe ahí.
+
+**Lo que sí cambió, y mucho:**
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| El "monto mínimo de reembolso" | *"existe, entre 5 y 50"* | **NO EXISTE.** ARS 5 entra en pagos de 5.000 y 7.500. Cuatro hipótesis murieron; el rechazo `code 2084` quedó **sin explicar**, y lo único probado es que **NO es una propiedad del pago**: el mismo pago rechazó 5 y aceptó 14 (`RF-8`) |
+| Idempotencia del reembolso | sin medir | **Es idempotente**: misma clave → `200`, cuerpo vacío, ningún reembolso nuevo (`RF-6`) |
+| ¿Un reembolso emite webhook? | **"bloqueado, no se puede ver"** | **Se ve.** La API de producción ES el receptor y sus logs se leen: tres notificaciones por reembolso, en **dos formatos** para el mismo hecho (`RF-7`) |
+| El `search` de suscripciones | *"`status` sí filtra"* | **`status=cancelled` devuelve 15 de 69** — un subconjunto plausible, sin señal de que falte nada (`RC-1`). Y el `search` devuelve **menos campos** que el `GET` (`RC-4`) |
+| `EX-16` | medido en sandbox | **VERIFIED en producción también** — pero el primer resultado fue un falso negativo perfecto: 0 cobros en las 4 autorizadas porque **ninguna cobró todavía** |
+
+**Escribir en producción tiene un radio de explosión medido, no supuesto**: crear un preapproval
+`pending` y cancelarlo produce exactamente **dos webhooks, los dos `200`**, sin encolar
+reintentos ni escribir filas. Se midió con UNO antes de crear los siete de la sonda 26.
+
+⚠️ **Y de paso apareció un error VIVO en producción que NO se tocó** (§4): los webhooks
+`subscription_authorized_payment` de al menos dos preapprovals fallan con
+`SubscriptionNotResolvedError`, la API responde `500` y los encola hasta 5 veces. Es anterior a
+esta sesión y alcanza a suscripciones reales. Detalle en
+[`04-open-decisions.md`](./04-open-decisions.md).
+
 ### Los webhooks ya son observables — qué queda de ese bloque
 
 El receptor propio (sonda 08, un Worker en la cuenta de Cloudflare del owner)
@@ -203,7 +235,9 @@ ausencia de mecanismo es, ella misma, un hallazgo que hay que registrar.
 | ✅ **Reembolsos: resueltos** | `RF-1` y `RF-2` cerrados el 2026-09-15 **midiendo en producción**. El bloqueo era **la cuenta de prueba**, no la API ni el código: la misma llamada da `401` con el vendedor de prueba y entra con la cuenta real. `M-LEGAL-01` **ya tiene respuesta técnica** |
 | Qué credenciales habilitan **reembolsos** en sandbox | `RF-1`/`RF-2` dieron `401 "Unauthorized use of live credentials"`. Eso no dice que el proveedor no reembolse: dice que estas credenciales no lo pueden pedir |
 | ~~Acceso a la casilla del comprador de prueba~~ | ❌ **YA NO SIRVE.** `EX-3` se midió **inmedible en sandbox** (sonda 17): el dominio del comprador tiene un MX a `localhost` —un agujero negro— y ni siquiera es de Mercado Pago. Ese correo no se puede haber enviado. La única vía que queda es observarlo en producción sobre un cliente real |
-| ⚠️ **Autorizar (o no) cuatro experimentos que mueven plata** | Son los únicos que quedan sin correr, aparte de los del reloj: el **mínimo exacto de reembolso**, la **idempotencia del reembolso**, los **parciales acumulativos**, y si el header `X-Idempotency-Key` **era obligatorio hace unas horas**. Cuadro completo, con qué mueve cada uno y por qué no se puede evitar, en [`04-open-decisions.md`](./04-open-decisions.md). **Cada monto se pregunta de nuevo**: ya pasó una vez que se cambió sobre la marcha |
+| ✅ Los cuatro experimentos que movían plata | **EJECUTADOS el 2026-09-15**, autorizados por el owner, contra producción. Los cuatro pagos reembolsables eran todos **suyos** (verificado antes de tocar nada), así que la plata volvió a su propia tarjeta. Resultados en [`04-open-decisions.md`](./04-open-decisions.md) |
+| 📬 **Mirar la casilla de `qazuor@gmail.com`** | `EX-3`. El 2026-09-15 22:38 se creó en producción un preapproval `pending` con esa dirección como pagador y se canceló 45 s después. Si Mercado Pago mandó algún correo, **ése es el dato**, y es la única vía viva: en sandbox la casilla del comprador no existe |
+| ⚠️ **Un error vivo en producción, encontrado de paso** | Webhooks de suscripción que fallan con `500` y se encolan hasta 5 veces, sobre suscripciones reales. **Registrado y no tocado** por el §4 |
 | ⚠️ **Preguntarle a soporte de MP por `R-MP-01`** | El panel avisa que **la API de Payments se descontinúa** y la documentación no lo formaliza. Tres preguntas que **no se pueden medir** porque son sobre el futuro del proveedor: (1) ¿alcanza también a las **lecturas** de `/v1/payments`? (2) ¿**cuándo**? (3) si se retira, **¿cómo se reembolsa un cobro originado por un `preapproval`?**. Tardan días: conviene preguntarlas ya |
 
 Reglas de 1C, del §58 al §61: nada se completa desde documentación ni memoria — **sólo con un

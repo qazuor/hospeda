@@ -243,38 +243,37 @@ convivencia durante el rewrite · `M-MIG-01` criterio de corte del trial ya cons
 
 ---
 
-## Lo que necesita una autorización del owner para poder medirse
+## Los experimentos que movían plata — EJECUTADOS el 2026-09-15
 
-Agregado el **2026-09-15**. No son decisiones de diseño: son **cuatro experimentos que
-mueven plata propia en producción** y por eso no se corren solos. El dinero vuelve en todos
-los casos —son reembolsos sobre cobros propios— pero eso no los hace gratis, y ya hubo un
-antecedente: el 2026-09-15 se autorizó un parcial de ARS 5, falló, y se ejecutó un total de
-ARS 15 **sin volver a preguntar**. Queda como regla: **un monto autorizado vale para ese
-monto, y cada cambio se pregunta de nuevo.**
+El owner los autorizó y se corrieron **contra producción**. Los cuatro pagos
+reembolsables resultaron ser todos del **propio owner** (`qazuor@gmail.com`,
+pagador `5860436`), verificado ANTES de tocar nada, así que la plata fue de su
+cuenta vendedora a su propia tarjeta. La comisión ya estaba pagada y no vuelve
+en ningún escenario, así que el costo adicional fue cero.
 
-Todo lo que se podía medir sin mover plata ya se midió — ver las sondas 14 a 18 en
-[`RESULTS-2026-09-15.md`](./mp-probes/RESULTS-2026-09-15.md).
+| Experimento | Resultado |
+|---|---|
+| Mínimo exacto de reembolso | **NO HAY MÍNIMO.** ARS 5 entró sobre pagos de 5.000 y 7.500. La conclusión anterior era un diagnóstico equivocado; ver `RF-2` y `RF-8` |
+| Idempotencia del reembolso | **SÍ es idempotente**: misma clave → `200` con cuerpo vacío y ningún reembolso nuevo (`RF-6`) |
+| Parciales acumulativos | **Funcionan**, validan contra el **saldo** (no contra el total) y al completarse el pago pasa a `refunded` solo |
+| ¿El header era obligatorio hace unas horas? | **La pregunta no existía**: la sonda 11 sí manda el header. Era una suposición mía |
 
-| # | Experimento | Qué fila alimenta | Cuánto mueve | Por qué no se puede evitar |
-|---|---|---|---|---|
-| 1 | **El mínimo exacto de reembolso.** Bisección entre ARS 5 (rechazado) y ARS 50 (aceptado) sobre pagos propios | `RF-2`, y el piso de cualquier prorrateo | un parcial por paso, **monto a autorizar en cada paso** | El mensaje del proveedor no nombra el monto: *"This transaction does not support to be refunded"* se lee como una propiedad del pago. Sin el número, cualquier prorrateo puede caer bajo el piso y fallar con un error que no explica por qué |
-| 2 | **Idempotencia del reembolso.** El mismo `X-Idempotency-Key` dos veces sobre un pago con saldo | §51, y el contrato del reconciliador | **un reembolso, o dos** — que es justo la pregunta | No se puede medir sobre saldo cero: ahí los dos intentos mueren en la validación de estado (`RF-5`) antes de llegar a la lógica de la clave |
-| 3 | **Parciales acumulativos.** Dos parciales sobre el mismo pago hasta completar el total | prorrateo, `BD-MP-02` | dos parciales sobre un pago propio | Falta saber si el segundo parcial se valida contra el **saldo** o contra el **monto total**, y si al completarse el pago queda `refunded` o `partially_refunded` |
-| 4 | **¿El header era obligatorio hace unas horas?** Un reembolso real **sin** `X-Idempotency-Key` | `RF-4` | un reembolso | `RF-1` se ejecutó sin ese header y devolvió `201`; la sonda 18 lo midió **obligatorio** unas horas después. O el proveedor cambió, o esa llamada lo llevaba por otra vía. **Mirando hacia atrás no se resuelve** |
+Y dos que estaban dadas por imposibles y no lo eran:
 
-Y uno que está **bloqueado por otra razón**, no por el dinero:
+| | |
+|---|---|
+| **¿Un reembolso emite webhook?** | Estaba marcado **bloqueado** porque el receptor propio está atado a la app de prueba. El razonamiento tenía un agujero: **la API de producción es un receptor y sus logs se leen**. Emite **tres notificaciones por reembolso, en dos formatos** (`RF-7`) |
+| **Re-medir el sandbox contra producción** | Diez comparaciones, **las diez coinciden**. Lo único que el sandbox falseaba era que **el vendedor de prueba no puede escribir sobre `/v1/payments`** |
 
-> **¿Un reembolso emite webhook?** El receptor propio está atado a la app de **prueba**, y los
-> reembolsos sólo entran en la cuenta **real**, cuyo webhook apunta a la API de producción.
-> Verlo exigiría repuntar el webhook productivo, que es exactamente lo que no se puede hacer.
+---
 
-### Y uno que salió de esta lista
+## Lo que le queda al owner
 
-**El acceso a la casilla del comprador de prueba ya no sirve para nada.** `EX-3` se midió
-como **inmedible en sandbox**: el dominio del comprador de prueba tiene un MX a `localhost`
-—un agujero negro— y ni siquiera es de Mercado Pago. El correo que esa fila quiere observar
-no se puede haber enviado. Si el owner quiere cerrarla, la única vía es observarlo en
-**producción sobre un cliente real**.
+| Qué | Para qué |
+|---|---|
+| ⚠️ **Un error VIVO en producción, encontrado de paso** | Los webhooks `subscription_authorized_payment` / `invoice.updated` de al menos dos preapprovals (`74eea70d…` y `7a9e6a99…`) fallan con `SubscriptionNotResolvedError` (HOS-276), la API responde **`500`** y los encola para reintentar hasta 5 veces. **Alcanza a suscripciones reales, no sólo a las de prueba**, y es **anterior a esta sesión** (aparece disparado por el cron `webhook-retry`). Además, `invoice.updated` cae en `DEAD-LETTER: unrecognized MercadoPago event type`. **Queda registrado y NO se tocó**: el §4 prohíbe tocar código productivo, y es justo lo que el rediseño tiene que resolver de raíz |
+| 📬 **`EX-3`: mirá tu casilla** | El 2026-09-15 22:38 se creó en producción un preapproval `pending` con **tu** dirección como pagador, y se canceló 45 s después. Si Mercado Pago te mandó algún correo por eso —por la suscripción pendiente o por su cancelación—, **ése es el dato que `EX-3` necesita** y es la única vía que quedó viva: en sandbox la casilla del comprador de prueba no existe |
+| Autorizar (o no) lo que **sigue** necesitando una tarjeta real | `EX-4` (cambiar el ciclo), `EX-12` (reusar un token), `UP-*`, `DW-*`, `PS-*`: exigen una suscripción **autorizada**, y autorizar en producción exige una tarjeta real y un cobro real. Hoy están medidas sólo en sandbox |
 
 ---
 
