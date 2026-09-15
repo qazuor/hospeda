@@ -191,8 +191,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RF-1 | Reembolso total de un cobro | `UNKNOWN` | — | — | — | — |
-| RF-2 | Reembolso parcial | `UNKNOWN` | — | — | — | — |
+| RF-1 | Reembolso total de un cobro | `UNKNOWN` | 2026-09-15 | sandbox | [sondas 01/02/03/05](./mp-probes/RESULTS-2026-09-15.md) | **Bloqueado por credenciales, no por el proveedor**: `POST /v1/payments/{id}/refunds` → `401 "Unauthorized use of live credentials"`. **No se midió si MP soporta el reembolso**: se midió que estas credenciales no pueden pedirlo |
+| RF-2 | Reembolso parcial | `UNKNOWN` | 2026-09-15 | sandbox | [sondas 01/02/03/05](./mp-probes/RESULTS-2026-09-15.md) | Ídem `RF-1`: `401` por credenciales. La capacidad sigue **sin medir** |
 | RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | — |
 
 ## ✚ Huecos estructurales
@@ -230,8 +230,8 @@ Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no ha
 | Bloque | Qué hace falta |
 |---|---|
 | Renovaciones, grace y efectos reales de la pausa | **Que pase tiempo.** La pausa de la sonda duró 1,3 s: alcanzó para las transiciones, no para las fechas |
-| Webhooks y orden de eventos | **Un endpoint público** que reciba los POST del proveedor |
-| Reembolsos | No se probaron todavía |
+| Webhooks y orden de eventos | **Un endpoint público** que reciba los POST, **y poder cambiar la URL de webhook** — que es **de sólo lectura por API** (`403` en PUT/POST/PATCH sobre `/applications/{id}`) y sólo se cambia desde el panel de desarrolladores |
+| Reembolsos | **Se intentaron y el endpoint devolvió `401 "Unauthorized use of live credentials"`.** Hace falta aclarar qué credenciales habilitan reembolsos en sandbox |
 | Correos del proveedor (`EX-3`) | Observar la casilla del comprador de prueba |
 
 ## Qué espera cada decisión
