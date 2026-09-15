@@ -916,18 +916,62 @@ Cada entrada lleva, según §3.4:
      anticipada de un compromiso anual — **sigue vigente sin cambios**.
 - **Origen**: `BD-SUB-01` (BLOCKING) + FASE 1C.
 
+### DEC-MP-001 — Los cambios de precio sobre suscripciones vigentes se aplican mutando el monto
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: el experimento (`BD-MP-03`)
+- **Problema**: el §29 contempla explícitamente que un cambio de precio afecte *"subscriptions
+  existentes"*, pero no dice cómo se ejecuta sobre una suscripción que el cliente ya autorizó.
+  `BD-MP-03` era una de las cuatro bloqueantes de FASE 2 que no se podían cerrar por
+  conversación.
+- **Contexto medido** (2026-09-15, sandbox,
+  [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md)):
+  - `PC-1` **`VERIFIED`**: el monto de una suscripción **autorizada** se muta. 1500 → 2200 → 15
+    → 1500, los cuatro pasos verificados **por relectura**, no por el código de estado.
+  - `PC-3` **`VERIFIED`**: **no requiere nuevo consentimiento** del usuario. La suscripción
+    sigue `authorized` y conserva su medio de pago.
+  - `PC-2` **`VERIFIED`**: el piso es **ARS 15**. Cero y negativo se rechazan.
+  - `EX-4` **`NOT_SUPPORTED`**: el **ciclo** no se puede mutar. Un cambio de precio que además
+    mueva el ciclo no entra por acá.
+- **Alternativas**: (1) mutar `transaction_amount` sobre la suscripción vigente; (2) cancelar y
+  recrear con el precio nuevo, que es el mecanismo de `DEC-SUB-005`; (3) no aplicar cambios de
+  precio a las vigentes y dejarlos sólo para clientes nuevos.
+- **Decisión**: **(1)**.
+- **Motivo**: es la única que **no le pide nada al cliente**. La (2) exige el código de
+  seguridad (`EX-9`) a **toda la base instalada** por un cambio que el cliente no pidió:
+  convierte un aumento en una renegociación, y quien no complete el formulario se queda sin
+  suscripción. La (3) contradice el §29, que nombra a las suscripciones existentes entre las
+  que un cambio de precio *puede afectar*.
+- **Implicaciones**:
+  1. **Que el proveedor no pida re-consentimiento no significa que no haya que avisar.** El §29
+     exige aviso, precio anterior y nuevo, fecha efectiva y derecho a cancelar, y **el proveedor
+     no hace nada de eso**: es responsabilidad entera de Hospeda. Acá sólo se cerró la pregunta
+     técnica.
+  2. **La mutación se verifica por relectura y comparación campo por campo** (§0 de los
+     resultados). Es precisamente el terreno donde este proveedor ya demostró aceptar cambios
+     que no aplica, y un aumento "aplicado" que no se aplicó no lo nota nadie hasta la
+     conciliación.
+  3. **El cambio se ejecuta en la fecha efectiva, no cuando se decide.** Eso implica una cola de
+     cambios programados, que es el hueco `M-SUB-02`, y no un `PUT` en el momento de la
+     decisión comercial.
+  4. **Un precio nuevo por debajo de ARS 15 no es aplicable por este camino** (`PC-2`).
+  5. Si el cambio de precio **viene con un cambio de ciclo**, no es este camino: es
+     `DEC-SUB-005` (cancelar y recrear), con su fricción de código de seguridad.
+  6. El §29 cierra con *"Investigar normativa actual antes de implementar"*. **Eso sigue
+     pendiente** y no lo resuelve esta decisión: queda en `M-LEGAL-03`.
+- **Origen**: `BD-MP-03` (BLOCKING) + FASE 1C.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **28** |
+| Decisiones tomadas | **29** |
 | De metodología | 3 |
-| Funcionales | 25 |
-| `SUPERSEDED` | 0 |
+| Funcionales | 26 |
+| `SUPERSEDED` | **1** — `DEC-SUB-001`, por `DEC-SUB-005` |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
-| Bloqueantes de FASE 2 que decide el experimento | **4 abiertas** — esperan FASE 1C |
-| Decisiones condicionadas a FASE 1C | 1 — `DEC-SUB-001`, depende de `EX-7`/`EX-8` |
+| Bloqueantes de FASE 2 que decide el experimento | **2 abiertas** — `BD-MP-01` (pausa) y `BD-MP-02` (cortesía). `BD-MP-03` la cerró `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
+| Decisiones condicionadas a FASE 1C | **0** — la única que lo estaba (`DEC-SUB-001`) ya se resolvió |
 | Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34), y el `SUSPENDED` doble de `M-ARCH-01` |

@@ -9,13 +9,14 @@ phase: 1C
 
 # Matriz de validación de Mercado Pago
 
-**FASE 1C en curso.** Tras las [sondas 01, 02 y 03](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **16 filas `VERIFIED`, 5 `PARTIALLY_SUPPORTED`, 2 `NOT_SUPPORTED`, 32 `UNKNOWN`**.
+**FASE 1C en curso.** Tras las [sondas 01 a 05](./mp-probes/RESULTS-2026-09-15.md) del
+2026-09-15: **16 filas `VERIFIED`, 8 `PARTIALLY_SUPPORTED`, 2 `NOT_SUPPORTED`, 29 `UNKNOWN`**.
 
 > **El hallazgo que atraviesa todo lo demás**: Mercado Pago **acepta cambios que no aplica, y
-> responde `200`**. Tres casos confirmados — el campo `items`, y dos intentos aislados de
-> cambiar `frequency`. **Un `200` no significa que el cambio se haya aplicado**: toda mutación
-> exige relectura y comparación campo por campo.
+> responde `2xx`**. **Cinco** casos confirmados — el campo `items`, dos intentos aislados de
+> cambiar `frequency`, un token de tarjeta guardada sin código de seguridad, y una
+> `notification_url` por suscripción. **Un `2xx` no significa que el cambio se haya aplicado**:
+> toda mutación exige relectura y comparación campo por campo.
 
 ## Reglas
 
@@ -221,16 +222,16 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | Estado | Filas |
 |---|---|
 | `VERIFIED` | **16** |
-| `PARTIALLY_SUPPORTED` | **5** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `EX-9` |
+| `PARTIALLY_SUPPORTED` | **8** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `WH-1`, `WH-4`, `EX-2`, `EX-9` |
 | `NOT_SUPPORTED` | **2** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto) |
-| **`UNKNOWN`** | **32** |
+| **`UNKNOWN`** | **29** |
 
 Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no hay:
 
 | Bloque | Qué hace falta |
 |---|---|
-| Renovaciones, grace y efectos reales de la pausa | **Que pase tiempo.** La pausa de la sonda duró 1,3 s: alcanzó para las transiciones, no para las fechas |
-| Webhooks y orden de eventos | **Un endpoint público** que reciba los POST, **y poder cambiar la URL de webhook** — que es **de sólo lectura por API** (`403` en PUT/POST/PATCH sobre `/applications/{id}`) y sólo se cambia desde el panel de desarrolladores |
+| Renovaciones, grace y efectos reales de la pausa | **Que pase tiempo** — pero **un día, no un mes**: `days` es un `frequency_type` válido (medido en `FR-4`), así que un ciclo diario pone un ciclo real a 24 h. Es lo que arma la [sonda 05](./mp-probes/probe-05-arrancar-el-reloj.sh) y lo que lee la [06](./mp-probes/probe-06-leer-el-reloj.sh). **Que el ciclo diario se autorice y se ejecute no está medido**: es lo primero que comprueba la sonda 05, por relectura |
+| Webhooks y orden de eventos | **Un endpoint público** que reciba los POST, **y poder cambiar la URL de webhook** — que es **de sólo lectura por API** (`403` en PUT/POST/PATCH sobre `/applications/{id}`) y sólo se cambia desde el panel de desarrolladores. Y como el webhook es **por aplicación**, apuntarlo a un banco de pruebas deja al staging sin los suyos: hace falta una **aplicación de sandbox aparte** |
 | Reembolsos | **Se intentaron y el endpoint devolvió `401 "Unauthorized use of live credentials"`.** Hace falta aclarar qué credenciales habilitan reembolsos en sandbox |
 | Correos del proveedor (`EX-3`) | Observar la casilla del comprador de prueba |
 
@@ -240,8 +241,8 @@ Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no ha
 |---|---|
 | `BD-MP-01` mecanismo de pausa | `PS-1`…`PS-6` |
 | `BD-MP-02` cortesía sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` |
-| `BD-MP-03` cambio de precio sobre vigentes | ✅ `PC-1`, `PC-2`, `PC-3` — **las tres cerradas** |
-| `BD-MP-04` addons recurrentes | ✅ `EX-5`, `EX-6` — **las dos cerradas** |
+| `BD-MP-03` cambio de precio sobre vigentes | ✅ `PC-1`, `PC-2`, `PC-3` cerradas → **decidida: `DEC-MP-001`** |
+| `BD-MP-04` addons recurrentes | ✅ `EX-5`, `EX-6` cerradas, **pero le sobrevivió una elección de diseño**: con un solo monto por autorización y varias autorizaciones conviviendo, hay dos mecanismos y los dos funcionan. Volvió al owner |
 | `BD-SUB-01` matriz de cambio de plan | ⚠️ `EX-4` salió `NOT_SUPPORTED` y `EX-8` `VERIFIED`: **el mecanismo de `DEC-SUB-001` no es implementable como está escrito**. Faltan `UP-1`, `UP-2`, `DW-1`, `DW-2` |
 | `MP-01` los cuatro ciclos del §19 | `FR-1`…`FR-4`, `EX-4` |
 | `M-LEGAL-01` revocación con devolución | `RF-1`, `RF-3` |
@@ -251,8 +252,14 @@ Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no ha
 | `A-PROMO-01` piso del descuento apilado | `PC-2` |
 
 **Dos de las cuatro bloqueantes de FASE 2 ya tienen sus filas cerradas** (`BD-MP-03` y
-`BD-MP-04`) y se pueden decidir. Las otras dos (`BD-MP-01` pausa, `BD-MP-02` cortesía) siguen
-bloqueadas por el §61.
+`BD-MP-04`). La primera se decidió: `DEC-MP-001`. La segunda **no la cerró la medición** — le
+sobrevivió una elección de diseño y volvió al owner. Las otras dos (`BD-MP-01` pausa,
+`BD-MP-02` cortesía) siguen bloqueadas por el §61.
+
+Una lección de método que deja esto: *"la decide el experimento"* fue una clasificación
+**optimista**. Medir qué permite el proveedor cierra la pregunta técnica, y a veces deja dos
+caminos abiertos en vez de uno. Cuando pasa, la salida es devolver la elección, no forzar una
+decisión que la medición no tomó.
 
 Y **`DEC-SUB-001` quedó sin mecanismo** y fue reemplazada por **`DEC-SUB-005`**: el cambio de
 ciclo se hace **cancelando y recreando** con la primera fecha corrida, no mutando. La política

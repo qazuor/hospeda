@@ -22,10 +22,14 @@ estuvo abierto es parte del registro.
 Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).
 
 > **Estado al 2026-09-15**: FASE 1A entregada y **completamente respondida**. 104 hallazgos,
-> **28 decisiones registradas**, **0 preguntas del owner abiertas**.
+> **29 decisiones registradas**, **0 de las 25 preguntas de FASE 1A abiertas**.
 >
-> Lo único que frena FASE 2 son las **4 bloqueantes que decide el experimento** de FASE 1C.
-> Ninguna se puede cerrar por conversación.
+> **Pero FASE 1C abrió una pregunta nueva para el owner**: `BD-MP-04`. Sus filas están medidas
+> y aun así le sobrevivió una elección de diseño que la medición no toma. Está abajo, con su
+> cuadro comparativo y una recomendación.
+>
+> Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
+> `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 
 ---
 
@@ -36,15 +40,17 @@ Tres grupos, y no se mezclan:
 | Grupo | Quién decide | Cuántos | Cuándo |
 |---|---|---|---|
 | **Bloqueantes de FASE 2 que decide el owner** | owner | **8** | ✅ cerradas |
-| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | ⛔ esperan la matriz |
+| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | 1 cerrada (`DEC-MP-001`) · **2** esperan la matriz · **1 volvió al owner** (`BD-MP-04`) |
 | **No bloqueantes que decide el owner** | owner | **19** | ✅ cerradas |
 | **Huecos técnicos** | la Master Spec (FASE 2) | **~70** | sin intervención del owner |
 
 Los 12 bloqueantes son los que frenan FASE 2 (§0: *"Toda cuestión que pueda cambiar
 significativamente la arquitectura: `BLOCKING DECISION`"*).
 
-**FASE 2 sigue bloqueada** por las 4 que decide el experimento. Ninguna se puede cerrar
-mientras su fila de la matriz diga `UNKNOWN` (§61), y hoy las 53 filas lo dicen.
+**FASE 2 sigue bloqueada**, pero por **2** de las 4 que decide el experimento, no por las
+cuatro: FASE 1C ya cerró las filas de `BD-MP-03` y `BD-MP-04`. Ninguna de las otras dos se
+puede cerrar mientras su fila de la matriz diga `UNKNOWN` (§61), y al 2026-09-15 **29 de las
+55 filas** lo dicen.
 
 ---
 
@@ -70,19 +76,59 @@ las dos listas a propósito, no por doble conteo.
 ## Bloqueantes de FASE 2 — las decide el experimento, no el owner
 
 **No se pueden cerrar mientras su fila de [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md)
-diga `UNKNOWN`** (§61 y regla 3 del Decision Log). Hoy las 53 filas dicen `UNKNOWN`.
+diga `UNKNOWN`** (§61 y regla 3 del Decision Log). Al 2026-09-15, **29 de las 55** lo dicen —
+y **`BD-MP-03` y `BD-MP-04` ya no**.
 
 | ID | Pregunta | Filas que la desbloquean | Estado |
 |---|---|---|---|
 | `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6` | 🟡 espera 1C |
 | `BD-MP-02` | Cortesía temporal sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` | 🟡 espera 1C |
-| `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | 🟢 **filas cerradas, decidible** — el monto se muta sin re-consentimiento |
-| `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🟢 **filas cerradas, decidible** — una autorización cubre un solo monto |
+| `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | ✅ **`DEC-MP-001`** — se muta el monto del preapproval; el §29 se cumple del lado nuestro |
+| `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🔴 **la medición no alcanzó: sobrevivió una elección — ver abajo** |
 
-Además, dos decisiones del owner **quedan condicionadas** a la matriz aunque no sean
-bloqueantes de FASE 2: `BD-SUB-01` depende de `EX-4`/`EX-7`/`EX-8` para saber si el cambio de
-ciclo es siquiera implementable, y `M-LEGAL-01` depende de `RF-1`/`RF-3` para saber si se
-puede reembolsar.
+Además, `M-LEGAL-01` **queda condicionada** a la matriz aunque no sea bloqueante de FASE 2:
+depende de `RF-1`/`RF-3` para saber si se puede reembolsar. (`BD-SUB-01` ya no: `EX-4`, `EX-7`
+y `EX-8` están medidas y `DEC-SUB-005` la cerró.)
+
+### `BD-MP-04` — la medición cerró la pregunta técnica y dejó una elección abierta
+
+Estaba clasificada como *"la decide el experimento, no el owner"*. **Esa clasificación resultó
+incorrecta**, y conviene decirlo en vez de forzar una decisión que la medición no toma.
+
+Lo que el experimento sí cerró:
+
+- `EX-5` **`NOT_SUPPORTED`** — **una autorización cubre un solo monto**. `auto_recurring` como
+  array da `400`; el campo `items` devuelve `201` y **se descarta en silencio**. Un addon
+  recurrente **no puede ser una línea aparte dentro de la suscripción del plan**.
+- `EX-6` **`VERIFIED`** — **dos suscripciones autorizadas del mismo pagador conviven** sin
+  conflicto.
+- `PC-1`/`PC-3` **`VERIFIED`** — el monto de una autorizada se muta sin re-consentimiento.
+
+Y el §38 no deja lugar a dudas de que hacen falta: *"Tipos: one-time; **recurrent**"*.
+
+Con eso, **quedan dos mecanismos posibles y los dos funcionan**. Por eso la elección no la
+decide la matriz:
+
+| | (1) Subir el monto de la suscripción del plan | (2) Un preapproval aparte por addon recurrente |
+|---|---|---|
+| **Se apoya en** | `PC-1`, `PC-3` | `EX-6` |
+| **Qué ve el cliente en su tarjeta** | **un solo importe**, sin desglose | un cargo por el plan y otro por cada addon |
+| **Contratar un addon** | no le pide nada: es un `PUT` | exige **autorizar de nuevo**, con código de seguridad (`EX-9`) |
+| **Ciclo del addon** | **obligado al del plan**: un addon mensual sobre un plan anual no entra | **propio**, independiente del plan |
+| **Que venza el addon** | otra mutación del monto, con el riesgo del §0 en cada una | cancelar su preapproval, sin tocar el plan |
+| **Conciliar** | el importe cobrado **no dice** qué lo compone: hay que derivarlo del estado local | cada cobro se explica solo |
+| **Si la mutación falla en silencio** | se cobra de menos **o de más** sin que nadie lo note | no aplica |
+
+**Recomendación: (2)**, y el motivo no es el desglose sino el §40: el PDR define addons con
+scope `LISTING`, `VERTICAL_SUBSCRIPTION`, `USER` y `GLOBAL`, y el §41 exige poder cancelar un
+addon huérfano **sin** tocar lo demás. Con (1) cada alta y cada baja de addon es una mutación
+del monto del plan — el punto exacto donde este proveedor ya demostró aceptar sin aplicar — y
+un addon con ciclo propio directamente no existe.
+
+El costo de (2) está medido y es real: **contratar un addon recurrente le pide al cliente el
+código de seguridad**, igual que `DEC-SUB-005`.
+
+**Decide el owner.** Ninguna medición pendiente cambia este cuadro.
 
 ## No bloqueantes — las decide el owner
 
@@ -228,5 +274,5 @@ owner con su costo anotado.
 | Missing Requirements (`M-`) | 35 |
 | Objections (`O-`) | 6 |
 | Suggested Improvements (`S-`) | 9 |
-| Pending MP Validation | `MP-01` más toda la sección 4 y las 53 filas de la matriz |
+| Pending MP Validation | `MP-01` más toda la sección 4 y las 55 filas de la matriz |
 | **Total de hallazgos** | **104** (`E-TRIAL-04`, `E-ENT-01` y `E-SUB-05` agregados el 2026-09-15) |

@@ -328,14 +328,80 @@ endpoint público**. Reembolsos y los correos del proveedor siguen sin probarse.
 
 ---
 
+## 2026-09-15 — FASE 1C: el reloj, y tres conteos que mentían
+
+Sin credenciales en el entorno de esta sesión no se pudo medir nada nuevo. Se hizo lo que no
+dependía de ellas.
+
+### Se corrigieron tres afirmaciones falsas en los propios documentos del programa
+
+Las mediciones de webhooks (`WH-1`, `WH-4`, `EX-2`) entraron a la matriz **sin actualizar sus
+totales**, así que tres documentos afirmaban un estado que la propia matriz desmentía:
+
+| Documento | Decía | Es |
+|---|---|---|
+| `06-mp-validation-matrix.md` (cabecera y resumen) | 5 parciales, 32 `UNKNOWN`, "tres casos" del §0 | **8** parciales, **29** `UNKNOWN`, **cinco** casos |
+| `03-handoff.md` | "21 de 55 filas medidas", 5 parciales, 32 `UNKNOWN` | **26 de 55**, 8 parciales, 29 `UNKNOWN` |
+| `04-open-decisions.md` | "hoy **las 53 filas** dicen `UNKNOWN`" (dos veces) | 29 de **55**, y `BD-MP-03`/`BD-MP-04` ya no |
+
+No es contabilidad: la regla 3 del Decision Log y el §61 **prohíben decidir sobre una fila
+`UNKNOWN`**. Un documento que dice que las 53 filas están en `UNKNOWN` bloquea dos decisiones
+que ya se pueden tomar. El `DEC-SUB-001` del handoff describía además un condicional que
+`DEC-SUB-005` ya había reemplazado.
+
+### El atajo para las diecisiete filas que sólo esperan tiempo
+
+`RN-1..3`, `GR-1..3`, `PS-2`/`4`/`5`/`6`, `PA-4`, `EX-1`, `UP-1`/`2`, `DW-1`/`2` y `CT-1`/`3`
+no están en `UNKNOWN` por falta de permisos: **esperan que el proveedor ejecute un ciclo**.
+
+La espera no es de un mes. Sale de una medición que ya estaba hecha y que nadie había usado
+para esto: al rechazar `frequency_type: "years"`, el proveedor contestó *"valid ones are
+`[days, months]`"* (`FR-4`). **Un ciclo diario pone una renovación real a 24 h.**
+
+Eso **no está medido** y no se dio por cierto: que `days` se acepte al crear no prueba que se
+guarde ni que se ejecute. Es el primer control de la sonda 05, por relectura, siguiendo el §0.
+
+### Dos sondas nuevas, verificadas en seco
+
+- [`probe-05-arrancar-el-reloj.sh`](./mp-probes/probe-05-arrancar-el-reloj.sh) — crea **siete**
+  suscripciones de ciclo diario (una por bloque de filas), deja hechas las mutaciones del día 0
+  —bajar el monto, subirlo, llevarlo al piso de ARS 15, pausar— y escribe un manifiesto.
+- [`probe-06-leer-el-reloj.sh`](./mp-probes/probe-06-leer-el-reloj.sh) — vuelve a las 24 h,
+  48 h y 72 h y reporta el **delta entre dos fotos fechadas**, no el estado. Con `REANUDAR=1`
+  toma la foto antes y después de reanudar la pausa: ese par es el que decide el §26.4.
+
+Las dos se corrieron contra un `curl` stubbeado, sin tocar la red. **La corrida en seco
+encontró dos defectos que habrían costado un día de calendario cada uno**: una variable con
+`Ñ` que bajo `set -u` mataba la sonda después del primer sujeto —seis de siete no se creaban—,
+y un `request.json` que guardaba un `card_token_id: null` que nunca se había mandado, o sea
+evidencia falsificada.
+
+### Lo que quedó esperando al owner
+
+Cuatro cosas, y ninguna es una decisión de diseño: credenciales en el entorno, una aplicación
+de Mercado Pago aparte para pruebas (el webhook es por aplicación y su URL no se cambia por
+API), qué credenciales habilitan reembolsos en sandbox, y la casilla del comprador de prueba.
+
+---
+
 ## Próximo paso
 
-**Seguir FASE 1C.** Es lo que más urge:
+**Correr la sonda 05.** Es lo único del programa cuyo costo es tiempo de calendario: hasta que
+el reloj no arranque, diecisiete filas siguen en `UNKNOWN` por una razón que no se acelera
+después.
 
-- **`BD-MP-01` (pausa) y `BD-MP-02` (cortesía) siguen bloqueando FASE 2.** Las dos necesitan
-  mediciones que llevan tiempo real, no una conversación.
-- **`BD-MP-03` y `BD-MP-04` ya son decidibles**: sus filas están cerradas.
+Después, sin esperar a nadie:
+
+- **Escribir `BD-MP-03` y `BD-MP-04`**: sus filas están cerradas y las decisiones todavía no
+  están registradas. Bajan de 4 a 2 las bloqueantes de FASE 2.
+- **`BD-MP-01` (pausa) y `BD-MP-02` (cortesía)** siguen bloqueando FASE 2, y las dos dependen
+  de lo que devuelva la sonda 06.
 - **FASE 1B sigue bloqueada** por `DEC-METH-001`: no se lee código hasta que el diseño esté
   cerrado.
 
-**No quedan preguntas para el owner.** Las 25 de FASE 1A están respondidas.
+**Las 25 preguntas de FASE 1A están respondidas, pero FASE 1C abrió una nueva.** `BD-MP-04`
+tiene sus filas medidas y **le sobrevivió una elección de diseño**: con un solo monto por
+autorización (`EX-5`) y varias autorizaciones conviviendo (`EX-6`), un addon recurrente se
+puede implementar de dos maneras y las dos funcionan. Está planteada con su cuadro y una
+recomendación en `04-open-decisions.md`. Lo demás que falta del owner es **habilitación, no
+decisión**.
