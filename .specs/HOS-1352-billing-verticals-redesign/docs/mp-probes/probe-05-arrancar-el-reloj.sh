@@ -73,6 +73,12 @@ echo "############ salida: $OUT · manifiesto: $MANIFEST"
 #   APRO → aprueba · FUND → rechaza por fondos insuficientes
 # `FUND` es el sujeto de PA-4 y el que puede producir un cobro fallido real
 # sin tener que esperar a que una tarjeta buena falle sola.
+#
+# UN TOKEN SE USA UNA SOLA VEZ. Medido el 2026-09-15: tokenizar una vez y
+# reusar el mismo token para varios preapprovals devuelve
+# `400 "Card token was used, please generate new"` a partir del segundo. La
+# primera corrida de esta sonda perdió cinco de siete sujetos por eso. Por eso
+# `crear` tokeniza de nuevo para CADA sujeto.
 tokenizar() { # <nombre-titular> → imprime el token, o vacío
   local titular="$1" body resp
   body=$(jq -cn --arg n "$titular" '{
@@ -86,16 +92,28 @@ tokenizar() { # <nombre-titular> → imprime el token, o vacío
   printf '%s' "$resp" | jq -r '.id // empty'
 }
 
-TOK_APRO="$(tokenizar APRO)"
-TOK_FUND="$(tokenizar FUND)"
-[ -n "$TOK_APRO" ] || { echo "sin token APRO: no hay nada que arrancar"; exit 1; }
-echo "tokens → APRO: $([ -n "$TOK_APRO" ] && echo ok || echo FALLÓ) · FUND: $([ -n "$TOK_FUND" ] && echo ok || echo FALLÓ)"
+# `SOLO="slug slug"` crea únicamente esos sujetos. Sirve para completar una
+# corrida parcial sin duplicar los que ya están vivos: crear dos veces el mismo
+# sujeto deja basura cobrando en el sandbox y confunde la lectura de la 06.
+SOLO="${SOLO:-}"
+quiero() { [ -z "$SOLO" ] || printf '%s' " $SOLO " | grep -q " $1 "; }
 
 # --- crear un sujeto --------------------------------------------------------
 # Devuelve el id, y deja request, response y RELECTURA en disco.
-crear() { # <slug> <token|-> <monto> <start_date|-> <descripción>
-  local slug="$1" tok="$2" monto="$3" inicio="$4" desc="$5"
-  local body id code
+crear() { # <slug> <titular-de-la-tarjeta|-> <monto> <start_date|-> <descripción>
+  local slug="$1" titular="$2" monto="$3" inicio="$4" desc="$5"
+  local body id code tok="-"
+
+  quiero "$slug" || return
+
+  # un token nuevo por sujeto: son de un solo uso (ver arriba)
+  if [ "$titular" != "-" ]; then
+    tok="$(tokenizar "$titular")"
+    if [ -z "$tok" ]; then
+      printf '\n=== %-14s %s\n    NO SE PUDO TOKENIZAR (titular %s)\n' "$slug" "$desc" "$titular"
+      echo "$slug|"; return
+    fi
+  fi
 
   body=$(jq -cn --arg e "$MP_BUYER_EMAIL" --arg r "HOS1352 reloj $slug" \
                 --arg x "HOS-1352-reloj-$STAMP-$slug" --arg b "$BACK_URL" \
@@ -140,17 +158,22 @@ crear() { # <slug> <token|-> <monto> <start_date|-> <descripción>
 }
 
 # --- los siete sujetos ------------------------------------------------------
+# El titular de la tarjeta decide el resultado del cobro: APRO aprueba, FUND
+# rechaza por fondos, OTHE rechaza por error general.
 {
-  crear renov-ok       "$TOK_APRO" 2000 -         "RN-1: renovación exitosa a las 24 h"
-  crear renov-falla    "$TOK_FUND" 2000 "$MANANA" "PA-4 + RN-2 + GR-1..3: cobro que falla"
-  crear pausa-real     "$TOK_APRO" 2000 -         "PS-2/4/5/6: se pausa abajo, por 24 h reales"
-  crear sin-autorizar  -           2000 -         "EX-1: nunca se autoriza. ¿Vence? ¿Cuándo?"
-  crear monto-baja     "$TOK_APRO" 2000 -         "DW-1/DW-2: el monto baja a 1000"
-  crear monto-sube     "$TOK_APRO" 2000 -         "UP-1/UP-2: el monto sube a 4000"
-  crear cortesia-piso  "$TOK_APRO" 2000 -         "CT-1/CT-3: el monto baja al piso de ARS 15"
-} | tee "$OUT/creacion.log"
+  crear renov-ok       APRO 2000 -         "RN-1: renovación exitosa a las 24 h"
+  crear renov-falla    FUND 2000 "$MANANA" "PA-4 + RN-2 + GR-1..3: cobro que falla"
+  crear renov-falla2   OTHE 2000 "$MANANA" "ídem, por si FUND no pasa la validación de tarjeta"
+  crear renov-falla3   APRO 2000 -         "RN-2/GR-*: nace sana y abajo se le sube el monto a un absurdo"
+  crear pausa-real     APRO 2000 -         "PS-2/4/5/6: se pausa abajo, por 24 h reales"
+  crear sin-autorizar  -    2000 -         "EX-1: nunca se autoriza. ¿Vence? ¿Cuándo?"
+  crear monto-baja     APRO 2000 -         "DW-1/DW-2: el monto baja a 1000"
+  crear monto-sube     APRO 2000 -         "UP-1/UP-2: el monto sube a 4000"
+  crear cortesia-piso  APRO 2000 -         "CT-1/CT-3: el monto baja al piso de ARS 15"
+} | tee -a "$OUT/creacion.log"
 
-ids() { grep -E "^$1\|" "$OUT/creacion.log" | tail -1 | cut -d'|' -f2; }
+# el `.` final exige que haya id: una línea "slug|" es un sujeto que no se creó
+ids() { grep -E "^$1\|." "$OUT/creacion.log" | tail -1 | cut -d'|' -f2; }
 
 # --- las mutaciones que hay que dejar hechas HOY -----------------------------
 # El sentido de cada una es qué hace el proveedor con ella EN EL CICLO
@@ -179,17 +202,40 @@ mutar cortesia-piso   '{"auto_recurring":{"transaction_amount":15,"currency_id":
 mutar pausa-real      '{"status":"paused"}' \
       "queda pausada 24 h REALES: PS-2, PS-4, PS-5, PS-6"
 
+# Provocar un cobro FALLIDO resultó no ser trivial: las tarjetas de prueba que
+# rechazan (titular FUND, titular OTHE) NO llegan a crear la suscripción —
+# mueren antes con `400 CC_VAL_433 Credit card validation has failed`. O sea
+# que no se puede fabricar una renovación fallida eligiendo una tarjeta mala.
+# Queda un camino: nacer con una tarjeta buena y subir el monto a algo que la
+# tarjeta de prueba no pueda pagar mañana. Si tampoco falla, RN-2 y GR-* piden
+# otra idea, y eso ya es un hallazgo.
+mutar renov-falla3    '{"auto_recurring":{"transaction_amount":9999999,"currency_id":"ARS"}}' \
+      "¿un monto absurdo hace fallar el cobro de mañana?"
+
 # --- manifiesto -------------------------------------------------------------
 # Es lo que la sonda 06 vuelve a leer mañana. Sin esto, el experimento se
 # pierde: no hay forma de encontrar estas suscripciones por external_reference
 # (RC-1: el search lo ignora en silencio).
-jq -n --arg t0 "$(date -Is)" --arg stamp "$STAMP" '
-  {arrancado: $t0, stamp: $stamp, sujetos: $sujetos}' \
-  --argjson sujetos "$(
-    for s in renov-ok renov-falla pausa-real sin-autorizar monto-baja monto-sube cortesia-piso; do
-      printf '{"slug":"%s","id":"%s"}\n' "$s" "$(ids "$s")"
-    done | jq -sc '[.[] | select(.id != "")]'
-  )" > "$MANIFEST"
+#
+# Se MEZCLA con el manifiesto anterior si lo hay. Sobrescribirlo tiraría los
+# sujetos de una corrida parcial previa, que son los que ya están contando el
+# tiempo: perderlos cuesta un día, no un comando. `arrancado` conserva el
+# instante de la PRIMERA corrida, que es contra el que se mide todo.
+NUEVOS=$(
+  for s in renov-ok renov-falla renov-falla2 renov-falla3 pausa-real sin-autorizar \
+           monto-baja monto-sube cortesia-piso; do
+    printf '{"slug":"%s","id":"%s"}\n' "$s" "$(ids "$s")"
+  done | jq -sc '[.[] | select(.id != "")]'
+)
+PREVIO='{"sujetos":[]}'
+[ -f "$MANIFEST" ] && PREVIO=$(cat "$MANIFEST")
+jq -n --arg t0 "$(date -Is)" --arg stamp "$STAMP" \
+      --argjson previo "$PREVIO" --argjson nuevos "$NUEVOS" '
+  {arrancado: ($previo.arrancado // $t0),
+   stamp:     ($previo.stamp // $stamp),
+   ampliado:  (if ($previo.sujetos | length) > 0 then $t0 else null end),
+   sujetos:   (($previo.sujetos + $nuevos) | group_by(.slug) | map(.[0]))}' \
+  > "$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
 
 echo; echo "############ manifiesto:"; jq -c '.sujetos[]' "$MANIFEST"
 cat <<TXT
