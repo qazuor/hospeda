@@ -94,12 +94,30 @@ echo "   la clave de idempotencia tiene que salir de tipo + id del recurso)"
 
 echo
 echo "=== La firma: qué headers manda de verdad ==="
+# Se busca el PRIMER evento que efectivamente traiga firma, no el primero a
+# secas: un POST de prueba propio, sin firma, hacía que esto informara
+# "sin headers de firma" con la firma presente en todas las entregas reales.
 printf '%s' "$RESP" | jq -r '
-  (.eventos[0].headers // {})
+  ([.eventos[] | select(.headers["x-signature"])] | first | .headers // {})
   | to_entries
   | map(select(.key | test("signature|request-id|timestamp|hook|mercado"; "i")))
-  | if length == 0 then "  (sin headers de firma en la primera entrega)"
+  | if length == 0 then "  (ninguna entrega trajo firma todavía)"
     else .[] | "  \(.key): \(.value)" end'
+
+echo
+echo "=== EX-2 (bis) — la VERSIÓN del recurso ==="
+# El campo `version` del cuerpo es un contador por recurso. Si es monótono,
+# sirve para descartar un evento viejo que llega tarde, que es exactamente lo
+# que M-CONC-02 (no-retroceso de estado) necesita — y sirve mejor que el id
+# del evento, que cambia en cada reentrega.
+printf '%s' "$RESP" | jq -r '
+  [.eventos[] | (.body_crudo | fromjson? // {}) as $b
+   | select($b.version != null)
+   | {recurso: ($b.data.id // "?"), version: $b.version, llegada: .llegada}]
+  | group_by(.recurso)
+  | if length == 0 then "  (ninguna entrega trajo version)"
+    else .[] | "  recurso \(.[0].recurso): versiones \([.[].version] | join(", "))"
+    end'
 
 echo
 echo "############ Para el detalle completo: --crudo"
