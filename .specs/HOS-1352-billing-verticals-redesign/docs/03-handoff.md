@@ -75,15 +75,11 @@ El 2026-09-15 quedaron **ocho sujetos vivos** de ciclo diario en el sandbox. El
 ciclo diario funciona y está verificado por relectura. Lo que sigue sólo
 depende de que el proveedor ejecute un ciclo.
 
-> ⚠️ **ANTES QUE NADA, devolver el receptor a modo normal.** Quedó en `mode=fail`
-> para medir los reintentos (`WH-4`). Si sigue así cuando lleguen las
-> renovaciones, **todas van a fallar y reintentarse**, y encima el proveedor
-> podría dejar de mandar:
->
-> ```bash
-> cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
-> SINK_URL=https://hos1352-webhook-sink.qazuor.workers.dev bash probe-08-leer-webhooks.sh --ok
-> ```
+> ✅ **El receptor está en modo normal.** Estuvo en `mode=fail` para medir los
+> reintentos de `WH-4` y se devolvió a `ok` el 2026-09-15 16:36, verificado con
+> un POST de control (`200`). Si alguna vez se vuelve a poner en `--fail`,
+> **acordarse de devolverlo**: con el receptor fallando, las renovaciones se
+> pierden en reintentos y `RN-1` queda sin medir.
 
 **A partir del 2026-09-16 ~11:30, correr la sonda 06:**
 
