@@ -9,13 +9,15 @@ status: CURRENT
 
 # Handoff — estado del programa
 
-> **Si sos un agente que acaba de entrar a este programa: leé esto entero antes de hacer
-> nada, y después leé los documentos en el orden de abajo. No confíes en memoria implícita,
-> ni en engram, ni en lo que diga otro CLAUDE.md sobre billing.** El PDR es explícito:
-> conocimiento viejo reutilizado como si siguiera vigente es una de las causas de que
-> estemos acá.
+> **Si sos un agente o una persona que acaba de entrar a este programa: leé esto entero antes
+> de hacer nada, y después leé los documentos en el orden de abajo.**
+>
+> **No confíes en memoria implícita, ni en engram, ni en ningún `CLAUDE.md`, ni en
+> documentación del repo, ni en un sistema de tracking.** El PDR es explícito (§3.5):
+> reutilizar conocimiento viejo como si siguiera vigente es una de las causas de que estemos
+> acá. Este programa ya tuvo que resetearse una vez por exactamente eso (`DEC-METH-001`).
 
-## Orden de lectura obligatorio
+## Orden de lectura obligatorio (§66)
 
 1. [`00-PDR.md`](./00-PDR.md) — el documento rector del owner. **Inmutable.**
 2. [`01-decision-log.md`](./01-decision-log.md) — qué se decidió y por qué.
@@ -23,96 +25,88 @@ status: CURRENT
 4. **Este archivo** — dónde estamos parados.
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
-7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de MP (hoy: nada verificado).
-8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay.
+7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
+   (hoy: **nada**, las 53 filas en `UNKNOWN`).
 
 ---
 
-## Última actualización: 2026-09-15 (segunda sesión)
+## Última actualización: 2026-09-15
 
 ### Último punto completado
 
-**FASE 0 completa**, **FASE 1A entregada y respondida**: el owner cerró **36 decisiones**.
+**FASE 0 completa. FASE 1A entregada y esperando respuesta del owner.**
+
+El programa se reseteó hoy: el único documento heredado es el PDR (`DEC-METH-001`). Todo lo
+demás se escribió de cero contra ese texto.
 
 ### Estado por fase
 
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | ✅ **cerrada** — 36 decisiones tomadas |
-| FASE 1B — discovery del sistema actual | 🟢 **desbloqueada** |
-| FASE 1C — experimentación con MP | 🟢 **desbloqueada, y es la que más urge** |
-| FASE 2 — Master Spec | 🟡 1 bloqueante abierta (`BD-MP-04`), depende de 1C |
-| FASE 3-10 | ⬜ no empezadas |
+| FASE 1A — análisis de dominio | 🟡 **entregada, esperando las 25 respuestas del owner** |
+| FASE 1B — discovery del sistema actual | ⛔ bloqueada por §67 y por `DEC-METH-001` |
+| FASE 1C — experimentación con Mercado Pago | ⛔ bloqueada: mismo orden, más la pregunta 24 |
+| FASE 2 — Master Spec | ⛔ bloqueada por 12 decisiones bloqueantes |
+| FASE 3 a 10 | ⬜ no empezadas |
 
 ### Próximo paso exacto
 
-**Arrancar FASE 1C**, y 1B en paralelo si hay capacidad.
+**Que el owner responda las 25 preguntas del §16 de
+[`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).**
 
-1C va primero porque hay seis cosas esperando su resultado:
+Nada avanza antes de eso. Las 8 primeras son bloqueantes de FASE 2; las otras 17 no frenan
+pero se necesitan igual para escribir la Master Spec sin inventar.
 
-| Espera | Filas de la matriz |
-|---|---|
-| `BD-MP-01` mecanismo de pausa | `PA-1`…`PA-7` |
-| `BD-MP-02` cortesía sobre suscripción viva | `CO-1`…`CO-3` |
-| `BD-MP-03` cambio de precio sobre vigentes | `PR-1`…`PR-3` |
-| `BD-MP-04` addons recurrentes (**la última bloqueante**) | `AD-1`, `AD-2` |
-| Plan B de `DEC-SUB-001`: ¿se puede correr la primera fecha de cobro? | `PA-5`, `PA-6`, `F-5` |
-| `DEC-LEGAL-001`: ¿se pueden emitir reembolsos? | (agregar fila) |
+Cuando lleguen las respuestas:
 
-Reglas de 1C, del PDR §58-61: nada se completa desde documentación ni memoria — **sólo con un
-experimento ejecutado**, con request, response y webhook registrados. Las sondas van
-versionadas en `docs/mp-probes/`, marcadas como no productivas.
+1. Se registra **una decisión por respuesta** en
+   [`01-decision-log.md`](./01-decision-log.md), con el formato del §3.4 y declarando de qué
+   fuente sale su fundamento.
+2. Se marca cada ítem cerrado en [`04-open-decisions.md`](./04-open-decisions.md), **en el
+   mismo commit**.
+3. Recién entonces se habilitan 1B y 1C.
+
+### Decisiones tomadas
+
+**Una**, y es de metodología: `DEC-METH-001` (reset total). **Cero decisiones funcionales.**
+
+Si alguien encuentra una afirmación funcional en cualquier documento de este programa que no
+esté respaldada por el PDR, por una medición fechada o por una respuesta del owner, es un
+defecto: hay que marcarlo, no usarlo.
+
+### Reglas duras que rigen ahora
+
+- **`00-PDR.md` no se edita nunca** (§3.1). Toda desviación se registra como decisión en `01`.
+- **Una decisión `ACCEPTED` no se edita**: se crea otra que la marque `SUPERSEDED`.
+- **No se toca código productivo** hasta FASE 10 (§4), y por `DEC-METH-001` **ni siquiera se
+  lee código** para fundamentar una decisión funcional, hasta que el diseño esté cerrado.
+- **No se implementa ninguna capability cuya fila de la matriz diga `UNKNOWN`** (§61), ni se
+  toma ninguna decisión que dependa de ella.
+- **No se clasifica nada como `KEEP` / `ADAPT` / `REWRITE`**: eso es FASE 5, y su criterio ni
+  siquiera está definido (pregunta 25).
+- **Ningún documento de este programa referencia trabajo anterior.** Si encontrás una
+  referencia así, es un defecto.
+- Los hallazgos de 1A **no se reescriben**. Si aparece algo nuevo, se agrega con un ID nuevo.
 
 ### Lo que NO hay que rehacer
 
-- El PDR ya está guardado verbatim. No lo edites por ningún motivo.
-- **Las 36 decisiones ya están tomadas.** No las re-litigues ni le vuelvas a preguntar al
-  owner lo que ya respondió: está todo en [`01-decision-log.md`](./01-decision-log.md). Si una
-  decisión resulta inviable por lo que aparezca en 1B o 1C, se crea una **nueva** que marque
-  la anterior `SUPERSEDED` — no se edita la vieja.
-- El análisis 1A es el registro de lo que se encontró. Si aparece algo nuevo, **agregalo con
-  un ID nuevo**; no reescribas los existentes.
-- Los conteos de producción se hicieron el 2026-09-15. Volvé a medirlos sólo si pasó tiempo o
-  si una decisión depende de un número que pudo moverse (el primer trial vence el
-  **2026-09-26**).
-- El issue paraguas ya existe: **HOS-1352**. No crees otro.
-
-### Gate de FASE 5 — leer antes de clasificar nada
-
-`DEC-METH-005`: **el criterio para clasificar KEEP / ADAPT / REWRITE se define al empezar
-FASE 5**, con el inventario de 1B terminado a la vista.
-
-**No clasifiques ninguna pieza antes de haberlo definido.** Hacerlo "mientras tanto" es elegir
-no tener criterio, sin decirlo. Y si el criterio que se elija trata distinto al Eje 2
-(comportamiento específico de vertical, §8), tiene que decirlo explícitamente: un criterio
-anterior fallaba justamente ahí, porque exigía que el código no nombrara ninguna vertical y
-eso mandaba todo el Eje 2 a `REWRITE` por definición.
-
-Sea cual sea el resultado, **toda clasificación lleva su argumento escrito**.
-
-### Cuatro decisiones con riesgo declarado
-
-No son errores: son decisiones del owner con su costo anotado. Están en la tabla "Para revisar
-más adelante" de [`04-open-decisions.md`](./04-open-decisions.md).
+- El PDR ya está guardado, verbatim, con su integridad verificada contra el historial de git.
+- El análisis 1A ya está entregado. Si algo le falta, se **agrega**; no se reescribe.
+- El issue paraguas ya existe: **HOS-1352**. No crear otro.
 
 ### Dónde está el trabajo
 
 - **Worktree**: `/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign`
-- **Branch**: `spec/HOS-1352-billing-verticals-redesign` (de `origin/staging` @ `60a39dae2`)
-- **Linear**: [HOS-1352](https://linear.app/hospeda-beta/issue/HOS-1352)
-- Sólo documentos. Cero código, cero migraciones.
-
-### Prohibiciones vigentes
-
-Hasta FASE 10, por §4 del PDR: sin código productivo, sin migraciones, sin borrar código,
-sin tocar la DB productiva (lecturas sí), sin modificar la integración con MP, sin PRs de
-implementación, y **sin conservar nada sólo porque ya existe**.
+- **Branch**: `spec/HOS-1352-billing-verticals-redesign`
+- **Linear**: HOS-1352
+- Sólo documentos. Cero código, cero migraciones, cero cambios en la DB.
 
 ### Trampas concretas de este entorno
 
-- `hops psql` con salida **vacía** significa que la query falló, no que haya cero filas.
-  Un `UNION` largo se anula entero si una columna no existe. Partí las consultas.
-- `--target=` va **antes** del subcomando y es obligatorio.
-- El clone principal puede estar en detached HEAD o en la branch de otra sesión. Trabajá
-  siempre en el worktree de arriba.
+- El clone principal del repo puede estar en `detached HEAD` o en la branch de otra sesión.
+  **Trabajá siempre en el worktree de arriba.**
+- Si en algún momento se autorizan conteos de producción (pregunta 24): una salida **vacía**
+  de la consola de SQL significa que la consulta falló y el error se tragó, **no** que haya
+  cero filas. Un `UNION` largo se anula entero si una sola columna no existe. Partir las
+  consultas.

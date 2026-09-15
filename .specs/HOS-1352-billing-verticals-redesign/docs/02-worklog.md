@@ -3,171 +3,170 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
+updated: 2026-09-15
 status: CURRENT
 ---
 
 # Worklog
 
-Registro cronológico del programa. Tiene que poder responder, en cualquier momento:
-**"¿qué hicimos hasta ahora y por qué?"**
+Registro cronológico exigido por el [PDR](./00-PDR.md) §3.2. Tiene que poder responder, en
+cualquier momento: **"¿Qué hicimos hasta ahora y por qué?"**
 
-Se agrega al final. No se reescribe el pasado: si algo resultó estar mal, se anota abajo que
-estaba mal, con la fecha en que se supo.
-
----
-
-## 2026-09-15 — FASE 0 y FASE 1A
-
-### Qué se hizo
-
-**FASE 0 — bootstrap**
-
-1. El owner entregó el PDR rector completo en una sola sesión.
-2. Se acordaron tres cosas antes de empezar (ver `DEC-METH-001/002/003`): ubicación de los
-   documentos, issue paraguas nuevo, y permiso para contar filas en producción.
-3. Se buscaron duplicados en Linear (team `Hospeda`) con dos consultas: "rediseño billing
-   verticales" y "billing redesign motor generico rewrite". **No existía ningún issue
-   paraguas de rediseño integral.** Sí aparecieron ~20 issues puntuales de `area-billing`
-   abiertos, incluido `HOS-1257` (paridad entre verticales, con worktree activo).
-4. Se creó **`HOS-1352`** como issue paraguas.
-5. Se creó el worktree `hospeda-spec-hos-1352-billing-redesign`, branch
-   `spec/HOS-1352-billing-verticals-redesign`, cortada de `origin/staging` (`60a39dae2`).
-   No se levantaron servers ni DB: el worktree es sólo para documentos.
-6. Se escribió el PDR verbatim en [`00-PDR.md`](./00-PDR.md), marcado inmutable, más este
-   worklog, el decision log, el handoff, las decisiones abiertas y la matriz MP vacía.
-
-**Inventario de hechos duros** (autorizado, ver `DEC-METH-003`)
-
-Conteos read-only contra producción. El resultado más importante:
-**cero pagos registrados en producción** (`billing_payments` = 0 filas), y cero fichas de
-gastronomía, experiencias y partner. Lo que hay vivo son 3 trials con preapproval de MP,
-2 cortesías, 22 usuarios y 12 alojamientos (5 publicados). Detalle completo en
-[`07-facts-inventory.md`](./07-facts-inventory.md).
-
-**FASE 1A — análisis del dominio**
-
-Se analizó el PDR contra sí mismo, sin mirar código. Resultado en
-[`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md): 6 contradicciones,
-6 ambigüedades, 9 decisiones bloqueantes, 5 abiertas, 11 edge cases, 4 riesgos,
-31 requisitos faltantes, 3 objeciones, 7 mejoras sugeridas y 21 preguntas para el owner.
-
-### Qué se encontró (lo que más pesa)
-
-- **`BD-ARCH-01`** — el PDR nunca define si los planes son mutables o versionados, y define
-  todo lo demás encima de esa pregunta. Es la decisión que más condiciona el esquema.
-- **`C-ARCH-01`** — "toda la configuración en DB" (§9) es inaplicable tal como está escrito:
-  el código necesita nombrar las claves de entitlement y limit para poder gatear. Hay que
-  acotar el principio o se va a violar en silencio, que es cómo se llegó a la situación
-  actual.
-- **`M-SUB-01`** — falta el estado `PENDING_AUTHORIZATION`. En el modelo elegido (§5.6) esa
-  ventana existe siempre y es donde se pierde gente.
-- **`M-ENT-01`** — §37 asume que todos los limits suman; hay limits donde sumar es incorrecto.
-  Falta `aggregationStrategy`.
-- **`M-LEGAL-01`** — el PDR no menciona el botón de baja ni el derecho de revocación de 10
-  días, que son requisitos legales duros para cobrar por débito automático en Argentina.
-- **`C-TRIAL-02`** — §17 dice que Partner tiene trial; §17.3 lo hace imposible.
-- Los conteos de producción **abaratan mucho** `BD-MIG-01` y `R-MIG-01`: no hay historial de
-  pagos que preservar. Son cinco relaciones a migrar, no una base instalada.
-
-### Problemas encontrados en el camino
-
-- `hops psql` devuelve **salida vacía** cuando la query falla: un `UNION` de diez tramos se
-  anula entero si una sola columna no existe. Se resolvió partiendo las consultas.
-- El clone principal estaba en detached HEAD; todo el trabajo se hizo en el worktree nuevo
-  para no tocar la branch de otra sesión.
-
-### Decisiones tomadas
-
-`DEC-METH-001`, `DEC-METH-002`, `DEC-METH-003`. Ver
-[`01-decision-log.md`](./01-decision-log.md).
+Se escribe hacia abajo. Nada se edita retroactivamente: si algo resultó estar mal, se agrega
+una entrada nueva que lo diga.
 
 ---
 
-## 2026-09-15 (más tarde) — Cierre de 1A: 36 decisiones
+## 2026-09-15 — Reset del programa
+
+### Qué pasó
+
+Una pasada anterior de este mismo programa produjo análisis, decisiones y mediciones que
+resultaron **contaminados**: parte de su fundamento venía de fuentes que el §0 prohíbe
+explícitamente usar como tales — comportamiento legacy, documentación obsoleta,
+implementaciones actuales, memoria de sesiones previas y suposiciones sobre Mercado Pago.
+
+El caso que lo destapó: se le atribuyó al PDR una afirmación que el PDR **no hace**. Eso es
+peor que usar información vieja, porque falsifica el origen de la afirmación y la vuelve
+irrastreable: quien la lea después no tiene forma de saber que hay que verificarla.
+
+Una auditoría posterior encontró que el problema no era aislado. Había citas a secciones del
+PDR que decían otra cosa, decisiones apoyadas en artefactos preexistentes leídos como estado
+actual, y conteos que no reproducían.
+
+### Qué se decidió
+
+**Reset total** (`DEC-METH-001`): el único documento que sobrevive es
+[`00-PDR.md`](./00-PDR.md). Todo lo demás se rehace desde cero.
+
+El owner eligió esta opción por sobre dos alternativas menos drásticas (conservar las
+decisiones ya tomadas, o conservar además los hechos ya medidos). El motivo: **cero
+herencia**, ni siquiera un resultado medido por una sesión contaminada.
 
 ### Qué se hizo
 
-El owner pidió resolver, en una sola sesión, todo lo que dependiera de su decisión y no
-necesitara investigación previa. Se recorrieron **30 decisiones suyas en siete tandas**, más
-seis que aparecieron durante la conversación.
+1. **Verificación de integridad del PDR.** Se comprobó contra el historial de git que
+   `00-PDR.md` fue introducido por un único commit y que su contenido no fue modificado desde
+   entonces. Sigue siendo verbatim.
+2. **Borrado** de todos los demás documentos del programa, incluidas las sondas de Mercado
+   Pago. No se archivaron ni se marcaron como históricos: se eliminaron. Un documento marcado
+   `LEGACY` que queda a mano vuelve a contaminar, y §3.5 advierte justamente sobre *"permitir
+   que documentación antigua parezca vigente"*.
+3. **FASE 0 rehecha** (§65): Decision Log, este Worklog y el Handoff, más el índice del
+   programa.
+4. **FASE 1A rehecha** (§67): lectura crítica del PDR contra sí mismo, sin mirar código, sin
+   consultar documentación del repo, sin tracking y sin memoria.
 
-**Resultado: 36 decisiones cerradas.** Detalle completo en
-[`01-decision-log.md`](./01-decision-log.md); el mapeo pregunta → decisión, en
-[`04-open-decisions.md`](./04-open-decisions.md).
+### Problema de método que queda registrado
 
-De las 7 bloqueantes de FASE 2, **quedaron cerradas 6**. La séptima (`BD-MP-04`, addons
-recurrentes) el owner la dejó **deliberadamente condicionada a FASE 1C**, porque la opción
-buena para el cliente — cobrarlos junto al plan — depende de lo que permita MercadoPago.
+Las tres reglas que se agregaron al Decision Log salen directamente de lo que falló:
 
-### Lo que se verificó en el camino
+- Sólo se admiten **tres fuentes** de fundamento: el PDR, una medición propia fechada, o una
+  respuesta explícita del owner.
+- Si una decisión cita un `§`, **el texto se verifica contra el PDR antes de escribirla**.
+- Ningún documento de este programa referencia trabajo anterior. Un enlace a algo previo es un
+  defecto, no una fuente.
 
-Para responder `BD-SUB-02` no alcanzaba con opinar, así que se consultó la **documentación
-oficial de Stripe** vía Context7, de donde copia el resto de la industria. Lo que encontró
-corrigió mi propia recomendación previa:
+---
 
-- Cambio de precio con el mismo intervalo: se prorratea en la próxima factura, sin mover la
-  fecha de cobro.
-- Downgrades: se agendan a fin de período con *subscription schedules* (su portal lo llama
-  literalmente "Manage downgrades").
-- **Cambio de intervalo: es la excepción explícita.** Se acredita el tiempo no usado, se cobra
-  el precio nuevo de inmediato y el ciclo se reinicia.
+## 2026-09-15 — FASE 0
 
-Yo había recomendado que el cambio de ciclo esperara siempre a la renovación. La industria
-hace lo contrario. Se adoptó la regla de la industria (`DEC-SUB-001`), con la salvedad de que
-**la compensación se hace en días y no en pesos** — corriendo la primera fecha de cobro del
-preapproval nuevo — porque prorratear dinero es justamente lo que MP probablemente no soporta.
-El plan B quedó declarado por si 1C dice que no.
+**Completada.** Los cuatro entregables del §65:
 
-### Hallazgo aportado por el owner
+| Documento | Qué es |
+|---|---|
+| [`00-PDR.md`](./00-PDR.md) | Ya estaba, verbatim, con integridad verificada |
+| [`01-decision-log.md`](./01-decision-log.md) | Formato del §3.4, reglas, y `DEC-METH-001` |
+| [`02-worklog.md`](./02-worklog.md) | Este archivo |
+| [`03-handoff.md`](./03-handoff.md) | Handoff vivo del §3.3 |
 
-**`M-MAIL-04`**: cuando el motor cancela, pausa o modifica un preapproval, **MercadoPago le
-manda al cliente su propio correo**, que nosotros no escribimos ni controlamos. El cliente
-recibe "tu suscripción fue cancelada" sin contexto.
+Más el índice en [`../spec.md`](../spec.md) con el orden de lectura obligatorio del §66.
 
-No es un caso de un flujo: es transversal a toda operación sobre un preapproval. Se agregó al
-análisis 1A y se cerró como `DEC-MAIL-002`: **todo lo que toque un preapproval va precedido de
-un correo nuestro**.
+**Decisiones tomadas**: una, `DEC-METH-001` (reset total), decidida por el owner.
 
-### Decisiones que se apartaron de la recomendación
+---
 
-Cinco, todas del owner y todas con su riesgo declarado en el log:
+## 2026-09-15 — FASE 1A
 
-- `DEC-METH-004` — sin criterio fijo para KEEP vs REWRITE, caso por caso. Es la que más
-  tensión guarda con el §2 del propio PDR; conviene revisarla al empezar FASE 5.
-- `DEC-ENT-003` y `DEC-GRANT-001` — cancelar sin reembolso. Riesgo bajo hoy (todas las
-  suscripciones vivas son mensuales), alto si aparece un ciclo anual.
-- `DEC-ADDON-004` y `DEC-ADDON-005` — el reloj del addon corre igual, y el addon se pierde con
-  la ficha. Ambas necesitan que la UI avise explícitamente.
-- `DEC-MAIL-001` — campañas de recuperación en paralelo sin control. Riesgo teórico hoy: sólo
-  una vertical tiene contenido.
-- `DEC-PROMO-003` — scope "verticales futuras" sin restricción.
+**Entregada.** Análisis crítico del dominio en
+[`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).
 
-### Revisión de DEC-METH-004, el mismo día
+### Qué se investigó
 
-El owner pidió volver sobre la única decisión que había quedado en tensión con su propio PDR:
-clasificar KEEP vs REWRITE caso por caso, sin criterio.
+Únicamente el PDR, leído entero y contra sí mismo. Cada `§` citado se verificó contra el texto
+antes de escribirlo.
 
-Al discutirla aparecieron las dos caras:
+### Qué se encontró
 
-- **A favor de tener criterio**: FASE 5 son decenas de clasificaciones (42 tablas de billing
-  medidas, más al menos siete motores de entitlements detectados). El §2 pone la carga de la
-  prueba del lado de conservar, pero eso sólo funciona si hay algo concreto que rendir; sin
-  eso la carga se invierte sola, porque conservar nunca requiere defensa. Y con el programa
-  atravesando varias ventanas de contexto (§3.3), dos piezas equivalentes se clasifican al
-  revés sin que nadie lo note.
-- **En contra del criterio que yo había propuesto**: era **defectuoso**. Su punto 2 exigía que
-  el código no nombrara ninguna vertical, pero el §8 define el Eje 2 como *comportamiento
-  específico de vertical*. Ese criterio mandaba todo el Eje 2 a `REWRITE` por definición.
+**101 hallazgos** agrupados por dominio, con ID estable:
 
-**Resultado**: `DEC-METH-004` queda `SUPERSEDED` por **`DEC-METH-005`** — la decisión se toma
-al empezar FASE 5, con el inventario real de 1B enfrente, y es el **gate de entrada** de esa
-fase: no se clasifica ninguna pieza antes de haberla tomado.
+| Categoría | Cantidad |
+|---|---|
+| Contradicciones internas del PDR | 5 |
+| Ambigüedades | 13 |
+| **Decisiones bloqueantes de FASE 2** | **12** |
+| Decisiones abiertas no bloqueantes | 5 |
+| Edge cases sin regla | 12 |
+| Riesgos | 5 |
+| Requisitos aparentemente olvidados | 35 |
+| Objeciones | 6 |
+| Mejoras sugeridas | 9 |
+| Pendientes de validación con Mercado Pago | toda la sección 4 |
 
-### Próximo paso exacto
+De las 12 bloqueantes, **8 las decide el owner** y **4 las decide el experimento** de FASE 1C
+— no se pueden responder por conversación porque dependen de hechos del proveedor que §58
+exige comprobar.
 
-**FASE 1B está desbloqueada** (discovery del sistema actual), y **FASE 1C también** —
-son independientes entre sí.
+### Lo más estructural que apareció
 
-Conviene **arrancar por 1C**: hay 4 decisiones esperando su resultado (`BD-MP-01`, `BD-MP-02`,
-`BD-MP-03`, `BD-MP-04`), más el plan B de `DEC-SUB-001` y el reembolso que necesita
-`DEC-LEGAL-001`. Mientras 1C corre, 1B puede avanzar en paralelo.
+- **Los planes**: el PDR nunca dice si son mutables o versionados, y define encima de esa
+  respuesta la derivación del Trial Plan, el enforcement de excedentes, los cambios de precio
+  y el recálculo de limits.
+- **"El plan más premium" no es computable.** §10.3 lo exige y ningún lado define el orden.
+- **§9 es inaplicable tal como está escrito**: no se puede evaluar una capacidad sin nombrarla
+  en código. Hace falta acotar el principio, o se va a violar en silencio.
+- **§7 y §8 no traen criterio para distinguirse.** "Motor único" y "comportamiento específico
+  de vertical" son las dos correctas, y sin una regla escrita cualquier divergencia futura se
+  justifica sola como Eje 2.
+- **La matriz de cambio de plan tiene seis celdas sin política**, porque §27 y §28 definen
+  upgrade/downgrade sobre un eje y §18 crea dos.
+- **Falta el estado "autorización creada y todavía no completada"**, que el modelo del §5.6
+  vuelve estructural: existe siempre, por diseño.
+- **Faltan la baja online y el derecho de revocación**, que el PDR no menciona en ningún lado
+  y son obligaciones para cobrar por débito automático.
+
+### Experimentos realizados
+
+**Ninguno.** FASE 1C no empezó y no puede empezar antes de que el owner responda 1A. La matriz
+de [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) quedó armada con sus **53
+filas en `UNKNOWN`**: 42 de la matriz mínima del §60 y 11 agregadas por el propio análisis,
+marcadas como agregadas.
+
+### Mediciones realizadas
+
+**Ninguna.** Varias decisiones dependen de cuántos clientes reales hay (`O-MIG-01` señala que
+el propio §56 apoya su conclusión en un *"hay pocos customers actuales"* sin número). Medirlo
+no rompe ninguna prohibición — §4 permite explícitamente *"ejecutar queries"* e *"inspeccionar
+DB"* — pero está cerca de la línea del §67, así que **se preguntó en vez de asumirlo**
+(pregunta 24).
+
+### Preguntas abiertas
+
+**25**, en el §16 del análisis. Las 8 primeras son bloqueantes.
+
+### Respuestas del owner
+
+Ninguna todavía.
+
+---
+
+## Próximo paso
+
+Que el owner responda las 25 preguntas del §16. Nada avanza antes de eso:
+
+- **FASE 1B** no puede empezar: §67 dice *"NO empezar FASE 1B hasta que yo responda las
+  preguntas de 1A"*. Y por `DEC-METH-001` la restricción es más fuerte todavía: no se mira
+  código hasta que el diseño esté cerrado.
+- **FASE 1C** tampoco: el mismo orden aplica, y además la pregunta 24 define si se pueden
+  medir conteos de producción.
+- **FASE 2** está bloqueada por las 12 decisiones bloqueantes.

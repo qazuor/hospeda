@@ -9,142 +9,153 @@ phase: 1C
 
 # Matriz de validación de Mercado Pago
 
-Esqueleto de **FASE 1C**. Hoy **todas las filas están en `UNKNOWN`**: nada fue verificado
-en el marco de este programa.
+Esqueleto de **FASE 1C**. **Las 53 filas están en `UNKNOWN`**: no se ejecutó ningún
+experimento.
+
+FASE 1C **no ha empezado** y no puede empezar antes de que el owner responda FASE 1A (§67:
+*"NO empezar FASE 1B hasta que yo responda las preguntas de 1A"*; el mismo orden aplica).
 
 ## Reglas
 
-1. **Nada acá se completa desde documentación, memoria, código existente ni "parece que lo
-   soporta"** (PDR §58). Una fila se llena **sólo** con un experimento ejecutado.
-2. **No se implementa una capability crítica mientras su fila diga `UNKNOWN`** (PDR §61).
-3. Cada fila lleva **fecha y entorno**. Una fila sin fecha se lee como `UNKNOWN`
-   (`S-METH-02`): MP cambia y un `VERIFIED` viejo no es un `VERIFIED`.
-4. Las sondas van **versionadas** en `docs/mp-probes/`, marcadas como no-productivas y
-   excluidas de todo build (`S-METH-01`). Un experimento que vive sólo en el log no es
-   reproducible y la matriz envejece sin que nadie lo note.
-5. Un resultado `PARTIALLY_SUPPORTED` **tiene que decir qué parte**. "Casi" no es un
+1. **Ninguna fila se completa desde documentación, memoria, código existente ni "parece que lo
+   soporta"** (§58: *"NO alcanza documentación. NO alcanza código legacy. NO alcanza memoria.
+   NO alcanza 'parece soportarlo'."*). Una fila se llena **sólo** con un experimento
+   ejecutado.
+2. **No se implementa una capability crítica mientras su fila diga `UNKNOWN`** (§61).
+3. **Ninguna decisión sobre Mercado Pago se toma mientras su fila diga `UNKNOWN`**
+   (regla 3 de [`01-decision-log.md`](./01-decision-log.md)).
+4. Cada fila lleva **fecha y entorno**. Una fila sin fecha se lee como `UNKNOWN` (`S-MP-02`):
+   un proveedor externo cambia su comportamiento sin avisarnos, y un resultado viejo no es un
    resultado.
+5. Las pruebas quedan como **sondas versionadas y ejecutables** en `docs/mp-probes/`, marcadas
+   como no productivas y excluidas de todo build (`S-MP-03`). Un experimento que vive sólo en
+   su conclusión no se puede volver a correr.
+6. Un `PARTIALLY_SUPPORTED` **tiene que nombrar qué parte**. "Casi" no es un resultado.
+7. Antes de FASE 10 **todas las filas se re-verifican** (`S-MP-02`).
 
-## Estados
+## Estados (§61)
 
 | Estado | Significa |
 |---|---|
-| `VERIFIED` | Se ejecutó y funciona como necesitamos. Con evidencia. |
-| `NOT_SUPPORTED` | Se ejecutó y MP no lo permite. Con evidencia. |
+| `VERIFIED` | Se ejecutó y funciona como lo necesitamos. Con evidencia. |
+| `NOT_SUPPORTED` | Se ejecutó y el proveedor no lo permite. Con evidencia. |
 | `PARTIALLY_SUPPORTED` | Funciona con una restricción **nombrada**. |
 | `UNKNOWN` | No se probó, o se probó hace demasiado. |
 
-## Procedimiento por fila (PDR §59)
+## Procedimiento por fila (§59)
 
-Leer la documentación oficial actual → revisar limitaciones → preparar la prueba →
-ejecutar contra la API → happy path → error paths → estados ambiguos → retries →
+Leer la documentación oficial **actual** → revisar limitaciones → preparar la prueba →
+ejecutar contra la API o el sandbox → happy path → error paths → estados ambiguos → retries →
 registrar request → registrar response → observar el webhook → documentar la conclusión.
+
+## Composición
+
+| Origen | Filas |
+|---|---|
+| Matriz mínima obligatoria del **§60** | 42 |
+| Agregadas por FASE 1A (`M-MP-03`), marcadas ✚ | 11 |
+| **Total** | **53** |
+
+Columnas: **Estado** · **Fecha** · **Entorno** · **Evidencia** (ruta de la sonda, con request,
+response y webhook observado) · **Conclusión**.
 
 ---
 
-## Matriz
+# Matriz mínima del §60
 
-Columnas: **Estado** · **Fecha** · **Entorno** · **Evidencia** (ruta de la sonda + request,
-response y webhook observado) · **Conclusión**.
-
-### Preapproval
+## Preapproval
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| P-1 | Creación por API | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `status: pending` + `init_point`, sin cobrar. `payer_email` es obligatorio y **debe existir**: uno inventado da `400 "User bad request"`, sin decir cuál es el problema |
-| P-2 | Linking con nuestro dominio desde el inicio | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `external_reference` se acepta y vuelve en la respuesta y en el search |
-| P-3 | Autorización por el usuario | `UNKNOWN` | — | — | — | requiere completar el `init_point` |
-| P-4 | Rechazo | `UNKNOWN` | — | — | — | requiere autorización |
-| P-5 | Cancelación | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `PUT {status:"cancelled"}`. **Irreversible**: reintentar da `400 "You can not modify a cancelled preapproval"` |
-| P-6 | Abandono: qué pasa con un preapproval nunca autorizado | `UNKNOWN` | — | — | — | requiere dejar uno abandonado y esperar |
+| PA-1 | Creación por API | `UNKNOWN` | — | — | — | — |
+| PA-2 | Linking con nuestro dominio desde el inicio | `UNKNOWN` | — | — | — | — |
+| PA-3 | Autorización por el usuario | `UNKNOWN` | — | — | — | — |
+| PA-4 | Rechazo | `UNKNOWN` | — | — | — | — |
+| PA-5 | Cancelación | `UNKNOWN` | — | — | — | — |
 
-> P-6 no está en la matriz mínima del PDR §60 pero se agrega: es el estado
-> `PENDING_AUTHORIZATION` de `M-SUB-01`, y en el modelo elegido existe siempre.
-
-### Frecuencias de facturación
+## Frecuencias de facturación (§19)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| F-1 | Mensual | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 1, frequency_type: "months"` |
-| F-2 | Trimestral | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 3, frequency_type: "months"` |
-| F-3 | Semestral | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 6, frequency_type: "months"` |
-| F-4 | Anual | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 12, frequency_type: "months"`. **`frequency_type: "years"` NO existe**: `400 "valid ones are [days, months]"` |
-| F-5 | Cambio de frecuencia sobre un preapproval ya autorizado | `UNKNOWN` | — | — | — | requiere autorización |
+| FR-1 | Mensual | `UNKNOWN` | — | — | — | — |
+| FR-2 | Trimestral | `UNKNOWN` | — | — | — | — |
+| FR-3 | Semestral | `UNKNOWN` | — | — | — | — |
+| FR-4 | Anual | `UNKNOWN` | — | — | — | — |
 
-### Renovaciones
-
-| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
-|---|---|---|---|---|---|---|
-| R-1 | Cobro exitoso | `UNKNOWN` | — | — | — | — |
-| R-2 | Cobro fallido | `UNKNOWN` | — | — | — | — |
-| R-3 | Recuperación tras el fallo | `UNKNOWN` | — | — | — | — |
-
-### Grace
+## Renovaciones
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| G-1 | Recuperación durante el grace | `UNKNOWN` | — | — | — | — |
-| G-2 | Pago tardío (después de suspender) | `UNKNOWN` | — | — | — | — |
-| G-3 | Política de reintentos de MP | `UNKNOWN` | — | — | — | — |
+| RN-1 | Cobro exitoso | `UNKNOWN` | — | — | — | — |
+| RN-2 | Cobro fallido | `UNKNOWN` | — | — | — | — |
+| RN-3 | Recuperación tras el fallo | `UNKNOWN` | — | — | — | — |
 
-### Pausa — `BD-MP-01`
-
-| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
-|---|---|---|---|---|---|---|
-| PA-1 | Pausar | `UNKNOWN` | — | — | — | — |
-| PA-2 | Que no cobre mientras está pausada | `UNKNOWN` | — | — | — | — |
-| PA-3 | Reanudación anticipada por el usuario | `UNKNOWN` | — | — | — | — |
-| PA-4 | Reanudación automática al llegar la fecha | `UNKNOWN` | — | — | — | — |
-| PA-5 | Qué pasa con las fechas al reanudar | `UNKNOWN` | — | — | — | — |
-| PA-6 | Qué pasa con la fecha de cobro al reanudar | `UNKNOWN` | — | — | — | — |
-| PA-7 | ¿Se preservan los días ya pagados? (§26.4) | `UNKNOWN` | — | — | — | — |
-
-### Cancelación
+## Grace (§20)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| CA-1 | Cancelación programada a fin de período | `UNKNOWN` | — | — | — | — |
-| CA-2 | Comportamiento inmediato del provider | `UNKNOWN` | — | — | — | — |
+| GR-1 | Recuperación durante el grace | `UNKNOWN` | — | — | — | — |
+| GR-2 | Pago tardío, después de suspender (§22) | `UNKNOWN` | — | — | — | — |
+| GR-3 | Política de reintentos del proveedor | `UNKNOWN` | — | — | — | — |
 
-### Cambios de precio — `BD-MP-03`
+## Pausa — `BD-MP-01`
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| PR-1 | Sobre una subscription existente | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | mutar el monto funciona **sobre un `pending`** (1000 → 1500). Sobre uno **autorizado** sigue `UNKNOWN`, y ése es el caso que importa |
-| PR-2 | Limitaciones (pisos, topes, magnitud del cambio) | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | **piso de $15 ARS**: `400 "Cannot pay an amount lower than $ 15.00"`. Monto `0` → `400 "must be a positive number"` |
-| PR-3 | ¿Requiere nuevo consentimiento del usuario? | `UNKNOWN` | — | — | — | requiere autorización |
+| PS-1 | Pausar | `UNKNOWN` | — | — | — | — |
+| PS-2 | Que no cobre mientras está pausada | `UNKNOWN` | — | — | — | — |
+| PS-3 | Reanudación anticipada por el usuario (§26.2) | `UNKNOWN` | — | — | — | — |
+| PS-4 | Reanudación automática al llegar la fecha (§26.2) | `UNKNOWN` | — | — | — | — |
+| PS-5 | Qué pasa con las fechas al reanudar | `UNKNOWN` | — | — | — | — |
+| PS-6 | Qué pasa con la fecha de cobro al reanudar (§26.4) | `UNKNOWN` | — | — | — | — |
 
-> PR-3 es la que define si Hospeda puede actualizar precios sin perder la base instalada.
+## Cancelación (§24)
 
-### Upgrade
+| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
+|---|---|---|---|---|---|---|
+| CN-1 | Cancelación programada a fin de período | `UNKNOWN` | — | — | — | — |
+| CN-2 | Comportamiento inmediato del proveedor | `UNKNOWN` | — | — | — | — |
+
+## Cambios de precio — `BD-MP-03` (§29)
+
+| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
+|---|---|---|---|---|---|---|
+| PC-1 | Sobre una suscripción existente ya autorizada | `UNKNOWN` | — | — | — | — |
+| PC-2 | Limitaciones: pisos, topes, magnitud del cambio | `UNKNOWN` | — | — | — | — |
+| PC-3 | ¿Requiere nuevo consentimiento del usuario? | `UNKNOWN` | — | — | — | — |
+
+> `PC-3` decide si se pueden actualizar precios sin perder la base instalada. `PC-2` también
+> alimenta el piso de `A-PROMO-01` y la estrategia de bajar el monto de `BD-MP-02`.
+
+## Upgrade (§27)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
 | UP-1 | Aplicación inmediata | `UNKNOWN` | — | — | — | — |
-| UP-2 | Efecto económico (prorrateo, cobro inmediato, nada) | `UNKNOWN` | — | — | — | — |
+| UP-2 | Efecto económico: prorrateo, cobro inmediato, o nada | `UNKNOWN` | — | — | — | — |
 
-### Downgrade
-
-| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
-|---|---|---|---|---|---|---|
-| DN-1 | Aplicación al ciclo siguiente | `UNKNOWN` | — | — | — | — |
-| DN-2 | ¿Lo soporta el provider, o hay que emularlo? | `UNKNOWN` | — | — | — | — |
-
-### Cortesía temporal — `BD-MP-02`
+## Downgrade (§28)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| CO-1 | N meses gratis sobre una subscription viva | `UNKNOWN` | — | — | — | — |
-| CO-2 | Estrategias posibles (bajar monto / pausar / recrear / reembolsar) | `UNKNOWN` | — | — | — | — |
-| CO-3 | Efectos colaterales de cada estrategia | `UNKNOWN` | — | — | — | — |
+| DW-1 | Aplicación al ciclo siguiente | `UNKNOWN` | — | — | — | — |
+| DW-2 | ¿Lo soporta el proveedor, o hay que emularlo? | `UNKNOWN` | — | — | — | — |
 
-### Grant permanente
+## Cortesía temporal — `BD-MP-02` (§34.2)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| GR-1 | Cancelación correcta de la subscription de MP | `UNKNOWN` | — | — | — | — |
+| CT-1 | N meses gratis sobre una suscripción viva | `UNKNOWN` | — | — | — | — |
+| CT-2 | Estrategias posibles: bajar monto / pausar / recrear / reembolsar | `UNKNOWN` | — | — | — | — |
+| CT-3 | Efectos colaterales de cada estrategia | `UNKNOWN` | — | — | — | — |
 
-### Webhooks
+## Grant permanente (§35.3)
+
+| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
+|---|---|---|---|---|---|---|
+| GT-1 | Cancelación correcta de la suscripción del proveedor | `UNKNOWN` | — | — | — | — |
+
+## Webhooks (§51)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
@@ -152,77 +163,78 @@ response y webhook observado) · **Conclusión**.
 | WH-2 | Demorados | `UNKNOWN` | — | — | — | — |
 | WH-3 | Fuera de orden | `UNKNOWN` | — | — | — | — |
 | WH-4 | Reintentos | `UNKNOWN` | — | — | — | — |
-| WH-5 | Faltantes (evento que nunca llega) | `UNKNOWN` | — | — | — | — |
-| WH-6 | ¿Hay versionado o timestamp confiable del evento? | `UNKNOWN` | — | — | — | — |
+| WH-5 | Faltantes: un evento que nunca llega | `UNKNOWN` | — | — | — | — |
 
-> WH-6 se agrega a la matriz mínima: sin un orden confiable, `M-CONC-02` (no-retroceso de
-> estado) no se puede implementar.
-
-### Reconciliación
+## Reconciliación (§23)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RC-1 | Consultar el estado real de un preapproval | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | **`GET /preapproval/{id}` es confiable; `/preapproval/search` NO**: devolvió `pending` para uno que el GET directo ya daba `cancelled`. La reconciliación debe leer por id, nunca por search |
+| RC-1 | Consultar el estado real de una suscripción | `UNKNOWN` | — | — | — | — |
 | RC-2 | Historial de pagos | `UNKNOWN` | — | — | — | — |
-| RC-3 | Reparar el estado local desde el del provider | `UNKNOWN` | — | — | — | — |
+| RC-3 | Reparar el estado local desde el del proveedor | `UNKNOWN` | — | — | — | — |
 
-### Addons recurrentes — `BD-MP-04`
+---
+
+# ✚ Filas agregadas por FASE 1A
+
+No están en la matriz mínima del §60. §60 dice *"matriz mínima"*, así que ampliarla es lo
+esperado; se marcan para que quede claro qué exige el PDR y qué agregó el análisis
+(`M-MP-03`).
+
+## ✚ Reembolsos — `M-LEGAL-01`
+
+> El derecho de revocación con devolución total necesita poder reembolsar. También es una de
+> las cuatro estrategias posibles de `BD-MP-02`.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| AD-1 | ¿Un preapproval puede cubrir más de un ítem? | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring` como array → `400`. Un campo `items` con dos líneas → **`200` y se descarta en silencio**: el preapproval queda con un solo monto y `items` no vuelve en la respuesta |
-| AD-2 | N preapprovals del mismo pagador conviviendo | `UNKNOWN` | — | — | — | se crearon 8 `pending` del mismo pagador sin conflicto, pero **autorizados** sigue sin probarse |
-
-### Reembolsos — `DEC-LEGAL-001`
-
-> Agregado el 2026-09-15: la revocación de 10 días con devolución total, que el owner
-> incorporó al alcance, necesita poder reembolsar.
-
-| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
-|---|---|---|---|---|---|---|
-| RF-1 | Reembolso total de un cobro de preapproval | `UNKNOWN` | — | — | — | — |
+| RF-1 | Reembolso total de un cobro | `UNKNOWN` | — | — | — | — |
 | RF-2 | Reembolso parcial | `UNKNOWN` | — | — | — | — |
 | RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | — |
 
-### Compensación en días — `DEC-SUB-001`
+## ✚ Huecos estructurales
 
-> Agregado el 2026-09-15: la regla de cambio de plan que eligió el owner compensa los días ya
-> pagados corriendo la primera fecha de cobro, en vez de prorratear dinero. Si esto no se
-> puede, el plan B declarado es que el cambio de ciclo espere a la renovación.
+| # | Comportamiento | Para qué | Estado | Fecha | Entorno | Evidencia | Conclusión |
+|---|---|---|---|---|---|---|---|
+| EX-1 | Qué pasa con una autorización creada y **nunca completada**: ¿vence?, ¿cuándo?, ¿se puede reusar? | `M-SUB-01`, `M-MP-02` | `UNKNOWN` | — | — | — | — |
+| EX-2 | ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)? | `M-CONC-02` | `UNKNOWN` | — | — | — | — |
+| EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | `UNKNOWN` | — | — | — | — |
+| EX-4 | Cambio de **frecuencia** sobre una suscripción ya autorizada | `BD-SUB-01`, `MP-01` | `UNKNOWN` | — | — | — | — |
+| EX-5 | ¿Una autorización puede cubrir **más de un monto**? | `BD-MP-04` | `UNKNOWN` | — | — | — | — |
+| EX-6 | N autorizaciones del mismo pagador conviviendo, ya autorizadas | `BD-MP-04` | `UNKNOWN` | — | — | — | — |
+| EX-7 | Compensar días ya pagados corriendo la **primera fecha de cobro** | `BD-SUB-01` | `UNKNOWN` | — | — | — | — |
+| EX-8 | ¿Se respeta esa primera fecha **después** de autorizar? | `BD-SUB-01` | `UNKNOWN` | — | — | — | — |
 
-| # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
-|---|---|---|---|---|---|---|
-| CD-1 | Crear un preapproval con la primera fecha de cobro corrida N días | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring.start_date` a +20 días → `next_payment_date` quedó en esa fecha, no en la de creación |
-| CD-2 | ¿Esa fecha se respeta **tras autorizar**? | `UNKNOWN` | — | — | — | **Ésta es la que decide.** El antecedente de HOS-1012 (MP prometió 14 días de trial y cobró a los 118 segundos) es el motivo de no darlo por cerrado con CD-1 |
+> `EX-7` y `EX-8` van separadas a propósito: que el proveedor **acepte** una fecha futura al
+> crear no prueba que la **respete** una vez autorizada, y ésa es la que decide. Una fila que
+> sólo se probó antes de autorizar no responde por el comportamiento después.
 
 ---
 
 ## Resumen
 
-Tras la [sonda 01](./mp-probes/RESULTS-2026-09-15.md) del 2026-09-15:
-
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **10** — P-1, P-2, P-5, F-1, F-2, F-3, F-4, CD-1, PR-2, y `years` descartado |
-| `PARTIALLY_SUPPORTED` | **2** — PR-1 (sólo sobre `pending`), RC-1 (GET sí, search no) |
-| `NOT_SUPPORTED` | **1** — AD-1 (un preapproval = un cobro) |
-| `UNKNOWN` | **33** |
-
-**Todo lo que falta necesita un preapproval AUTORIZADO**, y para eso hace falta completar el
-`init_point` con la cuenta del comprador de prueba. Es el único bloqueo de FASE 1C.
+| `VERIFIED` | 0 |
+| `PARTIALLY_SUPPORTED` | 0 |
+| `NOT_SUPPORTED` | 0 |
+| **`UNKNOWN`** | **53** |
 
 ## Qué espera cada decisión
 
-| Decisión | Filas que la desbloquean |
+| Decisión abierta | Filas que la desbloquean |
 |---|---|
-| `BD-MP-01` mecanismo de pausa | `PA-1`…`PA-7` |
-| `BD-MP-02` cortesía sobre suscripción viva | `CO-1`…`CO-3` |
-| `BD-MP-03` cambio de precio sobre vigentes | `PR-1`…`PR-3` |
-| `BD-MP-04` addons recurrentes (**última bloqueante de FASE 2**) | `AD-1`, `AD-2` |
-| `DEC-SUB-001` plan B del cambio de ciclo | `CD-1`, `CD-2`, `F-5` |
-| `DEC-LEGAL-001` revocación con devolución | `RF-1`, `RF-3` |
-| `M-CONC-02` no-retroceso de estado | `WH-6` |
-| `M-SUB-01` estado `PENDING_AUTHORIZATION` | `P-6` |
+| `BD-MP-01` mecanismo de pausa | `PS-1`…`PS-6` |
+| `BD-MP-02` cortesía sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` |
+| `BD-MP-03` cambio de precio sobre vigentes | `PC-1`, `PC-2`, `PC-3` |
+| `BD-MP-04` addons recurrentes | `EX-5`, `EX-6` |
+| `BD-SUB-01` matriz de cambio de plan | `UP-1`, `UP-2`, `DW-1`, `DW-2`, `EX-4`, `EX-7`, `EX-8` |
+| `MP-01` los cuatro ciclos del §19 | `FR-1`…`FR-4`, `EX-4` |
+| `M-LEGAL-01` revocación con devolución | `RF-1`, `RF-3` |
+| `M-CONC-02` no-retroceso de estado | `WH-3`, `EX-2` |
+| `M-SUB-01` estado de autorización pendiente | `PA-3`, `PA-4`, `EX-1` |
+| `M-MAIL-04` correos del proveedor | `EX-3` |
+| `A-PROMO-01` piso del descuento apilado | `PC-2` |
 
-**Ninguna capability de billing puede implementarse hoy.** Es lo esperable: FASE 1C no
-empezó.
+**Ninguna capability de billing puede implementarse todavía** (§61), y ninguna decisión que
+dependa de estas filas puede tomarse. Es lo esperable: FASE 1C no empezó.

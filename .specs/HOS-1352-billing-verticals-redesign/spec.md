@@ -14,13 +14,13 @@ areas:
 
 # Rediseño integral de Verticales y Billing
 
-> **Esto no es una spec todavía.** Es el índice de un programa cuyo diseño está en curso.
-> La Master Spec se escribe en **FASE 2**, y FASE 2 está bloqueada.
+> **Esto todavía no es una spec.** Es el índice de un programa cuyo diseño está en curso. La
+> Master Spec se escribe en **FASE 2**, y FASE 2 está bloqueada.
 
 ## Orden de lectura obligatorio
 
 Cualquier agente o persona que entre a este programa lee, en este orden, **antes de hacer
-nada**:
+nada** (§66):
 
 | # | Documento | Qué es |
 |---|---|---|
@@ -30,45 +30,54 @@ nada**:
 | 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
 | 6 | [`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md) | El análisis de dominio (FASE 1A) |
-| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de MercadoPago (hoy: nada verificado) |
-| 8 | [`docs/07-facts-inventory.md`](./docs/07-facts-inventory.md) | Cuántos clientes reales hay |
+| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago (hoy: nada) |
 
-**No confíes en memoria implícita, en engram, ni en lo que diga otro `CLAUDE.md` sobre
-billing.** El PDR es explícito al respecto: reutilizar conocimiento viejo como si siguiera
-vigente es una de las causas de que estemos acá.
+**No confíes en memoria implícita, ni en engram, ni en ningún otro `CLAUDE.md`, ni en
+documentación del repo, ni en un sistema de tracking.** El PDR es explícito al respecto (§3.5):
+reutilizar conocimiento viejo como si siguiera vigente es una de las causas de que estemos acá.
 
 ## Reglas del programa
 
-- `00-PDR.md` **no se edita nunca**. Toda desviación se registra como decisión en `01`.
+- **`00-PDR.md` no se edita nunca.** Toda desviación se registra como decisión en `01`.
+- **Sólo hay tres fuentes válidas de fundamento**: el PDR, una medición propia fechada, o una
+  respuesta explícita del owner. No el código, no la documentación del repo, no un sistema de
+  tracking, no la memoria de un agente.
+- **Si un documento cita un `§`, el texto se verifica contra el PDR antes de escribirlo.**
+- **Ningún documento de este programa referencia trabajo anterior.** Una referencia así es un
+  defecto, no una fuente.
+- Una decisión `ACCEPTED` no se edita: se crea otra que la marque `SUPERSEDED`.
+- Ninguna decisión sobre Mercado Pago se toma mientras su fila de la matriz diga `UNKNOWN`.
+- **No se lee código para fundamentar una decisión funcional**, hasta que el diseño esté
+  cerrado (`DEC-METH-001`).
 - Todo documento declara `status: CURRENT | LEGACY | OBSOLETE | SUPERSEDED` en su frontmatter.
-- Ningún documento justifica una decisión de diseño citando el código existente antes de
-  FASE 5.
 - El macro-estado del programa vive en **Linear (HOS-1352)**, no en estos archivos.
-- Una decisión sobre MercadoPago no se toma mientras su fila de la matriz diga `UNKNOWN`.
 
 ## Estado
 
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | ✅ **cerrada** — 36 decisiones tomadas |
-| FASE 1B — discovery del sistema actual | 🟢 desbloqueada |
-| FASE 1C — experimentación con MP | 🟢 desbloqueada, y es la que más urge |
-| FASE 2 — Master Spec | 🟡 1 bloqueante abierta (`BD-MP-04`), depende de 1C |
+| FASE 1A — análisis de dominio | 🟡 **entregada, esperando 25 respuestas del owner** |
+| FASE 1B — discovery del sistema actual | ⛔ bloqueada |
+| FASE 1C — experimentación con Mercado Pago | ⛔ bloqueada |
+| FASE 2 — Master Spec | ⛔ bloqueada por 12 decisiones bloqueantes |
 | FASE 3 — épicas | ⬜ |
 | FASE 4 — spec por épica | ⬜ |
 | FASE 5 — gap analysis contra legacy | ⬜ |
-| FASE 6 — decisión rewrite/reuse | ⬜ |
+| FASE 6 — decisión rewrite / reuse | ⬜ |
 | FASE 7 — estrategia de implementación | ⬜ |
 | FASE 8 — revisión adversarial | ⬜ |
 | FASE 9 — revisión final de diseño | ⬜ |
 | FASE 10 — implementación | ⬜ |
 
+**Decisiones funcionales tomadas: 0.** La única decisión registrada es de metodología.
+
 ## Próximo paso
 
-**Arrancar FASE 1C** (experimentación contra MercadoPago), y 1B en paralelo si hay capacidad.
-1C va primero porque hay seis cosas esperando su resultado, incluida la última decisión
-bloqueante de FASE 2. Detalle en [`docs/03-handoff.md`](./docs/03-handoff.md).
+**Que el owner responda las 25 preguntas** del §16 de
+[`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md).
+
+Las 8 primeras frenan FASE 2. Nada — ni 1B, ni 1C, ni 2 — avanza antes de esas respuestas.
 
 ## Épicas
 
