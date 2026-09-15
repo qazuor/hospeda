@@ -31,6 +31,7 @@ nada** (§66):
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
 | 6 | [`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md) | El análisis de dominio (FASE 1A) |
 | 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago (hoy: nada) |
+| 8 | [`docs/07-facts-inventory.md`](./docs/07-facts-inventory.md) | Cuántos clientes reales hay, medido |
 
 **No confíes en memoria implícita, ni en engram, ni en ningún otro `CLAUDE.md`, ni en
 documentación del repo, ni en un sistema de tracking.** El PDR es explícito al respecto (§3.5):
@@ -57,10 +58,10 @@ reutilizar conocimiento viejo como si siguiera vigente es una de las causas de q
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | 🟡 **entregada, esperando 25 respuestas del owner** |
-| FASE 1B — discovery del sistema actual | ⛔ bloqueada |
-| FASE 1C — experimentación con Mercado Pago | ⛔ bloqueada |
-| FASE 2 — Master Spec | ⛔ bloqueada por 12 decisiones bloqueantes |
+| FASE 1A — análisis de dominio | 🟡 **8 bloqueantes cerradas; quedan 16 preguntas** |
+| FASE 1B — discovery del sistema actual | ⛔ bloqueada hasta cerrar el diseño |
+| FASE 1C — experimentación con Mercado Pago | 🟢 **desbloqueada, y es lo que más urge** |
+| FASE 2 — Master Spec | ⛔ bloqueada por las 4 bloqueantes que decide el experimento |
 | FASE 3 — épicas | ⬜ |
 | FASE 4 — spec por épica | ⬜ |
 | FASE 5 — gap analysis contra legacy | ⬜ |
@@ -70,14 +71,17 @@ reutilizar conocimiento viejo como si siguiera vigente es una de las causas de q
 | FASE 9 — revisión final de diseño | ⬜ |
 | FASE 10 — implementación | ⬜ |
 
-**Decisiones funcionales tomadas: 0.** La única decisión registrada es de metodología.
+**Decisiones tomadas: 10** — 2 de metodología y **8 funcionales**, todas las bloqueantes que
+le correspondían al owner.
 
 ## Próximo paso
 
-**Que el owner responda las 25 preguntas** del §16 de
-[`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md).
+**Arrancar FASE 1C.** Cuatro decisiones bloqueantes de FASE 2 sólo las puede cerrar el
+experimento contra Mercado Pago, y `DEC-SUB-001` ya está tomada pero no se puede implementar
+hasta saber si se puede correr la primera fecha de cobro sobre una suscripción autorizada.
 
-Las 8 primeras frenan FASE 2. Nada — ni 1B, ni 1C, ni 2 — avanza antes de esas respuestas.
+En paralelo quedan **16 preguntas no bloqueantes** para el owner, en el §16 de
+[`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md).
 
 ## Épicas
 

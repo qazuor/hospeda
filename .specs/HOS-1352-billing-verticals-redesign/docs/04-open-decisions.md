@@ -21,8 +21,10 @@ estuvo abierto es parte del registro.
 
 Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).
 
-> **Estado al 2026-09-15**: FASE 1A entregada. **101 hallazgos. Cero decisiones funcionales
-> tomadas.** El owner todavía no respondió ninguna de las 25 preguntas.
+> **Estado al 2026-09-15**: FASE 1A entregada, **101 hallazgos**. El owner cerró **9
+> decisiones**: las **8 bloqueantes de FASE 2 que le correspondían**, más la autorización de
+> conteos de producción. Quedan **4 bloqueantes que decide el experimento** de FASE 1C y
+> **16 preguntas no bloqueantes**.
 
 ---
 
@@ -32,13 +34,16 @@ Tres grupos, y no se mezclan:
 
 | Grupo | Quién decide | Cuántos | Cuándo |
 |---|---|---|---|
-| **Bloqueantes de FASE 2 que decide el owner** | owner | **8** | ahora |
+| **Bloqueantes de FASE 2 que decide el owner** | owner | **8** | ✅ cerradas |
 | **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | después de la matriz |
 | **No bloqueantes que decide el owner** | owner | **19** (en 17 preguntas) | ahora |
 | **Huecos técnicos** | la Master Spec (FASE 2) | **70** | sin intervención del owner |
 
 Los 12 bloqueantes son los que frenan FASE 2 (§0: *"Toda cuestión que pueda cambiar
 significativamente la arquitectura: `BLOCKING DECISION`"*).
+
+**FASE 2 sigue bloqueada** por las 4 que decide el experimento. Ninguna se puede cerrar
+mientras su fila de la matriz diga `UNKNOWN` (§61), y hoy las 53 filas lo dicen.
 
 ---
 
@@ -49,14 +54,14 @@ Corresponden a las preguntas **1 a 8** de
 
 | # | ID | Pregunta | Estado |
 |---|---|---|---|
-| 1 | `BD-ARCH-01` | ¿Los planes son mutables, o versionados con las suscripciones ancladas? | 🔴 abierta |
-| 2 | `BD-ARCH-02` | ¿Cómo se ordenan los planes para computar "el más premium" y "el más básico"? | 🔴 abierta |
-| 3 | `C-TRIAL-01` | El "1 ficha en trial" (§10.5) vs heredar los limits de Basic (§10.3) | 🔴 abierta |
-| 4 | `BD-TRIAL-01` | La derivación del Trial Plan, ¿en vivo o congelada al arrancar? | 🔴 abierta |
-| 5 | `BD-SUB-01` | Las seis celdas sin política de la matriz tier × ciclo | 🔴 abierta |
-| 6 | `C-PARTNER-01` | ¿Partner tiene trial, dentro de un alta administrada? | 🔴 abierta |
-| 7 | `BD-MIG-01` | ¿Qué se le promete a quien hoy está pagando? | 🔴 abierta |
-| 8 | `BD-TRIAL-02` | ¿Qué señal define "la misma identidad" para el trial de por vida? | 🔴 abierta |
+| 1 | `BD-ARCH-01` | ¿Los planes son mutables, o versionados con las suscripciones ancladas? | ✅ `DEC-ARCH-001` — híbrido: se versiona lo que tiene efecto |
+| 2 | `BD-ARCH-02` | ¿Cómo se ordenan los planes para computar "el más premium" y "el más básico"? | ✅ `DEC-ARCH-002` — rank explícito, sólo los vendibles |
+| 3 | `C-TRIAL-01` | El "1 ficha en trial" (§10.5) vs heredar los limits de Basic (§10.3) | ✅ `DEC-TRIAL-001` — overrides declarados en DB, por vertical |
+| 4 | `BD-TRIAL-01` | La derivación del Trial Plan, ¿en vivo o congelada al arrancar? | ✅ `DEC-TRIAL-002` — trinquete: en vivo, nunca empeora |
+| 5 | `BD-SUB-01` | Las seis celdas sin política de la matriz tier × ciclo | ✅ `DEC-SUB-001` — sube ya, baja espera, el ciclo se aplica ya |
+| 6 | `C-PARTNER-01` | ¿Partner tiene trial, dentro de un alta administrada? | ✅ `DEC-TRIAL-003` — configurable por plan, en cero hoy |
+| 7 | `BD-MIG-01` | ¿Qué se le promete a quien hoy está pagando? | ✅ `DEC-MIG-001` — coordinación manual de las 5, cero código |
+| 8 | `BD-TRIAL-02` | ¿Qué señal define "la misma identidad" para el trial de por vida? | ✅ `DEC-TRIAL-004` — el email normalizado bloquea, el resto observa |
 
 `C-TRIAL-01` y `C-PARTNER-01` son contradicciones del PDR **y además** bloqueantes: aparecen en
 las dos listas a propósito, no por doble conteo.
@@ -99,7 +104,7 @@ Corresponden a las preguntas **9 a 25** del §16.
 | 21 | `A-GRANT-01` | ¿Quién puede otorgar una cortesía temporal? | 🔴 abierta |
 | 22 | `C-DATA-01` | Retención a los 90 y 180 días, y los avisos previos | 🔴 abierta |
 | 23 | `O-LEGAL-01` | Comprobante no fiscal hasta ARCA, ¿con fecha de revisión? | 🔴 abierta |
-| 24 | `O-METH-02` | ¿Se autorizan conteos read-only de producción durante 1A? | 🔴 abierta |
+| 24 | `O-METH-02` | ¿Se autorizan conteos read-only de producción durante 1A? | ✅ `DEC-METH-002` — sí, con fecha y método |
 | 25 | `O-METH-03` | ¿El criterio de FASE 5 se define al empezar FASE 5? | 🔴 abierta |
 
 ---

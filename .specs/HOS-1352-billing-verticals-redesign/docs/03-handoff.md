@@ -27,6 +27,7 @@ status: CURRENT
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
    (hoy: **nada**, las 53 filas en `UNKNOWN`).
+8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
 ---
 
@@ -34,7 +35,7 @@ status: CURRENT
 
 ### Último punto completado
 
-**FASE 0 completa. FASE 1A entregada y esperando respuesta del owner.**
+**FASE 0 completa. FASE 1A entregada y respondida en sus 8 decisiones bloqueantes.**
 
 El programa se reseteó hoy: el único documento heredado es el PDR (`DEC-METH-001`). Todo lo
 demás se escribió de cero contra ese texto.
@@ -44,32 +45,38 @@ demás se escribió de cero contra ese texto.
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | 🟡 **entregada, esperando las 25 respuestas del owner** |
-| FASE 1B — discovery del sistema actual | ⛔ bloqueada por §67 y por `DEC-METH-001` |
-| FASE 1C — experimentación con Mercado Pago | ⛔ bloqueada: mismo orden, más la pregunta 24 |
-| FASE 2 — Master Spec | ⛔ bloqueada por 12 decisiones bloqueantes |
+| FASE 1A — análisis de dominio | 🟡 **8 bloqueantes cerradas; quedan 16 preguntas no bloqueantes** |
+| FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
+| FASE 1C — experimentación con Mercado Pago | 🟢 **desbloqueada, y es lo que más urge** |
+| FASE 2 — Master Spec | ⛔ bloqueada por las 4 bloqueantes que decide el experimento |
 | FASE 3 a 10 | ⬜ no empezadas |
 
 ### Próximo paso exacto
 
-**Que el owner responda las 25 preguntas del §16 de
-[`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).**
+**Arrancar FASE 1C** — la experimentación contra Mercado Pago — y en paralelo seguir cerrando
+con el owner las 16 preguntas no bloqueantes que quedan.
 
-Nada avanza antes de eso. Las 8 primeras son bloqueantes de FASE 2; las otras 17 no frenan
-pero se necesitan igual para escribir la Master Spec sin inventar.
+1C es lo que más urge porque **cuatro decisiones bloqueantes de FASE 2 sólo las puede cerrar
+el experimento**, y porque `DEC-SUB-001` ya está tomada pero **no se puede implementar** hasta
+saber si se puede correr la primera fecha de cobro sobre una suscripción autorizada
+(`EX-7`/`EX-8`). Si no se puede, su plan B declarado es que el cambio de ciclo espere a la
+renovación.
 
-Cuando lleguen las respuestas:
+Reglas de 1C, del §58 al §61: nada se completa desde documentación ni memoria — **sólo con un
+experimento ejecutado**, con request, response y webhook registrados. Las sondas van
+versionadas en `docs/mp-probes/`, marcadas como no productivas.
 
-1. Se registra **una decisión por respuesta** en
-   [`01-decision-log.md`](./01-decision-log.md), con el formato del §3.4 y declarando de qué
-   fuente sale su fundamento.
-2. Se marca cada ítem cerrado en [`04-open-decisions.md`](./04-open-decisions.md), **en el
-   mismo commit**.
-3. Recién entonces se habilitan 1B y 1C.
+Para cada respuesta nueva del owner: se registra **una decisión** en
+[`01-decision-log.md`](./01-decision-log.md) con el formato del §3.4, y se marca el ítem
+cerrado en [`04-open-decisions.md`](./04-open-decisions.md) **en el mismo commit**.
 
 ### Decisiones tomadas
 
-**Una**, y es de metodología: `DEC-METH-001` (reset total). **Cero decisiones funcionales.**
+**Diez**: dos de metodología (`DEC-METH-001` reset total, `DEC-METH-002` conteos autorizados)
+y **ocho funcionales**, que son las 8 bloqueantes de FASE 2 que le correspondían al owner.
+
+`DEC-SUB-001` está tomada pero **condicionada**: si `EX-8` resulta `NOT_SUPPORTED`, entra su
+plan B sin volver a preguntar.
 
 Si alguien encuentra una afirmación funcional en cualquier documento de este programa que no
 esté respaldada por el PDR, por una medición fechada o por una respuesta del owner, es un
@@ -106,7 +113,7 @@ defecto: hay que marcarlo, no usarlo.
 
 - El clone principal del repo puede estar en `detached HEAD` o en la branch de otra sesión.
   **Trabajá siempre en el worktree de arriba.**
-- Si en algún momento se autorizan conteos de producción (pregunta 24): una salida **vacía**
-  de la consola de SQL significa que la consulta falló y el error se tragó, **no** que haya
-  cero filas. Un `UNION` largo se anula entero si una sola columna no existe. Partir las
-  consultas.
+- Los conteos de producción están autorizados (`DEC-METH-002`), pero **sólo contar filas**.
+  Y una salida **vacía** de la consola de SQL significa que la consulta falló y el error se
+  tragó, **no** que haya cero filas: un `UNION` largo se anula entero si una sola columna no
+  existe. Partir las consultas.

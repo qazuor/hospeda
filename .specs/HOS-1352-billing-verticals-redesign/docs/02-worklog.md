@@ -160,13 +160,62 @@ Ninguna todavía.
 
 ---
 
+## 2026-09-15 — Cierre de las 8 bloqueantes que decide el owner
+
+Se recorrieron una por una, con alternativas y consecuencias sobre la mesa. **Nueve decisiones
+registradas** en [`01-decision-log.md`](./01-decision-log.md).
+
+| Pregunta | Decisión |
+|---|---|
+| `BD-ARCH-01` planes mutables o versionados | `DEC-ARCH-001` — híbrido: se versiona lo que tiene efecto |
+| `BD-ARCH-02` orden entre planes | `DEC-ARCH-002` — rank explícito, sólo los vendibles |
+| `C-TRIAL-01` "1 ficha" contra los limits de Basic | `DEC-TRIAL-001` — overrides declarados en DB, por vertical |
+| `BD-TRIAL-01` derivación en vivo o congelada | `DEC-TRIAL-002` — trinquete: en vivo, nunca empeora |
+| `BD-SUB-01` la matriz tier × ciclo | `DEC-SUB-001` — sube ya, baja espera, el ciclo se aplica ya |
+| `C-PARTNER-01` trial de Partner | `DEC-TRIAL-003` — configurable por plan, en cero hoy |
+| `BD-MIG-01` qué se le promete a quien paga | `DEC-MIG-001` — coordinación manual de las 5, cero código |
+| `BD-TRIAL-02` señal de identidad | `DEC-TRIAL-004` — el email normalizado bloquea, el resto observa |
+| `O-METH-02` conteos de producción | `DEC-METH-002` — autorizados, con fecha y método |
+
+### Un cambio de orden, y por qué
+
+`BD-MIG-01` se planteó **después** de medir, no antes. El §56 apoya su preferencia por la
+coordinación manual en un *"hay pocos customers actuales"* que el PDR no cuantifica
+(`O-MIG-01`), y decidir sobre una premisa sin verificar era repetir el error que motivó el
+reset. Así que se adelantó la pregunta 24, se autorizó medir, y recién entonces se preguntó.
+
+### Mediciones realizadas
+
+Tres consultas read-only contra producción, en [`07-facts-inventory.md`](./07-facts-inventory.md).
+
+**La premisa del §56 quedó verificada por goleada**: cero pagos cobrados en la historia del
+sistema, **tres** relaciones con compromiso de cobro vivo y dos cortesías. Gastronomía,
+experiencia y partner tienen cero filas. El primer trial vence el **2026-09-26**.
+
+### Una decisión que no se puede implementar todavía
+
+`DEC-SUB-001` está tomada pero **condicionada a FASE 1C**: compensar en días requiere correr
+la primera fecha de cobro sobre una suscripción ya autorizada, y eso está en `UNKNOWN`
+(`EX-7`/`EX-8`). Su plan B ya está declarado, así que si el experimento dice que no, entra
+solo y no hay que volver a preguntar.
+
+### Problemas encontrados
+
+Al redactar `DEC-TRIAL-002` apareció una ambigüedad de orden entre el trinquete y los
+overrides de `DEC-TRIAL-001`: aplicar el piso antes de los overrides dejaba un agujero por el
+que bajar un override degradaba a los trials en curso. Se corrigió en el acto fijando que **el
+trinquete se aplica al final, sobre el resultado completo**.
+
+---
+
 ## Próximo paso
 
-Que el owner responda las 25 preguntas del §16. Nada avanza antes de eso:
+**Arrancar FASE 1C.** Es lo que más urge:
 
-- **FASE 1B** no puede empezar: §67 dice *"NO empezar FASE 1B hasta que yo responda las
-  preguntas de 1A"*. Y por `DEC-METH-001` la restricción es más fuerte todavía: no se mira
-  código hasta que el diseño esté cerrado.
-- **FASE 1C** tampoco: el mismo orden aplica, y además la pregunta 24 define si se pueden
-  medir conteos de producción.
-- **FASE 2** está bloqueada por las 12 decisiones bloqueantes.
+- **Cuatro decisiones bloqueantes de FASE 2** sólo las puede cerrar el experimento
+  (`BD-MP-01` a `BD-MP-04`). No las decide el owner.
+- **`DEC-SUB-001` no se puede implementar** hasta saber el resultado de `EX-7`/`EX-8`.
+- **FASE 1B sigue bloqueada** por `DEC-METH-001`: no se lee código hasta que el diseño esté
+  cerrado.
+
+En paralelo quedan **16 preguntas no bloqueantes** para el owner, en el §16 del análisis.
