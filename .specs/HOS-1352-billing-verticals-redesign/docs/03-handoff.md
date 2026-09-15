@@ -99,7 +99,7 @@ calendario, y hasta que no arranque, todo lo demás corre detrás.
 
 | Qué | Para qué |
 |---|---|
-| Las **credenciales** del sandbox en el entorno de la sesión | Sin esto no corre ninguna sonda. **No están en el repo** y no deben entrar |
+| Las **credenciales** del sandbox | Sin esto no corre ninguna sonda. **No están en el repo** y no deben entrar: viven en `~/.config/hospeda/mp-sandbox-creds.sh` (fuera del repo, `chmod 600`), con `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY` y `MP_BUYER_EMAIL`. Al hacerle `source` corre un guard que **aborta si son de producción** (`APP_USR-`) o si quedó un placeholder |
 | Una **aplicación de Mercado Pago aparte** para pruebas | El webhook es **por aplicación** y su URL **no se puede cambiar por API** (`403`). La app de sandbox actual apunta al staging de Hospeda, así que medir webhooks hoy es medir nuestra propia capa legacy — justo lo que el §58 prohíbe. Desbloquea `WH-2`, `WH-3`, `WH-5` y la firma |
 | Qué credenciales habilitan **reembolsos** en sandbox | `RF-1`/`RF-2` dieron `401 "Unauthorized use of live credentials"`. Eso no dice que el proveedor no reembolse: dice que estas credenciales no lo pueden pedir |
 | Acceso a la **casilla del comprador de prueba** | `EX-3`: qué le comunica el proveedor al cliente por su cuenta |
@@ -107,6 +107,15 @@ calendario, y hasta que no arranque, todo lo demás corre detrás.
 Reglas de 1C, del §58 al §61: nada se completa desde documentación ni memoria — **sólo con un
 experimento ejecutado**, con request, response y webhook registrados. Las sondas van
 versionadas en `docs/mp-probes/`, marcadas como no productivas.
+
+**Cómo se corre una sonda**: el `source` va en la **misma línea**, porque cada invocación
+arranca un shell nuevo y las variables de entorno **no sobreviven** de una llamada a la
+siguiente (comprobado):
+
+```bash
+cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
+source ~/.config/hospeda/mp-sandbox-creds.sh && bash probe-05-arrancar-el-reloj.sh
+```
 
 Para cada respuesta nueva del owner: se registra **una decisión** en
 [`01-decision-log.md`](./01-decision-log.md) con el formato del §3.4, y se marca el ítem
