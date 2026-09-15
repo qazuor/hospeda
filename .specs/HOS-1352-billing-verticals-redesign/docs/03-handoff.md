@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (hoy: **nada**, las 53 filas en `UNKNOWN`).
+   (55 filas: 16 `VERIFIED`, 5 parciales, 2 `NOT_SUPPORTED`, 32 `UNKNOWN`).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
 ---
@@ -47,14 +47,30 @@ demás se escribió de cero contra ese texto.
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 28 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟢 **desbloqueada, y es lo que más urge** |
-| FASE 2 — Master Spec | ⛔ bloqueada por las 4 bloqueantes que decide el experimento |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 21 de 55 filas medidas** |
+| FASE 2 — Master Spec | ⛔ bloqueada por `BD-MP-01` (pausa) y `BD-MP-02` (cortesía) |
 | FASE 3 a 10 | ⬜ no empezadas |
 
 ### Próximo paso exacto
 
-**Arrancar FASE 1C** — la experimentación contra Mercado Pago. **No quedan preguntas para el
-owner**: las 25 de FASE 1A están respondidas.
+**Seguir FASE 1C.** No quedan preguntas para el owner: las 25 de FASE 1A están respondidas.
+
+**Antes de medir nada más, leer el §0 de
+[`mp-probes/RESULTS-2026-09-15.md`](./mp-probes/RESULTS-2026-09-15.md)**: Mercado Pago acepta
+cambios que no aplica y responde `2xx`. Cuatro casos medidos. **Toda mutación exige relectura y
+comparación campo por campo**; ninguna fila de la matriz se marca por el código de estado.
+
+Lo que falta necesita tres cosas que hoy no hay:
+
+| Bloque | Qué hace falta |
+|---|---|
+| `RN-*`, `GR-*`, `PS-2`/`4`/`5`/`6` | **Tiempo real.** La pausa de la sonda duró 1,3 s |
+| `WH-*`, `EX-2` | **Un endpoint público** que reciba los POST del proveedor |
+| `RF-*` | Probar reembolsos |
+| `EX-3` | Observar la casilla del comprador de prueba |
+
+Las credenciales del sandbox las tiene el owner. **No están en el repo** y no deben entrar:
+las sondas las leen del entorno.
 
 1C es lo que más urge porque **cuatro decisiones bloqueantes de FASE 2 sólo las puede cerrar
 el experimento**, y porque `DEC-SUB-001` ya está tomada pero **no se puede implementar** hasta

@@ -278,13 +278,63 @@ a los trials en curso.
 
 ---
 
+## 2026-09-15 — FASE 1C, sondas 01 a 03
+
+**21 de 55 filas medidas.** El owner entregó las credenciales del sandbox; quedaron **fuera del
+repo**, leídas por entorno, y ningún script las contiene.
+
+Se consiguió **autorizar por API con un `card_token`**, sin navegador, lo que destrabó todo el
+bloque post-autorización sin depender de un flujo manual.
+
+### El hallazgo que atraviesa todo lo demás
+
+**Mercado Pago acepta cambios que no aplica, y responde `2xx`.** Cuatro casos medidos: el campo
+`items` al crear, dos intentos aislados de cambiar `frequency`, y un token de tarjeta guardada
+que se genera con `201` y después no sirve.
+
+**Un `2xx` no prueba que el cambio se haya aplicado.** Toda mutación exige relectura y
+comparación campo por campo. Es la regla que más va a pesar en el diseño del reconciliador.
+
+### Lo que cambió una decisión ya tomada
+
+`EX-4` salió `NOT_SUPPORTED`: el ciclo de una suscripción autorizada no se puede mutar. Eso
+dejó a **`DEC-SUB-001` sin mecanismo**.
+
+En vez de re-decidir ahí mismo, **se midió lo que elegía entre las dos salidas posibles**
+(sonda 03): recrear la suscripción **no exige recargar la tarjeta, sólo el código de
+seguridad**. Con ese dato, `DEC-SUB-005` mantuvo la política intacta y reemplazó sólo el
+mecanismo.
+
+Decidir antes de medir habría sido repetir el error que motivó el reset.
+
+### Otras dos bloqueantes quedaron decidibles
+
+- **`BD-MP-03`**: `PC-1` y `PC-3` `VERIFIED` — el monto de una autorizada se muta **sin nuevo
+  consentimiento** del proveedor.
+- **`BD-MP-04`**: `EX-5` `NOT_SUPPORTED` — una autorización cubre **un solo monto**.
+
+### Dos defectos del proveedor que condicionan el diseño
+
+- **`/preapproval/search` ignora `external_reference` en silencio** (111 resultados con
+  cualquier valor), y ése es nuestro único vínculo con el dominio. Hay que guardar el id del
+  proveedor y leer por `GET`. En `/v1/payments/search` el mismo filtro **sí** funciona.
+- **El piso es ARS 15**: una cortesía "sin cobrar" bajando el monto no existe.
+
+### Lo que no se pudo medir, y por qué
+
+Renovaciones, grace y efectos reales de la pausa necesitan **que pase tiempo** — la pausa de la
+sonda duró 1,3 segundos y de eso **no se concluye nada** sobre §26.4. Webhooks necesitan **un
+endpoint público**. Reembolsos y los correos del proveedor siguen sin probarse.
+
+---
+
 ## Próximo paso
 
-**Arrancar FASE 1C.** Es lo que más urge:
+**Seguir FASE 1C.** Es lo que más urge:
 
-- **Cuatro decisiones bloqueantes de FASE 2** sólo las puede cerrar el experimento
-  (`BD-MP-01` a `BD-MP-04`). No las decide el owner y no hay forma de sortearlas.
-- **`DEC-SUB-001` no se puede implementar** hasta saber el resultado de `EX-7`/`EX-8`.
+- **`BD-MP-01` (pausa) y `BD-MP-02` (cortesía) siguen bloqueando FASE 2.** Las dos necesitan
+  mediciones que llevan tiempo real, no una conversación.
+- **`BD-MP-03` y `BD-MP-04` ya son decidibles**: sus filas están cerradas.
 - **FASE 1B sigue bloqueada** por `DEC-METH-001`: no se lee código hasta que el diseño esté
   cerrado.
 
