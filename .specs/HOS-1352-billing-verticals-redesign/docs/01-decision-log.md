@@ -442,16 +442,58 @@ Reglas:
 
 ### DEC-ADDON-001 — Los addons recurrentes quedan condicionados a FASE 1C
 
-- **Fecha**: 2026-09-15 · **Estado**: **PENDING** (condicionada) · **Decide**: owner
+- **Fecha**: 2026-09-15 · **Estado**: **SUPERSEDED por `DEC-ADDON-006`** · **Decide**: owner
 - **Problema**: si un preapproval cubre un solo ítem, cada addon recurrente sería un débito
   separado en el resumen del cliente y una conciliación N:1.
 - **Decisión**: **no se decide ahora**. Se resuelve cuando la matriz responda si un
   preapproval puede cubrir más de un ítem o si se puede mutar su monto (filas `AD-1`, `AD-2`).
-- **Motivo**: la opción buena para el cliente — cobrarlos junto al plan, como hace la
-  industria — depende enteramente de esa respuesta.
-- **Implicaciones**: **es la única de las 7 decisiones bloqueantes que sigue abierta.**
-  Hasta cerrarla, el diseño asume que todo addon puede ser one-time.
 - **Origen**: `BD-MP-04` (BLOCKING).
+- **Reemplazada**: el mismo día, cuando la sonda 01 respondió `AD-1`.
+
+### DEC-ADDON-006 — El `billingKind` decide el mecanismo de cobro del addon
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Reemplaza a**: `DEC-ADDON-001`.
+- **Problema**: cómo se cobran los addons, sabiendo ya que **un preapproval cubre un solo
+  monto** (`AD-1` = `NOT_SUPPORTED`, medido: `auto_recurring` como array da 400, y el campo
+  `items` se acepta y se descarta en silencio).
+- **Alternativas**: (1) el `billingKind` decide; (2) todos suman al preapproval; (3) todos
+  one-time con renovación ofrecida.
+- **Decisión**: **(1)**.
+
+  | `billingKind` | Cómo se cobra |
+  |---|---|
+  | `ONE_TIME` | Cobro único **aparte**. No toca el preapproval del plan, dure lo que dure el beneficio |
+  | `RECURRING` | **Suma al monto del preapproval** del plan. Un solo débito para el cliente |
+
+- **Motivo**: es el eje correcto — el campo que declara cómo se cobra decide cómo se cobra, sin
+  cruzar con `grantDuration`. Da un único débito donde tiene sentido, sin romper los addons de
+  días fijos (un boost de 7 días sobre un ciclo mensual no puede sumarse al preapproval: habría
+  que subir y bajar el monto dentro del mismo período y el cobro pasa una sola vez).
+- **Implicaciones**:
+  1. **Una sola función compartida**, no una cascada de condiciones:
+     `montoEsperado(suscripción) = precio de la versión de plan anclada + Σ addons RECURRING activos`.
+     Tres disparadores la usan: compra de addon, vencimiento y cancelación. Con planes
+     versionados (`DEC-ARCH-001`) el cálculo es determinista y reproducible.
+  2. **El reconciliador no es opcional**: hace falta un cron que compare el monto real del
+     preapproval en MP contra el esperado. Si falla la resta al vencer un addon, **el cliente
+     sigue pagando de más indefinidamente**. Mismo patrón que los conversores que el repo ya
+     tiene (`trial-expiry`, `courtesy-expiry`): re-leer MP y reflejar la verdad.
+  3. **La combinación `RECURRING` + `FIXED_DAYS` se prohíbe por validación** — "se cobra todos
+     los meses y dura 7 días" no significa nada.
+  4. **La fracción del ciclo en curso se regala**: el addon recurrente empieza a cobrarse en el
+     ciclo siguiente y el acceso se da al instante. Cero prorrateo — que es justamente lo que
+     MP no hace.
+  5. **Riesgo legal declarado**: subir el monto de un débito automático **es un aumento**. Se
+     asume defendible porque el cliente lo pidió explícitamente al comprar el addon, pero queda
+     escrito como decisión consciente, no implícita. Se cruza con `DEC-LEGAL-001` y el §29.
+  6. **Depende de `PR-1` sobre un preapproval AUTORIZADO**, que sigue `UNKNOWN`. Verificado
+     sólo sobre `pending`. **Si MP exige re-autorización al mutar el monto (`PR-3`), este
+     mecanismo se cae** y hay que volver a cobros separados. Es lo primero que debe medir la
+     sonda 02.
+  7. No hay nada que preservar del mecanismo actual: **HOS-847 (Urgent, In Progress) reporta
+     que hoy los addons recurrentes cobran una vez y no renuevan**.
+- **Origen**: `BD-MP-04` (BLOCKING) + sonda 01 de FASE 1C.
 
 ### DEC-ADDON-002 — Dos ejes: cómo se cobra y cuánto dura
 

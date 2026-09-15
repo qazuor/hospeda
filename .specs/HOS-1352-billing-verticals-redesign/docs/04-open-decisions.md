@@ -16,9 +16,13 @@ Cuando una se cierra: se crea su `DEC-*` en [`01-decision-log.md`](./01-decision
 marca acá como cerrada con el ID de la decisión. **No se borra la fila** — el histórico de qué
 estuvo abierto es parte del registro.
 
-> **Estado al 2026-09-15**: el owner cerró **36 decisiones** en una sesión.
-> Queda **1 bloqueante** condicionada a FASE 1C, **3 dependientes de MP**, y
-> **23 huecos técnicos** que resuelve la Master Spec sin intervención del owner.
+> **Estado al 2026-09-15**: el owner cerró **37 decisiones**.
+> **Las 7 bloqueantes de FASE 2 están cerradas.** Quedan **3 dependientes de MP**
+> (`BD-MP-01`, `BD-MP-02`, `BD-MP-03`) y **23 huecos técnicos** que resuelve la Master Spec
+> sin intervención del owner.
+>
+> `BD-MP-04` se cerró con `DEC-ADDON-006` tras la sonda 01 de FASE 1C, pero su
+> implementación **depende de `PR-1` sobre un preapproval autorizado**, que sigue `UNKNOWN`.
 
 ## Gate de FASE 5
 
@@ -39,7 +43,7 @@ lleva su argumento escrito.
 | `BD-TRIAL-01` | Derivación del Trial Plan: ¿live o snapshot? | ✅ `DEC-TRIAL-001` — trinquete: en vivo, nunca empeora |
 | `C-TRIAL-01` | "1 ficha en trial" vs "hereda limits de Basic" | ✅ `DEC-TRIAL-002` — overrides declarados en DB por vertical |
 | `BD-SUB-02` | ¿Qué es upgrade con dos ejes? | ✅ `DEC-SUB-001` — la regla de la industria |
-| `BD-MP-04` | ¿Existen addons recurrentes? | 🟡 **`DEC-ADDON-001` — condicionada a FASE 1C** |
+| `BD-MP-04` | ¿Existen addons recurrentes? | ✅ **`DEC-ADDON-006`** — el `billingKind` decide: `ONE_TIME` se cobra aparte, `RECURRING` suma al monto del preapproval |
 | `BD-MIG-01` | ¿Qué se le promete al cliente que hoy paga? | ✅ `DEC-MIG-001` — coordinación manual de las 5 |
 | `C-TRIAL-02` | ¿Partner tiene trial? | ✅ `DEC-TRIAL-003` — configurable por plan, apagado hoy |
 
