@@ -71,10 +71,19 @@ comparación campo por campo**; ninguna fila de la matriz se marca por el códig
 
 ### EL RELOJ ESTÁ CORRIENDO — lo primero que hay que hacer mañana
 
-El 2026-09-15 a las 12:26–12:29 quedaron **siete suscripciones de ciclo diario vivas** en el
-sandbox. El ciclo diario **funciona y está verificado por relectura**: `authorized`, ciclo
-`1 days`, un cobro al crear y `next_payment_date` al día siguiente. Eso es lo que convierte
-en medibles en 24 h las filas que esperaban un ciclo.
+El 2026-09-15 quedaron **ocho sujetos vivos** de ciclo diario en el sandbox. El
+ciclo diario funciona y está verificado por relectura. Lo que sigue sólo
+depende de que el proveedor ejecute un ciclo.
+
+> ⚠️ **ANTES QUE NADA, devolver el receptor a modo normal.** Quedó en `mode=fail`
+> para medir los reintentos (`WH-4`). Si sigue así cuando lleguen las
+> renovaciones, **todas van a fallar y reintentarse**, y encima el proveedor
+> podría dejar de mandar:
+>
+> ```bash
+> cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
+> SINK_URL=https://hos1352-webhook-sink.qazuor.workers.dev bash probe-08-leer-webhooks.sh --ok
+> ```
 
 **A partir del 2026-09-16 ~11:30, correr la sonda 06:**
 
@@ -95,6 +104,14 @@ cada fila se marca contra el **delta entre dos fotos fechadas**.
 | `monto-baja` | `5e4c5e5c…` | `DW-1`/`DW-2` | ARS **1000** |
 | `monto-sube` | `4f60c31c…` | `UP-1`/`UP-2` | ARS **4000** |
 | `cortesia-piso` | `30c03cca…` | `CT-1`/`CT-3` | ARS **15** |
+| `cancelada-no-cobra` | `6738c7fb…` | `GT-1` | **`cancelled`**, con cobro anunciado para el 16 |
+
+**Y leer también el receptor de webhooks**, que ahora ve las renovaciones
+crudas: es la única forma de medir `RN-1` sin la capa legacy en el medio.
+
+```bash
+SINK_URL=https://hos1352-webhook-sink.qazuor.workers.dev bash probe-08-leer-webhooks.sh
+```
 
 El manifiesto vive en `/tmp/mp-probe-05/manifiesto.json`, que **no sobrevive a un reinicio**.
 Y si se pierde, **se pierde el experimento**: por `RC-1` el `search` de preapprovals ignora
