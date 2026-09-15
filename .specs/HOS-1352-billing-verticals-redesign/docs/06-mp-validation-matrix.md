@@ -162,10 +162,10 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| WH-1 | Duplicados | `UNKNOWN` | — | — | — | — |
+| WH-1 | Duplicados | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01-05](./mp-probes/RESULTS-2026-09-15.md) | **Hay entregas duplicadas**: el mismo recurso llegó dos veces con **1,5 s** de diferencia y **dos ids de evento distintos**. Observado indirectamente (ver limitación en los resultados) |
 | WH-2 | Demorados | `UNKNOWN` | — | — | — | — |
 | WH-3 | Fuera de orden | `UNKNOWN` | — | — | — | — |
-| WH-4 | Reintentos | `UNKNOWN` | — | — | — | — |
+| WH-4 | Reintentos | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01-05](./mp-probes/RESULTS-2026-09-15.md) | **Reintenta ante un `500`, con backoff creciente**: 4 entregas del mismo recurso a **1,5 s · 18 min · 35 min**. **Cada reentrega trae un `provider_event_id` NUEVO** |
 | WH-5 | Faltantes: un evento que nunca llega | `UNKNOWN` | — | — | — | — |
 
 ## Reconciliación (§23)
@@ -200,7 +200,7 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | # | Comportamiento | Para qué | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|---|
 | EX-1 | Qué pasa con una autorización creada y **nunca completada**: ¿vence?, ¿cuándo?, ¿se puede reusar? | `M-SUB-01`, `M-MP-02` | `UNKNOWN` | — | — | — | requiere dejar una sin autorizar y esperar |
-| EX-2 | ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)? | `M-CONC-02` | `UNKNOWN` | — | — | — | requiere recibir webhooks; hace falta un endpoint público |
+| EX-2 | ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)? | `M-CONC-02` | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01-05](./mp-probes/RESULTS-2026-09-15.md) | El evento trae `id` propio y, en algunos tipos, `created`. **Pero el `id` CAMBIA en cada reentrega** (4 entregas del mismo hecho, 4 ids), así que **no sirve como clave de deduplicación**: la clave debe salir del tipo + el id del recurso |
 | EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | `UNKNOWN` | — | — | — | requiere observar la casilla del comprador de prueba |
 | EX-4 | Cambio de **frecuencia** sobre una suscripción ya autorizada | `BD-SUB-01`, `MP-01` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **El ciclo NO se puede cambiar, y falla en silencio**: `200` en dos intentos aislados (12 y 3 meses) y `frequency` siguió en 1 |
 | EX-5 | ¿Una autorización puede cubrir **más de un monto**? | `BD-MP-04` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring` como array → `400`. Campo `items` → **`201` y se descarta en silencio**: no vuelve en la respuesta, queda un solo monto |
