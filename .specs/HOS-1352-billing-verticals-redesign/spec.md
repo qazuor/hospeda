@@ -30,7 +30,7 @@ nada** (§66):
 | 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
 | 6 | [`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md) | El análisis de dominio (FASE 1A) |
-| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: 26 de 55 filas |
+| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: 31 de 57 filas |
 | 8 | [`docs/07-facts-inventory.md`](./docs/07-facts-inventory.md) | Cuántos clientes reales hay, medido |
 
 **No confíes en memoria implícita, ni en engram, ni en ningún otro `CLAUDE.md`, ni en
@@ -60,7 +60,7 @@ reutilizar conocimiento viejo como si siguiera vigente es una de las causas de q
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 26 de 55 filas medidas** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 31 de 57 filas · reloj corriendo** |
 | FASE 2 — Master Spec | ⛔ bloqueada por 2 de las 4 que decide el experimento (`BD-MP-01` pausa, `BD-MP-02` cortesía) |
 | FASE 3 — épicas | ⬜ |
 | FASE 4 — spec por épica | ⬜ |
@@ -76,12 +76,18 @@ FASE 1A están cerradas; queda **una** abierta que abrió FASE 1C (`BD-MP-04`).
 
 ## Próximo paso
 
-**Correr la [sonda 05](./docs/mp-probes/probe-05-arrancar-el-reloj.sh).** Diecisiete filas no
-esperan permisos: esperan que el proveedor ejecute un ciclo. Con un ciclo **diario** eso pasa
-a 24 h, así que arrancar el reloj es lo único cuyo costo no se puede recuperar después.
+**A partir del 2026-09-16 ~11:30, correr la
+[sonda 06](./docs/mp-probes/probe-06-leer-el-reloj.sh).** El reloj arrancó el 15 a las 12:26:
+siete suscripciones de **ciclo diario** vivas en el sandbox, una por bloque de filas. El ciclo
+diario ya está verificado por relectura; lo que falta es ver al proveedor ejecutar un ciclo.
 
-Dos de las cuatro bloqueantes de FASE 2 (`BD-MP-03`, `BD-MP-04`) **ya tienen sus filas
-cerradas**: escribir sus decisiones no espera a nada.
+Detalle operativo: el manifiesto está en `/tmp/mp-probe-05/manifiesto.json`, con copia
+versionada en `docs/mp-probes/manifiesto-reloj-2026-09-15.json`. Si se perdiera, **se pierde
+el experimento**: por `RC-1` no hay forma de volver a encontrar esas suscripciones por nuestra
+referencia.
+
+De las cuatro bloqueantes de FASE 2, `BD-MP-03` quedó decidida (`DEC-MP-001`) y `BD-MP-04`
+volvió al owner.
 
 De las 25 preguntas de FASE 1A no queda ninguna abierta, pero **FASE 1C abrió una nueva**:
 `BD-MP-04` (cómo se implementa un addon recurrente) tiene sus filas medidas y aun así **le

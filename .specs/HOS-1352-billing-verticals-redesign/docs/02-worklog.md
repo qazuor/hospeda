@@ -384,18 +384,83 @@ API), qué credenciales habilitan reembolsos en sandbox, y la casilla del compra
 
 ---
 
+## 2026-09-15 — El reloj arrancó, y la sonda 07
+
+El owner cargó las credenciales. **31 de 57 filas medidas** (eran 26 de 55).
+
+### Un supuesto que era falso, y lo corrigió el owner
+
+Se había escrito un guard que exigía que el access token empezara con `TEST-`. **Está mal**:
+el modo de pruebas actual de Mercado Pago se arma creando un **usuario vendedor de prueba** y,
+bajo él, una aplicación propia, cuyas credenciales empiezan con `APP_USR-` y son
+**indistinguibles por su forma** de unas productivas. Ese guard bloqueaba el caso bueno y
+habría dejado pasar el malo.
+
+El discriminador real lo da el proveedor: `GET /users/me` → `tags: ["test_user", …]`. El guard
+ahora exige ese tag, y además verifica que **comprador y vendedor no sean la misma cuenta**.
+
+### El ciclo diario funciona: el reloj está corriendo
+
+`frequency: 1, frequency_type: "days"` se acepta, se autoriza y **queda así**, verificado por
+relectura en los seis sujetos: `authorized`, un cobro al crear, `next_payment_date` al día
+siguiente. Siete suscripciones vivas, una por bloque de filas. Se leen con la sonda 06 desde
+el 2026-09-16 ~11:30.
+
+### Cuatro mediciones nuevas
+
+- **`PC-2` tiene techo**: el rango real es **ARS 15 a ARS 2.000.000**.
+- **`UP-1`/`UP-2` a `PARTIALLY`**: subir el monto queda aplicado en el acto y **no cobra la
+  diferencia**; `next_payment_date` no se mueve. Cuánto cobra en el ciclo siguiente lo dice
+  el reloj.
+- **`PA-4`**: una tarjeta que va a rechazar **no llega a crear la suscripción** (`400
+  CC_VAL_433`), porque la validación ocurre antes. Consecuencia incómoda: **no se puede
+  fabricar un cobro fallido eligiendo una tarjeta mala**, y `RN-2`/`GR-*` quedaron sin
+  mecanismo salvo el intento de `renov-falla3`.
+- **`EX-12` `NOT_SUPPORTED`**: un `card_token` sirve para **una sola** suscripción. La primera
+  corrida de la sonda 05 tokenizó una vez y reusó: **perdió cinco de siete sujetos**. Importa
+  fuera de la sonda, porque todo reintento de creación —y `DEC-SUB-005`— tiene que tokenizar
+  de nuevo.
+
+### `EX-11` — qué se puede hacer sobre una suscripción pausada
+
+La sonda 05 devolvió al pasar `400 "You can not modify a paused preapproval."`. El mensaje
+sugería mucho más de lo que se había probado, así que se midió con la **sonda 07**, y con
+control:
+
+| Sobre el mismo sujeto | |
+|---|---|
+| cambiar el monto **estando pausada** | `400`, y el monto **no se movió** |
+| cambiar el monto **ya reanudada** | `200`, y el monto **cambió** |
+
+El segundo es el control y es lo que hace válida la conclusión: **bloquea el estado, no la
+operación**. Y por otro lado, **cancelar una pausada sí funciona**: la pausa no atrapa al
+cliente.
+
+Esto abre `E-SUB-06`: un cambio de precio programado (`DEC-MP-001`) que cae sobre una
+suscripción pausada **no se puede aplicar en su fecha efectiva**.
+
+### Un `NOT_SUPPORTED` que casi se inventa
+
+El primer intento de la sonda 07 se comió un **`429 local_rate_limited`** justo en el paso que
+decidía. Un `429` no dice que la operación esté prohibida: dice que **no llegó a evaluarse**.
+Darlo por `NOT_SUPPORTED` habría fabricado una limitación inexistente. La sonda reintenta con
+backoff y la conclusión de arriba es de la corrida limpia.
+
+Es el reverso del §0: allá un `2xx` no probaba que algo se aplicara; acá un error no prueba
+que algo esté prohibido. **Ningún código de estado, de ninguna familia, alcanza solo.**
+
+---
+
 ## Próximo paso
 
-**Correr la sonda 05.** Es lo único del programa cuyo costo es tiempo de calendario: hasta que
-el reloj no arranque, diecisiete filas siguen en `UNKNOWN` por una razón que no se acelera
-después.
+**Leer el reloj con la sonda 06, desde el 2026-09-16 ~11:30.** Es lo único que no se puede
+apurar, y de ahí salen `RN-*`, `GR-*`, `PS-2`/`4`/`5`/`6`, `EX-1`, `UP-2`, `DW-*` y `CT-*`.
 
-Después, sin esperar a nadie:
+Después:
 
-- **Escribir `BD-MP-03` y `BD-MP-04`**: sus filas están cerradas y las decisiones todavía no
-  están registradas. Bajan de 4 a 2 las bloqueantes de FASE 2.
 - **`BD-MP-01` (pausa) y `BD-MP-02` (cortesía)** siguen bloqueando FASE 2, y las dos dependen
-  de lo que devuelva la sonda 06.
+  de lo que devuelva la 06. `EX-11` ya le adelantó a `BD-MP-01` dos restricciones duras.
+- **`BD-MP-04` espera al owner**: la medición no la cerró.
 - **FASE 1B sigue bloqueada** por `DEC-METH-001`: no se lee código hasta que el diseño esté
   cerrado.
 

@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (55 filas: 16 `VERIFIED`, 8 parciales, 2 `NOT_SUPPORTED`, 29 `UNKNOWN`).
+   (57 filas: 18 `VERIFIED`, 10 parciales, 3 `NOT_SUPPORTED`, 26 `UNKNOWN`).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
 ---
@@ -36,7 +36,7 @@ status: CURRENT
 ### Último punto completado
 
 **FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.
-FASE 1C en curso: 26 de 55 filas medidas, y las sondas 05 y 06 escritas y listas para correr.**
+FASE 1C en curso: 31 de 57 filas medidas, y EL RELOJ YA ESTÁ CORRIENDO.**
 
 El programa se reseteó hoy: el único documento heredado es el PDR (`DEC-METH-001`). Todo lo
 demás se escribió de cero contra ese texto.
@@ -53,7 +53,7 @@ owner.
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 29 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 26 de 55 filas medidas** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 31 de 57 filas medidas · reloj corriendo, leer el 2026-09-16** |
 | FASE 2 — Master Spec | ⛔ bloqueada por `BD-MP-01` (pausa) y `BD-MP-02` (cortesía) |
 | FASE 3 a 10 | ⬜ no empezadas |
 
@@ -69,37 +69,68 @@ sobrevivió una elección de diseño**, planteada con su cuadro y una recomendac
 cambios que no aplica y responde `2xx`. Cinco casos medidos. **Toda mutación exige relectura y
 comparación campo por campo**; ninguna fila de la matriz se marca por el código de estado.
 
-Lo que falta se divide en **lo que sólo necesita arrancar** y **lo que necesita al owner**.
+### EL RELOJ ESTÁ CORRIENDO — lo primero que hay que hacer mañana
 
-### Lo que sólo necesita arrancar: el reloj
+El 2026-09-15 a las 12:26–12:29 quedaron **siete suscripciones de ciclo diario vivas** en el
+sandbox. El ciclo diario **funciona y está verificado por relectura**: `authorized`, ciclo
+`1 days`, un cobro al crear y `next_payment_date` al día siguiente. Eso es lo que convierte
+en medibles en 24 h las filas que esperaban un ciclo.
 
-Diecisiete filas (`RN-1..3`, `GR-1..3`, `PS-2`/`4`/`5`/`6`, `PA-4`, `EX-1`, `UP-1`/`2`,
-`DW-1`/`2`, `CT-1`/`3`) no están en `UNKNOWN` por falta de permisos: **están esperando que
-pase tiempo**. La pausa de la sonda 02 duró 1,3 s.
+**A partir del 2026-09-16 ~11:30, correr la sonda 06:**
 
-Pero **la espera es de un día, no de un mes**, y eso sale de una medición ya hecha: al
-rechazar `frequency_type: "years"` el proveedor contestó *"valid ones are `[days, months]`"*
-(`FR-4`). Un ciclo **diario** pone un ciclo real a 24 h.
+```bash
+cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
+source ~/.config/hospeda/mp-sandbox-creds.sh && OUT_DIR=/tmp/mp-probe-05 bash probe-06-leer-el-reloj.sh
+```
 
-Las dos sondas ya están escritas y verificadas en seco:
+La primera corrida fija la línea de base y **no concluye nada**; de la segunda en adelante
+cada fila se marca contra el **delta entre dos fotos fechadas**.
 
-| Sonda | Qué hace |
-|---|---|
-| [`probe-05-arrancar-el-reloj.sh`](./mp-probes/probe-05-arrancar-el-reloj.sh) | Crea **siete** suscripciones de ciclo diario, una por bloque de filas, deja hechas las mutaciones del día 0 y escribe un manifiesto |
-| [`probe-06-leer-el-reloj.sh`](./mp-probes/probe-06-leer-el-reloj.sh) | Vuelve a las 24 h, 48 h y 72 h, y reporta el **delta** entre dos fotos fechadas |
+| slug | id | qué fila decide | cómo quedó al arrancar |
+|---|---|---|---|
+| `renov-ok` | `930a7596…` | `RN-1` | `authorized`, ARS 2000 |
+| `renov-falla3` | `0e678ead…` | `RN-2`, `GR-1..3` | `authorized`, ARS 2000 |
+| `pausa-real` | `747cc456…` | `PS-2`/`4`/`5`/`6` | **`paused`** |
+| `sin-autorizar` | `bf9b6feb…` | `EX-1` | `pending` |
+| `monto-baja` | `5e4c5e5c…` | `DW-1`/`DW-2` | ARS **1000** |
+| `monto-sube` | `4f60c31c…` | `UP-1`/`UP-2` | ARS **4000** |
+| `cortesia-piso` | `30c03cca…` | `CT-1`/`CT-3` | ARS **15** |
 
-**Que el ciclo diario se autorice y se ejecute NO está medido.** Es lo primero que comprueba
-la sonda 05, por relectura — si el proveedor acepta `days` y guarda otra cosa, se ve en el
-acto y no 24 h después. Es el mismo patrón del §0.
+El manifiesto vive en `/tmp/mp-probe-05/manifiesto.json`, que **no sobrevive a un reinicio**.
+Y si se pierde, **se pierde el experimento**: por `RC-1` el `search` de preapprovals ignora
+`external_reference` en silencio, así que no habría forma de volver a encontrar estas
+suscripciones por nuestra referencia. Por eso hay dos copias:
+[`mp-probes/manifiesto-reloj-2026-09-15.json`](./mp-probes/manifiesto-reloj-2026-09-15.json)
+en el repo, y `~/.config/hospeda/mp-reloj-manifiesto-2026-09-15.json` fuera de él. Los ids de
+suscripción del sandbox no son secretos: son la evidencia del §59.
 
-**Correr la 05 es lo más urgente del programa**: es lo único cuyo costo es tiempo de
-calendario, y hasta que no arranque, todo lo demás corre detrás.
+**Para medir la reanudación de la pausa** (`PS-5`, `PS-6`, que son las que deciden si el §26.4
+es implementable), con la pausa ya cumplida y **una sola vez**, porque reanudar no se deshace:
+
+```bash
+source ~/.config/hospeda/mp-sandbox-creds.sh && OUT_DIR=/tmp/mp-probe-05 REANUDAR=1 bash probe-06-leer-el-reloj.sh
+```
+
+**Una trampa que ya mordió**: si todos los sujetos dicen SIN CAMBIOS pasadas las 24 h, eso no
+es un error de la sonda, **es el hallazgo**. Y al revés: un `429 local_rate_limited` **no**
+significa que algo esté prohibido, significa que no llegó a evaluarse. La sonda 07 casi
+concluye un `NOT_SUPPORTED` inexistente por eso.
+
+### Lo que NO se pudo fabricar, y es un problema abierto
+
+**No se puede provocar un cobro fallido eligiendo una tarjeta mala.** Los dos titulares de
+rechazo de las tarjetas de prueba (`FUND` y `OTHE`) **no llegan a crear la suscripción**:
+mueren antes con `400 CC_VAL_433`, porque la validación de la tarjeta ocurre primero (`PA-4`).
+
+El único camino que queda es el sujeto `renov-falla3`, que nació sano y tiene el monto
+subido. **Si mañana igual cobra bien, `RN-2` y `GR-1..3` necesitan otra idea** — y esa
+ausencia de mecanismo es, ella misma, un hallazgo que hay que registrar.
 
 ### Lo que necesita al owner
 
 | Qué | Para qué |
 |---|---|
-| Las **credenciales** del sandbox | Sin esto no corre ninguna sonda. **No están en el repo** y no deben entrar: viven en `~/.config/hospeda/mp-sandbox-creds.sh` (fuera del repo, `chmod 600`), con `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY` y `MP_BUYER_EMAIL`. Al hacerle `source` corre un guard que **aborta si son de producción** (`APP_USR-`) o si quedó un placeholder |
+| Las **credenciales** de prueba | ✅ **entregadas y cargadas.** Viven en `~/.config/hospeda/mp-sandbox-creds.sh`, fuera del repo y `chmod 600`. **Ojo con un supuesto que era falso**: el modo de pruebas actual de Mercado Pago **no usa el prefijo `TEST-`** — se arma con un usuario vendedor de prueba y una app propia, cuyas credenciales empiezan con `APP_USR-` igual que las productivas. Lo que distingue, y lo dice el proveedor, es `GET /users/me` → `tags:["test_user",…]`, y eso es lo que verifica el guard antes de dejar correr nada |
 | Una **aplicación de Mercado Pago aparte** para pruebas | El webhook es **por aplicación** y su URL **no se puede cambiar por API** (`403`). La app de sandbox actual apunta al staging de Hospeda, así que medir webhooks hoy es medir nuestra propia capa legacy — justo lo que el §58 prohíbe. Desbloquea `WH-2`, `WH-3`, `WH-5` y la firma |
 | Qué credenciales habilitan **reembolsos** en sandbox | `RF-1`/`RF-2` dieron `401 "Unauthorized use of live credentials"`. Eso no dice que el proveedor no reembolse: dice que estas credenciales no lo pueden pedir |
 | Acceso a la **casilla del comprador de prueba** | `EX-3`: qué le comunica el proveedor al cliente por su cuenta |

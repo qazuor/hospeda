@@ -21,7 +21,7 @@ estuvo abierto es parte del registro.
 
 Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).
 
-> **Estado al 2026-09-15**: FASE 1A entregada y **completamente respondida**. 104 hallazgos,
+> **Estado al 2026-09-15**: FASE 1A entregada y **completamente respondida**. 105 hallazgos,
 > **29 decisiones registradas**, **0 de las 25 preguntas de FASE 1A abiertas**.
 >
 > **Pero FASE 1C abrió una pregunta nueva para el owner**: `BD-MP-04`. Sus filas están medidas
@@ -49,8 +49,8 @@ significativamente la arquitectura: `BLOCKING DECISION`"*).
 
 **FASE 2 sigue bloqueada**, pero por **2** de las 4 que decide el experimento, no por las
 cuatro: FASE 1C ya cerró las filas de `BD-MP-03` y `BD-MP-04`. Ninguna de las otras dos se
-puede cerrar mientras su fila de la matriz diga `UNKNOWN` (§61), y al 2026-09-15 **29 de las
-55 filas** lo dicen.
+puede cerrar mientras su fila de la matriz diga `UNKNOWN` (§61), y al 2026-09-15 **26 de las
+57 filas** lo dicen.
 
 ---
 
@@ -76,12 +76,12 @@ las dos listas a propósito, no por doble conteo.
 ## Bloqueantes de FASE 2 — las decide el experimento, no el owner
 
 **No se pueden cerrar mientras su fila de [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md)
-diga `UNKNOWN`** (§61 y regla 3 del Decision Log). Al 2026-09-15, **29 de las 55** lo dicen —
+diga `UNKNOWN`** (§61 y regla 3 del Decision Log). Al 2026-09-15, **26 de las 57** lo dicen —
 y **`BD-MP-03` y `BD-MP-04` ya no**.
 
 | ID | Pregunta | Filas que la desbloquean | Estado |
 |---|---|---|---|
-| `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6` | 🟡 espera 1C |
+| `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6`, `EX-11` | 🟡 espera 1C, **pero `EX-11` ya midió dos restricciones duras**: estando pausada el proveedor **rechaza toda modificación** (con control: reanudada, el mismo cambio entra), y **cancelar sí se puede**. Los efectos sobre el cobro los responde el reloj el 2026-09-16 |
 | `BD-MP-02` | Cortesía temporal sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` | 🟡 espera 1C |
 | `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | ✅ **`DEC-MP-001`** — se muta el monto del preapproval; el §29 se cumple del lado nuestro |
 | `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🔴 **la medición no alcanzó: sobrevivió una elección — ver abajo** |
@@ -192,7 +192,7 @@ despublicar enseguida · `A-TRIAL-02` "solamente en trial" para un usuario multi
 después el trial se extiende
 
 **Suscripción** · `M-SUB-01` estados faltantes · `A-SUB-01` qué es una "main subscription" ·
-`A-SUB-02` dónde se habilita la pausa · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
+`A-SUB-02` dónde se habilita la pausa · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · **`E-SUB-06` un cambio de precio programado que cae sobre una suscripción PAUSADA** (nuevo, residuo de `DEC-MP-001` + `EX-11`: estando pausada el proveedor **rechaza toda modificación**, así que el cambio no se puede aplicar en su fecha efectiva y hay que decidir si se encola hasta la reanudación, si se bloquea la pausa mientras hay un cambio pendiente, o si el §29 se cumple de otro modo) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
 precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelación programada ·
 `R-SUB-01` el servicio completo durante el grace · `M-SUB-03` vertical discontinuada
 
@@ -275,4 +275,4 @@ owner con su costo anotado.
 | Objections (`O-`) | 6 |
 | Suggested Improvements (`S-`) | 9 |
 | Pending MP Validation | `MP-01` más toda la sección 4 y las 55 filas de la matriz |
-| **Total de hallazgos** | **104** (`E-TRIAL-04`, `E-ENT-01` y `E-SUB-05` agregados el 2026-09-15) |
+| **Total de hallazgos** | **105** (`E-TRIAL-04`, `E-ENT-01`, `E-SUB-05` y `E-SUB-06` agregados el 2026-09-15) |
