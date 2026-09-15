@@ -10,7 +10,7 @@ phase: 1C
 # Matriz de validación de Mercado Pago
 
 **FASE 1C en curso.** Tras las [sondas 01 a 07](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **23 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 23 `UNKNOWN`**.
+2026-09-15: **23 filas `VERIFIED`, 11 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 22 `UNKNOWN`**.
 
 > **El reloj está corriendo.** Siete suscripciones de **ciclo diario** quedaron vivas en el
 > sandbox el 2026-09-15 a las 12:26–12:29 (manifiesto en `/tmp/mp-probe-05/manifiesto.json`).
@@ -156,14 +156,14 @@ response y webhook observado) · **Conclusión**.
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
 | CT-1 | N meses gratis sobre una suscripción viva | `UNKNOWN` | — | — | — | ⏳ **sujeto vivo**: `cortesia-piso` (`30c03cca…`), llevado al piso de ARS 15 |
-| CT-2 | Estrategias posibles: bajar monto / pausar / recrear / reembolsar | `UNKNOWN` | — | — | — | — |
+| CT-2 | Estrategias posibles: bajar monto / pausar / recrear / reembolsar | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01-12](./mp-probes/RESULTS-2026-09-15.md) | **Las cuatro medidas, y ninguna da "gratis" limpio.** (1) **Bajar el monto**: funciona sin re-consentimiento (`PC-1`/`PC-3`) pero el piso es **ARS 15** (`PC-2`), así que la cortesía máxima es ARS 15 por ciclo, no cero. (2) **Pausar**: la transición funciona (`PS-1`), pero estando pausada **no se puede modificar nada** (`EX-11`) — ni siquiera aplicar un cambio de precio — y si deja de cobrar lo dice el reloj (`PS-2`). (3) **Cancelar y recrear**: funciona (`EX-8`/`EX-10`) pero **le pide el código de seguridad al cliente** (`EX-9`). (4) **Cobrar y reembolsar**: **no se puede pedir** desde esta cuenta (`RF-1`) |
 | CT-3 | Efectos colaterales de cada estrategia | `UNKNOWN` | — | — | — | — |
 
 ## Grant permanente (§35.3)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| GT-1 | Cancelación correcta de la suscripción del proveedor | `UNKNOWN` | — | — | — | — |
+| GT-1 | Cancelación correcta de la suscripción del proveedor | `UNKNOWN` | — | — | — | La **transición** ya está medida (`PA-5`/`CN-2`: inmediata e irreversible). Lo que falta es lo que importa para un grant permanente: **que efectivamente deje de cobrar**. ⏳ **sujeto vivo**: `cancelada-no-cobra` (`6738c7fb…`), cancelada el 2026-09-15 con un cobro que le tocaría el 16 a las 14:42. **Ojo**: `next_payment_date` **NO se limpia al cancelar** —sigue diciendo el 16— así que ese campo no sirve para saber si va a cobrar |
 
 ## Webhooks (§51)
 
@@ -233,9 +233,9 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | Estado | Filas |
 |---|---|
 | `VERIFIED` | **23** |
-| `PARTIALLY_SUPPORTED` | **10** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `WH-3`, `WH-4`, `EX-9` |
+| `PARTIALLY_SUPPORTED` | **11** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `CT-2`, `WH-3`, `WH-4`, `EX-9` |
 | `NOT_SUPPORTED` | **4** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno) |
-| **`UNKNOWN`** | **23** |
+| **`UNKNOWN`** | **22** |
 
 Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no hay:
 
