@@ -269,7 +269,7 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-001 — Subir es inmediato, bajar de tier espera, tocar el ciclo se aplica ya
 
-- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-15 · **Estado**: **SUPERSEDED por `DEC-SUB-005`** · **Decide**: owner
 - **Problema**: §27 (upgrade inmediato) y §28 (downgrade a fin de ciclo) definen el cambio de
   plan sobre **un** eje, y §18 crea dos — Plan (tier) y BillingOption (ciclo). De nueve
   celdas, una es un no-cambio y sólo dos tenían política. Quedaban seis sin definir, y son las
@@ -304,6 +304,9 @@ Cada entrada lleva, según §3.4:
   5. El cambio inmediato dispara el enforcement de excedentes del §28.1 cuando el destino es
      más chico — que sigue siendo un hueco transversal (`M-ENT-02`).
 - **Origen**: `BD-SUB-01` (BLOCKING).
+- **Reemplazada**: el mismo día, cuando FASE 1C midió que el ciclo de una suscripción
+  autorizada **no se puede mutar** (`EX-4`, `NOT_SUPPORTED`). **La política de la matriz no
+  cambió**; lo que se cayó fue el mecanismo. Ver `DEC-SUB-005`.
 
 ### DEC-TRIAL-003 — El trial es configurable por plan; Partner lo tiene en cero
 
@@ -864,6 +867,54 @@ Cada entrada lleva, según §3.4:
   4. Se descartó adelantar ARCA porque metería una integración externa entera en el camino
      crítico de un programa de diez fases, y hoy no hay a quién cobrarle.
 - **Origen**: `O-LEGAL-01`.
+
+### DEC-SUB-005 — El cambio de ciclo se hace cancelando y recreando, no mutando
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner (delegado al criterio
+  técnico, con el hecho medido a la vista)
+- **Reemplaza a**: `DEC-SUB-001`.
+- **Problema**: `DEC-SUB-001` fijó que cualquier cambio de ciclo se aplica de inmediato
+  compensando en días, y eso presuponía poder **mutar** el ciclo de la suscripción vigente.
+  FASE 1C midió que **no se puede**: `EX-4` salió `NOT_SUPPORTED`, y además **falla en
+  silencio** — dos intentos aislados devolvieron `200` con `frequency` intacta.
+- **Contexto medido** (2026-09-15, sandbox,
+  [sondas 01/02/03](./mp-probes/RESULTS-2026-09-15.md)):
+  - `EX-4` **el ciclo no se puede cambiar** sobre una suscripción autorizada.
+  - `EX-8` **`VERIFIED`**: crear una suscripción autorizada con `start_date` futura respeta esa
+    fecha **y no cobra al crearse**.
+  - **Recrear no exige recargar la tarjeta**: se puede tokenizar la tarjeta ya guardada
+    server-side con `card_id` **más el código de seguridad**. Verificado de punta a punta y por
+    relectura independiente: quedó `authorized`, con el ciclo nuevo, el primer cobro corrido y
+    cero cobro al crear.
+  - Con `card_id` **sin** código de seguridad el token se genera (`201`) pero **no sirve**:
+    `400 "Card token was generated without cvv validation"`.
+- **Alternativas**: (1) cancelar y recrear con la fecha corrida; (2) el plan B declarado en
+  `DEC-SUB-001` — el cambio de ciclo espera a la renovación; (3) prohibir el cambio de ciclo.
+- **Decisión**: **(1)**. **La política de `DEC-SUB-001` se mantiene sin cambios** — subir de
+  tier es inmediato, bajar de tier con el mismo ciclo espera al fin del período, y cualquier
+  cambio de ciclo se aplica ya. **Lo único que cambia es cómo se ejecuta**: cancelando la
+  suscripción vigente y creando una nueva con la primera fecha de cobro corrida por los días
+  ya pagados.
+- **Motivo**: entrega exactamente el efecto que la decisión original buscaba, medido, y evita
+  el plan B — que degradaba la experiencia sin necesidad.
+- **Implicaciones**:
+  1. **El cliente tiene que ingresar su código de seguridad** para cambiar de ciclo. Es
+     fricción real, pero de un campo, no de un checkout entero. **Es el costo de esta decisión
+     y conviene que la UI lo anticipe** en vez de sorprender con un formulario.
+  2. **La operación no es atómica del lado del proveedor**: son dos llamadas, cancelar y
+     crear, y cancelar es **irreversible** (`PA-5`). Si la creación falla después de haber
+     cancelado, **el cliente queda sin suscripción**. El orden correcto es **crear primero y
+     cancelar después**, y hace falta una reconciliación para el caso en que se caiga en el
+     medio y queden dos vivas — que conviven sin conflicto (`EX-6`), así que el estado
+     intermedio no es destructivo.
+  3. **Toda mutación exige relectura y comparación**, no alcanza con el código de estado. Es
+     la regla general que dejó FASE 1C y acá es lo que habría evitado dar por bueno el cambio
+     de ciclo.
+  4. `DEC-SUB-003` (cambiar de plan en grace) se cruza con esto: si el cambio además mueve el
+     ciclo, se recrea. Qué pasa con el período impago al compensar sigue abierto (`E-SUB-05`).
+  5. El agujero declarado en `DEC-SUB-001` — bajar de tier y de ciclo a la vez como salida
+     anticipada de un compromiso anual — **sigue vigente sin cambios**.
+- **Origen**: `BD-SUB-01` (BLOCKING) + FASE 1C.
 
 ---
 

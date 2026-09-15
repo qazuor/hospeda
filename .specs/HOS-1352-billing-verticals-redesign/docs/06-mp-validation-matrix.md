@@ -9,8 +9,8 @@ phase: 1C
 
 # Matriz de validación de Mercado Pago
 
-**FASE 1C en curso.** Tras las [sondas 01 y 02](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **15 filas `VERIFIED`, 4 `PARTIALLY_SUPPORTED`, 2 `NOT_SUPPORTED`, 32 `UNKNOWN`**.
+**FASE 1C en curso.** Tras las [sondas 01, 02 y 03](./mp-probes/RESULTS-2026-09-15.md) del
+2026-09-15: **16 filas `VERIFIED`, 5 `PARTIALLY_SUPPORTED`, 2 `NOT_SUPPORTED`, 32 `UNKNOWN`**.
 
 > **El hallazgo que atraviesa todo lo demás**: Mercado Pago **acepta cambios que no aplica, y
 > responde `200`**. Tres casos confirmados — el campo `items`, y dos intentos aislados de
@@ -56,7 +56,8 @@ registrar request → registrar response → observar el webhook → documentar 
 |---|---|
 | Matriz mínima obligatoria del **§60** | 42 |
 | Agregadas por FASE 1A (`M-MP-03`), marcadas ✚ | 11 |
-| **Total** | **53** |
+| Agregadas por FASE 1C al medir | 2 — `EX-9`, `EX-10` |
+| **Total** | **55** |
 
 Columnas: **Estado** · **Fecha** · **Entorno** · **Evidencia** (ruta de la sonda, con request,
 response y webhook observado) · **Conclusión**.
@@ -205,6 +206,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | EX-5 | ¿Una autorización puede cubrir **más de un monto**? | `BD-MP-04` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring` como array → `400`. Campo `items` → **`201` y se descarta en silencio**: no vuelve en la respuesta, queda un solo monto |
 | EX-6 | N autorizaciones del mismo pagador conviviendo, ya autorizadas | `BD-MP-04` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | Dos autorizadas del mismo pagador conviven sin conflicto |
 | EX-7 | Compensar días ya pagados corriendo la **primera fecha de cobro** | `BD-SUB-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `start_date` a +20 días → `next_payment_date` en esa fecha |
+| EX-9 | ¿Se puede tokenizar una tarjeta **ya guardada**, server-side? | `DEC-SUB-005` | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02/03](./mp-probes/RESULTS-2026-09-15.md) | **Sí, pero exige el código de seguridad.** Con `card_id` solo, el token se genera (`201`) y **no sirve**: `400 "Card token was generated without cvv validation"`. Con `card_id` + `security_code`, funciona |
+| EX-10 | ¿Ese token crea una suscripción autorizada real? | `DEC-SUB-005` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02/03](./mp-probes/RESULTS-2026-09-15.md) | `201` y **verificado por relectura independiente**: `authorized`, ciclo nuevo (3 meses), primer cobro corrido a +18 días, **cero cobro al crear** |
 | EX-8 | ¿Se respeta esa primera fecha **después** de autorizar? | `BD-SUB-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **Sí se respeta tras autorizar.** Además **no cobra al crearse**. El proveedor lo modela como un `free_trial` de 20 días que nosotros no pedimos |
 
 > `EX-7` y `EX-8` van separadas a propósito: que el proveedor **acepte** una fecha futura al
@@ -217,8 +220,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **15** |
-| `PARTIALLY_SUPPORTED` | **4** — `PA-2`, `RC-1`, `PS-1`, `PS-3` |
+| `VERIFIED` | **16** |
+| `PARTIALLY_SUPPORTED` | **5** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `EX-9` |
 | `NOT_SUPPORTED` | **2** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto) |
 | **`UNKNOWN`** | **32** |
 
@@ -251,6 +254,6 @@ Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no ha
 `BD-MP-04`) y se pueden decidir. Las otras dos (`BD-MP-01` pausa, `BD-MP-02` cortesía) siguen
 bloqueadas por el §61.
 
-Y **`DEC-SUB-001`, que ya estaba `ACCEPTED`, quedó sin mecanismo**: el cambio de ciclo no se
-puede aplicar mutando la suscripción. Hay que revisarla con una decisión nueva que la marque
-`SUPERSEDED`.
+Y **`DEC-SUB-001` quedó sin mecanismo** y fue reemplazada por **`DEC-SUB-005`**: el cambio de
+ciclo se hace **cancelando y recreando** con la primera fecha corrida, no mutando. La política
+de la matriz tier × ciclo no cambió.

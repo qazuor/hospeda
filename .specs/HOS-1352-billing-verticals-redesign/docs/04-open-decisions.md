@@ -59,7 +59,7 @@ Corresponden a las preguntas **1 a 8** de
 | 2 | `BD-ARCH-02` | ¿Cómo se ordenan los planes para computar "el más premium" y "el más básico"? | ✅ `DEC-ARCH-002` — rank explícito, sólo los vendibles |
 | 3 | `C-TRIAL-01` | El "1 ficha en trial" (§10.5) vs heredar los limits de Basic (§10.3) | ✅ `DEC-TRIAL-001` — overrides declarados en DB, por vertical |
 | 4 | `BD-TRIAL-01` | La derivación del Trial Plan, ¿en vivo o congelada al arrancar? | ✅ `DEC-TRIAL-002` — trinquete: en vivo, nunca empeora |
-| 5 | `BD-SUB-01` | Las seis celdas sin política de la matriz tier × ciclo | ✅ `DEC-SUB-001` — sube ya, baja espera, el ciclo se aplica ya |
+| 5 | `BD-SUB-01` | Las seis celdas sin política de la matriz tier × ciclo | ✅ `DEC-SUB-001`, **reemplazada por `DEC-SUB-005`** — misma política, se ejecuta cancelando y recreando |
 | 6 | `C-PARTNER-01` | ¿Partner tiene trial, dentro de un alta administrada? | ✅ `DEC-TRIAL-003` — configurable por plan, en cero hoy |
 | 7 | `BD-MIG-01` | ¿Qué se le promete a quien hoy está pagando? | ✅ `DEC-MIG-001` — coordinación manual de las 5, cero código |
 | 8 | `BD-TRIAL-02` | ¿Qué señal define "la misma identidad" para el trial de por vida? | ✅ `DEC-TRIAL-004` — el email normalizado bloquea, el resto observa |
@@ -76,8 +76,8 @@ diga `UNKNOWN`** (§61 y regla 3 del Decision Log). Hoy las 53 filas dicen `UNKN
 |---|---|---|---|
 | `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6` | 🟡 espera 1C |
 | `BD-MP-02` | Cortesía temporal sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` | 🟡 espera 1C |
-| `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | 🟡 espera 1C |
-| `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🟡 espera 1C |
+| `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | 🟢 **filas cerradas, decidible** — el monto se muta sin re-consentimiento |
+| `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🟢 **filas cerradas, decidible** — una autorización cubre un solo monto |
 
 Además, dos decisiones del owner **quedan condicionadas** a la matriz aunque no sean
 bloqueantes de FASE 2: `BD-SUB-01` depende de `EX-4`/`EX-7`/`EX-8` para saber si el cambio de
@@ -207,7 +207,7 @@ owner con su costo anotado.
 |---|---|
 | `DEC-ENT-004` y `DEC-GRANT-001` — cancelar sin reembolso | **El día que exista un ciclo anual.** Hoy se retiene un mes parcial como máximo porque todas las suscripciones vivas son mensuales; con anual serían hasta once meses |
 | `DEC-TRIAL-004` — sólo el email bloquea la identidad | Cuando la base crezca dos órdenes de magnitud. Hoy se optimiza contra perder clientes reales porque son 22 |
-| `DEC-SUB-001` — el cambio de ciclo compensa en días | **Apenas cierre `EX-8`.** Si resulta `NOT_SUPPORTED`, entra su plan B sin volver a preguntar |
+| `DEC-SUB-005` — cancelar y recrear pide el código de seguridad | Si la fricción del CVV resulta costar conversión. La alternativa medida es esperar a la renovación, que es peor para el cliente |
 | `DEC-TRIAL-003` — Partner con el trial en cero | Si alguna vez se pone en distinto de cero: hay que declarar su evento de activación (§10.4) |
 | `DEC-PROMO-002` — scope "futuras" sin restricción | **Al crear cada vertical nueva.** Hay que listar qué concesiones la alcanzan automáticamente, con su costo estimado |
 | `DEC-GRANT-002` — cortesía sólo por `SUPER_ADMIN` | Si aparece que se comparte la cuenta de `SUPER_ADMIN` para compensar clientes. Ese síntoma pide un permiso acotado, no una cuenta compartida |
