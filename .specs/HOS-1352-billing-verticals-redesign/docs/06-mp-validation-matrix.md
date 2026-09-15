@@ -198,8 +198,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RF-1 | Reembolso total de un cobro | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | **Reintentado con las credenciales del vendedor de prueba: mismo `401 "Unauthorized use of live credentials"`.** Ahora **caracterizado**, con controles: el mismo token **lee** ese pago (`200`) y **escribe** en `/v1` (`201` al tokenizar), y **las dos** vías de reembolso fallan igual (`POST /refunds` y `PUT {status:"refunded"}`). No es el token: son **las operaciones de reembolso** las vedadas para esta cuenta. Sigue `UNKNOWN` — no se midió si MP reembolsa, se midió que acá no se puede pedir |
-| RF-2 | Reembolso parcial | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | Ídem `RF-1`, con `{"amount":100}`: `401`. La capacidad sigue **sin medir** |
+| RF-1 | Reembolso total de un cobro | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | **No es un problema de reembolsos: la aplicación NO PUEDE ESCRIBIR sobre `payments`, punto.** Medido en una sola corrida: `GET /v1/payments/{id}` **200**, `GET .../refunds` **200**, `POST /preapproval` **201**, `PUT /preapproval/{id}` **200** … y **todo** `write` sobre un pago da `401 "Unauthorized use of live credentials"`, incluso un `PUT {"description":"x"}` inocuo. El reembolso es **daño colateral** de eso. Sigue `UNKNOWN`: no se midió si MP reembolsa, se midió que esta aplicación no puede pedir **ninguna** escritura sobre pagos |
+| RF-2 | Reembolso parcial | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | Ídem `RF-1`, con `{"amount":100}` y también con el header de contingencia `X-Render-In-Process-Refunds`: `401` en los dos casos. La capacidad sigue **sin medir** |
 | RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | — |
 
 ## ✚ Huecos estructurales
