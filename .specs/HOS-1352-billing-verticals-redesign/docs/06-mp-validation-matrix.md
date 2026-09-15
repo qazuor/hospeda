@@ -10,7 +10,7 @@ phase: 1C
 # Matriz de validación de Mercado Pago
 
 **FASE 1C en curso.** Tras las [sondas 01 a 28](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **32 filas `VERIFIED`, 11 `PARTIALLY_SUPPORTED`, 8 `NOT_SUPPORTED`, 20 `UNKNOWN`**,
+2026-09-15: **33 filas `VERIFIED`, 11 `PARTIALLY_SUPPORTED`, 8 `NOT_SUPPORTED`, 19 `UNKNOWN`**,
 sobre **71**.
 
 > **Ya no falta ningún permiso, ninguna credencial ni ningún endpoint.** Con la tarjeta real
@@ -20,9 +20,10 @@ sobre **71**.
 > De las 20 `UNKNOWN`, **16 esperan que un ciclo SE EJECUTE** (`RN-1..3`, `GR-1..3`,
 > `PS-2/4/5/6`, `DW-1/2`, `CT-1/3`, `GT-1`, `EX-1`). Las otras cuatro no, y cada una por su
 > motivo: `WH-5` se fuerza con el interruptor del receptor **pero hacerlo rompería la lectura
-> del reloj**, `RC-3` es una pregunta de diseño más que de proveedor, `RF-3` necesita un pago de
-> más de 180 días **que todavía no existe**, y `EX-3` está **medida como inmedible en sandbox**
-> (ver su fila).
+> del reloj**, `RC-3` es una pregunta de diseño más que de proveedor y `RF-3` necesita un pago de
+> más de 180 días **que todavía no existe**. **`EX-3` ya no está entre ellas**: era inmedible en
+> sandbox, y el reloj de producción convirtió al propio owner en el cliente que había que
+> observar — 43 correos del proveedor en un día.
 
 > **Diez comparaciones sandbox ↔ producción, y las diez coinciden.** Se re-midieron contra la
 > cuenta real todas las filas de creación que no le cobran a nadie (`EX-17`, `EX-18`, `PC-2`,
@@ -262,7 +263,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | RF-8 ✚ | El rechazo `code 2084`, sin explicación | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | **producción** | [sonda 24](./mp-probes/probe-24-el-pago-de-quince-pesos.mjs) | **Lo que está probado es negativo y alcanza para el contrato: `2084` NO es una propiedad del pago.** Sobre UN MISMO pago de ARS 15, `amount: 5` dio `400 code 2084` y `amount: 14` dio `201` minutos después; con 1 de saldo, tanto `amount: 1` como el total sin body volvieron a dar `2084`. Y el mismo `amount: 5` entra en pagos de 5.000 y 7.500. **Cuatro hipótesis murieron** (piso del monto, piso del resto, tipo de transacción, "un pago al mínimo no admite parciales") y **la regla real no se pudo determinar**. El mensaje —*"This transaction does not support to be refunded"*— afirma lo contrario de lo medido. **Consecuencia**: ante un `2084` el reconciliador NO puede dar de baja el intento; reintenta con otro monto o cae al total |
 | EX-1 | Qué pasa con una autorización creada y **nunca completada**: ¿vence?, ¿cuándo?, ¿se puede reusar? | `M-SUB-01`, `M-MP-02` | `UNKNOWN` | — | — | — | ⏳ **sujeto vivo**: `sin-autorizar` (`bf9b6feb…`), `pending` desde el 2026-09-15 12:26 |
 | EX-2 | ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)? | `M-CONC-02` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **SÍ: el cuerpo trae `version`, un contador monótono POR RECURSO.** Medido con receptor propio: el mismo preapproval llegó con `version` 4, 6, 7, 8 en el orden causal de las acciones. Es lo que `M-CONC-02` necesita y **es más fuerte que el id del evento**, que cambia en cada reentrega. Corrige por ampliación la lectura anterior, que se había hecho sobre la tabla ya normalizada de staging y no veía este campo |
-| EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | `UNKNOWN` — **y medido por qué** | 2026-09-15 | sandbox | [sonda 17](./mp-probes/probe-17-casilla-del-comprador.sh) | **INMEDIBLE EN SANDBOX, y no por falta de un acceso.** El comprador de prueba es `…@testuser.com`, cuyo **único MX es `localhost`** —un agujero negro: ningún servidor de correo del mundo puede entregar ahí— y cuyo dominio ni siquiera es de Mercado Pago (está parqueado y en venta). El correo que esta fila quiere observar **no se puede haber enviado**. Tampoco hay vía por API: `/users/test_user` → `405`, `/messages/packs` → `404`. **Pedir la casilla ya no sirve**: la única vía que queda es observarlo en **producción** sobre un cliente real, y eso es una decisión del owner, no un experimento |
+| EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | **`VERIFIED`** | 2026-09-15 | **producción** | [casilla real del owner](./mp-probes/RESULTS-2026-09-15.md), 43 correos de `info@mercadopago.com` en el día | **Le avisa TODO, y primero que a nosotros.** Cuatro correos al pagador: **alta** (monto, tarjeta terminada en, frecuencia, el vendedor con su mail, y *"Cobramos $15 solo para validar tu tarjeta y te lo devolvemos enseguida"*), **cambio de monto** (*"El vendedor Hospeda cambió el monto"* + *"Próximo cobro: no especificado"*), **pausa** y **cancelación**. Y uno al vendedor: *"¡Tenés un nuevo suscriptor!"*. **Seis consecuencias**: (1) el **`reason` ES la copy que ve el cliente** en asunto y encabezado —y `EX-19` lo hace reescribible, así que nunca va un slug interno ahí—; (2) **un cambio de precio no se puede hacer en silencio**, y como `EX-15` midió que no emite webhook, **el proveedor le avisa al cliente y NO nos avisa a nosotros**; (3) los cuatro correos mandan al cliente a **nuestra** puerta (*"contactá con el vendedor"`*): no hay autogestión, todo cae en soporte; (4) **`paused` y `cancelled` llegan AMBIGUOS** —los dos dicen *"por un pago no realizado o por opción del vendedor"*—, así que una pausa de cortesía y una por mora son idénticas para el cliente y **nuestra comunicación tiene que desambiguar**; (5) el proveedor afirma que una pausa **la levanta el vendedor**, contra el supuesto de reanudación automática del §26.2; (6) el asunto del alta dice **"Pagaste la suscripción"** y no se pagó nada — mismo género que el `2084` de `RF-8`: **el texto del proveedor afirma cosas que sus propios datos desmienten** |
+
 | EX-4 | Cambio de **frecuencia** sobre una suscripción ya autorizada | `BD-SUB-01`, `MP-01` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **El ciclo NO se puede cambiar, y falla en silencio**: `200` en dos intentos aislados (12 y 3 meses) y `frequency` siguió en 1. **RE-VERIFICADO EN PRODUCCIÓN CON TARJETA REAL** el 2026-09-15 ([sonda 28](./mp-probes/probe-28-suscripciones-autorizadas-sin-cobrar.mjs)), sobre suscripciones autorizadas con `start_date` a +30 días — que no cobran: la corrida entera cerró con **cero cobros**: cuatro intentos (3 meses, 12 meses, `days`, y frecuencia+monto en el mismo `PUT`), los cuatro `200`, `frequency` siempre en 1 |
 | EX-5 | ¿Una autorización puede cubrir **más de un monto**? | `BD-MP-04` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring` como array → `400`. Campo `items` → **`201` y se descarta en silencio**: no vuelve en la respuesta, queda un solo monto. **RE-VERIFICADO EN PRODUCCIÓN** el 2026-09-15 ([sonda 26](./mp-probes/probe-26-re-medir-en-produccion.mjs)): el array da `400 "Parameters passed are invalid"` y `items` se vuelve a descartar en silencio |
 | EX-6 | N autorizaciones del mismo pagador conviviendo, ya autorizadas | `BD-MP-04` | **`VERIFIED`** | 2026-09-15 | sandbox **+ producción** | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) + [sonda 28](./mp-probes/probe-28-suscripciones-autorizadas-sin-cobrar.mjs) | Dos autorizadas del mismo pagador conviven sin conflicto. En **producción con tarjeta real** se llegó a **SEIS** conviviendo, todas `authorized`, mismo `payer_email` |
@@ -291,10 +293,10 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **32** |
+| `VERIFIED` | **33** |
 | `PARTIALLY_SUPPORTED` | **11** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `CT-2`, `WH-3`, `EX-9`, **`RF-8`** |
 | `NOT_SUPPORTED` | **8** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno), `EX-17` (creación idempotente), `EX-18` (otra moneda), `RC-4` (el `search` devuelve menos campos que el `GET`), **`EX-20`** (un `PUT` mixto se aplica a medias) |
-| **`UNKNOWN`** | **20** — 16 esperan el reloj; las otras son `WH-5`, `RC-3`, `RF-3` y `EX-3` |
+| **`UNKNOWN`** | **19** — 16 esperan el reloj; las otras tres son `WH-5`, `RC-3` y `RF-3`. **`EX-3` se cerró** leyendo la casilla real del owner |
 
 Recalculado con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) el
 2026-09-15, sobre **71** filas.
