@@ -243,6 +243,41 @@ convivencia durante el rewrite · `M-MIG-01` criterio de corte del trial ya cons
 
 ---
 
+## Lo que necesita una autorización del owner para poder medirse
+
+Agregado el **2026-09-15**. No son decisiones de diseño: son **cuatro experimentos que
+mueven plata propia en producción** y por eso no se corren solos. El dinero vuelve en todos
+los casos —son reembolsos sobre cobros propios— pero eso no los hace gratis, y ya hubo un
+antecedente: el 2026-09-15 se autorizó un parcial de ARS 5, falló, y se ejecutó un total de
+ARS 15 **sin volver a preguntar**. Queda como regla: **un monto autorizado vale para ese
+monto, y cada cambio se pregunta de nuevo.**
+
+Todo lo que se podía medir sin mover plata ya se midió — ver las sondas 14 a 18 en
+[`RESULTS-2026-09-15.md`](./mp-probes/RESULTS-2026-09-15.md).
+
+| # | Experimento | Qué fila alimenta | Cuánto mueve | Por qué no se puede evitar |
+|---|---|---|---|---|
+| 1 | **El mínimo exacto de reembolso.** Bisección entre ARS 5 (rechazado) y ARS 50 (aceptado) sobre pagos propios | `RF-2`, y el piso de cualquier prorrateo | un parcial por paso, **monto a autorizar en cada paso** | El mensaje del proveedor no nombra el monto: *"This transaction does not support to be refunded"* se lee como una propiedad del pago. Sin el número, cualquier prorrateo puede caer bajo el piso y fallar con un error que no explica por qué |
+| 2 | **Idempotencia del reembolso.** El mismo `X-Idempotency-Key` dos veces sobre un pago con saldo | §51, y el contrato del reconciliador | **un reembolso, o dos** — que es justo la pregunta | No se puede medir sobre saldo cero: ahí los dos intentos mueren en la validación de estado (`RF-5`) antes de llegar a la lógica de la clave |
+| 3 | **Parciales acumulativos.** Dos parciales sobre el mismo pago hasta completar el total | prorrateo, `BD-MP-02` | dos parciales sobre un pago propio | Falta saber si el segundo parcial se valida contra el **saldo** o contra el **monto total**, y si al completarse el pago queda `refunded` o `partially_refunded` |
+| 4 | **¿El header era obligatorio hace unas horas?** Un reembolso real **sin** `X-Idempotency-Key` | `RF-4` | un reembolso | `RF-1` se ejecutó sin ese header y devolvió `201`; la sonda 18 lo midió **obligatorio** unas horas después. O el proveedor cambió, o esa llamada lo llevaba por otra vía. **Mirando hacia atrás no se resuelve** |
+
+Y uno que está **bloqueado por otra razón**, no por el dinero:
+
+> **¿Un reembolso emite webhook?** El receptor propio está atado a la app de **prueba**, y los
+> reembolsos sólo entran en la cuenta **real**, cuyo webhook apunta a la API de producción.
+> Verlo exigiría repuntar el webhook productivo, que es exactamente lo que no se puede hacer.
+
+### Y uno que salió de esta lista
+
+**El acceso a la casilla del comprador de prueba ya no sirve para nada.** `EX-3` se midió
+como **inmedible en sandbox**: el dominio del comprador de prueba tiene un MX a `localhost`
+—un agujero negro— y ni siquiera es de Mercado Pago. El correo que esa fila quiere observar
+no se puede haber enviado. Si el owner quiere cerrarla, la única vía es observarlo en
+**producción sobre un cliente real**.
+
+---
+
 ## Para revisar más adelante
 
 Decisiones tomadas cuyo riesgo está declarado y acotado **hoy**, pero que hay que volver a
