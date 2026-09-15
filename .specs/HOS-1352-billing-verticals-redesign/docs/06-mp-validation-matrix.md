@@ -10,7 +10,7 @@ phase: 1C
 # Matriz de validación de Mercado Pago
 
 **FASE 1C en curso.** Tras las [sondas 01 a 07](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **25 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 22 `UNKNOWN`**.
+2026-09-15: **27 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 20 `UNKNOWN`**.
 
 > **El reloj está corriendo.** Siete suscripciones de **ciclo diario** quedaron vivas en el
 > sandbox el 2026-09-15 a las 12:26–12:29 (manifiesto en `/tmp/mp-probe-05/manifiesto.json`).
@@ -198,11 +198,11 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RF-1 | Reembolso total de un cobro | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | **No es un problema de reembolsos: la aplicación NO PUEDE ESCRIBIR sobre `payments`, punto.** Medido en una sola corrida: `GET /v1/payments/{id}` **200**, `GET .../refunds` **200**, `POST /preapproval` **201**, `PUT /preapproval/{id}` **200** … y **todo** `write` sobre un pago da `401 "Unauthorized use of live credentials"`, incluso un `PUT {"description":"x"}` inocuo. **No se puede medir con una cuenta de prueba, y NO hay precedente que copiar: el reembolso nunca se ejecutó, en ningún entorno** (medido el 2026-09-15: `billing_refunds` tiene **0 filas en staging y 0 en producción**, con 10 y 0 pagos respectivamente). Staging usa **exactamente el mismo token** que da `401` (sha256 idéntico).
+| RF-1 | Reembolso total de un cobro | **`VERIFIED`** | 2026-09-15 | **producción** | [sonda 11 + ejecución directa](./mp-probes/RESULTS-2026-09-15.md) | **Funciona.** `POST /v1/payments/{id}/refunds` **sin body** sobre un pago propio de ARS 15: `201`, refund `3269585727`, y **verificado por relectura** — el pago quedó `status: refunded`, `transaction_amount_refunded: 15`. **La variable era la CUENTA, no el código ni la API**: la misma llamada, con la misma forma, da `401` con la cuenta de prueba y entra con la real (`HOSPEDA_COM_AR`, `3497516165`, sin tag `test_user`) |
 
 **Y ya no es hipótesis.** Se creó una **segunda app** con producto Checkout API / API de Payments, bajo el MISMO vendedor de prueba, cuyos scopes incluyen `urn:mp:online:payments:refunds/`**`read-write`**. Con ella: reembolsar → **`401`**, y **crear un pago** (`POST /v1/payments`) → **`401` también**. O sea que **el vendedor de prueba no puede escribir sobre la API de Payments en absoluto**, cualquiera sea la app o sus scopes. Las suscripciones funcionan porque **los pagos los crea el proveedor**, no nosotros. Para medir `RF-*` hace falta una cuenta que no sea de prueba, o que soporte de MP lo habilite |
-| RF-2 | Reembolso parcial | `UNKNOWN` | 2026-09-15 | sandbox | [sonda 11](./mp-probes/RESULTS-2026-09-15.md) | Ídem `RF-1`, con `{"amount":100}` y también con el header de contingencia `X-Render-In-Process-Refunds`: `401` en los dos casos. La capacidad sigue **sin medir** |
-| RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | Bloqueada por lo mismo que `RF-1`. La documentación dice **180 días desde la aprobación**, pero eso es documentación y el §58 no la acepta para cerrar una fila |
+| RF-2 | Reembolso parcial | **`VERIFIED`** | 2026-09-15 | **producción** | [ejecución directa](./mp-probes/RESULTS-2026-09-15.md) | **Funciona en los DOS tipos de pago**: ARS 100 sobre un `regular_payment` de 5000 (refund `3269653245`) y ARS 50 sobre un `recurring_payment` de 100 (refund `3328744216`), los dos `201` y verificados por relectura (`status_detail: partially_refunded`). **Hay un monto mínimo**: `{"amount": 5}` se rechaza con `400 "This transaction does not support to be refunded"` — un mensaje que **no menciona el monto** y se lee como una propiedad del pago cuando es del pedido. **El mínimo exacto no se midió**: 5 no entra, 50 sí |
+| RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | Se reembolsó un pago de **65 días** sin problema, así que el plazo es **mayor que eso**. La documentación dice 180 días desde la aprobación, pero el §58 no acepta documentación para cerrar una fila, y forzar el borde exigiría un pago de más de 180 días que no existe todavía |
 
 ## ✚ Huecos estructurales
 
@@ -235,10 +235,10 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **25** |
+| `VERIFIED` | **27** |
 | `PARTIALLY_SUPPORTED` | **10** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `CT-2`, `WH-3`, `EX-9` |
 | `NOT_SUPPORTED` | **4** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno) |
-| **`UNKNOWN`** | **22** |
+| **`UNKNOWN`** | **20** |
 
 Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no hay:
 
