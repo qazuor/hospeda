@@ -51,12 +51,12 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| P-1 | Creación por API | `UNKNOWN` | — | — | — | — |
-| P-2 | Linking con nuestro dominio desde el inicio | `UNKNOWN` | — | — | — | — |
-| P-3 | Autorización por el usuario | `UNKNOWN` | — | — | — | — |
-| P-4 | Rechazo | `UNKNOWN` | — | — | — | — |
-| P-5 | Cancelación | `UNKNOWN` | — | — | — | — |
-| P-6 | Abandono: qué pasa con un preapproval nunca autorizado | `UNKNOWN` | — | — | — | — |
+| P-1 | Creación por API | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `status: pending` + `init_point`, sin cobrar. `payer_email` es obligatorio y **debe existir**: uno inventado da `400 "User bad request"`, sin decir cuál es el problema |
+| P-2 | Linking con nuestro dominio desde el inicio | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `external_reference` se acepta y vuelve en la respuesta y en el search |
+| P-3 | Autorización por el usuario | `UNKNOWN` | — | — | — | requiere completar el `init_point` |
+| P-4 | Rechazo | `UNKNOWN` | — | — | — | requiere autorización |
+| P-5 | Cancelación | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `PUT {status:"cancelled"}`. **Irreversible**: reintentar da `400 "You can not modify a cancelled preapproval"` |
+| P-6 | Abandono: qué pasa con un preapproval nunca autorizado | `UNKNOWN` | — | — | — | requiere dejar uno abandonado y esperar |
 
 > P-6 no está en la matriz mínima del PDR §60 pero se agrega: es el estado
 > `PENDING_AUTHORIZATION` de `M-SUB-01`, y en el modelo elegido existe siempre.
@@ -65,11 +65,11 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| F-1 | Mensual | `UNKNOWN` | — | — | — | — |
-| F-2 | Trimestral | `UNKNOWN` | — | — | — | — |
-| F-3 | Semestral | `UNKNOWN` | — | — | — | — |
-| F-4 | Anual | `UNKNOWN` | — | — | — | — |
-| F-5 | Cambio de frecuencia sobre un preapproval ya autorizado | `UNKNOWN` | — | — | — | — |
+| F-1 | Mensual | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 1, frequency_type: "months"` |
+| F-2 | Trimestral | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 3, frequency_type: "months"` |
+| F-3 | Semestral | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 6, frequency_type: "months"` |
+| F-4 | Anual | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 12, frequency_type: "months"`. **`frequency_type: "years"` NO existe**: `400 "valid ones are [days, months]"` |
+| F-5 | Cambio de frecuencia sobre un preapproval ya autorizado | `UNKNOWN` | — | — | — | requiere autorización |
 
 ### Renovaciones
 
@@ -110,9 +110,9 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| PR-1 | Sobre una subscription existente | `UNKNOWN` | — | — | — | — |
-| PR-2 | Limitaciones (pisos, topes, magnitud del cambio) | `UNKNOWN` | — | — | — | — |
-| PR-3 | ¿Requiere nuevo consentimiento del usuario? | `UNKNOWN` | — | — | — | — |
+| PR-1 | Sobre una subscription existente | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | mutar el monto funciona **sobre un `pending`** (1000 → 1500). Sobre uno **autorizado** sigue `UNKNOWN`, y ése es el caso que importa |
+| PR-2 | Limitaciones (pisos, topes, magnitud del cambio) | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | **piso de $15 ARS**: `400 "Cannot pay an amount lower than $ 15.00"`. Monto `0` → `400 "must be a positive number"` |
+| PR-3 | ¿Requiere nuevo consentimiento del usuario? | `UNKNOWN` | — | — | — | requiere autorización |
 
 > PR-3 es la que define si Hospeda puede actualizar precios sin perder la base instalada.
 
@@ -162,7 +162,7 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RC-1 | Consultar el estado real de un preapproval | `UNKNOWN` | — | — | — | — |
+| RC-1 | Consultar el estado real de un preapproval | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | **`GET /preapproval/{id}` es confiable; `/preapproval/search` NO**: devolvió `pending` para uno que el GET directo ya daba `cancelled`. La reconciliación debe leer por id, nunca por search |
 | RC-2 | Historial de pagos | `UNKNOWN` | — | — | — | — |
 | RC-3 | Reparar el estado local desde el del provider | `UNKNOWN` | — | — | — | — |
 
@@ -170,8 +170,8 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| AD-1 | ¿Un preapproval puede cubrir más de un ítem? | `UNKNOWN` | — | — | — | — |
-| AD-2 | N preapprovals del mismo pagador conviviendo | `UNKNOWN` | — | — | — | — |
+| AD-1 | ¿Un preapproval puede cubrir más de un ítem? | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring` como array → `400`. Un campo `items` con dos líneas → **`200` y se descarta en silencio**: el preapproval queda con un solo monto y `items` no vuelve en la respuesta |
+| AD-2 | N preapprovals del mismo pagador conviviendo | `UNKNOWN` | — | — | — | se crearon 8 `pending` del mismo pagador sin conflicto, pero **autorizados** sigue sin probarse |
 
 ### Reembolsos — `DEC-LEGAL-001`
 
@@ -192,19 +192,24 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| CD-1 | Crear un preapproval con la primera fecha de cobro corrida N días | `UNKNOWN` | — | — | — | — |
-| CD-2 | ¿Esa fecha se respeta, o MP la recalcula? | `UNKNOWN` | — | — | — | — |
+| CD-1 | Crear un preapproval con la primera fecha de cobro corrida N días | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 01](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring.start_date` a +20 días → `next_payment_date` quedó en esa fecha, no en la de creación |
+| CD-2 | ¿Esa fecha se respeta **tras autorizar**? | `UNKNOWN` | — | — | — | **Ésta es la que decide.** El antecedente de HOS-1012 (MP prometió 14 días de trial y cobró a los 118 segundos) es el motivo de no darlo por cerrado con CD-1 |
 
 ---
 
 ## Resumen
 
+Tras la [sonda 01](./mp-probes/RESULTS-2026-09-15.md) del 2026-09-15:
+
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | 0 |
-| `PARTIALLY_SUPPORTED` | 0 |
-| `NOT_SUPPORTED` | 0 |
-| `UNKNOWN` | **46** |
+| `VERIFIED` | **10** — P-1, P-2, P-5, F-1, F-2, F-3, F-4, CD-1, PR-2, y `years` descartado |
+| `PARTIALLY_SUPPORTED` | **2** — PR-1 (sólo sobre `pending`), RC-1 (GET sí, search no) |
+| `NOT_SUPPORTED` | **1** — AD-1 (un preapproval = un cobro) |
+| `UNKNOWN` | **33** |
+
+**Todo lo que falta necesita un preapproval AUTORIZADO**, y para eso hace falta completar el
+`init_point` con la cuenta del comprador de prueba. Es el único bloqueo de FASE 1C.
 
 ## Qué espera cada decisión
 
