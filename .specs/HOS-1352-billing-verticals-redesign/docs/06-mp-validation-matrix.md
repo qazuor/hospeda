@@ -9,11 +9,13 @@ phase: 1C
 
 # Matriz de validación de Mercado Pago
 
-Esqueleto de **FASE 1C**. **Las 53 filas están en `UNKNOWN`**: no se ejecutó ningún
-experimento.
+**FASE 1C en curso.** Tras las [sondas 01 y 02](./mp-probes/RESULTS-2026-09-15.md) del
+2026-09-15: **15 filas `VERIFIED`, 4 `PARTIALLY_SUPPORTED`, 2 `NOT_SUPPORTED`, 32 `UNKNOWN`**.
 
-FASE 1C **no ha empezado** y no puede empezar antes de que el owner responda FASE 1A (§67:
-*"NO empezar FASE 1B hasta que yo responda las preguntas de 1A"*; el mismo orden aplica).
+> **El hallazgo que atraviesa todo lo demás**: Mercado Pago **acepta cambios que no aplica, y
+> responde `200`**. Tres casos confirmados — el campo `items`, y dos intentos aislados de
+> cambiar `frequency`. **Un `200` no significa que el cambio se haya aplicado**: toda mutación
+> exige relectura y comparación campo por campo.
 
 ## Reglas
 
@@ -67,20 +69,20 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| PA-1 | Creación por API | `UNKNOWN` | — | — | — | — |
-| PA-2 | Linking con nuestro dominio desde el inicio | `UNKNOWN` | — | — | — | — |
-| PA-3 | Autorización por el usuario | `UNKNOWN` | — | — | — | — |
-| PA-4 | Rechazo | `UNKNOWN` | — | — | — | — |
-| PA-5 | Cancelación | `UNKNOWN` | — | — | — | — |
+| PA-1 | Creación por API | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `201`, `status: pending`, `init_point` presente, sin cobrar |
+| PA-2 | Linking con nuestro dominio desde el inicio | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `external_reference` se acepta y vuelve en la respuesta y en el `GET`. **Pero el `search` no filtra por él** — ver `RC-1` |
+| PA-3 | Autorización por el usuario | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **Se autoriza por API, sin navegador**: `card_token_id` + `status:"authorized"` → `201` autorizada. **Y cobra en el acto** si no se manda `start_date` |
+| PA-4 | Rechazo | `UNKNOWN` | — | — | — | requiere forzar un rechazo con una tarjeta de prueba que lo provoque |
+| PA-5 | Cancelación | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `PUT {status:"cancelled"}`. **Irreversible**: reintentar da `400`; sobre una autorizada, `400 "Invalid transition from cancelled to authorized"` |
 
 ## Frecuencias de facturación (§19)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| FR-1 | Mensual | `UNKNOWN` | — | — | — | — |
-| FR-2 | Trimestral | `UNKNOWN` | — | — | — | — |
-| FR-3 | Semestral | `UNKNOWN` | — | — | — | — |
-| FR-4 | Anual | `UNKNOWN` | — | — | — | — |
+| FR-1 | Mensual | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 1, frequency_type: "months"` |
+| FR-2 | Trimestral | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 3, months` |
+| FR-3 | Semestral | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 6, months` |
+| FR-4 | Anual | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `frequency: 12, months`. **`"years"` NO existe**: `400`, válidos sólo `[days, months]`. Y `frequency: 5` se acepta: **los 4 ciclos del §19 son elección nuestra, no un límite del proveedor** |
 
 ## Renovaciones
 
@@ -102,27 +104,27 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| PS-1 | Pausar | `UNKNOWN` | — | — | — | — |
-| PS-2 | Que no cobre mientras está pausada | `UNKNOWN` | — | — | — | — |
-| PS-3 | Reanudación anticipada por el usuario (§26.2) | `UNKNOWN` | — | — | — | — |
+| PS-1 | Pausar | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | La **transición** funciona (`PUT {status:"paused"}` → `200`). Los efectos sobre el cobro no se midieron: ver `PS-2` |
+| PS-2 | Que no cobre mientras está pausada | `UNKNOWN` | — | — | — | requiere una pausa de duración real; la de la sonda duró 1,3 s |
+| PS-3 | Reanudación anticipada por el usuario (§26.2) | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | La **transición** funciona (`PUT {status:"authorized"}` → `200`) |
 | PS-4 | Reanudación automática al llegar la fecha (§26.2) | `UNKNOWN` | — | — | — | — |
-| PS-5 | Qué pasa con las fechas al reanudar | `UNKNOWN` | — | — | — | — |
-| PS-6 | Qué pasa con la fecha de cobro al reanudar (§26.4) | `UNKNOWN` | — | — | — | — |
+| PS-5 | Qué pasa con las fechas al reanudar | `UNKNOWN` | — | — | — | **de una pausa de 1,3 s no se puede concluir nada.** `next_payment_date` no se movió, pero eso no dice nada sobre una pausa real |
+| PS-6 | Qué pasa con la fecha de cobro al reanudar (§26.4) | `UNKNOWN` | — | — | — | ídem `PS-5`. Es la que decide si §26.4 es implementable |
 
 ## Cancelación (§24)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
 | CN-1 | Cancelación programada a fin de período | `UNKNOWN` | — | — | — | — |
-| CN-2 | Comportamiento inmediato del proveedor | `UNKNOWN` | — | — | — | — |
+| CN-2 | Comportamiento inmediato del proveedor | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | Cancelación inmediata e **irreversible**, igual que `PA-5` |
 
 ## Cambios de precio — `BD-MP-03` (§29)
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| PC-1 | Sobre una suscripción existente ya autorizada | `UNKNOWN` | — | — | — | — |
-| PC-2 | Limitaciones: pisos, topes, magnitud del cambio | `UNKNOWN` | — | — | — | — |
-| PC-3 | ¿Requiere nuevo consentimiento del usuario? | `UNKNOWN` | — | — | — | — |
+| PC-1 | Sobre una suscripción existente ya autorizada | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **El monto SÍ se muta sobre una autorizada**: 1500→2200→15→1500, todos `200`, verificado por relectura |
+| PC-2 | Limitaciones: pisos, topes, magnitud del cambio | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **Piso de ARS 15**: `400 "Cannot pay an amount lower than $ 15.00"`. Cero y negativo: `400 "must be a positive number"` |
+| PC-3 | ¿Requiere nuevo consentimiento del usuario? | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **NO requiere nuevo consentimiento.** La mutación se aplica sola y la suscripción sigue `authorized` con su medio de pago |
 
 > `PC-3` decide si se pueden actualizar precios sin perder la base instalada. `PC-2` también
 > alimenta el piso de `A-PROMO-01` y la estrategia de bajar el monto de `BD-MP-02`.
@@ -169,8 +171,8 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RC-1 | Consultar el estado real de una suscripción | `UNKNOWN` | — | — | — | — |
-| RC-2 | Historial de pagos | `UNKNOWN` | — | — | — | — |
+| RC-1 | Consultar el estado real de una suscripción | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **`GET /preapproval/{id}` es confiable.** El `search` **ignora `external_reference` en silencio**: 111 resultados con un valor válido, con basura y con el nuestro. `status` sí filtra. `/v1/payments/search` sí filtra por `external_reference` |
+| RC-2 | Historial de pagos | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | Dos caminos funcionan: `/authorized_payments/search?preapproval_id=` y `/v1/payments/search?external_reference=` |
 | RC-3 | Reparar el estado local desde el del proveedor | `UNKNOWN` | — | — | — | — |
 
 ---
@@ -196,14 +198,14 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | # | Comportamiento | Para qué | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|---|
-| EX-1 | Qué pasa con una autorización creada y **nunca completada**: ¿vence?, ¿cuándo?, ¿se puede reusar? | `M-SUB-01`, `M-MP-02` | `UNKNOWN` | — | — | — | — |
-| EX-2 | ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)? | `M-CONC-02` | `UNKNOWN` | — | — | — | — |
-| EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | `UNKNOWN` | — | — | — | — |
-| EX-4 | Cambio de **frecuencia** sobre una suscripción ya autorizada | `BD-SUB-01`, `MP-01` | `UNKNOWN` | — | — | — | — |
-| EX-5 | ¿Una autorización puede cubrir **más de un monto**? | `BD-MP-04` | `UNKNOWN` | — | — | — | — |
-| EX-6 | N autorizaciones del mismo pagador conviviendo, ya autorizadas | `BD-MP-04` | `UNKNOWN` | — | — | — | — |
-| EX-7 | Compensar días ya pagados corriendo la **primera fecha de cobro** | `BD-SUB-01` | `UNKNOWN` | — | — | — | — |
-| EX-8 | ¿Se respeta esa primera fecha **después** de autorizar? | `BD-SUB-01` | `UNKNOWN` | — | — | — | — |
+| EX-1 | Qué pasa con una autorización creada y **nunca completada**: ¿vence?, ¿cuándo?, ¿se puede reusar? | `M-SUB-01`, `M-MP-02` | `UNKNOWN` | — | — | — | requiere dejar una sin autorizar y esperar |
+| EX-2 | ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)? | `M-CONC-02` | `UNKNOWN` | — | — | — | requiere recibir webhooks; hace falta un endpoint público |
+| EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | `UNKNOWN` | — | — | — | requiere observar la casilla del comprador de prueba |
+| EX-4 | Cambio de **frecuencia** sobre una suscripción ya autorizada | `BD-SUB-01`, `MP-01` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **El ciclo NO se puede cambiar, y falla en silencio**: `200` en dos intentos aislados (12 y 3 meses) y `frequency` siguió en 1 |
+| EX-5 | ¿Una autorización puede cubrir **más de un monto**? | `BD-MP-04` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring` como array → `400`. Campo `items` → **`201` y se descarta en silencio**: no vuelve en la respuesta, queda un solo monto |
+| EX-6 | N autorizaciones del mismo pagador conviviendo, ya autorizadas | `BD-MP-04` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | Dos autorizadas del mismo pagador conviven sin conflicto |
+| EX-7 | Compensar días ya pagados corriendo la **primera fecha de cobro** | `BD-SUB-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `start_date` a +20 días → `next_payment_date` en esa fecha |
+| EX-8 | ¿Se respeta esa primera fecha **después** de autorizar? | `BD-SUB-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **Sí se respeta tras autorizar.** Además **no cobra al crearse**. El proveedor lo modela como un `free_trial` de 20 días que nosotros no pedimos |
 
 > `EX-7` y `EX-8` van separadas a propósito: que el proveedor **acepte** una fecha futura al
 > crear no prueba que la **respete** una vez autorizada, y ésa es la que decide. Una fila que
@@ -215,10 +217,19 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | 0 |
-| `PARTIALLY_SUPPORTED` | 0 |
-| `NOT_SUPPORTED` | 0 |
-| **`UNKNOWN`** | **53** |
+| `VERIFIED` | **15** |
+| `PARTIALLY_SUPPORTED` | **4** — `PA-2`, `RC-1`, `PS-1`, `PS-3` |
+| `NOT_SUPPORTED` | **2** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto) |
+| **`UNKNOWN`** | **32** |
+
+Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no hay:
+
+| Bloque | Qué hace falta |
+|---|---|
+| Renovaciones, grace y efectos reales de la pausa | **Que pase tiempo.** La pausa de la sonda duró 1,3 s: alcanzó para las transiciones, no para las fechas |
+| Webhooks y orden de eventos | **Un endpoint público** que reciba los POST del proveedor |
+| Reembolsos | No se probaron todavía |
+| Correos del proveedor (`EX-3`) | Observar la casilla del comprador de prueba |
 
 ## Qué espera cada decisión
 
@@ -226,9 +237,9 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 |---|---|
 | `BD-MP-01` mecanismo de pausa | `PS-1`…`PS-6` |
 | `BD-MP-02` cortesía sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` |
-| `BD-MP-03` cambio de precio sobre vigentes | `PC-1`, `PC-2`, `PC-3` |
-| `BD-MP-04` addons recurrentes | `EX-5`, `EX-6` |
-| `BD-SUB-01` matriz de cambio de plan | `UP-1`, `UP-2`, `DW-1`, `DW-2`, `EX-4`, `EX-7`, `EX-8` |
+| `BD-MP-03` cambio de precio sobre vigentes | ✅ `PC-1`, `PC-2`, `PC-3` — **las tres cerradas** |
+| `BD-MP-04` addons recurrentes | ✅ `EX-5`, `EX-6` — **las dos cerradas** |
+| `BD-SUB-01` matriz de cambio de plan | ⚠️ `EX-4` salió `NOT_SUPPORTED` y `EX-8` `VERIFIED`: **el mecanismo de `DEC-SUB-001` no es implementable como está escrito**. Faltan `UP-1`, `UP-2`, `DW-1`, `DW-2` |
 | `MP-01` los cuatro ciclos del §19 | `FR-1`…`FR-4`, `EX-4` |
 | `M-LEGAL-01` revocación con devolución | `RF-1`, `RF-3` |
 | `M-CONC-02` no-retroceso de estado | `WH-3`, `EX-2` |
@@ -236,5 +247,10 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | `M-MAIL-04` correos del proveedor | `EX-3` |
 | `A-PROMO-01` piso del descuento apilado | `PC-2` |
 
-**Ninguna capability de billing puede implementarse todavía** (§61), y ninguna decisión que
-dependa de estas filas puede tomarse. Es lo esperable: FASE 1C no empezó.
+**Dos de las cuatro bloqueantes de FASE 2 ya tienen sus filas cerradas** (`BD-MP-03` y
+`BD-MP-04`) y se pueden decidir. Las otras dos (`BD-MP-01` pausa, `BD-MP-02` cortesía) siguen
+bloqueadas por el §61.
+
+Y **`DEC-SUB-001`, que ya estaba `ACCEPTED`, quedó sin mecanismo**: el cambio de ciclo no se
+puede aplicar mutando la suscripción. Hay que revisarla con una decisión nueva que la marque
+`SUPERSEDED`.
