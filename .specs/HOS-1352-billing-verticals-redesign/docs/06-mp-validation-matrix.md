@@ -9,8 +9,20 @@ phase: 1C
 
 # Matriz de validación de Mercado Pago
 
-**FASE 1C en curso.** Tras las [sondas 01 a 07](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **27 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 20 `UNKNOWN`**.
+**FASE 1C en curso.** Tras las [sondas 01 a 18](./mp-probes/RESULTS-2026-09-15.md) del
+2026-09-15: **29 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 6 `NOT_SUPPORTED`, 20 `UNKNOWN`**,
+sobre **65**.
+
+> Los conteos de este documento **no se suman a mano** — ya salieron mal una vez. Se
+> recalculan leyendo las filas con
+> [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), que además avisa si
+> quedó una fila sin estado o un identificador repetido.
+
+> **De las 20 `UNKNOWN`, 16 sólo esperan que pase el tiempo** (`RN-1..3`, `GR-1..3`,
+> `PS-2/4/5/6`, `DW-1/2`, `CT-1/3`, `GT-1`, `EX-1`): son las del reloj. Las otras cuatro son
+> `WH-5` (se fuerza con el interruptor del receptor, **pero hacerlo ahora rompería la lectura
+> del reloj**), `RC-3`, `RF-3` (necesita un pago de +180 días que no existe) y `EX-3`
+> (**medida como inmedible en sandbox**, ver su fila).
 
 > **El reloj está corriendo.** Siete suscripciones de **ciclo diario** quedaron vivas en el
 > sandbox el 2026-09-15 a las 12:26–12:29 (manifiesto en `/tmp/mp-probe-05/manifiesto.json`).
@@ -18,11 +30,19 @@ phase: 1C
 > [sonda 06](./mp-probes/probe-06-leer-el-reloj.sh) **a partir del 2026-09-16 ~11:30**.
 
 > **El hallazgo que atraviesa todo lo demás**: Mercado Pago **acepta cambios que no aplica, y
-> responde `2xx`**. **Seis** casos confirmados — el campo `items`, dos intentos aislados de
+> responde `2xx`**. **Siete** casos confirmados — el campo `items`, dos intentos aislados de
 > cambiar `frequency`, un token de tarjeta guardada sin código de seguridad, una
-> `notification_url` por suscripción, y un `end_date` fijado sobre una suscripción ya
-> autorizada. **Un `2xx` no significa que el cambio se haya aplicado**:
+> `notification_url` por suscripción, un `end_date` fijado sobre una suscripción ya
+> autorizada, y —el séptimo, del 2026-09-15 a la tarde— el header **`X-Idempotency-Key` sobre
+> `/preapproval`**, que se acepta y **no hace nada** (`EX-17`), mientras que en `/refunds` es
+> **obligatorio** (`RF-4`). **Un `2xx` no significa que el cambio se haya aplicado**:
 > toda mutación exige relectura y comparación campo por campo.
+>
+> **Y la regla vale en las dos direcciones.** Un error tampoco prueba que algo esté
+> prohibido: prueba que no llegó a evaluarse. La sonda 18 lo volvió a mostrar —tres intentos
+> murieron en un header faltante, antes de cualquier validación de negocio— y la 15 casi
+> produce un `PARTIALLY_SUPPORTED` inventado para multi-moneda porque el proveedor **valida
+> el monto antes que la moneda** y el mensaje del piso es ciego a la moneda.
 
 ## Reglas
 
@@ -64,7 +84,8 @@ registrar request → registrar response → observar el webhook → documentar 
 | Matriz mínima obligatoria del **§60** | 42 |
 | Agregadas por FASE 1A (`M-MP-03`), marcadas ✚ | 11 |
 | Agregadas por FASE 1C al medir | 8 — `EX-9` a `EX-16` |
-| **Total** | **61** |
+| Agregadas por FASE 1C, segunda tanda | 4 — `RF-4`, `RF-5`, `EX-17`, `EX-18` |
+| **Total** | **65** |
 
 Columnas: **Estado** · **Fecha** · **Entorno** · **Evidencia** (ruta de la sonda, con request,
 response y webhook observado) · **Conclusión**.
@@ -179,7 +200,7 @@ response y webhook observado) · **Conclusión**.
 
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
-| RC-1 | Consultar el estado real de una suscripción | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **`GET /preapproval/{id}` es confiable.** El `search` **ignora `external_reference` en silencio**: 111 resultados con un valor válido, con basura y con el nuestro. `status` sí filtra. `/v1/payments/search` sí filtra por `external_reference` |
+| RC-1 | Consultar el estado real de una suscripción | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) + [sonda 16](./mp-probes/probe-16-search-filtros.sh) | **`GET /preapproval/{id}` es confiable.** Del `search`, medido con control de basura sobre **153** suscripciones: **`payer_email` filtra** (basura → 0), **`status` filtra** (los 4 estados suman exactamente 153) y **los dos se componen**; **`external_reference` SE IGNORA** (basura → las 153). `/v1/payments/search` sí filtra por `external_reference`. **Los dos defectos fallan en direcciones CONTRARIAS**: una referencia ignorada devuelve TODO, y un **`status` inválido devuelve `200` con `total: 0`, no un `400`** — o sea que un typo, o un estado que el proveedor renombre, se lee como *"este cliente no tiene suscripciones"*. Todo barrido por `status` necesita **control de totales** |
 | RC-2 | Historial de pagos | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | Dos caminos funcionan: `/authorized_payments/search?preapproval_id=` y `/v1/payments/search?external_reference=` |
 | RC-3 | Reparar el estado local desde el del proveedor | `UNKNOWN` | — | — | — | — |
 
@@ -203,6 +224,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 **Y ya no es hipótesis.** Se creó una **segunda app** con producto Checkout API / API de Payments, bajo el MISMO vendedor de prueba, cuyos scopes incluyen `urn:mp:online:payments:refunds/`**`read-write`**. Con ella: reembolsar → **`401`**, y **crear un pago** (`POST /v1/payments`) → **`401` también**. O sea que **el vendedor de prueba no puede escribir sobre la API de Payments en absoluto**, cualquiera sea la app o sus scopes. Las suscripciones funcionan porque **los pagos los crea el proveedor**, no nosotros. Para medir `RF-*` hace falta una cuenta que no sea de prueba, o que soporte de MP lo habilite |
 | RF-2 | Reembolso parcial | **`VERIFIED`** | 2026-09-15 | **producción** | [ejecución directa](./mp-probes/RESULTS-2026-09-15.md) | **Funciona en los DOS tipos de pago**: ARS 100 sobre un `regular_payment` de 5000 (refund `3269653245`) y ARS 50 sobre un `recurring_payment` de 100 (refund `3328744216`), los dos `201` y verificados por relectura (`status_detail: partially_refunded`). **Hay un monto mínimo**: `{"amount": 5}` se rechaza con `400 "This transaction does not support to be refunded"` — un mensaje que **no menciona el monto** y se lee como una propiedad del pago cuando es del pedido. **El mínimo exacto no se midió**: 5 no entra, 50 sí |
 | RF-3 | Plazo máximo para reembolsar un cobro | `UNKNOWN` | — | — | — | Se reembolsó un pago de **65 días** sin problema, así que el plazo es **mayor que eso**. La documentación dice 180 días desde la aprobación, pero el §58 no acepta documentación para cerrar una fila, y forzar el borde exigiría un pago de más de 180 días que no existe todavía |
+| RF-4 ✚ | ¿El reembolso exige clave de idempotencia? | **`VERIFIED`** | 2026-09-15 | **producción** | [sonda 18](./mp-probes/probe-18-errores-de-reembolso.mjs) | **`X-Idempotency-Key` es OBLIGATORIO en `POST /v1/payments/{id}/refunds`**: sin él, `400 code 4292 "Header X-Idempotency-Key can't be null"`, **antes** de cualquier validación de negocio. Es la **contracara exacta** de `EX-17`: el mismo header, en `/preapproval`, se acepta y no hace nada. **La idempotencia de este proveedor es POR ENDPOINT** y no se puede razonar de uno al otro. ⚠️ Abre una pregunta: `RF-1` se ejecutó **sin** ese header y devolvió `201`; resolverlo exige mandar un reembolso real con y sin header, y eso mueve plata |
+| RF-5 ✚ | Forma del error cuando el reembolso NO corresponde | **`VERIFIED`** | 2026-09-15 | **producción** | [sonda 18](./mp-probes/probe-18-errores-de-reembolso.mjs) | Sobre un pago con saldo reembolsable **cero**, y verificado por relectura de que ningún intento entró: total sin body → `400` **`code 2063`** *"The action requested is not valid for the current payment state"*; `amount` mayor al saldo → `400` **`code 2017`** *"Invalid transaction_amount for update"*; `amount` igual al total ya devuelto → **el mismo `2017`**. **El `message` NO alcanza** (dos situaciones distintas comparten texto): el contrato se arma sobre **`cause[0].code`**. `2063` habla del ESTADO del pago y `2017` del MONTO — que es justo la distinción que un reintento necesita entre *"ya está hecho, seguí"* y *"el monto que tenía guardado está mal"*. **Hueco nombrado**: el rechazo por monto bajo el mínimo trae otro texto (*"This transaction does not support to be refunded"*) y **su código no quedó registrado** |
 
 ## ✚ Huecos estructurales
 
@@ -210,7 +233,7 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 |---|---|---|---|---|---|---|---|
 | EX-1 | Qué pasa con una autorización creada y **nunca completada**: ¿vence?, ¿cuándo?, ¿se puede reusar? | `M-SUB-01`, `M-MP-02` | `UNKNOWN` | — | — | — | ⏳ **sujeto vivo**: `sin-autorizar` (`bf9b6feb…`), `pending` desde el 2026-09-15 12:26 |
 | EX-2 | ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)? | `M-CONC-02` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **SÍ: el cuerpo trae `version`, un contador monótono POR RECURSO.** Medido con receptor propio: el mismo preapproval llegó con `version` 4, 6, 7, 8 en el orden causal de las acciones. Es lo que `M-CONC-02` necesita y **es más fuerte que el id del evento**, que cambia en cada reentrega. Corrige por ampliación la lectura anterior, que se había hecho sobre la tabla ya normalizada de staging y no veía este campo |
-| EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | `UNKNOWN` | — | — | — | requiere observar la casilla del comprador de prueba |
+| EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | `UNKNOWN` — **y medido por qué** | 2026-09-15 | sandbox | [sonda 17](./mp-probes/probe-17-casilla-del-comprador.sh) | **INMEDIBLE EN SANDBOX, y no por falta de un acceso.** El comprador de prueba es `…@testuser.com`, cuyo **único MX es `localhost`** —un agujero negro: ningún servidor de correo del mundo puede entregar ahí— y cuyo dominio ni siquiera es de Mercado Pago (está parqueado y en venta). El correo que esta fila quiere observar **no se puede haber enviado**. Tampoco hay vía por API: `/users/test_user` → `405`, `/messages/packs` → `404`. **Pedir la casilla ya no sirve**: la única vía que queda es observarlo en **producción** sobre un cliente real, y eso es una decisión del owner, no un experimento |
 | EX-4 | Cambio de **frecuencia** sobre una suscripción ya autorizada | `BD-SUB-01`, `MP-01` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | **El ciclo NO se puede cambiar, y falla en silencio**: `200` en dos intentos aislados (12 y 3 meses) y `frequency` siguió en 1 |
 | EX-5 | ¿Una autorización puede cubrir **más de un monto**? | `BD-MP-04` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | `auto_recurring` como array → `400`. Campo `items` → **`201` y se descarta en silencio**: no vuelve en la respuesta, queda un solo monto |
 | EX-6 | N autorizaciones del mismo pagador conviviendo, ya autorizadas | `BD-MP-04` | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | Dos autorizadas del mismo pagador conviven sin conflicto |
@@ -223,6 +246,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | EX-13 | ¿Los eventos vienen **firmados**, y se puede verificar la firma? | §51, `M-CONC-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 10](./mp-probes/RESULTS-2026-09-15.md) | **La firma se verifica.** `x-signature: ts=<epoch>,v1=<hex64>` + `x-request-id`, y el `v1` es **HMAC-SHA256** con la clave de la aplicación sobre el manifiesto `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` — **el punto y coma final incluido**: sin él no coincide. Reproducido sobre **tres** entregas reales de tipos distintos, con control de la propia herramienta (vector RFC 4231). La URL del receptor no es un agujero abierto |
 | EX-14 | ¿Se puede distinguir **sandbox de producción** mirando el evento? | `M-MP-01`, riesgo operativo | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **No.** Un `payment.created` de la cuenta de prueba (`tags:["test_user"]`) llega con **`live_mode: true`**. Un handler que filtre por ese campo trata los eventos de sandbox como productivos |
 | EX-16 | ¿Se puede conciliar una suscripción **SIN** la API de Payments? | `R-MP-01`, §23, §57 | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 13](./mp-probes/RESULTS-2026-09-15.md) | **Sí, entera.** `GET /authorized_payments/search?preapproval_id=` y `GET /authorized_payments/{id}` pertenecen a la familia de **suscripciones**, no a `/v1/payments`, y traen todo lo que la conciliación necesita: `status`, `transaction_amount`, `currency_id`, `debit_date`, `date_created`, `last_modified`, `payment_method_id`, **`retry_attempt`**, y el pago embebido (`payment.id`, `payment.status`, `payment.status_detail`). El `search` **exige** filtro y **filtra bien por `preapproval_id`** (1 con el real, 0 con basura); por `external_reference` **no filtra** — mismo defecto que `RC-1`, y da igual porque el id del proveedor ya se guarda |
+| EX-17 | ¿La **creación** de una suscripción es idempotente? | `M-CONC-01` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 14](./mp-probes/probe-14-idempotencia-de-creacion.sh) | **No deduplica por ningún mecanismo.** Corrida dos veces, **diez sujetos, diez ids distintos**: (a) mismo `external_reference` sin header → dos `201` distintos; (b) misma `X-Idempotency-Key` con cuerpo idéntico → dos `201` distintos; (c) misma clave con **monto distinto** → un tercer `201` con el monto nuevo. El caso (c) es el que cierra la pregunta: el header **no tiene ningún efecto** sobre `/preapproval` — se acepta y no hace nada, otra forma del §0. **Consecuencia: el candado es nuestro o no existe**, y tiene que estar ANTES de llamar al proveedor. El daño no es simétrico: dos `pending` no cobran, pero una creación **con `card_token_id`** queda autorizada y **cobra en el acto** (`PA-3`), así que ahí un reintento son **dos cobros**. De yapa: **un `pending` SE PUEDE cancelar** (11 de 11, verificado por relectura) |
+| EX-18 | ¿Se puede cobrar en una **moneda** que no sea ARS? | `M-MP-01` | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 15](./mp-probes/probe-15-moneda.sh) | **Sólo ARS** en esta cuenta (`site_id: MLA`). `USD 100` y `BRL 50` → `400 "Invalid field -> auto_recurring.currency_id"`. **El modelo de datos no necesita moneda por plan, por suscripción ni por cobro.** Y deja una regla para el contrato de errores que casi produce un `PARTIALLY_SUPPORTED` inventado: **el proveedor valida el MONTO antes que la MONEDA, y el mensaje del piso es ciego a la moneda** — `USD 10` devuelve *"Cannot pay an amount lower than $ 15.00"*, y también lo devuelve `BRL 10`, con `BRL` ya sabida inválida. **Un `400` de monto no dice nada sobre si la moneda era válida** |
 | EX-15 | ¿Qué operaciones **NO** emiten webhook? | `DEC-MP-001`, §23, §51 | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Mutar el monto NO emite ninguna entrega.** Medido con 90 s entre acciones: ventana de 91 s sin eventos, con la mutación aplicada — y la `version` del recurso saltó de 5 a 9, o sea que **el recurso cambió y el proveedor no avisó**. Crear, pausar, reanudar y cancelar **sí** notifican. Consecuencia: un cambio de precio **no tiene vía de confirmación asincrónica** y sólo se puede comprobar releyendo |
 
 > `EX-7` y `EX-8` van separadas a propósito: que el proveedor **acepte** una fecha futura al
@@ -235,10 +260,13 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **27** |
+| `VERIFIED` | **29** |
 | `PARTIALLY_SUPPORTED` | **10** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `CT-2`, `WH-3`, `EX-9` |
-| `NOT_SUPPORTED` | **4** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno) |
-| **`UNKNOWN`** | **20** |
+| `NOT_SUPPORTED` | **6** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno), **`EX-17`** (creación idempotente), **`EX-18`** (otra moneda) |
+| **`UNKNOWN`** | **20** — 16 esperan el reloj; las otras son `WH-5`, `RC-3`, `RF-3` y `EX-3` |
+
+Recalculado con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) el
+2026-09-15, sobre **65** filas.
 
 Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no hay:
 
@@ -259,7 +287,9 @@ Lo que falta se agrupa en cuatro bloques, y cada uno necesita algo que hoy no ha
 | `BD-MP-04` addons recurrentes | ✅ `EX-5`, `EX-6` cerradas, **pero le sobrevivió una elección de diseño**: con un solo monto por autorización y varias autorizaciones conviviendo, hay dos mecanismos y los dos funcionan. Volvió al owner |
 | `BD-SUB-01` matriz de cambio de plan | ⚠️ `EX-4` salió `NOT_SUPPORTED` y `EX-8` `VERIFIED`: **el mecanismo de `DEC-SUB-001` no es implementable como está escrito**. Faltan `UP-1`, `UP-2`, `DW-1`, `DW-2` |
 | `MP-01` los cuatro ciclos del §19 | `FR-1`…`FR-4`, `EX-4` |
-| `M-LEGAL-01` revocación con devolución | `RF-1`, `RF-3` |
+| `M-LEGAL-01` revocación con devolución | `RF-1` ✅, `RF-3`. `RF-4`/`RF-5` ✅ dan el contrato de errores |
+| `M-CONC-01` nada se cobra dos veces | ✅ **`EX-17`**: el proveedor **no deduplica**, así que el candado es nuestro |
+| `M-MP-01` moneda | ✅ **`EX-18`**: sólo ARS |
 | `M-CONC-02` no-retroceso de estado | `WH-3`, `EX-2` |
 | `M-SUB-01` estado de autorización pendiente | `PA-3`, `PA-4`, `EX-1` |
 | `M-MAIL-04` correos del proveedor | `EX-3` |
