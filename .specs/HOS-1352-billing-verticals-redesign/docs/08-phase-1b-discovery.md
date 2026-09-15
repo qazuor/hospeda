@@ -26,7 +26,9 @@ está cerrado hasta definir el criterio (`DEC-METH-005`).
    son **462** con label `area-billing` en el team `Hospeda`, de los cuales **308 están
    abiertos** (170 Backlog + 138 Started). FASE 3 tiene que dimensionarse contra ese número.
 2. **Path C no fue abandonado.** El PDR §5.6 lo narra como superado, pero hoy es el camino de
-   checkout real de **gastronomía, experiencia y partner** en producción.
+   checkout real de **gastronomía, experiencia y partner** en producción. Y el trial del
+   código sigue siendo *card-first* (HOS-171), cuando el §5.6 y HOS-1012 coinciden en que el
+   trial vuelve a ser de Hospeda — ver §12.
 3. **`commerce` no es un resto: es la columna vertebral de dos verticales.**
    `BaseCommerceListingService` es la clase de la que heredan Gastronomía y Experiencia, con
    **625 archivos** que nombran `commerce` en código activo.
@@ -366,12 +368,32 @@ contracción que debía retirarlo **se abandonó**) · checkout duplicado (HOS-1
 HOS-1347) · pausa/cortesía sólo en alojamiento (HOS-1278, HOS-1160) · addons rotos (HOS-847
 Urgent) · cambio de precio que no llega a MP (HOS-176).
 
-### Tensión a resolver antes de FASE 2
+### HOS-1012 NO contradice al PDR — corrección
 
 **HOS-1012** está *In Progress* y se titula *"la prueba gratis vuelve a ser de Hospeda: trial
-propio, **sin tarjeta**, con reloj propio"*. El PDR §5.6 asume que el modelo vigente es
-card-first con preapproval creado por Hospeda. **Los dos no pueden ser ciertos a la vez.**
-Hay que confirmar cuál describe el estado real.
+propio, sin tarjeta, con reloj propio"*.
+
+Este informe afirmaba en su primera versión que eso contradecía al §5.6 del PDR, que
+supuestamente asumía un modelo *card-first*. **Es falso.** Verificado por grep sobre
+[`00-PDR.md`](./00-PDR.md): **las palabras "card" y "tarjeta" no aparecen ni una vez en todo
+el PDR**. Lo que el §5.6 dice, textual, es:
+
+> *"Volvimos al enfoque donde: 1. Hospeda crea explícitamente el `preapproval` mediante API;
+> 2. queda asociado desde el comienzo a nuestro dominio; 3. recién después enviamos al usuario
+> a Mercado Pago para completar/autorizar el proceso. **También volvimos a administrar el
+> trial desde Hospeda.**"*
+
+Esa última frase **es** el título de HOS-1012. Los dos describen el mismo rumbo.
+
+El término *card-first* viene del `CLAUDE.md` del repo (HOS-171) y se atribuyó al PDR por
+error. La tensión real no es PDR contra HOS-1012: es **el rumbo nuevo contra el código
+actual**, que sigue siendo card-first — y es exactamente lo que este rediseño viene a cambiar.
+
+Coherencia adicional: el §10.4 dice que el trial arranca **al publicar la primera ficha**, lo
+que es incompatible con pedir tarjeta antes de empezar. `DEC-TRIAL-004` ya descartó el pagador
+de MercadoPago como señal de identidad justamente porque **no hay tarjeta en ese momento**.
+
+Ninguna de las decisiones tomadas quedó afectada por el error.
 
 ### Specs con referencias rotas
 
