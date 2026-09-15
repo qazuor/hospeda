@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (60 filas: 23 `VERIFIED`, 10 parciales, 4 `NOT_SUPPORTED`, 23 `UNKNOWN`).
+   (61 filas: 27 `VERIFIED`, 10 parciales, 4 `NOT_SUPPORTED`, 20 `UNKNOWN`).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
 ---
@@ -36,7 +36,7 @@ status: CURRENT
 ### Último punto completado
 
 **FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.
-FASE 1C en curso: 37 de 60 filas medidas, EL RELOJ CORRIENDO, y los webhooks observables Y VERIFICABLES.**
+FASE 1C en curso: 41 de 61 filas medidas, EL RELOJ CORRIENDO, webhooks verificables, y LOS REEMBOLSOS CERRADOS.**
 
 El programa se reseteó hoy: el único documento heredado es el PDR (`DEC-METH-001`). Todo lo
 demás se escribió de cero contra ese texto.
@@ -53,7 +53,7 @@ owner.
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 29 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 37 de 60 filas medidas · reloj corriendo, leer el 2026-09-16** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 41 de 61 filas medidas · reloj corriendo, leer el 2026-09-16** |
 | FASE 2 — Master Spec | ⛔ bloqueada por `BD-MP-01` (pausa) y `BD-MP-02` (cortesía) |
 | FASE 3 a 10 | ⬜ no empezadas |
 
@@ -167,7 +167,7 @@ ausencia de mecanismo es, ella misma, un hallazgo que hay que registrar.
 | Las **credenciales** de prueba | ✅ **entregadas y cargadas.** Viven en `~/.config/hospeda/mp-sandbox-creds.sh`, fuera del repo y `chmod 600`. **Ojo con un supuesto que era falso**: el modo de pruebas actual de Mercado Pago **no usa el prefijo `TEST-`** — se arma con un usuario vendedor de prueba y una app propia, cuyas credenciales empiezan con `APP_USR-` igual que las productivas. Lo que distingue, y lo dice el proveedor, es `GET /users/me` → `tags:["test_user",…]`, y eso es lo que verifica el guard antes de dejar correr nada |
 | ⚠️ **El webhook de la app de prueba está repuntado a la sonda** | El owner lo cambió el 2026-09-15 a `https://hos1352-webhook-sink.qazuor.workers.dev`. **Mientras siga así, el billing de staging no recibe nada de esa app.** La URL a restaurar es `https://staging-api.hospeda.com.ar/api/v1/webhooks/mercadopago?source_news=webhooks`, y **se restaura a mano**: el `PUT` por API da `403` |
 | ✅ La **clave secreta de webhook** | Entregada. Cerró `EX-13`: la firma se verifica con HMAC-SHA256 sobre `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`. Guardada en `~/.config/hospeda/mp-webhook-secret.txt`, fuera del repo |
-| **Una cuenta que NO sea de prueba, o que soporte de MP habilite los pagos** | `RF-1`/`RF-2`/`RF-3` **no se pueden medir en sandbox, y ya está probado que no es configuración**: se creó una segunda app con producto Checkout API (**HOS-1352 Reembolsos**, `1457958296102812`) cuyos scopes incluyen `payments:refunds/read-write`, y con ella el reembolso da `401` **y crear un pago también**. El vendedor de prueba **no puede escribir sobre la API de Payments en absoluto**. Las suscripciones andan porque **los pagos los crea el proveedor**. Deja a `M-LEGAL-01` (derecho de revocación con devolución) **sin respuesta técnica** |
+| ✅ **Reembolsos: resueltos** | `RF-1` y `RF-2` cerrados el 2026-09-15 **midiendo en producción**. El bloqueo era **la cuenta de prueba**, no la API ni el código: la misma llamada da `401` con el vendedor de prueba y entra con la cuenta real. `M-LEGAL-01` **ya tiene respuesta técnica** |
 | Qué credenciales habilitan **reembolsos** en sandbox | `RF-1`/`RF-2` dieron `401 "Unauthorized use of live credentials"`. Eso no dice que el proveedor no reembolse: dice que estas credenciales no lo pueden pedir |
 | Acceso a la **casilla del comprador de prueba** | `EX-3`: qué le comunica el proveedor al cliente por su cuenta |
 | ⚠️ **Preguntarle a soporte de MP por `R-MP-01`** | El panel avisa que **la API de Payments se descontinúa** y la documentación no lo formaliza. Tres preguntas que **no se pueden medir** porque son sobre el futuro del proveedor: (1) ¿alcanza también a las **lecturas** de `/v1/payments`? (2) ¿**cuándo**? (3) si se retira, **¿cómo se reembolsa un cobro originado por un `preapproval`?**. Tardan días: conviene preguntarlas ya |
