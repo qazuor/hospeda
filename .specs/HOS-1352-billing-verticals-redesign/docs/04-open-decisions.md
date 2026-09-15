@@ -21,10 +21,11 @@ estuvo abierto es parte del registro.
 
 Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).
 
-> **Estado al 2026-09-15**: FASE 1A entregada, **101 hallazgos**. El owner cerró **9
-> decisiones**: las **8 bloqueantes de FASE 2 que le correspondían**, más la autorización de
-> conteos de producción. Quedan **4 bloqueantes que decide el experimento** de FASE 1C y
-> **16 preguntas no bloqueantes**.
+> **Estado al 2026-09-15**: FASE 1A entregada y **completamente respondida**. 104 hallazgos,
+> **28 decisiones registradas**, **0 preguntas del owner abiertas**.
+>
+> Lo único que frena FASE 2 son las **4 bloqueantes que decide el experimento** de FASE 1C.
+> Ninguna se puede cerrar por conversación.
 
 ---
 
@@ -35,9 +36,9 @@ Tres grupos, y no se mezclan:
 | Grupo | Quién decide | Cuántos | Cuándo |
 |---|---|---|---|
 | **Bloqueantes de FASE 2 que decide el owner** | owner | **8** | ✅ cerradas |
-| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | después de la matriz |
-| **No bloqueantes que decide el owner** | owner | **19** (en 17 preguntas) | ahora |
-| **Huecos técnicos** | la Master Spec (FASE 2) | **70** | sin intervención del owner |
+| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | ⛔ esperan la matriz |
+| **No bloqueantes que decide el owner** | owner | **19** | ✅ cerradas |
+| **Huecos técnicos** | la Master Spec (FASE 2) | **~70** | sin intervención del owner |
 
 Los 12 bloqueantes son los que frenan FASE 2 (§0: *"Toda cuestión que pueda cambiar
 significativamente la arquitectura: `BLOCKING DECISION`"*).
@@ -96,28 +97,28 @@ Corresponden a las preguntas **9 a 25** del §16.
 | 12b | `OD-ENT-01` | ¿Cuándo se resetea una cuota de consumo? | ✅ `DEC-ENT-002` — mensual siempre, sin arrastre |
 | 13 | `A-ENT-01` | Alcance de la herencia Turista VIP | ✅ `DEC-ENT-003` — entitlements y limits; no puede comprar VIP |
 | 13b | `A-ENT-01` (b) | Qué pasa con un VIP previo ya pago | ✅ `DEC-ENT-004` — se cancela ya, sin reembolso |
-| 14 | `C-SUB-01` | ¿El grace de 10 días es constante o configurable? | 🔴 abierta |
-| 15 | `E-SUB-03` | ¿Se puede cambiar de plan estando en grace? | 🔴 abierta |
-| 16 | `OD-SUB-01` | ¿La ventana de pausa se cuenta por user+vertical o por suscripción? | 🔴 abierta |
-| 17 | `E-ADDON-01` · `E-ADDON-02` | Addon sobre ficha borrada o despublicada | 🔴 abierta |
-| 18 | `M-PROMO-01` | ¿Hay cupo total y ventana de validez por promo code? | 🔴 abierta |
-| 19 | `OD-PROMO-01` | El scope "todas las verticales futuras", ¿sin tope? | 🔴 abierta |
-| 20 | `M-GRANT-01` | Free Forever y el dinero ya cobrado; qué pasa al revocar | 🔴 abierta |
-| 21 | `A-GRANT-01` | ¿Quién puede otorgar una cortesía temporal? | 🔴 abierta |
-| 22 | `C-DATA-01` | Retención a los 90 y 180 días, y los avisos previos | 🔴 abierta |
-| 23 | `O-LEGAL-01` | Comprobante no fiscal hasta ARCA, ¿con fecha de revisión? | 🔴 abierta |
+| 14 | `C-SUB-01` | ¿El grace de 10 días es constante o configurable? | ✅ `DEC-SUB-002` — en DB por plan, default 10 |
+| 15 | `E-SUB-03` | ¿Se puede cambiar de plan estando en grace? | ✅ `DEC-SUB-003` — permitido, es el camino de recuperación |
+| 16 | `OD-SUB-01` | ¿La ventana de pausa se cuenta por user+vertical o por suscripción? | ✅ `DEC-SUB-004` — por user + vertical |
+| 17 | `E-ADDON-01` · `E-ADDON-02` | Addon sobre ficha borrada o despublicada | ✅ `DEC-ADDON-001` — se pierde con la ficha; el reloj no se congela |
+| 18 | `M-PROMO-01` | ¿Hay cupo total y ventana de validez por promo code? | ✅ `DEC-PROMO-001` — cupo total + ventana |
+| 19 | `OD-PROMO-01` | El scope "todas las verticales futuras", ¿sin tope? | ✅ `DEC-PROMO-002` — permitido sin restricción |
+| 20 | `M-GRANT-01` | Free Forever y el dinero ya cobrado; qué pasa al revocar | ✅ `DEC-GRANT-001` — corta ya sin reembolso; revocar no restaura |
+| 21 | `A-GRANT-01` | ¿Quién puede otorgar una cortesía temporal? | ✅ `DEC-GRANT-002` — sólo `SUPER_ADMIN`, igual que Free Forever |
+| 22 | `C-DATA-01` | Retención a los 90 y 180 días, y los avisos previos | ✅ `DEC-DATA-001` — oculto del público, visible al dueño, dos avisos |
+| 23 | `O-LEGAL-01` | Comprobante no fiscal hasta ARCA, ¿con fecha de revisión? | ✅ `DEC-LEGAL-001` — confirmado, sin fecha ni disparador |
 | 24 | `O-METH-02` | ¿Se autorizan conteos read-only de producción durante 1A? | ✅ `DEC-METH-002` — sí, con fecha y método |
-| 25 | `O-METH-03` | ¿El criterio de FASE 5 se define al empezar FASE 5? | 🔴 abierta |
+| 25 | `O-METH-03` | ¿El criterio de FASE 5 se define al empezar FASE 5? | ✅ `DEC-METH-003` — sí, y es su gate de entrada |
 
 ---
 
-## Gate de FASE 5 — pendiente de la pregunta 25
+## Gate de FASE 5 — decidido (`DEC-METH-003`)
 
-`O-METH-03` propone que **el criterio para clasificar `KEEP` / `ADAPT` / `REWRITE` se defina al
-empezar FASE 5**, con el inventario real a la vista, y que sea su condición de entrada.
+**El criterio para clasificar `KEEP` / `ADAPT` / `REWRITE` se define al empezar FASE 5**, con
+el inventario real de 1B a la vista, y **es su condición de entrada**.
 
-Mientras esa pregunta no se responda, **no se clasifica ninguna pieza**. Empezar a clasificar
-"mientras tanto" equivale a elegir no tener criterio, sin decirlo.
+**No se clasifica ninguna pieza antes de haberlo definido.** Empezar a clasificar "mientras
+tanto" equivale a elegir no tener criterio, sin decirlo.
 
 Y una trampa a evitar cuando se defina, sea cual sea: un criterio del tipo *"no nombra ninguna
 vertical en su lógica"* manda **todo el Eje 2 a `REWRITE` por definición**, porque §8 define el
@@ -145,7 +146,7 @@ despublicar enseguida · `A-TRIAL-02` "solamente en trial" para un usuario multi
 después el trial se extiende
 
 **Suscripción** · `M-SUB-01` estados faltantes · `A-SUB-01` qué es una "main subscription" ·
-`A-SUB-02` dónde se habilita la pausa · `M-SUB-02` cola de cambios programados · `E-SUB-01`
+`A-SUB-02` dónde se habilita la pausa · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
 precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelación programada ·
 `R-SUB-01` el servicio completo durante el grace · `M-SUB-03` vertical discontinuada
 
@@ -169,7 +170,7 @@ combinación de promo, cortesía y grant
 actor administrativo · `A-AUTH-01` el rol al perder el acceso · `S-AUTH-01` scope de vertical
 estructural, no un chequeo
 
-**Datos y legal** · `R-DATA-01` el silencio entre el día 60 y el 90 · `M-DATA-01` qué es dato
+**Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · `M-DATA-01` qué es dato
 eliminable · `M-LEGAL-01` baja online y derecho de revocación · `M-LEGAL-02` finalidad de las
 señales de identidad · `M-LEGAL-03` política de notificación de aumento
 
@@ -204,10 +205,13 @@ owner con su costo anotado.
 
 | Decisión | Cuándo revisarla |
 |---|---|
-| `DEC-ENT-004` — cancelar un VIP previo sin reembolso | **El día que exista un ciclo anual de Turista VIP.** Hoy se retiene un mes parcial como máximo porque todas las suscripciones vivas son mensuales; con anual serían hasta once meses |
+| `DEC-ENT-004` y `DEC-GRANT-001` — cancelar sin reembolso | **El día que exista un ciclo anual.** Hoy se retiene un mes parcial como máximo porque todas las suscripciones vivas son mensuales; con anual serían hasta once meses |
 | `DEC-TRIAL-004` — sólo el email bloquea la identidad | Cuando la base crezca dos órdenes de magnitud. Hoy se optimiza contra perder clientes reales porque son 22 |
 | `DEC-SUB-001` — el cambio de ciclo compensa en días | **Apenas cierre `EX-8`.** Si resulta `NOT_SUPPORTED`, entra su plan B sin volver a preguntar |
 | `DEC-TRIAL-003` — Partner con el trial en cero | Si alguna vez se pone en distinto de cero: hay que declarar su evento de activación (§10.4) |
+| `DEC-PROMO-002` — scope "futuras" sin restricción | **Al crear cada vertical nueva.** Hay que listar qué concesiones la alcanzan automáticamente, con su costo estimado |
+| `DEC-GRANT-002` — cortesía sólo por `SUPER_ADMIN` | Si aparece que se comparte la cuenta de `SUPER_ADMIN` para compensar clientes. Ese síntoma pide un permiso acotado, no una cuenta compartida |
+| `DEC-LEGAL-001` — comprobante no fiscal | **Sin disparador agendado, por decisión explícita.** El riesgo impositivo crece con cada cobro y nada va a avisar: depende de que alguien lo recuerde |
 
 ---
 
@@ -219,10 +223,10 @@ owner con su costo anotado.
 | Ambiguities (`A-`) | 13 |
 | Blocking Decisions | 12 (10 `BD-` + `C-TRIAL-01` + `C-PARTNER-01`) |
 | Open Decisions (`OD-`) | 5 |
-| Edge Cases (`E-`) | 14 |
+| Edge Cases (`E-`) | 15 |
 | Risks (`R-`) | 5 |
 | Missing Requirements (`M-`) | 35 |
 | Objections (`O-`) | 6 |
 | Suggested Improvements (`S-`) | 9 |
 | Pending MP Validation | `MP-01` más toda la sección 4 y las 53 filas de la matriz |
-| **Total de hallazgos** | **103** (`E-TRIAL-04` y `E-ENT-01` agregados el 2026-09-15) |
+| **Total de hallazgos** | **104** (`E-TRIAL-04`, `E-ENT-01` y `E-SUB-05` agregados el 2026-09-15) |

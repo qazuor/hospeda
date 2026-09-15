@@ -108,6 +108,37 @@ Cada entrada lleva, según §3.4:
   3. **Los números caducan.** Toda decisión que los cite debe re-verificarlos si pasó tiempo.
 - **Origen**: `O-METH-02`.
 
+### DEC-METH-003 — El criterio de FASE 5 se define al empezar FASE 5, y es su gate de entrada
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §2 dice que *"La carga de prueba debe estar del lado de conservar código
+  legacy. No del lado de justificar reescribirlo"*, y la FASE 5 define `KEEP` como *"sólo si
+  estamos prácticamente 100% seguros"* de cinco cosas. Esa frase sólo tiene efecto si existe
+  algo concreto que rendir: sin criterio operable, la carga se invierte sola, porque conservar
+  nunca requiere defensa activa y reescribir siempre sí. Y con el programa atravesando varias
+  ventanas de contexto (§3.3), dos piezas equivalentes se clasifican al revés en sesiones
+  distintas y nadie lo nota.
+- **Alternativas**: (1) se define al empezar FASE 5, como gate de entrada; (2) se define
+  ahora, vinculante; (3) sin criterio fijo, caso por caso argumentado.
+- **Decisión**: **(1)**. El criterio se define **al empezar FASE 5**, con el inventario real de
+  FASE 1B terminado a la vista.
+- **Motivo**: con las piezas concretas enfrente se puede juzgar si un criterio ayuda o estorba,
+  en vez de diseñarlo a ciegas.
+- **Implicaciones — esto es un gate, no un pendiente**:
+  1. **No se clasifica ninguna pieza antes de haber tomado esa decisión.** Empezar a clasificar
+     "mientras tanto" equivale a elegir la alternativa (3) sin decirlo.
+  2. La decisión se toma **con el inventario de 1B terminado**, no con una muestra.
+  3. **Si el criterio que se elija excluye o trata distinto al Eje 2, tiene que decirlo
+     explícitamente.** Es la trampa conocida: cualquier regla del tipo *"no nombra ninguna
+     vertical en su lógica"* manda **todo el Eje 2 a `REWRITE` por definición**, porque §8
+     define el Eje 2 como comportamiento específico de vertical.
+  4. **Sea cual sea el resultado, toda clasificación lleva su argumento escrito.** Eso no está
+     en discusión y vale también si se elige no tener criterio. Es lo que le da efecto al §2
+     aunque el criterio final sea flexible.
+  5. El gate tiene que sobrevivir a varias ventanas de contexto entre hoy y FASE 5: vive en el
+     handoff y en `04-open-decisions.md`, no en la memoria de nadie.
+- **Origen**: `O-METH-03`.
+
 ---
 
 ## Decisiones funcionales
@@ -563,16 +594,289 @@ Cada entrada lleva, según §3.4:
      `UNKNOWN`. Llegar antes es lo único que se puede controlar.
 - **Origen**: `A-ENT-01` (b).
 
+### DEC-SUB-002 — Grace configurable en DB por plan, default 10 días
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: cuatro afirmaciones del PDR que no pueden ser ciertas a la vez. §20 fija
+  *"Duración: **10 días**"*; §30 lo repite para pagos manuales; §42.3 habla de *"Schedule
+  configurable durante 10 días"*, o sea schedule variable dentro de ventana fija; y §9 dice
+  que toda regla comercial sale de DB.
+- **Alternativas**: (1) configurable en DB por plan, default 10; (2) configurable por
+  vertical; (3) constante del dominio, con §9 excepcionado.
+- **Decisión**: **(1)**. Los días de grace son un campo **de la versión de plan**, con **10 de
+  default**.
+- **Motivo**: cumple §9 sin perder el número que el PDR eligió, y deja una palanca comercial
+  real — un plan caro puede tener más aire.
+- **Implicaciones**:
+  1. Al vivir en la **versión** de plan (`DEC-ARCH-001`), cambiarlo queda versionado: **nadie
+     ve su grace acortado retroactivamente**.
+  2. **El schedule de correos del §42.3 tiene que ser relativo al vencimiento, no absoluto.**
+     Si la ventana es variable, un schedule con días fijos se cae fuera de la ventana en los
+     planes con grace más corto.
+  3. Dos planes de la misma vertical pueden tener grace distinto. Tiene que poder explicarse
+     en soporte y mostrarse en la UI del cliente, no sólo aplicarse.
+  4. Vale igual para pagos manuales (§30): el mecanismo es el mismo, cambia el método de pago.
+- **Origen**: `C-SUB-01`.
+
+### DEC-SUB-003 — Cambiar de plan en grace está permitido, y es el camino de recuperación
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §26 sólo permite pausar desde `ACTIVE`, pero el PDR no dice nada sobre cambiar
+  de plan en `GRACE_PERIOD`. Si se prohíbe, el control impide el propio remedio — bajarse a un
+  plan más barato es cómo alguien sale de un impago. Si se permite, hay dos abusos simétricos:
+  cambiar de plan para generar un cobro nuevo que "limpie" el fallido, o para esquivar la
+  deuda del ciclo anterior.
+- **Alternativas**: (1) se permite, con cobro inmediato del plan nuevo; (2) hay que estar al
+  día; (3) sólo se permite bajar de tier.
+- **Decisión**: **(1)**. Se permite. **Se intenta el cobro del plan nuevo de inmediato**: si
+  entra, vuelve a `ACTIVE` con el plan nuevo; si falla, **sigue en grace con el plan anterior
+  y no cambia nada**.
+- **Motivo**: convierte el cambio de plan en una salida del problema en vez de un muro, y
+  cierra los dos abusos a la vez — no se puede limpiar el fallido porque el cobro nuevo tiene
+  que entrar de verdad, y no se puede esquivar la deuda porque si falla se queda con el plan
+  viejo y su deuda.
+- **Implicaciones**:
+  1. **La transacción debe ser atómica.** No puede quedar con el plan nuevo y el pago fallido.
+     Es el punto exacto donde esto se rompe si se implementa mal, y entra en los cruces de
+     concurrencia de `E-CONC-01`.
+  2. **Se cruza con `DEC-SUB-001`**: si además cambia el ciclo, habría que compensar días
+     sobre una suscripción que está en deuda. **Qué pasa con el período impago al compensar
+     queda abierto** y se registra como `E-SUB-05`.
+  3. El intento de cobro inmediato depende del comportamiento del proveedor, que está en
+     `UNKNOWN` (`GR-1`, recuperación durante el grace).
+- **Origen**: `E-SUB-03`.
+
+### DEC-SUB-004 — La ventana de límites de pausa se cuenta por user + vertical
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §26.3 define tres límites con precisión — 3 pausas por ventana móvil de 12
+  meses, 120 días por pausa, 240 días acumulados — y **no dice sobre qué entidad se cuentan**.
+  Si fuera por suscripción, cancelar y volver a suscribirse resetearía los tres.
+- **Alternativas**: (1) por `user + vertical`; (2) por suscripción; (3) por suscripción con
+  arrastre del historial al re-suscribirse.
+- **Decisión**: **(1)**. El contador vive en la relación **persona + vertical** y **sobrevive
+  a cancelar y volver a suscribirse**.
+- **Motivo**: es el único que hace que el límite limite. Con tres números tan específicos el
+  §26.3 claramente quiso poner un techo; contarlo por suscripción lo volvería decorativo.
+- **Implicaciones**:
+  1. Es **el mismo eje que ya usa el resto del modelo**: el trial es por `user + vertical`
+     (§10.1) y la suscripción principal también (§11). No se introduce un eje nuevo.
+  2. El contador vive **fuera** de la fila de suscripción: hay una entidad más que mantener.
+  3. **Queda abierto qué pasa con el historial si la persona borra la cuenta y vuelve.** Se
+     cruza con `DEC-TRIAL-004`, que ya eligió el email normalizado como señal de identidad
+     para un problema de la misma forma. Conviene que usen la misma señal.
+  4. Se descartó la variante con arrastre explícito porque es un **fail-open**: si un camino
+     de creación de suscripción se olvida de copiar el historial, el contador se resetea en
+     silencio.
+- **Origen**: `OD-SUB-01`.
+
+### DEC-ADDON-001 — El addon se pierde con la ficha, y su reloj no se congela
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §40 define el scope `LISTING` y §41 ordena cancelar *"solo cuando queda
+  efectivamente huérfano"*. Dos casos quedan sin cubrir: la ficha **se borra** (el addon
+  apunta a algo que ya no existe) y la ficha queda **despublicada por suspensión** (§21) — ahí
+  el addon **no está huérfano**, la ficha existe, y sin embargo no sirve para nada mientras el
+  reloj sigue corriendo.
+- **Alternativas**: (1) se pierde con la ficha y el reloj no se congela; (2) el reloj se
+  congela mientras la ficha no se vea; (3) el addon se libera y se puede reasignar.
+- **Decisión**: **(1)**. Borrar la ficha **consume** el addon: no se libera ni se reasigna. Y
+  el addon **vence cuando vence**, esté la ficha publicada o no.
+- **Motivo**: la regla más simple posible — una fecha de fin y nada más que calcular, sin
+  estados intermedios. No abre la puerta a usar el borrado o la despublicación para estirar un
+  addon comprado.
+- **Implicaciones**:
+  1. **Mitigación obligatoria**: la confirmación de borrado de una ficha **debe advertir qué
+     addons se pierden y por cuánto**. Sin eso el reclamo entra por soporte y es justo.
+  2. Un cliente suspendido dos meses **pierde dos meses de algo que pagó**. Conviene que el
+     aviso de suspensión lo diga explícitamente.
+  3. Coherente con cómo el §10.2 trata el trial: borrar no devuelve nada.
+  4. No resuelve *"quiero mover el destaque a otra ficha"*, que el PDR tampoco cubre y que
+     queda fuera de alcance por ahora.
+- **Origen**: `E-ADDON-01`, `E-ADDON-02`.
+
+### DEC-PROMO-001 — Cupo total de canjes más ventana de validez
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §31 define *"Cada user: máximo un uso de cada código"* y nada más. Sin cupo
+  total ni ventana de validez, un código filtrado es una pérdida abierta: el límite por persona
+  no limita nada cuando hay usuarios ilimitados y crear una cuenta es gratis.
+- **Alternativas**: (1) cupo total más ventana de validez; (2) sólo cupo total; (3) sólo el
+  límite por persona del §31.
+- **Decisión**: **(1)**. Cada código declara **cuántos canjes admite en total** y **entre qué
+  fechas es válido**, además del límite por persona.
+- **Motivo**: dos defensas independientes. Si el código se filtra lo corta el cupo; si alguien
+  se olvida de desactivarlo, lo apaga la fecha. Que fallen las dos a la vez es mucho menos
+  probable que fallar una.
+- **Implicaciones**:
+  1. **El cupo acota la pérdida máxima a un número conocido de antemano**, así que una campaña
+     se puede presupuestar.
+  2. **Hay que definir qué ve quien llega tarde** cuando el cupo se agota: un error claro que
+     diga que el código ya no está disponible, no un silencio que se lea como "el código no
+     existe".
+  3. Los dos campos necesitan default, porque el modo de falla más común es el olvido. Un
+     default generoso deja el agujero abierto igual.
+  4. No resuelve el corte por presupuesto consumido (cortar cuando el descuento acumulado
+     supera un monto), que es un tercer mecanismo y queda fuera de alcance.
+  5. Se cruza con `A-PROMO-01` (orden de aplicación y piso del apilado), que **sigue abierta**.
+- **Origen**: `M-PROMO-01`.
+
+### DEC-PROMO-002 — El scope "todas las verticales futuras" se permite sin restricción
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el scope aparece en §31, §34 y §35.1, y significa que una concesión creada hoy
+  otorga acceso automático a una vertical **que todavía no existe**, cuyo costo no se conoce y
+  cuyo modelo de negocio puede ser completamente distinto. Una vertical nueva **nace regalada**
+  a esa lista.
+- **Alternativas**: (1) se permite tal cual; (2) se permite con vencimiento obligatorio;
+  (3) una vertical nueva entra sólo si se la incluye explícitamente.
+- **Decisión**: **(1)**. Se permite tal cual lo escribe el PDR, **sin tope y sin vencimiento
+  obligatorio**.
+- **Motivo**: decisión del owner. Es una herramienta comercial real para un acuerdo
+  fundacional, y esos acuerdos son efectivamente "para siempre y para todo".
+- **Implicaciones**:
+  1. **Una vertical nueva nace regalada a esa lista**, con un costo que no se conocía cuando se
+     otorgó la concesión.
+  2. **Mitigación sugerida — no forma parte de la decisión**: que el acto de **crear una
+     vertical liste explícitamente qué concesiones la alcanzan automáticamente**, para que sea
+     una decisión consciente y no un descubrimiento posterior.
+  3. Si la vertical futura tiene entitlements medidos (`DEC-ENT-001`), el regalo es de dinero
+     por uso y no sólo de acceso. Conviene que esa lista incluya el costo estimado.
+  4. Se descartó el vencimiento obligatorio porque contradice el §35, que modela Free Forever
+     como permanente.
+- **Origen**: `OD-PROMO-01`.
+
+### DEC-GRANT-001 — Free Forever corta el cobro de inmediato, sin reembolso; revocar no restaura
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §35.3 ordena *"Cancelar toda obligación de pago cubierta"*, incluidos
+  MercadoPago y manual, pero no dice qué pasa con el período **ya cobrado** ni qué pasa si el
+  grant se **revoca** después.
+- **Contexto medido** (2026-09-15): hay 2 cortesías en producción, ninguna con vínculo al
+  proveedor de pagos, y cero pagos cobrados en la historia del sistema.
+- **Alternativas**: (1) se corta ya, sin reembolso, y revocar no restaura; (2) no se renueva,
+  conservando el período pagado; (3) se corta ya, con reembolso proporcional.
+- **Decisión**: **(1)**. Se corta el cobro **en el acto** y **no se devuelve lo pagado**. Si el
+  grant se **revoca**, **no se reanuda el débito viejo**: hay que pedirle al cliente que
+  autorice uno nuevo.
+- **Motivo**: consistente con `DEC-ENT-004`, que resolvió el mismo dilema de la misma forma.
+  Cumple el §35.3 literalmente y no depende de poder reembolsar, que sigue en `UNKNOWN`.
+- **Implicaciones y riesgo declarado**:
+  1. **Mismo riesgo que `DEC-ENT-004`**: retener dinero de un servicio cancelado por nosotros
+     es discutible bajo la ley de defensa del consumidor. Acá **además el cliente no pidió
+     nada**: le otorgamos un beneficio y en el mismo acto le retuvimos un período.
+  2. **Revocar es una acción destructiva.** Deja al cliente **sin grant y sin suscripción**,
+     o sea **sin servicio**, hasta que autorice un débito nuevo. **La UI del admin debe
+     decirlo explícitamente al revocar**, o alguien lo va a hacer sin entender que está
+     cortando el servicio de alguien.
+  3. Si el proveedor no permite reanudar una autorización cancelada (`PA-5`, `UNKNOWN`), esto
+     es **irreversible por construcción**, no por política.
+  4. **Conviene avisar por correo antes**, tanto al otorgar como al revocar: al cancelar contra
+     el proveedor es posible que éste le escriba por su cuenta (`M-MAIL-04`, fila `EX-3` en
+     `UNKNOWN`). El §35.4 exige auditar el grant, pero **auditar no es avisar**.
+  5. Hereda el disparador de revisión de `DEC-ENT-004`: el día que exista un ciclo anual, el
+     monto retenido puede ser de once meses.
+- **Origen**: `M-GRANT-01`.
+
+### DEC-GRANT-002 — La cortesía temporal también es exclusiva de SUPER_ADMIN
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el PDR es asimétrico y no dice si a propósito. §35, para Free Forever: *"Solo:
+  `SUPER_ADMIN`"*. §34, para la cortesía temporal: apenas *"Admin puede otorgar"*. Las dos
+  regalan servicio, y es una autorización con dinero atrás.
+- **Alternativas**: (1) cualquier admin, con tope de días y auditoría; (2) sólo `SUPER_ADMIN`,
+  igual que Free Forever; (3) cualquier admin, sin tope.
+- **Decisión**: **(2)**. **Toda concesión gratuita, temporal o permanente, la firma
+  `SUPER_ADMIN`.**
+- **Motivo**: decisión del owner. Una sola regla para todo lo que regala servicio: imposible
+  confundirse y sin configuración que mantener.
+- **Implicaciones**:
+  1. **Apartamiento declarado del §34**, que dice *"Admin puede otorgar"*. El PDR no se edita
+     (§3.1): queda registrado acá.
+  2. **Cierra un agujero real**: una cortesía "temporal" sin tope de días es un Free Forever
+     con otro nombre. Si la pudiera otorgar un admin común, la exclusividad del §35 existiría
+     en un camino y se podría esquivar por el otro.
+  3. **Costo operativo declarado**: compensar a alguien unos días por un problema de servicio
+     pasa a requerir al `SUPER_ADMIN`. **El riesgo concreto es que se termine compartiendo la
+     cuenta**, que es peor que el riesgo que se evita. Conviene vigilarlo y, si aparece,
+     resolverlo con un permiso acotado y no con una cuenta compartida.
+  4. El catálogo de acciones administrativas de `M-ADMIN-01` tiene que reflejar que estas dos
+     acciones comparten el mismo permiso.
+  5. §35.4 ya exige auditar el grant; la cortesía temporal debe auditarse igual.
+- **Origen**: `A-GRANT-01`.
+
+### DEC-DATA-001 — Retención: oculto del público, visible para el dueño, con dos avisos
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §21 promete que al suspender los *"datos conservados"* y la *"recuperación
+  posible"*. §25 hace **soft delete a los 90 días** y **hard delete a los 180**. Y entre el
+  `+60` en que la campaña del §10.7 ordena dejar de contactar y el día 90 hay **silencio
+  total**: alguien que vuelve el día 200 encuentra su contenido borrado sin haber recibido
+  nunca una advertencia.
+- **Alternativas**: (1) oculto del público, visible para el dueño, con dos avisos; (2) oculto
+  para todos, con dos avisos; (3) se conserva todo, sin hard delete.
+- **Decisión**: **(1)**.
+  - **Día 90**: la ficha **sale del sitio público**, pero **el dueño la sigue viendo** y puede
+    **exportarla** o **reactivarla** suscribiéndose.
+  - **Día 180**: hard delete de lo eliminable.
+  - **Dos avisos**: uno antes del día 90 y otro antes del día 180.
+- **Motivo**: es lo único que cumple la promesa del §21 sin incumplir el §25. Nadie pierde su
+  contenido sin advertencia previa, y poder exportarlo antes es lo que hace defendible el hard
+  delete.
+- **Implicaciones**:
+  1. **Los dos avisos son correos transaccionales no suprimibles.** No pueden caer bajo el
+     opt-out comercial, o se deja de avisar justo a quien más lo necesita. Depende de
+     `M-MAIL-03` (jerarquía de supresión), que **sigue abierta**.
+  2. **"Visible para el dueño" obliga a que la suspensión no apague el acceso de lectura**, lo
+     que es coherente con el *"Mi Cuenta read-only"* del §21 y se cruza con `A-AUTH-01` (si el
+     rol se revoca al suspender), que **sigue abierta**.
+  3. **Cierra el hueco de `DEC-TRIAL-007`**: "archivar" un borrador por inactividad significa
+     esto mismo — sale de circulación, el dueño lo sigue viendo, y no es borrar.
+  4. **Qué es exactamente "dato operativo eliminable"** a los 180 sigue sin definirse
+     (`M-DATA-01`, abierta). Si la auditoría del §49 guarda copias del contenido, el hard
+     delete puede no eliminar nada.
+  5. Los dos avisos tapan el silencio entre el `+60` y el día 90 que señalaba `R-DATA-01`.
+- **Origen**: `C-DATA-01`.
+
+### DEC-LEGAL-001 — Comprobante no fiscal hasta ARCA, sin fecha ni disparador de revisión
+
+- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: §54 ordena que hasta integrar ARCA cada cobro genere un comprobante o recibo
+  PDF y que **no** se lo llame factura fiscal; §53 difiere ARCA *"salvo decisión separada"*.
+  Cobrar a consumidores finales sin comprobante fiscal tiene consecuencias impositivas, y el
+  PDR lo dejaba como detalle de implementación que nadie había firmado.
+- **Contexto medido** (2026-09-15): **cero pagos cobrados** en la historia del sistema. Hoy no
+  hay ni un comprobante que emitir.
+- **Alternativas**: (1) confirmado, con disparador al primer cobro real; (2) confirmado, sin
+  fecha ni disparador; (3) se integra ARCA antes de cobrar.
+- **Decisión**: **(2)**. Se avanza con comprobante no fiscal. La revisión ocurre *"cuando entre
+  ARCA"*, **sin disparador agendado**.
+- **Motivo**: decisión del owner. Es exactamente lo que dicen el §53 y el §54, sin agregar
+  maquinaria.
+- **Implicaciones y riesgo declarado**:
+  1. **Lo que la objeción pedía queda cumplido**: esto es ahora una decisión firmada con su
+     riesgo impositivo asumido, y no un detalle de implementación.
+  2. **`"cuando entre ARCA"` no es una fecha ni un evento observable.** Queda explícito que no
+     hay nada agendado ni ninguna condición que alguien vaya a verificar: la revisión depende
+     de que alguien la recuerde.
+  3. **El riesgo impositivo crece con cada cobro** y no hay ningún momento definido en que
+     alguien se pregunte si sigue siendo tolerable. Hoy es cero porque no se cobró nunca nada.
+  4. Se descartó adelantar ARCA porque metería una integración externa entera en el camino
+     crítico de un programa de diez fases, y hoy no hay a quién cobrarle.
+- **Origen**: `O-LEGAL-01`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **10** |
-| De metodología | 2 — `DEC-METH-001`, `DEC-METH-002` |
-| Funcionales | 8 |
+| Decisiones tomadas | **28** |
+| De metodología | 3 |
+| Funcionales | 25 |
 | `SUPERSEDED` | 0 |
+| **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
 | Bloqueantes de FASE 2 que decide el experimento | **4 abiertas** — esperan FASE 1C |
-| Decisiones que no se pueden implementar todavía | 1 — `DEC-SUB-001`, depende de `EX-7`/`EX-8` |
+| Decisiones condicionadas a FASE 1C | 1 — `DEC-SUB-001`, depende de `EX-7`/`EX-8` |
+| Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34), y el `SUSPENDED` doble de `M-ARCH-01` |

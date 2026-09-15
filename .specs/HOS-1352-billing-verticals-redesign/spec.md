@@ -58,7 +58,7 @@ reutilizar conocimiento viejo como si siguiera vigente es una de las causas de q
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | 🟡 **8 bloqueantes cerradas; quedan 16 preguntas** |
+| FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada hasta cerrar el diseño |
 | FASE 1C — experimentación con Mercado Pago | 🟢 **desbloqueada, y es lo que más urge** |
 | FASE 2 — Master Spec | ⛔ bloqueada por las 4 bloqueantes que decide el experimento |
@@ -71,8 +71,8 @@ reutilizar conocimiento viejo como si siguiera vigente es una de las causas de q
 | FASE 9 — revisión final de diseño | ⬜ |
 | FASE 10 — implementación | ⬜ |
 
-**Decisiones tomadas: 10** — 2 de metodología y **8 funcionales**, todas las bloqueantes que
-le correspondían al owner.
+**Decisiones tomadas: 28** — 3 de metodología y **25 funcionales**. Cero preguntas abiertas
+para el owner.
 
 ## Próximo paso
 
@@ -80,8 +80,8 @@ le correspondían al owner.
 experimento contra Mercado Pago, y `DEC-SUB-001` ya está tomada pero no se puede implementar
 hasta saber si se puede correr la primera fecha de cobro sobre una suscripción autorizada.
 
-En paralelo quedan **16 preguntas no bloqueantes** para el owner, en el §16 de
-[`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md).
+**No quedan preguntas para el owner.** Todo lo que falta lo decide el experimento o lo
+resuelve la Master Spec.
 
 ## Épicas
 

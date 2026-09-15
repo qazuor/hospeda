@@ -208,14 +208,84 @@ trinquete se aplica al final, sobre el resultado completo**.
 
 ---
 
+## 2026-09-15 — Cierre de las 16 preguntas no bloqueantes
+
+Mismo formato, una por una. **Diecinueve decisiones más**, para un total de **28**.
+
+| Pregunta | Decisión |
+|---|---|
+| `A-TRIAL-01` publicación inmediata o mediada | `DEC-TRIAL-005` — inmediata: publicar es quedar visible |
+| `M-TRIAL-01` trial de Turista | `DEC-TRIAL-006` — sí; el botón `Empezar` del §47 |
+| `M-TRIAL-02` estado pre-trial | `DEC-TRIAL-007` — borradores ilimitados, archivado por inactividad |
+| `R-TRIAL-01` entitlements caros en trial | `DEC-ENT-001` — todas las funciones, con cuota propia de trial |
+| `OD-ENT-01` reset de las cuotas | `DEC-ENT-002` — mensual siempre, sin arrastre |
+| `A-ENT-01` alcance de la herencia VIP | `DEC-ENT-003` — entitlements y limits; no puede comprar VIP |
+| `A-ENT-01` (b) el VIP previo ya pago | `DEC-ENT-004` — se cancela ya, sin reembolso |
+| `C-SUB-01` grace de 10 días | `DEC-SUB-002` — en DB por plan, default 10 |
+| `E-SUB-03` cambiar de plan en grace | `DEC-SUB-003` — permitido, es el camino de recuperación |
+| `OD-SUB-01` ventana de límites de pausa | `DEC-SUB-004` — por user + vertical |
+| `E-ADDON-01`/`02` addon sobre ficha borrada o despublicada | `DEC-ADDON-001` — se pierde con la ficha; el reloj no se congela |
+| `M-PROMO-01` cupo de un promo code | `DEC-PROMO-001` — cupo total + ventana de validez |
+| `OD-PROMO-01` scope "verticales futuras" | `DEC-PROMO-002` — permitido sin restricción |
+| `M-GRANT-01` Free Forever y el dinero cobrado | `DEC-GRANT-001` — corta ya sin reembolso; revocar no restaura |
+| `A-GRANT-01` quién otorga una cortesía | `DEC-GRANT-002` — sólo `SUPER_ADMIN` |
+| `C-DATA-01` retención a los 90 y 180 días | `DEC-DATA-001` — oculto del público, visible al dueño, dos avisos |
+| `O-LEGAL-01` comprobante no fiscal | `DEC-LEGAL-001` — confirmado, sin fecha ni disparador |
+| `O-METH-03` criterio de FASE 5 | `DEC-METH-003` — se define al empezar FASE 5, y es su gate |
+
+### Tres apartamientos declarados del PDR
+
+No son errores: son decisiones conscientes que se apartan del texto, registradas como tales
+porque el PDR no se edita (§3.1).
+
+- **`DEC-ENT-001`** contra el §10.3, que dice *"exactamente los entitlements del plan más
+  premium"*: los medidos llevan cuota propia de trial.
+- **`DEC-GRANT-002`** contra el §34, que dice *"Admin puede otorgar"*: la cortesía temporal
+  pasa a ser exclusiva de `SUPER_ADMIN`, para que una cortesía sin tope no sea un Free Forever
+  otorgado por quien no podía otorgarlo.
+- **`DEC-LEGAL-001`** deja explícito que *"cuando entre ARCA"* no es un disparador y que nada
+  va a avisar.
+
+### Dos decisiones tomadas contra la recomendación
+
+Con su riesgo declarado, no re-litigadas:
+
+- **`DEC-ENT-004`** y **`DEC-GRANT-001`** — cancelar sin reembolso. Hoy el monto es un mes
+  parcial porque todas las suscripciones vivas son mensuales (medido). Anotadas para revisar
+  el día que exista un ciclo anual.
+
+### Tres hallazgos nuevos, residuo de decisiones tomadas
+
+- **`E-TRIAL-04`** — con publicación inmediata toda moderación es reactiva, y bajar una ficha
+  ya publicada no devuelve el trial (§10.2).
+- **`E-ENT-01`** — qué pasa con los beneficios de turista heredados cuando el plan comercial
+  se suspende.
+- **`E-SUB-05`** — cómo se compensan días sobre una suscripción que está en deuda.
+
+### Dos cosas que se cerraron solas
+
+- **`E-TRIAL-01`** quedó **disuelto** por `DEC-TRIAL-005`: sin revisión previa no hay rechazo
+  posterior.
+- **`R-DATA-01`** quedó **resuelto** por `DEC-DATA-001`: los dos avisos tapan el silencio entre
+  el `+60` de la campaña y el día 90.
+
+### Una corrección de método, en el momento
+
+Al redactar `DEC-TRIAL-002` apareció una ambigüedad de orden entre el trinquete y los overrides
+de `DEC-TRIAL-001`. Se corrigió fijando que el trinquete se aplica **al final, sobre el
+resultado completo**: aplicarlo antes dejaba un agujero por el que bajar un override degradaba
+a los trials en curso.
+
+---
+
 ## Próximo paso
 
 **Arrancar FASE 1C.** Es lo que más urge:
 
 - **Cuatro decisiones bloqueantes de FASE 2** sólo las puede cerrar el experimento
-  (`BD-MP-01` a `BD-MP-04`). No las decide el owner.
+  (`BD-MP-01` a `BD-MP-04`). No las decide el owner y no hay forma de sortearlas.
 - **`DEC-SUB-001` no se puede implementar** hasta saber el resultado de `EX-7`/`EX-8`.
 - **FASE 1B sigue bloqueada** por `DEC-METH-001`: no se lee código hasta que el diseño esté
   cerrado.
 
-En paralelo quedan **16 preguntas no bloqueantes** para el owner, en el §16 del análisis.
+**No quedan preguntas para el owner.** Las 25 de FASE 1A están respondidas.

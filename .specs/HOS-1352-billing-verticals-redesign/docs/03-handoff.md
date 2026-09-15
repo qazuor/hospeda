@@ -35,7 +35,7 @@ status: CURRENT
 
 ### Último punto completado
 
-**FASE 0 completa. FASE 1A entregada y respondida en sus 8 decisiones bloqueantes.**
+**FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.**
 
 El programa se reseteó hoy: el único documento heredado es el PDR (`DEC-METH-001`). Todo lo
 demás se escribió de cero contra ese texto.
@@ -45,7 +45,7 @@ demás se escribió de cero contra ese texto.
 | Fase | Estado |
 |---|---|
 | FASE 0 — bootstrap de documentación | ✅ completa |
-| FASE 1A — análisis de dominio | 🟡 **8 bloqueantes cerradas; quedan 16 preguntas no bloqueantes** |
+| FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 28 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
 | FASE 1C — experimentación con Mercado Pago | 🟢 **desbloqueada, y es lo que más urge** |
 | FASE 2 — Master Spec | ⛔ bloqueada por las 4 bloqueantes que decide el experimento |
@@ -53,8 +53,8 @@ demás se escribió de cero contra ese texto.
 
 ### Próximo paso exacto
 
-**Arrancar FASE 1C** — la experimentación contra Mercado Pago — y en paralelo seguir cerrando
-con el owner las 16 preguntas no bloqueantes que quedan.
+**Arrancar FASE 1C** — la experimentación contra Mercado Pago. **No quedan preguntas para el
+owner**: las 25 de FASE 1A están respondidas.
 
 1C es lo que más urge porque **cuatro decisiones bloqueantes de FASE 2 sólo las puede cerrar
 el experimento**, y porque `DEC-SUB-001` ya está tomada pero **no se puede implementar** hasta
@@ -72,8 +72,13 @@ cerrado en [`04-open-decisions.md`](./04-open-decisions.md) **en el mismo commit
 
 ### Decisiones tomadas
 
-**Diez**: dos de metodología (`DEC-METH-001` reset total, `DEC-METH-002` conteos autorizados)
-y **ocho funcionales**, que son las 8 bloqueantes de FASE 2 que le correspondían al owner.
+**Veintiocho**: tres de metodología y **veinticinco funcionales**. Cubren las 25 preguntas de
+FASE 1A, incluidas las 8 bloqueantes que le correspondían al owner.
+
+Tres son **apartamientos declarados del PDR** (`DEC-ENT-001` del §10.3, `DEC-GRANT-002` del
+§34, y `DEC-LEGAL-001` explicitando que "cuando entre ARCA" no es un disparador). Dos se
+tomaron **contra la recomendación**, con su riesgo escrito: `DEC-ENT-004` y `DEC-GRANT-001`,
+cancelar sin reembolso.
 
 `DEC-SUB-001` está tomada pero **condicionada**: si `EX-8` resulta `NOT_SUPPORTED`, entra su
 plan B sin volver a preguntar.
@@ -90,8 +95,9 @@ defecto: hay que marcarlo, no usarlo.
   lee código** para fundamentar una decisión funcional, hasta que el diseño esté cerrado.
 - **No se implementa ninguna capability cuya fila de la matriz diga `UNKNOWN`** (§61), ni se
   toma ninguna decisión que dependa de ella.
-- **No se clasifica nada como `KEEP` / `ADAPT` / `REWRITE`**: eso es FASE 5, y su criterio ni
-  siquiera está definido (pregunta 25).
+- **No se clasifica nada como `KEEP` / `ADAPT` / `REWRITE`** antes de definir el criterio al
+  empezar FASE 5. Es un **gate** (`DEC-METH-003`), no un pendiente, y toda clasificación lleva
+  su argumento escrito.
 - **Ningún documento de este programa referencia trabajo anterior.** Si encontrás una
   referencia así, es un defecto.
 - Los hallazgos de 1A **no se reescriben**. Si aparece algo nuevo, se agrega con un ID nuevo.

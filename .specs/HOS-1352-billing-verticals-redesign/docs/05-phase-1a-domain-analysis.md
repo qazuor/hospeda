@@ -474,6 +474,15 @@ control impide el propio remedio, porque cambiarse a un plan más barato es just
 alguien sale de un impago. Si se permite, hay dos abusos posibles: cambiar de plan para
 generar un cobro nuevo que "limpie" el fallido, o para esquivar la deuda del ciclo anterior.
 
+### E-SUB-05 — Compensar días sobre una suscripción en deuda
+
+> Agregado el 2026-09-15, derivado de `DEC-SUB-003`. No estaba en la entrega original.
+
+`DEC-SUB-001` compensa en días cualquier cambio de ciclo. `DEC-SUB-003` permite cambiar de plan
+estando en `GRACE_PERIOD`. Si alguien hace las dos cosas a la vez — cambia de ciclo estando en
+deuda — hay que decidir **qué pasa con el período impago** al calcular la compensación:
+¿se cuenta como pagado, se descuenta, o el cambio de ciclo se bloquea mientras haya deuda?
+
 ### R-SUB-01 — Durante el grace el servicio queda completo
 
 §20 es explícito: durante el grace el servicio está activo, las fichas publicadas, la edición
