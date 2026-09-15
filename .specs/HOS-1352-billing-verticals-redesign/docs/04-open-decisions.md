@@ -21,7 +21,7 @@ estuvo abierto es parte del registro.
 
 Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).
 
-> **Estado al 2026-09-15**: FASE 1A entregada y **completamente respondida**. 105 hallazgos,
+> **Estado al 2026-09-15**: FASE 1A entregada y **completamente respondida**. 106 hallazgos,
 > **29 decisiones registradas**, **0 de las 25 preguntas de FASE 1A abiertas**.
 >
 > **Pero FASE 1C abrió una pregunta nueva para el owner**: `BD-MP-04`. Sus filas están medidas
@@ -196,7 +196,7 @@ después el trial se extiende
 precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelación programada ·
 `R-SUB-01` el servicio completo durante el grace · `M-SUB-03` vertical discontinuada
 
-**Mercado Pago** · `MP-01` los cuatro ciclos · `M-MP-01` moneda e impuestos · `M-MP-02`
+**Mercado Pago** · **`R-MP-01` la API de Payments se descontinúa** (nuevo, 2026-09-15): el panel avisa *"Esta API será descontinuada pronto"* sobre `API de Payments` y la documentación **no lo formaliza** —las docs de Suscripciones siguen indicando `/v1/payments`, y las de Orders la presentan como opción paralela, sin fecha—. **Ninguna de las 39 filas medidas depende de `POST /v1/payments`**, y `EX-16` midió que la conciliación entera se puede hacer con `/authorized_payments`, de la familia de suscripciones. Quedan sobre la familia que se retira **sólo** el detalle fino del pago y **los reembolsos**. Tres preguntas para soporte de MP, que no se pueden medir porque son sobre el futuro del proveedor: si alcanza también a las lecturas, cuándo, y **cómo se reembolsa un cobro originado por un `preapproval`** si se retira · `MP-01` los cuatro ciclos · `M-MP-01` moneda e impuestos · `M-MP-02`
 checkout pendiente · `S-MP-01` capacidades por método de pago · `S-MP-02` caducidad de un
 resultado verificado · `S-MP-03` sondas reproducibles · `M-MP-03` los seis huecos del §60
 
@@ -270,9 +270,9 @@ owner con su costo anotado.
 | Blocking Decisions | 12 (10 `BD-` + `C-TRIAL-01` + `C-PARTNER-01`) |
 | Open Decisions (`OD-`) | 5 |
 | Edge Cases (`E-`) | 15 |
-| Risks (`R-`) | 5 |
+| Risks (`R-`) | 6 |
 | Missing Requirements (`M-`) | 35 |
 | Objections (`O-`) | 6 |
 | Suggested Improvements (`S-`) | 9 |
 | Pending MP Validation | `MP-01` más toda la sección 4 y las 55 filas de la matriz |
-| **Total de hallazgos** | **105** (`E-TRIAL-04`, `E-ENT-01`, `E-SUB-05` y `E-SUB-06` agregados el 2026-09-15) |
+| **Total de hallazgos** | **106** (`E-TRIAL-04`, `E-ENT-01`, `E-SUB-05`, `E-SUB-06` y `R-MP-01` agregados el 2026-09-15) |

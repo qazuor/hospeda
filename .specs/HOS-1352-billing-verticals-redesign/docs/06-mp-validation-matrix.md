@@ -10,7 +10,7 @@ phase: 1C
 # Matriz de validación de Mercado Pago
 
 **FASE 1C en curso.** Tras las [sondas 01 a 07](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **24 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 22 `UNKNOWN`**.
+2026-09-15: **25 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 22 `UNKNOWN`**.
 
 > **El reloj está corriendo.** Siete suscripciones de **ciclo diario** quedaron vivas en el
 > sandbox el 2026-09-15 a las 12:26–12:29 (manifiesto en `/tmp/mp-probe-05/manifiesto.json`).
@@ -63,8 +63,8 @@ registrar request → registrar response → observar el webhook → documentar 
 |---|---|
 | Matriz mínima obligatoria del **§60** | 42 |
 | Agregadas por FASE 1A (`M-MP-03`), marcadas ✚ | 11 |
-| Agregadas por FASE 1C al medir | 7 — `EX-9` a `EX-15` |
-| **Total** | **60** |
+| Agregadas por FASE 1C al medir | 8 — `EX-9` a `EX-16` |
+| **Total** | **61** |
 
 Columnas: **Estado** · **Fecha** · **Entorno** · **Evidencia** (ruta de la sonda, con request,
 response y webhook observado) · **Conclusión**.
@@ -220,6 +220,7 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 | EX-12 | ¿Un `card_token` sirve para más de una suscripción? | `DEC-SUB-005`, reintentos | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 05](./mp-probes/RESULTS-2026-09-15.md) | **Un solo uso.** Del segundo en adelante: `400 "Card token was used, please generate new"`. Todo reintento de creación tiene que **tokenizar de nuevo**, y el mensaje de error no se parece en nada a "reintentaste" |
 | EX-13 | ¿Los eventos vienen **firmados**, y se puede verificar la firma? | §51, `M-CONC-01` | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 10](./mp-probes/RESULTS-2026-09-15.md) | **La firma se verifica.** `x-signature: ts=<epoch>,v1=<hex64>` + `x-request-id`, y el `v1` es **HMAC-SHA256** con la clave de la aplicación sobre el manifiesto `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` — **el punto y coma final incluido**: sin él no coincide. Reproducido sobre **tres** entregas reales de tipos distintos, con control de la propia herramienta (vector RFC 4231). La URL del receptor no es un agujero abierto |
 | EX-14 | ¿Se puede distinguir **sandbox de producción** mirando el evento? | `M-MP-01`, riesgo operativo | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **No.** Un `payment.created` de la cuenta de prueba (`tags:["test_user"]`) llega con **`live_mode: true`**. Un handler que filtre por ese campo trata los eventos de sandbox como productivos |
+| EX-16 | ¿Se puede conciliar una suscripción **SIN** la API de Payments? | `R-MP-01`, §23, §57 | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 13](./mp-probes/RESULTS-2026-09-15.md) | **Sí, entera.** `GET /authorized_payments/search?preapproval_id=` y `GET /authorized_payments/{id}` pertenecen a la familia de **suscripciones**, no a `/v1/payments`, y traen todo lo que la conciliación necesita: `status`, `transaction_amount`, `currency_id`, `debit_date`, `date_created`, `last_modified`, `payment_method_id`, **`retry_attempt`**, y el pago embebido (`payment.id`, `payment.status`, `payment.status_detail`). El `search` **exige** filtro y **filtra bien por `preapproval_id`** (1 con el real, 0 con basura); por `external_reference` **no filtra** — mismo defecto que `RC-1`, y da igual porque el id del proveedor ya se guarda |
 | EX-15 | ¿Qué operaciones **NO** emiten webhook? | `DEC-MP-001`, §23, §51 | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Mutar el monto NO emite ninguna entrega.** Medido con 90 s entre acciones: ventana de 91 s sin eventos, con la mutación aplicada — y la `version` del recurso saltó de 5 a 9, o sea que **el recurso cambió y el proveedor no avisó**. Crear, pausar, reanudar y cancelar **sí** notifican. Consecuencia: un cambio de precio **no tiene vía de confirmación asincrónica** y sólo se puede comprobar releyendo |
 
 > `EX-7` y `EX-8` van separadas a propósito: que el proveedor **acepte** una fecha futura al
@@ -232,7 +233,7 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **24** |
+| `VERIFIED` | **25** |
 | `PARTIALLY_SUPPORTED` | **10** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `CT-2`, `WH-3`, `EX-9` |
 | `NOT_SUPPORTED` | **4** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno) |
 | **`UNKNOWN`** | **22** |
