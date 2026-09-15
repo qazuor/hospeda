@@ -10,7 +10,7 @@ phase: 1C
 # Matriz de validación de Mercado Pago
 
 **FASE 1C en curso.** Tras las [sondas 01 a 07](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **23 filas `VERIFIED`, 11 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 22 `UNKNOWN`**.
+2026-09-15: **24 filas `VERIFIED`, 10 `PARTIALLY_SUPPORTED`, 4 `NOT_SUPPORTED`, 22 `UNKNOWN`**.
 
 > **El reloj está corriendo.** Siete suscripciones de **ciclo diario** quedaron vivas en el
 > sandbox el 2026-09-15 a las 12:26–12:29 (manifiesto en `/tmp/mp-probe-05/manifiesto.json`).
@@ -172,7 +172,7 @@ response y webhook observado) · **Conclusión**.
 | WH-1 | Duplicados | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Ocurren, y no en el camino feliz.** Con entregas exitosas: cero duplicados en tres corridas. Con el receptor en `mode=fail`: el **mismo evento** —misma `version`— llegó **dos veces a ~0,5 s**, con **ids de notificación distintos**. Eso cierra el círculo con `EX-2`: el id del evento no sirve para deduplicar y **la `version` sí**, porque en el duplicado es la misma |
 | WH-2 | Demorados | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Sí, y la demora es muy variable**: medida entre **0,6 s y 32 s** sobre la misma secuencia de acciones, con receptor propio. Consecuencia de método: cualquier experimento que atribuya un evento a una acción necesita espaciarlas **más que la demora máxima** — con 20 s la atribución quedaba ambigua |
 | WH-3 | Fuera de orden | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **No se observó desorden** en tres corridas contra una secuencia de orden conocido: las entregas llegaron en el orden causal. No prueba que no pueda pasar — las demoras van de 0,6 s a 32 s (`WH-2`), así que dos acciones juntas podrían invertirse. **Pero ya no importa tanto**: `EX-2` da un `version` monótono que permite detectar y descartar el desorden |
-| WH-4 | Reintentos | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01-05](./mp-probes/RESULTS-2026-09-15.md) | **Reintenta ante un `500`, con backoff creciente**: 4 entregas del mismo recurso a **1,5 s · 18 min · 35 min**. **Cada reentrega trae un `provider_event_id` NUEVO** |
+| WH-4 | Reintentos | **`VERIFIED`** | 2026-09-15 | sandbox | [sondas 08/09](./mp-probes/RESULTS-2026-09-15.md) | **Reintenta ante un `500`, con backoff creciente**, ahora medido con receptor propio y no a través de la tabla normalizada de staging: duplicado inmediato a **+0,5 s** y reintento a **+18,8 min**. **Y en el reintento cambian el id de notificación Y el `ts` de la firma —el proveedor RE-FIRMA— mientras la `version` del recurso se mantiene.** O sea que ni el id ni la marca de tiempo sirven para detectar una reentrega: **la `version` es lo único estable** |
 | WH-5 | Faltantes: un evento que nunca llega | `UNKNOWN` | — | — | — | Distinto de `EX-15`, que es un evento que **nunca existe**. Acá se mide una entrega que se pierde. Se fuerza con el interruptor `mode=fail` de la sonda 08 |
 
 ## Reconciliación (§23)
@@ -232,8 +232,8 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **23** |
-| `PARTIALLY_SUPPORTED` | **11** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `CT-2`, `WH-3`, `WH-4`, `EX-9` |
+| `VERIFIED` | **24** |
+| `PARTIALLY_SUPPORTED` | **10** — `PA-2`, `RC-1`, `PS-1`, `PS-3`, `CN-1`, `UP-1`, `UP-2`, `CT-2`, `WH-3`, `EX-9` |
 | `NOT_SUPPORTED` | **4** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno) |
 | **`UNKNOWN`** | **22** |
 
