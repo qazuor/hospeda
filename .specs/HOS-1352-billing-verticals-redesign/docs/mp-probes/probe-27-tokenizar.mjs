@@ -35,7 +35,15 @@
 // CÓMO SE CORRE (lo hace el owner, interactivo)
 // ---------------------------------------------
 //   ssh -t -p 2222 qazuor@216.238.103.219
-//   hops --target=prod exec api -- node /tmp/p27.mjs
+//   hops --target=prod exec api --shell
+//   node /tmp/p27.mjs
+//
+// **Tiene que ser `--shell`.** Un comando inline (`hops exec api -- node …`)
+// corre con el stdio heredado pero SIN TTY, y sin TTY no se puede ocultar lo
+// que se tipea. Esta sonda **se niega a arrancar** en ese caso en vez de pedir
+// un número de tarjeta que va a quedar visible en pantalla: medido el
+// 2026-09-15, la primera versión se caía con un `ERR_USE_AFTER_CLOSE` después
+// de haber impreso el aviso, que es la peor combinación posible.
 //
 // Si el contenedor se reinicia o se redeploya, `/tmp` se va y hay que volver a
 // correrlo. No es un problema: son treinta segundos.
@@ -48,7 +56,6 @@
 // nuestro: es antifraude, y hay que espaciar los intentos.
 // =============================================================================
 
-import { createInterface } from 'node:readline';
 import { writeFileSync } from 'node:fs';
 
 const API = 'https://api.mercadopago.com';
@@ -61,31 +68,63 @@ if (!TOKEN) {
     process.exit(1);
 }
 
-const rl = createInterface({ input: process.stdin, output: process.stdout });
+// --- el guard de TTY, que va ANTES de preguntar nada --------------------------
+// Sin TTY no hay forma de ocultar lo que se tipea. Pedir igual un número de
+// tarjeta y avisar "se va a ver" es lo peor de los dos mundos: el aviso llega
+// cuando el usuario ya está por tipear. Así que acá no se pregunta nada.
+if (!process.stdin.isTTY) {
+    console.error('✗ No hay TTY, así que no se puede ocultar lo que tipees.');
+    console.error('  Esta sonda NO va a pedir un número de tarjeta en esas condiciones.');
+    console.error('');
+    console.error('  Entrá con una shell interactiva y corrés el script adentro:');
+    console.error('');
+    console.error('    ssh -t -p 2222 qazuor@216.238.103.219');
+    console.error('    hops --target=prod exec api --shell');
+    console.error('    node /tmp/p27.mjs');
+    console.error('');
+    console.error('  (`hops exec api -- node …` hereda el stdio pero no da TTY.)');
+    process.exit(1);
+}
 
-// Pregunta ocultando lo tipeado. Si no hay TTY, avisa en vez de mostrarlo.
+// Lee una línea en modo raw, haciendo el eco a mano. Se usa para TODOS los
+// campos —no sólo los ocultos— porque en modo raw la terminal no hace eco por
+// su cuenta, y mezclar readline con raw es justo lo que rompió la v1.
 const preguntar = (texto, oculto = false) =>
     new Promise((resolve) => {
-        if (!oculto) return rl.question(texto, resolve);
-        if (!process.stdin.isTTY) {
-            console.log('  ⚠ sin TTY: lo que tipees se va a VER. Cortá con Ctrl+C y corré con `ssh -t`.');
-            return rl.question(texto, resolve);
-        }
         process.stdout.write(texto);
-        const onData = (char) => {
-            const c = String(char);
-            if (c === '\n' || c === '\r' || c === '') return;
-            // reescribe la línea tapando lo tipeado
-            process.stdout.clearLine(0);
-            process.stdout.cursorTo(0);
-            process.stdout.write(texto + '*'.repeat(rl.line.length));
+        const stdin = process.stdin;
+        stdin.setEncoding('utf8');
+        stdin.setRawMode(true);
+        stdin.resume();
+        let buf = '';
+        const onData = (trozo) => {
+            for (const c of trozo) {
+                if (c === '\r' || c === '\n') {
+                    stdin.removeListener('data', onData);
+                    stdin.setRawMode(false);
+                    stdin.pause();
+                    process.stdout.write('\n');
+                    return resolve(buf.trim());
+                }
+                if (c === '') {
+                    // Ctrl+C: en modo raw hay que manejarlo a mano o no sale nunca
+                    stdin.setRawMode(false);
+                    process.stdout.write('\n');
+                    process.exit(130);
+                }
+                if (c === '' || c === '\b') {
+                    if (buf.length) {
+                        buf = buf.slice(0, -1);
+                        process.stdout.write('\b \b');
+                    }
+                    continue;
+                }
+                if (c < ' ') continue; // ignora el resto de los caracteres de control
+                buf += c;
+                process.stdout.write(oculto ? '*' : c);
+            }
         };
-        process.stdin.on('data', onData);
-        rl.question('', (valor) => {
-            process.stdin.removeListener('data', onData);
-            process.stdout.write('\n');
-            resolve(valor);
-        });
+        stdin.on('data', onData);
     });
 
 console.log('############ SONDA 27 — tokenizar (los datos NO se guardan ni se imprimen)\n');
@@ -99,7 +138,6 @@ const mes = await preguntar('  mes de vencimiento (MM): ');
 const anio = await preguntar('  año de vencimiento (YYYY): ');
 const titular = await preguntar('  nombre del titular     : ');
 const doc = await preguntar('  DNI del titular        : ');
-rl.close();
 
 console.log(`\n  tokenizando ${CUANTOS} veces (un token = una suscripción, son de un solo uso)…`);
 
