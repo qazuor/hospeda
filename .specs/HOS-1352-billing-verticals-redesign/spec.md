@@ -30,7 +30,7 @@ nada** (§66):
 | 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
 | 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
 | 6 | [`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md) | El análisis de dominio (FASE 1A) |
-| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: 31 de 57 filas |
+| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: 36 de 60 filas |
 | 8 | [`docs/07-facts-inventory.md`](./docs/07-facts-inventory.md) | Cuántos clientes reales hay, medido |
 
 **No confíes en memoria implícita, ni en engram, ni en ningún otro `CLAUDE.md`, ni en
@@ -60,7 +60,7 @@ reutilizar conocimiento viejo como si siguiera vigente es una de las causas de q
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 31 de 57 filas · reloj corriendo** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 36 de 60 filas · reloj corriendo** |
 | FASE 2 — Master Spec | ⛔ bloqueada por 2 de las 4 que decide el experimento (`BD-MP-01` pausa, `BD-MP-02` cortesía) |
 | FASE 3 — épicas | ⬜ |
 | FASE 4 — spec por épica | ⬜ |

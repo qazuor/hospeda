@@ -59,9 +59,13 @@ TOK=$(curl -sS -X POST "$API/v1/card_tokens" \
   | jq -r '.id // empty')
 [ -n "$TOK" ] || { echo "no se pudo tokenizar"; exit 1; }
 
-anotar() { # <accion> <http> <estado>
-  printf '%s\t%s\t%s\t%s\n' "$(date -Ins)" "$1" "$2" "$3" >> "$BITACORA"
-  printf '  %-28s HTTP %-3s → %s   [%s]\n' "$1" "$2" "$3" "$(date +%H:%M:%S.%3N)"
+# El instante que se anota es el del ENVÍO, no el del final de la llamada.
+# Anotarlo al final —después del PUT y de la relectura— corre la marca casi un
+# segundo hacia adelante, y con eso un evento que llegó DESPUÉS de la acción
+# aparece llegando ANTES. Toda la atribución se apoya en esta marca.
+anotar() { # <accion> <http> <estado> <instante-de-envío>
+  printf '%s\t%s\t%s\t%s\n' "$4" "$1" "$2" "$3" >> "$BITACORA"
+  printf '  %-28s HTTP %-3s → %s   [enviada %s]\n' "$1" "$2" "$3" "$4"
 }
 
 # --- 1. crear -----------------------------------------------------------------
@@ -71,25 +75,36 @@ BODY=$(jq -cn --arg e "$MP_BUYER_EMAIL" --arg t "$TOK" --arg x "HOS-1352-wh-$STA
   card_token_id:$t, status:"authorized",
   auto_recurring:{frequency:1, frequency_type:"days",
                   transaction_amount:2500, currency_id:"ARS"}}')
+T0="$(date -Ins)"
 code=$(curl -sS -o "$OUT/01-crear.json" -w '%{http_code}' -X POST "$API/preapproval" \
   -H "Authorization: Bearer $MP_ACCESS_TOKEN" -H 'Content-Type: application/json' \
   --data-raw "$BODY")
 ID=$(jq -r '.id // empty' "$OUT/01-crear.json")
-anotar "crear (cobra al instante)" "$code" "$(jq -r '.status // "?"' "$OUT/01-crear.json")"
+anotar "crear (cobra al instante)" "$code" "$(jq -r '.status // "?"' "$OUT/01-crear.json")" "$T0"
 [ -n "$ID" ] || { jq -c '{message}' "$OUT/01-crear.json"; exit 1; }
 echo "  id de la suscripción: $ID"
 echo "$ID" > "$OUT/id-$STAMP.txt"
 
 paso() { # <accion> <json>
-  local accion="$1" patch="$2" code estado
+  local accion="$1" patch="$2" code estado envio espera=5 n=0
   sleep "$ESPERA"
-  code=$(curl -sS -o "$OUT/${accion// /_}.json" -w '%{http_code}' -X PUT "$API/preapproval/$ID" \
-    -H "Authorization: Bearer $MP_ACCESS_TOKEN" -H 'Content-Type: application/json' \
-    --data-raw "$patch")
+  # Un `429 local_rate_limited` NO es una respuesta del negocio: es que la
+  # llamada no llegó a evaluarse. Una corrida anterior lo comió justo en el
+  # cambio de monto, la mutación no se aplicó, y el paso quedó sin poder
+  # afirmar si notifica o no.
+  while : ; do
+    envio="$(date -Ins)"
+    code=$(curl -sS -o "$OUT/${accion// /_}.json" -w '%{http_code}' -X PUT "$API/preapproval/$ID" \
+      -H "Authorization: Bearer $MP_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+      --data-raw "$patch")
+    [ "$code" = "429" ] || break
+    n=$((n + 1)); [ "$n" -le 5 ] || break
+    echo "    (429 — reintento $n en ${espera}s)"; sleep "$espera"; espera=$((espera * 2))
+  done
   # relectura: el 2xx no prueba nada (§0)
   estado=$(curl -sS -H "Authorization: Bearer $MP_ACCESS_TOKEN" "$API/preapproval/$ID" \
     | jq -r '"\(.status)/\(.auto_recurring.transaction_amount)"')
-  anotar "$accion" "$code" "$estado"
+  anotar "$accion" "$code" "$estado" "$envio"
 }
 
 # --- 2..5. la secuencia, en un orden que después se compara -------------------

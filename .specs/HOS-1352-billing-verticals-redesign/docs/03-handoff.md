@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (57 filas: 18 `VERIFIED`, 10 parciales, 3 `NOT_SUPPORTED`, 26 `UNKNOWN`).
+   (60 filas: 21 `VERIFIED`, 11 parciales, 4 `NOT_SUPPORTED`, 24 `UNKNOWN`).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
 ---
@@ -36,7 +36,7 @@ status: CURRENT
 ### Último punto completado
 
 **FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.
-FASE 1C en curso: 31 de 57 filas medidas, y EL RELOJ YA ESTÁ CORRIENDO.**
+FASE 1C en curso: 36 de 60 filas medidas, EL RELOJ CORRIENDO, y los webhooks POR FIN OBSERVABLES.**
 
 El programa se reseteó hoy: el único documento heredado es el PDR (`DEC-METH-001`). Todo lo
 demás se escribió de cero contra ese texto.
@@ -53,7 +53,7 @@ owner.
 | FASE 0 — bootstrap de documentación | ✅ completa |
 | FASE 1A — análisis de dominio | ✅ **cerrada — 25 de 25 preguntas respondidas, 29 decisiones** |
 | FASE 1B — discovery del sistema actual | ⛔ bloqueada por `DEC-METH-001`: no se lee código hasta cerrar el diseño |
-| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 31 de 57 filas medidas · reloj corriendo, leer el 2026-09-16** |
+| FASE 1C — experimentación con Mercado Pago | 🟡 **en curso — 36 de 60 filas medidas · reloj corriendo, leer el 2026-09-16** |
 | FASE 2 — Master Spec | ⛔ bloqueada por `BD-MP-01` (pausa) y `BD-MP-02` (cortesía) |
 | FASE 3 a 10 | ⬜ no empezadas |
 
@@ -116,6 +116,28 @@ es un error de la sonda, **es el hallazgo**. Y al revés: un `429 local_rate_lim
 significa que algo esté prohibido, significa que no llegó a evaluarse. La sonda 07 casi
 concluye un `NOT_SUPPORTED` inexistente por eso.
 
+### Los webhooks ya son observables — qué queda de ese bloque
+
+El receptor propio (sonda 08, un Worker en la cuenta de Cloudflare del owner)
+guarda cada POST crudo con **todos** los headers. Con eso se cerraron `WH-2`,
+`EX-2`, `EX-13`, `EX-14` y `EX-15`. Para seguir:
+
+```bash
+cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
+source ~/.config/hospeda/mp-sandbox-creds.sh && ESPERA=90 bash probe-09-disparar-webhooks.sh
+SINK_URL=https://hos1352-webhook-sink.qazuor.workers.dev bash probe-08-leer-webhooks.sh
+```
+
+- **`WH-4` y `WH-5`** se fuerzan con el interruptor: `probe-08-leer-webhooks.sh --fail`
+  hace que el receptor responda `500` y el proveedor reintente. **Acordarse de
+  volver con `--ok`.**
+- **`EX-13`** necesita la clave secreta del panel: sin ella la firma se ve pero
+  no se verifica.
+- **Espaciar las acciones más de 32 s**, que es la demora máxima medida. Con
+  menos, la atribución de un evento a una acción es una inferencia, no una
+  lectura.
+- El Worker se borra al terminar 1C: `wrangler delete --name hos1352-webhook-sink`
+
 ### Lo que NO se pudo fabricar, y es un problema abierto
 
 **No se puede provocar un cobro fallido eligiendo una tarjeta mala.** Los dos titulares de
@@ -131,7 +153,8 @@ ausencia de mecanismo es, ella misma, un hallazgo que hay que registrar.
 | Qué | Para qué |
 |---|---|
 | Las **credenciales** de prueba | ✅ **entregadas y cargadas.** Viven en `~/.config/hospeda/mp-sandbox-creds.sh`, fuera del repo y `chmod 600`. **Ojo con un supuesto que era falso**: el modo de pruebas actual de Mercado Pago **no usa el prefijo `TEST-`** — se arma con un usuario vendedor de prueba y una app propia, cuyas credenciales empiezan con `APP_USR-` igual que las productivas. Lo que distingue, y lo dice el proveedor, es `GET /users/me` → `tags:["test_user",…]`, y eso es lo que verifica el guard antes de dejar correr nada |
-| Una **aplicación de Mercado Pago aparte** para pruebas | El webhook es **por aplicación** y su URL **no se puede cambiar por API** (`403`). La app de sandbox actual apunta al staging de Hospeda, así que medir webhooks hoy es medir nuestra propia capa legacy — justo lo que el §58 prohíbe. Desbloquea `WH-2`, `WH-3`, `WH-5` y la firma |
+| ⚠️ **El webhook de la app de prueba está repuntado a la sonda** | El owner lo cambió el 2026-09-15 a `https://hos1352-webhook-sink.qazuor.workers.dev`. **Mientras siga así, el billing de staging no recibe nada de esa app.** La URL a restaurar es `https://staging-api.hospeda.com.ar/api/v1/webhooks/mercadopago?source_news=webhooks`, y **se restaura a mano**: el `PUT` por API da `403` |
+| La **clave secreta de webhook** del panel | Es lo único que falta para cerrar `EX-13`. Hoy la firma se **ve** (`x-signature: ts=…,v1=…`) pero no se puede **verificar** |
 | Qué credenciales habilitan **reembolsos** en sandbox | `RF-1`/`RF-2` dieron `401 "Unauthorized use of live credentials"`. Eso no dice que el proveedor no reembolse: dice que estas credenciales no lo pueden pedir |
 | Acceso a la **casilla del comprador de prueba** | `EX-3`: qué le comunica el proveedor al cliente por su cuenta |
 

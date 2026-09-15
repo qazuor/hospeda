@@ -451,6 +451,69 @@ que algo esté prohibido. **Ningún código de estado, de ninguna familia, alcan
 
 ---
 
+## 2026-09-15 — Los webhooks dejaron de ser inobservables
+
+El owner repuntó el webhook de la aplicación de prueba a un receptor propio.
+**36 de 60 filas medidas.**
+
+### Por qué hizo falta un receptor propio
+
+Medir webhooks contra staging era medir **nuestra interpretación** del
+proveedor: la tabla guarda el evento ya normalizado —MP manda
+`subscription_authorized_payment` y el log lo llama `invoice.updated`— y **no
+guarda headers**, así que la firma no se podía ni mirar. Los túneles no
+funcionan desde este entorno. La salida fue un Worker en la cuenta de
+Cloudflare del owner, que guarda cada POST tal cual llega.
+
+### Cinco filas cerradas, y dos corrigen supuestos
+
+- **`EX-2` a `VERIFIED`**: el cuerpo trae **`version`**, un contador monótono
+  por recurso (5, 9, 11, 12 en orden causal). Lo anterior —"el id del evento
+  cambia en cada reentrega, deduplicá por tipo + recurso"— seguía siendo
+  cierto, pero se había medido sobre la tabla normalizada de staging, que **no
+  guarda este campo**. Con `version` además se puede **descartar un evento
+  viejo que llega tarde**, que es lo que `M-CONC-02` pedía.
+- **`EX-14` `NOT_SUPPORTED`**: un `payment.created` de la cuenta de prueba
+  llega con **`live_mode: true`**. **No se puede distinguir sandbox de
+  producción mirando el evento.** Segundo caso del día en que una señal que
+  *parece* indicar entorno no lo indica — el primero fue el prefijo `TEST-`.
+- **`EX-15` `VERIFIED`**: **mutar el monto NO emite ningún webhook.** 91
+  segundos de ventana sin entregas, con la mutación aplicada, y la `version`
+  del recurso saltando de 5 a 9: el recurso cambió y el proveedor no avisó.
+  Crear, pausar, reanudar y cancelar sí notifican.
+- **`EX-13` `PARTIALLY`**: llega `x-signature: ts=…,v1=<hex64>` en todas las
+  entregas reales. Falta la clave secreta del panel: hoy la firma se **ve**,
+  no se **verifica**.
+- **`WH-2` `VERIFIED`**: demoras de **0,6 s a 32 s**, muy variables.
+
+### Lo que esto le hace a `DEC-MP-001`
+
+La decisión dice que un cambio de precio se aplica mutando el monto. Ahora se
+sabe que esa operación **puede responder `2xx` sin aplicarse** (§0) **y no
+emite ningún evento**. No hay vía de confirmación asincrónica: la única forma
+de saber si un aumento se aplicó es **releer y comparar**. No invalida la
+decisión —sigue siendo la única que no le pide nada al cliente— pero vuelve la
+relectura **obligatoria**.
+
+### Tres defectos de método propios
+
+1. **La marca de tiempo se anotaba al terminar la llamada, no al enviarla.**
+   La corría casi un segundo y hacía que un evento posterior a la acción
+   apareciera como anterior. Toda la atribución se apoya en esa marca.
+2. **La sonda no reintentaba ante `429`.** La corrida de 60 s se comió uno en
+   el cambio de monto: la mutación no se aplicó y el paso no pudo afirmar
+   nada. Segunda vez en el día.
+3. **El lector buscaba la firma en `.eventos[0]`**, que era un POST de prueba
+   propio sin firma, e informaba "sin headers de firma" con la firma presente
+   en todas las entregas reales. Un falso negativo sobre justo la pregunta que
+   el receptor venía a contestar.
+
+Y una lección que costó dos corridas: **para atribuir un evento a una acción
+hay que espaciar las acciones más que la demora máxima de entrega**. Con 1,4 s
+era imposible; con 20 s seguía siendo ambiguo; con 90 s es una lectura.
+
+---
+
 ## Próximo paso
 
 **Leer el reloj con la sonda 06, desde el 2026-09-16 ~11:30.** Es lo único que no se puede
@@ -461,6 +524,10 @@ Después:
 - **`BD-MP-01` (pausa) y `BD-MP-02` (cortesía)** siguen bloqueando FASE 2, y las dos dependen
   de lo que devuelva la 06. `EX-11` ya le adelantó a `BD-MP-01` dos restricciones duras.
 - **`BD-MP-04` espera al owner**: la medición no la cerró.
+- **`WH-4` y `WH-5`** se fuerzan con el interruptor `--fail` del receptor.
+- **`EX-13`** necesita la clave secreta de webhook del panel.
+- ⚠️ **Restaurar el webhook de staging** cuando termine 1C: hoy la app de
+  prueba apunta a la sonda, y el `PUT` por API da `403`, así que es a mano.
 - **FASE 1B sigue bloqueada** por `DEC-METH-001`: no se lee código hasta que el diseño esté
   cerrado.
 
