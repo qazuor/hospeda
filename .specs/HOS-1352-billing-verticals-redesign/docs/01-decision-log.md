@@ -870,9 +870,14 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-SUB-005 — El cambio de ciclo se hace cancelando y recreando, no mutando
 
-- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner (delegado al criterio
-  técnico, con el hecho medido a la vista)
+- **Fecha**: 2026-09-15 · **Estado**: **SUPERSEDED por `DEC-SUB-006`** (2026-09-16) · **Decide**:
+  owner (delegado al criterio técnico, con el hecho medido a la vista)
 - **Reemplaza a**: `DEC-SUB-001`.
+- **Qué se cayó y qué no**: la **política no cambió** —el cambio de ciclo se sigue haciendo
+  cancelando y recreando— pero el **mecanismo de re-autorización sí**: esta decisión daba por
+  hecho tokenizar la tarjeta guardada del lado del servidor y pedirle el código de seguridad al
+  cliente. `DEC-SUB-006` lo reemplaza por el checkout del proveedor, y además fija la
+  compensación y el momento exacto de la cancelación, que acá quedaban sin definir.
 - **Problema**: `DEC-SUB-001` fijó que cualquier cambio de ciclo se aplica de inmediato
   compensando en días, y eso presuponía poder **mutar** el ciclo de la suscripción vigente.
   FASE 1C midió que **no se puede**: `EX-4` salió `NOT_SUPPORTED`, y además **falla en
@@ -960,18 +965,87 @@ Cada entrada lleva, según §3.4:
      pendiente** y no lo resuelve esta decisión: queda en `M-LEGAL-03`.
 - **Origen**: `BD-MP-03` (BLOCKING) + FASE 1C.
 
+### DEC-SUB-006 — El cambio de ciclo se re-autoriza en el checkout, y se compensa por valor
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Reemplaza a**: `DEC-SUB-005` (sólo su mecanismo; la política es la misma).
+- **Problema**: `DEC-SUB-005` fijó que el cambio de ciclo se hace cancelando y recreando, pero
+  dejó tres cosas sin definir que resultaron ser las que deciden el diseño: **cómo vuelve a
+  autorizar el cliente**, **qué pasa con los días que ya pagó**, y **en qué momento exacto se
+  cancela la suscripción vieja**.
+- **Contexto medido**:
+  - `EX-4` **`NOT_SUPPORTED`**: el ciclo de una suscripción viva no se muta — `200` y nada cambia.
+  - `EX-21` **`NOT_SUPPORTED`**: tampoco se la puede mover de un plan a otro — `200` y sigue en el
+    plan viejo. **La documentación oficial del proveedor lo confirma**: una suscripción creada sin
+    plan no se puede migrar a un plan después.
+  - `EX-9` **`PARTIALLY_SUPPORTED`**: tokenizar la tarjeta guardada **exige el código de
+    seguridad**. Sin él el token se genera igual (`201`) y falla recién al usarse.
+  - `EX-12` **`NOT_SUPPORTED`**: un token de tarjeta es **de un solo uso**, y el error del segundo
+    intento no se parece a «reintentaste».
+  - `EX-6` **`VERIFIED`**: varias suscripciones autorizadas del mismo pagador **conviven sin
+    conflicto** (seis a la vez, en producción). El estado intermedio no es destructivo.
+  - `PA-5`: cancelar es **irreversible**.
+  - `EX-3`: cancelar dispara un correo del proveedor que dice *«por cuenta de pagos no realizados
+    o por opción del vendedor»* — una baja voluntaria y una por mora le llegan idénticas.
+- **Alternativas** para re-autorizar: (1) tokenizar la tarjeta guardada del lado del servidor y
+  pedirle el código de seguridad en nuestra página; (2) **crear el `preapproval` en estado
+  pendiente y mandarlo al `init_point`**, igual que en el alta.
+- **Alternativas** para los días pagados: (a) no compensar; (b) correr la fecha del primer cobro
+  tantos días como le quedaban; (c) **correr la fecha por VALOR**: el crédito es lo pagado sin
+  usar, y los días que cubre salen de dividirlo por el precio diario del plan nuevo; (d) mover
+  plata — cobrar la diferencia o reembolsar.
+- **Decisión**: **(2) + (c)**. Se re-autoriza en el **checkout del proveedor**, y los días pagados
+  se compensan **por valor**, corriendo la fecha del primer cobro de la suscripción nueva.
+- **Motivo**:
+  - El checkout **ya hay que tenerlo construido igual**, porque es el flujo del alta —y es el
+    modelo que el §5.6 fija como actual—, así que reusarlo no agrega superficie nueva. La
+    tokenización sería un flujo entero que existe sólo para este caso.
+  - La tokenización **sólo sirve si el cliente paga con tarjeta**. Quien paga con saldo en cuenta
+    queda afuera. El checkout acepta todos los medios.
+  - Compensar por valor **cuesta lo mismo que no compensar**: en los dos casos hay que mandar una
+    fecha de primer cobro futura —es la precondición que evita el doble cobro—, así que la única
+    diferencia es qué fecha se calcula. No compensar sólo compra un cliente molesto.
+  - Compensar **por días** y no por valor es correcto de mensual a anual y regala plata al revés:
+    trasladaría el descuento por compromiso anual a un plan mensual que no lo tiene.
+  - Mover plata suma un reembolso con comisión perdida, sobre una API que el proveedor anuncia en
+    discontinuación (`R-MP-01`) y con un rechazo que todavía no sabemos explicar (`RF-8`).
+- **Implicaciones**:
+  1. **La suscripción vieja se cancela al recibir el webhook de autorizada, NUNCA antes.** Si se
+     cancela al iniciar el cambio y el cliente abandona el checkout, **se queda sin nada**. Con
+     este orden, si nunca autoriza, la vieja sigue viva y no pasó nada.
+  2. **La fecha de primer cobro futura no es un detalle: es la precondición de seguridad.** Sin
+     ella la nueva cobra en el acto mientras la vieja sigue viva, y el cliente paga dos veces.
+  3. **Hace falta una reconciliación** para el caso en que la nueva quede autorizada y la
+     cancelación de la vieja falle: quedan dos vivas y el cliente paga dos veces en el ciclo
+     siguiente. `EX-6` garantiza que el estado intermedio no rompe nada, no que se limpie solo.
+  4. **El correo del proveedor no se puede evitar, pero sí anticipar.** Hay que escribirle antes
+     de cancelar, avisándole que va a recibir un aviso de Mercado Pago que habla de cancelación y
+     que es parte del cambio que pidió.
+  5. **El cliente ve la fecha antes de confirmar**: el checkout le muestra monto y desde cuándo se
+     cobra, así que la compensación deja de ser un gesto invisible y pasa a ser parte de lo que
+     acepta.
+  6. El crédito **se consume entero en la fecha y no deja saldo**, así que no hace falta modelar
+     un saldo a favor.
+- **CONDICIONADA a `EX-33`**, que está **`UNKNOWN`** (§61): está medido que una fecha futura se
+  respeta sobre una suscripción autorizada **por API con token** (`EX-8`), y **nadie midió qué
+  pasa cuando la autoriza el cliente en el checkout**. Es la misma distinción que el documento ya
+  marca entre `EX-7` y `EX-8`: que el proveedor acepte una fecha al crear no prueba que la respete
+  después. Si el checkout la resetea, la compensación no se puede ejecutar por esta vía **y el
+  cliente paga dos veces**. Se mide en sandbox, sin costo, completando un checkout a mano una vez.
+- **Origen**: punto 1 del contraste PDR ↔ proveedor · §19 · `BD-SUB-01`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **29** |
+| Decisiones tomadas | **30** |
 | De metodología | 3 |
-| Funcionales | 26 |
-| `SUPERSEDED` | **1** — `DEC-SUB-001`, por `DEC-SUB-005` |
+| Funcionales | 27 |
+| `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
 | Bloqueantes de FASE 2 que decide el experimento | **2 abiertas** — `BD-MP-01` (pausa) y `BD-MP-02` (cortesía). `BD-MP-03` la cerró `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
-| Decisiones condicionadas a FASE 1C | **0** — la única que lo estaba (`DEC-SUB-001`) ya se resolvió |
+| Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-006`, a `EX-33` (¿el checkout respeta una fecha de primer cobro futura?) |
 | Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34), y el `SUSPENDED` doble de `M-ARCH-01` |
