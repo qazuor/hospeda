@@ -1467,15 +1467,79 @@ Cada entrada lleva, según §3.4:
      despublicaría automáticamente, o el criterio deja de ser predecible.
 - **Origen**: punto 8 del contraste PDR ↔ proveedor · §42 · §43 · `M-MAIL-04`.
 
+### DEC-RF-001 — La revocación reembolsa y cancela en un solo acto; el botón de arrepentimiento queda fuera de alcance hasta la consulta legal
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §54 y `M-LEGAL-01` dan por supuesto poder reembolsar, pero no dicen **cuándo se
+  reembolsa, qué pasa con la suscripción, ni qué hace el sistema cuando el proveedor rechaza sin
+  motivo entendible**.
+- **Contexto medido** (todo en **producción**, con los cuatro pagos del propio owner):
+  - `RF-1`/`RF-2` **`VERIFIED`**: reembolso **total y parcial**, en los dos tipos de cobro. Los
+    parciales **se acumulan** hasta completar el total y validan contra el **saldo**, no contra el
+    monto original. **No hay monto mínimo** — ARS 5 entró sobre pagos de 5.000 y 7.500.
+  - `RF-6` **`VERIFIED`**: **es idempotente**. Misma clave → `200` con cuerpo vacío y ningún
+    reembolso nuevo. **Devuelve `200`, no `201`** —un cliente que sólo acepte `201` trata una
+    reentrega correcta como fallo— y **no devuelve el reembolso original** en el cuerpo.
+  - `RF-4` **`VERIFIED`**: `X-Idempotency-Key` es **obligatoria**, y falla **antes** de cualquier
+    validación de negocio.
+  - `RF-5`: `cause[0].code` distingue el motivo (`2063` estado del pago, `2017` monto). **El
+    `message` no alcanza.**
+  - `RF-8`: **hay un rechazo sin explicar.** Sobre el mismo pago, $5 se rechaza con `2084` y $14
+    entra. Cuatro hipótesis murieron. Lo único probado es negativo y alcanza: **no es una
+    propiedad del pago**, aunque el mensaje diga exactamente eso.
+  - **Reembolsar el cobro de una suscripción viva NO la da de baja** (sonda 32).
+  - `R-MP-01`: la API donde viven los reembolsos está anunciada en **discontinuación**, y su guía
+    de migración **excluye explícitamente a las suscripciones**.
+- **Contexto normativo** (búsqueda propia con fuente oficial, **no es una opinión legal**):
+  la **Resolución 424/2020** sobre la Ley 24.240 art. 34 fija **10 días corridos** para revocar,
+  un **botón de arrepentimiento** visible en el primer acceso de la página de inicio, **sin exigir
+  registro ni trámite**, y **24 horas** para informar el código de identificación.
+- **Decisión**, en cuatro partes:
+  1. **La revocación es UNA sola operación: reembolso total + cancelación.** No dos cosas que
+     alguien tenga que acordarse de hacer juntas. Un reembolso por otra causa —un duplicado, un
+     error nuestro— **no cancela nada**.
+  2. **El pedido se registra y se responde al instante; el reembolso se ejecuta con confirmación
+     humana.** El acceso al servicio se corta enseguida si el cliente lo pide; la plata sale
+     dentro de la ventana. Concilia el plazo de 24 h con la regla que ya rige en `DEC-CONC-001` y
+     `DEC-CONC-002`: **lo que toca plata lo mira una persona**.
+  3. **Ante el `2084`, el sistema NUNCA concluye que el pago no se puede reembolsar.** Reintenta
+     con otro monto o cae al reembolso total. Está medido que ese mensaje miente.
+  4. **El botón de arrepentimiento queda FUERA DE ALCANCE por ahora**, por decisión explícita del
+     owner (2026-09-16), hasta que lo consulte con un abogado.
+- **Motivo de la parte 1**: está medido que reembolsar **no** da de baja. Si alguien se arrepiente
+  y sólo le devolvemos la plata, **le vuelven a cobrar el mes siguiente** — el peor final posible
+  para un cliente que ya se estaba yendo.
+- **RIESGO DECLARADO Y ACEPTADO (parte 4).** No implementar el botón **no es una funcionalidad
+  faltante: si la norma aplica, es un incumplimiento.** El owner decidió no construirlo sobre una
+  búsqueda web y consultarlo profesionalmente primero, lo cual es razonable — pero el riesgo corre
+  mientras tanto. **Las preguntas ya están formuladas** para esa consulta:
+  1. ¿Una suscripción mensual recurrente queda alcanzada igual que una compra única?
+  2. **¿Cada renovación abre una ventana nueva de 10 días, o corre una sola vez desde el alta?**
+     Esto cambia el diseño, no sólo la redacción.
+  3. ¿El botón es exigible para nuestro rubro y tamaño?
+  4. Las otras tres de `M-LEGAL-03`: plazo de notificación de aumentos, botón de baja, y **si el
+     silencio del cliente vale como aceptación** de un aumento.
+- **Implicaciones**:
+  1. **El histórico de reembolsos es nuestro o no existe**: el buscador de pagos del proveedor
+     cubre **sólo doce meses**.
+  2. **Un reembolso emite TRES notificaciones, en DOS formatos distintos para el mismo hecho**
+     (`RF-7`). Deduplicar por tipo no alcanza.
+  3. **`RF-3` sigue `UNKNOWN`**: no sabemos qué pasa con un pago de más de 180 días, porque
+     todavía no existe uno.
+  4. El riesgo de plataforma de `R-MP-01` **cae entero sobre este punto**: es la única capacidad
+     del diseño que vive en una API anunciada como discontinuada, sin camino de migración
+     publicado para suscripciones.
+- **Origen**: punto 9 del contraste PDR ↔ proveedor · §54 · `M-LEGAL-01`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **38** |
+| Decisiones tomadas | **39** |
 | De metodología | 3 |
-| Funcionales | 35 |
+| Funcionales | 36 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
