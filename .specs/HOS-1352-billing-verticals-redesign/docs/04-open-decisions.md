@@ -31,7 +31,11 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
-> **Punto 1 del contraste cerrado el 2026-09-16** (`DEC-SUB-006`): el cambio de ciclo se
+> **Puntos 1 y 2 del contraste cerrados el 2026-09-16.** `DEC-SUB-007`: el **upgrade** se
+> ejecuta con el mismo mecanismo, y queda anotada la asimetría que condiciona al downgrade —
+> subir pasa por el checkout y cobra desde ya, bajar se difiere al fin del ciclo sin checkout.
+>
+> `DEC-SUB-006`: el cambio de ciclo se
 > re-autoriza en el checkout del proveedor y los días pagados se compensan por valor. Queda
 > **condicionada a `EX-33`** (§61): nadie midió todavía si el checkout respeta una fecha de primer
 > cobro futura, y si no la respeta, el cliente paga dos veces.
