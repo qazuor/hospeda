@@ -1074,11 +1074,20 @@ Cada entrada lleva, según §3.4:
      desde ya), y el **downgrade** se ejecuta como una **mutación programada para el fin del
      ciclo** —sin checkout, porque mutar no pide consentimiento (`PC-3`)—. Esa segunda mitad se
      decide en su propio punto; acá queda anotada la mitad que esta decisión condiciona.
-  2. **El downgrade tiene que ser diferido de verdad.** Si se muta el monto en el momento en que
-     el cliente lo pide, el proveedor cobrará el monto bajo al fin del ciclo (`DW-1`/`DW-2`: cobra
-     siempre el vigente) y el cliente habrá usado el plan alto pagando el bajo. Cumplir el §28
-     significa **no tocar el monto hasta el fin del ciclo**, lo que exige la cola de cambios
-     programados de `M-SUB-02`.
+  2. ~~**El downgrade tiene que ser diferido de verdad.** Si se muta el monto en el momento en que
+     el cliente lo pide, el proveedor cobrará el monto bajo al fin del ciclo y el cliente habrá
+     usado el plan alto pagando el bajo. Cumplir el §28 significa no tocar el monto hasta el fin
+     del ciclo, lo que exige la cola de cambios programados de `M-SUB-02`.~~
+
+     ⚠️ **CORREGIDO el 2026-09-16**, el mismo día y antes de decidir el punto 3. Se deja tachado
+     en vez de borrado. **La implicación era falsa.** El cobro es **por adelantado**: el del día 1
+     ya pagó el período en curso, y el del día 30 paga el mes siguiente, que ya es el plan bajo.
+     Así que **mutar el monto cuando el cliente lo pide da el resultado correcto**, y diferirlo
+     sería **peor** — una carrera contra el cobro donde perder significa cobrarle el plan caro un
+     mes que no va a usar. El agujero que motivó el párrafo era el del **upgrade gratis**, y lo
+     cierra la decisión (C) de arriba, no el downgrade. **El downgrade no necesita la cola de
+     `M-SUB-02`.** Lo que sí se difiere al fin del ciclo son los **entitlements**, que son
+     nuestros y no del proveedor — ver `DEC-SUB-008`.
   3. **Cada upgrade dispara el correo de cancelación del proveedor**, que dice *«por cuenta de
      pagos no realizados o por opción del vendedor»*. Alguien que acaba de **pagar más** recibe un
      aviso que insinúa que lo dieron de baja por no pagar. Se mitiga igual que en `DEC-SUB-006`:
