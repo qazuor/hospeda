@@ -10,8 +10,8 @@ phase: 1C
 # Matriz de validación de Mercado Pago
 
 **FASE 1C en curso.** Tras las [sondas 01 a 41](./mp-probes/RESULTS-2026-09-15.md) del 2026-09-15
-y 09-16: **44 filas `VERIFIED`, 14 `PARTIALLY_SUPPORTED`, 14 `NOT_SUPPORTED`, 11 `UNKNOWN`**,
-sobre **83**.
+y 09-16: **44 filas `VERIFIED`, 14 `PARTIALLY_SUPPORTED`, 14 `NOT_SUPPORTED`, 12 `UNKNOWN`**,
+sobre **84**.
 
 > **La pregunta de fondo quedó contestada, y en contra: el ciclo de cobro NO puede ser nuestro.**
 > El proveedor sí tiene un modelo donde el comercio decide cuándo cobrar —`/v1/orders` con
@@ -135,7 +135,8 @@ registrar request → registrar response → observar el webhook → documentar 
 | Agregadas con la tarjeta real | 2 — `EX-19`, `EX-20` |
 | Agregadas por el modelo de **planes** (`/preapproval_plan`) | 9 — `EX-21` a `EX-29` |
 | Agregadas por **cobrar sin suscripción** (`/v1/orders`, Wallet Connect) | 3 — `EX-30` a `EX-32` |
-| **Total** | **83** |
+| Abierta por `DEC-SUB-006` | 1 — `EX-33` |
+| **Total** | **84** |
 
 Columnas: **Estado** · **Fecha** · **Entorno** · **Evidencia** (ruta de la sonda, con request,
 response y webhook observado) · **Conclusión**.
@@ -360,6 +361,7 @@ miden. Sondas [38](./mp-probes/probe-38-cobrar-sin-preapproval.mjs),
 | EX-30 ✚ | ¿Existe `/v1/orders`, y cobra? | alternativa a `preapproval`, `R-MP-01` | **`VERIFIED`** | 2026-09-16 | sandbox | [sonda 39](./mp-probes/probe-39-descubrir-el-contrato-de-orders.mjs) | **SÍ, y cobra de verdad.** Una orden con una tarjeta tokenizada y **sin `customer`** devolvió `201` y la relectura dice `processed/accredited` con ARS 20 acreditados. El contrato se descubrió **preguntándole al validador**, que nombra los campos que faltan (`missing properties: '$.external_reference'`…): cuerpo mínimo → `transactions` → `payments[0]` exige `amount` y `payment_method`. **Consecuencia útil hoy**: un cobro de **única vez** —un addon, por ejemplo— no necesita ninguna habilitación especial ni pasa por `preapproval`. De paso quedó medido que **`POST /v1/customers` da `401 "access denied"`** con la credencial de prueba, igual que `/v1/payments` (`RF-1`/`RF-2`): eso habla de la credencial, no de la capacidad, y resultó **no estar en el camino crítico** |
 | EX-31 ✚ | ¿Se puede cobrar de forma **recurrente** sin `preapproval`, con credencial guardada? | «el ciclo de vida es nuestro» | **`NOT_SUPPORTED`** | 2026-09-16 | sandbox | [sondas 38 y 40](./mp-probes/probe-40-que-dispara-el-403-de-pagos-automaticos.mjs) | **No con esta aplicación, y el rechazo es del PERMISO, no del pedido.** El proveedor documenta el producto *«pagos automáticos»* en el dominio argentino —*"pagos recurrentes… **sin solicitar el CVV** para cada transacción"*, con MIT explícito y *"la lógica de recurrencia definida por el vendedor"*— y el contrato es `POST /v1/orders` con `automatic_payments.payment_profile_id` y `stored_credential`. **Medido con el control que distingue**: la misma orden **sin** esos nodos entra (`201`, ver `EX-30`); con **sólo `stored_credential`**, con **sólo `automatic_payments`**, con **los dos**, y con `payment_initiator: "merchant"` sin perfil → **los cuatro `403` con el mensaje idéntico** *"The application is not authorized to perform this type of payment"*. O sea que no hay forma de armar el pedido que lo evite. **Y la vía alternativa está cerrada por diseño del proveedor**: tokenizar una tarjeta guardada **exige volver a capturar el código de seguridad** (documentado), y un token de tarjeta es **de un solo uso** (`EX-12`), así que no sirve para cobrar el mes siguiente. Lo más plausible es que este `403` sea **el mismo portón comercial que `EX-32`** —el último paso de Wallet Connect es, campo por campo, este request— pero **eso no está medido**: son dos productos con nombres distintos |
 | EX-32 ✚ | ¿Está disponible **Wallet Connect**? | «el ciclo de vida es nuestro», vía billetera | **`NOT_SUPPORTED`** | 2026-09-16 | sandbox **+ requisito publicado** | [sonda 41](./mp-probes/probe-41-wallet-connect.mjs) | **El recurso existe, no lo tenemos, y no lo podemos pedir.** `POST /v2/wallet_connect/agreements` devuelve **`403 Forbidden`** con y sin el header `x-platform-id`; un `GET` sobre la misma ruta devuelve **`405 Not Allowed`**, o sea que **la ruta está viva en el gateway** y no es un `404`. El control (`/v1/orders` con cuerpo incompleto → `400`) confirma que la cuenta sigue respondiendo normal. **Lo que lo cierra no es el `403` sino el requisito publicado**: la integración está disponible **sólo** para vendedores con **más de 100.000 usuarios** (dos variantes: ticket promedio < 15 USD con ≥2 transacciones mensuales por usuario, o suscripción mensual con ticket < 40 USD). Hospeda tiene **3** relaciones de cobro vivas: son más de tres órdenes de magnitud, así que **no es una negociación que se pueda intentar**. El mecanismo, para el registro: acuerdo → el comprador aprueba **en su app de Mercado Pago** → `payer_token` **persistente** de servidor (a diferencia del de tarjeta, que es de un solo uso) → `POST /v1/orders` con `payment_method: {type:'wallet'}` y `stored_credential`. **Trampa de método**: la página de *prerrequisitos* del producto **no menciona el umbral** —lo encontró el owner en la página de disponibilidad—, y este documento llegó a afirmar que no había mínimo de volumen. **Que una fuente no mencione algo no prueba que no exista** |
+| EX-33 ✚ | Una suscripción creada **pendiente** con fecha de primer cobro futura y autorizada **por el cliente en el checkout**, ¿respeta esa fecha? | **`DEC-SUB-006`** | **`UNKNOWN`** | — | — | sin medir | **Es la condición de `DEC-SUB-006`, y no está medida.** `EX-8` verificó que una fecha futura se respeta sobre una suscripción autorizada **por API con `card_token_id`**; nadie probó el camino del checkout, donde **quien autoriza es otro**. Es exactamente la distinción que este documento ya marca entre `EX-7` y `EX-8`: que el proveedor acepte una fecha al crear no prueba que la respete después de autorizar. **Lo que está en juego**: si el checkout la resetea, la suscripción nueva cobra en el acto mientras la vieja sigue viva hasta que llegue el webhook de autorización, y **el cliente paga dos veces** — que es justo el riesgo que la fecha futura existe para evitar. **Cómo se mide**: crear un `preapproval` `pending` con `start_date` a +N días, abrir su `init_point`, completarlo a mano con el comprador de prueba, y releer. Sandbox, sin costo; lo único que no se automatiza es el clic del comprador |
 
 ---
 
@@ -371,10 +373,10 @@ miden. Sondas [38](./mp-probes/probe-38-cobrar-sin-preapproval.mjs),
 | `PARTIALLY_SUPPORTED` | **14** — `PA-2`, `RC-1`, **`RC-3`**, `PS-1`, `PS-3`, `CN-1`, `CT-1`, `CT-2`, `WH-3`, `RN-1`, `EX-9`, `RF-8`, **`EX-23`** (el plan alcanza la lectura del suscripto; falta el cobro), **`EX-29`** (el free trial del plan no lo decide el request) |
 | `NOT_SUPPORTED` | **14** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno), `EX-17` (creación idempotente), `EX-18` (otra moneda), `RC-4` (el `search` devuelve menos campos que el `GET`), **`EX-20`** (un `PUT` mixto se aplica a medias), **`EX-21`** (mover una suscripción de plan), **`EX-22`** (contradecir al plan), **`EX-25`** (el ciclo del plan no alcanza a los suscriptos), **`EX-27`** (`repetitions` y `billing_day` sin plan), **`EX-31`** (cobro recurrente sin `preapproval`) y **`EX-32`** (Wallet Connect) |
 | | Las dos últimas son **de elegibilidad, no técnicas**: el proveedor las hace y no nos las da. Ver la advertencia de su sección |
-| **`UNKNOWN`** | **11** — nueve esperan la lectura de mañana (`RN-2`, `RN-3`, `GR-1..3`, `PS-4`, `PS-5`, `PS-6`, `EX-1`); las otras dos son `WH-5` y `RF-3` |
+| **`UNKNOWN`** | **12** — nueve esperan la lectura del reloj (`RN-2`, `RN-3`, `GR-1..3`, `PS-4`, `PS-5`, `PS-6`, `EX-1`); `WH-5` y `RF-3` no dependen del tiempo; y **`EX-33`** es nueva: la condición de `DEC-SUB-006`, medible a mano en sandbox |
 
 Recalculado con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) el
-2026-09-16, sobre **83** filas.
+2026-09-16, sobre **84** filas.
 
 **Lo más grave que dejó la tanda de producción**, y que en sandbox era invisible: el `search`
 de suscripciones tiene **tres modos de falla en tres direcciones distintas** —devuelve TODO
