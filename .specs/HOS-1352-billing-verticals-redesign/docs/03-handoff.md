@@ -42,11 +42,14 @@ medición: los cuatro salieron de `UNKNOWN`.
 | | 2026-09-15 | **2026-09-16** |
 |---|---|---|
 | Filas de la matriz | 84 · 12 `UNKNOWN` | **89 · 8 `UNKNOWN`** |
-| Decisiones | 39 | **41** |
+| Decisiones | 39 | **43** |
 | Puntos del contraste PDR ↔ proveedor | 9 de 12 | **11 de 12** |
 | Bloqueantes de FASE 2 que decide el experimento | 2 abiertos | **0** |
+| Bloqueantes de FASE 2 que decide el owner | 1 abierto (`BD-MP-04`) | **0** |
 
-Las dos decisiones nuevas, las dos del owner:
+**FASE 2 queda DESBLOQUEADA**: no hay ningún bloqueante abierto, ni de experimento ni de owner.
+
+Las tres decisiones nuevas, las tres del owner:
 
 - **`DEC-SUB-010`** — la **pausa** es la nativa del proveedor, empieza cuando el cliente la pide,
   se elige en **meses enteros**, y los días no usados del ciclo en curso **se pierden**. Con
@@ -58,6 +61,11 @@ Las dos decisiones nuevas, las dos del owner:
   sosteniendo el servicio de nuestro lado. Es la única de las tres que no mueve un peso: bajar al
   piso le **cobra** ARS 15 por ciclo a quien le dijimos que no pagaba, y cancelar lo obliga a
   volver al checkout al final del regalo.
+- **`DEC-ADDON-002`** — cada **addon recurrente** es un **preapproval aparte**, no una línea del
+  monto del plan. Cierra `BD-MP-04`, el último bloqueante de FASE 2. Subir el monto **toca plata
+  cada vez** que alguien contrata o da de baja un addon, en el punto exacto donde el proveedor
+  acepta sin aplicar — y `EX-15` midió que esa mutación **no emite webhook**, así que cobraría mal
+  sin que nadie se entere.
 
 ### Lo único que falta decidir: el cobro fallido
 
@@ -164,8 +172,13 @@ fecha futura no cobraron nada — que es justamente la respuesta buena de `EX-33
 2. **Leer `pausa-real` el 17, 18 y 19** — es la condición de `DEC-SUB-010`.
 3. **Decidir el residuo abierto**: la precedencia entre una cortesía vigente y una pausa pedida
    por el cliente, y entre dos cortesías. Salió de `DEC-GRANT-003` y quedó anotado ahí, sin decidir.
-4. **`BD-MP-04`** sigue siendo la única pregunta que FASE 1C le devolvió al owner: tiene sus filas
-   medidas y aun así le sobrevivió una elección de diseño.
+4. **Arrancar FASE 2 (Master Spec)**, que ya no está bloqueada. Tiene **~70 huecos técnicos**
+   inventariados en `04-open-decisions.md` que resuelve sola, sin el owner.
+5. **Pedir las consultas que dependen de terceros, que son las de mayor latencia**: `M-LEGAL-03`
+   (sobre todo **si el silencio del cliente vale como aceptación** de un aumento — si no alcanza,
+   `DEC-MP-002` cambia de forma), `M-LEGAL-01` (si cada renovación abre una ventana nueva de
+   revocación), y las tres preguntas a soporte de MP por `R-MP-01` (la API de los reembolsos se
+   descontinúa y su guía de migración **excluye suscripciones**).
 
 ### Cómo pidió trabajar el owner
 
