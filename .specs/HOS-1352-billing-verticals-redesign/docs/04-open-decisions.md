@@ -31,7 +31,12 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
-> **Puntos 1 a 7 del contraste cerrados el 2026-09-16.** `DEC-CONC-002`: la conciliación se
+> **Puntos 1 a 8 del contraste cerrados el 2026-09-16.** `DEC-MAIL-001`: nuestro correo
+> **bloquea la acción sólo antes de cancelar** —donde el del proveedor insinúa mora—, y los correos
+> falsos **se anticipan en vez de desmentirse**. Cierra la deuda que las cinco decisiones
+> anteriores venían acumulando sobre «nuestro aviso sale antes».
+>
+> **Puntos 1 a 7.** `DEC-CONC-002`: la conciliación se
 > apoya en **nuestro inventario** —el buscador del proveedor no puede ser fuente de verdad—,
 > detecta huérfanas **por webhook** y sólo repara el vínculo automáticamente. De paso convierte el
 > `SubscriptionNotResolvedError` vivo en producción **de bug en caso de uso**.
