@@ -1351,15 +1351,73 @@ Cada entrada lleva, según §3.4:
      hecho** (`RF-7`).
 - **Origen**: punto 6 del contraste PDR ↔ proveedor · §51 · §52 · `M-CONC-01`.
 
+### DEC-CONC-002 — La conciliación se apoya en NUESTRO inventario, detecta huérfanas por webhook, y sólo repara el vínculo
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §23 pide un proceso periódico contra el proveedor que detecte webhooks
+  faltantes, duplicados, pagos y suscripciones huérfanas, estados que no coinciden y preapprovals
+  desconocidos. La forma canónica de hacerlo —dos extracciones paralelas, la nuestra y la del
+  proveedor, enfrentadas en una capa de comparación— **no es aplicable acá**, porque una de las
+  dos no se puede obtener.
+- **Contexto medido**:
+  - `RC-2` **`VERIFIED`**: leer una suscripción **por su id** es confiable.
+  - `RC-1` **`PARTIALLY_SUPPORTED`**: **buscarlas no lo es**, y falla en tres direcciones sin
+    avisar en ninguna — ignora `external_reference` y devuelve **todo**; con un `status` inválido
+    devuelve **nada** (`200` con cero resultados, no un error); y con uno válido devuelve **un
+    subconjunto plausible** (en producción, `cancelled` trajo **15 de 69**). El tercero es el peor:
+    un barrido procesa parte de la cartera y **termina sin error**.
+  - `RC-4` **`NOT_SUPPORTED`**: el buscador devuelve **menos campos** que el `GET`.
+  - `EX-15` **`VERIFIED`**: mutar el monto **no emite webhook**. Una divergencia de monto no se
+    anuncia por ningún canal: sólo aparece releyendo.
+  - `EX-19` **`VERIFIED`** (producción): el `external_reference` **se puede reescribir** sobre una
+    suscripción viva. Es la vía de reparación de un vínculo roto.
+  - `EX-16`: `/authorized_payments` **llega tarde**, y eso ya casi produjo una conclusión falsa.
+  - Documentación oficial: el buscador de pagos cubre **sólo los últimos doce meses**.
+- **Decisión**, en cuatro partes:
+  1. **El inventario a conciliar sale de NUESTRA base**, no de la del proveedor: se guarda el id de
+     cada suscripción y se leen de a una. El buscador **no puede ser fuente de verdad de nada**.
+  2. **Las huérfanas se detectan por WEBHOOK, no por barrido.** Toda suscripción que cobra emite
+     uno; si llega uno de un preapproval que no conocemos, eso *es* la detección.
+  3. **Barrido diario** de la cartera propia, para lo que el webhook no cubre — sobre todo los
+     estados que divergen **en silencio**, como un cambio de monto que el proveedor aceptó y no
+     aplicó.
+  4. **Sólo se repara el vínculo automáticamente.** Re-vincular una huérfana reescribiendo su
+     `external_reference` no cambia plata ni estado: sólo dice de quién es. Toda divergencia de
+     **monto, estado o cobro** emite `RECONCILIATION_REQUIRED` y la mira una persona.
+- **Motivo**:
+  - La parte 1 **no es una elección**: está medida. Cualquier diseño que liste desde el proveedor
+    va a procesar una fracción de la cartera y a terminar en verde.
+  - La parte 2 resuelve el punto ciego que deja la 1: si sólo miramos los ids que ya tenemos, una
+    suscripción que nunca registramos no aparecería jamás. **Y el detector ya existe y funciona
+    hoy en producción**: el `SubscriptionNotResolvedError` que encontramos de paso es exactamente
+    eso — el sistema detecta la huérfana bien, y lo que está mal es lo que hace después (responde
+    `500` y la encola cinco veces). Lo que falta no es el detector, es el tratamiento.
+  - La parte 4 aplica la misma frontera que `DEC-CONC-001`, y el owner la eligió por segunda vez:
+    **la línea no es «automático contra manual», es «toca plata o no toca plata»**.
+- **Implicaciones**:
+  1. **Guardar el id de cada suscripción deja de ser una comodidad y pasa a ser la condición de
+     que la conciliación exista.** Si se pierde un id, esa suscripción se vuelve invisible para el
+     barrido — y sólo reaparece si cobra y emite webhook.
+  2. **El `SubscriptionNotResolvedError` vivo en producción pasa de bug a caso de uso.** Cuando se
+     arregle, no debe silenciarse: debe convertirse en el disparador de la re-vinculación.
+  3. **La conciliación no puede apoyarse en `/authorized_payments` para concluir que algo no
+     cobró**: llega tarde, y la ausencia de cobros tiene tres causas distintas — no cobró nunca,
+     lag, o el id es de otra cuenta.
+  4. **Más allá de doce meses, la única fuente somos nosotros.** El buscador de pagos no llega, así
+     que el histórico tiene que ser nuestro o no existe.
+  5. `RECONCILIATION_REQUIRED` ya notifica a `SUPER_ADMIN` por regla del PDR; esta decisión define
+     **cuándo se emite**: en toda divergencia que toque plata o estado.
+- **Origen**: punto 7 del contraste PDR ↔ proveedor · §23 · §22.1.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **36** |
+| Decisiones tomadas | **37** |
 | De metodología | 3 |
-| Funcionales | 33 |
+| Funcionales | 34 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
