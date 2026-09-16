@@ -30,6 +30,11 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 >
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
+>
+> **Punto 1 del contraste cerrado el 2026-09-16** (`DEC-SUB-006`): el cambio de ciclo se
+> re-autoriza en el checkout del proveedor y los días pagados se compensan por valor. Queda
+> **condicionada a `EX-33`** (§61): nadie midió todavía si el checkout respeta una fecha de primer
+> cobro futura, y si no la respeta, el cliente paga dos veces.
 
 ---
 
@@ -65,7 +70,7 @@ Corresponden a las preguntas **1 a 8** de
 | 2 | `BD-ARCH-02` | ¿Cómo se ordenan los planes para computar "el más premium" y "el más básico"? | ✅ `DEC-ARCH-002` — rank explícito, sólo los vendibles |
 | 3 | `C-TRIAL-01` | El "1 ficha en trial" (§10.5) vs heredar los limits de Basic (§10.3) | ✅ `DEC-TRIAL-001` — overrides declarados en DB, por vertical |
 | 4 | `BD-TRIAL-01` | La derivación del Trial Plan, ¿en vivo o congelada al arrancar? | ✅ `DEC-TRIAL-002` — trinquete: en vivo, nunca empeora |
-| 5 | `BD-SUB-01` | Las seis celdas sin política de la matriz tier × ciclo | ✅ `DEC-SUB-001`, **reemplazada por `DEC-SUB-005`** — misma política, se ejecuta cancelando y recreando |
+| 5 | `BD-SUB-01` | Las seis celdas sin política de la matriz tier × ciclo | ✅ `DEC-SUB-001` → `DEC-SUB-005` → **`DEC-SUB-006`** (2026-09-16) — la política nunca cambió; lo que se fue precisando es el mecanismo: cancelar y recrear, **re-autorizando en el checkout** y compensando los días pagados **por valor** |
 | 6 | `C-PARTNER-01` | ¿Partner tiene trial, dentro de un alta administrada? | ✅ `DEC-TRIAL-003` — configurable por plan, en cero hoy |
 | 7 | `BD-MIG-01` | ¿Qué se le promete a quien hoy está pagando? | ✅ `DEC-MIG-001` — coordinación manual de las 5, cero código |
 | 8 | `BD-TRIAL-02` | ¿Qué señal define "la misma identidad" para el trial de por vida? | ✅ `DEC-TRIAL-004` — el email normalizado bloquea, el resto observa |
@@ -287,7 +292,7 @@ owner con su costo anotado.
 |---|---|
 | `DEC-ENT-004` y `DEC-GRANT-001` — cancelar sin reembolso | **El día que exista un ciclo anual.** Hoy se retiene un mes parcial como máximo porque todas las suscripciones vivas son mensuales; con anual serían hasta once meses |
 | `DEC-TRIAL-004` — sólo el email bloquea la identidad | Cuando la base crezca dos órdenes de magnitud. Hoy se optimiza contra perder clientes reales porque son 22 |
-| `DEC-SUB-005` — cancelar y recrear pide el código de seguridad | Si la fricción del CVV resulta costar conversión. La alternativa medida es esperar a la renovación, que es peor para el cliente |
+| ~~`DEC-SUB-005`~~ — cancelar y recrear pide el código de seguridad | **Disuelta por `DEC-SUB-006`**: al re-autorizar en el checkout ya no se tokeniza del lado del servidor, así que no hay código de seguridad que pedir. Quedó otro riesgo en su lugar: que el cliente **abandone el checkout** — y ahí no pasa nada, porque la suscripción vieja sólo se cancela cuando llega el aviso de que la nueva quedó autorizada |
 | `DEC-TRIAL-003` — Partner con el trial en cero | Si alguna vez se pone en distinto de cero: hay que declarar su evento de activación (§10.4) |
 | `DEC-PROMO-002` — scope "futuras" sin restricción | **Al crear cada vertical nueva.** Hay que listar qué concesiones la alcanzan automáticamente, con su costo estimado |
 | `DEC-GRANT-002` — cortesía sólo por `SUPER_ADMIN` | Si aparece que se comparte la cuenta de `SUPER_ADMIN` para compensar clientes. Ese síntoma pide un permiso acotado, no una cuenta compartida |
