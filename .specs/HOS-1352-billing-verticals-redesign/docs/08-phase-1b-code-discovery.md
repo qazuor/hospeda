@@ -93,7 +93,7 @@ verificado contra la definición real.
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
 | Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | 0 |
 | Migraciones estructurales | 125 | `packages/db/src/migrations/*.sql` | 0 |
-| Migraciones `extras` | 42 | `migrations/extras/*.sql` | 0 |
+| Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
 | Data-migrations de seed | 121 | `packages/seed/src/data-migrations/*.ts` | 0 |
 | Archivos de ruta de la API | 1150 | `apps/api/src/routes/**/*.ts` — **denominador provisorio**, son archivos y no endpoints registrados | 0 |
 | Servicios en `service-core` | 101 | `*.service.ts` — **provisorio**, ver `F-1B-003` | 0 |
@@ -521,6 +521,48 @@ declaración (`export function` y `export const`), y los conteos por nombre dan 
 seis de ellas — el mismo modo de falla de `F-1B-003`. La medición correcta es construir
 la app y leer `app.routes`, que es exactamente lo que hace `listRoutes`
 (`apps/api/src/utils/list-routes.ts`, invocado en `apps/api/src/index.ts:379`).
+
+---
+
+### F-1B-014 — Cuatro de los 42 `extras` mueven datos, y trece escriben sobre tablas de qzpay
+
+Qué contienen realmente los **42** archivos de `packages/db/src/migrations/extras/`,
+contado por sentencia y no por palabra suelta:
+
+| sentencia | cantidad |
+|---|---|
+| `ADD CONSTRAINT` | 38 |
+| `ALTER TABLE` | 36 |
+| `CREATE UNIQUE INDEX` | 29 |
+| `CREATE INDEX` | 14 |
+| `CREATE TRIGGER` | 12 · `DROP TRIGGER` 11 |
+| `CREATE OR REPLACE FUNCTION` | 6 |
+| `INSERT INTO` | **6**, en **4 archivos** |
+| `UPDATE … SET` | **6**, en **1 archivo** |
+| `CREATE MATERIALIZED VIEW` | 2 |
+
+**Cuatro archivos hacen cambios de datos**, y lo dicen en su propio nombre:
+
+```
+013-moderation-role-grants.data.sql
+019-accommodation-media-backfill.data-migration.sql
+027-social-post-target-media-backfill.data-migration.sql
+028-vip-promotions-access-repair.data.sql
+```
+
+Es un hecho del inventario, no un juicio: el repo tiene **además** un directorio
+`packages/seed/src/data-migrations/` con **121** módulos numerados, o sea dos lugares
+distintos donde vive una migración de datos.
+
+**Trece de los 42 tocan tablas que modela qzpay** — la tercera forma del mismo
+acoplamiento de una sola mano que ya aparece en `F-1B-008` (constraints) y `F-1B-011`
+(triggers).
+
+**Dos mediciones que hubo que rehacer, las dos por la regla 3.** Buscar `UPDATE`
+sin anclar da **60** ocurrencias y son **6**: la palabra está dentro de `updated_at`,
+que aparece en casi todos los archivos. Y `ON UPDATE` —el sospechoso obvio, el de las
+claves foráneas— aparece **una sola vez** y no era la causa. La hipótesis plausible y
+la causa real no coincidieron.
 
 ---
 
