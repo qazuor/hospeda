@@ -1034,18 +1034,80 @@ Cada entrada lleva, según §3.4:
   cliente paga dos veces**. Se mide en sandbox, sin costo, completando un checkout a mano una vez.
 - **Origen**: punto 1 del contraste PDR ↔ proveedor · §19 · `BD-SUB-01`.
 
+### DEC-SUB-007 — El upgrade se ejecuta con el mismo mecanismo que el cambio de ciclo
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Extiende** `DEC-SUB-006` al cambio de **plan**. No la reemplaza.
+- **Problema**: el §27 pide que el upgrade sea inmediato y dejó el **impacto económico** marcado
+  `PENDING MP VALIDATION`. La medición le dio una respuesta incómoda: **subir de plan es gratis
+  hasta el próximo cobro**.
+- **Contexto medido**:
+  - `UP-1`/`UP-2` **`VERIFIED`** (producción): mutar el monto aplica en el acto y el cobro
+    siguiente sale por el monto nuevo — una suscripción que nació en $15 y se subió a $30 cobró
+    $30. Pero **el proveedor no prorratea ni cobra la diferencia del ciclo en curso**.
+  - `PC-3` **`VERIFIED`**: mutar el monto **no pide un consentimiento nuevo** al cliente.
+  - `EX-30` **`VERIFIED`**: una orden de única vez cobra sin habilitación especial — pero
+    **necesita un medio de pago**, y no tenemos la tarjeta del cliente de forma reusable
+    (`EX-12`: el token es de un solo uso; `EX-9`: tokenizar la guardada pide el código de
+    seguridad).
+  - `EX-3`: cancelar dispara el correo del proveedor que insinúa mora.
+- **Contexto externo** (no es fundamento, es contraste): la industria cobra la diferencia
+  prorrateada **al instante** en el upgrade y **difiere** el downgrade al próximo ciclo. La
+  asimetría es deliberada y es lo que evita que alguien juegue con los tiempos.
+- **Alternativas**: (A) aceptar el upgrade gratis hasta el próximo cobro, que es lo que el
+  proveedor hace solo; (B) cobrar la diferencia prorrateada con una orden suelta; (C) **cancelar y
+  recrear**, igual que el cambio de ciclo, compensando por valor.
+- **Decisión**: **(C)**.
+- **Motivo**:
+  - **No agrega ni una línea de mecanismo**: es el mismo camino de `DEC-SUB-006` con otro plan en
+    vez de otro ciclo. Un solo flujo cubre los dos cambios.
+  - **(B) no es viable como parecía**: cobrar una orden suelta **exige un medio de pago**, y ahí
+    vuelve exactamente la fricción de tokenización que `DEC-SUB-006` descartó — más un movimiento
+    de plata que no hacía falta.
+  - **(A) deja un agujero que el downgrade diferido no cierra**: subir de plan y **cancelar antes
+    del cobro** entrega un ciclo de plan caro casi gratis.
+  - Para un upgrade, un checkout es fricción esperable: el cliente ya decidió gastar más, y de
+    paso **ve y acepta el monto nuevo antes de confirmar**, que es lo que el §29 pide comunicar.
+- **Implicaciones**:
+  1. **Queda una asimetría deliberada entre subir y bajar**, y coincide con la práctica de la
+     industria: el **upgrade** se ejecuta cancelando y recreando (pasa por el checkout, cobra
+     desde ya), y el **downgrade** se ejecuta como una **mutación programada para el fin del
+     ciclo** —sin checkout, porque mutar no pide consentimiento (`PC-3`)—. Esa segunda mitad se
+     decide en su propio punto; acá queda anotada la mitad que esta decisión condiciona.
+  2. **El downgrade tiene que ser diferido de verdad.** Si se muta el monto en el momento en que
+     el cliente lo pide, el proveedor cobrará el monto bajo al fin del ciclo (`DW-1`/`DW-2`: cobra
+     siempre el vigente) y el cliente habrá usado el plan alto pagando el bajo. Cumplir el §28
+     significa **no tocar el monto hasta el fin del ciclo**, lo que exige la cola de cambios
+     programados de `M-SUB-02`.
+  3. **Cada upgrade dispara el correo de cancelación del proveedor**, que dice *«por cuenta de
+     pagos no realizados o por opción del vendedor»*. Alguien que acaba de **pagar más** recibe un
+     aviso que insinúa que lo dieron de baja por no pagar. Se mitiga igual que en `DEC-SUB-006`:
+     escribirle **antes** de cancelar. Es el costo declarado de esta decisión.
+  4. **Los addons no se cancelan solos.** Como un addon recurrente es una suscripción aparte
+     (`EX-6`), cancelar la del plan no los toca. Al recrear hay que decidir si siguen colgando del
+     cliente o si hay que re-vincularlos — es el hueco `E-ADDON-04`.
+  5. Hereda de `DEC-SUB-006` sus tres precondiciones: fecha de primer cobro futura, cancelación de
+     la vieja **sólo al recibir el webhook de autorizada**, y reconciliación para el caso en que
+     la nueva quede viva y la cancelación falle.
+- **CONDICIONADA a `EX-33`**, igual que `DEC-SUB-006`: si el checkout no respeta la fecha de
+  primer cobro futura, el cliente paga dos veces.
+- **Para revisar**: si alguna vez la fricción del checkout mide caída de conversión en upgrades,
+  la alternativa (A) es defendible como decisión comercial — regala medio ciclo a cambio de cero
+  fricción y de no disparar el correo de cancelación.
+- **Origen**: punto 2 del contraste PDR ↔ proveedor · §27.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **30** |
+| Decisiones tomadas | **31** |
 | De metodología | 3 |
-| Funcionales | 27 |
+| Funcionales | 28 |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
 | Bloqueantes de FASE 2 que decide el experimento | **2 abiertas** — `BD-MP-01` (pausa) y `BD-MP-02` (cortesía). `BD-MP-03` la cerró `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
-| Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-006`, a `EX-33` (¿el checkout respeta una fecha de primer cobro futura?) |
+| Decisiones condicionadas a FASE 1C | **2** — `DEC-SUB-006` y `DEC-SUB-007`, las dos a `EX-33` (¿el checkout respeta una fecha de primer cobro futura?) |
 | Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34), y el `SUSPENDED` doble de `M-ARCH-01` |
