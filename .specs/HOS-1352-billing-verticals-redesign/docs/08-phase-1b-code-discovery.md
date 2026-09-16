@@ -488,6 +488,42 @@ no se leen en ningún lado salvo en el `indexdef`.
 
 ---
 
+### F-1B-013 — El documento OpenAPI de la API no existe en ningún entorno desplegado
+
+`GET /docs/openapi.json` devuelve **404 en producción y 404 en staging**, con el cuerpo
+de error propio de la API (`{"success":false,"error":{"code":"NOT_FOUND"}}`), o sea que
+la ruta no está registrada, no que el documento falle al generarse.
+
+La causa está en `apps/api/src/app.ts:19-21`:
+
+```ts
+// Configure OpenAPI AFTER all routes are registered (only in non-production)
+if (env.NODE_ENV !== 'production') {
+    configureOpenAPI(app);
+}
+```
+
+Y **los dos entornos corren `NODE_ENV=production`**, medido sobre Coolify, no supuesto:
+`hops --target=staging env-list api --reveal --match '^NODE_ENV$'` y su equivalente en
+prod devuelven `NODE_ENV=production` los dos. (De paso: la app `api` tiene **112**
+variables de entorno configuradas en cada slot.)
+
+Consecuencia para el relevamiento: **el contrato de la API no se puede obtener del
+sistema que corre**. Con él caen también `/reference` (Scalar), `/docs/ui` (Swagger) y
+`/docs`, que cuelgan del mismo `configureOpenAPI`.
+
+Consecuencia de producto, anotada sin juzgarla: un consumidor externo —o un agente— no
+tiene forma de descubrir la API desde el entorno real.
+
+**Por eso el denominador de endpoints sigue abierto.** Contar por patrón no sirve: hay
+**24** factories `create*Route*` distintas en `apps/api/src`, con dos estilos de
+declaración (`export function` y `export const`), y los conteos por nombre dan cero para
+seis de ellas — el mismo modo de falla de `F-1B-003`. La medición correcta es construir
+la app y leer `app.routes`, que es exactamente lo que hace `listRoutes`
+(`apps/api/src/utils/list-routes.ts`, invocado en `apps/api/src/index.ts:379`).
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
