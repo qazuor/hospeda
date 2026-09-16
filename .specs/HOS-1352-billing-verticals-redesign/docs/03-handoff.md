@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-16
 status: CURRENT
 ---
 
@@ -26,13 +26,167 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (**71 filas: 33 `VERIFIED`, 11 parciales, 8 `NOT_SUPPORTED`, 19 `UNKNOWN`**, recontadas con
+   (**89 filas: 49 `VERIFIED`, 13 parciales, 19 `NOT_SUPPORTED`, 8 `UNKNOWN`**, recontadas con
    [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
 
 ---
 
-## Última actualización: 2026-09-15
+## Última actualización: 2026-09-16
+
+### Dónde estamos
+
+**FASE 1C prácticamente cerrada.** Ya no queda ningún bloqueante de FASE 2 que dependa de una
+medición: los cuatro salieron de `UNKNOWN`.
+
+| | 2026-09-15 | **2026-09-16** |
+|---|---|---|
+| Filas de la matriz | 84 · 12 `UNKNOWN` | **89 · 8 `UNKNOWN`** |
+| Decisiones | 39 | **41** |
+| Puntos del contraste PDR ↔ proveedor | 9 de 12 | **11 de 12** |
+| Bloqueantes de FASE 2 que decide el experimento | 2 abiertos | **0** |
+
+Las dos decisiones nuevas, las dos del owner:
+
+- **`DEC-SUB-010`** — la **pausa** es la nativa del proveedor, empieza cuando el cliente la pide,
+  se elige en **meses enteros**, y los días no usados del ciclo en curso **se pierden**. Con
+  ciclos enteros el cliente vuelve el mismo día del mes, así que lo perdido se compensa con lo que
+  gana al volver. Puede volver cuando quiera (§26.2 entero) y se le cobra normal en el ciclo
+  siguiente. **Al reanudar se le muestra UNA sola cosa: qué día se le va a cobrar** — nada de días
+  perdidos, porque el cobro es **por adelantado** y no paga servicio que no recibe.
+- **`DEC-GRANT-003`** — la **cortesía temporal** se implementa **pausando** en el proveedor y
+  sosteniendo el servicio de nuestro lado. Es la única de las tres que no mueve un peso: bajar al
+  piso le **cobra** ARS 15 por ciclo a quien le dijimos que no pagaba, y cancelar lo obliga a
+  volver al checkout al final del regalo.
+
+### Lo único que falta decidir: el cobro fallido
+
+Y ya **no** le falta un mecanismo para medirlo, que era el problema de ayer.
+
+**Un cobro fallido no se puede fabricar** (sonda 42): el proveedor valida la tarjeta **cobrando
+ARS 0** tanto al crear la suscripción como al cambiarle el medio de pago, así que **nunca deja una
+suscripción asociada a una tarjeta que no aprueba**. Los seis cardholders de rechazo dan `400
+CC_VAL_433` en el alta y `402` en el cambio; ni `CONT` se cuela, porque en una validación de
+tarjeta no existe el estado pendiente.
+
+La salida fue del owner: **que la tarjeta apruebe al asociarse y se degrade después.** El sujeto
+`apagon` vive en **producción** con su tarjeta real, ya cobró su primer ciclo sano, y el owner la
+apaga desde el home banking. **El intento del 2026-09-17 ~14:20 es el cobro fallido**, y con lo
+que pase después caen `RN-2`, `RN-3` y `GR-1..3`.
+
+### Los dos relojes que hay que leer
+
+| qué | cuándo | comando |
+|---|---|---|
+| **`apagon`** — el cobro fallido | 2026-09-17, bien pasadas las 14:20 | sonda 43, modo `LEER=1` |
+| **`pausa-real`** — la condición de `DEC-SUB-010` | 17, 18 y 19 | sonda 06 |
+
+```bash
+# producción — corre adentro del contenedor de la API en el VPS
+cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
+B64=$(base64 -w0 probe-43-la-tarjeta-que-se-apaga.mjs)
+ssh -p 2222 qazuor@216.238.103.219 "bash -lc \"hops --target=prod exec api -- sh -c 'echo $B64 | base64 -d > /tmp/p43.mjs && LEER=1 node /tmp/p43.mjs'\""
+
+# sandbox — el reloj de la pausa larga
+source ~/.config/hospeda/mp-sandbox-creds.sh && OUT_DIR=/tmp/mp-probe-05 bash probe-06-leer-el-reloj.sh
+```
+
+> **`DEC-SUB-010` está CONDICIONADA a esa segunda lectura.** Que la fecha corra +1 ciclo por
+> vencimiento está medido **una sola vez**, con ciclo diario y **un** vencimiento; toda la
+> aritmética de los meses enteros lo necesita en el vencimiento 2 y 3. `pausa-real` quedó pausada
+> el 2026-09-16 12:16 `-03` con `next` en el 17 justamente para eso. **Si esa lectura desmiente el
+> corrimiento, la decisión se reabre.**
+
+### Sujetos vivos — hay que acordarse de cancelarlos
+
+**En producción** (cuenta `HOSPEDA_COM_AR` 3497516165, pagador `qazuor@gmail.com`, ARS 15 por
+ciclo cada uno). Ids en
+[`manifiesto-tarjeta-apagada-2026-09-16.json`](./mp-probes/manifiesto-tarjeta-apagada-2026-09-16.json),
+[`manifiesto-segundo-trial-2026-09-16.json`](./mp-probes/manifiesto-segundo-trial-2026-09-16.json)
+y [`manifiesto-trial-vuelta-3-2026-09-16.json`](./mp-probes/manifiesto-trial-vuelta-3-2026-09-16.json),
+y también en `~/.config/hospeda/`:
+
+| slug | id | empieza a cobrar |
+|---|---|---|
+| `apagon` | `5d9dfc9d…` | ya cobró 1 ciclo · próximo intento **17/09** |
+| `ex33` | `04adf298…` | **19/09** |
+| `trial-vuelta-2` | `6b93a292…` | **18/09** |
+| `trial-vuelta-3` | `84a9c564…` | **21/09** |
+
+**Gasto real del 2026-09-16: ARS 15** de los 60 autorizados por el owner. Los tres sujetos con
+fecha futura no cobraron nada — que es justamente la respuesta buena de `EX-33`.
+
+**En sandbox**: los 8 del reloj original, más los ~20 de las sondas 33-37. Sin costo.
+
+### Cinco cosas medidas hoy que cambian cómo se implementa
+
+1. **`EX-37` — el `init_point` que devuelve la API está ROTO.** Viene con `&activation=true` y esa
+   URL abre **«Esta página no existe»**; bug abierto del proveedor desde el 2026-09-04
+   ([sdk-nodejs#480](https://github.com/mercadopago/sdk-nodejs/issues/480)), sin respuesta oficial.
+   **Es el caso más caro del §0**: la API responde `201` y entrega un dato que parece válido, el
+   cliente no se suscribe, y no hay ningún error del lado nuestro. **Nunca usar el `init_point`
+   crudo** — sanearlo antes de mostrarlo, **con un guard estático**, porque es un call site que
+   cualquiera vuelve a escribir «bien» copiando lo que devuelve la API.
+2. **`EX-38` — una `start_date` futura se convierte en un free trial sola.** El request no lleva
+   `free_trial` y el objeto queda con uno, y al comprador se le anuncia **«Tu prueba gratis
+   comenzó»**. O sea: **compensar días ya pagados corriendo la fecha ES pedirle un trial al
+   proveedor**, aunque el payload no lo nombre — y un guard que busque `free_trial` **en el
+   payload** no ve nada. Al cliente que hace un upgrade a mitad de mes se le anuncia una prueba
+   gratis justo cuando está usando días que **ya pagó**.
+3. **`EX-36` — se puede cambiar el medio de pago sin recrear la suscripción.** `card_id` y
+   `payment_method_id` cambian de verdad, incluso de marca y de crédito a débito. Pero **el cambio
+   cobra una validación de ARS 0 que puede fallar**, y **el endpoint no dice por qué**: devuelve
+   `402 "Unknown error"` con `cause: null`, y el motivo real **sólo existe en el pago de
+   validación**, que hay que ir a buscar aparte.
+4. **`EX-34` y `EX-35` — sobre una suscripción viva no se puede correr la fecha ni poner un
+   `free_trial`.** Cuatro formas y dos formas, todas `200`, `last_modified` congelado. El control
+   que lo separa de «esta suscripción está trabada»: el monto sobre el mismo objeto sí entra.
+5. **El cobro del proveedor llega tarde, y el retraso es variable.** 33 minutos en la renovación de
+   sandbox, ~26 en producción (`PA-3`), y ~100 segundos en el alta de `apagon`. **Ninguna lógica
+   puede preguntar «¿ya cobró?» a la hora exacta.**
+
+### Trampas nuevas, además de las del §0
+
+- **`live_mode: true` NO distingue sandbox de producción** (`EX-14`), y el token es `APP_USR-` en
+  los dos. Lo que **sí** distingue es `GET /users/me`: la cuenta de pruebas trae
+  `tags: ["test_user"]`. **Toda sonda que mute algo tiene que abrir con ese guard** — las 42 y 43
+  lo traen, y en la 43 está invertido porque ahí producción es lo que se quiere.
+- **`~/.config/hospeda/mp-refunds-app-creds.sh` es de la cuenta de PRUEBAS**, pese al nombre. El
+  token de producción es `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` y **sólo existe dentro del contenedor
+  de la API en el VPS**.
+- **`/tmp` del contenedor no sobrevive a un redeploy**, y `RC-1` midió que el `search` ignora
+  `external_reference`: **sin los ids no hay forma de reencontrar los sujetos**. Por eso cada
+  manifiesto se copia al repo Y a `~/.config/hospeda/`.
+
+### Próximo paso exacto
+
+1. **Leer `apagon` el 17** — es el último punto del contraste.
+2. **Leer `pausa-real` el 17, 18 y 19** — es la condición de `DEC-SUB-010`.
+3. **Decidir el residuo abierto**: la precedencia entre una cortesía vigente y una pausa pedida
+   por el cliente, y entre dos cortesías. Salió de `DEC-GRANT-003` y quedó anotado ahí, sin decidir.
+4. **`BD-MP-04`** sigue siendo la única pregunta que FASE 1C le devolvió al owner: tiene sus filas
+   medidas y aun así le sobrevivió una elección de diseño.
+
+### Cómo pidió trabajar el owner
+
+Punto por punto. **Antes de plantear cada uno: búsqueda externa exhaustiva** (docs oficiales,
+foros, normativa). Recién después, **opciones numeradas con costo / riesgo / fricción y UNA
+recomendación justificada**. **UNA pregunta por vez, y después PARAR.** Cuando da el OK, se asienta
+en `01-decision-log.md` **y** se marca cerrado en `04-open-decisions.md`, **en el mismo commit**.
+
+Sus dos criterios, que ya resolvieron ocho puntos:
+
+- la frontera no es «automático vs manual», es **«toca plata o no toca plata»**;
+- se elige **hacia dónde falla** cada opción, no cuál funciona.
+
+---
+
+## Estado al 2026-09-15 — histórico, superado por lo de arriba
+
+> Lo que sigue quedó como registro de dónde estaba el programa esa noche. **Los conteos, los
+> relojes y las filas abiertas que menciona ya no son los vigentes.** Se conserva porque el
+> histórico de qué se creía en cada momento es parte del registro de este programa.
+
 
 ### Último punto completado
 
