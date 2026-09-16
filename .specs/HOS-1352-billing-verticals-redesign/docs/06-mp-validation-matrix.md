@@ -187,9 +187,9 @@ response y webhook observado) · **Conclusión**.
 | PS-1 | Pausar | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | La **transición** funciona (`PUT {status:"paused"}` → `200`). Los efectos sobre el cobro no se midieron: ver `PS-2`. **RE-VERIFICADO EN PRODUCCIÓN CON TARJETA REAL** el 2026-09-15 ([sonda 28](./mp-probes/probe-28-suscripciones-autorizadas-sin-cobrar.mjs)), sobre suscripciones autorizadas con `start_date` a +30 días — que no cobran: la corrida entera cerró con **cero cobros** |
 | PS-2 | Que no cobre mientras está pausada | **`VERIFIED`** | 2026-09-15 | **producción** | [sonda 29 · primer cobro del reloj de producción](./mp-probes/probe-29-el-reloj-de-produccion.mjs) | **Pausada NO cobra.** `pausa-real` tenía su `next_payment_date` en el mismo instante que las cuatro que cobraron, se pausó ~26 minutos antes de que el proveedor ejecutara el ciclo, y **no cobró**. Lo que queda probado es la pregunta operativa: **pausar ANTES de que el cobro se ejecute lo evita**. ⚠️ Y un detalle que sorprende: **la pausa NO congela el calendario** — su `next_payment_date` igual se corrió +24 h sin haber cobrado |
 | PS-3 | Reanudación anticipada por el usuario (§26.2) | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | La **transición** funciona (`PUT {status:"authorized"}` → `200`). **RE-VERIFICADO EN PRODUCCIÓN CON TARJETA REAL** el 2026-09-15 ([sonda 28](./mp-probes/probe-28-suscripciones-autorizadas-sin-cobrar.mjs)), sobre suscripciones autorizadas con `start_date` a +30 días — que no cobran: la corrida entera cerró con **cero cobros** |
-| PS-4 | Reanudación automática al llegar la fecha (§26.2) | `UNKNOWN` | — | — | — | ⏳ lo dice el mismo sujeto: si aparece `authorized` sin que nadie lo tocara |
-| PS-5 | Qué pasa con las fechas al reanudar | `UNKNOWN` | — | — | — | **de una pausa de 1,3 s no se puede concluir nada.** `next_payment_date` no se movió, pero eso no dice nada sobre una pausa real |
-| PS-6 | Qué pasa con la fecha de cobro al reanudar (§26.4) | `UNKNOWN` | — | — | — | ídem `PS-5`. Es la que decide si §26.4 es implementable |
+| PS-4 | Reanudación automática al llegar la fecha (§26.2) | **`NOT_SUPPORTED`** | 2026-09-16 | sandbox | [foto de línea de base](./mp-probes/fotos-reloj-2026-09-16/pausa-real-linea-de-base.json) · [sonda 06](./mp-probes/probe-06-leer-el-reloj.sh) | **No existe la auto-reanudación.** `pausa-real` se pausó el 2026-09-15 ~12:29 y a las **24,5 h** (2026-09-16T12:54:45-03) seguía `paused`, con `last_modified` todavía en el instante de la pausa: nadie la movió, y el proveedor tampoco. Concuerda con la doc oficial, que sólo ofrece reactivar con un `PUT {status:"authorized"}` — **MP no tiene un `pauseUntil`**: la fecha de fin de pausa es un concepto NUESTRO y el reloj que la dispara tiene que ser nuestro |
+| PS-5 | Qué pasa con las fechas al reanudar | **`VERIFIED`** | 2026-09-16 | sandbox | [antes](./mp-probes/fotos-reloj-2026-09-16/pausa-real-antes-de-reanudar.json) · [después](./mp-probes/fotos-reloj-2026-09-16/pausa-real-despues-de-reanudar.json) | **Reanudar cambia SÓLO el `status`.** Sobre una pausa **real de 24,5 h**, el `PUT {status:"authorized"}` (2026-09-16T12:56:15-03, confirmado por `last_modified`, no por el 200) dejó `next_payment_date` **clavado en 2026-09-17T11:28:03-04**, el mismo valor que ya tenía pausada. Ni se adelanta ni se corre. Re-leído a los 3 min: idéntico |
+| PS-6 | Qué pasa con la fecha de cobro al reanudar (§26.4) | **`NOT_SUPPORTED`** | 2026-09-16 | sandbox + **producción** | [antes](./mp-probes/fotos-reloj-2026-09-16/pausa-real-antes-de-reanudar.json) · [después](./mp-probes/fotos-reloj-2026-09-16/pausa-real-despues-de-reanudar.json) · `PS-2` (prod) | **El período pagado durante la pausa se PIERDE, y el proveedor no ofrece nada para recuperarlo.** Tres hechos encadenados: (1) pausar **no** corre la fecha en el acto — cadena crear→pausar→reanudar de las [sondas 07/07b](./mp-probes/probe-07-que-se-puede-sobre-una-pausada.sh), segundos, `next` idéntico en los tres pasos; (2) el ciclo que vence **estando pausada** igual avanza `next_payment_date` +1 ciclo sin cobrar — `pausa-real` nació con `next`=2026-09-16T11:28:03-04 ([creacion.log](./mp-probes/fotos-reloj-2026-09-16/creacion-del-reloj-2026-09-15.log)) y al día siguiente leía **2026-09-17** ([línea de base](./mp-probes/fotos-reloj-2026-09-16/pausa-real-linea-de-base.json)), y lo mismo se había medido ya en **producción** (`PS-2`); (3) al reanudar no hay cobro de recuperación ni deuda acumulada (`cobros`=1, `charged_amount`=2000, sin `pending_charge_*`). **Conclusión: §26.4 NO es delegable a MP.** Si el usuario no debe perder días pagos, los sostenemos nosotros — mismo patrón que `DEC-SUB-009` |
 
 ## Cancelación (§24)
 
@@ -369,14 +369,28 @@ miden. Sondas [38](./mp-probes/probe-38-cobrar-sin-preapproval.mjs),
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **44** |
+| `VERIFIED` | **45** — la nueva es **`PS-5`** (reanudar cambia sólo el `status`) |
 | `PARTIALLY_SUPPORTED` | **14** — `PA-2`, `RC-1`, **`RC-3`**, `PS-1`, `PS-3`, `CN-1`, `CT-1`, `CT-2`, `WH-3`, `RN-1`, `EX-9`, `RF-8`, **`EX-23`** (el plan alcanza la lectura del suscripto; falta el cobro), **`EX-29`** (el free trial del plan no lo decide el request) |
-| `NOT_SUPPORTED` | **14** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno), `EX-17` (creación idempotente), `EX-18` (otra moneda), `RC-4` (el `search` devuelve menos campos que el `GET`), **`EX-20`** (un `PUT` mixto se aplica a medias), **`EX-21`** (mover una suscripción de plan), **`EX-22`** (contradecir al plan), **`EX-25`** (el ciclo del plan no alcanza a los suscriptos), **`EX-27`** (`repetitions` y `billing_day` sin plan), **`EX-31`** (cobro recurrente sin `preapproval`) y **`EX-32`** (Wallet Connect) |
+| `NOT_SUPPORTED` | **16** — **`PS-4`** (no existe la auto-reanudación: MP no tiene `pauseUntil`), **`PS-6`** (el período pagado en pausa se pierde y no hay nada para recuperarlo), `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno), `EX-17` (creación idempotente), `EX-18` (otra moneda), `RC-4` (el `search` devuelve menos campos que el `GET`), **`EX-20`** (un `PUT` mixto se aplica a medias), **`EX-21`** (mover una suscripción de plan), **`EX-22`** (contradecir al plan), **`EX-25`** (el ciclo del plan no alcanza a los suscriptos), **`EX-27`** (`repetitions` y `billing_day` sin plan), **`EX-31`** (cobro recurrente sin `preapproval`) y **`EX-32`** (Wallet Connect) |
 | | Las dos últimas son **de elegibilidad, no técnicas**: el proveedor las hace y no nos las da. Ver la advertencia de su sección |
-| **`UNKNOWN`** | **12** — nueve esperan la lectura del reloj (`RN-2`, `RN-3`, `GR-1..3`, `PS-4`, `PS-5`, `PS-6`, `EX-1`); `WH-5` y `RF-3` no dependen del tiempo; y **`EX-33`** es nueva: la condición de `DEC-SUB-006`, medible a mano en sandbox |
+| **`UNKNOWN`** | **9** — seis esperan **otra** lectura del reloj (`RN-2`, `RN-3`, `GR-1..3`, `EX-1`); `WH-5` y `RF-3` no dependen del tiempo; y **`EX-33`** es la condición de `DEC-SUB-006`, medible a mano en sandbox |
+| | La primera lectura del reloj (2026-09-16) cerró tres: `PS-4`, `PS-5` y `PS-6`. Las otras seis siguen abiertas porque **el ciclo diario de sandbox no cobró en la fecha** — ver la nota de abajo |
 
 Recalculado con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) el
-2026-09-16, sobre **84** filas.
+2026-09-16 **13:00**, sobre **84** filas.
+
+> ⚠️ **El reloj de sandbox no había cobrado al vencer, y eso todavía no se puede
+> interpretar.** Los seis sujetos `authorized` tenían `next_payment_date` el
+> 2026-09-16 a las 11:26–11:28 `-04`, y a las **11:59 `-04`** (31 min después)
+> los seis seguían con `charged_quantity: 1` y `next_payment_date` **sin correr**.
+> Son las dos explicaciones de siempre y no las distingue una sola lectura: puede
+> ser **lag** del proveedor, o puede ser que **un ciclo `days` no cobre**. Lo que
+> las separa es una relectura más tarde, no más razonamiento. Hasta entonces,
+> `RN-2`, `RN-3`, `GR-1..3` y `EX-1` no se tocan (§61).
+>
+> Dato que **no** encaja con "lag de todo": la pausada **sí** tenía la fecha
+> corrida (+1 ciclo) mientras las `authorized` **no**. Si fuera puro lag,
+> deberían haberse corrido las siete.
 
 **Lo más grave que dejó la tanda de producción**, y que en sandbox era invisible: el `search`
 de suscripciones tiene **tres modos de falla en tres direcciones distintas** —devuelve TODO
