@@ -1602,20 +1602,86 @@ Cada entrada lleva, según §3.4:
   leyéndolo el 17, 18 y 19. **Si esa lectura desmiente el corrimiento, esta decisión se reabre.**
 - **Origen**: punto 10 del contraste PDR ↔ proveedor · §26.2 · §26.4 · `BD-MP-01`.
 
+### DEC-GRANT-003 — La cortesía temporal se implementa PAUSANDO la suscripción en el proveedor, y el servicio lo sostenemos nosotros
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §34.2 pide **mantener el servicio sin cobrar** durante N días o meses, y es el
+  único punto del PDR que ordena investigar antes de elegir: *«NO asumir implementación contra MP.
+  Debe investigarse.»* El proveedor no tiene nada parecido a «no le cobres a este durante N ciclos».
+- **Contexto medido**:
+  - `PC-2` **`VERIFIED`**: el piso es **ARS 15**. Cobrar cero devuelve `400`. **«Gratis» no existe
+    bajando el monto**, y no es teórico: `CT-1` lo confirmó el 2026-09-16 sobre una suscripción que
+    ya había cobrado — `cortesia-piso` cobró 2000 en su primer ciclo, se lo bajó al piso, y en la
+    renovación **cobró ARS 15**.
+  - `EX-35` **`NOT_SUPPORTED`** (2026-09-16): **no se le puede poner un `free_trial` a una
+    suscripción viva**. Dos formas, dos `200`, `free_trial` siguió `null`, `last_modified`
+    congelado. Con control: el monto sobre el mismo objeto entró y movió `last_modified`.
+  - `EX-34` **`NOT_SUPPORTED`** (2026-09-16): **tampoco se le puede correr la fecha de cobro.**
+    Cuatro formas, cuatro `200`, nada escrito.
+  - `PS-2` **`VERIFIED`** en **producción**: **pausada NO cobra.**
+  - `PS-5` **`VERIFIED`** (2026-09-16): reanudar es un `PUT {status:"authorized"}` que cambia sólo
+    el estado — no dispara cobro de recuperación ni deja deuda.
+  - `EX-11` **`VERIFIED`**: estando pausada **no se puede modificar nada** (`400` explícito), pero
+    **sí cancelar**.
+  - `CT-3` **`VERIFIED`**: todo cambio de monto le dispara al pagador un correo del proveedor que
+    dice **«El vendedor Hospeda cambió el monto»**, y `EX-15` midió que esa mutación **no emite
+    webhook**: le avisa al cliente y no a nosotros.
+  - `PA-5` + `EX-3`: cancelar es **irreversible**, y su correo **insinúa mora**.
+- **Contexto externo** (contraste, no fundamento): los proveedores maduros lo tienen resuelto
+  adentro. Stripe expone `pause_collection` con tres comportamientos (`void`, `keep_as_draft`,
+  `mark_uncollectible`) y su documentación dice explícitamente que se usa **«para ofrecer
+  temporalmente tu servicio gratis»**. Mercado Pago ofrece **tres operaciones y ninguna más**:
+  pausar, cancelar, modificar monto. No existe saltear un cobro ni cobrar cero.
+- **Alternativas**: (A) **pausar en el proveedor durante la cortesía y sostener el servicio de
+  nuestro lado**; (B) cancelar y que el beneficiario se re-suscriba al terminar; (C) bajar el monto
+  al piso durante la cortesía.
+- **Decisión**: **(A)**.
+- **Motivo, por los dos criterios del owner.**
+  - **Toca plata o no toca plata**: (A) es la única que **no mueve un peso en ninguna dirección**.
+    (C) le **cobra ARS 15 por ciclo a alguien a quien le dijimos que no pagaba**. (B) no cobra, pero
+    pone una barrera de checkout al final de un regalo.
+  - **Hacia dónde falla cada una**: (A) falla **regalando más días de los debidos**, y se corrige
+    reanudando. (B) falla **perdiendo al cliente** —cancelar es irreversible y al final hay que
+    reconquistarlo en el checkout, justo a quien quisimos premiar—. (C) falla **cobrándole** al
+    beneficiario.
+  - Y (A) **no cuesta código nuevo**: el reloj que pausa y reanuda hay que construirlo igual por
+    `DEC-SUB-010`. La cortesía es otro motivo para el mismo mecanismo, no un mecanismo más.
+- **Implicaciones**:
+  1. **Durante la cortesía la suscripción queda congelada en el proveedor** (`EX-11`): no se le
+     puede aplicar un upgrade, ni un cambio de precio de `DEC-MP-002`, ni un cambio de tarjeta. Lo
+     que se pida en ese período **se encola y se aplica al reanudar**, o se reanuda primero y se
+     rehace la cortesía. No hay una tercera opción: el proveedor devuelve `400`.
+  2. **En el proveedor una cortesía se ve IDÉNTICA a una pausa pedida por el cliente.** La
+     distinción existe sólo en nuestra base, y el reloj que reanuda **tiene que saber por qué está
+     pausada**: si lee sólo el estado de MP, reanuda la cortesía de alguien que había pedido pausa,
+     o al revés.
+  3. **Falta decidir la precedencia** entre una cortesía vigente y una pausa pedida por el cliente
+     —y entre una cortesía y otra—. Queda como residuo, no como parte de esta decisión.
+  4. **El §34.1 no toca al proveedor**: durante el trial, la cortesía extiende el trial, que es
+     nuestro. Son dos implementaciones según el estado del beneficiario.
+  5. **La cortesía PERMANENTE sigue cancelando** (§35.3 y `DEC-GRANT-001`), y la asimetría es
+     deliberada: cancelar es irreversible, así que sirve para lo que no termina y no para lo que sí.
+  6. Lo que `PS-6` mide —que el ciclo vencido en pausa se pierde— **acá no aplica**: durante la
+     cortesía el servicio lo damos igual, que es el punto.
+- **Pendiente de medir, y no bloquea**: **si el proveedor le manda algún correo al cliente cuando
+  pausamos su suscripción.** Si le llega un «tu suscripción fue pausada» en medio de un regalo, hay
+  que anticiparlo (`DEC-MAIL-001`: los correos del proveedor se anticipan, no se desmienten).
+- **Origen**: punto 11 del contraste PDR ↔ proveedor · §34.2 · `BD-MP-02`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **40** |
+| Decisiones tomadas | **41** |
 | De metodología | 3 |
-| Funcionales | 37 |
+| Funcionales | 38 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
-| Bloqueantes de FASE 2 que decide el experimento | **1 abierta** — `BD-MP-02` (cortesía). `BD-MP-01` (pausa) la cerró `DEC-SUB-010` con el reloj leído; `BD-MP-03` la cerró `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
+| Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
 | Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34), y el `SUSPENDED` doble de `M-ARCH-01` |

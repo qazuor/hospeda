@@ -28,8 +28,9 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > y aun así le sobrevivió una elección de diseño que la medición no toma. Está abajo, con su
 > cuadro comparativo y una recomendación.
 >
-> Lo que frena FASE 2 es **1** bloqueante que decide el experimento (`BD-MP-02` cortesía).
-> `BD-MP-01` (pausa) la cerró `DEC-SUB-010` con el reloj leído; `BD-MP-03` la cerró `DEC-MP-001`.
+> **Ya no queda ningún bloqueante de FASE 2 que decida el experimento.** `BD-MP-01` (pausa) la
+> cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con
+> el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`.
 >
 > **Punto 10 del contraste cerrado el 2026-09-16.** `DEC-SUB-010`: la pausa es **la del
 > proveedor**, empieza **cuando el cliente la pide**, se elige en **meses enteros**, y los días no
@@ -44,8 +45,16 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > rechazo inexplicable el sistema nunca concluye que el pago no se puede reembolsar. **El botón de
 > arrepentimiento queda fuera de alcance** hasta la consulta legal, con el riesgo declarado.
 >
-> **Quedan dos puntos.** La **cortesía** espera el reloj de sandbox; el **cobro fallido** no tiene
-> todavía un mecanismo para fabricarlo. El **fin de pausa** se cerró con `DEC-SUB-010`.
+> **Punto 11 del contraste cerrado el 2026-09-16.** `DEC-GRANT-003`: la cortesía temporal se
+> implementa **pausando** la suscripción en el proveedor y sosteniendo el servicio de nuestro lado.
+> Es la única de las tres que no mueve un peso: bajar al piso le **cobra** ARS 15 por ciclo a quien
+> le dijimos que no pagaba (`PC-2`, `CT-1`), y cancelar lo obliga a volver al checkout al final del
+> regalo. Las otras dos puertas se cerraron con mediciones del mismo día: `EX-35` (no se le puede
+> poner un `free_trial` a una viva) y `EX-34` (no se le puede correr la fecha).
+>
+> **Queda UN punto: el cobro fallido.** Ya no le falta un mecanismo para fabricarlo —lo tiene, y
+> está corriendo—: el sujeto `apagon` vive en **producción** con la tarjeta real del owner, que la
+> apaga desde el home banking. El intento del 2026-09-17 lo contesta.
 >
 > **Puntos 1 a 8.** `DEC-MAIL-001`: nuestro correo
 > **bloquea la acción sólo antes de cancelar** —donde el del proveedor insinúa mora—, y los correos
@@ -139,7 +148,7 @@ y **`BD-MP-03` y `BD-MP-04` ya no**.
 | ID | Pregunta | Filas que la desbloquean | Estado |
 |---|---|---|---|
 | `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6`, `EX-11`, `EX-34` | ✅ **cerrada el 2026-09-16 por `DEC-SUB-010`: la NATIVA**, leído el reloj. `PS-4` no hay auto-reanudación (el reloj de fin de pausa es nuestro), `PS-5` reanudar cambia sólo el `status`, `PS-6` el ciclo vencido en pausa se pierde, `EX-34` la fecha de una suscripción viva es inmutable —así que ni recrear ni acreditar hacen falta: con pausas de **meses enteros** la aritmética se compensa sola—. `EX-11` sigue acotándola: estando pausada el proveedor **rechaza toda modificación** (con control: reanudada, el mismo cambio entra), y **cancelar sí se puede** |
-| `BD-MP-02` | Cortesía temporal sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` | 🟡 espera 1C |
+| `BD-MP-02` | Cortesía temporal sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1`, **`EX-34`**, **`EX-35`** | ✅ **cerrada el 2026-09-16 por `DEC-GRANT-003`: se PAUSA.** Las cuatro estrategias de `CT-2` quedaron medidas hasta el fondo y tres se caen: bajar el monto **cobra ARS 15 por ciclo** (`PC-2`, y `CT-1` lo confirmó cobrando 15 en la renovación), poner un `free_trial` sobre una viva **no se puede** (`EX-35`), correr la fecha **tampoco** (`EX-34`), y cancelar-y-recrear devuelve al beneficiario al checkout. Pausar es la única que no mueve un peso, y el reloj que la reanuda ya es obligatorio por `DEC-SUB-010` |
 | `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | ✅ **`DEC-MP-001`** — se muta el monto del preapproval; el §29 se cumple del lado nuestro |
 | `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🔴 **la medición no alcanzó: sobrevivió una elección — ver abajo** |
 
