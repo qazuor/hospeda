@@ -1149,12 +1149,14 @@ Cada entrada lleva, según §3.4:
      proveedor acepta y no aplica no lo nota nadie hasta la conciliación.
   5. **Nuestro aviso tiene que salir antes** que el del proveedor, o al menos explicar el que ya
      le llegó.
-- **ABIERTO — el criterio del automático.** Está decidido *que* haya fallback automático; **no
-  cuál es el criterio** cuando el cliente no eligió. No se completa en silencio (§67). Candidatos:
-  despublicar primero **las publicadas más recientemente** (determinista y anticipable por el
-  cliente), las de **menos visitas** (mejor señal, pero ruidosa y necesita datos), o pedirle un
-  **orden de prioridad** una sola vez. Recomendado: las más recientes primero, por ser el único
-  que el cliente puede predecir sin mirar métricas.
+- **El criterio del automático: se despublican primero las publicadas MÁS RECIENTEMENTE**, hasta
+  quedar dentro del límite. Cerrado el 2026-09-16 por el owner. Se descartaron «las de menos
+  visitas» y «pedirle un orden de prioridad» por el mismo motivo: **es el único criterio que el
+  cliente puede predecir sin mirar métricas**. Si el aviso dice «vamos a despublicar las últimas
+  que publicaste», sabe qué va a pasar y puede actuar; con un criterio por rendimiento no puede
+  anticiparlo, y una sorpresa ahí le pega al negocio. **Por eso el criterio va escrito en el
+  aviso**, no sólo en el código: si el cliente no puede leerlo, deja de ser predecible y el
+  motivo por el que se eligió se pierde.
 - **Origen**: punto 3 del contraste PDR ↔ proveedor · §28 · `M-ENT-02`.
 
 ---
