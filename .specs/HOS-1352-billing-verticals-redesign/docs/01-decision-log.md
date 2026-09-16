@@ -1291,15 +1291,75 @@ Cada entrada lleva, según §3.4:
   baja—, y **las tres piden revisión profesional, no una búsqueda web**.
 - **Origen**: punto 5 del contraste PDR ↔ proveedor · §29 · `M-LEGAL-03`.
 
+### DEC-CONC-001 — El candado contra el doble cobro es nuestro, durable, y el duplicado se cancela solo pero se reembolsa con confirmación
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §51 y el §52 piden diseñar explícitamente para el doble clic, los reintentos,
+  los webhooks duplicados, el desorden, los jobs duplicados y los fallos de red. La medición dejó
+  ese pedido sin red de contención del lado del proveedor.
+- **Contexto medido**:
+  - `EX-17` **`NOT_SUPPORTED`**: la creación de una suscripción **no deduplica por ningún
+    mecanismo**. Diez intentos, diez ids. Ni `external_reference` ni `X-Idempotency-Key` — el
+    header **se acepta y no hace nada**. Re-verificado en producción.
+  - `RF-4`/`RF-6` **`VERIFIED`**: en `/refunds` el mismo header es **obligatorio** y **se
+    respeta**. **La idempotencia de este proveedor es POR ENDPOINT** y no se puede razonar de uno
+    al otro. La documentación oficial lo confirma y advierte que no se le atribuyan a la API de
+    suscripciones garantías que no tiene.
+  - `RC-1` **`PARTIALLY_SUPPORTED`**: el buscador de suscripciones **ignora `external_reference`
+    en silencio**; sí filtra por `payer_email` y `status`, y los compone.
+  - `PA-3`: una creación **autorizada cobra** — al instante en sandbox, ~26 min en producción.
+  - `RF-8`: hay un rechazo de reembolso que **no sabemos explicar** ($5 se rechaza y $14 entra
+    sobre el mismo pago). `R-MP-01`: la API donde viven los reembolsos está anunciada en
+    discontinuación.
+  - `payer.id` **no identifica a una persona** — el mismo mail apareció con dos ids. El mail sí.
+- **Decisión**, en tres partes:
+  1. **El candado es nuestro, va ANTES de llamar al proveedor, y es DURABLE.** Nada en memoria del
+     proceso: en un despliegue conviven dos contenedores sirviendo tráfico, y un registro en
+     memoria deja de deduplicar justo cuando más falta hace.
+  2. **La recuperación tras un timeout no pregunta por nuestra referencia, pregunta por el
+     pagador.** Como el buscador ignora `external_reference`, la pregunta *«¿ya creé ésta?»* no
+     tiene respuesta; la que sí la tiene es **«¿este pagador tiene alguna suscripción autorizada
+     que yo no tenga registrada?»**, por `payer_email` + `status`.
+  3. **Ante un duplicado que ya cobró: se cancela automáticamente, y el reembolso lo confirma una
+     persona.**
+- **Motivo**:
+  - El caso peligroso **no lo cubre un candado**: mandamos crear, el proveedor crea y cobra, y la
+    respuesta se pierde. Desde nuestro lado sólo hay un timeout. Reintentar son dos cobros; no
+    reintentar deja a alguien que pagó sin servicio. **Sólo lo resuelve preguntarle al proveedor**,
+    y por eso la parte 2 es tan importante como la 1.
+  - **Cancelar y reembolsar no son igual de riesgosos.** Cancelar detiene el daño futuro, no mueve
+    plata, y lo peor que puede salir mal es cancelar algo que igual había que cancelar. El
+    reembolso es **la operación que más veces nos sorprendió midiendo**, sobre una API en
+    discontinuación. Automatizar lo primero y confirmar lo segundo separa lo reversible de lo que
+    no lo es.
+  - Con tres clientes, la confirmación humana llega en minutos; el costo de esperar es bajo y el
+    de un reembolso automático mal disparado no.
+- **Implicaciones**:
+  1. **El daño no es simétrico, y el diseño tiene que reflejarlo.** Dos suscripciones sin
+     autorizar son inofensivas; **una creación autorizada cobra**, así que ahí un reintento son
+     dos cobros reales. El candado tiene que ser más estricto en el camino que autoriza.
+  2. **La clave de idempotencia se genera y se persiste ANTES de la primera llamada**, no al
+     reintentar. Si se genera en el reintento, no hay nada que comparar.
+  3. **Hace falta un reconciliador que barra los estados intermedios**: creaciones que quedaron sin
+     respuesta, y suscripciones del proveedor que no tienen contraparte nuestra.
+  4. **El `external_reference` sirve para RECONOCER, no para ENCONTRAR.** Una vez que tenés la
+     suscripción en la mano, la referencia te dice de quién es; pero no podés llegar a ella por la
+     referencia. Y `EX-19` mide que se puede **reescribir** sobre una autorizada, así que es una
+     vía de reparación de vínculos.
+  5. **Los webhooks también se deduplican de nuestro lado**, y no alcanza con mirar el tipo: el
+     proveedor emite **tres notificaciones por reembolso, en dos formatos distintos para el mismo
+     hecho** (`RF-7`).
+- **Origen**: punto 6 del contraste PDR ↔ proveedor · §51 · §52 · `M-CONC-01`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **35** |
+| Decisiones tomadas | **36** |
 | De metodología | 3 |
-| Funcionales | 32 |
+| Funcionales | 33 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
