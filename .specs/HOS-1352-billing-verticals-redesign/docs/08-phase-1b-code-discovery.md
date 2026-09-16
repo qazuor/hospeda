@@ -48,15 +48,27 @@ limpieza se retiraron 45 memorias locales, 149 observaciones de engram y 303 iss
 5. **Un hallazgo que contradice una decisión no toca el decision log.** Se anota acá
    y se le presenta al owner con el costo de cambiarla y el de no cambiarla.
 
-### Ancla
+### Qué código — son DOS repos, y qzpay es nuestro
 
-Todo lo de este documento está medido sobre **`60a39dae2`** (2026-09-11 13:52 `-03`),
-que al 2026-09-16 es la punta de `origin/staging` **y** el contenido de `origin/main`:
-`git diff origin/main HEAD` fuera de `.specs/` da 48 `.md` y 2 `.json`, **cero
-archivos de código**. Lo que se lee acá es lo que corre en producción.
+El relevamiento cubre **hospeda y `qzpay`** (`/home/qazuor/projects/PACKAGES/qzpay`).
+Decisión del owner, 2026-09-16: *«es nuestro, incluilo en todo el relevamiento, ya que
+también lo incluiremos en el refactor/código a escribir nuevo»*. qzpay **no** es una
+dependencia de terceros que haya que rodear: es superficie reescribible como cualquier
+otra.
 
-Si `staging` se mueve, las mediciones no se actualizan solas: se re-miden o se marcan
-caducas.
+### Anclas
+
+| Repo | Ancla | Por qué ésa |
+|---|---|---|
+| hospeda | **`60a39dae2`** (2026-09-11 13:52 `-03`) | es la punta de `origin/staging` **y** el contenido de `origin/main`: `git diff origin/main HEAD` fuera de `.specs/` da 48 `.md` y 2 `.json`, **cero archivos de código** |
+| qzpay | **`c934164`** = `origin/main` (2026-09-09 03:46 `-03`) | es el único punto donde las versiones coinciden con las que hospeda tiene instaladas — ver `F-1B-004` |
+
+**En los dos casos el ancla es el ref remoto, no el working tree.** El checkout local
+de qzpay está en otra branch y tres commits atrás; leerlo habría descrito código que no
+corre. Se lee desde un worktree detached en `c934164`, sin tocar la branch del owner.
+
+Si cualquiera de los dos refs se mueve, las mediciones no se actualizan solas: se
+re-miden o se marcan caducas.
 
 ---
 
@@ -68,9 +80,12 @@ verificado contra la definición real.
 | Conjunto | Total medido | Cómo se midió | Cubierto |
 |---|---|---|---|
 | Tablas en producción | **174** | `information_schema.tables` en prod | 174 |
-| Tablas con schema Drizzle en el repo | **147** | `pgTable(` multilínea en `packages/db/src` | 147 |
-| Tablas sin schema en el repo | **27** | diferencia de los dos anteriores | 27 |
-| `pgEnum` declarados | **90** | `pgEnum(` multilínea | 0 |
+| … con schema Drizzle en **hospeda** | **147** | `pgTable(` multilínea en `packages/db/src` | 147 |
+| … con schema Drizzle en **qzpay** | **27** | `pgTable(` multilínea en `packages/drizzle/src` | 27 |
+| … sin schema en ningún lado | **0** | los dos conjuntos anteriores, cruzados | — |
+| Paquetes publicables de qzpay | **9** | `packages/*/package.json` | 9 |
+| … que hospeda importa | **5** | `@qazuor/qzpay-*` en el código, no en el `package.json` | 5 |
+| `pgEnum` declarados en hospeda | **90** | `pgEnum(` multilínea | 0 |
 | Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | 0 |
 | Migraciones estructurales | 125 | `packages/db/src/migrations/*.sql` | 0 |
 | Migraciones `extras` | 42 | `migrations/extras/*.sql` | 0 |
@@ -87,7 +102,7 @@ registra. `F-1B-003` es la razón.
 
 ## Hallazgos
 
-### F-1B-001 — El núcleo de billing no tiene schema en este repo
+### F-1B-001 — El núcleo de billing vive en qzpay, y el censo de tablas cierra exacto
 
 **27 de las 174 tablas de producción no tienen ninguna definición Drizzle en
 `packages/db/src`.** Las 27 son `billing_*`, y entre ellas está todo el núcleo:
@@ -105,21 +120,30 @@ billing_audit_logs       billing_vendors          billing_vendor_payouts
 billing_subscription_polling_jobs
 ```
 
-Las crean las migraciones **de este repo** (`0000_baseline.sql` en adelante), pero sus
-definiciones Drizzle viven en **`@qazuor/qzpay-drizzle`** (`^4.0.0`, declarado en
-`packages/db/package.json:57`). O sea: el repo es dueño del **DDL** y no del
-**modelo**.
+Las crean las migraciones **de hospeda** (`0000_baseline.sql` en adelante), y sus
+definiciones Drizzle viven en **`qzpay/packages/drizzle/src`**. O sea: hospeda es dueño
+del **DDL** y qzpay del **modelo**, sobre las mismas 27 tablas.
 
-En la otra dirección el resultado es limpio: **cero** tablas declaradas en el repo que
-no existan en producción. El esquema del repo es un subconjunto estricto de la base
-real.
+**El censo cierra sin residuo**, y las tres direcciones se verificaron por separado:
 
-*Medición*: `information_schema.tables` sobre prod vía `hops --target=prod psql`
-(174), contra `pgTable(` multilínea sobre `packages/db/src` (147), 2026-09-16.
+- qzpay define **exactamente 27** tablas (27 ocurrencias de `pgTable(`, 27 nombres
+  únicos), y son **el mismo conjunto** que le falta a hospeda — no sólo la misma
+  cantidad: los conjuntos son idénticos, comparados fila por fila.
+- Las 27 de qzpay **están todas en producción**. Ninguna declarada de más.
+- Cero tablas declaradas en hospeda que no existan en producción.
+
+**174 = 147 + 27.** Ninguna tabla de producción queda sin dueño y ningún dueño declara
+una tabla que no exista.
+
+*Medición*: `information_schema.tables` sobre prod vía `hops --target=prod psql` (174),
+contra `pgTable(` multilínea sobre `hospeda/packages/db/src` (147) y sobre
+`qzpay/packages/drizzle/src` en `c934164` (27). 2026-09-16.
 
 *Qué abre, sin resolverlo acá*: el §9 exige que toda configuración comercial salga de
-la DB y el §7 exige un único motor genérico. Los dos aterrizan sobre tablas cuyo
-modelo lo define un paquete externo, con su propio versionado.
+la DB y el §7 exige un único motor genérico. Los dos aterrizan sobre tablas cuyo modelo
+vive en el otro repo — que es reescribible, pero tiene versionado propio, se publica a
+un registro y tiene otros consumidores potenciales (`stripe`, `nestjs`, `react`,
+`hono`, `cli`) que hospeda no usa.
 
 ---
 
@@ -168,6 +192,68 @@ suficientemente equivocada como para delatarse sola.
 
 ---
 
+### F-1B-004 — El checkout local de qzpay no es el código que corre
+
+El working tree de `/home/qazuor/projects/PACKAGES/qzpay` está en la branch
+`feat/drop-product-domain-default`, en `7240dca`, **tres commits detrás de
+`origin/main`**. Y las versiones que declara **no** son las que hospeda tiene
+instaladas:
+
+| paquete | checkout local | `origin/main` | instalado en hospeda |
+|---|---|---|---|
+| `qzpay-core` | 6.0.0 | **7.0.0** | **7.0.0** |
+| `qzpay-drizzle` | 3.0.0 | **4.0.0** | **4.0.0** |
+| `qzpay-mercadopago` | 2.11.1 | **2.11.2** | **2.11.2** |
+
+En `core` y en `drizzle` la diferencia es **un major**, y el commit del working tree es
+`feat(core,drizzle)!: require a productDomain when creating a plan` — un breaking change.
+Relevar el working tree habría descrito una API que producción no tiene.
+
+`origin/main` (`c934164`) coincide exactamente con lo instalado en los tres paquetes, y
+por eso es el ancla. Las versiones instaladas salen de `pnpm-lock.yaml` de hospeda, no
+de los rangos `^` del `package.json`, que no dicen qué se resolvió.
+
+*Por qué está anotado*: es la misma trampa que la del working tree de hospeda, en otro
+repo. Una afirmación sobre el código que corre se verifica contra el ref remoto.
+
+---
+
+### F-1B-005 — Hospeda usa 5 de los 9 paquetes de qzpay; 4 no tienen una sola referencia
+
+Medido por los `import` del código, no por los `package.json`:
+
+| paquete | versión | archivos `src` | líneas | tests | lo importa hospeda |
+|---|---|---|---|---|---|
+| `core` | 7.0.0 | 89 | 22.120 | 26 | **sí** (112 referencias) |
+| `drizzle` | 4.0.0 | 68 | 14.762 | 46 | **sí** (52) |
+| `mercadopago` | 2.11.2 | 16 | 4.160 | 15 | **sí** (39) |
+| `hono` | 2.0.1 | 22 | 4.137 | 13 | **sí** (22) |
+| `react` | 2.0.1 | 28 | 4.869 | 21 | **sí** (10) |
+| `stripe` | 1.3.11 | 19 | 3.309 | 13 | no |
+| `nestjs` | 2.0.1 | 36 | 2.507 | 15 | no |
+| `cli` | 1.1.0 | 21 | 3.142 | 13 | no |
+| `dev` | 1.4.7 | 9 | 3.039 | 8 | no |
+
+**Los cinco están declarados donde se usan** — `apps/api` (core, hono, mercadopago),
+`apps/admin` (core, react), `packages/db` (core, drizzle), `packages/billing` (core,
+mercadopago), `packages/service-core` (core). Cero dependencias fantasma.
+
+`stripe`, `nestjs`, `cli` y `dev` no tienen **ninguna** referencia en hospeda.
+
+Una aclaración de método que casi produce un hallazgo falso: `packages/schemas` aparece
+en una búsqueda de `@qazuor/qzpay-hono` y **no declara** ninguna dependencia de qzpay.
+No es una dependencia fantasma: la coincidencia está en un **comentario**
+(`packages/schemas/src/api/billing/admin-billing-view.schema.ts:7`), no en un import.
+
+Ese comentario deja además una **pista a verificar, que todavía no es un hallazgo**:
+afirma que qzpay y hospeda usan vocabularios distintos para el mismo hecho
+(`succeeded`/`canceled` contra el de hospeda), que el camino del webhook normaliza con
+`QZPAY_TO_HOSPEDA_STATUS` y que **el camino del cancel de admin escribe la grafía de
+qzpay sin normalizar**. Es prosa dentro del código, o sea exactamente lo que la regla 1
+no admite: hay que leerlo en la implementación antes de anotarlo.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -184,4 +270,15 @@ Ninguno empezado. El orden no está decidido.
 | Superficies Admin | por medir | ⬜ |
 | Las 125 + 42 + 121 migraciones: qué quedó aplicado y qué quedó muerto | 288 | ⬜ |
 | Tests: qué comportamiento afirman (como evidencia de intención, no de corrección) | por medir | ⬜ |
-| `@qazuor/qzpay-*`: qué del núcleo vive fuera del repo | por medir | ⬜ |
+
+Y en **qzpay**, con el mismo criterio:
+
+| Carril | Denominador | Estado |
+|---|---|---|
+| `core` — el motor: qué expone y qué decide | 89 archivos / 22.120 líneas | ⬜ |
+| `drizzle` — las 27 tablas: columnas, constraints e índices | 27 tablas / 68 archivos | ⬜ |
+| `mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C | 16 archivos | ⬜ |
+| `hono` y `react` — las superficies que hospeda monta | 50 archivos | ⬜ |
+| La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
+| El vocabulario: `QZPAY_TO_HOSPEDA_STATUS` y quién lo esquiva (pista de `F-1B-005`) | por medir | ⬜ |
+| `stripe`, `nestjs`, `cli`, `dev` — sin consumidor en hospeda | 85 archivos | ⬜ |
