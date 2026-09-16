@@ -93,9 +93,12 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > subir pasa por el checkout y cobra desde ya, bajar se difiere al fin del ciclo sin checkout.
 >
 > `DEC-SUB-006`: el cambio de ciclo se
-> re-autoriza en el checkout del proveedor y los días pagados se compensan por valor. Queda
-> **condicionada a `EX-33`** (§61): nadie midió todavía si el checkout respeta una fecha de primer
-> cobro futura, y si no la respeta, el cliente paga dos veces.
+> re-autoriza en el checkout del proveedor y los días pagados se compensan por valor. Estuvo
+> **condicionada a `EX-33`** (§61) hasta el **2026-09-16**, cuando esa fila quedó `VERIFIED` en
+> **producción con tarjeta real**: el checkout **sí** respeta la fecha de primer cobro futura,
+> medido tres veces sobre el mismo pagador. El cliente no paga dos veces. ⚠️ Lo que sí destapó la
+> medición es `EX-38`: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al
+> cliente como «Tu prueba gratis comenzó», justo sobre días que ya pagó.
 
 ---
 
@@ -106,17 +109,17 @@ Tres grupos, y no se mezclan:
 | Grupo | Quién decide | Cuántos | Cuándo |
 |---|---|---|---|
 | **Bloqueantes de FASE 2 que decide el owner** | owner | **8** | ✅ cerradas |
-| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | 1 cerrada (`DEC-MP-001`) · **2** esperan la matriz · **1 volvió al owner** (`BD-MP-04`) |
+| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | ✅ **3 cerradas** (`DEC-MP-001`, `DEC-SUB-010`, `DEC-GRANT-003`) · **1 volvió al owner** (`BD-MP-04`) |
 | **No bloqueantes que decide el owner** | owner | **19** | ✅ cerradas |
 | **Huecos técnicos** | la Master Spec (FASE 2) | **~70** | sin intervención del owner |
 
 Los 12 bloqueantes son los que frenan FASE 2 (§0: *"Toda cuestión que pueda cambiar
 significativamente la arquitectura: `BLOCKING DECISION`"*).
 
-**FASE 2 sigue bloqueada**, pero por **2** de las 4 que decide el experimento, no por las
-cuatro: FASE 1C ya cerró las filas de `BD-MP-03` y `BD-MP-04`. Ninguna de las otras dos se
-puede cerrar mientras su fila de la matriz diga `UNKNOWN` (§61), y al 2026-09-15 **26 de las
-57 filas** lo dicen.
+**Al 2026-09-16 ya no queda ningún bloqueante que dependa de una medición.** Las dos que
+seguían abiertas —`BD-MP-01` (pausa) y `BD-MP-02` (cortesía)— se cerraron ese día, una vez que el
+reloj se leyó: `DEC-SUB-010` y `DEC-GRANT-003`. La matriz pasó de **26 `UNKNOWN` sobre 57 filas**
+(2026-09-15) a **8 sobre 89**, y ninguno de los 8 bloquea FASE 2.
 
 ---
 
@@ -142,8 +145,8 @@ las dos listas a propósito, no por doble conteo.
 ## Bloqueantes de FASE 2 — las decide el experimento, no el owner
 
 **No se pueden cerrar mientras su fila de [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md)
-diga `UNKNOWN`** (§61 y regla 3 del Decision Log). Al 2026-09-15, **26 de las 57** lo dicen —
-y **`BD-MP-03` y `BD-MP-04` ya no**.
+diga `UNKNOWN`** (§61 y regla 3 del Decision Log). **Las cuatro ya salieron de ahí**: al 2026-09-16
+quedan **8 `UNKNOWN` sobre 89 filas**, y ninguno pertenece a un bloqueante.
 
 | ID | Pregunta | Filas que la desbloquean | Estado |
 |---|---|---|---|
