@@ -88,8 +88,8 @@ verificado contra la definición real.
 | `pgEnum` declarados en hospeda | **90** | `pgEnum(` multilínea, cruzado con `pg_type` en prod | **90** |
 | Columnas en producción | **2.423** | `information_schema.columns` | 2.423 |
 | Claves foráneas | **399** | `pg_constraint` con `contype='f'` | **399** |
-| Índices | **836** | `pg_indexes` | 0 |
-| Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | 0 |
+| Índices | **836** | `pg_index` por catálogo — **no** por nombre, que da 160 PK en vez de 174 | **836** |
+| Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | **132** |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
 | Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | 0 |
 | Migraciones estructurales | 125 | `packages/db/src/migrations/*.sql` | 0 |
@@ -424,6 +424,70 @@ tablas destino.
 
 ---
 
+### F-1B-011 — Toda la base tiene DOS funciones de trigger, y una tabla quedó con el trigger duplicado por un rename
+
+Los **132** triggers no internos invocan **exactamente dos** funciones:
+
+| función | triggers | tablas |
+|---|---|---|
+| `set_updated_at` | **122** | 121 |
+| `delete_entity_bookmarks` | **10** | 5 |
+
+Repartidos: 119 sobre tablas de hospeda, **13 sobre tablas de qzpay**. O sea que el
+carril `extras` de hospeda también le pone triggers a las tablas que modela qzpay — es
+el mismo patrón de `F-1B-008`, en otra forma.
+
+**La cobertura de `updated_at` es completa, verificada por la negativa.** Hay **121**
+tablas con columna `updated_at` y **cero** que la tengan sin su trigger. Las 53
+restantes (174 − 121) simplemente no tienen la columna. No hay ninguna tabla con un
+`updated_at` que nadie actualice.
+
+**La anomalía está en `entity_subscriptions`: tiene DOS triggers `set_updated_at`.**
+
+```
+trg_set_updated_at_commerce_listing_subscriptions
+trg_set_updated_at_entity_subscriptions
+```
+
+El primero sobrevivió al rename de `F-1B-002` —Postgres renombra la tabla y deja el
+trigger con su nombre viejo— y después se creó el segundo. La función se ejecuta dos
+veces por cada fila modificada. Es idempotente, así que el resultado no cambia; lo que
+queda es un resto del rename que nadie retiró.
+
+Es la única tabla de las 174 con un trigger duplicado.
+
+---
+
+### F-1B-012 — Los 836 índices, y 77 restricciones de unicidad que no son constraints
+
+Clasificados por catálogo (`pg_index.indisprimary` / `indisunique`), **no por el nombre
+del índice**:
+
+| tipo | cantidad |
+|---|---|
+| Clave primaria | **174** |
+| Único | **116** |
+| Normal | **546** |
+
+Y por mitad: **705** sobre tablas de hospeda, **131** sobre las de qzpay.
+
+**Clasificar por nombre da 160 claves primarias en vez de 174.** Catorce PK no se llaman
+`*_pkey`: son las compuestas de las tablas de relación (`r_accommodation_amenity`,
+`r_entity_tag`, `role_permission`, `user_role`, `user_permission`, …), que Drizzle nombra
+`*_pk`. Es la regla 3 otra vez: el patrón fallaba, no la base.
+
+**De los 116 índices únicos, sólo 39 respaldan una `constraint UNIQUE`; los otros 77 son
+índices únicos sueltos.** La diferencia no es cosmética: un índice único impone la misma
+unicidad, pero no aparece como constraint en `information_schema.table_constraints`, así
+que cualquier inventario de restricciones que mire sólo ahí va a contar **39** donde hay
+**116**.
+
+Además hay **46 índices parciales** (con cláusula `WHERE`) y **21 de expresión**. Los
+parciales son restricciones condicionales —unicidad que vale sólo para ciertas filas— y
+no se leen en ningún lado salvo en el `indexdef`.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -433,7 +497,8 @@ Ninguno empezado. El orden no está decidido.
 | ~~Esquema: censo de columnas, constraints y enums~~ | — | ✅ `F-1B-006` a `F-1B-009` |
 | ~~Las 399 claves foráneas y la frontera hospeda↔qzpay~~ | — | ✅ `F-1B-010` |
 | Las 358 FK internas de hospeda: el grafo de dependencias del dominio | 358 | ⬜ |
-| Los 836 índices y los 132 triggers: qué hacen y cuáles no los conoce Drizzle | 968 | ⬜ |
+| ~~Los 836 índices y los 132 triggers~~ | — | ✅ `F-1B-011`, `F-1B-012` |
+| Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | Los 47 cron jobs: qué hace cada uno, leído del handler | 47 | ⬜ |
 | Endpoints registrados de la API por tier (`public` / `protected` / `admin`) | por medir | ⬜ |
