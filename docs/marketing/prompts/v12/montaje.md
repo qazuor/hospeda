@@ -1,6 +1,6 @@
-# V12 · Treinta días para probarlo — montaje
+# V12 · Probalo gratis — montaje
 
-Prompts y montaje de **[V12](../../plan-videos.md#v12--treinta-días-para-probarlo)**: un
+Prompts y montaje de **[V12](../../plan-videos.md#v12--probalo-gratis)**: un
 corto de 20 s armado con **tres tiradas de Hailuo, grabación de pantalla y la placa de
 cierre**.
 
@@ -13,20 +13,20 @@ Molde: [`../v9/montaje.md`](../v9/montaje.md).
 **Esto es lo que se escucha de punta a punta cuando el montaje está terminado**, en
 orden y sin cortes. Es una sola idea dicha una sola vez: el video no dice nada más.
 
-> Treinta días para probar Hospeda sin que se te cobre nada.
+> Empezá a usar Hospeda gratis, sin que se te cobre nada.
 >
-> Entrás, elegís tu plan, publicás tu alojamiento y recién al día treinta y uno se te
-> cobra.
+> Entrás, elegís tu plan, publicás tu alojamiento y antes del primer cobro siempre te
+> avisamos.
 
 Repartido en las tomas:
 
 | | Frase | Toma | Sílabas | Dura |
 |:-:|---|:-:|:-:|:-:|
-| **F1** | Treinta días para probar Hospeda sin que se te cobre nada. | T1 | 19 | 3,3 s |
+| **F1** | Empezá a usar Hospeda gratis, sin que se te cobre nada. | T1 | 19 | 3,3 s |
 | — | *(beat visual, sin voz)* | T2 | — | 1,5 s |
 | **F2** | Entrás, elegís tu plan, | T3 | 7 | 1,2 s |
 | **F3** | publicás tu alojamiento | T3 | 9 | 1,6 s |
-| **F4** | y recién al día treinta y uno se te cobra. | T4 | 15 | 2,6 s |
+| **F4** | y antes del primer cobro siempre te avisamos. | T4 | 15 | 2,6 s |
 | — | *(beat visual, sin voz)* | T5 | — | 3,0 s |
 
 **Hablado: 8,7 s de 20.** El resto es el beat visual, la grabación de la reserva de
@@ -36,7 +36,7 @@ Y lo que se **lee** en pantalla, que no se dice en voz:
 
 | Cuándo | Texto |
 |---|---|
-| T1–T2 | **30 días sin pagar nada.** grande, como elemento principal |
+| T1–T2 | **Empezá gratis.** grande, como elemento principal |
 | T3–T4 | subtítulo palabra por palabra de F2, F3 y F4 |
 | T6 | **Empezá en hospeda.com.ar** |
 
@@ -92,10 +92,10 @@ o interno.
 
 | # | Tiempo | Dura | De dónde sale | Plano | Qué pasa | Voz |
 |---|---|:-:|---|---|---|---|
-| **T1** | 0,0–4,0 | 4,0 | Hailuo · `@######ESCENA25#######` | medio corto | habla mirando a cámara, abre la mano libre | *"Treinta días para probar Hospeda sin que se te cobre nada."* |
+| **T1** | 0,0–4,0 | 4,0 | Hailuo · `@######ESCENA25#######` | medio corto | habla mirando a cámara, abre la mano libre | *"Empezá a usar Hospeda gratis, sin que se te cobre nada."* |
 | **T2** | 4,0–5,5 | 1,5 | Hailuo · `@######ESCENA25#######` | entero (abierto) | se inclina hacia adelante y levanta el celular unos centímetros | — (beat visual) |
 | **T3** | 5,5–9,5 | 4,0 | **grabación A7** (elige el plan → confirma) | pantalla | | *"Entrás, elegís tu plan, publicás tu alojamiento"* |
-| **T4** | 9,5–14,0 | 4,5 | Hailuo · `@######ESCENA25#######` | primer plano (cerrado) | asiente, guiño final | *"y recién al día treinta y uno se te cobra."* |
+| **T4** | 9,5–14,0 | 4,5 | Hailuo · `@######ESCENA25#######` | primer plano (cerrado) | asiente, guiño final | *"y antes del primer cobro siempre te avisamos."* |
 | **T5** | 14,0–17,0 | 3,0 | **grabación A7** (pantalla de confirmación) | pantalla | queda el aviso de la fecha del primer cobro | — (solo música) |
 | **T6** | 17,0–20,0 | 3,0 | `placas/final.png` | placa | logo y CTA | — (solo música) |
 
@@ -116,7 +116,7 @@ o interno.
 
 ### Texto en pantalla
 
-- **T1–T2**: **"30 días sin pagar nada."** grande, entrando en el frame 1.
+- **T1–T2**: **"Empezá gratis."** grande, entrando en el frame 1.
 - **T3–T4**: subtítulo palabra por palabra, sincronizado con la voz.
 - **T6**: *Empezá en hospeda.com.ar*
 
@@ -164,10 +164,10 @@ Todo en segundos, para un montaje de 20,0 s a 120 BPM.
 
 | Frase | En la timeline | Dura | Cae dentro de | Aire hasta el corte |
 |---|---|:-:|:-:|:-:|
-| **F1** *Treinta días para probar Hospeda sin que se te cobre nada.* | 0,00 → 3,30 | 3,3 | T1 | 0,70 |
+| **F1** *Empezá a usar Hospeda gratis, sin que se te cobre nada.* | 0,00 → 3,30 | 3,3 | T1 | 0,70 |
 | **F2** *Entrás, elegís tu plan,* | 5,50 → 6,70 | 1,2 | T3 | — (sigue en F3) |
 | **F3** *publicás tu alojamiento* | 6,80 → 8,40 | 1,6 | T3 | 1,10 |
-| **F4** *y recién al día treinta y uno se te cobra.* | 9,50 → 12,10 | 2,6 | T4 | 1,90 (incluye el guiño de cierre) |
+| **F4** *y antes del primer cobro siempre te avisamos.* | 9,50 → 12,10 | 2,6 | T4 | 1,90 (incluye el guiño de cierre) |
 
 > ⚠️ **La pista de voz no se pega como un bloque único.** F2 y F3 salen de la misma
 > tirada de voz, en el mismo tramo continuo (no hay pausa escrita entre ellas: es un
