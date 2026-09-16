@@ -1208,7 +1208,7 @@ Cada entrada lleva, según §3.4:
      veces, la segunda no hace nada.
 - **Origen**: punto 4 del contraste PDR ↔ proveedor · §24.
 
-### DEC-MP-002 — El aumento rige ya para los nuevos, y alcanza a los existentes tras dos meses de aviso
+### DEC-MP-002 — El aumento rige ya para los nuevos, y alcanza a los existentes tras 60 días de aviso
 
 - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
 - **Complementa** `DEC-MP-001`, que decidió el **mecanismo** (mutar el monto). Esta decide la
@@ -1228,9 +1228,23 @@ Cada entrada lleva, según §3.4:
 - **Decisión**, en tres partes:
   1. **Cambiar el precio del plan rige de inmediato para los que se suscriban desde ese momento.**
   2. **A los que ya estaban se les aplica también, pero recién después de una ventana de aviso de
-     al menos DOS MESES**, con **tres contactos**: al anunciar, a 30 días y a 7 días. Cada uno
-     lleva el precio actual, el nuevo, **la fecha en que le toca a ese cliente** y que si no
-     acepta puede cancelar.
+     al menos 60 DÍAS**, con **tres contactos**: al anunciar, a 30 días y a 7 días. Cada uno lleva
+     el precio actual, el nuevo, **la fecha en que le toca a ese cliente** y que si no acepta
+     puede cancelar.
+
+     **La ventana se cuenta desde el PRIMER AVISO, no desde el cambio del catálogo.** Lo que la
+     regla protege es el tiempo de reacción del cliente: si el precio cambia un lunes y se avisa
+     el jueves, el cliente tuvo tres días menos.
+
+     **Cómo cae la fecha efectiva, por ciclo:**
+     - **Mensual** — 60 días desde el primer aviso, **aunque en el medio haya cobros**. El aumento
+       se aplica en el **primer cobro estrictamente posterior** a cumplirse los 60 días. En la
+       práctica: **dos cobros al precio viejo y el tercero al nuevo**.
+     - **Anual** — el aviso sale **60 días antes de su renovación**, y el aumento se aplica en esa
+       renovación. **Si al decidirse el aumento le faltan menos de 60 días para renovar, no se
+       llega a avisar y su aumento se posterga a la renovación SIGUIENTE** — hasta catorce meses
+       después. Es el costo de la regla, y es deliberado.
+     - **El empate lo gana el cliente**: un cobro que cae justo el día 60 va al precio viejo.
   3. **Llegada esa fecha, el monto se muta automáticamente.** No hace falta que el cliente acepte
      nada; sí puede cancelar antes.
 - **Motivo**:
@@ -1247,10 +1261,13 @@ Cada entrada lleva, según §3.4:
     instante de mutar y a nosotros no nos avisa, si no hablamos primero el cliente se entera por
     un tercero. Con tres avisos previos, el correo del proveedor llega como **confirmación**.
 - **Implicaciones**:
-  1. **La fecha efectiva es por cliente, no global.** Un anual que ya pagó hasta dentro de nueve
-     meses no puede recibir un aviso que diga «desde el 1 de diciembre»: el aumento lo alcanza en
-     **su** renovación. El anuncio es global, **cada mail dice la fecha de ese cliente**, o el
-     «cancelá antes» no le sirve para calcular nada.
+  1. **La fecha efectiva es por cliente, no global**, y sale de la regla por ciclo de arriba. Un
+     anual que ya pagó hasta dentro de nueve meses no puede recibir un aviso que diga «desde el 1
+     de diciembre»: el aumento lo alcanza en **su** renovación. El anuncio es global, **cada mail
+     dice la fecha de ese cliente**, o el «cancelá antes» no le sirve para calcular nada.
+  1b. **Un aumento tarda en rendir, y hay que preverlo.** En mensual, dos ciclos completos al
+     precio viejo; en anual, hasta catorce meses. Quien decida un aumento tiene que saber cuándo
+     empieza a cobrarse de verdad.
   2. **El precio vive en la suscripción, no sólo en el plan.** Durante la ventana conviven dos
      precios para el mismo plan, y lo que se cobra es el de la suscripción.
   3. **El proceso que aplica el aumento falla para el lado bueno**: si no corre, el cliente sigue
@@ -1262,13 +1279,16 @@ Cada entrada lleva, según §3.4:
      de inmediato y conserva el servicio hasta el fin del período que pagó.
   6. **Falta resolver un cruce**: qué pasa si la fecha del aumento cae sobre una suscripción en
      mora o en grace. Queda como hueco, no se completa en silencio.
-- **RIESGO LEGAL DECLARADO, no resuelto por esta decisión.** La parte 3 se apoya en que **el
-  silencio del cliente vale como aceptación** de una modificación del contrato. Es el modelo
-  estándar de la industria, **pero no está verificado para Argentina** y es precisamente el
-  terreno donde la normativa de consumo suele ser restrictiva. **Si resultara que el silencio no
-  alcanza, esta decisión cambia de forma**: haría falta una aceptación activa, y quien no responda
-  no podría ser aumentado. Va a `M-LEGAL-03` junto con las otras dos pendientes —el plazo de
-  notificación y el botón de baja—, y **las tres piden revisión profesional, no una búsqueda web**.
+- **RIESGO LEGAL DECLARADO Y ACEPTADO POR EL OWNER.** La parte 3 se apoya en que **el silencio
+  del cliente vale como aceptación** de una modificación del contrato. Es el modelo estándar de la
+  industria, **pero no está verificado para Argentina** y es precisamente el terreno donde la
+  normativa de consumo suele ser restrictiva. El owner decidió explícitamente **avanzar así y
+  corregir si la consulta legal dice otra cosa** (2026-09-16).
+  **Si resultara que el silencio no alcanza, esta decisión cambia de forma**: haría falta una
+  aceptación activa, y quien no responda no podría ser aumentado. Eso no sería un ajuste de
+  redacción sino otro diseño, así que **conviene resolverlo antes de implementar el punto 5**.
+  Va a `M-LEGAL-03` junto con las otras dos pendientes —el plazo de notificación y el botón de
+  baja—, y **las tres piden revisión profesional, no una búsqueda web**.
 - **Origen**: punto 5 del contraste PDR ↔ proveedor · §29 · `M-LEGAL-03`.
 
 ---
