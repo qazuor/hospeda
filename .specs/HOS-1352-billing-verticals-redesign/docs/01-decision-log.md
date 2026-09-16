@@ -1531,19 +1531,88 @@ Cada entrada lleva, según §3.4:
      publicado para suscripciones.
 - **Origen**: punto 9 del contraste PDR ↔ proveedor · §54 · `M-LEGAL-01`.
 
+### DEC-SUB-010 — La pausa es la del proveedor, empieza ya, dura meses enteros, y el que vuelve antes paga el ciclo siguiente completo
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §26.4 pide que el usuario **no pierda período ya pagado por estar pausado**. El
+  proveedor no lo hace solo, y —esto es lo nuevo— **tampoco nos deja arreglarlo**.
+- **Contexto medido** (sandbox 2026-09-16, con producción coincidiendo en el tercer punto):
+  - `PS-4` **`NOT_SUPPORTED`**: **no existe la auto-reanudación**. El sujeto estuvo `paused` 24,5 h
+    y siguió `paused`, con `last_modified` sin tocar. **MP no tiene `pauseUntil`**: el reloj que
+    termina una pausa es NUESTRO, sí o sí.
+  - `PS-5` **`VERIFIED`**: reanudar cambia **sólo el `status`**. `next_payment_date` queda clavado
+    donde estaba; no se adelanta, no se corre, no dispara cobro de recuperación ni deja deuda.
+  - `PS-6` **`NOT_SUPPORTED`**: el ciclo que vence **estando pausada** avanza la fecha +1 ciclo
+    **sin cobrar**. El período pagado que no se usó se pierde, y no hay nada para recuperarlo. Ya
+    se había visto en producción (`PS-2`).
+  - `EX-34` **`NOT_SUPPORTED`**: **la fecha de cobro de una suscripción viva es inmutable.** Cuatro
+    formas de pedirlo, cuatro `200`, cero cambios, `last_modified` congelado en las cuatro — con el
+    control que lo separa de "esta suscripción está rara": el **monto** sí muta en el mismo
+    instante. Es lo que cierra la puerta: `start_date` a futuro sólo funciona **al crear**
+    (`EX-7`).
+  - `EX-11` **`VERIFIED`**: estando pausada **no se puede modificar nada** (`400` explícito), pero
+    **sí cancelar**.
+- **Alternativas**: (A) diferir la pausa al fin del ciclo, para que el cliente use todo lo que
+  pagó; (B) pausar ya y devolverle los días perdidos como **servicio nuestro**, con un crédito en
+  nuestra base desfasado a propósito del calendario del proveedor; (C) **pausar ya, en múltiplos
+  de un ciclo entero, sin compensación de ninguna clase**.
+- **Decisión**: **(C)**. La pausa empieza **en el momento en que el cliente la pide**, se elige en
+  **cantidad de meses**, y los días no usados del ciclo en curso **se pierden**. El cliente puede
+  **volver cuando quiera** (§26.2 se cumple entero), y al volver **se le cobra normal en el ciclo
+  siguiente**: el `next_payment_date` que el proveedor ya tiene corrido. No se prorratea, no se
+  recalcula, no se acredita nada.
+- **Motivo: la aritmética se compensa sola, así que no hace falta mecanismo.** Lo que el cliente
+  pierde del ciclo pagado y lo que gana del ciclo de vuelta **son el mismo número de días** cuando
+  la pausa dura ciclos enteros, porque vuelve **el mismo día del mes** en que pausó. Pausa el 5/ene
+  por dos meses: pierde 25 días de enero, vuelve el 5/mar, y el proveedor recién cobra el 1/abr —
+  27 días sin pagar. Neto ≈ 0.
+  - Contra **(A)**: resuelve con un mecanismo lo que (C) resuelve con una restricción, y le niega
+    al cliente parar cuando quiere parar. Además su cron **tiene que ganarle al cobro del
+    proveedor**, cuyo instante exacto no es predecible —en producción el cobro llegó ~26 min tarde
+    (`PA-3`), y el reloj de sandbox seguía sin cobrar 31 min después de su fecha—, así que exigía
+    un margen de 24 h que ya le costaba un día al cliente.
+  - Contra **(B)**: obliga a mantener a propósito una fecha nuestra distinta de la del proveedor,
+    que es exactamente la clase de desfasaje que alguien viene a "arreglar" después.
+  - **El caso que (C) tenía que resolver, y resuelve**: la pausa que empieza y termina **dentro del
+    mismo ciclo** era indefendible —pagó el 1, pausó el 5, volvió el 25: recibió 11 días de los 30
+    que pagó y el 1/feb le cobran el mes completo igual, o sea **pausar le salió estrictamente peor
+    que no pausar**—. Con el mínimo de un mes, esa pausa no existe.
+- **Implicaciones**:
+  1. **El que vuelve antes de tiempo puede recibir muy poco por un mes entero**, y es el costo
+     aceptado de dejarlo volver cuando quiera: si vuelve el 28/feb con el cobro corrido al 1/mar,
+     recibe dos días y paga el mes. **Hay que mostrarle el número antes de que confirme** —hasta
+     cuándo tiene servicio y qué día se le cobra—, no explicárselo después. Mismo criterio que
+     `DEC-MAIL-001`.
+  2. **El reloj de fin de pausa es nuestro** (`PS-4`), y reanudar es un `PUT {status:"authorized"}`
+     que no cobra nada (`PS-5`). El mismo scheduler sirve para el auto-resume y para el early
+     resume.
+  3. **Todo cambio pedido durante la pausa se aplica DESPUÉS de reanudar**: estando pausada el
+     proveedor rechaza cualquier modificación (`EX-11`), incluso un cambio de precio. Un aumento
+     que caiga sobre un pausado (`DEC-MP-002`) no se puede aplicar hasta que vuelva.
+  4. Los límites del §26.3 **se reexpresan en meses**: 120 días son 4 pausas-mes y 240 son 8.
+  5. Los meses no miden lo mismo: pausar un 31/ene y volver un 28/feb deja 3 días de ruido en la
+     compensación. Se acepta.
+- **Condicionada a una medición en curso**: que la fecha corra **+1 ciclo por vencimiento
+  indefinidamente** está medido **una sola vez**, con ciclo diario y **un** vencimiento. Toda la
+  aritmética de arriba lo necesita en el vencimiento 2 y 3 — si el proveedor dejara de correrla, o
+  la recalculara al reanudar, el cliente vuelve el 5/mar y le cobran enseguida. El sujeto
+  `pausa-real` quedó **pausado el 2026-09-16 12:16 `-03` con `next` en el 17** para responderlo
+  leyéndolo el 17, 18 y 19. **Si esa lectura desmiente el corrimiento, esta decisión se reabre.**
+- **Origen**: punto 10 del contraste PDR ↔ proveedor · §26.2 · §26.4 · `BD-MP-01`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **39** |
+| Decisiones tomadas | **40** |
 | De metodología | 3 |
-| Funcionales | 36 |
+| Funcionales | 37 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
-| Bloqueantes de FASE 2 que decide el experimento | **2 abiertas** — `BD-MP-01` (pausa) y `BD-MP-02` (cortesía). `BD-MP-03` la cerró `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
-| Decisiones condicionadas a FASE 1C | **2** — `DEC-SUB-006` y `DEC-SUB-007`, las dos a `EX-33` (¿el checkout respeta una fecha de primer cobro futura?) |
+| Bloqueantes de FASE 2 que decide el experimento | **1 abierta** — `BD-MP-02` (cortesía). `BD-MP-01` (pausa) la cerró `DEC-SUB-010` con el reloj leído; `BD-MP-03` la cerró `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
+| Decisiones condicionadas a FASE 1C | **3** — `DEC-SUB-006` y `DEC-SUB-007` a `EX-33` (¿el checkout respeta una fecha de primer cobro futura?), y `DEC-SUB-010` a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34), y el `SUSPENDED` doble de `M-ARCH-01` |

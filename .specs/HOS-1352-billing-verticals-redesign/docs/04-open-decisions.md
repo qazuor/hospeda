@@ -28,16 +28,24 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > y aun así le sobrevivió una elección de diseño que la medición no toma. Está abajo, con su
 > cuadro comparativo y una recomendación.
 >
-> Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
-> `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
+> Lo que frena FASE 2 es **1** bloqueante que decide el experimento (`BD-MP-02` cortesía).
+> `BD-MP-01` (pausa) la cerró `DEC-SUB-010` con el reloj leído; `BD-MP-03` la cerró `DEC-MP-001`.
+>
+> **Punto 10 del contraste cerrado el 2026-09-16.** `DEC-SUB-010`: la pausa es **la del
+> proveedor**, empieza **cuando el cliente la pide**, se elige en **meses enteros**, y los días no
+> usados del ciclo en curso **se pierden** —porque con ciclos enteros el cliente vuelve el mismo
+> día del mes y lo perdido se compensa con lo que gana al volver—. Puede **volver cuando quiera**
+> (§26.2 entero) y al volver se le cobra normal en el ciclo siguiente. El §26.4 **no es delegable
+> al proveedor**: está medido que la fecha de una suscripción viva es inmutable (`EX-34`) y que el
+> ciclo vencido en pausa se pierde (`PS-6`).
 >
 > **Puntos 1 a 9 del contraste cerrados el 2026-09-16.** `DEC-RF-001`: la **revocación**
 > reembolsa y cancela **en un solo acto** —está medido que reembolsar no da de baja—, y ante el
 > rechazo inexplicable el sistema nunca concluye que el pago no se puede reembolsar. **El botón de
 > arrepentimiento queda fuera de alcance** hasta la consulta legal, con el riesgo declarado.
 >
-> **Quedan tres puntos, los tres trabados por una medición**: cortesía y fin de pausa esperan el
-> reloj de sandbox; el cobro fallido no tiene todavía un mecanismo para fabricarlo.
+> **Quedan dos puntos.** La **cortesía** espera el reloj de sandbox; el **cobro fallido** no tiene
+> todavía un mecanismo para fabricarlo. El **fin de pausa** se cerró con `DEC-SUB-010`.
 >
 > **Puntos 1 a 8.** `DEC-MAIL-001`: nuestro correo
 > **bloquea la acción sólo antes de cancelar** —donde el del proveedor insinúa mora—, y los correos
@@ -130,7 +138,7 @@ y **`BD-MP-03` y `BD-MP-04` ya no**.
 
 | ID | Pregunta | Filas que la desbloquean | Estado |
 |---|---|---|---|
-| `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6`, `EX-11` | 🟡 espera 1C, **pero `EX-11` ya midió dos restricciones duras**: estando pausada el proveedor **rechaza toda modificación** (con control: reanudada, el mismo cambio entra), y **cancelar sí se puede**. Los efectos sobre el cobro los responde el reloj el 2026-09-16 |
+| `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6`, `EX-11`, `EX-34` | ✅ **cerrada el 2026-09-16 por `DEC-SUB-010`: la NATIVA**, leído el reloj. `PS-4` no hay auto-reanudación (el reloj de fin de pausa es nuestro), `PS-5` reanudar cambia sólo el `status`, `PS-6` el ciclo vencido en pausa se pierde, `EX-34` la fecha de una suscripción viva es inmutable —así que ni recrear ni acreditar hacen falta: con pausas de **meses enteros** la aritmética se compensa sola—. `EX-11` sigue acotándola: estando pausada el proveedor **rechaza toda modificación** (con control: reanudada, el mismo cambio entra), y **cancelar sí se puede** |
 | `BD-MP-02` | Cortesía temporal sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1` | 🟡 espera 1C |
 | `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | ✅ **`DEC-MP-001`** — se muta el monto del preapproval; el §29 se cumple del lado nuestro |
 | `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🔴 **la medición no alcanzó: sobrevivió una elección — ver abajo** |
