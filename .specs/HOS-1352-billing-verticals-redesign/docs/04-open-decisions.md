@@ -33,8 +33,8 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 >
 > **Puntos 1, 2 y 3 del contraste cerrados el 2026-09-16.** `DEC-SUB-008`: el **downgrade**
 > muta el monto ya, baja los entitlements al fin del ciclo, y el excedente se avisa antes de
-> tocarlo — con fallback automático si el cliente no ordena. **Queda abierto un sub-punto**: cuál
-> es el criterio de ese automático.
+> tocarlo — con fallback automático si el cliente no ordena, que despublica **las publicadas más
+> recientemente** y lo dice en el aviso. Sin sub-puntos abiertos.
 >
 > **Puntos 1 y 2.** `DEC-SUB-007`: el **upgrade** se
 > ejecuta con el mismo mecanismo, y queda anotada la asimetría que condiciona al downgrade —
