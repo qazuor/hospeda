@@ -1578,11 +1578,13 @@ Cada entrada lleva, según §3.4:
     que pagó y el 1/feb le cobran el mes completo igual, o sea **pausar le salió estrictamente peor
     que no pausar**—. Con el mínimo de un mes, esa pausa no existe.
 - **Implicaciones**:
-  1. **El que vuelve antes de tiempo puede recibir muy poco por un mes entero**, y es el costo
-     aceptado de dejarlo volver cuando quiera: si vuelve el 28/feb con el cobro corrido al 1/mar,
-     recibe dos días y paga el mes. **Hay que mostrarle el número antes de que confirme** —hasta
-     cuándo tiene servicio y qué día se le cobra—, no explicárselo después. Mismo criterio que
-     `DEC-MAIL-001`.
+  1. **El early resume no perjudica nunca al cliente, porque el cobro es POR ADELANTADO.** Lo que
+     se cobra el 1/mar es marzo entero, que va a usar: volver antes de tiempo no le hace pagar
+     servicio que no recibe, sólo le da los días que van de la reanudación al próximo cobro
+     **gratis**. Lo único que pierde es lo que ya estaba decidido: los días del ciclo en curso en
+     que estuvo pausado. **Al reanudar se le muestra UNA cosa: qué día se le va a cobrar.** No se
+     le habla de días perdidos ni se le explica la compensación — no hay nada que compensar desde
+     su lado, y contarlo sólo inventa un problema. Decisión explícita del owner.
   2. **El reloj de fin de pausa es nuestro** (`PS-4`), y reanudar es un `PUT {status:"authorized"}`
      que no cobra nada (`PS-5`). El mismo scheduler sirve para el auto-resume y para el early
      resume.
