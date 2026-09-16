@@ -31,7 +31,15 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
-> **Puntos 1 a 8 del contraste cerrados el 2026-09-16.** `DEC-MAIL-001`: nuestro correo
+> **Puntos 1 a 9 del contraste cerrados el 2026-09-16.** `DEC-RF-001`: la **revocación**
+> reembolsa y cancela **en un solo acto** —está medido que reembolsar no da de baja—, y ante el
+> rechazo inexplicable el sistema nunca concluye que el pago no se puede reembolsar. **El botón de
+> arrepentimiento queda fuera de alcance** hasta la consulta legal, con el riesgo declarado.
+>
+> **Quedan tres puntos, los tres trabados por una medición**: cortesía y fin de pausa esperan el
+> reloj de sandbox; el cobro fallido no tiene todavía un mecanismo para fabricarlo.
+>
+> **Puntos 1 a 8.** `DEC-MAIL-001`: nuestro correo
 > **bloquea la acción sólo antes de cancelar** —donde el del proveedor insinúa mora—, y los correos
 > falsos **se anticipan en vez de desmentirse**. Cierra la deuda que las cinco decisiones
 > anteriores venían acumulando sobre «nuestro aviso sale antes».
@@ -258,7 +266,7 @@ actor administrativo · `A-AUTH-01` el rol al perder el acceso · `S-AUTH-01` sc
 estructural, no un chequeo
 
 **Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · `M-DATA-01` qué es dato
-eliminable · `M-LEGAL-01` baja online y derecho de revocación · `M-LEGAL-02` finalidad de las
+eliminable · **`M-LEGAL-01`** baja online y derecho de revocación — parcialmente cerrado por `DEC-RF-001` (el mecanismo: reembolso + cancelación en un acto). **Sigue abierto lo normativo**, con las preguntas ya formuladas para el abogado — sobre todo **si cada renovación abre una ventana nueva de 10 días o corre una sola vez desde el alta**, que cambia el diseño · `M-LEGAL-02` finalidad de las
 señales de identidad · **`M-LEGAL-03` política de notificación de aumento** — sigue abierto tras `DEC-MP-002` y creció a **tres preguntas, ninguna verificada**: (1) si existe un plazo normativo de antelación para aumentos —no se encontró, los dos meses son decisión comercial—; (2) el **botón de baja**, que no se pueda exigir registro ni trámite para cancelar y haya que confirmar en 24 h con un código; y (3) la más pesada, **si el silencio del cliente vale como aceptación** de una modificación del contrato. La (3) es estructural: si no alcanza, `DEC-MP-002` cambia de forma —haría falta aceptación activa, y a quien no responda no se lo podría aumentar—. Las tres piden revisión profesional, no una búsqueda web. **El owner decidió avanzar así y corregir si la consulta dice otra cosa** (2026-09-16); la (3) conviene resolverla **antes de implementar** el punto 5, porque cambiaría el diseño y no sólo la redacción
 
 **Emails** · `M-MAIL-01` huso horario como invariante · `M-MAIL-02` deduplicación del envío ·
