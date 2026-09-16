@@ -74,7 +74,15 @@ const TOKEN = process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
 const CUENTA_ESPERADA = 3497516165;
 const PAGADOR = 'qazuor@gmail.com';
 const BACK_URL = 'https://hospeda.com.ar/';
-const MANIFIESTO = '/tmp/hos1352-segundo-trial.json';
+// `VUELTA` corre la misma sonda otra vez sobre el mismo pagador, con su propio
+// manifiesto y su propia fecha. Existe porque `EX-29` midió el patrón `✅ ✅ ❌`
+// —las dos primeras altas reciben el trial y la tercera no—, así que dos
+// corridas exitosas NO cierran la pregunta: la que decide es la tercera.
+const VUELTA = Number(process.env.VUELTA ?? 2);
+const MANIFIESTO = `/tmp/hos1352-trial-vuelta-${VUELTA}.json`;
+// La fecha sola tiene que identificar al sujeto, así que no puede chocar con
+// las ya usadas: `ex33` se llevó +3 días (19/09) y la vuelta 2, +2 (18/09).
+const DIAS_ADELANTE = Number(process.env.DIAS ?? VUELTA);
 const MONTO = 15;
 const PRESUPUESTO_AUTORIZADO = 15;
 
@@ -171,17 +179,17 @@ if (MONTO !== PRESUPUESTO_AUTORIZADO) {
 console.log(`############ máximo a cobrar: ARS ${MONTO} — coincide con lo autorizado`);
 console.log('############ si la fecha se respeta, no cobra NADA hoy');
 
-const FUTURO = new Date(Date.now() + 2 * 24 * 3600 * 1000).toISOString().replace('Z', '-00:00');
+const FUTURO = new Date(Date.now() + DIAS_ADELANTE * 24 * 3600 * 1000).toISOString().replace('Z', '-00:00');
 const sello = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15);
-const slug = 'segundo-trial';
+const slug = `trial-vuelta-${VUELTA}`;
 
 const r = await pedir('/preapproval', {
     method: 'POST',
     body: JSON.stringify({
-        reason: 'Hospeda HOS-1352 prueba fecha 2',
+        reason: `Hospeda HOS-1352 prueba fecha v${VUELTA}`,
         payer_email: PAGADOR,
         back_url: BACK_URL,
-        external_reference: `HOS-1352-segundo-trial-${sello}`,
+        external_reference: `HOS-1352-trial-v${VUELTA}-${sello}`,
         status: 'pending',
         auto_recurring: {
             frequency: 1,
