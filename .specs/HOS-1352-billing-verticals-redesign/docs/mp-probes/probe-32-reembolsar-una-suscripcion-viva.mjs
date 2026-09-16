@@ -146,9 +146,22 @@ if (!cobro) {
     process.exit(1);
 }
 console.log(`\n######## el cobro a reembolsar: ${cobro.id} · ARS ${cobro.transaction_amount} · ${cobro.date_approved}`);
-if (Number(cobro.payer?.id) !== PAGADOR_ESPERADO) {
-    console.error(`✗ ABORTA: el pagador es ${cobro.payer?.id}, no el owner.`);
+// El guard va por EMAIL, no por id — y eso lo decidió una medición, no una
+// preferencia. La primera versión comparaba `payer.id` contra `5860436` y
+// ABORTÓ sobre un pago que SÍ era del owner: un cobro recurrente nacido de una
+// suscripción creada por API llega con `payer.id: 1505978827`, mientras que los
+// pagos sueltos de la misma tarjeta y el mismo mail llegan con `5860436`.
+//
+// O sea que **una misma persona tiene más de un `payer.id`**, y el id no sirve
+// para identificarla. El mail sí: los cuatro pagos comparados dan
+// `qazuor@gmail.com`.
+const mail = String(cobro.payer?.email ?? '').toLowerCase();
+if (mail !== PAGADOR.toLowerCase()) {
+    console.error(`✗ ABORTA: el pagador es ${mail || '(sin mail)'} (id ${cobro.payer?.id}), no el owner.`);
     process.exit(1);
+}
+if (Number(cobro.payer?.id) !== PAGADOR_ESPERADO) {
+    console.log(`  (nota: payer.id ${cobro.payer?.id} ≠ ${PAGADOR_ESPERADO}, mismo mail — el id no identifica a la persona)`);
 }
 
 const r = await pedir(`/v1/payments/${cobro.id}/refunds`, {
