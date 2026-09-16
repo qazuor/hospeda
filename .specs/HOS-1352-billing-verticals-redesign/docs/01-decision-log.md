@@ -1208,11 +1208,11 @@ Cada entrada lleva, según §3.4:
      veces, la segunda no hace nada.
 - **Origen**: punto 4 del contraste PDR ↔ proveedor · §24.
 
-### DEC-MP-002 — El aumento se avisa 30 días antes, y no alcanza a nadie hasta que se lo migra
+### DEC-MP-002 — El aumento rige ya para los nuevos, y alcanza a los existentes tras dos meses de aviso
 
 - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
 - **Complementa** `DEC-MP-001`, que decidió el **mecanismo** (mutar el monto). Esta decide la
-  **política**: cuándo se avisa y a quién alcanza.
+  **política**: cuándo se avisa, con cuánta antelación, y cómo alcanza a quien ya está.
 - **Problema**: el §29 exige avisar, mostrar el precio anterior y el nuevo, la fecha efectiva y
   permitir cancelar — y cierra con *«investigar normativa actual antes de implementar»*.
   `DEC-MP-001` cerró la pregunta técnica y dejó ésta abierta.
@@ -1223,48 +1223,52 @@ Cada entrada lleva, según §3.4:
     entera releyendo.
   - `EX-3` **`VERIFIED`**: **el proveedor le escribe al cliente por su cuenta** —*«El vendedor
     Hospeda cambió el monto»*— y lo hace **en el acto**.
-  - `EX-23` **`PARTIALLY_SUPPORTED`**: editar el monto de un **plan** alcanza la lectura de
-    **todos sus suscriptos**; un testigo que nadie tocó pasó de 2000 a 2500 y después a 15.
-- **Decisión**, en dos partes:
-  1. **Nuestro aviso sale ANTES de mutar, con 30 días de antelación mínima**, y lleva precio
-     anterior, precio nuevo, fecha efectiva y cómo darse de baja. La mutación ocurre en la fecha
-     efectiva, no cuando se decide el aumento.
-  2. **Cambiar el precio de un plan NO mueve a nadie.** Migrar a las suscripciones existentes es
-     una acción aparte y deliberada, por suscripción.
+  - `DW-1`/`DW-2` **`VERIFIED`**: el proveedor cobra siempre el **monto vigente al momento del
+    cobro**, así que mutar hoy alcanza a la próxima renovación sea cuando sea.
+- **Decisión**, en tres partes:
+  1. **Cambiar el precio del plan rige de inmediato para los que se suscriban desde ese momento.**
+  2. **A los que ya estaban se les aplica también, pero recién después de una ventana de aviso de
+     al menos DOS MESES**, con **tres contactos**: al anunciar, a 30 días y a 7 días. Cada uno
+     lleva el precio actual, el nuevo, **la fecha en que le toca a ese cliente** y que si no
+     acepta puede cancelar.
+  3. **Llegada esa fecha, el monto se muta automáticamente.** No hace falta que el cliente acepte
+     nada; sí puede cancelar antes.
 - **Motivo**:
-  - **El orden es forzado por la medición.** Como el proveedor le escribe al cliente en el
+  - **El owner quiere que el aumento alcance a todos**, no sólo a los nuevos. Una versión anterior
+    de esta decisión fijaba migración explícita por cliente —es decir, que si nadie la ejecutaba
+    los viejos conservaban el precio para siempre— y **eso no era lo que se quería**. Corregido el
+    mismo día, antes de implementar nada.
+  - **La ventana larga es lo que hace real el derecho a cancelar del §29.** Con 30 días y ciclo
+    mensual el cliente tiene un solo ciclo para reaccionar; con dos meses tiene dos o tres. La
+    antelación no es cortesía: es la condición para que «cancelá si no aceptás» signifique algo.
+  - **Tres contactos y no uno** porque un único mail se pierde, y el costo de que se pierda lo
+    paga el cliente con un cobro que no esperaba.
+  - **Nuestro aviso sale antes de mutar, siempre.** Como el proveedor le escribe al cliente en el
     instante de mutar y a nosotros no nos avisa, si no hablamos primero el cliente se entera por
-    un tercero. Avisando antes, el correo del proveedor pasa de sorpresa a **confirmación de algo
-    ya anunciado**.
-  - **La antelación tiene un piso estructural, no de gusto.** Si el aviso es más corto que lo que
-    el cliente necesita para darse de baja antes de que el precio nuevo lo alcance, **el derecho a
-    cancelar que el §29 exige es decorativo**. Con la baja a fin de período de `DEC-SUB-009`, eso
-    son 30 días: un ciclo completo en mensual, y tiempo de sobra en anual.
-  - **La migración explícita separa dos decisiones que hoy se confunden en una**: cambiar la
-    oferta para clientes nuevos, y aumentarle a alguien que ya está. Con alcance automático,
-    **editar el catálogo se vuelve un acto peligroso**: un precio pensado para nuevos le sube a
-    toda la base sin que nadie lo haya pedido.
-  - Y hay un argumento **medido**: `EX-23` mide que con los planes del proveedor ese accidente
-    está **a un clic de distancia**. Nuestro catálogo tiene que ser el que manda, precisamente
-    para que no pueda pasar.
-  - Encaja con `DEC-ARCH-001` (se versiona lo que tiene efecto): cada suscripción queda anclada a
-    su versión hasta que alguien la mueva a propósito.
+    un tercero. Con tres avisos previos, el correo del proveedor llega como **confirmación**.
 - **Implicaciones**:
-  1. **El precio vive en la suscripción, no sólo en el plan.** Sostenerlo por suscripción es el
-     costo de esta decisión.
-  2. **Un aumento es una operación por lotes con destinatarios elegidos**, no un `UPDATE` al
-     catálogo. Necesita su propia acción administrativa y su propio registro de a quién alcanzó.
-  3. **La mutación se verifica releyendo**, siempre: no hay webhook que confirme, y es el terreno
+  1. **La fecha efectiva es por cliente, no global.** Un anual que ya pagó hasta dentro de nueve
+     meses no puede recibir un aviso que diga «desde el 1 de diciembre»: el aumento lo alcanza en
+     **su** renovación. El anuncio es global, **cada mail dice la fecha de ese cliente**, o el
+     «cancelá antes» no le sirve para calcular nada.
+  2. **El precio vive en la suscripción, no sólo en el plan.** Durante la ventana conviven dos
+     precios para el mismo plan, y lo que se cobra es el de la suscripción.
+  3. **El proceso que aplica el aumento falla para el lado bueno**: si no corre, el cliente sigue
+     pagando el precio viejo y nadie cobra de más. Pero **hay que registrar a quién se le
+     aplicó**, para que un fallo parcial no deje media cartera migrada sin que se sepa cuál.
+  4. **La mutación se verifica releyendo**, siempre: no hay webhook que confirme, y es el terreno
      donde el proveedor ya demostró aceptar sin aplicar.
-  4. El aviso previo **es nuestro y no se puede delegar**: el del proveedor llega tarde, sin el
-     precio anterior y sin la fecha efectiva.
-- **PENDIENTE LEGAL — no resuelto por esta decisión.** El §29 pide investigar la normativa y
-  **sigue pendiente** (`M-LEGAL-03`). Los 30 días son una decisión comercial informada por el
-  derecho a cancelar, **no un plazo normativo verificado**: no se encontró uno. Y buscando esto
-  apareció otra obligación que toca al §24 y a `DEC-SUB-009`, y que **tampoco está verificada**:
-  que el proveedor no pueda exigir registro ni trámite para cancelar, y deba confirmar la baja
-  dentro de las 24 horas con un código. **Las dos necesitan una revisión profesional**, no una
-  búsqueda web.
+  5. Quien cancela para no aceptar el aumento entra por `DEC-SUB-009`: se cancela en el proveedor
+     de inmediato y conserva el servicio hasta el fin del período que pagó.
+  6. **Falta resolver un cruce**: qué pasa si la fecha del aumento cae sobre una suscripción en
+     mora o en grace. Queda como hueco, no se completa en silencio.
+- **RIESGO LEGAL DECLARADO, no resuelto por esta decisión.** La parte 3 se apoya en que **el
+  silencio del cliente vale como aceptación** de una modificación del contrato. Es el modelo
+  estándar de la industria, **pero no está verificado para Argentina** y es precisamente el
+  terreno donde la normativa de consumo suele ser restrictiva. **Si resultara que el silencio no
+  alcanza, esta decisión cambia de forma**: haría falta una aceptación activa, y quien no responda
+  no podría ser aumentado. Va a `M-LEGAL-03` junto con las otras dos pendientes —el plazo de
+  notificación y el botón de baja—, y **las tres piden revisión profesional, no una búsqueda web**.
 - **Origen**: punto 5 del contraste PDR ↔ proveedor · §29 · `M-LEGAL-03`.
 
 ---
