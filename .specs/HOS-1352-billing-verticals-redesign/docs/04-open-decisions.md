@@ -31,7 +31,12 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
-> **Puntos 1 a 4 del contraste cerrados el 2026-09-16.** `DEC-SUB-009`: la **baja a fin de
+> **Puntos 1 a 5 del contraste cerrados el 2026-09-16.** `DEC-MP-002`: el aumento se avisa
+> **30 días antes** y **no alcanza a nadie hasta que se lo migra** — cambiar el precio de un plan
+> no mueve a los existentes. Deja **`M-LEGAL-03` explícitamente abierto**, y le suma una segunda
+> obligación sin verificar que toca al §24: el botón de baja sin trámite y la confirmación en 24 h.
+>
+> **Puntos 1 a 4.** `DEC-SUB-009`: la **baja a fin de
 > período** cancela en el proveedor de inmediato y sostiene el servicio de nuestro lado, porque
 > así el fallo regala días en vez de cobrar de más.
 >
@@ -236,7 +241,7 @@ estructural, no un chequeo
 
 **Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · `M-DATA-01` qué es dato
 eliminable · `M-LEGAL-01` baja online y derecho de revocación · `M-LEGAL-02` finalidad de las
-señales de identidad · `M-LEGAL-03` política de notificación de aumento
+señales de identidad · **`M-LEGAL-03` política de notificación de aumento** — sigue abierto tras `DEC-MP-002`, que fijó 30 días como **decisión comercial, no como plazo normativo verificado**. Se le suma, del mismo bloque y también sin verificar, el **botón de baja**: que no se pueda exigir registro ni trámite para cancelar y haya que confirmar en 24 h con un código. Las dos piden revisión profesional, no una búsqueda web
 
 **Emails** · `M-MAIL-01` huso horario como invariante · `M-MAIL-02` deduplicación del envío ·
 `M-MAIL-03` jerarquía de supresión y transaccional vs comercial · `M-MAIL-04` qué comunica el
