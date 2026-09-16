@@ -24,9 +24,9 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > **Estado al 2026-09-15**: FASE 1A entregada y **completamente respondida**. 106 hallazgos,
 > **29 decisiones registradas**, **0 de las 25 preguntas de FASE 1A abiertas**.
 >
-> **Pero FASE 1C abrió una pregunta nueva para el owner**: `BD-MP-04`. Sus filas están medidas
-> y aun así le sobrevivió una elección de diseño que la medición no toma. Está abajo, con su
-> cuadro comparativo y una recomendación.
+> **La pregunta que FASE 1C le había abierto al owner —`BD-MP-04`— se cerró el 2026-09-16**
+> (`DEC-ADDON-002`: un preapproval aparte por addon recurrente). **Era el último bloqueante de
+> FASE 2**, que queda desbloqueada.
 >
 > **Ya no queda ningún bloqueante de FASE 2 que decida el experimento.** `BD-MP-01` (pausa) la
 > cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con
@@ -116,7 +116,7 @@ Tres grupos, y no se mezclan:
 | Grupo | Quién decide | Cuántos | Cuándo |
 |---|---|---|---|
 | **Bloqueantes de FASE 2 que decide el owner** | owner | **8** | ✅ cerradas |
-| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | ✅ **3 cerradas** (`DEC-MP-001`, `DEC-SUB-010`, `DEC-GRANT-003`) · **1 volvió al owner** (`BD-MP-04`) |
+| **Bloqueantes de FASE 2 que decide el experimento** | FASE 1C | **4** | ✅ **las 4 cerradas** — `DEC-MP-001`, `DEC-SUB-010`, `DEC-GRANT-003`, y `BD-MP-04` que volvió al owner y cerró `DEC-ADDON-002` |
 | **No bloqueantes que decide el owner** | owner | **19** | ✅ cerradas |
 | **Huecos técnicos** | la Master Spec (FASE 2) | **~70** | sin intervención del owner |
 
@@ -160,13 +160,13 @@ quedan **8 `UNKNOWN` sobre 89 filas**, y ninguno pertenece a un bloqueante.
 | `BD-MP-01` | Mecanismo de pausa: ¿nativa, recrear, o crédito interno? | `PS-1`…`PS-6`, `EX-11`, `EX-34` | ✅ **cerrada el 2026-09-16 por `DEC-SUB-010`: la NATIVA**, leído el reloj. `PS-4` no hay auto-reanudación (el reloj de fin de pausa es nuestro), `PS-5` reanudar cambia sólo el `status`, `PS-6` el ciclo vencido en pausa se pierde, `EX-34` la fecha de una suscripción viva es inmutable —así que ni recrear ni acreditar hacen falta: con pausas de **meses enteros** la aritmética se compensa sola—. `EX-11` sigue acotándola: estando pausada el proveedor **rechaza toda modificación** (con control: reanudada, el mismo cambio entra), y **cancelar sí se puede** |
 | `BD-MP-02` | Cortesía temporal sobre una suscripción viva | `CT-1`…`CT-3`, `PC-2`, `RF-1`, **`EX-34`**, **`EX-35`** | ✅ **cerrada el 2026-09-16 por `DEC-GRANT-003`: se PAUSA.** Las cuatro estrategias de `CT-2` quedaron medidas hasta el fondo y tres se caen: bajar el monto **cobra ARS 15 por ciclo** (`PC-2`, y `CT-1` lo confirmó cobrando 15 en la renovación), poner un `free_trial` sobre una viva **no se puede** (`EX-35`), correr la fecha **tampoco** (`EX-34`), y cancelar-y-recrear devuelve al beneficiario al checkout. Pausar es la única que no mueve un peso, y el reloj que la reanuda ya es obligatorio por `DEC-SUB-010` |
 | `BD-MP-03` | Cambio de precio sobre suscripciones vigentes | `PC-1`, `PC-2`, `PC-3` | ✅ **`DEC-MP-001`** — se muta el monto del preapproval; el §29 se cumple del lado nuestro |
-| `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6` | 🔴 **la medición no alcanzó: sobrevivió una elección — ver abajo** |
+| `BD-MP-04` | ¿Existen addons recurrentes? | `EX-5`, `EX-6`, **`EX-34`**, **`EX-36`**, **`EX-37`** | ✅ **cerrada el 2026-09-16 por `DEC-ADDON-002`: un preapproval APARTE por addon.** La medición había cerrado la pregunta técnica y dejado viva la elección; la decidió el owner |
 
 Además, `M-LEGAL-01` **queda condicionada** a la matriz aunque no sea bloqueante de FASE 2:
 depende de `RF-1`/`RF-3` para saber si se puede reembolsar. (`BD-SUB-01` ya no: `EX-4`, `EX-7`
 y `EX-8` están medidas y `DEC-SUB-005` la cerró.)
 
-### `BD-MP-04` — la medición cerró la pregunta técnica y dejó una elección abierta
+### `BD-MP-04` — la medición cerró la pregunta técnica y dejó una elección abierta · ✅ **CERRADA por `DEC-ADDON-002`**
 
 Estaba clasificada como *"la decide el experimento, no el owner"*. **Esa clasificación resultó
 incorrecta**, y conviene decirlo en vez de forzar una decisión que la medición no toma.
@@ -204,7 +204,17 @@ un addon con ciclo propio directamente no existe.
 El costo de (2) está medido y es real: **contratar un addon recurrente le pide al cliente el
 código de seguridad**, igual que `DEC-SUB-005`.
 
-**Decide el owner.** Ninguna medición pendiente cambia este cuadro.
+**Decidido por el owner el 2026-09-16: (2).** `DEC-ADDON-002`.
+
+> ⚠️ **Dos casillas de este cuadro quedaron desactualizadas por mediciones posteriores**, y se
+> corrigen en la decisión en vez de reescribirlas acá:
+>
+> - **«exige autorizar de nuevo, con código de seguridad (`EX-9`)»** — ya no: `DEC-SUB-006` movió
+>   la re-autorización al **checkout**, así que no se tokeniza del lado del servidor. El costo es
+>   pasar por el checkout, no pedir el código.
+> - **Falta una fila entera**: con (2), **un cambio de tarjeta son N actualizaciones** (`EX-36`),
+>   cada una con una validación de ARS 0 que puede fallar por separado y dejar al cliente con
+>   parte de sus addons cobrando y parte no. Con (1) sería una sola.
 
 ## No bloqueantes — las decide el owner
 

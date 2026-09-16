@@ -1717,19 +1717,77 @@ Cada entrada lleva, según §3.4:
      rediseño.
 - **Origen**: residuo de `DEC-GRANT-003` · §34.2 · §35.4 · §26.
 
+### DEC-ADDON-002 — Cada addon recurrente es un preapproval aparte, no una línea del monto del plan
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §38 define dos tipos de addon, *«one-time; **recurrent**»*, y `EX-5` midió que
+  **una autorización del proveedor cubre un solo monto**. Quedaban dos mecanismos posibles, y
+  **los dos funcionan** — por eso `BD-MP-04` estaba mal clasificada como «la decide el
+  experimento»: la medición cerró la pregunta técnica y dejó viva una elección de diseño.
+- **Contexto medido**:
+  - `EX-5` **`NOT_SUPPORTED`**: `auto_recurring` como array da `400`, y el campo `items` devuelve
+    `201` y **se descarta en silencio**. Un addon **no puede ser una línea aparte dentro de la
+    suscripción del plan**.
+  - `EX-6` **`VERIFIED`**: **dos suscripciones autorizadas del mismo pagador conviven** sin
+    conflicto. Verificado con seis a la vez, en producción.
+  - `PC-1` / `PC-3` **`VERIFIED`**: el monto de una autorizada se muta sin re-consentimiento.
+  - **`EX-36`** (2026-09-16): el medio de pago se cambia **por preapproval**, y ese cambio **cobra
+    una validación de ARS 0 que puede fallar**.
+  - **`EX-37`** (2026-09-16): el `init_point` que entrega la API **viene roto**.
+  - **`EX-34`** (2026-09-16): la fecha de una suscripción viva **es inmutable**.
+- **Contexto externo** (contraste, no fundamento): existe un PR previo en el repo —
+  [#3236, «provision MercadoPago preapproval plans for recurring add-ons»](https://github.com/qazuor/hospeda/pull/3236),
+  detrás de un flag—. **No se leyó y no se usa como fundamento** (§4, `DEC-METH-001`); se anota
+  para FASE 5, que es donde se contrasta contra lo existente.
+- **Alternativas**: (1) **subir el monto de la suscripción del plan** por cada addon contratado;
+  (2) **un preapproval aparte por cada addon recurrente**.
+- **Decisión**: **(2)**.
+- **Motivo, por los dos criterios del owner.**
+  - **Toca plata o no toca plata**: **(1) toca plata cada vez que alguien contrata o da de baja un
+    addon**, porque cada alta y cada baja es una mutación del monto del plan — **el punto exacto
+    donde este proveedor ya demostró nueve veces que acepta sin aplicar**. Ahí el fallo silencioso
+    **cobra de menos o de más y nadie se entera**, porque `EX-15` midió que mutar el monto **no
+    emite webhook**. **(2) no toca plata nunca**: contratar es crear, dar de baja es cancelar.
+  - **Hacia dónde falla**: (2) falla hacia **un addon que no se cobra** — visible y recuperable.
+    (1) falla hacia **cobrar mal el plan entero**.
+  - Y hay un argumento estructural que no depende de los fallos: con (1) **un addon con ciclo
+    propio no existe** —queda obligado al del plan, así que un addon mensual sobre un plan anual
+    es imposible— y el §40 define scopes (`LISTING`, `VERTICAL_SUBSCRIPTION`, `USER`, `GLOBAL`)
+    que el §41 exige **poder cancelar por separado**. Con (1) el importe cobrado tampoco dice qué
+    lo compone: hay que derivarlo del estado local.
+- **Implicaciones**:
+  1. **Contratar un addon pasa por el checkout.** El costo que el análisis previo había anotado
+     —«le pide el código de seguridad al cliente»— **ya no aplica**: `DEC-SUB-006` movió la
+     re-autorización al checkout, así que no se tokeniza del lado del servidor. Es más visible
+     para el cliente, pero no manejamos datos de tarjeta.
+  2. **Y por lo tanto `EX-37` alcanza a cada addon**: cada contratación necesita un `init_point`,
+     que **viene roto**. Es un call site más para el guard que sanea el link — no uno nuevo, pero
+     sí más superficie.
+  3. **Un cambio de tarjeta son N actualizaciones, no una** (`EX-36`), cada una con su validación
+     de ARS 0 que **puede fallar por separado**. Si falla en algunas y en otras no, el cliente
+     queda con **parte de sus addons cobrando y parte no**: es un estado parcial que hay que
+     reconciliar, y es un caso real porque a la gente se le vence la tarjeta. Lo que lo hace
+     manejable es que **cada preapproval se lee solo**, así que el estado parcial es detectable.
+  4. **El ciclo del addon se alinea al del plan sólo AL CREARLO** (`EX-34`). Después no se corrige.
+  5. **El resumen de la tarjeta muestra un cargo por el plan y otro por cada addon.** Es lo que
+     hace que cada cobro se explique solo en la conciliación, y a la vez lo que el cliente ve.
+  6. **Cancelar el plan NO cancela los addons**: esa orquestación es nuestra, y es exactamente lo
+     que el §41 pide poder hacer al revés (cancelar un addon huérfano sin tocar lo demás).
+- **Origen**: `BD-MP-04` · §38 · §40 · §41. **Era el último bloqueante de FASE 2.**
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **42** |
+| Decisiones tomadas | **43** |
 | De metodología | 3 |
-| Funcionales | 39 |
+| Funcionales | 40 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
-| Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
+| Bloqueantes de FASE 2 que decide el owner | **9 de 9 cerradas** — `BD-MP-04` volvió al owner y la cerró `DEC-ADDON-002` |
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
