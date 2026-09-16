@@ -95,7 +95,8 @@ verificado contra la definición real.
 | Migraciones estructurales | **125** | archivos, cruzados con `drizzle.__drizzle_migrations` en prod | **125** |
 | Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
 | Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
-| Archivos de ruta de la API | 1150 | `apps/api/src/routes/**/*.ts` — **denominador provisorio**, son archivos y no endpoints registrados | 0 |
+| **Handlers de la API** | **1.032** | `app.routes` con la app construida, menos 725 middleware — **no** los 1.150 archivos | **1.032** |
+| … documentados en OpenAPI | **983** | el documento generado por la app | **983** |
 | Servicios en `service-core` | 101 | `*.service.ts` — **provisorio**, ver `F-1B-003` | 0 |
 | Archivos que mencionan conceptos de billing | 4251 (2658 sin tests) | `rg -l` sobre `apps` y `packages` | — |
 
@@ -596,6 +597,68 @@ Es la tercera vez que un conteo por nombre de archivo da mal (`F-1B-003`, `F-1B-
 
 ---
 
+### F-1B-016 — La API expone 1.032 handlers, y 52 no están en su propio contrato
+
+Medido **construyendo la app** (`initApp()`, sin base de datos) y leyendo `app.routes` y
+el documento OpenAPI, no contando archivos. Sonda descartable, no commiteada.
+
+| | |
+|---|---|
+| Entradas en `app.routes` | 4.574 (1.757 únicas) |
+| … de las cuales middleware (`ALL`) | **725** |
+| **Handlers reales** | **1.032** |
+| Operaciones en el documento OpenAPI | **983**, sobre **740** paths |
+
+**Por tier** — y el reparto es el hallazgo:
+
+| tier | operaciones |
+|---|---|
+| `/api/v1/admin/` | **557** (57%) |
+| `/api/v1/protected/` | 299 |
+| `/api/v1/public/` | **115** |
+| `/api/v1/ai/` | 3 |
+| otros | 9 |
+
+Por método: 429 `GET`, 271 `POST`, 118 `DELETE`, 95 `PATCH`, 70 `PUT`.
+
+**Los 52 handlers que no aparecen en el documento**, por prefijo:
+
+| | |
+|---|---|
+| `/api/v1/protected/conversations` | 10 |
+| **`/api/v1/protected/billing`** | **9** |
+| `/api/v1/admin/conversations` | 7 |
+| `/api/v1/public/conversations` | 5 |
+| `/api/v1/admin/ai` | 4 |
+| `/api/auth/*` | 6 |
+| resto (accommodations, newsletter, alliance, commerce, webhooks, docs) | 11 |
+
+**Los 9 de billing son rutas prefabricadas de qzpay.**
+`apps/api/src/routes/billing/index.ts:26` importa `createBillingRoutes` de
+`@qazuor/qzpay-hono` y las monta en `/api/v1/protected/billing`
+(`apps/api/src/routes/index.ts:776`). Se registran sobre un router Hono común, no por la
+factory con OpenAPI de hospeda, así que **existen y responden pero no figuran en el
+contrato**: `customers`, `invoices`, `payments`, `plans`, `plans/{id}`,
+`plans/{id}/prices`, `promo-codes`, `promo-codes/{code}`.
+
+**Y tres operaciones del documento están malformadas.** Declaran el parámetro con la
+sintaxis de Hono en vez de la de OpenAPI:
+
+```
+POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner
+POST /api/v1/admin/alliance/leads/:id/mark-handled
+POST /api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription
+```
+
+Son exactamente las **3** operaciones del documento con `:` en el path. Un cliente
+generado desde ese documento trataría `:id` como parte literal de la URL.
+
+*Nota de método*: este denominador **no se podía obtener contando archivos**. Los 1.150
+archivos bajo `apps/api/src/routes/` no son endpoints, y las 24 factories `create*Route*`
+tampoco se pueden contar por patrón. Hizo falta construir la app.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -609,7 +672,8 @@ Ninguno empezado. El orden no está decidido.
 | Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | Los 47 cron jobs: qué hace cada uno, leído del handler | 47 | ⬜ |
-| Endpoints registrados de la API por tier (`public` / `protected` / `admin`) | por medir | ⬜ |
+| ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
+| Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Servicios: métodos públicos y qué validan | por medir | ⬜ |
 | Entitlements y limits: claves existentes y dónde se consumen | por medir | ⬜ |
 | Superficies Web | por medir | ⬜ |
