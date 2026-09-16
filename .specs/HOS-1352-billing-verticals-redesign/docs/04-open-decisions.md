@@ -31,7 +31,12 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
-> **Puntos 1 a 5 del contraste cerrados el 2026-09-16.** `DEC-MP-002`: el aumento **rige ya para
+> **Puntos 1 a 6 del contraste cerrados el 2026-09-16.** `DEC-CONC-001`: el candado contra el
+> doble cobro es **nuestro y durable**, la recuperación tras un timeout pregunta **por el pagador**
+> (porque el buscador ignora nuestra referencia), y un duplicado que ya cobró **se cancela solo pero
+> se reembolsa con confirmación humana**.
+>
+> **Puntos 1 a 5.** `DEC-MP-002`: el aumento **rige ya para
 > los nuevos** y **alcanza a los existentes tras 60 días de aviso** con tres contactos; si no
 > cancelan, se aplica solo. La ventana se cuenta **desde el primer aviso** y cae distinto por
 > ciclo: en mensual, dos cobros al precio viejo y el tercero al nuevo; en anual, 60 días antes de
@@ -250,7 +255,7 @@ señales de identidad · **`M-LEGAL-03` política de notificación de aumento** 
 `M-MAIL-03` jerarquía de supresión y transaccional vs comercial · `M-MAIL-04` qué comunica el
 proveedor por su cuenta
 
-**Concurrencia** · `M-CONC-01` idempotencia del lado nuestro · `M-CONC-02` no-retroceso de
+**Concurrencia** · **`M-CONC-01`** idempotencia del lado nuestro — ✅ **cerrado por `DEC-CONC-001`** (2026-09-16) · `M-CONC-02` no-retroceso de
 estado · `E-CONC-01` los seis cruces del §52 · `M-CONC-03` qué hace que un pago tardío sea
 seguro
 
