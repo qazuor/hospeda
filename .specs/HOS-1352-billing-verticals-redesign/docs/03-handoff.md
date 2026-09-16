@@ -82,12 +82,13 @@ sobrevivió una elección de diseño**, planteada con su cuadro y una recomendac
 cambios que no aplica y responde `2xx`. Cinco casos medidos. **Toda mutación exige relectura y
 comparación campo por campo**; ninguna fila de la matriz se marca por el código de estado.
 
-### HAY DOS RELOJES, Y LOS DOS SE LEEN MAÑANA
+### HAY TRES RELOJES, Y LOS TRES SE LEEN MAÑANA
 
 | reloj | arrancado | leer a partir de | sujetos |
 |---|---|---|---|
 | **sandbox** | 2026-09-15 12:26 (-03) | **2026-09-16 ~11:30** | 8 |
 | **producción** | 2026-09-15 20:35 (-03) | **2026-09-16 ~20:40** | 7 |
+| **planes** (sandbox) | 2026-09-15 23:32 (-03) | **2026-09-16 ~23:35** | 2 |
 
 ```bash
 # sandbox
@@ -96,7 +97,45 @@ source ~/.config/hospeda/mp-sandbox-creds.sh && OUT_DIR=/tmp/mp-probe-05 bash pr
 
 # producción — corre adentro del contenedor de la API en el VPS
 ssh -p 2222 qazuor@216.238.103.219 'bash -lc "hops --target=prod exec api -- sh -c \"LEER=1 node /tmp/p29.mjs\""'
+
+# planes — ¿el plan propaga el monto de verdad, o sólo lo refleja la lectura?
+source ~/.config/hospeda/mp-sandbox-creds.sh && \
+  OUT_DIR=/tmp/mp-probe-33 LEER=1 node probe-36-el-plan-propaga-o-solo-lo-parece.mjs
 ```
+
+> **El reloj de planes contesta UNA cosa y no hay que pedirle otra.** Un sujeto nació a ARS 2000
+> y su plan se subió a **ARS 3300** antes del primer cobro; el otro es idéntico y **no se tocó**.
+> Si el editado cobra 3300, editar un plan **propaga** de verdad y existe un cambio de precio
+> masivo que `DEC-MP-001` no consideró. Si cobra 2000, **la relectura miente sobre el monto que
+> se cobra**, y eso alcanza a toda verificación hecha sobre planes. El control es el que lo hace
+> legible: si no cobró nada, el hallazgo es otro y no hay que forzar una conclusión sobre el
+> monto. Manifiesto versionado en
+> [`manifiesto-propaga-2026-09-15.json`](./mp-probes/manifiesto-propaga-2026-09-15.json).
+
+> **Ruido en el sink de webhooks**: las sondas 33 a 37 crearon ~20 suscripciones en el sandbox,
+> y el webhook de la app de prueba apunta al receptor propio. Al leer el sink mañana para
+> `RN-1`, esos `data.id` son ruido y están todos en
+> [`manifiesto-planes-2026-09-15.json`](./mp-probes/manifiesto-planes-2026-09-15.json) justamente
+> para poder excluirlos.
+
+### El modelo de PLANES entró a la matriz — y no resuelve el punto 1
+
+Las 71 filas anteriores se habían medido **todas** sobre `/preapproval` (suscripciones sueltas).
+La noche del 2026-09-15 se midió el segundo modelo del proveedor, `/preapproval_plan`, con nueve
+filas nuevas (`EX-21` a `EX-29`, sondas 33 a 37, todas en sandbox y a costo cero).
+
+| | |
+|---|---|
+| **`EX-21`** — mover una suscripción viva de un plan a otro | **NO, con un `200` y el campo descartado.** Medido con el control en tres pasos. **El modelo de planes NO resuelve el cambio de ciclo individual**: `DEC-SUB-005` sigue siendo el único camino |
+| **`EX-23`** — editar el monto del plan | **alcanza la LECTURA de los ya suscriptos** (2000 → 2500 → 15 sobre un testigo que nadie tocó). Si alcanza también al **cobro**, es un cambio de precio masivo. Lo contesta el reloj de planes |
+| **`EX-25`** — editar el ciclo del plan | el ciclo **es editable** (`EX-24`) y **NO alcanza a los suscriptos**. Asimetría con `EX-23`: sobre los mismos sujetos, el monto cambia y el ciclo no |
+| **`EX-27`** — `repetitions` y `billing_day` | **exclusivos de planes**; sin plan se descartan con un `201`. Es lo único que los planes aportan sobre el suelto. `free_trial` sí anda suelto (`EX-26`) |
+| **`EX-29`** — el free trial de un plan | **no lo decide el request**: dos altas idénticas dan resultados distintos, reproducido tres veces (`✅ ✅ ❌`). Mecanismo **sin identificar**. La relectura lo delata, así que **no se le puede prometer al cliente la fecha del primer cobro desde lo que se mandó** |
+| **`EX-22`** — el `reason` con plan | lo fija **el plan**, no la suscripción. Como el `reason` **es la copy que ve el cliente** (`EX-3`), un catálogo de planes es también un catálogo de textos, uno por vertical × tier × ciclo |
+
+Y un dato de costo: **los planes aceptan ciclo diario** (`EX-28`), así que una batería completa
+sobre planes se lee en 24 h y no en un mes — salvo lo que use `billing_day`, que es mensual por
+definición.
 
 **Si el contenedor se redeployó, `/tmp/p29.mjs` se perdió**: hay que volver a ponerlo con el
 base64 de [`probe-29`](./mp-probes/probe-29-el-reloj-de-produccion.mjs). El manifiesto sí está
