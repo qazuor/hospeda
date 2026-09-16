@@ -32,8 +32,10 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
 > **Puntos 1 a 5 del contraste cerrados el 2026-09-16.** `DEC-MP-002`: el aumento **rige ya para
-> los nuevos** y **alcanza a los existentes tras dos meses de aviso** con tres contactos; si no
-> cancelan, se aplica solo. Deja **`M-LEGAL-03` explícitamente abierto y más cargado**: al plazo
+> los nuevos** y **alcanza a los existentes tras 60 días de aviso** con tres contactos; si no
+> cancelan, se aplica solo. La ventana se cuenta **desde el primer aviso** y cae distinto por
+> ciclo: en mensual, dos cobros al precio viejo y el tercero al nuevo; en anual, 60 días antes de
+> su renovación —y si no se llega, se posterga un año—. Deja **`M-LEGAL-03` explícitamente abierto y más cargado**: al plazo
 > de notificación se le suman el **botón de baja** (sin trámite, confirmación en 24 h) y, sobre
 > todo, **si el silencio del cliente vale como aceptación** de un aumento. Las tres sin verificar.
 >
@@ -242,7 +244,7 @@ estructural, no un chequeo
 
 **Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · `M-DATA-01` qué es dato
 eliminable · `M-LEGAL-01` baja online y derecho de revocación · `M-LEGAL-02` finalidad de las
-señales de identidad · **`M-LEGAL-03` política de notificación de aumento** — sigue abierto tras `DEC-MP-002` y creció a **tres preguntas, ninguna verificada**: (1) si existe un plazo normativo de antelación para aumentos —no se encontró, los dos meses son decisión comercial—; (2) el **botón de baja**, que no se pueda exigir registro ni trámite para cancelar y haya que confirmar en 24 h con un código; y (3) la más pesada, **si el silencio del cliente vale como aceptación** de una modificación del contrato. La (3) es estructural: si no alcanza, `DEC-MP-002` cambia de forma —haría falta aceptación activa, y a quien no responda no se lo podría aumentar—. Las tres piden revisión profesional, no una búsqueda web
+señales de identidad · **`M-LEGAL-03` política de notificación de aumento** — sigue abierto tras `DEC-MP-002` y creció a **tres preguntas, ninguna verificada**: (1) si existe un plazo normativo de antelación para aumentos —no se encontró, los dos meses son decisión comercial—; (2) el **botón de baja**, que no se pueda exigir registro ni trámite para cancelar y haya que confirmar en 24 h con un código; y (3) la más pesada, **si el silencio del cliente vale como aceptación** de una modificación del contrato. La (3) es estructural: si no alcanza, `DEC-MP-002` cambia de forma —haría falta aceptación activa, y a quien no responda no se lo podría aumentar—. Las tres piden revisión profesional, no una búsqueda web. **El owner decidió avanzar así y corregir si la consulta dice otra cosa** (2026-09-16); la (3) conviene resolverla **antes de implementar** el punto 5, porque cambiaría el diseño y no sólo la redacción
 
 **Emails** · `M-MAIL-01` huso horario como invariante · `M-MAIL-02` deduplicación del envío ·
 `M-MAIL-03` jerarquía de supresión y transaccional vs comercial · `M-MAIL-04` qué comunica el
