@@ -31,7 +31,12 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
-> **Puntos 1 y 2 del contraste cerrados el 2026-09-16.** `DEC-SUB-007`: el **upgrade** se
+> **Puntos 1, 2 y 3 del contraste cerrados el 2026-09-16.** `DEC-SUB-008`: el **downgrade**
+> muta el monto ya, baja los entitlements al fin del ciclo, y el excedente se avisa antes de
+> tocarlo — con fallback automático si el cliente no ordena. **Queda abierto un sub-punto**: cuál
+> es el criterio de ese automático.
+>
+> **Puntos 1 y 2.** `DEC-SUB-007`: el **upgrade** se
 > ejecuta con el mismo mecanismo, y queda anotada la asimetría que condiciona al downgrade —
 > subir pasa por el checkout y cobra desde ya, bajar se difiere al fin del ciclo sin checkout.
 >
