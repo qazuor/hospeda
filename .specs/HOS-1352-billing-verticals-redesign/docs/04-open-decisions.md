@@ -45,6 +45,13 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > rechazo inexplicable el sistema nunca concluye que el pago no se puede reembolsar. **El botón de
 > arrepentimiento queda fuera de alcance** hasta la consulta legal, con el riesgo declarado.
 >
+> **El residuo que dejó la cortesía también se cerró, el mismo día.** `DEC-GRANT-004`: los tres
+> cruces entre cortesía y pausa se resuelven **de nuestro lado**, porque el proveedor no distingue
+> una de la otra. Pausar estando en cortesía **se permite, avisando que la pierde**; sobre una
+> pausa **no se otorga** cortesía; y una cortesía sobre otra **suma días**. Se eligió la variante
+> menos compleja: la alternativa protegía mejor al cliente pero traía de vuelta la **pausa
+> programada** que `DEC-SUB-010` había descartado.
+>
 > **Punto 11 del contraste cerrado el 2026-09-16.** `DEC-GRANT-003`: la cortesía temporal se
 > implementa **pausando** la suscripción en el proveedor y sosteniendo el servicio de nuestro lado.
 > Es la única de las tres que no mueve un peso: bajar al piso le **cobra** ARS 15 por ciclo a quien

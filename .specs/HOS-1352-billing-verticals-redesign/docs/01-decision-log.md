@@ -1655,8 +1655,8 @@ Cada entrada lleva, según §3.4:
      distinción existe sólo en nuestra base, y el reloj que reanuda **tiene que saber por qué está
      pausada**: si lee sólo el estado de MP, reanuda la cortesía de alguien que había pedido pausa,
      o al revés.
-  3. **Falta decidir la precedencia** entre una cortesía vigente y una pausa pedida por el cliente
-     —y entre una cortesía y otra—. Queda como residuo, no como parte de esta decisión.
+  3. **La precedencia** entre una cortesía vigente y una pausa pedida por el cliente —y entre una
+     cortesía y otra— quedó como residuo, y **la cerró `DEC-GRANT-004`** el mismo día.
   4. **El §34.1 no toca al proveedor**: durante el trial, la cortesía extiende el trial, que es
      nuestro. Son dos implementaciones según el estado del beneficiario.
   5. **La cortesía PERMANENTE sigue cancelando** (§35.3 y `DEC-GRANT-001`), y la asimetría es
@@ -1668,15 +1668,64 @@ Cada entrada lleva, según §3.4:
   que anticiparlo (`DEC-MAIL-001`: los correos del proveedor se anticipan, no se desmienten).
 - **Origen**: punto 11 del contraste PDR ↔ proveedor · §34.2 · `BD-MP-02`.
 
+### DEC-GRANT-004 — Cortesía y pausa se resuelven con validaciones nuestras: pausar cancela la cortesía avisando, y sobre una pausa no se otorga
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: residuo que dejó abierto `DEC-GRANT-003`. La cortesía y la pausa del cliente
+  **usan el mismo mecanismo** —pausar en el proveedor—, así que se pisan. Hay tres cruces:
+  un cliente en cortesía que pide pausar, un cliente pausado que recibe una cortesía, y una
+  cortesía que cae sobre otra.
+- **Contexto medido**: `DEC-GRANT-003` + `EX-11`. En el proveedor **una cortesía se ve idéntica a
+  una pausa pedida por el cliente**: es el mismo `status: "paused"`, y `EX-11` midió que estando
+  pausada no se puede modificar nada. **No hay ningún campo del proveedor que distinga una de la
+  otra**, así que preguntarle a él por qué está pausada no es una opción — la intención es nuestra
+  o no existe.
+- **Decisión**: los tres cruces se resuelven **de nuestro lado, con validaciones, prohibiciones y
+  avisos**, sin pedirle nada al proveedor.
+  1. **En cortesía, pide pausar** → **se le permite**, avisándole explícitamente que **pierde la
+     cortesía que le quedaba**, y elige. Si acepta, el grant se cancela y queda una pausa normal.
+  2. **En pausa, el super admin intenta otorgar cortesía** → **se bloquea**, avisando que la
+     suscripción está pausada.
+  3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan**, y el aviso dice la
+     **fecha de fin nueva**, no «un mes más».
+- **Motivo**:
+  - **(1) es la opción menos compleja, y esa es la razón.** La alternativa evaluada —prohibir
+    pausar durante la cortesía y ofrecer una **pausa programada** para cuando termine— protege
+    mejor al cliente, pero **introduce un mecanismo que `DEC-SUB-010` ya había descartado**: ahí se
+    decidió que la pausa empieza cuando el cliente la pide, sin diferir nada. Traerla de vuelta por
+    la puerta de atrás, para un caso de borde, no se paga.
+    - Queda **declarado el costo**: durante la cortesía el cliente **no está pagando**, así que
+      pausar no le ahorra un peso — sólo le quita servicio. Es la misma operación sin sentido
+      económico que `DEC-SUB-010` eliminó para la pausa intra-ciclo. **Por eso el aviso importa
+      más que la validación**: es lo único que lo protege de tomar una decisión que sólo lo
+      perjudica.
+  - **(2)**: regalarle meses a alguien que no está pagando **no le regala nada** — la cortesía se
+    consumiría contra un período sin cobro. Bloquear y avisar deja el error del lado visible.
+  - **(3) se suman** porque reemplazar es **destructivo y silencioso**: un super admin que otorga un
+    mes a alguien que tenía seis se los saca sin que nada en la operación lo insinúe. Sumar es
+    además lo que menos sorprende —«le doy un mes» es un mes más— y encaja con el §35.4, que ya
+    pide auditoría **por grant**: cada uno sobrevive entero en el registro y la fecha de fin es la
+    consecuencia, no un dato que haya que reconstruir.
+- **Implicaciones**:
+  1. **El estado «pausada» de nuestra base necesita un motivo**, no sólo un booleano: pausa del
+     cliente, cortesía, o —cuando lo midamos— el destino al que el proveedor manda una suscripción
+     al agotar los reintentos. El reloj que reanuda lee ese motivo, nunca el estado del proveedor.
+  2. **El aviso del caso (1) es parte de la decisión, no un adorno.** Sin él, el cliente pausa y
+     descubre después que perdió el regalo.
+  3. **Programar una cortesía para cuando el cliente reanude** se evaluó y **queda fuera** por la
+     misma razón de simplicidad. Si más adelante aparece la necesidad, es un agregado, no un
+     rediseño.
+- **Origen**: residuo de `DEC-GRANT-003` · §34.2 · §35.4 · §26.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **41** |
+| Decisiones tomadas | **42** |
 | De metodología | 3 |
-| Funcionales | 38 |
+| Funcionales | 39 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
