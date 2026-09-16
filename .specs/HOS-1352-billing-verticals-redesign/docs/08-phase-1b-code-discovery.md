@@ -85,7 +85,12 @@ verificado contra la definición real.
 | … sin schema en ningún lado | **0** | los dos conjuntos anteriores, cruzados | — |
 | Paquetes publicables de qzpay | **9** | `packages/*/package.json` | 9 |
 | … que hospeda importa | **5** | `@qazuor/qzpay-*` en el código, no en el `package.json` | 5 |
-| `pgEnum` declarados en hospeda | **90** | `pgEnum(` multilínea | 0 |
+| `pgEnum` declarados en hospeda | **90** | `pgEnum(` multilínea, cruzado con `pg_type` en prod | **90** |
+| Columnas en producción | **2.423** | `information_schema.columns` | 2.423 |
+| Claves foráneas | **399** | `information_schema.table_constraints` | 0 |
+| Índices | **836** | `pg_indexes` | 0 |
+| Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | 0 |
+| `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
 | Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | 0 |
 | Migraciones estructurales | 125 | `packages/db/src/migrations/*.sql` | 0 |
 | Migraciones `extras` | 42 | `migrations/extras/*.sql` | 0 |
@@ -254,13 +259,117 @@ no admite: hay que leerlo en la implementación antes de anotarlo.
 
 ---
 
+### F-1B-006 — El esquema de producción, medido
+
+Todo contra `information_schema` y `pg_catalog` en producción, 2026-09-16.
+
+| | Total | hospeda (147 tablas) | qzpay (27 tablas) |
+|---|---|---|---|
+| Columnas | **2.423** | 2.028 | 395 |
+| Claves primarias | **174** | — | — |
+| Claves foráneas | **399** | — | — |
+| `UNIQUE` | **39** | — | — |
+| `CHECK` reales | **30** | 24 | 6 |
+| Índices | **836** | — | — |
+| Triggers no internos | **132** | — | — |
+| Tipos `enum` | **90** | 90 | **0** |
+| Vistas materializadas | **1** | — | — |
+
+**Una trampa que cambia el número por cuarenta y seis veces.**
+`information_schema.table_constraints` reporta **1.403** `CHECK`, y son **30**. Postgres
+sintetiza una fila `CHECK` por cada columna `NOT NULL`, así que ese conteo mezcla dos
+cosas distintas. Los `CHECK` reales salen de `pg_constraint` con `contype='c'`.
+
+La aritmética cierra y por eso la explicación no es una hipótesis: hay **1.373** columnas
+`NOT NULL` en producción, y **1.373 + 30 = 1.403**.
+
+---
+
+### F-1B-007 — Las dos mitades del esquema modelan los estados de forma incompatible
+
+| | hospeda (147 tablas) | qzpay (27 tablas) |
+|---|---|---|
+| Tipos `enum` declarados | **90** | **0** |
+| Columnas de tipo `enum` | **166** | **0** |
+| `CHECK` reales | 24 | 6, **todos en una sola tabla** |
+
+Los 90 tipos `enum` de producción son **exactamente** los 90 que declara
+`hospeda/packages/db/src` — conjuntos idénticos, comparados por nombre. qzpay no declara
+ni uno.
+
+**Las diez columnas `status` de qzpay son `varchar` sin ninguna restricción.** Medido una
+por una: `billing_subscriptions`, `billing_payments`, `billing_invoices`,
+`billing_refunds`, `billing_checkouts`, `billing_payment_methods`,
+`billing_subscription_addons`, `billing_webhook_events`, `billing_vendor_payouts` y
+`billing_subscription_polling_jobs` son `character varying(50)` o `(20)`, y **cero** de
+ellas tiene un `CHECK` que mencione `status`. La base acepta cualquier cadena que entre
+en el largo.
+
+Los 6 `CHECK` de qzpay están **todos sobre `billing_promo_codes`**: el dominio de
+`effect_kind`, el de `value_kind`, y tres de forma por `effect_kind`. Ninguna otra tabla
+de esa mitad tiene una sola restricción de dominio.
+
+*Qué abre, sin resolverlo acá*: el §63 pide modelar explícitamente los estados y las
+transiciones de Trial, Subscription, Payment, Manual Payment, Addon, Publication, Grace y
+Pause. Del lado de hospeda hay 90 enums en la base; del lado donde viven Subscription y
+Payment **no hay nada** que impida escribir un estado inexistente.
+
+---
+
+### F-1B-008 — Hospeda escribe restricciones dentro de tablas que modela qzpay
+
+Los 6 `CHECK` de `billing_promo_codes` **no los define qzpay**: no hay una sola
+coincidencia de `effect_kind_domain_chk` ni de `comp_shape_chk` en todo el repo de qzpay
+en `c934164`. Los define **hospeda**, en
+`packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql`.
+
+O sea que el acoplamiento entre los dos repos no va en una sola dirección: hospeda no
+sólo crea el DDL de las 27 tablas, también les agrega restricciones de dominio por el
+carril `extras`, que qzpay no conoce.
+
+---
+
+### F-1B-009 — El volumen real de la mitad de billing
+
+De las **27** tablas de qzpay, **12 tienen filas** y **15 están completamente vacías**.
+
+| tabla | filas |
+|---|---|
+| `billing_webhook_events` | 206 |
+| `billing_webhook_dead_letter` | 63 |
+| `billing_plans` | 20 |
+| `billing_customers` | 19 |
+| `billing_entitlements` | 14 |
+| `billing_prices` | 10 |
+| `billing_addons` | 9 |
+| `billing_subscriptions` | **8** |
+| `billing_idempotency_keys` | 6 |
+| `billing_promo_codes` | 5 |
+| `billing_promo_code_usage` | 4 |
+| `billing_limits` | 3 |
+
+**`billing_payments`, `billing_invoices`, `billing_refunds` y `billing_checkouts` tienen
+cero filas**, contadas con `count(*)` y no con la estadística de `pg_stat_user_tables`.
+
+Las 8 suscripciones se reparten en **3 `trialing`, 3 `abandoned` y 2 `comp`**. No hay
+ninguna `active`.
+
+*Por qué importa para el relevamiento y no sólo para la migración*: 63 entradas en
+`billing_webhook_dead_letter` contra 206 eventos procesados es una proporción que hay que
+mirar, y **la mitad del esquema de billing nunca recibió una fila**. Una tabla vacía no
+dice si su código funciona.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
 
 | Carril | Denominador | Estado |
 |---|---|---|
-| Esquema: columnas, constraints, índices y triggers de las 174 | por medir | ⬜ |
+| ~~Esquema: censo de columnas, constraints y enums~~ | — | ✅ `F-1B-006` a `F-1B-009` |
+| Las 399 claves foráneas: qué depende de qué, y qué cruza la frontera hospeda↔qzpay | 399 | ⬜ |
+| Los 836 índices y los 132 triggers: qué hacen y cuáles no los conoce Drizzle | 968 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | Los 47 cron jobs: qué hace cada uno, leído del handler | 47 | ⬜ |
 | Endpoints registrados de la API por tier (`public` / `protected` / `admin`) | por medir | ⬜ |
