@@ -1159,15 +1159,64 @@ Cada entrada lleva, según §3.4:
   motivo por el que se eligió se pierde.
 - **Origen**: punto 3 del contraste PDR ↔ proveedor · §28 · `M-ENT-02`.
 
+### DEC-SUB-009 — La baja a fin de período cancela YA y sostiene el servicio de nuestro lado
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §24 pide que la baja se haga efectiva al final del período ya pagado,
+  manteniendo el servicio hasta entonces. El proveedor **no lo ofrece** para una suscripción viva,
+  así que hay que emularlo — y la forma obvia de emularlo es la peligrosa.
+- **Contexto medido**:
+  - `CN-1` **`PARTIALLY_SUPPORTED`**: la baja programada existe, pero **sólo se puede fijar al
+    CREAR** la suscripción. El mismo campo sobre una autorizada devuelve `200` y **no aparece en
+    la relectura**. Justo el caso que importa —una baja se pide *después* de contratar— es el que
+    no entra.
+  - `GT-1` **`VERIFIED`** (producción): cancelar **frena el cobro**. El sujeto cancelado tenía su
+    cobro agendado para el mismo instante que los otros y no cobró.
+  - `PA-5`: cancelar es **irreversible**.
+  - `EX-3`: cancelar dispara el correo del proveedor que insinúa mora.
+- **Contexto externo** (contraste, no fundamento): los proveedores maduros lo resuelven adentro
+  —Stripe tiene un `cancel_at_period_end` nativo, y reactivar es ponerlo en falso—. Y el **fallo
+  parcial de ese agendamiento está documentado como vulnerabilidad real de implementación**: el
+  trabajo programado falla a medias, el procesador no se entera de nada y al vencimiento
+  **renueva y sigue cobrando**.
+- **Alternativas**: (A) un trabajo programado que cancele el día del vencimiento, dejando la
+  suscripción viva en el proveedor hasta entonces; (B) **cancelar en el proveedor de inmediato y
+  sostener el servicio de nuestro lado** hasta el fin del período pagado.
+- **Decisión**: **(B)**.
+- **Motivo, y es uno solo: la dirección en la que falla cada una.** Las dos tienen procesos que se
+  pueden caer; lo que se elige es qué pasa cuando se caen.
+  - Con **(A)** el fallo **cobra plata que no corresponde**, y repararlo exige un reembolso — con
+    la comisión perdida, sobre la API que el proveedor anuncia en discontinuación (`R-MP-01`) y
+    con el rechazo de `RF-8` que todavía no sabemos explicar.
+  - Con **(B)** el fallo **regala unos días de servicio**, y se corrige sin mover un peso.
+  - Segundo argumento: con (A) la suscripción **sigue viva en el proveedor** entre el pedido y el
+    vencimiento, así que cualquier otra operación de esa ventana se cruza con una baja pendiente
+    que el proveedor no conoce. Con (B) el estado es simple: cancelada allá, con una fecha de fin
+    de servicio en nuestra base.
+- **Implicaciones**:
+  1. **El costo de esta decisión es el arrepentimiento, y es más frecuente que un proceso caído.**
+     Como cancelar es irreversible, volver atrás exige **recrear**. No es código nuevo —es el
+     mismo camino de `DEC-SUB-006`— pero es fricción, sobre alguien que acaba de decidir quedarse.
+  2. **El correo del proveedor le llega el día que pide la baja, no el día que termina.** Va a
+     leer *«tu suscripción fue cancelada»* con días de servicio por delante. **Nuestro aviso tiene
+     que salir antes y decir la fecha real hasta la que tiene acceso**, o va a creer que perdió lo
+     que pagó.
+  3. **La fecha de fin de servicio pasa a ser un dato nuestro**, no del proveedor. El
+     `next_payment_date` de una suscripción cancelada **no sirve**: sigue mostrando una fecha
+     futura que ya no significa nada.
+  4. El proceso que corta el servicio al vencimiento **tiene que ser idempotente**: si corre dos
+     veces, la segunda no hace nada.
+- **Origen**: punto 4 del contraste PDR ↔ proveedor · §24.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **33** |
+| Decisiones tomadas | **34** |
 | De metodología | 3 |
-| Funcionales | 30 |
+| Funcionales | 31 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
