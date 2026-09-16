@@ -31,7 +31,12 @@ Todos los IDs salen de [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-a
 > Lo que frena FASE 2 son **2** bloqueantes que decide el experimento (`BD-MP-01` pausa,
 > `BD-MP-02` cortesía). `BD-MP-03` la cerró `DEC-MP-001`.
 >
-> **Puntos 1 a 6 del contraste cerrados el 2026-09-16.** `DEC-CONC-001`: el candado contra el
+> **Puntos 1 a 7 del contraste cerrados el 2026-09-16.** `DEC-CONC-002`: la conciliación se
+> apoya en **nuestro inventario** —el buscador del proveedor no puede ser fuente de verdad—,
+> detecta huérfanas **por webhook** y sólo repara el vínculo automáticamente. De paso convierte el
+> `SubscriptionNotResolvedError` vivo en producción **de bug en caso de uso**.
+>
+> **Puntos 1 a 6.** `DEC-CONC-001`: el candado contra el
 > doble cobro es **nuestro y durable**, la recuperación tras un timeout pregunta **por el pagador**
 > (porque el buscador ignora nuestra referencia), y un duplicado que ya cobró **se cancela solo pero
 > se reembolsa con confirmación humana**.
@@ -302,7 +307,7 @@ Y dos que estaban dadas por imposibles y no lo eran:
 
 | Qué | Para qué |
 |---|---|
-| ⚠️ **Un error VIVO en producción, encontrado de paso** | Los webhooks `subscription_authorized_payment` / `invoice.updated` de al menos dos preapprovals (`74eea70d…` y `7a9e6a99…`) fallan con `SubscriptionNotResolvedError` (HOS-276), la API responde **`500`** y los encola para reintentar hasta 5 veces. **Alcanza a suscripciones reales, no sólo a las de prueba**, y es **anterior a esta sesión** (aparece disparado por el cron `webhook-retry`). Además, `invoice.updated` cae en `DEAD-LETTER: unrecognized MercadoPago event type`. **Queda registrado y NO se tocó**: el §4 prohíbe tocar código productivo, y es justo lo que el rediseño tiene que resolver de raíz |
+| ⚠️ **Un error VIVO en producción, encontrado de paso** — ahora con destino: `DEC-CONC-002` lo convierte en **el detector de huérfanas**, así que al arreglarlo **no debe silenciarse** sino convertirse en el disparador de la re-vinculación | Los webhooks `subscription_authorized_payment` / `invoice.updated` de al menos dos preapprovals (`74eea70d…` y `7a9e6a99…`) fallan con `SubscriptionNotResolvedError` (HOS-276), la API responde **`500`** y los encola para reintentar hasta 5 veces. **Alcanza a suscripciones reales, no sólo a las de prueba**, y es **anterior a esta sesión** (aparece disparado por el cron `webhook-retry`). Además, `invoice.updated` cae en `DEAD-LETTER: unrecognized MercadoPago event type`. **Queda registrado y NO se tocó**: el §4 prohíbe tocar código productivo, y es justo lo que el rediseño tiene que resolver de raíz |
 | 📬 **`EX-3`: mirá tu casilla** | El 2026-09-15 22:38 se creó en producción un preapproval `pending` con **tu** dirección como pagador, y se canceló 45 s después. Si Mercado Pago te mandó algún correo por eso —por la suscripción pendiente o por su cancelación—, **ése es el dato que `EX-3` necesita** y es la única vía que quedó viva: en sandbox la casilla del comprador de prueba no existe |
 | Autorizar (o no) lo que **sigue** necesitando una tarjeta real | `EX-4` (cambiar el ciclo), `EX-12` (reusar un token), `UP-*`, `DW-*`, `PS-*`: exigen una suscripción **autorizada**, y autorizar en producción exige una tarjeta real y un cobro real. Hoy están medidas sólo en sandbox |
 
