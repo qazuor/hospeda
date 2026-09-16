@@ -1409,15 +1409,73 @@ Cada entrada lleva, según §3.4:
      **cuándo se emite**: en toda divergencia que toque plata o estado.
 - **Origen**: punto 7 del contraste PDR ↔ proveedor · §23 · §22.1.
 
+### DEC-MAIL-001 — Nuestro correo bloquea la acción sólo donde el del proveedor hace daño, y los correos falsos se anticipan
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §42 se escribió como si fuéramos los únicos que le hablan al cliente, y la
+  medición mostró que no. Además, **cinco decisiones anteriores** (`DEC-SUB-006`, `007`, `008`,
+  `009` y `DEC-MP-002`) se apoyan en que «nuestro aviso sale antes», y ninguna definía qué pasa si
+  no sale.
+- **Contexto medido** (`EX-3`, sobre la casilla real del owner: 43 correos del proveedor en un día):
+  - El proveedor le escribe al cliente **por su cuenta** en el **alta**, el **cambio de monto**, la
+    **pausa** y la **cancelación** — y **siempre primero**.
+  - **Tres de esos correos afirman cosas que sus propios datos desmienten**: *«Pagaste la
+    suscripción»* 18 s después de autorizar, cuando no se cobró nada —y en los sujetos pausados y
+    cancelados ese cobro **no llegó nunca**—; *«Cobramos $15 para validar tu tarjeta»* cuando el
+    cargo registrado es de **$0**; y el rechazo `2084` que dice que un pago no se puede reembolsar
+    cuando sí se puede.
+  - **`paused` y `cancelled` llegan idénticos**: *«por un pago no realizado o por opción del
+    vendedor»*. Una cortesía y una mora son indistinguibles para el cliente.
+  - Los cuatro lo mandan a **nuestra** puerta (*«contactá con el vendedor»*): **no hay
+    autogestión**, todo cae en nuestro soporte.
+  - `EX-19` **`VERIFIED`**: el **`reason` es el texto que ve el cliente** en asunto y encabezado,
+    y **se puede reescribir**.
+  - `EX-22`: si la suscripción se crea **con plan**, el `reason` propio se descarta y queda el del
+    plan.
+  - `EX-15`: mutar el monto **no nos avisa a nosotros**, pero **sí le avisa a él**.
+- **Decisión**, en tres partes:
+  1. **Nuestro correo bloquea la acción SÓLO donde el del proveedor hace daño**: antes de
+     **cancelar**, sí; antes de mutar un monto, no. Si el correo no sale, la cancelación no se
+     ejecuta y se reintenta.
+  2. **Los correos falsos del proveedor se ANTICIPAN, no se desmienten.** Nuestro correo de alta
+     avisa que va a llegar uno diciendo que ya pagó, y da la fecha del primer cobro real.
+  3. **El `reason` es copy, no un identificador.** Nunca lleva un id interno ni un slug.
+- **Motivo**:
+  - Bloquear **siempre** acopla el cobro al proveedor de mail: una caída de algo accesorio frenaría
+    algo crítico. No bloquear **nunca** deja el peor resultado posible —que el cliente reciba
+    **sólo** el correo ambiguo o falso— y además **ocurre sin que nadie lo note**.
+  - **Bloquear donde importa resulta gratis** por cómo quedaron las decisiones anteriores: en el
+    cambio de ciclo y el upgrade, la cancelación de la vieja ocurre **cuando llega el webhook de
+    que la nueva quedó autorizada**, que es un momento que controlamos. La secuencia natural es
+    webhook → correo → cancelar, y si el correo falla **no se cancela y se reintenta**. El estado
+    intermedio no es destructivo: las dos suscripciones conviven (`EX-6`) y la nueva no cobra
+    porque tiene fecha futura. **Bloquear ahí no frena nada ni arriesga nada.**
+  - Desmentir al proveedor es una pelea que se pierde: su correo llega primero y con su marca.
+    **Anticiparlo convierte la contradicción en algo previsto.**
+- **Implicaciones**:
+  1. **Regla para soporte, que sale directo de la medición: ante un reclamo, mirar el PAGO, nunca
+     el correo.** Ninguna decisión de atención puede apoyarse en la copy del proveedor.
+  2. **Nuestra comunicación tiene que desambiguar lo que el proveedor dejó ambiguo**: si pausamos
+     por cortesía, decirlo; si es por mora, decirlo. El cliente recibe el mismo texto del
+     proveedor en los dos casos.
+  3. **No hay autogestión del lado del proveedor**: toda baja, cambio o duda cae en nuestro
+     soporte. Dimensionarlo así, no como excepción.
+  4. **El `reason` se controla por suscripción sólo porque no usamos los planes del proveedor**
+     (`DEC-MP-002`). Si alguna vez se usaran, el texto lo fijaría el plan y sería **un texto por
+     combinación** de vertical, tier y ciclo.
+  5. El aviso del punto 3 —el excedente al bajar de plan— **lleva escrito el criterio** con que se
+     despublicaría automáticamente, o el criterio deja de ser predecible.
+- **Origen**: punto 8 del contraste PDR ↔ proveedor · §42 · §43 · `M-MAIL-04`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **37** |
+| Decisiones tomadas | **38** |
 | De metodología | 3 |
-| Funcionales | 34 |
+| Funcionales | 35 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
