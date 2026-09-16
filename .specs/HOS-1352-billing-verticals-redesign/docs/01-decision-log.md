@@ -1105,15 +1105,67 @@ Cada entrada lleva, según §3.4:
   fricción y de no disparar el correo de cancelación.
 - **Origen**: punto 2 del contraste PDR ↔ proveedor · §27.
 
+### DEC-SUB-008 — El downgrade muta el monto ya, baja los entitlements al fin del ciclo, y el excedente se avisa antes de tocarlo
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §28 pide que el downgrade se aplique al fin del ciclo conservando el plan
+  anterior hasta entonces, y **no dice qué pasa con lo que ya no entra** en el plan nuevo — un
+  anfitrión con 5 fichas publicadas que baja a un plan de 3. Ese hueco es `M-ENT-02`.
+- **Contexto medido**:
+  - `DW-1`/`DW-2` **`VERIFIED`** (producción): el proveedor **cobra siempre el monto vigente al
+    momento del cobro**. Una suscripción que nació en $30 y se bajó a $15 cobró $15.
+  - `PC-3` **`VERIFIED`**: mutar el monto **no pide consentimiento** al cliente.
+  - `EX-15` **`VERIFIED`**: mutar el monto **no emite ningún webhook**. Nuestro estado sólo se
+    entera releyendo.
+  - `EX-3`: el cliente recibe *«El vendedor Hospeda cambió el monto»*. En un descenso es benigno,
+    pero llega sin contexto y antes que nosotros.
+- **Decisión**, en tres partes:
+  1. **El monto se muta cuando el cliente lo pide.** No se difiere. El cobro es por adelantado, así
+     que el próximo cobro ya corresponde al plan nuevo y sale correcto solo. Diferirlo sería una
+     carrera contra el cobro (ver la corrección de `DEC-SUB-007`).
+  2. **Los entitlements bajan al fin del ciclo**, no al pedirlo. Son dos relojes distintos: entre
+     el pedido y el fin del ciclo el cliente ve el precio nuevo y conserva los beneficios viejos,
+     que es exactamente lo que el §28 pide.
+  3. **El excedente se avisa, no se ejecuta por sorpresa.** Al pedir el downgrade se le muestra
+     qué no va a entrar y se le pide que elija qué conserva. **No es obligatorio**: puede
+     confirmar igual, y tiene hasta el fin del ciclo para ordenarlo él. Si llegado ese momento
+     sigue excedido, **el sistema despublica automáticamente** hasta dejarlo dentro del límite.
+- **Motivo**:
+  - Del lado del proveedor **no había nada que elegir**: mutar funciona, no pide consentimiento y
+    no dispara el correo de cancelación. Es el único de los tres cambios de plan que sale limpio.
+  - **Bloquear el downgrade hasta que ordene empuja a cancelar del todo.** Alguien que baja porque
+    no puede pagar y se encuentra bloqueado no vuelve al plan caro: se va. Es mejor que baje.
+  - **Automático puro sin aviso puede despublicarle la ficha principal**, que para un anfitrión es
+    el negocio. Avisar primero y dejar que elija cuesta una pantalla y evita ese daño.
+- **Implicaciones**:
+  1. **Despublicar no es borrar.** El automático saca del público; los datos siguen y el dueño los
+     ve, según `DEC-DATA-001`. Eso es lo que hace tolerable el fallback.
+  2. **Hace falta guardar la elección** del cliente entre el pedido y el fin del ciclo, y un
+     proceso que la ejecute. No es la cola de cambios programados del proveedor (`M-SUB-02`): es
+     una cola nuestra, de entitlements.
+  3. **Arrepentirse es barato**: volver al plan alto antes del fin del ciclo es otra mutación del
+     monto más cancelar el descenso programado.
+  4. **Toda mutación se verifica releyendo.** Como no emite webhook, un cambio de monto que el
+     proveedor acepta y no aplica no lo nota nadie hasta la conciliación.
+  5. **Nuestro aviso tiene que salir antes** que el del proveedor, o al menos explicar el que ya
+     le llegó.
+- **ABIERTO — el criterio del automático.** Está decidido *que* haya fallback automático; **no
+  cuál es el criterio** cuando el cliente no eligió. No se completa en silencio (§67). Candidatos:
+  despublicar primero **las publicadas más recientemente** (determinista y anticipable por el
+  cliente), las de **menos visitas** (mejor señal, pero ruidosa y necesita datos), o pedirle un
+  **orden de prioridad** una sola vez. Recomendado: las más recientes primero, por ser el único
+  que el cliente puede predecir sin mirar métricas.
+- **Origen**: punto 3 del contraste PDR ↔ proveedor · §28 · `M-ENT-02`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **31** |
+| Decisiones tomadas | **32** |
 | De metodología | 3 |
-| Funcionales | 28 |
+| Funcionales | 29 |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **8 de 8 cerradas** |
