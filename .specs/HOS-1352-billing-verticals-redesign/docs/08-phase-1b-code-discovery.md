@@ -92,9 +92,9 @@ verificado contra la definición real.
 | Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | **132** |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
 | Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | 0 |
-| Migraciones estructurales | 125 | `packages/db/src/migrations/*.sql` | 0 |
+| Migraciones estructurales | **125** | archivos, cruzados con `drizzle.__drizzle_migrations` en prod | **125** |
 | Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
-| Data-migrations de seed | 121 | `packages/seed/src/data-migrations/*.ts` | 0 |
+| Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
 | Archivos de ruta de la API | 1150 | `apps/api/src/routes/**/*.ts` — **denominador provisorio**, son archivos y no endpoints registrados | 0 |
 | Servicios en `service-core` | 101 | `*.service.ts` — **provisorio**, ver `F-1B-003` | 0 |
 | Archivos que mencionan conceptos de billing | 4251 (2658 sin tests) | `rg -l` sobre `apps` y `packages` | — |
@@ -566,6 +566,36 @@ la causa real no coincidieron.
 
 ---
 
+### F-1B-015 — Los tres carriles de migración están al día en producción, y sólo dos llevan registro
+
+En la base de producción existen **exactamente dos** tablas de ledger:
+`drizzle.__drizzle_migrations` y `public.seed_migrations`.
+
+| carril | en el repo | aplicadas en prod | pendientes |
+|---|---|---|---|
+| Estructural (`packages/db/src/migrations/*.sql`) | **125** | **125** | **0** |
+| Datos de seed (`packages/seed/src/data-migrations/NNNN-*.ts`) | **105** | **105** | **0** |
+| `extras` (`migrations/extras/*.sql`) | 42 | **sin ledger** | no aplica |
+
+**El carril `extras` no deja registro de qué se aplicó.** No hay tabla que lo lleve: se
+re-aplica entero y se apoya en que cada archivo sea idempotente. Consecuencia directa:
+para los otros dos carriles existe una respuesta a *«¿esto está aplicado acá?»*, y para
+los 42 `extras` **no existe** — sólo se puede inferir mirando si el objeto que crean
+está presente.
+
+**Otro denominador por nombre de archivo que estaba mal.** `fd -e ts` sobre
+`data-migrations/` da **121**, y las migraciones son **105**: los otros 16 archivos son
+la infraestructura del runner (`ledger.ts`, `discover.ts`, `context.ts`,
+`fkGuard.ts`, `columnDependencyGuard.ts`, `safeDelete.ts`, `baselineStamp.ts`,
+`billingCleanupGuards.ts`, `trialPlanMigration.ts`, …). Filtrando por el prefijo
+`NNNN-` el conteo da 105, que es **exactamente** lo que el ledger de producción
+reporta.
+
+Es la tercera vez que un conteo por nombre de archivo da mal (`F-1B-003`, `F-1B-012`,
+ésta). Las tres veces el error estuvo del lado del patrón.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -584,7 +614,8 @@ Ninguno empezado. El orden no está decidido.
 | Entitlements y limits: claves existentes y dónde se consumen | por medir | ⬜ |
 | Superficies Web | por medir | ⬜ |
 | Superficies Admin | por medir | ⬜ |
-| Las 125 + 42 + 121 migraciones: qué quedó aplicado y qué quedó muerto | 288 | ⬜ |
+| ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
+| Qué hace cada una de las 125 estructurales: columnas muertas, renames, drops | 125 | ⬜ |
 | Tests: qué comportamiento afirman (como evidencia de intención, no de corrección) | por medir | ⬜ |
 
 Y en **qzpay**, con el mismo criterio:
