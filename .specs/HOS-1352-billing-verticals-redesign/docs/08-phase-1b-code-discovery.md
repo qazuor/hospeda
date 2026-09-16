@@ -87,7 +87,7 @@ verificado contra la definición real.
 | … que hospeda importa | **5** | `@qazuor/qzpay-*` en el código, no en el `package.json` | 5 |
 | `pgEnum` declarados en hospeda | **90** | `pgEnum(` multilínea, cruzado con `pg_type` en prod | **90** |
 | Columnas en producción | **2.423** | `information_schema.columns` | 2.423 |
-| Claves foráneas | **399** | `information_schema.table_constraints` | 0 |
+| Claves foráneas | **399** | `pg_constraint` con `contype='f'` | **399** |
 | Índices | **836** | `pg_indexes` | 0 |
 | Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | 0 |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
@@ -361,6 +361,69 @@ dice si su código funciona.
 
 ---
 
+### F-1B-010 — Ninguna tabla de qzpay referencia a hospeda: la dependencia es de una sola mano
+
+Las **399** claves foráneas de producción, repartidas por la frontera:
+
+| dirección | cantidad |
+|---|---|
+| hospeda → hospeda | 358 |
+| qzpay → qzpay | 22 |
+| **hospeda → qzpay** | **19** |
+| **qzpay → hospeda** | **0** |
+
+**Cero en esa última fila.** El esquema de qzpay es cerrado sobre sí mismo: ninguna de
+sus 27 tablas apunta a una de las 147 de hospeda. Toda la dependencia va en la otra
+dirección, y son 19 columnas.
+
+**Las 19, completas:**
+
+| desde (hospeda) | columna | hacia (qzpay) | `ON DELETE` |
+|---|---|---|---|
+| `billing_addon_purchases` | `addon_id` | `billing_addons` | `SET NULL` |
+| `billing_mp_addon_plans` | `addon_id` | `billing_addons` | `CASCADE` |
+| `billing_addon_purchases` | `customer_id` | `billing_customers` | `RESTRICT` |
+| `billing_dunning_attempts` | `customer_id` | `billing_customers` | `RESTRICT` |
+| `billing_notification_log` | `customer_id` | `billing_customers` | `SET NULL` |
+| `billing_pending_checkouts` | `customer_id` | `billing_customers` | `CASCADE` |
+| `billing_mp_plans` | `commercial_plan_id` | `billing_plans` | `CASCADE` |
+| `billing_plan_price_changes` | `plan_id` | `billing_plans` | `CASCADE` |
+| **`partners`** | `plan_id` | `billing_plans` | `SET NULL` |
+| `billing_plan_price_changes` | `price_id` | `billing_prices` | `CASCADE` |
+| `billing_addon_purchases` | `subscription_id` | `billing_subscriptions` | `SET NULL` |
+| `billing_dunning_attempts` | `subscription_id` | `billing_subscriptions` | `SET NULL` |
+| `billing_pending_checkouts` | `local_subscription_id` | `billing_subscriptions` | `CASCADE` |
+| `billing_plan_price_change_notices` | `subscription_id` | `billing_subscriptions` | `CASCADE` |
+| `billing_plan_price_change_targets` | `subscription_id` | `billing_subscriptions` | `CASCADE` |
+| `billing_subscription_events` | `subscription_id` | `billing_subscriptions` | `CASCADE` |
+| **`entity_subscriptions`** | `subscription_id` | `billing_subscriptions` | `CASCADE` |
+| **`partner_subscriptions`** | `subscription_id` | `billing_subscriptions` | `CASCADE` |
+| **`partners`** | `subscription_id` | `billing_subscriptions` | `SET NULL` |
+
+Cuatro cosas que salen de leer la tabla y no de suponerla:
+
+1. **Sólo 5 de las 27 tablas de qzpay tienen algún referente en hospeda**:
+   `billing_subscriptions` (9 de las 19), `billing_customers` (4), `billing_plans` (3),
+   `billing_addons` (2) y `billing_prices` (1). **Las otras 22 no las referencia nadie
+   desde este lado.**
+2. **Casi toda la frontera la cruzan tablas `billing_*` propias de hospeda.** Las únicas
+   tres excepciones son `partners` (dos columnas), `partner_subscriptions` y
+   `entity_subscriptions`. O sea: el resto del dominio —alojamientos, destinos,
+   usuarios, gastronomía, experiencias— **no toca las tablas de qzpay por clave
+   foránea**.
+3. **Los tres comportamientos de borrado conviven**: 11 `CASCADE`, 6 `SET NULL`,
+   2 `RESTRICT`.
+4. **`billing_addon_purchases` y `billing_dunning_attempts` tratan distinto al cliente
+   y a la suscripción**: `RESTRICT` sobre `billing_customers` y `SET NULL` sobre
+   `billing_subscriptions`. Borrar una suscripción deja la fila con el vínculo en nulo;
+   borrar un cliente está bloqueado.
+
+*Qué abre, sin resolverlo acá*: la separabilidad de los dos repos es una propiedad
+**medida**, no una aspiración — 19 columnas en una sola dirección, concentradas en 5
+tablas destino.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -368,7 +431,8 @@ Ninguno empezado. El orden no está decidido.
 | Carril | Denominador | Estado |
 |---|---|---|
 | ~~Esquema: censo de columnas, constraints y enums~~ | — | ✅ `F-1B-006` a `F-1B-009` |
-| Las 399 claves foráneas: qué depende de qué, y qué cruza la frontera hospeda↔qzpay | 399 | ⬜ |
+| ~~Las 399 claves foráneas y la frontera hospeda↔qzpay~~ | — | ✅ `F-1B-010` |
+| Las 358 FK internas de hospeda: el grafo de dependencias del dominio | 358 | ⬜ |
 | Los 836 índices y los 132 triggers: qué hacen y cuáles no los conoce Drizzle | 968 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | Los 47 cron jobs: qué hace cada uno, leído del handler | 47 | ⬜ |
