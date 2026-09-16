@@ -91,7 +91,7 @@ verificado contra la definición real.
 | Índices | **836** | `pg_index` por catálogo — **no** por nombre, que da 160 PK en vez de 174 | **836** |
 | Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | **132** |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
-| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | 0 |
+| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** (horario) · 0 (handler) |
 | Migraciones estructurales | **125** | archivos, cruzados con `drizzle.__drizzle_migrations` en prod | **125** |
 | Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
 | Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
@@ -659,6 +659,69 @@ tampoco se pueden contar por patrón. Hizo falta construir la app.
 
 ---
 
+### F-1B-017 — Los 47 crons y su horario; tres lo toman del entorno y uno corre distinto en producción
+
+**Los 47 registrados, con el horario que declara el código:**
+
+| cron | horario | | cron | horario |
+|---|---|---|---|---|
+| `subscription-poll` | `* * * * *` | | `host-trade-usage-expiry` | `15 4 * * *` |
+| `poll-apify-reputation-runs` | `*/2 * * * *` ¹ | | `partner-expiry` | `15 4 * * *` |
+| `conversation-notification` | `*/5 * * * *` | | `entity-views-purge` | `30 3 * * *` |
+| `newsletter-close-campaigns` | `*/5 * * * *` | | `conversation-token-cleanup` | `0 3 * * *` |
+| `social-publish-dispatch` | `*/5 * * * *` | | `archive-abandoned-drafts` | `0 3 * * *` |
+| `apply-scheduled-plan-changes` | `*/15 * * * *` | | `notification-log-purge` | `0 3 * * *` |
+| `propagate-plan-price-changes` | `*/15 * * * *` | | `trial-reconcile` ² | `0 2 * * *` |
+| `abandoned-pending-subs` | `0 * * * *` | | `addon-expiry` | `0 5 * * *` |
+| `archive-expired-promotions` | `0 * * * *` | | `app-log-purge` | `0 5 * * *` |
+| `courtesy-expiry` | `0 * * * *` | | `preapproval-less-expiry` | `30 5 * * *` |
+| `webhook-retry` | `0 */1 * * *` | | `dunning` | `0 6 * * *` |
+| `reactivation-supersession-reconcile` | `0 * * * *` | | `destination-weather-fetch` | `0 6,18 * * *` |
+| `page-revalidation` | `0 * * * *` ¹ ³ | | `alerts-digest` | `0 8 * * *` |
+| `subscription-drift-reconcile` | `17 * * * *` | | `notification-schedule` | `0 8 * * *` |
+| `exchange-rate-fetch` | `0 */3 * * *` | | `conversation-token-reminder` | `0 9 * * *` |
+| `lead-intake-backstop` | `20 */4 * * *` | | `view-monthly-rollup` | `10 4 * * *` |
+| `calendar-sync-google` | `0 */6 * * *` | | `finalize-cancelled-subs` | `30 4 * * *` |
+| `calendar-sync-ical` | `0 */6 * * *` | | `host-trade-usage-reminder` | `30 4 * * *` |
+| `featured-by-entitlement-reconcile` | `0 */6 * * *` | | `partner-payment-review` | `30 4 * * *` |
+| `search-index-refresh` | `0 */6 * * *` | | `partner-unpaid-reaper` | `45 4 * * *` |
+| `entity-subscription-cache-reconcile` | `30 */6 * * *` | | `host-trade-stats-reconcile` | `0 5 * * 1` |
+| `addon-subscription-reconcile` | `45 */6 * * *` | | `refresh-external-reputation` | `0 2 * * 1` ¹ |
+| `cloudinary-e2e-cleanup` | `0 2 * * 0` | | `media-orphan-cleanup` | `0 0 * * 0` |
+| `cron-run-purge` | `0 4 * * *` | | | |
+
+¹ el horario sale de una variable de entorno, con ese valor como default.
+² definido en `jobs/trial-expiry.ts`: **el archivo se llama distinto que el job**.
+³ **en producción NO corre con ese horario** — ver abajo.
+
+**Tres de los 47 leen su horario del entorno**, no del código:
+
+| cron | default en el código | variable | valor en producción |
+|---|---|---|---|
+| `page-revalidation` | `0 * * * *` | `HOSPEDA_REVALIDATION_CRON_SCHEDULE` | **`0 */6 * * *`** |
+| `refresh-external-reputation` | `0 2 * * 1` | `HOSPEDA_EXTREP_CRON_SCHEDULE` | sin setear |
+| `poll-apify-reputation-runs` | `*/2 * * * *` | `HOSPEDA_EXTREP_POLL_SCHEDULE` | sin setear |
+
+**`page-revalidation` corre cada seis horas en producción, no cada hora.** Medido con
+`hops --target=prod env-list api --reveal`, contra el default de
+`jobs/page-revalidation.job.ts:40`. Es una divergencia real entre el código y el sistema
+que corre, y del tipo que ningún test puede ver.
+
+**Cuatro mediciones que hubo que rehacer, las cuatro por leer en vez de suponer:**
+
+1. La extracción por `name: '...'` daba **46 de 47**. El que faltaba,
+   `reactivation-supersession-reconcile`, declara `name: JOB_NAME`
+   (`jobs/reactivation-supersession-reconcile.job.ts:151`), o sea una constante y no un
+   literal.
+2. Cinco `timeoutMs` parecían absurdos —`2`, `5`, `10`— y eran expresiones:
+   `2 * 60 * 1000`, `5 * 60_000`, `10 * 60_000`. El regex tomaba el primer número.
+3. Tres jobs parecían no tener horario y lo toman del entorno.
+4. `jobs/trial-expiry.ts` define un job llamado **`trial-reconcile`**. Buscarlo por el
+   nombre del archivo no lo encuentra; buscarlo por el nombre del job no encuentra el
+   archivo.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -671,7 +734,8 @@ Ninguno empezado. El orden no está decidido.
 | ~~Los 836 índices y los 132 triggers~~ | — | ✅ `F-1B-011`, `F-1B-012` |
 | Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
-| Los 47 cron jobs: qué hace cada uno, leído del handler | 47 | ⬜ |
+| ~~Los 47 crons: nombre, horario y habilitación~~ | — | ✅ `F-1B-003`, `F-1B-017` |
+| Qué hace cada uno de los 47 handlers, leído por dentro | 47 | ⬜ |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Servicios: métodos públicos y qué validan | por medir | ⬜ |
