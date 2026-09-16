@@ -1208,15 +1208,74 @@ Cada entrada lleva, según §3.4:
      veces, la segunda no hace nada.
 - **Origen**: punto 4 del contraste PDR ↔ proveedor · §24.
 
+### DEC-MP-002 — El aumento se avisa 30 días antes, y no alcanza a nadie hasta que se lo migra
+
+- **Fecha**: 2026-09-16 · **Estado**: ACCEPTED · **Decide**: owner
+- **Complementa** `DEC-MP-001`, que decidió el **mecanismo** (mutar el monto). Esta decide la
+  **política**: cuándo se avisa y a quién alcanza.
+- **Problema**: el §29 exige avisar, mostrar el precio anterior y el nuevo, la fecha efectiva y
+  permitir cancelar — y cierra con *«investigar normativa actual antes de implementar»*.
+  `DEC-MP-001` cerró la pregunta técnica y dejó ésta abierta.
+- **Contexto medido**:
+  - `PC-1`/`PC-3` **`VERIFIED`**: el monto de una suscripción viva se muta **sin pedirle un
+    consentimiento nuevo** al cliente.
+  - `EX-15` **`VERIFIED`**: mutar el monto **no emite ningún webhook**. Nuestro sistema sólo se
+    entera releyendo.
+  - `EX-3` **`VERIFIED`**: **el proveedor le escribe al cliente por su cuenta** —*«El vendedor
+    Hospeda cambió el monto»*— y lo hace **en el acto**.
+  - `EX-23` **`PARTIALLY_SUPPORTED`**: editar el monto de un **plan** alcanza la lectura de
+    **todos sus suscriptos**; un testigo que nadie tocó pasó de 2000 a 2500 y después a 15.
+- **Decisión**, en dos partes:
+  1. **Nuestro aviso sale ANTES de mutar, con 30 días de antelación mínima**, y lleva precio
+     anterior, precio nuevo, fecha efectiva y cómo darse de baja. La mutación ocurre en la fecha
+     efectiva, no cuando se decide el aumento.
+  2. **Cambiar el precio de un plan NO mueve a nadie.** Migrar a las suscripciones existentes es
+     una acción aparte y deliberada, por suscripción.
+- **Motivo**:
+  - **El orden es forzado por la medición.** Como el proveedor le escribe al cliente en el
+    instante de mutar y a nosotros no nos avisa, si no hablamos primero el cliente se entera por
+    un tercero. Avisando antes, el correo del proveedor pasa de sorpresa a **confirmación de algo
+    ya anunciado**.
+  - **La antelación tiene un piso estructural, no de gusto.** Si el aviso es más corto que lo que
+    el cliente necesita para darse de baja antes de que el precio nuevo lo alcance, **el derecho a
+    cancelar que el §29 exige es decorativo**. Con la baja a fin de período de `DEC-SUB-009`, eso
+    son 30 días: un ciclo completo en mensual, y tiempo de sobra en anual.
+  - **La migración explícita separa dos decisiones que hoy se confunden en una**: cambiar la
+    oferta para clientes nuevos, y aumentarle a alguien que ya está. Con alcance automático,
+    **editar el catálogo se vuelve un acto peligroso**: un precio pensado para nuevos le sube a
+    toda la base sin que nadie lo haya pedido.
+  - Y hay un argumento **medido**: `EX-23` mide que con los planes del proveedor ese accidente
+    está **a un clic de distancia**. Nuestro catálogo tiene que ser el que manda, precisamente
+    para que no pueda pasar.
+  - Encaja con `DEC-ARCH-001` (se versiona lo que tiene efecto): cada suscripción queda anclada a
+    su versión hasta que alguien la mueva a propósito.
+- **Implicaciones**:
+  1. **El precio vive en la suscripción, no sólo en el plan.** Sostenerlo por suscripción es el
+     costo de esta decisión.
+  2. **Un aumento es una operación por lotes con destinatarios elegidos**, no un `UPDATE` al
+     catálogo. Necesita su propia acción administrativa y su propio registro de a quién alcanzó.
+  3. **La mutación se verifica releyendo**, siempre: no hay webhook que confirme, y es el terreno
+     donde el proveedor ya demostró aceptar sin aplicar.
+  4. El aviso previo **es nuestro y no se puede delegar**: el del proveedor llega tarde, sin el
+     precio anterior y sin la fecha efectiva.
+- **PENDIENTE LEGAL — no resuelto por esta decisión.** El §29 pide investigar la normativa y
+  **sigue pendiente** (`M-LEGAL-03`). Los 30 días son una decisión comercial informada por el
+  derecho a cancelar, **no un plazo normativo verificado**: no se encontró uno. Y buscando esto
+  apareció otra obligación que toca al §24 y a `DEC-SUB-009`, y que **tampoco está verificada**:
+  que el proveedor no pueda exigir registro ni trámite para cancelar, y deba confirmar la baja
+  dentro de las 24 horas con un código. **Las dos necesitan una revisión profesional**, no una
+  búsqueda web.
+- **Origen**: punto 5 del contraste PDR ↔ proveedor · §29 · `M-LEGAL-03`.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **34** |
+| Decisiones tomadas | **35** |
 | De metodología | 3 |
-| Funcionales | 31 |
+| Funcionales | 32 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
