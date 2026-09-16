@@ -9,9 +9,18 @@ phase: 1C
 
 # Matriz de validación de Mercado Pago
 
-**FASE 1C en curso.** Tras las [sondas 01 a 28](./mp-probes/RESULTS-2026-09-15.md) del
-2026-09-15: **40 filas `VERIFIED`, 12 `PARTIALLY_SUPPORTED`, 8 `NOT_SUPPORTED`, 11 `UNKNOWN`**,
-sobre **71**.
+**FASE 1C en curso.** Tras las [sondas 01 a 37](./mp-probes/RESULTS-2026-09-15.md) del
+2026-09-15: **43 filas `VERIFIED`, 14 `PARTIALLY_SUPPORTED`, 12 `NOT_SUPPORTED`, 11 `UNKNOWN`**,
+sobre **80**.
+
+> **El modelo de PLANES (`/preapproval_plan`) entró a la matriz con nueve filas** (`EX-21` a
+> `EX-29`). Las 71 anteriores se habían medido **todas** sobre suscripciones sueltas. Lo que
+> decidía era `EX-21` —si una suscripción viva se puede mover de un plan a otro— y salió
+> **`NOT_SUPPORTED` con un `200`**: el campo se descarta en silencio. **Los planes no resuelven
+> el cambio de ciclo individual.** Lo que sí abrieron: **editar el monto de un plan alcanza a
+> los ya suscriptos** (`EX-23`), que sería un cambio de precio masivo que `DEC-MP-001` no
+> consideró — falta un cobro ejecutado para saber si propaga de verdad o la lectura miente, y
+> hay dos sujetos puestos para eso.
 
 > **El reloj de producción cobró a las 26 minutos y cerró siete filas de una** (`UP-1`, `UP-2`,
 > `DW-1`, `DW-2`, `CT-3`, `PS-2`, `GT-1`), más media `RN-1` y media `CT-1`. El resultado que más
@@ -117,7 +126,8 @@ registrar request → registrar response → observar el webhook → documentar 
 | Agregadas por FASE 1C, segunda tanda | 4 — `RF-4`, `RF-5`, `EX-17`, `EX-18` |
 | Agregadas por la tanda de producción | 4 — `RF-6`, `RF-7`, `RF-8`, `RC-4` |
 | Agregadas con la tarjeta real | 2 — `EX-19`, `EX-20` |
-| **Total** | **71** |
+| Agregadas por el modelo de **planes** (`/preapproval_plan`) | 9 — `EX-21` a `EX-29` |
+| **Total** | **80** |
 
 Columnas: **Estado** · **Fecha** · **Entorno** · **Evidencia** (ruta de la sonda, con request,
 response y webhook observado) · **Conclusión**.
@@ -295,17 +305,43 @@ esperado; se marcan para que quede claro qué exige el PDR y qué agregó el an�
 
 ---
 
+## ✚ Planes — `/preapproval_plan`
+
+Las 71 filas anteriores se midieron **todas** sobre `/preapproval`: suscripciones sueltas. El
+proveedor tiene un **segundo modelo** que este programa no había tocado, y que expone campos que
+la suscripción suelta no tiene (`repetitions`, `billing_day`, `billing_day_proportional`,
+`free_trial`). Estas nueve filas lo miden, todas en sandbox el 2026-09-15, con las sondas
+[33](./mp-probes/probe-33-planes-vs-suscripciones-sueltas.mjs),
+[34](./mp-probes/probe-34-controles-de-la-33.mjs),
+[35](./mp-probes/probe-35-el-ciclo-de-un-plan-es-editable.mjs),
+[36](./mp-probes/probe-36-el-plan-propaga-o-solo-lo-parece.mjs) y
+[37](./mp-probes/probe-37-el-free-trial-del-plan-se-da-una-sola-vez.mjs).
+
+| # | Comportamiento | Para qué | Estado | Fecha | Entorno | Evidencia | Conclusión |
+|---|---|---|---|---|---|---|---|
+| EX-21 ✚ | ¿Se puede **mover** una suscripción viva de un plan a otro? | punto 1 / `DEC-SUB-005`, §27, §28 | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 33](./mp-probes/probe-33-planes-vs-suscripciones-sueltas.mjs) | **NO, y en la peor de las formas: `200` con el campo descartado.** `PUT /preapproval/{id}` mandando `preapproval_plan_id` devuelve **`200`** y la relectura sigue mostrando el plan viejo. Medido en tres pasos, con **el control que distingue**: (a) el mismo `PUT` con sólo `back_url` → `200` **aplicado**, así que el `PUT` sobre ese sujeto funciona; (b) con sólo `preapproval_plan_id` → `200`, plan viejo; (c) **los dos juntos** → `200`, `back_url` aplicado y **plan ignorado**. Sin (a), un error en (b) no habría distinguido "prohibido" de "no llegó a evaluarse"; sin (c), el `200` de (b) no distinguía nada. Es **`EX-20` otra vez**, y esta vez el campo descartado es justo el que se preguntaba. **El modelo de planes NO resuelve el punto 1**: `DEC-SUB-005` —cancelar y recrear, con el código de seguridad al cliente— sigue siendo el único camino medido para un cambio de ciclo individual |
+| EX-22 ✚ | Con plan, ¿puede la suscripción traer su propio `auto_recurring`? | §19, §29, catálogo de planes | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 33 y 34](./mp-probes/probe-34-controles-de-la-33.mjs) | **Manda el plan, y lo que sobra se descarta sin avisar.** Monto distinto → **`400`** *"The transaction_amount must be the same as preapproval_plan"*. Monto **igual** y frecuencia distinta (`2 months` contra `1 months` del plan) → **`201`** y la relectura dice `1 months`: **el proveedor valida el monto y no valida la frecuencia**, así que el único campo que protesta es el único que no hacía falta proteger. La suscripción además **heredó** el `billing_day: 10` del plan, que nunca pidió. El `reason` propio también se descarta: queda el del plan. **Consecuencia sobre `EX-3`**: está medido que el `reason` **es la copy que ve el cliente** en asunto y encabezado de los correos del proveedor, así que con planes **esa copy la fija el plan** — un catálogo de planes es también un catálogo de textos al cliente, uno por combinación vertical × tier × ciclo |
+| EX-23 ✚ | Editar el **monto** de un plan, ¿alcanza a los ya suscriptos? | `BD-MP-03`, `DEC-MP-001`, §29 | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 33 a 36](./mp-probes/probe-36-el-plan-propaga-o-solo-lo-parece.mjs) | **La LECTURA de los suscriptos sigue al plan; falta saber si el COBRO también.** Un testigo que nadie tocó leyó 2000 al alta, **2500** tras subir el plan y **15** tras bajarlo: tres puntos, sobre dos suscriptos. Eso admite dos explicaciones que **ninguna lectura distingue**: que el proveedor **propague** —y entonces existe un cambio de precio **masivo** por plan, mucho más barato que mutar suscripción por suscripción, que es lo que decidió `DEC-MP-001`— o que la lectura sólo **refleje** el plan mientras el cobro sale de otro lado, **que sería peor que el hallazgo**, porque la relectura es la única herramienta con la que este programa verifica todo. Sólo un cobro ejecutado las separa: quedaron dos sujetos de ciclo diario puestos el 2026-09-15 23:32, uno con el plan subido a **ARS 3300** antes del primer cobro y otro **sin tocar** que lo hace legible ([manifiesto](./mp-probes/manifiesto-propaga-2026-09-15.json)). **Se lee el 2026-09-16.** El piso de `PC-2` también rige acá: ARS 1 → `400` *"Cannot pay an amount lower than $ 15.00"* |
+| EX-24 ✚ | ¿El **ciclo** de un plan es editable? | §19, §29 | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 35](./mp-probes/probe-35-el-ciclo-de-un-plan-es-editable.mjs) | **SÍ**, verificado por relectura dos veces: `1 days → 2 days` sobre un plan sin free trial y `1 months → 2 months` sobre uno con free trial. **Y casi se registra un `NOT_SUPPORTED` inventado**: el primer intento devolvió `400`, pero el mensaje era *"The free trial property must be sent"* — si el plan tiene free trial, **todo `PUT` que toque `frequency` tiene que reenviarlo**, y el rechazo no tenía nada que ver con el ciclo. Tercer caso en este programa de un error que no prueba una prohibición sino que no se llegó a evaluar |
+| EX-25 ✚ | El cambio de **ciclo** del plan, ¿alcanza a los ya suscriptos? | §19, §29 | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 35](./mp-probes/probe-35-el-ciclo-de-un-plan-es-editable.mjs) | **NO.** Con el plan en `2 months`, sus dos suscriptos siguen leyéndose en `1 months`. **La asimetría con `EX-23` es el hallazgo**: sobre el mismo plan y los mismos suscriptos, el monto cambia y el ciclo no. Un plan puede quedar describiendo un ciclo que ninguno de sus suscriptos tiene, y nada avisa |
+| EX-26 ✚ | ¿`free_trial` funciona **sin** plan? | §10, trial | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 33](./mp-probes/probe-33-planes-vs-suscripciones-sueltas.mjs) | **SÍ, y difiere el primer cobro.** Medido con un par en la misma corrida, con segundos de diferencia: el sujeto **con** `free_trial` quedó en `summarized.charged_quantity: null` y su gemelo **sin** trial en `1`. El proveedor agrega por su cuenta `first_invoice_offset`. No hizo falta esperar nada |
+| EX-27 ✚ | ¿`repetitions` y `billing_day` funcionan **sin** plan? | §19, catálogo | **`NOT_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 33 y 34](./mp-probes/probe-34-controles-de-la-33.mjs) | **No: los dos se descartan en silencio.** `repetitions: 3` → `201` y **ausente** en la relectura. `billing_day` con ciclo diario → `400` *"Only monthly frequencies are able to receive billing day or proportional"*, **que no contestaba la pregunta** porque el rechazo era del ciclo; el control con ciclo **mensual** sí la contesta, y da **`201` con el campo ausente**. **Son exclusivos de planes**, y es lo único que el modelo de planes aporta sobre el suelto |
+| EX-28 ✚ | ¿Los planes aceptan **ciclo diario**? | costo de medir sobre planes | **`VERIFIED`** | 2026-09-15 | sandbox | [sonda 34](./mp-probes/probe-34-controles-de-la-33.mjs) | **SÍ.** El primer intento dio `400` *"the only valid frequency is months"*, pero ese plan mandaba además `billing_day`, que exige mensual. **Sin `billing_day`, un plan de `1 days` entra y se relee correcto.** Importa por el costo: una batería completa sobre planes **se lee en 24 h, no en un mes** — salvo la parte que use `billing_day`, que es mensual por definición |
+| EX-29 ✚ | El **free trial de un plan**, ¿lo decide el request? | §10, trial, UI de checkout | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sonda 37](./mp-probes/probe-37-el-free-trial-del-plan-se-da-una-sola-vez.mjs) | **NO lo decide el request, el patrón es reproducible y el mecanismo NO está identificado.** Dos suscripciones del mismo pagador sobre el mismo plan, con requests **idénticos** y tres segundos de diferencia, salieron distintas: una con `free_trial` y la otra con `null`. Ninguna lo pidió — lo trae el plan. Reproducido **tres veces en frío**, sobre tres planes nuevos, siempre `✅ ✅ ❌`. **No es "una vez por plan"** (dos la reciben) **ni "una vez por pagador"** (la recibe en tres planes distintos), y el plan de la sonda 33 dio `✅ ❌ ❌`, que tampoco encaja con "dos por plan". **Se registra lo reproducible y no se elige la explicación más cómoda**: falta el experimento que las distinga, y el más barato es separar las altas en el tiempo. Lo que **sí** está cerrado y no depende del mecanismo: (1) dos altas idénticas dan resultados distintos; (2) **la relectura lo delata** —`free_trial: null` y `next_payment_date` en el instante del alta en vez de mañana—; (3) por lo tanto **no se le puede prometer al cliente la fecha del primer cobro desde lo que se mandó**: hay que releer antes de mostrarla, siempre |
+
+---
+
 ## Resumen
 
 | Estado | Filas |
 |---|---|
-| `VERIFIED` | **40** |
-| `PARTIALLY_SUPPORTED` | **12** — `PA-2`, `RC-1`, **`RC-3`**, `PS-1`, `PS-3`, `CN-1`, `CT-1`, `CT-2`, `WH-3`, `RN-1`, `EX-9`, `RF-8` |
-| `NOT_SUPPORTED` | **8** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno), `EX-17` (creación idempotente), `EX-18` (otra moneda), `RC-4` (el `search` devuelve menos campos que el `GET`), **`EX-20`** (un `PUT` mixto se aplica a medias) |
+| `VERIFIED` | **43** |
+| `PARTIALLY_SUPPORTED` | **14** — `PA-2`, `RC-1`, **`RC-3`**, `PS-1`, `PS-3`, `CN-1`, `CT-1`, `CT-2`, `WH-3`, `RN-1`, `EX-9`, `RF-8`, **`EX-23`** (el plan alcanza la lectura del suscripto; falta el cobro), **`EX-29`** (el free trial del plan no lo decide el request) |
+| `NOT_SUPPORTED` | **12** — `EX-4` (cambio de ciclo), `EX-5` (más de un monto), `EX-12` (reusar un token), `EX-14` (distinguir entorno), `EX-17` (creación idempotente), `EX-18` (otra moneda), `RC-4` (el `search` devuelve menos campos que el `GET`), **`EX-20`** (un `PUT` mixto se aplica a medias), **`EX-21`** (mover una suscripción de plan), **`EX-22`** (contradecir al plan), **`EX-25`** (el ciclo del plan no alcanza a los suscriptos), **`EX-27`** (`repetitions` y `billing_day` sin plan) |
 | **`UNKNOWN`** | **11** — nueve esperan la lectura de mañana (`RN-2`, `RN-3`, `GR-1..3`, `PS-4`, `PS-5`, `PS-6`, `EX-1`); las otras dos son `WH-5` y `RF-3` |
 
 Recalculado con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) el
-2026-09-15, sobre **71** filas.
+2026-09-15, sobre **80** filas.
 
 **Lo más grave que dejó la tanda de producción**, y que en sandbox era invisible: el `search`
 de suscripciones tiene **tres modos de falla en tres direcciones distintas** —devuelve TODO
