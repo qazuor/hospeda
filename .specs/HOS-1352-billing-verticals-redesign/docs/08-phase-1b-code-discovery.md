@@ -4204,6 +4204,160 @@ pregunta se puede responder aparte de las otras 50.539, porque el grafo no las a
 
 ---
 
+### F-1B-096 — Los mappers de qzpay descartan campos en silencio, y uno de los descartados es el que su propio repositorio usa para filtrar
+
+Leídos enteros los 35 archivos de `qzpay/packages/drizzle/src/schema/` (20 / 2.450 líneas) y
+`mappers/` (15 / 1.882), más `types.ts` (73) e `index.ts` (19).
+
+**El mapper de suscripción devuelve 21 de las 34 columnas.**
+`mappers/subscription.mapper.ts:20-55` (`mapDrizzleSubscriptionToCore`) no incluye
+`trialConverted`, `trialConvertedAt`, `endedAt`, `promoCodeId`, `defaultPaymentMethodId`,
+**`gracePeriodEndsAt`**, `retryCount`, `nextRetryAt`, `productDomain`,
+`promoEffectRemainingCycles`, `courtesyStartsAt`, `courtesyEndsAt`,
+`courtesyCyclesGranted` ni `version`. Y de escritura puede menos: el mapper de update
+(`:123-170`) nombra **ocho** columnas.
+
+**`gracePeriodEndsAt` es el caso que cierra el círculo**: el repositorio del mismo paquete
+lo usa como filtro y como orden en las dos consultas de mora —
+`repositories/subscriptions.repository.ts:659` (`gt`), `:694-695` (`isNotNull` + `lt`)—,
+así que **quien llama a `findWithExpiredGracePeriod()` recibe un objeto de dominio sin el
+campo por el que esa consulta lo seleccionó.**
+
+**Y la asimetría del mapper de planes está documentada… del lado que la arreglaron.**
+`mappers/plan.mapper.ts:45-48`, dentro del mapper de ESCRITURA, explica el defecto:
+
+> *«This mapper builds the row field-by-field, so a field it does not name is a field the
+> caller cannot set — which is how a stated `productDomain` used to be dropped here and
+> answered by the column default instead.»*
+
+El mapper de LECTURA está treinta líneas más arriba (`:13-28`) y **tiene exactamente ese
+defecto para el mismo campo**: no devuelve `productDomain`, ni `displayName`,
+`monthlyPriceArs`, `annualPriceArs`, `livemode` o `version`, todos declarados `notNull()` en
+`schema/plans.schema.ts:19-56`. Es la razón por la que hospeda lee `product_domain` con
+consultas tipadas propias en vez de por este camino.
+
+**Tres mappers no descartan: inventan.**
+
+| dónde | qué inventa |
+|---|---|
+| `mappers/limit.mapper.ts:81` | `customerId: drizzle.subscriptionId` — el `customerId` del objeto de dominio **contiene un id de suscripción**; la tabla no tiene columna de cliente. Y la vuelta no es simétrica: `mapCoreUsageRecordToDrizzle` (`:93-103`) exige el `subscriptionId` como parámetro aparte, así que nadie puede reconstruir el insert leyendo el objeto que este mismo mapper produjo |
+| `mappers/promo-code.mapper.ts:52-53` | `updatedAt: drizzle.createdAt` y `deletedAt: null`, con sus propios comentarios —*«Schema doesn't have updatedAt»*, *«Schema doesn't support soft deletes»*— sobre una tabla que efectivamente no declara ninguna de las dos |
+| `mappers/vendor.mapper.ts:49-52` | `payoutSchedule ?? { interval: 'weekly', dayOfWeek: 1 }` sobre una columna nullable sin default: le pone un significado («semanal, los lunes») que nunca se escribió |
+
+`mappers/payment-method.mapper.ts:125` repite el primero de esos comentarios.
+
+**Los cuatro campos del motor de promos de SPEC-262 no están en ningún mapper.**
+`effect_kind`, `value_kind`, `duration_cycles` y `extra_days`
+(`schema/promo-codes.schema.ts:46-65`) no aparecen ni en la lectura (`:31-55`), ni en la
+creación (`:60-104`), ni en el update (`:109-176`) de `promo-code.mapper.ts`. En hospeda
+esos cuatro nombres tienen entre 29 y 56 archivos con menciones: **toda esa funcionalidad
+pasa por afuera de la API de qzpay**, que es lo que `F-1B-060` midió desde el otro lado.
+
+**Treinta y tres columnas `jsonb` y ninguna se valida.** Las 15 funciones
+`mapDrizzle*ToCore` castean con `as Tipo` directo —`(drizzle.config as PromoCodeConfig) ?? {}`
+(`promo-code.mapper.ts:32`), `drizzle.payoutSchedule as QZPayPayoutSchedule | null`
+(`vendor.mapper.ts:39`), `(drizzle.scheduledPlanChange as QZPayScheduledPlanChange | null)`
+(`subscription.mapper.ts:49`), `drizzle.limits as Array<{key,value,action}>`
+(`addon.mapper.ts:38`)—. Un JSONB con otra forma pasa sin error hasta que algo río abajo
+busca un campo que no está.
+
+**Y 34 columnas `varchar` tienen un dominio cerrado y ninguna restricción**, repartidas en
+las 27 tablas — los diez `status` que `F-1B-007` ya midió, más `billing_interval`,
+`provider`, `type`, `mode`, `effect_kind`, `value_kind`, `source`, `action`, `entity_type`,
+`actor_type`, `payment_mode`, `onboarding_status` y `resource_type`.
+
+**Dos consistencias, medidas por la negativa**: ningún mapper convierte centavos a unidades
+mayores (todo monto viaja como el mismo entero en los 15), y ninguno toca la zona horaria
+(todo `timestamp` pasa como el mismo `Date`). La única excepción monetaria es
+`billing_vendors.commission_rate`, un `numeric(5,2)` que viaja como string y se convierte
+en los dos sentidos (`vendor.mapper.ts:48`, `:72`).
+
+**`types.ts` (73 líneas) está muerto entero**: `QZPayDrizzleConfig` se re-exporta y no lo
+importa nadie —ni hospeda ni el propio `adapter/index.ts:35`, que define su propia forma—,
+y `QZPayDrizzleConnectionStatus` (`:67-73`) ni siquiera se re-exporta.
+
+---
+
+### F-1B-097 — Doce de los dieciséis servicios del motor no tienen un solo símbolo alcanzable desde hospeda, y el único que sí está apagado por una constante
+
+Leídos enteros los 14 archivos de producción de `qzpay/packages/core/src/services/`
+(**7.920** de las 8.762 líneas del directorio; los otros dos son un test y un ejemplo).
+
+**El reparto, medido nombre por nombre** —cada símbolo exportado de cada archivo, buscado
+sobre `apps/` y `packages/` de hospeda sin tests:
+
+| archivo | líneas | alcanzable desde hospeda |
+|---|---|---|
+| `subscription-lifecycle.service.ts` | 932 | **sí**, por un solo llamador |
+| `checkout.service.ts` | 491 | sólo **2 de 26** exports, y de forma indirecta |
+| `metrics.service.ts` | 440 | cableado en la fachada, **namespace nunca llamado** |
+| `discount.service.ts` | 774 | **cero** |
+| `security.service.ts` | 736 | **cero** |
+| `resilience.service.ts` | 672 | **cero** |
+| `notification.service.ts` | 573 | **cero** |
+| `job.service.ts` | 563 | **cero** |
+| `marketplace.service.ts` | 536 | **cero** |
+| `usage.service.ts` | 518 | **cero** |
+| `invoice.service.ts` | 430 | **cero** |
+| `health.service.ts` | 312 | **cero** |
+| `payment.service.ts` | 307 | **cero** |
+| `saved-card.service.ts` | 299 | **cero** |
+| `payment-method.service.ts` | 290 | **cero** |
+
+**Doce de los dieciséis en cero.** Y once de esos doce **`billing.ts` tampoco los importa**:
+existen sólo por el barrel público del paquete (`services/index.ts:9-47`).
+
+**El único que hospeda llama de verdad está apagado.** `dunning.job.ts:63` importa
+`createSubscriptionLifecycle` y `:677-678` invoca `processRetries()` y
+`processCancellations()` — **2 de los 5 métodos públicos**. Pero `F-1B-026` ya midió que
+`DUNNING_MUTATIONS_ENABLED = false` (`dunning.job.ts:245`) corta antes de llegar ahí. Y hay
+una capa más: `processRenewals()` —nunca invocado— es el **único** camino del motor que
+escribe `PAST_DUE` (`subscription-lifecycle.service.ts:329-344`, alcanzado sólo desde
+`:394-418`), así que el conjunto sobre el que operarían los reintentos está vacío incluso
+con el interruptor prendido. **Era un no-op estructural antes de ser un no-op por bandera.**
+
+Lo mismo arrastra a las facturas: los tres caminos que llaman `billing.invoices.create()`
+(`:460`, `:586`, `:746`) cuelgan de métodos inalcanzables. Verificado por el otro lado:
+`invoices.create(` da **cero** en el código de producción de hospeda, y la única llamada a
+`billing.invoices.*` es una lectura (`middlewares/billing-ownership.middleware.ts:118`).
+Es la explicación de por qué `billing_invoices` tiene cero filas.
+
+**Donde los dos lados hacen lo mismo, lo hacen distinto.** `qzpayCalculateDiscountAmount`
+(`discount.service.ts:273`) redondea con `Math.round`; el reducer propio de hospeda
+(`service-core/…/promo-code/effect-reducer.ts:29`) usa `Math.floor`. `F-1B-060` ya midió
+que hospeda usa los dos redondeos dentro de una misma respuesta; ahora además se sabe que el
+motor tiene un tercero y que nadie lo llama.
+
+**Y donde no hacen lo mismo, el nombre engaña.** El `usage.service.ts` del motor modela
+**facturación medida** (eventos, tramos graduados, un runner de facturación); el
+`usage-tracking.service.ts` de hospeda modela **consumo contra los límites del plan**. Son
+dos cosas distintas con la misma palabra, y hospeda no importa un solo símbolo del primero.
+
+**La idempotencia es el caso más literal de convivencia.**
+`apps/api/src/middlewares/idempotency-key.ts:29-38` apunta a la tabla
+`billing_idempotency_keys` *«already present in the schema»* y define
+`HOSPEDA_KEY_NAMESPACE = 'hospeda-billing:'` (`:51-54`) **para no chocar con las entradas
+propias de qzpay-core en la misma tabla**. Los dos mecanismos escriben la misma tabla y
+ninguno llama al otro.
+
+**Una tensión que el sub-agente reportó sin resolver, y que se resuelve cruzando dos
+mediciones.** `billing.checkout.create()` persiste **antes** de hablar con el proveedor
+(`billing.ts:2086`, comentado *«Decision 1A: no orphans»*) y tiene dos call sites vivos, y
+sin embargo `billing_checkouts` tiene cero filas en producción (`F-1B-009`). No es una
+contradicción:
+
+1. `addon.checkout.ts:650` está **después** del `return` de `:623-631`, que es la rama que
+   corre cuando `RECURRING_ADDONS_ENABLED` está en `true` — y `F-1B-049` midió ese flag en
+   **`true` en producción** y `false` en staging. En producción ese `create` es inalcanzable.
+2. `subscription-checkout.service.ts:2217` es el cobro prorrateado de un **upgrade de plan**,
+   y `F-1B-048` midió que en producción no hay **ninguna** suscripción `active`: las 8 son
+   3 `trialing`, 3 `abandoned` y 2 `comp`. Nadie pudo hacer un upgrade.
+
+O sea que la tabla está vacía porque ninguno de los dos caminos se ejerció, no porque la
+escritura falle.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
