@@ -4099,12 +4099,12 @@ El orden no está decidido.
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | 🟨 ver la fila de abajo |
 | Las 337 funciones de `apps/api/src/services` | 337 (**333** nombres) | 🟨 censo de consumo hecho (`F-1B-052`); **122 archivos leídos enteros** de 185 — **48.303 de 64.191 líneas (75 %)**. Cerradas las familias **addon** (22), **ai** (16), **plan** (6), **creación + idempotencia** (11), **trial** (7), **cambio de plan / cancelación** (10), **pagos y huérfanos** (8) y **promos + provisioning** (11): `F-1B-065` a `F-1B-084`. Lo que queda sin leer —**63 archivos / 15.888 líneas**— es casi todo fuera de billing: credenciales sociales, brochure, calendarios, media, QR, feedback. Diez de los 185 no tienen cuerpo (`F-1B-063`) |
-| Los 67 servicios de `service-core` | 67 | 🟨 `promo-code/` entero (9 archivos, 4.117 líneas) más 5 de los 19 de `addon/` (`addon.crud`, `addon-catalog.service`, `addon-expiration.queries`, `addon-expiration.batch`, `addon-status-transitions`: 1.798 líneas) — **5.915 de 14.254 (41 %)** — `F-1B-060`, `F-1B-066` |
+| ~~Los 52 archivos de `service-core/src/services/billing`~~ | 52 | ✅ **52 de 52 leídos enteros, 14.254 de 14.254 líneas** — `F-1B-060`, `F-1B-066`, `F-1B-086`, `F-1B-087`, `F-1B-092` |
 | ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
 | ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
 | Los 16 archivos de rutas que la matriz y el código no coinciden: leer uno por uno | 16 | ⬜ (`F-1B-038`) |
-| Superficies Web | por medir | ⬜ |
-| Superficies Admin | por medir | ⬜ |
+| Superficies Web | **15** archivos (de 1.049) | 🟨 denominador corregido y la tabla comparativa medida — `F-1B-088`, `F-1B-089`; los 15 archivos, sin leer enteros |
+| Superficies Admin | **22** archivos (de 1.454) | 🟨 denominador corregido — `F-1B-089`; sin leer |
 | ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
 | Qué hace cada una de las 125 estructurales: columnas muertas, renames, drops | 125 | ⬜ |
 | Tests: qué comportamiento afirman (como evidencia de intención, no de corrección) | por medir | ⬜ |
@@ -4113,9 +4113,9 @@ Y en **qzpay**, con el mismo criterio:
 
 | Carril | Denominador | Estado |
 |---|---|---|
-| `core` — el motor: qué expone y qué decide | 89 archivos / 22.120 líneas | ⬜ |
+| `core` — el motor: qué expone y qué decide | 89 archivos / 22.120 líneas | 🟨 `billing.ts` + `billing-from-env` + `index` + los 5 de `adapters/` leídos enteros (**4.724 líneas**) y la fachada de 94 miembros cruzada contra hospeda — `F-1B-090`. Faltan `services/` (18 arch. / 8.762), `events/` (6 / 1.923), `helpers/` (6 / 2.258), `types/` (21 / 2.484), `utils/` (7 / 1.362), `errors/` (8 / 612), `constants/` (16 / 486) |
 | `drizzle` — las 27 tablas: columnas, constraints e índices | 27 tablas / 68 archivos | ⬜ |
-| `mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C | 16 archivos | ⬜ |
+| ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
 | `hono` y `react` — las superficies que hospeda monta | 50 archivos | ⬜ |
 | La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
 | ~~El vocabulario de estados y sus mapas~~ | — | ✅ `F-1B-021` |
