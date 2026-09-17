@@ -3121,7 +3121,7 @@ La clase existe para distinguir, y ningún `instanceof` la distingue.
 
 ## Carriles pendientes
 
-Ninguno empezado. El orden no está decidido.
+El orden no está decidido.
 
 | Carril | Denominador | Estado |
 |---|---|---|
@@ -3130,15 +3130,15 @@ Ninguno empezado. El orden no está decidido.
 | Las 358 FK internas de hospeda: el grafo de dependencias del dominio | 358 | ⬜ |
 | ~~Los 836 índices y los 132 triggers~~ | — | ✅ `F-1B-011`, `F-1B-012` |
 | Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
-| Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
+| ~~Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas`~~ | — | ✅ `F-1B-064` — **90 de 90**, cruzados con `pg_enum` en prod |
 | ~~Los 47 crons: nombre, horario y habilitación~~ | — | ✅ `F-1B-003`, `F-1B-017` |
 | ~~Los 17 handlers de billing, leídos por dentro~~ | — | ✅ `F-1B-018` a `F-1B-031` |
 | ~~Los 30 crons restantes (no tocan billing)~~ | 30 | ✅ `F-1B-040` a `F-1B-044` — **47 de 47** leídos |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | 🟨 ver la fila de abajo |
-| Las 337 funciones de `apps/api/src/services` | 337 (**333** nombres) | 🟨 censo de consumo hecho (`F-1B-052`); **16 archivos leídos enteros** de 185 — **15.778 de 65.165 líneas (24 %)** — más el inventario completo de los 39 de `services/billing` (`F-1B-058`) |
-| Los 67 servicios de `service-core` | 67 | 🟨 `promo-code/` leído entero (9 archivos, 4.117 líneas de 14.254) — `F-1B-060` |
+| Las 337 funciones de `apps/api/src/services` | 337 (**333** nombres) | 🟨 censo de consumo hecho (`F-1B-052`); **61 archivos leídos enteros** de 185 — **30.974 de 65.165 líneas (48 %)** — más el inventario completo de los 39 de `services/billing` (`F-1B-058`). Cerradas las familias **addon** (22 archivos), **ai** (16) y **plan** (6): `F-1B-065` a `F-1B-071`. Diez de los 185 no tienen cuerpo (`F-1B-063`) |
+| Los 67 servicios de `service-core` | 67 | 🟨 `promo-code/` entero (9 archivos, 4.117 líneas) más 5 de los 19 de `addon/` (`addon.crud`, `addon-catalog.service`, `addon-expiration.queries`, `addon-expiration.batch`, `addon-status-transitions`: 1.798 líneas) — **5.915 de 14.254 (41 %)** — `F-1B-060`, `F-1B-066` |
 | ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
 | ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
 | Los 16 archivos de rutas que la matriz y el código no coinciden: leer uno por uno | 16 | ⬜ (`F-1B-038`) |
