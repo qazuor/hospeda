@@ -2097,6 +2097,42 @@ de `F-1B-039` y los tres métodos de `F-1B-046`.
 
 ---
 
+### F-1B-053 — La duplicación no es de nombres: dos servicios de cambio de plan comparten 114 líneas idénticas
+
+**Por nombre no se ve casi nada.** Los cinco hogares de `F-1B-032` exportan **1.112**
+símbolos invocables —360 `apps/api/src/services`, 110 `service-core/billing`, 54
+`packages/billing`, 457 `qzpay/core`, 131 `qzpay/drizzle`— y **un solo nombre** aparece en
+más de uno: `getPlanBySlug`, en `packages/billing` y en `service-core/billing`. Buscar
+duplicación comparando nombres exportados no la encuentra.
+
+**Por contenido sí.** Barriendo los **274** archivos de los tres hogares de hospeda con
+ventanas de **10 líneas de código** (sin comentarios ni líneas en blanco, espacios
+normalizados), hay **180 ventanas que aparecen en dos o más archivos distintos**. Los
+pares que más comparten:
+
+| par | líneas de código idénticas |
+|---|---|
+| `billing/immediate-plan-swap.service.ts` ↔ `billing/trialing-plan-upgrade.service.ts` | **114** — el **50 %** del primero y el **42 %** del segundo |
+| `google-calendar/google-token.errors.ts` ↔ `mercadolibre-oauth/ml-token.errors.ts` | 43 — el **55 %** de cada uno |
+| `commerce-brochure/brochure-render.ts` ↔ `experience-certificate/certificate-render.ts` | 57 (13 % / 21 %) |
+| `plan-downgrade-remediation.service.ts` ↔ `plan-upgrade-restoration.service.ts` | 35 (10 % / 12 %) |
+| `ai-context/experience-ai-context.ts` ↔ `ai-context/gastronomy-ai-context.ts` | 26 (11 % / 10 %) |
+
+**El primer par son los dos caminos de cambio de plan sin cobro**, y el parentesco está
+escrito: `immediate-plan-swap.service.ts:21-22` dice *«Same primitive as
+`trialing-plan-upgrade.service.ts`»*. Uno sirve a una suscripción `active` cuyo plan
+destino cuesta igual o menos (HOS-222) y el otro a una `trialing` (HOS-211); los dos
+mutan el `transaction_amount` de la preapproval viva y no cobran nada.
+
+El resto del ranking repite la misma forma: **un archivo por proveedor**
+(Google ↔ MercadoLibre, dos veces) y **un archivo por vertical** (brochure de commerce ↔
+certificado de experiencia, contexto de IA de experiencia ↔ el de gastronomía).
+
+Esto no dice que sobre código: dice **dónde** está repetido y **cuánto**, medido sobre el
+texto y no sobre los nombres.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
