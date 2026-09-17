@@ -2558,6 +2558,73 @@ del nombre es la convención de este repo para una variable que no se usa.
 
 ---
 
+### F-1B-062 — Recortar y restaurar no son simétricos, y el «único reconciliador» son dos con 30 llamadas
+
+Leídos enteros `plan-downgrade-remediation.service.ts` (727),
+`plan-upgrade-restoration.service.ts` (585) y `subscription-linked-entities.service.ts`
+(120), más los auxiliares que invocan.
+
+**El recorte es atómico; lo que viene después, no.** `applyDowngradeRestrictions:458-692`
+hace los tres pasos dentro de **una** `withTransaction` (`:530-571`): `accommodations.planRestricted`,
+`ownerPromotions.planRestricted` y el archivado de `accommodation_media`
+(`state='visible'` → `'archived'`). Un error en cualquiera revierte todo. Lo que corre
+**después** del commit —recuento de destinos y revalidación ISR (`:573-661`)— tiene su
+propio `try/catch` y sólo loguea.
+
+**La restauración elige por fecha; el recorte, por decisión del host.** El downgrade acepta
+`keepSelections` y las resuelve en `resolveKeepIds:245-304`. El upgrade no tiene ningún
+parámetro equivalente: `splitByHeadroom` (`plan-upgrade-restoration.deps.ts:47-71`) hace
+`restricted.slice(0, headroom)` sobre una lista ordenada por `updatedAt DESC`. Su propio
+docblock (`:35-37`) remite el control fino a una UI que no es este servicio.
+
+**Y el upgrade puede restaurar fotos que el downgrade nunca archivó.** La consulta que
+alimenta la restauración (`plan-upgrade-restoration.deps.ts:238-249`) selecciona
+**cualquier** fila con `state = 'archived'`, sin filtrar por origen — y el endpoint de
+admin `routes/accommodation/admin/archiveMedia.ts:5-6` escribe exactamente ese estado, con
+su docblock diciendo que es *«distinct from the billing downgrade archive»*. Nada en el
+camino de restauración distingue una cosa de la otra.
+
+**Una asimetría más, en la dirección contraria**: el upgrade saltea restaurar fotos de un
+alojamiento que sigue `planRestricted` (guard «n-2», `plan-upgrade-restoration.service.ts:366-380`);
+el downgrade **no tiene el guard inverso** — su bucle de archivado (`:544-570`) corre para
+toda entrada del preview sin mirar si ese alojamiento acaba de quedar restringido en el
+paso 1 de la misma pasada.
+
+**El «único reconciliador» son dos, y las llamadas son treinta.** Medido hoy:
+`reconcileSubscriptionLinkedEntities` tiene **17 llamadas en 13 archivos** y
+`reconcilePartnerForSubscription` **13 más** — un segundo puente que escribe
+`partner_subscriptions`, porque los partners no viven en `entity_subscriptions`. Ninguno
+llama al otro.
+
+El repo ya se quemó con ese número: el `CLAUDE.md` del ancla dice **«Do not look for the
+count here — this bullet twice carried a number that was wrong by the time it was read
+("six sites", then "nine … wired at five")»**, y delega el conteo vivo a
+`apps/api/test/services/subscription-linked-entities-bridge.guard.test.ts`, que desde
+HOS-1306 además exige el pareo: todo archivo que llame al puente de entidades llama
+también al de partners o figura en `BRIDGE_ONLY_SITES` con la razón medida.
+
+*(Nota: la copia del `CLAUDE.md` que traen las sesiones desde el clone principal todavía
+dice «One reconciler, six sites». La del ancla ya está corregida.)*
+
+**El puente no tira nunca, y eso está verificado y no sólo declarado**: sus tres
+delegadas —`reconcileCommerceListingForSubscription`,
+`syncAccommodationSubscriptionCacheForSubscription` y
+`republishBillingUnpublishedAccommodations`— envuelven todo su cuerpo en `try/catch` y
+ninguna relanza (`commerce-reconcile.service.ts:419-427`,
+`entity-subscription-cache.service.ts:319-327`,
+`accommodation-winback-republish.service.ts:262-270`). Por eso los 17 sitios lo llaman con
+un `await` pelado. La excepción es la que midió `F-1B-056`: en `subscription-comp-grant`
+esa misma llamada sí puede tirar por lo que ocurre **antes** de entrar.
+
+**Y dos `defaultDeps` que sólo existen para un test**: los de
+`plan-downgrade-remediation.service.ts:203` y `plan-upgrade-restoration.deps.ts:77` sólo
+los importa `apps/api/test/services/plan-change-revalidation-slugs.test.ts`, con el
+carve-out declarado en sus propios docblocks. `applyUpgradeRestorations` (sin el sufijo
+`OrWarn`) tampoco tiene llamador productivo: las cuatro llamadas reales pasan por el
+wrapper.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
