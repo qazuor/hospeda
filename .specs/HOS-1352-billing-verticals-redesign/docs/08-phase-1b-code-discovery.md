@@ -1052,6 +1052,12 @@ hacen `rawResults.slice(0, BATCH_SIZE)` **en JavaScript**, sin `limit()` en la c
 (verificado: cero ocurrencias de `limit(` en ese archivo). El tope de 100 acota el
 procesamiento, no lo que la base devuelve.
 
+> ⚠️ **Ruta corregida el 2026-09-16 por `F-1B-063`.** Las dos líneas son correctas, el
+> archivo no: viven en
+> `packages/service-core/src/services/billing/addon/addon-expiration.queries.ts`. El
+> `apps/api/src/services/addon-expiration.queries.ts` que nombraba esta cita es un shim
+> de re-export de **20 líneas**, así que sus líneas 237 y 322 no existen.
+
 **Contradicción de política dentro del mismo archivo**, verificada en `:1080-1094`: si
 falla la verificación del estado contra el proveedor, el código **revoca igual**
 (*«proceeding with revocation conservatively — the orphaned state was already confirmed
@@ -2622,6 +2628,67 @@ los importa `apps/api/test/services/plan-change-revalidation-slugs.test.ts`, con
 carve-out declarado en sus propios docblocks. `applyUpgradeRestorations` (sin el sufijo
 `OrWarn`) tampoco tiene llamador productivo: las cuatro llamadas reales pasan por el
 wrapper.
+
+---
+
+### F-1B-063 — Diez archivos de `apps/api/src/services` no tienen cuerpo: son shims de re-export a `@repo/service-core`, y una cita de este mismo registro apuntaba a uno
+
+Barridos los **185** archivos `.ts` no-test de `apps/api/src/services`, **doce** no
+declaran nada: todo su contenido son sentencias `export … from`. **Diez** apuntan a
+`@repo/service-core` y **dos** son barrels internos (`index.ts` del directorio y de
+`feedback/`). Los diez suman **162 líneas**:
+
+| shim | líneas | consumidores de producción |
+|---|---|---|
+| `plan.service.ts` | 26 | **8** (3 middlewares, 4 rutas, `billing/tourist-vip-inheritance.ts:154`) |
+| `addon-lifecycle-events.ts` | 25 | 1 (`routes/billing/admin/metrics.ts:19`) |
+| `addon-expiration.queries.ts` | 20 | 1 (`addon-expiration.service.ts:28,38`) |
+| `promo-code.service.ts` | 17 | 1 (`addon.checkout.ts:53`) |
+| `addon-plan-change.helpers.ts` | 15 | 1 (`addon-plan-change.service.ts:49`) |
+| `addon-limit-recalculation.service.ts` | 13 | 4 |
+| `plan-disable-lifecycle.deps.ts` | 12 | 1 (`plan-disable-lifecycle.service.ts:59`) |
+| `billing-settings.service.ts` | 12 | 2 |
+| `addon-expiration.batch.ts` | 12 | 1 (`addon-expiration.service.ts:27,33`) |
+| `notification-retention.service.ts` | 10 | 2 |
+
+**Ninguno está muerto**: los diez tienen al menos un importador de producción. **Ocho** lo
+dicen de sí mismos en su docblock —*«This shim maintains backward compatibility for
+existing consumers in the API layer»*— y **tres de esos ocho** se declaran además
+`@deprecated` con la instrucción de importar del paquete
+(`promo-code.service.ts:6`, `addon-limit-recalculation.service.ts:6`,
+`addon-expiration.batch.ts:6`).
+
+**Los otros dos no son compatibilidad hacia atrás, y uno existe para los tests.**
+`plan.service.ts:1-4` sólo se declara *«Re-export shim for the PlanService»*, sin motivo;
+y `plan-disable-lifecycle.deps.ts:1-8` declara el suyo: re-exporta el helper de auditoría
+*«so the main service can be unit-tested without touching `@repo/service-core` internals
+directly»*, nombrando la ruta exacta que la suite mockea. O sea que ahí el shim **es** la
+costura de test, y borrarlo rompe el mock, no un import.
+
+**Dos símbolos se importan por los dos caminos a la vez.** `PlanService` entra **ocho**
+veces por el shim y **dos** directo de `@repo/service-core`
+(`addon-purchase-adjustments.ts:28`, `addon.checkout.recurring-resolve.ts:20`), y
+`PromoCodeService` **una** por el shim (`addon.checkout.ts:53`) y **dos** directo
+(`routes/billing/promo-codes.ts:28`, `routes/billing/promo-codes.apply.ts:32`). Son dos
+grafías de la misma clase conviviendo dentro de la misma app.
+
+**Qué corrige de este registro.** `F-1B-028` citó `addon-expiration.queries.ts:237` y
+`:322` para el `slice` en JavaScript. Las líneas son correctas y el archivo no: están en
+`packages/service-core/src/services/billing/addon/addon-expiration.queries.ts` (358
+líneas), no en el shim de 20. El hecho medido —`rawResults.slice(0, BATCH_SIZE)` sin
+`limit()` en la consulta— se re-verificó en el archivo real y se sostiene.
+
+**Qué corrige del denominador.** Las **65.165 líneas** de `apps/api/src/services` que mide
+`F-1B-032` incluyen estas 162 que no contienen lógica, y el directorio `addon/` de
+`service-core` al que remiten son **19 archivos / 4.864 líneas** que el conteo de
+`apps/api` no ve. La frontera entre los dos hogares de `F-1B-032` no es la que dibujan las
+rutas de los `import`.
+
+*Nota de método, la duodécima vez, y otra vez el patrón fue mío*: el primer barrido buscó
+los importadores con el patrón `services/<nombre>`, que **no matchea un import relativo
+dentro del propio directorio** (`from './addon-expiration.queries.js'`). Con ese patrón
+seis de los diez shims parecían no tener ningún consumidor de producción. Contados por el
+especificador completo, **cero** lo están.
 
 ---
 
