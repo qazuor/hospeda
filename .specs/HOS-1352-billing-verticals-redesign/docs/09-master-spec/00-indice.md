@@ -170,6 +170,7 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 16 — Addons | ✅ |
 | 17 — Autorización | ✅ |
 | 18 — Partner | ✅ |
-| 19 y 20 | ⬜ sin escribir |
+| 19 | ⬜ sin escribir |
+| 20 — Estrategia de testing | ✅ |
 | 21 — Migración | ✅ |
 | 22 — Lo legal | ✅ |
