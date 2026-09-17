@@ -3579,6 +3579,98 @@ citando el nombre que nunca se lanza.
 
 ---
 
+### F-1B-083 — Aplicar un descuento a una suscripción viva baja el monto en MercadoPago antes de comprometer la redención, y si la redención falla el monto bajo queda
+
+`applyMultiCycleDiscountToExistingSubscription` (`promo-discount-apply.service.ts`) hace
+los pasos en este orden:
+
+| # | paso | dónde |
+|---|---|---|
+| 1 | mutar el `transaction_amount` en MercadoPago | `:193-202` → `promo-renewal-mp.service.ts:109` |
+| 2 | comprometer la redención (incrementa `usedCount` y escribe la fila de uso) | `:212` |
+| 3 | corregir el contador de ciclos | `:244-247` |
+
+**El paso 1 es deliberadamente primero, y el archivo lo declara fail-closed**: si la
+mutación falla no se llega al 2, así que el código no se gasta. Hasta ahí la elección está
+tomada y escrita.
+
+**Lo que queda medido es el otro extremo.** Si el paso 2 falla —por ejemplo, porque el
+código llegó a su tope de usos entre la validación y la redención—, `:220-235` loguea y
+**devuelve `{ success: false }` sin restaurar el monto**, con la razón escrita: *«we do NOT
+auto-restore here because that would race the just-applied lower amount»*. El resultado es
+una preapproval que ya cobra el monto descontado y un código de promoción que no quedó
+marcado como usado. El mensaje de log lo nombra: *«manual reconcile required»*.
+
+**Y el paso 3 es una escritura suelta, fuera de la transacción del paso 2.**
+`:244-247` hace `getDb().update(billingSubscriptions).set({ promoEffectRemainingCycles })`
+sin compartir `tx` con la redención que ya commiteó. El comentario de `:236-243` explica
+por qué hace falta —el reducer interno siembra `N-1` porque asume el camino de checkout— y
+si el proceso muere entre `:212` y `:244` el contador queda en `N-1` con el código ya
+gastado.
+
+**El guard de elegibilidad es más ancho que lo que declara.** El docblock (`:78-81`) y el
+propio mensaje de error (`:123`) dicen que este camino es *«only for monthly subscriptions
+with an active preapproval»*, y el único chequeo es `if (!sub.mpSubscriptionId)`
+(`:117-126`). No hay ninguna comparación de `billingInterval` ni de cadencia en todo el
+cuerpo (`:96-275`), verificado por ausencia del patrón. Como desde HOS-171 una suscripción
+**anual también es una preapproval con `mp_subscription_id`**, una anual pasa este guard
+igual que una mensual.
+
+---
+
+### F-1B-084 — Los dos aprovisionadores de planes de MercadoPago son gemelos que resuelven el precio por comprador con diseños opuestos, y crean el plan en el proveedor antes de reclamarlo local
+
+`billing/mp-plan-provisioning.service.ts` (591) y
+`billing/mp-addon-plan-provisioning.service.ts` (539) tienen la misma estructura de tres
+ramas —acierto activo, acierto con deriva por compare-and-swap, y fallo con carrera—, con
+comentarios casi textuales (`:322-328` contra `:359-365`). `truncateToLength` es
+**idéntica carácter por carácter** entre `:171-177` y `:206-212`, y
+`archiveMpPlanBestEffort` (`:574-591`) y `archiveMpAddonPlanBestEffort` (`:522-539`) son la
+misma función con otra etiqueta de log.
+
+**Pero la dimensión que decide cuántos planes existen está resuelta al revés en cada uno:**
+
+| | clave de la variante | qué pasa con un precio distinto por comprador |
+|---|---|---|
+| planes comerciales | `(commercialPlanId, billingInterval, trialDays, **discountCycle1AmountArs**)` (`:65-77`, `:307-309`) | **cada monto genera su propio plan de MercadoPago**, y coexisten |
+| planes de addon | `(addonId, billingInterval)` (`:342-346`) | prohibido: el `amountCentavos` está declarado *«hard contract»* que nunca lleva un monto por comprador (`:96-134`) |
+
+Es el mismo problema con dos respuestas incompatibles, en dos archivos que por lo demás son
+copias.
+
+**Ninguno de los dos le pregunta a MercadoPago si el plan ya existe.** Las tres ramas de
+cada uno leen y escriben **sólo la tabla local** (`billing_mp_plans` /
+`billing_mp_addon_plans`), y `createMpPlan` (`:234-265`) llama siempre
+`adapter.prices.create(...)`. Si la fila local falta para una variante que ya tiene su plan
+del otro lado, el código no lo detecta: crea otro.
+
+**Y el objeto del proveedor se crea antes de reclamar la variante localmente.** El orden de
+la rama de fallo (`:365-391`) es: crear en MercadoPago (`:367`), después intentar el
+`insert`, y si el `insert` pierde la carrera, **archivar el plan recién creado
+best-effort** y converger en el ganador. O sea que dos checkouts concurrentes para la misma
+variante **sí crean dos planes reales en MercadoPago**; uno queda archivado por un camino
+declarado best-effort. El propio comentario lo dice: *«the unique constraint on the variant
+key makes the insert the concurrency guard»* — el candado protege la tabla, no al
+proveedor.
+
+**Dos asimetrías más entre los gemelos, las dos con su razón escrita:**
+
+- el seam de control de test (`applyTestControl`) envuelve el camino comercial
+  (`:475-491`) y en el de addons está **deliberadamente omitido** (`:483-492`);
+- el de addons tiene un guard fail-closed contra un `addonId` vacío (`:336-341`), cuyo
+  comentario describe el síntoma que evita —*«a buyer authorizing a preapproval for a
+  product they did not buy»*— y el comercial **no tiene el equivalente** sobre
+  `commercialPlanId`.
+
+**Y el docblock del de addons dice que nadie lo llama.** `:27-29`: *«Nothing calls this
+module yet: recurring add-on checkout lands in PR 4»*. La cadena existe y está montada:
+`addon.checkout.recurring.ts:213` → `addon.checkout.ts:624` → `addon.service.ts:115`. Lo
+que sí es cierto es que está detrás del flag `RECURRING_ADDONS_ENABLED`, que `F-1B-049`
+midió en **`true` en producción** y `false` en staging. El módulo no está sin cablear: está
+corriendo en el entorno donde hay plata.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
