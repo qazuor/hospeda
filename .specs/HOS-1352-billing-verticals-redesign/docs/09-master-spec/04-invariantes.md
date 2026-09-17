@@ -119,13 +119,13 @@ ejecutando nada.**
 
 ## 3. Los invariantes que agregan las decisiones
 
-El §64 se escribió antes de las 44 decisiones. Éstos no están en su lista y tienen el mismo
+El §64 se escribió antes de las 45 decisiones. Éstos no están en su lista y tienen el mismo
 peso, porque romperlos rompe algo que ya se decidió:
 
 | # | invariante | de dónde sale | dónde se hace cumplir |
 |---|---|---|---|
 | D1 | **Una suscripción se ancla a una versión de plan, y moverla es un acto explícito** | `DEC-ARCH-001` | servicio: ninguna lectura de configuración comercial toma valores del plan, siempre de la versión |
-| D2 | **Dos planes vendibles no comparten `rank` dentro de una vertical** | `DEC-ARCH-002` | base |
+| D2 | **Dos versiones vendibles y vigentes no comparten `rank` dentro de una vertical** | `DEC-ARCH-002`, cap. 10 §2 | base |
 | D3 | **Una pausa siempre tiene motivo, y el reloj lee el motivo y nunca al proveedor** | `DEC-GRANT-004` | base (dominio cerrado) + servicio |
 | D4 | **El candado de idempotencia se persiste ANTES de la primera llamada al proveedor** | `DEC-CONC-001` | servicio; si se genera al reintentar, no hay nada que comparar |
 | D5 | **Toda mutación en el proveedor se verifica releyendo y comparando campo por campo** | `EX-20`, `EX-15` | servicio: el código de estado **nunca** cierra una mutación |
@@ -136,6 +136,8 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D10 | **El `init_point` crudo del proveedor no se muestra nunca sin sanear** | `EX-37` | guard |
 | D11 | **Lo que toca plata lo confirma una persona** | `DEC-CONC-001`, `DEC-CONC-002`, `DEC-RF-001` | servicio |
 | D12 | **El trial no se le pide al proveedor: el reloj del trial es nuestro** | `DEC-TRIAL-002`, cap. 03 §2 | guard + servicio |
+| D13 | **Retirar un plan del catálogo no mueve ninguna suscripción** | cap. 10 §3.2 | servicio: retirar publica una versión no vendible y ninguna lectura de suscripción pasa por la vigente |
+| D14 | **Anunciada la discontinuación de una vertical, no se emite un cobro más en ella** | cap. 10 §4.2 | servicio: el anuncio cancela en el proveedor en el mismo acto, y el servicio se sostiene del lado nuestro |
 
 **D5, D9 y D10 son las tres que más se parecen entre sí y no lo son.** D5 es sobre *verificar*
 después de escribir; D9 y D10 son sobre *qué se manda* y *qué se muestra*. Las tres existen
@@ -153,7 +155,8 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
    que un addon se cancela *«solo cuando queda efectivamente huérfano»*, y con `DEC-ADDON-002`
    cada addon recurrente es una suscripción aparte que **no se cancela sola**. Es `E-ADDON-04`,
    capítulo 16.
-2. **Qué hace el sistema con una vertical discontinuada.** Es `M-SUB-03`, capítulo 10.
+2. ~~**Qué hace el sistema con una vertical discontinuada.**~~ **Cerrado por el capítulo 10 §4**,
+   y dejó los invariantes `D14` y `D13` arriba.
 3. **Si el silencio del cliente vale como aceptación de un aumento.** Es `M-LEGAL-03`, y
    **cambia el diseño, no la redacción**: si no alcanza, `DEC-MP-002` necesita aceptación activa
    y a quien no responda no se lo puede aumentar. Capítulo 22, y pide revisión profesional.
@@ -165,11 +168,11 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 | nivel | cuántos del §64 | cuántos de las decisiones |
 |---|---|---|
 | base | 6 | 2 |
-| servicio | 14 | 9 |
+| servicio | 14 | 11 |
 | guard | 5 | 3 |
 | principio o regla de método, **no verificable ejecutando** | 7 | 0 |
 | en un capítulo de subdominio | 5 | 0 |
-| **total** | **37** | **12** |
+| **total** | **37** | **14** |
 
 > La columna de la derecha suma 14 sobre 12 invariantes, y no es un error de conteo: **`D3` y
 > `D12` se sostienen en dos niveles a la vez**. `D3` necesita que la base restrinja el dominio

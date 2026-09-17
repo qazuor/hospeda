@@ -271,7 +271,9 @@ lista cerrada de ocho ítems; todo lo demás es Eje 1) · ~~`S-ARCH-02`~~ **cerr
 (la lista, enumerada, y crece sólo por decisión registrada) · ~~`M-ARCH-01`~~ **cerrado por el
 cap. 01 + `DEC-ARCH-003`** (glosario completo; los dos `SUSPENDED` se separan en `TRIAL_EXPIRED`
 y `SUSPENDED`, nombre aprobado por el owner el 2026-09-17) · ~~`M-ARCH-02`~~ **cerrado por el cap. 02** (se cachea el conjunto efectivo por `user+vertical`, se invalida por evento y el TTL es red y no mecanismo) ·
-`OD-ARCH-01` retiro de un plan del catálogo
+~~`OD-ARCH-01`~~ **cerrado por el cap. 10** (retirar es publicar una versión no vendible y no mueve
+a nadie; migrar es otro acto que sí toca plata; no hay fecha de vencimiento y la cola se extingue
+sola, visible en el listado del §48)
 
 **Trial** · ~~`E-TRIAL-01`~~ **disuelto por `DEC-TRIAL-005`** (sin revisión previa no hay
 rechazo posterior) · **`E-TRIAL-04` baja reactiva de una ficha publicada** (nuevo, residuo de
@@ -286,7 +288,10 @@ existen suscripciones no principales: cada addon recurrente es una, por `DEC-ADD
 acota sólo la principal) · ~~`A-SUB-02`~~ **cerrado por el cap. 01** (ni el plan ni el billing
 option lo declaran: `puedePausar()` lo deriva en un solo lugar) · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · **`E-SUB-06` un cambio de precio programado que cae sobre una suscripción PAUSADA** (nuevo, residuo de `DEC-MP-001` + `EX-11`: estando pausada el proveedor **rechaza toda modificación**, así que el cambio no se puede aplicar en su fecha efectiva y hay que decidir si se encola hasta la reanudación, si se bloquea la pausa mientras hay un cambio pendiente, o si el §29 se cumple de otro modo) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
 precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelación programada ·
-`R-SUB-01` el servicio completo durante el grace · `M-SUB-03` vertical discontinuada
+`R-SUB-01` el servicio completo durante el grace · ~~`M-SUB-03`~~ **cerrado por el cap. 10 §4** (se
+deja de cobrar antes de dejar de prestar: el anuncio cancela en el proveedor en el acto y el
+servicio se sostiene hasta `max(60 días, el último día ya pagado)`; nadie se migra, la fila de
+`vertical` no se borra nunca, y acortar la cola exige reembolsar, por caso)
 
 **Mercado Pago** · ~~`R-MP-01`~~ **cerrado por el cap. 06** (la única capacidad expuesta a la
 discontinuación es el reembolso; la conciliación no, porque `EX-16` midió que se hace entera con

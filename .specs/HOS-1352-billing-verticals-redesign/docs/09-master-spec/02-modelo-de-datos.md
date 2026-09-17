@@ -91,7 +91,7 @@ vertical (catálogo, espejo del enum)
 |---|---|---|
 | **`vertical`** | el espejo en base del enum de código | el guard de §1.2 verifica las dos direcciones |
 | **`plan`** | identidad y cosmética: vertical, slug, nombre, descripción, orden en la pricing. **Muta libremente** (`DEC-ARCH-001`) | `UNIQUE(vertical, slug)` |
-| **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(vertical, rank) WHERE vendible`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
+| **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`billing_option`** | el ciclo y su precio: mensual, trimestral, semestral o anual (§19), monto y moneda | `UNIQUE(plan_version_id, ciclo)` |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
 | **`plan_version_limit`** | qué clave limita y con qué valor | ídem |
@@ -105,6 +105,13 @@ sólo acepta ARS —`USD` y `BRL` dan `400` (`EX-18`)—, pero el §57 pide que 
 acoplado a Mercado Pago. La columna existe con una restricción que hoy admite un valor; sacarla
 obligaría a una migración de esquema el día que haya un segundo proveedor, y agregarle un valor
 a la restricción no obliga a nada.
+
+**«Vendible» sin «vigente» no alcanza, y las dos restricciones van juntas.** Un plan tiene varias
+versiones y sólo una es la actual; sin marcar cuál, una versión vieja sigue ocupando un `rank` que
+el plan ya no usa y la pricing encuentra como comprable algo que se retiró. Las dos preguntas del
+catálogo se separan así: **la pricing lee la versión vigente y sólo si es vendible; una suscripción
+lee su versión anclada, vigente o no, vendible o no.** El capítulo 10 §2 lo desarrolla y §3 lo usa
+para retirar un plan sin mecanismo nuevo.
 
 **El plan de trial no es una entidad aparte.** Es un `plan` con su versión, marcado **no
 vendible**, uno por vertical. Sus limits y entitlements **no se guardan**: se derivan en cada
@@ -285,7 +292,8 @@ esquive**, los otros sí, y por eso los otros necesitan estar en un solo lugar.
 
 ## Lo que este capítulo NO cierra
 
-- **`OD-ARCH-01`** (retiro de un plan del catálogo) es del capítulo 10: acá está el flag de
-  vendible, que es la mitad del mecanismo; falta la política.
+- **`OD-ARCH-01`** (retiro de un plan del catálogo) lo cerró el capítulo 10: acá está el flag de
+  vendible y el de vigente, que son el mecanismo; la política es de allá.
 - **Los tipos, los índices y el plan de migración** son de FASE 4 y FASE 7.
-- **Qué hace el sistema con una vertical discontinuada** (`M-SUB-03`) es del capítulo 10.
+- **Qué hace el sistema con una vertical discontinuada** (`M-SUB-03`) lo cerró el capítulo 10 §4.
+  De acá sale lo único que el modelo necesitaba: la fila de `vertical` no se borra nunca.

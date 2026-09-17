@@ -34,7 +34,7 @@ nuevo»*— y el §65 lo repite al abrir la fase. Las tres fuentes admitidas son
 
 1. **el PDR** — y si un capítulo cita un `§`, el texto se verifica contra el PDR antes de
    escribirlo (regla 5);
-2. **una decisión registrada** en `01-decision-log.md` — son 43, y las `SUPERSEDED` no cuentan;
+2. **una decisión registrada** en `01-decision-log.md` — son 45, y las `SUPERSEDED` no cuentan;
 3. **una medición fechada** de `06-mp-validation-matrix.md` o `07-facts-inventory.md`.
 
 **El registro de FASE 1B (`08`) no es fuente de diseño.** Un hallazgo de 1B puede aparecer en
@@ -162,4 +162,5 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 08 — Auditoría y observabilidad | ✅ |
 | 09 — Conciliación | ✅ |
 | **Parte I completa** | ✅ |
-| 10 a 22 | ⬜ sin escribir |
+| 10 — Verticales, planes y billing options | ✅ |
+| 11 a 22 | ⬜ sin escribir |
