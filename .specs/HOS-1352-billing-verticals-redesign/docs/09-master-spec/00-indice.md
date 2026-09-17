@@ -158,4 +158,5 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 04 — Invariantes | ✅ |
 | 05 — Idempotencia y concurrencia | ✅ |
 | 06 — Proveedor y contrato de MP | ✅ |
-| 07 a 22 | ⬜ sin escribir |
+| 07 — Outbox y notificaciones | ✅ |
+| 08 a 22 | ⬜ sin escribir |
