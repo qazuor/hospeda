@@ -265,9 +265,12 @@ No necesitan al owner. Se listan para que no se pierdan: son huecos reales del P
 tiene que cerrar, no cosas que alguien improvise al implementar.
 
 **Arquitectura** · `C-ARCH-01` §9 inaplicable como está escrito · `S-ARCH-01` separar catálogo
-de claves de configuración comercial · `O-ARCH-01` falta criterio para distinguir Eje 1 de
-Eje 2 · `S-ARCH-02` lista cerrada de decisiones por vertical · `M-ARCH-01` glosario de estados ·
-`M-ARCH-02` caché e invalidación · `OD-ARCH-01` retiro de un plan del catálogo
+de claves de configuración comercial · ~~`O-ARCH-01`~~ **cerrado por el cap. 01** (el Eje 2 es una
+lista cerrada de ocho ítems; todo lo demás es Eje 1) · ~~`S-ARCH-02`~~ **cerrado por el cap. 01**
+(la lista, enumerada, y crece sólo por decisión registrada) · ~~`M-ARCH-01`~~ **cerrado por el
+cap. 01** (glosario completo; los dos `SUSPENDED` se separan en `TRIAL_EXPIRED` y `SUSPENDED`,
+con el nombre pendiente del OK del owner) · `M-ARCH-02` caché e invalidación ·
+`OD-ARCH-01` retiro de un plan del catálogo
 
 **Trial** · ~~`E-TRIAL-01`~~ **disuelto por `DEC-TRIAL-005`** (sin revisión previa no hay
 rechazo posterior) · **`E-TRIAL-04` baja reactiva de una ficha publicada** (nuevo, residuo de
@@ -277,8 +280,10 @@ despublicar enseguida · `A-TRIAL-02` "solamente en trial" para un usuario multi
 `M-TRIAL-03` anti-spam de la campaña de recuperación · `E-TRIAL-03` la campaña se dispara y
 después el trial se extiende
 
-**Suscripción** · `M-SUB-01` estados faltantes · `A-SUB-01` qué es una "main subscription" ·
-`A-SUB-02` dónde se habilita la pausa · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · **`E-SUB-06` un cambio de precio programado que cae sobre una suscripción PAUSADA** (nuevo, residuo de `DEC-MP-001` + `EX-11`: estando pausada el proveedor **rechaza toda modificación**, así que el cambio no se puede aplicar en su fecha efectiva y hay que decidir si se encola hasta la reanudación, si se bloquea la pausa mientras hay un cambio pendiente, o si el §29 se cumple de otro modo) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
+**Suscripción** · `M-SUB-01` estados faltantes · ~~`A-SUB-01`~~ **cerrado por el cap. 01** (sí
+existen suscripciones no principales: cada addon recurrente es una, por `DEC-ADDON-002`; el §11
+acota sólo la principal) · ~~`A-SUB-02`~~ **cerrado por el cap. 01** (ni el plan ni el billing
+option lo declaran: `puedePausar()` lo deriva en un solo lugar) · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · **`E-SUB-06` un cambio de precio programado que cae sobre una suscripción PAUSADA** (nuevo, residuo de `DEC-MP-001` + `EX-11`: estando pausada el proveedor **rechaza toda modificación**, así que el cambio no se puede aplicar en su fecha efectiva y hay que decidir si se encola hasta la reanudación, si se bloquea la pausa mientras hay un cambio pendiente, o si el §29 se cumple de otro modo) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
 precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelación programada ·
 `R-SUB-01` el servicio completo durante el grace · `M-SUB-03` vertical discontinuada
 

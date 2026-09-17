@@ -152,4 +152,5 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | capítulo | estado |
 |---|---|
 | 00 — este índice | ✅ |
-| 01 a 22 | ⬜ sin escribir |
+| 01 — Glosario y modelo conceptual | ✅ |
+| 02 a 22 | ⬜ sin escribir |
