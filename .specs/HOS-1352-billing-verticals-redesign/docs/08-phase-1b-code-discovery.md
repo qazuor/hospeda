@@ -2933,6 +2933,115 @@ en esta sesión que el error fue mío.
 
 ---
 
+### F-1B-068 — La cadena de addons recurrentes —la que corre en producción— no abre una sola transacción, y la mitad que no ve un webhook tampoco reporta a Sentry
+
+Leídos enteros los **10** archivos de la cadena recurrente (**4.968 líneas**):
+`addon-recurring-activation.service.ts` (596), `addon.checkout.recurring.ts` (534),
+`addon.checkout.recurring-resolve.ts` (470), `addon.checkout.recurring-idempotency.ts`
+(443), `addon-recurring-period.ts` (386), `addon-recurring-renewal.service.ts` (374),
+`addon-recurring-revoke.service.ts` (207), `addon.checkout.recurring-write.ts` (153),
+`addon-purchase-adjustments.ts` (107) y `addon-recurring-charging.ts` (79).
+
+Es el camino que `F-1B-049` midió corriendo **en producción y no en staging**
+(`HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED=true` en un slot y `false` en el otro).
+
+**Cero transacciones, en los diez.** `grep -c withTransaction` sobre cada uno da **0**, y
+ninguno recibe una `tx` por parámetro. Cada escritura es una sentencia suelta contra
+`getDb()`.
+
+**Lo que eso significa donde se liquida un cobro.** `settleRecurringAddonCharge`
+(`addon-recurring-renewal.service.ts:232-374`) encadena **tres** escrituras
+independientes:
+
+| # | qué | dónde |
+|---|---|---|
+| 1 | el ledger de pago (`recordAddonPayment`) | `:246` |
+| 2 | la activación de la compra (su propio `UPDATE`) | `:275` |
+| 3 | el avance del período | `:326` |
+
+Cualquiera puede quedar hecha con las otras sin hacer. Empalma con `F-1B-027`, que midió
+que el handler del webhook devuelve `handled: true` aunque la liquidación tire, y con
+`F-1B-019`: el evento se marca resuelto y sale de la cola de dead-letter.
+
+**Y la visibilidad del fallo está repartida al revés de donde hace falta.** Contados los
+`apiLogger.error`/`warn` y cuántos llevan `{ capture: true }` —o sea, cuántos llegan a
+Sentry—:
+
+| grupo | logs de error/warn | con `capture: true` |
+|---|---|---|
+| los 2 disparados por webhook (`activation`, `renewal`) | 13 | **9** |
+| los 4 de checkout (`recurring`, `-resolve`, `-idempotency`, `-write`) | **13** | **0** |
+
+Los cuatro de checkout describen en su propio texto los escenarios más caros y ninguno los
+captura: *«pending add-on purchase row could not be written — cancelling the preapproval»*
+(`addon.checkout.recurring.ts:485-494`) y *«FAILED to cancel the add-on preapproval… needs
+manual reconciliation»* (`addon.checkout.recurring-write.ts:143-151`). El segundo es el
+caso en que la preapproval quedó viva en MercadoPago sin fila local.
+
+`addon-recurring-revoke.service.ts` no tiene **ningún** `apiLogger.error`/`warn`: toda su
+visibilidad depende de que el llamador capture la excepción.
+
+**La idempotencia del checkout recurrente no es una clave: es un `SELECT` previo.** El
+propio archivo lo declara (`addon.checkout.recurring-idempotency.ts:14-17`): la clave del
+proveedor *«is the new subscription's id, fresh on every call»* y el header HTTP lo
+*«REGENERATES per user action»*. Lo que evita el doble cobro es leer el estado anterior
+—`loadInFlightSnapshot:221-288`, dos `SELECT`— y, si no es reusable, cancelar en
+MercadoPago (`:333`) y cerrar la fila local (`:354-361`) **antes** de emitir la nueva. Esa
+cancelación tampoco se relee: no hay un `retrieve(` en todo el archivo.
+
+Es la contracara exacta de `F-1B-050`, que midió el camino de pago único: ahí la
+idempotencia no existe y la confirmación tiene polling; acá la idempotencia existe pero es
+un `SELECT` y la confirmación no tiene más canal que el webhook.
+
+*Corrección al material de origen*: el sub-agente contó **11** logs de error/warn en los
+cuatro archivos de checkout. Son **13**. El reparto y la conclusión no cambian —siguen
+siendo 0 con captura— pero el número sí.
+
+---
+
+### F-1B-069 — La cerca anti-inyección se extrajo a un módulo común para que no hubiera tres copias, y el archivo del que se extrajo nunca la importó
+
+`apps/api/src/services/ai-context/owner-data-fence.ts` es el control que envuelve el texto
+escrito por un dueño antes de que llegue al modelo. Su docblock (`:1-14`) declara por qué
+existe:
+
+> *«Extracted verbatim from `accommodation-ai-context.ts`… It moved here unchanged the
+> moment a SECOND and THIRD assembler needed it, because the alternative — three copies of
+> a security control — is the failure mode HOS-547 already described once… **Three copies
+> free to drift is the same defect a level up**.»*
+
+Y `ai-context/types.ts:15-17` lo repite como hecho: *«Those live in `owner-data-fence.ts`
+and are **imported by every assembler** rather than reimplemented per vertical»*.
+
+**Lo importan dos de los tres.** Medido: `experience-ai-context.ts:36` y
+`gastronomy-ai-context.ts:46`, más el re-export de `ai-context/index.ts:21`.
+`accommodation-ai-context.ts` —el archivo del que se extrajo— **no aparece**, y conserva
+sus cinco copias privadas:
+
+| pieza | copia de accommodation | módulo común |
+|---|---|---|
+| `OWNER_DATA_DELIMITER_START` / `_END` | `:50-51` | `:36-37` |
+| `OWNER_DATA_DIRECTIVE` | `:61-67` | `:47-53` |
+| `sanitizeOwnerDelimiters` | `:312-317` | `:78-83` |
+| `fenceOwnerValue` | `:327-329` | `:96-98` |
+| `truncate` | `:335-343` | `:111-119` |
+| `buildChatSystemMessage` | `:392` | `:134` |
+
+**Y el texto ya divergió.** Las dos copias de `OWNER_DATA_DIRECTIVE` difieren en dos
+lugares: la de accommodation dice *«written by the **property** owner… relay to the
+**guest**»*; la común, *«written by the **listing** owner… relay to the **visitor**»*. El
+resto de la directiva —la parte que le dice al modelo que ignore instrucciones dentro de
+la cerca— es idéntica.
+
+O sea que la deriva que el módulo se creó para evitar ya ocurrió, en la única pieza que es
+prosa dirigida al modelo, y entre el original y la copia.
+
+Cierra además un cabo de `F-1B-052`: `buildChatSystemMessage` era uno de los cuatro nombres
+exportados desde dos archivos distintos. Los otros tres son el trío de OAuth escrito dos
+veces; éste es una cerca de seguridad escrita dos veces.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
