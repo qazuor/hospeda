@@ -1997,6 +1997,64 @@ La misma forma se repite dos veces más en la confirmación: si falla el `insert
 
 ---
 
+### F-1B-051 — El tercer nivel de reconciliación quedó inalcanzable por el flag que sí está prendido
+
+`linkPreapprovalToLocalSub`
+(`apps/api/src/services/billing/link-preapproval.service.ts:1002`) resuelve **qué fila
+local corresponde a una preapproval** por tres niveles, en orden estricto
+(`resolvePendingCheckout:198-344`):
+
+| nivel | con qué resuelve | cuándo se usa |
+|---|---|---|
+| 1 | `expectedLocalSubscriptionId` + `customerId` | el `back_url` del navegador |
+| 2 | `externalReference` (el nonce) | el webhook `subscription_preapproval` |
+| 3 | `preapproval_plan_id` + email + ventana de 24h | cuando no hay ninguno de los dos |
+
+**El nivel 3 no puede resolver nada para una preapproval creada por el camino que corre
+hoy.** La cadena está verificada eslabón por eslabón:
+
+1. La rama de preapproval propio crea una preapproval **ad-hoc**:
+   `own-preapproval-subscription-create.ts:50` — *«the preapproval this creates carries NO
+   `preapproval_plan_id`»* (HOS-1221) — y hay un guard de CI que lo mantiene así,
+   `scripts/check-no-plan-id-to-own-preapproval.sh`.
+2. La respuesta REST de una preapproval ad-hoc trae ese campo en nulo:
+   `apps/api/src/utils/mp-preapproval-plan-lookup.ts:53-56` — *«`preapproval_plan_id` is
+   `null` on the response for an ad-hoc (non-plan-based) preapproval»*.
+3. `resolvePendingCheckout:281-287` corta con `not_found` **antes** de buscar candidatos
+   cuando ese campo es falsy: `if (planLookup.kind !== 'ok' || !planLookup.preapprovalPlanId)`.
+
+O sea que `findReconcileCandidates` ni siquiera se llega a ejecutar.
+
+**Y hay un camino que sólo puede usar el nivel 3.** El webhook de
+`subscription_authorized_payment` —el que llega cuando MercadoPago **ya cobró**— pasa los
+dos campos en nulo a propósito (`subscription-payment-handler.ts:975-985`:
+`externalReference: null, payerEmail: null`), con el comentario que lo explica: *«Passing
+`null` for both only affects which resolution tier is attempted here (Tier 2/heuristic
+fall through to Tier 3 directly)»*. Bajo el estado real del flag, esa caída termina
+siempre en `not_found`.
+
+**Qué NO es esto**: no es que las suscripciones queden sin vincular. El sentido del
+preapproval propio es justamente que el `external_reference` sobrevive, así que el nivel 2
+resuelve por el webhook de `subscription_preapproval`. Lo que quedó sin piso es el
+**fallback**: el nivel 3 existía para el caso en que Path C perdía el
+`external_reference`, y hoy es código inalcanzable para todo lo que se cree de acá en
+adelante — alcanzable sólo para filas `pending_provider` heredadas de la época de Path C.
+
+El módulo entero está escrito sobre la premisa contraria: `link-preapproval.service.ts:4-6`
+abre con *«Path C's `/start-paid` never creates the MercadoPago preapproval
+server-side»*, y el propio archivo del lookup dice *«Path C always creates plan-based
+preapprovals»* (`mp-preapproval-plan-lookup.ts:54-55`). Es la tercera y cuarta afirmación
+de código que `F-1B-045` desmiente con el valor medido en Coolify.
+
+*Nota de método*: el sub-agente que leyó este archivo atribuyó además un comentario de
+«tres llamadores» a `subscription-logic.ts`. **No existe**: `rg "three callers"` sobre
+`apps/api/src` no devuelve nada. Lo verificable es el conteo —`processSubscriptionUpdated`
+tiene **cuatro** llamadores: `subscription-handler.ts:54`, `webhook-retry.job.ts:174`,
+`subscription-poll.job.ts:183` y `subscription-drift-reconcile.job.ts:655`— y queda
+anotado como conteo, no como contradicción con un comentario que no está.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
