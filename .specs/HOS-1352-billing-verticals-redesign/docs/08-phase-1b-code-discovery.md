@@ -5848,6 +5848,297 @@ objeto distinto del que corre.**
 
 ---
 
+### F-1B-125 — Los otros cuatro vocabularios compartidos: tres enums de hospeda no tipan nada, factura tiene CUATRO vocabularios para una tabla sin filas, y el único gobernado es el que qzpay no modela
+
+`F-1B-021` hizo esto para el estado de SUSCRIPCIÓN. Repetido para los otros cuatro, el reparto
+es más desparejo de lo que hacía esperar.
+
+| | qzpay declara | hospeda declara en `enums/` | coinciden verbatim | valores filtrados que ningún vocabulario declara | valores declarados que nadie escribe |
+|---|---|---|---|---|---|
+| **Pago** | **8** | 8 (`PaymentStatusEnum`) | **4** | **`'completed'`** | `authorized`, `captured`, `declined`, `disputed` |
+| **Factura** | **5** | 8 (`InvoiceStatusEnum`) | **2** | — | **los 5 + los 8 + 3 más** |
+| **Reembolso** | **3**, sin archivo de constantes | 6 (`RefundStatusEnum`) | **2** | — | `approved`, `processing`, `completed`, `rejected`, y `pending`/`failed` de qzpay |
+| **Addon** | 3 (`billing_subscription_addons`), inline | 4 en Zod (`billing_addon_purchases`) | 3 | — | el vocabulario entero de `billing_subscription_addons` |
+
+**Tres de los cuatro enums de `packages/schemas/src/enums/` no tipan ninguna columna.**
+`PaymentStatusEnum` (`payment-status.enum.ts:5-22`), `InvoiceStatusEnum`
+(`invoice-status.enum.ts:5-22`) y `RefundStatusEnum` (`refund-status.enum.ts:5-18`) generan sus
+`pgEnum` en `enums.dbschema.ts:306`, `:308` y `:310`, y **ninguno de los tres símbolos tiene una
+referencia fuera de esa declaración**. Es la contracara exacta, desde el lado del vocabulario, de
+los seis tipos de billing que `F-1B-064` midió sin una sola columna que los use.
+
+**Y sólo uno de los tres tiene su ausencia documentada.**
+`packages/schemas/src/api/billing/admin-billing-view.schema.ts:47-54` explica por qué el de pago
+no se reusa: *«describe un ciclo autorizar/capturar que la integración de MercadoPago nunca
+produce»*, y reusarlo *«significaría declarar estados que nunca pueden ocurrir mientras se omite
+`succeeded`, que es el más común de la tabla»*. Ahí mismo define un **tercer** vocabulario de
+pago, `AdminPaymentViewStatusSchema` (`:42-64`), con 7 valores — los 8 de qzpay menos `disputed`.
+Factura y reembolso no tienen esa explicación: sus enums están muertos sin nota.
+
+**Factura es el caso extremo: cuatro vocabularios para una tabla con cero filas y cero
+escritores.**
+
+| vocabulario | dónde | valores |
+|---|---|---|
+| qzpay | `core/src/constants/invoice-status.ts:4-10` | `draft, open, paid, void, uncollectible` |
+| hospeda, enum muerto | `schemas/src/enums/invoice-status.enum.ts:5-22` | `draft, issued, sent, paid, partial_paid, overdue, cancelled, voided` |
+| **admin, tipo escrito a mano** | `apps/admin/src/features/billing-invoices/components/InvoiceDetailDialog.tsx:24` | `draft, open, paid, void, uncollectible` |
+| **admin, un CUARTO para sponsors** | `apps/admin/src/routes/_authed/sponsor/invoices.tsx:21` | `draft, open, paid, void` |
+
+El tercero coincide verbatim con qzpay y **no lo importa**: es un `type` literal en un `.tsx`, sin
+pasar por `@repo/schemas` — para facturas no existe un `admin-invoice-view.schema.ts` análogo al
+de pagos. Y `billingInvoices` sólo aparece en producción como re-export
+(`packages/db/src/billing/index.ts:66-67`) y en un **borrado** de limpieza
+(`packages/seed/src/data-migrations/0059-purge-test-and-commerce-example.ts:581-584`). Nunca un
+`insert` ni un `update`, verificado sobre `apps` y `packages` sin tests.
+
+**El reembolso es el más asimétrico: hospeda no escribe esa columna en ninguna línea.**
+`billingRefunds` aparece exactamente dos veces en producción y las dos son el re-export
+(`packages/db/src/billing/index.ts:99-100`). El único escritor de toda la base de código es
+**qzpay-core**, `core/src/billing.ts:2462`, con `status: 'succeeded'`. Y de los tres valores que
+qzpay declara, **sólo ése llega a materializarse como fila**: la rama `failed` tira antes de
+escribir y la rama `pending` sólo toca el `metadata` de `billing_payments`.
+
+Dato de nombre contra contenido: `apps/api/src/services/refund-lifecycle.service.ts` (546 líneas)
+**nunca toca `billing_refunds.status`**. Escribe `billing_payments.refunded_amount` y
+`billing_subscriptions.status = CANCELLED`. Gestiona el estado de la **suscripción** a partir de
+un reembolso que qzpay ya asentó.
+
+**Y el único vocabulario realmente gobernado es el de la tabla que qzpay NO modela.**
+`billing_addon_purchases` es de hospeda de punta a punta, y es la única de las cinco columnas con
+las tres capas alineadas: el `CHECK` de `extras/004-billing.constraints.sql:33-35`, el Zod activo
+de `schemas/src/api/billing/customer-addons.schema.ts:16-21` y `addon.schema.ts:203`, y los
+escritores reales. Los cuatro valores coinciden verbatim en las tres.
+
+Su gemela del otro repo, **`billing_subscription_addons`, no la escribe nada**: verificado con
+`insert(billingSubscriptionAddons)` y `update(...)` sobre `apps` y `packages` excluyendo tests —
+**cero resultados**. El único insert del repo vive en `apps/api/test/e2e/helpers/billing-factories.ts:424`.
+Son **dos tablas para el estado de un addon**, una modelada por qzpay y vacía, otra de hospeda y
+viva, sin nada que las reconcilie.
+
+*Qué abre, sin resolverlo acá*: el §63 pide una máquina de estados explícita para Payment, Addon
+y las demás. De los cinco vocabularios medidos entre este hallazgo y `F-1B-021`, **uno solo tiene
+restricción en la base**, y es el de la tabla que el motor no conoce.
+
+---
+
+### F-1B-126 — El grafo del dominio no es una malla: 253 de las 358 claves foráneas apuntan a `users`, y el 68 % de todo el grafo anula en vez de propagar
+
+Las **358** claves foráneas internas de hospeda —las 399 de producción menos las 41 que cruzan a
+qzpay o viven dentro de qzpay (`F-1B-010`)—, leídas de `pg_constraint` en producción el
+2026-09-17.
+
+**El grafo es una estrella.** El grado de entrada, ordenado:
+
+| tabla | FK que la apuntan |
+|---|---|
+| **`users`** | **253** (71 % de las 358) |
+| `accommodations` | 14 |
+| `destinations` | 13 |
+| `gastronomies` | 9 |
+| `experiences` | 6 |
+| `partners` | 5 |
+| `social_posts` | 4 |
+| el resto | ≤ 3 cada una |
+
+Las **cinco** entidades de dominio juntas —alojamientos, destinos, gastronomías, experiencias y
+partners— suman **47**, menos de la quinta parte de lo que apunta a `users`.
+
+**Y el comportamiento de borrado dominante es anular, no propagar:**
+
+| `ON DELETE` | cantidad | % |
+|---|---|---|
+| **`SET NULL`** | **244** | **68 %** |
+| `CASCADE` | 90 | 25 % |
+| `RESTRICT` | 21 | 6 % |
+| `NO ACTION` | 3 | 1 % |
+
+**Qué pasa exactamente al borrar una fila de `users`**, que es la pregunta que el 71 % del grafo
+contesta:
+
+- **CASCADE a 18 tablas**: `account`, `session`, `verification` no —ésa está aislada—,
+  `ai_conversations`, `host_trade_benefit_usages`, `host_trade_reviews`,
+  `host_trade_review_replies`, `newsletter_subscribers`, `r_entity_tag`, `tags`,
+  `tourist_price_alerts`, `user_auth_identities`, `user_bookmarks`,
+  `user_bookmark_collections`, `user_permission`, `user_push_tokens`, `user_role`,
+  `user_search_history`.
+- **RESTRICT desde 10 tablas**, o sea que el borrado **está prohibido** si el usuario tiene
+  aunque sea una fila en: `accommodations`, `experiences`, `gastronomies`, `events`, `posts`,
+  `owner_promotions`, `sponsorships`, `newsletter_campaigns`, `accommodation_calendar_sync`,
+  `accommodation_occupancy`.
+- **SET NULL en 222 columnas repartidas en 77 tablas.**
+- `NO ACTION` en 3.
+
+**Cierra el círculo de `F-1B-061`**: ninguna de esas 253 toca una tabla de billing, porque
+`qzpay → hospeda` tiene **cero** claves foráneas y el cliente de billing se cruza sólo por
+`external_id`. Borrar un usuario —si los diez `RESTRICT` lo permitieran— **no toca su fila de
+`billing_customers` ni su suscripción**, que es exactamente el hueco que
+`BillingCustomerSyncService.handleUserDeletion` existe para tapar y que ningún camino ejecuta.
+En la práctica no se llega a ese punto: la ruta de admin llama `softDelete`, no borra la fila.
+
+**Veintitrés de las 174 tablas no participan de ninguna clave foránea**, ni como origen ni como
+destino. **Siete son de billing**, y son justamente las que este relevamiento ya midió sin dueño
+funcional:
+
+```
+billing_entitlements      billing_limits            ← 20 escritores, 0 lectores (F-1B-034)
+billing_webhook_events    billing_webhook_dead_letter  ← las 2 más pobladas, repos no
+billing_audit_logs           instanciados (F-1B-098), escritas por hospeda con Drizzle crudo
+billing_idempotency_keys  ← dos mecanismos escriben la misma tabla (F-1B-097)
+billing_orphan_payments
+```
+
+Las otras dieciséis son bitácoras y configuración: `app_log_entries`, `audit_log_entries`,
+`cron_runs`, `entity_views`, `entity_view_monthly_rollups`, `exchange_rates`,
+`external_oauth_credentials`, `feature_flags`, `feature_flag_audit_log`, `revalidation_config`,
+`revalidation_log`, `role_permission`, `seed_migrations`, `social_audit_log`, `social_settings`
+y `verification`.
+
+**Cuatro auto-referencias**: `destinations → destinations` con `RESTRICT`, y tres columnas de
+`users → users` con `SET NULL`.
+
+*Qué abre, sin resolverlo acá*: el §13 pide que la autorización verifique owner, scope de
+vertical y estado de acceso. La base modela la propiedad de una sola forma —una columna que
+apunta a `users`, 253 veces— y **no modela el vertical en ninguna**: `F-1B-085` ya midió que
+billing toca el dominio por ocho banderas desnormalizadas sin restricción, y este grafo confirma
+que del otro lado tampoco hay nada que ate un recurso a la suscripción que lo habilita.
+
+---
+
+### F-1B-127 — Las rutas de qzpay no verifican de quién es el recurso: el `customerId` es un filtro opcional del query, y sin él devuelven la tabla
+
+Leídos enteros los 22 archivos de `qzpay/packages/hono/src` (4.137 líneas) en el ancla `c934164`.
+
+**El único middleware propio del paquete no valida nada.** `createQZPayMiddleware`
+(`middleware/qzpay.middleware.ts:30-35`) es, completo:
+
+```ts
+return async (c, next) => { c.set('qzpay', config.billing); await next(); };
+```
+
+Inyecta el motor en el contexto y llama a `next()`. **El paquete no exporta ningún middleware de
+autenticación**: `authMiddleware` es un parámetro que tiene que traer el consumidor.
+
+**Y es OPCIONAL en el tier de usuario y OBLIGATORIO en el de admin**, verificado en los tipos:
+
+| factory | declaración | cómo se aplica |
+|---|---|---|
+| `createBillingRoutes` | `authMiddleware?: MiddlewareHandler` (`types.ts:256`) | `if (authMiddleware) { router.use('*', authMiddleware); }` (`billing.routes.ts:70-72`) |
+| `createAdminRoutes` | `authMiddleware: MiddlewareHandler` — **sin `?`** (`admin.routes.ts:213`, comentado *«required»*) | `router.use('*', authMiddleware);` incondicional (`:276`) |
+
+Sin ese parámetro, las 34 rutas del tier protegido quedan abiertas. Hospeda **sí** lo pasa
+(`billingAuthMiddleware`, `routes/billing/index.ts:115`), así que no es un agujero vivo — es
+dónde vive la garantía.
+
+**El aislamiento entre clientes no existe en el paquete.** `billing.routes.ts:162-166`:
+
+```ts
+const query = c.req.valid('query');
+if (query.customerId) {
+    const data = await billing.subscriptions.getByCustomerId(query.customerId);
+    …
+}
+const result = await billing.subscriptions.list({ limit: query.limit, offset: query.offset });
+```
+
+**`customerId` es un filtro opcional que el llamador provee, y sin él la ruta lista la tabla.**
+El mismo patrón en pagos (`:281-285`) y facturas (`:358-362`); y como **parámetro de ruta sin
+ninguna comparación con el actor** en `GET /customers/:customerId/entitlements` (`:537-546`),
+`GET …/limits` (`:595-604`) y `POST …/entitlements` (`:562-579`). En las 692 líneas del archivo
+no hay una sola comparación entre el `customerId` de la request y un identificador de actor.
+
+Es exactamente el defecto que hospeda describió al construir su bloqueador (`F-1B-106`): *«they
+return every row and treat `customerId` as an OPTIONAL filter the caller may supply, never as an
+imposed limit … any authenticated user could list every customer's name and email»*. Lo que
+agrega esta lectura es que **el diagnóstico de hospeda sobre el otro repo es correcto al pie de
+la letra**, y que las rutas de listado que el bloqueador cierra con 404 no son las únicas con esa
+forma: los seis accesos por `:customerId` la tienen también, y **ésos no los cubre el bloqueador**
+—sólo cierra colecciones de un segmento— sino `billingOwnershipMiddleware`
+(`routes/billing/index.ts:333`).
+
+**Cada operación mutante de admin tiene un gemelo `force-*` que se saltea los hooks, y está
+escrito.** Verificado leyendo los dos lados:
+
+| con hooks | crudo, sin hooks |
+|---|---|
+| `POST /subscriptions/:id/cancel` (`:511-552`) | **`force-cancel`** (`:493-507`) — comentado *«raw cancel, no hooks»* |
+| `POST /payments/:id/refund` (`:785-809`) | **`force-refund`** (`:767-782`) |
+| `POST /invoices/:id/pay` (`:872-889`) | **`mark-paid`** (`:856-867`) |
+
+Los tres crudos llaman el método del motor directo. Y eso tiene consecuencia medida **del lado de
+hospeda**: `apps/api/src/services/admin-billing-view.status.ts:14-17` documenta que la ruta admin
+de cancelación *«goes straight through the `@qazuor/qzpay-hono` tier, which writes qzpay's own
+`canceled`»* —una L— mientras el camino del webhook normaliza a `cancelled`. Es el origen de la
+divergencia de grafía que `F-1B-021` midió en la columna.
+
+**Los `onAfter*` no pueden vetar nada, y su error se traga.** `safeAfterHook` (`:284-299`) atrapa
+lo que tire el hook, lo loguea y sigue: *«The core operation has already committed at this point,
+so we never let a hook failure flip the …»*. Su tipo de retorno es `Promise<void>`. Y los
+`onBefore*` —los únicos que pueden abortar con 422— existen sólo para **tres** operaciones
+(`cancel`, `pause`, `resume`, `:94-202`): **no hay punto de intercepción previo para reembolsar,
+pagar o anular una factura, ni para otorgar o revocar un entitlement, ni para fijar o resetear un
+límite.**
+
+**Y hay tres formas de error distintas en un mismo paquete**: `{ error: message }` plano en el
+tier de webhooks (`middleware/webhook.middleware.ts:170-179`),
+`{ success: false, error: { code, message } }` en los otros dos (`billing.routes.ts:654-683` y
+`admin.routes.ts:1066-1094`, **duplicados byte a byte salvo nueve líneas**), y una cuarta que
+agrega `details` en el validador Zod (`validators/zod-validator.ts:33-46`). El
+`createErrorResponse` que el paquete exporta (`middleware/error.middleware.ts`) **no lo usa
+ninguna de las dos factories**: cada una define el suyo.
+
+---
+
+### F-1B-128 — El paquete de React de qzpay no es un cliente: exige el motor entero en el navegador, y por eso hospeda no usa ni un componente
+
+Leídos enteros los 28 archivos de `qzpay/packages/react/src` (4.869 líneas).
+
+`F-1B-094` midió que hospeda importa cuatro símbolos y ninguno es componente ni hook. **La razón
+está en el tipo de una prop.**
+
+`QZPayProviderProps.billing` es **`QZPayBilling`** (`types.ts:28`, `:58`) — la instancia del motor
+de `@qazuor/qzpay-core`, la misma que `createQZPayMiddleware` inyecta del lado del servidor, con
+su adaptador de almacenamiento y su adaptador de pagos adentro. Y **los hooks la usan directo**:
+`usePlans.ts:34` hace `const billing = useQZPay()` y después llama `billing.plans.*`; igual
+`useCustomer.ts:38`, `useSubscription.ts:44`, `useEntitlements.ts:37`, `useLimits.ts:36`,
+`usePayment.ts:43` e `useInvoices.ts:34`.
+
+**Verificado por la negativa: `fetch(` y `axios` dan CERO en los 28 archivos.** El paquete no
+habla HTTP en ninguna línea.
+
+**Consecuencia: `react` y `hono` no son interoperables entre sí.** Las rutas de `hono` devuelven
+`{ success, data, pagination? }`; los hooks de `react` consumen objetos de dominio crudos
+devueltos por una llamada de método. Un consumidor que quisiera enchufar `PricingTable` contra
+`createBillingRoutes` tendría que escribir el adaptador, y **ninguno de los 28 archivos lo
+escribe**. Son dos superficies de integración del mismo paquete que no se conectan.
+
+Eso explica el consumo medido: hospeda usa las rutas de `hono` desde el servidor y **cero**
+componentes de `react`, porque usarlos exigiría exponer el motor completo —y con él el adaptador
+de MercadoPago y el acceso a la base— al navegador del admin. Lo único que monta son los dos
+envoltorios que **no hacen red**: `QZPayProvider` (`context/QZPayContext.tsx:36-51`, sólo
+`useState` + `useMemo`, sin un `useEffect`) y `QZPayThemeProvider`
+(`theme/ThemeContext.tsx:160-217`, variables CSS en memoria).
+
+**Dos cosas más, medidas:**
+
+1. **El mismo esqueleto de hook está copiado siete veces.** El trío
+   `isMountedRef` + `requestIdRef` + `try/catch/finally` con el chequeo
+   `currentRequestId === requestIdRef.current` aparece igual en `useCustomer.ts:42-84`,
+   `useSubscription.ts:50-101`, `usePlans.ts:38-76`, `useEntitlements.ts:43-85`,
+   `useLimits.ts:42-84`, `usePayment.ts:49-91` e `useInvoices.ts:40-82`. No hay hook base.
+2. **Un símbolo exportado en el barrel intermedio y no en la raíz queda inalcanzable, y pasa en
+   los dos paquetes.** `QZPayErrorBoundary` sale de `components/index.ts:12` y **no** de
+   `index.ts:29-38`; su tipo `QZPayErrorBoundaryProps` está además **declarado dos veces**, en
+   `components/ErrorBoundary.tsx:11-27` y en `types.ts:688-704`. Del lado de `hono`, lo mismo con
+   `AdminSetLimitSchema` (`schemas/limit.schema.ts:24-33`), que la raíz no re-exporta.
+
+*Qué abre, sin resolverlo acá*: `F-1B-095` midió que `stripe`, `nestjs`, `cli` y `dev` son hojas
+—11.997 líneas que nada de lo que hospeda usa importa—. Con esto, `react` queda en una posición
+parecida pero no igual: **se monta, no se usa**, y sus 4.869 líneas no son alcanzables sin un
+cambio de arquitectura que ponga el motor en el navegador.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -5856,7 +6147,7 @@ El orden no está decidido.
 |---|---|---|
 | ~~Esquema: censo de columnas, constraints y enums~~ | — | ✅ `F-1B-006` a `F-1B-009` |
 | ~~Las 399 claves foráneas y la frontera hospeda↔qzpay~~ | — | ✅ `F-1B-010` |
-| Las 358 FK internas de hospeda: el grafo de dependencias del dominio | 358 | 🟨 medida la frontera billing↔dominio (6 FK) y las 8 banderas sin restricción — `F-1B-085`; el resto del grafo, sin recorrer |
+| ~~Las 358 FK internas de hospeda: el grafo del dominio~~ | 358 | ✅ `F-1B-126` — **253 de las 358 apuntan a `users`**; 68 % del grafo es `SET NULL`; 23 tablas sin ninguna FK, 7 de ellas de billing |
 | ~~Los 836 índices y los 132 triggers~~ | — | ✅ `F-1B-011`, `F-1B-012` |
 | ~~Los 46 índices parciales y los de expresión: qué condición imponen~~ | — | ✅ `F-1B-074` — 46 parciales (33 únicos) y **2** de expresión, no 21 |
 | ~~Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas`~~ | — | ✅ `F-1B-064` — **90 de 90**, cruzados con `pg_enum` en prod |
@@ -5886,8 +6177,8 @@ Y en **qzpay**, con el mismo criterio:
 | ~~`core` — el motor: qué expone y qué decide~~ | 90 archivos / 22.611 líneas | ✅ **21.769 de 22.611 (96 %)** — `F-1B-090`, `F-1B-097`, `F-1B-099`, `F-1B-104`. Lo no leído son el test y el ejemplo de `services/` |
 | ~~`drizzle` — las 27 tablas: columnas, constraints e índices~~ | 68 archivos / 14.762 líneas | ✅ **65 de 68, 14.438 líneas** — `F-1B-096`, `F-1B-098`, `F-1B-104`. Lo no leído es `examples/` |
 | ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
-| `hono` y `react` — las superficies que hospeda monta | 50 archivos | 🟨 las tres factories de `hono` contadas y su montaje verificado (59 rutas), y el consumo de `react` medido — `F-1B-093`, `F-1B-094`; los 50 archivos, sin leer enteros |
+| ~~`hono` y `react` — las superficies que hospeda monta~~ | 50 archivos / 9.006 líneas | ✅ **50 de 50 leídos enteros** — `F-1B-127`, `F-1B-128`. Con esto **qzpay queda relevado entero** salvo tests y ejemplos |
 | La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
 | ~~El vocabulario de estados y sus mapas~~ | — | ✅ `F-1B-021` |
-| Los otros vocabularios compartidos: pago, factura, reembolso, addon | por medir | ⬜ |
+| ~~Los otros vocabularios compartidos: pago, factura, reembolso, addon~~ | 4 | ✅ `F-1B-125` — tres enums de hospeda no tipan nada; factura tiene **cuatro** vocabularios para una tabla con cero filas; el único gobernado es el que qzpay no modela |
 | ~~`stripe`, `nestjs`, `cli`, `dev` — sin consumidor en hospeda~~ | 85 archivos / 11.997 líneas | ✅ `F-1B-095` — son HOJAS: nada de lo que hospeda usa los importa |
