@@ -1584,6 +1584,44 @@ porque no tiene bucle donde acumular un error: ahí el literal no esconde nada.
 
 ---
 
+### F-1B-041 — Catorce de los 47 toman lock, dos lo RETIRARON a propósito, y contar por archivo da diecisiete
+
+**Los 14 que ejecutan `pg_try_advisory_xact_lock`**, verificados excluyendo las líneas
+que empiezan con `*` o `//`:
+
+```
+abandoned-pending-subs:434   addon-expiry:246              addon-subscription-reconcile:487
+archive-abandoned-drafts:181 archive-expired-promotions:103 conversation-token-cleanup:77
+destination-weather-fetch:135 dunning:295                  exchange-rate-fetch:93
+notification-schedule:251    social-publish-dispatch:200   subscription-drift-reconcile:504
+subscription-poll:917        webhook-retry:866
+```
+
+**Los otros 33 no toman ninguno**, y en tres de ellos eso está decidido y escrito:
+
+| cron | qué dice y dónde |
+|---|---|
+| `conversation-notification` | *«Lock `43020` … has been REMOVED»* (`:52`); usa un claim atómico en Redis (`:162-169`) que **falla abierto** si Redis no responde (`:155-160`, `:170-176`) |
+| `conversation-token-reminder` | *«Lock `43021` … has been REMOVED»* (`:47`), *«added serialization overhead without closing a…»* (`:57`); dedupe por la columna `*_reminder_sent_at` |
+| `calendar-sync-google` | el docblock (`:11`) declara que deliberadamente no lo toma |
+
+**Contar por archivo da 17 y no 14**, porque el patrón matchea los comentarios de esos
+tres. Es la novena vez que un conteo por patrón da mal, y la primera en que el error lo
+produce la propia documentación del código.
+
+`social-publish-dispatch:43` deja anotado que su lock `43032` *«continues the
+non-billing 4300x series»*: los de billing y los del resto están en rangos distintos, y
+`exchange-rate-fetch` usa `1008`, fuera de los dos.
+
+**Dónde se toma importa tanto como si se toma.** `destination-weather-fetch` documenta
+(`:14-34`) que parte la corrida en dos fases —fetch HTTP afuera, persistencia adentro del
+lock— para no sostener una transacción abierta mientras habla con la red.
+`exchange-rate-fetch` hace lo contrario: el lock se toma en `:93` y las dos llamadas HTTP
+—DolarAPI y ExchangeRate-API— ocurren **dentro** del mismo callback de `withTransaction`
+(`:117-119` en el camino de dry-run, y dentro de `fetchAndStore()` en `:157`).
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
