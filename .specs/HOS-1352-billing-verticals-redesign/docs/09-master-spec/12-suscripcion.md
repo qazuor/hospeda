@@ -60,8 +60,13 @@ El capítulo 03 §6 da cinco estados de pago —`PENDING`, `SUCCEEDED`, `FAILED`
 | el proveedor **agotó sus reintentos** | `FAILED` | S4 → `GRACE_PERIOD`, y **ahí** arranca el reloj |
 
 **`FAILED` significa «el proveedor se dio por vencido», no «un intento salió mal».** Con esa
-definición la máquina del capítulo 03 queda intacta y el estado intermedio del proveedor —tenga
-el nombre que tenga— **no necesita existir de nuestro lado**: es suyo, y lo leemos.
+definición la máquina del capítulo 03 queda intacta y el estado intermedio del proveedor **no
+necesita existir de nuestro lado**: es suyo, y lo leemos.
+
+**Ese estado tiene nombre y está medido: `recycling`.** Producción, 2026-09-17 19:12:34 `-04`: la
+cuota `7032034055` quedó en `status: recycling` con su pago en
+`rejected / cc_rejected_high_risk`. Es la primera observación directa del reciclado, y confirma
+que **un rechazo no es un veredicto**: el proveedor sigue intentando después de él.
 
 ### 1.4 Una baja decidida por el proveedor se espeja, no se discute
 
@@ -189,7 +194,29 @@ repetibles**. Negarlo falla hacia que un cliente legítimo con la tarjeta rechaz
 arreglarla y volver a suscribirse — que es el flujo normal y esperable de una tarjeta que no pasa,
 y le cuesta minutos.
 
-### 4.4 Tres precisiones que la regla necesita
+### 4.4 Y el proveedor ni siquiera nos deja llegar a suspender
+
+Medido en producción el **2026-09-17**: sobre una suscripción cuyo **primer** cobro fue rechazado,
+el proveedor **cancela la suscripción en el mismo instante** en que manda la cuota a `recycling`
+—los dos hechos comparten el milisegundo, `19:12:34.583` y `19:12:34.745`— y esa cancelación es
+**terminal**: `PUT {status:"authorized"}` devuelve
+`400 "Invalid transition from cancelled to authorized"`.
+
+**Entonces no hay suscripción que suspender, y la regla de §4.3 se refuerza en vez de
+contradecirse**: un primer cobro rechazado **no es una suscripción con un problema, es un alta que
+no ocurrió**.
+
+Dos consecuencias que el diseño tiene que absorber:
+
+1. **El reintento del cliente es una suscripción NUEVA, con id nuevo.** No se recupera la anterior
+   —no se puede—, así que la superficie tiene que ofrecer empezar de nuevo, no «reintentar el
+   pago».
+2. **El capítulo 03 necesita distinguir dos muertes que hoy comparten estado.** `ABANDONED` dice
+   *«nadie autorizó en 72 h»*; esto es *«intentó y lo rechazaron»*. Le decimos cosas distintas al
+   cliente en cada caso, así que no pueden compartir nombre. **Queda anotado como el residuo de
+   este capítulo**, no resuelto acá.
+
+### 4.5 Tres precisiones que la regla necesita
 
 1. **«Ningún pago acreditado» se cuenta por `user + vertical`, no por suscripción.** Por
    suscripción, cancelar y volver a suscribirse resetea el contador y la regla no limita nada — es

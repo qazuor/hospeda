@@ -44,6 +44,34 @@ la **Parte I está completa** — 10 de 22 archivos escritos.
 |---|---|
 | Capítulos escritos | **10 de 22** (`00` a `09`) |
 | Huecos técnicos cerrados | **70 de 72** · quedan **2** |
+
+> ⏰ **DOS LECTURAS AGENDADAS PARA EL 2026-09-18 — no dependen de que la sesión siga viva.**
+> El owner autorizó dos suscripciones de producción con **la misma tarjeta Visa `9630614559`** y
+> después **la borró de su cuenta de Mercado Pago**. Las dos tienen pagos acreditados encima, así
+> que miden el caso de **renovación** —el que gobierna el grace—, no el de alta.
+>
+> | sujeto | id | próximo cobro | leer a partir de |
+> |---|---|---|---|
+> | `apagon` | `5d9dfc9d3fe44d8596ef257792246ea0` | 18/09 **13:19 `-04`** | **15:05 `-03`** |
+> | `borrada` | `81658bf52ebf4ce4aa979ee86c4c38f8` | 18/09 **19:18 `-04`** | **21:05 `-03`** |
+>
+> El margen sale del retraso medido del cobro: **26 a 44 min** (`PA-3`, re-medido el 2026-09-17).
+> Son **dos sujetos independientes con la misma causa**: si los dos rechazan no es casualidad, y si
+> uno rechaza y el otro no, eso también dice algo.
+>
+> **Qué contestan**: si el vínculo tarjeta-suscripción sobrevive a borrar la tarjeta de la
+> billetera. El `card_id` **sigue figurando** en las dos después del borrado — lo que falta saber
+> es si sobrevive **al cobro**.
+>
+> Presupuesto: de los **ARS 30** autorizados se gastaron **15**. Si mañana el cobro entra, se llega
+> a 30 y ahí se corta.
+
+> 🔬 **PRUEBA LIMPIA PENDIENTE, y el owner la pidió**: confirmar si una suscripción con el primer
+> cobro rechazado queda **inservible para todo medio de pago**. Está medido que la suscripción
+> muere (`400 Invalid transition from cancelled to authorized`) y que los intentos 2 y 3 del
+> 2026-09-17 **no generaron ni un registro de pago**; falta descartar que hayan fallado por otra
+> causa. Requiere provocar un rechazo a propósito, y **el 2026-09-17 ya se acumuló un
+> `cc_rejected_high_risk` en la cuenta**: conviene no encadenar otro el mismo día.
 | Decisiones | **45** (4 apartamientos declarados del PDR) |
 | Filas de la matriz de MP | 89 · **8 `UNKNOWN`**, y **cinco se contestan hoy** |
 
