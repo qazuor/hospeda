@@ -1896,6 +1896,58 @@ en el precio, 30 o 90 en la suscripción).
 
 ---
 
+### F-1B-049 — Los siete flags de billing, medidos en los dos entornos: tres corren al revés de su default y uno difiere ENTRE prod y staging
+
+`F-1B-045` encontró uno. Medidos **los siete** flags booleanos de categoría `billing` del
+registro (`packages/config/src/env-registry.hospeda.ts`, 126 entradas, 20 booleanas),
+contra Coolify el 2026-09-16:
+
+| flag | default declarado | **producción** | **staging** |
+|---|---|---|---|
+| `HOSPEDA_ADDON_LIFECYCLE_ENABLED` | `true` | `true` | `true` |
+| `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` | `false` | **`true`** | **`true`** |
+| `HOSPEDA_BILLING_POLLING_ENABLED` | `true` | **sin setear** | **sin setear** |
+| `HOSPEDA_BILLING_PRICE_INCREASE_ENABLED` | `false` | `false` | `false` |
+| `HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED` | `false` | **`true`** | **`false`** |
+| `HOSPEDA_MERCADO_PAGO_SANDBOX` | `true` | `false` | `true` |
+| `HOSPEDA_USER_CANCEL_ENABLED` | `false` | **`true`** | **`true`** |
+
+**Tres de los siete corren al revés de su default declarado** —los tres que el registro
+describe como apagados por seguridad— y `MERCADO_PAGO_SANDBOX` también, con la diferencia
+de que ése es el valor que producción **tiene que** tener.
+
+**Uno difiere entre los dos entornos, y es el que decide cómo se cobra un addon.**
+Con `RECURRING_ADDONS_ENABLED` en `true`, `createAddonCheckout` toma la rama de
+preapproval propio (`addon.checkout.ts:623-648`); en `false` toma la de `Preference` de
+pago único (`:650-746`). O sea que **producción cobra addons por un camino y staging por
+el otro**. El comentario que decide la rama (`addon.checkout.ts:473-475`) dice: *«Off
+(the production default, **and the only value any environment has today**)»* — producción
+lo tiene en `true`.
+
+El registro, además, describe lo que pasa si se prende antes de tener la cadena completa
+(`env-registry.hospeda.ts:990`): la fila de `billing_subscriptions` del addon lleva un
+`mp_subscription_id` real y *«el handler genérico de MercadoPago resuelve los eventos de
+preapproval contra esa columna sin filtrar por product_domain, así que matchea la fila del
+addon y corre la activación de PLAN completa sobre algo que no es un plan»*. La cadena
+existe —el handler es `addon-recurring-handler.ts` (`F-1B-027`) y el reconciliador es el
+cron `addon-subscription-reconcile` (`F-1B-018`)—, así que esto queda anotado como la
+condición que el propio registro pone, verificada como cumplida, no como un problema.
+
+**Y hay un octavo flag, de categoría `testing`, prendido en producción**:
+`HOSPEDA_SHOW_TEST_BILLING_PLAN=true` en los dos entornos.
+`subscription-checkout.service.ts:159` lo describe como *«the SOLE gate»* del checkout del
+plan oculto `owner-test-daily` —ARS 15 por **día**, `billing_prices` id `7f3873da`, interval
+`day`—. Medido contra el sistema que corre: `GET /api/v1/public/plans` en producción
+devuelve **tres** planes (`owner-basico`, `owner-pro`, `owner-premium`) y **no** lista el
+de prueba, así que el plan no se ofrece; lo que el flag habilita es que un checkout con ese
+slug **no sea rechazado**.
+
+*Qué abre, sin resolverlo acá*: el `defaultValue` del registro describe con qué nace una
+variable, no con qué corre el sistema. Las tres divergencias de arriba no se ven en ningún
+diff, ningún test y ningún guard: sólo leyendo Coolify.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
