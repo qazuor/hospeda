@@ -172,4 +172,4 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 18 — Partner | ✅ |
 | 19 y 20 | ⬜ sin escribir |
 | 21 — Migración | ✅ |
-| 22 | ⬜ sin escribir |
+| 22 — Lo legal | ✅ |

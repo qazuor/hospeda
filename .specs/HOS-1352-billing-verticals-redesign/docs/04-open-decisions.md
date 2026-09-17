@@ -372,8 +372,21 @@ por rol; queda como guard: ninguna transición de suscripción ni de trial escri
 ~~`S-AUTH-01`~~ (ninguna operación de dominio se puede expresar sin su vertical, con guard; lo
 global es la **fuente**, nunca la operación, así que la regla no tiene excepciones)
 
-**Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · ~~`M-DATA-01`~~ **cerrado por el cap. 02** (la lista de qué se borra, qué se anonimiza y qué se conserva; la fila de `trial` sobrevive al borrado por el §10.2) · **`M-LEGAL-01`** baja online y derecho de revocación — parcialmente cerrado por `DEC-RF-001` (el mecanismo: reembolso + cancelación en un acto). **Sigue abierto lo normativo**, con las preguntas ya formuladas para el abogado — sobre todo **si cada renovación abre una ventana nueva de 10 días o corre una sola vez desde el alta**, que cambia el diseño · `M-LEGAL-02` finalidad de las
-señales de identidad · **`M-LEGAL-03` política de notificación de aumento** — sigue abierto tras `DEC-MP-002` y creció a **tres preguntas, ninguna verificada**: (1) si existe un plazo normativo de antelación para aumentos —no se encontró, los dos meses son decisión comercial—; (2) el **botón de baja**, que no se pueda exigir registro ni trámite para cancelar y haya que confirmar en 24 h con un código; y (3) la más pesada, **si el silencio del cliente vale como aceptación** de una modificación del contrato. La (3) es estructural: si no alcanza, `DEC-MP-002` cambia de forma —haría falta aceptación activa, y a quien no responda no se lo podría aumentar—. Las tres piden revisión profesional, no una búsqueda web. **El owner decidió avanzar así y corregir si la consulta dice otra cosa** (2026-09-16); la (3) conviene resolverla **antes de implementar** el punto 5, porque cambiaría el diseño y no sólo la redacción
+**Datos y legal** — **los tres los cerró el cap. 22**, separando lo que es **pregunta legal** de lo
+que era **decisión de diseño disfrazada**. Las seis preguntas legales quedan abiertas con su riesgo
+y con **qué cambia si la respuesta es la contraria** — tres cambian diseño, tres cambian un número.
+· ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) ·
+~~`M-DATA-01`~~ **cerrado por el cap. 02** · ~~`M-LEGAL-01`~~ (el mecanismo ya lo fijó
+`DEC-RF-001`; la **baja tan simple como el alta** se compromete como diseño, con norma o sin ella.
+Abiertas: si cada renovación abre ventana nueva —**cambia el diseño**—, el plazo, y el **botón de
+arrepentimiento**, que no es una feature faltante sino **un incumplimiento si la norma aplica**) ·
+~~`M-LEGAL-02`~~ (y **destapó un defecto real**: el correo es a la vez el único bloqueo de
+`DEC-TRIAL-004` y el primer dato que el cap. 02 §4 anonimiza, así que la fila de `trial` sobrevivía
+**sin poder reconocer a nadie**. Se guarda un **hash irreversible**, no el correo; el cap. 02 queda
+corregido. La pregunta al abogado pasa a ser si ese hash se puede conservar tras un borrado) ·
+~~`M-LEGAL-03`~~ (**la prueba del aviso cierra sin abogado**: es el outbox del §44 con la clave del
+cap. 07 §2, y los tres avisos son transaccionales **no suprimibles**. Lo abierto es el **plazo**, y
+si el silencio vale como aceptación — **eso cambia el diseño de `DEC-MP-002`, no su redacción**)
 
 **Emails** · ~~`M-MAIL-01`~~ **cerrado por el cap. 07** (toda ventana en días se computa en el huso del mercado; el instante se guarda en UTC) · ~~`M-MAIL-02`~~ **cerrado por el cap. 07** (clave `(destinatario, plantilla, ocurrencia)` con unicidad, calculada al encolar) · ~~`M-MAIL-03`~~ **cerrado por el cap. 07** (dos clases y una jerarquía de cuatro causas; un rebote duro sobre un obligatorio es un evento, no un no-envío) · ~~`M-MAIL-04`~~ **cerrado por el cap. 07 + `DEC-MAIL-001`** (los cuatro correos del proveedor, tres falsos y dos ambiguos; se anticipan)
 

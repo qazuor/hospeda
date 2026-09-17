@@ -122,7 +122,7 @@ resolución, del plan vendible de `rank` más alto y del más bajo, más los ove
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio y fin | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo |
+| **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio, fin y **el hash irreversible del correo normalizado** (§4.1) | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo |
 | **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, período actual, fecha de fin de servicio, clase (principal o de complemento) | **`UNIQUE(user_id, vertical) WHERE clase = principal AND estado ∈ {vivos}`** — es el §11, **impuesto por la base y no por un chequeo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
@@ -253,15 +253,23 @@ decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, 
 |---|---|---|
 | **Se borra** al día 180 | el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`) | es lo que el §25 llama operativo: sirve para prestar el servicio y el servicio terminó |
 | **Se anonimiza** al día 180 | los datos personales que hayan quedado **dentro** de un evento de dominio o de un registro de outbox: nombre, correo, teléfono, dirección | el evento tiene que seguir existiendo —dice que algo pasó y cuándo— pero no necesita decir de quién para eso |
-| **Se conserva íntegro, siempre** | pagos, reembolsos, comprobantes, el vínculo con el proveedor, y **la fila de `trial`** | los cuatro primeros son obligación legal y contable; el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro |
+| **Se conserva íntegro, siempre** | pagos, reembolsos, comprobantes, el vínculo con el proveedor, y **la fila de `trial`** — que guarda **un hash irreversible del correo normalizado, no el correo** | los cuatro primeros son obligación legal y contable; el quinto es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro |
+
+**El hash existe porque el correo es a la vez el único bloqueo y el primer dato que se anonimiza.**
+`DEC-TRIAL-004` decidió que sólo el correo normalizado niega un trial nuevo, y este mismo capítulo
+anonimiza el correo al día 180: la fila sobreviviría **sin poder reconocer a nadie**, que es
+exactamente el desenlace que conservarla venía a evitar. Un hash sirve para lo único que hace
+falta —*«¿este correo ya consumió?»*, nunca *«¿cuál era?»*— y no hay nada que anonimizar en él. El
+capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
 
 ### 4.2 Tres reglas que la lista necesita
 
 1. **Anonimizar no es borrar la fila.** El evento conserva su tipo, su fecha, su entidad y su
    causa; lo que se reemplaza es el dato personal.
 2. **La fila de `trial` sobrevive al borrado de la cuenta.** Es la única entidad de este modelo
-   que lo hace, y la razón está en el §10.2. Conserva el `user + vertical` y las fechas; lo
-   personal se anonimiza con el resto.
+   que lo hace, y la razón está en el §10.2. Conserva el `user + vertical`, las fechas y **el hash
+   del correo normalizado**; lo personal se anonimiza con el resto. El hash **no** se anonimiza —
+   es lo que hace que sobrevivir sirva de algo.
 3. **El día 90 no borra nada.** La ficha sale del sitio público, **el dueño la sigue viendo** y
    puede exportarla o reactivarla suscribiéndose (`DEC-DATA-001`). Poder exportar antes es lo que
    hace defendible el hard delete del día 180, y los dos avisos previos son correos
