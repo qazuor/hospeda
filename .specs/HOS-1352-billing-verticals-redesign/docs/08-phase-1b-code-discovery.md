@@ -1683,6 +1683,44 @@ visible en el archivo del job sin seguir el `resolveSchedule`.
 
 ---
 
+### F-1B-044 — Correr un cron en dry-run no dice qué va a hacer: en ocho devuelve cero sin medir nada, y uno no lo tiene
+
+`F-1B-020` lo encontró en `trial-reconcile`, donde las dos ramas no comparten una línea.
+Leídos los 47, la forma se repite y tiene dos extremos.
+
+**Ocho devuelven `processed: 0` sin contar nada**, con el mismo bloque casi literal:
+
+```
+app-log-purge:42     cron-run-purge:47        entity-views-purge:52
+host-trade-usage-expiry:34   media-orphan-cleanup:86  newsletter-close-campaigns:45
+notification-log-purge:38    view-monthly-rollup:85
+```
+
+Cuatro de ellos son idénticos hasta en el mensaje —*«Dry run - no records purged»*, con
+`processed: 0, errors: 0, details: { dryRun: true }`— y ninguno ejecuta la consulta que
+diría cuántas filas alcanzaría. La rama sale **antes** de construir el servicio.
+
+**El contraste está adentro del mismo lote.** `conversation-token-cleanup` sí mide: su
+rama de dry-run corre un `select` de conteo (`:93-101`) y devuelve `wouldRevoke`
+(`:109-115`), mientras la real corre el `update` (`:120-129`). `alerts-digest` devuelve
+`wouldProcess` (`:142-154`). `lead-intake-backstop`, `partner-expiry`,
+`partner-payment-review` y `partner-unpaid-reaper` reportan el conjunto de candidatos que
+ya trajeron.
+
+**Uno no tiene dry-run.** `poll-apify-reputation-runs` destructura sólo
+`{ logger, startedAt }` (`:108`) y nunca consulta `dryRun`: es el único de los 47
+handlers donde la bandera no existe. Correrlo «en seco» lo corre de verdad — hace upserts
+en la tabla de reputación (`:209-224`, `:240-249`, `:267-277`) y habla con Apify
+(`:179`, `:195`).
+
+**Y en dos, la bandera se pasa a otra función en vez de ramificar acá**:
+`destination-weather-fetch:141` la reenvía a `fetcher.persist(fetchResults, { dryRun, tx })`
+—con el fetch HTTP ya ejecutado en `:128`, dry-run o no— y
+`host-trade-stats-reconcile:35-37` se la pasa entera a `reconcileAllHostTradeAggregates`.
+En los dos casos **qué hace el dry-run no se puede leer en el archivo del job**.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
