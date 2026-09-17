@@ -2408,6 +2408,47 @@ directorio real: **39 / 15.304**. Ningún hallazgo publicado usaba el número in
 
 ---
 
+### F-1B-059 — Veintiuna afirmaciones del código sobre qzpay están ancladas a una versión, y sólo una nombra la instalada
+
+El código de hospeda razona sobre el comportamiento de la librería del proveedor citando
+la versión en la que lo verificó. Contadas todas las citas con número de versión sobre
+`apps` y `packages`, sin tests: **21 afirmaciones en 13 archivos**, nombrando **doce
+versiones distintas**.
+
+| paquete | versiones citadas en comentarios | **instalada** (`pnpm-lock.yaml:4069-4094`) |
+|---|---|---|
+| `qzpay-core` | 1.1.0, 1.2.0, **1.12.0**, 2.0.0, 5.1.0, 5.2.0, 6.0.0, **7.0.0** | **7.0.0** |
+| `qzpay-drizzle` | 1.10.0, 1.11.0, 2.0.0 | **4.0.0** |
+| `qzpay-mercadopago` | 2.5.0 (×5) | **2.11.2** |
+
+**Una sola de las 21 nombra la versión que corre** (`abandoned-pending-subs.job.ts:182`,
+que cita `qzpay-core 7.0.0`). Las tres de `drizzle` y las cinco de `mercadopago` nombran
+versiones que quedaron dos majors atrás y nueve parches atrás respectivamente.
+
+Los ejemplos más citados son afirmaciones de comportamiento, no notas históricas:
+`paid-subscription-create.ts:136` y `:155` describen en qué unidad espera `unitAmount`
+*«(`@qazuor/qzpay-core@5.2.0`)»*; `:172` describe qué hace
+`billing.subscriptions.create` *«(`@qazuor/qzpay-core@5.1.0`)»*; `:341` dice *«Until
+qzpay-core 6.0.0 the parameter did not…»*; y
+`packages/billing/src/adapters/mercadopago-stub.ts:26` abre su lista de comportamientos
+del motor con *«Verified against `@qazuor/qzpay-core@1.12.0` (`dist/index.js`)»* — seis
+majors atrás de lo instalado.
+
+Cruza con `F-1B-004`, que midió lo mismo desde el otro lado: el checkout local de qzpay
+declaraba `core 6.0.0` / `drizzle 3.0.0` cuando hospeda ya corría 7.0.0 / 4.0.0.
+
+**Y el paquete de catálogo lleva dos adaptadores de prueba adentro.**
+`packages/billing/src` son **37 archivos / 8.167 líneas**, de las cuales
+`adapters/mercadopago-stub.ts` (337) y `adapters/qzpay-test-control.ts` (281) son **618
+líneas de instrumentación de test** exportadas desde `adapters/index.ts:17`. Las habilita
+`HOSPEDA_QZPAY_TEST_CONTROL_ENABLED`, que **no está seteada en producción ni en staging**
+(medido: `hops env-list --match QZPAY_TEST_CONTROL` devuelve `No matches` en los dos).
+
+El archivo más grande del paquete es `config/plans.config.ts`, con **1.721 líneas**: es el
+catálogo comercial que `F-1B-033` midió viviendo en TypeScript.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
