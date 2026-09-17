@@ -91,7 +91,7 @@ verificado contra la definición real.
 | Índices | **836** | `pg_index` por catálogo — **no** por nombre, que da 160 PK en vez de 174 | **836** |
 | Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | **132** |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
-| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** horario · **47** partición · **1** handler leído entero |
+| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** horario · **47** partición · **6** handlers leídos enteros |
 | Migraciones estructurales | **125** | archivos, cruzados con `drizzle.__drizzle_migrations` en prod | **125** |
 | Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
 | Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
@@ -868,6 +868,96 @@ lo que el proveedor cuele, sobre una columna que no restringe nada.
 
 ---
 
+### F-1B-022 — Los cinco crons del ciclo de vida calculan `success` de tres formas distintas
+
+Leídos enteros: `subscription-poll` (1.011), `subscription-drift-reconcile` (766),
+`abandoned-pending-subs` (731), `finalize-cancelled-subs` (828),
+`reactivation-supersession-reconcile` (390).
+
+| cron | cómo computa `success` |
+|---|---|
+| `subscription-drift-reconcile` | `errors === 0 && unknownAtProvider === 0 && unresolved === 0` (`:733-734`) — una sola fila sin resolver tiñe el tick entero |
+| `finalize-cancelled-subs` | `errors === 0` (`:803`) |
+| `abandoned-pending-subs` | `errors === 0` |
+| `subscription-poll` | `errors === 0` (`:999`) |
+| **`reactivation-supersession-reconcile`** | **`success: true` literal** (`:348-349`), con `errors` devuelto al lado |
+
+**El último está verificado leyendo el `return`**: el objeto lleva `success: true`
+escrito a mano y `errors` como campo aparte, así que un tick con
+`cancel-did-not-take` —el caso exacto que ese cron existe para atrapar, una suscripción
+vieja que sigue cobrando en paralelo— se reporta como éxito. Es el único de los cinco
+que lo hace, y no hay comentario que explique la asimetría.
+
+Los dos extremos son crons hermanos con la misma responsabilidad de **evitar el doble
+cobro**.
+
+---
+
+### F-1B-023 — `finalize-cancelled-subs` cuenta la fila como finalizada antes de cancelar en el proveedor, y el resultado de esa cancelación no llega a ningún contador
+
+Verificado en `finalize-cancelled-subs.ts:771-782`:
+
+```ts
+if (outcome.kind === 'finalized') {
+    finalized += 1;
+    // HOS-237: close the MP preapproval (soft-cancel only paused it).
+    // Best-effort — a provider failure does not fail the finalization.
+    await hardCancelPreapprovalBestEffort({ … });
+}
+```
+
+El `finalized += 1` ocurre **antes** de la llamada, y el valor que devuelve
+`hardCancelPreapprovalBestEffort` (`cancelled` / `skipped` / `failed`) **no se asigna a
+nada**. El comentario lo declara deliberado.
+
+Consecuencia medible: el cron puede informar `Finalized N, skipped 0, errors 0`
+mientras **N preapprovals siguen vivas en MercadoPago**. La cancelación en el proveedor
+es irreversible cuando sale bien y, cuando sale mal, invisible en el resultado.
+
+---
+
+### F-1B-024 — La descripción que ve un administrador describe el comportamiento anterior
+
+`finalize-cancelled-subs.ts:709-710` declara en el `CronJobDefinition`:
+
+> *«Finalizes soft-cancelled subscriptions whose **current_period_end** has elapsed…»*
+
+Pero la consulta usa `effectiveEndDateExpr()` (`:225-227`, aplicada en `:279`), que es:
+
+```sql
+CASE WHEN status = 'trialing' AND trial_end IS NOT NULL THEN trial_end
+     ELSE current_period_end END
+```
+
+O sea que para una suscripción en trial la fecha de corte es `trial_end`, no
+`current_period_end`. El docblock del módulo sí lo documenta; el string `description`
+—que es lo que se muestra en cualquier panel de crons— quedó describiendo el
+comportamiento previo.
+
+---
+
+### F-1B-025 — Otras cuatro cosas del grupo de ciclo de vida
+
+1. **Dos de los cinco no tienen lock de proceso.** `subscription-poll` (`1007`),
+   `subscription-drift-reconcile` (`1010`) y `abandoned-pending-subs` (`1006`) usan
+   `pg_try_advisory_xact_lock`; `finalize-cancelled-subs` y
+   `reactivation-supersession-reconcile` **no tienen ninguno**. En el segundo, dos
+   réplicas simultáneas pueden llamar a `cancel()` sobre el mismo par en paralelo: lo
+   único que las separa es un índice único parcial **al insertar la auditoría**, o sea
+   después de haber hablado con el proveedor.
+2. **`subscription-poll` sí muta el monto en MercadoPago.** `:660` llama a
+   `subscriptions.update(mpSubscriptionId, { transactionAmount })` desde
+   `reconcileActiveDiscountAmounts` (`:532-695`), que el mismo handler invoca en
+   `:994-996`. Un comentario en `:768-775` dice que el job nunca toca el monto de una
+   suscripción activa — es cierto de `processOneJob`, la función donde está escrito, y
+   fácil de leer como si valiera para el módulo.
+3. **Ese reconciliador es enteramente best-effort**: sus errores se loguean pero **no
+   entran** en `processed` ni en `errors` del cron.
+4. **El cursor de `subscription-drift-reconcile` vive en memoria del módulo**
+   (`:216`), no en la base: se pierde en cada reinicio o despliegue.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -881,7 +971,7 @@ Ninguno empezado. El orden no está decidido.
 | Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | ~~Los 47 crons: nombre, horario y habilitación~~ | — | ✅ `F-1B-003`, `F-1B-017` |
-| Los 16 handlers de billing que faltan, leídos por dentro | 16 de 17 | 🟡 `F-1B-018` a `F-1B-020` |
+| Los handlers de billing, leídos por dentro | **6 de 17** | 🟡 `F-1B-018` a `F-1B-020`, `F-1B-022` a `F-1B-025` |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Servicios: métodos públicos y qué validan | por medir | ⬜ |
