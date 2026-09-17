@@ -163,4 +163,5 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 09 — Conciliación | ✅ |
 | **Parte I completa** | ✅ |
 | 10 — Verticales, planes y billing options | ✅ |
-| 11 a 22 | ⬜ sin escribir |
+| 11 — Trial | ✅ |
+| 12 a 22 | ⬜ sin escribir |

@@ -275,13 +275,21 @@ y `SUSPENDED`, nombre aprobado por el owner el 2026-09-17) · ~~`M-ARCH-02`~~ **
 a nadie; migrar es otro acto que sí toca plata; no hay fecha de vencimiento y la cola se extingue
 sola, visible en el listado del §48)
 
-**Trial** · ~~`E-TRIAL-01`~~ **disuelto por `DEC-TRIAL-005`** (sin revisión previa no hay
-rechazo posterior) · **`E-TRIAL-04` baja reactiva de una ficha publicada** (nuevo, residuo de
-`DEC-TRIAL-005`) · `E-TRIAL-02` publicar y
-despublicar enseguida · `A-TRIAL-02` "solamente en trial" para un usuario multi-vertical ·
-`S-TRIAL-01` cuota de trial por entitlement medido · `OD-TRIAL-01` techo de extensiones ·
-`M-TRIAL-03` anti-spam de la campaña de recuperación · `E-TRIAL-03` la campaña se dispara y
-después el trial se extiende
+**Trial** — **los siete los cerró el cap. 11**, sobre una sola regla: *el trial no vuelve, lo que
+hay es reparación hacia adelante*. · ~~`E-TRIAL-01`~~ **disuelto por `DEC-TRIAL-005`** (sin
+revisión previa no hay rechazo posterior) · ~~`E-TRIAL-04`~~ (la baja justificada no repara nada;
+el error nuestro se repara con T4 si el trial vive y con una cortesía si venció, y no hay
+excepción al §10.2) · ~~`E-TRIAL-02`~~ (el reloj es calendario y no lo detiene nada; volver a
+publicar no cuesta) · ~~`A-TRIAL-02`~~ (sí puede comprarlo; un addon de scope `USER` o `GLOBAL` no
+aporta a una vertical cuyo único título es un trial) · ~~`S-TRIAL-01`~~ (la cuota se resuelve por
+`user + vertical` y se multiplica por vertical, sin tope global; **no se resetea**, o el techo de
+extensiones dejaría de proteger) · ~~`OD-TRIAL-01`~~ (techo configurable de días acumulados por
+`user + vertical`; la extensión que no entra se rechaza entera y no consume el promo; ata al promo
+y no a `SUPER_ADMIN`; el total se muestra en §46 y §48) · ~~`M-TRIAL-03`~~ (una pieza por persona y
+por hito nombrando todas sus verticales, consolidando **antes** de la supresión del cap. 07; el
+corte al suscribirse es por vertical) · ~~`E-TRIAL-03`~~ **disuelto**: la campaña previa ya la
+re-agenda T4, y el cruce con la de recuperación es imposible por construcción — arranca en T3 y la
+única extensión es T4, que exige `TRIAL_ACTIVE`
 
 **Suscripción** · ~~`M-SUB-01`~~ **cerrado por el cap. 03** (los cuatro estados que pedía, más `ABANDONED`; y las 72 h, la limpieza y el reintento de la ventana sin autorizar) · ~~`A-SUB-01`~~ **cerrado por el cap. 01** (sí
 existen suscripciones no principales: cada addon recurrente es una, por `DEC-ADDON-002`; el §11

@@ -83,8 +83,9 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
   *«Solo válido durante `TRIAL_ACTIVE`. Nunca después. Backend debe rechazar.»*
 - **T4 re-agenda la campaña previa**, no la deja como estaba. Si el trial se extiende 10 días y
   el aviso de «faltan 2 días» ya salió, el cliente tiene que recibirlo de nuevo contra la fecha
-  nueva; el cruce inverso —la campaña de recuperación ya disparada y el trial extendido después—
-  sigue abierto (`E-TRIAL-03`).
+  nueva. El cruce inverso —la campaña de recuperación ya disparada y el trial extendido después—
+  **no existe**: esa campaña arranca en T3 y T4 exige `TRIAL_ACTIVE`, así que entre las dos no hay
+  camino (`E-TRIAL-03`, disuelto por el capítulo 11 §7).
 
 ---
 
