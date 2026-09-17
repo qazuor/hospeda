@@ -2230,6 +2230,64 @@ importa porque «nadie la llama» y «sólo la llama un test» no son lo mismo.
 
 ---
 
+### F-1B-056 — Cortesía y downgrade: una transacción por fila, dos políticas de recorte y un desempate que en producción nunca desempata
+
+Leídos enteros `subscription-comp-grant.service.ts` (807),
+`commerce-downgrade-remediation.service.ts` (771) y
+`subscription-downgrade-excess.service.ts` (517).
+
+**La cortesía no crea nada en MercadoPago, pero la misma llamada sí lo toca.**
+`grantCompSubscription` (`:354`) tiene **un** llamador real,
+`routes/billing/admin/subscription-comp.ts:185`. Antes de crear la fila `comp` recorre las
+suscripciones que va a suplantar y, por cada una, llama
+`hardCancelPreapprovalBestEffort` **contra MercadoPago** (`:485-489`) y después abre **una
+transacción por fila** (`:579-607`) para escribir `status='cancelled'`,
+`mpSubscriptionId=null` y su evento de auditoría. El comentario de `:715` —*«a comp never
+goes through MercadoPago»*— es cierto de la fila nueva y no de la operación.
+
+**Si el proveedor se niega a mitad del recorrido, lo ya hecho queda hecho.** `:557-570`
+devuelve `PROVIDER_ERROR` y sale: las filas procesadas en vueltas anteriores ya están
+`CANCELLED` y **la cortesía no se creó**. El propio mensaje de error lo asume y describe
+cómo retomar: *«Retry — the grant resumes, skips whatever is already closed»*.
+
+**Y la reconciliación de la fila nueva no está protegida.** `:720-724` hace
+`await reconcileSubscriptionLinkedEntities({...})` **sin `try/catch`**, después de que la
+transacción que creó la cortesía ya commiteó (`:656-682`), con el motivo escrito arriba
+(`:715-719`): como no hay webhook para una cortesía, el reconciliador que en todos los
+demás caminos dispara el webhook hay que llamarlo a mano. Si esa llamada tira, la cortesía
+está en la base y el llamador recibe una excepción.
+
+**Los dos servicios de exceso usan dos políticas de recorte distintas dentro del mismo
+archivo.** `computeDowngradeExcess` (`:329-517`) es de sólo lectura —cero escrituras
+verificadas— y calcula tres dimensiones:
+
+| dimensión | cómo elige qué se conserva |
+|---|---|
+| alojamientos | `compareByRecency` — `updatedAt` desc, y `viewCount` desc como desempate |
+| promociones activas | el mismo `compareByRecency` |
+| **fotos por alojamiento** | **el orden del arreglo**: `gallery.slice(gallerySlots)` es el excedente (`:462-471`), porque una foto no tiene fecha propia — y el archivo lo declara como *DOCUMENTED DIVERGENCE* (`:465-470`) |
+
+**El desempate declarado nunca se ejecuta en producción.** `defaultExcessDeps` —la
+implementación real de las lecturas— pasa `viewCount: null` para **todos** los ítems, en
+las dos consultas (`:223` y `:240`), con el comentario *«view data not trivially
+reachable»*. El docblock de `:12` describe el desempate por vistas como comportamiento
+vigente y el campo (`:91`, `:109`) dice *«used as a secondary sort tiebreaker when
+non-null»*: en producción es siempre nulo, así que el orden es `updatedAt` y nada más.
+
+**Del lado de commerce, el recorte es un flag y se escribe sin transacción.**
+`applyCommerceDowngradeRestrictions` (`:483-562`) y `applyCommerceUpgradeRestorations`
+(`:586-663`) hacen **un solo `UPDATE`** sobre `entity_subscriptions.plan_restricted`
+(`:289-302`, sin `withTransaction` en todo el archivo) y después recorren los listings
+llamando `reconcileListing` con un `try/catch` **por ítem** (`:525-544`, `:627-646`): si
+uno falla, el flag ya quedó cambiado y la visibilidad pública de ese listing no se
+re-derivó. El recorte es reversible por diseño —es un flag, no un borrado— y la
+restauración devuelve hasta donde llega el `headroom` del plan nuevo (`:607-621`).
+
+`applyCommerceUpgradeRestorations` sólo la llama la función de al lado (`:709`) y un test:
+es una de las 24 de `F-1B-052`.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
