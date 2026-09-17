@@ -1948,6 +1948,55 @@ diff, ningún test y ningún guard: sólo leyendo Coolify.
 
 ---
 
+### F-1B-050 — El checkout de addons tiene dos caminos con idempotencia opuesta, y el que corre en producción no tiene reintento
+
+`apps/api/src/services/addon.checkout.ts` son 1.605 líneas que exportan **dos** funciones
+—`createAddonCheckout:263` y `confirmAddonPurchase:954`— más una constante. Las
+validaciones compartidas (catálogo, propiedad del listing, suscripción activa, dominio,
+categoría de plan, promo) terminan en `:612`, y ahí se abre la bifurcación de `F-1B-049`.
+
+| | pago único (`Preference`) | recurrente (preapproval propio) |
+|---|---|---|
+| dónde | `:650-746` | `:623-648` |
+| corre en | **staging** | **producción** |
+| idempotencia | `randomUUID()` fresco por invocación (`:573`) | `resolveRecurringAddonCheckoutIdempotency`, que **lee una fila previa** antes de acuñar |
+| confirmación | polling (`scheduleAddonCheckoutPolling:777`) | **sólo webhook** |
+
+**La idempotencia del camino de pago único no existe, y el archivo lo dice de sí mismo.**
+El comentario de `:553-572` corrige una versión anterior de sí mismo: *«the line below
+this comment used to be preceded by the claim "a retry from the same logical checkout
+reuses the same UUID" — that is FALSE»*, y describe la consecuencia: *«two clicks (or the
+client's own retry) produce two DIFFERENT UUIDs, two DIFFERENT `idempotencyKey`s, and two
+independently payable MercadoPago Preferences for the same one-time add-on purchase»*.
+La línea `:573` es `const checkoutUuid = randomUUID();` sin ninguna consulta previa, y
+`:697` la manda como `idempotencyKey`. El propio comentario cierra con *«NOT fixed here…
+Tracked as a follow-up rather than built here»*.
+
+**Y el camino que corre en producción es el que no tiene canal de reintento.** El
+comentario de `:617-621` explica la asimetría: una `Preference` de MercadoPago no emite
+ningún evento de Webhooks v2, así que el polling es su **único** canal de confirmación; un
+preapproval sí los emite, y por eso la rama recurrente no agenda polling. Verificado: el
+`return` de `:623` sale antes de `scheduleAddonCheckoutPolling` (`:777`). Si ese webhook no
+llega, **nada re-dispara la confirmación** de un addon recurrente desde este archivo.
+
+Eso empalma con `F-1B-027`, que midió que `addon-recurring-handler.ts:266` devuelve
+`handled: true` aunque la liquidación tire, y con `F-1B-019`: el evento se marca resuelto y
+sale de la cola de dead-letter.
+
+**La confirmación se da por buena aunque el permiso no se otorgue.**
+`confirmAddonPurchase` llama `applyAddonEntitlements` en `:1412`; si falla, loguea, marca
+`needsEntitlementSync: true` en la fila (`:1432-1439`) y **devuelve éxito igual**
+(`:1591`). El comentario de `:1410-1411` nombra el backstop: *«the addon-expiry cron's
+Phase 7 grant-reconciliation sweep»*. Esa fase es una de las tres que `F-1B-028` midió
+como **no documentadas** en el docblock de su propio módulo, dentro del cron que
+`F-1B-029` midió devolviendo `success: true` literal para las siete fases.
+
+La misma forma se repite dos veces más en la confirmación: si falla el `insert` en
+`featured_listing_addon_grants` (`:1328-1354`) o si falta la metadata del target
+(`:1378-1402`), se loguea, se captura en Sentry y la compra se confirma igual.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
