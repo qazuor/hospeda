@@ -100,8 +100,8 @@ verificado contra la definición real.
 | Clases exportadas en `service-core` | **126** | `export class`, no `*.service.ts` (que da 101) | **126** |
 | … que extienden una base de servicio | **67** | 39 `BaseCrudService` + 19 `BaseService` + 6 related + 2 commerce | **67** |
 | Archivos de billing en `apps/api/src/services` | **140** de 185 | `rg -l` por vocabulario de dominio | **140** |
-| Archivos de `apps/web/src` | **1.049** | `fd -e ts -e tsx -e astro` | 42 importan `@repo/billing` · 21 nombran `EntitlementKey`/`LimitKey` |
-| Archivos de `apps/admin/src` | **1.454** | idem | 25 importan `@repo/billing` · 31 nombran las claves · 22 pegan a `/billing` |
+| Archivos de `apps/web/src` | **1.049** | `fd -e ts -e tsx -e astro` | **15** lo importan fuera de tests (42 lo mencionan — ver `F-1B-089`) |
+| Archivos de `apps/admin/src` | **1.454** | idem | **22** lo importan fuera de tests (25 lo mencionan — ver `F-1B-089`) · 31 nombran las claves |
 | Archivos que mencionan conceptos de billing | 4251 (2658 sin tests) | `rg -l` sobre `apps` y `packages` | — |
 
 Los marcados **provisorio** están medidos por nombre de archivo y por lo tanto no
@@ -3742,6 +3742,131 @@ relevamiento midió por dentro —`plan-downgrade-remediation` (727), `plan-upgr
 `commerce-downgrade-remediation` (771), `subscription-downgrade-excess` (517), más el
 abanico de `plan-disable-lifecycle`— escribe exactamente estas columnas. Son **≈3.300
 líneas** cuyo efecto no está presente en ninguna fila de producción.
+
+---
+
+### F-1B-086 — Hay una ruta de admin sirviendo las métricas de un sistema de eventos que nadie emite, y que además se reinicia con el proceso
+
+`packages/service-core/src/services/billing/addon/addon-lifecycle-events.ts` (351 líneas)
+declara un bus de eventos del ciclo de vida de un addon: nueve tipos de evento, la función
+que los emite (`emitLifecycleEvent`, `:305`) y un contador en memoria (`:24-30`).
+
+**`emitLifecycleEvent` no la llama nadie.** Buscado sobre `apps` y `packages` enteros, sus
+únicas apariciones fuera de tests son **tres**: la firma (`:305`), el `@example` de su
+propio docblock (`:296`) y la línea del shim que la re-exporta
+(`apps/api/src/services/addon-lifecycle-events.ts:22`). Ningún servicio, ruta ni cron la
+invoca.
+
+**Pero el lector sí está montado.** `apps/api/src/routes/billing/admin/metrics.ts:433`
+declara `getAddonLifecycleMetricsRoute`, `:444` llama a `getAddonLifecycleMetrics()` y
+`:459` la monta en el router. O sea que el endpoint responde, y responde el objeto inicial
+—`revocationOutcomes: { success: 0, failed: 0 }`, los arreglos vacíos— porque nada lo
+incrementó nunca.
+
+**Y aunque algo emitiera, el número no sobreviviría a un despliegue.** El propio docblock
+lo declara (`:17-22`): *«Collected per-process… no external dependency, **reset on process
+restart**»*. Es un contador en memoria de un proceso, servido por un endpoint de
+administración.
+
+---
+
+### F-1B-087 — Un servicio exige una conexión en su contrato, la ignora y abre la suya, mientras el llamador le pasa la que tiene abierta
+
+`recalculateAddonLimitsForCustomer`
+(`packages/service-core/src/services/billing/addon/addon-limit-recalculation.service.ts`)
+declara `db: DrizzleClient` como campo **obligatorio** de su entrada (`:71`), documentado
+como *«Drizzle database instance for querying `billing_addon_purchases`»*.
+
+La implementación desestructura `const { customerId, limitKey, billing } = input;`
+(`:175`) —**`db` no se lee en ninguna línea**— y abre una transacción nueva con
+`withTransaction` (`:204`). El comentario de `:173-174` lo declara: *«`db` is retained in
+the input interface for backward compatibility»*.
+
+Su único llamador de producción, `apps/api/src/services/addon.user-addons.ts:406-411`, sí
+le pasa un `db`. Así que el `SELECT … FOR UPDATE` sobre las compras activas (`:215-222`)
+corre en **otra** conexión que la del llamador, y los dos locks no se ven entre sí.
+
+**Y si el recálculo falla, la cancelación ya aplicada no se revierte.** El llamador
+(`addon.user-addons.ts:414-438`) captura en Sentry, loguea *«DB cancel already applied —
+webhook will reconcile»* y **sigue hasta su `return` de éxito**. El `catch` del servicio
+(`:442-446`) convierte cualquier excepción en `{ outcome: 'failed' }` y nunca relanza.
+
+**Aparte: `calculateThreshold` está escrita dos veces, con la misma lógica y firmas
+distintas.** `packages/service-core/…/usage-tracking.types.ts:125` la declara con un
+parámetro objeto y `apps/api/src/utils/limit-check.ts:110` con dos posicionales; las dos
+abren con el mismo `if (max <= 0) return 'ok'`. La primera la usa
+`usage-tracking.service.ts`; la segunda, siete sitios entre middlewares de límite y rutas
+de media. No hay ningún import entre ellas. Es la misma función del umbral 80/90/100 % en
+dos paquetes, y `F-1B-057` ya midió que ese `'ok'` para `max === 0` contradice al
+`checkLimit` que rechaza en ese mismo caso.
+
+---
+
+### F-1B-088 — El número de días de prueba que ve un visitante sale de tres mecanismos, y dos de las páginas no consultan nada
+
+`F-1B-075` midió los dos orígenes del lado del servidor. Del lado del sitio público hay un
+tercero, y las páginas no usan el mismo:
+
+| mecanismo | dónde | qué hace |
+|---|---|---|
+| **cómputo en vivo** | `apps/web/src/lib/billing/generic-trial-days.ts:126-143` | pide `/api/v1/public/plans`, filtra los planes `owner` activos con `hasTrial && trialDays > 0` y devuelve el **mínimo**; cae a la constante si el fetch falla |
+| **la constante, sin consultar nada** | `pages/[lang]/preguntas-frecuentes/index.astro:156`, `pages/[lang]/funcionalidades/index.astro:91` | interpola `OWNER_TRIAL_DAYS` directo en la copy |
+| **la constante como default de un prop** | `components/host/PropertyCard.astro:89` | `trialDays = OWNER_TRIAL_DAYS` |
+
+El comentario de `computeMinimumTrialDays` (`:70-84`) explica por qué toma el **mínimo** y
+no el máximo: *«a pre-selection promise can only be as good as the worst plan the visitor
+might end up on»*.
+
+**Hoy los tres dan 30, y está medido contra el sistema que corre.**
+`GET https://api.hospeda.com.ar/api/v1/public/plans` devuelve **tres** planes —
+`owner-basico`, `owner-pro`, `owner-premium`—, los tres con `isActive: true`,
+`hasTrial: true` y **`trialDays: 30`**. El mínimo es 30, y `OWNER_TRIAL_DAYS` vale 30
+(`packages/billing/src/constants/billing.constants.ts:17`).
+
+Lo que queda anotado es la forma, no una divergencia: **el mismo número se le promete al
+visitante desde una lectura en vivo en unas páginas y desde una constante compilada en
+otras**, y sólo la primera reaccionaría a un cambio de catálogo. Sumado a los dos orígenes
+del servidor, la duración de un trial se resuelve hoy en **cuatro** lugares.
+
+*Nota sobre el mínimo*: como toma el menor de lo que el endpoint devuelva, un plan `owner`
+activo con un trial corto que llegara a listarse bajaría la promesa de todo el sitio.
+`F-1B-049` midió que `owner-test-daily` —cuyo `metadata.trialDays` es `1`— **no** aparece
+en la respuesta pública pese a `HOSPEDA_SHOW_TEST_BILLING_PLAN=true` en producción, y la
+consulta de arriba lo confirma: son tres planes y ninguno es el de prueba.
+
+---
+
+### F-1B-089 — El censo contaba 42 archivos de Web tocando billing y son 15
+
+Recontado por el especificador de import y no por la mención:
+
+| | menciona `@repo/billing` | **lo importa** | lo importa, sin tests |
+|---|---|---|---|
+| `apps/web/src` | 42 | 21 | **15** |
+| `apps/admin/src` | 25 | 23 | **22** |
+
+Los 42 y 25 del censo son menciones: incluyen tests y los archivos que sólo nombran el
+paquete en un comentario. **La superficie real de Web son 15 archivos** de sus 1.049, y la
+de Admin **22** de 1.454.
+
+Los 15 de Web, completos:
+
+```
+components/host/PropertyCard.astro            components/host/PublishPrecheckPanel.astro
+components/billing/plan-comparison-rows.ts    components/billing/plan-card-delta.ts
+lib/host/usage-badge.ts                       lib/host/publish-precheck-panel-content.ts
+lib/billing/fetch-plans.ts                    lib/billing/audience-plans.ts
+lib/billing/generic-trial-days.ts             lib/billing-i18n.ts
+lib/commerce/usage-badge.ts                   pages/[lang]/preguntas-frecuentes/index.astro
+pages/[lang]/funcionalidades/index.astro      pages/[lang]/mi-cuenta/addons/index.astro
+pages/[lang]/suscriptores/checkout/failure.astro
+```
+
+**Y la tabla comparativa pública no muestra el catálogo entero.**
+`components/billing/plan-comparison-rows.ts` nombra **31** de las 53 claves de entitlement
+y **16** de las 22 de limit; el admin nombra **las 53**. Cruza con `F-1B-037`: de las 53,
+doce no las chequea nada en el servidor, y esta tabla es una de las dos superficies donde
+esas doce se exhiben.
 
 ---
 
