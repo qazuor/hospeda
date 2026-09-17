@@ -153,6 +153,6 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 |---|---|
 | 00 — este índice | ✅ |
 | 01 — Glosario y modelo conceptual | ✅ |
-| 02 — Modelo de datos | ⬜ |
+| 02 — Modelo de datos | ✅ |
 | 03 — Las ocho máquinas de estado | ✅ |
 | 04 a 22 | ⬜ sin escribir |

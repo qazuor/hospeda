@@ -264,12 +264,13 @@ cómo trata al Eje 2.
 No necesitan al owner. Se listan para que no se pierdan: son huecos reales del PDR que FASE 2
 tiene que cerrar, no cosas que alguien improvise al implementar.
 
-**Arquitectura** · `C-ARCH-01` §9 inaplicable como está escrito · `S-ARCH-01` separar catálogo
-de claves de configuración comercial · ~~`O-ARCH-01`~~ **cerrado por el cap. 01** (el Eje 2 es una
+**Arquitectura** · ~~`C-ARCH-01`~~ y ~~`S-ARCH-01`~~ **cerrados por el cap. 02** (el catálogo de
+claves vive en código verificado contra la base en las dos direcciones; la configuración comercial,
+sólo en la base) · ~~`O-ARCH-01`~~ **cerrado por el cap. 01** (el Eje 2 es una
 lista cerrada de ocho ítems; todo lo demás es Eje 1) · ~~`S-ARCH-02`~~ **cerrado por el cap. 01**
 (la lista, enumerada, y crece sólo por decisión registrada) · ~~`M-ARCH-01`~~ **cerrado por el
 cap. 01 + `DEC-ARCH-003`** (glosario completo; los dos `SUSPENDED` se separan en `TRIAL_EXPIRED`
-y `SUSPENDED`, nombre aprobado por el owner el 2026-09-17) · `M-ARCH-02` caché e invalidación ·
+y `SUSPENDED`, nombre aprobado por el owner el 2026-09-17) · ~~`M-ARCH-02`~~ **cerrado por el cap. 02** (se cachea el conjunto efectivo por `user+vertical`, se invalida por evento y el TTL es red y no mecanismo) ·
 `OD-ARCH-01` retiro de un plan del catálogo
 
 **Trial** · ~~`E-TRIAL-01`~~ **disuelto por `DEC-TRIAL-005`** (sin revisión previa no hay
@@ -307,8 +308,7 @@ combinación de promo, cortesía y grant
 actor administrativo · `A-AUTH-01` el rol al perder el acceso · `S-AUTH-01` scope de vertical
 estructural, no un chequeo
 
-**Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · `M-DATA-01` qué es dato
-eliminable · **`M-LEGAL-01`** baja online y derecho de revocación — parcialmente cerrado por `DEC-RF-001` (el mecanismo: reembolso + cancelación en un acto). **Sigue abierto lo normativo**, con las preguntas ya formuladas para el abogado — sobre todo **si cada renovación abre una ventana nueva de 10 días o corre una sola vez desde el alta**, que cambia el diseño · `M-LEGAL-02` finalidad de las
+**Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · ~~`M-DATA-01`~~ **cerrado por el cap. 02** (la lista de qué se borra, qué se anonimiza y qué se conserva; la fila de `trial` sobrevive al borrado por el §10.2) · **`M-LEGAL-01`** baja online y derecho de revocación — parcialmente cerrado por `DEC-RF-001` (el mecanismo: reembolso + cancelación en un acto). **Sigue abierto lo normativo**, con las preguntas ya formuladas para el abogado — sobre todo **si cada renovación abre una ventana nueva de 10 días o corre una sola vez desde el alta**, que cambia el diseño · `M-LEGAL-02` finalidad de las
 señales de identidad · **`M-LEGAL-03` política de notificación de aumento** — sigue abierto tras `DEC-MP-002` y creció a **tres preguntas, ninguna verificada**: (1) si existe un plazo normativo de antelación para aumentos —no se encontró, los dos meses son decisión comercial—; (2) el **botón de baja**, que no se pueda exigir registro ni trámite para cancelar y haya que confirmar en 24 h con un código; y (3) la más pesada, **si el silencio del cliente vale como aceptación** de una modificación del contrato. La (3) es estructural: si no alcanza, `DEC-MP-002` cambia de forma —haría falta aceptación activa, y a quien no responda no se lo podría aumentar—. Las tres piden revisión profesional, no una búsqueda web. **El owner decidió avanzar así y corregir si la consulta dice otra cosa** (2026-09-16); la (3) conviene resolverla **antes de implementar** el punto 5, porque cambiaría el diseño y no sólo la redacción
 
 **Emails** · `M-MAIL-01` huso horario como invariante · `M-MAIL-02` deduplicación del envío ·
