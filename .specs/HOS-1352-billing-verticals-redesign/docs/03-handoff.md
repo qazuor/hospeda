@@ -65,7 +65,7 @@ la **Parte I está completa** — 10 de 22 archivos escritos.
 >
 > Presupuesto: de los **ARS 30** autorizados se gastaron **15**. Si mañana el cobro entra, se llega
 > a 30 y ahí se corta.
-
+>
 > 🔬 **PRUEBA LIMPIA PENDIENTE, y el owner la pidió**: confirmar si una suscripción con el primer
 > cobro rechazado queda **inservible para todo medio de pago**. Está medido que la suscripción
 > muere (`400 Invalid transition from cancelled to authorized`) y que los intentos 2 y 3 del
