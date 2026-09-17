@@ -164,7 +164,8 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | **Parte I completa** | ✅ |
 | 10 — Verticales, planes y billing options | ✅ |
 | 11 — Trial | ✅ |
-| 12 a 14 | ⬜ sin escribir |
+| 12 y 13 | ⬜ sin escribir |
+| 14 — Promos, cortesías y grants | ✅ |
 | 15 — Entitlements y limits | ✅ |
 | 16 — Addons | ✅ |
 | 17 — Autorización | ✅ |

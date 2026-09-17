@@ -343,9 +343,21 @@ cobrar) · ~~`E-ADDON-04`~~ (no necesita mecanismo propio: es el reconciliador d
 ventana. Lo urgente es el otro efecto: un preapproval **huérfano sigue cobrando** y hay que
 cancelarlo en el proveedor — falla hacia cobrar de más)
 
-**Promos y grants** · `A-PROMO-01` orden de aplicación y piso · `M-PROMO-02` promo en curso
-ante un cambio de plan · `E-PROMO-01` extensión aplicada el día del vencimiento · `A-PROMO-02`
-combinación de promo, cortesía y grant
+**Promos y grants** — **los cuatro los cerró el cap. 14**, que separa qué toca cada instrumento:
+la promo el **monto**, la cortesía el **cobro**, el grant la **obligación**. · ~~`A-PROMO-01`~~
+(porcentuales primero y fijos después — determinista, porque dentro de cada familia conmuta, y es
+el total más bajo. El piso es del proveedor y está medido: **ARS 15** (`PC-2`); se valida **antes**
+de mutar, y si no entra, el descuento se ejecuta con el mecanismo de la cortesía. **Un descuento
+del 100 % no es un descuento: es una cortesía**) · ~~`M-PROMO-02`~~ (con el mismo ciclo la promo
+sobrevive —porcentual se recalcula, fijo se traslada, el contador sigue—; **al cambiar de ciclo
+sobrevive sólo lo que se puede expresar sin convertir nada**, o sea el porcentual `forever` y nada
+más: elegir si «3 cobros» son tres meses o tres años es inventar un término que nadie pactó) ·
+~~`E-PROMO-01`~~ (**gana el estado escrito, nunca la hora**: el canje vale si la fila sigue
+`TRIAL_ACTIVE` al escribir. Y la mitad que se olvida: el job re-lee la fecha **dentro de su
+transacción**, no la del lote) · ~~`A-PROMO-02`~~ (`stackable` rige **sólo entre promos**; lo demás
+lo determina el mecanismo. Durante la cortesía el descuento no se aplica porque `EX-11` mide que
+el proveedor rechaza toda modificación estando pausada — y no hay pérdida, porque no hay cobro que
+descontar: se reanuda con el contador intacto)
 
 **Autorización** — **los cuatro los cerró el cap. 17**, sobre una sola regla: *una verificación
 cubre el lugar donde alguien se acordó de escribirla*. · ~~`M-AUTH-01`~~ (faltaban dos —el estado
