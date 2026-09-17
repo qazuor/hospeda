@@ -3870,6 +3870,216 @@ esas doce se exhiben.
 
 ---
 
+### F-1B-090 — El motor de qzpay expone 94 miembros y hospeda usa un tercio; cuatro namespaces enteros están en cero y nadie escucha sus eventos
+
+Leídos enteros `packages/core/src/billing.ts` (3.092), `billing-from-env.ts` (217),
+`index.ts` (32) y los 5 archivos de `adapters/` (1.383), en el ancla `c934164`.
+
+**La superficie, contada con un parser que respeta las llaves anidadas:**
+
+| namespace | métodos | | namespace | métodos |
+|---|---|---|---|---|
+| `subscriptions` | 12 | | `limits` | 7 |
+| `addons` | **11** | | `payments` | 6 |
+| `paymentMethods` | **9** | | `plans` | 5 |
+| `customers` | 8 | | `promoCodes` | **5** |
+| `invoices` | 7 | | `entitlements` | 5 |
+| | | | `metrics` | **5** |
+| | | | `checkout` | 5 |
+
+**85 métodos en 12 namespaces**, más **9 miembros sueltos** (`on`, `once`, `off`,
+`getPlans`, `getPlan`, `isLivemode`, `getStorage`, `getPaymentAdapter`, `getLogger`):
+**94 direccionables**.
+
+**Cuatro namespaces enteros no los llama hospeda ni una vez.** Contadas las llamadas
+`billing.<ns>.<método>(` sobre `apps/api/src`, `packages/service-core/src` y
+`packages/billing/src`, sin tests:
+
+| namespace | llamadas |
+|---|---|
+| `subscriptions` | 119 |
+| `plans` | 55 |
+| `customers` | 47 |
+| `limits` | 20 |
+| `entitlements` | 15 |
+| `payments` | 15 |
+| `checkout` | 6 |
+| `invoices` | 1 |
+| **`promoCodes`** | **0** |
+| **`addons`** | **0** |
+| **`paymentMethods`** | **0** |
+| **`metrics`** | **0** |
+
+Los cuatro en cero suman **30 de los 85 métodos**. Y no es que esas funciones no existan en
+hospeda: promos, addons y métricas de billing están implementados **de nuevo** del lado de
+hospeda —`service-core/…/promo-code/` (4.117 líneas), los 23 archivos de addon de
+`apps/api`, `billing-metrics.service.ts`— sobre las mismas tablas que el motor modela.
+
+**Nadie escucha los eventos que el motor emite.** `billing.ts` emite más de veinte tipos
+(`subscription.created/updated/canceled/paused/…`, `payment.succeeded/failed/refunded`,
+`invoice.*`, `checkout.created`, `addon.*`, `payment_method.*`) y las tres funciones para
+suscribirse —`on`, `once`, `off`— **no las llama nadie**: cero ocurrencias en `apps/api/src`,
+`packages/service-core/src` y `packages/billing/src`.
+
+**El motor no abre transacciones ni acepta una.** `storage.adapter.ts:120` declara
+`transaction<T>(fn)` en el contrato, y `billing.ts` **no lo invoca nunca**: `transaction(`
+da **0** ocurrencias en las 3.092 líneas. Ninguna firma de servicio recibe un `tx` del
+host. El propio código documenta la decisión donde más importa (`billing.ts:1610-1614`):
+*«The sequence cannot be made atomic: wrapping it in a SQL transaction would hold locks
+across an HTTP round-trip»*. Es la razón por la que las ventanas de compensación que
+`F-1B-045` y `F-1B-082` midieron del lado de hospeda existen.
+
+**Y hay cableado muerto dentro del propio motor.** `QZPayBillingConfig.notifications`
+—el adaptador de mail, con su tipo completo de 118 líneas en `adapters/email.adapter.ts`—
+aparece en `billing.ts` exactamente **dos veces**: la declaración del campo (`:350`) y un
+comentario ajeno (`:1212`). El constructor (`:1102-1123`) nunca lo lee. No es que hospeda
+no lo pase: es que el motor no lo usaría aunque lo pasara.
+
+**Hospeda además saltea la fachada en dos lugares.** `getStorage()` (7 call sites) se usa
+sobre todo para llegar a `subscriptionPollingJobs`, que el contrato del storage declara
+(`storage.adapter.ts:82-84`) y **ningún servicio de `billing.*` envuelve**; y
+`getPaymentAdapter()` (9 call sites) llama al proveedor crudo, sin el registro local, los
+eventos ni la estrategia de error que `billing.ts` pone alrededor de cada llamada.
+
+*Nota de método, la decimoséptima vez, y mía*: el primer conteo de las llamadas por
+namespace usó `billing\.<ns>\.` y dio 224 para `promoCodes`, 317 para `addons` y 204 para
+`metrics` — el `.` sin escapar matcheaba rutas como `@repo/billing/promo-codes`. Anclado a
+`(?<![A-Za-z0-9_])billing\.<ns>\.[a-zA-Z]+\(`, los tres dan **0**. Y el conteo de métodos
+falló dos veces antes: una porque el `(.*?)\n\}` cortaba en la primera llave anidada, y otra
+porque los métodos se declaran como **propiedades con tipo función** (`create: (input) => …`)
+y el patrón buscaba `nombre(`.
+
+---
+
+### F-1B-091 — El único endpoint donde MercadoPago EXIGE la clave de idempotencia es el único método mutante que no la manda, y encima es el único envuelto en reintentos
+
+Leídos enteros los 16 archivos de `qzpay/packages/mercadopago/src` (4.160 líneas).
+
+**El reembolso.** `payment.adapter.ts:200-227`:
+
+```ts
+async refund(input: QZPayRefundInput, providerPaymentId: string) {
+    return withRetry(async () => {            // ← :201, el ÚNICO envuelto en reintentos
+        const body = {};
+        if (input.amount) body.amount = input.amount / 100;
+        const response = await this.refundApi.create({
+            payment_id: Number(providerPaymentId),
+            body                              // ← :210-213, SIN requestOptions
+        });
+        …
+    }, this.retryConfig, 'Refund payment');
+}
+```
+
+`FASE 1C` midió que en `/refunds` el header `X-Idempotency-Key` es **obligatorio**, y que la
+idempotencia de este proveedor es **por endpoint**. Acá no se manda. Y el tipo de entrada
+tampoco lo permite: `QZPayRefundInput`
+(`qzpay/packages/core/src/types/payment.types.ts:60-64`) no declara el campo, así que
+ningún llamador podría pasarlo. El hueco está en el contrato, no sólo en el adaptador.
+
+**Los tres lugares donde sí se manda son otros.** `payment.adapter.ts:70` acuña una clave
+para `payments.create`; `checkout.adapter.ts:239` la manda a `/checkout/preferences`; y
+`subscription.adapter.ts:137` la manda a **`POST /preapproval`**, que es exactamente el
+endpoint donde `EX-17` midió que el header *«se acepta y no hace nada»*.
+
+**No es un bug activo hoy**: `billing_refunds` tiene **cero filas** en producción
+(`F-1B-009`), así que ese camino nunca corrió de verdad. Lo que está medido es el camino.
+
+**Los reintentos cubren un solo adaptador de seis.** `retry.utils.ts` lo importa
+únicamente `payment.adapter.ts` (6 call sites). Los otros cinco —`subscription`,
+`customer`, `checkout`, `price`, `card-token`— usan `wrapAdapterMethod`
+(`error-mapper.ts:181-187`), que mapea el error y **no reintenta**. El cableado lo decide
+`mercadopago.adapter.ts:76-81`: `retryConfig` se le pasa sólo al adaptador de pagos. O sea
+que **el adaptador que hospeda más usa —`subscriptions`, con sus 7 métodos alcanzados— no
+tiene reintento alguno**, y el que sí lo tiene tiene 4 de sus 7 métodos inalcanzables desde
+hospeda.
+
+**Ninguna mutación compara campo por campo después de mutar.** Revisado
+`subscription.adapter.ts:159-244`: de los cinco mutantes (`update`, `cancel`, `pause`,
+`resume`, `uncancel`), **sólo `update` relee** —llama `this.retrieve()` en `:186`— y ni
+siquiera compara: devuelve el objeto releído como resultado. No hay un solo
+`if (devuelto.campo !== enviado.campo)` en el archivo. Es la misma ausencia que `F-1B-030` y
+`F-1B-054` midieron del lado de hospeda, ahora medida en la capa que habla con el proveedor:
+**el punto donde el §0 de la matriz dice que hay que comparar es justamente donde nadie
+compara.**
+
+**Un estado que el mapa no conoce se devuelve tal cual, sin avisar.** Los tres mapas de
+estado —`MERCADOPAGO_SUBSCRIPTION_STATUS` (4 claves), `MERCADOPAGO_PAYMENT_STATUS` (9) y el
+de eventos— resuelven con `statusMap[x] ?? x` (`subscription.adapter.ts:444-447`,
+`payment.adapter.ts:377-380`). Y `mapEventType` (`webhook.adapter.ts:333-373`) termina en
+`return mpEventType` **sin ningún `logger.warn`**, mientras que la verificación de firma
+del mismo archivo (`:175-308`) loguea cada rama de fallo. Un tipo de evento desconocido pasa
+en silencio; una firma inválida deja rastro.
+
+**Y la conversión de montos es asimétrica.** La salida hacia MercadoPago divide sin
+redondear (`input.amount / 100` en cinco sitios) y la entrada siempre redondea
+(`Math.round(x * 100)` en cinco más). Los adaptadores de `subscription` y `checkout` no
+convierten de vuelta en absoluto: sus tipos de retorno no llevan ningún campo de monto, así
+que **el importe que MercadoPago realmente aplicó a una suscripción nunca se lee de vuelta
+en todo el paquete**.
+
+---
+
+### F-1B-092 — La máquina de estados de una suscripción es opcional: de los 24 archivos que escriben `status`, diez importan el guard
+
+Leídos enteros los 24 archivos de `packages/service-core/src/services/billing/`
+—`subscription/` (10), `plan/` (6), `constants.ts`, `featured/` (2), `notification/` (2),
+`settings/` (2) y el `index.ts`—, **5.273 líneas**.
+
+**El guard existe y es opt-in.** `subscription/subscription-status-transitions.ts` declara
+`validateSubscriptionStatusTransition` (`:276`) y `checkSubscriptionStatusTransition`
+(`:326`) sobre la tabla de transiciones de los 10 estados. Pero **24 archivos de
+`apps/api/src` hacen `.update(billingSubscriptions)` y sólo 10 importan alguno de los dos**.
+Dos escrituras sin guardar, leídas en sus imports:
+
+- `courtesy-grant.service.ts:324` escribe `status: COURTESY` — su bloque de imports de
+  `@repo/service-core` (`:37-43`) no trae ninguno de los dos;
+- `subscription-comp-grant.service.ts:583` escribe `status: CANCELLED` — importa
+  `normalizeStoredSubscriptionStatus` (`:120-123`) y ninguno de los guards.
+
+Es el mismo hallazgo de forma que `F-1B-066` en los addons: una máquina de estados escrita,
+probada, y que no es el cuello por donde pasan las escrituras. La diferencia es que ésta sí
+tiene diez consumidores.
+
+**El catálogo de eventos declara 58 tipos y 14 no los escribe nada.**
+`constants.ts` define `BILLING_EVENT_TYPES` con 58 claves. Buscando cada una como
+`BILLING_EVENT_TYPES.<CLAVE>` sobre `apps/api/src` y `packages/*/src` sin tests, catorce dan
+cero:
+
+```
+PLAN_CHANGE_LOCAL_FAILED       PLAN_CHANGE_MP_PROPAGATION_FAILED   ADDON_EXPIRED
+ADDON_LIMIT_RECALCULATED       DUNNING_ATTEMPT_CREATED             DUNNING_ATTEMPT_SUCCEEDED
+DUNNING_ATTEMPT_FAILED         PROMO_CODE_REDEEMED                 PROMO_CODE_EXPIRED
+NOTIFICATION_SCHEDULED         TRIAL_BLOCKED                       REACTIVATION_AUDIT_FAILED
+TRIAL_PRE_END_NOTIF_D1         TRIAL_PRE_END_NOTIF_D3
+```
+
+Dos de esos catorce están **retirados a propósito** y el propio módulo lo declara
+(`constants.ts:158-161`): los `TRIAL_PRE_END_NOTIF_*` se conservan para que las filas
+históricas sigan significando algo — y son los mismos dos que `F-1B-074` encontró
+congelados en el predicado de un índice único. Los tres de `DUNNING_ATTEMPT_*` cruzan con
+`F-1B-026`: el cron de dunning tiene sus dos operaciones apagadas por una constante, así que
+no hay quién los escriba.
+
+**Y `plan.crud.ts` (1.201 líneas) descarta la causa de todos sus errores.** El archivo no
+importa ningún logger ni Sentry, y sus **nueve** bloques `catch (_error)` —`:282`, `:331`,
+`:381`, `:571`, `:877`, `:949`, `:1007`, `:1106`, `:1192`— nunca leen la variable: devuelven
+`{ success: false, error: { code: INTERNAL_ERROR, message: '<genérico>' } }`. Un
+`Error('Plan insert returned no row')` que el mismo archivo lanza en `:515` muere ahí.
+
+**`settings/billing-settings.service.ts` falla al revés según la operación.** `getSettings`
+(`:140-170`) envuelve su consulta en un `try/catch` que devuelve `DEFAULT_SETTINGS` (`:166`):
+un error de base es indistinguible de «no hay configuración guardada». `updateSettings`
+(`:195-249`) y `resetSettings` (`:269-311`) **no tienen `catch`**: cualquier error propaga.
+La misma clase falla en silencio al leer y a los gritos al escribir.
+
+Dato que importa para el §9 del PDR: **los 11 campos de `BillingSettings` salen de la base**
+—la fila `key='global'` de `billing_settings`, mezclada sobre el default de TypeScript
+(`:161-162`)—, así que la constante es el valor inicial y no una fuente paralela. Es la
+excepción al patrón que `F-1B-033` midió para entitlements y limits.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
