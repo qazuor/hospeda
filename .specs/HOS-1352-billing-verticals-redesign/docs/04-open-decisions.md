@@ -329,9 +329,18 @@ sostenía capacidad en uso
 ante un cambio de plan · `E-PROMO-01` extensión aplicada el día del vencimiento · `A-PROMO-02`
 combinación de promo, cortesía y grant
 
-**Autorización** · `M-AUTH-01` faltan el estado del recurso y el de la persona · `M-AUTH-02`
-actor administrativo · `A-AUTH-01` el rol al perder el acceso · `S-AUTH-01` scope de vertical
-estructural, no un chequeo
+**Autorización** — **los cuatro los cerró el cap. 17**, sobre una sola regla: *una verificación
+cubre el lugar donde alguien se acordó de escribirla*. · ~~`M-AUTH-01`~~ (faltaban dos —el estado
+del recurso y el de la persona— y sobraba una: el scope de vertical sale de la lista porque pasa a
+ser estructural. Quedan nueve pasos en orden, resueltos en un solo lugar; el paso del recurso
+responde «no existe» a las tres cosas, y el estado de la persona va antes que el permiso) ·
+~~`M-AUTH-02`~~ (actor y sujeto son dos campos siempre presentes: no agrega un modo especial, lo
+elimina. `actor ≠ sujeto` exige permiso de esa acción concreta, es auditable sin excepción, no
+hereda entitlements del sujeto, y **no existe la impersonación**) · ~~`A-AUTH-01`~~ (el rol
+**nunca** se revoca al perder el acceso, y la otra mitad es que ninguna autorización decida sólo
+por rol; queda como guard: ninguna transición de suscripción ni de trial escribe roles) ·
+~~`S-AUTH-01`~~ (ninguna operación de dominio se puede expresar sin su vertical, con guard; lo
+global es la **fuente**, nunca la operación, así que la regla no tiene excepciones)
 
 **Datos y legal** · ~~`R-DATA-01`~~ **resuelto por `DEC-DATA-001`** (los dos avisos tapan el silencio) · ~~`M-DATA-01`~~ **cerrado por el cap. 02** (la lista de qué se borra, qué se anonimiza y qué se conserva; la fila de `trial` sobrevive al borrado por el §10.2) · **`M-LEGAL-01`** baja online y derecho de revocación — parcialmente cerrado por `DEC-RF-001` (el mecanismo: reembolso + cancelación en un acto). **Sigue abierto lo normativo**, con las preguntas ya formuladas para el abogado — sobre todo **si cada renovación abre una ventana nueva de 10 días o corre una sola vez desde el alta**, que cambia el diseño · `M-LEGAL-02` finalidad de las
 señales de identidad · **`M-LEGAL-03` política de notificación de aumento** — sigue abierto tras `DEC-MP-002` y creció a **tres preguntas, ninguna verificada**: (1) si existe un plazo normativo de antelación para aumentos —no se encontró, los dos meses son decisión comercial—; (2) el **botón de baja**, que no se pueda exigir registro ni trámite para cancelar y haya que confirmar en 24 h con un código; y (3) la más pesada, **si el silencio del cliente vale como aceptación** de una modificación del contrato. La (3) es estructural: si no alcanza, `DEC-MP-002` cambia de forma —haría falta aceptación activa, y a quien no responda no se lo podría aumentar—. Las tres piden revisión profesional, no una búsqueda web. **El owner decidió avanzar así y corregir si la consulta dice otra cosa** (2026-09-16); la (3) conviene resolverla **antes de implementar** el punto 5, porque cambiaría el diseño y no sólo la redacción
