@@ -3264,6 +3264,106 @@ serie no lo deduplica nada hasta que se escriba una migración.
 
 ---
 
+### F-1B-075 — La duración de un trial sale de dos lugares distintos según quién lo arranque, y las dos ramas terminan en la misma constante
+
+`F-1B-048` midió que la duración real no sale de la fila del plan ni de la del precio.
+Leídos los dos caminos que crean un trial sin tarjeta, el reparto exacto es éste:
+
+| camino | de dónde saca los días | si falla |
+|---|---|---|
+| **alojamiento** (primera publicación) | nada: `createTrialSubscription` aplica su default | — |
+| **commerce** (gastronomía / experiencia) | `billing_plans.metadata.trialDays` (`commerce-trial-start.service.ts:156`) | cae al default del creador |
+
+El default es un literal de TypeScript:
+`subscription-trial-create.service.ts:150` hace
+`const trialDays = input.trialDays ?? OWNER_TRIAL_DAYS`, y `OWNER_TRIAL_DAYS = 30` vive en
+`packages/billing/src/constants/billing.constants.ts:17`.
+
+**La caída de commerce pasa por un cero.** `resolveCommerceTrialPlan` valida que el
+`metadata.trialDays` sea un entero positivo y, si no lo es, deja `undefined`, avisa por log
+—*«commerce trial plan declares no usable trialDays — falling back to the creator
+default»* (`:165-168`)— y **devuelve `trialDays: 0`** (`:170`). Río abajo, `:343` omite el
+campo cuando vale 0:
+
+```ts
+...(plan.trialDays > 0 ? { trialDays: plan.trialDays } : {}),
+```
+
+así que el `??` del creador resuelve a los mismos 30 días. **El cero no es una duración:
+es la forma de decir «usá el default», y viaja como número.**
+
+O sea: la columna `metadata.trialDays` existe en las filas de plan, sólo la lee el camino
+de commerce, y cuando la lee mal termina en la misma constante que el camino que nunca la
+mira. `F-1B-048` ya midió que esa metadata vale `30` en las seis filas de planes de
+`accommodation` — el mismo número que el literal, así que hoy las dos fuentes coinciden y
+la divergencia no se nota.
+
+**Y hay un tercer número que no es duración de nada**: `subscription-comp-create.service.ts:75`
+declara `COMP_PERIOD_MS = 100 * 365 * 24 * 60 * 60 * 1000` y lo usa como
+`currentPeriodEnd`. Es la forma de satisfacer el `NOT NULL` de esa columna en el esquema de
+qzpay con un período que nunca vence.
+
+---
+
+### F-1B-076 — La elegibilidad para un trial no atrapa un solo error, y el caso sin evidencia falla cerrado a propósito
+
+`apps/api/src/services/billing/trial-eligibility.service.ts` decide si alguien puede
+arrancar un trial. Tiene **cero bloques `try`/`catch`** —verificado con el patrón anclado
+`}\s*catch\s*\(`, que da 0— así que un fallo de base en cualquiera de sus dos consultas
+—`billing.subscriptions.getByCustomerId` (`:285`) o la de `billing_subscription_events`
+(`:232`)— se propaga como excepción a sus **cuatro** llamadores:
+`commerce-trial-start.service.ts:250` y `:313`, `accommodation-publish-deps.ts:200` y
+`routes/billing/trial-eligibility.ts:106`.
+
+No hay fail-open ni fail-closed programático ante un error de conexión: hay una excepción.
+Lo que sí está decidido y escrito es qué hacer ante un **dato ausente**, que es otra cosa.
+
+**La clasificación, completa:**
+
+| grupo | estados | ¿consume el trial? |
+|---|---|---|
+| `NEVER_AUTHORIZED_STATUSES` (`:108-111`) | `pending_provider`, `abandoned` | **no** |
+| `AUTHORIZED_STATUSES` (`:130-136`) | `active`, `trialing`, `past_due`, `paused`, `expired` | **sí** |
+| tratado como consumido aparte (`:149-155`) | `comp` | **sí** |
+| ambiguo, se resuelve por historial | `cancelled` | depende |
+
+`cancelled` está deliberadamente fuera de los dos conjuntos porque se alcanza desde las dos
+orillas, y el docblock (`:119-129`) lo explica: `active`/`trialing` → `cancelled` consumió
+el trial, y `pending_provider` → `cancelled` —alguien que abandonó la página de
+MercadoPago— no. Se dirime consultando `billing_subscription_events`.
+
+**Y una fila `cancelled` sin ningún evento falla CERRADO, con la razón escrita**
+(`:211-215`): *«with an empty audit trail there is no evidence in either direction, and the
+two mistakes do not cost the same»*. Se elige hacia dónde fallar, no cuál caso es más
+probable.
+
+**Del otro lado, la expiración local trata dos cosas distintas como la misma.**
+`expireLocalTrial` (`trial-local-expiry.service.ts:325`) corta con:
+
+```ts
+if (!subscription.trialEnd || subscription.trialEnd > now) {
+    return { outcome: 'not-elapsed' };
+}
+```
+
+Una fila **sin fecha** y una fila **cuya fecha todavía no llegó** devuelven el mismo
+`'not-elapsed'`. Es la confirmación por el lado del código del hueco que `F-1B-048` midió
+por el lado de los datos: una `trialing` con `trial_end` nulo no vence nunca, y el
+resultado no la distingue de una que simplemente está en curso. En producción hoy no
+existe ninguna.
+
+Ese servicio además sólo mira los trials **sin tarjeta**: `:321-323` sale con
+`'has-provider-id'` si la fila tiene `mpSubscriptionId`. Los de tarjeta los expira el otro
+mecanismo, `reconcileExpiredTrials`, que re-lee la preapproval. Son dos caminos disjuntos
+para el mismo hecho, separados por una columna.
+
+*Nota de método, la decimoquinta vez, y también mía*: `grep -c catch` sobre ese archivo da
+**1**, y no hay ninguno: el match es la palabra *«catches»* dentro de un comentario. El
+sub-agente había reportado cero y tenía razón; lo que falló fue mi verificación, hasta
+anclar el patrón a `}\s*catch\s*\(`.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
