@@ -3,7 +3,7 @@ title: FASE 1B — discovery del sistema actual, sólo contra el código
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-09-17
 status: CURRENT
 ---
 

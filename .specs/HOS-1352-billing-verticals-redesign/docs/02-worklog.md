@@ -3,7 +3,7 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-17
 status: CURRENT
 ---
 
@@ -511,6 +511,73 @@ relectura **obligatoria**.
 Y una lección que costó dos corridas: **para atribuir un evento a una acción
 hay que espaciar las acciones más que la demora máxima de entrega**. Con 1,4 s
 era imposible; con 20 s seguía siendo ambiguo; con 90 s es una lectura.
+
+---
+
+## 2026-09-16 y 09-17 — FASE 1B, y un hueco de este mismo documento
+
+> **Este worklog no tiene entradas de FASE 1B entre el 2026-09-15 y hoy.** Las hay: son 104
+> hallazgos, `F-1B-001` a `F-1B-104`, escritos en
+> [`08-phase-1b-code-discovery.md`](./08-phase-1b-code-discovery.md), que hizo de registro.
+> No se reconstruyen acá hacia atrás —el §3.2 pide un registro cronológico, no uno inventado
+> después— pero queda anotado que **el registro de 1B vive en `08`, no en este archivo**.
+
+### Lo que se cerró el 2026-09-17
+
+Tres carriles, en el orden que pedía el handoff.
+
+**1. La sonda que `F-1B-093` no había podido correr, anda.** Los dos intentos anteriores
+fallaron —uno por resolución de módulos de `tsx`, el otro matado por el techo de cinco
+minutos—. Escrita como test de vitest dentro de `apps/api`, construye la app con `initApp()`
+y vuelca `app.routes` más el documento OpenAPI **en 31 segundos**. Reproduce los seis números
+de `F-1B-016` exacto.
+
+Lo que agregó no es el número sino su condición: **los 1.032 handlers se miden con billing sin
+inicializar**, y la causa está medida y no inferida — el mock global de `@repo/db` de
+`apps/api` no exporta `createBillingAdapter`, el `catch` de `getBillingInstance` se lo traga, y
+las dos fábricas de qzpay devuelven routers vacíos. Faltan 48 rutas y todo el webhook de
+MercadoPago. `F-1B-105` a `F-1B-108`.
+
+De paso corrigió dos atribuciones: los 9 handlers de billing fuera del contrato **no son de
+qzpay** (cinco son un 404 que hospeda registra a propósito), y `createBillingRoutes` declara
+**34** registros y no 30.
+
+**2. `apps/api/src/services` quedó en 185 de 185 archivos.** Los 74 que este registro no citaba
+—19.654 líneas— se leyeron en siete carriles delegados con contrato de evidencia estricto.
+`F-1B-109` a `F-1B-119`.
+
+Dos correcciones a hallazgos anteriores salieron de ahí y se verificaron a mano antes de
+escribirlas: de los dos módulos de métricas de billing **sólo uno está montado** (`F-1B-077`
+los contaba a los dos, por confundir `routes/metrics/` con `routes/billing/metrics.ts`), y el
+segundo puente de reconciliación tiene **12** call sites y no 13 (`F-1B-062` contaba la
+declaración).
+
+**3. Qué agregan las 125 migraciones estructurales.** `F-1B-120` a `F-1B-122`. El hallazgo que
+cruza con el resto del relevamiento: de las 21 columnas que hospeda le agregó a tablas
+`billing_*`, **trece caen sobre tablas que modela qzpay, y las trece son invisibles para sus
+mappers de lectura** — verificado leyendo el fuente de qzpay en el ancla, no citando
+`F-1B-096`.
+
+### Cómo se trabajó, y qué falló
+
+Siete sub-agentes en paralelo, cada uno con el contrato de evidencia del `08` en el prompt
+—`archivo:línea` obligatorio, el docblock no vale como prueba, contar el denominador antes de
+recorrerlo, sin juicios— y el contexto ya medido que necesitaban para orientarse.
+
+**Se verificaron a mano las siete afirmaciones más graves antes de escribir ninguna**: el
+módulo de métricas no montado, el tamaño del archivo contra su propio docblock, la lectura de
+credencial fuera del `try`, los call sites del puente, el `JOIN` ausente de `getSystemUsage`,
+los imports de `certificate-render.ts` y los mappers de qzpay. **Las siete se sostuvieron**, y
+dos afinaron un número que el sub-agente había redondeado.
+
+Dos trampas de medición nuevas, que van al contador:
+
+1. **Comparar `app.routes` contra el documento OpenAPI sin normalizar las dos grafías de
+   parámetro** (`:id` contra `{id}`) marca como «no documentada» a **toda** ruta parametrizada:
+   149 en vez de 49. Fue el primer resultado y era todo falso.
+2. **El `ADD COLUMN` número 182 está dentro de un comentario** (`0123_brief_nebula.sql:3`, que
+   explica un modo de falla citando la frase). Son 181. Tercera vez que la causa de un conteo
+   inflado es la propia documentación del código.
 
 ---
 

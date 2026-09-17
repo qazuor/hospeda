@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-16
+updated: 2026-09-17
 status: CURRENT
 ---
 
@@ -32,7 +32,82 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-16
+## Última actualización: 2026-09-17
+
+### Dónde estamos
+
+**FASE 1B en curso y con sus tres carriles grandes cerrados.** El registro de 1B es
+[`08-phase-1b-code-discovery.md`](./08-phase-1b-code-discovery.md) — **122 hallazgos**,
+`F-1B-001` a `F-1B-122` —, y **no** el worklog, que no tiene entradas de 1B entre el 15 y el 17
+(anotado allá como hueco, no reconstruido hacia atrás).
+
+> ⚠️ **Todo lo que sigue de esta sección hacia abajo quedó del 2026-09-16 y describe 1C.**
+> En particular, la tabla «Estado por fase» dice que **FASE 1B está bloqueada por
+> `DEC-METH-001`**, y eso ya no rige: el owner levantó ese bloqueo el 2026-09-16 y 1B corrió.
+> Se conserva por la misma razón que el resto del histórico.
+
+**La regla de fuentes de 1B es más angosta que la del PDR, por decisión del owner (2026-09-16):
+la única fuente admitida es el CÓDIGO**, en los dos repos —hospeda y `qzpay`—. Ni docs del
+repo, ni specs, ni engram, ni Linear. El motivo está medido: el 2026-09-15 se borraron 94
+archivos de documentación de billing, 149 observaciones de engram y 303 issues. Las anclas son
+refs remotos, nunca el working tree: hospeda `60a39dae2`, qzpay `c934164`.
+
+**Y el encuadre del owner para 1B, textual**: *«el código y tablas y configs de todo lo
+referente a billing está súper desastroso, desorganizado, desparramado, duplicado, así que vos
+sólo relevá todo, después analizaremos qué queda y qué no»*. O sea: **no se pregunta si algo es
+deliberado**; se anota con su evidencia y se sigue. `KEEP`/`ADAPT`/`REWRITE` es FASE 5 y tiene
+su propio gate (`DEC-METH-003`).
+
+#### Carriles cerrados al 2026-09-17
+
+| carril | estado |
+|---|---|
+| `apps/api/src/services` | ✅ **185 de 185 archivos / 64.191 líneas** |
+| `packages/service-core/src/services/billing` | ✅ 52 de 52 / 14.254 líneas |
+| Superficies Web y Admin | ✅ 15 de 15 y 22 de 22 |
+| Los 47 crons, por dentro | ✅ 47 de 47 |
+| Los 1.032 handlers **por tier** | ✅ `F-1B-107` — y `F-1B-105` fija que 1.032 es un **piso** |
+| Las 125 migraciones estructurales | ✅ qué agregan y qué quitan, `F-1B-120` a `F-1B-122` |
+| Los 90 `pgEnum`, los 836 índices, las 399 FK, los 132 triggers | ✅ |
+| qzpay entero salvo tests y ejemplos | ✅ core 96 %, drizzle 65/68, mercadopago 16/16 |
+
+#### Lo que queda abierto de 1B
+
+1. **Qué hace cada uno de los 1.032 handlers, uno por uno** — el reparto por tier está medido,
+   el contenido no.
+2. **Re-medir la tabla de rutas con billing inicializado.** Necesita una base alcanzable. El
+   delta conocido son las 48 rutas ausentes de `F-1B-105`.
+3. **Los 16 archivos de ruta donde la matriz de gates y el código no coinciden** (`F-1B-038`),
+   leídos uno por uno. Son **sospechosos**, no discrepancias: el primer barrido ya demostró ser
+   un patrón mal escrito.
+4. **Las 358 FK internas de hospeda**: la frontera billing↔dominio está medida (`F-1B-085`), el
+   resto del grafo no.
+5. **`hono` y `react` de qzpay**, los 50 archivos leídos enteros (hoy están medidos por consumo
+   y por conteo de rutas).
+6. **Los tests, como evidencia de intención** — sin empezar.
+7. **Los vocabularios compartidos que no son el de suscripción**: pago, factura, reembolso,
+   addon.
+
+#### Método de 1B, que conviene no reinventar
+
+- **Delegar la lectura masiva a sub-agentes con el contrato de evidencia en el prompt**
+  (`archivo:línea` obligatorio, el docblock no es prueba, contar el denominador antes de
+  recorrerlo, sin juicios, `model: sonnet`) — **y verificar a mano sus afirmaciones más
+  graves.** Fallaron muchas veces en detalles que daban vuelta el hallazgo, y dos veces
+  tuvieron razón contra la verificación.
+- **Van veinte trampas de medición**, y unas ocho fueron propias. Están inventariadas en el
+  `08`. La que más se repite: `rg -l <símbolo>` matchea menciones dentro de un comentario o un
+  `@example`.
+- **Producción se consulta** con `hops --target=prod psql` por SSH, pasando la consulta en
+  base64. **Salida vacía = error tragado**, no cero filas: partir las consultas.
+- **La tabla de rutas se vuelca** con
+  [`probes/probe-45-volcar-la-tabla-de-rutas.test.ts.txt`](./probes/probe-45-volcar-la-tabla-de-rutas.test.ts.txt),
+  copiado a `apps/api/test/` y corrido con `CI=true pnpm exec vitest run`. **No se commitea**;
+  se borra al terminar.
+
+---
+
+## Histórico: 2026-09-16 — FASE 1C
 
 ### Dónde estamos
 
@@ -200,7 +275,6 @@ Sus dos criterios, que ya resolvieron ocho puntos:
 > relojes y las filas abiertas que menciona ya no son los vigentes.** Se conserva porque el
 > histórico de qué se creía en cada momento es parte del registro de este programa.
 
-
 ### Último punto completado
 
 **FASE 0 completa. FASE 1A entregada y COMPLETAMENTE respondida: las 25 preguntas cerradas.
@@ -278,6 +352,8 @@ source ~/.config/hospeda/mp-sandbox-creds.sh && \
 > legible: si no cobró nada, el hallazgo es otro y no hay que forzar una conclusión sobre el
 > monto. Manifiesto versionado en
 > [`manifiesto-propaga-2026-09-15.json`](./mp-probes/manifiesto-propaga-2026-09-15.json).
+
+<!-- separador: son dos notas distintas, no una sola cita -->
 
 > **Ruido en el sink de webhooks**: las sondas 33 a 37 crearon ~20 suscripciones en el sandbox,
 > y el webhook de la app de prueba apunta al receptor propio. Al leer el sink mañana para
