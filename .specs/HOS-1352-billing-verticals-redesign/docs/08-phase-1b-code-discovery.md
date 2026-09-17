@@ -814,6 +814,60 @@ número ni en efecto.
 
 ---
 
+### F-1B-021 — Una columna sin restricción, tres vocabularios de estado y dos mapas de traducción
+
+`billing_subscriptions.status` es `varchar(50)` sin `CHECK` ni tipo `enum`
+(`F-1B-007`). Lo que se escribe ahí sale de **tres** vocabularios distintos:
+
+| fuente | dónde | valores |
+|---|---|---|
+| **qzpay** | `qzpay/packages/core/src/constants/subscription-status.ts` | 8: `active`, `trialing`, `past_due`, `paused`, **`canceled`**, `unpaid`, `incomplete`, `incomplete_expired` |
+| **hospeda** | `packages/schemas/src/enums/subscription-status.enum.ts` | 10: `active`, `trialing`, `past_due`, `paused`, **`cancelled`**, `expired`, `pending_provider`, `abandoned`, `comp`, `courtesy` |
+| **MercadoPago**, de paso | llega por el `mapStatus()` de `qzpay-mercadopago` | al menos `finished` y `pending` |
+
+Sólo **cuatro** valores coinciden verbatim entre qzpay y hospeda: `active`, `trialing`,
+`past_due`, `paused`. La cancelación **no** coincide: qzpay escribe `canceled` (una L) y
+hospeda `cancelled` (dos).
+
+**Y hay dos mapas de traducción, en direcciones distintas, que el código pide
+explícitamente no unificar:**
+
+| mapa | dónde | qué traduce | claves |
+|---|---|---|---|
+| `QZPAY_TO_HOSPEDA_STATUS` | `packages/service-core/…/subscription-status-provider.ts:44` | el estado **entrante** de `retrieve()` | 6: `active`, `paused`, `canceled`, `finished`, `past_due`, `pending` |
+| `QZPAY_STORED_STATUS_ALIASES` | `packages/billing/src/predicates/subscription-status-normalize.ts:75` | el valor **ya guardado** en la base | 8: las de qzpay, con `unpaid`→`past_due`, `incomplete`→`pending_provider`, `incomplete_expired`→`abandoned` |
+
+El segundo lo dice en su propio comentario (`:62-67`): *«NOT the same map… that one maps
+the INCOMING retrieve() status (has finished/pending, never incomplete); this one maps
+the STORED DB from status (has incomplete/unpaid). Do NOT merge»*.
+
+**Consecuencia medible: el mapa de entrada no cubre cuatro de los ocho estados de
+qzpay** — `trialing`, `unpaid`, `incomplete` e `incomplete_expired` no son claves suyas.
+Y el camino para una clave ausente está en
+`apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts:640-649`:
+
+```ts
+if (providerStatus === undefined) {
+    apiLogger.warn(…, `Unknown QZPay subscription status: ${qzpayStatus}`);
+    Sentry.captureException(…);
+    return { success: true, statusChanged: false, outcome: 'provider_status_unknown' };
+}
+```
+
+Devuelve **`success: true`** sin cambiar nada. A diferencia de los caminos de
+`F-1B-019`, éste **sí avisa** —Sentry más un `warn`—, así que no es silencioso; el
+webhook se da por procesado igual.
+
+El mapa tiene **tres consumidores reales** —`trial.service.ts:1074`,
+`preapproval-recovery.service.ts:95` y `subscription-logic.ts:628`— y aparece citado en
+unos veinte comentarios más como referencia.
+
+*Qué abre, sin resolverlo acá*: el §63 pide una máquina de estados explícita para
+Subscription. Hoy los estados posibles están declarados en dos enums de dos repos, más
+lo que el proveedor cuele, sobre una columna que no restringe nada.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -847,5 +901,6 @@ Y en **qzpay**, con el mismo criterio:
 | `mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C | 16 archivos | ⬜ |
 | `hono` y `react` — las superficies que hospeda monta | 50 archivos | ⬜ |
 | La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
-| El vocabulario: `QZPAY_TO_HOSPEDA_STATUS` y quién lo esquiva (pista de `F-1B-005`) | por medir | ⬜ |
+| ~~El vocabulario de estados y sus mapas~~ | — | ✅ `F-1B-021` |
+| Los otros vocabularios compartidos: pago, factura, reembolso, addon | por medir | ⬜ |
 | `stripe`, `nestjs`, `cli`, `dev` — sin consumidor en hospeda | 85 archivos | ⬜ |
