@@ -629,3 +629,75 @@ autorización (`EX-5`) y varias autorizaciones conviviendo (`EX-6`), un addon re
 puede implementar de dos maneras y las dos funcionan. Está planteada con su cuadro y una
 recomendación en `04-open-decisions.md`. Lo demás que falta del owner es **habilitación, no
 decisión**.
+
+---
+
+## 2026-09-17 — Cierre de FASE 1B y arranque de FASE 2
+
+### Qué pasó, en orden
+
+**De madrugada, tres hallazgos que cerraron el último carril grande de 1B.** El carril era **la
+frontera conceptual qzpay↔hospeda**: siete hallazgos previos la tocaban de costado y ninguno la
+enunciaba entera.
+
+- **`F-1B-130`** — el módulo que existe para desambiguar las dos grafías de «cancelada» opera hoy
+  sobre **cero filas**, y la cifra de producción que su docblock cita para justificarse no se
+  reproduce contra la base: al 2026-08-15, fecha del módulo, la tabla tenía **dos** filas.
+- **`F-1B-131`** — **«cancelar a fin de período» desde el admin ejecuta todos los efectos de una
+  baja inmediata menos el status**: revoca addons, despublica la ficha de comercio y limpia
+  entitlements el mismo día, mientras la fila sigue `active`. Y es la opción **por defecto** del
+  diálogo. Cadena verificada eslabón por eslabón. Contradice el §24 y `DEC-SUB-009`. **No se
+  tocó** (§4).
+- **`F-1B-132`** — la frontera, enunciada: **seis repartos sobre las mismas 27 tablas y ninguno
+  coincide**. Hospeda tiene el DDL y la decisión, qzpay el modelo y la superficie; la escritura va
+  **14 tablas a 13** (205 escrituras crudas de hospeda, medidas); el vocabulario de estados no lo
+  gobierna nadie. Y **el corte no es por entidad sino por camino**.
+
+**Al mediodía arrancó FASE 2.** El owner aprobó el eje **híbrido** —núcleo transversal, después
+subdominios, después ejecución—, con **22 capítulos, un archivo cada uno**, en `09-master-spec/`.
+
+**La Parte I quedó completa el mismo día** — los 10 archivos de `00` a `09` — y con ella **30 de
+los 72 huecos técnicos cerrados**.
+
+### Por qué así
+
+El owner preguntó explícitamente si la spec se estaba escribiendo *«habiendo analizado todo el
+código actual»*, con marcas de qué se reusa y qué se reescribe. **No, y es deliberado**: eso es
+FASE 5. El §0 prohíbe que la implementación existente condicione el diseño, y `DEC-METH-003` puso
+la clasificación detrás de un gate. FASE 1B ya relevó el código —132 hallazgos con `archivo:línea`—
+y ese registro es el insumo de FASE 5, **no fuente de diseño de FASE 2**.
+
+### Dos decisiones nuevas, las dos del owner
+
+- **`DEC-ARCH-003`** — los dos `SUSPENDED` del PDR se separan; el del trial es **`TRIAL_EXPIRED`**.
+- **`DEC-OBS-001`** — `RECONCILIATION_REQUIRED` avisa por listado accionable más correo
+  **agregado**, no uno por evento.
+
+Con eso son **45 decisiones** y **cuatro apartamientos declarados** del PDR.
+
+### Una corrección propia, registrada y no escondida
+
+El capítulo 03 afirmaba que los eventos del proveedor **no traen orden confiable**, y sobre esa
+premisa justificaba la regla de no-retroceso. **Era falsa**: `EX-2` está `VERIFIED` y mide que el
+cuerpo trae un contador **`version` monótono por recurso**. La conclusión —releer el recurso en vez
+de creerle al evento— no cambió, porque un evento ordenado sigue sin decir el estado actual; lo que
+cambió es la razón, y ahora el contador **se usa**: descarta un evento viejo sin gastar una
+relectura.
+
+Es el tipo de defecto que este programa persigue: una razón caduca debajo de una conclusión
+correcta, que ningún test ve.
+
+### Un error operativo, corregido
+
+Un `git add` de un **directorio** —no de archivos sueltos— coló al repo
+`probe-08-webhook-sink/.wrangler/cache/wrangler-account.json`, con el account ID de Cloudflare del
+owner. Sacado con `git rm --cached` y `.wrangler/` agregado al `.gitignore` (`1ee6347f0` →
+`561183907`). El scanner de secretos del pre-commit **no lo frenó**: un account ID no matchea
+ningún patrón de credencial.
+
+### Qué queda para la próxima sesión
+
+1. **Leer los tres relojes** —`pausa-real` y `renov-falla3` en sandbox, `apagon` en producción—,
+   que vencen el mismo 2026-09-17 y contestan **cinco de las ocho filas `UNKNOWN`**. Comandos y
+   horas exactas en [`03-handoff.md`](./03-handoff.md).
+2. **Seguir por el capítulo 10** de la Master Spec.

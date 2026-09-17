@@ -1817,15 +1817,54 @@ Cada entrada lleva, según §3.4:
 - **Origen**: `M-ARCH-01` · §10.6 · §20 · §21 · §63. Cerrado por el capítulo 01 de la Master
   Spec; el nombre lo aprobó el owner el 2026-09-17.
 
+### DEC-OBS-001 — `RECONCILIATION_REQUIRED` avisa por un listado accionable y un correo AGREGADO, no uno por evento
+
+- **Fecha**: 2026-09-17 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el §22.1 ordena, **siempre** que el sistema llegue a ese estado, cinco cosas — y
+  la tercera es *«enviar email a `SUPER_ADMIN`»*, sin condición ni agrupamiento. Un incidente de
+  webhooks genera cientos de eventos idénticos: con un correo por evento, **el canal deja de
+  leerse justo cuando importa**. El requisito real lo enuncia el propio §22.1 al cerrar: *«El
+  objetivo es que SUPER_ADMIN esté al tanto y pueda intervenir»*.
+- **Alternativas**: (1) listado accionable en Admin como canal primario más un correo **agregado**
+  con ventana de frecuencia; (2) un correo por evento, tal como lo escribe el §22.1; (3) sólo el
+  listado, sin correo.
+- **Decisión**: **(1)**.
+  - **Canal primario**: el listado accionable en Admin — que el §22.1 **ya contempla** en su
+    cuarto punto.
+  - **El correo es agregado**: un resumen cada N minutos con el conteo por tipo y los sujetos
+    afectados. `N` es configuración (§9).
+  - **Excepción**: un evento **único y grave** —un doble cobro real detectado, un reembolso que
+    falló sobre una revocación— manda **su propio correo**, sin esperar la ventana.
+  - **La agrupación es por tipo + sujeto**, así que cientos de eventos de un mismo incidente
+    colapsan en una línea con su conteo.
+  - **Lo que NUNCA se agrupa es el registro**: el evento crítico se escribe uno por uno, siempre.
+    Lo que se agrupa es el aviso.
+- **Motivo**: cumple el objetivo que el §22.1 enuncia sin el modo de falla que su letra produce.
+  La (2) es la que apaga el canal. La (3) incumple el §22.1 sin compensarlo con nada: si nadie
+  mira el Admin ese día, nadie se entera.
+- **Implicaciones**:
+  1. **Apartamiento declarado del §22.1**, que dice *«enviar email a `SUPER_ADMIN`»* sin
+     condición. El PDR no se edita (§3.1): queda registrado acá. Es el **cuarto** apartamiento del
+     programa.
+  2. **Los otros cuatro puntos del §22.1 se cumplen literalmente**: evento crítico registrado,
+     información suficiente para investigar, alerta en Admin, y cero decisiones destructivas
+     automáticas.
+  3. **La ventana de agregación es un riesgo declarado**: entre que ocurre el primer evento y sale
+     el resumen pasan hasta `N` minutos. Para el caso que no puede esperar está la excepción, y
+     **qué eventos entran en esa excepción es una lista cerrada** que el capítulo 08 declara.
+  4. Se cruza con la jerarquía de supresión del capítulo 07: este correo es **transaccional no
+     suprimible**, y un rebote duro sobre él se escala como no entregable.
+- **Origen**: `R-OBS-01`, `S-OBS-01` · §22.1 · §50. Cerrado por el capítulo 08 de la Master Spec.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **44** |
+| Decisiones tomadas | **45** |
 | De metodología | 3 |
-| Funcionales | 41 |
+| Funcionales | 42 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
@@ -1833,4 +1872,4 @@ Cada entrada lleva, según §3.4:
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
-| Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio) |
+| Apartamientos declarados del PDR | **4** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), y **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento) |

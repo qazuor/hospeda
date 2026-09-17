@@ -32,7 +32,120 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-17
+## Última actualización: 2026-09-17, mediodía — FASE 2 EN CURSO
+
+### Dónde estamos
+
+**FASE 1B cerrada** con **132 hallazgos** (`F-1B-001` a `F-1B-132`) y **FASE 2 en curso**: la
+Master Spec vive en [`09-master-spec/`](./09-master-spec/), son **22 capítulos en tres partes**, y
+la **Parte I está completa** — 10 de 22 archivos escritos.
+
+| | |
+|---|---|
+| Capítulos escritos | **10 de 22** (`00` a `09`) |
+| Huecos técnicos cerrados | **30 de 72** · quedan **42** |
+| Decisiones | **45** (4 apartamientos declarados del PDR) |
+| Filas de la matriz de MP | 89 · **8 `UNKNOWN`**, y **cinco se contestan hoy** |
+
+### ⏰ TRES RELOJES VENCEN HOY — es lo primero que hay que hacer
+
+| sujeto | entorno | vence | qué decide |
+|---|---|---|---|
+| **`pausa-real`** | sandbox | **12:28 `-03`** | **condiciona `DEC-SUB-010`**: si la fecha no corre +1 ciclo en el vencimiento 2 y 3, la decisión de la pausa **se reabre** |
+| **`renov-falla3`** | sandbox | **~12:29 `-03`** | `RN-2` por el camino del monto impagable (ARS 2.000.000) |
+| **`apagon`** | **producción** | **14:19:55 `-03`** | `RN-2` por el camino de la tarjeta apagada. Con él caen `RN-3` y `GR-1..3` |
+
+**El cobro del proveedor llega tarde y el retraso es variable** (~26 a 33 min medidos), así que la
+lectura útil es **una media hora después** de cada vencimiento, no en el minuto exacto.
+
+```bash
+# sandbox — lee los 8 sujetos del reloj, pausa-real y renov-falla3 incluidos
+cd .specs/HOS-1352-billing-verticals-redesign/docs/mp-probes
+source ~/.config/hospeda/mp-sandbox-creds.sh && OUT_DIR=/tmp/mp-probe-05 bash probe-06-leer-el-reloj.sh
+
+# producción — apagon. El manifiesto de /tmp del contenedor se repuso el 17 a las 03:18
+B64=$(base64 -w0 probe-43-la-tarjeta-que-se-apaga.mjs)
+M64=$(base64 -w0 manifiesto-tarjeta-apagada-2026-09-16.json)
+ssh -p 2222 qazuor@216.238.103.219 "bash -lc \"hops --target=prod exec api -- sh -c 'echo $B64 | base64 -d > /tmp/p43.mjs && echo $M64 | base64 -d > /tmp/hos1352-tarjeta-apagada.json && LEER=1 node /tmp/p43.mjs'\""
+```
+
+> ⚠️ **El manifiesto de `/tmp/mp-probe-05` no sobrevive a un reinicio**, y sin él la sonda 06
+> aborta. La copia versionada es
+> [`manifiesto-reloj-2026-09-15.json`](./mp-probes/manifiesto-reloj-2026-09-15.json): se copia a
+> `/tmp/mp-probe-05/manifiesto.json` antes de correr.
+
+### Cómo se escribe FASE 2 — la regla de fuentes CAMBIA respecto de 1B
+
+**1B se escribió sólo contra el código. FASE 2 se escribe SIN el código.** El §0 es explícito
+—*«NO quiero que la implementación existente condicione el diseño del sistema nuevo»*, *«La
+arquitectura actual NO es la fuente de verdad»*— y el §65 lo repite al abrir la fase.
+
+Las tres fuentes admitidas son el **PDR**, una de las **45 decisiones**, y una **medición fechada**
+de la matriz o del inventario de hechos. **El registro de 1B (`08`) NO es fuente de diseño**: puede
+aparecer en un capítulo sólo como advertencia de un modo de falla ya observado, marcado como tal.
+
+Lo que el owner describe como *«esto se hace nuevo, esto se reutiliza, esto se mueve acá»* **es
+FASE 5**, no FASE 2, y tiene su propio gate (`DEC-METH-003`).
+
+### Los 22 capítulos, y por dónde seguir
+
+**Parte I — núcleo transversal ✅ COMPLETA**: `00` índice · `01` glosario · `02` modelo de datos ·
+`03` las ocho máquinas de estado · `04` invariantes · `05` idempotencia y concurrencia · `06`
+proveedor y contrato de MP · `07` outbox y notificaciones · `08` auditoría y observabilidad · `09`
+conciliación.
+
+**PRÓXIMO PASO EXACTO: el capítulo 10**, «Verticales, planes y billing options», que cierra
+`OD-ARCH-01` (retiro de un plan del catálogo) y `M-SUB-03` (vertical discontinuada).
+
+**Parte II — subdominios**: `10` verticales y planes · `11` trial · `12` suscripción · `13` pagos ·
+`14` promos, cortesías y grants · `15` entitlements y limits · `16` addons · `17` autorización ·
+`18` Partner.
+**Parte III — ejecución**: `19` superficies · `20` testing · `21` migración · `22` lo legal.
+
+> **El capítulo 12 tiene una dependencia dura de los relojes de hoy.** Puede escribir la política
+> del grace —la fijan el §20 y `DEC-SUB-002`— pero **no cómo se compone nuestro grace con el del
+> proveedor**: si él reintenta cuatro días y nosotros suspendemos a los tres, suspendemos a alguien
+> que iba a pagar bien. Eso lo contestan `RN-2`, `RN-3` y `GR-1..3`.
+
+### Reglas de trabajo de FASE 2
+
+1. **Un capítulo por commit**, con su fila de `04-open-decisions.md` marcada **en el mismo commit**
+   y el estado del índice `00` actualizado. Pushear.
+2. **El decision log y la matriz de MP NO se tocan sin el OK del owner**, con las razones. Un
+   apartamiento del PDR se escribe en el capítulo marcado como pendiente y se pregunta.
+3. **Si un capítulo cita un `§`, el texto se verifica contra el PDR antes de escribirlo** (regla 5
+   del log). Ya evitó dos errores.
+4. **commitlint**: el subject va en minúscula y no pasa de 100 caracteres. `FASE 2` al principio lo
+   rechaza por `subject-case`.
+5. **Stagear archivo por archivo.** `git add <directorio>` es `git add .` acotado: el 17 coló un
+   `.wrangler/cache/wrangler-account.json` al repo (sacado en `561183907`).
+
+### Lo que cerró hoy, y lo que se corrigió
+
+- **La frontera qzpay↔hospeda quedó enunciada entera** (`F-1B-132`): **seis repartos sobre las
+  mismas 27 tablas y ninguno coincide**, y el corte **no es por entidad sino por camino** — la
+  misma cancelación tiene tres, con tres repartos y dos grafías.
+- **`F-1B-131`**: «cancelar a fin de período» desde el admin **ejecuta todos los efectos de una
+  baja inmediata menos el status**, y es la opción **por defecto** del diálogo. Contradice el §24 y
+  `DEC-SUB-009`. Registrado, **no tocado** (§4).
+- **`F-1B-130`**: el módulo que desambigua `canceled`/`cancelled` opera hoy sobre **cero filas**, y
+  la cifra de producción de su docblock no se reproduce contra la base.
+- **Corrección propia**: el capítulo 03 afirmaba que los eventos del proveedor no traen orden
+  confiable. **`EX-2` mide lo contrario** —traen un contador `version` monótono por recurso—. La
+  conclusión (releer en vez de creerle al evento) no cambió; la razón sí, y ahora el contador se
+  usa para descartar eventos viejos sin gastar una relectura.
+
+### Dos decisiones nuevas, las dos del owner
+
+- **`DEC-ARCH-003`** — los dos `SUSPENDED` del PDR se separan: el del trial se llama
+  **`TRIAL_EXPIRED`**. Difieren en si hubo dinero, si corresponde la campaña del §10.7, y qué le
+  falta a la persona para volver.
+- **`DEC-OBS-001`** — `RECONCILIATION_REQUIRED` avisa por un **listado accionable** más un correo
+  **agregado**, no uno por evento. Cumple el objetivo del §22.1 y no su letra.
+
+---
+
+## Histórico: 2026-09-17, madrugada — el cierre de FASE 1B
 
 ### Dónde estamos
 

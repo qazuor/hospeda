@@ -178,13 +178,17 @@ enuncia el propio §22.1 al cerrar: *«que `SUPER_ADMIN` esté al tanto y pueda 
 | **la agrupación** | por **tipo + sujeto**. Cientos de eventos de un mismo incidente colapsan en una línea con su conteo |
 | **lo que nunca se agrupa** | el **registro**. El evento crítico se escribe uno por uno, siempre. Lo que se agrupa es el aviso |
 
-### 4.2 Y esto es un apartamiento del §22.1
+### 4.2 Y esto es un apartamiento del §22.1, registrado como `DEC-OBS-001`
 
-> ⚠️ **PENDIENTE DEL OWNER.** El §22.1 dice *«enviar email a `SUPER_ADMIN`»* sin condición, y
-> esto manda un correo agregado en vez de uno por evento. **Se cumple el objetivo que el propio
-> §22.1 enuncia y no su letra**, así que corresponde registrarlo como decisión en
-> `01-decision-log.md` — y ese documento no se toca sin el OK del owner. Hasta entonces, esta
-> spec describe el comportamiento agregado y la entrada del log está pendiente.
+El §22.1 dice *«enviar email a `SUPER_ADMIN`»* sin condición, y esto manda un correo agregado en
+vez de uno por evento: **se cumple el objetivo que el propio §22.1 enuncia al cerrar y no su
+letra**. Queda registrado en `01-decision-log.md` (2026-09-17, aprobado por el owner) y es el
+**cuarto** apartamiento del programa. Los otros cuatro puntos del §22.1 se cumplen literalmente.
+
+**La ventana de agregación es un riesgo declarado**: entre el primer evento y el resumen pasan
+hasta `N` minutos. Para lo que no puede esperar está la excepción, y **qué entra en esa excepción
+es una lista cerrada**: un doble cobro real detectado, y un reembolso que falló sobre una
+revocación.
 
 ### 4.3 La información suficiente, en concreto
 
