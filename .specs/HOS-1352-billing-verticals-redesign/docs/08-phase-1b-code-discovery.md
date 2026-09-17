@@ -2055,6 +2055,48 @@ anotado como conteo, no como contradicción con un comentario que no está.
 
 ---
 
+### F-1B-052 — Veinticuatro de las 333 funciones exportadas de `apps/api/src/services` no las consume nadie fuera de su archivo
+
+**El denominador, descompuesto.** `F-1B-032` contó 337 funciones exportadas. Medidas por
+sintaxis son **320 `export function` + 17 `export const … = (…)`**, que da exactamente
+337; los **nombres distintos** son **333**, porque cuatro se exportan desde dos archivos:
+
+```
+buildChatSystemMessage   accommodation-ai-context.ts     ·  ai-context/owner-data-fence.ts
+exchangeAuthorizationCode  mercadolibre-oauth/ml-oauth-client.ts · google-calendar/google-oauth-client.ts
+refreshAccessToken         mercadolibre-oauth/ml-oauth-client.ts · google-calendar/google-oauth-client.ts
+needsRefresh               mercadolibre-oauth/ml-token.service.ts · google-calendar/google-token.service.ts
+```
+
+Los tres últimos son el mismo trío de OAuth escrito dos veces, una por proveedor.
+
+**El barrido.** Tokenizando los **6.624** archivos fuente de `apps/api/src`,
+`apps/web/src`, `apps/admin/src` y `packages` (sin tests, sin `dist`), **24 de los 333
+nombres no aparecen en ningún archivo que no sea el suyo**:
+
+| categoría | cuántos | cuáles |
+|---|---|---|
+| Sólo los alcanza un test | **21** | `addMonthsClamped`, `admitsAddonGrant`, `applyCommerceUpgradeRestorations`, `buildExperienceMarkdownContext`, `buildGastronomyMarkdownContext`, `buildMarkdownContext`, `buildOrphanPaymentRow`, `causeHonoursPaidPeriod`, `claimRetryMintSlot`, `clearTouristVipGiftCache`, `computePlanChangeDelta`, `confirmCancellationDeferred`, `detectCoverFormat`, `formatCertificateDate`, `migrateSocialCredentialsToVault`, `parseIcsToRows`, `resetBillingMetricsService`, `resetMediaProviderForTesting`, `resolveCommerceListingCap`, `syncAccommodationSubscriptionCacheForOwner`, `unpublishListingsForExpiredTrial` |
+| Se usa sólo dentro de su archivo | 1 | `getNewsletterDispatchQueue` (`newsletter/delivery-factory.ts:121`) |
+| **Una sola ocurrencia en todo el repo: su propia definición** | **2** | `isOccupyingEvent` (`google-calendar/google-calendar-occupancy-filter.ts:102`), `_resetNewsletterDeliveryFactory` (`newsletter/delivery-factory.ts:214`) |
+
+Los dos últimos no los llama ni un test: el `rg` de su nombre sobre `apps` y `packages`
+devuelve exactamente una línea, la del `export`.
+
+**Qué NO dice esta medición.** Que una función sólo la alcance un test no la hace
+inservible: `resetMediaProviderForTesting`, `resetBillingMetricsService`,
+`clearTouristVipGiftCache` y `_resetNewsletterDeliveryFactory` existen **para** los tests
+por su propio nombre. Lo que la medición fija es el reparto: de 333 funciones exportadas,
+**309 tienen al menos un consumidor real** y 24 no, y entre esas 24 hay nombres que
+describen trabajo de producción —`unpublishListingsForExpiredTrial`,
+`applyCommerceUpgradeRestorations`, `confirmCancellationDeferred`, `parseIcsToRows`— cuyo
+único llamador vive en `test/`.
+
+Es el tercer conteo de superficie inalcanzable del relevamiento, después de los once gates
+de `F-1B-039` y los tres métodos de `F-1B-046`.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
