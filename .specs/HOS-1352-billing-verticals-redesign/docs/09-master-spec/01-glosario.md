@@ -160,7 +160,14 @@ Lo que sigue es el diccionario; el capítulo 03 dice qué transiciones existen.
 > **`ABANDONED` se agregó al escribir el capítulo 03**, no estaba en el primer corte de este
 > glosario: `M-SUB-01` exige que la ventana del preapproval sin autorizar tenga duración máxima
 > y limpieza, y sin un estado de salida esa ventana no vence nunca.
+>
+> **La postulación de Partner es la NOVENA máquina, y se agregó al escribir el capítulo 18.** El
+> §63 pide ocho y éstas son nueve: `M-PARTNER-01` pregunta textualmente si la postulación *«es una
+> entidad con estados propios»*, y lo es — hay una decisión humana en el medio, así que `APROBADA`
+> y `RECHAZADA` no son el mismo dato con distinto signo. Se agrega al núcleo en vez de declararse
+> en su subdominio, que es la regla del índice.
 | **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` |
+| **Postulación de Partner** | `PENDIENTE` · `APROBADA` · `RECHAZADA` |
 | **Grace** | no es una máquina propia: es el sub-estado `GRACE_PERIOD` de Suscripción, con su reloj |
 | **Pausa** | no es una máquina propia: es el sub-estado `PAUSED` de Suscripción, **con un motivo obligatorio** |
 

@@ -78,7 +78,7 @@ Es el Eje 1 del §8. Lo que no depende de ninguna vertical.
 |---|---|---|
 | 01 | Glosario y modelo conceptual | `M-ARCH-01` `A-SUB-01` `A-SUB-02` `O-ARCH-01` `S-ARCH-02` |
 | 02 | Modelo de datos: entidades, relaciones y constraints | `C-ARCH-01` `S-ARCH-01` `M-ARCH-02` `M-DATA-01` |
-| 03 | Las ocho máquinas de estado (§63) | `M-SUB-01` `M-CONC-02` |
+| 03 | Las máquinas de estado (§63) — ocho, más la postulación de Partner | `M-SUB-01` `M-CONC-02` |
 | 04 | Invariantes | — consolida los 37 del §64 |
 | 05 | Idempotencia y concurrencia | `E-CONC-01` `M-CONC-03` |
 | 06 | Abstracción de proveedor y el contrato de Mercado Pago | `MP-01` `M-MP-01` `M-MP-02` `M-MP-03` `R-MP-01` `S-MP-01` `S-MP-02` `S-MP-03` |
@@ -154,7 +154,7 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 00 — este índice | ✅ |
 | 01 — Glosario y modelo conceptual | ✅ |
 | 02 — Modelo de datos | ✅ |
-| 03 — Las ocho máquinas de estado | ✅ |
+| 03 — Las máquinas de estado | ✅ |
 | 04 — Invariantes | ✅ |
 | 05 — Idempotencia y concurrencia | ✅ |
 | 06 — Proveedor y contrato de MP | ✅ |
@@ -168,4 +168,5 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 15 — Entitlements y limits | ✅ |
 | 16 — Addons | ✅ |
 | 17 — Autorización | ✅ |
-| 18 a 22 | ⬜ sin escribir |
+| 18 — Partner | ✅ |
+| 19 a 22 | ⬜ sin escribir |

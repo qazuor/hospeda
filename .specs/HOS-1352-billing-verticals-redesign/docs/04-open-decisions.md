@@ -369,7 +369,16 @@ señales de identidad · **`M-LEGAL-03` política de notificación de aumento** 
 
 **Admin y observabilidad** · ~~`M-ADMIN-01`~~ **cerrado por el cap. 08** (las doce acciones, cada una con permiso, auditoría y confirmación) · ~~`R-OBS-01`~~ y ~~`S-OBS-01`~~ **cerrados por el cap. 08** (listado accionable como canal primario + correo agregado con ventana; es un apartamiento del §22.1, registrado como **`DEC-OBS-001`** el 2026-09-17) · ~~`M-OBS-01`~~ **cerrado por el cap. 08** (se acuña en el borde por intención; el salto de tres días se recupera por `provider_link`, no viaja en el `external_reference`) · ~~`M-AUDIT-01`~~ **cerrado por el cap. 08** (las tres condiciones, los siete campos, append-only con la anonimización como única escritura posterior)
 
-**Partner** · `A-PARTNER-01` qué cuentan los limits de Partner · `M-PARTNER-01` ciclo de vida
+**Partner** — **los dos los cerró el cap. 18**, sobre lo mismo: medio PDR está escrito sobre
+fichas y Partner no tiene. · ~~`A-PARTNER-01`~~ (*«cuántas presencias»* **no es un limit**: es un
+entitlement booleano que da el plan Gold. Los limits cuentan lo que hay **adentro** de la
+presencia, y un addon `LISTING` es incompatible **por dato** —§39, verticales compatibles—, sin
+rama de código. No hace falta un quinto scope: `VERTICAL_SUBSCRIPTION` la identifica porque hay
+una sola por suscripción) · ~~`M-PARTNER-01`~~ (sí es una entidad con estados propios, y es la
+**novena máquina**, agregada al núcleo. Se puede volver a postular pasada una espera configurable;
+**nada vence por tiempo** —vencer una pendiente es un rechazo silencioso y el §17.3 exige
+comunicarlo—; y el borde que el §17.3 no cubría: **la postulación no vincula nada hasta que la
+dirección se prueba**, o cargar el correo de un tercero alcanza para colgarle un Partner)
 de la postulación
 
 **Migración** · `O-MIG-01` §56 apoya su conclusión en un número que no da · `R-MIG-01`

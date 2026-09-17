@@ -1,5 +1,5 @@
 ---
-title: Master Spec 03 — Las ocho máquinas de estado
+title: Master Spec 03 — Las máquinas de estado
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
@@ -12,10 +12,12 @@ cierra:
   - M-CONC-02
 ---
 
-# 03 · Las ocho máquinas de estado
+# 03 · Las máquinas de estado
 
-El §63 las pide explícitamente: Trial, Subscription, Payment, Manual Payment, Addon,
-Publication, Grace y Pause, *«aunque finalmente no utilicemos librería de state machines»*.
+El §63 pide ocho explícitamente: Trial, Subscription, Payment, Manual Payment, Addon,
+Publication, Grace y Pause, *«aunque finalmente no utilicemos librería de state machines»*. Acá
+son **nueve**: la postulación de Partner (§11) se agregó al escribir el capítulo 18, con su razón
+escrita.
 
 Los nombres salen del capítulo 01 y **no se redefinen acá**. Lo que este capítulo agrega son
 las **transiciones**: qué evento mueve de dónde a dónde, bajo qué condición, y con qué efecto.
@@ -24,7 +26,7 @@ las **transiciones**: qué evento mueve de dónde a dónde, bajo qué condición
 
 ## 1. Cómo se leen estas máquinas
 
-Seis reglas que valen para las ocho. Están acá arriba porque son la diferencia entre una
+Seis reglas que valen para todas. Están acá arriba porque son la diferencia entre una
 máquina de estados y una convención.
 
 1. **La tabla de transiciones es exhaustiva.** Lo que no está, no pasa. Un intento de
@@ -372,6 +374,25 @@ la mutación de monto: **no emite webhook** (`EX-15`), así que no hay nada que 
 avisa. La defensa no es esta regla sino la del capítulo 06: **toda mutación se verifica
 releyendo y comparando campo por campo cada campo que se mandó**, porque está medido que un
 `PUT` con varios campos **se aplica a medias con un solo `200`** (`EX-20`).
+
+---
+
+## 11. Postulación de Partner
+
+**Es la novena**, agregada al escribir el capítulo 18 (ver la nota del cap. 01 §2.2). Chica, sin
+ciclos y sin vuelta atrás.
+
+| # | desde | evento | hacia | nota |
+|---|---|---|---|---|
+| PP1 | — | alguien completa el formulario del §17.3 | `PENDIENTE` | sólo el camino A; el camino B no crea postulación |
+| PP2 | `PENDIENTE` | el admin aprueba | `APROBADA` | **no vincula nada todavía**: si el correo ya es de un usuario, se le manda a **esa** dirección un aviso para reclamarlo (cap. 18 §2.4) |
+| PP3 | `PENDIENTE` | el admin rechaza | `RECHAZADA` | **se comunica** (§17.3); habilita postular de nuevo pasada la espera configurable |
+
+**Ninguna transición la dispara el tiempo.** Una `PENDIENTE` que nadie resuelve **no vence**: se
+marca atrasada en el panel del §48, porque vencerla sería un rechazo silencioso y el §17.3 exige
+que el rechazo se comunique. Una `APROBADA` que nadie reclama tampoco vence, y es inofensiva: la
+suscripción es el último de los nueve pasos del §17.3, así que no publica nada y no se le cobra
+nada.
 
 ---
 
