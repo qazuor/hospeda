@@ -6139,6 +6139,78 @@ cambio de arquitectura que ponga el motor en el navegador.
 
 ---
 
+### F-1B-129 — Los 16 sospechosos eran casi todos del patrón: queda UNA ruta sin gate, y la matriz se equivoca sobre todo por omisión
+
+`F-1B-038` midió que la matriz de 896 filas declara el gate de cada ruta, que **la columna
+`decisión` no se afirma en ningún `expect`** del guard, y dejó 16 + 22 casos anotados como
+**sospechosos, no discrepancias**. Recuperada la matriz del ancla —`git show
+60a39dae2:docs/billing/endpoint-gate-matrix.md`, que reproduce las 896 filas y el reparto
+822/52/17/5— y leído el código de cada sospechoso, el saldo es éste:
+
+| | |
+|---|---|
+| Filas con `decisión ≠ none` | **74**, en 71 archivos |
+| … con al menos uno de los once mecanismos en el archivo | **72** |
+| … **sin ninguno** | **2** |
+| Archivos de ruta con algún mecanismo, en todo el árbol | **96** |
+| … que la matriz declara `none` | **26** |
+| … de esos 26, gates reales que la matriz nunca listó | **24** |
+| … falsos positivos del patrón | **2** |
+
+**La matriz acierta en 72 de 74 y se equivoca sobre todo por omisión.** Las dos direcciones no
+son simétricas: declara un gate que no está en **dos** filas, y **no declara** uno que sí está en
+**veinticuatro**.
+
+**El único hallazgo real es `POST /api/v1/protected/media/upload`.** Verificado a mano:
+`apps/api/src/routes/media/protected/upload.ts` son 288 líneas y los once mecanismos dan **cero
+coincidencias**; `MAX_PHOTOS|maxAllowed|LIMIT_REACHED|LimitKey` también dan cero. Lo único que
+lleva es un `createSlidingWindowPerUserRateLimit({ windowMs: 60_000, max: 10 })` (`:280-286`), que
+es anti-abuso y no un gate de plan.
+
+Y el motivo que la fila escribe —*«Inline photo-limit check already in handler (SPEC-143
+Finding #15)»*, con la clave `max_photos_per_accommodation`— **no describe a este archivo**: su propio
+docblock (`:3-13`) dice *«Protected avatar upload endpoint … Always overwrites the existing avatar
+for the user»*. Es el avatar del usuario, un slot único que se sobreescribe, no un ítem de galería
+que se acumule. La fila parece haber heredado el motivo de otra ruta.
+
+**El segundo caso no es un hueco, es una clave equivocada.** `upload-entity.ts:326` compara el
+conteo de galería contra `getGalleryCap(entityType)`
+(`packages/schemas/src/common/media-upload.schema.ts:74-76`), un **techo estructural fijo por tipo
+de entidad** —50 para accommodation, 10 para event, 50 de fallback— que **no varía con el plan**.
+La matriz le atribuye `max_photos_per_accommodation`. El gate de plan real vive río abajo, en
+`accommodation/protected/addMedia.ts:95`, que es quien adjunta la URL a la galería; la ruta de
+subida no escribe ninguna fila.
+
+**Las 24 que la matriz llama `none` y sí tienen gate son dos grupos:**
+
+1. **Seis rutas de borrado de contenido** —`removeFaq` y `removeMedia`, una por vertical—, que
+   llevan el gate y un comentario que fecha el arreglo: *«HOS-1275: DELETING content is mutating
+   it. These two routes carried no entitlement gate at all … wired here with the same pair every
+   sibling content route carries»* (`accommodation/protected/removeFaq.ts:57-63`, idéntico en
+   `gastronomy/protected/removeFaq.ts:58` y `experience/protected/removeFaq.ts:58`). O sea: la
+   matriz tenía razón cuando se escribió y quedó vieja.
+2. **Dieciocho más, que son una laguna de cobertura para gastronomía y experiencia.** Verificado
+   sobre una: `gastronomy/protected/removeFaq.ts:65-67` monta el trío completo
+   —`commerceVerticalEntitlementMiddleware('gastronomy')`,
+   `requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO)` y
+   `requireLiveSubscription(ProductDomainEnum.GASTRONOMY)`—. Sus equivalentes de accommodation
+   **sí** figuran en la matriz como `gate`; los de las otras dos verticales nunca se agregaron.
+   Entran también dos rutas de `admin` de media que aplican `checkLimit` y tiran `LIMIT_REACHED`
+   (`accommodation/admin/addMedia.ts:96-131`).
+
+**Y los dos falsos positivos del barrido quedan descartados con su razón**, que es la misma clase
+de trampa que este relevamiento viene contando: `host-onboarding/protected/precheck.ts:74` matchea
+`enforceAccommodationLimit(` **dentro de un comentario**, y
+`accommodation/protected/getWhatsApp.ts:128-129` usa `hasEntitlement(...)` para **dar forma a la
+respuesta**, no para bloquear. Las dos son correctamente `none`.
+
+*Qué queda anotado sobre la matriz misma*: con 896 filas, **una** afirmación sustantiva falsa y
+**veinticuatro** omisiones, su valor como documentación es alto y su valor como garantía es cero
+—`F-1B-038` ya midió que el guard no afirma la columna—. Lo que este barrido agrega es el orden de
+magnitud del error y su dirección: **omite**, no inventa.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -6163,7 +6235,7 @@ El orden no está decidido.
 | ~~Los 52 archivos de `service-core/src/services/billing`~~ | 52 | ✅ **52 de 52 leídos enteros, 14.254 de 14.254 líneas** — `F-1B-060`, `F-1B-066`, `F-1B-086`, `F-1B-087`, `F-1B-092` |
 | ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
 | ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
-| Los 16 archivos de rutas que la matriz y el código no coinciden: leer uno por uno | 16 | ⬜ (`F-1B-038`) |
+| ~~Los archivos de ruta que la matriz y el código no coinciden~~ | 74 filas ≠ `none` + 26 `none` con mecanismo | ✅ `F-1B-129` — la matriz acierta en 72 de 74; **una** ruta sin gate por ningún camino, y **24** con gate que la matriz llama `none` |
 | ~~Superficies Web~~ | **15** archivos / 6.134 líneas | ✅ **15 de 15 leídos enteros** — `F-1B-088`, `F-1B-089`, `F-1B-103` |
 | ~~Superficies Admin~~ | **22** archivos / 4.889 líneas | ✅ **22 de 22 leídos enteros** — `F-1B-089`, `F-1B-102` |
 | ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
