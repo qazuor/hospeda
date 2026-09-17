@@ -4691,6 +4691,130 @@ nada. El hallazgo se dio vuelta entero al anclar el patrón.
 
 ---
 
+### F-1B-102 — Un límite en cero no se puede guardar desde el editor de planes, y del otro lado se lee como ilimitado
+
+Leídos enteros los **22 archivos** de `apps/admin/src` que importan `@repo/billing`
+(**4.889 líneas**).
+
+**El editor arranca con las 22 claves en cero y las descarta al enviar.**
+`features/billing-plans/components/PlanDialog.tsx:87-89`, al crear un plan nuevo:
+
+```ts
+limits: plan?.limits
+    ? plan.limits.map((l) => ({ key: l.key, value: l.value }))
+    : Object.values(LimitKey).map((key) => ({ key, value: 0 }))
+```
+
+y `:110`, al enviar:
+
+```ts
+limits: value.limits.filter((l) => l.value !== 0),
+```
+
+O sea que **un plan creado sin tocar ningún límite se envía con el arreglo vacío**, y un
+límite que el operador ponga deliberadamente en `0` desaparece del payload igual que uno
+que nunca tocó. Las dos intenciones —«no configuré esto» y «esto no se permite nunca»—
+colapsan en la misma ausencia.
+
+**Y la ausencia se lee como ilimitado en los dos lados.** En el cliente,
+`features/billing/use-my-entitlements.ts:103-105` hace `data?.limits[key] ?? -1`. En el
+servidor, `F-1B-036` ya midió que `getRemainingLimit` devuelve `-1` ante una clave ausente
+con el comentario *«Limit not defined - treat as unlimited»*, y que ése es el camino por el
+que corre **toda** la enforcement porque `requireLimit` —el único que falla cerrado— no
+tiene call sites.
+
+**El cero sí significa algo cuando llega**: `F-1B-057` midió que `checkLimit` rechaza con
+`maxAllowed === 0`. El problema no es que el servidor no lo entienda: es que el editor no
+puede escribirlo.
+
+**Y el indicador tampoco lo muestra.** `features/billing/LimitProgressIndicator.tsx:73`
+corta con `if (maxAllowed === 0) return null;` **antes** de calcular la razón y el estado
+`atLimit` (`:75-77`). Su propio docblock (`:39-43`) describe cuatro estados visuales
+incluyendo *«≥ 100 % → destructive + explicit "límite alcanzado" copy + CTA»*: para un
+límite en cero ese estado es inalcanzable — el componente desaparece en vez de avisar.
+
+El comentario de `:70-71` nombra la postura: *«Fail-open by design»*, y aclara que ahí caen
+tanto el staff (`-1` explícito) como *«actors whose plan does not expose this limit (hook
+defaults missing keys to -1)»*. Es el mismo `-1` ambiguo que `F-1B-036` midió del lado del
+servidor.
+
+**Dos cosas más del mismo lote:**
+
+- `features/billing-addons/components/AddonDialog.tsx:1-6` declara en su docblock *«Uses
+  TanStack Form with Zod validation»* y **no importa `zod` ni pasa `validators` a ningún
+  `form.Field`**. Las cinco lecturas de `field.state.meta.errors` (`:163`, `:188`, `:215`,
+  `:290`, `:515`) leen un arreglo que nada en el archivo puebla, y el asterisco de
+  «requerido» de `durationDays` (`:306-309`) es sólo visual.
+- `features/billing-subscriptions/utils.ts:191` decide los destinos de un cambio de plan
+  filtrando `ALL_PLANS`, y el docblock del propio archivo (`:110-116`) declara que ese
+  catálogo *«is deliberately accommodation-only (SPEC-239) — `commerce-listing`,
+  `partner-listing`, `partner-silver`, and `partner-gold` are excluded from it even though
+  they are real, purchasable plans»*. `F-1B-101` midió esos cuatro planes **activos** en
+  producción.
+
+---
+
+### F-1B-103 — El cartel de «compra exitosa» de los addons lo decide un parámetro de la URL, y el estado real de la compra se busca y no se mira
+
+Leídos enteros los **15 archivos** de `apps/web/src` que importan `@repo/billing`
+(**6.134 líneas**).
+
+`pages/[lang]/mi-cuenta/addons/index.astro:188-189` lee `status` y `addon` de
+`Astro.url.searchParams`, y `:199-216` arma el cartel **sólo con eso**:
+
+```ts
+const resultBanner = statusParam === 'success'
+    ? { kind: 'success', message: t('account.addons.result.success',
+          '¡Complemento adquirido con éxito!', { addon: resultAddonName }) }
+    : statusParam === 'failure' ? { … } : null;
+```
+
+**La página sí conoce el estado real y no lo consulta para esto.** `:90` y `:107-114`
+traen `ownedResult` y arman `ownedAddonSlugs` filtrando por `status === 'active'`, y ese
+arreglo se usa **solamente** para pintar la lista (`:262`). El cartel no lo cruza en
+ninguna línea.
+
+Además, `resultAddonName` (`:196-197`) cae al **literal crudo del parámetro** cuando no
+matchea ningún addon conocido, así que el texto puede nombrar algo que no está en el
+catálogo. El `?status=` es lo que MercadoPago pone en la URL de retorno —el comentario de
+`:193-194` lo dice—, no una lectura del estado local; y `F-1B-050` midió que en producción
+corre el camino recurrente, cuya única confirmación es el webhook.
+
+**Y hay una segunda fuente de verdad para la tabla de comparación.**
+`pages/[lang]/funcionalidades/index.astro:35-49` importa `VIAJEROS_TABLE_ROWS` y
+`ANFITRIONES_TABLE_ROWS` de `@/lib/features-content` —arrays escritos a mano— y los pinta
+en `:258-268` y `:309-319`; su propio comentario (`:57-64`) lo declara: *«No session, no API
+call — the content is i18n + code»*. En paralelo,
+`components/billing/plan-comparison-rows.ts:509-527` deriva **cada celda** de
+`plan.entitlements`/`plan.limits` reales, y su docblock (`:12-22`) dice existir exactamente
+para evitar la desincronización que una tabla a mano produce.
+
+**El precedente está escrito en ese mismo archivo.** `plan-comparison-rows.ts:43-56`
+explica por qué no existe una celda «todo incluido»: un valor así, escrito a mano, fue el
+bug **HOS-329** — la tabla le prometió a `tourist-free` una funcionalidad que la API
+bloquea.
+
+**Y dos de las doce claves sin gate de servidor se muestran hoy como disponibles, sin
+marca.** De las doce que `F-1B-037` midió sin ningún chequeo en el servidor, cinco están en
+la tabla: `priority_support` (`:243-248`), `custom_branding` (`:260-265`) y
+`respond_reviews` (`:195-200`) llevan `status: 'upcoming'`, pero **`read_reviews`
+(`:89-94`) y `can_contact_whatsapp_direct` (`:126-130`) llevan `status: 'available'` y
+ningún `noteKey`**. Es la misma clase de riesgo que el comentario de `:43-56` describe.
+
+**Las páginas de marketing no consultan nada.** `preguntas-frecuentes/index.astro` define
+51 preguntas (`:59-138`), todas por i18n, y **una sola** interpola un número real
+—`OWNER_TRIAL_DAYS` (`:170-173`)—, la constante y no el valor vivo.
+`funcionalidades/index.astro` usa esa misma constante en tres lugares (`:199`, `:290`,
+`:451`). Es la forma que `F-1B-088` midió: lo vivo y lo compilado conviven por página.
+
+**Dos defaults que ocultan la diferencia entre «no hay dato» y «el dato es cero»:**
+`lib/host/usage-badge.ts:139` usa `0` cuando `currentUsage` no es un número y `:142` usa
+`'ok'` cuando falta el umbral; y `lib/commerce/usage-badge.ts:69` devuelve `null` tanto
+para «el dueño no tiene suscripción» como para «la request falló», con el docblock
+(`:49-53`) declarando las dos causas para el mismo valor.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -4714,8 +4838,8 @@ El orden no está decidido.
 | ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
 | ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
 | Los 16 archivos de rutas que la matriz y el código no coinciden: leer uno por uno | 16 | ⬜ (`F-1B-038`) |
-| Superficies Web | **15** archivos (de 1.049) | 🟨 denominador corregido y la tabla comparativa medida — `F-1B-088`, `F-1B-089`; los 15 archivos, sin leer enteros |
-| Superficies Admin | **22** archivos (de 1.454) | 🟨 denominador corregido — `F-1B-089`; sin leer |
+| ~~Superficies Web~~ | **15** archivos / 6.134 líneas | ✅ **15 de 15 leídos enteros** — `F-1B-088`, `F-1B-089`, `F-1B-103` |
+| ~~Superficies Admin~~ | **22** archivos / 4.889 líneas | ✅ **22 de 22 leídos enteros** — `F-1B-089`, `F-1B-102` |
 | ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
 | Qué hace cada una de las 125 estructurales: columnas muertas, renames, drops | 125 | 🟨 el inventario de operaciones destructivas está medido (9 en total, ninguna de billing) — `F-1B-100`; qué agrega cada una, sin recorrer |
 | Tests: qué comportamiento afirman (como evidencia de intención, no de corrección) | por medir | ⬜ |
