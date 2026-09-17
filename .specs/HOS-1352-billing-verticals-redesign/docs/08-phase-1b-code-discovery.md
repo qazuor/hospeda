@@ -1721,6 +1721,67 @@ En los dos casos **qué hace el dry-run no se puede leer en el archivo del job**
 
 ---
 
+### F-1B-045 — El checkout que corre en producción es el que el código llama «apagado», y el flag alcanza cuatro caminos donde su registro dice uno
+
+`apps/api/src/services/subscription-checkout.service.ts` (2.283 líneas, el archivo más
+grande de `apps/api/src/services`) implementa **dos flujos completos por cada punto de
+entrada**, elegidos por `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED`:
+
+- **Path C** — no se crea ninguna preapproval del lado nuestro. Se resuelve/provisiona un
+  `preapproval_plan` de MercadoPago, se materializa una suscripción local en
+  `pending_provider` más una fila de correlación en `billing_pending_checkouts`, y se
+  redirige al **share link hosteado** de ese plan.
+- **Own preapproval** — se crea un `POST /preapproval` propio por usuario, servidor a
+  servidor (`own-preapproval-subscription-create.ts`, vía `createPaidSubscription` →
+  `billing.subscriptions.create({ mode: 'paid' })`).
+
+**El flag vale `true` en producción y en staging.** Medido el 2026-09-16 con
+`hops --target=prod env-list api --reveal --match OWN_PREAPPROVAL` y su equivalente en
+staging: `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED=true` en los dos slots.
+
+**Y el código afirma tres veces lo contrario:**
+
+| dónde | qué dice |
+|---|---|
+| `subscription-checkout.service.ts:18` | *«**Path C (flag off, live in production).**»* |
+| `routes/commerce/protected/start-subscription.ts:587` | *«whenever `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` is off, **which is production today**»* |
+| `packages/config/src/env-registry.hospeda.ts:958` | *«**Ships dark (default false)**»* |
+
+El default sí es `false`: el registro lo declara en `:963` y el schema lo transforma con
+`.optional().transform((v) => v === 'true')` (`apps/api/src/utils/env-schema.ts:512-515`),
+así que sin setear queda apagado. Lo que está setado es el valor en Coolify.
+
+**La segunda contradicción es de alcance.** El registro (`:963`) y el docblock del schema
+(`env-schema.ts:508-510`) dicen, con las mismas palabras: *«Scoped to accommodation
+monthly only — annual, commerce and partner checkouts are unaffected regardless of this
+flag»*. El código lo lee en **los cuatro** puntos de entrada:
+
+| entrada | función | dónde ramifica |
+|---|---|---|
+| accommodation mensual | `initiatePaidMonthlySubscription:479` | `:809` |
+| commerce | `initiateCommerceSubscription:1071` | `:1231` |
+| partner | `initiatePartnerMonthlySubscription:1441` | `:1531` |
+| accommodation anual | `initiatePaidAnnualSubscription:1748` | `:1910` |
+
+(más cuatro lecturas gemelas en `:734`, `:1184`, `:1501` y `:1881`, que eligen **qué
+estrategia de reuso** aplica la idempotencia del checkout). La quinta entrada,
+`initiatePaidPlanUpgrade:2092`, no lo lee.
+
+**Qué cambia por leerlo al revés.** El camino que corre es el que crea una preapproval
+real antes de escribir el estado local, o sea que la ventana de compensación que el
+código documenta como *«Hueco A»* es la viva, no la apagada:
+`own-preapproval-subscription-create.ts:430-470` captura el fallo de la escritura local
+posterior al `POST /preapproval`, intenta un `hardCancelPreapprovalBestEffort` y, cuando
+ese intento devuelve `failed`, loguea *«needs manual reconciliation, this is exactly the
+orphan class HOS-937 targets»* (`:467`). Con el flag apagado esa rama es inalcanzable;
+con el flag prendido es el camino normal de todo checkout.
+
+Cruza con `F-1B-013`: las dos veces que este relevamiento comparó una afirmación del
+código contra el entorno desplegado —el documento OpenAPI y este flag— el entorno decía
+otra cosa, y en las dos la afirmación estaba escrita en un comentario.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
