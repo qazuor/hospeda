@@ -1546,6 +1546,44 @@ y `apps/web/src/lib/billing-limit-error.ts:142`.
 
 ---
 
+### F-1B-040 — El `success: true` literal no es un patrón de billing: son nueve de los 47, y cinco están afuera
+
+`F-1B-029` lo encontró en cuatro crons de billing. Leídos los **30 que no tocan
+billing**, el patrón aparece en **cinco más**, y en los cinco el contador de errores
+existe, se incrementa y se devuelve al lado sin participar del cálculo:
+
+| cron | el `return` | dónde se incrementa `errors` |
+|---|---|---|
+| `alerts-digest` | `:210-217` | `:169`, `:222` |
+| `conversation-notification` | `:416-423` | `:308`, `:311`, `:350`, `:378`, `:390`, `:399`, `:428` |
+| `conversation-token-reminder` | `:456-463` | `:368`, `:397`, `:401`, `:407`, `:468` |
+| `page-revalidation` | `:273-280` | `:127`, `:165`, `:218`, `:226`, `:290` |
+| `host-trade-usage-reminder` | `:78-81` | `:66` |
+
+En `page-revalidation` el mensaje lo dice y el campo lo desmiente en la misma línea:
+`` `… cleaned up ${deleted} old log entries (${errors} errors)` `` junto a
+`success: true`.
+
+**Nueve de 47**, sumando los cuatro de `F-1B-029`. Del otro lado, **veinte** sí derivan
+el resultado de un contador —`errors === 0` en diez (`subscription-poll:999`,
+`finalize-cancelled-subs:803`, `partner-expiry:102`, `partner-payment-review:247`,
+`partner-unpaid-reaper:213`, `preapproval-less-expiry:339`, `calendar-sync-google:135`,
+`calendar-sync-ical:150`, `cloudinary-e2e-cleanup:113`,
+`destination-weather-fetch:164` vía `summary.errors.length === 0`), más
+`apply-scheduled-plan-changes:954`, `lead-intake-backstop:193`,
+`propagate-plan-price-changes:1594`, `social-publish-dispatch:286` y seis que propagan
+un `cronResult.success` calculado adentro de la transacción.
+
+**Y hay una tercera forma, declarada.** `exchange-rate-fetch:181` no usa ninguna de las
+dos: `const success = !hadErrors || result.stored > 0`, o sea que una corrida con errores
+se reporta exitosa si guardó aunque sea una cotización. Es la única de las 47 con una
+política de éxito parcial escrita explícitamente.
+
+El resto —los purgadores y los rollups— escribe `success: true` con `errors: 0` fijo
+porque no tiene bucle donde acumular un error: ahí el literal no esconde nada.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
