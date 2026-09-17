@@ -97,7 +97,9 @@ verificado contra la definición real.
 | Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
 | **Handlers de la API** | **1.032** | `app.routes` con la app construida, menos 725 middleware — **no** los 1.150 archivos | **1.032** |
 | … documentados en OpenAPI | **983** | el documento generado por la app | **983** |
-| Servicios en `service-core` | 101 | `*.service.ts` — **provisorio**, ver `F-1B-003` | 0 |
+| Clases exportadas en `service-core` | **126** | `export class`, no `*.service.ts` (que da 101) | **126** |
+| … que extienden una base de servicio | **67** | 39 `BaseCrudService` + 19 `BaseService` + 6 related + 2 commerce | **67** |
+| Archivos de billing en `apps/api/src/services` | **140** de 185 | `rg -l` por vocabulario de dominio | **140** |
 | Archivos que mencionan conceptos de billing | 4251 (2658 sin tests) | `rg -l` sobre `apps` y `packages` | — |
 
 Los marcados **provisorio** están medidos por nombre de archivo y por lo tanto no
@@ -1121,6 +1123,42 @@ fallar —incluida la propagación a MercadoPago— y la fila **sigue contando c
 
 ---
 
+### F-1B-032 — La lógica de billing vive en TRES paquetes de hospeda, más dos de qzpay
+
+| dónde | archivos | líneas |
+|---|---|---|
+| **`apps/api/src/services`** (los de billing) | **140** | **51.681** |
+| `packages/service-core/src/services/billing` | 52 | 14.254 |
+| `packages/billing/src` | 37 | 8.167 |
+| **subtotal hospeda** | **229** | **74.102** |
+| `qzpay/packages/core` | 89 | 22.120 |
+| `qzpay/packages/drizzle` | 68 | 14.762 |
+| `qzpay/packages/mercadopago` | 16 | 4.160 |
+| **subtotal qzpay** | **173** | **41.042** |
+| **TOTAL** | **402** | **≈115.000** |
+
+**El hogar más grande no es un paquete compartido: es la app.** El 70 % de la lógica de
+billing de hospeda está en `apps/api/src/services` —**140 de sus 185 archivos** mencionan
+conceptos de billing—, no en `service-core` ni en `packages/billing`.
+
+**Y los dos hogares tienen formas distintas.** `service-core` es de clases: **126 clases
+exportadas**, de las cuales **39 extienden `BaseCrudService`**, 19 `BaseService`, 6
+`BaseCrudRelatedService` y 2 `BaseCommerceListingService`. `apps/api/src/services` es de
+funciones: **23 clases contra 337 funciones exportadas**.
+
+*Nota de método, la séptima vez*: el patrón `class X extends BaseCrudService` daba **40**
+ocurrencias y **39** nombres únicos, lo que parecía una clase declarada dos veces. No lo
+era: la repetida es `AccommodationService`, y una de las dos está **dentro de un ejemplo
+de docblock** (`packages/service-core/src/base/base.crud.service.ts:97`, con su `*` al
+principio de la línea). Son 39.
+
+*Qué abre, sin resolverlo acá*: el §7 pide **un único motor genérico de billing**, y el
+§1 lista la lógica duplicada entre los problemas que motivaron este programa. La
+medición no dice si esas 115.000 líneas están duplicadas — dice **dónde están**, y que
+son cinco paquetes en dos repos.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -1138,7 +1176,8 @@ Ninguno empezado. El orden no está decidido.
 | Los 30 crons restantes (no tocan billing) | 30 | ⬜ |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
-| Servicios: métodos públicos y qué validan | por medir | ⬜ |
+| Los 67 servicios: métodos públicos y qué validan | 67 | ⬜ |
+| Las 337 funciones de `apps/api/src/services` | 337 | ⬜ |
 | Entitlements y limits: claves existentes y dónde se consumen | por medir | ⬜ |
 | Superficies Web | por medir | ⬜ |
 | Superficies Admin | por medir | ⬜ |
