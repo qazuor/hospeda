@@ -2182,6 +2182,12 @@ código lo aclara donde el equívoco importaba: `routes/billing/subscription-pau
 contra `billing`/`this.billing`— son **10 y 8**. El patrón no distinguía dos cosas que el
 código sí distingue.
 
+> ⚠️ **El receptor no alcanza como regla general — ver `F-1B-080`.** Lo de arriba vale para
+> `update` y se sostiene, pero **`billing.subscriptions.create({ mode: 'paid' })` SÍ llama a
+> MercadoPago**, verificado en el código de qzpay. Separar por receptor resuelve este
+> hallazgo y no clasifica el resto: hay que mirar el método, y en `create` hasta el
+> argumento.
+
 ---
 
 ### F-1B-055 — «Cuánto suma un addon» está escrito tres veces, con tres políticas distintas ante una clave que no corresponde
@@ -3451,6 +3457,125 @@ Cruza con `DEC-GRANT-003`, que decidió implementar la cortesía temporal **paus
 proveedor y sosteniendo el servicio del lado nuestro. La medición no dice si esto la
 contradice; dice que hoy el estado que esa decisión usa entra al camino de cancelación y no
 al de reversión.
+
+---
+
+### F-1B-080 — El receptor no alcanza para saber si una llamada toca MercadoPago: `billing.subscriptions.create({ mode: 'paid' })` sí lo hace
+
+`F-1B-054` estableció la regla que este relevamiento viene usando: `paymentAdapter.*` muta
+MercadoPago y `billing.*` —el cliente de qzpay— escribe sólo local. **Vale para `update` y
+no vale como regla del namespace.**
+
+Verificado en el código de qzpay, en el ancla `c934164`, no en un comentario:
+
+```ts
+// qzpay/packages/core/src/billing.ts:1528
+if (input.mode === 'paid' && paymentAdapter?.subscriptions) {
+    …
+    // :1636
+    providerResult = await paymentAdapter.subscriptions.create(providerInput);
+}
+```
+
+O sea que **el mismo método hace dos cosas distintas según su argumento**: con
+`mode: 'paid'` sale a crear la preapproval, y sin él escribe una fila y nada más. En
+hospeda ese camino se ejerce en `billing/paid-subscription-create.ts:398`, que es el punto
+por el que pasa **todo** checkout pago.
+
+La clasificación correcta tiene tres niveles, y sólo el primero es el receptor:
+
+| | ejemplo | toca MercadoPago |
+|---|---|---|
+| receptor | `paymentAdapter.subscriptions.update` | **sí**, siempre |
+| método | `billing.subscriptions.update` / `.cancel()` | **no** |
+| argumento | `billing.subscriptions.create({ mode: 'paid' })` | **sí** |
+| | `billing.subscriptions.create({ … })` sin `mode` | no |
+
+`abandon-never-confirmed-subscription.ts:9-12`, `own-preapproval-subscription-create.ts:446`
+y `paid-subscription-create.ts:461` documentan los tres, cada uno en su caso, que
+`billing.subscriptions.cancel()` escribe `status:'canceled'` **local** y no toca al
+proveedor — y ésa es exactamente la razón por la que existe
+`hardCancelPreapprovalBestEffort` (`F-1B-078`) como el único camino real de cancelación
+remota.
+
+*Nota de método, la decimosexta vez, y ésta se propagó*: la regla «mirá el receptor» no
+sólo quedó escrita en `F-1B-054`, la usé como contexto en cinco prompts de delegación de
+esta sesión. Un sub-agente la contradijo con la cita del docblock, y la verificación contra
+el fuente de qzpay le dio la razón. Un atajo que clasifica bien un conjunto no clasifica el
+siguiente.
+
+---
+
+### F-1B-081 — El guard que impide dos suscripciones vivas no cuenta a `pending_provider`, que es el estado en el que nace toda suscripción
+
+`assertNoLiveSubscriptionForDomain`
+(`apps/api/src/services/billing/duplicate-subscription-guard.ts:190`) es la defensa contra
+que un cliente termine con dos suscripciones del mismo dominio. Decide con
+`isLiveSubscriptionStatus`, y ese conjunto está medido en el código, no en su docblock:
+
+```
+LIVE_SUBSCRIPTION_STATUSES  (packages/billing/src/predicates/is-live-subscription-status.ts:88)
+  = ENTITLEMENT_GRANTING_STATUSES ∪ { 'past_due' }
+  = { active, trialing, comp, courtesy, past_due }
+```
+
+`pending_provider` **no está**. Y es el estado con el que nacen las filas de los dos
+creadores que llaman a ese guard: `paid-subscription-create.ts:377-385` y
+`pending-provider-subscription-create.ts:331-345`.
+
+**Consecuencia medible**: dos invocaciones concurrentes del mismo checkout leen las dos
+«sin suscripción viva» y las dos siguen. La única defensa que queda es el módulo de
+idempotencia, y `F-1B-082` mide que ahí la lectura y la escritura están separadas.
+
+Empalma con lo que `F-1B-048` midió en producción: de las 8 suscripciones, **3 están en
+`abandoned`** —el estado terminal al que va a parar un `pending_provider` que nunca se
+confirmó—, y las tres tienen `mp_subscription_id` nulo.
+
+---
+
+### F-1B-082 — Ningún creador de suscripción acuña su clave de idempotencia leyendo si ya existe una
+
+Leídos los tres, el patrón es el mismo en los tres:
+
+| creador | qué acuña | ¿lee algo antes? |
+|---|---|---|
+| `pending-provider-subscription-create.ts:311` | `randomBytes(16)` como nonce | **no** |
+| `own-preapproval-subscription-create.ts:294-502` | nada propio: delega en `createPaidSubscription` | **no** |
+| `paid-subscription-create.ts:398` | el id de fila que qzpay genera por llamada | **no** |
+
+Dos invocaciones del mismo checkout lógico producen dos claves distintas, dos filas y —en
+el camino que corre en producción— dos preapprovals. Esto no es un descuido del código: es
+lo que hay que hacer cuando el proveedor no deduplica, y `F-1B-017` de la matriz de MP ya
+midió que ni `external_reference` ni `X-Idempotency-Key` sirven en `/preapproval`.
+
+**El candado existe, y vive afuera del creador.** `checkout-idempotency.ts` lo implementa
+con dos funciones de decisión —`decideCheckoutReuse` (`checkout-reuse-decision.ts:218-263`)
+y `decideOwnPreapprovalReuse` (`checkout-idempotency.ts:482-521`)— que el **llamador**
+invoca antes de crear. Son una lectura y una decisión, separadas de la escritura: no hay
+lock ni constraint que las respalde dentro de estos archivos.
+
+**Tres de esas funciones de reuso ya no se alcanzan.** `resolveReusableCommerceCheckout`,
+`resolveReusablePartnerCheckout` y `resolveReusableAccommodationCheckout`
+(`checkout-idempotency.ts:346-428`) están las tres detrás del ternario de
+`HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` en `subscription-checkout.service.ts` (`:734`,
+`:1183`, `:1501`, `:1881`), en la rama `else`. Con el flag en `true` en los dos entornos
+(`F-1B-045`, `F-1B-049`), **son código inalcanzable en producción y en staging**.
+
+**Y `isUniqueConstraintViolation` no la usa ninguno de los tres.** El helper existe
+(`billing/unique-violation.ts`, detecta SQLSTATE `23505` caminando la cadena de `cause`
+hasta 5 niveles) y tiene **un solo consumidor** en todo el repo:
+`addon-recurring-activation.service.ts:446`, que está en un flujo de activación y no de
+creación. Un `23505` durante cualquiera de las tres creaciones no se traduce a «ya lo hizo
+otro»: se propaga como error genérico.
+
+**Un código de error declarado, mapeado a HTTP y que nadie lanza.**
+`subscription-checkout-error.ts:49` declara `DISCOUNT_APPLY_FAILED` en el union y
+`subscription-checkout-error-http.ts:74` lo mapea a **502**. Buscado
+`new SubscriptionCheckoutError('DISCOUNT_APPLY_FAILED'` sobre `apps` y `packages` sin
+tests: **cero**. Lo que sí existe es otro string, en otro tipo de error:
+`promo-renewal-mp.service.ts:127` produce `code: 'MP_DISCOUNT_APPLY_FAILED'` con forma de
+`ServiceError`. Y un comentario de `routes/billing/start-paid.ts:335` describe el flujo
+citando el nombre que nunca se lanza.
 
 ---
 
