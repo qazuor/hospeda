@@ -152,10 +152,14 @@ Lo que sigue es el diccionario; el capítulo 03 dice qué transiciones existen.
 | máquina | estados |
 |---|---|
 | **Trial** | `PRE_TRIAL` · `TRIAL_ACTIVE` · `TRIAL_CONVERTED` · `TRIAL_EXPIRED` |
-| **Suscripción** | `PENDING_AUTHORIZATION` · `ACTIVE` · `GRACE_PERIOD` · `PAUSED` · `SUSPENDED` · `CANCEL_SCHEDULED` · `CANCELLED` · `RECONCILIATION_REQUIRED` |
+| **Suscripción** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `GRACE_PERIOD` · `PAUSED` · `SUSPENDED` · `CANCEL_SCHEDULED` · `CANCELLED` · `RECONCILIATION_REQUIRED` |
 | **Pago** | `PENDING` · `SUCCEEDED` · `FAILED` · `REFUNDED` · `PARTIALLY_REFUNDED` |
 | **Pago manual** | `AWAITING` · `REGISTERED` · `DECLARED_UNPAID` |
-| **Addon (instancia)** | `PENDING_AUTHORIZATION` · `ACTIVE` · `EXPIRED` · `CANCELLED` |
+| **Addon (instancia)** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `EXPIRED` · `CANCELLED` |
+
+> **`ABANDONED` se agregó al escribir el capítulo 03**, no estaba en el primer corte de este
+> glosario: `M-SUB-01` exige que la ventana del preapproval sin autorizar tenga duración máxima
+> y limpieza, y sin un estado de salida esa ventana no vence nunca.
 | **Publicación** | `DRAFT` · `PUBLISHED` · `UNPUBLISHED_BY_BILLING` · `ARCHIVED` |
 | **Grace** | no es una máquina propia: es el sub-estado `GRACE_PERIOD` de Suscripción, con su reloj |
 | **Pausa** | no es una máquina propia: es el sub-estado `PAUSED` de Suscripción, **con un motivo obligatorio** |

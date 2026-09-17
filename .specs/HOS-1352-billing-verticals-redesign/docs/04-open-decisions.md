@@ -280,7 +280,7 @@ despublicar enseguida · `A-TRIAL-02` "solamente en trial" para un usuario multi
 `M-TRIAL-03` anti-spam de la campaña de recuperación · `E-TRIAL-03` la campaña se dispara y
 después el trial se extiende
 
-**Suscripción** · `M-SUB-01` estados faltantes · ~~`A-SUB-01`~~ **cerrado por el cap. 01** (sí
+**Suscripción** · ~~`M-SUB-01`~~ **cerrado por el cap. 03** (los cuatro estados que pedía, más `ABANDONED`; y las 72 h, la limpieza y el reintento de la ventana sin autorizar) · ~~`A-SUB-01`~~ **cerrado por el cap. 01** (sí
 existen suscripciones no principales: cada addon recurrente es una, por `DEC-ADDON-002`; el §11
 acota sólo la principal) · ~~`A-SUB-02`~~ **cerrado por el cap. 01** (ni el plan ni el billing
 option lo declaran: `puedePausar()` lo deriva en un solo lugar) · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · **`E-SUB-06` un cambio de precio programado que cae sobre una suscripción PAUSADA** (nuevo, residuo de `DEC-MP-001` + `EX-11`: estando pausada el proveedor **rechaza toda modificación**, así que el cambio no se puede aplicar en su fecha efectiva y hay que decidir si se encola hasta la reanudación, si se bloquea la pausa mientras hay un cambio pendiente, o si el §29 se cumple de otro modo) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
@@ -315,8 +315,7 @@ señales de identidad · **`M-LEGAL-03` política de notificación de aumento** 
 `M-MAIL-03` jerarquía de supresión y transaccional vs comercial · `M-MAIL-04` qué comunica el
 proveedor por su cuenta
 
-**Concurrencia** · **`M-CONC-01`** idempotencia del lado nuestro — ✅ **cerrado por `DEC-CONC-001`** (2026-09-16) · `M-CONC-02` no-retroceso de
-estado · `E-CONC-01` los seis cruces del §52 · `M-CONC-03` qué hace que un pago tardío sea
+**Concurrencia** · **`M-CONC-01`** idempotencia del lado nuestro — ✅ **cerrado por `DEC-CONC-001`** (2026-09-16) · ~~`M-CONC-02`~~ **cerrado por el cap. 03** (un webhook es un aviso, no un estado: se relee por id, que es el camino medido confiable) · `E-CONC-01` los seis cruces del §52 · `M-CONC-03` qué hace que un pago tardío sea
 seguro
 
 **Admin y observabilidad** · `M-ADMIN-01` catálogo de acciones administrativas · `R-OBS-01` un
