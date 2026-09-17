@@ -4358,6 +4358,116 @@ escritura falle.
 
 ---
 
+### F-1B-098 — La transacción del adaptador de qzpay no aísla nada, dos repositorios enteros no están enchufados, y el más grande expone 6 de sus 29 métodos
+
+Leídos enteros los 21 archivos de `qzpay/packages/drizzle/src/adapter/` (2 / 1.465 líneas) y
+`repositories/` (19 / 6.882).
+
+**La transacción descarta la transacción.** `adapter/drizzle-storage.adapter.ts:271-275`:
+
+```ts
+async transaction<T>(fn: () => Promise<T>): Promise<T> {
+    return this.db.transaction(async () => {
+        return fn();
+    });
+}
+```
+
+La firma del callback **no recibe ningún parámetro**, así que el cliente de sesión que
+`this.db.transaction()` entrega no se captura ni se le pasa a `fn()`. Todo lo que `fn()`
+haga corre sobre `this.db`, la conexión de afuera. **Es una transacción que abre una
+transacción y después trabaja fuera de ella.**
+
+No es un problema activo, por la razón que `F-1B-090` ya midió: `core/src/billing.ts` no
+invoca `transaction(` ni una vez en sus 3.092 líneas, y en hospeda `getStorage().transaction`
+da cero. La función existe, está mal, y nadie la llama.
+
+(La utilidad que sí lo haría bien, `utils/transaction.ts:58`, sólo se usa en
+`examples/transactions.example.ts` y en un JSDoc.)
+
+**El contrato está implementado 1 a 1 — y eso es lo que esconde el hallazgo.** Las 14
+sub-interfaces del contrato (`core/src/adapters/storage.adapter.ts:75-456`) están las 14 en
+el adaptador (`:213-226`) y cada una implementa exactamente los métodos que declara. Lo que
+no cierra es la capa de abajo:
+
+| repositorio | métodos | los alcanza el adaptador | huérfanos |
+|---|---|---|---|
+| **`subscriptions`** | **29** | **6** | **23** |
+| `invoices` | 26 | 7 | 19 |
+| `customers` | 20 | 7 | 13 |
+| `payments` | 20 | 8 | 12 |
+| `vendors` | 20 | 8 | 12 |
+| `addons` | 20 | 11 | 9 |
+| `promo-codes` | 18 | 7 | 11 |
+| `limits` / `entitlements` | 18 | 9 / 8 | 9 / 10 |
+| `prices` | 17 | 6 | 11 |
+| `payment-methods` | 15 | 8 | 7 |
+| `plans` | 13 | 5 | 8 |
+| `usage-records` | 10 | 1 | 9 |
+| `checkouts` · `subscription-polling-jobs` | 5 · 6 | 5 · 6 | **0 · 0** |
+| **`webhook-events`** | **18** | **0** | **18** |
+| **`audit-logs`** | **14** | **0** | **14** |
+
+**Los dos últimos no están enchufados en absoluto**: `WebhookEventsRepository` y
+`AuditLogsRepository` suman **825 líneas y 32 métodos**, el contrato no declara ninguna
+propiedad para ellos y el constructor del adaptador no los instancia — cero ocurrencias de
+sus nombres en `drizzle-storage.adapter.ts`.
+
+**Y las tablas que esos dos modelan son las que más filas tienen.** `billing_webhook_events`
+(224) y `billing_webhook_dead_letter` (75) son las dos tablas más pobladas de las 27
+(`F-1B-009`), y las escribe **hospeda con Drizzle crudo**:
+`cron/jobs/webhook-retry.job.ts:594-596`, `:723-741`, `:777-814`, `:887-891` y
+`routes/webhooks/health.ts:56-114`. Lo mismo con `billing_audit_logs`, escrita desde
+`service-core/…/promo-code.crud.ts:276,539,604`, `…/billing-settings.service.ts:232,296`,
+`…/addon.audit.ts:88` y `…/plan.audit.ts:86`.
+
+Es el mismo patrón que `F-1B-097` midió con la idempotencia —hospeda escribiendo en la
+tabla de qzpay con un prefijo de namespace para no chocar— y que `F-1B-090` midió con
+`promoCodes`, `addons`, `paymentMethods` y `metrics`: **la pieza existe del lado de qzpay y
+la que corre es la de hospeda, sobre la misma tabla.**
+
+**El caso extremo es `subscriptions.repository.ts`**: 750 líneas, 29 métodos, **6**
+alcanzables. Entre los 23 huérfanos está toda la sección de consultas de ciclo de vida
+—`findNeedingRenewal:574`, `findTrialsEndingSoon:607`, `findNeedingPaymentRetry:649`,
+`findWithExpiredGracePeriod:686`, `findPendingCancellationAtPeriodEnd:726`—. Y hospeda
+tiene su propia `findTrialsEndingSoon` (`apps/api/src/services/trial.service.ts:1886`),
+que `F-1B-046` ya midió **sin ningún llamador**: el mismo nombre, escrito dos veces, sin
+consumidor en ninguno de los dos lados.
+
+**`entitlements` repite el hallazgo de `limits` y nadie lo había anotado.**
+`F-1B-034` midió que `findDefinitionByKey` y `listDefinitions` de `limits` no los llama
+nadie. Sus gemelos de `entitlements` están en las mismas líneas relativas
+(`repositories/entitlements.repository.ts:61`, `:70`), expuestos por el adaptador
+(`:1216-1224`), y también en cero.
+
+**Un `where` que filtra por la columna de la tabla equivocada.** Las tres cargas eager de
+`repositories/customers.repository.ts` —`findByIdWithSubscriptions:367-378`,
+`findByIdWithPaymentMethods:388-399` y `findByIdWithRelations:425-453`— escriben el filtro
+de la relación anidada así:
+
+```ts
+with: { subscriptions: { where: isNull(billingCustomers.deletedAt) } }
+```
+
+`billingCustomers` es la tabla **padre**. El filtro de soft-delete de las suscripciones
+está mirando la columna del cliente. Los tres métodos son huérfanos —ni el contrato ni
+hospeda los alcanzan—, así que el defecto nunca se ejerció.
+
+**El filtro de `livemode` es desparejo, y eso mezcla sandbox con producción.**
+`checkouts.repository.ts:findByCustomerId` (`:67-94`) no lo filtra aunque su `search`
+(`:99-135`) sí; `addons.repository.ts:findByPlanId` (`:77-90`) y las dos por suscripción
+(`:263-280`) tampoco; y **ninguno de los diez métodos de lectura de `usage-records`** lo
+filtra, aunque la escritura sí graba la columna. En `subscriptions.repository.ts` las cinco
+consultas de ciclo de vida lo reciben **opcional** y sólo agregan la condición
+`if (livemode !== undefined)`: sin argumento, la consulta corre sin filtro.
+
+**`listAll` pagina sin tope.** El adaptador la implementa con `collectAllPages`
+(`utils/collect-all.ts:56-96`), cuyo `maxItems` es opcional (`:66`): sin él, el `while(true)`
+de `:78` sigue pidiendo páginas hasta que el proveedor diga que no hay más. **Ninguno de los
+14 `listAll` del adaptador pasa `maxItems`.**
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -4392,7 +4502,7 @@ Y en **qzpay**, con el mismo criterio:
 | Carril | Denominador | Estado |
 |---|---|---|
 | `core` — el motor: qué expone y qué decide | 89 archivos / 22.120 líneas | 🟨 `billing.ts` + `billing-from-env` + `index` + los 5 de `adapters/` leídos enteros (**4.724 líneas**) y la fachada de 94 miembros cruzada contra hospeda — `F-1B-090`. Faltan `services/` (18 arch. / 8.762), `events/` (6 / 1.923), `helpers/` (6 / 2.258), `types/` (21 / 2.484), `utils/` (7 / 1.362), `errors/` (8 / 612), `constants/` (16 / 486) |
-| `drizzle` — las 27 tablas: columnas, constraints e índices | 27 tablas / 68 archivos | ⬜ |
+| ~~`drizzle` — las 27 tablas: columnas, constraints e índices~~ | 27 tablas / 68 archivos | ✅ `schema/` + `mappers/` (35 arch. / 4.424 líneas) y `adapter/` + `repositories/` (21 / 8.347) leídos enteros — **56 de 68, 12.771 de 14.762 líneas**; falta `utils/` (9 / 1.667) — `F-1B-096`, `F-1B-098` |
 | ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
 | `hono` y `react` — las superficies que hospeda monta | 50 archivos | 🟨 las tres factories de `hono` contadas y su montaje verificado (59 rutas), y el consumo de `react` medido — `F-1B-093`, `F-1B-094`; los 50 archivos, sin leer enteros |
 | La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
