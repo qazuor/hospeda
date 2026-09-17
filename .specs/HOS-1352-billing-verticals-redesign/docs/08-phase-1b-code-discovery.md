@@ -2449,6 +2449,62 @@ catálogo comercial que `F-1B-033` midió viviendo en TypeScript.
 
 ---
 
+### F-1B-060 — El mismo descuento porcentual se calcula con dos redondeos distintos dentro de una sola respuesta
+
+`packages/service-core/src/services/billing/promo-code/` son **9 archivos y 4.117
+líneas** —`redemption` 1.090, `crud` 725, `renewal` 590, `validation` 551, `service` 407,
+`trial-extension` 402, `effect-reducer` 207, `defaults` 107, `index` 38—, leídos enteros.
+
+**Tres sitios calculan «cuánto descuenta un porcentaje», y uno redondea distinto:**
+
+| dónde | cálculo |
+|---|---|
+| `effect-reducer.ts:170` | `Math.floor(rawDiscount)` — y guarda el resto en `roundingDelta` (`:171-175`) |
+| `promo-code.validation.ts:270` (camino legacy) | `Math.floor((amount * value) / 100)` |
+| **`promo-code.validation.ts:205`** | **`Math.round((context.amount * value) / 100)`** |
+
+Los tres conviven en la **misma** respuesta de `validatePromoCode`: el campo
+`discountAmount` sale del `round` de `:205` y el `effectPreview.finalAmount` del `floor`
+del reducer (`:309`) o del legacy (`:270`). Cuando el descuento bruto cae exactamente en
+medio centavo, `discountAmount` y `amount - effectPreview.finalAmount` difieren en **1**,
+en la misma llamada. Ningún comentario menciona la diferencia.
+
+**El decremento multi-ciclo tiene un solo disparador y ninguna idempotencia.**
+`promoEffectRemainingCycles` sólo baja en `promo-code.renewal.ts:447-449` y `:466-469`
+(vía `persistRemainingCycles:581-590`), y el único llamador de `resolveRenewalPromoEffect`
+fuera de tests es el webhook `subscription-payment-handler.ts:735`. La función lee
+`remaining` y escribe `remaining - 1`: **nada dentro del archivo impide que dos entregas
+del mismo cobro lo bajen dos veces**. El único control adyacente (HOS-245, `:349-407`)
+compara el monto cobrado y saltea el decremento si no coincide — protege contra otro
+monto, no contra una entrega repetida.
+
+**La redención se difiere por convención del llamador, no por el servicio.**
+`applyPromoCode` incrementa `usedCount` y escribe la fila de uso en el momento en que se
+la llama (`:756-779` comp, `:827-829` trial, `:945-971` discount), y el propio
+`effect-reducer.ts:78-99` documenta el riesgo: un `POST /apply` sin `subscriptionId`
+*«redime el código… y sólo entonces retorna `finalAmount: 0`»*. Los caminos productivos lo
+evitan **afuera**: el checkout de suscripción difiere la redención a
+`link-preapproval.service.ts:872-885`, ya con la preapproval vinculada, y el de addons a
+`addon.checkout.ts:1450-1479`, *«now that payment is confirmed … prevents inflating usage
+counts for abandoned checkouts»*. La regla no vive en el servicio: vive en cada llamador.
+
+**Y hay superficie sin llamador productivo**: `tryRedeemAtomically`,
+`incrementPromoCodeUsage` y `recordPromoCodeUsage` sólo los alcanzan tests;
+`getDefaultPromoCodeConfigs` también. La rama `comp` de `applyPromoCode` (`:754-807`)
+sigue completa y **no tiene llamador que la alcance**: la única ruta HTTP que podría
+hacerlo corta antes con `assertPromoCodeIsNotComp` (`routes/billing/promo-codes.apply.ts:202`),
+y `promo-code-defaults.ts:24-26` lo dice: *«Nothing redeems a comp code any more»*. En
+producción, sin embargo, hay dos suscripciones `comp` y las dos tienen una fila de uso de
+`HOSPEDA_FREE` (`F-1B-048`).
+
+**Validar es deliberadamente no atómico**: `validatePromoCode` corre ocho chequeos en
+orden (`:105-196`) y **dos de ellos fallan abierto** ante un error de base —el tope por
+usuario (`:465-467`) y el «sólo clientes nuevos» (`:384-386`)—, con el comentario *«Fail-open:
+don't block validation on DB errors»*. El docblock (`:43-63`) declara el TOCTOU y remite
+a la redención, que re-valida bajo `SELECT … FOR UPDATE`.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
