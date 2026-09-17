@@ -4166,6 +4166,44 @@ hospeda.
 
 ---
 
+### F-1B-095 — Los cuatro paquetes de qzpay sin consumidor son hojas: 11.997 líneas que nada de lo que hospeda usa importa
+
+`F-1B-005` midió que hospeda usa 5 de los 9 paquetes. Falta la pregunta que decide el
+alcance de un rediseño: **¿los otros cuatro cuelgan de los cinco, o al revés?**
+
+**El grafo completo, leído de los `package.json`:**
+
+| paquete | archivos | líneas | depende de |
+|---|---|---|---|
+| **`core`** | 90 | **22.611** | — |
+| **`drizzle`** | 68 | **14.762** | `core` |
+| **`react`** | 28 | 4.869 | `core` |
+| **`mercadopago`** | 16 | 4.160 | `core` |
+| **`hono`** | 22 | 4.137 | `core`, `drizzle` |
+| | | | |
+| `stripe` | 19 | 3.309 | `core` |
+| `dev` | 9 | 3.039 | `core`, `drizzle` |
+| `cli` | 21 | 3.142 | `core`, `drizzle`, `hono`, `mercadopago`, `stripe` |
+| `nestjs` | 36 | 2.507 | `core`, `drizzle` |
+
+**Los cinco que hospeda usa: 224 archivos / 50.539 líneas. Los cuatro que no: 85 / 11.997.**
+
+**Las flechas van todas en la misma dirección.** Ninguno de los cinco declara depender de
+ninguno de los cuatro, y en el código hay exactamente **cuatro menciones**, todas dentro de
+un `@example` de docblock: `packages/hono/src/index.ts:10` y
+`packages/core/src/services/saved-card.service.ts:9`, `:277`, `:285`, las cuatro
+nombrando `@qazuor/qzpay-stripe` como el adaptador alternativo que se podría enchufar.
+Ningún `import` real.
+
+O sea: **`stripe`, `nestjs`, `cli` y `dev` son hojas.** Son 11.997 líneas que se pueden
+mirar como fuera del alcance sin tocar una sola línea de lo que corre — y el `cli`, que es
+el único que depende de cuatro paquetes a la vez, no depende de él nadie.
+
+*Lo que esta medición NO dice*: si esas 11.997 líneas deben existir o no. Dice que la
+pregunta se puede responder aparte de las otras 50.539, porque el grafo no las ata.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -4206,4 +4244,4 @@ Y en **qzpay**, con el mismo criterio:
 | La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
 | ~~El vocabulario de estados y sus mapas~~ | — | ✅ `F-1B-021` |
 | Los otros vocabularios compartidos: pago, factura, reembolso, addon | por medir | ⬜ |
-| `stripe`, `nestjs`, `cli`, `dev` — sin consumidor en hospeda | 85 archivos | ⬜ |
+| ~~`stripe`, `nestjs`, `cli`, `dev` — sin consumidor en hospeda~~ | 85 archivos / 11.997 líneas | ✅ `F-1B-095` — son HOJAS: nada de lo que hospeda usa los importa |
