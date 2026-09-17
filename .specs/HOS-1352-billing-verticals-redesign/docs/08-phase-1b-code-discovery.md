@@ -4143,6 +4143,12 @@ registros en el fuente. **No se resuelve acá cuál es el denominador correcto**
 anotado como discrepancia a re-medir construyendo la app, que es el método que `F-1B-016`
 ya demostró necesario.
 
+> **Intentado y no logrado, 2026-09-17.** Dos corridas de la sonda: la primera murió en la
+> resolución de módulos de `tsx`, y la segunda —ya con las diez variables de entorno
+> obligatorias sintetizadas y `NODE_ENV=development`— **fue matada por el techo de cinco
+> minutos sin llegar a imprimir**. Construir la app es reproducible pero no es barato;
+> queda como la próxima medición de este carril, no como algo pendiente de método.
+
 ---
 
 ### F-1B-094 — De las 4.869 líneas de componentes React de qzpay, hospeda no usa ninguno: importa el proveedor y el tema
