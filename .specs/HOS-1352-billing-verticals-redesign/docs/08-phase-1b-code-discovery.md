@@ -91,7 +91,7 @@ verificado contra la definición real.
 | Índices | **836** | `pg_index` por catálogo — **no** por nombre, que da 160 PK en vez de 174 | **836** |
 | Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | **132** |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
-| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** horario · **47** partición · **17 de 17** handlers de billing leídos |
+| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** horario · **47** partición · **47 de 47** handlers leídos (17 de billing + 30 fuera) |
 | Migraciones estructurales | **125** | archivos, cruzados con `drizzle.__drizzle_migrations` en prod | **125** |
 | Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
 | Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
@@ -1735,7 +1735,7 @@ Ninguno empezado. El orden no está decidido.
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | ~~Los 47 crons: nombre, horario y habilitación~~ | — | ✅ `F-1B-003`, `F-1B-017` |
 | ~~Los 17 handlers de billing, leídos por dentro~~ | — | ✅ `F-1B-018` a `F-1B-031` |
-| Los 30 crons restantes (no tocan billing) | 30 | ⬜ |
+| ~~Los 30 crons restantes (no tocan billing)~~ | 30 | ✅ `F-1B-040` a `F-1B-044` — **47 de 47** leídos |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | ⬜ |
