@@ -4501,7 +4501,7 @@ Y en **qzpay**, con el mismo criterio:
 
 | Carril | Denominador | Estado |
 |---|---|---|
-| `core` — el motor: qué expone y qué decide | 89 archivos / 22.120 líneas | 🟨 `billing.ts` + `billing-from-env` + `index` + los 5 de `adapters/` leídos enteros (**4.724 líneas**) y la fachada de 94 miembros cruzada contra hospeda — `F-1B-090`. Faltan `services/` (18 arch. / 8.762), `events/` (6 / 1.923), `helpers/` (6 / 2.258), `types/` (21 / 2.484), `utils/` (7 / 1.362), `errors/` (8 / 612), `constants/` (16 / 486) |
+| `core` — el motor: qué expone y qué decide | 90 archivos / 22.611 líneas | 🟨 `billing.ts` + adapters (4.724) y los 14 de `services/` (7.920) leídos enteros — **12.644 de 22.611 (56 %)** — `F-1B-090`, `F-1B-097`. Falta `events/` (1.923), `helpers/` (2.258), `types/` (2.484), `utils/` (1.362), `errors/` (612), `constants/` (486) |
 | ~~`drizzle` — las 27 tablas: columnas, constraints e índices~~ | 27 tablas / 68 archivos | ✅ `schema/` + `mappers/` (35 arch. / 4.424 líneas) y `adapter/` + `repositories/` (21 / 8.347) leídos enteros — **56 de 68, 12.771 de 14.762 líneas**; falta `utils/` (9 / 1.667) — `F-1B-096`, `F-1B-098` |
 | ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
 | `hono` y `react` — las superficies que hospeda monta | 50 archivos | 🟨 las tres factories de `hono` contadas y su montaje verificado (59 rutas), y el consumo de `react` medido — `F-1B-093`, `F-1B-094`; los 50 archivos, sin leer enteros |
