@@ -1622,6 +1622,28 @@ lock— para no sostener una transacción abierta mientras habla con la red.
 
 ---
 
+### F-1B-042 — La `description` que ve un administrador no describe el cuerpo en cuatro crons, y dos de los casos nuevos están fuera de billing
+
+`F-1B-024` (`finalize-cancelled-subs`) y `F-1B-028` (`addon-expiry`) eran los dos de
+billing. Los 30 restantes aportan **dos más**:
+
+| cron | qué declara la `description` | qué hace el cuerpo |
+|---|---|---|
+| `entity-views-purge` | *«Purge entity_views rows older than 95 days»* (`:38`) | purga **dos** tablas: `entity_views` (`:68`) y `partner_logo_clicks` (`:79`). El comentario de `:72-78` explica que la segunda se plegó acá en vez de crear otro cron; la `description` no se actualizó. |
+| `partner-payment-review` | *«Ask an admin whether a partner … **Never changes the partner state itself**»* (`:98-99`) | escribe `partners.payment_review_state = PENDING_CONFIRMATION` (`:182-187`) |
+
+El segundo tiene la contradicción **adentro del mismo archivo**: el comentario de `:178`
+llama a esa línea *«The ONLY write this job performs on a partner»*. El docblock del
+módulo (`:22-27`) reconcilia las dos afirmaciones definiendo «estado» como
+`subscriptionStatus` / `lifecycleState` / visibilidad, pero el string `description` —que
+es lo único que se muestra en un panel de crons— dice *«never changes the partner state
+itself»* sin esa aclaración.
+
+Son **cuatro de 47**, y las cuatro fallan del mismo lado: la `description` describe una
+versión anterior o más angosta del trabajo, nunca una más amplia.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
