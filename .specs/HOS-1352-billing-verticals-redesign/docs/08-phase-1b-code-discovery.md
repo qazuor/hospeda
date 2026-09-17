@@ -1166,6 +1166,49 @@ son cinco paquetes en dos repos.
 
 ---
 
+### F-1B-033 — Entitlements y limits se declaran en TypeScript, y la tabla de la base es su reflejo
+
+El §9 del PDR es terminante: *«Toda configuración relevante del dominio debe salir SI O SI
+DE DATABASE. NO usar: archivos TS; JSON de configuración; constantes duplicadas…»*, y
+lista **entitlements** y **limits** entre lo que debe salir de la base.
+
+Hoy es al revés, y el propio código lo declara. `packages/billing/src/config/entitlements.config.ts:5-27`:
+
+> *«`ENTITLEMENT_DEFINITIONS` is NOT DB-backed and is **intentionally NOT** part of the
+> billing catalog that was migrated to the database… **the enum is the source of truth**,
+> and this array is its human-readable companion… The seeder reads this array to populate
+> the `billing_entitlements` lookup table, but **that table is a reflection of this file —
+> not an independent source**.»*
+
+La razón que da: las claves aparecen en genéricos de TypeScript y en firmas de
+middleware, y un registro sólo-en-base perdería la exhaustividad en tiempo de
+compilación.
+
+**Los dos catálogos, medidos:**
+
+| | declarado en TS | filas en producción |
+|---|---|---|
+| `EntitlementKey` | **53** | **53** ✓ |
+| `LimitKey` | **22** | **20** ✗ |
+
+**Los entitlements coinciden exacto.** Los limits **no**: dos claves existen en el enum y
+**no tienen fila** en `billing_limits`:
+
+```
+max_ai_chat_experience_per_month
+max_ai_chat_gastronomy_per_month
+```
+
+Son las cuotas de chat con IA de **gastronomía y experiencia** — las dos verticales que
+el §5.5 separó de Commerce. Las otras siete claves `max_ai_*` sí están.
+
+*Qué abre, sin resolverlo acá*: `DEC-ENT-001` estableció que existen entitlements
+**medidos** y que cada uno declara dos cuotas; `DEC-ENT-002` fijó que se resetean
+mensualmente. Las dos decisiones se apoyan en un catálogo que hoy vive en un enum de
+TypeScript, con la tabla de la base como copia — y con dos claves que la copia no tiene.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -1185,7 +1228,8 @@ Ninguno empezado. El orden no está decidido.
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | ⬜ |
 | Las 337 funciones de `apps/api/src/services` | 337 | ⬜ |
-| Entitlements y limits: claves existentes y dónde se consumen | por medir | ⬜ |
+| ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033` |
+| Dónde se CONSUMEN las 53 + 22 claves | 75 | ⬜ |
 | Superficies Web | por medir | ⬜ |
 | Superficies Admin | por medir | ⬜ |
 | ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
