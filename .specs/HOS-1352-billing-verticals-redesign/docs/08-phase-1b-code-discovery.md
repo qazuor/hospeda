@@ -1209,6 +1209,343 @@ TypeScript, con la tabla de la base como copia — y con dos claves que la copia
 
 ---
 
+### F-1B-034 — Las dos tablas de catálogo son de escritura solamente: veinte escritores, cero lectores
+
+`F-1B-033` midió que el catálogo de claves vive en TypeScript y que la tabla es su
+reflejo. Lo que se midió ahora es el otro lado: **a ese reflejo no lo lee nadie.**
+
+| tabla | filas en prod | escritores | lectores |
+|---|---|---|---|
+| `billing_entitlements` | **53** | **17** | **0** |
+| `billing_limits` | **20** | **3** | **0** |
+
+**Los 17 escritores de `billing_entitlements`** son el seeder
+(`packages/seed/src/required/billingEntitlements.seed.ts:61`), **catorce**
+data-migrations que insertan la fila de su clave cuando falta —`0077:144`, `0080:100`,
+`0081:121`, `0082:96`, `0084:114`, `0085:115`, `0086:111`, `0087:100`, `0088:101`,
+`0091:111`, `0093:142`, `0094:301`, `0096:231`, `0098:111`— y **dos** `extras`:
+`015-spec216-entitlement-prune-and-inherit.data.sql:63` (un `DELETE` de ocho claves) y
+`028-vip-promotions-access-repair.data.sql:33` (un `INSERT`). O sea que los **tres**
+carriles de migración de `F-1B-015` escriben la misma tabla.
+
+**Los 3 de `billing_limits`**: el seeder (`billingLimits.seed.ts:67`) y dos
+data-migrations, `0061:109` y `0096:214`.
+
+**Y del lado de la lectura no hay una sola.** Verificado en las dos direcciones:
+
+- En hospeda, `billingEntitlements` y `billingLimits` sólo aparecen fuera de tests en
+  el seeder, las data-migrations, los `extras`, el re-export de
+  `packages/db/src/billing/index.ts:53,70` y un comentario de
+  `scripts/server-tools/src/commands/billing-test-reset.ts:7`. **Ninguna ruta, servicio,
+  middleware o cron las consulta.**
+- En qzpay, la API de lectura **existe y no la llama nadie**:
+  `core/src/adapters/storage.adapter.ts:367-368` y `:378-379` declaran
+  `findDefinitionByKey` y `listDefinitions` para los dos catálogos,
+  `drizzle/src/repositories/limits.repository.ts:61,70` los implementa y
+  `drizzle/src/adapter/drizzle-storage.adapter.ts:1265-1274` los expone. **Cero llamadas
+  en `core`, en `hono`, en `react` y en hospeda.**
+
+**El gate resuelve del plan, no del catálogo**, y el propio repo lo dice donde importa:
+`extras/015…data.sql:70-71` justifica su `DELETE` sobre `billing_customer_entitlements`
+con *«the column has no FK to `billing_entitlements`, and gating resolves from the plan
+at runtime»*. Lo que se chequea es el JSONB `entitlements` / `limits` de la fila de
+`billing_plans`.
+
+Consecuencia directa: **una fila de más, de menos o desactualizada en cualquiera de las
+dos tablas no cambia ningún comportamiento**, porque nadie las consulta. Es la razón por
+la que las dos claves faltantes de `F-1B-033` pudieron estar ausentes sin que nada se
+rompiera — y también por la que su ausencia no se detecta sola.
+
+*Qué abre, sin resolverlo acá*: el §9 exige que la configuración del dominio salga de la
+base. Hoy hay una copia en la base, escrita por veinte lugares y leída por ninguno.
+
+---
+
+### F-1B-035 — Las dos filas que faltan salen de una sola migración, y la regla que no siguió está escrita en otra
+
+`F-1B-033` midió que `LimitKey` declara 22 claves y `billing_limits` tiene 20. Las dos
+ausentes —`max_ai_chat_gastronomy_per_month` y `max_ai_chat_experience_per_month`— las
+introdujo **`0093-hos-400-commerce-ai-chat-grant-and-quota.ts`**, y esa migración
+**defiende un eje y no el otro**:
+
+- **Entitlement**: `:135-148` consulta `billing_entitlements` por `ai_chat` e inserta la
+  fila si falta, aunque su propio docblock (`:54-59`) explica que esa clave existe desde
+  SPEC-173. *«It re-checks anyway and inserts if absent, so a database seeded from a
+  narrower baseline is not left with a dangling grant.»*
+- **Limit**: escribe el cap de las dos claves nuevas en el JSONB de las seis filas de
+  `billing_plans` (`:158-196`) y **no toca `billing_limits`**. No es una omisión en el
+  cuerpo: el `import` de la línea `85` trae `billingEntitlements`, `billingPlans` y `eq`
+  — **la tabla de limits no está importada**, así que no había manera de escribirla.
+
+**Es la única de las tres data-migrations que introdujo claves de limit nuevas sin su
+fila de catálogo.** `0061:94-117` inserta las de `max_gastronomies` / `max_experiences`
+antes de crear los planes, con el comentario *«inserted before the plans because a plan's
+`limits` JSONB refers to these keys»*, y `0096:198-215` inserta la de
+`max_active_private_galleries`. `0094` no entra en la comparación: escribe cuotas de
+claves que ya existían (`:206-212` y `:234-237`, todas previas), no claves nuevas.
+
+**Y la regla está escrita, en la migración siguiente.** `0096:199-206`:
+
+> *«A grant naming a key with no `billing_entitlements` row is a dangling grant, and a
+> plan limit naming a key with no `billing_limits` row is the same thing on the other
+> axis. Both are created rather than assumed — `0093` and `0094` state the reason: the
+> documented run order (`db:migrate` → `db:apply-extras` → `db:seed:migrate`) does not
+> include the required seed, so a database can legitimately hold the plan rows while the
+> lookup tables are still nearly empty.»*
+
+Cita a `0093` como fuente de la razón, y `0093` aplicó esa razón sólo al eje de los
+entitlements.
+
+**El motivo por el que el eje de entitlements sí se defiende está medido, no supuesto.**
+`0094:278-291` lo cuenta: la versión original verificaba la presencia de las 15 claves y
+**tiraba** si faltaban, y *«that is precisely the state `cli-data-migrate.integration.test.ts`
+builds, where 14 of the 15 were missing and this was the only one of the 94 migrations
+that aborted the run»*. O sea que el eje de entitlements tiene catorce guardias porque un
+test rompió una vez; el de limits no tuvo ese accidente y quedó con dos.
+
+Cruza con `F-1B-034`: como **nadie lee `billing_limits`**, las dos filas ausentes no
+producen ningún síntoma en runtime. El daño es de catálogo — y la única superficie donde
+se nota es la etiqueta: las mismas dos claves, más `max_active_private_galleries`, son
+**las únicas 3 de las 22** que no tienen entrada en
+`packages/i18n/src/locales/<lang>/account.json` (`subscription.usage.limits.<key>`,
+verificado en las tres locales), así que el panel de consumo cae al fallback de
+`PlanUsageSection.client.tsx:283`, que es `limit.displayName` — *«that field comes from
+`LIMIT_METADATA` and is hardcoded English»*, según el comentario de `:281-282`.
+
+---
+
+### F-1B-036 — Once mecanismos chequean las claves, y el único que falla CERRADO ante una clave ausente no lo llama nadie
+
+Inventario de cómo se chequea una clave, contado sobre `apps/api/src/routes` (los 1.032
+handlers de `F-1B-016`), con el nombre del mecanismo como patrón:
+
+| mecanismo | dónde está definido | ocurrencias en rutas | archivos |
+|---|---|---|---|
+| `requireEntitlement(key)` | `middlewares/entitlement.ts:1335` | **79** | 71 |
+| `commerceVerticalEntitlementMiddleware(v)` | `middlewares/commerce-entitlement.ts:591` | **50** | 39 |
+| `requireLiveSubscription(domain)` | `middlewares/require-live-subscription.ts:79` | 34 | 34 |
+| `gateXxx(...)` (los 15 de tourist/accommodation) | `middlewares/tourist-entitlements.ts`, `…/accommodation-entitlements.ts` | 17 | 14 |
+| `enforceXxxLimit(...)` | `middlewares/limit-enforcement.ts`, `…/commerce-limit-enforcement.ts` | 15 | 6 |
+| `hasEntitlement(c, key)` | `middlewares/entitlement.ts:1474` | 9 | 7 |
+| `getRemainingLimit(c, key)` | `middlewares/entitlement.ts:1514` | 8 | 8 |
+| `createAiQuotaMiddleware(feature)` | `middlewares/ai-quota.ts:174` | 7 | 4 |
+| `checkLimit(params)` | `utils/limit-check.ts:178` | 5 | 5 |
+| `assertXxxLimitOrThrow(...)` | `middlewares/limit-enforcement.ts` | 3 | 1 |
+| **`requireLimit(key)`** | `middlewares/entitlement.ts:1402` | **0** | **0** |
+
+**Ninguno se monta en el ensamblador**: `apps/api/src/routes/index.ts` no tiene una sola
+ocurrencia de ninguno de los once. El gate se declara handler por handler.
+
+**`requireLimit` es código muerto.** Fuera de tests, las únicas menciones en todo el repo
+son su propia definición (`:1402`), el `@example` de su docblock (`:1388-1393`), dos
+comentarios que lo nombran (`:1294`, `types.ts:96`) y una línea de `apps/api/CLAUDE.md`.
+**Cero call sites.**
+
+Eso importa porque **es el único camino que falla cerrado ante una clave de limit
+ausente**, y las dos mitades están escritas en el mismo archivo:
+
+| función | condición | qué devuelve |
+|---|---|---|
+| `requireLimit` (`:1421-1430`) | `!limits.has(key)` | `ServiceError(LIMIT_REACHED)` → **403** |
+| `getRemainingLimit` (`:1528-1531`) | `!limits.has(key)` | **`-1`**, y el comentario lo dice: *«Limit not defined - treat as unlimited»* |
+
+`checkLimit` (`utils/limit-check.ts:182`) y `ai-quota.ts:258-265` heredan el segundo sin
+modificarlo. O sea: **la enforcement real de los 22 limits corre entera por el camino
+cuyo default es ilimitado**, y el que rechaza no lo usa ninguna ruta.
+`routes/ai/protected/chat.ts:408` lo dice de frente: *«Intentionally fail-open, UNLIKE
+`requireLimit`»*.
+
+Dos cosas más del mismo archivo, verificadas:
+
+1. **El fail-open está acotado por un flag, no por el default.** Si la carga de billing
+   falla, `entitlementMiddleware` deja los conjuntos vacíos **y** pone
+   `billingLoadFailed = true` (`:1269-1275`, `:1293-1297`), y tanto `requireEntitlement`
+   (`:1339-1349`) como `requireLimit` (`:1407-1417`) cortan con **503** antes de mirar la
+   clave. El comentario de `:1294-1295` declara el motivo: *«so requireLimit /
+   requireEntitlement will return 503 instead of silently granting unlimited access»*.
+   Pero `getRemainingLimit`, `checkLimit` y `hasEntitlement` **no consultan ese flag**.
+2. **`-1` es ambiguo por construcción**: es el valor explícito que guardan los conjuntos
+   de staff (`entitlement.ts:557`, `owner-entitlement.ts:787`,
+   `commerce-entitlement.ts:604`) y es también el que sintetiza `getRemainingLimit` para
+   una clave ausente. El llamador no puede distinguirlos.
+
+*Qué abre, sin resolverlo acá*: el §9 y `DEC-ENT-001` se apoyan en que una cuota no
+declarada sea un error. Hoy es un permiso.
+
+---
+
+### F-1B-037 — Doce de las 53 claves no las chequea nada en el servidor, y seis funciones gate están escritas y montadas en ninguna ruta
+
+Medido clave por clave sobre las 53: ocurrencias en `apps/api/src` y
+`packages/service-core/src`, excluyendo tests, buscando las dos formas
+(`EntitlementKey.MIEMBRO` y el literal `'valor'`).
+
+**Nueve tienen CERO referencias en el servidor**, y todas existen en los mismos cuatro
+lugares: el enum, `entitlements.config.ts`, la fila del plan en `plans.config.ts`, y una
+superficie de exhibición:
+
+| clave | dónde aparece, además del catálogo |
+|---|---|
+| `priority_support` | `apps/web/…/plan-comparison-rows.ts`, `apps/admin/…/plan-entitlement-groups.ts`, `apps/admin/src/lib/dashboard-sources/host.ts:181` |
+| `custom_branding` | idem (`host.ts:182`) |
+| `multi_property_management` | admin (`host.ts:183`) |
+| `consolidated_analytics` | admin (`host.ts:184`) |
+| `centralized_booking` | sólo `plan-entitlement-groups.ts` |
+| `staff_management` | sólo `plan-entitlement-groups.ts` |
+| `vip_support` | sólo `plan-entitlement-groups.ts` |
+| `read_reviews` | web + admin |
+| `manage_experience_private_galleries` | sólo admin; lo que sí se chequea es el **limit** `max_active_private_galleries` |
+
+**Tres más tienen referencias, y todas están dentro de una función gate que ninguna ruta
+monta:**
+
+| clave | sus únicas referencias en el servidor |
+|---|---|
+| `respond_reviews` | `accommodation-entitlements.ts:548,554,561` — las tres, dentro de `gateReviewResponse` |
+| `can_attach_review_photos` | `tourist-entitlements.ts:291,297,304` — dentro de `gateReviewPhotos` |
+| `can_contact_whatsapp_direct` | el gate (`:468,496,503`) más `routes/accommodation/protected/getWhatsApp.ts:129`, que **informa** `canDirect` en la respuesta, no rechaza |
+
+**Los seis gates sin montar**, verificados por la negativa: cada uno aparece en su propio
+módulo, en `apps/api/test/middlewares/entitlement.test.ts` y en un `.md` de
+`apps/api/docs/entitlements/`. **En ninguna ruta.**
+
+```
+gateReviewPhotos          tourist-entitlements.ts:289
+gateCalendarAccess        accommodation-entitlements.ts:264
+gateExternalCalendarSync  accommodation-entitlements.ts:321
+gateWhatsAppDisplay       accommodation-entitlements.ts:383
+gateWhatsAppDirect        accommodation-entitlements.ts:466
+gateReviewResponse        accommodation-entitlements.ts:546
+```
+
+Los seis lo declaran arriba con el mismo comentario: `// PHANTOM-GATE (SPEC-145): route
+not built yet`.
+
+**Y dos de esos seis comentarios están caducos: la ruta SÍ existe, con otro mecanismo.**
+
+- `gateCalendarAccess` dice *«route not built yet»* (`:261`), y `CAN_USE_CALENDAR` se
+  chequea en **cuatro** rutas montadas con `requireEntitlement`:
+  `routes/accommodation/protected/addOccupancy.ts:73`, `removeOccupancy.ts:52`,
+  `updateOccupancyEvent.ts:89` y `batchOccupancy.ts:78`.
+- `gateExternalCalendarSync` dice lo mismo (`:318`), y `CAN_SYNC_EXTERNAL_CALENDAR` está
+  en `calendarSync.ts:100`, `calendarConnectGoogle.ts:155` y `calendarConnectIcal.ts:172`.
+
+O sea que el gate quedó huérfano porque la ruta se construyó **por otro camino**, no
+porque falte. Los otros cuatro comentarios no se contradicen: para `respond_reviews` y
+`can_attach_review_photos` no hay ninguna otra referencia, y las dos de WhatsApp tienen
+lecturas (`utils/tourist-entitlement-filter.ts:111,265` usa `DISPLAY` para filtrar el
+contacto en el payload público) pero ninguna escritura gateada.
+
+**Dos gates más no rechazan: recortan.** `gateRichDescription`
+(`accommodation-entitlements.ts:84-121`) y `gateVideoEmbed` (`:158-227`) están montados
+—10 y 12 ocurrencias en rutas— y ante la falta de la clave **no devuelven 403**:
+neutralizan el markdown enriquecido (`:117-119`) o vacían el arreglo `videos`
+(`:206`, `:218-223`) y llaman a `next()`. Es el único de los tres comportamientos
+—403, recorte silencioso, informar en el cuerpo— que no deja rastro en la respuesta.
+
+*Qué abre, sin resolverlo acá*: las doce claves están **vendidas** —viven en la fila del
+plan y se dibujan en la tabla comparativa pública y en el editor de planes del admin—
+y no hay nada del lado del servidor que cambie de comportamiento según se tengan o no.
+
+---
+
+### F-1B-038 — Hay una matriz de 896 rutas que declara el gate de cada una, y el guard que la vigila sólo verifica que los archivos existan
+
+`apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts` (26.771 bytes) parsea un
+markdown —`docs/billing/endpoint-gate-matrix.md`, 255.860 bytes en el ancla— con
+`readFileSync` (`:85`) desde la ruta fija de `:68`, y lo compara contra los archivos de
+`apps/api/src/routes`.
+
+La tabla tiene **896 filas** con columnas `| ruta | archivo | decisión | claves | estado
+| motivo |` (el layout está declarado en el comentario `:121-122` del guard), y las
+decisiones se reparten así:
+
+| decisión declarada | filas |
+|---|---|
+| `none` | **822** |
+| `gate` | 52 |
+| `gate+limit` | 17 |
+| `limit` | 5 |
+
+**Lo que el guard verifica son dos direcciones de presencia de archivo**, y nada más
+(`:509-553`): que cada archivo nombrado por la matriz exista en disco, y que cada archivo
+de ruta en disco tenga una fila. Hay además siete casos unitarios del parser
+(`:431-508`) y un reporte de reconciliación de tamaños (`:554`).
+
+**La columna `decisión` se parsea en el comentario y no se afirma en ningún `expect`.**
+El guard extrae únicamente la columna 1 (el archivo). Una fila que declare `gate` sobre
+una ruta que no lo aplica —o `none` sobre una que sí— pasa igual.
+
+*Qué está medido y qué no*: contrastar las 896 filas contra el código da 3 rutas
+declaradas `gate` y 13 declaradas `limit` donde no aparece el mecanismo esperado, y 22
+declaradas `none` donde sí aparece uno. **Esos números no son un hallazgo**: la matriz es
+documentación, que la regla de fuentes no admite, y el primer barrido ya demostró ser un
+patrón mal escrito —`ai/protected/chat.ts` evalúa la cuota INLINE con
+`getRemainingLimit`, `user-bookmark/protected/create.ts:73` usa
+`assertFavoritesLimitOrThrow`, y ninguno de los dos matcheaba—. Quedan anotados como
+**lista de sospechosos a leer uno por uno**, no como discrepancias.
+
+Nota operativa, no del sistema: el commit `471a54b7a` de esta misma rama borró
+`docs/billing/` entero y **dejó el guard en pie**. El `readFileSync` de `:85` no tiene
+`existsSync` ni `skipIf` delante, así que en esta rama ese test tira `ENOENT`. En el
+ancla los dos archivos existen.
+
+---
+
+### F-1B-039 — Once funciones de enforcement exportadas y montadas en cero rutas, y dos cuentan contra un cero escrito a mano
+
+Sumando `F-1B-036` y `F-1B-037`, la superficie de enforcement que existe y no se usa:
+
+| función | dónde | montada en |
+|---|---|---|
+| `requireLimit` | `middlewares/entitlement.ts:1402` | **0 rutas** |
+| `gateReviewPhotos` | `middlewares/tourist-entitlements.ts:289` | 0 |
+| `gateCalendarAccess` | `middlewares/accommodation-entitlements.ts:264` | 0 |
+| `gateExternalCalendarSync` | `…:321` | 0 |
+| `gateWhatsAppDisplay` | `…:383` | 0 |
+| `gateWhatsAppDirect` | `…:466` | 0 |
+| `gateReviewResponse` | `…:546` | 0 |
+| `enforcePhotoLimit` | `middlewares/limit-enforcement.ts:329` | 0 |
+| `enforceFavoritesLimit` | `…:682` | 0 |
+| `enforcePropertiesLimit` | `…:738` | 0 |
+| `enforceStaffAccountsLimit` | `…:853` | 0 |
+
+Las que **sí** se montan del mismo archivo son `enforceAccommodationLimit` (`:201`, en 5
+rutas), `enforcePromotionLimit` (`:440`, en 1) y `assertFavoritesLimitOrThrow` (`:587`,
+en 1). O sea que dos de los cuatro `enforce*` sin montar están **reemplazados** por otro
+camino —las fotos por `max_photos_per_accommodation`, con 15 referencias en rutas y
+middlewares; los favoritos por el `assert…OrThrow` que
+`routes/user-bookmark/protected/create.ts:73` llama **dentro del handler**, con el
+comentario que explica por qué no es un middleware (`:70-92`)— y los otros dos no.
+
+**`enforcePropertiesLimit` y `enforceStaffAccountsLimit` cuentan contra un literal.**
+`limit-enforcement.ts:773` declara `const currentPropertyCount = 0;` y `:879` su gemelo
+`const currentCount = 0;`, los dos bajo el
+comentario `// RESERVED-LIMIT (SPEC-145): counting service not built` (`:760`, `:865`),
+que además explica el efecto: *«the count is always 0 and the limit never fires»*. No es
+inocuo del todo: `checkLimit` (`utils/limit-check.ts:194-204`) rechaza cuando
+`maxAllowed === 0`, así que el stub **sí** rechazaría en un plan que declare la cuota en
+cero, y nunca en ningún otro.
+
+**El otro lado del mismo hecho está en el medidor.** `usage-tracking.service.ts:128-169`
+clasifica cada `LimitKey` y marca **tres** como `UsageKind.UNBUILT`: `MAX_PROPERTIES`
+(`:143`), `MAX_STAFF_ACCOUNTS` (`:144`) y `MAX_ACTIVE_PRIVATE_GALLERIES` (`:155`), o sea
+sin contador. Las tres corresponden a claves de entitlement de las nueve de `F-1B-037`
+que nadie chequea: `multi_property_management`, `staff_management` y
+`manage_experience_private_galleries`. **La cuota sin contador y el permiso sin gate son
+la misma función no construida, vista desde los dos ejes.**
+
+El comentario de `:145-154` deja escrito qué pasa mientras tanto, y vale para las tres:
+*«The cap is declared on all six commerce plan rows (an absent key would read as
+UNLIMITED), but nothing creates, stores or expires a gallery yet»*, y *«Left here, it
+would report a permanent `0 / 20` to a provider who is actually at their cap»*.
+
+Y `max_active_private_galleries` es, de las 22, **la única sin una sola referencia en
+rutas ni middlewares**: sus dos apariciones fuera del catálogo son esa línea del medidor
+y `apps/web/src/lib/billing-limit-error.ts:142`.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -1228,8 +1565,9 @@ Ninguno empezado. El orden no está decidido.
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | ⬜ |
 | Las 337 funciones de `apps/api/src/services` | 337 | ⬜ |
-| ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033` |
-| Dónde se CONSUMEN las 53 + 22 claves | 75 | ⬜ |
+| ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
+| ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
+| Los 16 archivos de rutas que la matriz y el código no coinciden: leer uno por uno | 16 | ⬜ (`F-1B-038`) |
 | Superficies Web | por medir | ⬜ |
 | Superficies Admin | por medir | ⬜ |
 | ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
