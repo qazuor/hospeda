@@ -338,29 +338,36 @@ De las **27** tablas de qzpay, **12 tienen filas** y **15 están completamente v
 
 | tabla | filas |
 |---|---|
-| `billing_webhook_events` | 206 |
-| `billing_webhook_dead_letter` | 63 |
+| `billing_webhook_events` | **224** |
+| `billing_webhook_dead_letter` | **75** |
+| `billing_entitlements` | **53** |
+| `billing_prices` | **30** |
 | `billing_plans` | 20 |
+| `billing_limits` | **20** |
 | `billing_customers` | 19 |
-| `billing_entitlements` | 14 |
-| `billing_prices` | 10 |
-| `billing_addons` | 9 |
+| `billing_addons` | **15** |
 | `billing_subscriptions` | **8** |
 | `billing_idempotency_keys` | 6 |
 | `billing_promo_codes` | 5 |
 | `billing_promo_code_usage` | 4 |
-| `billing_limits` | 3 |
+
+> ⚠️ **Corregido el 2026-09-16.** La primera versión de esta tabla salió de
+> `pg_stat_user_tables.n_live_tup` y **subestimaba seis filas**: decía 14
+> entitlements donde hay 53, 3 limits donde hay 20, 10 precios donde hay 30, 9 addons
+> donde hay 15, y 206/63 webhooks donde hay 224/75. `n_live_tup` es una estimación del
+> planificador, no un conteo. Los números de arriba son `count(*)` sobre las 27, en una
+> sola consulta. **El reparto vacías/no vacías no cambió**: siguen siendo 12 y 15.
 
 **`billing_payments`, `billing_invoices`, `billing_refunds` y `billing_checkouts` tienen
-cero filas**, contadas con `count(*)` y no con la estadística de `pg_stat_user_tables`.
+cero filas**, contadas con `count(*)`.
 
 Las 8 suscripciones se reparten en **3 `trialing`, 3 `abandoned` y 2 `comp`**. No hay
 ninguna `active`.
 
-*Por qué importa para el relevamiento y no sólo para la migración*: 63 entradas en
-`billing_webhook_dead_letter` contra 206 eventos procesados es una proporción que hay que
-mirar, y **la mitad del esquema de billing nunca recibió una fila**. Una tabla vacía no
-dice si su código funciona.
+*Por qué importa para el relevamiento y no sólo para la migración*: **75 entradas en
+`billing_webhook_dead_letter` contra 224 eventos** es un tercio de los eventos en la cola
+de fallidos, y **15 de las 27 tablas nunca recibieron una fila**. Una tabla vacía no dice
+si su código funciona.
 
 ---
 
