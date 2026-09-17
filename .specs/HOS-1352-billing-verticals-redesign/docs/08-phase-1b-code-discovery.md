@@ -2692,6 +2692,91 @@ especificador completo, **cero** lo están.
 
 ---
 
+### F-1B-064 — Los 90 `pgEnum` no tienen un solo valor de deriva contra producción, y once tipos no los usa ninguna columna — seis de esos once son el vocabulario de billing
+
+**Los 90, por de dónde salen sus valores:**
+
+| forma | cuántos |
+|---|---|
+| `pgEnum('<nombre>', enumToTuple(<XEnum>))` | **81** |
+| `pgEnum('<nombre>', ['a', 'b', …])` — arreglo literal | **9** |
+
+`enumToTuple` es `Object.values(e)` (`packages/db/src/utils/enum-utils.ts:21-25`), así que
+para 81 de los 90 los valores del tipo de Postgres **son** los del enum de
+`@repo/schemas`, en orden de declaración. Los otros 9 se escriben a mano, y **cinco de esos
+9 son el mismo par `['visible', 'archived']` declarado como cinco tipos distintos**:
+`accommodation_media_state_enum`, `post_media_state_enum`, `experience_media_state_enum`,
+`gastronomy_media_state_enum` y `event_media_state_enum`.
+
+**Cero deriva contra producción.** Comparados los 90 nombres y la cantidad de valores de
+cada uno contra `pg_type`/`pg_enum` en prod (2026-09-16): los 90 nombres coinciden en las
+dos direcciones —cero tipos en prod que el repo no declare, cero declarados que no existan—
+y **ninguno difiere en cantidad de valores**. Es el único carril del relevamiento donde el
+código y la base coinciden exacto.
+
+**Y once de los 90 tipos no los usa NINGUNA columna:**
+
+| tipo | valores | dónde se declara |
+|---|---|---|
+| `permission_category_enum` | **81** | `packages/db/src/schemas/enums.dbschema.ts:178` |
+| `entity_permission_reason_enum` | 18 | `:266` |
+| **`subscription_status_enum`** | **10** | `:301` |
+| **`invoice_status_enum`** | 8 | `:308` |
+| **`payment_status_enum`** | 8 | `:306` |
+| **`refund_status_enum`** | 6 | `:310` |
+| **`product_type_enum`** | 6 | `:113` |
+| **`billing_interval_enum`** | 5 | `:296` |
+| `access_right_scope_enum` | 5 | `:92` |
+| `recurrence_type_enum` | 5 | `:204` |
+| `preferred_contact_enum` | 3 | `:106` |
+
+Medido en las dos direcciones. Del lado de la base: `pg_attribute` no tiene una sola
+columna de ninguno de los once, ni del tipo ni de su tipo arreglo —verificado con el
+control, que da **0 columnas de tipo arreglo de enum en toda la base**, así que la forma
+`enum[]` no es el escondite—. Del lado del código: los once símbolos `*PgEnum` tienen
+**exactamente una referencia cada uno en `packages/db/src`, que es su propia declaración**.
+Ninguna definición de tabla los nombra.
+
+**Seis de los once son la mitad de billing**: `subscription_status`, `payment_status`,
+`invoice_status`, `refund_status`, `billing_interval` y `product_type`. Es la contracara
+exacta de `F-1B-007`: hospeda **declaró y creó** en Postgres los tipos que restringirían
+esos dominios, y las columnas que los usarían viven en las 27 tablas que modela qzpay, que
+las declara `varchar` sin `CHECK`. Los tipos existen, tienen los valores correctos y no
+restringen nada.
+
+`subscription_status_enum` es el caso más nítido: sus **10** valores son los mismos 10 que
+`F-1B-021` midió en `packages/schemas/src/enums/subscription-status.enum.ts` —incluidos
+`comp` y `courtesy`, que qzpay no conoce— y la columna que los guardaría,
+`billing_subscriptions.status`, es `varchar(50)` libre.
+
+**Y hay 12 enums de `@repo/schemas` que no llegan a la base como tipo.** De los **93**
+`export enum` de `packages/schemas/src`, 81 tienen su `pgEnum` y estos doce no:
+
+```
+CommerceEntityTypeEnum        EventDatePrecisionEnum      ModerationCategoryEnum
+PlanChangeStatusEnum          ProductDomainEnum           PromoCodeDiscountTypeEnum
+PromoEffectKindEnum           QrCodeCenterLogoEnum        QrCodeErrorCorrectionLevelEnum
+QrCodeFormatEnum              ServiceErrorCode            ValueKindEnum
+```
+
+Cuatro de los doce son de billing y viven **fuera** del directorio `enums/`, dentro de un
+archivo de schema de API: `PlanChangeStatusEnum` (`api/billing/plan-change.schema.ts`),
+más `PromoEffectKindEnum`, `ValueKindEnum` y `PromoCodeDiscountTypeEnum`
+(`api/billing/promo-code.schema.ts`). Los dominios de los dos primeros son exactamente los
+que `F-1B-007` midió defendidos por los únicos 6 `CHECK` de la mitad de qzpay —los de
+`billing_promo_codes`—, o sea por el carril `extras` de hospeda y no por un tipo.
+`ProductDomainEnum`, el que separa las verticales, tampoco es un tipo de Postgres.
+
+*Nota de método, la decimotercera vez, y de nuevo el patrón mal escrito fue mío, dos veces
+seguidas*: el primer patrón —`pgEnum\(\s*'([^']+)'\s*,\s*\[(.*?)\]\)`— capturó **9 de 90**,
+porque asumía el arreglo literal cuando la forma dominante es `enumToTuple(X)`. Y al
+resolver después los valores del enum de TypeScript **sin quitar los comentarios primero**,
+un `effect_kind = 'comp'` escrito dentro de un JSDoc se contó como un undécimo miembro de
+`SubscriptionStatusEnum` y produjo una deriva repo↔producción que no existe. Las dos veces
+el error estuvo del lado del patrón, no de la base.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
