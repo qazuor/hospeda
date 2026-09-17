@@ -4080,6 +4080,92 @@ excepción al patrón que `F-1B-033` midió para entitlements y limits.
 
 ---
 
+### F-1B-093 — Cincuenta y nueve rutas de billing viven en el otro repo y están montadas en la API, incluidas las de forzar una cancelación y un reembolso
+
+`qzpay/packages/hono` (4.137 líneas) fabrica routers enteros, y hospeda monta **los tres**:
+
+| factory | rutas que declara | dónde se monta en hospeda |
+|---|---|---|
+| `createBillingRoutes` | **30** | `routes/index.ts:776` → `/api/v1/protected/billing` |
+| `createAdminRoutes` | **26** | `routes/billing/admin/index.ts:189` → `/api/v1/admin/billing` |
+| `createWebhookRouter` | **3** | `routes/webhooks/mercadopago/router.ts:120` |
+
+**Las 26 de admin, completas** (contadas sobre `router.<verbo>(\`${prefix}…\`)` en
+`packages/hono/src/routes/admin.routes.ts`):
+
+```
+GET  /dashboard · /customers · /customers/:id/full · /subscriptions · /subscriptions/:id
+     /payments · /payments/:id · /invoices · /invoices/:id · /plans · /promo-codes
+POST /subscriptions/:id/force-cancel · /cancel · /pause · /resume · /change-plan · /extend-trial
+     /payments/:id/force-refund · /payments/:id/refund
+     /invoices/:id/pay · /mark-paid · /void
+     /customers/:customerId/entitlements · /limits/:key/set · /limits/:key/reset
+DELETE /customers/:customerId/entitlements/:key
+```
+
+Trece de esas 26 **mutan**: cancelan a la fuerza, reembolsan a la fuerza, pausan, cambian
+de plan, extienden un trial, marcan una factura pagada y otorgan o revocan un entitlement.
+Están escritas en el otro repo.
+
+**Las 30 del tier protegido incluyen `POST /customers`, `POST /payments`,
+`POST /subscriptions`, `POST /invoices`, `DELETE /customers/:id` y el par
+`POST`/`DELETE /customers/:customerId/entitlements`** — o sea, otorgar y revocar
+entitlements desde el tier de **sesión de usuario**, no de admin.
+
+**Hospeda no las reescribió: les pasa ganchos.** `routes/billing/admin/index.ts:189-194`
+invoca la factory con `hooks: adminBillingHooks`, y el docblock del archivo (`:35-37`)
+cuenta el movimiento: *«The custom `subscription-cancel.ts` route that used to live here
+was removed in this change — its Phase 1 + Phase 2 lifecycle is now expressed as
+onBefore/onAfter hooks consumed by qzpay-hono v1.3+»*. El ciclo de vida de una cancelación
+de admin es hoy un callback que ejecuta código del otro repo.
+
+**Y el orden de montaje es lo único que decide quién atiende.** El mismo docblock
+(`:8-31`) declara que las rutas propias se montan PRIMERO para ganar las colisiones, que
+`GET /payments` y `GET /subscriptions` están sombreadas a propósito porque *«qzpay's raw
+rows carry no user, no plan slug and no amount, and spell a cancelled subscription
+`canceled`»*, y deja escrita la trampa: *«Adding a second path to either router would
+**silently** take that path away from qzpay»*. No hay ningún guard que lo verifique: la
+garantía es el comentario.
+
+**Un conteo que no cierra y queda abierto.** `F-1B-016` midió **9** handlers bajo
+`/api/v1/protected/billing` ausentes del documento OpenAPI, y esta factory declara **30**
+registros sin ninguna condición de configuración visible —hospeda le pasa sólo
+`{billing, prefix, authMiddleware}` (`routes/billing/index.ts:112-116`)—. Los dos números
+se midieron distinto: aquél construyendo la app y leyendo `app.routes`, éste contando
+registros en el fuente. **No se resuelve acá cuál es el denominador correcto**; queda
+anotado como discrepancia a re-medir construyendo la app, que es el método que `F-1B-016`
+ya demostró necesario.
+
+---
+
+### F-1B-094 — De las 4.869 líneas de componentes React de qzpay, hospeda no usa ninguno: importa el proveedor y el tema
+
+`qzpay/packages/react` trae **9 componentes** (`CheckoutButton`, `EntitlementGate`,
+`ErrorBoundary`, `InvoiceList`, `LimitGate`, `PaymentForm`, `PaymentMethodManager`,
+`PricingTable`, `SubscriptionStatus`) y **8 hooks** (`useCustomer`, `useEntitlements`,
+`useInvoices`, `useLimits`, `usePayment`, `usePlans`, `useSubscription`, más
+`useIsomorphicLayoutEffect`).
+
+**Hospeda importa cuatro símbolos, y ninguno es un componente ni un hook**:
+
+| símbolo | dónde |
+|---|---|
+| `QZPayProvider`, `QZPayProviderProps` | `apps/admin/src/routes/__root.tsx:2` |
+| `QZPayThemeProvider` | idem |
+| `qzpayMergeTheme`, `QZPayTheme` | `apps/admin/src/lib/qzpay-theme.ts:12-13` |
+
+Contados uno por uno sobre `apps` y `packages` sin tests, los nueve componentes y los ocho
+hooks dan **cero**. `usePlans` aparece una sola vez en todo el repo y es dentro de
+`apps/admin/test/integration/qzpay-provider.test.tsx:72`.
+
+O sea que el paquete se monta —hay un `QZPayProvider` envolviendo la aplicación del admin y
+un tema fusionado— y **la UI de billing del admin está escrita entera en hospeda**. Es el
+mismo reparto que `F-1B-090` midió en el motor con `promoCodes`, `addons`,
+`paymentMethods` y `metrics`: la pieza existe del lado de qzpay, y la que corre es la de
+hospeda.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -4116,7 +4202,7 @@ Y en **qzpay**, con el mismo criterio:
 | `core` — el motor: qué expone y qué decide | 89 archivos / 22.120 líneas | 🟨 `billing.ts` + `billing-from-env` + `index` + los 5 de `adapters/` leídos enteros (**4.724 líneas**) y la fachada de 94 miembros cruzada contra hospeda — `F-1B-090`. Faltan `services/` (18 arch. / 8.762), `events/` (6 / 1.923), `helpers/` (6 / 2.258), `types/` (21 / 2.484), `utils/` (7 / 1.362), `errors/` (8 / 612), `constants/` (16 / 486) |
 | `drizzle` — las 27 tablas: columnas, constraints e índices | 27 tablas / 68 archivos | ⬜ |
 | ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
-| `hono` y `react` — las superficies que hospeda monta | 50 archivos | ⬜ |
+| `hono` y `react` — las superficies que hospeda monta | 50 archivos | 🟨 las tres factories de `hono` contadas y su montaje verificado (59 rutas), y el consumo de `react` medido — `F-1B-093`, `F-1B-094`; los 50 archivos, sin leer enteros |
 | La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
 | ~~El vocabulario de estados y sus mapas~~ | — | ✅ `F-1B-021` |
 | Los otros vocabularios compartidos: pago, factura, reembolso, addon | por medir | ⬜ |
