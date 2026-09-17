@@ -2115,7 +2115,7 @@ Ninguno empezado. El orden no está decidido.
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | ⬜ |
-| Las 337 funciones de `apps/api/src/services` | 337 | ⬜ |
+| Las 337 funciones de `apps/api/src/services` | 337 (**333** nombres) | 🟨 censo de consumo hecho (`F-1B-052`); **4 archivos leídos enteros** de 185 — `subscription-checkout` (2.283), `trial` (2.160), `addon.checkout` (1.605), `link-preapproval` (1.226): **7.274 de 65.165 líneas** (`F-1B-045` a `F-1B-051`) |
 | ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
 | ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
 | Los 16 archivos de rutas que la matriz y el código no coinciden: leer uno por uno | 16 | ⬜ (`F-1B-038`) |
