@@ -5116,6 +5116,481 @@ el control y no por lectura del código.
 
 ---
 
+### F-1B-109 — De los dos módulos de métricas de billing, uno NO está montado: nadie lo importa, y `F-1B-077` los contó a los dos
+
+`F-1B-077` midió que las dos consultas de facturación filtran por un `status='completed'` que
+no existe, y cerró diciendo que las consume *«una superficie duplicada … dos módulos de ruta
+distintos, **los dos montados**: `routes/billing/metrics.ts:123-125` (montado en
+`routes/index.ts:120`) y `routes/billing/admin/metrics.ts:186-188`»*.
+
+**La primera mitad es falsa, y el error es de resolución de módulo.** `routes/index.ts:120`
+dice `import { metricsRoutes } from './metrics'`, y desde `routes/index.ts` ese especificador
+resuelve a **`routes/metrics/`, un directorio** —`routes/metrics/index.ts:167` exporta
+`export { router as metricsRoutes }`—, que son las métricas de la aplicación y no tienen nada
+que ver con billing. **`routes/billing/metrics.ts` no existe como `routes/metrics.ts`**:
+verificado, `ls routes/metrics.ts` da *«No such file or directory»*.
+
+**Y a `routes/billing/metrics.ts` no lo importa nadie.** Exporta cinco símbolos
+—`getDashboardMetricsRoute:104`, `getRecentActivityRoute:208`, `getSystemUsageRoute:308`,
+`getApproachingLimitsRoute:353` y `metricsRouter:393`— y las **únicas** ocurrencias de
+`metricsRouter` en todo `apps/api/src` sin tests son las cinco líneas del propio archivo
+(`:393` y `:396-399`, donde se arma a sí mismo). Los dos únicos `import` de un módulo de
+métricas en el árbol de rutas son `routes/index.ts:120` (el directorio, ajeno a billing) y
+`routes/billing/admin/index.ts:54` (`adminMetricsRouter`, el archivo hermano **que sí está
+montado**).
+
+**Lo confirma la tabla de rutas de `F-1B-105`**: bajo `/api/v1/admin/billing/metrics` hay
+**un** endpoint por path —`metrics`, `metrics/activity`, `metrics/approaching-limits`,
+`metrics/lifecycle`, `metrics/system-usage`—, cada uno con dos registros crudos (middleware
+más handler), no cuatro. Si los dos módulos estuvieran montados habría dos handlers por path.
+
+**El hallazgo de `F-1B-077` se sostiene; su alcance se reduce a la mitad.** El `'completed'`
+inalcanzable sigue vivo, porque `routes/billing/admin/metrics.ts` —el montado— llama a los
+mismos cuatro métodos de `getBillingMetricsService()`. Lo que se cae es la duplicación
+*servida*: hay dos archivos, se sirve uno.
+
+**Y el archivo muerto no es un esqueleto**: son 399 líneas que declaran cuatro rutas con
+`createAdminRoute`, con su docblock afirmando en `:9` *«All routes are mounted under
+/api/v1/admin/billing/metrics»*. Es el segundo caso del relevamiento —después de los seis
+gates `PHANTOM-GATE` de `F-1B-037`— de superficie completa, sintácticamente válida y
+documentada como viva, que ninguna línea alcanza.
+
+---
+
+### F-1B-110 — La tabla «clientes por plan» del panel de admin muestra UUIDs en las dos columnas, y el consumo promedio es siempre un objeto vacío
+
+`getSystemUsage` (`apps/api/src/services/billing-usage.service.ts:109-120`) arma su tercera
+consulta así:
+
+```sql
+SELECT
+    plan_id as plan_slug,
+    plan_id as plan_name,
+    COUNT(*) as customer_count
+FROM billing_subscriptions
+WHERE status IN (…) AND livemode = … AND deleted_at IS NULL
+GROUP BY plan_id
+```
+
+**No hay `JOIN billing_plans` en ninguna línea del archivo.** Las dos columnas se alimentan de
+la **misma** expresión, y `:140-145` las mapea a `planSlug` y `planName` del DTO. Como
+`billing_subscriptions.plan_id` es el `varchar` que guarda el **UUID** de `billing_plans.id`
+—el gotcha que el `CLAUDE.md` del repo documenta—, las dos columnas de la tabla que ve un
+administrador traen el mismo UUID, ni un slug ni un nombre.
+
+**Y la tercera columna del mismo DTO está vacía por construcción**: `:144` escribe
+`averageUsage: {}` literal, sobre un campo que el tipo declara
+`Record<string, number>` (`:40`).
+
+**El objeto de categorías tampoco está acotado a lo que declara.** `:124-137` inicializa
+`{ owner: 0, complex: 0, tourist: 0 }` y después recorre las filas de
+`COALESCE(segment,'unknown')` escribiendo `customersByCategory[cat]` **en las dos ramas del
+`if`**:
+
+```ts
+if (cat in customersByCategory) {
+    customersByCategory[cat] = Number(row.count);
+} else {
+    // Map unknown segments to a fallback
+    customersByCategory[cat] = Number(row.count);
+}
+```
+
+Las dos ramas son la misma sentencia; el `else` no mapea a ningún fallback pese a decirlo.
+Cualquier valor de `billing_customers.segment` —incluido `'unknown'` cuando la columna es
+nula— entra como clave nueva, así que la respuesta no respeta las tres claves que declara la
+interfaz `SystemUsageStats.customersByCategory` (`:40`).
+
+**Empalma con `F-1B-109`**: el método se sirve por `routes/billing/admin/metrics.ts`, el
+único de los dos módulos que está montado, en
+`GET /api/v1/admin/billing/metrics/system-usage`.
+
+---
+
+### F-1B-111 — Los dos servicios de sincronización de calendario prometen «nunca lanzar» y leen la credencial antes de cualquier `try`; la ruta que los expone documenta esa promesa como razón para no capturar nada
+
+`google-calendar-sync.service.ts:52-60` declara: *«This service **never throws** for
+operational failures — it records the outcome on the connection's sync-state columns … and
+returns a discriminated `CalendarSyncResult`»*.
+
+**La primera sentencia de la función es una lectura que puede tirar, y está fuera de todo
+`try`.** Verificado a mano leyendo el archivo entero: la función arranca en `:283`, su primera
+línea de trabajo es `:288`
+
+```ts
+const credential = await getGoogleCredential({ accommodationId });
+```
+
+y el primer `try` **de la función** está en `:303`. El `try` de `:248` no la cubre: pertenece
+al helper `recordFailure`, declarado en `:243-266`, o sea que cierra veinte líneas antes de
+que la función exista. El gemelo de iCal tiene la misma forma:
+`ical-calendar-sync.service.ts:269` lee la credencial y su primer `try` propio está en `:313`.
+
+**Y esa lectura desencripta sin red.** `getGoogleCredential`
+(`google-calendar/google-calendar-credential.repository.ts:137-154`) llama `decryptSecret` dos
+veces —`:137` para el access token y `:149` para el refresh token— **sin un solo `try`** en la
+función. Lo mismo en `ical-credential.repository.ts:113-117` y en
+`mercadolibre-oauth/ml-credential.repository.ts:180-190`. Un fallo de derivación de clave —la
+`HOSPEDA_OAUTH_VAULT_MASTER_KEY` ausente, que ya bloqueó un smoke de producción una vez— o un
+auth-tag GCM que no verifica, sale como excepción.
+
+**Consecuencia medida en los dos consumidores:**
+
+| consumidor | qué pasa |
+|---|---|
+| `routes/accommodation/protected/calendarSync.ts:88-93` | llama sin `try/catch` propio, y su docblock (`:20-22`) declara *«Neither sync service throws for operational failures … so a failed sync surfaces as a 200 with `status: 'error'`, not a 5xx»*. Un `Error` genérico no es `ServiceError` ni `RefinedBodyValidationError`, así que cae al camino por defecto de `handleRouteError` — no al 200 documentado |
+| `cron/jobs/calendar-sync-google.job.ts:97-119` | sí tiene un `catch` por alojamiento, así que el barrido no se cae; pero **no llama a `recordFailure`**: suma `errors += 1` y agrega el caso a `failures[]` del resultado del job, y la fila del calendario **nunca recibe su `lastSyncStatus = ERROR`** |
+
+O sea: por el camino de la ruta la promesa del docblock no se cumple, y por el camino del cron
+el estado que el anfitrión ve en su panel no se actualiza. Los dos por la misma línea.
+
+*Contraste dentro del mismo lote*: `recordFailure` (`:243-266`) **sí** envuelve su escritura en
+un `try/catch` que sólo loguea. El archivo protege la anotación del error y deja sin proteger
+la lectura que lo produce.
+
+---
+
+### F-1B-112 — Los dos vaults de credenciales son la mitad el mismo código, y sus 26 registros de error no llegan a Sentry
+
+`social-credential-vault.service.ts:10` declara que *«Mirrors `ai-credential-vault.service.ts`
+(SPEC-173 T-022) **file-for-file**»*. Medido, no leído: normalizando los identificadores que
+varían por proveedor —`aiProviderCredentials`↔`socialCredentials`, `providerId`↔`key`,
+`aiCredentialAudit`↔`socialCredentialAudit`— sobre las líneas de código sin comentarios,
+**238 de ~465 líneas normalizadas coinciden exactamente: ratio 0,51**. El par
+`listAiProviderCredentials` (`ai-credential-vault.service.ts:251-309`) ↔ `listSocialCredentials`
+(`social-credential-vault.service.ts:640-696`) es la misma estructura entera con otros nombres.
+
+Son **812 + 778 = 1.590 líneas** para dos bóvedas que hacen lo mismo con dos tablas distintas,
+y hay una tercera familia al lado —los tres repositorios de credenciales de Google, iCal y
+MercadoLibre— con el mismo esquema `get/save` y su propio cifrado.
+
+**Tres políticas distintas ante un fallo de desencriptado, en cinco lecturas:**
+
+| lectura | qué hace ante `decryptSecret` roto |
+|---|---|
+| `getDecryptedAiProviderCredential` (`:751-812`) | lo mete en el mismo `try` que todo lo demás → `INTERNAL_ERROR`, indistinguible de cualquier otro error |
+| `getDecryptedSocialCredential` (`social-…:719-778`) | idem |
+| `getGoogleCredential` (`…:137-154`) | **sin `try`**: la excepción sale (ver `F-1B-111`) |
+| `getIcalCredential` (`…:113-117`) | **sin `try`** |
+| `getActiveMLCredential` (`…:180-190`) | **sin `try`** |
+
+O sea que «la clave maestra no está» y «el ciphertext está corrupto» nunca se distinguen entre
+sí, y además se propagan de dos formas incompatibles según qué proveedor sea.
+
+**Cero de los 26 registros de error de estos archivos llega a Sentry.** Contados uno por uno:
+11 en `ai-credential-vault`, 6 en `social-credential-vault`, 2 en `google-calendar-sync`, 5 en
+`ical-calendar-sync` y 2 en `ical-parser`. **Ninguno lleva `{ capture: true }`**, la
+convención que el resto del repo sí usa —`addon-lifecycle-cancellation.service.ts` entre
+otros—. Es la misma forma que `F-1B-068` midió en la cadena de addons recurrentes: 13 logs de
+error en los archivos de checkout, 0 con captura.
+
+**Y no hay un solo reintento.** Buscado `retry|retries|backoff|attempt` sobre los doce
+archivos: los únicos aciertos son comentarios que **clasifican** un error como *retryable*
+(`google-calendar-sync.service.ts:153`, `:345`, `google-calendar-client.ts:155`). Ninguna
+llamada reintenta. Un fallo transitorio de Google queda registrado como `ERROR` y espera al
+cron siguiente, seis horas después.
+
+**Superficie que no alcanza nadie**, medida por la negativa:
+`GoogleCalendarSyncTokenInvalidError` (`google-calendar-client.ts:143-150`) se declara y se
+lanza (`:284`) y **ningún consumidor la importa ni la captura**; la rama `syncToken` de
+`buildQuery` (`:229-242`) no se ejercita porque `fetchAllPages`
+(`google-calendar-sync.service.ts:208-232`) nunca la pasa; y la columna `syncToken`, que
+`google-calendar-credential.repository.ts:60,161` se ocupa de poblar, **no la desestructura
+ninguno de los tres call sites** de `getGoogleCredential`. Es coherente con el propio docblock
+del servicio (`:29-32`), que declara el sync incremental retirado — lo que quedó vivo es el
+cableado que lo alimentaba.
+
+---
+
+### F-1B-113 — Las primitivas para dibujar un PDF están escritas TRES veces, y el archivo que explica por qué no hay que copiarlas copia cuatro de seis
+
+`F-1B-053` midió que `commerce-brochure/brochure-render.ts` y
+`experience-certificate/certificate-render.ts` comparten **57 líneas idénticas**. Leídos los
+quince archivos restantes de esas tres familias, la duplicación es mayor y tiene un tercer
+vértice.
+
+**Las tres funciones de dibujo, en tres archivos:**
+
+| pieza | `listing-qr-sheet/qr-sheet-page.ts` | `commerce-brochure/brochure-render.ts` | `experience-certificate/certificate-render.ts` |
+|---|---|---|---|
+| `measure` | `:59-68` (**exportada**) | `:206-211` (privada) | `:104-110` (privada) |
+| `drawTextTopDown` | `:82-98` (exportada) | `:269-285` (privada) | `:113-127` (privada) |
+| `drawRectTopDown` | `:142-158` (exportada) | `:288-304` (privada) | `:132-147` (privada) |
+
+**≈120 líneas de la misma lógica en tres copias.** La única diferencia real entre ellas es el
+nombre de la constante de alto de página —`A4_HEIGHT` en dos, `PAGE_HEIGHT` en la tercera,
+**mismo valor**— y los `readonly` de la versión exportada.
+
+**Y el archivo que argumenta contra eso lo hace.** `certificate-render.ts:14-18` dice:
+
+> *«`toDrawableText` and `wrapText` are **IMPORTED** from `commerce-brochure/brochure-render`
+> rather than copied: the WinAnsi substitution rule is a correctness property of every PDF
+> this API emits … and **two copies of it would drift**.»*
+
+Verificado a mano: `certificate-render.ts:42` importa **exactamente esas dos**. Las otras
+cuatro —`measure`, `drawTextTopDown`, `drawRectTopDown`, `drawCentredLine`— están copiadas ahí
+mismo, treinta líneas más abajo del comentario que explica por qué no habría que copiarlas.
+
+**El tercer vértice es el más nítido**: `qr-sheet-page.ts:25` **ya importa** `toDrawableText`
+de `brochure-render.js`, y `qr-sheet-render.ts:79` importa `wrapText` del mismo módulo. El
+archivo tiene la dependencia abierta y reimplementa las otras cuatro igual.
+
+**Y hay una cuarta capa de copia, más corta y más barata de romper:**
+
+- `t()`, `i18nText()` y `LOCALE_FALLBACK` son **18 líneas byte a byte idénticas** entre
+  `commerce-brochure/brochure-content.ts:88,129-148` y
+  `experience-certificate/certificate-content.ts:40,80-99`, comentarios de tipo incluidos.
+- El bloque `new Response(pdf, { headers: … })` con `Content-Type: application/pdf` y
+  `Cache-Control: private, no-store` está tres veces —`brochure-response.ts:63-75`,
+  `qr-sheet-response.ts:55-67`, `certificate-response.ts:106-118`— y el patrón
+  `FILENAME_SAFE = /[^a-z0-9-]/g` otras tres (`:35`, `:28`, `:65`).
+- `PUBLIC_PATH_SEGMENT` —los segmentos públicos `gastronomia` / `experiencias` /
+  `alojamientos`— está definido dos veces como literal, en `brochure-content.ts:110-113` y
+  `qr-sheet-content.ts:127-131`. Éste **sí** está declarado deliberado, y con un test que lo
+  vigila (`qr-sheet-content.ts:116-125`).
+- `FALLBACK_PRINTED_DOMAIN = 'hospeda.com.ar'` aparece en `qr-sheet-render.ts:191-197` y en
+  `brochure-render.ts:421-427`, dentro de dos copias de la misma función `printedDomain()`.
+
+*Qué NO dice esta medición*: si sobra código. Dice **cuánto** está repetido y **dónde**, medido
+sobre el texto, y que la única defensa escrita contra esa repetición —el comentario de
+`certificate-render.ts`— describe una disciplina que su propio archivo aplica a dos de seis
+piezas.
+
+---
+
+### F-1B-114 — El archivo que existe para no pasar de 500 líneas tiene 752, y su función central falla abierta o cerrada según el addon
+
+`apps/api/src/services/addon-lifecycle-cancellation.service.ts` abre con (`:7-9`):
+
+> *«This module is re-exported from `addon-lifecycle.service.ts` **to keep each file under the
+> 500-line limit**.»*
+
+Medido: **752 líneas** (`addon-lifecycle.service.ts`, el que lo re-exporta, tiene 363). El
+archivo que se creó para respetar el tope lo excede en un 50 %.
+
+**Y `revokeAddonForSubscriptionCancellation` (`addon-lifecycle.service.ts`) aplica dos
+políticas opuestas dentro de la misma función, según qué addon sea:**
+
+| rama | dónde | ante un fallo de revocación |
+|---|---|---|
+| addon con definición conocida (`entitlement` / `limit`) | `:176`, `:242` | `await billing.entitlements.revoke(...)` **sin `try`**: la excepción se propaga — **falla CERRADO**, y el docblock lo declara `@throws … FATAL` (`:120-122`) |
+| addon desconocido o retirado (`addonDef === undefined`) | `:284`, `:300` | las mismas dos llamadas, cada una en su `try/catch` que sólo hace `apiLogger.warn` (`:288-296`, `:304-312`), y la función devuelve `outcome: 'success'` igual (`:328-333`) — **falla ABIERTO** |
+
+Las dos ramas están documentadas en el docblock (`:89-109`), así que es una elección escrita y
+no un descuido. Lo que queda medido es su efecto: **un addon que el catálogo ya no conoce se
+da por revocado sin haberlo revocado**, y el resultado no lo distingue de una revocación real.
+
+**Tres cosas más del mismo lote, con su evidencia:**
+
+1. **La escritura local del éxito está fuera de la transacción que la cubriría.**
+   `addon-lifecycle-cancellation.service.ts:440-448` cierra la preapproval en MercadoPago,
+   `:540-545` revoca contra QZPay, y recién `:548-562` abre un `withTransaction` que envuelve
+   **una sola** sentencia. Si el proceso muere entre la revocación remota y ese `UPDATE`, el
+   `catch` de `:576` marca la compra `failed` con el permiso ya quitado.
+2. **`softCancelRecurringAddon` devuelve el mismo éxito haya movido una fila o ninguna.**
+   `addon-soft-cancel.ts:207` es el **único** `return { success: true }` del archivo, fuera del
+   `try/catch`, alcanzado tanto por `rowCount === 0` (`:159-163`, *«treating as already
+   cancelled»*) como por `rowCount > 0` (`:165-176`). Lo único que cambia entre las dos ramas
+   es si se manda el mail (`:203-205`).
+3. **La obligación que el módulo de grants difereidos le impone a sus llamadores la cumple uno
+   de tres.** `deferred-addon-grants.service.ts:85-90` escribe *«Callers must **not** cache a
+   degraded answer»*. `middlewares/entitlement.ts:424-427` lee `grants.degraded` y devuelve
+   `shouldCache: false`; `middlewares/owner-entitlement.ts:264-272` y `:836-845` **no leen el
+   campo en ninguna línea**. (El segundo de esos dos queda de todos modos fuera del camino de
+   caché por otra condición, `:826`; el primero no se verificó río arriba.)
+
+---
+
+### F-1B-115 — El detector de divergencias de pago no puede distinguir una divergencia de un ledger vacío, y hoy el ledger está vacío
+
+`computeBillingDivergences` (`apps/api/src/services/billing/payment-divergence.service.ts`,
+528 líneas) compara lo que MercadoPago reporta contra lo que hospeda registró.
+`loadRecordedProviderPaymentIds` (`:133-155`) arma el conjunto `recordedIds` leyendo
+`billing_payments` (`:137-140`), y `:441` clasifica:
+
+```ts
+.filter((payment) => !recordedIds.has(payment.id))
+```
+
+**`F-1B-009` midió que `billing_payments` tiene CERO filas en producción.** Con esa tabla
+vacía el conjunto es vacío siempre, así que **cada pago aprobado que el proveedor devuelva
+dentro de la ventana se clasifica como `unrecorded-payment`** — y el resultado no lleva nada
+que permita distinguir «divergencia real» de «el ledger todavía no tiene una sola fila».
+
+No es un defecto del archivo: es la intersección entre su lógica y el estado medido de la
+tabla. Lo que queda anotado es que el panel de reconciliación de admin
+(`GET /api/v1/admin/billing/reconciliation/divergences`, gateado por
+`BILLING_RECONCILIATION_MANAGE`) es hoy, por construcción, una lista de todo.
+
+**Y el archivo es de sólo lectura, verificado por la negativa**: cero `insert(`, `update(`,
+`delete(` o `db.execute` en las 528 líneas, consistente con su propio docblock (`:398`,
+*«this function performs no writes of any kind»*).
+
+**Los diez archivos de `services/billing/` de este lote no abren una sola transacción**
+—`grep '\.transaction('` da 0 sobre los diez— y no la necesitan: las cuatro escrituras que
+existen son sentencias únicas, y la más delicada, `resolveOrphanPayment`
+(`orphan-payment-queue.admin.service.ts:213-236`), pone el guard `status = 'unresolved'`
+**dentro del `WHERE`** (`:225`) en vez de leer y después escribir. Es el único lugar del
+relevamiento donde una carrera se cierra así.
+
+**Un detalle de conteo que vale guardar**: `resolveOrphanPayment` existe **dos veces** con el
+mismo nombre y sin relación: el servicio
+(`orphan-payment-queue.admin.service.ts:203`) y una función local del admin
+(`apps/admin/src/features/billing-reconciliation/hooks.ts:243`, un envoltorio de `fetch` del
+lado del cliente). Un `rg -l` habría contado dos consumidores donde hay uno.
+
+---
+
+### F-1B-116 — El precheck de publicación está escrito dos veces y falla ABIERTO; el resolver de plan de commerce, al lado, falla cerrado
+
+**Dos endpoints vivos calculan la misma decisión para alojamientos:**
+
+| ruta | cómo llega |
+|---|---|
+| `GET /api/v1/protected/host-onboarding/precheck` | en línea: `accommodationService.count(...)` (`routes/host-onboarding/protected/precheck.ts:75`) + `list(...)` (`:95`) → `deriveOnboardingDecision` (`:114`) |
+| `GET /api/v1/protected/publish/precheck/{vertical}` | `resolvePublishPrecheck` (`services/publish-precheck.service.ts:148`) → `countOwnListings`/`listOwnDraftListings` (`publish-listing-reads.ts:185`,`:238`, que para alojamiento hacen **el mismo** `service.count(actor, {ownerId})`, `:205`) → el mismo `deriveOnboardingDecision` (`:179`) |
+
+Los dos convergen en la misma función pura y tienen **dos schemas de respuesta casi
+idénticos** —`OnboardingPrecheckResponseSchema` (`host-onboarding/protected/precheck.ts:43-57`)
+y `PublishPrecheckResponseSchema` (`publish/protected/precheck.ts:58-72`), mismos campos, mismo
+enum de `decision`—. El repo ya sabe de la duplicación y explica por qué no la cerró:
+`publish-listing-reads.ts:144-150` dice que *«Accommodation keeps calling `count()` … routing
+it through a new call would change the one vertical that bills correctly today»*.
+
+**El genérico falla abierto, y está declarado.** `publish-precheck.service.ts:31-36` y
+`:92-99` definen `FAIL_OPEN` como `decision: 'create_direct'` con `hasQuota: true`, devuelto
+cuando las lecturas no resuelven (`:165-171`) o cuando la función entera tira (`:192-202`).
+Entre los caminos que llegan ahí está un `vertical` que el `switch` de
+`publish-listing-reads.ts:103-123` no reconoce —su `default` devuelve `null` (`:120`)—, o sea
+que **un vertical desconocido contesta «andá, publicá»**. Hoy es inalcanzable desde afuera
+porque la ruta acota con `z.enum(['accommodation','gastronomy','experience'])`
+(`publish/protected/precheck.ts:49`); el servicio por sí solo no lo impide.
+
+**El vecino hace lo contrario.** `commerce-plan-resolver.ts` falla **cerrado** en los dos
+casos que modela: configuración ausente o malformada → `CommercePlanNotConfiguredError`
+(`:100-105`, `:124-126`), mapeado a **503** en sus cinco llamadores; plan pedido que no es de
+ese vertical → `CommercePlanNotForVerticalError` (`:80-90`, `:197-200`), mapeado a **400**.
+
+Es la misma asimetría que `F-1B-071` midió dentro de un solo archivo —`assertAccommodationPlanSlug`
+cerrado contra `assertAccommodationPlanChangeTarget` abierto— ahora entre dos servicios del
+mismo dominio.
+
+---
+
+### F-1B-117 — El segundo puente son 12 call sites, no 13, y el comentario que lo describe llama «segundo» a lo que es un tercero
+
+`F-1B-062` midió `reconcilePartnerForSubscription` con **13** llamadas. Recontado anclando el
+patrón a `reconcilePartnerForSubscription\(` sobre `apps` y `packages` sin tests: **13 líneas,
+y una es la definición** (`services/partner-reconcile.service.ts:150`). Son **12** call sites,
+en 8 archivos:
+
+```
+subscription-comp-grant.service.ts:634,765   dunning.job.ts:449,528
+finalize-cancelled-subs.ts:643               abandoned-pending-subs.job.ts:368
+subscription-logic.ts:1432                   qzpay-admin-hooks.ts:401,990,1070
+subscription-pause.ts:388,497
+```
+
+Es la misma trampa que el `CLAUDE.md` del repo ya documentó para el otro puente —*«this bullet
+twice carried a number that was wrong by the time it was read»*—, esta vez por un lugar
+distinto: no por caducidad, por contar la declaración como uso.
+
+**Y el reparto entre los dos puentes es asimétrico donde importa.**
+`partner-reconcile.service.ts:157-250` envuelve **todo** su cuerpo en un `try/catch` que
+loguea y no relanza, así que cumple de verdad el contrato de no-tirar. El otro,
+`reconcileSubscriptionLinkedEntities` (`services/subscription-linked-entities.service.ts:104-120`),
+**no tiene `try` ni `catch` propios**: su garantía depende enteramente de que sus tres
+delegadas se traguen los errores, que es lo que `F-1B-062` verificó archivo por archivo.
+Eso hace que un comentario como el de `commerce-subscription-attach.service.ts:207-213`
+—*«Non-throwing by contract (see the reconcile service)»*— sea cierto sólo mientras las tres
+delegadas lo sigan siendo, y no por nada que esté escrito en la función que se invoca.
+
+**Y ese `attach` encadena dos escrituras sin transacción**: el
+`insert().onConflictDoUpdate()` sobre `entity_subscriptions` (`:180-200`) y la llamada al
+puente (`:209`). El propio docblock del módulo describe qué se ve cuando la segunda no ocurre
+(`:160-164`): *«the listing sits PRIVATE until some unrelated webhook happens to fire for that
+subscription — the owner pays nothing extra, sees nothing appear, and has no way to tell
+whether it worked»*.
+
+---
+
+### F-1B-118 — Dos docblocks del carril de IA describen cableado que no existe, y uno de ellos es sobre a dónde van los errores
+
+**1. El `recordEvent` que dice no tocar Sentry, lo toca.** `services/ai-service.factory.ts:18-19`
+afirma: *«Wiring `recordEvent` as a structured debug log entry (**NOT** usage-metering; per-call
+metering + **Sentry are out of scope** for T-043)»*. El cuerpo, en `:240`, inyecta
+`recordEvent: createAiObservabilityRecordEvent()`, y esa función
+(`services/ai-observability.service.ts:76-201`) llama `Sentry.addBreadcrumb` /
+`Sentry.captureMessage` para `fallback`, `exhausted`, `kill_switch` y `moderation_error`, más
+`ph.capture` de PostHog en 5 de sus 6 tipos de evento. El docblock quedó en T-043; el cableado
+es de T-035, documentado correctamente en el otro archivo (`:1-37`).
+
+**2. El auto-sync «fire-and-forget» al crear o rotar una credencial no está.**
+`services/ai-sync-models.service.ts:47-48` dice: *«the auto-sync-on-create/rotate wiring (T-010)
+calls this service the same way, **fire-and-forget**, from inside an already-authorized
+mutation»*. Medido: el único call site de `syncAiProviderModels` es
+`routes/ai/credentials/index.ts:267`, dentro del handler de `POST /{providerId}/sync-models`
+(`:250-264`), **con `await`**. Leídos enteros `createCredentialRoute` (`:114-148`) y
+`rotateCredentialRoute` (`:202-236`): ninguno nombra `syncAiProviderModels` ni
+`syncAiProviderModelsPreflight`.
+
+**3. Tres inserts secuenciales sin transacción en la persistencia del chat.**
+`persistConversationTurn` (`services/ai-chat-persistence.ts:103-210`) inserta la conversación
+(`:117-129`, sólo en el primer turno), el mensaje del usuario (`:161-170`) y el del asistente
+(`:187-196`), cada uno con su `try/catch` que loguea y relanza. `db.transaction` da **cero**
+ocurrencias en el archivo. Si el tercero falla, la conversación queda con la pregunta y sin la
+respuesta.
+
+**4. Quién mide y quién no, confirmado del lado de los servicios.** Ninguno de los ocho
+archivos de IA de este lote escribe en `ai_usage`: el único `insert(aiUsage)` del repo está en
+`packages/ai-core/src/storage/usage.storage.ts:104`, y el metering del chat ocurre en la
+**ruta** —`routes/ai/protected/chat.ts:558` y `:593`— antes de llamar a `persistChatTurn`
+(`:618`). O sea que la medición vive en el borde HTTP y no en el servicio, que es exactamente
+la forma por la que `F-1B-067` midió que la traducción automática —cuyo camino es un adaptador
+y no una ruta— no se cuenta en ninguna parte.
+
+**5. El techo de gasto no lo aplica el servicio que se llama «cost-alert».**
+`services/ai-cost-alert.service.ts` sólo manda mail a `HOSPEDA_ADMIN_NOTIFICATION_EMAILS` en
+los cruces de 50 / 80 / 100 % (`:139-160`). El bloqueo real lo hace `checkCostCeiling` lanzando
+`AiCeilingHitError` (`packages/ai-core/src/usage/ceiling.ts:21-24`). Y el de-dup del aviso
+**falla abierto por decisión escrita**: si la consulta a `billing_notification_log` tira,
+`wasAlertSent` (`:70-98`) devuelve `false` en el `catch` (`:96`) y el mail se manda otra vez —
+*«allow-through on error to avoid missing a critical alert»* (`:64-65`).
+
+---
+
+### F-1B-119 — El reintento de notificaciones no distingue «no había nada» de «la consulta explotó», y su cooldown fijo no es el backoff que su nombre sugiere
+
+`services/notification-retry.service.ts` (456 líneas) reintenta las filas `failed` de
+`billing_notification_log` cuyo `type` esté en `CRITICAL_TYPES` (`:44-56`:
+`TRIAL_ENDING_REMINDER`, `PAYMENT_FAILURE`, `ADDON_EXPIRED`, `RENEWAL_REMINDER`,
+`COMP_GRANTED`). Tiene un único llamador de producción,
+`cron/jobs/notification-schedule.job.ts`.
+
+**Los tres números son fijos y no hay progresión**: `MAX_RETRIES = 3` (`:31`),
+`RETRY_WINDOW_HOURS = 24` (`:33`) y `RETRY_COOLDOWN_MINUTES = 60` (`:35`). El intervalo entre
+intentos es **siempre 60 minutos** — no hay backoff exponencial en ninguna línea.
+
+**Y el `catch` que envuelve la consulta entera colapsa dos estados distintos.** `:320-326`
+atrapa cualquier excepción —incluida una caída de conexión— loguea, y **devuelve `stats` con
+todos los contadores en cero**, que es exactamente el mismo objeto que devuelve `:150-153`
+cuando la cola está vacía. El cron que lo llama no puede distinguir «no había nada que
+reintentar» de «la consulta falló», mirando el resultado.
+
+Es la misma forma que el relevamiento viene midiendo en los crons —`F-1B-019`, `F-1B-029`,
+`F-1B-040`— ahora un nivel más abajo, en el servicio.
+
+**Lo que sí está bien cerrado es la carrera entre workers**: el claim es un `UPDATE`
+condicional `failed → processing` (`:214-222`), y si `claimedRows === 0` el registro se saltea
+(`:226-233`). No hay lectura-y-después-escritura.
+
+**Y el filtro de tipos críticos gatea el bucle completo**: un tipo que no esté en
+`CRITICAL_TYPES` se saltea con un `debug` (`:167-173`), así que agregar un `case` en
+`reconstructPayload` sin agregar el tipo a esa lista produce código inalcanzable — cosa que el
+propio comentario de `:39-43` deja escrita.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -5132,9 +5607,11 @@ El orden no está decidido.
 | ~~Los 17 handlers de billing, leídos por dentro~~ | — | ✅ `F-1B-018` a `F-1B-031` |
 | ~~Los 30 crons restantes (no tocan billing)~~ | 30 | ✅ `F-1B-040` a `F-1B-044` — **47 de 47** leídos |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
-| Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
+| ~~Los 1.032 handlers por tier~~ | 1.032 | ✅ `F-1B-107` — 568 admin · 321 protected · 123 public · 3 ai · 17 otros; y `F-1B-105` fija que **1.032 es un piso**, medido sin billing inicializado |
+| Qué hace cada uno de los 1.032 handlers, uno por uno | 1.032 | ⬜ |
+| Re-medir la tabla de rutas CON billing inicializado | 63 rutas de qzpay | ⬜ — necesita una base alcanzable; el delta conocido son 48 ausentes (`F-1B-105`) |
 | Los 67 servicios: métodos públicos y qué validan | 67 | 🟨 ver la fila de abajo |
-| Las 337 funciones de `apps/api/src/services` | 337 (**333** nombres) | 🟨 censo de consumo hecho (`F-1B-052`); **122 archivos leídos enteros** de 185 — **48.303 de 64.191 líneas (75 %)**. Cerradas las familias **addon** (22), **ai** (16), **plan** (6), **creación + idempotencia** (11), **trial** (7), **cambio de plan / cancelación** (10), **pagos y huérfanos** (8) y **promos + provisioning** (11): `F-1B-065` a `F-1B-084`. Lo que queda sin leer —**63 archivos / 15.888 líneas**— es casi todo fuera de billing: credenciales sociales, brochure, calendarios, media, QR, feedback. Diez de los 185 no tienen cuerpo (`F-1B-063`) |
+| ~~Las 337 funciones de `apps/api/src/services`~~ | 337 (**333** nombres) | ✅ **185 de 185 archivos / 64.191 de 64.191 líneas (100 %)**. Los **74** que quedaban —**19.654 líneas**, medidos cruzando el censo contra las citas de este registro— se leyeron en siete carriles: `F-1B-110` a `F-1B-119`. **Nota de método**: el conjunto se reconstruyó por «archivos que este registro no cita por nombre» y da **74**, no los 63 que declaraba la fila anterior; la diferencia son 11 archivos leídos y nunca citados, así que 74 ⊇ 63 y la cobertura cierra igual. Lo cerrado antes: **addon** (22), **ai** (16), **plan** (6), **creación + idempotencia** (11), **trial** (7), **cambio de plan / cancelación** (10), **pagos y huérfanos** (8) y **promos + provisioning** (11): `F-1B-065` a `F-1B-084`. Los 74 del cierre: addons sin cubrir (8), `services/billing/` (10), billing de primer nivel (13), commerce/partner/publicación (8), credenciales y calendarios (12), IA (8), brochure/QR/certificado/media/feedback (15). Diez de los 185 no tienen cuerpo (`F-1B-063`) |
 | ~~Los 52 archivos de `service-core/src/services/billing`~~ | 52 | ✅ **52 de 52 leídos enteros, 14.254 de 14.254 líneas** — `F-1B-060`, `F-1B-066`, `F-1B-086`, `F-1B-087`, `F-1B-092` |
 | ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
 | ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
