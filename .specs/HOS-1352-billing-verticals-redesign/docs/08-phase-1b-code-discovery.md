@@ -4573,6 +4573,53 @@ comentarios.
 
 ---
 
+### F-1B-100 — En 125 migraciones estructurales se quitaron ocho columnas y ninguna era de billing
+
+Contadas las sentencias sobre los **125** archivos de `packages/db/src/migrations/*.sql`:
+
+| | sentencias |
+|---|---|
+| `CREATE TABLE` | **175** |
+| `ADD COLUMN` | **182** |
+| `ALTER COLUMN` | 19 |
+| `DROP INDEX` | 14 |
+| **`DROP COLUMN`** | **8** |
+| `DROP CONSTRAINT` | 2 |
+| `RENAME COLUMN` | 2 |
+| **`DROP TABLE`** | **1** |
+| `RENAME TO` | 1 |
+
+**357 sentencias que agregan contra 9 que quitan: cuarenta a uno.**
+
+**Y las nueve, completas, no tocan una sola tabla `billing_*`:**
+
+| migración | qué quitó |
+|---|---|
+| `0028_deep_machine_man.sql:14-15` | `amenities.name`, `features.name` |
+| `0069_mushy_captain_america.sql:105` | `users.role` |
+| `0072_wealthy_kingpin.sql:1-3` | `accommodations.media`, `experiences.media`, `gastronomies.media` |
+| `0090_stale_charles_xavier.sql:1` | `accommodations.schedule` |
+| `0098_graceful_tarantula.sql:1` | `DROP TABLE commerce_leads CASCADE` |
+
+Los tres renames tampoco: `accommodations.featured_by_plan → featured_by_entitlement`
+(`0040_fantastic_menace.sql:9`), `commerce_listing_subscriptions → entity_subscriptions`
+(`0114_entity_subscriptions_rename.sql:1`, el de `F-1B-002`) y
+`revalidation_log.path → target` (`0070_volatile_freak.sql:1`).
+
+**En toda la historia versionada del esquema, ninguna columna de billing se retiró nunca.**
+Es la contracara estructural de lo que este relevamiento viene midiendo por el lado del
+código: `F-1B-064` encontró seis tipos `enum` de billing que ninguna columna usa,
+`F-1B-096` catorce columnas de `billing_subscriptions` que el mapper no devuelve, y
+`F-1B-034` dos tablas con veinte escritores y cero lectores. Nada de eso se quitó porque
+**el carril estructural casi no quita**.
+
+*Precisión del conteo*: son **sentencias**, no objetos distintos. Las 175 `CREATE TABLE`
+incluyen las del `0000_baseline.sql` y cualquier repetición idempotente, así que ese número
+no es «175 tablas»; producción tiene 174 (`F-1B-006`). Lo que la proporción mide es la
+**forma** de las migraciones, no el inventario.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -4599,7 +4646,7 @@ El orden no está decidido.
 | Superficies Web | **15** archivos (de 1.049) | 🟨 denominador corregido y la tabla comparativa medida — `F-1B-088`, `F-1B-089`; los 15 archivos, sin leer enteros |
 | Superficies Admin | **22** archivos (de 1.454) | 🟨 denominador corregido — `F-1B-089`; sin leer |
 | ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
-| Qué hace cada una de las 125 estructurales: columnas muertas, renames, drops | 125 | ⬜ |
+| Qué hace cada una de las 125 estructurales: columnas muertas, renames, drops | 125 | 🟨 el inventario de operaciones destructivas está medido (9 en total, ninguna de billing) — `F-1B-100`; qué agrega cada una, sin recorrer |
 | Tests: qué comportamiento afirman (como evidencia de intención, no de corrección) | por medir | ⬜ |
 
 Y en **qzpay**, con el mismo criterio:
