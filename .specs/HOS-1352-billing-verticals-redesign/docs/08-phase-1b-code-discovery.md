@@ -6286,6 +6286,82 @@ mismo cero admitía las dos lecturas.
 
 ---
 
+### F-1B-131 — «Cancelar a fin de período» ejecuta TODOS los efectos de una baja inmediata menos el status, y es la opción por defecto del diálogo
+
+`F-1B-127` midió que cada operación mutante de admin tiene un gemelo `force-*` *«que se saltea los
+hooks»*, y los agrupó como una sola forma. Leídos los seis por dentro, **no son la misma forma**:
+dos gemelos hacen lo mismo con y sin gancho, y el tercero —la cancelación— **le pide al motor algo
+distinto**.
+
+| par | el crudo llama | el de ganchos llama | ¿mismo efecto sobre el motor? |
+|---|---|---|---|
+| **cancelar** | `cancel(id, { cancelAtPeriodEnd: **false** })` (`admin.routes.ts:498`) | `cancel(id, { cancelAtPeriodEnd: **!immediate** })` (`:532`) | **NO** |
+| reembolsar | `refund({ amount: body.amount })` (`:773`) | `refund({ amount: typeof body.amount === 'number' ? … : undefined })` (`:788`) | sí, salvo el saneado del tipo |
+| pagar factura | `invoices.markPaid(id, body.paymentId ‖ 'manual_<ts>')` (`:858`) | `invoices.markPaid(id, paymentId)`, mismo fallback (`:875`) | sí |
+
+**Y `immediate` no viene de la ruta: viene del cuerpo, y su ausencia significa diferir.** El propio
+comentario de la ruta lo declara (`admin.routes.ts:509-510`: *«Defaults to end-of-period; pass
+`{ immediate: true }` in the body for instant cancel»*). Con el default, `cancelAtPeriodEnd` llega
+en `true`, y entonces `billing.ts:1779-1781` **no entra**: el motor escribe `canceledAt` y **deja el
+`status` como estaba** (`:1776-1778`, incondicional).
+
+**El default no es teórico: es lo que el admin manda.**
+`apps/admin/src/features/billing-subscriptions/CancelSubscriptionDialog.tsx:40` arranca en
+`useState(false)`, o sea el selector abre en *«fin de período»*, y `:44` pasa ese valor tal cual.
+
+**Lo que el gancho hace, en cambio, no mira `immediate` en ninguna decisión.** En las 1.108 líneas
+de `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts` el parámetro aparece **dos veces**: al
+desestructurar (`:338`) y dentro de la metadata del evento de auditoría (`:379`). Los cinco efectos
+del `onAfterSubscriptionCancel` corren igual en los dos casos:
+
+1. las compras de addon activas pasan a `canceled` (`:347-360`);
+2. se escribe el evento `ADMIN_SUBSCRIPTION_CANCELLED` con `newStatus: CANCELLED` (`:373-376`);
+3. se limpia el caché de entitlements (`:384`);
+4. `reconcileSubscriptionLinkedEntities({ subscriptionStatus: **CANCELLED** })` (`:392-397`);
+5. `reconcilePartnerForSubscription({ subscriptionStatus: **CANCELLED** })` (`:401-405`).
+
+Y el `onBefore` **revoca los addons en el proveedor antes de que la cancelación se comprometa**
+(`:194-200` resuelve las compras activas, `:215` en adelante las revoca), también sin mirar
+`immediate`.
+
+**La cadena del punto 4, seguida eslabón por eslabón:**
+
+| paso | archivo:línea | qué pasa |
+|---|---|---|
+| 1 | `qzpay-admin-hooks.ts:392` | pasa `CANCELLED` |
+| 2 | `subscription-linked-entities.service.ts:111-115` | se lo entrega a la mitad de commerce (la de accommodation no lo recibe, `:117`) |
+| 3 | `commerce-reconcile.service.ts:370-374` | escribe `entity_subscriptions.status = 'cancelled'` |
+| 4 | `commerce-reconcile.service.ts:379-388` | llama a la visibilidad con ese status |
+| 5 | `commerce-visibility.ts:251` | `isEntitlementGrantingStatus('cancelled')` → `false` |
+| 6 | `commerce-visibility.ts:284-291` | `desiredVisibility = PRIVATE`, `lifecycleState = INACTIVE`, y escribe |
+
+**O sea: pedir la baja a fin de período despublica la ficha de comercio el mismo día**, revoca los
+addons el mismo día, limpia el acceso el mismo día — y deja la fila de `billing_subscriptions`
+diciendo `active` o `trialing`, porque es el único efecto que el motor difirió.
+
+**Dos consecuencias derivadas, de la misma lectura:**
+
+- **El guard de doble cancelación no detiene la segunda.** `onBeforeSubscriptionCancel` rechaza si
+  el status ya es `canceled` o `cancelled` (`:163-168`), y en el camino diferido ese status **nunca
+  cambia**: la misma baja se puede pedir otra vez y vuelve a pasar. Lo que la repetición agrega es
+  un evento de auditoría más — los efectos 1, 4 y 5 son idempotentes y el 1 ya no encuentra compras
+  `active`.
+- **El evento de auditoría afirma un estado que la fila no tiene.** `previousStatus` se lee de la
+  fila (`:361-363`) y `newStatus` es la constante `CANCELLED` (`:376`): el rastro dice que la
+  suscripción pasó a cancelada en un momento en que la columna dice lo contrario.
+
+*Alcance de esta medición*: la cadena está leída, no ejecutada. Cada eslabón se cita arriba y
+`F-1B-130` midió que en producción no hay ninguna fila con `canceled_at`, así que **ninguno de los
+dos caminos se ejerció nunca en esa base** — las dos rutas escriben `canceledAt` incondicionalmente.
+
+*Qué abre, sin resolverlo acá*: el §24 pide que la cancelación normal *«se hace efectiva al final
+del período ya pagado»* y que *«hasta entonces mantiene servicio»*, y `DEC-SUB-009` eligió
+deliberadamente cancelar ya en el proveedor **y sostener el servicio de nuestro lado**. El camino
+de admin leído acá hace la mitad opuesta de cada cosa: difiere en el proveedor y corta el servicio
+en el acto.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
