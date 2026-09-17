@@ -317,9 +317,19 @@ manifiesto obligatorio, guard de entorno y guard de presupuesto) · ~~`M-MP-03`~
 cap. 06** (las ocho filas `UNKNOWN` con qué bloquea cada una; cinco son el mismo hecho y se
 contestan el 2026-09-17)
 
-**Entitlements y limits** · **`E-ENT-01` suspensión y beneficios de turista heredados** (nuevo, residuo de `DEC-ENT-003`) · `M-ENT-01` estrategia de agregación por limit · `M-ENT-02`
-enforcement transversal de excedentes · `A-ENT-02` qué tiene el visitante sin cuenta ·
-`M-ENT-03` scope global de entitlements
+**Entitlements y limits** — **los cinco los cerró el cap. 15**, que separa tres cosas que el PDR
+mezcla: el scope de la **clave**, el de la **fuente** y el de la **operación**. · ~~`M-ENT-01`~~
+(cada clave declara su estrategia **en el catálogo**, no en el plan, o la clave significaría dos
+cosas; dos familias —acumula o no— y cuando no acumula gana el cliente) · ~~`M-ENT-03`~~ (cada
+clave declara scope de vertical o global; una de vertical se resuelve por `user + vertical` y por
+eso **no se puede leer desde otra**, sin chequeo que olvidar) · ~~`M-ENT-02`~~ (no se dispara por
+evento sino por condición: **la misma lista de siete que invalida el caché**, cap. 02 §3.2, y
+actúa sólo si algo bajó; nunca borra, cae lo más reciente primero, y la ventana para elegir existe
+sólo cuando la fecha se sabía) · ~~`A-ENT-02`~~ (ningún entitlement **medido**, enunciado por clase
+y no por clave; una cuota para el guest necesitaría una identidad que no hay, y el registro es
+gratis por el §14) · ~~`E-ENT-01`~~ (los pierde —§21— pero **el bloqueo de compra se levanta en el
+mismo instante**, porque `DEC-ENT-003` lo ata a que el plan *se lo dé*; el aviso nombra lo que
+pierde como turista y la compra avisa que al regularizar se cancela)
 
 **Addons** · `A-ADDON-01` dos ejes en vez de uno · `A-ADDON-02` qué es una suscripción
 "válida" · `E-ADDON-03` addon a costo cero bajo Free Forever · `E-ADDON-04` vence un addon que
