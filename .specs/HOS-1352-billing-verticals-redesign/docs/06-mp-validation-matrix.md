@@ -169,7 +169,7 @@ response y webhook observado) · **Conclusión**.
 | # | Comportamiento | Estado | Fecha | Entorno | Evidencia | Conclusión |
 |---|---|---|---|---|---|---|
 | RN-1 | Cobro exitoso | **`VERIFIED`** | 2026-09-16 | **producción + sandbox** | [sonda 29](./mp-probes/probe-29-el-reloj-de-produccion.mjs) · segunda lectura del reloj de sandbox | **El primer cobro funciona** (producción): `renov-ok` cobró ARS 15 (`178259523769`, `approved/accredited`, `recurring_payment`), comisión 1,20, neto 13,80. **Y la RENOVACIÓN también**, que era lo que faltaba: el 2026-09-16 a las 12:01:45 `-04` los cinco sujetos `authorized` del reloj de sandbox cobraron por **segunda** vez (`charged_quantity: 2`), un ciclo `days` después del primero. **Con 33 minutos de lag** sobre su `next_payment_date` — mismo orden que los ~26 min de `PA-3`, así que el retraso del cobro **no es una rareza del alta: es cómo cobra el proveedor**. Ninguna lógica puede preguntar "¿ya cobró?" a la hora exacta |
-| RN-2 | Cobro fallido | `UNKNOWN` | — | — | — | ⏳ **sujeto ARMADO el 2026-09-16 12:42 `-04`**: `renov-falla3` (`0e678ead…`) quedó con `transaction_amount` en **ARS 2.000.000** —el techo de `PC-2`— y cobro agendado para el **2026-09-17 ~11:29 `-04`**. **No se puede fabricar con una tarjeta mala** (`PA-4`: las que rechazan mueren antes con `400 CC_VAL_433`), así que el camino es que el cobro sea impagable. Su rol original nunca se había armado: se creó en la ampliación de la sonda 05, **después** de la etapa de mutación, y por eso llegó hasta hoy siendo un duplicado exacto de `renov-ok`. Se lee el 2026-09-17 |
+| RN-2 | Cobro fallido | `UNKNOWN` | — | — | — | ❌ **EL SUJETO NUNCA ESTUVO ARMADO, y esta fila lo afirmaba.** Corregido el **2026-09-17 13:19 `-03`**. Lo que decía: que `renov-falla3` (`0e678ead…`) había quedado en ARS 2.000.000 el 2026-09-16 12:42 `-04`. Lo que pasó: **la mutación se rechazó con `400` el 2026-09-15 12:29 `-03`** y quedó registrada en `/tmp/mp-probe-05/renov-falla3.mutacion.json` — `{"message":"Cannot pay an amount greater than $ 2000000.00","status":400}`. Se pidió **MÁS** que el techo, no el techo. La relectura post-mutación del mismo minuto lo confirma: `transaction_amount: 2000.0`, `last_modified` **sin tocar**. El sujeto cobró **2000 normal los días 15, 16 y 17** (sonda 06 del 2026-09-17: `cobros 2→3`, `cobrado_total 4000→6000`, pago `179498654880` `approved/accredited`). **La evidencia que desmentía esta fila estaba en el mismo directorio desde el 15/09 y nadie la leyó**: es exactamente el modo de falla que el invariante `D5` existe para impedir — la mutación se dio por hecha sin releer. **Sigue sin haber forma medida de fabricar un cobro fallido.** `PA-4` cerró la tarjeta mala (mueren antes con `400 CC_VAL_433`) y `PC-2` cierra el monto impagable por arriba y por abajo. ⚠️ **Y el camino de producción también se cayó**: el owner reportó el 2026-09-17 que su tarjeta está pausada en el home banking **pero el propio home banking avisa que los débitos automáticos se siguen cobrando**, así que `apagon` (14:19 `-03`) probablemente cobre igual. Se lee lo mismo, pero ya no es el camino. 🔎 **Camino nuevo sin probar**: `mpcli tester card create --user-id <id> --scenario insufficient_funds` — el CLI oficial provisiona tarjetas de prueba con **comportamiento atado a la tarjeta**, no al nombre del titular, que es lo que `PA-4` midió. Ver el bloque de abajo |
 | RN-3 | Recuperación tras el fallo | `UNKNOWN` | — | — | — | depende de `RN-2` |
 
 ## Grace (§20)
@@ -189,7 +189,7 @@ response y webhook observado) · **Conclusión**.
 | PS-3 | Reanudación anticipada por el usuario (§26.2) | **`PARTIALLY_SUPPORTED`** | 2026-09-15 | sandbox | [sondas 01/02](./mp-probes/RESULTS-2026-09-15.md) | La **transición** funciona (`PUT {status:"authorized"}` → `200`). **RE-VERIFICADO EN PRODUCCIÓN CON TARJETA REAL** el 2026-09-15 ([sonda 28](./mp-probes/probe-28-suscripciones-autorizadas-sin-cobrar.mjs)), sobre suscripciones autorizadas con `start_date` a +30 días — que no cobran: la corrida entera cerró con **cero cobros** |
 | PS-4 | Reanudación automática al llegar la fecha (§26.2) | **`NOT_SUPPORTED`** | 2026-09-16 | sandbox | [foto de línea de base](./mp-probes/fotos-reloj-2026-09-16/pausa-real-linea-de-base.json) · [sonda 06](./mp-probes/probe-06-leer-el-reloj.sh) | **No existe la auto-reanudación.** `pausa-real` se pausó el 2026-09-15 ~12:29 y a las **24,5 h** (2026-09-16T12:54:45-03) seguía `paused`, con `last_modified` todavía en el instante de la pausa: nadie la movió, y el proveedor tampoco. Concuerda con la doc oficial, que sólo ofrece reactivar con un `PUT {status:"authorized"}` — **MP no tiene un `pauseUntil`**: la fecha de fin de pausa es un concepto NUESTRO y el reloj que la dispara tiene que ser nuestro |
 | PS-5 | Qué pasa con las fechas al reanudar | **`VERIFIED`** | 2026-09-16 | sandbox | [antes](./mp-probes/fotos-reloj-2026-09-16/pausa-real-antes-de-reanudar.json) · [después](./mp-probes/fotos-reloj-2026-09-16/pausa-real-despues-de-reanudar.json) | **Reanudar cambia SÓLO el `status`.** Sobre una pausa **real de 24,5 h**, el `PUT {status:"authorized"}` (2026-09-16T12:56:15-03, confirmado por `last_modified`, no por el 200) dejó `next_payment_date` **clavado en 2026-09-17T11:28:03-04**, el mismo valor que ya tenía pausada. Ni se adelanta ni se corre. Re-leído a los 3 min: idéntico |
-| PS-6 | Qué pasa con la fecha de cobro al reanudar (§26.4) | **`NOT_SUPPORTED`** | 2026-09-16 | sandbox + **producción** | [antes](./mp-probes/fotos-reloj-2026-09-16/pausa-real-antes-de-reanudar.json) · [después](./mp-probes/fotos-reloj-2026-09-16/pausa-real-despues-de-reanudar.json) · `PS-2` (prod) | **El período pagado durante la pausa se PIERDE, y el proveedor no ofrece nada para recuperarlo.** Tres hechos encadenados: (1) pausar **no** corre la fecha en el acto — cadena crear→pausar→reanudar de las [sondas 07/07b](./mp-probes/probe-07-que-se-puede-sobre-una-pausada.sh), segundos, `next` idéntico en los tres pasos; (2) el ciclo que vence **estando pausada** igual avanza `next_payment_date` +1 ciclo sin cobrar — `pausa-real` nació con `next`=2026-09-16T11:28:03-04 ([creacion.log](./mp-probes/fotos-reloj-2026-09-16/creacion-del-reloj-2026-09-15.log)) y al día siguiente leía **2026-09-17** ([línea de base](./mp-probes/fotos-reloj-2026-09-16/pausa-real-linea-de-base.json)), y lo mismo se había medido ya en **producción** (`PS-2`); (3) al reanudar no hay cobro de recuperación ni deuda acumulada (`cobros`=1, `charged_amount`=2000, sin `pending_charge_*`). **Conclusión: §26.4 NO es delegable a MP.** Si el usuario no debe perder días pagos, los sostenemos nosotros — mismo patrón que `DEC-SUB-009` |
+| PS-6 | Qué pasa con la fecha de cobro al reanudar (§26.4) | **`NOT_SUPPORTED`** | 2026-09-16 | sandbox + **producción** | [antes](./mp-probes/fotos-reloj-2026-09-16/pausa-real-antes-de-reanudar.json) · [después](./mp-probes/fotos-reloj-2026-09-16/pausa-real-despues-de-reanudar.json) · `PS-2` (prod) | **El período pagado durante la pausa se PIERDE, y el proveedor no ofrece nada para recuperarlo.** Tres hechos encadenados: (1) pausar **no** corre la fecha en el acto — cadena crear→pausar→reanudar de las [sondas 07/07b](./mp-probes/probe-07-que-se-puede-sobre-una-pausada.sh), segundos, `next` idéntico en los tres pasos; (2) el ciclo que vence **estando pausada** igual avanza `next_payment_date` +1 ciclo sin cobrar — `pausa-real` nació con `next`=2026-09-16T11:28:03-04 ([creacion.log](./mp-probes/fotos-reloj-2026-09-16/creacion-del-reloj-2026-09-15.log)) y al día siguiente leía **2026-09-17** ([línea de base](./mp-probes/fotos-reloj-2026-09-16/pausa-real-linea-de-base.json)), y lo mismo se había medido ya en **producción** (`PS-2`); (3) al reanudar no hay cobro de recuperación ni deuda acumulada (`cobros`=1, `charged_amount`=2000, sin `pending_charge_*`). **Conclusión: §26.4 NO es delegable a MP.** Si el usuario no debe perder días pagos, los sostenemos nosotros — mismo patrón que `DEC-SUB-009` ✅ **RE-CONFIRMADO EN EL VENCIMIENTO 2** el 2026-09-17 13:05 `-03` ([sonda 06](./mp-probes/probe-06-leer-el-reloj.sh)): `pausa-real` sigue `paused`, la fecha corrió **2026-09-17 → 2026-09-18** `11:28:03 -04` y **no cobró** — `cobros` se quedó en **1** y `cobrado_total` en **2000**. Era la condición que `DEC-SUB-010` declaraba pendiente: el corrimiento estaba medido **una sola vez, con un vencimiento**, y toda la aritmética de la pausa lo necesita en el 2 y el 3. **Con el 2 medido, la decisión NO se reabre.** Falta el 3, que se lee el 2026-09-18 |
 
 ## Cancelación (§24)
 
@@ -385,16 +385,29 @@ miden. Sondas [38](./mp-probes/probe-38-cobrar-sin-preapproval.mjs),
 Recalculado con [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) el
 2026-09-16 **14:45**, sobre **89** filas.
 
-> ⏳ **El cobro fallido tiene sujeto, por fin.** `RN-2`, `RN-3` y `GR-1..3` no se
-> podían medir porque **un cobro fallido no se puede fabricar**: el proveedor
-> valida la tarjeta cobrando ARS 0 al crear la suscripción Y al cambiarle el
-> medio de pago, así que nunca deja una suscripción asociada a una tarjeta que
-> no aprueba (`EX-36`, y `PA-4` antes). La salida fue del owner: que la tarjeta
-> **apruebe al asociarse y se degrade después**. El sujeto `apagon`
-> ([sonda 43](./mp-probes/probe-43-la-tarjeta-que-se-apaga.mjs)) está vivo en
-> **producción** con su tarjeta real, ya cobró su primer ciclo, y el owner apaga
-> esa tarjeta desde el home banking. El intento del 2026-09-17 es el cobro
-> fallido.
+> ❌ **El cobro fallido NO tiene sujeto, y la versión anterior de este bloque decía que sí.**
+> Corregido el **2026-09-17 13:19 `-03`** con la corrida de la sonda 06. Ver `RN-2` para la
+> evidencia; el resumen es que **la mutación que iba a armar `renov-falla3` se rechazó con `400`
+> el 2026-09-15** y el archivo que lo prueba estuvo todo el tiempo en el mismo directorio.
+>
+> **Lo que sigue siendo cierto, y es el problema de fondo**: un cobro fallido **no se fabrica con
+> una tarjeta mala**, porque el proveedor valida la tarjeta cobrando ARS 0 al crear la suscripción
+> Y al cambiarle el medio de pago (`EX-36`, y `PA-4` antes), así que nunca deja una suscripción
+> asociada a una tarjeta que no aprueba.
+>
+> **Y el camino de producción se cayó el mismo día.** La salida era que la tarjeta **apruebe al
+> asociarse y se degrade después** (`apagon`, [sonda 43](./mp-probes/probe-43-la-tarjeta-que-se-apaga.mjs),
+> viva en producción con la tarjeta real del owner). El 2026-09-17 el owner reportó que la tarjeta
+> está pausada en el home banking **pero el home banking avisa que los débitos automáticos se
+> siguen cobrando**. Se lee igual a las 14:19 `-03` porque no cuesta nada, pero **no se cuenta con
+> ella**.
+>
+> 🔎 **Lo que no se probó todavía**, y es lo que hay que probar: el CLI oficial
+> (`mpcli tester card create --user-id <id> --scenario insufficient_funds`) provisiona tarjetas de
+> prueba cuyo **comportamiento está atado a la tarjeta**, no al nombre del titular. `PA-4` midió el
+> nombre del titular (`FUND`, `OTHE`), que es **otro mecanismo**. La pregunta abierta y barata de
+> contestar: **¿una tarjeta `insufficient_funds` pasa la validación de ARS 0 y falla recién en el
+> cobro real?** Si pasa, `RN-2`, `RN-3` y `GR-1..3` se contestan las cinco de una.
 
 > ✅ **El reloj cobró, y era lag.** A las 11:59 `-04` los cinco `authorized`
 > seguían con `charged_quantity: 1` y la fecha sin correr, 31 min después de su
