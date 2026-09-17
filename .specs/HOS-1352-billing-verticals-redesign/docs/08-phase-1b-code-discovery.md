@@ -3408,6 +3408,13 @@ dominios con la misma palabra.
 `billing_payments` esté hoy vacía en producción (`F-1B-009`): seguirían en cero el día que
 se llene, porque ninguna fila va a llevar ese estado.
 
+> **El repo ya había diagnosticado esto, en otro archivo.**
+> `apps/api/src/services/admin-billing-view.status.ts:147-148` lo deja escrito al excluir
+> ese valor de su mapa de alias: *«`completed` is deliberately ABSENT: no row has ever held
+> it. **It was invented by the admin UI, which is what made its refund button dead**»*. O
+> sea que el mismo error ya costó un botón de reembolso muerto, se corrigió en la vista de
+> admin, y sigue vivo en las dos consultas de `billing-metrics.service.ts`.
+
 **Y las consume una superficie duplicada.** `getBillingMetricsService()` expone cuatro
 métodos, y los llaman **dos módulos de ruta distintos, los dos montados**:
 `routes/billing/metrics.ts:123-125` (montado en `routes/index.ts:120`) y
@@ -4468,6 +4475,104 @@ de `:78` sigue pidiendo páginas hasta que el proveedor diga que no hay más. **
 
 ---
 
+### F-1B-099 — De los 261 símbolos que exportan cinco directorios del motor, hospeda usa seis; y el que hace aritmética de fechas carga el bug que hospeda ya pagó
+
+Leídos enteros los **43 archivos** de `qzpay/packages/core/src/` en `events/` (6 / 1.923),
+`helpers/` (6 / 2.258), `utils/` (7 / 1.362), `errors/` (8 / 612) y `constants/` (16 / 486):
+**6.641 líneas**.
+
+**El consumo, medido símbolo por símbolo:**
+
+| directorio | exporta | lo usa hospeda |
+|---|---|---|
+| `helpers/` | 80 | **1** (un tipo) |
+| `utils/` | 68 | **0** |
+| `events/` | 55 | **0** |
+| `constants/` | 47 | **4** (los cuatro, sólo como tipo) |
+| `errors/` | 11 | **1** |
+| **total** | **261** | **6** |
+
+Los seis: `QZPayBillingInterval`, `QZPayCurrency`, `QZPayPaymentStatus` y
+`QZPaySubscriptionStatus` (tipos de `constants/`), `QZPaySubscriptionWithHelpers` (tipo de
+`helpers/`), y `QZPayProviderSyncError`, la **única** clase de error que hospeda atrapa con
+un `instanceof` (`apps/api/src/lib/billing-provider-error.ts:59`, `:102-104`).
+
+**Ninguno de los cuatro tipos de `constants/` se usa junto a su objeto de valor.**
+`QZPAY_SUBSCRIPTION_STATUS`, `QZPAY_PAYMENT_STATUS` y los otros trece vocabularios cerrados
+tienen cero imports; las menciones que aparecen en un `grep` son comentarios —
+`billing/reactivation-supersession-complete.ts:97,99` cita
+`QZPAY_SUBSCRIPTION_STATUS.CANCELED` en un docblock sin importarlo.
+
+**El catálogo de eventos y lo que se emite son dos conjuntos, y no coinciden en ninguna de
+las dos direcciones.** `constants/billing-event.ts:4-54` declara **34** tipos; los
+`emitter.emit(...)` reales de `billing.ts` cubren **25**. Los **nueve que nadie emite**:
+`subscription.trial_ending`, `subscription.trial_ended`, `payment.disputed`,
+`invoice.payment_failed`, `checkout.completed`, `checkout.expired`, `vendor.created`,
+`vendor.updated`, `vendor.payout`. Y al revés: **`billing.ts` emite `'checkout.created'`
+dos veces (`:2120`, `:2151`) y ese string no existe en el catálogo.**
+
+**El almacén de eventos es un arreglo en memoria.** `QZPayInMemoryEventStore`
+(`events/event-store.ts:59-203`) guarda en `private events: QZPayEvent[] = []` (`:60`) y su
+propio docblock dice *«for development/testing»* (`:56-58`). No hay persistencia, ni cola,
+ni reintento de entrega: si `emit()` falla, `safeExecuteAsync` (`event-emitter.ts:271-294`)
+llama a `options.onError`, cuyo default es un `console.error` (`:70`). Da igual para
+hospeda, que no se suscribe a ninguno (`F-1B-090`).
+
+**Y el helper de fechas del motor carga exactamente el bug que hospeda ya midió y arregló
+por su cuenta.** `utils/date.utils.ts:20` hace:
+
+```ts
+case 'month':
+    result.setMonth(result.getMonth() + count);
+```
+
+`setMonth`/`getMonth` leen y escriben en el huso **local del proceso**. Hospeda escribió un
+módulo entero para no hacer eso, y su docblock cita el incidente con números
+(`packages/utils/src/utc-date-math.ts:7-24`, HOS-1010, bajo
+`TZ=America/Argentina/Buenos_Aires`):
+
+```
+2026-02-01 + 1 month => 2026-03-04   (tres días de más)
+2026-03-01 + 1 month => 2026-03-29   (tres días de menos)
+```
+
+y explica por qué no se ve en producción: *«production and CI run on Alpine with no `TZ`
+set, so they are UTC and never see it, while a developer machine in Argentina computes
+something else from the same row»*. Las 397 columnas `timestamp` del repo son `timestamptz`,
+así que Drizzle siempre devuelve un instante UTC.
+
+**`qzpayAddInterval` tiene cero usos en hospeda**, así que el bug no está vivo por este
+camino. Lo que queda medido es que **el motor ofrece la primitiva con el defecto que su
+consumidor ya pagó**, y el consumidor la reemplazó sin que el motor se enterara.
+
+**El prorrateo del motor tampoco se usa.** `qzpayCalculateProration`
+(`utils/money.utils.ts:108-114`) y `qzpayCalculateSubscriptionProration`
+(`helpers/subscription.helper.ts:317-345`) están en cero, consistente con lo que `F-1B-090`
+midió: hospeda pasa `prorationBehavior: 'none'` y cobra el delta por un checkout aparte.
+
+**Y el motor tiene su propia máquina de estados, también sin usar.**
+`utils/validation.utils.ts:423-477` declara `QZPAY_VALID_STATUS_TRANSITIONS` sobre los 8
+estados de qzpay, con cuatro guardas (`:508-585`). Cero usos en hospeda, que construyó la
+suya —`service-core/…/subscription/subscription-status-transitions.ts`, la que `F-1B-092`
+midió como opt-in— sobre un vocabulario de 10 estados que incluye tres que el de qzpay no
+tiene.
+
+**Un detalle que hace falta para leer el código de errores sin equivocarse: hay DOS
+`QZPayErrorCode` distintos en el monorepo de qzpay.** El de `core/src/errors/error-codes.ts`
+(30 valores, entre ellos `ENTITY_NOT_FOUND`) y otro, del adaptador de MercadoPago. Hospeda
+documenta y copia a mano los valores del **segundo** —`billing-provider-error.ts:113-114`
+lo dice: *«copied here to avoid importing from the adapter package directly»*, con
+`resource_not_found`, `invalid_card`, `card_declined` y siete más que **no existen** en el
+primero— y del primero no importa nada: sus cinco apariciones en hospeda son todas
+comentarios.
+
+**Dos clases de error viven fuera de `errors/` y no se re-exportan desde su barrel**:
+`QZPayAmountOverflowError` (`utils/money.utils.ts:159-168`) y
+`QZPayInvalidStatusTransitionError` (`utils/validation.utils.ts:482-492`). Quien mire el
+índice de errores no las ve.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -4501,7 +4606,7 @@ Y en **qzpay**, con el mismo criterio:
 
 | Carril | Denominador | Estado |
 |---|---|---|
-| `core` — el motor: qué expone y qué decide | 90 archivos / 22.611 líneas | 🟨 `billing.ts` + adapters (4.724) y los 14 de `services/` (7.920) leídos enteros — **12.644 de 22.611 (56 %)** — `F-1B-090`, `F-1B-097`. Falta `events/` (1.923), `helpers/` (2.258), `types/` (2.484), `utils/` (1.362), `errors/` (612), `constants/` (486) |
+| ~~`core` — el motor: qué expone y qué decide~~ | 90 archivos / 22.611 líneas | ✅ **19.285 de 22.611 (85 %)**: la fachada + adapters (4.724), los 14 de `services/` (7.920) y `events/`+`helpers/`+`utils/`+`errors/`+`constants/` (6.641) — `F-1B-090`, `F-1B-097`, `F-1B-099`. Falta sólo `types/` (21 arch. / 2.484) |
 | ~~`drizzle` — las 27 tablas: columnas, constraints e índices~~ | 27 tablas / 68 archivos | ✅ `schema/` + `mappers/` (35 arch. / 4.424 líneas) y `adapter/` + `repositories/` (21 / 8.347) leídos enteros — **56 de 68, 12.771 de 14.762 líneas**; falta `utils/` (9 / 1.667) — `F-1B-096`, `F-1B-098` |
 | ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
 | `hono` y `react` — las superficies que hospeda monta | 50 archivos | 🟨 las tres factories de `hono` contadas y su montaje verificado (59 rutas), y el consumo de `react` medido — `F-1B-093`, `F-1B-094`; los 50 archivos, sin leer enteros |
