@@ -331,9 +331,17 @@ gratis por el §14) · ~~`E-ENT-01`~~ (los pierde —§21— pero **el bloqueo d
 mismo instante**, porque `DEC-ENT-003` lo ata a que el plan *se lo dé*; el aviso nombra lo que
 pierde como turista y la compra avisa que al regularizar se cancela)
 
-**Addons** · `A-ADDON-01` dos ejes en vez de uno · `A-ADDON-02` qué es una suscripción
-"válida" · `E-ADDON-03` addon a costo cero bajo Free Forever · `E-ADDON-04` vence un addon que
-sostenía capacidad en uso
+**Addons** — **los cuatro los cerró el cap. 16**. · ~~`A-ADDON-01`~~ (dos ejes: **cobro**
+`UNA_VEZ`/`PERIÓDICO` y **vigencia** `DÍAS_FIJOS`/`MIENTRAS_VIVA_LA_SUSCRIPCIÓN`. Existen **tres**
+combinaciones; `PERIÓDICO`+`DÍAS_FIJOS` es una contradicción y **no hay vigencia permanente** —
+eso ya es el grant del §35) · ~~`A-ADDON-02`~~ (válida es **`ACTIVE` y sólo `ACTIVE`**; el grace no
+vale aunque ahí sí se pueda cambiar de plan, porque cambiar de plan es la salida y comprar es
+gastar más. **Excepción forzada por el §35.3**: el grant permanente vale como título, o
+`includesAddons: true` sería inalcanzable) · ~~`E-ADDON-03`~~ (no hay pago de cero ni comprobante
+de cero: no hubo hecho en el proveedor. Al revocar el grant **se corta**, y **nunca** se empieza a
+cobrar) · ~~`E-ADDON-04`~~ (no necesita mecanismo propio: es el reconciliador del cap. 15 §4, con
+ventana. Lo urgente es el otro efecto: un preapproval **huérfano sigue cobrando** y hay que
+cancelarlo en el proveedor — falla hacia cobrar de más)
 
 **Promos y grants** · `A-PROMO-01` orden de aplicación y piso · `M-PROMO-02` promo en curso
 ante un cambio de plan · `E-PROMO-01` extensión aplicada el día del vencimiento · `A-PROMO-02`

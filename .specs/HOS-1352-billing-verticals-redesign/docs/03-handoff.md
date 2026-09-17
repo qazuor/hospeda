@@ -43,7 +43,7 @@ la **Parte I está completa** — 10 de 22 archivos escritos.
 | | |
 |---|---|
 | Capítulos escritos | **10 de 22** (`00` a `09`) |
-| Huecos técnicos cerrados | **48 de 72** · quedan **24** |
+| Huecos técnicos cerrados | **52 de 72** · quedan **20** |
 | Decisiones | **45** (4 apartamientos declarados del PDR) |
 | Filas de la matriz de MP | 89 · **8 `UNKNOWN`**, y **cinco se contestan hoy** |
 

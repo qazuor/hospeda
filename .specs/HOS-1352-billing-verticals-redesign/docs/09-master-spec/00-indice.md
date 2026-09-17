@@ -166,6 +166,6 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 11 — Trial | ✅ |
 | 12 a 14 | ⬜ sin escribir |
 | 15 — Entitlements y limits | ✅ |
-| 16 | ⬜ sin escribir |
+| 16 — Addons | ✅ |
 | 17 — Autorización | ✅ |
 | 18 a 22 | ⬜ sin escribir |
