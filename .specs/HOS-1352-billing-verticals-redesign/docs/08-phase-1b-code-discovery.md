@@ -2133,6 +2133,43 @@ texto y no sobre los nombres.
 
 ---
 
+### F-1B-054 — `subscriptions.update` significa dos cosas distintas, y ninguna de las nueve mutaciones de monto relee
+
+`F-1B-030` midió que **cuatro crons** mutan el monto en MercadoPago sin releer. Barrida
+toda `apps/api/src`, los sitios son **diez**, y los otros seis no son crons:
+
+| dónde | línea | qué muta |
+|---|---|---|
+| `services/promo-renewal-mp.service.ts` | `:109`, `:181` | monto |
+| `services/billing/apply-price-increase.service.ts` | `:300` | monto |
+| `services/billing/immediate-plan-swap.service.ts` | `:168` | monto + `planId` |
+| `services/billing/trialing-plan-upgrade.service.ts` | `:309` | monto + `planId` |
+| `services/billing/link-preapproval.service.ts` | `:1092` | `externalReference` |
+| `cron/jobs/subscription-poll.job.ts` | `:660` | monto |
+| `cron/jobs/apply-scheduled-plan-changes.ts` | `:415` | monto |
+| `cron/jobs/propagate-plan-price-changes.job.ts` | `:791` | monto |
+| `routes/webhooks/mercadopago/payment-logic.ts` | `:939` | monto |
+
+**Nueve de los diez mutan el `transaction_amount`** de una preapproval viva, y **ninguno
+vuelve a leerla**: no hay un solo `subscriptions.retrieve(` dentro de las 80 líneas
+siguientes a ninguna de las diez llamadas. El éxito se determina por ausencia de
+excepción del SDK, igual que midió `F-1B-030` para el subconjunto de los crons.
+
+**Y el mismo nombre de método significa otra cosa según el objeto.** `billing.subscriptions.update(...)`
+—el de qzpay— escribe **sólo en la base local**, y hay ocho llamadas así en cinco
+archivos (`subscription-downgrade.service.ts` ×2, `trial.service.ts`,
+`apply-scheduled-plan-changes.ts` ×3, `subscription-pause.ts`, `payment-logic.ts`). El
+código lo aclara donde el equívoco importaba: `routes/billing/subscription-pause.ts:337-339`
+— *«Pure local — `subscriptions.update` never calls the provider (see qzpay-core dist
+`subscriptions.update`), so this cannot re-trigger a second MercadoPago call»*.
+
+*Nota de método, la décima vez*: buscar `subscriptions\.update\(` sin mirar el receptor da
+**17** llamadas y mezcla las dos APIs. Separadas por receptor —`paymentAdapter`/`adapter`
+contra `billing`/`this.billing`— son **10 y 8**. El patrón no distinguía dos cosas que el
+código sí distingue.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
