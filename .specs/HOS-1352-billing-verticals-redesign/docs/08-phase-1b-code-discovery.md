@@ -3677,6 +3677,74 @@ corriendo en el entorno donde hay plata.
 
 ---
 
+### F-1B-085 — Billing no toca el resto del dominio por clave foránea: lo toca por banderas, y hoy en producción están todas apagadas menos una
+
+`F-1B-010` midió la frontera hospeda↔qzpay: 19 columnas en una sola dirección. Falta la
+otra frontera, la que importa para saber qué se rompe afuera de billing si se rediseña.
+
+**Por clave foránea, casi nada.** De las 399 FK de producción, las que cruzan entre las
+tablas `billing_*` de hospeda y el resto del dominio son **seis**:
+
+| dirección | cuántas | cuáles |
+|---|---|---|
+| de una tabla `billing_*` **hacia afuera** | **1** | `billing_settings.* → users` |
+| **hacia adentro**, desde un puente de billing | 3 | `entity_subscriptions → billing_subscriptions`, `partner_subscriptions → billing_subscriptions`, `featured_listing_addon_grants → billing_addon_purchases` |
+| **hacia adentro**, desde una tabla del dominio | **2** | `partners.plan_id → billing_plans`, `partners.subscription_id → billing_subscriptions` |
+
+Los tres del medio son tablas puente: existen para billing. **La única tabla del dominio
+que apunta a billing por FK es `partners`.** Alojamientos, destinos, usuarios, gastronomías,
+experiencias, posts, eventos: **cero**.
+
+**El acoplamiento real es por columnas desnormalizadas que ninguna restricción conecta.**
+Medidas en el esquema de producción, las banderas que el código de billing escribe sobre
+tablas del dominio son ocho:
+
+| columna | quién la escribe |
+|---|---|
+| `accommodations.plan_restricted` | `plan-restriction.service.ts:84`, `:133` |
+| `owner_promotions.plan_restricted` | `plan-restriction.service.ts:192`, `:247` |
+| `entity_subscriptions.plan_restricted` | `commerce-downgrade-remediation.service.ts:289-302` |
+| `accommodation_media.state` → `'archived'` | `plan-photo-restriction.service.ts:190`, `:399` |
+| `accommodations.owner_suspended` | `subscription-pause.service.ts:78` |
+| `users.service_suspended` | `subscription-pause.service.ts:73` |
+| `accommodations.billing_unpublished_at` | `accommodation-winback-republish.service.ts:177` |
+| `accommodations.featured_by_entitlement` | `accommodation.sync-featured-by-entitlement.ts:147`, `:237` |
+
+Ninguna de las ocho tiene una FK ni un `CHECK` que la ate al estado de la suscripción que
+la produjo: son copias, y la única cosa que las mantiene ciertas es que alguien las vuelva
+a escribir.
+
+**Y en producción, hoy, siete de las ocho están en cero** (medido el 2026-09-17):
+
+| | filas con la bandera puesta | total |
+|---|---|---|
+| `accommodations.featured_by_entitlement` | **4** | 12 |
+| `accommodations.plan_restricted` | 0 | 12 |
+| `accommodations.owner_suspended` | 0 | 12 |
+| `accommodations.billing_unpublished_at` | 0 | 12 |
+| `users.service_suspended` | 0 | 23 |
+| `entity_subscriptions.plan_restricted` | 0 | 12 |
+| `accommodation_media` con `state = 'archived'` | 0 | 97 |
+| `owner_promotions.plan_restricted` | 0 | **0 filas en la tabla** |
+
+Lo que eso dice, con precisión: **ninguna fila de producción lleva hoy el rastro del
+recorte por downgrade, de la suspensión por mora, ni del despublicado por billing.** No
+dice que nunca se hayan prendido —una bandera se puede haber puesto y quitado—, pero sí que
+el estado actual no las ejerce.
+
+`accommodation_media` da el dato más limpio del lote: **0 de 97** archivadas. Es la misma
+columna que `F-1B-062` midió sin forma de distinguir un archivado por billing de uno hecho
+por un admin — hoy no hay ninguno de los dos.
+
+*Qué abre, sin resolverlo acá*: toda la maquinaria de recorte y restauración que este
+relevamiento midió por dentro —`plan-downgrade-remediation` (727), `plan-upgrade-restoration`
+(585), `plan-restriction` (265), `plan-photo-restriction` (433),
+`commerce-downgrade-remediation` (771), `subscription-downgrade-excess` (517), más el
+abanico de `plan-disable-lifecycle`— escribe exactamente estas columnas. Son **≈3.300
+líneas** cuyo efecto no está presente en ninguna fila de producción.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -3685,9 +3753,9 @@ El orden no está decidido.
 |---|---|---|
 | ~~Esquema: censo de columnas, constraints y enums~~ | — | ✅ `F-1B-006` a `F-1B-009` |
 | ~~Las 399 claves foráneas y la frontera hospeda↔qzpay~~ | — | ✅ `F-1B-010` |
-| Las 358 FK internas de hospeda: el grafo de dependencias del dominio | 358 | ⬜ |
+| Las 358 FK internas de hospeda: el grafo de dependencias del dominio | 358 | 🟨 medida la frontera billing↔dominio (6 FK) y las 8 banderas sin restricción — `F-1B-085`; el resto del grafo, sin recorrer |
 | ~~Los 836 índices y los 132 triggers~~ | — | ✅ `F-1B-011`, `F-1B-012` |
-| Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
+| ~~Los 46 índices parciales y los de expresión: qué condición imponen~~ | — | ✅ `F-1B-074` — 46 parciales (33 únicos) y **2** de expresión, no 21 |
 | ~~Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas`~~ | — | ✅ `F-1B-064` — **90 de 90**, cruzados con `pg_enum` en prod |
 | ~~Los 47 crons: nombre, horario y habilitación~~ | — | ✅ `F-1B-003`, `F-1B-017` |
 | ~~Los 17 handlers de billing, leídos por dentro~~ | — | ✅ `F-1B-018` a `F-1B-031` |
