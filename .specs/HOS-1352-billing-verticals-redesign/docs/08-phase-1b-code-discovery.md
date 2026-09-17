@@ -711,6 +711,11 @@ tampoco se pueden contar por patrón. Hizo falta construir la app.
 | `refresh-external-reputation` | `0 2 * * 1` | `HOSPEDA_EXTREP_CRON_SCHEDULE` | sin setear |
 | `poll-apify-reputation-runs` | `*/2 * * * *` | `HOSPEDA_EXTREP_POLL_SCHEDULE` | sin setear |
 
+> ⚠️ **Ampliado el 2026-09-16 por `F-1B-043`.** El entorno no es la única fuente
+> alternativa: `social-publish-dispatch` resuelve su horario contra la **base de datos**
+> por el campo `resolveSchedule` del tipo. La tabla de arriba, que sale del literal
+> `schedule`, describe su default y no necesariamente lo que corre.
+
 **`page-revalidation` corre cada seis horas en producción, no cada hora.** Medido con
 `hops --target=prod env-list api --reveal`, contra el default de
 `jobs/page-revalidation.job.ts:40`. Es una divergencia real entre el código y el sistema
@@ -1641,6 +1646,40 @@ itself»* sin esa aclaración.
 
 Son **cuatro de 47**, y las cuatro fallan del mismo lado: la `description` describe una
 versión anterior o más angosta del trabajo, nunca una más amplia.
+
+---
+
+### F-1B-043 — El horario tiene una CUARTA fuente que `F-1B-017` no vio: la base de datos
+
+`F-1B-017` midió que 3 de los 47 leen su horario de una variable de entorno y dio por
+sentado que los otros 44 lo declaran en el código. **Uno no**: `social-publish-dispatch`
+lo lee de la base.
+
+El mecanismo es un campo opcional del tipo, `resolveSchedule?: () => Promise<string>`
+(`apps/api/src/cron/types.ts:96`), y `bootstrap.ts:115-121` lo prefiere sobre
+`job.schedule` cuando está presente, cayendo al literal sólo si la promesa rechaza:
+
+```ts
+let scheduleExpression = job.schedule;
+if (job.resolveSchedule) {
+    try { scheduleExpression = await job.resolveSchedule(); } catch { /* warn + fallback */ }
+}
+```
+
+**Lo declara un solo job de los 47** (`social-publish-dispatch.job.ts:134`), y su
+resolvedor (`:112-118`) lee la fila `dispatch_cron_cadence` de `social_settings` y la
+valida con `resolveDispatchCronCadence`. El literal `'*/5 * * * *'` de `:131` lleva el
+comentario *«Documented default»*.
+
+Se resuelve **una vez, al arrancar el scheduler** (`:108-110`), así que cambiar el
+setting no tiene efecto hasta el próximo reinicio del proceso.
+
+**En producción los dos coinciden**: `social_settings.dispatch_cron_cadence` vale
+`*/5 * * * *`, medido contra la base de prod el 2026-09-16. O sea que hoy esta fuente no
+produce ninguna divergencia — a diferencia de `page-revalidation`, que sí corre distinto
+de su default (`F-1B-017`). Lo que cambia es el denominador: **el horario real de un cron
+puede salir de tres lugares** —el literal, el entorno, la base— y el tercero no es
+visible en el archivo del job sin seguir el `resolveSchedule`.
 
 ---
 
