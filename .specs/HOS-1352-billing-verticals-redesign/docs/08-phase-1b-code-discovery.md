@@ -100,6 +100,8 @@ verificado contra la definición real.
 | Clases exportadas en `service-core` | **126** | `export class`, no `*.service.ts` (que da 101) | **126** |
 | … que extienden una base de servicio | **67** | 39 `BaseCrudService` + 19 `BaseService` + 6 related + 2 commerce | **67** |
 | Archivos de billing en `apps/api/src/services` | **140** de 185 | `rg -l` por vocabulario de dominio | **140** |
+| Archivos de `apps/web/src` | **1.049** | `fd -e ts -e tsx -e astro` | 42 importan `@repo/billing` · 21 nombran `EntitlementKey`/`LimitKey` |
+| Archivos de `apps/admin/src` | **1.454** | idem | 25 importan `@repo/billing` · 31 nombran las claves · 22 pegan a `/billing` |
 | Archivos que mencionan conceptos de billing | 4251 (2658 sin tests) | `rg -l` sobre `apps` y `packages` | — |
 
 Los marcados **provisorio** están medidos por nombre de archivo y por lo tanto no
