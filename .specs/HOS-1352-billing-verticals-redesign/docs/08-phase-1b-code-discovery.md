@@ -4901,6 +4901,221 @@ tienen nada que ver (`packages/db/src/client.ts:174`,
 
 ---
 
+### F-1B-105 — Los 1.032 handlers son el PISO, no el inventario: se midieron con billing sin inicializar, y faltan 48 rutas que sólo existen cuando arranca
+
+`F-1B-093` dejó abierta una discrepancia —9 handlers medidos contra 30 declarados— y dos
+intentos de re-medirla fallaron. **La sonda corre y es barata**: como test de vitest dentro
+de `apps/api`, construye la app con `initApp()` y vuelca `app.routes` más el documento
+OpenAPI en **31 segundos**. El camino que fallaba era `tsx`; el que anda es el mismo que ya
+usan `test/schema-validation/field-enforcement/strict.test.ts` y otros cinco tests, que
+llaman `validateApiEnv()` y `initApp()` sin base de datos. La sonda quedó versionada en
+[`probes/probe-45-volcar-la-tabla-de-rutas.test.ts.txt`](./probes/probe-45-volcar-la-tabla-de-rutas.test.ts.txt).
+
+**Reproduce `F-1B-016` exacto**, los seis números:
+
+| | `F-1B-016` | esta corrida |
+|---|---|---|
+| Entradas en `app.routes` | 4.574 | **4.574** |
+| … únicas | 1.757 | **1.757** |
+| Middleware (`ALL`) | 725 | **725** |
+| **Handlers** | **1.032** | **1.032** |
+| Operaciones OpenAPI | 983 | **983** |
+| Paths OpenAPI | 740 | **740** |
+
+**Y el número tiene una condición que nadie había nombrado: billing no está inicializado.**
+La causa está medida, no inferida. `apps/api/src/routes/billing/index.ts:101-109` abre con:
+
+```ts
+const billing = getQZPayBilling();
+if (!billing) {
+    apiLogger.warn('Billing routes created but billing is not configured');
+    return createRouter();   // ← router VACÍO
+}
+```
+
+y `getQZPayBilling()` devuelve `null` bajo el arnés de tests. **No porque falte configuración**:
+la sonda 46 midió que `isBillingConfigured()` pasa —`HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` y
+`HOSPEDA_DATABASE_URL` están los dos presentes— y que lo que falla es el cuerpo del `try` de
+`getBillingInstance` (`apps/api/src/middlewares/billing.ts:142-155`):
+
+```
+createBillingAdapter = THROW  [vitest] No "createBillingAdapter" export is defined
+                              on the "@repo/db" mock
+createMercadoPagoAdapter = ok
+```
+
+O sea: **el mock global de `@repo/db` de `apps/api` no exporta `createBillingAdapter`**, el
+`catch` de `getBillingInstance` se lo traga, deja `billingInstance = null` con su backoff, y
+las dos fábricas de qzpay devuelven routers vacíos. Verificado además por la negativa:
+`getDb()` **sí** funciona bajo el mock (`getDb=ok (object)`), así que el fallo es de ese
+export puntual y no de la base.
+
+**Qué falta, contado contra el fuente de qzpay en el ancla `c934164`:**
+
+| factory | declara | ya están en la tabla | **ausentes** |
+|---|---|---|---|
+| `createBillingRoutes` (`/api/v1/protected/billing`) | **34** | 11 | **23** |
+| `createAdminRoutes` (`/api/v1/admin/billing`) | **26** | 4 | **22** |
+| `createWebhookRouter` | 3 | 0 | **3** |
+
+**Las 48 ausentes incluyen toda la superficie mutante del otro repo**: `POST /customers`,
+`DELETE /customers/:id`, `POST /subscriptions`, `PATCH /subscriptions/:id`,
+`POST /subscriptions/:id/pause` y `/resume`, `POST /payments`, `POST /payments/:id/refund`,
+`POST /invoices`, `POST /invoices/:id/void`, el par
+`POST`/`DELETE /customers/:customerId/entitlements` del tier **protegido**, y del lado admin
+`force-cancel`, `force-refund`, `change-plan`, `extend-trial`, `mark-paid`, `limits/:key/set`
+y `limits/:key/reset`. Verificado por la negativa: `GET /api/v1/protected/billing/customers/:id`,
+`…/subscriptions/:id`, `…/payments/:id`, `…/invoices/:id`,
+`…/customers/:customerId/entitlements` y `…/customers/:customerId/limits` dan **cero
+ocurrencias en las 4.574 entradas**, ni con ese prefijo ni con ningún otro.
+
+**Y el webhook de MercadoPago no está en la tabla en absoluto.** De las seis entradas con
+`webhook` en el path, ninguna es `/api/v1/webhooks/mercadopago`: son
+`admin/webhooks/events`, `admin/webhooks/dead-letter`, `admin/webhooks/dead-letter/:id/retry`,
+`webhooks/health`, `public/webhooks/brevo/:token` y `admin/social/make-webhook-schema`.
+
+**Corrige de paso el denominador de `F-1B-093`.** `createBillingRoutes` declara **34**
+registros, no 30: el patrón anclado a ``router.<verbo>(`${prefix}…`)`` no ve los **cuatro**
+que abren el argumento en la línea siguiente (`billing.routes.ts:214`, `:232`, `:333`, `:425`).
+Los 34 están gateados por ocho banderas de configuración —`customers`, `subscriptions`,
+`payments`, `invoices`, `plans`, `promoCodes`, `entitlements`, `limits`— que **todas
+defaultean a `true`** (`billing.routes.ts:52-60`), y hospeda no pasa ninguna
+(`routes/billing/index.ts:112-116`), así que en producción los 34 corren. Con `createAdminRoutes`
+(26, confirmado) y el webhook (3), qzpay aporta **63** registros y no 59.
+
+*Qué queda sin medir, y por qué no se fuerza acá*: el conteo de handlers **con billing
+inicializado** necesita una base de datos alcanzable, y eso excede lo que esta fase hace. Lo
+que sí queda fijado es la dirección del error: **1.032 es un piso**, y ninguna afirmación
+sobre «toda la superficie de la API» puede apoyarse en él sin decir esta condición.
+
+---
+
+### F-1B-106 — Los 9 handlers de billing fuera del contrato no son rutas de qzpay: cinco son un 404 que hospeda registra a propósito, y tres son overrides propios
+
+`F-1B-016` midió 9 handlers bajo `/api/v1/protected/billing` ausentes del documento OpenAPI y
+los atribuyó a *«rutas prefabricadas de qzpay»*. **Los nueve son de hospeda**, y la atribución
+se cae con la misma medición que `F-1B-105`: en esa corrida el router de qzpay estaba vacío.
+
+**Primero, la comparación que había que rehacer.** Contar «ausente del documento» exige
+normalizar las dos grafías de parámetro: `app.routes` escribe `:id` y el documento escribe
+`{id}`. Sin normalizar, **toda** ruta parametrizada aparece como no documentada —18 bajo ese
+prefijo en vez de 9, y 149 en toda la app en vez de 49—. Con `:x` y `{x}` colapsados a un
+mismo símbolo, los ausentes son **49** en toda la app, y **9** bajo `/protected/billing`,
+que es el número de `F-1B-016`.
+
+**Los nueve, por quién los registra:**
+
+| handler | quién lo registra | qué contesta |
+|---|---|---|
+| `GET /customers` | `collection-listing-block.ts:212` | **404 a todo el mundo** |
+| `GET /subscriptions` | idem | **404** |
+| `GET /invoices` | idem | **404** |
+| `GET /payments` | idem | **404** |
+| `GET /promo-codes` | idem | **404** |
+| `GET /promo-codes/:code` | idem, vía `BLOCKED_RESOURCE_LOOKUPS` (`:106`) | **404** |
+| `GET /plans` | `protectedPlansListRouter` | el catálogo filtrado de hospeda |
+| `GET /plans/:id` | `protectedPlanByIdRouter` | idem |
+| `GET /plans/:id/prices` | idem | idem |
+
+Los tres últimos están **verificados por el nombre del handler** en la tabla volcada:
+`handleProtectedPlansList`, `handleProtectedPlanById` y `handleProtectedPlanPrices` son tres
+de los apenas **26 nombres no anónimos** de las 4.574 entradas, y son de hospeda
+(`routes/billing/protected-plans-list.ts`, `…/protected-plan-by-id.ts`, montados en
+`routes/billing/index.ts:307` y `:315`).
+
+Los seis primeros salen de `createCollectionListingBlocker`
+(`routes/billing/collection-listing-block.ts:196-222`), montado **antes** del wrapper de qzpay
+(`routes/billing/index.ts:330`) porque Hono resuelve por primera coincidencia. El módulo
+**deriva qué bloquear de la tabla de rutas del propio qzpay**
+(`findCollectionListingSegments:137-166`) y, cuando esa tabla viene vacía, cae en
+`BASELINE_BLOCKED_COLLECTIONS` (`:88-94`) —`customers`, `subscriptions`, `invoices`,
+`payments`, `promo-codes`— menos `TIER_EXEMPT_COLLECTIONS` (`:77`, que contiene `plans`).
+**Cinco, más el lookup por código: seis.** El propio archivo escribió por qué existe el piso:
+*«If `createBillingRoutes` ever fails to build (the factory returns an empty router on error)
+discovery yields nothing, and without a floor the block would silently disappear along with
+the routes it guards»* (`:82-87`).
+
+**Esa corrida ES ese caso, y el piso funcionó**: la fábrica devolvió el router vacío, el
+descubrimiento no encontró nada y los seis 404 se registraron igual. Es la única defensa del
+relevamiento que se midió operando en su modo degradado.
+
+**Qué cambia la corrección.** `F-1B-016` leía esas nueve como superficie del otro repo
+respondiendo fuera del contrato. Lo medido es lo contrario: **cinco de las nueve son una
+puerta cerrada que hospeda puso delante de qzpay**, y su motivo está escrito con el incidente
+(`:1-20`): los handlers de listado de qzpay *«return every row and treat `customerId` as an
+OPTIONAL filter»*, los dos guards que tenían delante se deferían mutuamente, y
+*«any authenticated user could list every customer's name and email»*.
+
+**Y hay un sentido en el que el documento no miente: cero operaciones sin handler.** De las
+983 operaciones declaradas, **todas** tienen su handler registrado. La asimetría va en una
+sola dirección: 49 handlers sin operación, 0 operaciones sin handler.
+
+---
+
+### F-1B-107 — Los 1.032 handlers por tier: el 55 % son de admin, y el middleware se reparte igual
+
+El carril pedía el reparto de los 1.032. Medido sobre la misma tabla volcada, **contando
+handlers registrados** —no operaciones del documento, que es lo que `F-1B-016` repartió—:
+
+| tier | **handlers** | operaciones OpenAPI (`F-1B-016`) | diferencia |
+|---|---|---|---|
+| `/api/v1/admin/` | **568** (55 %) | 557 | 11 |
+| `/api/v1/protected/` | **321** (31 %) | 299 | 22 |
+| `/api/v1/public/` | **123** (12 %) | 115 | 8 |
+| `/api/v1/ai/` | 3 | 3 | 0 |
+| otros (`/api/auth/*`, `/docs`, `/api/v1/webhooks`) | **17** | 9 | 8 |
+| | **1.032** | **983** | **49** |
+
+Por método: **456** `GET`, **288** `POST`, **119** `DELETE`, **98** `PATCH`, **71** `PUT`.
+(El reparto por método de `F-1B-016` —429/271/118/95/70— era el de las 983 operaciones; las
+49 que faltaban se reparten en los cinco verbos.)
+
+**El middleware sigue la misma proporción**, y eso no era obvio: de los **725** paths con
+registro `ALL`, **387** son de admin (53 %), **210** de protected (29 %), **117** de public
+(16 %), 4 de `ai` y 7 del resto. La densidad es pareja —0,68 middleware por handler en admin,
+0,65 en protected, 0,95 en public— o sea que el tier público es el que **más** middleware
+por endpoint acumula, no el que menos.
+
+**Un detalle del volcado que conviene no perder**: `app.routes` guarda **una entrada por
+cada handler de la cadena**, no una por endpoint. Por eso las 4.574 entradas colapsan a
+1.757 pares únicos: `POST /api/v1/admin/billing/plans/:id/apply-price-increase`, por ejemplo,
+aparece **tres** veces (dos anónimas y una llamada `mw`). Los 1.032 son pares
+`método + path` distintos; contar entradas crudas da **2.204** para los mismos endpoints.
+
+**Y la prueba de que el prefijo de billing está bien poblado por hospeda y no por qzpay**:
+bajo `/api/v1/protected/billing` hay **36** endpoints en **61** registros crudos, y bajo
+`/api/v1/admin/billing` hay **50** en **106**. Las 26 rutas de admin que `F-1B-093` contó en
+qzpay —las trece que mutan incluidas— **no son ninguna de esas 50**: son las 22 ausentes de
+`F-1B-105` más cuatro colisiones (`GET /subscriptions`, `/payments`, `/plans`, `/promo-codes`)
+que hospeda gana por orden de montaje.
+
+---
+
+### F-1B-108 — Prender el control de pruebas de qzpay agrega cinco rutas a la app, y el flag no está seteado en ningún entorno
+
+Medición de control de `F-1B-105`: la misma sonda, con `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true`,
+da **1.037** handlers en vez de 1.032. Los cinco de diferencia, y no hay ninguno de menos:
+
+```
+GET  /api/v1/test/qzpay-control/state
+GET  /api/v1/test/qzpay-control/recorded-calls
+POST /api/v1/test/qzpay-control/reset
+POST /api/v1/test/qzpay-control/fail-next
+POST /api/v1/test/qzpay-control/delay-next
+```
+
+`F-1B-059` ya había medido que ese flag **no está seteado ni en producción ni en staging**
+(`hops env-list --match QZPAY_TEST_CONTROL` devuelve `No matches` en los dos), y que habilita
+las 618 líneas de instrumentación de `packages/billing/src/adapters/`. Lo que agrega esta
+medición es que **también abre un tier de rutas HTTP propio** —un quinto prefijo junto a
+`admin`, `protected`, `public` y `ai`— con dos endpoints que inyectan fallas (`fail-next`) y
+demoras (`delay-next`) en el camino de pago.
+
+Queda anotado como lo que es: superficie condicionada a una variable hoy ausente, medida por
+el control y no por lectura del código.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
