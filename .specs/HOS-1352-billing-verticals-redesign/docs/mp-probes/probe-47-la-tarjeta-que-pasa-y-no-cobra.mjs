@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SONDA 44 — la tarjeta que pasa la validación y no cobra
+ * SONDA 47 — la tarjeta que pasa la validación y no cobra
  * HOS-1352 · FASE 1C · 2026-09-17
  *
  * QUÉ PREGUNTA
@@ -33,13 +33,13 @@
  *
  * USO
  *   source ~/.config/hospeda/mp-sandbox-creds.sh && \
- *     OUT_DIR=/tmp/mp-probe-44 node probe-44-la-tarjeta-que-pasa-y-no-cobra.mjs
+ *     OUT_DIR=/tmp/mp-probe-47 node probe-47-la-tarjeta-que-pasa-y-no-cobra.mjs
  *
  * CÓMO SE CORRIÓ, EL 2026-09-17 — TRES PASADAS, y la tercera es la que vale
- *   1. los siete titulares de falla  → `402` los siete, la tarjeta no cambió. `/tmp/mp-probe-44`
- *   2. control con APRO, MASTERCARD  → **`200` y la tarjeta TAMPOCO cambió**. `/tmp/mp-probe-44-control`
+ *   1. los siete titulares de falla  → `402` los siete, la tarjeta no cambió. `/tmp/mp-probe-47`
+ *   2. control con APRO, MASTERCARD  → **`200` y la tarjeta TAMPOCO cambió**. `/tmp/mp-probe-47-control`
  *   3. control con APRO, VISA        → `200` y **cambió**: `9813074735 → 9834888704`,
- *                                      `master → visa`. `/tmp/mp-probe-44-control-visa`
+ *                                      `master → visa`. `/tmp/mp-probe-47-control-visa`
  *
  * LA TRAMPA QUE DESTAPÓ LA PASADA 2, y es un hallazgo aparte
  *   La tarjeta que ya estaba puesta era `master`, y el control usó una Mastercard: **es el
@@ -56,7 +56,7 @@ import { join } from 'node:path';
 const API = 'https://api.mercadopago.com';
 const TOKEN = process.env.MP_ACCESS_TOKEN;
 const PUBLIC_KEY = process.env.MP_PUBLIC_KEY;
-const OUT_DIR = process.env.OUT_DIR || '/tmp/mp-probe-44';
+const OUT_DIR = process.env.OUT_DIR || '/tmp/mp-probe-47';
 
 /** El vendedor de prueba esperado. Si no coincide, la sonda no corre. */
 const EXPECTED_SELLER_ID = 3497260543;

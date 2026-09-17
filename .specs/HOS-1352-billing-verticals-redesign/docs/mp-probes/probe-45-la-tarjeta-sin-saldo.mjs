@@ -9,7 +9,7 @@
  *   el capítulo 12 de la Master Spec.
  *
  * POR QUÉ EN PRODUCCIÓN, Y POR QUÉ ASÍ
- *   **En sandbox no se puede.** Está medido, no supuesto: la [sonda 44] probó los SIETE
+ *   **En sandbox no se puede.** Está medido, no supuesto: la [sonda 47] probó los SIETE
  *   titulares de prueba en el camino de creación Y en el de mutación — `402` los siete, con
  *   control `APRO` que sí aplica. `PC-2` cierra el monto impagable por arriba y por abajo.
  *   Y el CLI oficial (`mpcli tester card add --scenario insufficient_funds`) exige el token
