@@ -294,9 +294,14 @@ re-agenda T4, y el cruce con la de recuperación es imposible por construcción 
 **Suscripción** · ~~`M-SUB-01`~~ **cerrado por el cap. 03** (los cuatro estados que pedía, más `ABANDONED`; y las 72 h, la limpieza y el reintento de la ventana sin autorizar) · ~~`A-SUB-01`~~ **cerrado por el cap. 01** (sí
 existen suscripciones no principales: cada addon recurrente es una, por `DEC-ADDON-002`; el §11
 acota sólo la principal) · ~~`A-SUB-02`~~ **cerrado por el cap. 01** (ni el plan ni el billing
-option lo declaran: `puedePausar()` lo deriva en un solo lugar) · **`E-SUB-05` compensar días sobre una suscripción en deuda** (nuevo, residuo de `DEC-SUB-003`) · **`E-SUB-06` un cambio de precio programado que cae sobre una suscripción PAUSADA** (nuevo, residuo de `DEC-MP-001` + `EX-11`: estando pausada el proveedor **rechaza toda modificación**, así que el cambio no se puede aplicar en su fecha efectiva y hay que decidir si se encola hasta la reanudación, si se bloquea la pausa mientras hay un cambio pendiente, o si el §29 se cumple de otro modo) · `M-SUB-02` cola de cambios programados · `E-SUB-01`
-precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelación programada ·
-`R-SUB-01` el servicio completo durante el grace · ~~`M-SUB-03`~~ **cerrado por el cap. 10 §4** (se
+option lo declaran: `puedePausar()` lo deriva en un solo lugar) · ~~`E-SUB-05`~~ **disuelto por el cap. 12 §5**: `DEC-SUB-006` define el crédito como *lo pagado
+sin usar*, y en grace el período en curso **no se pagó** — el crédito es cero sin regla nueva. Lo
+que sí se congela: **el crédito se computa sobre pagos acreditados, nunca sobre días
+transcurridos** · ~~`E-SUB-06`~~ **cerrado por el cap. 12 §6**: se **encola hasta la reanudación** y **la pausa NO se bloquea** — bloquearla sería negarle un derecho de su plan para poder subirle el precio, y eso no se puede escribir en un aviso. El aviso de reanudación dice cuándo **y cuánto**, y la ventana de 60 días se corre hacia adelante, nunca se recorta · ~~`M-SUB-02`~~ **cerrado por el cap. 12 §2** (es una cola **nuestra, de entitlements**: lo único diferido es el descenso de capacidades, porque `DEC-SUB-008` muta el monto ya. A lo sumo una, con las cuatro colisiones resueltas) · ~~`E-SUB-01`~~ **disuelto por el cap. 12 §3** (la pregunta presuponía que el precio se aplica al ejecutar; `DEC-SUB-008` decidió lo contrario, así que rige el vigente **al pedirlo** — y un aumento posterior lo alcanza por la puerta del §29, no por ésta) · ~~`E-SUB-02`~~ **cerrado por el cap. 12 §7** (la premisa ya no es cierta: `DEC-SUB-010` decidió que los días no usados se pierden, así que no hay período extendido. **Cancelar estando pausado termina el servicio en el acto** — el §26.1 ya lo detuvo y no queda nada que sostener) ·
+~~`R-SUB-01`~~ **cerrado por el cap. 12 §4 — y NO cerraba**: el §20 da servicio completo durante
+el grace sin atarlo a haber pagado nunca, así que eran **10 días gratis por intento, repetibles**.
+La regla que lo cierra: **el grace no es un beneficio de entrada** — un primer cobro fallido para
+un `user + vertical` sin ningún pago acreditado va directo a `SUSPENDED` · ~~`M-SUB-03`~~ **cerrado por el cap. 10 §4** (se
 deja de cobrar antes de dejar de prestar: el anuncio cancela en el proveedor en el acto y el
 servicio se sostiene hasta `max(60 días, el último día ya pagado)`; nadie se migra, la fila de
 `vertical` no se borra nunca, y acortar la cola exige reembolsar, por caso)
