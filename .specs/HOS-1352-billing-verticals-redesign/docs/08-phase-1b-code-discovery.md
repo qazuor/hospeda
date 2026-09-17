@@ -1843,6 +1843,53 @@ lo medido.
 
 ---
 
+### F-1B-048 — Los tres trials vivos de producción, explicados fila por fila, y el hueco que ninguno ocupa
+
+Las **8** suscripciones de `F-1B-009`, con las columnas que deciden qué cron las mira
+(medido en prod el 2026-09-16):
+
+| estado | filas | `mp_subscription_id` | `trial_end` |
+|---|---|---|---|
+| `trialing` | 3 | presente en las 3 | presente en las 3 |
+| `abandoned` | 3 | **nulo** en las 3 | presente |
+| `comp` | 2 | **nulo** en las 2 | **nulo** |
+
+**Las tres en trial tienen dos duraciones distintas**, y la diferencia no es un error:
+
+| plan | trial | por qué |
+|---|---|---|
+| `owner-basico` | **30 días** | `OWNER_TRIAL_DAYS = 30` (`packages/billing/src/constants/billing.constants.ts:17`) |
+| `owner-pro` | **90 días** | 30 + `LANZAMIENTO60` |
+| `owner-premium` | **90 días** | 30 + `LANZAMIENTO60` |
+
+Verificado por el camino completo, no por la aritmética: `billing_promo_code_usage`
+tiene 4 filas, y las dos que apuntan a esas suscripciones usan el código
+`LANZAMIENTO60`, cuyo `effect_kind` es `trial_extension` con `extra_days = 60`. Las
+otras dos usan `HOSPEDA_FREE` (`effect_kind = comp`) y son exactamente las dos filas
+`comp`. **Ninguna de las tres tiene un evento de extensión**: sus únicos eventos en
+`billing_subscription_events` son un `WEBHOOK_SUBSCRIPTION_TRIALING` cada una, o sea que
+los 90 días se fijaron al crearse.
+
+**Y el catálogo dice 30 en todos lados**: `metadata->>'trialDays'` vale `30` en las seis
+filas de planes de `accommodation` (`owner-basico`, `owner-pro`, `owner-premium`,
+`owner-trial`, `tourist-plus`; `owner-test-daily` vale `1`), y **`billing_prices.trial_days`
+es nulo en las 30 filas**. La duración real de un trial no sale de la fila del plan ni de
+la del precio: sale del constante de TypeScript más lo que sume una promo.
+
+**El hueco medido**: una fila `trialing` con `trial_end` nulo sería invisible para los dos
+mecanismos que expiran trials —la consulta de reclamo de `reconcileExpiredTrials` exige
+`isNotNull(trialEnd)` (`trial.service.ts:936`) y `expireLocalTrial` trata `!trialEnd` como
+*no vencido* (`trial-local-expiry.service.ts:325`)— y quedaría en `trialing` para siempre.
+**Hoy no existe ninguna**: las tres tienen fecha. Las únicas dos filas sin `trial_end` son
+las `comp`, que ningún camino de trial mira.
+
+*Qué abre, sin resolverlo acá*: `DEC-TRIAL-*` y el §10.3 razonan sobre «el trial» como
+una duración del plan. La medición dice que hoy es un constante del código más un efecto
+de promo, y que la base guarda tres números distintos (30 en la metadata del plan, nulo
+en el precio, 30 o 90 en la suscripción).
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
