@@ -2170,6 +2170,66 @@ código sí distingue.
 
 ---
 
+### F-1B-055 — «Cuánto suma un addon» está escrito tres veces, con tres políticas distintas ante una clave que no corresponde
+
+Leídos enteros `addon-entitlement.service.ts` (840), `addon.user-addons.ts` (823) y
+`addon-plan-change.service.ts` (875).
+
+**El mismo cálculo, tres implementaciones.** Sumar los incrementos de los addons activos
+de un cliente para una `limitKey` y escribir `base + suma` está escrito en:
+
+| dónde | forma |
+|---|---|
+| `apps/api/src/services/addon-entitlement.service.ts:298-341` | bucle en línea sobre las compras activas, resolviendo cada addon con `getBySlug` |
+| `packages/service-core/…/addon/addon-plan-change.helpers.ts:245-260` | `sumIncrements`, que usa `addon-plan-change.service.ts:703,717` |
+| `packages/service-core/…/addon/addon-limit-recalculation.service.ts:390-428` | bucle propio, y **además** una rama `removeBySource` cuando el incremento queda en 0 que las otras dos no tienen |
+
+Y la resolución del plan base —«probá `getById`, si falla `getBySlug`»— está escrita
+otras tres veces: `addon-entitlement.service.ts:266-269`,
+`addon-plan-change.service.ts:89-99` y
+`addon-limit-recalculation.service.ts:98-110`.
+
+**Ante una `limitKey` que no pertenece al dominio del plan, los tres hacen cosas
+distintas:**
+
+| dónde | qué hace |
+|---|---|
+| `addon-entitlement.service.ts:273` | `planLimits[addon.affectsLimitKey] ?? 0` — **no clasifica nada**: una clave ajena se lee como base 0 y se escribe el límite igual |
+| `addon-plan-change.service.ts:458-486` | llama `classifyLimitKeyAgainstPlanDomain`; `'foreign'` → `skipped`, `'unclassified'` → `failed`, y las dos quedan en el resultado |
+| `addon-limit-recalculation.service.ts:306-321` | rechaza con `outcome:'failed'` |
+
+El comentario de `addon-plan-change.service.ts:480-484` describe esa política como *«the
+same fail-closed answer `recalculateAddonLimitsForCustomer` gives an unknown key»* — o
+sea que dos de los tres se declaran gemelos, y el tercero no participa.
+
+**Tres call sites de la misma función, tres cableados de transacción distintos.**
+`cancelAddonPurchaseRecord` (definida una sola vez en
+`service-core/…/addon-user-addons.ts:400-425`) se invoca:
+
+- `addon.user-addons.ts:288-290` — `{ purchaseId }` **sin** `ctx`, así que el `UPDATE`
+  corre en una conexión nueva **aunque el llamador haya pasado `input.tx`**;
+- `addon.user-addons.ts:701` — `{ purchaseId, ctx: { tx } }`, dentro del lock;
+- y la rama de al lado (`:339-378`) no la usa: hace su propio
+  `tx.update(billingAddonPurchases)` dentro de `withTransaction(..., input.tx)`.
+
+**Dos funciones que sólo alcanza un test**, sumando 392 líneas:
+
+| función | líneas | únicos llamadores |
+|---|---|---|
+| `AddonEntitlementService.getCustomerAddonAdjustments` | `:662-839` (178) | `apps/api/test/services/addon-entitlement.service.test.ts` |
+| `revokeAllAddonsForCustomer` | `addon.user-addons.ts:610-823` (214) | `apps/api/test/services/addon-user-addons-recurring-cancel.test.ts` |
+
+La segunda cierra preapprovals en MercadoPago (`:642-650`) y marca
+`billingSubscriptions.metadata.addonCancellationIncomplete` más un evento
+`ADDON_REVOCATIONS_PENDING` cuando alguna falla (`:762-781`). Ese camino de compensación
+hoy sólo lo ejecuta su test.
+
+*Corrección al material de origen*: el sub-agente informó que `revokeAllAddonsForCustomer`
+no tenía **ningún** llamador. Verificado a mano: tiene uno, y es un test. La diferencia
+importa porque «nadie la llama» y «sólo la llama un test» no son lo mismo.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
