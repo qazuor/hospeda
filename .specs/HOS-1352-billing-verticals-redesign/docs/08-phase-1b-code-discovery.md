@@ -2290,6 +2290,62 @@ es una de las 24 de `F-1B-052`.
 
 ---
 
+### F-1B-057 — Medir el consumo y enforzarlo son dos sistemas distintos, con tres políticas de fallo en un solo archivo
+
+Leídos enteros `usage-tracking.service.ts` (990),
+`middlewares/limit-enforcement.ts` (950) y `middlewares/commerce-limit-enforcement.ts`.
+
+**Cuatro de las 22 claves reportan el consumo como un literal `0`**, cada una por un
+motivo distinto escrito al lado:
+
+| clave | línea | motivo declarado |
+|---|---|---|
+| `MAX_PHOTOS_PER_ACCOMMODATION` | `:754-761` | es por alojamiento; el desglose real sale de `getPerAccommodationUsage()` |
+| `MAX_PROPERTIES` | `:780-783` | *«Blocked: complex/property table not yet created»* |
+| `MAX_STAFF_ACCOUNTS` | `:785-788` | *«Blocked: staff management table not yet created»* |
+| `MAX_COMPARE_ITEMS` | `:810-817` | es un tope **por request**, no una cantidad guardada |
+
+A esas cuatro se suma `MAX_ACTIVE_PRIVATE_GALLERIES`, que **no tiene `case` propio**: cae
+en el `default` (`:819-834`), no matchea ningún `AI_FEATURE_BY_LIMIT_KEY` y devuelve `0`
+por esa vía. Es la misma clave que `F-1B-039` midió como `UNBUILT` y sin gate.
+
+**El resto sí cuenta contra una consulta real**: `AccommodationService.count`,
+`GastronomyService.countOwn` / `ExperienceService.countOwn` —y el comentario de `:735-741`
+explica por qué no usan `count()`: ése fuerza `visibility: PUBLIC`—,
+`OwnerPromotionService.count`, `UserBookmarkService.countBookmarksForUser`,
+`AlertSubscriptionService.countActive`, `UserBookmarkCollectionService.countActiveCollections`,
+`SearchHistoryService.countForActor`, y `getMonthlyCallCount` para las nueve `MAX_AI_*`.
+
+**El mes de una cuota mensual es calendario UTC, por decisión escrita.**
+`packages/ai-core/src/usage/reporting/month-range.ts:4-9`: *«Decision (owner-approved
+2026-06-04): the "month" period for all AI usage reporting is **calendar-month UTC** …
+and is NOT the billing-cycle anniversary»*. Queda anotado que `DEC-ENT-002` dejó ese punto
+abierto —calendario contra aniversario— y que su implicación 4 pide computarlo *«en el
+huso del mercado, no en UTC»*: el código ya tomó la primera mitad de esa decisión en junio
+y la segunda al revés. **No se toca el decision log**; es material para la fase de
+análisis.
+
+**Tres políticas de fallo ante «no pude contar», las tres en `limit-enforcement.ts`:**
+
+| función | qué hace si el conteo falla |
+|---|---|
+| `enforceAccommodationLimit` (`:223-235`) | **503**, con el motivo escrito: *«This used to call `next()` … which handed out an uncapped accommodation every time the count hiccupped»* (HOS-1078) |
+| `enforcePromotionLimit`, `assertFavoritesLimitOrThrow` | **403 como si estuviera al tope**, vía `denyOnUnresolvedCount` (`:142-174`), que pasa `Number.MAX_SAFE_INTEGER` como conteo centinela |
+| `enforcePhotoLimit`, `enforcePropertiesLimit`, `enforceStaffAccountsLimit`, `enforceFavoritesLimit` | **`next()`**: el `catch` re-lanza sólo `ServiceError`/`HTTPException` y ante cualquier otro error deja pasar (`:813-824` y gemelas) |
+
+`commerce-limit-enforcement.ts` conoce **una sola**: 503 siempre (`:110-114`), y su
+docblock de módulo lo declara como divergencia deliberada. Las cuatro funciones de la
+tercera fila son, además, las mismas cuatro que `F-1B-039` midió sin montar en ninguna
+ruta.
+
+**Y el umbral que ve el usuario no coincide con el que rechaza.** `calculateThreshold`
+(`utils/limit-check.ts:110-113`) devuelve `'ok'` cuando `max <= 0` —el comentario dice
+*«Unlimited or disabled»*— mientras `checkLimit` (`:194-204`) rechaza con `allowed: false`
+cuando `maxAllowed === 0`. Un plan con la funcionalidad apagada muestra la fila en verde y
+la rechaza en la misma request.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
