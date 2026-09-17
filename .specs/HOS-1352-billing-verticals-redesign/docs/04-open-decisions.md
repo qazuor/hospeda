@@ -315,8 +315,7 @@ señales de identidad · **`M-LEGAL-03` política de notificación de aumento** 
 `M-MAIL-03` jerarquía de supresión y transaccional vs comercial · `M-MAIL-04` qué comunica el
 proveedor por su cuenta
 
-**Concurrencia** · **`M-CONC-01`** idempotencia del lado nuestro — ✅ **cerrado por `DEC-CONC-001`** (2026-09-16) · ~~`M-CONC-02`~~ **cerrado por el cap. 03** (un webhook es un aviso, no un estado: se relee por id, que es el camino medido confiable) · `E-CONC-01` los seis cruces del §52 · `M-CONC-03` qué hace que un pago tardío sea
-seguro
+**Concurrencia** · **`M-CONC-01`** idempotencia del lado nuestro — ✅ **cerrado por `DEC-CONC-001`** (2026-09-16) · ~~`M-CONC-02`~~ **cerrado por el cap. 03** (un webhook es un aviso, no un estado: se relee por id, que es el camino medido confiable) · ~~`E-CONC-01`~~ **cerrado por el cap. 05** (los seis, con respuesta nominal; el del pago manual se lleva a la base con un UNIQUE por período) · ~~`M-CONC-03`~~ **cerrado por el cap. 05** (las cuatro condiciones que hacen seguro reactivar; la tercera es la cara)
 
 **Admin y observabilidad** · `M-ADMIN-01` catálogo de acciones administrativas · `R-OBS-01` un
 correo por evento apaga el canal · `S-OBS-01` dashboard más correo agregado · `M-OBS-01`

@@ -156,4 +156,5 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 02 — Modelo de datos | ✅ |
 | 03 — Las ocho máquinas de estado | ✅ |
 | 04 — Invariantes | ✅ |
-| 05 a 22 | ⬜ sin escribir |
+| 05 — Idempotencia y concurrencia | ✅ |
+| 06 a 22 | ⬜ sin escribir |
