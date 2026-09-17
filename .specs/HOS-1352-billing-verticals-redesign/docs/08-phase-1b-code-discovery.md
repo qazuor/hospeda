@@ -4620,6 +4620,71 @@ no es «175 tablas»; producción tiene 174 (`F-1B-006`). Lo que la proporción 
 
 ---
 
+### F-1B-101 — El catálogo de producción usa seis dominios de producto, el enum declara seis, y no son los mismos seis
+
+**Los 20 planes de `billing_plans` en producción**, medidos el 2026-09-17:
+
+| dominio | planes | cuáles |
+|---|---|---|
+| `accommodation` | 6 | `owner-basico`, `owner-pro`, `owner-premium` (activos) · `owner-trial`, `owner-test-daily`, `tourist-plus` (inactivos) |
+| `gastronomy` | 4 | `gastronomy-basico/pro/premium` (activos) · `gastronomy-trial` |
+| `experience` | 4 | `experience-basico/pro/premium` (activos) · `experience-trial` |
+| `partner` | 3 | `partner-gold`, `partner-silver`, `partner-listing` (los tres activos) |
+| **`tourist`** | 2 | `tourist-free`, `tourist-vip` (los dos **activos**) |
+| **`commerce`** | 1 | `commerce-listing` (**activo**) |
+
+**El enum tiene seis valores y la base tiene seis, y la intersección es cinco.**
+`packages/schemas/src/enums/product-domain.enum.ts` declara `ACCOMMODATION`, `GASTRONOMY`,
+`EXPERIENCE`, `PARTNER`, **`TOURIST`** y **`ADDON`**.
+
+- **`commerce` está en producción y no en el enum**: es el valor retirado, y está sobre un
+  plan **activo**. `subscriptionMatchesDomain` compara con `value === domain`, así que ese
+  plan no matchea ninguno de los seis — el modo de falla buscado, no un accidente.
+- **`addon` está en el enum y no en ningún plan**: es un dominio de mecanismo, y el guard de
+  duplicados lo saltea explícitamente (`duplicate-subscription-guard.ts:210-212`).
+
+**Y `tourist` es un vertical de pleno derecho, con su razón escrita.**
+`BUSINESS_VERTICAL_PRODUCT_DOMAINS` lo incluye con un comentario que cuenta el incidente
+(HOS-1233): antes los planes de turista se archivaban como `accommodation`, y
+reclasificarlos sin sumarlos a esa lista *«would make the "mi plan" widget stop seeing a
+live subscription and show "no plan" to somebody who is paying»*.
+
+En producción hay **8 suscripciones: 7 `accommodation` y 1 `tourist`** — el vertical de
+turista no es teórico, tiene un suscriptor.
+
+> ⚠️ **Corrige una afirmación que este relevamiento venía arrastrando.** El `CLAUDE.md` del
+> proyecto dice que `ProductDomainEnum` *«holds exactly four values»*, y la usé como
+> contexto en varios prompts de delegación de esta sesión. Contra el código son **seis**.
+
+**La otra mitad: el campo que decide el vertical no llega en el objeto, y hospeda lo
+repone.** `F-1B-096` midió que el mapper de qzpay devuelve 21 de 34 columnas y que
+`productDomain` es una de las descartadas. El docblock de
+`subscription-product-domain.ts:236-250` describe la consecuencia desde este lado:
+`getByCustomerId()` devuelve objetos donde `productDomain` llega **`undefined` — nunca
+`null`, nunca el valor real**, y `subscriptionMatchesDomain` lee ese `undefined` como
+«fila vieja, falla abierto a accommodation». Sin reponerlo, *«a gastronomy-only subscription
+would match a caller scoped to `accommodation`»*.
+
+`hydrateSubscriptionProductDomains` es esa reposición: **73 referencias en 24 archivos**.
+
+**Y hoy la compensación no tiene fugas, medido por la negativa.** De las **30 llamadas
+reales** a `getByCustomerId` en **20 archivos**, cuatro no hidratan
+—`routes/billing/plan-change.ts`, `routes/billing/subscription-cancel.ts`,
+`routes/webhooks/mercadopago/notifications.ts` y
+`service-core/…/addon/addon-user-addons.ts`— y **ninguno de los cuatro compara por
+dominio**: sus menciones de `productDomain` son comentarios. El guard de duplicados, que sí
+compara, **evita la fachada por completo**: hace su propio `select` nombrando la columna
+(`duplicate-subscription-guard.ts:233`) y su docblock (`:45`) dice por qué.
+
+*Nota de método, la decimonovena vez, y mía*: el primer barrido dio **8 archivos sin
+hidratar** sobre 26, incluido el guard de duplicados — falso en las dos puntas.
+`rg -l 'subscriptions\.getByCustomerId'` matchea la mención dentro de un **docblock**, que
+es justamente donde el guard explica que NO usa esa API. Filtrando las líneas que empiezan
+con `*` o `//` quedan 30 llamadas en 20 archivos, y las cuatro sin hidratar no comparan
+nada. El hallazgo se dio vuelta entero al anclar el patrón.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
