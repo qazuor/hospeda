@@ -3042,6 +3042,83 @@ veces; éste es una cerca de seguridad escrita dos veces.
 
 ---
 
+### F-1B-070 — Una compra de addon se confirma sin su fila de ledger, y el comentario que la precede dice lo contrario
+
+`recordAddonPayment` (`apps/api/src/services/addon-payment-ledger.ts:186`) es lo único que
+escribe la fila de `billing_payments` de un addon, y tiene **dos** llamadores de
+producción: `addon.checkout.ts:1272` y `addon-recurring-renewal.service.ts:246`.
+
+**El primero es condicional** (`addon.checkout.ts:1271-1292`):
+
+```ts
+if (input.paymentId && input.amountInCents !== undefined) {
+    await recordAddonPayment({ … });
+} else {
+    apiLogger.error({ … },
+        'Add-on purchase confirmed without a settled provider charge; no billing_payments
+         row written — the charge cannot be reconciled or refunded');
+}
+```
+
+La compra ya se insertó veinte líneas antes (`:1180`) y **la confirmación devuelve éxito
+igual**. El único rastro es ese `apiLogger.error`, que **no lleva `capture: true`**: no
+llega a Sentry. El texto del mensaje nombra las dos cosas que se pierden —reconciliar y
+reembolsar— y las nombra correctamente, porque el reembolso resuelve por
+`providerPaymentIds->>'mercadopago'`, que es justo lo que falta.
+
+**Y el comentario inmediatamente anterior (`:1258-1270`) afirma la regla opuesta**: *«the
+ledger entry must not be conditional on anything that runs later succeeding»*. Es cierto de
+lo que corre **después** y no de lo que llega: el `if` de la línea siguiente la hace
+condicional a dos campos de la entrada. El mismo bloque explica por qué ninguno se
+defaultea —*«a row carrying the catalog list price instead of the charged amount would be a
+plausible-looking lie»*— así que la elección es deliberada; lo que no queda registrado en
+ninguna parte es el resultado de haberla tomado.
+
+**El segundo inserter de compras no llama al ledger en absoluto.**
+`addon.checkout.recurring-write.ts:67` inserta la fila `pending` del camino recurrente
+—el que `F-1B-049` midió corriendo en producción— y no menciona `recordAddonPayment`. Su
+primera fila de ledger llega recién con la confirmación del primer cobro, por el otro
+llamador. Los otros dos `insert(billingAddonPurchases)` del repo son el seed de usuarios de
+prueba y un script de migración.
+
+---
+
+### F-1B-071 — Un slug de plan no catalogado cierra en una función y abre en la de al lado, dentro del mismo archivo
+
+`apps/api/src/services/billing/plan-domain-guard.ts` resuelve el dominio de un plan con
+`productDomainForPlanSlug`, que devuelve `undefined` cuando el slug no está en el catálogo.
+Las dos funciones que lo usan tratan ese `undefined` al revés:
+
+| función | la comparación | qué hace con `undefined` |
+|---|---|---|
+| `assertAccommodationPlanSlug` (`:103-114`) | `if (resolved === ProductDomainEnum.ACCOMMODATION) return;` | **tira** `PlanDomainMismatchError` — **falla cerrado** |
+| `assertAccommodationPlanChangeTarget` (`:324-327`) | `if (resolved === undefined \|\| resolved === ProductDomainEnum.ACCOMMODATION) return;` | **deja pasar** — **falla abierto** |
+
+Las dos están documentadas como elección: la primera dice *«Fails closed on an unknown
+slug»* (`:89`) y la segunda *«Fails OPEN on an unknown slug, and that is not the
+fail-closed posture `isAccommodationPlanSlug` was written for»* (`:304-317`). O sea que la
+asimetría no es un descuido; lo que queda medido es que **el mismo hecho —un slug que el
+catálogo no conoce— habilita un cambio de plan y bloquea una remediación**, con las dos
+reglas a doscientas líneas de distancia.
+
+**Hay una tercera forma en el mismo archivo, y no es ninguna de las dos.**
+`isAccommodationDomainSubscription` (`:166-181`) y `selectAccommodationSubscription`
+(`:246`) inicializan `let resolved = <el objeto sin hidratar>` y **no lo reasignan en el
+`catch`**, así que ante un fallo de lectura siguen con el objeto tal como llegó y delegan
+el veredicto a `subscriptionMatchesDomain`, que vive en `@repo/service-core`. El default
+real —tratar un `productDomain` nulo como accommodation— se decide allá, no acá. Su propio
+docblock lo llama *«fails OPEN toward accommodation, twice over»* (`:132-144`).
+
+**Y el error que la mitad cerrada lanza no lo atrapa nadie por su tipo.**
+`PlanDomainMismatchError` se define (`:58-84`) y se tira (`:108`), y fuera de ese archivo su
+nombre sólo aparece en un comentario de
+`commerce-downgrade-remediation.service.ts:88`. Los dos llamadores
+—`plan-downgrade-remediation.service.ts:482` y `plan-upgrade-restoration.service.ts:294`—
+lo dejan propagar hasta el `catch` de sus envoltorios `…OrWarn`, que miran `err.message`.
+La clase existe para distinguir, y ningún `instanceof` la distingue.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
