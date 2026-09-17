@@ -1775,15 +1775,57 @@ Cada entrada lleva, según §3.4:
      que el §41 pide poder hacer al revés (cancelar un addon huérfano sin tocar lo demás).
 - **Origen**: `BD-MP-04` · §38 · §40 · §41. **Era el último bloqueante de FASE 2.**
 
+### DEC-ARCH-003 — Los dos `SUSPENDED` del PDR se separan: el del trial se llama `TRIAL_EXPIRED`
+
+- **Fecha**: 2026-09-17 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el PDR usa la palabra `SUSPENDED` para dos situaciones que no se comportan igual.
+  El §10.6 la usa para el trial que venció sin que la persona se suscribiera
+  (`TRIAL_ACTIVE -> SUSPENDED`), y el §20/§21 para el pago que falló y agotó su grace
+  (`GRACE_PERIOD -> SUSPENDED`). El §63 pide modelar explícitamente los estados y las
+  transiciones de ocho máquinas, y dos situaciones distintas bajo un mismo nombre no se pueden
+  modelar: cualquier transición que se escriba sobre `SUSPENDED` es ambigua.
+- **Las tres diferencias, que es lo que impide compartir nombre**:
+
+  | | trial vencido | impago tras el grace |
+  |---|---|---|
+  | ¿hubo dinero de por medio? | no, nunca pagó | sí, y quedó un cobro sin entrar |
+  | campaña de recuperación del §10.7 (+1, +5, +15, +30, +60) | **sí** — el §10.7 la define para este caso | **no** — el §10.7 habla de *«Recovery post-trial»* |
+  | qué le falta para volver | suscribirse por primera vez | regularizar un pago |
+
+- **Alternativas**: (1) separarlos en dos estados con nombres distintos; (2) un solo
+  `SUSPENDED` con un campo `motivo`; (3) dejarlo como está y que cada consumidor deduzca cuál
+  es por el contexto.
+- **Decisión**: **(1)**. El del §10.6 se llama **`TRIAL_EXPIRED`** y el del §20/§21 conserva
+  **`SUSPENDED`**.
+- **Motivo**: es la única que hace que las transiciones del §63 sean escribibles sin ambigüedad.
+  La (2) mueve el problema a un campo que hay que acordarse de mirar —y `DEC-GRANT-004` ya
+  obligó a un motivo para `PAUSED`, donde sí hace falta porque el proveedor no distingue; acá
+  la distinción es nuestra desde el origen y no hay razón para diferirla a un campo—. La (3) es
+  el estado de cosas que el §1 nombra entre las causas de este programa.
+- **Implicaciones**:
+  1. **Apartamiento declarado del §10.6**, que escribe `SUSPENDED`. El PDR no se edita (§3.1):
+     queda registrado acá. Es el **tercero** del programa, y ya estaba anticipado como tal en el
+     resumen de este log antes de tener ID propio.
+  2. **Las consecuencias del §21 valen para los dos por igual** —sin listado público, sin
+     edición, sin creación, sin entitlements comerciales, datos conservados, Mi Cuenta en sólo
+     lectura, billing accesible, recuperación posible—. Lo que cambia es la comunicación, no el
+     acceso.
+  3. **El reloj de retención del §25 arranca igual en los dos**: el §25 dice *«desde que queda
+     efectivamente inactiva»* y las dos situaciones lo son. Rige `DEC-DATA-001` sin cambios.
+  4. La campaña del §10.7 se dispara **sólo** desde `TRIAL_EXPIRED`. Qué pasa si la campaña ya
+     se disparó y después el trial se extiende sigue abierto (`E-TRIAL-03`, capítulo 11).
+- **Origen**: `M-ARCH-01` · §10.6 · §20 · §21 · §63. Cerrado por el capítulo 01 de la Master
+  Spec; el nombre lo aprobó el owner el 2026-09-17.
+
 ---
 
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **43** |
+| Decisiones tomadas | **44** |
 | De metodología | 3 |
-| Funcionales | 40 |
+| Funcionales | 41 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
@@ -1791,4 +1833,4 @@ Cada entrada lleva, según §3.4:
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
-| Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34), y el `SUSPENDED` doble de `M-ARCH-01` |
+| Apartamientos declarados del PDR | 3 — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio) |

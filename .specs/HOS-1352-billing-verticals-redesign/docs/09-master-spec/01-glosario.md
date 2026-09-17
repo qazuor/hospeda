@@ -136,13 +136,10 @@ Difieren en tres cosas medibles, y por eso no pueden compartir nombre:
 sin creación, sin entitlements comerciales, datos conservados, Mi Cuenta en sólo lectura,
 billing accesible, recuperación posible—. Lo que cambia es la comunicación, no el acceso.
 
-> ⚠️ **Apartamiento del PDR, PENDIENTE DEL OWNER.** El §10.6 escribe `SUSPENDED` y esta spec
-> escribe `TRIAL_EXPIRED`. El PDR no se edita (§3.1), así que una desviación se registra como
-> decisión en `01-decision-log.md` — y **ese documento no se toca sin el OK del owner**. El
-> resumen del log ya cuenta *«el `SUSPENDED` doble de `M-ARCH-01`»* entre los tres apartamientos
-> declarados, o sea que **la separación está aceptada y lo que falta aprobar es el nombre**.
-> Hasta que eso ocurra, `TRIAL_EXPIRED` es el nombre que usa esta spec y la entrada del log está
-> pendiente.
+**Apartamiento declarado del PDR, registrado como `DEC-ARCH-003`** (2026-09-17, aprobado por el
+owner). El §10.6 escribe `SUSPENDED` y esta spec escribe `TRIAL_EXPIRED`; el PDR no se edita
+(§3.1), así que la desviación vive en `01-decision-log.md`. Es el tercer apartamiento del
+programa, y ya estaba anticipado en el resumen de ese log antes de tener ID propio.
 
 **Y el reloj de retención del §25 arranca igual en los dos.** El §25 dice *«desde que queda
 efectivamente inactiva»*, y las dos lo son: día 90 sale del sitio público conservando acceso

@@ -268,8 +268,8 @@ tiene que cerrar, no cosas que alguien improvise al implementar.
 de claves de configuración comercial · ~~`O-ARCH-01`~~ **cerrado por el cap. 01** (el Eje 2 es una
 lista cerrada de ocho ítems; todo lo demás es Eje 1) · ~~`S-ARCH-02`~~ **cerrado por el cap. 01**
 (la lista, enumerada, y crece sólo por decisión registrada) · ~~`M-ARCH-01`~~ **cerrado por el
-cap. 01** (glosario completo; los dos `SUSPENDED` se separan en `TRIAL_EXPIRED` y `SUSPENDED`,
-con el nombre pendiente del OK del owner) · `M-ARCH-02` caché e invalidación ·
+cap. 01 + `DEC-ARCH-003`** (glosario completo; los dos `SUSPENDED` se separan en `TRIAL_EXPIRED`
+y `SUSPENDED`, nombre aprobado por el owner el 2026-09-17) · `M-ARCH-02` caché e invalidación ·
 `OD-ARCH-01` retiro de un plan del catálogo
 
 **Trial** · ~~`E-TRIAL-01`~~ **disuelto por `DEC-TRIAL-005`** (sin revisión previa no hay
