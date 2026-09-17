@@ -91,7 +91,7 @@ verificado contra la definición real.
 | Índices | **836** | `pg_index` por catálogo — **no** por nombre, que da 160 PK en vez de 174 | **836** |
 | Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | **132** |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
-| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** horario · **47** partición · **6** handlers leídos enteros |
+| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** horario · **47** partición · **17 de 17** handlers de billing leídos |
 | Migraciones estructurales | **125** | archivos, cruzados con `drizzle.__drizzle_migrations` en prod | **125** |
 | Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
 | Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
@@ -958,6 +958,169 @@ comportamiento previo.
 
 ---
 
+### F-1B-026 — El cron de `dunning` no muta nada: sus dos operaciones están apagadas por una constante
+
+Verificado a mano. `dunning.job.ts:245` declara:
+
+```ts
+export const DUNNING_MUTATIONS_ENABLED = false;
+```
+
+y `:635` corta antes de llegar a `processRetries()` / `processCancellations()`, que viven
+en `:668-720` y **nunca se ejecutan**. Lo que corre es una pasada de sólo observación que
+cuenta los `past_due` y devuelve `processed: 0` con el mensaje literal
+*«no local retries or cancellations attempted»* (`:654-665`).
+
+**No es un olvido: tiene razón escrita** — *«MercadoPago native recycling is
+authoritative»* (HOS-191 F5), y el docblock del módulo (`:20-58`) lo documenta como
+decisión, incluyendo que `past_due` es hoy inalcanzable en el pipeline local.
+
+**Pero el primer bloque de comentarios del mismo archivo (`:1-18`) sigue describiendo el
+comportamiento viejo**: *«Uses QZPay's SubscriptionLifecycleService to process payment
+retries», «Cancels subscriptions…»*. Un lector que se quede con el docblock de arriba se
+lleva una descripción incorrecta de lo que corre, y recién en la línea 20 se entera.
+
+Cruza con `DEC-SUB-002` (grace configurable) y con todo el §20: **hoy el grace del lado
+nuestro no lo ejecuta nadie**.
+
+---
+
+### F-1B-027 — Un cobro de addon puede darse por procesado con su liquidación fallida
+
+Verificado en `apps/api/src/routes/webhooks/mercadopago/addon-recurring-handler.ts:251-266`.
+`settleRecurringAddonCharge` —que activa el addon, inserta en el ledger y avanza el
+período— corre dentro de un `try`; el `catch` loguea con `capture: true`; y el
+
+```ts
+return { handled: true, purchaseId: purchase.id };
+```
+
+**queda fuera del `try/catch`**. O sea que una excepción en la liquidación no cambia el
+retorno.
+
+Río abajo eso importa: `webhook-retry.job.ts:324-335` trata `handled === true` como
+procesado y el llamador ejecuta `markAsResolved`, sacando el evento de la cola de
+dead-letter. **El cobro del addon queda cobrado en el proveedor, sin activar, sin ledger
+y sin período avanzado, y el evento marcado como resuelto.**
+
+**Tiene razón escrita**: *«event consumed anyway so it can never be booked as a plan
+renewal»*. Es una elección entre dos daños, no un descuido — pero el daño elegido no
+queda registrado en ningún contador.
+
+Es el segundo camino que encontramos por el que la cola de dead-letter se vacía sin
+trabajo hecho; el primero es el de `F-1B-019`.
+
+---
+
+### F-1B-028 — `addon-expiry` son siete responsabilidades en un archivo, y su docblock describe cuatro
+
+Las 2.076 líneas se reparten en **siete fases**, todas bajo el mismo lock `43001`:
+
+| # | fase | líneas | límite |
+|---|---|---|---|
+| 1 | expirar addons vencidos | 277-557 | sin `LIMIT` en SQL |
+| 2 | aviso a 3 días | 558-687 | — |
+| 3 | aviso a 1 día | 688-817 | — |
+| 4 | reintento de revocación de huérfanos | 818-1421 | `LIMIT 100` |
+| 5 | reconciliar split-state DB↔proveedor | 1423-1565 | `LIMIT 10` |
+| 6 | reintento de quita de entitlements | 1566-1754 | `LIMIT 10` |
+| 7 | reconciliar grants faltantes | 1755-2028 | `LIMIT 10` |
+
+**El docblock del módulo (`:1-30`) documenta las fases 1 a 4.** Las fases 5, 6 y 7 —unas
+600 líneas, y las tres mutan acceso o cobro— no figuran.
+
+Las fases 2 y 3 son código casi idéntico con `daysAhead` distinto.
+
+**Y el `LIMIT` de la fase 1 no está en SQL**: `addon-expiration.queries.ts:237` y `:322`
+hacen `rawResults.slice(0, BATCH_SIZE)` **en JavaScript**, sin `limit()` en la consulta
+(verificado: cero ocurrencias de `limit(` en ese archivo). El tope de 100 acota el
+procesamiento, no lo que la base devuelve.
+
+**Contradicción de política dentro del mismo archivo**, verificada en `:1080-1094`: si
+falla la verificación del estado contra el proveedor, el código **revoca igual**
+(*«proceeding with revocation conservatively — the orphaned state was already confirmed
+via DB join»*), mientras que `closeAddonPreapproval` sigue la regla opuesta: si no puede
+confirmar en el proveedor, **no expira**. Ante la misma duda, un camino le quita el
+addon al cliente y el otro se abstiene.
+
+---
+
+### F-1B-029 — `success: true` literal: son cuatro crons, no uno
+
+`F-1B-022` encontró el primero. Con los dos grupos restantes leídos, el patrón es:
+
+| cron | dónde | qué queda afuera de `success` |
+|---|---|---|
+| `reactivation-supersession-reconcile` | `:348` | pares con `cancel-did-not-take` |
+| `featured-by-entitlement-reconcile` | `:319-335` | owners cuya corrección falló |
+| `notification-schedule` | `:615` | renovaciones, serie de trial y reintentos fallidos |
+| **`addon-expiry`** | `:1857` (y `:2038` lo propaga) | **las siete fases** |
+
+En los cuatro, `errors` se acumula y se devuelve en el resultado, pero **no participa del
+cálculo de `success`**. Sólo una excepción que escape del handler entero lo pone en
+`false`.
+
+En `addon-expiry` eso significa que expiraciones rechazadas, revocaciones fallidas,
+split-state no reconciliado, entitlements no removidos y grants no aplicados **dejan el
+job en verde**.
+
+`courtesy-expiry` es la excepción deliberada del lote: `:315-331` devuelve
+`success: false` si `errors > 0`, y su docblock lo declara como decisión.
+
+Y en los cuatro, más varios de los otros, **«no pude tomar el lock» y «billing no está
+configurado» también devuelven `success: true`**, indistinguibles en ese campo de una
+corrida real sin trabajo.
+
+---
+
+### F-1B-030 — Ningún cron relee el monto después de mutarlo en el proveedor
+
+De los once handlers leídos, cuatro mutan el `transaction_amount` de una suscripción viva
+en MercadoPago:
+
+| cron | dónde |
+|---|---|
+| `subscription-poll` | `:660` |
+| `apply-scheduled-plan-changes` | `:415-419` |
+| `propagate-plan-price-changes` | `:779-803` (hasta 3 intentos, 400 ms de espera) |
+| `webhook-retry` → `payment-logic.ts` | `:939` |
+
+**Ninguno de los cuatro vuelve a leer el preapproval para comparar campo por campo.** El
+éxito se determina por ausencia de excepción del SDK.
+
+La única relectura que sí existe es la de `processSubscriptionUpdated`
+(`subscription-logic.ts:601-610`), que relee el **estado** antes de escribirlo local — no
+el monto.
+
+Cruza directo con `DEC-MP-001` y `DEC-SUB-008`, que fijan que el cambio de precio se hace
+mutando el monto **y que la mutación se verifica releyendo**, porque es el terreno donde
+el proveedor ya demostró nueve veces aceptar sin aplicar.
+
+---
+
+### F-1B-031 — Dos crons resuelven el mismo cálculo con políticas opuestas
+
+Ante el mismo fallo —no poder resolver el estado de descuento de una suscripción al
+calcular su monto nuevo—:
+
+- **`apply-scheduled-plan-changes.ts:95-144`** cae en **fail-open**: devuelve el precio
+  pleno, sin descuento. Comentado como aceptable porque *«a missed discount
+  re-application is recoverable via the reconciler»*.
+- **`propagate-plan-price-changes.job.ts:268-316`** cae en **fail-closed**: difiere el
+  target y no toca nada, comentado explícitamente para no *«invertir una baja en una suba
+  accidental»*.
+
+Los dos comentan su elección; las elecciones son opuestas. El primero puede cobrarle de
+más a alguien con descuento vigente; el segundo prefiere no cobrar todavía.
+
+Y hay una asimetría gemela en el tratamiento del target fallido: en
+`propagate-plan-price-changes` un target `failed` **hace fallar el registro padre**
+(`:1079-1094`), mientras que en `apply-scheduled-plan-changes` los pasos 2 a 4 pueden
+fallar —incluida la propagación a MercadoPago— y la fila **sigue contando como
+`applied`** (`:397-464`).
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -971,7 +1134,8 @@ Ninguno empezado. El orden no está decidido.
 | Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | ~~Los 47 crons: nombre, horario y habilitación~~ | — | ✅ `F-1B-003`, `F-1B-017` |
-| Los handlers de billing, leídos por dentro | **6 de 17** | 🟡 `F-1B-018` a `F-1B-020`, `F-1B-022` a `F-1B-025` |
+| ~~Los 17 handlers de billing, leídos por dentro~~ | — | ✅ `F-1B-018` a `F-1B-031` |
+| Los 30 crons restantes (no tocan billing) | 30 | ⬜ |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Servicios: métodos públicos y qué validan | por medir | ⬜ |
