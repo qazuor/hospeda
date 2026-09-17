@@ -6211,6 +6211,81 @@ magnitud del error y su dirección: **omite**, no inventa.
 
 ---
 
+### F-1B-130 — El módulo que desambigua las dos grafías de «cancelada» opera sobre cero filas, y la cifra que lo justifica no se reproduce contra la base
+
+`F-1B-021` midió que `billing_subscriptions.status` recibe tres vocabularios y que la
+cancelación es el valor donde qzpay y hospeda no coinciden: `canceled` contra `cancelled`.
+`apps/api/src/services/admin-billing-view.status.ts` existe para resolver eso, y su docblock
+(`:10-26`) da el dato que lo motiva: *«production held 6 `canceled` rows and 2 `cancelled` rows
+when this module was written»*, y *«the admin "Cancelada" filter returned 2 of 8 rows»*.
+
+**El camino que escribe `canceled` existe y no es una inferencia.** `billing.subscriptions.cancel`
+(`qzpay/packages/core/src/billing.ts:1744`) arma su update así:
+
+```ts
+const updateInput = { canceledAt: now };          // :1776-1778, INCONDICIONAL
+if (!options?.cancelAtPeriodEnd) {
+    updateInput.status = 'canceled';              // :1779-1781, una L
+}
+```
+
+y `mapCoreSubscriptionUpdateToDrizzle` **sí nombra `canceledAt`**
+(`qzpay/packages/drizzle/src/mappers/subscription.mapper.ts:136-138`), así que no es uno de los
+campos que `F-1B-096` midió descartados en silencio: si ese camino corre, la columna se escribe.
+La ruta que lo invoca está montada (`F-1B-093`: `POST /subscriptions/:id/cancel` y su gemela
+`force-cancel`).
+
+**Y la base dice que nunca corrió.** Medido contra producción el 2026-09-17 con
+`hops --target=prod psql`:
+
+| | |
+|---|---|
+| filas en `billing_subscriptions` | **8** |
+| filas con `canceled_at` no nulo | **0** |
+| filas con `deleted_at` no nulo | **0** |
+| `status` presentes | `trialing` 3 · `abandoned` 3 · `comp` 2 |
+| filas con `status` `canceled` **o** `cancelled` | **0** |
+
+Son las mismas 8 que `F-1B-048` midió. **Ninguna de las dos grafías de cancelación está hoy en la
+columna**, y ningún camino —ni el del motor ni el de hospeda— dejó un `canceled_at`.
+
+**La cifra del docblock tampoco se reproduce hacia atrás.** El módulo nació el **2026-08-15**
+(`75897ea85`, primer commit del archivo; el segundo y último es `47ea26826`, del 2026-09-09). El
+reparto por fecha de creación de las 8 filas vivas es:
+
+| `created_at` | `status` | n |
+|---|---|---|
+| 2026-07-24 | `comp` | 1 |
+| 2026-08-14 | `comp` | 1 |
+| 2026-08-27 | `abandoned` | 1 |
+| 2026-08-27 | `trialing` | 2 |
+| 2026-08-28 | `abandoned` | 2 |
+| 2026-09-01 | `trialing` | 1 |
+
+Al 2026-08-15 existían **dos** filas, las dos `comp`, y las dos siguen ahí. Las otras seis son
+posteriores. Para que hubiera ocho filas canceladas ese día tendrían que haberse borrado con
+`DELETE` duro —que no deja rastro y por lo tanto no se puede descartar—, pero **no por soft
+delete**: la columna `deleted_at` existe y está en cero.
+
+**Lo que caducó es el dato, no la conclusión.** El módulo sigue siendo correcto sobre el código:
+hay dos escritores con dos grafías, y filtrar por una sola devolvería menos filas de las que
+corresponden. Lo que ya no existe es la evidencia que lo fechó — su defecto *«2 de 8»* opera hoy
+sobre **cero** filas de cualquier grafía de cancelación, porque la ruta de admin que produce
+`canceled` no se ejerció nunca en esta base.
+
+*Qué abre, sin resolverlo acá*: `DEC-SUB-009` decide que la baja cancela **ya** en el proveedor y
+sostiene el servicio de nuestro lado, así que el diseño nuevo va a producir cancelaciones en
+volumen por un camino que hoy tiene cero ejercicio medido. Y el §63 pide una máquina de estados
+explícita para Subscription sobre una columna que `F-1B-007` midió sin ninguna restricción.
+
+*Nota de método*: la primera consulta no excluyó `deleted_at` —que es la trampa inversa de la que
+este programa ya registró—, así que se midió aparte y dio cero; con soft-deletes la lectura habría
+sido otra. Y la verificación de que `canceledAt` no fuera un campo descartado por el mapper es lo
+que separa «el camino no corrió» de «el camino corrió y el campo se perdió»: sin ese control, el
+mismo cero admitía las dos lecturas.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
