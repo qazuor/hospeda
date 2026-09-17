@@ -36,9 +36,9 @@ status: CURRENT
 
 ### Dónde estamos
 
-**FASE 1B en curso y con sus tres carriles grandes cerrados.** El registro de 1B es
-[`08-phase-1b-code-discovery.md`](./08-phase-1b-code-discovery.md) — **122 hallazgos**,
-`F-1B-001` a `F-1B-122` —, y **no** el worklog, que no tiene entradas de 1B entre el 15 y el 17
+**FASE 1B en curso, con casi todos sus carriles cerrados.** El registro de 1B es
+[`08-phase-1b-code-discovery.md`](./08-phase-1b-code-discovery.md) — **129 hallazgos**,
+`F-1B-001` a `F-1B-129` —, y **no** el worklog, que no tiene entradas de 1B entre el 15 y el 17
 (anotado allá como hueco, no reconstruido hacia atrás).
 
 > ⚠️ **Todo lo que sigue de esta sección hacia abajo quedó del 2026-09-16 y describe 1C.**
@@ -66,27 +66,30 @@ su propio gate (`DEC-METH-003`).
 | `packages/service-core/src/services/billing` | ✅ 52 de 52 / 14.254 líneas |
 | Superficies Web y Admin | ✅ 15 de 15 y 22 de 22 |
 | Los 47 crons, por dentro | ✅ 47 de 47 |
-| Los 1.032 handlers **por tier** | ✅ `F-1B-107` — y `F-1B-105` fija que 1.032 es un **piso** |
+| Los **1.078** handlers por tier | ✅ `F-1B-123` — 1.032 era el piso, medido sin billing inicializado (`F-1B-105`) |
 | Las 125 migraciones estructurales | ✅ qué agregan y qué quitan, `F-1B-120` a `F-1B-122` |
 | Los 90 `pgEnum`, los 836 índices, las 399 FK, los 132 triggers | ✅ |
-| qzpay entero salvo tests y ejemplos | ✅ core 96 %, drizzle 65/68, mercadopago 16/16 |
+| **qzpay entero** salvo tests y ejemplos | ✅ core 96 %, drizzle 65/68, mercadopago 16/16, **hono 22/22 y react 28/28** |
+| Las 358 FK internas de hospeda | ✅ `F-1B-126` — 253 apuntan a `users` |
+| Los cinco vocabularios de estado compartidos | ✅ `F-1B-021` + `F-1B-125` |
+| La matriz de gates, contrastada contra el código | ✅ `F-1B-129` |
 
 #### Lo que queda abierto de 1B
 
-1. **Qué hace cada uno de los 1.032 handlers, uno por uno** — el reparto por tier está medido,
-   el contenido no.
-2. **Re-medir la tabla de rutas con billing inicializado.** Necesita una base alcanzable. El
-   delta conocido son las 48 rutas ausentes de `F-1B-105`.
-3. **Los 16 archivos de ruta donde la matriz de gates y el código no coinciden** (`F-1B-038`),
-   leídos uno por uno. Son **sospechosos**, no discrepancias: el primer barrido ya demostró ser
-   un patrón mal escrito.
-4. **Las 358 FK internas de hospeda**: la frontera billing↔dominio está medida (`F-1B-085`), el
-   resto del grafo no.
-5. **`hono` y `react` de qzpay**, los 50 archivos leídos enteros (hoy están medidos por consumo
-   y por conteo de rutas).
-6. **Los tests, como evidencia de intención** — sin empezar.
-7. **Los vocabularios compartidos que no son el de suscripción**: pago, factura, reembolso,
-   addon.
+Quedan **tres**, y ninguno bloquea FASE 2:
+
+1. **Qué hace cada uno de los 1.078 handlers, uno por uno** — el reparto por tier está medido
+   (`F-1B-123`) y la dimensión del gate también (`F-1B-129`); el contenido de cada handler no.
+2. **Los tests, como evidencia de intención** (no de corrección) — sin empezar.
+3. **La frontera conceptual**: qué decide qzpay y qué decide hospeda sobre el mismo hecho. Hay
+   siete hallazgos que la tocan de costado (`F-1B-090`, `097`, `098`, `104`, `121`, `127`, `128`)
+   y ninguno la enuncia entera.
+
+Cerrados el 2026-09-17, después del primer corte de este handoff: la re-medición de la tabla de
+rutas con billing inicializado (`F-1B-123`, `F-1B-124`), las 358 FK internas (`F-1B-126`), los
+50 archivos de `hono` y `react` (`F-1B-127`, `F-1B-128` — **qzpay queda relevado entero**), los
+cuatro vocabularios compartidos que faltaban (`F-1B-125`) y los sospechosos de la matriz de gates
+(`F-1B-129`).
 
 #### Método de 1B, que conviene no reinventar
 

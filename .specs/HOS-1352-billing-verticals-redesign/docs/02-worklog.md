@@ -579,6 +579,31 @@ Dos trampas de medición nuevas, que van al contador:
    explica un modo de falla citando la frase). Son 181. Tercera vez que la causa de un conteo
    inflado es la propia documentación del código.
 
+### Segunda tanda del 2026-09-17 — cinco carriles más, y uno que no necesitaba lo que decía necesitar
+
+**El carril que estaba anotado como «necesita una base alcanzable» no la necesitaba.**
+`F-1B-105` había medido que lo único que impide inicializar billing bajo el arnés de tests es un
+export que le falta al mock de `@repo/db`. Reponerlo a nivel de archivo con un `vi.mock` alcanza:
+la app se construye igual, `billingConfigured` da `true`, y el inventario real son **1.078
+handlers** — 1.032 era el piso (`F-1B-123`).
+
+**Y de ahí salió un hallazgo que no se buscaba.** La primera corrida dio 1.056 en vez de 1.078
+porque la sonda llamaba `mountQZPayAdminTier()` **después** de `initApp()`, y `apps/api/src/index.ts`
+lo hace **antes** (`:301` contra `:359`). Hono copia las rutas de un sub-app al montarlo, así que
+el orden es load-bearing: invertir esas dos líneas hace desaparecer **22 rutas de admin de
+billing, once de ellas mutantes**, sin romper nada visible. La consecuencia más ancha es que
+**`initApp()` no construye la app que se sirve** (`F-1B-124`).
+
+Cerrados además: las **358 FK internas** —el grafo es una estrella, 253 apuntan a `users`
+(`F-1B-126`)—, los **50 archivos de `hono` y `react`** de qzpay, con lo que **qzpay queda relevado
+entero** (`F-1B-127`, `F-1B-128`), los **cuatro vocabularios de estado** que faltaban
+(`F-1B-125`) y los **sospechosos de la matriz de gates** (`F-1B-129`).
+
+**Una verificación que evitó un hallazgo falso.** Con la sonda mal ordenada, la lectura obvia era
+*«`mountQZPayAdminTier()` es un no-op, las 22 rutas no existen en producción»*. Mirar el orden de
+`index.ts` antes de escribirlo mostró lo contrario: en producción el orden es el correcto y las 22
+existen. El hallazgo real quedó en la fragilidad del orden, no en una ausencia.
+
 ---
 
 ## Próximo paso
