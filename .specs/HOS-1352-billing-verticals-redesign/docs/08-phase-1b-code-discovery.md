@@ -498,6 +498,12 @@ Además hay **46 índices parciales** (con cláusula `WHERE`) y **21 de expresi�
 parciales son restricciones condicionales —unicidad que vale sólo para ciertas filas— y
 no se leen en ningún lado salvo en el `indexdef`.
 
+> ⚠️ **Corregido el 2026-09-17 por `F-1B-074`.** Los parciales son **46** y ese número se
+> sostiene, pero los de expresión son **2**, no 21. El 21 salió de buscar patrones en el
+> texto del `indexdef`, que matchea los casts `::text` y los `lower(…)` del **predicado**;
+> un índice de expresión es el que la tiene en la **clave**, y eso lo dice el catálogo:
+> `pg_index.indexprs IS NOT NULL`.
+
 ---
 
 ### F-1B-013 — El documento OpenAPI de la API no existe en ningún entorno desplegado
@@ -3189,6 +3195,72 @@ Dos cosas que ocurren **después** del commit y no se pueden revertir: `clearEnt
 `PLAN_DISABLED_BY_ADMIN` audit entry»*, y el código pasa `action: 'plan_disabled'`
 (`:278`). `PLAN_DISABLED_BY_ADMIN` existe, pero anidado dentro de `changes.eventType`
 (`:284`), no como el campo por el que se busca una acción de auditoría.
+
+---
+
+### F-1B-074 — Los índices de expresión son DOS, no 21, y los dos son de billing: indexan una clave de un JSONB que no existe como columna
+
+Medido por catálogo y no por el texto del `indexdef`, que es lo que estaba mal en el censo:
+
+| | por catálogo (`pg_index`) | por patrón sobre `indexdef` |
+|---|---|---|
+| Parciales (`indpred IS NOT NULL`) | **46** | 46 ✓ |
+| De expresión (`indexprs IS NOT NULL`) | **2** | 21 / 25 ✗ |
+
+El patrón matchea los `::text` y los `lower(…)` que aparecen en el **predicado** de un
+índice parcial. Un índice de expresión es el que la lleva en la **clave**. Los dos
+conceptos se cruzan —los 2 de expresión son también parciales— pero no son el mismo.
+
+**Los dos, completos, y los dos son de billing:**
+
+```sql
+CREATE UNIQUE INDEX idx_notification_log_idempotency_key
+  ON billing_notification_log ((metadata ->> 'idempotencyKey'))
+  WHERE (metadata ->> 'idempotencyKey') IS NOT NULL;
+
+CREATE UNIQUE INDEX uq_billing_subscription_events_supersession_pairing
+  ON billing_subscription_events (subscription_id, (metadata ->> 'supersededSubscriptionId'))
+  WHERE (metadata ->> 'supersededSubscriptionId') IS NOT NULL;
+```
+
+Los dos imponen unicidad sobre **una clave de un JSONB que no existe como columna**. El
+segundo es el que `F-1B-025` nombró como lo único que separa a dos réplicas de
+`reactivation-supersession-reconcile` de cancelar el mismo par en paralelo — y como es un
+índice sobre la fila de auditoría, actúa **después** de haber hablado con el proveedor.
+
+**Y de los 46 parciales, 33 son ÚNICOS.** O sea: **33 reglas de unicidad condicional** que
+no figuran en `information_schema.table_constraints` —`F-1B-012` ya midió que ahí se ven
+39 de 116— y que sólo se leen en el `indexdef`.
+
+**Veintiuno de los 46 parciales están sobre tablas `billing_*`**, 11 de ellos únicos. Los
+que más deciden:
+
+| índice | qué impone |
+|---|---|
+| `idx_addon_purchases_active_unique` | un solo addon `active` por `(customer_id, addon_slug)` — el backstop que `F-1B-068` midió atrapando la reentrega del webhook |
+| `billing_subscriptions_mp_id_uniq` | una sola fila local por preapproval, **sólo cuando `mp_subscription_id` no es nulo** |
+| `billing_addon_purchases_mp_id_uniq` | lo mismo del lado de los addons |
+| `billing_customers_external_id_livemode_uniq` | el candado de `(external_id, livemode)` que `F-1B-061` midió resolviendo la carrera de dos requests |
+| `idx_polling_jobs_one_active_per_resource` | un solo job `pending` por `(provider, provider_resource_id)` |
+
+**Ese `WHERE … IS NOT NULL` del segundo tiene consecuencia medida.** En producción hay 8
+suscripciones y **5 tienen `mp_subscription_id` nulo** —las 3 `abandoned` y las 2 `comp`,
+según `F-1B-048`—, así que cinco de las ocho filas están **fuera** de esa unicidad. No es
+un defecto del índice: un `NULL` no colisiona con otro `NULL` en Postgres, y ésa es la
+razón por la que el predicado está escrito. Lo que queda anotado es que la garantía cubre
+tres de las ocho.
+
+**Dos índices congelan una lista de negocio en su predicado.**
+`uq_billing_subscription_events_trial_series` enumera **nueve** `event_type`
+(`TRIAL_SERIES_NOTIF_PRE_10D`, `PRE_5D`, `PRE_1D`, `EXPIRY`, `POST_1D`, `POST_5D`,
+`POST_10D`, `POST_30D`, `POST_60D`) y `uq_billing_subscription_events_trial_pre_end` otros
+**dos** (`TRIAL_PRE_END_NOTIF_D3`, `D1`). Son las dos series de mails de trial, y su lista
+vive en un índice de Postgres además de en el código.
+
+**Hoy no hay deriva**: contadas las constantes del repo fuera de tests, `TRIAL_SERIES_NOTIF_*`
+da exactamente **9** y `TRIAL_PRE_END_NOTIF_*` exactamente **2**, los mismos que enumeran
+los dos predicados. Lo que queda medido es el acoplamiento: agregar un décimo mail a la
+serie no lo deduplica nada hasta que se escriba una migración.
 
 ---
 
