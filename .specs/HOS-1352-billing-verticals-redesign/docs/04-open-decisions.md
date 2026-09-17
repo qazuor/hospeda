@@ -393,8 +393,25 @@ comunicarlo—; y el borde que el §17.3 no cubría: **la postulación no vincul
 dirección se prueba**, o cargar el correo de un tercero alcanza para colgarle un Partner)
 de la postulación
 
-**Migración** · `O-MIG-01` §56 apoya su conclusión en un número que no da · `R-MIG-01`
-convivencia durante el rewrite · `M-MIG-01` criterio de corte del trial ya consumido
+**Migración** — **los tres los cerró el cap. 21**, con el mismo número medido. ·
+~~`O-MIG-01`~~ (la premisa del §56 **está medida y es cierta por mucho**: 3 compromisos de cobro y
+**0 pagos en la historia**; re-verificada el 2026-09-17 12:52 `-03` sin un cambio) · ~~`M-MIG-01`~~
+(**no hay criterio de corte porque no hay cohorte**: son cinco filas y se transcriben a mano. El
+estado se transcribe, no se reinterpreta — el que está corriendo conserva **su fecha**, y escribir
+la fecha hace que la heterogeneidad de 30 y 90 días no haya que representarla) · ~~`R-MIG-01`~~
+(**no hay débitos corriendo**, así que el hueco cambia de forma: se parte en tres y dos se
+cierran. Lo que queda es §3.3, abajo)
+
+> ⚠️ **ABIERTA, y la abre el cap. 21 §3.3 en vez de completarla en silencio (§67): qué pasa con
+> las ALTAS NUEVAS durante el rediseño.** Es comercial, no técnica. Seguir tomándolas agranda la
+> cohorte que después se transcribe a mano —hoy son 5 y la regla sólo es barata mientras sean
+> pocas—; congelarlas tiene costo de negocio real, porque tres verticales todavía no vendieron
+> nada; coexistir dos motores contamina la arquitectura nueva, que es lo que el §56 pide no hacer.
+> **Decide el owner.**
+>
+> 📅 **Y un dato operativo con fecha, que no es una decisión**: el **2026-09-26** vence el primer
+> trial y cae **el primer cobro de la historia del sistema**. Llega durante FASE 2 o 3, o sea que
+> ocurre bajo el sistema **actual**. Necesita a alguien mirándolo ese día.
 
 **Metodología** · `O-METH-01` "cerrar todas las decisiones funcionales" no cierra en 1A ·
 `S-METH-01` declarar cuándo una decisión se considera caduca
