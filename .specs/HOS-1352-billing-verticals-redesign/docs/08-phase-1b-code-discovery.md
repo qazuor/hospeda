@@ -4815,6 +4815,92 @@ para «el dueño no tiene suscripción» como para «la request falló», con el
 
 ---
 
+### F-1B-104 — El motor declara tipos para un producto que su propio esquema no puede guardar, y sus utilidades de base las reimplementan los repositorios al lado
+
+Leídos enteros los dos últimos directorios de qzpay sin relevar: `core/src/types/`
+(21 archivos / 2.484 líneas) y `drizzle/src/utils/` (9 / 1.667). **4.151 líneas.**
+Con esto **qzpay queda relevado entero salvo tests y ejemplos.**
+
+**`core/src/types/` exporta 124 tipos y hospeda importa 14.** Los 110 restantes (**89 %**)
+no aparecen en ningún `import` de hospeda. Los 14: `QZPayCustomer`, `QZPaySubscription`,
+`QZPayPlan`, `QZPayPrice`, `QZPayPayment`, `QZPayPromoCode`, `QZPayCustomerEntitlement`,
+`QZPayCustomerLimit`, `QZPayScheduledPlanChange`, `QZPaySubscriptionPollingJob`,
+`QZPayCreatePriceInput`, `QZPayRefundInput`, `QZPayLogger` y `QZPayLogMeta`.
+
+**Tres archivos de tipos no tienen tabla en ninguna parte.** Cruzados contra los 18
+archivos de `drizzle/src/schema/`:
+
+| archivo | líneas | qué modela | tabla |
+|---|---|---|---|
+| `usage.types.ts` | **406** | un motor de facturación **medida**: `QZPayUsageMeter` con `aggregationType`, `QZPayMeteredPrice` con `pricingModel`/`tiers`/`billingMode`/`resetBehavior`, `QZPayPricingTier`, y un job de facturación | **ninguna** |
+| `setup-intent.types.ts` | 154 | los SetupIntents de **Stripe** | **ninguna** |
+| `metrics.types.ts` | 66 | MRR, churn, ingresos | **ninguna** |
+
+Lo único que persiste de uso es `billing_usage_records`
+(`schema/usage-records.schema.ts:15-37`): un log plano con `metricName` como `varchar`
+suelto, `quantity`, `action`, `timestamp` y `metadata`. **No hay tabla de medidores, ni de
+precios medidos, ni de tramos.** El archivo de tipos más grande del directorio —el 16 % de
+`types/`— promete precios escalonados, graduados, por paquete y tarifa plana que la capa de
+almacenamiento no puede expresar.
+
+`setup-intent.types.ts` sólo lo referencian los tres archivos de `packages/stripe/`, el
+paquete que `F-1B-095` midió sin ningún consumidor en hospeda.
+
+**Y un campo del tipo de promo no tiene columna.** `types/promo-code.types.ts:21` declara
+`applicableProductIds: string[]` —**requerido**—, y `schema/promo-codes.schema.ts` no tiene
+ninguna columna de productos: tiene `validPlans` (`:27`), que son planes. Del mismo par,
+`:13` declara `stackingMode: QZPayDiscountStackingMode` contra un
+`combinable: boolean` (`:32`): un enum tipado del lado del tipo, un booleano del lado de la
+tabla.
+
+**Del lado de `drizzle/src/utils`, dos archivos enteros están sin usar y los repositorios
+hacen a mano exactamente lo que ofrecen.**
+
+| archivo | líneas | exports | llamadas reales fuera de su archivo |
+|---|---|---|---|
+| `soft-delete.ts` | 264 | 15 | **0** |
+| `pagination.ts` | 270 | 13 | **0** (salvo `getPaginationOrderBy`, que usa `order-by.ts`) |
+| `optimistic-locking.ts` | 223 | 12 | **1** (`generateVersion`) |
+| `transaction.ts` | — | 10 | **0** de producción: sus cinco helpers sólo los usa `examples/transactions.example.ts` |
+
+Y al lado, en los mismos repositorios: **127 `isNull(…deletedAt)` escritos a mano** —la
+expresión exacta que devuelve `excludeDeleted()` (`soft-delete.ts:29-31`)— y **101
+`.limit(`** en vez de la paginación del propio paquete.
+
+`order-by.ts` es el único con tracción real: `resolveOrderBy` lo llaman **11** de los
+repositorios, y resuelve por `instanceof PgColumn` en vez de interpolar el string del
+llamador, así que no es vulnerable a inyección por nombre de columna.
+
+**Tres defectos concretos en esas utilidades sin usar:**
+
+1. `optimistic-locking.ts:184-186` — `compareAndSwap(column, expectedValue, _newValue)`
+   **no hace ningún swap**: devuelve `eq(column, expectedValue)`, o sea la mitad
+   «compare». El tercer parámetro lleva guión bajo porque no se usa, y el docblock lo
+   titula *«compare-and-swap condition for atomic updates»*.
+2. `migrate.ts:121` — `ensureDatabase` interpola el nombre directo en DDL:
+   `sql.unsafe(\`CREATE DATABASE "${databaseName}"\`)`, sin lista blanca ni escape más allá
+   de las comillas. Cero llamadores.
+3. `migrate.ts:76-79` — `hasPendingMigrations` consulta
+   `information_schema.tables WHERE table_name = 'drizzle_migrations'`, mientras
+   `runMigrations` (`:45-47`) delega en el `migrate()` de drizzle-orm, que lleva su propio
+   registro con otro nombre. Cero llamadores.
+
+**Y tres convenciones distintas para armar SQL dinámico conviven en el mismo directorio**:
+`transaction.ts:204` y `:262` pasan un template literal crudo a `tx.execute(...)` sin la
+etiqueta `sql`; `optimistic-locking.ts:198`,`:211` usan la etiqueta;
+`soft-delete.ts:227` usa `sql.raw` marcando la parte interpolada.
+
+*Nota de método que el sub-agente reportó y conviene guardar*: buscar estos nombres por
+símbolo en hospeda da cientos de falsos positivos, porque `withTransaction`,
+`isSoftDeleted`, `runMigrations` e `isActive` **existen nativamente en hospeda** y no
+tienen nada que ver (`packages/db/src/client.ts:174`,
+`packages/service-core/src/utils/relations.ts:37`,
+`packages/seed/src/data-migrations/runner.ts:295`). Y `base.repository.ts:13,16,25` menciona
+`withTransaction` dentro de un `@example`, no en un `import`. Es la misma trampa que
+`F-1B-101` documentó del lado de hospeda.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -4848,8 +4934,8 @@ Y en **qzpay**, con el mismo criterio:
 
 | Carril | Denominador | Estado |
 |---|---|---|
-| ~~`core` — el motor: qué expone y qué decide~~ | 90 archivos / 22.611 líneas | ✅ **19.285 de 22.611 (85 %)**: la fachada + adapters (4.724), los 14 de `services/` (7.920) y `events/`+`helpers/`+`utils/`+`errors/`+`constants/` (6.641) — `F-1B-090`, `F-1B-097`, `F-1B-099`. Falta sólo `types/` (21 arch. / 2.484) |
-| ~~`drizzle` — las 27 tablas: columnas, constraints e índices~~ | 27 tablas / 68 archivos | ✅ `schema/` + `mappers/` (35 arch. / 4.424 líneas) y `adapter/` + `repositories/` (21 / 8.347) leídos enteros — **56 de 68, 12.771 de 14.762 líneas**; falta `utils/` (9 / 1.667) — `F-1B-096`, `F-1B-098` |
+| ~~`core` — el motor: qué expone y qué decide~~ | 90 archivos / 22.611 líneas | ✅ **21.769 de 22.611 (96 %)** — `F-1B-090`, `F-1B-097`, `F-1B-099`, `F-1B-104`. Lo no leído son el test y el ejemplo de `services/` |
+| ~~`drizzle` — las 27 tablas: columnas, constraints e índices~~ | 68 archivos / 14.762 líneas | ✅ **65 de 68, 14.438 líneas** — `F-1B-096`, `F-1B-098`, `F-1B-104`. Lo no leído es `examples/` |
 | ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
 | `hono` y `react` — las superficies que hospeda monta | 50 archivos | 🟨 las tres factories de `hono` contadas y su montaje verificado (59 rutas), y el consumo de `react` medido — `F-1B-093`, `F-1B-094`; los 50 archivos, sin leer enteros |
 | La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
