@@ -2777,6 +2777,103 @@ el error estuvo del lado del patrón, no de la base.
 
 ---
 
+### F-1B-065 — Reactivar un addon desde el admin no otorga nada, y apaga la bandera que su propio backstop usa para encontrarlo
+
+`POST /api/v1/admin/billing/customers/addons/{id}/activate`
+(`apps/api/src/routes/billing/admin/customer-addons.ts:178-187`, `BILLING_MANAGE`) llama a
+`AdminAddonService.activateAddon` (`:107`). El método hace tres cosas, y la del medio no
+puede ocurrir.
+
+**1. La transacción pone la bandera en `false`.** `addon.admin.ts:380-388` escribe
+`status: 'active'`, `canceledAt: null`, el nuevo `expiresAt` y **`needsEntitlementSync:
+false`**, todo bajo un `SELECT … FOR UPDATE` (`:321-333`).
+
+**2. La reaplicación de entitlements es inalcanzable.** `addon.admin.ts:417` construye el
+servicio con el cliente de billing en nulo:
+
+```ts
+const entitlementService = new AddonEntitlementService(null);
+try {
+    await entitlementService.applyAddonEntitlements({ … });
+} catch (entitlementError) { … }
+```
+
+y el método arranca con un guard que **devuelve** en vez de tirar
+(`addon-entitlement.service.ts:99-107`):
+
+```ts
+if (!this.billing) {
+    return { success: false, error: { code: 'SERVICE_UNAVAILABLE', … } };
+}
+```
+
+El `ServiceResult` no se asigna a nada, así que el `success: false` se descarta sin leerse,
+y como no hubo excepción **el `catch` de `:424` nunca corre**. Es la única de las **seis**
+construcciones de `AddonEntitlementService` del repo que pasa `null`: las otras cinco pasan
+un `billing` real (`addon-expiration.service.ts:80`,
+`addon-recurring-activation.service.ts:513`, `addon.service.ts:63`,
+`addon-expiry.job.ts:1620` y `:1913`).
+
+**3. La bandera nunca vuelve a `true`.** El `UPDATE` que la levanta —`addon.admin.ts:448`,
+`{ needsEntitlementSync: true }`— vive **dentro** de ese `catch` inalcanzable.
+
+**El docblock describe los dos pasos que no ocurren.** `addon.admin.ts:286-297`, pasos 3 y
+4: *«Outside the transaction, attempts to re-apply entitlements in QZPay»* y *«If QZPay
+throws, marks the purchase with `needsEntitlementSync=true`»*. Ni se intenta contra QZPay
+—el guard corta antes— ni se marca la bandera. La `description` de la ruta
+(`customer-addons.ts:180-181`) repite la primera: *«Re-applies entitlements and sets status
+to active»*.
+
+**Y el backstop no puede encontrar la fila.** La fase 7 de `addon-expiry` —la que
+`F-1B-050` nombra como red de contención de los grants faltantes— selecciona exactamente
+`eq(billingAddonPurchases.needsEntitlementSync, true)`
+(`apps/api/src/cron/jobs/addon-expiry.job.ts:1786-1789`). Una fila reactivada por el admin
+queda `active` con la bandera en `false`, o sea **fuera del predicado que la repararía**.
+
+El resultado medido es una compra `active`, sin `canceledAt`, con `expiresAt` nuevo, sin el
+entitlement ni el limit que vende, y sin ninguna señal en la fila de que falte algo.
+
+---
+
+### F-1B-066 — La máquina de estados de un addon existe, está probada con 22 casos, y no la ejecuta ni una línea de producción
+
+`packages/service-core/src/services/billing/addon/addon-status-transitions.ts` declara los
+cuatro estados (`:18-23`), el mapa de transiciones válidas (`:43-51`) —`pending → active |
+canceled`, `active → canceled | expired`, y los dos terminales con el conjunto vacío— y la
+función que lo aplica, `validateAddonStatusTransition` (`:87`), que tira
+`InvalidStateTransitionError` (`:107`).
+
+**Call sites de producción: cero.** Verificado sobre `apps` y `packages` enteros: las
+únicas ocurrencias del nombre son **cuatro** en su propio archivo —dos del docblock
+(`:54`, `:77`, `:80`) y la firma (`:87`)— y **veinticuatro** en
+`packages/service-core/test/billing/addon-status-transitions.test.ts`. Ninguna ruta, ningún
+servicio, ningún cron la importa.
+
+**Y el mapa contradice la razón de ser de una ruta montada.** El test afirma que
+`expired → active` y `canceled → active` tiran (`:93`, `:119`, `:146`, `:189`, `:202`,
+`:219`). Son exactamente las dos transiciones que `activateAddon` **exige**:
+`addon.admin.ts:353-358` rechaza con `INVALID_STATUS` cualquier fila cuyo estado no sea
+`expired` o `canceled` —*«Must be 'expired' or 'canceled'»*— antes de escribir `'active'`
+en `:381-388`. O sea que la ruta de admin de `F-1B-065` no se salta la máquina de estados
+por descuido: **existe para hacer las dos únicas transiciones que la máquina declara
+imposibles**, y el `@example` del propio módulo usa `{ current: 'expired', target:
+'active' }` como el caso que tira (`addon-status-transitions.ts:80`).
+
+*Nota de método*: el sub-agente que leyó el archivo informó que ese `UPDATE` corre *«sin
+ningún filtro de estado actual»*, mirando sólo el `.where()` de `:390-393` (`id` +
+`deletedAt`). Verificado a mano, el filtro existe y está **río arriba**, en la lectura bajo
+`FOR UPDATE` de la misma transacción (`:345-358`). La diferencia cambia el hallazgo de
+«escribe a ciegas» a «exige el estado que la máquina prohíbe», que es lo contrario de un
+descuido.
+
+Quien impone el dominio es otra cosa y en otro carril: el `CHECK` de
+`packages/db/src/migrations/extras/004-billing.constraints.sql:36`
+—`status IN ('active','expired','canceled','pending')`— que acota los **valores** y no las
+**transiciones**. Es el mismo reparto que `F-1B-008`: la restricción que existe sobre una
+tabla de billing la puso el carril `extras` de hospeda.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
