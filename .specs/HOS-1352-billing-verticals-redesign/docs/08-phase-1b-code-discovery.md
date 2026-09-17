@@ -6362,6 +6362,123 @@ en el acto.
 
 ---
 
+### F-1B-132 — La frontera qzpay↔hospeda: seis repartos que no coinciden, y el corte no es por entidad sino por CAMINO
+
+Éste es el carril que faltaba enunciar entero. Siete hallazgos lo tocaban de costado —`F-1B-090`,
+`097`, `098`, `104`, `121`, `127`, `128`— y ninguno decía **qué decide cada lado sobre el mismo
+hecho**. La respuesta medida es que **la pregunta no tiene una respuesta**, y el motivo es
+verificable: sobre las mismas 27 tablas hay **seis repartos distintos**, y ningún par coincide.
+
+#### Los seis ejes, medidos
+
+| eje | dueño | evidencia |
+|---|---|---|
+| **DDL** — quién crea las tablas | **hospeda**, las 27 | `F-1B-001` |
+| **Restricciones de dominio** — `CHECK` | **hospeda**, por el carril `extras`, sobre tabla que modela qzpay | `F-1B-008` |
+| **Triggers** | **hospeda** | `F-1B-011` |
+| **Modelo** — la definición Drizzle | **qzpay**, las 27; hospeda no declara ninguna | `F-1B-001` |
+| **Escritura** | **repartido**, 14 contra 13 — medido abajo | nuevo |
+| **Vocabulario de estados** | **nadie**: cinco vocabularios, uno solo con restricción en la base | `F-1B-021`, `F-1B-125` |
+| **Decisión de negocio** | **hospeda**: 6 de 261 símbolos del motor usados, 12 de 16 servicios en cero, 4 namespaces en cero | `F-1B-090`, `F-1B-097`, `F-1B-099` |
+| **Superficie HTTP** | **qzpay**: 59 rutas montadas, 13 de ellas mutantes de admin | `F-1B-093`, `F-1B-127` |
+| **Dependencia estructural** | **una sola mano**: 19 FK hospeda→qzpay, **0** al revés | `F-1B-010` |
+
+#### El reparto de escritura, las 27 filas
+
+El camino de import es único y va por `@repo/db`: `packages/db/src/billing/schemas.ts:14` hace
+`export * from '@qazuor/qzpay-drizzle'`, `packages/db/src/billing/index.ts:20-197` re-exporta los
+símbolos uno por uno, y `packages/db/src/index.ts:24` los expone. **Ningún archivo de producción
+importa `@qazuor/qzpay-drizzle` directo** salvo la fábrica del adaptador
+(`packages/db/src/billing/drizzle-adapter.ts:22`).
+
+Contadas las escrituras Drizzle crudas de hospeda (`.insert`/`.update`/`.delete` sobre el símbolo),
+sin tests: **205 escrituras sobre 14 de las 27 tablas.**
+
+| tabla | escrituras | | tabla | escrituras |
+|---|---|---|---|---|
+| `billing_plans` | **53** | | `billing_audit_logs` | 7 |
+| `billing_subscriptions` | **50** | | `billing_webhook_dead_letter` | 6 |
+| `billing_prices` | 28 | | `billing_customers` | 4 |
+| `billing_entitlements` | 15 | | `billing_payments` | 4 |
+| `billing_addons` | 11 | | `billing_limits` | 3 |
+| `billing_promo_codes` | 11 | | `billing_promo_code_usage` | 3 |
+| `billing_webhook_events` | 8 | | `billing_idempotency_keys` | 2 |
+
+**Las otras trece tienen cero escrituras crudas, y las trece tienen repositorio en qzpay y están
+expuestas por su adaptador**: `billing_invoices`, `billing_invoice_lines`,
+`billing_invoice_payments`, `billing_refunds`, `billing_customer_entitlements`,
+`billing_customer_limits`, `billing_subscription_addons`, `billing_usage_records`,
+`billing_checkouts`, `billing_payment_methods`, `billing_vendors`, `billing_vendor_payouts` y
+`billing_subscription_polling_jobs`.
+
+**Una sola de las 27 está enteramente del lado de qzpay**: `billing_subscription_polling_jobs`, cuyo
+símbolo Drizzle **no aparece ni una vez en hospeda** —cero ocurrencias en `apps`, `packages` y
+`scripts`, tests incluidos, verificado con `rg --count-matches` y su exit code—. Se accede sólo por
+`billing.getStorage().subscriptionPollingJobs`, que `F-1B-090` ya había medido como una de las dos
+formas en que hospeda saltea la fachada.
+
+**Y hay un camino de escritura más, que no pasa por Drizzle ni por el motor**: los comandos
+`hops billing-test-*` arman strings SQL y los ejecutan por `docker exec … psql`
+(`scripts/server-tools/src/commands/billing-test-reset-queries.ts:124-153`, `:281`,
+`billing-test-link.ts:220-233`). Tocan **nueve de esas trece** tablas que por Drizzle parecen
+enteramente delegadas. Del lado de la app hay además SQL crudo por `db.execute`
+(`apps/api/src/services/billing/payer-email.ts:243`, `:307`;
+`packages/service-core/…/promo-code.trial-extension.ts:362`;
+`…/promo-code.redemption.ts:773`, que escribe `status='comp'`).
+
+#### Lo que esos seis repartos producen: el corte es por camino
+
+**Un mismo hecho del dominio no cae de un lado o del otro: cae distinto según por dónde entre.** La
+cancelación de una suscripción, que es el hecho con más caminos medidos, tiene tres:
+
+| camino | quién decide | quién escribe | grafía | efectos de dominio |
+|---|---|---|---|---|
+| **webhook de MercadoPago** | hospeda | hospeda, Drizzle crudo | `cancelled` | los ejecuta el propio código |
+| **`POST …/subscriptions/:id/cancel`** | qzpay | qzpay, por su mapper | `canceled`, **o ninguna** si es a fin de período (`F-1B-131`) | un callback de hospeda, cuyo error se traga (`F-1B-127`) |
+| **`POST …/subscriptions/:id/force-cancel`** | qzpay | qzpay | `canceled` | **ninguno** |
+
+Tres caminos, tres repartos, **una sola columna** — que `F-1B-007` midió sin ninguna restricción.
+
+#### El patrón de reparación: cuando el motor no alcanza, se escribe al lado
+
+Cuatro instancias medidas, todas con la misma forma — la pieza existe del lado de qzpay y la que
+corre es la de hospeda, sobre la misma tabla:
+
+| qué | del lado de qzpay | lo que corre |
+|---|---|---|
+| **idempotencia** | entradas propias del motor en `billing_idempotency_keys` | un segundo mecanismo de hospeda en la **misma tabla**, con `HOSPEDA_KEY_NAMESPACE` para no chocar (`F-1B-097`) |
+| **webhooks y auditoría** | `WebhookEventsRepository` y `AuditLogsRepository`, 825 líneas y 32 métodos, **no instanciados** (`F-1B-098`) | hospeda con Drizzle crudo: 8 + 6 + 7 escrituras |
+| **promos** | namespace `promoCodes`, **0 llamadas** (`F-1B-090`); los 4 campos de SPEC-262 en ningún mapper (`F-1B-096`) | 4.117 líneas propias sobre las tablas del motor |
+| **addons** | `billing_subscription_addons`, **0 escrituras** | `billing_addon_purchases`, de hospeda, viva y con el **único** vocabulario gobernado de los cinco (`F-1B-125`) |
+
+Y la instancia más literal ya estaba medida: **las trece columnas que hospeda le agregó a tablas de
+qzpay son exactamente las trece que sus mappers de lectura no devuelven** (`F-1B-121`), nueve de
+ellas sin camino de escritura tampoco. La frontera ya se cruzó una vez, y la reparación fue
+esquivarla.
+
+#### El enunciado, en una línea
+
+**qzpay tiene el modelo y la superficie; hospeda tiene el DDL y la decisión. Ninguno de los dos
+tiene un hecho entero**, y la dependencia es de una sola mano: 19 claves foráneas van de hospeda a
+qzpay y ninguna al revés (`F-1B-010`), así que el esquema del motor es cerrado sobre sí mismo
+mientras el de hospeda lo referencia. El motor no puede ver trece de las columnas que gobiernan
+vertical, cortesía y promoción; el host no puede tocar trece de las tablas sin pasar por el motor;
+y el estado que los dos escriben no tiene restricción que los obligue a coincidir.
+
+*Qué abre, sin resolverlo acá*: el §7 pide **un único motor genérico de billing**. Los seis ejes de
+arriba se pueden cortar por separado —el modelo, el DDL, la escritura, el vocabulario, la decisión
+y la superficie HTTP son seis elecciones independientes—, así que «qué se hace con qzpay» no es una
+pregunta binaria sino seis. Esto **no clasifica nada** (`DEC-METH-003` es el gate de FASE 5): deja
+enunciado cuáles son los seis cortes posibles, que es lo que FASE 2 necesita para diseñar sin
+heredar el reparto actual por omisión.
+
+*Nota de método, y van veintiuna*: el conteo propio de escrituras sobre `billingSubscriptions` dio
+**51** y el correcto es **50** — la de más es `courtesy-fields.ts:164`, una línea de docblock que
+empieza con `*` y muestra `await db.update(billingSubscriptions)` como ejemplo. Es la cuarta vez que
+la causa de un conteo inflado es la propia documentación del código.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
@@ -6401,7 +6518,7 @@ Y en **qzpay**, con el mismo criterio:
 | ~~`drizzle` — las 27 tablas: columnas, constraints e índices~~ | 68 archivos / 14.762 líneas | ✅ **65 de 68, 14.438 líneas** — `F-1B-096`, `F-1B-098`, `F-1B-104`. Lo no leído es `examples/` |
 | ~~`mercadopago` — el adaptador, contra las 89 filas ya medidas en 1C~~ | — | ✅ **16 de 16 leídos enteros, 4.160 líneas** — `F-1B-091` |
 | ~~`hono` y `react` — las superficies que hospeda monta~~ | 50 archivos / 9.006 líneas | ✅ **50 de 50 leídos enteros** — `F-1B-127`, `F-1B-128`. Con esto **qzpay queda relevado entero** salvo tests y ejemplos |
-| La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho | por medir | ⬜ |
+| ~~La frontera: qué decide qzpay y qué decide hospeda sobre el mismo hecho~~ | 27 tablas × 6 ejes | ✅ `F-1B-132` — **seis repartos que no coinciden**; la escritura va 14 tablas a 13 (205 escrituras crudas de hospeda), y el corte no es por entidad sino **por camino**: la misma cancelación tiene tres, con tres repartos y dos grafías. Apoyado en `F-1B-130` y `F-1B-131` |
 | ~~El vocabulario de estados y sus mapas~~ | — | ✅ `F-1B-021` |
 | ~~Los otros vocabularios compartidos: pago, factura, reembolso, addon~~ | 4 | ✅ `F-1B-125` — tres enums de hospeda no tipan nada; factura tiene **cuatro** vocabularios para una tabla con cero filas; el único gobernado es el que qzpay no modela |
 | ~~`stripe`, `nestjs`, `cli`, `dev` — sin consumidor en hospeda~~ | 85 archivos / 11.997 líneas | ✅ `F-1B-095` — son HOJAS: nada de lo que hospeda usa los importa |
