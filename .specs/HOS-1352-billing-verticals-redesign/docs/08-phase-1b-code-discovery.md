@@ -5584,6 +5584,11 @@ Es la misma forma que el relevamiento viene midiendo en los crons —`F-1B-019`,
 condicional `failed → processing` (`:214-222`), y si `claimedRows === 0` el registro se saltea
 (`:226-233`). No hay lectura-y-después-escritura.
 
+**Y el filtro de tipos críticos gatea el bucle completo**: un tipo que no esté en
+`CRITICAL_TYPES` se saltea con un `debug` (`:167-173`), así que agregar un `case` en
+`reconstructPayload` sin agregar el tipo a esa lista produce código inalcanzable — cosa que el
+propio comentario de `:39-43` deja escrita.
+
 ---
 
 ### F-1B-120 — Qué agregan las 125 migraciones, y la aritmética contra producción cierra sin residuo
@@ -5731,10 +5736,115 @@ tercera en que la causa es la propia documentación del código (las anteriores:
 los locks retirados y `F-1B-014` con `updated_at`). Anclando a `ALTER TABLE … ADD COLUMN` en la
 misma sentencia, son 181 y todas son reales.
 
-**Y el filtro de tipos críticos gatea el bucle completo**: un tipo que no esté en
-`CRITICAL_TYPES` se saltea con un `debug` (`:167-173`), así que agregar un `case` en
-`reconstructPayload` sin agregar el tipo a esa lista produce código inalcanzable — cosa que el
-propio comentario de `:39-43` deja escrita.
+---
+
+### F-1B-123 — El inventario real son 1.078 handlers: el piso se levantó, y lo que entra es toda la superficie mutante del otro repo
+
+`F-1B-105` dejó los 1.032 como un piso y el carril abierto por *«necesita una base alcanzable»*.
+**No la necesita.** Lo único que separaba a `getQZPayBilling()` de devolver una instancia era el
+export que le falta al mock —medido en `F-1B-105`—, así que alcanza con un `vi.mock('@repo/db')`
+a nivel de archivo que reponga `createBillingAdapter` devolviendo un adaptador inerte. La app se
+construye igual, en **25 segundos**, y el guard de la sonda lo confirma:
+`billingConfigured: true`. Versionada en
+[`probes/probe-47-la-tabla-de-rutas-con-billing-inicializado.test.ts.txt`](./probes/probe-47-la-tabla-de-rutas-con-billing-inicializado.test.ts.txt).
+
+| | piso (`F-1B-105`) | **real** |
+|---|---|---|
+| Entradas en `app.routes` | 4.574 | **4.673** |
+| **Handlers** | **1.032** | **1.078** |
+| Middleware (`ALL`) | 725 | **726** |
+
+**Cuarenta y seis handlers nuevos, y cero que desaparezcan.** El reparto coincide **exacto** con
+lo que `F-1B-105` había derivado del fuente de qzpay sin construir nada: 23 en `protected`, 22 en
+`admin`, 1 el webhook.
+
+| tier | piso | **real** |
+|---|---|---|
+| `/api/v1/admin/` | 568 | **590** |
+| `/api/v1/protected/` | 321 | **344** |
+| `/api/v1/public/` | 123 | 123 |
+| otros | 17 | **18** |
+| `/api/v1/ai/` | 3 | 3 |
+
+Por método: **471** `GET`, **314** `POST`, **122** `DELETE`, **100** `PATCH`, **71** `PUT`.
+
+**Las 23 del tier de SESIÓN DE USUARIO son el hallazgo.** No son lecturas: entre ellas están
+`POST /customers`, `DELETE /customers/:id`, `PATCH /customers/:id`, `POST /subscriptions`,
+`PATCH /subscriptions/:id`, `POST /subscriptions/:id/pause` y `/resume`, `POST /payments`,
+**`POST /payments/:id/refund`**, `POST /invoices`, `POST /invoices/:id/void`, y el par
+`POST` / `DELETE /customers/:customerId/entitlements` más
+`POST /customers/:customerId/limits/:key/increment` y `/usage`. O sea: **reembolsar un pago,
+otorgarse un entitlement e incrementarse un límite, desde el tier protegido**, servido por código
+del otro repo. El único freno es el `qzpayWrapper` de `routes/billing/index.ts:332-335`, que les
+aplica `billingAdminGuardMiddleware()` y `billingOwnershipMiddleware()`.
+
+**Las 22 de admin son las trece mutantes que `F-1B-093` listó**, ahora verificadas presentes en la
+tabla y no sólo declaradas en el fuente: `force-cancel`, `force-refund`, `refund`, `cancel`,
+`pause`, `resume`, `change-plan`, `extend-trial`, `invoices/:id/pay`, `mark-paid`, `void`,
+`limits/:key/set`, `limits/:key/reset`, más `POST`/`DELETE /customers/:customerId/entitlements`,
+`GET /dashboard`, `GET /customers`, `GET /customers/:id/full`, `GET /invoices`,
+`GET /invoices/:id`, `GET /payments/:id` y `GET /subscriptions/:id`.
+
+**Corrige el denominador de qzpay por segunda vez.** `createWebhookRouter` declara **UNA** ruta,
+no 3: `webhook.routes.ts:76` es el único `router.post('/')` del archivo, más un `router.use`
+—verificado con un patrón que atraviesa saltos de línea sobre sus 198 líneas—. Y la tabla lo
+confirma: entró **un** handler (`POST /api/v1/webhooks/mercadopago`) y **un** middleware
+(`/api/v1/webhooks/mercadopago/*`). El total de qzpay es **34 + 26 + 1 = 61** registros;
+`F-1B-093` decía 59 y `F-1B-105` había dicho 63.
+
+**Y de las 61, 46 llegan a la tabla.** Las otras 15 son colisiones que hospeda gana por orden de
+montaje: 11 en `protected` —las cinco que el bloqueador de `F-1B-106` cierra con 404, las tres de
+planes, `promo-codes`, `promo-codes/:code` y `POST /promo-codes/validate`— y 4 en `admin`
+(`GET /subscriptions`, `/payments`, `/plans`, `/promo-codes`).
+
+---
+
+### F-1B-124 — `initApp()` no construye la app que se sirve, y el orden de dos líneas de `index.ts` es lo único que sostiene 22 rutas de admin
+
+Al medir `F-1B-123` la primera corrida dio **1.056** handlers, no 1.078: **las 22 de admin no
+aparecieron y las 23 de `protected` sí**. La diferencia no estaba en el código de la app sino en
+el orden en que la sonda hacía dos llamadas.
+
+**El tier de admin de qzpay no se monta al importar: lo monta una función explícita.**
+`routes/billing/admin/index.ts:175-197` declara `mountQZPayAdminTier()`, con su propio candado de
+idempotencia (`qzpayAdminMounted`), que sale temprano si `getQZPayBilling()` es nulo y sólo
+entonces hace `createAdminRoutes({…hooks})` y `app.route('/', qzpayAdmin)`. El comentario de
+`:155-162` declara el motivo —el *hoisting* de ESM y que el mount necesita la base lista— y quién
+debe llamarla: *«Caller (index.ts) must invoke `mountQZPayAdminTier()` AFTER …»*.
+
+**Y el llamador la invoca cincuenta y ocho líneas antes de construir la app:**
+
+| línea de `apps/api/src/index.ts` | qué hace |
+|---|---|
+| `:300-301` | `const { mountQZPayAdminTier } = await import('./routes/billing/admin'); mountQZPayAdminTier();` |
+| `:359` | `const app = initApp();` |
+
+Ese orden es **load-bearing**, porque Hono **copia** las rutas de un sub-app al padre en el
+momento del `app.route(...)`: `setupRoutes` absorbe `adminBillingRoutes` cuando corre, y todo lo
+que se monte en ese sub-app **después** ya no le llega al padre. Medido con el control, que es lo
+que lo vuelve una lectura y no una hipótesis:
+
+| orden en la sonda | handlers | admin |
+|---|---|---|
+| `initApp()` y **después** `mountQZPayAdminTier()` | **1.056** | 568 |
+| `mountQZPayAdminTier()` y **después** `initApp()` — el de `index.ts` | **1.078** | **590** |
+
+**Veintidós rutas de admin de billing, once de ellas mutantes, dependen de que esas dos líneas no
+se reordenen.** No hay nada que lo vigile: ni un guard, ni un test, ni un error al arrancar.
+Invertirlas no rompe nada visible —las rutas simplemente dejan de existir— y el
+`apiLogger.info('QZPay admin tier mounted…')` de `:196` se sigue imprimiendo igual, porque la
+función sí corrió.
+
+**La consecuencia más ancha es la otra mitad del mismo hecho: `initApp()` no es la app que se
+sirve.** Es lo que construyen los seis tests que lo llaman, cualquier herramienta y las dos
+sondas de este relevamiento, y le faltan 22 rutas **aunque billing esté perfectamente
+configurado**. El único lugar donde la app completa existe es el proceso del servidor, entre
+`index.ts:301` y `:359`.
+
+Cruza con `F-1B-013`: el documento OpenAPI tampoco se genera en producción, porque
+`configureOpenAPI` está detrás de `NODE_ENV !== 'production'`. **Las dos únicas formas de
+observar el contrato de esta API —el documento y la construcción de la app— describen cada una un
+objeto distinto del que corre.**
 
 ---
 
@@ -5754,9 +5864,9 @@ El orden no está decidido.
 | ~~Los 17 handlers de billing, leídos por dentro~~ | — | ✅ `F-1B-018` a `F-1B-031` |
 | ~~Los 30 crons restantes (no tocan billing)~~ | 30 | ✅ `F-1B-040` a `F-1B-044` — **47 de 47** leídos |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
-| ~~Los 1.032 handlers por tier~~ | 1.032 | ✅ `F-1B-107` — 568 admin · 321 protected · 123 public · 3 ai · 17 otros; y `F-1B-105` fija que **1.032 es un piso**, medido sin billing inicializado |
-| Qué hace cada uno de los 1.032 handlers, uno por uno | 1.032 | ⬜ |
-| Re-medir la tabla de rutas CON billing inicializado | 63 rutas de qzpay | ⬜ — necesita una base alcanzable; el delta conocido son 48 ausentes (`F-1B-105`) |
+| ~~Los handlers por tier~~ | **1.078** | ✅ `F-1B-123` — 590 admin · 344 protected · 123 public · 18 otros · 3 ai. `F-1B-107` repartió los 1.032 del piso; éste es el inventario con billing inicializado |
+| ~~Re-medir la tabla de rutas CON billing inicializado~~ | 61 registros de qzpay | ✅ `F-1B-123` — **no hacía falta una base**: alcanzó con reponer `createBillingAdapter` en el mock. Entran 46 de los 61; las otras 15 son colisiones que hospeda gana por orden de montaje. Y `F-1B-124`: `initApp()` **no** construye la app que se sirve |
+| Qué hace cada uno de los 1.078 handlers, uno por uno | 1.078 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | 🟨 ver la fila de abajo |
 | ~~Las 337 funciones de `apps/api/src/services`~~ | 337 (**333** nombres) | ✅ **185 de 185 archivos / 64.191 de 64.191 líneas (100 %)**. Los **74** que quedaban —**19.654 líneas**, medidos cruzando el censo contra las citas de este registro— se leyeron en siete carriles: `F-1B-110` a `F-1B-119`. **Nota de método**: el conjunto se reconstruyó por «archivos que este registro no cita por nombre» y da **74**, no los 63 que declaraba la fila anterior; la diferencia son 11 archivos leídos y nunca citados, así que 74 ⊇ 63 y la cobertura cierra igual. Lo cerrado antes: **addon** (22), **ai** (16), **plan** (6), **creación + idempotencia** (11), **trial** (7), **cambio de plan / cancelación** (10), **pagos y huérfanos** (8) y **promos + provisioning** (11): `F-1B-065` a `F-1B-084`. Los 74 del cierre: addons sin cubrir (8), `services/billing/` (10), billing de primer nivel (13), commerce/partner/publicación (8), credenciales y calendarios (12), IA (8), brochure/QR/certificado/media/feedback (15). Diez de los 185 no tienen cuerpo (`F-1B-063`) |
 | ~~Los 52 archivos de `service-core/src/services/billing`~~ | 52 | ✅ **52 de 52 leídos enteros, 14.254 de 14.254 líneas** — `F-1B-060`, `F-1B-066`, `F-1B-086`, `F-1B-087`, `F-1B-092` |
