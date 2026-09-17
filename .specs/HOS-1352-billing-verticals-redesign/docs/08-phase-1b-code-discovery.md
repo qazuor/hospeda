@@ -5584,6 +5584,153 @@ Es la misma forma que el relevamiento viene midiendo en los crons —`F-1B-019`,
 condicional `failed → processing` (`:214-222`), y si `claimedRows === 0` el registro se saltea
 (`:226-233`). No hay lectura-y-después-escritura.
 
+---
+
+### F-1B-120 — Qué agregan las 125 migraciones, y la aritmética contra producción cierra sin residuo
+
+`F-1B-100` contó lo que las 125 migraciones **quitan** y dejó abierto lo que agregan, con una
+advertencia: *«Las 175 `CREATE TABLE` incluyen … cualquier repetición idempotente, así que ese
+número no es "175 tablas"»*. **Medido, sí lo es**: las 175 sentencias producen **175 nombres
+distintos** —cero repeticiones— y ninguna está dentro de un comentario (verificado excluyendo
+las líneas que abren con `--`).
+
+**Y con eso la aritmética contra producción cierra exacta:**
+
+```
+175 tablas creadas
+ −1 DROP TABLE  (commerce_leads, 0098_graceful_tarantula.sql:1)
+────
+174 = las 174 tablas de producción (F-1B-006)
+```
+
+La tabla renombrada de `F-1B-002` no rompe el balance: `commerce_listing_subscriptions` está
+entre las 175 creadas (`0017_acoustic_dust.sql:37`) y en producción se llama
+`entity_subscriptions`. Es el mismo objeto con otro nombre, no una más ni una menos.
+
+**El reparto de las 175: 82 en el baseline, 93 en las otras 124.** O sea que **más de la mitad
+del esquema se construyó después del punto de partida**, y en tandas grandes: `0026` crea las
+16 tablas de social, `0005` las 8 de IA, `0017` las 7 de gastronomía y commerce, `0019` las 5
+de experiencias, `0031` las 2 de partners.
+
+**Las 6 tablas `billing_*` creadas después del baseline, todas de hospeda:**
+
+| tabla | migración |
+|---|---|
+| `billing_mp_plans` | `0061_heavy_blade.sql` |
+| `billing_pending_checkouts` | `0062_clammy_jigsaw.sql` |
+| `billing_plan_price_changes` · `billing_plan_price_change_targets` | `0064_amused_maelstrom.sql` |
+| `billing_plan_price_change_notices` | `0066_young_wendell_vaughn.sql` |
+| `billing_orphan_payments` | `0095_sparkling_supernaut.sql` |
+| `billing_mp_addon_plans` | `0118_mean_bill_hollister.sql` |
+
+Ninguna de las **27 que modela qzpay** se creó después del baseline: las 27 están en
+`0000_baseline.sql`. Lo que hospeda agregó en billing durante 124 migraciones son **seis
+tablas satélite propias**, todas sobre el eje MercadoPago / cambio de precio / huérfanos.
+
+**El resto del censo, medido sobre las 125:**
+
+| operación | cantidad |
+|---|---|
+| `ALTER TYPE … ADD VALUE` | **155** |
+| `CREATE INDEX` / `CREATE UNIQUE INDEX` | **610** |
+| `ADD CONSTRAINT … FOREIGN KEY` | **404** |
+| `CREATE TYPE` | **92**, sobre **90** nombres distintos |
+| `ADD COLUMN` | **181** |
+| `CREATE TABLE` | **175** |
+| Sentencias totales (por `;`) | **1.724** |
+
+**Los 90 nombres distintos de `CREATE TYPE` son exactamente los 90 tipos `enum` que `F-1B-064`
+midió en producción.** Segundo carril donde el repo y la base coinciden sin deriva.
+
+**Y 36 de las 125 no crean ni agregan nada**: sólo alteran lo que ya existe —backfills,
+cambios de tipo, índices, permisos—. Entre ellas están las cuatro que `F-1B-100` nombró como
+destructivas (`0028`, `0069`, `0072`, `0090`) y las dos que rehacen un enum (`0029`, `0085`).
+
+---
+
+### F-1B-121 — Las trece columnas que hospeda le agregó a las tablas de qzpay son EXACTAMENTE las trece que los mappers de qzpay no devuelven
+
+De las **181** columnas agregadas en 125 migraciones, **21 caen sobre tablas `billing_*`**, en
+seis tablas. El reparto es el hallazgo:
+
+| tabla | dueña del modelo | columnas agregadas |
+|---|---|---|
+| **`billing_subscriptions`** | **qzpay** | `product_domain`, `promo_effect_remaining_cycles`, `courtesy_starts_at`, `courtesy_ends_at`, `courtesy_cycles_granted` |
+| **`billing_plans`** | **qzpay** | `display_name`, `monthly_price_ars`, `annual_price_ars`, `product_domain` |
+| **`billing_promo_codes`** | **qzpay** | `effect_kind`, `value_kind`, `duration_cycles`, `extra_days` |
+| `billing_addon_purchases` | hospeda | `mp_subscription_id`, `current_period_start`, `current_period_end`, `cancel_at_period_end`, `billing_interval` |
+| `billing_mp_plans` | hospeda | `init_point`, `discount_cycle1_amount_ars` |
+| `billing_pending_checkouts` | hospeda | `pending_trial_extension` |
+
+**Trece de las 21 están sobre tablas que modela el otro repo. Y las trece son invisibles para
+sus mappers de lectura**, verificado a mano en el fuente de qzpay en el ancla `c934164`, no
+contra `F-1B-096`:
+
+- **`subscription.mapper.ts`** — `mapDrizzleSubscriptionToCore` (`:20-55`) devuelve 21 campos y
+  ninguno es de los cinco. `productDomain` aparece **una sola vez en todo el archivo**, en
+  `:96`, dentro del mapper de **escritura**. Las cuatro de cortesía y el contador de ciclos
+  dan **cero ocurrencias en el archivo entero**: qzpay no puede ni leerlas ni escribirlas.
+- **`plan.mapper.ts`** — las cuatro aparecen **dos veces cada una**, y las ocho apariciones
+  están dentro de `mapCorePlanCreateToDrizzle` (`:33-65`, líneas `:36`, `:38`, `:40`, `:49`,
+  `:56`, `:57`, `:58`). `mapDrizzlePlanToCore` (`:13-32`), que es la **lectura**, no nombra
+  ninguna.
+- **`promo-code.mapper.ts`** — `effectKind`, `valueKind`, `durationCycles` y `extraDays` dan
+  **cero** en el archivo completo: ni lectura, ni creación, ni update.
+
+**Nueve de las trece no tienen camino de escritura tampoco** (las cinco de
+`billing_subscriptions` menos `productDomain`, más las cuatro de `billing_promo_codes`). O sea
+que **el motor no puede poner ahí un valor aunque quisiera**, y quien las escribe es hospeda
+con consultas tipadas propias — que es exactamente lo que el `CLAUDE.md` del proyecto declara
+para `product_domain` y para el motor de promos de SPEC-262.
+
+*Qué abre, sin resolverlo acá*: son cuatro medidas del mismo hecho, tomadas en cuatro carriles
+independientes y que coinciden. `F-1B-001` midió que hospeda es dueña del DDL y qzpay del
+modelo; `F-1B-008` que hospeda le pone `CHECK` a tablas que qzpay modela; `F-1B-011` que
+también le pone triggers; y ahora que **cada columna que hospeda agregó a esas tablas en 124
+migraciones cayó fuera del modelo**. El §7 pide un único motor genérico: hoy hay uno que no ve
+trece de las columnas que gobiernan vertical, cortesía y promoción.
+
+---
+
+### F-1B-122 — Los enums crecieron 155 veces y se destruyeron dos, y esas dos no están en el censo de operaciones destructivas
+
+`F-1B-100` midió **9** sentencias que quitan —8 `DROP COLUMN` y 1 `DROP TABLE`— contra 357 que
+agregan, y concluyó *«cuarenta a uno»*. El conteo es correcto para las dos formas que miró;
+recorridas **todas** las formas destructivas, aparecen cinco más:
+
+| operación | cantidad | ¿estaba en `F-1B-100`? |
+|---|---|---|
+| `DROP COLUMN` | 8 | sí |
+| `DROP TABLE` | 1 | sí |
+| **`DROP INDEX`** | **14** | sí (listado, no contado entre las 9) |
+| **`DROP TYPE`** | **2** | **no** |
+| **`DROP CONSTRAINT`** | **2** | sí (listado) |
+| **`DROP DEFAULT`** | **4** | **no** |
+| **`DROP NOT NULL`** | **7** | **no** |
+
+**Las dos `DROP TYPE` son la única forma en que este repo quitó un valor de un enum**, y las
+dos son `DROP TYPE` seguido de `CREATE TYPE` con la lista nueva:
+
+| tipo | creado | rehecho | qué cambió |
+|---|---|---|---|
+| `partner_tier_enum` | `0031_nice_venus.sql:2` con `('bronze','silver','gold')` | `0085_known_agent_zero.sql:22-23` con `('silver','gold')` | **se retiró `bronze`** |
+| `permission_enum` | `0000_baseline.sql` | `0029_dear_dormammu.sql:18-19` | se reescribió la lista entera |
+
+Son también la explicación de los **92 `CREATE TYPE` sobre 90 nombres**: los dos nombres
+repetidos son exactamente esos.
+
+**Contra eso, 155 `ALTER TYPE … ADD VALUE`.** La proporción del carril de enums es **155
+agregados contra 2 destrucciones**, y las dos destrucciones fueron rehacer el tipo entero
+porque Postgres no sabe quitar un valor de un `enum`. Es la misma forma que el resto del
+esquema —`F-1B-100` ya la había nombrado— medida ahora en el eje que decide qué estados existen.
+
+*Corrección de conteo*: `ADD COLUMN` son **181**, no 182. La ocurrencia 182 está **dentro de un
+comentario**: `0123_brief_nebula.sql:3` explica un modo de falla citando la frase
+`` `ADD COLUMN ... NOT NULL` ``. Es la vigésima vez que un conteo por patrón da de más, y la
+tercera en que la causa es la propia documentación del código (las anteriores: `F-1B-041` con
+los locks retirados y `F-1B-014` con `updated_at`). Anclando a `ALTER TABLE … ADD COLUMN` en la
+misma sentencia, son 181 y todas son reales.
+
 **Y el filtro de tipos críticos gatea el bucle completo**: un tipo que no esté en
 `CRITICAL_TYPES` se saltea con un `debug` (`:167-173`), así que agregar un `case` en
 `reconstructPayload` sin agregar el tipo a esa lista produce código inalcanzable — cosa que el
@@ -5619,7 +5766,7 @@ El orden no está decidido.
 | ~~Superficies Web~~ | **15** archivos / 6.134 líneas | ✅ **15 de 15 leídos enteros** — `F-1B-088`, `F-1B-089`, `F-1B-103` |
 | ~~Superficies Admin~~ | **22** archivos / 4.889 líneas | ✅ **22 de 22 leídos enteros** — `F-1B-089`, `F-1B-102` |
 | ~~Las migraciones: qué quedó aplicado~~ | — | ✅ `F-1B-014`, `F-1B-015` |
-| Qué hace cada una de las 125 estructurales: columnas muertas, renames, drops | 125 | 🟨 el inventario de operaciones destructivas está medido (9 en total, ninguna de billing) — `F-1B-100`; qué agrega cada una, sin recorrer |
+| ~~Qué hace cada una de las 125 estructurales: qué agrega y qué quita~~ | 125 | ✅ `F-1B-100`, `F-1B-120`, `F-1B-121`, `F-1B-122` — 175 tablas (82 baseline + 93 después), 181 columnas, 155 `ADD VALUE`, 610 índices, 404 FK, 92 `CREATE TYPE` sobre 90 nombres; la aritmética cierra con las 174 de producción. Las 21 columnas de billing y las 13 que caen fuera del modelo de qzpay, en `F-1B-121` |
 | Tests: qué comportamiento afirman (como evidencia de intención, no de corrección) | por medir | ⬜ |
 
 Y en **qzpay**, con el mismo criterio:
