@@ -1780,6 +1780,12 @@ Cruza con `F-1B-013`: las dos veces que este relevamiento comparó una afirmaci�
 código contra el entorno desplegado —el documento OpenAPI y este flag— el entorno decía
 otra cosa, y en las dos la afirmación estaba escrita en un comentario.
 
+**Y el PDR coincide con la medición, no con los comentarios.** El §5.6 —*«Finalmente
+decidimos abandonar Path C como modelo principal… Hospeda crea explícitamente el
+`preapproval` mediante API»*— describe exactamente lo que el flag prendido hace hoy. O
+sea que lo desactualizado no es el relato del dueño: son los tres comentarios del código
+que siguen diciendo que producción corre Path C.
+
 ---
 
 ### F-1B-046 — De los ocho métodos de `TrialService`, tres no los llama nadie
