@@ -2874,6 +2874,65 @@ tabla de billing la puso el carril `extras` de hospeda.
 
 ---
 
+### F-1B-067 — Publicar o editar contenido dispara traducciones pagadas que no se cuentan, y en producción hay quince de esas contra cero filas de consumo
+
+`apps/api/src/services/translation-service.adapter.ts` llama `translateEntity` (`:48`) y
+`persistTranslations` (`:54`) —o sea, una llamada real al proveedor por cada par (campo,
+locale)— y **no tiene una sola línea de medición**: `rg 'meterAiUsage|recordAiUsage'` sobre
+ese archivo devuelve **0**. El `catch` de `:68` lo declara *«Fire-and-forget: never throw
+back to the caller»*.
+
+**Está montado en el camino de escritura de cuatro entidades.** `apps/api/src/index.ts:347`
+hace `initializeTranslationService(createTranslationServiceAdapter())`, y
+`getTranslationService()` se invoca desde **ocho** sitios —el par crear/actualizar de cada
+uno— en `packages/service-core`: `accommodation.service.ts:1095` y `:1359`,
+`destination.service.ts:1061` y `:1122`, `event.service.ts:466` y `:507`,
+`post.service.ts:647` y `:688`.
+
+**Son tres caminos sin medir, no uno.** Medidos con el mismo patrón sobre cada archivo:
+
+| camino | mide |
+|---|---|
+| `services/translation-service.adapter.ts` (auto-traducción al guardar) | **0** |
+| `routes/ai/admin/translate.ts` (`translateEntity:143`, `batchTranslate:215`) | **0** |
+| `routes/ai/admin/post-generate.ts` | **0** |
+
+El tercero tiene razón escrita y los dos primeros no: `middlewares/ai-quota.ts:58-67`
+declara `QuotaGatedAiFeature = Exclude<AiFeature, 'post_generate'>` porque los caminos de
+admin *«are permission-gated only»*. No hay una exclusión equivalente para `translate`.
+
+**Y la cuota y el techo de gasto son el mismo punto ciego, no dos.** Los dos leen la misma
+tabla: el conteo por usuario con `getMonthlyCallCount`
+(`packages/ai-core/src/usage/reporting/monthly-call-count.ts:42`, filtrando
+`status IN ('success','fallback')`) y el techo global en dólares con
+`aggregateAiUsageByMonth`, que suma `aiUsage.costEstimateMicroUsd`
+(`packages/ai-core/src/storage/usage.queries.ts:114-125`, invocado desde
+`packages/ai-core/src/usage/ceiling.ts:270-278`). Una llamada que no escribe en `ai_usage`
+no la ve ninguno de los dos.
+
+**Medido en producción el 2026-09-17**, y esta parte no es una inferencia sobre el código:
+
+| | |
+|---|---|
+| Filas de `ai_usage` | **59** — `chat` 42, `search` 9, `text_improve` 8 |
+| … con `feature = 'translate'` | **0** |
+| Rango de fechas de `ai_usage` | 2026-07-08 a 2026-09-01 |
+| Filas de contenido con una traducción de IA registrada | **15** — 12 `accommodations`, 1 `destination`, 1 `event`, 1 `post` |
+| Fecha de esas traducciones | 2026-08-12, **dentro** del rango de `ai_usage` |
+
+La marca es el `translation_meta` de la fila, que `ai-translate.service.ts:785` escribe con
+el proveedor y el modelo (`{"summary":{"en":{"model":"gpt-5.4-nano","provider":"openai",…}}}`).
+Quince traducciones con proveedor registrado, cero filas de consumo, en la misma ventana de
+tiempo.
+
+*Control, y corrección de mi primer conteo*: contar `translation_meta IS NOT NULL` da
+**112**, y no son 112. **Noventa y siete de esas filas tienen `{}`** —la columna existe y
+está vacía— así que el predicado honesto es que el JSON nombre un `provider`. Con ese
+predicado son 15. Es la decimocuarta vez que un conteo mal acotado da de más, y la segunda
+en esta sesión que el error fue mío.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
