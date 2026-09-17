@@ -99,6 +99,7 @@ De ahí salen **tres formas posibles**, y hay que evaluarlas como tres, no como 
 | **F1 · Reemplazar la pasarela** | otra pasarela argentina con recurrencia propia | A y B, si la nueva es mejor | C |
 | **F2 · Capa de suscripciones encima de la adquirencia local** | una plataforma gateway-agnóstica maneja el ciclo de vida; abajo sigue habiendo un adquirente argentino (puede seguir siendo MP) | **B casi entero**, y parte de A | C, y **hereda A1/A2 si abajo sigue MP** |
 | **F3 · Merchant of record** | un tercero es el vendedor legal y nos liquida | A, B y parte de C | cambia el modelo fiscal y la relación con el cliente. **Decisión de negocio, no técnica** |
+| **F4 · Quedarse en MP, SIN `preapproval`** | MP cobra cuando se lo pedimos, con tarjeta en archivo; el ciclo de vida es **nuestro** | **A casi entera y B casi entera** — ver §2.1 | C. Y **depende de un permiso que MP no nos dio**: es la prueba 0 del §5.0 |
 
 **F2 es la que nadie evaluó todavía y la que más barato podría salir**, porque conserva la
 adquirencia local en ARS —que es lo que hace falta para cobrarle a un anfitrión argentino— y
@@ -106,6 +107,59 @@ reemplaza justo la parte que nos está doliendo.
 
 **La pregunta que decide F2**: *¿alguna de esas plataformas soporta Mercado Pago —u otro
 adquirente argentino— como gateway?* **No lo sabemos, y es lo primero que hay que averiguar.**
+
+### 2.1 F4 en detalle, y por qué va primera aunque probablemente no se pueda
+
+**La idea**: que nosotros manejemos toda la suscripción —trial, pausa, cambio de plan,
+reintentos, cancelación— y a MP le pidamos **sólo el cobro puntual de cada mes**, contra una
+tarjeta en archivo, **sin que el cliente tenga que volver a entrar**.
+
+**Eso existe, MP lo documenta para Argentina, y ya lo probamos** (`EX-31`, 2026-09-16). Se llama
+*«pagos automáticos»* y la documentación del proveedor dice textualmente *«pagos recurrentes… sin
+solicitar el CVV para cada transacción»*, con MIT explícito y **«la lógica de recurrencia definida
+por el vendedor»**. El contrato es `POST /v1/orders` con `automatic_payments.payment_profile_id`
+y `stored_credential`.
+
+**Medido, con el control que lo distingue de un error nuestro:**
+
+| pedido | resultado |
+|---|---|
+| la misma orden **sin** esos nodos | **`201`, y cobra de verdad** (`EX-30`) |
+| sólo `stored_credential` · sólo `automatic_payments` · los dos · `payment_initiator: "merchant"` | **`403` los cuatro**, mensaje idéntico: *«The application is not authorized to perform this type of payment»* |
+
+**El rechazo es del PERMISO, no del pedido.** No hay forma de armar el request que lo evite.
+
+#### Lo que F4 resolvería si el permiso se consiguiera
+
+| problema | qué pasa sin `preapproval` |
+|---|---|
+| *acepta y no aplica* — `EX-20`, `EX-21`, `EX-22`, `EX-24`, `EX-25`, `EX-34`, `EX-35` | **se evaporan**: son todas operaciones sobre la suscripción de MP, que dejaría de existir |
+| no hay auto-reanudación de pausa — `PS-4`, `PS-6` | **pausar es no cobrar**; el reloj ya era nuestro |
+| una autorización cubre un solo monto — `EX-5` | **un addon es un cobro más**, no un preapproval aparte |
+| el `init_point` roto — `EX-37` | **no hay checkout por addon** |
+| los correos del proveedor que mienten — `EX-3` | MP deja de administrar una suscripción, así que no le escribe al cliente sobre ella |
+| **`GR-3`, la política de reintentos** | **deja de importar**: los reintentos pasan a ser nuestros, y el capítulo 12 ya está escrito así |
+| **`R-MP-01`**, los reembolsos en una API en discontinuación | **se resuelve solo**: su guía de migración **excluye a las suscripciones**, así que dejar de ser una suscripción **nos incluye** |
+
+#### Y la hipótesis en contra, que es fuerte
+
+**La propia fila `EX-31` la dejó anotada el 2026-09-16**, y hay que leerla antes de entusiasmarse:
+
+> *«Lo más plausible es que este `403` sea **el mismo portón comercial que `EX-32`** —el último
+> paso de Wallet Connect es, campo por campo, este request— pero **eso no está medido**: son dos
+> productos con nombres distintos.»*
+
+Y `EX-32` (Wallet Connect) **sí tiene requisito publicado y medido: más de 100.000 usuarios**.
+Hospeda tiene **3** relaciones de cobro vivas — tres órdenes de magnitud. **No es una negociación
+que se pueda intentar.**
+
+**Lo único que los separa**, y es lo que hace que la pregunta valga la pena: `stored_credential`
+
++ MIT es un producto **estándar de las redes de tarjetas** —tarjeta en archivo, iniciado por el
+comercio—, que los adquirentes le dan a comercios comunes todo el tiempo. Wallet Connect es un
+producto **de billetera**, y ahí el requisito de escala tiene sentido porque MP está dando acceso
+a su base de usuarios. **Que compartan el request final no prueba que compartan el requisito
+comercial.**
 
 ---
 
@@ -203,21 +257,55 @@ Acordado con el owner el 2026-09-17:
 | 1 | buscar todas las opciones posibles | ✅ §3 |
 | 2 | escribir este documento | ✅ |
 | 3 | limpiar la ventana de contexto | ⬜ |
+| **0** | **PRUEBA 0 — preguntarle a MP por `automatic_payments`** (§5.0). **Va primera**, por decisión del owner el 2026-09-17 | ⬜ |
 | 4 | **investigación exhaustiva por candidato**: costos y comisiones, documentación, qué soporta y qué no, problemas reportados, comunidad | ⬜ |
 | 5 | decidir el **orden de prueba** con el resultado del 4 | ⬜ |
 | 6 | **empezar las pruebas** | ⬜ |
 
+### 5.0 PRUEBA 0 — `automatic_payments` de Mercado Pago
+
+**Va antes que todo lo demás**, y no porque sea la más prometedora sino porque **su respuesta
+decide si el paso 4 arranca con una duda o con una conclusión ya ganada**:
+
++ **si es el mismo portón comercial que Wallet Connect** → MP **estructuralmente no puede** darnos
+  cobro recurrente sin `preapproval`. Las 19 `NOT_SUPPORTED` y las nueve fallas de integridad son
+  **inevitables con ellos**, y evaluar alternativas deja de ser prudencia: es necesario;
++ **si es un permiso comercial común** → **F4 es de lejos lo más barato** y no hace falta mudarse.
+
+**No es un desarrollo: es una pregunta a soporte del proveedor**, con la evidencia adjunta.
+
+**La pregunta, textual:**
+
+> ¿Qué requisitos tiene que cumplir una aplicación para que se le habilite **`automatic_payments`
+> con `stored_credential`** en `POST /v1/orders`? ¿Es el mismo requisito de elegibilidad que
+> **Wallet Connect** (más de 100.000 usuarios), o es un permiso comercial independiente?
+
+**La evidencia que va adjunta:**
+
+| | |
+|---|---|
+| error exacto | `403 "The application is not authorized to perform this type of payment"` |
+| control que descarta un error nuestro | la **misma orden sin esos nodos** devuelve `201` y cobra (`EX-30`) |
+| variantes probadas, todas con el mismo `403` | sólo `stored_credential` · sólo `automatic_payments` · las dos · `payment_initiator: "merchant"` sin perfil |
+| fecha y sonda | 2026-09-16, [sonda 40](./mp-probes/probe-40-que-dispara-el-403-de-pagos-automaticos.mjs) |
+| contexto del negocio | plataforma de suscripciones mensuales, ARS, ticket bajo, en crecimiento |
+
+**Y una pregunta más, que conviene mandar junta** porque la respuesta también cambia el diseño:
+`R-MP-01` — la API donde viven los reembolsos está anunciada en discontinuación y su guía de
+migración **excluye explícitamente a las suscripciones**. ¿Cuál es el camino de reembolso para
+`preapproval` después de esa fecha?
+
 ### 5.1 Qué tiene que traer el paso 4, por candidato
 
-- **Comisiones** y costos fijos, y si hay licencia aparte
-- **Plazos de liquidación**
-- **Calidad de la documentación**: si contesta las ocho preguntas del §4.1 o si hay que medirlas
-- **Qué soporta y qué no**, contra las ocho capacidades del capítulo 06
-- **Problemas reportados**: issues de GitHub, Stack Overflow, foros, estado de los SDK
-- **Comunidad y soporte**: si hay a quién preguntarle y si contesta
-- **Si hay entorno de prueba usable**, y si se puede **provocar un cobro rechazado** — que con MP
++ **Comisiones** y costos fijos, y si hay licencia aparte
++ **Plazos de liquidación**
++ **Calidad de la documentación**: si contesta las ocho preguntas del §4.1 o si hay que medirlas
++ **Qué soporta y qué no**, contra las ocho capacidades del capítulo 06
++ **Problemas reportados**: issues de GitHub, Stack Overflow, foros, estado de los SDK
++ **Comunidad y soporte**: si hay a quién preguntarle y si contesta
++ **Si hay entorno de prueba usable**, y si se puede **provocar un cobro rechazado** — que con MP
   resultó imposible en sandbox, medido en siete intentos
-- **Riesgo de continuidad**: quién es el dueño, si está en venta, si anuncia discontinuaciones
++ **Riesgo de continuidad**: quién es el dueño, si está en venta, si anuncia discontinuaciones
 
 ### 5.2 Lo que hay que preguntar explícitamente y no está en ningún folleto
 
@@ -230,9 +318,9 @@ Acordado con el owner el 2026-09-17:
 
 ## 6. Lo que este documento NO resuelve
 
-- **No recomienda ninguno.** El §58 no lo permitiría: todo el §3 es material de folleto.
-- **No dice si conviene cambiar.** Eso sale del paso 5, con los datos del 4.
-- **No frena la Master Spec.** Falta el capítulo 13 y no depende de esto: se apoya en el 06, que
++ **No recomienda ninguno.** El §58 no lo permitiría: todo el §3 es material de folleto.
++ **No dice si conviene cambiar.** Eso sale del paso 5, con los datos del 4.
++ **No frena la Master Spec.** Falta el capítulo 13 y no depende de esto: se apoya en el 06, que
   está escrito por capacidades.
-- **No toca lo que ya está medido de MP.** Si al final nos quedamos, las 49 filas `VERIFIED`
++ **No toca lo que ya está medido de MP.** Si al final nos quedamos, las 49 filas `VERIFIED`
   siguen valiendo.
