@@ -288,9 +288,21 @@ option lo declaran: `puedePausar()` lo deriva en un solo lugar) · **`E-SUB-05` 
 precio que cambia entre programar y ejecutar · `E-SUB-02` pausa más cancelación programada ·
 `R-SUB-01` el servicio completo durante el grace · `M-SUB-03` vertical discontinuada
 
-**Mercado Pago** · **`R-MP-01` la API de Payments se descontinúa** (nuevo, 2026-09-15): el panel avisa *"Esta API será descontinuada pronto"* sobre `API de Payments` y la documentación **no lo formaliza** —las docs de Suscripciones siguen indicando `/v1/payments`, y las de Orders la presentan como opción paralela, sin fecha—. **Ninguna de las 39 filas medidas depende de `POST /v1/payments`**, y `EX-16` midió que la conciliación entera se puede hacer con `/authorized_payments`, de la familia de suscripciones. Quedan sobre la familia que se retira **sólo** el detalle fino del pago y **los reembolsos**. Tres preguntas para soporte de MP, que no se pueden medir porque son sobre el futuro del proveedor: si alcanza también a las lecturas, cuándo, y **cómo se reembolsa un cobro originado por un `preapproval`** si se retira · `MP-01` los cuatro ciclos · `M-MP-01` moneda e impuestos · `M-MP-02`
-checkout pendiente · `S-MP-01` capacidades por método de pago · `S-MP-02` caducidad de un
-resultado verificado · `S-MP-03` sondas reproducibles · `M-MP-03` los seis huecos del §60
+**Mercado Pago** · ~~`R-MP-01`~~ **cerrado por el cap. 06** (la única capacidad expuesta a la
+discontinuación es el reembolso; la conciliación no, porque `EX-16` midió que se hace entera con
+`/authorized_payments`. Las tres preguntas a soporte del proveedor quedan formuladas y siguen sin
+respuesta) · ~~`MP-01`~~ **cerrado por el cap. 06** (los cuatro ciclos `VERIFIED`; `"years"` no
+existe y `frequency: 5` se acepta, así que los cuatro son elección nuestra) · ~~`M-MP-01`~~
+**cerrado por el cap. 06** (sólo ARS, la columna existe igual por el §57; los impuestos no se
+modelan hasta ARCA) · ~~`M-MP-02`~~ **cerrado por los caps. 03 y 06** (la ventana del checkout es
+NUESTRA, 72 h, y se cancela explícitamente al vencer porque `EX-1` sigue `UNKNOWN`) ·
+~~`S-MP-01`~~ **cerrado por el cap. 06** (las capacidades se componen proveedor ∩ plan ∩ billing
+option, y nadie pregunta por el método de pago) · ~~`S-MP-02`~~ **cerrado por el cap. 06** (una
+fila caduca cuando cambia lo que la sostiene, no por antigüedad; se re-verifica antes de
+implementar, no antes de escribir) · ~~`S-MP-03`~~ **cerrado por el cap. 06** (sondas versionadas,
+manifiesto obligatorio, guard de entorno y guard de presupuesto) · ~~`M-MP-03`~~ **cerrado por el
+cap. 06** (las ocho filas `UNKNOWN` con qué bloquea cada una; cinco son el mismo hecho y se
+contestan el 2026-09-17)
 
 **Entitlements y limits** · **`E-ENT-01` suspensión y beneficios de turista heredados** (nuevo, residuo de `DEC-ENT-003`) · `M-ENT-01` estrategia de agregación por limit · `M-ENT-02`
 enforcement transversal de excedentes · `A-ENT-02` qué tiene el visitante sin cuenta ·
