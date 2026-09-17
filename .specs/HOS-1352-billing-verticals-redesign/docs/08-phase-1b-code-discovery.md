@@ -2696,6 +2696,12 @@ líneas), no en el shim de 20. El hecho medido —`rawResults.slice(0, BATCH_SIZ
 `apps/api` no ve. La frontera entre los dos hogares de `F-1B-032` no es la que dibujan las
 rutas de los `import`.
 
+> ⚠️ **Segundo ajuste del mismo denominador, 2026-09-17.** Las 65.165 líneas incluyen
+> además **un archivo de test** (`__tests__/ai-translate.service.test.ts`, 974 líneas), que
+> el criterio de este censo excluye. El total de fuentes no-test es **64.191** sobre **185**
+> archivos: 65.165 − 974 = 64.191, y 186 − 1 = 185. Los porcentajes de cobertura de la
+> tabla de carriles usan el denominador corregido.
+
 *Nota de método, la duodécima vez, y otra vez el patrón fue mío*: el primer barrido buscó
 los importadores con el patrón `services/<nombre>`, que **no matchea un import relativo
 dentro del propio directorio** (`from './addon-expiration.queries.js'`). Con ese patrón
@@ -3689,7 +3695,7 @@ El orden no está decidido.
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Los 67 servicios: métodos públicos y qué validan | 67 | 🟨 ver la fila de abajo |
-| Las 337 funciones de `apps/api/src/services` | 337 (**333** nombres) | 🟨 censo de consumo hecho (`F-1B-052`); **61 archivos leídos enteros** de 185 — **30.974 de 65.165 líneas (48 %)** — más el inventario completo de los 39 de `services/billing` (`F-1B-058`). Cerradas las familias **addon** (22 archivos), **ai** (16) y **plan** (6): `F-1B-065` a `F-1B-071`. Diez de los 185 no tienen cuerpo (`F-1B-063`) |
+| Las 337 funciones de `apps/api/src/services` | 337 (**333** nombres) | 🟨 censo de consumo hecho (`F-1B-052`); **122 archivos leídos enteros** de 185 — **48.303 de 64.191 líneas (75 %)**. Cerradas las familias **addon** (22), **ai** (16), **plan** (6), **creación + idempotencia** (11), **trial** (7), **cambio de plan / cancelación** (10), **pagos y huérfanos** (8) y **promos + provisioning** (11): `F-1B-065` a `F-1B-084`. Lo que queda sin leer —**63 archivos / 15.888 líneas**— es casi todo fuera de billing: credenciales sociales, brochure, calendarios, media, QR, feedback. Diez de los 185 no tienen cuerpo (`F-1B-063`) |
 | Los 67 servicios de `service-core` | 67 | 🟨 `promo-code/` entero (9 archivos, 4.117 líneas) más 5 de los 19 de `addon/` (`addon.crud`, `addon-catalog.service`, `addon-expiration.queries`, `addon-expiration.batch`, `addon-status-transitions`: 1.798 líneas) — **5.915 de 14.254 (41 %)** — `F-1B-060`, `F-1B-066` |
 | ~~Entitlements y limits: el catálogo y su reflejo en la base~~ | — | ✅ `F-1B-033`, `F-1B-034`, `F-1B-035` |
 | ~~Dónde se CONSUMEN las 53 + 22 claves~~ | 75 | ✅ `F-1B-036` a `F-1B-039` — **75 de 75** medidas |
