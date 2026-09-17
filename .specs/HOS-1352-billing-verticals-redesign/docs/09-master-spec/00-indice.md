@@ -160,4 +160,6 @@ cierran acá arriba. Son 75 los IDs que la sección nombra; tres ya estaban cerr
 | 06 — Proveedor y contrato de MP | ✅ |
 | 07 — Outbox y notificaciones | ✅ |
 | 08 — Auditoría y observabilidad | ✅ |
-| 09 a 22 | ⬜ sin escribir |
+| 09 — Conciliación | ✅ |
+| **Parte I completa** | ✅ |
+| 10 a 22 | ⬜ sin escribir |
