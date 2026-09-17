@@ -3119,6 +3119,79 @@ La clase existe para distinguir, y ningún `instanceof` la distingue.
 
 ---
 
+### F-1B-072 — Expirar un addon nunca corre en transacción, y hay una causa de cancelación declarada que ningún camino usa
+
+**El parámetro de transacción existe y no lo pasa ningún llamador.**
+`AddonExpirationService.expireAddon` (`apps/api/src/services/addon-expiration.service.ts:123-127`)
+declara `input: ExpireAddonInput & { tx?: DrizzleClient }` y resuelve
+`const db = input.tx ?? getDb()`. Sus **tres** llamadores de producción pasan sólo el id:
+
+| llamador | qué pasa |
+|---|---|
+| `addon.admin.ts:273` | `{ purchaseId }` |
+| `cron/jobs/addon-expiry.job.ts:328` | `{ purchaseId: addon.id }` |
+| `addon-expiration.service.ts:347` (el lote) | lo que le dé `processExpiredAddonsBatch`, y el tipo `ExpireAddonFn` (`packages/service-core/…/addon-expiration.batch.ts:36-40`) **no tiene campo `tx`** |
+
+O sea que la expiración siempre corre contra una conexión nueva, y sus dos escrituras —la
+quita de entitlements y el `UPDATE` a `expired`— no son atómicas entre sí.
+
+**Y las dos mitades de esa expiración tienen políticas opuestas ante el fallo**, dentro de
+la misma función: si `closeAddonPreapproval` no confirma, corta con `SERVICE_UNAVAILABLE` y
+la fila queda `active` (`:200-220`); si la quita de entitlements falla, se marca
+`entitlementRemovalPending` y **se escribe `expired` igual** (`:225-259`, `:266`). Ante la
+misma premisa —no se pudo revocar— un canal se abstiene y el otro sigue.
+
+**Una causa de cancelación declarada y nunca pasada.**
+`AddonPreapprovalCancelSource` (`apps/api/src/services/addon-preapproval-cancel.ts`) tiene
+**siete** miembros. Seis tienen al menos un call site real; `'provider-terminal'` (`:87`)
+aparece **una sola vez en `apps` y `packages` enteros: su propia declaración**. Su
+comentario describe el caso —*«MercadoPago itself reported the preapproval terminal; we
+mirror it locally»*— y el archivo que atiende ese caso,
+`addon-recurring-revoke.service.ts`, no llama `closeAddonPreapproval` en ninguna línea:
+espeja un estado ya terminal en vez de causarlo, así que no tiene a quién pasarle la causa.
+
+*Corrección al material de origen*: el sub-agente informó **dos** llamadores de
+`expireAddon`. Son **tres** — se le pasó el del cron (`addon-expiry.job.ts:328`), que es
+justamente el de mayor volumen. La conclusión no cambia: ninguno de los tres pasa `tx`.
+
+---
+
+### F-1B-073 — Deshabilitar un plan no migra, no cancela y no toca al proveedor: marca una bandera por suscripción, cada una en su propia transacción
+
+`disablePlanLifecycle` (`apps/api/src/services/plan-disable-lifecycle.service.ts:142`) es
+el abanico que corre cuando un admin retira un plan. La llama sólo
+`routes/billing/admin/plans.ts`, en dos lugares (`:313` y `:418`, el segundo un
+re-disparo manual descrito como idempotente en `:414`).
+
+**Lo único que escribe sobre la suscripción es una bandera.** `:189-195` hace
+`.set({ cancelAtPeriodEnd: true, updatedAt })` y **el `status` queda como estaba**; el
+docblock (`:13-14`) lo declara: *«status stays — the finalize-cancelled-subs cron
+transitions to `cancelled` after `currentPeriodEnd`»*. No hay ningún `planId` reasignado a
+otro plan: **no existe migración**, sólo un `migrationHint` (`:145`, `:232`) que es un
+texto que viaja dentro del mail `PLAN_BEING_RETIRED`.
+
+**No toca MercadoPago.** Cero ocurrencias de `paymentAdapter`, `preapproval` o
+`hardCancel` en todo el archivo. La preapproval sigue viva y cobrando hasta que el cron
+`finalize-cancelled-subs` la cierre —el mismo cron que `F-1B-023` midió contando la fila
+como finalizada **antes** de cancelar en el proveedor, con el resultado de esa cancelación
+sin asignar a ningún contador.
+
+**Una transacción por suscripción, y el fallo de una no frena la pasada.** `:185-204` abre
+`withServiceTransaction` **dentro** del bucle —el docblock lo declara *«independent, not
+nested»* (`:35-39`)— y el `catch` de `:252-264` loguea y sigue. `affectedSubCount` cuenta
+sólo los éxitos, así que un abanico parcial y uno completo se distinguen por un número que
+nadie compara contra el total.
+
+Dos cosas que ocurren **después** del commit y no se pueden revertir: `clearEntitlementCache`
+(`:209`) y la notificación, que es `void Promise.resolve(...).catch(log)` (`:218-243`).
+
+**Y la entrada de auditoría no se llama como dice el docblock.** `:18` promete *«writes ONE
+`PLAN_DISABLED_BY_ADMIN` audit entry»*, y el código pasa `action: 'plan_disabled'`
+(`:278`). `PLAN_DISABLED_BY_ADMIN` existe, pero anidado dentro de `changes.eventType`
+(`:284`), no como el campo por el que se busca una acción de auditoría.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
