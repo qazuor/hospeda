@@ -2346,6 +2346,68 @@ la rechaza en la misma request.
 
 ---
 
+### F-1B-058 — `apps/api/src/services/billing/`: 39 archivos planos, tres caminos para crear una suscripción y trece que hablan con MercadoPago
+
+**El denominador, medido**: `apps/api/src/services/billing/` tiene **39 archivos** y
+**15.304 líneas**, en un **directorio plano** —cero subdirectorios— y sin un solo
+`.test.ts` adentro (los tests viven en `apps/api/test/services/billing/`).
+
+**Tres archivos distintos crean la fila de una suscripción**, y los tres conviven:
+
+| archivo | líneas | qué crea |
+|---|---|---|
+| `paid-subscription-create.ts` | 483 | llama `billing.subscriptions.create({mode:'paid'})` (`:398`) — el `POST /preapproval` |
+| `own-preapproval-subscription-create.ts` | 502 | envuelve al anterior (`:326`) y normaliza el estado local a `pending_provider` (`:403`) |
+| `pending-provider-subscription-create.ts` | 471 | inserta la fila local **sin** preapproval (`:352`) más la fila de correlación |
+
+A eso se suman `subscription-comp-create.service.ts` y
+`subscription-trial-create.service.ts` (`F-1B-047`), que están fuera de este directorio y
+también insertan filas de `billing_subscriptions`: **cinco puntos de creación** en total.
+
+**Trece de los 39 hablan con MercadoPago**:
+
+```
+apply-price-increase        immediate-plan-swap          link-preapproval
+mp-plan-provisioning        mp-addon-plan-provisioning   own-preapproval-subscription-create
+paid-subscription-create    pending-provider-subscription-create
+preapproval-hard-cancel     preapproval-recovery         reactivation-supersession-complete
+trialing-plan-upgrade       abandon-never-confirmed-subscription
+```
+
+**Trece escriben tablas de billing con Drizzle directo** —`billing_subscriptions`,
+`billing_subscription_events`, `billing_orphan_payments`, `entity_subscriptions`,
+`partner_subscriptions`— y el reparto de transacciones es desparejo: **tres** abren la suya
+(`pending-provider-subscription-create`, `trial-local-expiry`, `link-preapproval`),
+**cuatro** reciben una `tx` por parámetro (`own-preapproval-subscription-create`,
+`subscription-domain-carry-forward`, `preapproval-recovery`,
+`trial-supersede-on-activation`) y el resto escribe sin una ni otra. Sólo seis archivos
+usan un modelo tipado (`billingMpPlanModel`, `billingMpAddonPlanModel`,
+`billingPendingCheckoutModel`); el resto va contra la tabla.
+
+**Cinco archivos para el ciclo de vida del trial**: `trial-eligibility.service.ts`,
+`trial-local-expiry.service.ts`, `trial-series-cohort.ts`,
+`trial-notification-offsets.ts` y `trial-supersede-on-activation.ts` —más
+`trial.service.ts` (2.160 líneas) un directorio más arriba.
+
+**Y dos servicios gemelos de aprovisionamiento**: `mp-plan-provisioning.service.ts` (591)
+y `mp-addon-plan-provisioning.service.ts` (539), con la misma estructura
+(`resolveOrProvisionMp*Plan` + `resolveCheckoutMp*PlanId`) contra dos tablas distintas
+(`billing_mp_plans` / `billing_mp_addon_plans`).
+
+**Tres símbolos sin consumidor de producción** en este directorio: `admitsAddonGrant`
+(`addon-grant-domain.ts`, sólo tests), `clearTouristVipGiftCache`
+(`tourist-vip-inheritance.ts:556`) y `TOTAL_TRIAL_SERIES_EMAILS`
+(`trial-notification-offsets.ts:76`).
+
+*Nota de método, la undécima vez, y esta vez el patrón mal escrito fue mío*: al agrupar
+los 185 archivos de `apps/api/src/services` por «familia» tomé el primer segmento de la
+ruta y, para los archivos sueltos, el prefijo del nombre — así que los `billing-*.ts` del
+nivel de arriba (`billing-metrics.service.ts`, `billing-customer-sync.ts`, …) cayeron en
+el mismo balde que el directorio y daban **44 archivos / 16.804 líneas**. Contado sobre el
+directorio real: **39 / 15.304**. Ningún hallazgo publicado usaba el número inflado.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
