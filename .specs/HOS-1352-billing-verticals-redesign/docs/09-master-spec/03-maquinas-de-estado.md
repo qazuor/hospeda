@@ -317,15 +317,28 @@ se eligió (`DEC-SUB-008`).
 ## 10. La regla de no-retroceso · cierra `M-CONC-02`
 
 El §51 nombra *«out-of-order»* entre los escenarios a cubrir y el §64.18 dice que *«MP gobierna
-hechos ocurridos en MP»*. Para aplicar lo segundo hace falta un orden confiable de los eventos
-del proveedor, y **no lo hay**: llegan tarde, duplicados y desordenados.
+hechos ocurridos en MP»*.
 
-**La regla no intenta ordenarlos. Elimina la necesidad de ordenarlos.**
+**El orden existe y está medido**: el cuerpo de cada evento trae un campo **`version`, un
+contador monótono por recurso** — el mismo preapproval llegó con `version` 4, 6, 7 y 8 en el
+orden causal de las acciones (`EX-2`, `VERIFIED`). Es más fuerte que el id del evento, que
+cambia en cada reentrega.
+
+**Y aun así la regla no se apoya en ordenarlos, sino en no necesitar el orden.** El motivo no es
+que falte el contador: es que un evento ordenado sigue sin decir el estado actual. Entre que el
+proveedor emite y nosotros procesamos pueden haber pasado más cosas, y el `version` permite
+saber que un evento es viejo pero no qué hay ahora. La relectura sí.
+
+El `version` **se usa**, y para dos cosas concretas: descartar un evento más viejo que el último
+aplicado **sin gastar una relectura**, y detectar que el recurso cambió sin que nos avisaran —
+está medido que mutar el monto **salta el contador de 5 a 9 sin emitir una sola entrega**
+(`EX-15`).
 
 ### 10.1 Un webhook no es un estado: es un aviso
 
-**Nunca se escribe el estado que trae el evento.** Al recibirlo se **relee el recurso por su id**
-en el proveedor y se escribe lo leído.
+**Nunca se escribe el estado que trae el evento.** Al recibirlo, si su `version` no es mayor que
+la última aplicada para ese recurso se descarta ahí mismo; si lo es, se **relee el recurso por su
+id** en el proveedor y se escribe lo leído, junto con la `version` de esa lectura.
 
 Está medido que ese camino es el confiable: leer por id es `VERIFIED` (`RC-2`), mientras que
 **buscar no lo es** y falla en tres direcciones sin avisar en ninguna (`RC-1`) — ignora nuestra

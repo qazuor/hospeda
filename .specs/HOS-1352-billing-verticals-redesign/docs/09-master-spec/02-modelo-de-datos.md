@@ -118,7 +118,12 @@ resolución, del plan vendible de `rank` más alto y del más bajo, más los ove
 | **`trial`** | `user`, vertical, estado del cap. 03 §2, referencia al plan de trial, **referencia a las versiones vigentes al arrancar** (el piso del trinquete), inicio y fin | **`UNIQUE(user_id, vertical)`** — sin condición de estado. Es el §10.1 y el §10.2: el trial es único **de por vida**, así que la fila sobrevive a todo y su sola existencia niega un trial nuevo |
 | **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, período actual, fecha de fin de servicio, clase (principal o de complemento) | **`UNIQUE(user_id, vertical) WHERE clase = principal AND estado ∈ {vivos}`** — es el §11, **impuesto por la base y no por un chequeo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
-| **`provider_link`** | el id del proveedor de una suscripción, y cuál es el proveedor | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
+| **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
+
+> La `version` es el contador monótono por recurso que trae cada evento (`EX-2`). Guardarla es lo
+> que permite descartar un evento viejo sin gastar una relectura (cap. 03 §10.1) y lo que hace
+> visible el caso en que el recurso cambió **sin** que el proveedor avisara — mutar el monto lo
+> salta sin emitir ninguna entrega (`EX-15`).
 
 **El piso del trinquete se guarda como referencia a versiones, nunca como copia de valores.** El
 §10.3 prohíbe copiar a mano y una copia además queda desactualizada (`DEC-TRIAL-002`).
