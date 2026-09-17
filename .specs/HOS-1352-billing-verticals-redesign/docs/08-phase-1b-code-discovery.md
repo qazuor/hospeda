@@ -3364,6 +3364,96 @@ anclar el patrón a `}\s*catch\s*\(`.
 
 ---
 
+### F-1B-077 — Las dos métricas de facturación suman los pagos de un estado que nadie escribe en ninguna parte del repo
+
+`billing-metrics.service.ts` calcula la facturación con dos consultas, y las dos filtran por
+el mismo valor:
+
+| métrica | dónde | filtro |
+|---|---|---|
+| `getOverviewMetrics` → ingreso total | `:258-263` | `WHERE status = 'completed'` |
+| `getRevenueTimeSeries` | `:342-353` | `WHERE status = 'completed'` |
+
+**`'completed'` no es un estado de pago de este sistema.** El vocabulario de qzpay tiene
+**ocho** valores y ése no está entre ellos
+(`qzpay/packages/core/src/constants/payment-status.ts:4-13`, en el ancla `c934164`):
+
+```
+pending · processing · succeeded · failed · canceled · refunded · partially_refunded · disputed
+```
+
+Y del lado de hospeda, los cuatro sitios que escriben `billing_payments.status` escriben
+**`'succeeded'`**: `billing/payment-reconcile.service.ts:421`,
+`routes/webhooks/mercadopago/payment-logic.ts:415`, `:608` y `:1011`.
+
+Buscado `'completed'` sobre `apps/api/src` y `packages/*/src` sin tests, las únicas dos
+ocurrencias que apuntan a `billing_payments` son las dos consultas de arriba. Las demás
+—`refund-status.enum.ts`, `admin-billing-view.status.ts`,
+`billing/reactivation-supersession-complete.ts`, `newsletter-dispatch.worker.ts`— son otros
+dominios con la misma palabra.
+
+**Las dos métricas devuelven cero por construcción**, y eso es independiente de que
+`billing_payments` esté hoy vacía en producción (`F-1B-009`): seguirían en cero el día que
+se llene, porque ninguna fila va a llevar ese estado.
+
+**Y las consume una superficie duplicada.** `getBillingMetricsService()` expone cuatro
+métodos, y los llaman **dos módulos de ruta distintos, los dos montados**:
+`routes/billing/metrics.ts:123-125` (montado en `routes/index.ts:120`) y
+`routes/billing/admin/metrics.ts:186-188` (montado en `routes/billing/admin/index.ts:54`).
+Los dos declaran en su propia cabecera estar servidos bajo
+`/api/v1/admin/billing/metrics`.
+
+---
+
+### F-1B-078 — Cancelar en el proveedor devuelve un veredicto de tres valores y la mitad de los llamadores lo tira
+
+`hardCancelPreapprovalBestEffort` (`apps/api/src/services/billing/preapproval-hard-cancel.ts:221`)
+devuelve `{ kind: 'cancelled' | 'skipped' | 'failed' }` y **nunca tira** (`:173`). Tiene
+**seis** call sites de producción, y se reparten exactamente por la mitad:
+
+| lee el resultado | lo descarta |
+|---|---|
+| `addon-preapproval-cancel.ts:166` (`const outcome =` → ramifica por `.kind`) | `refund-lifecycle.service.ts:525` — `await …({ … }).catch(…)`, y como la función no tira, el `.catch` no intercepta nada y el valor no se lee |
+| `subscription-comp-grant.service.ts:485` | `cron/jobs/courtesy-expiry.job.ts:166` — `await` pelado |
+| `billing/own-preapproval-subscription-create.ts:452` | `cron/jobs/finalize-cancelled-subs.ts:776` — `await` pelado |
+
+`F-1B-023` ya había medido el último: `finalized += 1` ocurre en `:772`, **antes** de esa
+llamada. Lo que agrega esta medición es que no es un caso aislado — es la mitad del
+conjunto, y el otro caso de cron (`courtesy-expiry`) tiene la misma forma.
+
+Los tres que sí lo leen lo usan sólo para decidir **qué loguear**: ninguno de los seis
+vuelve a leer la preapproval para confirmar que la cancelación tomó. Es la misma ausencia
+que `F-1B-030` y `F-1B-054` midieron del lado de las mutaciones de monto, ahora del lado de
+la cancelación.
+
+---
+
+### F-1B-079 — Una cortesía se puede cancelar y no se puede des-cancelar, y es la única asimetría del par sin comentario que la explique
+
+Los dos conjuntos que gobiernan el par, en dos archivos:
+
+| | dónde | contenido |
+|---|---|---|
+| `SOFT_CANCELLABLE_STATUSES` | `subscription-cancel.service.ts:120` | `active`, `trialing`, **`courtesy`** |
+| `UNCANCELLABLE_STATUSES` | `subscription-uncancel.service.ts:92` | `active`, `trialing`, **`past_due`** |
+
+`courtesy` está en el primero y no en el segundo. Y el soft-cancel **no cambia el
+`status`** —escribe sólo `cancelAtPeriodEnd` y `updatedAt` (`:262-265`)—, así que una
+cortesía cancelada queda en `status='courtesy'` con la bandera puesta, y el guard de
+`subscription-uncancel.service.ts:163` la rechaza con `VALIDATION_ERROR`. **Dentro de estos
+dos archivos no hay ninguna combinación de entradas que revierta ese cancel.**
+
+La asimetría espejo —`past_due`, que se puede des-cancelar y no cancelar— **sí tiene su
+comentario** (`subscription-uncancel.service.ts:86-90`), declarada deliberada. La de
+`courtesy` no tiene ninguno en ninguno de los dos archivos.
+
+Cruza con `DEC-GRANT-003`, que decidió implementar la cortesía temporal **pausando** en el
+proveedor y sosteniendo el servicio del lado nuestro. La medición no dice si esto la
+contradice; dice que hoy el estado que esa decisión usa entra al camino de cancelación y no
+al de reversión.
+
+---
+
 ## Carriles pendientes
 
 El orden no está decidido.
