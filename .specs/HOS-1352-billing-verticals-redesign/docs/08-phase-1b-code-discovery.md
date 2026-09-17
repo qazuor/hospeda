@@ -91,7 +91,7 @@ verificado contra la definición real.
 | Índices | **836** | `pg_index` por catálogo — **no** por nombre, que da 160 PK en vez de 174 | **836** |
 | Triggers no internos | **132** | `pg_trigger` sin `tgisinternal` | **132** |
 | `CHECK` reales | **30** | `pg_constraint` con `contype='c'` — **no** `information_schema`, que dice 1.403 | **30** |
-| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** (horario) · 0 (handler) |
+| Cron jobs registrados | **47** | el arreglo `cronJobs` de `registry.ts` | **47** horario · **47** partición · **1** handler leído entero |
 | Migraciones estructurales | **125** | archivos, cruzados con `drizzle.__drizzle_migrations` en prod | **125** |
 | Migraciones `extras` | **42** | `migrations/extras/*.sql`, inventariadas por sentencia | **42** |
 | Data-migrations de seed | **105** | prefijo `NNNN-`, cruzado con `seed_migrations` en prod — **no** `fd -e ts`, que da 121 | **105** |
@@ -722,6 +722,98 @@ que corre, y del tipo que ningún test puede ver.
 
 ---
 
+### F-1B-018 — 17 de los 47 crons son de billing, y suman 13.500 líneas
+
+Partición **por lo que cada handler referencia**, no por su nombre: menciones a las 27
+tablas de qzpay, imports de `@qazuor/qzpay-*`, y vocabulario de dominio
+(`subscription`, `entitlement`, `billing`, `plan`, `addon`, `promo`, `trial`,
+`courtesy`).
+
+**17 de los 47** superan las 50 referencias de dominio. Los diez más grandes:
+
+| cron | líneas | | cron | líneas |
+|---|---|---|---|---|
+| `addon-expiry` | **2.076** | | `addon-subscription-reconcile` | 765 |
+| `propagate-plan-price-changes` | 1.629 | | `abandoned-pending-subs` | 731 |
+| `webhook-retry` | 1.082 | | `notification-schedule` | 693 |
+| `subscription-poll` | 1.011 | | `entity-subscription-cache-reconcile` | 496 |
+| `apply-scheduled-plan-changes` | 973 | | `courtesy-expiry` | 398 |
+| `finalize-cancelled-subs` | 828 | | `reactivation-supersession-reconcile` | 390 |
+| `dunning` | 773 | | `featured-by-entitlement-reconcile` | 362 |
+| `subscription-drift-reconcile` | 766 | | `preapproval-less-expiry` | 359 |
+| | | | **`trial-reconcile`** | **189** |
+
+Las 17 suman **≈13.500 líneas**. Los otros 30 crons no tocan billing.
+
+**Siete construyen su propio adaptador de MercadoPago** en vez de usar el de
+qzpay-core: `abandoned-pending-subs`, `addon-subscription-reconcile`,
+`reactivation-supersession-reconcile`, `subscription-drift-reconcile`,
+`subscription-poll`, `trial-reconcile` y `webhook-retry`. El motivo está escrito en
+`trial-expiry.ts:135-138`: `getPaymentAdapter()` devuelve la interfaz genérica y la
+reconciliación necesita el `subscriptions.retrieve()` tipado de MercadoPago.
+
+---
+
+### F-1B-019 — «Billing no está configurado» se resuelve de cuatro formas distintas, y una descarta eventos
+
+**Catorce** crons tienen la rama `if (!billing)`. Ante **exactamente la misma
+condición**, hacen cuatro cosas distintas:
+
+| qué hace | cuántos | quiénes |
+|---|---|---|
+| `success: true`, `processed: 0` | **11** | `abandoned-pending-subs`, `addon-subscription-reconcile`, `apply-scheduled-plan-changes`, `dunning`, `finalize-cancelled-subs`, `notification-schedule`, `propagate-plan-price-changes`, `reactivation-supersession-reconcile`, `subscription-drift-reconcile`, `subscription-poll`, `trial-reconcile` |
+| `success: false`, `errors: 1` | **1** | `addon-expiry` (`:260-270`) |
+| cuenta un error por fila y sigue | **1** | `courtesy-expiry` (`:127-131`) |
+| **`return true`** | **1** | `webhook-retry` (`:104-107`, `:145`) |
+
+**El cuarto caso descarta eventos.** `retryMercadoPagoPaymentUpdated` documenta su
+retorno como *«true if processing succeeded, false otherwise»*
+(`webhook-retry.job.ts:100`), y devuelve **`true`** cuando billing no está configurado,
+sin haber procesado nada. En el llamador, `webhook-retry.job.ts:961-963`:
+
+```ts
+if (success) {
+    // Mark as resolved
+    await markAsResolved(tx, event.id, event.providerEventId);
+    resolved++;
+}
+```
+
+O sea que por ese camino **la cola de dead-letter se vacía marcando cada evento de pago
+como resuelto sin haberlo procesado**, y el cron reporta éxito.
+
+**Es un camino latente, no un bug activo**: depende de que `getQZPayBilling()` devuelva
+un valor falsy, y eso **no está medido** — en producción billing está configurado, hay
+8 suscripciones y 206 eventos de webhook. Lo que está medido es el camino y su efecto.
+
+Y hay un artefacto citable de lo desparejo que es el patrón: `dunning.job.ts:316`
+devuelve **`skipped: false` junto a `success: true`** en la rama de «no configurado» —
+declara que no se salteó mientras se saltea.
+
+*Nota*: un cron que se saltea porque **otra instancia tiene el lock** y reporta
+`success: true` es correcto y no entra en este conteo (`exchange-rate-fetch:213`,
+`dunning:725`). Son dos condiciones distintas que un regex suelto mezcla.
+
+---
+
+### F-1B-020 — En `trial-reconcile`, el `dryRun` no simula lo que hace el modo real
+
+`trial-expiry.ts` tiene 189 líneas y delega toda su lógica en
+`TrialService.reconcileExpiredTrials({ paymentAdapter })` (`:141`). Pero **las dos ramas
+no comparten ni una línea**:
+
+- **Modo real** (`:132-141`): construye el adaptador de MercadoPago y llama al servicio,
+  que re-lee cada preapproval y espeja el veredicto del proveedor.
+- **Dry run** (`:75-130`): lista las suscripciones `trialing` con
+  `billing.subscriptions.listAll()` y **cuenta** las que tienen `trialEnd < now`. No
+  llama al servicio, no habla con el proveedor, y no aplica ninguna de sus reglas.
+
+El dry run responde *«cuántas tienen el trial vencido»*; el modo real hace *«qué dice el
+proveedor de cada una»*. **Correr el dry run no dice qué va a hacer el modo real**, ni en
+número ni en efecto.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
@@ -735,7 +827,7 @@ Ninguno empezado. El orden no está decidido.
 | Los 46 índices parciales y los 21 de expresión: qué condición imponen | 67 | ⬜ |
 | Los 90 `pgEnum` y su correspondencia con los enums de `@repo/schemas` | 90 | ⬜ |
 | ~~Los 47 crons: nombre, horario y habilitación~~ | — | ✅ `F-1B-003`, `F-1B-017` |
-| Qué hace cada uno de los 47 handlers, leído por dentro | 47 | ⬜ |
+| Los 16 handlers de billing que faltan, leídos por dentro | 16 de 17 | 🟡 `F-1B-018` a `F-1B-020` |
 | ~~Endpoints registrados por tier~~ | — | ✅ `F-1B-016` |
 | Qué hace cada uno de los 1.032 handlers | 1.032 | ⬜ |
 | Servicios: métodos públicos y qué validan | por medir | ⬜ |
