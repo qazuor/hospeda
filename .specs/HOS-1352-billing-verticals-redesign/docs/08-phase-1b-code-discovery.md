@@ -2505,6 +2505,59 @@ a la redención, que re-valida bajo `SELECT … FOR UPDATE`.
 
 ---
 
+### F-1B-061 — Borrar una cuenta no toca billing: la única función que podía hacerlo no la llama nadie
+
+Leídos enteros `refund-lifecycle.service.ts` (545), `courtesy-grant.service.ts` (373) y
+`billing-customer-sync.ts` (531).
+
+**`BillingCustomerSyncService.handleUserDeletion` (`billing-customer-sync.ts:355`) no
+tiene un solo llamador.** Sus únicas apariciones fuera de la definición son dos tests. Y
+la ruta que borra un usuario —`apps/api/src/routes/user/admin/delete.ts:34`— llama
+`userService.softDelete(actor, id)` y **no menciona billing, suscripciones ni la caché de
+entitlements en ninguna línea**.
+
+Lo que cierra el círculo es que el repo ya midió por qué importa: el guard
+`apps/api/test/services/inv1-cache-invalidation.guard.test.ts:450` registra esa función
+como *«the only place that can invalidate»*, porque *«qzpay's `findByCustomerId` filters
+`deleted_at IS NULL` … and account deletion fires no MercadoPago webhook»*. O sea: hay una
+razón escrita de por qué hace falta, una función que la implementa, un test que la
+documenta — y ningún camino que la ejecute.
+
+**El refund declara su no-atomicidad como decisión.** `applyRefundLifecycle:366-377`
+escribe `billing_payments.refunded_amount` **fuera** de toda transacción y, si ese `UPDATE`
+tira, **sigue igual**: el log dice *«attempting subscription transition anyway»*. El
+comentario de `:358-365` lo llama *«Intentional non-atomicity (accepted tradeoff)»* y
+nombra el resultado raro que acepta: *«`refunded_amount` stays 0 on a cancelled sub»*.
+Después, ya fuera de la transacción de estado, llama
+`hardCancelPreapprovalBestEffort` (`:525-534`). La función devuelve `void` y **no relanza
+ningún error**: cada paso tiene su `try/catch` que sólo loguea.
+
+**Cortesía y `comp` son mecanismos opuestos sobre el mismo hecho.** El docblock de
+`courtesy-grant.service.ts:17-21` los contrasta y el código lo cumple: `comp` **destruye**
+la preapproval (`mp_subscription_id = NULL`, `F-1B-056`), mientras `courtesy` la
+**pausa** —`billing.subscriptions.pause(subscriptionId)` (`:274`)— y lo hace **antes** de
+escribir nada local (`:23-28`); si el proveedor se niega, registra
+`recordPauseProviderRefusal` y devuelve `PROVIDER_ERROR` sin tocar la base (`:285-307`).
+Tiene un único llamador: `routes/billing/admin/subscription-courtesy.ts:153`.
+
+**El cliente de billing se cruza sólo por `external_id`.** `billing-customer-sync.ts` no
+consulta por email en ninguna línea: todo lookup es
+`billing.customers.getByExternalId(userId)` (`:102`, `:176`, `:250`, `:365`). La carrera
+de dos requests concurrentes la resuelve el índice único parcial de
+`extras/036-billing-customers-external-id-unique.index.sql` más `isDuplicateKeyError`
+(SQLSTATE 23505), re-leyendo al ganador (`:170-181`). Un cliente con el mismo email y otro
+`external_id` no lo detecta nada de este lado.
+
+**Y un middleware construye el servicio que no usa.** `middlewares/billing-customer.ts:97`
+hace `const _syncService = getSyncService();` bajo el comentario *«Try to ensure customer
+exists / This will check cache first, then DB, then create if needed»* (`:99-102`), y el
+bloque que sigue nunca le llama un método: resuelve con
+`billing.customers.getByExternalId(actor.id)` (`:112`) y, si no hay cliente, deja `null`
+con otro comentario —*«Customer will be created on auth/sync»* (`:127`)—. El guion bajo
+del nombre es la convención de este repo para una variable que no se usa.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
