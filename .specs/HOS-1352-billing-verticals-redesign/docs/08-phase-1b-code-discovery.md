@@ -1807,6 +1807,42 @@ probada y nunca alcanzada. Acá son **≈290 líneas** de los 2.160 del archivo.
 
 ---
 
+### F-1B-047 — Sí existe un trial sin tarjeta: no sale del checkout, sale de publicar
+
+`apps/api/src/services/subscription-trial-create.service.ts:146` exporta
+`createTrialSubscription`, que **inserta una fila de `billing_subscriptions` con
+`status: TRIALING` y sin `mpSubscriptionId`** (`:213-232`). El propio código marca la
+ausencia como deliberada (`:211-212`): *«No `mpSubscriptionId` is named here, and that is
+load-bearing rather than an omission: there is no MercadoPago object to point at»*.
+
+`trialStart` es el reloj local y `trialEnd` es aritmética local (`:206-207`):
+
+```ts
+const trialStart = input.now ?? new Date();
+const trialEnd = new Date(trialStart.getTime() + trialDays * MS_PER_DAY);
+```
+
+`currentPeriodStart` / `currentPeriodEnd` se apuntan a esa misma ventana (`:223-224`),
+con el motivo escrito: `currentPeriodEnd` es `NOT NULL` en el esquema de qzpay.
+
+**Tiene exactamente dos llamadores**, los dos fuera del checkout:
+
+| llamador | qué lo dispara |
+|---|---|
+| `apps/api/src/services/accommodation-publish-deps.ts:265` | la primera publicación de un alojamiento (`metadata.source = 'first-publish-trial'`, `:231`) |
+| `apps/api/src/services/commerce-trial-start.service.ts:339` | el arranque del trial de un listing de commerce |
+
+Esto no contradice a `F-1B-045` ni al camino pago: los cinco puntos de entrada del
+checkout siguen mandando `trialDays: 0` a MercadoPago. Lo que agrega es que **el trial de
+la plataforma tiene dos orígenes distintos** —uno con preapproval y tarjeta, otro sin
+nada de eso— y sólo el primero está atado a un objeto del proveedor.
+
+`trial.service.ts` nunca importa `createTrialSubscription`: lo nombra en tres comentarios
+(`:116`, `:147`, `:544`) afirmando que tiene dos call sites, y la afirmación coincide con
+lo medido.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
