@@ -1782,6 +1782,31 @@ otra cosa, y en las dos la afirmación estaba escrita en un comentario.
 
 ---
 
+### F-1B-046 — De los ocho métodos de `TrialService`, tres no los llama nadie
+
+`apps/api/src/services/trial.service.ts` son 2.160 líneas con una clase de **ocho
+métodos públicos**. Contados los call sites fuera del propio archivo y fuera de tests:
+
+| método | líneas | call sites |
+|---|---|---|
+| `getTrialStatus` | `:385-787` | 7 |
+| `reconcileExpiredTrials` | `:876-1227` | 2 (`routes/billing/trial.ts:397`, `cron/jobs/trial-expiry.ts:141`) |
+| `extendTrial` | `:1236-1318` | 1 |
+| `reactivateFromTrial` | `:1355-1547` | 1 |
+| `reactivateSubscription` | `:1579-1876` | 1 |
+| **`checkTrialExpiry`** | `:796-799` | **0** |
+| **`findTrialsEndingSoon`** | `:1886-2019` | **0** |
+| **`reconcileDuplicateSubscriptions`** | `:2047-2159` | **0** |
+
+Los tres últimos están completos y no los invoca ninguna ruta, ningún cron y ningún otro
+servicio. `reconcileDuplicateSubscriptions` tiene **una sola** aparición en el repo fuera
+de su definición: el `@example` de su propio JSDoc (`:2041`).
+
+Es el mismo hallazgo de forma que `F-1B-039` en el eje de los gates: superficie escrita,
+probada y nunca alcanzada. Acá son **≈290 líneas** de los 2.160 del archivo.
+
+---
+
 ## Carriles pendientes
 
 Ninguno empezado. El orden no está decidido.
