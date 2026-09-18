@@ -274,6 +274,34 @@ decide si el paso 4 arranca con una duda o con una conclusión ya ganada**:
 
 **No es un desarrollo: es una pregunta a soporte del proveedor**, con la evidencia adjunta.
 
+#### El `403` está explicado por la documentación del proveedor — lectura del 2026-09-17
+
+**El producto publica su requisito, y el requisito es comercial.** La página de resumen de
+*Pagos automáticos* en el sitio argentino
+([`/developers/es/docs/automatic-payments-orders/landing`](https://www.mercadopago.com.ar/developers/es/docs/automatic-payments-orders/landing),
+leída el 2026-09-17) lista **dos** requisitos previos, y el segundo dice, textual:
+
+> **Contacto con representante Comercial**
+>
+> Es necesario contar con la autorización del equipo Comercial para poder utilizar esta solución.
+
+Tres cosas se siguen de ahí, y ninguna estaba escrita antes:
+
+1. **El `403` de la sonda 40 no es un bug ni un alcance de credencial mal pedido**: es el portón
+   que el proveedor declara por escrito. Deja de haber una hipótesis de que armamos mal el
+   request — ya estaba descartada por el control, y ahora además está explicada.
+2. **Quien habilita es Comercial, no soporte técnico.** Eso cambia a quién se le pregunta, no qué
+   se pregunta.
+3. **La página no publica ningún umbral** de volumen, facturación ni usuarios. **Eso no prueba que
+   no exista**: es exactamente la trampa que `EX-32` ya dejó anotada —el umbral de Wallet Connect
+   tampoco está en su página de *prerrequisitos*, y este documento llegó a afirmar que no había
+   mínimo—. Se verificó el 2026-09-17 que la página de prerrequisitos de Wallet Connect **sigue
+   sin mencionarlo**, así que en este proveedor **la ausencia en esa clase de página no es
+   evidencia de nada**.
+
+> ⚠️ Esto es **lectura de documentación, no una medición**. Por el §58 no marca ninguna fila de la
+> matriz. Lo que aporta es a **quién** se dirige la pregunta y con qué cita se abre.
+
 **La pregunta, textual:**
 
 > ¿Qué requisitos tiene que cumplir una aplicación para que se le habilite **`automatic_payments`
