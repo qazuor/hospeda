@@ -184,6 +184,44 @@ No es aceptar-y-descartar: es **aceptar y RELLENAR**. Hay que saber si ese `1m` 
 el proveedor va a ejecutar cobros por su cuenta cada mes sobre una suscripción que creímos
 manual. **Sin medir** — y es justo la diferencia entre «el ciclo es nuestro» y «el ciclo es suyo».
 
+## § 2.6 · La causa de todo: la cuenta de demostración NO APRUEBA NINGÚN PAGO
+
+**Es el hallazgo que reordena la tanda entera, y se mide contando.**
+
+Las **12 operaciones** que tiene la cuenta demo en el listado —tres días de actividad, la de otros
+integradores incluida— leídas contra la
+[tabla oficial de códigos](https://mobbex.dev/codigos-de-estado):
+
+| código | qué significa, textual | cuántas |
+|---|---|---|
+| **`200`** | **«Paga»** | **CERO** |
+| `604` | «Transacción Denegada» | 8 |
+| `502` | **no figura en la tabla de códigos del proveedor** | 2 |
+| `500` | «Error» | 1 |
+| `400` | «Declinada» | 1 |
+
+**Ni una sola operación aprobada en toda la cuenta.** No es nuestra tarjeta —el control del §2.5
+la probó por dos caminos—, no es nuestro flujo y no es el CVV: **la cuenta pública de
+demostración no procesa pagos**.
+
+Eso reinterpreta hacia atrás medio documento:
+
++ el rechazo del alta de tarjeta (§2.5) **no dice nada sobre el alta de tarjeta de Mobbex**;
++ la pantalla de aprobado del checkout era **UI sin operación detrás** — por eso al reconsultar
+  no aparecía nada. **La reserva que se escribió en el §2.5 estaba bien puesta**: si se hubiera
+  dado por bueno el verde, este documento afirmaría que el checkout cobra, y no cobró;
++ **todo lo que dependa de que un pago se concrete queda sin medir**, y eso incluye lo único que
+  nos trajo a este proveedor: el cobro a demanda.
+
+**Lo que SÍ sigue valiendo** es todo lo que no necesita un pago aprobado: la idempotencia por
+`reference` (§1.1), que el status HTTP no cierra nada (§0), que un campo inventado se descarta
+(§2.3), que una `manual` vuelve con `interval` (§2.4), que el intento de cobro queda registrado
+con estado propio (§2.1), y que la URL del checkout abre de verdad (§1.2).
+
+> **De paso, un hallazgo chico y real**: el código **`502` aparece en operaciones vivas y no está
+> en la tabla de códigos del proveedor**. Un integrador que mapee estados contra esa tabla se
+> encuentra con un valor que no existe en la documentación.
+
 ## § 3 · Inventario de lo creado
 
 Cuenta de demostración **pública y compartida**: hay objetos de terceros ahí, así que **ningún
