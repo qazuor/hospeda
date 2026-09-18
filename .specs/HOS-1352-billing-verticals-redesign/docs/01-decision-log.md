@@ -1858,13 +1858,107 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ARCH-004 — El billing se implementa de nuestro lado, en un package propio de Hospeda, con la pasarela detrás de un adaptador
+
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: tres días de medición contra Mercado Pago dejaron dos cosas a la vista. La
+  primera, que **de las ocho capacidades del capítulo 06 ya traíamos cinco de nuestro lado** —el
+  reloj de la pausa, el candado contra el doble cobro, el inventario a conciliar, la
+  compensación de días y la baja a fin de período—, no por desconfianza sino porque el proveedor
+  no las tiene o las tiene de una forma que no sirve. La segunda, que el reparto actual entre
+  `qzpay` y Hospeda **no tiene una frontera**: son **seis repartos distintos sobre las mismas 27
+  tablas y ninguno coincide** (`F-1B-132`), con el DDL escrito por Hospeda y los modelos Drizzle
+  definidos por `qzpay`. Encima, la evaluación de reemplazo abierta el 2026-09-17 puso sobre la
+  mesa una pregunta que el diseño actual no sabe contestar: **qué cuesta cambiar de pasarela**.
+- **Las cifras que sostienen la decisión**, todas medidas:
+
+  | | |
+  |---|---|
+  | capacidades que ya resolvíamos nosotros | **5 de 8** |
+  | decisiones acopladas a una fila medida del proveedor | **20 de 46** (43 %) |
+  | capítulos de la Master Spec que citan una medición | **13 de 21**, y **41 de las citas viven en el capítulo 06** |
+  | tamaño de `qzpay` | **~62.500 líneas** en 9 paquetes |
+  | cuánto de su motor usa Hospeda | **6 de 261 símbolos**; 12 de 16 servicios en cero; 4 namespaces en cero |
+  | otros consumidores de `qzpay` | **ninguno** — sólo worktrees de Hospeda |
+  | dirección de la dependencia | **19 FK** hospeda→qzpay, **0** al revés |
+  | crons que ya se saltean la abstracción | **7 de 17**, con el motivo escrito en el código |
+
+- **Alternativas**: (1) seguir con `qzpay` como paquete externo y mejorar su frontera;
+  (2) traer el billing adentro de Hospeda, en un package propio, con la pasarela detrás de un
+  adaptador; (3) acoplarse a la pasarela elegida y aceptar que cambiarla sea una reescritura.
+- **Decisión**: **(2)**, con cinco definiciones del owner y dos condiciones que las hacen
+  exigibles:
+  1. **Se implementa de nuestro lado todo lo que se pueda**, para depender de la pasarela lo
+     mínimo posible. Al proveedor se le pide cobrar, reembolsar, leer y avisar — el ciclo de
+     vida es nuestro.
+  2. **`qzpay` se absorbe.** Deja de ser un paquete externo.
+  3. **Un package del monorepo concentra el dominio de billing**, y **ninguna otra parte de
+     Hospeda habla con la pasarela directamente**.
+  4. **Ese package expone una API definida por lo que Hospeda necesita**, no por lo que una
+     pasarela ofrece — que es lo que el capítulo 06 ya hizo con las ocho capacidades.
+  5. **Adentro es un adaptador intercambiable**: cambiar de pasarela cambia el adaptador, no la
+     API ni el código que la consume.
+  6. **Condición A — un guard estático** que prohíba importar el SDK de la pasarela fuera del
+     adaptador. Es lo único que convierte «no lo hagas» en «no se puede».
+  7. **Condición B — un adaptador falso, en memoria, desde el día uno**, que implemente la misma
+     interfaz. Sirve para testear sin red y, sobre todo, **es lo que prueba que la abstracción no
+     miente**: si no se puede escribir sin filtrar conceptos de Mercado Pago, la interfaz está
+     mal definida.
+- **Motivo**: un paquete externo se justifica por reuso, y **no hay reuso**: `qzpay` existe sólo
+  para Hospeda, que además usa el 2 % de su motor. Estamos pagando el precio de una frontera sin
+  cobrar ningún beneficio, y la frontera está rota de una forma medida y no accidental. La (1)
+  conserva ese precio. La (3) es la que nos trajo hasta acá: es la razón por la que tres días de
+  medición sobre un proveedor pusieron en duda meses de diseño.
+- **Lo que esta decisión NO afirma**: que las pasarelas sean intercambiables. **No lo son.** El
+  modelo de datos difiere de verdad —en Mobbex una suscripción es una plantilla con muchos
+  suscriptores; en Mercado Pago un `preapproval` **es** un cliente—, y lo que el proveedor le
+  escribe al cliente por su cuenta (`EX-3`), sus tiempos de acreditación y sus comisiones no se
+  abstraen. Por eso la API **no expone el mínimo común denominador**: para cada capacidad, el
+  diseño declara qué pasa cuando el proveedor no la tiene —se emula de nuestro lado, se degrada,
+  o se bloquea la función del producto—. Un adaptador que finge paridad es peor que ninguno,
+  porque el código de arriba le cree.
+- **El riesgo, declarado**: esta decisión **traslada el riesgo hacia nosotros**. Hoy, si un cobro
+  sale mal, es problema del proveedor. Con el ciclo de vida de nuestro lado, **un doble cobro es
+  nuestro bug y es plata de un cliente real** — y está medido que ni Mercado Pago (`EX-17`) ni
+  Mobbex ofrecen idempotencia en la creación, así que el candado es nuestro y va **antes** de
+  llamar al proveedor (`DEC-CONC-001`). Se acepta el trade por dos razones: un bug nuestro se
+  arregla y uno del proveedor no, y **nadie puede testear lo que no controla** — hoy el e2e de
+  billing corre contra un stub de Mercado Pago que, por construcción, no puede detectar
+  divergencias con el proveedor real.
+- **Implicaciones**:
+  1. **El package no es un wrapper de pasarela: es el dominio de billing entero.** Adentro viven
+     el reloj de la pausa, el dunning, los reintentos, las cortesías y el candado contra el doble
+     cobro. La pasarela queda como un detalle al fondo.
+  2. **La FASE 5 cambia de contenido.** `qzpay` deja de ser material a clasificar en
+     `KEEP`/`ADAPT`/`REWRITE` y pasa a absorberse. El gate de `DEC-METH-003` sigue rigiendo para
+     el resto del código de billing de Hospeda.
+  3. **Las 20 decisiones acopladas se revisan, no se reescriben.** En cada una la política
+     sobrevive y lo que se revisa es la forma. Varias mejoran si el proveedor nuevo puede lo que
+     Mercado Pago no: si se puede mutar el ciclo de una suscripción viva, `DEC-SUB-006` deja de
+     necesitar el cancelar-y-recrear.
+  4. **El capítulo 13 (Pagos), el único que falta, se escribe con esta decisión puesta.** Era la
+     razón por la que se había diferido.
+  5. **Lo que se absorbe es mucho menos que 62.500 líneas**: el 2 % del motor que se usa, más los
+     modelos de las 27 tablas cuyo DDL ya es de Hospeda. Lo que se descarta es lo que nunca se
+     usó.
+  6. **Los 7 crons que hoy construyen su propio adaptador se reescriben** — ya estaban condenados
+     por decisión previa del owner, así que no es costo que agregue esta decisión.
+- **Origen**: conversación con el owner del 2026-09-18, a partir del §57 del PDR (abstracción de
+  proveedor), del capítulo 06 de la Master Spec (las ocho capacidades por dominio) y de la
+  evaluación de proveedor abierta el 2026-09-17
+  ([`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md)). **Es la primera decisión
+  de arquitectura del programa que no sale de una medición sino de un criterio del owner**; las
+  mediciones que la sostienen están citadas arriba, pero la elección es suya.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **45** |
+| Decisiones tomadas | **46** |
 | De metodología | 3 |
-| Funcionales | 42 |
+| Funcionales | 43 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
@@ -1872,4 +1966,5 @@ Cada entrada lleva, según §3.4:
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
+| Decisiones de arquitectura del owner | **1** — **`DEC-ARCH-004`** (2026-09-18): el billing se implementa de nuestro lado, en un package propio, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**; las mediciones que la sostienen están citadas en ella |
 | Apartamientos declarados del PDR | **4** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), y **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento) |
