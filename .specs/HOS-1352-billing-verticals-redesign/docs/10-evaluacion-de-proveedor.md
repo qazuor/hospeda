@@ -364,37 +364,144 @@ por la vía pública. Son dos canales distintos y **cada uno contesta una cosa q
 
 #### Texto 2 — ticket en el centro de soporte técnico
 
-**Asunto**: *Elegibilidad de `automatic_payments` + `stored_credential` en `POST /v1/orders`, y
-reembolsos de `preapproval` tras la discontinuación de la API de Payments*
+**El pedido del owner el 2026-09-17**: que el ticket **cuente todo lo que probamos y todo lo que
+nos pasó**, no sólo el `403`. El motivo es que **la respuesta útil puede no ser la que estamos
+pidiendo**: si hay un producto o una configuración que no estamos viendo, la única forma de que
+nos la ofrezcan es que sepan qué estamos intentando hacer y contra qué chocamos.
 
-> Hola. Dos consultas de integración sobre la cuenta `3497516165`, aplicación
-> `<ID de la aplicación>`.
+**Asunto**: *Suscripciones: limitaciones medidas en `preapproval` y solicitud de elegibilidad para
+`automatic_payments` en `POST /v1/orders`*
+
+> Hola. Escribo por la cuenta `3497516165`, aplicación `<ID de la aplicación>`.
 >
-> **1 · Elegibilidad de pagos automáticos**
+> Somos una plataforma de alojamientos turísticos que cobra **suscripciones mensuales en ARS** a
+> sus anfitriones. Durante los últimos días evaluamos a fondo la API de suscripciones para
+> implementar el ciclo de vida completo del producto, y llegamos a varias limitaciones que nos
+> bloquean. **Antes de decidir cómo seguir, queremos preguntarles si hay algún producto o
+> configuración que no estemos viendo.**
 >
-> `POST /v1/orders` con `automatic_payments` y/o `stored_credential` devuelve
-> `403 "The application is not authorized to perform this type of payment"`.
+> **Cómo medimos**: cada resultado se verificó **releyendo el recurso** después de la operación y
+> comparando campo por campo, y cada prueba se acompañó de un control que distingue *«el proveedor
+> lo rechazó»* de *«no llegó a evaluarse»*. Si alguno de estos puntos es un error nuestro de
+> método, nos sirve muchísimo que nos lo digan.
 >
-> Lo medimos el 2026-09-16 con el control que descarta un error nuestro:
+> **Qué necesita hacer nuestro producto**: alta con prueba gratis, cambio de plan, cambio de ciclo
+> (mensual ↔ anual), pausa temporal con reanudación, cortesías de N meses, adicionales
+> contratables aparte, baja, y recuperación de un cobro fallido.
 >
-> + la **misma orden sin esos nodos** → `201`, y cobra;
-> + cuatro variantes → **el mismo `403` en las cuatro**: sólo `stored_credential`; sólo
->   `automatic_payments`; las dos juntas; y `payment_initiator: "merchant"` sin perfil de pago.
+> ---
 >
-> Entendemos por la documentación del producto que la habilitación la otorga el equipo Comercial
-> —ya se la solicitamos por el formulario—. Lo que les pedimos a ustedes es el **criterio**:
-> ¿cuáles son los requisitos de elegibilidad, y **son los mismos que los de Wallet Connect**
-> (más de 100.000 usuarios) o es una habilitación independiente?
+> **1 · Operaciones que responden `2xx` y no se aplican**
 >
-> **2 · Reembolsos de una suscripción, después de la discontinuación de la API de Payments**
+> Es el grupo que más nos preocupa, porque no hay error que detectar: la API responde bien y el
+> cambio no ocurre.
 >
-> El panel anuncia que la API de Payments se descontinúa, y su guía de migración a Orders
-> **excluye explícitamente a las suscripciones**. Tres preguntas:
+> + **Cambiar la frecuencia** de una suscripción autorizada: `PUT /preapproval/{id}` con
+>   `auto_recurring.frequency` → **`200`** y `frequency` sigue en 1. Cuatro intentos (3 meses, 12
+>   meses, `days`), en sandbox y en producción.
+> + **Mover una suscripción viva de un plan a otro**: `PUT` con `preapproval_plan_id` → **`200`** y
+>   la relectura sigue mostrando el plan anterior. *Control*: el mismo `PUT` con sólo `back_url` sí
+>   se aplica, y mandando los dos juntos se aplica `back_url` y se ignora el plan.
+> + **Correr la fecha del próximo cobro** de una suscripción viva: cuatro formas
+>   (`auto_recurring.start_date`, `next_payment_date`, `auto_recurring` completo,
+>   `auto_recurring.billing_day`) → **`200` las cuatro**, y `last_modified` **congelado** en las
+>   cuatro. *Control*: un `PUT` de `transaction_amount` sobre la misma suscripción sí entra y mueve
+>   `last_modified`.
+> + **Poner un `free_trial` a una suscripción ya viva** → **`200`**, `free_trial` sigue en `null`.
+> + **Un `PUT` con varios campos se aplica a medias, con un solo `200`**: `frequency: 6` +
+>   `transaction_amount: 99` → el monto cambia y la frecuencia no. `end_date` +
+>   `transaction_amount: 77` → el monto cambia y el `end_date` no aparece.
+> + **Cubrir más de un monto con una misma autorización**: `auto_recurring` como array → `400`;
+>   el campo `items` → **`201`** y se descarta (no vuelve en la respuesta).
+> + **`repetitions` sin plan** → **`201`** y el campo queda ausente en la relectura.
+> + **`currency_id: "USD"` sobre una autorizada** → **`200`** y sigue en ARS. Al **crear**, la misma
+>   moneda da `400`.
+> + **`X-Idempotency-Key` en `POST /preapproval`**: no deduplica. Diez creaciones, diez ids. Con la
+>   misma clave y **monto distinto** devuelve un tercer `201` con el monto nuevo. Como una creación
+>   con `card_token_id` cobra en el acto, un reintento nuestro son dos cobros.
 >
-> + ¿la discontinuación alcanza también a las **lecturas** de `/v1/payments`?
-> + ¿en qué **fecha**?
-> + cuando se retire, **¿por qué endpoint se reembolsa un cobro originado por un `preapproval`**,
->   si las suscripciones quedan fuera de la migración a Orders?
+> **2 · Capacidades que no encontramos**
+>
+> + **Reanudar una pausa automáticamente**: no encontramos un `pauseUntil` ni equivalente. Una
+>   suscripción pausada seguía `paused` **24,5 h después**, con `last_modified` en el instante de la
+>   pausa.
+> + **El ciclo que vence estando pausada avanza `next_payment_date` sin cobrar**, y al reanudar no
+>   hay recuperación de ese período: el tiempo pago se pierde.
+> + **Editar el ciclo de un plan no alcanza a los ya suscriptos**, mientras que **editar el monto sí
+>   los alcanza**. Nos sorprendió la asimetría: medido sobre los mismos sujetos.
+> + **Un `card_token` sirve una sola vez**, así que cada reintento de alta requiere re-tokenizar.
+> + **Sólo ARS** (`site_id: MLA`): `USD` y `BRL` → `400`.
+>
+> **3 · Comportamientos que nos parecen defectos, y queremos confirmar con ustedes**
+>
+> + **El `init_point` que devuelve `POST /preapproval` no funciona**: viene con `&activation=true` y
+>   esa URL abre *«Esta página no existe»*. Sin ese parámetro abre el checkout normal. Reproducido
+>   con la cuenta productiva; hay un issue abierto sin respuesta desde el 2026-09-04
+>   ([sdk-nodejs#480](https://github.com/mercadopago/sdk-nodejs/issues/480)). Es serio: la API
+>   responde `201` con un dato que parece válido y el cliente no se suscribe.
+> + **Mutar el monto no emite ninguna notificación**: ventana de 91 s sin eventos, con la mutación
+>   aplicada y la `version` del recurso saltando de 5 a 9. Crear, pausar, reanudar y cancelar sí
+>   notifican. Al **cliente** ustedes sí le avisan del cambio de precio por correo; a nosotros no.
+> + **El `search` de `/preapproval` devuelve resultados incorrectos de tres formas distintas**, y
+>   ninguna da error: `external_reference` **se ignora** (devuelve todo el universo); un `status`
+>   inválido devuelve `200` con `total: 0`; y en producción `status=cancelled` devolvió **15 filas
+>   cuando recorriendo sin filtro hay 69**. Además el `search` trae `next_payment_date: null` y
+>   `summarized: {}` donde el `GET` del mismo recurso, en el mismo momento, trae los valores reales.
+> + **`live_mode: true` en eventos de la cuenta de prueba** (`tags: ["test_user"]`): no encontramos
+>   forma de distinguir sandbox de producción mirando el evento.
+> + **Una `start_date` futura se convierte en un `free_trial` sola**: el request no menciona
+>   `free_trial` y el objeto queda con uno, y al comprador se le anuncia *«Tu prueba gratis
+>   comenzó»*. Reproducido tres veces. Nos afecta porque compensar días ya pagados corriendo la
+>   fecha le anuncia al cliente una prueba gratis que no le dimos.
+> + **El `free_trial` de un plan no lo decide el request**: dos altas del mismo pagador sobre el
+>   mismo plan, con requests idénticos y 3 segundos de diferencia, dieron una con `free_trial` y
+>   otra con `null`. Reproducido tres veces sobre tres planes nuevos. No logramos identificar el
+>   criterio, y nos importa porque no podemos anunciarle al cliente la fecha del primer cobro desde
+>   lo que mandamos.
+> + **`PUT {card_token_id}` puede fallar con `402 {"message":"Unknown error","error":null,"cause":null}`**:
+>   el motivo real sólo aparece en el pago de validación de ARS 0, que hay que ir a buscar aparte.
+> + **`400 code 2084 "This transaction does not support to be refunded"`**: sobre **el mismo pago**
+>   de ARS 15, `amount: 5` se rechazó y `amount: 14` entró minutos después. Descartamos cuatro
+>   hipótesis y no dimos con la regla.
+> + **La documentación de reintentos de cobro se contradice**: una página indica 4 intentos en 10
+>   días y otra 8 cada 4 días. ¿Cuál rige hoy en Argentina?
+>
+> **4 · Lo que no pudimos ensayar en el entorno de pruebas**
+>
+> + **No se puede asociar una tarjeta que rechace**: los siete titulares de rechazo
+>   (`CALL`, `SECU`, `CONT`, `EXPI`, `FORM`, `FUND`, `OTHE`) dan `400 CC_VAL_433` al crear y `402`
+>   al cambiar el medio de pago. *Control*: `APRO` sobre el mismo sujeto y endpoint funciona. **No
+>   tenemos forma de ensayar un cobro fallido**, que es justamente el caso que más nos importa
+>   manejar bien. ¿Hay alguna manera de provocarlo en sandbox?
+> + La casilla del comprador de prueba no es accesible, así que no podemos ver los correos que
+>   ustedes le envían al cliente sin usar la cuenta real.
+>
+> ---
+>
+> **5 · Lo que buscamos, y las tres preguntas**
+>
+> Frente a esto evaluamos **manejar nosotros el ciclo de vida** y pedirle a Mercado Pago sólo el
+> cobro mensual contra una tarjeta en archivo, con `automatic_payments` + `stored_credential` en
+> `POST /v1/orders`. Hoy ese pedido devuelve
+> **`403 "The application is not authorized to perform this type of payment"`**. Lo probamos el
+> 2026-09-16 con el control correspondiente: la **misma orden sin esos nodos** devuelve `201` y
+> cobra, y cuatro variantes dan el mismo `403` (sólo `stored_credential`; sólo `automatic_payments`;
+> las dos juntas; `payment_initiator: "merchant"` sin perfil de pago). Entendemos por la
+> documentación del producto que la autorización la otorga el equipo Comercial, y ya la
+> solicitamos por el formulario.
+>
+> 1. **Dado el caso de uso descripto, ¿hay algún producto, endpoint o configuración que no estemos
+>    considerando?** Es la pregunta más importante de este ticket.
+> 2. **¿Cuáles son los requisitos de elegibilidad de `automatic_payments` con `stored_credential`, y
+>    son los mismos que los de Wallet Connect** (más de 100.000 usuarios) **o es una habilitación
+>    independiente?**
+> 3. **Reembolsos**: el panel anuncia que la API de Payments se descontinúa y la guía de migración a
+>    Orders **excluye explícitamente a las suscripciones**. ¿La discontinuación alcanza también a las
+>    **lecturas** de `/v1/payments`? ¿En qué fecha? Y cuando se retire, **¿por qué endpoint se
+>    reembolsa un cobro originado por un `preapproval`**?
+>
+> Quedamos a disposición para enviar los `request`/`response` completos de cualquiera de estos
+> puntos, con sus ids.
 >
 > Gracias.
 
