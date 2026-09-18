@@ -82,24 +82,71 @@ venía `true` **también en sandbox** y lo único que distinguía el entorno era
 | respuesta | **`200` · `{"result":true,"data":{}}`** |
 | ídem | el `GET` de la misma ruta —«ejecutar manualmente»— devuelve lo mismo |
 
-**El control que lo cierra**, corrido en la sonda 04:
+> ⚠️ **CORRECCIÓN, 2026-09-18 00:40 — este apartado afirmaba de más y se corrige entero.**
+> La primera redacción concluyó *«aceptó dos cobros y no creó ninguna operación»* apoyándose en
+> tres lecturas que resultaron ser **el lugar equivocado**. El intento SÍ queda registrado. Lo que
+> sigue es lo que efectivamente está medido.
 
-+ `GET /p/entity/operations?limit=25` → **0 filas** con nuestro sello;
-+ `GET .../subscriber/{sid}/execution` → `{"result":true,"data":{}}`, **ninguna ejecución**;
-+ el suscriptor releído sigue con `updated` en el instante de su creación (3 ms después de
-  `created`): **los dos intentos de cobro no lo movieron**.
+**Lo que devuelve el endpoint**: `200` · `{"result":true,"data":{}}`. **La respuesta no dice nada**
+— ni que falló, ni por qué.
 
-**Conclusión: aceptó dos cobros y no creó ninguna operación, con `result:true` en las dos.**
+**Dónde estaba el rastro, y dónde NO estaba:**
 
-Esto es exactamente el patrón que hace caro a Mercado Pago —aceptar y descartar— **en el endpoint
-del que depende toda la arquitectura que el owner quiere**: nosotros pedimos el cobro, el
-proveedor cobra. Si ese pedido puede devolver éxito sin cobrar, **el éxito no es verificable por
-la respuesta** y hay que confirmar cada cobro releyendo la operación.
+| dónde se buscó | qué dio |
+|---|---|
+| `GET /p/entity/operations` | **nada**. El intento no llega a ser una operación de pago |
+| `GET .../subscriber/{sid}/execution` — el endpoint propio de ejecuciones | **`{"result":true,"data":{}}`**, o sea vacío. **Este endpoint no sirve para esto** |
+| **`GET .../subscriber/{sid}` → campo `executions`** | **ACÁ ESTÁ**: las tres ejecuciones, con `status: "error_no_payment_method"`, su `uid`, su `total` y nuestra `reference` |
 
-> **Lo que todavía NO está medido, y hay que decirlo**: falta ver qué contesta el mismo endpoint
-> sobre un suscriptor **que SÍ tiene tarjeta**. Es posible que el `data:{}` sea «no tengo con qué
-> cobrar» mal reportado y que con tarjeta devuelva la operación. **Eso no lo salva**: el problema
-> es que hoy los dos casos son indistinguibles desde la respuesta.
+**Entonces el comportamiento real es**: acepta, **registra el intento**, lo marca fallido con un
+estado específico y correcto (`error_no_payment_method`) — **y no te lo dice en la respuesta**.
+
+Es mejor de lo que este documento afirmó primero y sigue siendo un problema:
+
++ **lo bueno**: hay estado, es específico y queda auditado. No es el «acepta y descarta» de
+  Mercado Pago, donde la mutación se evapora sin rastro;
++ **lo malo, y vale para el diseño**: **la respuesta del cobro no distingue el éxito del fracaso**,
+  y el endpoint que uno leería para averiguarlo —el de ejecuciones— **devuelve vacío**. La verdad
+  vive en un campo del objeto suscriptor. Un integrador que confíe en el `result:true`, o que
+  relea donde la documentación sugiere, **no se entera de que no cobró**.
+
+**Para la arquitectura que el owner quiere** —nosotros pedimos el cobro, el proveedor cobra— eso
+significa: **cada cobro se confirma releyendo `executions` del suscriptor**, nunca por la
+respuesta del `POST` ni por el endpoint de ejecuciones.
+
+> **Sigue sin medirse** qué devuelve el mismo endpoint sobre un suscriptor **con tarjeta válida**.
+> No se pudo llegar a ese estado — ver §2.5.
+
+### 2.5 · No se pudo cargar una tarjeta al suscriptor, y el control dice que no es la tarjeta
+
+Con el navegador, sobre la `sourceUrl` del suscriptor, con la tarjeta de prueba del proveedor
+(`4507990000000010`, `12/34`, titular `demo`, documento `12123123`) y **CVV `200`, que según su
+propia tabla APRUEBA**:
+
+> **Operación rechazada** — *«No hemos podido validar su tarjeta. Por favor valide o intente de
+> nuevo.»* · **Total: $ 0,00**
+
+**La validación de tarjeta es un cobro de ARS 0**, igual que Mercado Pago (`EX-36`). Quedó como
+operación `9C2YZSFAO00O9WLAM6ISP2`, `status: 604`, `total: 0`, `sourceReference: "visa.debit"`,
+con la suscripción y el suscriptor adentro. El suscriptor sigue con `sources: []` y
+`activeSource: null`.
+
+**El control que lo separa de «la tarjeta no sirve»**: se pagó **la misma tarjeta, el mismo CVV**,
+por el **checkout común** de la misma cuenta (`CHK:YB3UHYXBNMX8S70P15`). El checkout la aceptó,
+reconoció la marca, ofreció planes de cuotas —*«1 x T$ 150 Débito visa»*— y **terminó en la
+pantalla de aprobado**.
+
+> ⚠️ **Y ese control tiene su propia reserva, que hay que respetar**: la pantalla verde **no es
+> prueba**. Al reconsultar la API minutos después, **la operación del checkout no aparecía** en
+> `GET /p/entity/operations`, y `GET /p/checkout/{id}` devuelve `200` con
+> `{"result":false,"code":"UAA","error":"Acceso no autorizado"}`. **Queda pendiente confirmarlo
+> por API**: este programa ya aprendió —con `EX-37`— a no creerle a una pantalla.
+
+Lo que **sí** queda medido y no depende de esa reserva: **el alta de tarjeta del suscriptor
+rechaza la tarjeta de prueba oficial con el CVV que aprueba**. Si se confirma, es el equivalente
+de `PA-4` en Mercado Pago —donde tampoco se podía asociar una tarjeta que rechaza— pero peor:
+**acá no se puede asociar ni una que apruebe**, y sin tarjeta asociada **no hay cobro a demanda
+que medir**, que es lo único que nos trajo hasta este proveedor.
 
 ### 2.2 La tokenización server-side no está habilitada — y el error no lo dice
 
