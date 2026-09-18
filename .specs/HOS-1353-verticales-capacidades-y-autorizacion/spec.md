@@ -3,6 +3,7 @@ title: Verticales — capacidades, entitlements, limits y autorización
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-18
+updated: 2026-09-18
 type: feature
 areas:
   - api
@@ -14,109 +15,134 @@ parent: HOS-1352
 
 # Verticales — capacidades, entitlements, limits y autorización
 
-> **Esta épica se puede implementar sin saber con qué pasarela vamos a cobrar.** Es la mitad del
-> programa HOS-1352 que no pregunta por dinero, y por eso no comparte su bloqueo.
+> **Esta épica se sostiene sola.** No espera a que la de billing esté definida, y su diseño vive
+> acá adentro — no en otro documento. Se puede implementar sin saber con qué pasarela vamos a
+> cobrar.
 
-## 1. De dónde sale esta épica
+## 1. De dónde sale
 
-El programa [HOS-1352](../HOS-1352-billing-verticals-redesign/spec.md) quedó detenido por una
-sola cosa: **no está decidida la pasarela.** Mercado Pago niega el cobro a demanda con un `403`
+El programa [HOS-1352](../HOS-1352-billing-verticals-redesign/spec.md) quedó detenido por una sola
+cosa: **no está decidida la pasarela.** Mercado Pago niega el cobro a demanda con un `403`
 comercial y el candidato que sí lo documenta tiene el alta en revisión de KYC.
 
-**Ese bloqueo alcanza al dinero y no alcanza a las capacidades.** El owner decidió el 2026-09-18
-partir el programa en dos épicas. El corte, con su fundamento y el reparto capítulo por capítulo,
-está en
-[`docs/11-particion-del-programa.md`](../HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md).
-Esta spec es el alcance de la mitad que arranca.
+**Ese bloqueo alcanza al dinero y no alcanza a las capacidades.** `DEC-ARCH-005` parte el programa
+en dos épicas autónomas y ésta es la que arranca. El corte, con su fundamento, está en
+[`11-particion-del-programa.md`](../HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md).
 
-**El diseño ya está escrito.** La Master Spec de FASE 2 tiene 21 de sus 22 capítulos, y los de
-esta épica están completos. Esta spec **no rediseña nada**: declara qué entra, qué contrato tiene
-con la otra mitad, qué se puede construir hoy y con qué se comprueba que está bien.
+**La frontera, en una línea:**
+
+> Es de esta épica si sólo necesita saber **qué puede hacer una cuenta**, sin preguntar si pagó.
+
+Es el criterio del owner —*«toca plata o no toca plata»*—, y no hubo que inventarlo: el capítulo 15
+ya lo había escrito al cerrar, separando su materia de la de promos y cortesías con las palabras
+exactas — *«acá se agregan **capacidades**, allá se compone **dinero**»*.
 
 ---
 
-## 2. La frontera, que es lo primero que hay que tener claro
+## 2. El diseño de esta épica
 
-> **Es de esta épica si sólo necesita saber QUÉ PUEDE HACER una cuenta, sin preguntar si pagó.**
+Once capítulos, en [`docs/`](./docs/). **Son de esta épica**: ningún otro documento los contiene,
+y ninguno de ellos necesita leer uno de la épica de billing para estar completo.
 
-Es el criterio del owner —*«toca plata o no toca plata»*—, y el capítulo 15 ya lo había escrito
-al cerrar, separando su materia de la del 14: *«acá se agregan **capacidades**, allá se compone
-**dinero**»*.
+| # | capítulo | qué resuelve |
+|---|---|---|
+| `02` | [modelo de datos](./docs/02-modelo-de-datos.md) | el catálogo de planes **sin el precio**, la ficha, el caché del conjunto efectivo, la retención |
+| `03` | [máquinas de estado](./docs/03-maquinas-de-estado.md) | **tres**: Trial, Publicación y Postulación de Partner |
+| `10` | [verticales y planes](./docs/10-verticales-planes-billing-options.md) | el Eje 2 como lista cerrada, y qué se lee del catálogo desde dónde |
+| `11` | [trial](./docs/11-trial.md) | el reloj de calendario, el techo de días, la reparación, la campaña de recuperación |
+| `15` | [entitlements y limits](./docs/15-entitlements-y-limits.md) | las cuatro estrategias de agregación, el scope, el excedente, el visitante sin cuenta |
+| `17` | [autorización](./docs/17-autorizacion.md) | los nueve pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
+| `18` | [Partner](./docs/18-partner.md) | la presencia y la postulación |
+| `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **siete guards** |
+| `21` | [migración](./docs/21-migracion.md) | el trial ya consumido, y por qué no hay deuda de datos |
+| `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el hash irreversible del correo |
 
-**El punto donde el reparto se equivoca si se hace por nombre**: «plan» suena a billing y no lo
-es. De las seis entidades del catálogo comercial (cap. 02 §2.1), **cinco no tienen un solo campo
-de dinero** — `vertical`, `plan`, `plan_version`, `plan_version_entitlement` y
-`plan_version_limit`. El precio vive en una sola tabla hoja, `billing_option`, que es la única de
-las seis que **no** es de esta épica.
+### 2.1 Lo que cita y no contiene
+
+Tres cosas, y ninguna la bloquea — las tres están escritas y cerradas:
+
+| qué | dónde | por qué no está acá |
+|---|---|---|
+| **el núcleo** — reglas de escritura, glosario, invariantes, outbox, auditoría, y el método del modelo de datos y de las máquinas | [`docs/nucleo/`](../HOS-1352-billing-verticals-redesign/docs/nucleo/) | es vocabulario y método común. Partirlo lo rompe: un glosario en dos mitades deja de ser un glosario, y los 51 invariantes numerados de corrido pierden lo único que los hace útiles — poder preguntar **una vez** si están todos |
+| **el contrato de cobertura** | [`12-contrato-de-cobertura.md`](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) | es **la frontera**, y por eso tiene una sola fuente que ninguna de las dos épicas puede mutar sola |
+| **el PDR y el decision log** | [`docs/`](../HOS-1352-billing-verticals-redesign/docs/) | son las fuentes del programa entero |
 
 ---
 
 ## 3. Las definiciones declaradas
 
-Lo que sigue son las definiciones que esta épica da por fijadas. Cada una tiene su fuente, y
-ninguna se re-litiga acá: si algo hay que cambiar, se cambia en su capítulo.
+Lo que esta épica da por fijado. Cada una con su capítulo; ninguna se re-litiga acá.
 
 ### 3.1 Qué diferencia legítimamente a una vertical de otra
 
-**El Eje 2 es una lista cerrada de ocho ítems y todo lo demás es Eje 1** (cap. 01 §4). Los ocho:
-el evento que activa el trial, qué publica, la sección de Mi Cuenta, qué claves tienen sentido, el
-camino de alta, si hereda Turista VIP, los métodos de pago admitidos y si tiene pricing propia.
+**El Eje 2 es una lista cerrada de ocho ítems y todo lo demás es Eje 1.** Los ocho: el evento que
+activa el trial, qué publica, la sección de Mi Cuenta, qué claves tienen sentido, el camino de
+alta, si hereda Turista VIP, los métodos de pago admitidos y si tiene pricing propia.
 
-**La consecuencia medida**: Alojamiento, Gastronomía y Experiencia **coinciden en siete de los
-ocho** y difieren sólo en cuál subconjunto de claves tiene sentido — que es configuración en base,
-no comportamiento. **Tres verticales que coinciden en siete ítems no justifican una sola línea de
-código separado** (cap. 10 §1.1).
+**La consecuencia, que es el corazón del rediseño**: Alojamiento, Gastronomía y Experiencia
+**coinciden en siete de los ocho** y difieren sólo en cuál subconjunto de claves tiene sentido —
+configuración en base, no comportamiento. **Tres verticales que coinciden en siete ítems no
+justifican una sola línea de código separado** (cap. 10 §1.1).
 
-Las dos que sí difieren son **Turista** (no publica nada, y es el origen de la herencia en vez de
-su destino) y **Partner** (no tiene trial, no es self-service, y su presencia no es una ficha).
+Las dos que sí difieren de verdad son **Turista** (no publica nada, y es el origen de la herencia
+en vez de su destino) y **Partner** (no tiene trial, no es self-service, y su presencia no es una
+ficha). Las dos caen dentro de la lista cerrada.
 
-**Lo que NO es Eje 2, aunque lo parezca**: los ciclos que ofrece un plan, el grace, la pausa, los
-días de trial y los overrides. Todos son **valores** configurables por plan, y el Eje 2 es
-variación de **comportamiento**, no de valores (cap. 10 §1.2).
+**Lo que NO es Eje 2 aunque lo parezca**: los ciclos que ofrece un plan, el grace, la pausa, los
+días de trial y los overrides. Son **valores** configurables por plan, y el Eje 2 es variación de
+*comportamiento*, no de *valores*.
 
 ### 3.2 Qué sale de la base y qué sale del código
 
-**El catálogo de claves es código; la configuración comercial es base** (cap. 02 §1). Una clave de
-entitlement o de limit existe porque hay código que la respeta; **qué plan la otorga y con qué
-valor** es un dato.
+**El catálogo de claves es código; la configuración comercial es base.** Una clave existe porque
+hay código que la respeta; qué plan la otorga y con qué valor es un dato.
 
-Y el guard va en **las dos direcciones**: una clave usada en código que no existe en la base
-falla, y una clave de la base que no existe en el catálogo también (`G3`).
+El guard va en **las dos direcciones**: una clave usada en código que no está en la base falla, y
+una de la base que no está en el catálogo también (`G3`). Cada dirección es un defecto distinto —
+un permiso que nunca se puede otorgar, y configuración que nadie va a leer.
 
-### 3.3 Cómo se agrega un limit
+### 3.3 El catálogo de planes es de esta épica, menos el precio
 
-**La estrategia se declara con la clave, no con el plan** (cap. 15 §2), y la lista es cerrada:
-`SUMA`, `MÁXIMO`, `MÍNIMO` y `MEJOR_DECLARADO`. Las tres últimas son la misma regla dicha de tres
-formas: **gana la fuente más favorable**.
+De las seis entidades del catálogo comercial, **cinco no tienen un solo campo de dinero**:
+`vertical`, `plan`, `plan_version` —que guarda `rank`, vendible, días de grace, días de trial,
+permite pausa, hereda VIP—, `plan_version_entitlement` y `plan_version_limit`. **El precio vive en
+una sola tabla hoja, `billing_option`**, que es de la otra épica.
 
-**Vive con la clave y no con el plan** porque, si la declarara el plan, dos planes de la misma
-vertical podrían declarar estrategias distintas para la misma clave y **la clave significaría dos
-cosas**.
+**Eso es lo que vuelve independiente al trial**: deriva su plan del vendible de `rank` más alto y
+del más bajo, y las dos columnas están en `plan_version`. **Un trial se resuelve entero sin que
+exista un precio en la base.**
+
+### 3.4 Cómo se agrega un limit
+
+**La estrategia se declara con la clave, no con el plan**, y la lista es cerrada: `SUMA`,
+`MÁXIMO`, `MÍNIMO` y `MEJOR_DECLARADO`. Las tres últimas son la misma regla dicha de tres formas:
+**gana la fuente más favorable**.
+
+Vive con la clave porque, si la declarara el plan, dos planes de la misma vertical podrían
+declarar estrategias distintas para la misma clave y **la clave significaría dos cosas**.
 
 **Cuando no acumula, gana el cliente.** La alternativa es que comprar un addon te deje peor que
-antes.
+antes, y eso no se puede defender ante nadie.
 
-### 3.4 Qué scope tiene una clave
+### 3.5 Qué scope tiene una clave
 
-**Cada clave declara si es de vertical o global** (cap. 15 §3), simétrico con los addons del §40.
+**Cada clave declara si es de vertical o global.** Y la defensa contra el cruce entre verticales es
+**estructural, no un chequeo**: una clave de vertical se resuelve por `user + vertical`, así que
+no se puede invocar sin la vertical. No hay un control que alguien pueda olvidar.
 
-Y la defensa contra el cruce entre verticales **es estructural, no un chequeo**: una clave de
-vertical se resuelve por `user + vertical`, así que **no se puede invocar sin la vertical**. No
-hay un control que alguien pueda olvidar.
+**El scope de la clave dice dónde vale; la fuente dice por cuánto tiempo.**
 
-**El scope de la clave dice dónde vale; la fuente dice por cuánto tiempo.** Son preguntas
-distintas.
+### 3.6 Cómo se autoriza una operación
 
-### 3.5 Cómo se autoriza una operación
-
-**Nueve pasos, en un orden que no es preferencia** (cap. 17 §1.2): va de lo que no depende de nada
-hacia lo que depende de todo, y cada paso revela lo mínimo.
+**Nueve pasos, en un orden que no es preferencia**: va de lo que no depende de nada hacia lo que
+depende de todo, y cada paso revela lo mínimo.
 
 1. quién es · 2. estado de la persona · 3. permiso · 4. el recurso: existencia, estado y dueño ·
-5. título vivo · 6. entitlement · 7. limits — con el **contexto de vertical** como precondición
+5. **título vivo** · 6. entitlement · 7. limits — con el **contexto de vertical** como precondición
 estructural, no como paso.
 
-**Tres precisiones que el orden hace cumplir:**
+Tres precisiones que el orden hace cumplir:
 
 - **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
   inexistente son indistinguibles desde afuera; decir *«no es tuyo»* confirma que el id existe.
@@ -124,52 +150,46 @@ estructural, no como paso.
   averiguar qué permisos tiene probando operaciones.
 - **Los limits van últimos** porque son los únicos que necesitan contar.
 
-**Y los nueve se resuelven en un solo lugar.** El invariante no es que cada servicio los haga:
-es que **ninguno los haga por su cuenta**.
+**Y los nueve se resuelven en un solo lugar.** El invariante no es que cada servicio los haga: es
+que **ninguno los haga por su cuenta**.
 
-### 3.6 Actor y sujeto
+### 3.7 Actor y sujeto
 
-**Toda operación lleva dos identidades** y casi siempre coinciden (cap. 17 §3.2). Lo que autoriza
-que difieran es **un permiso de esa acción concreta**, nunca una condición general de «es
-administrador».
+**Toda operación lleva dos identidades** y casi siempre coinciden. Lo que autoriza que difieran es
+**un permiso de esa acción concreta**, nunca una condición general de «es administrador».
 
 **El admin no hereda los entitlements del sujeto**: los pasos 5, 6 y 7 se evalúan sobre el sujeto.
 **Y no existe la impersonación** — impersonar hace que el registro diga que lo hizo el cliente, y
 ése es exactamente el rastro que no se puede perder.
 
-### 3.7 El rol no se toca al perder el acceso
+### 3.8 El rol no se toca al perder el acceso
 
-**Perder el acceso NUNCA revoca un rol** (cap. 17 §4): ni la suspensión, ni el vencimiento del
-trial, ni la cancelación, ni la pausa.
+**Perder el acceso NUNCA revoca un rol**: ni la suspensión, ni el vencimiento del trial, ni la
+cancelación, ni la pausa.
 
 **El rol dice a qué familia de operaciones pertenece la persona; el estado de acceso dice si hoy
-puede ejecutarlas.** Son dos ejes independientes, y los pasos 3 y 5 están separados justamente
-para que puedan discrepar.
+puede ejecutarlas.** Son dos ejes independientes, y los pasos 3 y 5 están separados para que
+puedan discrepar.
 
 Va con su mitad obligatoria: **ninguna autorización decide sólo por rol** (`G6`). Las dos juntas o
 ninguna funciona.
 
-### 3.8 El trial
+### 3.9 El trial
 
 **Es único de por vida por `user + vertical`**, impuesto por una restricción de base sin condición
-de estado (cap. 02 §2.2). **El reloj es de calendario y no lo detiene nada** — ni despublicar, ni
-borrar la ficha, ni dejar de entrar (cap. 11 §1).
+de estado. **El reloj es de calendario y no lo detiene nada** — ni despublicar, ni borrar la ficha,
+ni dejar de entrar.
 
-**El trial no vuelve; lo que hay es reparación hacia adelante** (cap. 11). Mientras sigue vivo se
-extiende; si ya venció, la reparación es un instrumento de la otra épica.
+**El trial no vuelve; lo que hay es reparación hacia adelante.** Mientras sigue vivo se extiende;
+si ya venció, la reparación es un instrumento de la otra épica.
 
-**Y tiene techo**: cada vertical declara un máximo de días acumulados, en base y no en código
-(cap. 11 §3.2).
+**Y tiene techo**: cada vertical declara un máximo de días acumulados, en base y no en código.
 
-**Su plan no es una entidad aparte**: es un plan marcado no vendible, y sus valores **no se
-guardan, se derivan** del plan vendible de `rank` más alto y del más bajo, más los overrides y el
-trinquete (cap. 02 §2.1).
+### 3.10 El excedente
 
-### 3.9 El excedente
-
-**No se dispara por evento: se dispara por condición** (cap. 15 §4.2) — cuando el conjunto
-efectivo de un `user + vertical` se recalcula y algo bajó. Enumerar puntos de invocación es cómo
-se olvida el séptimo.
+**No se dispara por evento: se dispara por condición** — cuando el conjunto efectivo de un
+`user + vertical` se recalcula y algo bajó. Enumerar puntos de invocación es cómo se olvida el
+séptimo.
 
 **Nunca borra**: archiva, despublica o deshabilita. **Cae lo más reciente primero**, y el criterio
 va escrito en el aviso.
@@ -178,11 +198,11 @@ va escrito en el aviso.
 no existe es peor que no prometerla: cuando no la hay, el aviso dice **qué se hizo** y cómo
 revertirlo.
 
-### 3.10 El visitante sin cuenta
+### 3.11 El visitante sin cuenta
 
-**Es un actor del modelo, no la falta de uno** (cap. 17 §3.3). **No recibe ningún entitlement
-medido**, y de los booleanos sólo los de lectura pública — enunciado **por clase** para que una
-clave medida nueva no quede habilitada por omisión (cap. 15 §5).
+**Es un actor del modelo, no la falta de uno.** **No recibe ningún entitlement medido**, y de los
+booleanos sólo los de lectura pública — enunciado **por clase** para que una clave medida nueva no
+quede habilitada por omisión.
 
 No hay cuota chica para el guest porque **una cuota necesita a quién imputarla**, y sin cuenta lo
 único disponible se elude trivialmente.
@@ -191,35 +211,36 @@ No hay cuota chica para el guest porque **una cuota necesita a quién imputarla*
 
 ## 4. El contrato con la épica de billing
 
-Todo lo que esta épica necesita de HOS-1354 es **un hecho y un aviso**:
+Todo lo que esta épica necesita de HOS-1354 es **un hecho y un aviso**, definidos en
+[`12-contrato-de-cobertura.md`](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md):
 
 ```text
-cobertura(user, vertical) → { tiene_título_vivo, fuente, hasta_cuándo }
+cobertura(user, vertical) → { cubierto, fuentes: [ { tipo, versiónDePlan, hasta } ] }
 
 evento: la cobertura de (user, vertical) cambió
 ```
 
-El mismo hecho aparece en cuatro lugares del diseño y es siempre el mismo: el paso 5 de la
-autorización, la transición `PB2` de publicación, la pérdida de beneficios de turista al
-suspender (cap. 15 §6) y el disparador del recálculo del conjunto efectivo.
+El mismo hecho aparece en cuatro lugares del diseño: el paso 5 de la autorización, la transición
+`PB2` de publicación, la pérdida de beneficios de turista al suspender, y el disparador del
+recálculo del conjunto efectivo.
 
 **Nada más cruza la frontera**: ni montos, ni estados de pago, ni ids del proveedor, ni fechas de
-cobro. **Si aparece un quinto lugar que necesita algo de billing y no es este hecho, es una señal
-de que el corte se está filtrando** — se mira, no se resuelve en el lugar.
+cobro. Ni siquiera el estado exacto de la suscripción — esta épica no distingue `ACTIVE` de
+`GRACE_PERIOD`, porque durante el grace el servicio sigue.
 
-### 4.1 El valor por defecto que hace posible construir hoy
+### 4.1 Cómo se construye sin que exista billing
 
-**El trial ya es un título vivo, y el trial no es billing.** Mientras HOS-1354 no exista,
-`cobertura()` se resuelve con esa única fuente y las otras tres —suscripción, cortesía, grant—
-responden que no.
+**El trial ya es un título vivo, y el trial no es billing.** La implementación de arranque del
+contrato resuelve esa fuente de verdad y niega las otras tres.
 
-Con eso se construye y se prueba **entero**: la autorización recorre sus nueve pasos, la máquina
-de publicación tiene vivo su disparador de `PB2` alimentado por `T3`, el reconciliador de
-excedentes corre disparado por las transiciones de trial, y la agregación de limits y los scopes
-no tienen ninguna dependencia que defaultear porque nunca preguntaron por dinero.
+Con eso se construye y se prueba **entero**: la autorización recorre sus nueve pasos, la máquina de
+publicación tiene vivo su `PB2` alimentado por `T3`, el reconciliador de excedentes corre disparado
+por las transiciones de trial, y la agregación de limits y los scopes no tienen ninguna dependencia
+que defaultear porque nunca preguntaron por dinero.
 
-**Cuando billing exista se enchufa**: se agrega como fuente de `cobertura()` y como llamador del
-reconciliador. No se modifica nada de lo construido.
+**No es un stub de datos fijos, y la diferencia decide el ejercicio**: un simulacro que contesta
+siempre que sí es un fail-open y **deja sin ejercer la mitad interesante** —perder la cobertura—;
+uno que contesta siempre que no deja todo apagado.
 
 ### 4.2 Lo que queda inactivo, declarado y no escondido
 
@@ -232,41 +253,16 @@ reconciliador. No se modifica nada de lo construido.
 
 ---
 
-## 5. El alcance, por capítulo
+## 5. Cómo se comprueba que está bien
 
-**Enteros de esta épica**: `11` trial · `15` entitlements y limits · `17` autorización ·
-`18` Partner.
-
-**Las mitades que le tocan de los partidos**:
-
-| capítulo | qué entra |
-|---|---|
-| `01` glosario | identidad y acceso, vertical y lo que publica, capacidades; las filas de trial, publicación y postulación del glosario de estados |
-| `02` modelo de datos | §2.1 **menos `billing_option`**, `listing` (§2.5), el caché y su invalidación (§3), las reglas de retención de ficha y el hash de trial (§4) |
-| `03` máquinas de estado | trial (§2), publicación (§9), postulación de Partner (§11) |
-| `04` invariantes | los de acceso, trial y roles — incluido `D12`, que afirma justamente que **el reloj del trial es nuestro y no se le pide al proveedor** |
-| `10` verticales y planes | el Eje 2 (§1) y la lectura del catálogo (§2) |
-| `19` superficies | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones |
-| `20` testing | los guards `G1` a `G6` y `G8`, y el E2E del trial completo |
-| `21` migración | el trial ya consumido |
-| `22` lo legal | las señales de identidad y el hash irreversible del correo |
-
-**Compartido con la otra épica** (no se puede partir sin duplicarlo): el `00` índice, el criterio
-Eje 1 / Eje 2 del `01` §4, el mecanismo de outbox del `07`, y el criterio de auditoría y
-correlación del `08`.
-
----
-
-## 6. Cómo se comprueba que está bien
-
-**Siete guards**, y cada uno **lleva un caso que lo hace fallar a propósito** (cap. 20 §2.1) —
-porque un guard que no puede fallar es un comentario con exit code 0:
+**Siete guards**, y cada uno **lleva un caso que lo hace fallar a propósito** — porque un guard que
+no puede fallar es un comentario con exit code 0:
 
 | # | falla si |
 |---|---|
 | `G1` | una pieza **nombra una vertical** sin implementar uno de los ocho ítems del Eje 2 |
 | `G2` | una operación de dominio **no declara** su contexto de vertical |
-| `G3` | una clave de código no existe en la base, **o una de la base no existe en el catálogo** |
+| `G3` | una clave de código no está en la base, **o una de la base no está en el catálogo** |
 | `G4` | una transición de suscripción o de trial **escribe roles** |
 | `G5` | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes |
 | `G6` | una autorización **decide sólo por rol** |
@@ -280,24 +276,22 @@ predicado verifica.**
 
 ---
 
-## 7. Por qué esta épica tampoco carga deuda de datos
+## 6. Por qué tampoco carga deuda de datos
 
 El capítulo 21 midió que **Gastronomía, Experiencia y Partner tienen cero filas**, y que **no hay
-un solo pago histórico**. Los tres compromisos de cobro vivos que existen están del otro lado de
-la frontera.
+un solo pago histórico**. Los tres compromisos de cobro vivos están del otro lado de la frontera.
 
-Es decir: esta épica es independiente **por diseño** —no pregunta por dinero— y también **por
-datos** — no tiene nada que migrar y nada que romper.
+Esta épica es independiente **por diseño** —no pregunta por dinero— y también **por datos**: no
+tiene nada que migrar y nada que romper.
 
 ---
 
-## 8. Lo que esta spec NO decide
+## 7. Lo que esta spec NO decide
 
-- **El orden de implementación.** Es el próximo paso, y sale de las dependencias entre capítulos,
-  no de esta declaración de alcance.
-- **Cuáles son las claves de entitlement y de limit de cada vertical.** Es configuración, y el
-  capítulo 15 es explícito: acá está que el subconjunto se declara por vertical y que cada clave
-  lleva scope, estrategia y `enforcementStrategy` — no cuál es.
+- **El orden de implementación.** Sale de las dependencias entre capítulos, no de acá.
+- **Cuáles son las claves de entitlement y de limit de cada vertical.** Es configuración: acá está
+  que el subconjunto se declara por vertical y que cada clave lleva scope, estrategia y
+  `enforcementStrategy` — no cuál es.
 - **Si el mes de una cuota corre por calendario o por aniversario.** Sigue abierto desde
   `DEC-ENT-002`.
 - **Qué se reescribe y qué se reutiliza del código actual.** Es FASE 5 y tiene su gate propio
