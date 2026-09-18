@@ -540,3 +540,110 @@ nos la ofrezcan es que sepan qué estamos intentando hacer y contra qué chocamo
   está escrito por capacidades.
 + **No toca lo que ya está medido de MP.** Si al final nos quedamos, las 49 filas `VERIFIED`
   siguen valiendo.
+
+---
+
+## 7. Resultados del paso 4 — primera pasada, 2026-09-17
+
+**Qué es esto**: una investigación documental sobre los candidatos del §3, hecha en tres frentes
+paralelos. **No es medición** —por el §58 no marca ninguna fila de la matriz— y **no elige
+ganador**: eso es el paso 5. Lo que sigue son los hallazgos que **cambian el tablero**, cada uno
+verificado a mano contra la fuente primaria antes de escribirse acá.
+
+### 7.1 La pregunta que decidía F2 tiene respuesta, y es «sí, pero»
+
+> *¿Alguna capa de suscripciones soporta Mercado Pago —u otro adquirente argentino— como gateway?*
+
+**Recurly sí, y es la única de las cinco.** Lo hace **vía Ebanx**, no directo, y su propia página
+del producto lista qué queda afuera. Cita textual
+([docs.recurly.com](https://docs.recurly.com/recurly-subscriptions/docs/mercadopago), leída el
+2026-09-17):
+
+> *«One-time transactions and force collections are not supported — only subscription sign-ups and
+> automatic renewals.»*
+>
+> *«Invoice/calendar aggregation, parent/child accounts, **multiple subscriptions per account**,
+> **proration during subscription upgrades or changes**, and funds verification/wallet payment
+> instrument visibility.»*
+
+**Tres de esas exclusiones chocan de frente con decisiones ya tomadas de este programa:**
+
+| lo que Recurly+MP no soporta | con qué choca |
+|---|---|
+| **varias suscripciones por cuenta** | `DEC-ADDON-002` —cada addon recurrente es una suscripción aparte— y el modelo de verticales entero: una misma persona puede ser anfitrión, gastronómico y partner a la vez, con una suscripción por dominio |
+| **transacciones one-time** | los addons de compra única (`visibility-boost-7d/-30d`) |
+| **prorrateo en cambios de plan** | nada, en realidad: el capítulo 06 ya dejó el prorrateo afuera a propósito |
+
+**O sea: el camino existe y no nos sirve como está.** Hay que anotarlo así y no como un `NO`: lo
+que lo bloquea son dos exclusiones concretas y nombradas, no una ausencia de producto.
+
+Las otras cuatro: **Chargebee** llega a ARS por Ebanx pero **sin débito** y sin nombrar a Mercado
+Pago; **Lago** sólo tiene tres proveedores nativos (GoCardless, Stripe, Adyen) y su vía «custom»
+es **reescribir una integración entera sobre su código Rails**, no configurar un conector;
+**Stripe Billing** queda afuera por la pregunta 0 —Argentina **no está** en la lista de países
+donde se abre cuenta Stripe, y lo que el propio Stripe ofrece para esos países es Treasury con
+stablecoins—; **Rebill** ver abajo.
+
+### 7.2 Tres cosas que el §3 de este documento decía mal
+
+Todas salieron de leer la documentación técnica contra el folleto que las había originado.
+
+1. **Payway NO está en venta.** Corregido en el §3.1 con el comunicado de Visa.
+2. **«Rebill acepta Mercado Pago» no es lo que parecía.** Su propia documentación dice que los
+   métodos alternativos *«don't support automatic recurring charges the way cards do»* y que las
+   renovaciones se resuelven **mandándole un mail al cliente para que pague de nuevo cada ciclo**.
+   Mercado Pago entra ahí como una de las apps que leen un QR de Transferencia 3.0, no como
+   gateway de tarjeta. Su riel de tarjetas en Argentina **sí** es adquirencia local, pero va por
+   **Decidir**, o sea Payway. El 71% de recuperación que promete el folleto no tiene metodología
+   ni cohorte publicadas.
+3. **Adyen no tiene adquirencia local en Argentina**, y lo dice su propia página: *«Adyen has
+   local acquiring licenses across Europe, North America (including Canada), Brazil, Hong Kong,
+   Australia, New Zealand, and Singapore»*. De Latinoamérica, sólo Brasil. **Es la respuesta a la
+   pregunta del owner**: Netflix no cobra en Argentina como tendríamos que cobrar nosotros.
+
+### 7.3 Candidatos que se caen, con el motivo
+
+| candidato | por qué |
+|---|---|
+| **Ualá Bis** | no existe recurrencia: su API v2 completa son cinco endpoints de pago único |
+| **MODO** | no es adquirente sino un facilitador que **exige tener cuenta con Payway, Fiserv o Getnet** por debajo, y su único objeto es un QR que el usuario escanea |
+| **Stripe** (directo y Billing) | Argentina no está entre los países donde se abre cuenta |
+| **Checkout.com** | ausente de sus cuatro regiones declaradas con adquirencia directa |
+| **Adyen** | §7.2, punto 3 |
+| **Paddle** | **nos prohíbe por escrito**: su política de uso aceptable veda *«Any product or service that enables non-Paddle Sellers to sell products and services to customers, such as digital marketplaces»* y *«Travel Services, including but not limited to reservation services»*. La segunda es discutible —cobramos una suscripción de software, no una reserva—; la primera no |
+
+### 7.4 Lo que queda vivo, y qué habría que medirle
+
++ **Mobbex** — suscripción REST real, mutación del monto documentada textual, pausa y reanudación
+  por API, y **un sandbox que fuerza un rechazo determinístico** (CVV `400`), que es exactamente
+  lo que con Mercado Pago resultó imposible (`PA-4`, siete titulares). Orquesta entre varios
+  adquirentes con fallback.
++ **PagoTIC** — suscripción REST real y mutación documentada (aplica desde el ciclo siguiente),
+  **pero sin pausa**: sólo cancelación permanente. No publica precios ni tiene SDK.
++ **Recurly** — §7.1.
++ **Worldpay** — el único internacional con evidencia afirmativa de adquirencia local en ARS
+  (licencia doméstica reportada en 2020 + su página de cobertura vigente). **Evidencia floja**: su
+  documentación técnica no se pudo leer.
++ **Payway** y **Getnet** — los dos tienen producto, y de los dos **no se pudo leer la
+  documentación técnica**: el portal de Payway es una SPA y el de Getnet dio 404 en varias rutas.
+  No están descartados; están **sin relevar**.
+
+### 7.5 Dos huecos que son deuda, no resultado
+
++ **Nuvei quedó sin investigar** — se agotó el presupuesto de búsqueda de la sesión.
++ **Payway, Getnet y Worldpay** necesitan una lectura humana de sus portales, que las herramientas
+  no pudieron renderizar. **Un `NO ENCONTRADO` por SPA no es una ausencia**, y este programa ya
+  tiene una lección escrita sobre concluir desde el silencio de una fuente (`EX-32`).
+
+### 7.6 Y un patrón que vale más que cualquier candidato
+
+**La creación idempotente no la documenta NADIE**: ni los seis argentinos, ni Recurly, ni Lago.
+Sólo Chargebee, Stripe y Rebill la tienen. O sea que `DEC-CONC-001` —el candado es nuestro— **no
+era un parche contra una carencia de Mercado Pago**: es la norma de la plaza, y sobrevive a
+cualquier mudanza.
+
+**Y el orden de los webhooks no lo garantiza ninguno de los cinco de la §7.1.** Recurly y Stripe
+lo dicen con todas las letras. La decisión del capítulo 03 —releer en vez de creerle al evento—
+tampoco depende del proveedor.
+
+---
