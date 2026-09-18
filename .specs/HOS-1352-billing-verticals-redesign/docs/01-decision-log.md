@@ -1952,13 +1952,141 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ARCH-005 — El programa se parte en dos épicas autónomas: Verticales y Billing
+
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el programa entero quedó detenido por **una sola cosa**: no está decidida la
+  pasarela. Mercado Pago niega el cobro a demanda con un `403` comercial y el candidato que sí lo
+  documenta tiene el alta en revisión manual de KYC. **Ese bloqueo alcanza al dinero y no alcanza
+  a las capacidades**: qué puede hacer una cuenta, qué publica cada vertical, cómo se agregan los
+  limits y quién está autorizado a qué no necesitan saber con qué se cobra. Se estaba esperando
+  por una razón que no aplicaba a la mitad del programa.
+- **Las cifras que sostienen la decisión**:
+
+  | | |
+  |---|---|
+  | capítulos escritos que **no citan ninguna medición** del proveedor | **8 de 21**, contados con `rg` el 2026-09-18 — y son casi exactamente la épica que arranca |
+  | capítulos que son billing **sin una sola fisura** | **5** — `05`, `06`, `09`, `12`, `14` |
+  | capítulos que son verticales enteros | **3** — `11`, `17`, `18` |
+  | entidades del catálogo comercial **sin un solo campo de dinero** | **5 de 6** (cap. 02 §2.1) |
+  | lugares distintos donde verticales necesita un hecho de billing | **4**, y los cuatro son **el mismo hecho** |
+  | filas a migrar en Gastronomía, Experiencia y Partner | **cero**, y **cero pagos históricos** (cap. 21) |
+
+- **Alternativas**: (1) esperar a que se decida la pasarela con el programa entero detenido;
+  (2) partir en dos épicas autónomas; (3) arrancar la implementación completa en una sola épica
+  con billing simulado adentro.
+- **Decisión**: **(2)**, y con una precisión del owner que es la que le da forma: **las dos
+  épicas son AUTÓNOMAS**. Cada una se lee y se desarrolla **sin que la otra esté terminada de
+  definir**. No son dos vistas de un mismo documento: son dos specs que se sostienen solas.
+  - **`HOS-1353` · Verticales** — capacidades, entitlements, limits y autorización. Arranca ya.
+  - **`HOS-1354` · Billing** — cobro, suscripción y proveedor detrás de un adaptador. Espera.
+  - **`HOS-1352`** queda como **paraguas** y deja de implementarse.
+- **Por dónde pasa el corte**: **es el criterio del owner —*«toca plata o no toca plata»*—**, y no
+  hubo que inventarlo: el capítulo 15 ya lo había escrito al cerrar, separando su materia de la
+  del 14 con las palabras exactas — *«acá se agregan **capacidades**, allá se compone **dinero**»*.
+- **Y pasa POR DENTRO del catálogo de planes, no por afuera.** Es el punto donde el reparto se
+  equivoca si se hace por nombre: «plan» suena a billing y no lo es. De las seis entidades del
+  catálogo comercial, **cinco no tienen un solo campo de dinero** — `vertical`, `plan`,
+  `plan_version` (que guarda `rank`, vendible, días de grace, días de trial, permite pausa,
+  hereda Turista VIP), `plan_version_entitlement` y `plan_version_limit`. **El precio vive en una
+  sola tabla hoja, `billing_option`**, y el propio capítulo 02 lo dice: *«El precio cuelga de la
+  versión, no del plan»*. **Eso es lo que vuelve independiente al trial**: deriva su plan del
+  vendible de `rank` más alto y del más bajo, y las dos columnas están en `plan_version`, así que
+  se resuelve entero sin que exista un precio en la base.
+- **Motivo**: un bloqueo se respeta donde aplica, no donde alcanza por contagio. La (1) paga el
+  costo de un bloqueo que sólo rige para la mitad del trabajo, y esa mitad no tiene siquiera deuda
+  de datos que la justifique. La (3) mete el simulacro adentro de una épica sola, que es donde un
+  simulacro se vuelve permanente sin que nadie lo note.
+- **Lo que esta decisión NO afirma**: que las dos mitades no se toquen. Se tocan en **un** lugar,
+  y ese lugar es compartido por definición — lo fija `DEC-ARCH-006`. **Autónomo no quiere decir
+  incomunicado**: quiere decir que ninguna espera a la otra para avanzar.
+- **El riesgo, declarado**: **dos specs autónomas duplican contenido y pueden divergir.** Es el
+  modo de falla que este programa ya tiene medido —seis repartos sobre las mismas 27 tablas y
+  ninguno coincide (`F-1B-132`)— y se acota de dos formas: la frontera tiene **una sola fuente**
+  (`DEC-ARCH-006`) que ninguna de las dos puede mutar sola, y lo transversal —glosario, el
+  criterio Eje 1 / Eje 2, outbox, auditoría— queda en un núcleo común que las dos citan sin
+  copiar.
+- **Implicaciones**:
+  1. **Los interiores se escriben autónomos; la frontera no.** Cada spec absorbe el diseño de sus
+     capítulos; el contrato de la frontera se cita, nunca se copia.
+  2. **Queda pendiente qué pasa con la Master Spec.** El documento de partición escrito el
+     2026-09-18 dice *«los capítulos no se reescriben ni se mueven»*, y eso era correcto cuando
+     las specs sólo declaraban alcance. Con specs autónomas hay dos fuentes para lo mismo si los
+     capítulos se quedan donde están **y** las specs los absorben. **Sin decidir, y es del owner.**
+  3. **El reparto capítulo por capítulo** vive en
+     [`11-particion-del-programa.md`](./11-particion-del-programa.md) §4.
+- **Origen**: conversación con el owner del 2026-09-18, a partir del bloqueo de la evaluación de
+  proveedor ([`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md)) y de
+  `DEC-ARCH-004`. La autonomía de las dos épicas es una segunda precisión suya, del mismo día.
+
+---
+
+### DEC-ARCH-006 — La frontera entre las dos épicas es un contrato único con dos implementaciones desde el día uno
+
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: `DEC-ARCH-005` parte el programa, y eso sólo sirve si la épica de verticales
+  **puede correr sin que exista la de billing**. El punto de contacto no es teórico: el paso 5 de
+  la resolución de autorización (cap. 17 §1.2) pregunta *«¿tiene trial, suscripción, cortesía o
+  grant que lo cubra?»*, y tres de esas cuatro fuentes son de billing.
+- **Lo medido que lo hace posible**: verticales necesita de billing **un solo hecho**, que aparece
+  en cuatro lugares y es siempre el mismo — el paso 5 de la autorización, la transición `PB2` de
+  publicación (cap. 03 §9), la pérdida de beneficios de turista al suspender (cap. 15 §6) y el
+  disparador del recálculo del conjunto efectivo (cap. 02 §3.2 · cap. 15 §4.2). **Nada más cruza
+  la frontera**: ni montos, ni estados de pago, ni ids del proveedor, ni fechas de cobro.
+- **Y el contrato no depende de la pregunta que billing tiene abierta.** Esté el reloj de cobro de
+  nuestro lado o del proveedor —lo que decidirá el capítulo 13—, en los dos mundos hay un título
+  con un estado y una fecha hasta la cual cubre. **Se puede definir hoy sin prejuzgar el 13.**
+- **Decisión**: **un contrato único, con dos implementaciones desde el día uno.**
+  1. **El contrato es de la frontera, no de una épica.** Vive en el programa, las dos specs lo
+     citan, y **ninguna de las dos puede mutarlo sola**. Una copia que billing pudiera tocar sin
+     que verticales se entere es `F-1B-132` otra vez.
+  2. **Lo que verticales declara es lo que necesita, no el package ajeno.** Verticales no depende
+     de un `@repo/billing`: depende de un contrato que billing satisface. Es el punto 4 de
+     `DEC-ARCH-004` —*«expone una API definida por lo que Hospeda necesita»*— aplicado un nivel
+     más arriba.
+  3. **La implementación de arranque NO devuelve datos fijos: resuelve el trial de verdad**, y
+     niega las otras tres fuentes. Es la precisión que cambia el valor del ejercicio, y el motivo
+     está abajo.
+  4. **Tres defensas, y ninguna es opcional**: el default de una fuente no implementada es
+     **negar**; **un solo juego de casos corre contra las dos implementaciones**; y un guard
+     impide que la implementación de arranque llegue a producción.
+- **Motivo**: es la **condición B de `DEC-ARCH-004`** aplicada a esta frontera en vez de a la de
+  la pasarela — *«es lo que prueba que la abstracción no miente: si no se puede escribir sin
+  filtrar conceptos de Mercado Pago, la interfaz está mal definida»*. El contrato no es un
+  andamio: es el instrumento que verifica que el corte de `DEC-ARCH-005` es real.
+- **Por qué el trial y no un dato fijo**: un simulacro que contesta **siempre que sí** es un
+  fail-open, y deja sin ejercer **la mitad interesante** —perder la cobertura: `PB2`, el
+  reconciliador de excedentes, el aviso de qué se hizo—. Uno que contesta siempre que no deja todo
+  apagado. Las dos versiones desarrollan verticales contra un mundo que no existe. **El trial evita
+  las dos porque es un título vivo de verdad**, con una máquina de estados que vive del lado de
+  verticales (cap. 03 §2) y que vence: los dos caminos se ejercen completos sin una sola línea de
+  mentira. Lo único que se siembra es un plan con sus entitlements para que el trial tenga de dónde
+  derivar, y eso es un dato, no una rama en el código.
+- **El riesgo, declarado**: **que la implementación de arranque sobreviva a producción.** El
+  proyecto ya tiene el caso: un fallback comentado como seguro que era el permisivo. Por eso las
+  tres defensas del punto 4 son parte de la decisión y no una recomendación — y por eso el default
+  es negar: **un olvido apaga funciones en vez de regalarlas.**
+- **Implicaciones**:
+  1. **El swap de implementación deja de ser un día de sorpresas** y pasa a ser un evento
+     verificable: para entonces el juego de casos ya corrió meses contra la otra.
+  2. **El contrato se escribe antes que las dos specs autónomas**, porque las dos lo citan.
+  3. **No agrega sobrearquitectura** (§57): es un contrato con dos implementaciones, que es el
+     mínimo con el que la condición B se puede cumplir.
+- **Origen**: propuesta del owner del 2026-09-18 —*«definir una interface para el package billing,
+  que la épica de verticales genere como stub… y luego la sub épica de billing real, convierta ese
+  package stub en código real»*—, con tres precisiones aceptadas en la misma conversación: que lo
+  declarado sea el contrato y no el package ajeno, que la implementación de arranque resuelva el
+  trial en vez de devolver datos fijos, y las tres defensas del punto 4.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **46** |
+| Decisiones tomadas | **48** |
 | De metodología | 3 |
-| Funcionales | 43 |
+| Funcionales | 45 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
@@ -1966,5 +2094,5 @@ Cada entrada lleva, según §3.4:
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
-| Decisiones de arquitectura del owner | **1** — **`DEC-ARCH-004`** (2026-09-18): el billing se implementa de nuestro lado, en un package propio, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**; las mediciones que la sostienen están citadas en ella |
+| Decisiones de arquitectura del owner | **3**, las tres del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera |
 | Apartamientos declarados del PDR | **4** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), y **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento) |
