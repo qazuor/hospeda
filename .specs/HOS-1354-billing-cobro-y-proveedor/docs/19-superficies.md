@@ -11,7 +11,7 @@ capitulo: 19
 
 # 19 · Superficies: API, Web y Admin
 
-Mitad **BILLING** del capítulo 19 (`09-master-spec/19-superficies.md`).
+Mitad **BILLING** del capítulo 19 del programa. La otra mitad vive en la otra épica.
 
 Las superficies no deciden nada. Leen lo que el núcleo resolvió y lo muestran. Por eso este
 capítulo es el más corto de la Parte III en lo conceptual y el más largo en una sola cosa: **la

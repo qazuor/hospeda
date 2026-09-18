@@ -11,7 +11,7 @@ capitulo: 20
 
 # 20 · Estrategia de testing
 
-Mitad **BILLING** del capítulo 20 (`09-master-spec/20-testing.md`).
+Mitad **BILLING** del capítulo 20 del programa. La otra mitad vive en la otra épica.
 
 El §62 abre diciendo que *«testing forma parte del diseño desde el comienzo»* y reparte el trabajo
 en cuatro capas. Este capítulo dice **qué va en cada una** y, sobre todo, resuelve las dos cosas

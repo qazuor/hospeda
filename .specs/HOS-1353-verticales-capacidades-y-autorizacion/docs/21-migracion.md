@@ -15,7 +15,7 @@ cierra:
 
 # 21 · Migración
 
-Mitad **VERTICALES** del capítulo 21 (`09-master-spec/21-migracion.md`).
+Mitad **VERTICALES** del capítulo 21 del programa. La otra mitad vive en la otra épica.
 
 Este capítulo es corto por una razón que está medida: **no hay casi nada que migrar.**
 

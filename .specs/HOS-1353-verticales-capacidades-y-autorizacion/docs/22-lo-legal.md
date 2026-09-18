@@ -15,7 +15,7 @@ cierra:
 
 # 22 · Lo que queda en manos de la consulta legal
 
-Mitad **VERTICALES** del capítulo 22 (`09-master-spec/22-lo-legal.md`).
+Mitad **VERTICALES** del capítulo 22 del programa. La otra mitad vive en la otra épica.
 
 **Este capítulo no opina sobre derecho.** Es el pliego de la consulta: qué hay que preguntar,
 **qué parte del diseño depende de cada respuesta**, y qué cambia si la respuesta no es la que se

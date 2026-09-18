@@ -15,7 +15,7 @@ cierra:
 
 # 21 · Migración
 
-Mitad **BILLING** del capítulo 21 (`09-master-spec/21-migracion.md`).
+Mitad **BILLING** del capítulo 21 del programa. La otra mitad vive en la otra épica.
 
 Este capítulo es corto por una razón que está medida: **no hay casi nada que migrar.**
 
@@ -39,7 +39,7 @@ la preferencia por la coordinación manual descansa ahí, y también el tamaño 
 ### 1.2 Está medida, y la premisa es cierta por mucho
 
 Medición de producción del **2026-09-15**, sólo lectura
-([`07-facts-inventory.md`](../07-facts-inventory.md)), **re-verificada el 2026-09-17 a las 12:52
+([`07-facts-inventory.md`](../../HOS-1352-billing-verticals-redesign/docs/07-facts-inventory.md)), **re-verificada el 2026-09-17 a las 12:52
 `-03`** con la consulta 2 de ese documento, **sin un solo cambio**:
 
 | | |
@@ -109,7 +109,7 @@ Las tres opciones del hueco, con lo que cuesta cada una **dado el número medido
 | 3 | **coexistencia de dos motores** | el más caro de construir | contamina la arquitectura nueva, que es lo que el §56 pide no hacer |
 
 **No se completa en silencio** (§67). Queda declarada como decisión del owner en
-[`04-open-decisions.md`](../04-open-decisions.md) — la única que este capítulo abre en vez de
+[`04-open-decisions.md`](../../HOS-1352-billing-verticals-redesign/docs/04-open-decisions.md) — la única que este capítulo abre en vez de
 cerrar.
 
 ---

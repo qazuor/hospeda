@@ -28,11 +28,84 @@ status: CURRENT
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
    (**89 filas: 49 `VERIFIED`, 13 parciales, 19 `NOT_SUPPORTED`, 8 `UNKNOWN`**, recontadas con
    [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano).
-8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido.
+8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido
+9. [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md) — la evaluación de reemplazo
+   de Mercado Pago
+10. [`11-particion-del-programa.md`](./11-particion-del-programa.md) — **por dónde pasa el corte
+    entre las dos épicas**
+11. [`12-contrato-de-cobertura.md`](./12-contrato-de-cobertura.md) — **la frontera entre las dos**
+12. [`nucleo/00-indice.md`](./nucleo/00-indice.md) — el mapa de las tres partes y las reglas de
+    escritura.
 
 ---
 
-## Última actualización: 2026-09-18, madrugada — DEC-ARCH-004 y la evaluación de proveedor
+## Última actualización: 2026-09-18, tarde — el programa se partió en dos épicas
+
+### Lo que cambió
+
+**El owner decidió partir el programa en dos épicas autónomas** (`DEC-ARCH-005`), y el desarme se
+ejecutó el mismo día. El motivo, en una línea: el bloqueo que tenía todo detenido —no saber con qué
+pasarela vamos a cobrar— **alcanza al dinero y no alcanza a las capacidades**.
+
+| | | |
+|---|---|---|
+| **HOS-1353 · Verticales** | capacidades, entitlements, limits, autorización | **arranca ya** |
+| **HOS-1354 · Billing** | cobro, suscripción, proveedor | **espera la pasarela** |
+| **HOS-1352** | este programa | **paraguas**, ya no se implementa |
+
+**`09-master-spec/` ya no existe.** El diseño vive en tres lugares:
+
+| parte | dónde | cuántos |
+|---|---|---|
+| núcleo | [`nucleo/`](./nucleo/) | **7** — reglas de escritura, glosario, invariantes, outbox, auditoría, y el método del modelo de datos y de las máquinas |
+| verticales | `../../HOS-1353-…/docs/` | **11** |
+| billing | `../../HOS-1354-…/docs/` | **13** |
+
+### Dónde pasa el corte, y el punto que no es obvio
+
+La frontera es el criterio del owner —*«toca plata o no toca plata»*— y el capítulo 15 ya la había
+escrito al cerrar: *«acá se agregan **capacidades**, allá se compone **dinero**»*.
+
+**El corte pasa POR DENTRO del catálogo de planes.** De las seis entidades del catálogo comercial,
+**cinco no tienen un solo campo de dinero**; el precio vive en una sola tabla hoja,
+`billing_option`. **Eso es lo que vuelve independiente al trial**: deriva de `rank` y `vendible`,
+que son columnas de `plan_version`.
+
+### La frontera es un contrato, y tiene una sola fuente
+
+`DEC-ARCH-006`, en [`12-contrato-de-cobertura.md`](./12-contrato-de-cobertura.md):
+
+```text
+cobertura(user, vertical) → { cubierto, fuentes: [ { tipo, versiónDePlan, hasta } ] }
+evento: la cobertura de (user, vertical) cambió
+```
+
+Aparece en cuatro lugares del diseño y es siempre el mismo hecho. **Nada más cruza.** Y **la
+implementación de arranque no devuelve datos fijos: resuelve el trial de verdad** — un simulacro
+permisivo dejaría sin ejercer la mitad interesante, que es perder la cobertura.
+
+### Cómo se verificó el desarme, porque es lo que lo hace confiable
+
+- **Antes de mover nada**: de los cuatro capítulos de verticales, **sólo tres referencias cruzan a
+  billing**, y las tres viven en *«Lo que este capítulo NO cierra»*. Son exclusiones, no
+  dependencias.
+- **Antes de retirar ningún original**: **105 de 105 encabezados** presentes en alguna mitad, y el
+  volumen de texto entre **1,06x y 1,29x** del de partida.
+- **Dos correcciones sobre lo que entregaron los agentes**: repuestos los párrafos de apertura y
+  las secciones *«NO cierra»* del 02 y el 03, que un agente declaró haber dejado afuera en vez de
+  adivinar; y descartados 11 falsos positivos de una verificación propia, que eran referencias
+  anotadas con otra forma.
+
+### Próximo paso exacto
+
+**Escribir la spec autónoma de HOS-1354**, como ya se hizo con la de HOS-1353. Se puede escribir
+casi entera aunque la épica siga bloqueada: suscripción, grace, pausa, promos, cortesías, grants,
+addons y conciliación ya están diseñados. **Lo único que no se puede cerrar es el capítulo 13**,
+que espera la pasarela y la pregunta de quién tiene el reloj de cobro.
+
+---
+
+## Histórico: 2026-09-18, madrugada — DEC-ARCH-004 y la evaluación de proveedor
 
 ### Lo que cambió, y es lo más importante del programa desde el reset
 
@@ -156,7 +229,7 @@ que en fish falla— y la 05 aborta si detecta la cuenta demo.
 ### Dónde estamos
 
 **FASE 1B cerrada** con **132 hallazgos** (`F-1B-001` a `F-1B-132`) y **FASE 2 en curso**: la
-Master Spec vive en [`09-master-spec/`](./09-master-spec/), son **22 capítulos en tres partes**, y
+Master Spec vive en `09-master-spec/` (retirado el 2026-09-18), son **22 capítulos en tres partes**, y
 la **Parte I está completa** — 10 de 22 archivos escritos.
 
 | | |

@@ -3,7 +3,7 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-17
+updated: 2026-09-18
 status: CURRENT
 ---
 
@@ -701,3 +701,67 @@ ningún patrón de credencial.
    que vencen el mismo 2026-09-17 y contestan **cinco de las ocho filas `UNKNOWN`**. Comandos y
    horas exactas en [`03-handoff.md`](./03-handoff.md).
 2. **Seguir por el capítulo 10** de la Master Spec.
+
+---
+
+## 2026-09-18 (tarde) — El programa se parte en dos épicas, y el diseño se desarma
+
+### Qué pasó
+
+El owner decidió **partir el programa en dos épicas autónomas** (`DEC-ARCH-005`) y, en la misma
+conversación, que la frontera entre ellas fuera **un contrato con dos implementaciones desde el día
+uno** (`DEC-ARCH-006`). El desarme se ejecutó el mismo día.
+
+El motivo: el bloqueo que tenía todo detenido —no saber con qué pasarela vamos a cobrar— **alcanza
+al dinero y no alcanza a las capacidades**. Se estaba esperando por una razón que no aplicaba a la
+mitad del programa.
+
+### Lo que se midió antes de decidir
+
+- **8 de 21 capítulos escritos no citan ninguna medición del proveedor** (contados con `rg`), y son
+  casi exactamente la épica que arranca. El corte no hubo que inventarlo: ya estaba en el material.
+- **De los cuatro capítulos de verticales, sólo tres referencias cruzan a billing**, y las tres
+  viven en la sección *«Lo que este capítulo NO cierra»*. Son exclusiones —el capítulo diciendo que
+  eso no es suyo—, no dependencias. **Eso es lo que autorizó el desarme.**
+- **De las seis entidades del catálogo comercial, cinco no tienen un solo campo de dinero.** El
+  precio vive en una sola tabla hoja, `billing_option`.
+
+### Una corrección de alcance, y venía de un error de un sub-agente
+
+Un agente clasificador afirmó que el acoplamiento más cargado era la derivación del plan de trial,
+«porque lee el catálogo de planes en vivo», y marcó el trial como posiblemente-billing. **Verificado
+contra el capítulo 02 §2.1: es al revés.** Lee `rank` y `vendible`, que están en `plan_version` y no
+son un precio.
+
+La consecuencia no es menor: **el catálogo de planes entero, menos `billing_option`, entra en la
+épica que arranca hoy**. Verificar la afirmación más grave de un sub-agente cambió el alcance de una
+épica.
+
+### Qué se produjo
+
+| | |
+|---|---|
+| `11-particion-del-programa.md` | el corte, su fundamento y el reparto capítulo por capítulo |
+| `12-contrato-de-cobertura.md` | la frontera: un hecho y un aviso, con sus dos implementaciones y tres defensas |
+| `DEC-ARCH-005` y `DEC-ARCH-006` | asentadas; el log queda en **48 decisiones** |
+| el desarme | **7 capítulos al núcleo, 11 a verticales, 13 a billing**; `09-master-spec/` retirado |
+| `HOS-1353/spec.md` | reescrita como spec **autónoma** |
+
+### Cómo se verificó el desarme
+
+**Antes de retirar ningún original**: 105 de 105 encabezados presentes en alguna mitad, y el volumen
+de texto entre 1,06x y 1,29x del de partida.
+
+Dos correcciones sobre lo que entregaron los agentes que partieron los capítulos:
+
+1. Uno **declaró** haber dejado afuera los párrafos de apertura y las secciones *«NO cierra»* del 02
+   y el 03, en vez de adivinar dónde iban — que era exactamente lo pedido. Se repusieron a mano.
+2. Una verificación propia marcó 11 líneas como perdidas en los otros cinco capítulos y **eran
+   falsos positivos míos**: el agente anotó las referencias cruzadas metiendo la marca dentro del
+   paréntesis existente en vez de abrir uno nuevo, que resultó más legible que lo especificado.
+
+### Lo que NO se decidió
+
+- **Cuál es la pasarela.** Sigue en el paso 4 de 6, esperando la PRUEBA 0 y el KYC de Mobbex.
+- **Si el capítulo 13 adopta el cargo puntual como modelo canónico.** Planteado, con sus tres
+  opciones y una recomendación, y sin responder. Es la primera pregunta de HOS-1354.

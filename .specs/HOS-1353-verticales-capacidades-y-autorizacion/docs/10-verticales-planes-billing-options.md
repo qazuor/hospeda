@@ -14,7 +14,7 @@ cierra:
 
 # 10 · Verticales, planes y billing options
 
-Mitad **VERTICALES** del capítulo 10 (`09-master-spec/10-verticales-planes-billing-options.md`).
+Mitad **VERTICALES** del capítulo 10 del programa. La otra mitad vive en la otra épica.
 
 Abre la Parte II. Acá empieza a describirse **comportamiento**, y la regla del índice rige desde
 la primera línea: este capítulo **referencia** el núcleo y no redefine nada. Los nombres salen

@@ -181,12 +181,37 @@ secciones sobrevive sin la pasarela.
 
 **Tres son verticales enteros**: 11, 17 y 18.
 
-### 4.1 Los capítulos no se reescriben ni se mueven
+### 4.1 Los capítulos SÍ se movieron, y esta sección decía lo contrario
 
-Quedan donde están, con su numeración. Esta tabla es el índice de lectura de cada épica, no una
-instrucción de mudanza. Mover 21 archivos para expresar un reparto cuesta el riesgo de perder
-referencias cruzadas —hay decenas— y no compra nada: una épica puede leer «el capítulo 17 entero
-y el §2.1 del 02» perfectamente bien.
+> **Corregido el 2026-09-18, el mismo día.** Esta sección decía que los capítulos quedaban donde
+> estaban y que la tabla era sólo un índice de lectura. **Era correcto mientras las dos specs sólo
+> declaraban alcance, y dejó de serlo cuando el owner pidió que fueran autónomas**: si los
+> capítulos se quedan en un lugar **y además** cada spec los absorbe, hay dos fuentes para lo
+> mismo — exactamente lo que esta partición viene a evitar. Se conserva el texto viejo tachado
+> abajo porque el registro de qué se creía en cada momento es parte de este programa.
+
+**Lo que efectivamente se hizo** (`DEC-ARCH-005`, y el desarme se ejecutó el 2026-09-18):
+
+| dónde | qué |
+|---|---|
+| `HOS-1353-…/docs/` | **11 capítulos**, los de verticales |
+| `HOS-1354-…/docs/` | **13 capítulos**, los de billing |
+| `HOS-1352-…/docs/nucleo/` | **7**: reglas de escritura, glosario, invariantes, outbox, auditoría, y el método del modelo de datos y de las máquinas de estado |
+
+Los siete capítulos mixtos se partieron de verdad, y **los originales se retiraron**: dejarlos
+habría sido la segunda fuente. `09-master-spec/` ya no existe.
+
+**Lo que sí se conservó de la decisión vieja son los números**: verticales tiene los capítulos 11,
+15, 17 y 18, salteados. Son identificadores, no orden, y renumerarlos rompería las decenas de
+referencias cruzadas que existen entre capítulos.
+
+**Y el riesgo que la versión vieja nombraba era real**: al partir, 105 encabezados podían perderse
+en el camino. Por eso el desarme se verificó antes de retirar ningún original — 105 de 105
+presentes en alguna mitad, y el volumen de texto entre 1,06x y 1,29x del de partida.
+
+> ~~Quedan donde están, con su numeración. Esta tabla es el índice de lectura de cada épica, no una
+> instrucción de mudanza. Mover 21 archivos para expresar un reparto cuesta el riesgo de perder
+> referencias cruzadas —hay decenas— y no compra nada.~~
 
 ---
 
