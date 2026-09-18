@@ -647,3 +647,144 @@ lo dicen con todas las letras. La decisión del capítulo 03 —releer en vez de
 tampoco depende del proveedor.
 
 ---
+
+## 8. Mobbex en profundidad — 2026-09-17
+
+Lo pidió el owner después de la primera pasada. **Sigue siendo lectura de documentación, no
+medición**: por el §58 no marca ninguna fila. Lo decisivo se verificó a mano contra la fuente.
+
+### 8.1 Lo que cambia todo: Mobbex tiene el cobro a demanda que MP nos niega
+
+**Es el hallazgo central, y es exactamente F4 sin depender de un permiso comercial.**
+
+| endpoint | qué hace |
+|---|---|
+| `GET /p/subscriptions/{id}/subscriber/{sid}/execution` | ejecuta el cobro **en el acto**, con el monto estándar |
+| `POST` sobre la misma ruta | ejecuta con **monto libre**: *«El monto con el que se ejecuta la suscripción puede ser diferente al definido en la suscripción o el suscriptor»* |
+| `POST /p/subscriptions/{id}/action/execute` | **cobro masivo**, hasta N suscriptores en una llamada. Asíncrono: contesta que aceptó y avisa por webhook |
+| `POST /p/subscriptions/{id}/subscriber/{sid}/action/schedule` | **programa** una ejecución futura, con monto opcional. Mínimo 4 días de anticipación |
+
+Leído el 2026-09-17 en [mobbex.dev/ejecuciones](https://mobbex.dev/ejecuciones), verificado contra
+la fuente.
+
+**Qué significa**: el ciclo de vida puede ser nuestro —trial, pausa, cambio de plan, reintentos,
+cortesías— y al proveedor se le pide sólo el cobro del mes. Es la forma F4 del §2, que con Mercado
+Pago quedó trabada en un `403` y en un portón comercial. **Acá es un endpoint público de su API.**
+
+### 8.2 Las ocho capacidades del capítulo 06
+
+| # | capacidad | Mobbex | contra MP |
+|---|---|---|---|
+| 1 | **autorizar** | ✅ tres vías: checkout hospedado, **tokenización propia** y **DEBIN** (débito bancario) | MP: sólo checkout |
+| 2 | **cobrar** | ✅ **y a demanda** (§8.1). Automático si la suscripción es «dinámica», manual si no | **mejor**: MP cobra cuando él quiere, con retraso variable |
+| 3 | **cambiar el monto** | ✅ y por tres vías: en la suscripción, **por suscriptor**, o puntual en cada ejecución | **mejor**: el monto por ejecución no tiene equivalente en MP |
+| 4 | **pausar y reanudar** | ⚠️ `action/suspend` y `action/activate`, **sin reanudación automática** | **igual de mal**: el reloj sigue siendo nuestro |
+| 5 | **cancelar** | ⚠️ borrado lógico; **no hay baja agendada a fin de período** | igual |
+| 6 | **reembolsar** | ✅ total y parcial. **La parcial recién al día siguiente.** No admiten reembolso: Binance, Pix, QR interoperable, DEBIN y efectivo | MP reembolsa en el día |
+| 7 | **leer** | ✅ por id y listado con filtros y paginación. **El listado devuelve campos aplanados, distintos del `GET`** | mismo defecto que `RC-4`, pero **su buscador sí filtra** |
+| 8 | **avisar** | ⚠️ **el punto más flojo** — ver §8.4 | |
+
+### 8.3 Los ocho casos donde MP falla
+
+| caso | Mobbex |
+|---|---|
+| cambiar el **ciclo** de una viva | ❌ **mismo bloqueo**: el `interval` *«sólo puede editarse si la suscripción no posee suscriptores»*. **Pero avisa con un error, no con un `200` mentiroso** |
+| **mover** de un plan a otro | ✅ **lo tiene**, y MP no: `POST .../subscriber/{sid}/action/move`. Es también la salida al caso de arriba |
+| correr la **fecha** del próximo cobro | ⚠️ no hay campo editable, pero `action/schedule` programa una ejecución. **Sin documentar si convive con el cobro automático** — riesgo de doble cobro, hay que medirlo |
+| **trial** sobre una viva | ❌ el `trial` es de la suscripción-plantilla, no del suscriptor |
+| **baja a fin de período** | ❌ no existe |
+| **más de un monto** / varias suscripciones por cliente | ✅ el **wallet compartido** permite que un mismo cliente tenga varias suscripciones reusando sus tarjetas. Y el monto por ejecución hace innecesaria la «autorización paraguas» |
+| **idempotencia** | ⚠️ no hay header, pero **sí dedupe por campo de negocio**: `reference` único en checkout, y desde el 2025-08-01 dos suscriptores con la misma referencia quedan bloqueados. **Es más de lo que da MP**, que acepta el header y no hace nada (`EX-17`) |
+| provocar un **cobro rechazado** en sandbox | ✅ **y es determinístico**: el CVV lo decide. `200` aprueba, `400` deniega, `002` deja pendiente (Amex: `0200`/`0400`/`0002`). Hay 13 tarjetas de prueba, **una de ellas prepaga** |
+
+**Ese último renglón vale por varios**: `PA-4` midió que con MP no se puede fabricar un cobro
+fallido ni en el alta ni al cambiar la tarjeta, con los siete titulares de rechazo. Es lo que dejó
+`RN-2`, `RN-3` y `GR-1..3` sin medir y obligó a gastar plata real en producción.
+
+### 8.4 Los riesgos, y el primero es serio
+
+1. **No hay firma HMAC documentada en los webhooks.** Lo único que exigen es TLS 1.2+ del lado
+   receptor. Con MP la firma está medida y reproducida (`EX-13`). **Si de verdad no hay firma,
+   cualquiera que conozca la URL puede inyectar un evento de cobro.** No está documentada; puede
+   existir. **Es la primera pregunta que hay que hacerles.**
+2. **No documentan un webhook de mutación a nivel suscripción.** Los eventos son de suscriptor
+   (`registration`, `change_source`, `suspended`, `active`) y de ejecución. **Es el mismo `A4` que
+   nos duele de MP**, y si se confirma, la regla del capítulo 06 §4.1 —releer siempre— vale igual
+   acá. Tampoco hay contador de versión ni garantía de orden documentados.
+3. **La tokenización propia no es self-service**: exige escribirles y **certificar PCI DSS**. Sin
+   eso, el alta va por el checkout hospedado.
+4. **El SDK de Node no se toca desde julio de 2023.** El de PHP se declara a sí mismo no apto para
+   producción. **No es bloqueante** —el adaptador se escribe contra la API REST igual— pero borra
+   el SDK de la columna de ventajas.
+5. **Nada publicado sobre la empresa después de noviembre de 2023**, y las fuentes se contradicen
+   en el año de fundación y el tamaño del equipo. No es una señal mala; es **ausencia de señal**.
+6. **No publican plazos de liquidación ni límites de la API.**
+
+### 8.5 La plata, y una pregunta de plata sin responder
+
+Aranceles publicados del plan **Essential**
+([mobbex.com/planes](https://www.mobbex.com/planes/), 2026-09-17, verificado):
+
+| concepto | arancel |
+|---|---|
+| débito | **1,9 % + IVA** |
+| crédito y **prepagas** | **2,6 % + IVA** |
+| **suscripciones** | **3,9 % + IVA** |
+
+El plan **Enterprise** es a medida y pide **$70.000.000/mes** de facturación — o sea que el
+relevante para Hospeda es Essential. No publican costo fijo ni mensual.
+
+> **La pregunta que hay que hacerles, y vale plata**: si el cobro sale por **ejecución a demanda**
+> (§8.1) en vez de por la suscripción automática, **¿paga 2,6 % o 3,9 %?** Es la misma tarjeta
+> guardada y el mismo cargo; lo que cambia es quién dispara. **1,3 puntos sobre toda la
+> facturación recurrente** dependen de esa respuesta.
+
+**Y falta el otro lado de la comparación**: cuánto nos cobra hoy Mercado Pago por una suscripción.
+No está medido en ninguna fila de la matriz — es un hueco del programa, no de este candidato.
+
+### 8.6 Prepagas: la hipótesis del §1C se confirma de este lado
+
+La página de suscripciones dice textual que *«las suscripciones son débitos automáticos en
+tarjetas de crédito, débito **y prepagas**»*, y el sandbox trae una **Mastercard Prepaga Bancor**
+entre las 13 tarjetas de prueba. **No prueba que MP pudiera**, pero sí que la plaza argentina no
+lo impide: es una decisión de producto de Mercado Pago.
+
+### 8.7 Cuánto trabajo es integrarlo
+
+Medido sobre `/home/qazuor/projects/PACKAGES/qzpay` (`7240dca`), que es consulta **operativa**
+sobre el sistema que corre hoy, no fuente de diseño:
+
+| | |
+|---|---|
+| `packages/mercadopago` | 16 archivos · **4.160 líneas** |
+| **`packages/stripe`** | 19 archivos · **3.309 líneas** |
+
+**La abstracción de proveedor no es teórica: está implementada dos veces**, y con dos pasarelas
+que no se parecen. `packages/core/src/adapters/payment.adapter.ts` pide siete sub-adaptadores
+—`customers`, `subscriptions`, `payments`, `checkout`, `prices`, `webhooks` y `vendors`— y el de
+suscripciones expone `create`, `update`, `cancel(cancelAtPeriodEnd)`, `pause`, `resume`,
+`uncancel` y `retrieve`: casi uno a uno las ocho capacidades del capítulo 06.
+
+**Un `packages/mobbex` sería el tercero sobre un molde ya probado: del orden de 3.500 a 4.000
+líneas.**
+
+Lo que el adaptador **no** salva: el registro de 1B midió que **siete de los diecisiete crons de
+billing construyen su propio adaptador de MP** en vez del genérico, porque la reconciliación
+necesita el `subscriptions.retrieve()` **tipado** de Mercado Pago. Esos siete se reescriben. **No
+es costo que agregue el cambio de proveedor**: ese código ya estaba condenado por decisión del
+owner.
+
+### 8.8 El resumen honesto
+
+**Mobbex empata a MP en lo que MP hace bien, le gana en cuatro cosas que nos duelen, y tiene un
+riesgo propio que MP no tiene.**
+
++ **Gana**: cobro a demanda con monto libre · mover de plan · rechazo provocable en sandbox ·
+  prepagas.
++ **Empata mal**: sin auto-reanudación de pausa, sin baja agendada, sin trial sobre una viva, sin
+  cambiar el ciclo de una viva.
++ **Pierde**: sin firma de webhook documentada, sin webhook de mutación documentado, SDK
+  abandonado, y una empresa sobre la que no hay noticias desde 2023.
+
+**Lo que no se sabe y decide**: si el cobro a demanda paga 2,6 % o 3,9 %, y si los webhooks se
+firman.
