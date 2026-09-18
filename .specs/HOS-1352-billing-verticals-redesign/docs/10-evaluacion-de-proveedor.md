@@ -36,9 +36,15 @@ matriz de validación quedan en `VERIFIED` y cuáles vuelven a `UNKNOWN`.
 
 ## 1. Qué nos pasa con Mercado Pago, clasificado
 
-Sobre **98 filas medidas**: 49 `VERIFIED`, **19 `NOT_SUPPORTED`**, 13 `PARTIALLY_SUPPORTED`,
-17 `UNKNOWN`. El detalle está en [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md);
+Sobre **89 filas medidas**: 49 `VERIFIED`, **19 `NOT_SUPPORTED`**, 13 `PARTIALLY_SUPPORTED` y
+8 `UNKNOWN`. El detalle está en [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md);
 acá va la clasificación que decide si cambiar sirve.
+
+> **Corregido el 2026-09-18**: este párrafo decía «98 filas» y «17 `UNKNOWN`», y las dos cifras
+> eran falsas — 49 + 19 + 13 + 8 dan **89**, no 98. Recontado con
+> [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), que es la regla del handoff:
+> **las filas se cuentan con el script, nunca a mano**. Las ocho que siguen abiertas son `RN-2`,
+> `RN-3`, `GR-1`, `GR-2`, `GR-3`, `WH-5`, `RF-3` y `EX-1`.
 
 ### A · Fallas de integridad — responde bien y hace mal
 
