@@ -256,8 +256,8 @@ Acordado con el owner el 2026-09-17:
 |---|---|---|
 | 1 | buscar todas las opciones posibles | ✅ §3 |
 | 2 | escribir este documento | ✅ |
-| 3 | limpiar la ventana de contexto | ⬜ |
-| **0** | **PRUEBA 0 — preguntarle a MP por `automatic_payments`** (§5.0). **Va primera**, por decisión del owner el 2026-09-17 | ⬜ |
+| 3 | limpiar la ventana de contexto | ✅ 2026-09-17 |
+| **0** | **PRUEBA 0 — preguntarle a MP por `automatic_payments`** (§5.0). **Va primera**, por decisión del owner el 2026-09-17 | 🟡 **los dos textos redactados y los dos canales identificados. Falta que el owner los envíe**: el formulario comercial pide un dato suyo (facturación esperada) y el ticket técnico exige su sesión |
 | 4 | **investigación exhaustiva por candidato**: costos y comisiones, documentación, qué soporta y qué no, problemas reportados, comunidad | ⬜ |
 | 5 | decidir el **orden de prueba** con el resultado del 4 | ⬜ |
 | 6 | **empezar las pruebas** | ⬜ |
@@ -318,10 +318,91 @@ Tres cosas se siguen de ahí, y ninguna estaba escrita antes:
 | fecha y sonda | 2026-09-16, [sonda 40](./mp-probes/probe-40-que-dispara-el-403-de-pagos-automaticos.mjs) |
 | contexto del negocio | plataforma de suscripciones mensuales, ARS, ticket bajo, en crecimiento |
 
-**Y una pregunta más, que conviene mandar junta** porque la respuesta también cambia el diseño:
-`R-MP-01` — la API donde viven los reembolsos está anunciada en discontinuación y su guía de
-migración **excluye explícitamente a las suscripciones**. ¿Cuál es el camino de reembolso para
-`preapproval` después de esa fecha?
+#### Por dónde se manda — dos canales públicos, y ninguno es opcional
+
+El owner confirmó el 2026-09-17 que **no hay representante comercial asignado**, así que se entra
+por la vía pública. Son dos canales distintos y **cada uno contesta una cosa que el otro no**:
+
+| canal | qué es | qué contesta |
+|---|---|---|
+| **Formulario comercial** — [`/herramientas-para-vender/cobrar/contacto`](https://www.mercadopago.com.ar/herramientas-para-vender/cobrar/contacto) | público, sin sesión. Pide nombre, empresa, mail, teléfono, **facturación mensual de e-commerce (real o esperada)**, rubro y un campo **Mensaje** libre | **la habilitación misma**. Es el equipo que la doc nombra |
+| **Centro de soporte técnico** — [`/developers/es/support/center`](https://www.mercadopago.com/developers/es/support/center) | **requiere iniciar sesión** con la cuenta de Mercado Pago | el **criterio** de elegibilidad, y `R-MP-01`, que es técnica y no le corresponde a Comercial |
+
+> ⚠️ **El campo de facturación decide si el lead se lee o se descarta**, y es una declaración
+> comercial del owner, no un dato técnico: hoy hay **3 relaciones de cobro vivas** (`07`). El
+> formulario admite la **esperada**, que es el número honesto para una plataforma que está
+> abriendo su cobro. **Lo completa el owner; este documento no lo propone.**
+
+#### Texto 1 — formulario comercial, campo «Mensaje»
+
+> Hola. Integro pagos con Mercado Pago para Hospeda, una plataforma de alojamientos turísticos
+> con planes de suscripción mensual en pesos.
+>
+> Escribo por un requisito que la propia documentación les remite a ustedes: la página de
+> resumen de **Pagos automáticos** (`/developers/es/docs/automatic-payments-orders/landing`)
+> dice que *«es necesario contar con la autorización del equipo Comercial para poder utilizar
+> esta solución»*. Vengo a solicitar esa autorización.
+>
+> Qué necesitamos habilitar: **`automatic_payments` con `stored_credential` en
+> `POST /v1/orders`**, para cobrar la renovación mensual contra una tarjeta ya registrada, sin
+> pedirle al cliente que vuelva a ingresar sus datos.
+>
+> Hoy ese pedido devuelve **`403 "The application is not authorized to perform this type of
+> payment"`**. La misma orden **sin** esos campos devuelve `201` y cobra correctamente, así que
+> el rechazo es de permisos y no del request.
+>
+> Dos consultas concretas:
+>
+> 1. ¿Cuáles son los requisitos de elegibilidad para esta autorización, y cómo se solicita
+>    formalmente?
+> 2. ¿Es el mismo criterio de elegibilidad que **Wallet Connect** (más de 100.000 usuarios), o
+>    es una habilitación independiente?
+>
+> Cuenta: `3497516165`. Aplicación: `<ID de la aplicación>`.
+>
+> Gracias.
+
+#### Texto 2 — ticket en el centro de soporte técnico
+
+**Asunto**: *Elegibilidad de `automatic_payments` + `stored_credential` en `POST /v1/orders`, y
+reembolsos de `preapproval` tras la discontinuación de la API de Payments*
+
+> Hola. Dos consultas de integración sobre la cuenta `3497516165`, aplicación
+> `<ID de la aplicación>`.
+>
+> **1 · Elegibilidad de pagos automáticos**
+>
+> `POST /v1/orders` con `automatic_payments` y/o `stored_credential` devuelve
+> `403 "The application is not authorized to perform this type of payment"`.
+>
+> Lo medimos el 2026-09-16 con el control que descarta un error nuestro:
+>
+> + la **misma orden sin esos nodos** → `201`, y cobra;
+> + cuatro variantes → **el mismo `403` en las cuatro**: sólo `stored_credential`; sólo
+>   `automatic_payments`; las dos juntas; y `payment_initiator: "merchant"` sin perfil de pago.
+>
+> Entendemos por la documentación del producto que la habilitación la otorga el equipo Comercial
+> —ya se la solicitamos por el formulario—. Lo que les pedimos a ustedes es el **criterio**:
+> ¿cuáles son los requisitos de elegibilidad, y **son los mismos que los de Wallet Connect**
+> (más de 100.000 usuarios) o es una habilitación independiente?
+>
+> **2 · Reembolsos de una suscripción, después de la discontinuación de la API de Payments**
+>
+> El panel anuncia que la API de Payments se descontinúa, y su guía de migración a Orders
+> **excluye explícitamente a las suscripciones**. Tres preguntas:
+>
+> + ¿la discontinuación alcanza también a las **lecturas** de `/v1/payments`?
+> + ¿en qué **fecha**?
+> + cuando se retire, **¿por qué endpoint se reembolsa un cobro originado por un `preapproval`**,
+>   si las suscripciones quedan fuera de la migración a Orders?
+>
+> Gracias.
+
+<!-- separador: termina el texto del ticket y empieza la nota sobre R-MP-01 -->
+
+> **`R-MP-01` va montado en el mismo ticket, a propósito.** Es la consulta pendiente de mayor
+> latencia —pregunta por el futuro del proveedor, así que no se puede medir— y viaja gratis en un
+> ticket que de todos modos hay que abrir. Está incorporada como punto 2 del Texto 2.
 
 ### 5.1 Qué tiene que traer el paso 4, por candidato
 
