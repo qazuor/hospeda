@@ -96,6 +96,32 @@ permisivo dejaría sin ejercer la mitad interesante, que es perder la cobertura.
   adivinar; y descartados 11 falsos positivos de una verificación propia, que eran referencias
   anotadas con otra forma.
 
+### Autónomas para desarrollar, juntas para liberar — y esto se malinterpretó una vez
+
+`DEC-ARCH-007`, de la misma tarde. **«Autónomas» significa que ninguna espera a la otra para
+avanzar; NO significa que una pueda salir a producción sola.** Las dos llegan juntas y terminadas.
+
+Hay que leerlo antes de proponer nada: con la lectura equivocada, esta misma sesión llegó a
+proponer un adaptador sobre el billing actual —código real sobre un sistema condenado, escrito para
+tirarlo— para que verticales pudiera llegar sola. **Esa premisa nunca existió**, y el contrato se
+queda con **dos** implementaciones.
+
+**El flujo de ramas lo hace cumplir**, en vez de confiar en que alguien se acuerde:
+
+| | |
+|---|---|
+| rama de integración | `epic/HOS-1352-verticales-billing`, **nace con el primer código**. Los docs siguen yendo por su rama de spec a `staging` |
+| las sub-épicas | cortan de ella y mergean a ella. **Nunca a `staging`** |
+| `staging` → paraguas | **periódicamente y como obligación**, nunca al revés hasta el final |
+| dónde se revisa | en los PRs de sub-épica → paraguas, no en el PR final |
+
+**«Terminada» para una épica no es «en producción»**: es lista y verificada contra el contrato,
+esperando a la otra.
+
+**Y las fases quedan así**: 5, 6 y 7 se parten limpio; 8 y 9 cada épica la suya **más una final
+sobre el conjunto**; 10 se desarrolla en paralelo y despliega una sola vez; **1C no se parte** — es
+billing entera.
+
 ### Próximo paso exacto
 
 **Escribir la spec autónoma de HOS-1354**, como ya se hizo con la de HOS-1353. Se puede escribir

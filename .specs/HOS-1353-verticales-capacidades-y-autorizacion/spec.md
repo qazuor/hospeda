@@ -18,6 +18,10 @@ parent: HOS-1352
 > **Esta épica se sostiene sola.** No espera a que la de billing esté definida, y su diseño vive
 > acá adentro — no en otro documento. Se puede implementar sin saber con qué pasarela vamos a
 > cobrar.
+>
+> **Pero no sale a producción sola** (`DEC-ARCH-007`). La autonomía es para **desarrollar**: las
+> dos épicas llegan juntas y terminadas. Acá **«terminada» significa lista y verificada contra el
+> contrato**, esperando a la otra — no desplegada.
 
 ## 1. De dónde sale
 
@@ -250,6 +254,19 @@ uno que contesta siempre que no deja todo apagado.
    hasta que exista billing. Mientras el trial sigue vivo sí la tiene: la extensión `T4`.
 3. **El techo de días de trial cuenta una fuente de tres**: las extensiones de `T4`, no las que
    vendrían de un promo o de una cortesía. El número no cambia; cambia cuántas cosas suman.
+
+### 4.3 Cómo se integra con la otra épica
+
+**El código de esta épica no va a `staging` por su cuenta** (`DEC-ARCH-007`). Corta de la rama de
+integración del paraguas —`epic/HOS-1352-verticales-billing`— y mergea ahí. La unidad que llega a
+`staging` es el paraguas, con las dos épicas adentro.
+
+**La revisión ocurre en esos PRs**, los de esta épica hacia el paraguas. El PR final a `staging` va
+a ser demasiado grande para revisarse de verdad: tiene que ser el merge de algo ya revisado.
+
+Y una obligación que es la que hace viable todo lo anterior: **`staging` se mergea periódicamente
+hacia la rama del paraguas**, nunca al revés hasta el final. Sin eso, una rama que vive meses
+acumula conflictos con todo lo que entre al repo mientras tanto.
 
 ---
 

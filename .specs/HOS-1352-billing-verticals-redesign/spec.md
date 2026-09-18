@@ -25,6 +25,28 @@ areas:
 >
 > El bloqueo que tenía detenido al programa —no saber con qué pasarela vamos a cobrar— **alcanza al
 > dinero y no alcanza a las capacidades** (`DEC-ARCH-005`).
+>
+> **Pero autónomas para desarrollar no quiere decir separadas para liberar: las dos llegan a
+> producción juntas y terminadas** (`DEC-ARCH-007`). Ninguna sale sola.
+
+## Cómo se libera: juntas, y el flujo lo hace cumplir
+
+La separación existe **para poder trabajar**, no para poder desplegar. Y no queda librada a que
+alguien se acuerde — misma lógica que la condición A de `DEC-ARCH-004`, convertir *«no lo hagas»*
+en *«no se puede»*:
+
+| | |
+|---|---|
+| **la rama de integración** | `epic/HOS-1352-verticales-billing`, **nace cuando exista el primer código**. Los documentos siguen yendo por su rama de spec, que sí va a `staging`: son documentación y no despliegan nada |
+| **las sub-épicas** | cortan de ella y mergean **a ella**. Nunca a `staging` directamente |
+| **`staging` → paraguas** | periódicamente y **como obligación**, nunca al revés hasta el final |
+| **dónde se revisa** | **en los PRs de sub-épica → paraguas**, no en el PR final |
+
+**Es una excepción declarada** al flujo de 6 pasos del `CLAUDE.md` del repo. Está escrita para que
+el próximo agente que entre no la «corrija».
+
+**«Terminada» para una épica no significa «en producción»**: significa lista y verificada contra el
+contrato, esperando a la otra.
 
 ## Por dónde entrar
 
@@ -112,7 +134,12 @@ El mapa completo, con qué define cada uno, está en
 | FASE 1C — experimentación contra Mercado Pago | 🟡 **89 filas · 81 cerradas · 8 `UNKNOWN`** — cinco son el camino del cobro fallido, imposible de fabricar con Mercado Pago |
 | FASE 1C-bis — evaluación de proveedor | 🟡 **paso 4 de 6** |
 | FASE 2 — el diseño | 🟡 **21 de 22 capítulos**, desarmado en tres partes. Falta el `13` (Pagos) |
-| FASE 3 a 10 | ⬜ **se reparten entre HOS-1353 y HOS-1354** |
+| FASE 3 · épicas · FASE 4 · spec por épica | ✅ **en su nivel grueso**: partir en dos épicas con su spec cada una *es* la 3 y la 4. Falta la descomposición fina adentro de cada una, y esa se hace por separado |
+| FASE 5 · gap analysis · FASE 6 · rewrite/reuse · FASE 7 · estrategia | ⬜ **se parten limpio**: cada épica hace la suya |
+| FASE 8 · revisión adversarial · FASE 9 · diseño final | ⬜ cada épica la suya, **más una final sobre el conjunto** |
+| FASE 10 · implementación | ⬜ **se desarrolla en paralelo y despliega una sola vez** |
+
+**La FASE 1C no se parte**: es billing entera y se va con `HOS-1354`.
 
 **48 decisiones** — 3 de metodología y 45 funcionales. Ninguna pregunta del owner queda abierta, y
 ningún bloqueante de diseño tampoco.

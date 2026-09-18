@@ -2080,13 +2080,70 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ARCH-007 — Las dos épicas se desarrollan en paralelo y se liberan juntas; ninguna llega a producción sola
+
+- **Fecha**: 2026-09-18 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: `DEC-ARCH-005` partió el programa en dos épicas autónomas, y «autónomas» se puede
+  leer de dos formas muy distintas. Una es *«cada una se desarrolla sin esperar a la otra»*; la
+  otra es *«cada una puede salir a producción por su cuenta»*. **La decisión era la primera y no la
+  segunda**, y no estaba escrito en ningún lado — al punto de que una sesión propuso construir un
+  adaptador sobre el billing actual para que verticales pudiera llegar sola, que es trabajo real
+  sobre código condenado, apoyado en una premisa que el owner nunca pidió.
+- **Alternativas**: (1) cada épica llega a producción cuando está lista; (2) se desarrollan en
+  paralelo y se liberan juntas; (3) se libera primero billing y después verticales.
+- **Decisión**: **(2)**. La separación existe **para poder trabajar**, no para poder desplegar.
+  **Las dos llegan a producción juntas y terminadas.**
+- **Y el flujo de ramas lo hace cumplir, en vez de confiar en que alguien se acuerde**:
+  1. **Existe una rama de integración del paraguas** — `epic/HOS-1352-verticales-billing` — que
+     **nace cuando exista el primer código**, no antes. Los documentos siguen yendo por su rama de
+     spec, que sí va a `staging` normalmente: son documentación y no despliegan nada.
+  2. **Las sub-épicas cortan de esa rama y mergean a esa rama.** Nunca a `staging` directamente.
+  3. **`staging` se mergea HACIA la rama del paraguas, periódicamente y como obligación.** Nunca al
+     revés hasta el final. Es lo único que evita que meses de divergencia terminen en un merge
+     imposible, y este repo tiene mucho movimiento.
+  4. **La revisión ocurre en los PRs de sub-épica → paraguas.** El PR final a `staging` va a ser
+     enorme y nadie lo puede revisar de verdad: tiene que ser el merge de algo ya revisado pieza
+     por pieza, no el momento de mirar.
+  5. **Es una excepción declarada** al flujo de 6 pasos del `CLAUDE.md` del repo, que exige que
+     toda rama salga de `staging` y vuelva a `staging`. Declarada acá para que el próximo agente
+     que entre no la «corrija».
+- **Motivo**: es la misma forma de la **condición A de `DEC-ARCH-004`** — convertir *«no lo hagas»*
+  en *«no se puede»*. Con la rama de integración, liberar una épica sola deja de ser una decisión
+  que alguien puede tomar mal: **la unidad que llega a `staging` es el paraguas**.
+- **Lo que esta decisión NO cambia**: la autonomía de desarrollo. Las dos épicas siguen sin
+  esperarse: verticales se construye y se prueba entera con la implementación de arranque del
+  contrato (`DEC-ARCH-006`), y billing avanza en todo lo que no dependa de la pasarela.
+- **Lo que sí cancela**: **el contrato se queda con DOS implementaciones.** La tercera que se había
+  propuesto —un adaptador que leyera el billing actual, para que verticales pudiera ir a producción
+  sin la otra épica— **deja de tener objeto**. Era código sobre el sistema viejo, escrito para
+  tirarlo, y sólo se justificaba bajo la lectura equivocada de `DEC-ARCH-005`.
+- **El riesgo, declarado, y es otro que el que parecía**: no es la coexistencia en producción —no
+  la hay— sino **la espera**. Si una épica termina meses antes que la otra, su código espera, y una
+  rama que vive meses acumula conflictos con todo lo que entre a `staging` mientras tanto. Lo
+  acotan el punto 3 de arriba y la integración continua hacia la rama del paraguas; **cómo se
+  integra sin activar** es materia de la FASE 7 de cada épica y no se resuelve acá.
+- **Implicaciones**:
+  1. **«Terminada» para una épica no significa «en producción»**: significa **lista y verificada
+     contra el contrato**, esperando a la otra.
+  2. **Las fases 8 y 9 se parten pero no del todo**: cada épica hace la suya, y **hace falta una
+     revisión final sobre el conjunto** antes del despliegue.
+  3. **La FASE 10 se desarrolla en paralelo y despliega una sola vez.**
+  4. Las fases **5, 6 y 7** sí se parten limpio: cada épica hace su gap analysis, su decisión de
+     rewrite/reuse y su estrategia.
+  5. **La FASE 1C no se parte**: es billing entera, y se va con `HOS-1354`.
+- **Origen**: conversación con el owner del 2026-09-18, aclarando el alcance de `DEC-ARCH-005`
+  —*«van a llegar sí o sí juntas y terminadas ambas a producción»*— y proponiendo él mismo la rama
+  de integración del paraguas.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **48** |
+| Decisiones tomadas | **49** |
 | De metodología | 3 |
-| Funcionales | 45 |
+| Funcionales | 46 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
@@ -2094,5 +2151,5 @@ Cada entrada lleva, según §3.4:
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
-| Decisiones de arquitectura del owner | **3**, las tres del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera |
+| Decisiones de arquitectura del owner | **4**, las cuatro del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera. **`DEC-ARCH-007`**: se desarrollan en paralelo y **se liberan juntas** — ninguna llega a producción sola, y una rama de integración del paraguas lo hace cumplir |
 | Apartamientos declarados del PDR | **4** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), y **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento) |

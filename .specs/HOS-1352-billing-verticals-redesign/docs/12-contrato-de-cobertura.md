@@ -166,6 +166,16 @@ rama en el código** — y la distinción importa, porque una rama es lo que des
 Agrega las otras tres fuentes —suscripción, cortesía, grant— y **no toca nada de lo construido**:
 se enchufa como fuente y como emisor del aviso.
 
+### 5.3 Son dos, y no hay una tercera
+
+**No existe una implementación que lea el billing actual.** Se propuso —un adaptador sobre el
+sistema que corre hoy, para que verticales pudiera llegar a producción sin esperar a la otra
+épica— y **se descartó porque su premisa no existía**: `DEC-ARCH-007` es explícita en que las dos
+llegan juntas, así que nadie necesita que una salga sola.
+
+Queda escrito acá porque la idea es tentadora y va a volver: es código real sobre un sistema
+condenado, escrito para tirarlo, resolviendo un problema que el programa no tiene.
+
 ---
 
 ## 6. Las tres defensas

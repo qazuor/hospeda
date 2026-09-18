@@ -765,3 +765,62 @@ Dos correcciones sobre lo que entregaron los agentes que partieron los capítulo
 - **Cuál es la pasarela.** Sigue en el paso 4 de 6, esperando la PRUEBA 0 y el KYC de Mobbex.
 - **Si el capítulo 13 adopta el cargo puntual como modelo canónico.** Planteado, con sus tres
   opciones y una recomendación, y sin responder. Es la primera pregunta de HOS-1354.
+
+---
+
+## 2026-09-18 (tarde, II) — Autónomas para desarrollar, juntas para liberar
+
+### Qué pasó
+
+El owner aclaró el alcance de `DEC-ARCH-005`, y la aclaración canceló trabajo que se estaba por
+proponer. **«Autónomas» era *cada una se desarrolla sin esperar a la otra*, no *cada una puede
+salir a producción sola*.** Textual: *«van a llegar sí o sí juntas y terminadas ambas a
+producción»*.
+
+**Por qué importa**: con la lectura equivocada, esta sesión había propuesto una **tercera
+implementación del contrato** —un adaptador sobre el billing actual, para que verticales pudiera
+llegar a producción sin la otra épica—. Era código real sobre un sistema condenado, escrito para
+tirarlo, **resolviendo un problema que el programa no tiene**. Se descartó.
+
+### La decisión, y lo que la hace cumplir
+
+`DEC-ARCH-007`. Y no queda librada a que alguien se acuerde: **el owner propuso una rama de
+integración del paraguas**, y eso convierte *«no lo hagas»* en *«no se puede»* — misma forma que la
+condición A de `DEC-ARCH-004`.
+
+| | |
+|---|---|
+| rama de integración | `epic/HOS-1352-verticales-billing`, **nace con el primer código** |
+| las sub-épicas | cortan de ella y mergean a ella, **nunca a `staging`** |
+| `staging` → paraguas | **periódicamente y como obligación**, nunca al revés hasta el final |
+| dónde se revisa | en los PRs de sub-épica → paraguas, no en el PR final |
+
+Las tres condiciones que se le pusieron salen de los modos de falla conocidos de una rama de larga
+vida: la divergencia contra un repo que se mueve mucho, un PR final demasiado grande para revisarse
+de verdad, y que es una **excepción declarada** al flujo de 6 pasos del `CLAUDE.md` del repo — sin
+declararla, el primer agente que entre la «corrige».
+
+### El riesgo cambió de forma
+
+**No es la coexistencia de dos sistemas en producción** —no la hay— **sino la espera**: si una
+épica termina meses antes, su código espera. Lo acotan el merge periódico y la integración
+continua; **cómo se integra sin activar** es materia de la FASE 7 de cada épica y quedó sin
+resolver a propósito.
+
+### Y las fases quedaron repartidas
+
+5, 6 y 7 se parten limpio. 8 y 9, cada épica la suya **más una final sobre el conjunto**. La 10 se
+desarrolla en paralelo y **despliega una sola vez**. **La 1C no se parte**: es billing entera. Las
+3 y 4 ya se cumplieron en su nivel grueso al partir el programa.
+
+### Qué se produjo
+
+`DEC-ARCH-007` asentada —el log queda en **49 decisiones**, recontadas con `rg`—, la partición y
+las dos specs actualizadas, el contrato con una sección nueva que explica **por qué no hay una
+tercera implementación**, y **la spec autónoma de `HOS-1354`**, que faltaba.
+
+### Una cosa que no se hizo, y a propósito
+
+El owner pidió actualizar *«todas las specs, pdr, o cualquier md»*. **El PDR no se tocó**: su
+propia regla dice que no se edita nunca y que toda desviación se registra como decisión en el log
+— que es exactamente lo que se hizo.

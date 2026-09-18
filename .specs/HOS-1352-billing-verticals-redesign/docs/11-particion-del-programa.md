@@ -227,7 +227,46 @@ compromisos de cobro vivos que existen están del otro lado de la frontera.
 
 ---
 
-## 6. Lo que esta partición NO decide
+## 6. Autónomas para desarrollar, juntas para liberar
+
+**«Autónomas» significa que ninguna espera a la otra para avanzar. No significa que una pueda salir
+a producción sola.** Las dos llegan **juntas y terminadas** (`DEC-ARCH-007`).
+
+Hay que decirlo con todas las letras porque la ambigüedad ya costó: una sesión llegó a proponer
+construir un adaptador sobre el billing actual —código real sobre un sistema condenado, escrito
+para tirarlo— para que verticales pudiera llegar sola. **Esa premisa nunca existió.**
+
+### 6.1 El flujo de ramas lo hace cumplir
+
+No es una regla que alguien tenga que recordar: **es la forma del flujo**. Misma lógica que la
+condición A de `DEC-ARCH-004` — convertir *«no lo hagas»* en *«no se puede»*.
+
+| | |
+|---|---|
+| **la rama de integración** | `epic/HOS-1352-verticales-billing`, **nace cuando exista el primer código**. Los documentos siguen yendo por su rama de spec, que sí va a `staging`: son documentación y no despliegan nada |
+| **las sub-épicas** | cortan de ella y mergean **a ella**. Nunca a `staging` directamente |
+| **`staging` → paraguas** | periódicamente y **como obligación**, nunca al revés hasta el final |
+| **dónde se revisa** | **en los PRs de sub-épica → paraguas**. El PR final a `staging` va a ser enorme y nadie lo puede revisar de verdad: es el merge de algo ya revisado, no el momento de mirar |
+
+**Es una excepción declarada** al flujo de 6 pasos del `CLAUDE.md` del repo, que exige que toda
+rama salga de `staging` y vuelva a `staging`. Queda escrita acá para que el próximo agente que
+entre no la «corrija».
+
+### 6.2 Qué significa «terminada» para una épica
+
+**No significa «en producción».** Significa **lista y verificada contra el contrato**, esperando a
+la otra.
+
+### 6.3 Y el riesgo cambia de forma
+
+No es la coexistencia de dos sistemas en producción —no la hay— sino **la espera**: si una épica
+termina meses antes, su código espera, y una rama que vive meses acumula conflictos con todo lo que
+entre a `staging` mientras tanto. Lo acotan el merge periódico de `staging` hacia el paraguas y la
+integración continua; **cómo se integra sin activar** es materia de la FASE 7 de cada épica.
+
+---
+
+## 7. Lo que esta partición NO decide
 
 - **Cuál es la pasarela.** Sigue en [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md),
   paso 4 de 6, esperando la PRUEBA 0 y el KYC de Mobbex.
