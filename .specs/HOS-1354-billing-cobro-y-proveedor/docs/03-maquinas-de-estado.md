@@ -1,9 +1,9 @@
 ---
 title: Master Spec 03 — Las máquinas de estado
-linear: HOS-1352
+linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-18
 status: CURRENT
 fase: 2
 capitulo: 3
@@ -14,80 +14,7 @@ cierra:
 
 # 03 · Las máquinas de estado
 
-El §63 pide ocho explícitamente: Trial, Subscription, Payment, Manual Payment, Addon,
-Publication, Grace y Pause, *«aunque finalmente no utilicemos librería de state machines»*. Acá
-son **nueve**: la postulación de Partner (§11) se agregó al escribir el capítulo 18, con su razón
-escrita.
-
-Los nombres salen del capítulo 01 y **no se redefinen acá**. Lo que este capítulo agrega son
-las **transiciones**: qué evento mueve de dónde a dónde, bajo qué condición, y con qué efecto.
-
----
-
-## 1. Cómo se leen estas máquinas
-
-Seis reglas que valen para todas. Están acá arriba porque son la diferencia entre una
-máquina de estados y una convención.
-
-1. **La tabla de transiciones es exhaustiva.** Lo que no está, no pasa. Un intento de
-   transición que la tabla no declara **no se ejecuta**: se registra como evento de dominio y,
-   si tocaba plata o estado, emite `RECONCILIATION_REQUIRED` (§22.1).
-2. **El estado vive en una columna con dominio restringido.** El §63 pide máquinas explícitas;
-   una columna que acepta cualquier cadena no tiene máquina, tiene una costumbre. El capítulo 02
-   fija la restricción.
-3. **Una transición es atómica junto con sus efectos locales.** Los efectos remotos —el
-   proveedor, el correo— nunca están dentro de esa transacción: el §43 lo ordena para el correo
-   (*«Si falla mail: acción de dominio permanece»*) y el capítulo 05 lo desarrolla para el
-   proveedor.
-4. **Toda transición deja un evento de dominio** (§49), con quién la causó y qué la disparó.
-5. **Ninguna máquina consulta el estado del proveedor para decidir.** Consulta el suyo. Lo que
-   el proveedor dice entra siempre por §10, la regla de no-retroceso.
-6. **Grace y Pause no son máquinas independientes**, y el §63 las nombra igual. Son sub-estados
-   de Suscripción **con reloj propio y datos propios**, y se modelan aparte por eso: un estado
-   sin reloj no puede vencer solo, y los dos vencen. Se describen en §4 y §5.
-
----
-
-## 2. Trial
-
-**Alcance**: uno por `user + vertical`, de por vida (§10.1). No se reinicia por borrar la
-ficha, crear otra, cancelar, volver, cambiar de plan ni registrarse de nuevo sobre la misma
-identidad detectable (§10.2, `DEC-TRIAL-004`).
-
-```text
-            evento de activación de la vertical
-  PRE_TRIAL ─────────────────────────────────────► TRIAL_ACTIVE
-                                                     │    │
-                        se suscribe                  │    │   vence sin suscribirse
-              ┌──────────────────────────────────────┘    └──────────────┐
-              ▼                                                          ▼
-      TRIAL_CONVERTED ◄───────── se suscribe después ──────────── TRIAL_EXPIRED
-```
-
-| # | desde | evento | hacia | condición | efectos |
-|---|---|---|---|---|---|
-| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan tiene días de trial > 0 **y** no hay trial previo para ese `user + vertical` | se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
-| T2 | `TRIAL_ACTIVE` | se autoriza una suscripción | `TRIAL_CONVERTED` | — | se cancela la campaña previa; el acceso pasa a depender de la suscripción |
-| T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | no hay suscripción autorizada | publicación → `UNPUBLISHED_BY_BILLING`; arranca la campaña de recuperación y el reloj de retención |
-| T4 | `TRIAL_ACTIVE` | promo de extensión o cortesía | `TRIAL_ACTIVE` | sólo durante `TRIAL_ACTIVE` (§32) | corre la fecha de fin; **re-agenda** la campaña previa |
-| T5 | `TRIAL_EXPIRED` | se autoriza una suscripción | `TRIAL_CONVERTED` | — | corta la campaña de recuperación; se restituye la publicación |
-
-**Cuatro cosas que la tabla fija y conviene leer explícitas:**
-
-- **`PRE_TRIAL` es el estado más poblado del sistema** y es un estado real, no la ausencia de
-  uno: es donde vive quien entró a la vertical y todavía no publicó, con borradores ilimitados,
-  sin capacidades comerciales y sin consumir trial (`DEC-TRIAL-007`).
-- **No existe transición de vuelta a `PRE_TRIAL` ni a `TRIAL_ACTIVE` desde `TRIAL_EXPIRED`.**
-  Es lo que hace cumplir al §10.2. Un trial consumido no se devuelve ni siquiera si la ficha que
-  lo disparó se borra — con la consecuencia ya registrada de que alguien puede quedarse sin
-  ficha y sin trial (`E-TRIAL-04`, capítulo 11).
-- **La extensión sólo entra por T4**, o sea sólo durante `TRIAL_ACTIVE`. El §32 es terminal:
-  *«Solo válido durante `TRIAL_ACTIVE`. Nunca después. Backend debe rechazar.»*
-- **T4 re-agenda la campaña previa**, no la deja como estaba. Si el trial se extiende 10 días y
-  el aviso de «faltan 2 días» ya salió, el cliente tiene que recibirlo de nuevo contra la fecha
-  nueva. El cruce inverso —la campaña de recuperación ya disparada y el trial extendido después—
-  **no existe**: esa campaña arranca en T3 y T4 exige `TRIAL_ACTIVE`, así que entre las dos no hay
-  camino (`E-TRIAL-03`, disuelto por el capítulo 11 §7).
+La mitad de billing del capítulo 03 del programa: Suscripción, Grace, Pausa, Pago, Pago manual, Addon y la regla de no-retroceso. Las reglas de lectura comunes viven en el núcleo; Trial, Publicación y Postulación de Partner viven en la épica de verticales.
 
 ---
 
@@ -111,9 +38,9 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
 | `CANCELLED` | terminada |
 | `RECONCILIATION_REQUIRED` | el sistema no puede decidir solo (§22.1) |
 
-> `ABANDONED` no estaba en el capítulo 01 y se agrega acá: `M-SUB-01` exige nombrar la ventana
+> `ABANDONED` no estaba en el capítulo 01 (núcleo) y se agrega acá: `M-SUB-01` exige nombrar la ventana
 > del preapproval sin autorizar **con su duración máxima y su limpieza**, y sin un estado de
-> salida esa ventana no vence nunca. El capítulo 01 queda corregido en el mismo commit.
+> salida esa ventana no vence nunca. El capítulo 01 (núcleo) queda corregido en el mismo commit.
 
 ### 3.2 Las transiciones
 
@@ -126,7 +53,7 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
 | S5 | `GRACE_PERIOD` | entra el pago | `ACTIVE` | — | se apaga el reloj |
 | S6 | `GRACE_PERIOD` | se agota el reloj | `SUSPENDED` | — | §21: sin listado público, sin edición, sin creación, sin entitlements comerciales; datos conservados y billing accesible |
 | S7 | `SUSPENDED` | regulariza | `ACTIVE` | el cobro entró de verdad | se restituye la publicación |
-| S8 | `ACTIVE` | la persona pide pausar | `PAUSED` *(motivo `CUSTOMER_REQUEST`)* | `puedePausar()` (capítulo 01 §3) | se pausa en el proveedor; se elige en **meses enteros** (`DEC-SUB-010`) |
+| S8 | `ACTIVE` | la persona pide pausar | `PAUSED` *(motivo `CUSTOMER_REQUEST`)* | `puedePausar()` (capítulo 01 (núcleo) §3) | se pausa en el proveedor; se elige en **meses enteros** (`DEC-SUB-010`) |
 | S9 | `ACTIVE` | `SUPER_ADMIN` otorga cortesía | `PAUSED` *(motivo `COURTESY`)* | no hay pausa vigente (`DEC-GRANT-004`) | se pausa en el proveedor y **el servicio se sostiene de nuestro lado** (`DEC-GRANT-003`) |
 | S10 | `PAUSED` | llega el fin, o la persona vuelve antes | `ACTIVE` | — | `PUT status=authorized`; al reanudar se le muestra **una sola cosa: qué día se le cobra** (`DEC-SUB-010`) |
 | S11 | `ACTIVE` | pide la baja | `CANCEL_SCHEDULED` | — | **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
@@ -291,32 +218,6 @@ revés.
 
 ---
 
-## 9. Publicación
-
-Es la máquina de la ficha, y el §63 la pide aparte porque no coincide con la de la suscripción:
-una suscripción cubre **todas** las fichas de su vertical (§12), así que un solo evento de
-billing mueve varias publicaciones a la vez.
-
-| # | desde | evento | hacia | nota |
-|---|---|---|---|---|
-| PB1 | `DRAFT` | el dueño publica | `PUBLISHED` | **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha |
-| PB2 | `PUBLISHED` | se pierde la cobertura | `UNPUBLISHED_BY_BILLING` | trial vencido (T3), suspensión (S6), cancelación consumada (S12), o excedente tras un downgrade |
-| PB3 | `UNPUBLISHED_BY_BILLING` | se recupera la cobertura | `PUBLISHED` | S5, S7, T5 |
-| PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de inactividad | `ARCHIVED` | sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) |
-| PB5 | `DRAFT` | N meses sin actividad | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración |
-| PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2) |
-
-**`UNPUBLISHED_BY_BILLING` es un estado distinto de `DRAFT` a propósito.** Si billing bajara la
-ficha a `DRAFT`, al recuperar la cobertura no habría forma de saber cuáles republicar sin
-publicar también las que el dueño había bajado él. La distinción es lo que hace posible PB3.
-
-**El excedente tras un downgrade tiene criterio escrito y predecible**: se despublican **las
-publicadas más recientemente**, hasta entrar en el límite, y **el criterio va escrito en el
-aviso** — si el cliente no puede leerlo, deja de ser predecible y se pierde el motivo por el que
-se eligió (`DEC-SUB-008`).
-
----
-
 ## 10. La regla de no-retroceso · cierra `M-CONC-02`
 
 El §51 nombra *«out-of-order»* entre los escenarios a cubrir y el §64.18 dice que *«MP gobierna
@@ -377,29 +278,7 @@ releyendo y comparando campo por campo cada campo que se mandó**, porque está 
 
 ---
 
-## 11. Postulación de Partner
-
-**Es la novena**, agregada al escribir el capítulo 18 (ver la nota del cap. 01 §2.2). Chica, sin
-ciclos y sin vuelta atrás.
-
-| # | desde | evento | hacia | nota |
-|---|---|---|---|---|
-| PP1 | — | alguien completa el formulario del §17.3 | `PENDIENTE` | sólo el camino A; el camino B no crea postulación |
-| PP2 | `PENDIENTE` | el admin aprueba | `APROBADA` | **no vincula nada todavía**: si el correo ya es de un usuario, se le manda a **esa** dirección un aviso para reclamarlo (cap. 18 §2.4) |
-| PP3 | `PENDIENTE` | el admin rechaza | `RECHAZADA` | **se comunica** (§17.3); habilita postular de nuevo pasada la espera configurable |
-
-**Ninguna transición la dispara el tiempo.** Una `PENDIENTE` que nadie resuelve **no vence**: se
-marca atrasada en el panel del §48, porque vencerla sería un rechazo silencioso y el §17.3 exige
-que el rechazo se comunique. Una `APROBADA` que nadie reclama tampoco vence, y es inofensiva: la
-suscripción es el último de los nueve pasos del §17.3, así que no publica nada y no se le cobra
-nada.
-
----
-
-## Lo que este capítulo NO cierra
+## Lo que esta mitad NO cierra
 
 - **Los seis cruces del §52** son `E-CONC-01`, del capítulo 05. Acá quedan nombrados dos —el
   pago manual simultáneo al del proveedor, y el cambio de plan en grace— sin resolverlos.
-- **Las restricciones de base** que hacen cumplir estas máquinas son del capítulo 02.
-- **Qué correo sale en cada transición** es del capítulo 07.
-- **Los relojes**, como jobs concretos con su horario y su idempotencia, son de cada subdominio.

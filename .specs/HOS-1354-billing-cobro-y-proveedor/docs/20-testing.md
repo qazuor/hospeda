@@ -1,15 +1,17 @@
 ---
 title: Master Spec 20 — Estrategia de testing
-linear: HOS-1352
+linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-18
 status: CURRENT
 fase: 2
 capitulo: 20
 ---
 
 # 20 · Estrategia de testing
+
+Mitad **BILLING** del capítulo 20 (`09-master-spec/20-testing.md`).
 
 El §62 abre diciendo que *«testing forma parte del diseño desde el comienzo»* y reparte el trabajo
 en cuatro capas. Este capítulo dice **qué va en cada una** y, sobre todo, resuelve las dos cosas
@@ -45,21 +47,10 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 
 | # | qué falla si se rompe | de dónde sale |
 |---|---|---|
-| G1 | una pieza **nombra una vertical** sin implementar uno de los ocho ítems del Eje 2 | cap. 01 §4.4 |
-| G2 | una operación de dominio **no declara** su contexto de vertical | cap. 17 §2.3 |
-| G3 | una clave usada en código **no existe en la base**, o una de la base **no existe en el catálogo** — las dos direcciones | cap. 02 §1.2 |
-| G4 | una transición de suscripción o de trial **escribe roles** | cap. 17 §4.4 |
-| G5 | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes | cap. 15 §4.2 |
-| G6 | una autorización **decide sólo por rol** | invariantes §64.12 y §64.13 |
 | G7 | un valor comercial vive **en código** | invariantes §64.15 y §64.16 |
-| G8 | aparece `commerce` en fuentes activas | invariante §64.32, §55 |
 | G9 | el `reason` que se manda al proveedor es **un identificador interno** y no copy para el cliente | `D9`, `EX-19` |
 | G10 | un `init_point` del proveedor se muestra **sin sanear** | `D10`, `EX-37` |
 | G11 | se le pide un **trial al proveedor** | `D12` |
-
-**G1 y G2 son la pinza** y ya se explicó en el capítulo 17 §2.3: uno acota **quién puede** nombrar
-una vertical, el otro obliga a que las operaciones **lo hagan**. Por separado cada uno deja pasar
-lo que el otro atrapa.
 
 ### 2.1 Un guard se prueba rompiéndolo
 
@@ -82,9 +73,9 @@ no dice **cómo se comporta** ese falso. Si se lo escribe con el comportamiento 
 aplica, rechaza y explica, avisa cuando algo cambia— **se está probando el código contra un
 proveedor que no tenemos.**
 
-El capítulo 06 y la matriz midieron lo contrario, repetidamente: **este proveedor acepta y no
-aplica, responde `2xx` sobre operaciones que descarta, y avisa de cosas que sus propios datos
-desmienten.**
+El capítulo 06 (épica de billing) y la matriz midieron lo contrario, repetidamente: **este
+proveedor acepta y no aplica, responde `2xx` sobre operaciones que descarta, y avisa de cosas que
+sus propios datos desmienten.**
 
 > **El stub no simula al proveedor: reproduce sus mentiras medidas.** Cada una está fechada y con
 > su fila; ninguna es una hipótesis sobre cómo podría fallar.
@@ -117,10 +108,10 @@ tener casos donde llega tarde.
 ### 3.3 Y de ahí sale qué es un escenario de carrera
 
 El §62.1 pide cubrir *«races»* sin decir cuáles. Los seis cruces de concurrencia ya están
-enumerados en el capítulo 05, y la lista de arriba agrega los que sólo existen porque el proveedor
-se comporta así: el cobro que llega después de suspender, la mutación que se acepta y no se
-aplica, el webhook que no llega nunca, y el cliente que recibe el correo del proveedor **antes**
-que el nuestro.
+enumerados en el capítulo 05 (épica de billing), y la lista de arriba agrega los que sólo existen
+porque el proveedor se comporta así: el cobro que llega después de suspender, la mutación que se
+acepta y no se aplica, el webhook que no llega nunca, y el cliente que recibe el correo del
+proveedor **antes** que el nuestro.
 
 ---
 
@@ -143,9 +134,9 @@ Entonces la suite de sandbox corre **las filas de la matriz**, no los casos de u
 porque son pocas filas las que sostienen decisiones, y es obligatoria porque es lo único que
 convierte a `S-METH-01` de una advertencia en un control.
 
-**Con dos límites que el capítulo 06 ya fijó y que valen igual acá**: guard de entorno y guard de
-presupuesto — una sonda que pueda correr contra producción por error, o gastar más de lo
-autorizado, no se ejecuta.
+**Con dos límites que el capítulo 06 (épica de billing) ya fijó y que valen igual acá**: guard de
+entorno y guard de presupuesto — una sonda que pueda correr contra producción por error, o gastar
+más de lo autorizado, no se ejecuta.
 
 ---
 
@@ -162,8 +153,6 @@ manualmente todo billing»*. Los flujos críticos son los que mueven plata o cor
 4. **pausa** y reanudación, las dos formas: al vencer y anticipada;
 5. **cancelación** con servicio sostenido hasta el fin del período (`DEC-SUB-009`);
 6. **revocación**: reembolso total más cancelación en un solo acto (`DEC-RF-001`);
-7. **trial** completo: activación, campaña previa, vencimiento, campaña de recuperación y
-   conversión tardía;
 8. **contratación y vencimiento de un addon**, con el excedente que dispara.
 
 **Lo que E2E no reemplaza** es el smoke contra el proveedor real: el §62.3 existe porque el stub y
@@ -174,8 +163,8 @@ el real pueden divergir, y un E2E que corre contra el stub hereda esa divergenci
 ## 6. Una regla que atraviesa las cuatro capas
 
 **Ninguna aserción se escribe sobre un código de estado.** Está medido nueve veces que este
-proveedor devuelve `2xx` sobre operaciones que no aplicó (`D5`, cap. 04). Un test que afirma
-*«devolvió 200»* pasa exactamente igual con la operación aplicada y sin aplicar, que es la
+proveedor devuelve `2xx` sobre operaciones que no aplicó (`D5`, cap. 04, núcleo). Un test que
+afirma *«devolvió 200»* pasa exactamente igual con la operación aplicada y sin aplicar, que es la
 definición de un test que no prueba nada.
 
 **Se afirma sobre el estado releído**, campo por campo — que es la misma regla que el invariante
