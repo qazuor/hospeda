@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-17
+updated: 2026-09-18
 status: CURRENT
 ---
 
@@ -32,7 +32,126 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-17, mediodía — FASE 2 EN CURSO
+## Última actualización: 2026-09-18, madrugada — DEC-ARCH-004 y la evaluación de proveedor
+
+### Lo que cambió, y es lo más importante del programa desde el reset
+
+**`DEC-ARCH-004`** (2026-09-18, decide el owner): **el billing se implementa de nuestro lado, en
+un package propio de Hospeda, con la pasarela detrás de un adaptador.** Cinco definiciones suyas
+y dos condiciones:
+
+1. se implementa de nuestro lado todo lo que se pueda — al proveedor se le pide **cobrar,
+   reembolsar, leer y avisar**, y el ciclo de vida es nuestro;
+2. **`qzpay` se absorbe**: deja de ser un paquete externo;
+3. un package del monorepo concentra el dominio de billing y **nadie más habla con la pasarela**;
+4. ese package expone una API definida por lo que Hospeda necesita;
+5. adentro es un adaptador intercambiable;
+6. **condición A**: un guard estático que prohíba importar el SDK de la pasarela fuera del
+   adaptador;
+7. **condición B**: un adaptador falso en memoria desde el día uno — **es lo que prueba que la
+   abstracción no miente**.
+
+> **Es la primera decisión de arquitectura del programa que no sale de una medición sino de un
+> criterio del owner.** Las mediciones que la sostienen están citadas adentro. **Y trae un riesgo
+> declarado**: traslada los errores caros hacia nosotros — un doble cobro pasa a ser nuestro bug.
+
+**PRÓXIMO PASO EXACTO: reescribir lo que haga falta de la FASE 2 con esta decisión puesta.**
+No es reescribir la Master Spec: son **20 decisiones acopladas y 13 capítulos que citan una
+medición** los que hay que revisar, más el **capítulo 13 (Pagos)**, el único que falta y que se
+había diferido justamente por esto. Ocho capítulos no citan ninguna medición y no se tocan.
+
+### Estado por fase, medido
+
+| fase | qué es | estado |
+|---|---|---|
+| 0 · bootstrap | andamiaje | ✅ |
+| 1A · domain analysis | el dominio sin código | ✅ 25 de 25 preguntas |
+| 1B · discovery | el billing que corre hoy | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
+| 1C · experimentación MP | medir al proveedor | 🟡 **89 filas · 81 cerradas · 8 `UNKNOWN`** — las ocho del camino del cobro fallido |
+| **1C-bis · evaluación de proveedor** | ¿nos quedamos o nos mudamos? | 🟡 paso 4 de 6 |
+| 2 · Master Spec | 22 capítulos | 🟡 **21 de 22** · falta el 13 |
+| 3 a 10 | épicas → implementación | ⬜ sin empezar |
+
+**Conteos que se recuentan con script, nunca a mano**: la matriz con
+[`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) (**89 filas**, no 98 — el
+documento 10 arrastraba ese error y se corrigió el 2026-09-18), y las decisiones con
+`rg -c "^### DEC-"` (**47 encabezados = 46 decisiones**, porque la plantilla del formato no
+cuenta).
+
+### La evaluación de proveedor — dónde quedó
+
+Todo vive en [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md).
+
+| paso | estado |
+|---|---|
+| 1 · buscar opciones · 2 · escribir el documento · 3 · limpiar contexto | ✅ |
+| **0 · PRUEBA 0** — preguntarle a MP por `automatic_payments` | 🟡 **los dos textos escritos (§5.0). Falta que el owner los mande** |
+| 4 · investigación por candidato | 🟡 ~21 relevados, 6 eliminados, **Mobbex a fondo**. Faltan Nuvei, Payway y Getnet |
+| 5 · orden de prueba · 6 · pruebas | 🟡 la batería contra Mobbex **está escrita y lista**, bloqueada por el token |
+
+**Lo que el paso 4 corrigió de nuestro propio inventario**, todo verificado contra la fuente:
+Payway **no** está en venta (Visa compró Prisma y Newpay, y su comunicado excluye a Payway);
+**Adyen no tiene adquirencia local en Argentina** (su propia lista: de LatAm sólo Brasil);
+**Paddle prohíbe el rubro por escrito** («digital marketplaces» y «Travel Services»); y
+**«Rebill acepta Mercado Pago» era falso** como lo leímos — MP entra ahí como una app que lee un
+QR, y las renovaciones se resuelven mandándole un mail al cliente cada ciclo.
+
+**Recurly es la única capa de suscripciones que llega a MP** (vía Ebanx), pero excluye
+`multiple subscriptions per account` y `one-time transactions`, que chocan con `DEC-ADDON-002` y
+con el modelo de verticales. Existe y no sirve como está.
+
+### Mobbex — medido, y bloqueado
+
+**Lo que lo puso sobre la mesa**: documenta `POST /p/subscriptions/{id}/subscriber/{sid}/execution`
+con **monto libre** — el cobro a demanda que Mercado Pago nos niega con un `403` y un portón
+comercial. Es exactamente la arquitectura de `DEC-ARCH-004`, sin pedirle permiso a nadie.
+
+**Cuatro sondas corridas** ([`mobbex-probes/RESULTADOS-2026-09-18.md`](./mobbex-probes/RESULTADOS-2026-09-18.md)):
+
+- **la creación de suscripción ES idempotente** por `reference` — contra `EX-17` de MP, donde diez
+  creaciones daban diez ids;
+- **el checkout que devuelve ANDA** — se pidió la URL y abre, el control que con `EX-37` faltó;
+- **en Mobbex el status HTTP no cierra nada**: `GET /p/entity` devuelve `200` con
+  `{"result":false,"error":"Acceso no autorizado"}`. **Lo que decide es el campo `result`**;
+- un cobro sobre un suscriptor sin tarjeta devuelve `200 {"result":true,"data":{}}` **y sí
+  registra el intento** con `error_no_payment_method` — pero la verdad vive en el campo
+  `executions` **dentro del objeto suscriptor**, no en `/p/entity/operations` ni en
+  `GET .../execution`, que devuelve vacío;
+- **la cuenta demo pública NO APRUEBA NINGÚN PAGO**: cero `200` («Paga») en 12 operaciones de tres
+  días. Por eso todo lo que dependa de un cobro concretado quedó sin medir.
+
+**Estado del alta propia**: aplicación creada y activa en el devportal (`bfgC3P5a0`), **API key
+guardada** en `~/.config/hospeda/mobbex-creds.sh` (`chmod 600`, fuera del repo). **El KYC quedó en
+revisión manual hasta 72 h hábiles** y sin entidad aprobada no hay `x-access-token`. Verificado
+con control: `POST /2.0/entities/search` devuelve `200` **vacío** por CUIT y por email — la
+entidad no existe todavía, no es que la búsqueda falle.
+
+**La batería está lista para disparar**:
+[`mobbex-probes/PLAN-DE-BATERIA.md`](./mobbex-probes/PLAN-DE-BATERIA.md) tiene el gatillo, el
+orden y las trampas. Las sondas **leen el archivo de credenciales solas** —no hace falta `source`,
+que en fish falla— y la 05 aborta si detecta la cuenta demo.
+
+### Trampas nuevas, medidas el 2026-09-18
+
+- **`form_input` no sirve en el formulario de tarjeta de Mobbex**: escribe el DOM, el framework no
+  registra el cambio, los tildes de validación aparecen y el envío va vacío. Va teclado real.
+- **El CVV no toma al primer intento** — pasó las dos veces. Verificar con screenshot antes de
+  enviar.
+- **Una pantalla verde no es una medición.** El checkout mostró «aprobado» y no existía ninguna
+  operación detrás. La reserva escrita en el momento fue lo que evitó afirmar que cobraba.
+- **Buscar en el lugar equivocado fabrica un falso negativo.** Se llegó a escribir «aceptó dos
+  cobros y no creó ninguna operación»; el rastro estaba en otro campo. Hubo que corregir un
+  documento ya commiteado.
+
+### Lo que necesita al owner
+
+1. **Mandar los dos textos de la PRUEBA 0** (§5.0 del documento 10) — el formulario comercial
+   pide una facturación esperada que decide él, y los dos textos necesitan el ID de aplicación.
+2. **Avisar cuando llegue el mail de Mobbex**, para vincular la entidad y sacar el token.
+
+---
+
+## Histórico: 2026-09-17, mediodía — FASE 2 EN CURSO
 
 ### Dónde estamos
 
