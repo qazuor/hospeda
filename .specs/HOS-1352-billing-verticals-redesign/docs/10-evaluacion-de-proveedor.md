@@ -175,7 +175,7 @@ contradijeran.
 |---|---|
 | **Mercado Pago** | el actual. Es la línea de base contra la que se compara |
 | **Mobbex** | **orquesta entre Payway, Fiserv, Global Processing y Getnet con fallback automático**. Suscripciones por API, webhooks nativos, débito recurrente contra cuentas bancarias **y virtuales** |
-| **Payway** (Prisma) | débito automático contra cuenta bancaria. Es infraestructura de adquirencia, no un producto de suscripciones. ⚠️ **Visa anunció en 2026 la compra de Prisma y Newpay** — cambio de dueño en curso |
+| **Payway** (Prisma) | débito automático contra cuenta bancaria. Es infraestructura de adquirencia, no un producto de suscripciones. ✅ **Corregido el 2026-09-17**: este documento decía que Payway estaba en cambio de dueño. **No lo está.** Visa anunció el 19/02/2026 la compra de **Prisma Medios de Pago y Newpay**, y su propio comunicado dice textual que *«Payway S.A.U. is not part of this transaction and will remain owned by funds managed by Advent International»* ([investor.visa.com](https://investor.visa.com/news/news-details/2026/Visa-to-Acquire-Prisma-Medios-de-Pago-and-Newpay-in-Argentina/default.aspx), leído el 2026-09-17). Se separaron en 2023: Prisma transfirió la adquirencia a Payway S.A.U. **El riesgo de continuidad que le habíamos anotado no existe** |
 | **PagoTIC** | pasarela argentina; capacidades de recurrencia **sin verificar** |
 | **Ualá Bis** | cobros; actúa como agente de retención de AFIP (IIBB y ganancias) |
 | **MODO** | billetera de los bancos; se menciona recurrencia en su plan premium |
