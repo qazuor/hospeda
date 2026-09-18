@@ -123,7 +123,7 @@ la unidad se declara terminada.
 
 ---
 
-## 6. Dónde vive cada unidad
+## 5. Dónde vive cada unidad
 
 Las nueve están en Linear como sub-issues de `HOS-1353`, y cada una tiene su ficha publicada.
 El estado en vivo —qué está bloqueado, qué se puede empezar, qué está en curso— se lleva en el
@@ -149,7 +149,7 @@ cuando todas sus dependencias están hechas.
 
 ---
 
-## 7. Lo que esta descomposición NO decide
+## 6. Lo que esta descomposición NO decide
 
 - **Las tareas atómicas de cada unidad.** Se atomiza cuando la unidad arranca, con el estado del
   código de ese momento a la vista.
