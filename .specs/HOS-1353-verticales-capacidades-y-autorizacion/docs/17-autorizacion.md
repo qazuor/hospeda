@@ -1,6 +1,6 @@
 ---
 title: Master Spec 17 — Autorización
-linear: HOS-1352
+linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17

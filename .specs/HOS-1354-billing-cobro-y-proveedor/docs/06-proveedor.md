@@ -1,6 +1,6 @@
 ---
 title: Master Spec 06 — Abstracción de proveedor y el contrato de Mercado Pago
-linear: HOS-1352
+linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17

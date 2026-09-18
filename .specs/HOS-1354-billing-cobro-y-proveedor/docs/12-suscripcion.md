@@ -1,6 +1,6 @@
 ---
 title: Master Spec 12 — Suscripción
-linear: HOS-1352
+linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17
@@ -225,7 +225,7 @@ Dos consecuencias que el diseño tiene que absorber:
    período pagado, y confundirlos es lo que abre el agujero de §5.
 3. **El aviso es distinto.** A quien nunca pagó no se le dice *«tenés diez días para
    regularizar»*: se le dice que el cobro no entró y cómo volver a intentarlo. Prometer una
-   ventana que no tiene es peor que no prometerla (cap. 15 §4.4).
+   ventana que no tiene es peor que no prometerla (cap. 15 (épica de verticales) §4.4).
 
 ---
 

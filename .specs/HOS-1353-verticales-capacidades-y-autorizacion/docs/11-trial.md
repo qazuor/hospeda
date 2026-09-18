@@ -1,6 +1,6 @@
 ---
 title: Master Spec 11 — Trial
-linear: HOS-1352
+linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17

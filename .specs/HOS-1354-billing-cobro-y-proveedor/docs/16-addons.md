@@ -1,6 +1,6 @@
 ---
 title: Master Spec 16 — Addons
-linear: HOS-1352
+linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17
@@ -87,7 +87,7 @@ Comprar un addon **toca plata**, así que se elige hacia dónde falla: **hacia n
 | `PAUSED` | **no** | el servicio está detenido: no hay nada que complementar. Y `EX-11` midió que estando pausada el proveedor **rechaza toda modificación** |
 | `SUSPENDED` | **no** | *«sin entitlements comerciales»* (§21) |
 | `CANCEL_SCHEDULED` | **no** | se conoce la fecha en que se va; venderle un addon ahí es fabricar un huérfano con fecha |
-| trial, sin suscripción | **no** | §38, invariante §64.7 y capítulo 11 §5 |
+| trial, sin suscripción | **no** | §38, invariante §64.7 y capítulo 11 (épica de verticales) §5 |
 
 ### 2.3 Por qué `GRACE_PERIOD` no vale si ahí sí se puede cambiar de plan
 
@@ -163,7 +163,7 @@ nombrarlo igual.
 ### 4.1 No necesita mecanismo propio
 
 Un addon *+5 fichas* que vence deja a la persona con fichas publicadas por encima del límite del
-plan. **Eso es exactamente el reconciliador de excedentes del capítulo 15 §4**, y el vencimiento
+plan. **Eso es exactamente el reconciliador de excedentes del capítulo 15 (épica de verticales) §4**, y el vencimiento
 de un addon ya está en la lista que lo dispara (cap. 02 §3.2).
 
 Que el hueco no necesite mecanismo propio **es el resultado**, no una omisión: `M-ENT-02` existía
@@ -172,7 +172,7 @@ escribir nada.
 
 Dos precisiones que sí son de acá:
 
-1. **Es uno de los casos con ventana** (cap. 15 §4.4): la fecha de vencimiento se conoce de
+1. **Es uno de los casos con ventana** (cap. 15 (épica de verticales) §4.4): la fecha de vencimiento se conoce de
    antemano, así que el aviso sale **antes** y la persona elige qué baja.
 2. **El criterio si no elige es el de `DEC-SUB-008`**: cae lo más reciente primero, y va escrito
    en el aviso.
@@ -204,7 +204,7 @@ disparan del mismo lugar:
 
 | efecto | quién lo hace |
 |---|---|
-| las capacidades bajan | el reconciliador de excedentes (cap. 15 §4) |
+| las capacidades bajan | el reconciliador de excedentes (cap. 15 (épica de verticales) §4) |
 | los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** |
 
 **Falla hacia cobrar de más, y por eso es el que no puede fallar.** Un excedente sin reconciliar

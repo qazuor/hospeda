@@ -1,6 +1,6 @@
 ---
 title: Master Spec 15 — Entitlements y limits
-linear: HOS-1352
+linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17
@@ -266,6 +266,6 @@ Dos obligaciones que vienen con eso, y no son cosméticas:
   estrategia de agregación y `enforcementStrategy`.
 - **Si el mes de una cuota corre por calendario o por aniversario** sigue abierto desde
   `DEC-ENT-002` (implicación 2).
-- **Qué es una suscripción «válida» para comprar un addon** (`A-ADDON-02`) es del capítulo 16.
+- **Qué es una suscripción «válida» para comprar un addon** (`A-ADDON-02`) es del capítulo 16 (épica de billing).
 - **El orden de aplicación entre promo, cortesía y grant** (`A-PROMO-01`, `A-PROMO-02`) es del
-  capítulo 14: acá se agregan **capacidades**, allá se compone **dinero**.
+  capítulo 14 (épica de billing): acá se agregan **capacidades**, allá se compone **dinero**.

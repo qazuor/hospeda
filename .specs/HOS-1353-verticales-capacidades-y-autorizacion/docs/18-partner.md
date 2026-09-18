@@ -1,6 +1,6 @@
 ---
 title: Master Spec 18 — Partner
-linear: HOS-1352
+linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17
@@ -171,6 +171,6 @@ hoy sólo los use Partner es un hecho de la configuración, no del diseño.
 
 - **El ciclo de publicación de la presencia** es del capítulo 19: acá está que existe, que la da
   el plan Gold y que no es una ficha.
-- **Cómo se registra un pago manual** es del capítulo 13.
+- **Cómo se registra un pago manual** es del capítulo 13 (épica de billing).
 - **Si algún día Partner enciende su trial**, tiene que declarar su evento de activación
   (`DEC-TRIAL-003`, implicación 1), y ahí el §10.5 pasa a alcanzarlo.

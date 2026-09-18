@@ -1,6 +1,6 @@
 ---
 title: Master Spec 14 — Promos, cortesías y grants
-linear: HOS-1352
+linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
 updated: 2026-09-17
@@ -50,7 +50,7 @@ porcentajes se multiplican y los fijos se suman, y las dos operaciones conmutan.
 —qué familia va primero, y nada más— el resultado queda fijo.
 
 **Va primero el porcentaje porque da el total más bajo**, o sea a favor del cliente. Es la misma
-dirección que el capítulo 15 §2.4 eligió para los limits que no acumulan, y por la misma razón:
+dirección que el capítulo 15 (épica de verticales) §2.4 eligió para los limits que no acumulan, y por la misma razón:
 una composición que a veces castiga al que acumuló beneficios no se puede explicar.
 
 ### 1.3 El piso no es nuestro: es del proveedor, y está medido
@@ -145,7 +145,7 @@ se ejecuta.**
 
 ### 3.4 Un canje rechazado no se consume
 
-Igual que en el techo de extensiones (cap. 11 §3.3): la fila de canje no se escribe, y la persona
+Igual que en el techo de extensiones (cap. 11 (épica de verticales) §3.3): la fila de canje no se escribe, y la persona
 conserva el código. Cobrarle el canje por una carrera que perdió es castigarla por la hora a la
 que corrió un proceso nuestro.
 
@@ -186,7 +186,7 @@ recibir el correo del proveedor por su cuenta (`EX-3`).
 
 ### 4.4 Extensión de trial + cortesía durante el trial
 
-**Ya está resuelto en el capítulo 11 §3**: las dos extienden, **acumulan contra un único techo**
+**Ya está resuelto en el capítulo 11 (épica de verticales) §3**: las dos extienden, **acumulan contra un único techo**
 configurable por `user + vertical`, la que no entra se rechaza entera sin consumir el promo, y el
 techo ata al canje pero no a `SUPER_ADMIN`.
 
