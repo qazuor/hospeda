@@ -2452,3 +2452,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `integrationBranch` y `promotionBranches`, no reemplazar texto globalmente.
 - Se documentó la auditoría en `docs/migration/develop-branch-audit.md`.
 - No se modificaron ramas, GitHub, CI ni Git.
+
+## Gate 75 · Diseño de promoción y back-merge genéricos
+
+- Se diseñó `qz promote` y `qz back-merge` como núcleo configurable por adapter,
+  sin asumir nombres fijos de ramas.
+- El adapter separa `issueBase`, `integration`, `promotion` y `urgentTargets`.
+- El modo por defecto será `--plan`; `--confirm` sólo podrá crear o actualizar
+  PRs y nunca hará merge o push implícito.
+- Hospeda tendrá aliases `hops-promote` y `hops-back-merge` sin duplicar lógica.
+- El diseño quedó en `docs/migration/qz-promotion-backmerge-design.md`.
+- No se creó `develop` ni se modificaron GitHub, CI, ramas o Linear.
