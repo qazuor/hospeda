@@ -2822,3 +2822,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 
 - El dry-run read-only devolvió `status: up-to-date` para `hospeda-staging`.
 - SHA local y remoto coinciden en `60a39dae2`; `remoteOk: true` y `touched: false`.
+
+## Gate 111 · Cobertura de wrappers standalone
+
+- El registro contiene 29 comandos y existen exactamente 29 wrappers
+  `hops-<comando>`.
+- No hay comandos registrados sin wrapper ni wrappers huérfanos fuera del
+  registro.
