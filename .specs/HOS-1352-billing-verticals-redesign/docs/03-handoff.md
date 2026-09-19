@@ -45,7 +45,88 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-19, tarde — las decisiones aplicadas, el registro cerrado
+## Última actualización: 2026-09-19, noche — la 8-bis corrida, las 23 decisiones tomadas, la 9-bis SIN EMPEZAR
+
+### El próximo paso exacto, en una línea
+
+> **Aplicar los 23 arreglos de la 9-bis.** Están **todos decididos** y **ninguno escrito**. No hay
+> nada pendiente del owner para arrancar.
+
+### Dónde estamos
+
+| paso del ciclo (`DEC-METH-006`) | estado |
+|---|---|
+| 1 · aplicar las decisiones de la FASE 9 a los capítulos | ✅ |
+| 2 · las seis `DEC-` + log, handoff, worklog | ✅ |
+| 3 · **FASE 8-bis, entera** | ✅ **112 hallazgos · 28 críticos · 23 defectos distintos** |
+| 4 · **9-bis** | 🟡 **← ACÁ. Las 23 decisiones tomadas, CERO arreglos escritos** |
+| 5 · salidas 3 y 4 (propagación), una sola vez | ⬜ |
+| 6 · FASE 10 | ⬜ |
+
+### Lo que la 8-bis probó, y cambió el método
+
+**El ciclo 8 ↔ 9 no converge con su condición original**, y está medido: de los 25 críticos de las
+pasadas A y B, **25 los produjo la tanda de arreglos de la FASE 9** y **ninguno venía de antes**. La
+condición de corte medía un **stock** y el generador es **el acto de arreglar**.
+
+La causa, con su caso testigo: `DEC-METH-004` exigía recorrer *«todo su dominio»*, y **ése es el
+dominio del PROBLEMA, nunca el del ARREGLO**. Al partir el `UNIQUE` del §11 por `sucede_a` el
+dominio pasó de **90 a 180 pares** y se verificaron **los 90 de antes**.
+
+**`DEC-METH-008` lo corrige**, en cuatro partes: (1) un arreglo se verifica contra **el dominio que
+él crea**; (2) se contesta por escrito **«¿qué premisa de OTRO racimo estoy volviendo falsa?»**;
+(3) el ciclo corta cuando **ningún `CRITICA` queda abierto sin causa declarada**; (4) **la elección
+entre arreglar y declarar la toma el owner, caso por caso** — el agente no elige.
+
+### Las 23 decisiones, todas tomadas el 2026-09-19
+
+**22 `ARREGLAR` · 1 `APLICAR` · 0 declaradas con causa.** Están en
+[`17-fase-8-bis/00-hallazgos.md`](./17-fase-8-bis/00-hallazgos.md) §3, familia por familia, cada
+una con su casilla. **Tres llevaron discusión de opciones y quedaron resueltas:**
+
+| # | qué se eligió |
+|---|---|
+| **7** | **opción A** — la regla que distingue subir de bajar **se muda a verticales**; la dirección inversa del contrato gana una pregunta que devuelve **un veredicto, nunca valores** |
+| **16** | **opción A** — se escribe el **mapa completo de los nueve estados**, y **esperar autorización NO cubre** |
+| **18** | **opción C** — se enumeran los **ocho pares**; los que tengan transición legítima la reciben, y los que queden **son divergencias reales** |
+
+Y dos precisiones del owner que hay que respetar al escribir:
+
+- **defecto 11** — el candado cuenta **sólo las suscripciones principales**; las de complemento de
+  un addon quedan afuera **por diseño** (ya estaba bien escrito: `clase = principal` en las dos
+  claves).
+- **defecto 5** — no se decide solo: **se vuelve a mirar después de arreglar el 1**, porque el 1
+  lo disuelve casi entero.
+
+### Tres cosas que NO son defecto de diseño y se aplican sin discutir
+
+| qué | dónde |
+|---|---|
+| `R5-G` — el compromiso viejo se conserva con su vínculo al proveedor | `B/21-migracion.md`. Es el defecto **21** |
+| `R5-D`, su mitad *«una fila por vertical de su scope»* | `B/21-migracion.md`. Toca el defecto **6** |
+| el resumen de invariantes quedó en *«16 apoyos sobre 14»* y *«51, ocho de base»* | `NUCLEO/04` §5. El real es **52 y 10**, y hay que **recorrerlo entero**: un apoyo **se mudó**, no se agregó |
+
+### Cómo arrancar la 9-bis
+
+1. Leer [`17-fase-8-bis/00-hallazgos.md`](./17-fase-8-bis/00-hallazgos.md) — los 23 con su decisión.
+2. Aplicar **por artefacto, no por familia**: primero el contrato (que es la frontera y va atómico),
+   después verticales, después billing, después el corte. Aplicar familia por familia **es repetir
+   el error que produjo esta pasada**.
+3. Por cada arreglo, lo que `DEC-METH-008` exige: **enumerar el dominio que el arreglo crea** y
+   **contestar qué premisa de otro racimo vuelve falsa**.
+4. Al terminar: paso 2 del ciclo otra vez (log, handoff, worklog) y después **8-bis-2**.
+
+### Pendientes del owner, sin cambios
+
+1. Las **12 etiquetas `status-blocked`** de Linear.
+2. La automatización de Linear **«On PR merge → Done»** (va con el trabajo de dev experience).
+3. **La respuesta de Mercado Pago.** Si el **2026-09-23** no hay respuesta, se arranca contra el
+   proveedor falso igual.
+4. `DEC-CI-001` y el `CLAUDE.md` del repo: **su aplicación la decide el owner**.
+
+---
+
+## Histórico: 2026-09-19, tarde — las decisiones aplicadas, el registro cerrado
 
 ### Dónde estamos, en una línea
 
