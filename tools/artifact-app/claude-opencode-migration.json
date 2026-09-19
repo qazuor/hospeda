@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_6",
-        "number": 6,
+        "id": "ver_claude_opencode_migration_7",
+        "number": 7,
         "createdAt": "2026-09-16T00:00:00.000Z",
         "author": "opencode",
-        "reason": "bootstrap reproducible y portabilidad de Engram agregados al backlog",
+        "reason": "decisión Engram aprobada y wrappers Hops de memoria agregados",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_5"
+        "basedOnVersion": "ver_claude_opencode_migration_6"
     },
     "data": {
         "sections": [
@@ -168,7 +168,7 @@
                             "title": "Instalador deja el entorno listo para trabajar",
                             "category": "Instalación y reproducibilidad",
                             "description": "Detectar/crear hospeda-staging, actualizarlo desde origin/staging, reconciliar envs, generar los primeros .env.local seguros, preparar Postgres/Redis, construir/promover el primer template válido y verificar wrappers, puertos y health checks.",
-                            "notes": "Nueva tarea. Debe ser idempotente, tener dry-run, no imprimir secretos, conservar backups y detenerse ante drift o datos faltantes. Debe permitir reinstalar una PC y empezar a usar Hops sin pasos manuales ocultos.",
+                            "notes": "Nueva tarea. Incluye hospeda-staging, envs, Postgres/Redis, primer template válido, wrappers, health checks y ahora también backup/restore inicial de Engram; debe ser idempotente, tener dry-run y no imprimir secretos.",
                             "done": false
                         }
                     ]
@@ -265,7 +265,23 @@
                             "title": "Definir portabilidad y backup de Engram entre PCs",
                             "category": "Engram + memoria",
                             "description": "Elegir una arquitectura que preserve la memoria al reinstalar equipos, con SQLite local autoritativa, backups verificables y sincronización opcional.",
-                            "notes": "Nueva tarea de decisión. Documentación oficial actual describe Git Sync por chunks y Engram Cloud opt-in por proyecto; cloud replica, no reemplaza la SQLite local. Recomendación preliminar: no versionar la DB SQLite en el repo; usar backup cifrado/export controlado y evaluar cloud propio o administrado más backup offline. Requiere revisar privacidad, costo, token, compatibilidad de versiones y restauración antes de activarlo.",
+                            "notes": "Decisión aprobada. SQLite local sigue siendo autoridad; no se versiona la DB en el repo. Se usará backup cifrado/export verificable y se evaluará Engram Cloud o Git Sync como replicación adicional por proyecto, con restore probado antes de depender de otra PC.",
+                            "done": true
+                        },
+                        {
+                            "id": "hops-engram-wrapper",
+                            "title": "Crear wrapper Hops para Engram",
+                            "category": "Hops y memoria",
+                            "description": "Exponer bajo `hops engram` las operaciones frecuentes de Engram: TUI, doctor, projects, stats, search, context, review/conflicts, export/import y sync con dry-run/confirmación según corresponda.",
+                            "notes": "Nueva tarea. El wrapper debe delegar al binario oficial, ocultar valores sensibles, distinguir lecturas de mutaciones y facilitar descubrimiento sin duplicar la lógica de Engram. `engram tui` es la interfaz principal para revisar memorias; export/import/sync requieren backup y alcance explícito.",
+                            "done": false
+                        },
+                        {
+                            "id": "hops-gentle-wrapper-audit",
+                            "title": "Evaluar wrappers Hops para Gentle-AI",
+                            "category": "Hops y mantenimiento",
+                            "description": "Auditar los comandos actuales de Gentle-AI y exponer sólo diagnósticos o acciones que realmente aporten valor a través de Hops.",
+                            "notes": "Nueva tarea. Empezar por version/status/doctor y modos dry-run; no inventar subcomandos ni envolver install/sync/upgrade sin una política de confirmación explícita.",
                             "done": false
                         }
                     ]
