@@ -2840,3 +2840,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Persisten 97 referencias foráneas huérfanas conocidas; no se repararon.
 - La DB activa no se modificó y no se leyeron contenidos, títulos, tokens ni
   credenciales. La revisión humana por lotes sigue pendiente.
+
+## Gate 113 · Guardas ampliadas del wrapper Engram
+
+- `hops engram` ahora exige `--confirm` también para `export`,
+  `projects consolidate`, `conflicts scan --apply` y `conflicts deferred
+  --replay`.
+- Las operaciones de lectura y la ayuda siguen sin confirmación; el wrapper no
+  agrega `--hard`, `--apply` ni `--all` por cuenta propia.
+- Pruebas: **298 tests, 0 fallos y 736 assertions**.

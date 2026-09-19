@@ -1,7 +1,16 @@
 import { spawnSync } from 'node:child_process';
 import pc from 'picocolors';
 
-const MUTATING = new Set(['save', 'delete', 'import', 'setup', 'sync', 'cloud', 'obsidian-export']);
+const MUTATING = new Set([
+    'save',
+    'delete',
+    'import',
+    'setup',
+    'sync',
+    'cloud',
+    'export',
+    'obsidian-export'
+]);
 
 function help(): string {
     return `
@@ -17,8 +26,10 @@ ${pc.bold('Lecturas frecuentes')}
   hops engram conflicts list|stats
 
 ${pc.bold('Operaciones con escritura')}
-  save, delete, import, sync, setup, cloud y obsidian-export se delegan sólo con
-  --confirm. El wrapper nunca agrega --hard, --apply ni --all por su cuenta.
+  save, delete, import, export, sync, setup, cloud, obsidian-export,
+  projects consolidate, conflicts scan --apply y conflicts deferred --replay se
+  delegan sólo con --confirm. El wrapper nunca agrega --hard, --apply ni --all
+  por su cuenta.
 
 ${pc.dim('La DB local sigue siendo autoridad; no se copia al repositorio.')}
 `;
@@ -26,6 +37,18 @@ ${pc.dim('La DB local sigue siendo autoridad; no se copia al repositorio.')}
 
 function firstCommand(argv: readonly string[]): string | null {
     return argv.find((arg) => !arg.startsWith('-')) ?? null;
+}
+
+function requiresConfirmation(argv: readonly string[]): boolean {
+    const command = firstCommand(argv);
+    if (command !== null && MUTATING.has(command)) return true;
+    const positional = argv.filter((arg) => !arg.startsWith('-'));
+    if (positional[0] === 'projects' && positional[1] === 'consolidate') return true;
+    if (positional[0] === 'conflicts' && positional[1] === 'scan' && argv.includes('--apply'))
+        return true;
+    if (positional[0] === 'conflicts' && positional[1] === 'deferred' && argv.includes('--replay'))
+        return true;
+    return false;
 }
 
 export function runEngram({ argv }: { readonly argv: readonly string[] }): Promise<number> {
@@ -36,8 +59,7 @@ export function runEngram({ argv }: { readonly argv: readonly string[] }): Promi
 
     const confirm = argv.includes('--confirm');
     const forwarded = argv.filter((arg) => arg !== '--confirm');
-    const command = firstCommand(forwarded);
-    if (command !== null && MUTATING.has(command) && !confirm) {
+    if (requiresConfirmation(forwarded) && !confirm) {
         process.stderr.write(
             `${pc.yellow('Engram puede modificar memoria o configuración.')}` +
                 ' Repetí con --confirm si esa mutación es intencional.\n'
