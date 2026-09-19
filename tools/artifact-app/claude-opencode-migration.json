@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_34",
-        "number": 34,
+        "id": "ver_claude_opencode_migration_35",
+        "number": 35,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "cerrar gate de routing de modelos alternativos",
+        "reason": "diagnosticar bloqueo filesystem de OpenCode",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_33"
+        "basedOnVersion": "ver_claude_opencode_migration_34"
     },
     "data": {
         "sections": [
@@ -128,7 +128,7 @@
                             "title": "Configurar providers y modelos",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Usar OpenAI por suscripción para tareas complejas y evaluar GLM/DeepSeek para tareas simples.",
-                            "notes": "OpenCode V1 enumera modelos disponibles; el routing inicial queda en OpenAI y GLM/DeepSeek siguen para un piloto posterior.",
+                            "notes": "OpenCode providers list falló por root filesystem montado ro, no por credenciales. Detalle y procedimiento reversible en opencode-filesystem-blocker.md; no se remonta ni cambia permisos aún.",
                             "done": true
                         },
                         {
@@ -580,7 +580,7 @@
                             "title": "Revisar permisos OpenCode",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Reducir bash wildcard y mantener bloqueos de secretos, Git destructivo y producción.",
-                            "notes": "Política consolidada en security-policy-v1.md. Precedencia prohibido > autorización > permitido; implementación pendiente de prueba en runtime escribible.",
+                            "notes": "La política está documentada, pero la validación de runtime escribible queda bloqueada hasta resolver el root filesystem ro.",
                             "done": false
                         },
                         {
