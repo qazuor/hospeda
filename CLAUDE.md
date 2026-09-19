@@ -731,6 +731,44 @@ ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch
 
 `main` is the validated baseline; `staging` is the integration line. Never branch features from `main`, never PR features into `main`. The only exception is a production hotfix (branch from `main`, fix, PR to `main`, then back-merge `main` → `staging`).
 
+#### `epic/**` — umbrella integration branches (since 2026-09-19, `DEC-CI-001`)
+
+A **multi-epic program** whose parts must ship together uses an umbrella integration branch named
+`epic/<slug>`. Sub-epics cut from it and merge **into it**, never into `staging` directly; `staging`
+is merged **into** the umbrella periodically; and the review happens in the sub-epic → umbrella PRs,
+because the final PR to `staging` is too large for anyone to review honestly. The first case is
+`epic/HOS-1352-verticales-billing`.
+
+This is a **declared exception** to the 6-step flow above, and it is a **project rule, not a
+one-off**: the next program reuses it without editing workflows again.
+
+**Which workflows run on `epic/**`, and which must not.** The risk is never that an unrelated
+`epic/` branch gets CI — lint and tests there are desirable. The risk is running what is
+**expensive**, and above all what has **effects outside the repo**:
+
+| runs on `epic/**` | does NOT run on `epic/**` |
+|---|---|
+| `ci.yml` (on **both** `push` and `pull_request`) | `e2e-pr.yml` — too slow per PR; use `workflow_dispatch`, and it is **mandatory before the final PR to `staging`** |
+| `validate-pr-title.yml` | `lighthouse.yml`, `a11y-sweep.yml` — they measure deployed pages; the umbrella deploys nothing |
+| `validate-docs.yml` | `whats-new-gate.yml` — `main` by design |
+| `codeql.yml` | **`smoke-gate-sync.yml`** — see below |
+| `docs.yml` (already runs; it filters by path, not by branch) | |
+
+⚠️ **`smoke-gate-sync.yml` must never run on `epic/**`.** It moves Linear issues on merge. Sub-epic
+PRs carry `[HOS-NNNN]` in the title (because `validate-pr-title` requires it), so running it there
+would **close every unit of the program as done with nothing deployed** — the exact footgun this
+file documents with two real incidents (PR #1982 → `HOS-36`, PR #1983 → `HOS-54`, both reverted by
+hand).
+
+**`ci.yml` needs both halves**: `pull_request` covers the sub-epic PRs; **`push` covers the
+periodic `staging` → umbrella merge**, which is not a PR and which no `pull_request` trigger
+reaches. That merge will be noisy in the two diff-based jobs (`security`'s semgrep
+`--baseline-commit` and the seed dual-write guard) because their base resolves to the umbrella's
+previous HEAD; re-dispatch `ci.yml` with `baseline_ref: staging` to fix the base.
+
+> **A guard listed in `pnpm check:guards` does NOT automatically run in CI** — it needs its own
+> step in the `guards` job. This bites whenever a program adds guards of its own.
+
 #### Post-merge: a merged PR is DONE — new work needs a new branch + new PR
 
 When a PR is merged, GitHub closes it. Pushing additional commits to the same branch DOES NOT reopen the PR — those commits become orphans living on a branch with no review surface. This is silent — git accepts the push, you only notice later when the work isn't anywhere.
