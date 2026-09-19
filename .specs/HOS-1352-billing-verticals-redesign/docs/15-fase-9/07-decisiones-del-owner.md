@@ -962,6 +962,29 @@ cosa. Una pasada 8-bis los habría encontrado sistemáticamente.
 que la definición de salida descartada. Los `ALTA` y `MEDIA` de la última pasada **se registran y
 se va a FASE 10 con ellos declarados**.
 
+### 3. Dónde cae la 8-bis dentro del ciclo — precisado el mismo día
+
+**El orden importa, porque las salidas 3 y 4 son PROPAGACIÓN** — 52 objetos entre issues, fichas y
+descomposiciones. Si la 8-bis corriera después de las cuatro salidas y trajera críticos, la 9-bis
+los resolvería **y habría que propagar todo de nuevo**. Es el mismo razonamiento que puso 3 y 4 al
+final en `DEC-METH-004`, con un dato nuevo: **ahora sabemos que el diseño se va a volver a mover**,
+porque el ciclo está hecho para eso.
+
+**El orden queda así**:
+
+| | |
+|---|---|
+| 1 | **salida 1** — aplicar las decisiones a los capítulos |
+| 2 | **salida 2** — las seis `DEC-`, decision log, handoff, worklog |
+| 3 | **8-bis, entera**, sobre el diseño ya corregido |
+| 4 | **¿críticos nuevos?** → 9-bis → **volver al paso 1** |
+| 5 | **¿sin críticos?** → recién ahí **salidas 3 y 4**, una sola vez |
+| 6 | **FASE 10** |
+
+**No cambia la decisión del ciclo: la cumple mejor.** Se sigue repitiendo 8↔9 hasta que no haya
+críticos; lo único que se mueve es **dónde cae la propagación**, que pasa a hacerse **una sola vez,
+sobre un diseño ya reverificado**, en vez de una vez por iteración.
+
 **Cómo corre la 8-bis: ENTERA, no sólo sobre lo que cambió.** Ratificado por el owner. La causa
 raíz del programa es que **las contradicciones viven ENTRE capítulos**, así que atacar sólo los
 textos corregidos la volvería ciega a justamente lo que este ciclo busca. Lo que la abarata no es
