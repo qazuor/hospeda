@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { COMMANDS } from '../src/registry.ts';
@@ -10,16 +11,19 @@ const BIN_DIR = join(import.meta.dir, '..', 'bin');
 async function runBin({
     name,
     args,
-    env
+    env,
+    cwd
 }: {
     readonly name: string;
     readonly args: readonly string[];
     readonly env?: Record<string, string>;
+    readonly cwd?: string;
 }): Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }> {
     const proc = Bun.spawn([join(BIN_DIR, name), ...args], {
         stdout: 'pipe',
         stderr: 'pipe',
         stdin: 'ignore',
+        cwd,
         env: env === undefined ? undefined : { ...process.env, ...env }
     });
     const [stdout, stderr] = await Promise.all([
@@ -63,7 +67,11 @@ describe('bin/hops', () => {
 describe('ci · integración del binario con GitHub', () => {
     it('debe distinguir verde, rojo, pendiente, conflicto, sin checks y error de consulta', async () => {
         const fakeDir = mkdtempSync(join(tmpdir(), 'hops-fake-gh-'));
+        const fakeRepo = mkdtempSync(join(tmpdir(), 'hops-fake-repo-'));
         const fakeGh = join(fakeDir, 'gh');
+        mkdirSync(join(fakeRepo, '.claude'));
+        writeFileSync(join(fakeRepo, '.claude', 'project.config.json'), '{}');
+        execFileSync('git', ['init', '-q', '-b', 'test-ci'], { cwd: fakeRepo });
         writeFileSync(
             fakeGh,
             `#!/usr/bin/env bash
@@ -97,13 +105,15 @@ esac
                     env: {
                         PATH: `${fakeDir}:${process.env.PATH ?? ''}`,
                         HOPS_FAKE_GH_SCENARIO: scenario
-                    }
+                    },
+                    cwd: fakeRepo
                 });
                 expect({ scenario, code: result.code }).toEqual({ scenario, code });
                 expect(`${result.stdout}\n${result.stderr}`).toContain(expected);
             }
         } finally {
             rmSync(fakeDir, { recursive: true, force: true });
+            rmSync(fakeRepo, { recursive: true, force: true });
         }
     }, 60_000);
 });
