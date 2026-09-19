@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_26",
-        "number": 26,
+        "id": "ver_claude_opencode_migration_27",
+        "number": 27,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "concretar recomendación híbrida para specs y Gentle SDD",
+        "reason": "consolidar política operativa de permisos y pre-commit",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_25"
+        "basedOnVersion": "ver_claude_opencode_migration_26"
     },
     "data": {
         "sections": [
@@ -572,7 +572,7 @@
                             "title": "Endurecer pre-commit",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Bloquear secretos staged, drift, patrones inseguros y cambios peligrosos baratos.",
-                            "notes": "Propuesta documentada; implementación final pendiente.",
+                            "notes": "Capas concretas consolidadas en security-policy-v1.md: guards rápidos siempre, guards por rutas y checks costosos fuera del hook. Implementación pendiente.",
                             "done": false
                         },
                         {
@@ -580,7 +580,7 @@
                             "title": "Revisar permisos OpenCode",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Reducir bash wildcard y mantener bloqueos de secretos, Git destructivo y producción.",
-                            "notes": "Auditoría y matriz allow/ask/deny documentadas; endurecimiento activo pendiente de aprobación y de un runtime con filesystem escribible.",
+                            "notes": "Política consolidada en security-policy-v1.md. Precedencia prohibido > autorización > permitido; implementación pendiente de prueba en runtime escribible.",
                             "done": false
                         },
                         {
