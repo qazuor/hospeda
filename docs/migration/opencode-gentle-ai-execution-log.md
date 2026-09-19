@@ -2322,3 +2322,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Una ejecución anterior quedó invalidada por procesos residuales que ocupaban los
   puertos; se limpiaron exclusivamente procesos del worktree temporal y se repitió
   la prueba desde cero antes de considerar este gate exitoso.
+
+## Gate 65 · Límite de validación de `hops update`
+
+- Se ejecutó `hops update --dry-run` desde el wrapper global apuntando a
+  `hospeda-staging`.
+- El comando llegó al checkout operativo, pero Git no pudo escribir `FETCH_HEAD`
+  porque el `.git` compartido de la sesión está montado read-only. No alcanzó a
+  ejecutar reset, reconciliación ni instalación y no se modificó código.
+- El comportamiento queda documentado como pendiente de una sesión con filesystem
+  escribible o de un checkout Git independiente. No se ejecutará contra el
+  `staging` local adelantado hasta contar con esa condición, para no arriesgar sus
+  commits no publicados.
