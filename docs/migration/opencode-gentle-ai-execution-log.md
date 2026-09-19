@@ -2660,3 +2660,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - En el worktree actual el helper detectó dependencias presentes y no instaló
   nada. Sintaxis shell y `git diff --check` pasaron.
 - Suite final: **294 tests pasaron, 0 fallaron, 724 assertions**.
+
+## Gate 95 · `hops stats --json`
+
+- Ejecutado desde `hospeda-staging` sin terminal interactiva.
+- El comando usó el camino estable de código/tests/deuda y devolvió JSON con
+  SHA, tamaño del repositorio, archivos, casos de test, assertions, skips,
+  `TODO` y deuda de tipos.
+- No imprimió valores de entorno ni realizó cambios en Git, Linear o GitHub.

@@ -314,7 +314,7 @@
                             "title": "Implementar comandos client-tools existentes",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Mantener todos los comandos del registro con binarios, wrappers y tests.",
-                            "notes": "26 comandos registrados; cada uno tiene contraparte `hops-*` en OpenCode (30 wrappers contando artifact-create/list/publish/state).",
+                            "notes": "26 comandos registrados; cada uno tiene contraparte `hops-*` en OpenCode (30 wrappers contando artifact-create/list/publish/state). Gate95: stats --json también validado desde hospeda-staging sin mutaciones.",
                             "done": true
                         },
                         {
