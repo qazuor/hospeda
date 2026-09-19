@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Implementado; `--changed --list` leyó el workflow real y enumeró lint/guards/typecheck/tests sin mutar. El agente debe usarlo antes de verificar manualmente.",
+                            "notes": "Gate81: implementado; `--changed --list` leyó el workflow real y enumeró 2 lint, 36 guards y typecheck sin mutar, separando baseline/instalaciones. El agente debe usarlo antes de verificar manualmente.",
                             "done": true
                         },
                         {

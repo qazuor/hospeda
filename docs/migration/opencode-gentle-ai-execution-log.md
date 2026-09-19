@@ -2518,3 +2518,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   presenten V2 como instalación activa.
 - No se modificaron `hospeda-staging`, ramas, Linear, Engram ni configuraciones
   globales.
+
+## Gate 81 · `verify --changed --list`
+
+- El runner local leyó el workflow de CI sin instalar dependencias ni ejecutar
+  mutaciones.
+- Enumeró 2 checks de lint, 36 guards y typecheck.
+- Separó correctamente los pasos que requieren baseline o instalación y por eso
+  no deben correr en modo listado.
+- Este es el camino recomendado para que el agente seleccione verificaciones
+  por diff antes de lanzar comandos manuales más amplios.
