@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -80,13 +80,45 @@ ninguna columna de dinero.
 | **`addon_instance`** | producto, dueño, **objetivo** (ficha, suscripción de vertical, usuario o global), estado, inicio, fin, su suscripción de complemento si es recurrente | el objetivo corresponde al tipo de scope del producto |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código» |
-| **`courtesy_grant`** | beneficiario, scope, días o meses, inicio, fin, quién lo firmó, motivo | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`) |
-| **`permanent_grant`** | beneficiario, scope de verticales, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4) | ídem |
+| **`courtesy_grant`** | beneficiario, scope, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** |
+| **`permanent_grant`** | beneficiario, scope de verticales, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **el `plan` que otorga** y **el piso del trinquete** | ídem; el plan **no es anulable** |
 
 **Las concesiones no modifican el plan ni la suscripción: son fuentes independientes.** El §36
 dice que un entitlement sigue activo «mientras al menos una source exista», y eso sólo se puede
 calcular si cada fuente es su propia fila. Una cortesía que editara la suscripción sería
 irreversible sin adivinar qué había antes.
+
+**Las dos concesiones ganaron la columna que las vuelve resolubles**, y es la misma regla en los
+dos casos: `12-contrato-de-cobertura.md` §2.3 declara que **una fuente sin referencia resoluble no
+se puede expresar**, así que ninguna de las dos columnas admite nulo.
+
+- **`courtesy_grant.subscription_id`** — el mecanismo ya la presuponía y la fila no la guardaba.
+  `DEC-GRANT-003` implementa la cortesía *«pausando en el proveedor y sosteniendo el servicio de
+  nuestro lado»* y `B/14` §4.3 confirma que sobre un grant no se otorga porque *«no queda nada que
+  no cobrar»*: las dos frases dicen que **una cortesía presupone una suscripción**, y la fila no
+  decía cuál. Con la columna, la referencia que transporta el `tipo: CORTESÍA` es **la versión
+  anclada de la suscripción que pausa** — la misma que llevaría `SUSCRIPCIÓN`. Lo que el `tipo`
+  aporta es la distinción que sí importa: una `PAUSED` por `CUSTOMER_REQUEST` **no cubre** (`B/16`
+  §2.2, *«el servicio está detenido»*) y una `PAUSED` por `COURTESY` **sí**, porque lo sostenemos
+  nosotros.
+- **`permanent_grant.plan_id`, y NO una versión.** El grant resuelve **la versión vigente de ese
+  plan, vendible o no**, y `UNIQUE(plan_id) WHERE vigente` garantiza que esa versión es unívoca y
+  siempre existe. Anclar a una versión fija lo dejaría congelado; leer *«la vigente y sólo si es
+  vendible»*, como la pricing, lo dejaría **sin nada** el día que se retira el plan, porque retirar
+  un plan se hace publicando una versión no vendible (`D13`, cap. 10 §3.2).
+- **`permanent_grant.piso_del_trinquete`** — **la referencia a la versión que estaba vigente el día
+  que se firmó**, nunca una copia de sus valores, por la misma razón que el piso del trial (`V/02`
+  §2.2: el §10.3 prohíbe copiar a mano, y una copia además queda desactualizada). Seguir la versión
+  vigente expone al beneficiario a que el plan **empeore**: una versión que reparte distinto
+  le saca algo a quien tiene un «para siempre», sin que nadie lo haya decidido para esa persona.
+  **Un grant nunca otorga menos de lo que otorgaba el día que se concedió**, y el instrumento no es
+  nuevo: es el piso de `V/15` §2.5 aplicado acá.
+
+**Anclar no es ser.** Una suscripción ancla una versión de plan y no es un plan: el grant sigue
+siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya estaba resuelto —
+`D13`: *«retirar un plan del catálogo no mueve ninguna suscripción»*. La alternativa, que el grant
+declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
+entitlements**, que `V/02` §1.2 impide.
 
 ---
 

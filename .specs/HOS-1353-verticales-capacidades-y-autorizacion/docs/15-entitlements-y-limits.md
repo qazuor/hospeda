@@ -3,7 +3,7 @@ title: Master Spec 15 — Entitlements y limits
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 15
@@ -93,6 +93,19 @@ los crearon:
    con las fuentes: se aplica sobre el resultado.
 2. **El trinquete** (`DEC-TRIAL-002`) es un **piso**, no una fuente. Se compara al final contra
    las versiones vigentes al arrancar el trial, y sólo puede subir el resultado.
+
+**El trinquete tiene un segundo sujeto, y es el mismo mecanismo.** Un `permanent_grant` se ancla a
+un **plan** y resuelve su **versión vigente** (`B/02` §2.4), así que sigue las mejoras del plan —y
+quedaría expuesto a sus recortes—. Su piso es **lo que ese plan otorgaba el día que se firmó el
+grant**, guardado en la fila:
+
+> **Un grant nunca otorga menos de lo que otorgaba el día que se concedió.**
+
+Se compara igual que el del trial —al final, y sólo puede subir el resultado—, y por la misma razón
+de fondo: una versión nueva que reparte distinto **le sacaría algo a quien tiene un «para
+siempre», sin que nadie lo haya decidido para esa persona**. La diferencia con el del trial es sólo
+contra qué se compara: el del trial, contra las versiones vigentes al arrancar; el del grant,
+contra las vigentes al firmarlo.
 
 ---
 

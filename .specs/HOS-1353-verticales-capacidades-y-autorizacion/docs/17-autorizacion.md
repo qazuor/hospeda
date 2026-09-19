@@ -3,7 +3,7 @@ title: Master Spec 17 — Autorización
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 17
@@ -65,11 +65,11 @@ falla.
 | 2 | **estado de la persona** | ¿esta cuenta puede operar hoy? | inhabilitada, o correo sin verificar |
 | 3 | **permiso** | ¿pertenece a la familia de operaciones? | sin permiso |
 | 4 | **el recurso: existencia, estado y dueño** | ¿existe, está en un estado que acepta esto, y es del sujeto? | **no existe** — las tres juntas |
-| 5 | **título vivo** | ¿tiene trial, suscripción, cortesía o grant que lo cubra? | sin cobertura |
+| 5 | **título vivo** | ¿hay **al menos una fuente viva** para ese `user + vertical`? | sin cobertura |
 | 6 | **entitlement** | ¿su conjunto efectivo otorga esta capacidad? | sin la capacidad |
 | 7 | **limits** | ¿le queda cupo? | excedido |
 
-**Tres precisiones que el orden hace cumplir:**
+**Cinco precisiones que el orden hace cumplir:**
 
 1. **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
    inexistente son indistinguibles desde afuera. Contestar *«no es tuyo»* confirma que el
@@ -80,6 +80,21 @@ falla.
 3. **Los limits van últimos porque son los únicos que necesitan contar.** Todos los pasos
    anteriores se responden con lo que ya está resuelto; éste lee datos. Ponerlo antes hace
    trabajo que la mayoría de los rechazos no necesita.
+4. **El paso 5 no decide capacidades: decide si hay de dónde resolverlas.** Una fuente viva es la
+   que el contrato de cobertura devuelve con su referencia; **qué otorga esa referencia es el paso
+   6**. Ahí se separa quien puede publicar de quien sólo puede escribir borradores. Un paso 5 que
+   contestara *«sin cobertura»* a alguien que tiene una fuente viva con conjunto efectivo vacío
+   estaría dando el veredicto del 6 con el mensaje del 5 — y ésa es la forma exacta en que el paso
+   5 dejó de tener respuesta para `PRE_TRIAL`.
+5. **El paso 5 pregunta por `fuentes`, no por `cubierto`.** Son dos cosas distintas desde que el
+   contrato tiene tres clases de fuente (`12-contrato…` §2.4): `cubierto` cuenta sólo las de clase
+   `TÍTULO`, y el paso 5 acepta cualquiera — incluido el piso, que toda persona tiene en toda
+   vertical (`12-contrato…` §2.5). **La consecuencia hay que decirla en voz alta: el paso 5 ya no
+   rechaza a nadie, y toda la defensa se apoya en el paso 6.** Es deliberado, y es lo que le
+   devuelve al 6 una decisión que el 5 estaba tomando de prestado. Lo que sostiene la defensa es
+   que **lo que otorga cada versión es dato del catálogo, no una rama del código** (§1.3 y `V/02`
+   §1.2), y que un guard verifica que las dos versiones no vendibles de cada vertical —la de
+   pre-trial y la de piso— no otorguen ninguna clave comercial.
 
 ### 1.3 Los nueve se resuelven en un solo lugar
 
@@ -112,7 +127,15 @@ Y se apoya en algo que el núcleo ya decidió: **la resolución de entitlements 
 `user + vertical`** (cap. 02 §3.1). No existe *«resolvé las capacidades de esta persona»* sin
 decir en cuál vertical. Las dos cosas juntas son lo que cierra el caso del §13: para que alguien
 con Gastronomía ejecute algo de Alojamiento, la operación tendría que haber sido invocada
-**declarando Alojamiento**, y ahí el paso 5 no encuentra título.
+**declarando Alojamiento**, y ahí su conjunto efectivo es el de Alojamiento — donde no tiene nada.
+
+**Dónde se le contesta que no, con precisión, porque cambió.** No en el paso 5: desde que existe el
+título `BASE` (`12-contrato…` §2.5) esa persona **sí** tiene una fuente en Alojamiento, la de piso,
+y el paso 5 la deja pasar. Se le contesta en el **paso 6**, porque la versión de piso de Alojamiento
+no otorga ninguna capacidad comercial. La regla del §64.10 —*«una acción en una vertical no puede
+afectar otra accidentalmente»*— se sigue cumpliendo con el mismo rigor, y por la misma razón de
+fondo: **la resolución es por `user + vertical`**, así que declarar Alojamiento es resolver contra
+Alojamiento. Lo único que se movió es en qué paso se materializa el rechazo.
 
 ### 2.3 El guard, y su gemelo
 

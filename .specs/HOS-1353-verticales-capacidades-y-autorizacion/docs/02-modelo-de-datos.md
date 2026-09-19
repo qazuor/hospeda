@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -36,7 +36,7 @@ vertical (catálogo, espejo del enum)
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`vertical`** | el espejo en base del enum de código | el guard de §1.2 verifica las dos direcciones |
+| **`vertical`** | el espejo en base del enum de código, **si admite altas** y **su fecha de fin de servicio** | el guard de §1.2 verifica las dos direcciones |
 | **`plan`** | identidad y cosmética: vertical, slug, nombre, descripción, orden en la pricing. **Muta libremente** (`DEC-ARCH-001`) | `UNIQUE(vertical, slug)` |
 | **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
@@ -49,10 +49,34 @@ catálogo se separan así: **la pricing lee la versión vigente y sólo si es ve
 lee su versión anclada, vigente o no, vendible o no.** El capítulo 10 §2 lo desarrolla y §3 lo usa
 para retirar un plan sin mecanismo nuevo.
 
+**Las dos columnas de `vertical` no son de adorno: son la mitad declarada de la frontera.**
+`admite_altas` y `fin_de_servicio` las **lee billing** (`B/10` §4.6) y hasta ahora no existían en
+ninguna entidad. Son dos de los seis campos de la dirección inversa del contrato
+(`12-contrato-de-cobertura.md` §4.1), que transporta **política y estado de catálogo, nunca
+capacidades**.
+
 **El plan de trial no es una entidad aparte.** Es un `plan` con su versión, marcado **no
 vendible**, uno por vertical. Sus limits y entitlements **no se guardan**: se derivan en cada
 resolución, del plan vendible de `rank` más alto y del más bajo, más los overrides declarados
 (`DEC-TRIAL-001`) y el trinquete (`DEC-TRIAL-002`). El §10.3 es explícito en que no se copien.
+
+**El plan de piso tampoco, y tiene el mismo tratamiento con una diferencia.** Es un `plan` con su
+versión, marcado **no vendible**, **uno por vertical**, y es lo que la fuente `BASE` del contrato
+apunta (`12-contrato-de-cobertura.md` §2.5) para toda persona en toda vertical. A diferencia del de
+trial, **sus entitlements y limits sí se guardan**: no hay de dónde derivarlos —no son los del
+premium ni los del más bajo— y el §10.3 sólo prohíbe copiar **los del trial**.
+
+Otorga exactamente lo mínimo para que alguien exista en la plataforma y pueda volver a contratar:
+**ninguna capacidad comercial**, y la de contratar una suscripción. Es lo que le da respuesta al
+paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`, sin los cuales **la
+*«recuperación posible»* del §21 no tiene por dónde ocurrir**.
+
+> ⚠️ **La versión de piso es un punto único de falla, y por eso lleva guard.** Si alguien le siembra
+> una clave comercial, **toda la plataforma la recibe gratis, para siempre, sin consumir ningún
+> trial**. Es la misma exposición que la versión de pre-trial, así que la vigila el **mismo guard**:
+> `G-R3` se comprueba sobre **las dos** versiones no vendibles de cada vertical, en CI, en las dos
+> direcciones. Es una verificación automática y no una revisión, porque es el único lugar donde un
+> error de siembra no lo ve nadie.
 
 ### 2.2 Compromiso y ciclo de vida
 
