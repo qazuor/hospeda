@@ -2505,3 +2505,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Suite completa: **294 tests pasaron, 0 fallaron, 724 assertions**.
 - La validación externa de OpenCode/providers sigue bloqueada por el filesystem
   root read-only.
+
+## Gate 80 · Registro actualizado de compatibilidad V1
+
+- La suite de `scripts/client-tools` queda verificada con **294 tests pasados,
+  0 fallos y 724 assertions**, incluyendo los binarios standalone de los dos
+  wrappers Gentle nuevos.
+- El estado operativo documentado se corrigió para reflejar la decisión vigente:
+  OpenCode V1.18.31 es el runtime diario; OpenCode V2.0.3 queda sólo como
+  rollback/evaluación futura.
+- Se actualizaron `current-state.md` y `opencode-gentle-ai-plan.md` para que no
+  presenten V2 como instalación activa.
+- No se modificaron `hospeda-staging`, ramas, Linear, Engram ni configuraciones
+  globales.
