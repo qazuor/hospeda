@@ -23,8 +23,8 @@ las va a buscar para aplicar el texto.
 |---|---|
 | total | **37** |
 | ya contestadas antes de abrir esta tanda | **4** |
-| contestadas en la tanda | **1** |
-| pendientes | **32** |
+| contestadas en la tanda | **33** |
+| **pendientes** | **0** |
 
 ### Las cuatro que se contestaron antes, sin estar en la lista
 
@@ -1034,3 +1034,69 @@ verlo ponerse rojo. Es caro, y **sólo es viable gracias al orden**: se aplica a
   `commerce` en fuentes activas— y hacerlo pasar **es ejecutar el §55 sobre el código real**, o sea
   FASE 5. Sin esto, **la primera unidad del programa no puede terminar** y las otras 21 esperan.
 - ⚠️ **`DEC-` propia obligatoria**: es el gate de entrada que `DEC-METH-003` dejó declarado.
+
+---
+
+## D-32 y D-33 · La FASE 7 del paraguas es un entregable propio, y el rollback vive ahí — `R6` #5, `R5` #5
+
+**Decidido: la FASE 7 del paraguas se escribe como documento propio, con dueño, ANTES de que nazca
+la rama.** Los seis ítems huérfanos del §65 se escriben ahí, **y el rollback es uno de ellos**.
+
+**El hueco**: `DEC-ARCH-007` partió la FASE 7 **por épica**, y **ninguna de las dos épicas
+despliega** — la unidad que llega a `staging` es **el paraguas**, que **no tiene fase que se la
+escriba**. Seis de los diez ítems quedaron sin dónde vivir.
+
+**Por qué son una sola decisión y no dos**: el rollback **es un ítem de la FASE 7**. Decidir quién
+escribe la FASE 7 del paraguas **es** decidir quién escribe el rollback; separarlas lo deja como una
+tarea huérfana que nadie toma. Y está medido: **la palabra «rollback» no aparece en ningún documento
+de diseño del programa** (`F-8C2-005`, el único crítico de `R5` que sobrevivió a `D-26`).
+
+**El momento es ahora y no es una preferencia**: la rama del paraguas **todavía no existe**
+(`git ls-remote` → cero) y `D-28` arranca el desarrollo en días. Después de que nazca, la estrategia
+de despliegue se escribe con código adentro.
+
+**Por qué no que cada épica escriba la suya y se junten**: **es lo que ya pasó y produjo el hueco.**
+Dos mitades que no despliegan no suman una estrategia de despliegue.
+
+> ⚠️ **Salvedad aceptada por el owner, y es el resultado más valioso posible**: puede que la
+> conclusión honesta sea **que no hay vuelta atrás**. Reemplazar el sistema de cobro no es revertir
+> un deploy: si el corte se hizo y hay gente suscripta en el sistema nuevo, volver al viejo
+> significa **deshacer compromisos reales con un proveedor externo**. Si la respuesta es *«no se
+> puede volver, y el punto de no retorno es éste»*, **eso no es un fracaso del documento**. Saber
+> dónde está el punto de no retorno y decidir con eso a la vista es mucho mejor que **descubrirlo
+> cruzándolo**.
+
+- **Dónde vive**: un documento nuevo del paraguas, `HOS-1352-…/docs/`.
+- **Cierra**: `F-8C2-005` (lo que queda de él) y `F-8C2-010`.
+
+---
+
+## Cierre de la tanda — 2026-09-19
+
+**Las 37 están contestadas.** 33 en esta tanda (`D-01` a `D-33`, algunas agrupadas) y 4 que se
+habían contestado antes de abrirla.
+
+| racimo | decisiones | estado |
+|---|---|---|
+| `R2` | 6 | **todas** |
+| `R1` | 10 | **todas** — salvo `#9`, que no depende del owner: es el capítulo 13 |
+| `R3` | 7 | **todas** |
+| `R5` | 6 | **todas** — y `D-26` dejó cuatro de sus cinco críticos **sin objeto** |
+| `R6` | 8 | **todas** |
+
+### Las que necesitan `DEC-` propia en el decision log
+
+`D-05` (el grant anclado al plan, con trinquete) · `D-11` (la marca, que revisa una razón escrita
+del owner) · `D-13` (el §11 cuenta compromisos, no filas — **apartamiento del PDR**) · `D-26` (no se
+migra — **supersede en parte a `DEC-MIG-001`**) · `D-30` (el ciclo 8 ↔ 9 — **apartamiento del
+método**) · `D-31` (el gate de FASE 5).
+
+### Lo que sigue abierto, con su causa
+
+| qué | de qué depende |
+|---|---|
+| el capítulo 13 y lo que cuelga de él (`F-8B3-002`, `F-8B3-003`, el pago manual) | que se decida la pasarela |
+| el rollback del programa | de `D-32`: se escribe en la FASE 7 del paraguas |
+| la enumeración de operaciones de dominio | de la implementación, con el guard de `D-23` vigilando |
+| las 12 etiquetas `status-blocked` de Linear | de `D-28`: «bloqueada» cambió de significado |
+| la automatización de Linear | del trabajo de dev experience ya en curso (`D-27`) |
