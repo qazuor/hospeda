@@ -475,6 +475,12 @@ Y dos que estaban dadas por imposibles y no lo eran:
 cualquier capítulo de las dos épicas **existen todas** en `01-decision-log.md` (comparación de
 conjuntos, no a ojo), y ningún otro capítulo remite a este archivo para declarar algo abierto.
 
+> **El número de este párrafo es el del barrido y no se actualiza**: son las 50 que existían
+> cuando se corrió. Desde el 2026-09-19 el log tiene **51** — `DEC-METH-004`, la que amplía la
+> FASE 9 a cuatro salidas—, y **no estaba en ese barrido** porque ningún capítulo la cita
+> todavía. Reescribir un resultado fechado para que parezca actual es perder el único dato que
+> tenía: contra qué se verificó.
+
 ### Dos cosas que apareció el linter al tocar la matriz el 2026-09-19
 
 Para poder commitear la ampliación de `EX-3` hubo que dejar la matriz limpia de markdownlint —

@@ -15,9 +15,13 @@ tocó un archivo existente. Este documento no repite sus hallazgos: los **agrupa
 que la FASE 9 resuelva mecanismos y no síntomas.
 
 > **Lo que este documento NO hace.** No propone soluciones (§65: la FASE 8 encuentra, la 9
-> resuelve), no edita el decision log ni la matriz de MP —las correcciones que la fase encontró
-> están listadas al final, **sin aplicar**, esperando al owner— y no reordena el trabajo ya
-> publicado en Linear.
+> resuelve) y no reordena el trabajo ya publicado en Linear.
+>
+> **Las seis correcciones de registro de la §7 SÍ se aplicaron**, el 2026-09-19 y con
+> autorización del owner. Eran correcciones de **registro** —conteos y celdas vacías—, no
+> resoluciones de hallazgos: ningún capítulo de diseño cambió de contenido. Tres de las seis
+> resultaron ser algo distinto de lo que decía su enunciado cuando se las fue a medir; está en
+> su fila.
 
 ---
 
@@ -210,19 +214,28 @@ No todo sobrevivió a la pasada C, y queda registrado para que nadie los reabra:
 
 ---
 
-## 7. Correcciones de registro que la fase encontró — NO APLICADAS
+## 7. Correcciones de registro que la fase encontró — APLICADAS el 2026-09-19
 
-Van acá y no en sus archivos porque **el decision log y la matriz no se tocan sin el owner**. Cada
-una está verificada.
+> **Estado: las seis se aplicaron**, con autorización del owner el 2026-09-19. Esta tabla se
+> conserva como registro de qué se corrigió y contra qué se verificó. **Tres de las seis
+> resultaron ser otra cosa de lo que decía su enunciado** cuando se las fue a medir — está anotado
+> en su fila.
+>
+> **Dos no se tocaron a propósito**, y el criterio vale para lo que venga: **un registro fechado
+> no se reescribe.** El §676 de `02-worklog.md` dice «45 decisiones» y es correcto **en su fecha**;
+> `04-open-decisions.md` §474 dice que el barrido verificó «50» y es lo que verificó. A ese
+> segundo se le agregó una nota al pie en vez de cambiarle el número. Sólo se corrigió el
+> `03-handoff.md`, que no narra un momento sino que **declara una regla vigente** — las fuentes
+> admitidas de la FASE 2.
 
 | # | qué | dónde | verificación |
 |---|---|---|---|
 | 1 | **Los invariantes son 51, no 49.** El §64 aporta 37 y la tabla de decisiones tiene **14 filas** (`D1`…`D14`). La nota al pie («suma 14 sobre **12**») y el cierre («Cuarenta y nueve») son **anteriores a `D13` y `D14`**, que el propio §4 dice que se agregaron al cerrar el cap. 10 §4 | `nucleo/04-invariantes.md`, dos frases | filas contadas con `rg`; «ocho los sostiene la base» cierra: base 6 + base 2 = 8 |
 | 2 | **La fila sin id de la matriz es un duplicado desactualizado**, no una novena `UNKNOWN`. La pregunta que decía no estar medida es `EX-33`: `VERIFIED`, 2026-09-16, producción con tarjeta real, tres de tres | `06-mp-validation-matrix.md`, nota al pie de su tabla | `contar-filas-de-la-matriz.py`: 89 filas / 49 `VERIFIED` / **8** `UNKNOWN` |
 | 3 | **`RF-6`, `RF-7` y `RF-8` ya tienen «Para qué»**: las tres sirven a **reembolsar**, la única capacidad que el cap. 06 §10 declara en riesgo de plataforma. Y dos de ellas contienen el dato que invalida el mecanismo que las cita | `06-mp-validation-matrix.md`, celda «Para qué» | `F-8B1-008`, `F-8B1-012`, `F-8B1-013`, `F-8B3-011` |
-| 4 | **El catálogo de guards no cierra**: dice once, las descomposiciones dicen trece, la spec dice siete | `F-8C1-010` | — |
-| 5 | **Cuántas máquinas de estado hay**: cuatro respuestas vivas, y dos de las «nueve» no son máquinas | `F-8C1-011` | — |
-| 6 | **Tres documentos del paraguas dan tres conteos distintos del decision log** | `F-8C2-017` | — |
+| 4 | ⚠️ **Era otra cosa.** No hay tres cuentas del mismo conjunto: hay **un catálogo de 11 y dos huérfanos**. Los dos capítulos `20` catalogan `G1`…`G11` sin huecos (verticales `G1`-`G6`+`G8`, billing `G7`+`G9`-`G11`); **`G12` y `G13` nacieron en las descomposiciones y no están en ningún capítulo `20`**. El «siete» de la spec de verticales no es un total: es su porción. **No se cambió ningún número** — el hallazgo real es que dos guards viven fuera del catálogo que CI leería, y eso lo resuelve R6, no una corrección de registro | `F-8C1-010`, y coincide con `F-8C2-008` | unión medida con `rg` sobre los dos `20-testing.md` y las dos `descomposicion.md` |
+| 5 | ⚠️ **Era otra cosa.** Tampoco son cuatro respuestas: el **§63 del PDR pide ocho**, el diseño define **nueve** —la novena es Postulación de Partner, que el cap. 18 §5 declara agregada— y la **§10 del capítulo 03 no es una máquina** sino la regla de no-retroceso. **Corregido** en `nucleo/01-glosario.md` §2, que decía *«El §63 pide ocho máquinas. El capítulo 03 **las** define»*, haciendo coincidir lo que el PDR pide con lo que el capítulo entrega | `F-8C1-011` | secciones §2–§11 del cap. 03 partido, contadas con `rg` |
+| 6 | **Corregido sólo donde era una regla vigente.** `03-handoff.md` §329 decía que las fuentes admitidas son «una de las **45** decisiones» → **51**. `02-worklog.md` §676 **no se tocó** (narra un día y es correcto en su fecha) y `04-open-decisions.md` §474 **tampoco** (registra lo que un barrido verificó): a éste se le agregó una nota al pie diciendo que desde el 19/09 son 51 y que `DEC-METH-004` no estaba en ese barrido | `F-8C2-017` | `rg -c "^### DEC-"` = 52, menos la plantilla |
 
 > **Una regla de método que sale de la #1**: cuando varios agentes discrepan sobre un número,
 > **dirime la aritmética del documento, no la mayoría**. Cuatro informes dijeron 49; la suma dice
