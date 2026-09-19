@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_24",
-        "number": 24,
+        "id": "ver_claude_opencode_migration_25",
+        "number": 25,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "implementar Codex como agente seleccionable",
+        "reason": "diseñar distribución unificada qz/hops para agentes",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_23"
+        "basedOnVersion": "ver_claude_opencode_migration_24"
     },
     "data": {
         "sections": [
@@ -458,7 +458,7 @@
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Ampliado. Debe incluir AGENTS.md, CLAUDE.md compatible, instrucciones globales/project-locales, perfiles, permisos, guardrails y adapters. Evaluar copias, symlinks o generación; detectar clientes, propagar actualizaciones y validar hashes/derivaciones para que varios agentes trabajen con las mismas reglas sin duplicar lógica.",
+                            "notes": "Arquitectura documentada en command-distribution-architecture.md: fuente canónica versionada, derivados por cliente, manifest/hash, copias generadas en vez de symlinks y separación qz-core/hops-hospeda. Implementación final pendiente.",
                             "done": false
                         },
                         {
