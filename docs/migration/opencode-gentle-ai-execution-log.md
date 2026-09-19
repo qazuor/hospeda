@@ -2600,3 +2600,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   estado `unresolved` porque no hay cambios activos bajo `openspec/changes`.
 - El estado bloqueado es informativo y esperado en un repositorio sin una
   feature SDD activa; no se creó ninguna estructura ni artifact.
+
+## Gate 89 · Preflight de cierre
+
+- `hops close-issue --plan --issue HOS-635 --json` desde `hospeda-staging`
+  devolvió un plan read-only con estado Linear Backlog, sin spec/closeout/PR y
+  acciones pendientes explícitas.
+- La ejecución desde el worktree histórico de HOS-635 no pudo cargar
+  `@clack/prompts` porque ese checkout no tiene dependencias instaladas.
+- Esto no es una mutación ni un fallo del preflight; es un gap de bootstrap que
+  el instalador/worktree debe resolver antes de abrir un agente en un checkout
+  nuevo. No se instaló nada durante esta prueba.
