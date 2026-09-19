@@ -536,6 +536,12 @@ estado sin reinterpretarlo) **describen dos operaciones distintas sobre las mism
 | (`F6`, `F7`, `F8`) × D2…D6 | 15 | están fuera de «las cinco»: ninguna regla las nombra |
 | (`F1`, `F2`, `F3`) × D4, D6 | 6 | ¿una `trialing` migrada arrastra alguna concesión? |
 
+> **Corregido el 2026-09-19 por el recorrido de R5** (`06-R5-resuelto.md` §6). Esta tabla de
+> bloques **cuenta `D6` tres veces** y **omite `(F1, F2, F3) × D1` y `(F1, F2, F3) × D5`**. El total de 37 no
+> cambia —los solapamientos y las omisiones se compensan— pero los bloques no se pueden leer como
+> particiones. Y `D6` **no aplica a cinco de las ocho filas**: un grant y un trial no tienen ciclo
+> ni precio, así que ese bloque se contesta 3 y 5, no 8.
+
 ### 6. El criterio de verificación
 
 **Para cada una de las 48 celdas (fila medida × entidad destino) hay que poder decir qué se
