@@ -4,6 +4,7 @@ import type { RunContext } from '../../lib/context.ts';
 import { run } from '../../lib/exec.ts';
 import { findPr } from '../../lib/github.ts';
 import { fetchIssue } from '../../lib/linear.ts';
+import { collectEnvDrift } from '../env/drift.ts';
 
 function issueFromBranch(branch: string): string | null {
     const match = branch.match(/(?:^|\/)([a-z]+-\d+)(?:-|$)/i);
@@ -60,6 +61,15 @@ export async function runCloseIssue({
     const state = issueId
         ? await fetchIssue({ issueId })
         : { ok: false as const, reason: 'no se pudo inferir issue desde la branch' };
+    const envReport = collectEnvDrift({ root: cwd });
+    const envDrift = {
+        clean: envReport.clean,
+        missing: envReport.files.reduce((sum, file) => sum + file.missing.length, 0),
+        obsolete: envReport.files.reduce((sum, file) => sum + file.obsolete.length, 0),
+        needsValue: envReport.files.reduce((sum, file) => sum + file.needsValue.length, 0),
+        mismatched: envReport.mismatched.length,
+        absentCrossChecks: envReport.absentCrossChecks.length
+    };
     // main/staging do not have an issue PR of their own. Avoid asking GitHub
     // about them: an empty PR result would look like a missing closeout signal
     // instead of the structural fact that this is a protected base branch.
@@ -79,6 +89,7 @@ export async function runCloseIssue({
         actions.push(`confirmar el estado final de Linear (actual: ${state.issue.stateName})`);
     if (state.ok && state.issue.labels.some((label) => label.startsWith('status-needs-smoke-')))
         actions.push('ejecutar y evidenciar los smoke gates pendientes');
+    if (!envDrift.clean) actions.push('resolver drift de variables de entorno antes del cierre');
     if (pr === 'none' && branch && !['main', 'staging'].includes(branch))
         actions.push('abrir o vincular el PR antes del cierre');
     else if (typeof pr === 'object' && 'error' in pr)
@@ -107,6 +118,7 @@ export async function runCloseIssue({
                           smokePending: smoke
                       }
                     : { error: state.reason },
+                envDrift,
                 pullRequest: pr,
                 actions,
                 readOnly: true
@@ -123,6 +135,9 @@ export async function runCloseIssue({
     process.stdout.write(`specs: ${specs.length ? specs.join(', ') : '(no encontrada)'}\n`);
     process.stdout.write(`closeout: ${closeout ? 'presente' : 'ausente'}\n`);
     process.stdout.write(`tasks/state: ${taskState ? 'presente' : 'ausente'}\n`);
+    process.stdout.write(
+        `env drift: ${envDrift.clean ? 'limpio' : `${envDrift.missing} faltantes · ${envDrift.obsolete} obsoletas · ${envDrift.needsValue} sin valor`}\n`
+    );
     process.stdout.write(
         `Linear: ${state.ok ? `${state.issue.stateName} (${state.issue.identifier})` : state.reason}\n`
     );

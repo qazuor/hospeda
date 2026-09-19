@@ -354,7 +354,7 @@
                             "title": "Close issue completo",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Cerrar issue, verificar PR/CI/smoke, actualizar Linear/Engram y limpiar recursos.",
-                            "notes": "Gate89: `close-issue --plan --issue HOS-635 --json` funciona desde hospeda-staging y devuelve plan read-only con estado Linear Backlog y acciones pendientes. Un worktree histórico sin dependencias no pudo cargar @clack/prompts; queda como gap de bootstrap. Decisión nueva: close-issue debe ser parte del núcleo qz configurable (provider, estados, closeout, cleanup y acciones remotas).",
+                            "notes": "Gate98: `close-issue --plan` incorpora resumen seguro de env drift y agrega acción explícita cuando hay faltantes/obsoletas, sin imprimir valores ni mutar envs. El preflight read-only sigue funcionando; close-issue debe migrar luego al núcleo qz configurable.",
                             "done": true
                         },
                         {

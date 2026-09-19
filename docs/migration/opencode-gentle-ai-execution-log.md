@@ -2695,3 +2695,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se integró `copy-env-to-worktree.sh` en `wt-up`; usa `hospeda-staging` por
   defecto, omite el self-copy y deja que `wt-env-prepare` complete sólo lo que
   esté definido en ejemplos.
+
+## Gate 98 · Guard de env drift en `close-issue --plan`
+
+- `close-issue` ahora reutiliza `collectEnvDrift` y agrega un resumen seguro al
+  JSON/humano: faltantes, obsoletas, sin valor, cruzadas y ausentes.
+- Si el drift no está limpio, el preflight agrega una acción explícita para
+  resolverlo antes del cierre; nunca imprime valores ni modifica envs.
+- La suite completa sigue en **294 tests pasados, 0 fallos y 724 assertions**.
