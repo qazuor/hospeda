@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_3",
-        "number": 3,
+        "id": "ver_claude_opencode_migration_4",
+        "number": 4,
         "createdAt": "2026-09-16T00:00:00.000Z",
         "author": "opencode",
-        "reason": "agente explícito y distribución unificada de comandos Hops",
+        "reason": "develop, promociones, Dependabot y Codex agregados al backlog",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_2"
+        "basedOnVersion": "ver_claude_opencode_migration_3"
     },
     "data": {
         "sections": [
@@ -427,6 +427,38 @@
                             "category": "CLI, skills y workflows",
                             "description": "Mantener una definición canónica de nuestros comandos y generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
                             "notes": "Nueva tarea. Evaluar archivos copiados, symlinks o generación; el instalador debe detectar clientes, instalar adapters y propagar actualizaciones sin duplicar lógica.",
+                            "done": false
+                        },
+                        {
+                            "id": "develop-branch-policy",
+                            "title": "Agregar develop como rama de integración intermedia",
+                            "category": "Git, Linear y promoción",
+                            "description": "Introducir develop como destino automático de los cambios terminados; mantener staging como promoción explícita y main como rama protegida de producción.",
+                            "notes": "Nueva tarea. Auditar project.config, startIssue/closeIssue, branch naming, workflows CI, PR base branches, documentación, guards y cualquier referencia staging/main. Los PRs directos a staging seguirán permitidos para urgencias; develop no debe bloquear ese escape controlado.",
+                            "done": false
+                        },
+                        {
+                            "id": "promotion-backmerge-commands",
+                            "title": "Agregar comandos de promoción y back-merge",
+                            "category": "CLI, Git y workflow",
+                            "description": "Crear comandos deterministas para develop → staging, staging → main y sus back-merges, con plan, validaciones, PR/base branch y lectura posterior.",
+                            "notes": "Nueva tarea. Debe funcionar manualmente y desde agentes; primero será read-only/plan y luego mutación explícita. No debe hacer push ni merge implícito sin confirmación.",
+                            "done": false
+                        },
+                        {
+                            "id": "dependabot-weekly-review",
+                            "title": "Automatizar la revisión semanal de PRs de Dependabot",
+                            "category": "CI, dependencias y mantenimiento",
+                            "description": "Analizar cada PR automático, explicar riesgo/beneficio y clasificarlo como cerrar, aplicar con PR pequeño NO-SPEC o convertir en issue HOS para backlog.",
+                            "notes": "Nueva tarea. Evaluar si conviene comando Hops read-only, skill de análisis y/o artifact de reporte. Debe leer checks, changelog, semver, uso real y compatibilidad del monorepo sin aprobar ni mergear automáticamente.",
+                            "done": false
+                        },
+                        {
+                            "id": "codex-agent-option",
+                            "title": "Agregar Codex como agente seleccionable",
+                            "category": "CLI y distribución multiplataforma",
+                            "description": "Agregar --agent codex y revisar todos los comandos, wrappers y adapters que hoy aceptan claude u opencode.",
+                            "notes": "Nueva tarea. Mantener agente por defecto none; el launcher debe detectar disponibilidad y producir un error claro si codex no está instalado. Los comandos Hops deben seguir siendo neutrales al cliente.",
                             "done": false
                         }
                     ]
