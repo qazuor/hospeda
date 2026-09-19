@@ -2266,6 +2266,11 @@ Cada entrada lleva, según §3.4:
   título porque `validate-pr-title` lo exige— **cerraría las 22 unidades del programa como hechas
   sin nada desplegado**. Es el footgun que el `CLAUDE.md` documenta con **dos incidentes reales**
   (PR #1982 → `HOS-36`, PR #1983 → `HOS-54`, ambos revertidos a mano).
+- **El barrido profundo también** (agregado el 2026-09-19, `D-29`): `codeql-staging.yml` pina
+  `ref: staging`, así que una rama de paraguas acumularía **meses de código nuevo sin barrido
+  profundo**, cubierta sólo por semgrep **por diff** — que mira el cambio y no el conjunto, y por lo
+  tanto **no ve lo que emerge de la combinación** de cambios que individualmente pasaron. Vale para
+  **toda** rama de integración de épica, no sólo la primera.
 - **Las dos mitades de `ci.yml` hacen falta**: `pull_request` cubre `F-8C2-003`; **`push` cubre
   `F-8C2-004`**, porque el merge periódico de `staging` hacia el paraguas **no es un PR** y ningún
   disparador de `pull_request` lo alcanza.

@@ -826,3 +826,99 @@ podía escribir.
   con las cinco filas.
 - **Dónde se aplica**: los dos `21-migracion.md`, que hoy describen una migración que no va a
   ocurrir.
+
+---
+
+## D-27 · La automatización de Linear queda como está, y va a la lista de dev experience — `R6` #3
+
+**Decidido: la salida (3) por ahora** —dejarla activa y revertir a mano— **con el motivo del owner**:
+*«tengo a un agente en Codex trabajando en mejorar todo el dev experience»*. **Queda anotada para
+ese trabajo**, igual que `develop` en `DEC-CI-002`, para que no se pierda.
+
+**El mecanismo, para quien lo tome**: el equipo Hospeda tiene **«On PR merge, move to Done»**
+activo, y dispara con **cualquier PR cuyo título mencione un issue** — sin magic word y sin chequeo
+de completitud. Y `DEC-CI-001` mantiene `validate-pr-title` corriendo en `epic/**`, así que **los
+PRs de sub-épica van a llevar `[HOS-NNNN]` porque el CI lo exige**.
+
+**Consecuencia**: cada sub-épica que mergee al paraguas **marca su unidad `Done`**, meses antes de
+que exista nada desplegado. Son 22. **Ya pasó dos veces** —PR #1982 cerró `HOS-36`, PR #1983 cerró
+`HOS-54`, ambos sin trabajo real y revertidos a mano— y el `CLAUDE.md` del repo lo documenta.
+
+**La salida que se descartó y por qué no era viable**: no poner el `HOS-N` en el título choca de
+frente con `C-3`. `validate-pr-title` exige el tag para que un reviewer sepa a qué spec pertenece
+cada PR; **sacarlo para esquivar la automatización sería romper una defensa para compensar otra mal
+configurada**.
+
+**La salida recomendada, para cuando se tome**: poner la automatización en **`No action`** para el
+equipo Hospeda. Quedan los dos caminos válidos que ya se usan — `/closeSpec` y el magic word
+deliberado.
+
+> **El riesgo de la (3) mientras dure, dicho una vez**: no es el trabajo de revertir 22 veces, es
+> que **alguna no se revierta**. Y durante los meses que dure, **`Done` deja de significar algo en
+> el tablero** — que es lo que el `CLAUDE.md` describe como *«no puede coexistir»* con un estado
+> real.
+
+- **Es la única de las 33 que se resuelve en una herramienta externa**, no en el repo.
+
+---
+
+## D-28 · La espera se corta en días, no en meses — `R6` #6
+
+**Decidido por el owner**: *«ni en pedo vamos a esperar 3 meses. Si en 3 o 4 días no tenemos
+respuesta, empezaremos a desarrollar con lo que tenemos conocido hoy en día»*. Plazo: **hasta el
+2026-09-23**.
+
+**La recomendación era una revisión a los 3 meses y estaba mal calibrada.** Razonaba sobre *el
+costo de la rama larga* —cuándo un branch se vuelve caro de mergear—; el owner razona sobre **el
+costo de no avanzar**, y tiene razón: **el adaptador existe justamente para que lo segundo no
+dependa de la pasarela**.
+
+**Y no fuerza nada: `DEC-ARCH-004` ya diseñó esto.** Su **condición B** es *«adaptador falso en
+memoria desde el día uno»*, y la ficha de `B1` lo dice textual — **la interfaz de las ocho
+capacidades y `G12` se pueden escribir hoy**, porque esa API se define *«por lo que Hospeda
+necesita, no por lo que una pasarela ofrece»*. **Lo que esperaba era el adaptador real, no el
+contrato.**
+
+**Qué significa «con lo conocido»**: construir contra la interfaz de las ocho capacidades y el
+**proveedor falso**, con las **90 filas medidas** de la matriz como referencia de comportamiento.
+El adaptador real se escribe cuando se sepa cuál es.
+
+> ⚠️ **Consecuencia operativa que hay que ejecutar**: **doce unidades llevan `status-blocked` en
+> Linear**, y con esta decisión *«bloqueada»* pasa a significar otra cosa — no *«no se puede
+> empezar»* sino *«su adaptador real espera»*. **Esas etiquetas hay que revisarlas una por una**, y
+> es parte de la salida 4 de `DEC-METH-004` (lo publicado).
+
+**Lo que esta decisión NO cambia**: `F-8C2-007` sigue en pie — **decidir la pasarela no destraba
+las nueve unidades, reabre la FASE 1C**. Si sale Mobbex, hay que re-medir; lo que el adaptador
+compra es que esa re-medición **no invalide lo construido**, sólo el adaptador.
+
+- **Y cierra la mitad «cota» de `F-8C2-014`.** La otra mitad —el nacimiento de la rama— ya estaba
+  cerrada.
+
+---
+
+## D-29 · El barrido profundo de seguridad cubre `epic/**` — como REGLA, no para esta épica — `R6` #7
+
+**Decidido: `codeql-staging.yml` barre también el paraguas** — y el owner lo **generalizó**:
+*«para todas las épicas que hagamos de ahora en adelante, no sólo ésta»*. Toda rama de integración
+de una épica grande, que recién mergea cuando la épica está lista, **lleva barrido profundo**.
+
+**El caso**: `codeql-staging.yml` tiene **`ref: staging` fijo**, así que la rama del paraguas
+acumularía **meses de código nuevo sin barrido profundo**, cubierta sólo por **semgrep por diff** —
+que mira el cambio y no el conjunto, y por lo tanto **no ve lo que emerge de la combinación** de
+cambios que individualmente pasaron.
+
+**Por qué cambió el peso respecto de lo que `R6` había evaluado**: `R6` lo dio por *«menor mientras
+el paraguas viva poco, y crece con la espera»*. Con `D-28` —arrancar a desarrollar en días sin
+esperar la pasarela— **el paraguas va a vivir más, no menos**: verticales avanza ya y billing
+construye contra el proveedor falso.
+
+**El argumento es el mismo que metió `codeql.yml` en `epic/**` en `DEC-CI-001`**: una rama que vive
+meses necesita las defensas **más**, no menos. Éste es el barrido profundo en vez del de PR.
+
+**Y la generalización es coherente con lo ya decidido**: `DEC-CI-001` declaró `epic/**` como **tipo
+de rama del proyecto, no excepción temporal**, justamente para que la próxima épica no tenga que
+volver a decidir esto.
+
+- **Costo**: bajo — una corrida programada o un input, sobre un workflow que ya existe.
+- **Se escribe en los dos lugares donde vive la regla**: `DEC-CI-001` y el `CLAUDE.md` del repo.
