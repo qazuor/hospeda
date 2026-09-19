@@ -38,9 +38,10 @@ ${pc.bold('hops verify')} — todo lo que CI va a mirar, antes de subir
 
 ${pc.bold('Uso')}
 
-  hops verify [--full] [--only <job>] [--list]
+  hops verify [--changed] [--full] [--only <job>] [--list]
 
-  ${pc.bold('--tests')}       Suma los tests de los paquetes que tocaste. ${pc.dim('No van por default.')}
+  ${pc.bold('--changed')}     Corre tests de los paquetes afectados además de lint/guards/typecheck.
+  ${pc.bold('--tests')}       Alias explícito de --changed.
   ${pc.bold('--full')}        TODOS los tests, un paquete por vez. ${pc.dim('Son miles: dejalo')}
                 ${pc.dim('laburando y andá a hacer otra cosa.')}
   ${pc.bold('--only <job>')}  Sólo un job: ${JOBS.join(', ')}, tests.
@@ -168,7 +169,8 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
     const plan = planFromWorkflow({ yaml, jobs: [...jobs] });
 
     const full = rest.includes('--full');
-    const wantsTests = rest.includes('--tests') || full || only === 'tests';
+    const wantsTests =
+        rest.includes('--changed') || rest.includes('--tests') || full || only === 'tests';
     const changed = full || !wantsTests ? [] : await changedPackages({ cwd });
     const tests =
         only === undefined || only === 'tests'
@@ -231,7 +233,7 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
 
     if (tests === null && !wantsTests) {
         process.stderr.write(
-            `\n${pc.dim('Sin tests. Pedilos con --tests (sólo lo que tocaste) o --full (todo).')}\n`
+            `\n${pc.dim('Sin tests. Pedilos con --changed (sólo lo que tocaste) o --full (todo).')}\n`
         );
     } else if (tests === null) {
         process.stderr.write(

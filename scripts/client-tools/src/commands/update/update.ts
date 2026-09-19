@@ -65,6 +65,25 @@ async function toolChanges({
         .filter((line) => line.length > 0);
 }
 
+/** Reconciles ignored local env files after the code checkout moves. */
+async function reconcileLocalEnv({
+    stagingPath,
+    runner
+}: {
+    readonly stagingPath: string;
+    readonly runner: ReturnType<typeof runnerFor>;
+}): Promise<number> {
+    const script = join(stagingPath, 'scripts/reconcile-local-env.sh');
+    if (!existsSync(script)) {
+        process.stderr.write(
+            `${pc.yellow('Aviso:')} staging todavía no trae reconcile-local-env.sh; ` +
+                'se mantiene el entorno existente.\n'
+        );
+        return 0;
+    }
+    return await runner.exec({ command: 'bash', args: [script, stagingPath], cwd: stagingPath });
+}
+
 /** Hashes a lockfile so a dependency change can be detected. */
 function lockfileOf({ toolsPath }: { readonly toolsPath: string }): string | null {
     const path = join(toolsPath, 'bun.lock');
@@ -151,7 +170,8 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
 
     if (before !== null && wanted === before) {
         process.stderr.write(`${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`);
-        return 0;
+        if (dryRun) return 0;
+        return await reconcileLocalEnv({ stagingPath, runner });
     }
 
     if (before !== null && wanted !== null) {
@@ -180,6 +200,9 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
         cwd: stagingPath
     });
     if (reset !== 0) return reset;
+
+    const reconciled = await reconcileLocalEnv({ stagingPath, runner });
+    if (reconciled !== 0) return reconciled;
 
     if (lockfileOf({ toolsPath }) !== lockBefore) {
         process.stderr.write(`${pc.dim('Cambiaron las dependencias, reinstalando…')}\n`);
