@@ -2807,3 +2807,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   líneas ausentes del template y elimina claves obsoletas.
 - La salida sólo informa `values hidden`; ningún valor de la fixture apareció en
   stdout.
+
+## Gate 109 · Auditoría estática del flujo de envs
+
+- `shellcheck` pasó sobre `copy-env-to-worktree.sh`,
+  `reconcile-local-env.sh`, `wt-env-prepare.sh`, `wt-up.sh` y `wt-create.sh`.
+- El orden es seguro: primero se copian sólo claves ausentes desde la fuente
+  confiable, luego `wt-env-prepare` completa las claves activas del template y
+  finalmente la configuración del worktree escribe únicamente DB/puertos.
+- No se detectaron accesos que impriman valores ni sobrescrituras implícitas de
+  asignaciones existentes en el camino por defecto.
