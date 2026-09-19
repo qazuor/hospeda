@@ -2628,3 +2628,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `60a39dae2` y mostró el plan sin hacer fetch, reset, instalación ni cambios
   de archivos.
 - La salida confirmó explícitamente `(--dry-run) no se tocó nada`.
+
+## Gate 92 · Descubrimiento seguro de Engram
+
+- `hops engram --help` expone lecturas frecuentes (`tui`, `doctor`, projects,
+  stats, search, context y conflicts) y separa explícitamente operaciones con
+  escritura.
+- `save`, `delete`, `import`, `sync`, `setup`, `cloud` y `obsidian-export`
+  sólo se delegan con `--confirm`; el wrapper no agrega `--hard`, `--apply` ni
+  `--all` automáticamente.
+- La ayuda confirma que la DB local sigue fuera del repositorio.

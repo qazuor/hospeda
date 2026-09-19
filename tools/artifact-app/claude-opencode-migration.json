@@ -273,7 +273,7 @@
                             "title": "Crear wrapper Hops para Engram",
                             "category": "Hops y memoria",
                             "description": "Exponer bajo `hops engram` las operaciones frecuentes de Engram: TUI, doctor, projects, stats, search, context, review/conflicts, export/import y sync con dry-run/confirmación según corresponda.",
-                            "notes": "Implementado y versionado como hops engram + hops-engram. Delegación al binario oficial, ayuda con lecturas frecuentes y guard explícito para mutaciones (--confirm); no agrega --hard, --apply ni --all. Integrado en hospeda-staging y wrapper Fish global regenerado. La DB sigue fuera del repo.",
+                            "notes": "Gate92: `hops engram --help` expone lecturas frecuentes y separa mutaciones. `save/delete/import/sync/setup/cloud/obsidian-export` exigen --confirm; no agrega --hard/--apply/--all. Integrado en hospeda-staging; la DB sigue fuera del repo.",
                             "done": true
                         },
                         {
