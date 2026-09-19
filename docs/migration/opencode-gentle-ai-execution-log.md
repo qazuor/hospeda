@@ -2375,3 +2375,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   procesos. Los clones temporales fueron eliminados.
 - Se regeneraron nuevamente los wrappers desde `hospeda-staging`; vuelven a
   apuntar al checkout operativo permanente.
+
+## Gate 69 · Bootstrap read-only endurecido
+
+- `scripts/bootstrap/opencode-gentle-bootstrap.sh` quedó versionado y disponible
+  en `hospeda-staging` (`20c4c1034`).
+- La interfaz acepta `--plan`, `--dry-run`, `--verify` y `--backup-dir PATH`.
+  `--restore PATH` termina con error explícito porque la etapa de aplicación y
+  restauración todavía no está implementada.
+- El script mantiene la política segura: no instala, no elimina, no copia
+  secretos, no restaura Engram, no cambia Git/Linear y no imprime valores.
+- Se validaron `bash -n`, plan con backup-dir, rechazo de restore y verify de
+  herramientas/pines actuales.
+- El item de bootstrap sigue pendiente hasta implementar y probar la etapa de
+  aplicación idempotente en un entorno descartable.
