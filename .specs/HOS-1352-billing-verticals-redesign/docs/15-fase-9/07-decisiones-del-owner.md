@@ -579,3 +579,113 @@ hash construyeron para tapar**. Y no hace falta mala fe para encontrarla: se des
 > **Conviene preguntárselo en cada racimo que se aplique.**
 
 - **Costo**: una restricción de base. **Dónde se aplica**: `V/02`, junto con el cambio de `R3`.
+
+---
+
+## D-19 · El reloj es una segunda clase de actor, y lleva guard — `R3` #2
+
+**Ratificado**: cuando el actor es el reloj, los pasos 5 a 7 se evalúan **por analogía con las doce
+acciones administrativas** —la capacidad del actor, no la del sujeto—, la clase se **declara**
+transición por transición, y **lleva un guard que verifica su propiedad**.
+
+**El hueco**: `T3` —el vencimiento del trial— **la dispara el reloj**. `V/17` §3.3 declara al
+sistema como actor pero **nunca dice cómo se evalúan los pasos 5, 6 y 7 cuando el actor es uno**, y
+esos pasos preguntan por el título, las capacidades y el cupo **de alguien que no existe**. Es el
+segundo hallazgo nuevo del barrido de `R3`; no estaba en ningún informe de FASE 8.
+
+**Por qué pedía ratificación y no la tomó `R3` solo**: porque **declara una clase nueva** en `V/17`
+§3, y ese mismo capítulo dice textual *«a qué clase pertenece una operación se declara, nunca se
+infiere»*. Dejarla inferida sería incumplir la regla del capítulo con el que se la resuelve.
+
+**La propiedad que la hace segura, y es lo que el guard vigila**:
+
+> **Una transición de esta clase nunca otorga. `T3` quita.**
+
+**Por qué el guard no es opcional**: el riesgo de la clase es *«bajo mientras la propiedad se
+verifique; medio si nadie la verifica»*. Sin verificación es **una puerta abierta con un cartel que
+dice no pasar**. Y encaja con `DEC-METH-005`: es un guard que la unidad correspondiente **entrega
+desde el día 1**.
+
+**La alternativa descartada** —que cada transición del reloj resuelva por su cuenta— es cómo se
+generan las exenciones por ruta: cada job inventando su propia respuesta al paso 5.
+
+- **Costo**: un párrafo, la enumeración, y un guard. **Dónde se aplica**: `V/17` §3.
+
+---
+
+## D-20 · «Sin fecha» se desambigua en el contrato — `R3` #4
+
+**Decidido: se distinguen los dos casos**, como una fila más del campo `hasta`. Entra en el mismo
+cambio que `D-01`, `D-04`, `D-05` y `D-06`.
+
+**El caso**: el contrato §2.1 define `hasta` como *«la fecha hasta la que cubre, o **sin fecha**
+para un grant permanente»*. Con `R3`, la fuente de trial en `PRE_TRIAL` **también devuelve «sin
+fecha»** —todavía no arrancó ningún reloj—, así que el campo pasa a significar dos cosas: *«esto no
+vence nunca»* y *«esto todavía no arrancó»*. Un consumidor que asuma la primera **le da cobertura
+perpetua a alguien que ni empezó su prueba**, y ése es el error en la dirección cara: **no falla
+ruidosamente, regala**.
+
+**Por qué `R3` no lo resolvió solo, y estuvo bien**: el contrato es la frontera y `DEC-ARCH-006`
+dice que ninguna épica lo muta sola. `R3` **lo miró y no lo resolvió en el lugar**, que es
+literalmente la regla de vigilancia del §4 del contrato.
+
+> **Una buena noticia que `R3` dejó anotada para `R2`**: `PRE_TRIAL` **no es un `tipo` nuevo**. La
+> fuente sigue siendo `tipo: TRIAL` y lo único que cambia es a qué `versiónDePlan` apunta. De las
+> tres salidas que `F-8A1-002` enumeraba, la elegida es **la que no toca el enum**, así que el
+> contrato **no gana un valor más** por culpa de `R3`: sólo hay que desambiguar un campo.
+
+- **Costo**: una fila. **Dónde se aplica**: `12-contrato-de-cobertura.md` §2.1.
+
+---
+
+## D-21 · El evento de activación gana una columna en `vertical` — `R3` #5
+
+**Decidido: una columna en `vertical`**, y **atada a `R3` como condición de aplicación**, igual que
+`D-18`.
+
+**El caso**: la resolución de `R3` se apoya en que **cada vertical declara su evento de
+activación** —el momento en que el pre-trial pasa a trial corriendo— y **ese valor no tiene columna
+en ninguna entidad**. Está medido: `F-8A3-006` (`ALTA`). `vertical` es *«el espejo en base del
+enum»* y `plan_version` guarda seis columnas que no lo incluyen.
+
+**Por qué es peor que el agujero de `D-18`**: si se olvida, la regla del «si y sólo si» de `R3`
+**queda sin lado izquierdo** y el guard `G-R3` —el que impide sembrar una clave comercial en la
+versión de pre-trial— **no puede verificar nada**. O sea: **se aplica la defensa y no defiende, sin
+que nada lo avise**. El agujero de `D-18` al menos es visible cuando alguien lo usa.
+
+**Por qué columna y no tabla de configuración**: `vertical` es exactamente donde el diseño ya pone
+el espejo del enum, y hoy **hay una sola cosa que configurar**. Crear una tabla para una columna es
+adelantarse; si mañana aparece la segunda, pasar de columna a tabla es trivial.
+
+- **Costo**: una columna. **Dónde se aplica**: `V/02` §2.1, junto con el cambio de `R3`.
+
+> **`R3` tiene ahora DOS condiciones de aplicación**: `D-18` (la unicidad del hash del correo) y
+> `D-21` (esta columna). Ninguna es opcional y las dos entran en el mismo cambio.
+
+---
+
+## D-22 · El pre-trial GUARDA sus entitlements y el trial los DERIVA, a propósito — `R3` #7
+
+**Ratificado.** Dos planes no vendibles de la misma vertical se comportan al revés, y es
+deliberado.
+
+| plan | sus limits y entitlements |
+|---|---|
+| **de trial** | **no se guardan: se derivan** (`V/02` §2.1) |
+| **de pre-trial** | **se guardan** |
+
+**El motivo**: el de trial **tiene de dónde derivarse** —el vendible de `rank` más alto y el más
+bajo, dos extremos concretos—. El de pre-trial **no es ninguno de los dos**: es un conjunto mínimo
+propio, lo justo para que alguien exista y llegue a publicar, y **no hay fórmula que lo produzca**.
+
+**Por qué se ratifica en vez de aplicarse sin más**, y la razón no es técnica: **es el tipo de
+diferencia que alguien unifica después sin entender para qué estaba**. Dentro de seis meses alguien
+ve dos planes no vendibles de la misma vertical, uno que deriva y otro que no, **lo toma por una
+inconsistencia** y los unifica — y al hacerlo, o el pre-trial pasa a otorgar lo del premium, o el
+trial deja de derivarse.
+
+**Lo valioso de esta decisión no es la elección, que es obvia: es que quede el porqué.** Sin él la
+asimetría se lee como un descuido; con él, como lo que es — dos planes que resuelven problemas
+distintos.
+
+- **Costo**: una siembra por vertical. **Riesgo**: bajo, y acotado por `G-R3` (`D-19`).
