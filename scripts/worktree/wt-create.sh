@@ -20,7 +20,7 @@ RELPATH="${PATHPAT//\{slug\}/$SLUG}"
 WTPATH="$(realpath -m "$ROOT/$RELPATH" 2>/dev/null || echo "$ROOT/$RELPATH")"
 
 # Already exists? reuse it.
-if git -C "$ROOT" worktree list --porcelain | grep -q "branch refs/heads/$BRANCH"; then
+if grep -Fq "branch refs/heads/$BRANCH" < <(git -C "$ROOT" worktree list --porcelain); then
   echo "EXISTS: worktree for branch '$BRANCH' already present — use it:"
   git -C "$ROOT" worktree list | grep "$BRANCH" || true
   exit 0
