@@ -119,3 +119,110 @@ verdad de nada»*. Y no serviría igual: un guard tiene que poder correr sin red
 - **Costo**: bajo — una columna, en un modelo que todavía no existe.
 - **Dónde se aplica**: `B/02-modelo-de-datos.md` §2.2 (la tabla `subscription`) y `NUCLEO/04` §3
   (subir `D8` de nivel).
+
+---
+
+## D-04 · Quien gastó su trial vuelve por un QUINTO TIPO DE TÍTULO — `R3` #1
+
+**Decidido: la salida (a).** El contrato gana un quinto `tipo` para los que no tienen ninguno —
+`Turista Free`, `Guest` y `TRIAL_EXPIRED`.
+
+**El círculo que rompe**: a un `TRIAL_EXPIRED` no le queda ninguna fuente viva, así que el paso 5
+le niega **la operación de suscribirse**, que es la única forma de volver a tener una. **Queda
+afuera para siempre**, contra la *«recuperación posible»* que el §21 promete y que `NUCLEO/01`
+§2.1 cita para los dos `SUSPENDED`. Son **8 de los 45 casos de `R3`** y es **un hallazgo del
+barrido**: ningún informe de FASE 8 lo tenía. **No es «no anda hasta que exista billing»** — el día
+que billing exista va a seguir sin andar.
+
+**Por qué la (a) y no las otras dos**:
+
+- **Cierra dos cosas a la vez.** Es la única salida que además cierra `F-8A1-005`.
+- **«No tener título» no es un accidente: es el estado base de la plataforma.** Todo usuario
+  autenticado es `Turista Free` sin suscripción real (§14) y todo visitante es `Guest`. Que el paso
+  5 no tenga respuesta para el caso más común del sistema es **el mismo defecto que `R3` acaba de
+  arreglar para `PRE_TRIAL`**, del otro lado del ciclo.
+- La **(b)** —una clase de «operaciones que abren título»— tiene riesgo medio porque **la clase
+  puede crecer y cada miembro es una operación menos verificada**: es el mecanismo que, mal usado,
+  se vuelve la exención por ruta que `R3` se cuidó de no abrir.
+- La **(c)** la desaconseja el propio `R3`: `cubierto` sería verdadero **para siempre** y el
+  contrato §5.1 pide que *«un trial vence de verdad»*.
+
+> ⚠️ **El costo de la (a) no es técnico, es de proceso.** El contrato es la frontera, y
+> `DEC-ARCH-006` dice que **ninguna épica lo muta sola**. Esta decisión **forma paquete** con las de
+> `R2` sobre el contrato (`D-01` y las que sigan): se aplican juntas o no se aplican.
+
+- **Dónde se aplica**: `12-contrato-de-cobertura.md` §2.1, y `V/17` §1.2 (el paso 5).
+
+---
+
+## D-05 · Qué otorga un grant: el PLAN, su versión vigente, y con trinquete — `R2` #1
+
+**Decidido**: el grant **se ancla al plan**, no a una versión, y resuelve **la versión vigente —
+sea vendible o no—**, con un **trinquete**: *un grant nunca otorga menos de lo que otorgaba el día
+que se concedió.*
+
+**El problema que cierra** es la causa del racimo `R2`, el defecto que encontraron **tres agentes de
+las dos épicas por separado**: un grant permanente cruza la frontera, la persona queda «cubierta»,
+y cuando el paso 6 pregunta **qué capacidades le da, no hay respuesta**. *Free Forever* no otorgaba
+nada, porque el contrato transporta un solo campo de contenido (`versiónDePlan`) y un grant no
+apunta a ningún plan.
+
+**La recomendación original era anclar a una VERSIÓN fija. El owner la mejoró**, y el diseño le da
+la razón: `V/02` §2.1 ya tiene **los dos modos escritos** —*«la pricing lee la versión **vigente** y
+sólo si es vendible; una suscripción lee su versión **anclada**, vigente o no, vendible o no»*— así
+que seguir la vigente no inventa un modo nuevo. Y **`UNIQUE(plan_id) WHERE vigente`** garantiza que
+«la última» es unívoca y siempre existe.
+
+**Por qué «vendible o no» y no como la pricing**: porque **retirar un plan se hace publicando una
+versión no vendible** (`D13`, cap. 10 §3.2). Leyendo como la pricing —*sólo si es vendible*— el día
+que se retira el plan Premium **todos los `Free Forever` anclados a él se quedan sin nada**. El
+híbrido toma «la vigente» de la pricing y el «vendible o no» de la suscripción.
+
+**Por qué el trinquete**: seguir la versión vigente expone al beneficiario a que **el plan
+empeore** —una versión que reparte distinto le saca algo a quien tiene un «para siempre», sin que
+nadie lo haya decidido para esa persona—. El trinquete es un instrumento **que el diseño ya tiene**
+(el piso de `V/15` §2.5), aplicado acá: sigue las mejoras y no sufre los recortes.
+
+**Por qué no dejar que el grant declare su propio juego de claves**: sería **una segunda forma de
+declarar entitlements**, que `V/02` §1.2 prohíbe — y obligaría a mantener dos catálogos en
+sincronía para siempre. Es el defecto que este programa entero viene a corregir.
+
+- **Beneficio operativo**: regalar algo pasa a ser **elegir un plan concreto**, y queda auditado.
+  Hoy *Free Forever* es un nombre comercial sin contenido definido.
+- **Riesgo declarado**: que alguien lea el anclaje como *«el grant es un plan»*. Lo contesta el
+  §2.2.
+- **Dónde se aplica**: `permanent_grant` en `B/02`, el §1.3 de
+  [`02-R2-resuelto.md`](./02-R2-resuelto.md), y el trinquete en `V/15` §2.5.
+- ⚠️ **Candidata a `DEC-` propia** en el decision log: cambia el modelo de un instrumento comercial.
+
+---
+
+## D-06 · La dirección inversa se declara DENTRO del contrato — `R2` #5
+
+**Decidido: se escribe**, con sus **seis** campos, y dos columnas nuevas en `vertical`.
+
+**El problema**: el contrato enumera con cuidado **lo que billing empuja a verticales** y **nunca
+declara lo que billing LEE** (`plan_version`, `vertical`). Eso resultó ser **el acoplamiento real**
+entre las dos épicas (`F-8B3-009`), con un agravante medido: **dos de las columnas que billing lee
+no existen**. Hoy billing lee tablas de verticales **sin contrato que lo regule**, que es
+exactamente el acoplamiento que el corte en dos épicas venía a impedir.
+
+**La objeción que el propio hallazgo anticipa, y por qué no aplica**: *«salvo que ampliar el
+contrato en la otra dirección se considere una mutación de `DEC-ARCH-006`»*. **No lo es.**
+`DEC-ARCH-006` decidió que la frontera es **un contrato con dos implementaciones**; nunca dijo que
+fuera de una sola vía. Esto **no muta la decisión: escribe la mitad que faltaba.**
+
+**El costo de no hacerlo**: el acoplamiento existe igual, sólo que **sin declarar**. El día que
+billing lea una columna que verticales cambió, nadie se entera hasta que rompe.
+
+**Un detalle que lo refuerza**: `R2` descubrió que la dirección inversa tiene **seis** campos, no
+cinco. El sexto —`vigente`/`vendible`— salió de recorrer el dominio, y **era la diferencia entre
+que `F-8B3-009` se cortara o siguiera llegando**. Sin declararla, ese campo se pierde de vista y el
+hallazgo vuelve.
+
+- **Costo**: una sección del contrato, más dos columnas en `vertical` (`E-5`, `E-6`).
+- **Dónde se aplica**: `12-contrato-de-cobertura.md` (sección nueva) y el §1.7 de
+  [`02-R2-resuelto.md`](./02-R2-resuelto.md).
+
+> **`D-01`, `D-04`, `D-05` y `D-06` tocan todas el contrato**, que es la frontera. Por
+> `DEC-ARCH-006` **ninguna épica lo muta sola**: se aplican como un solo cambio, no de a una.
