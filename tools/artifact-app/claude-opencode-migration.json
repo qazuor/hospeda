@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_33",
-        "number": 33,
+        "id": "ver_claude_opencode_migration_34",
+        "number": 34,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "cerrar inventario read-only de secretos",
+        "reason": "cerrar gate de routing de modelos alternativos",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_32"
+        "basedOnVersion": "ver_claude_opencode_migration_33"
     },
     "data": {
         "sections": [
@@ -152,7 +152,7 @@
                             "title": "Evaluar GLM/DeepSeek/Ollama",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Medir costo, latencia, contexto y calidad para tareas simples.",
-                            "notes": "Elegir por evidencia, no por disponibilidad.",
+                            "notes": "Gate documentado en model-routing-gate.md. OpenAI sigue exclusivo para tareas críticas; GLM/DeepSeek/OpenKilo no se activan hasta resolver filesystem, medir calidad/costo y definir perfiles sin fallback silencioso.",
                             "done": false
                         },
                         {
