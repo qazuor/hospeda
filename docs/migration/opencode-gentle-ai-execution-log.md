@@ -2741,3 +2741,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   cross-check ausente. No se leyeron ni imprimieron valores.
 - Pruebas: `env-drift.test.ts` 3/3 y suite completa de client-tools 294/294,
   724 assertions.
+
+## Gate 102 · `hops update --dry-run` después del guard de envs
+
+- Ejecutado desde el worktree de migración con `--dry-run`; informó la
+  comparación `cf08bb7e3 → 60a39dae2` de `hospeda-staging` y confirmó que no se
+  tocó código, Git ni archivos de entorno.
+- La variante actual imprime su resultado en formato humano aunque se agregue
+  `--json`; queda registrado como una mejora de contrato pendiente si se quiere
+  automatizar este dry-run desde otro proceso.
