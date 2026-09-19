@@ -2750,3 +2750,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La variante actual imprime su resultado en formato humano aunque se agregue
   `--json`; queda registrado como una mejora de contrato pendiente si se quiere
   automatizar este dry-run desde otro proceso.
+
+## Gate 103 · Salida JSON de `hops update --dry-run`
+
+- `hops update --dry-run --json` ahora devuelve por stdout un objeto seguro con
+  `status`, checkout, SHA anterior, SHA remoto, `remoteOk` y `touched: false`.
+- La ejecución real devolvió `would-update` para `hospeda-staging`, sin tocar el
+  checkout ni sus archivos; los mensajes de contexto permanecen en stderr para
+  el uso humano.
+- `tsc --noEmit` y la suite completa pasaron: **295 tests, 0 fallos y 728
+  assertions**.

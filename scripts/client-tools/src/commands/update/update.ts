@@ -33,8 +33,13 @@ ${pc.bold('Uso')}
   hops update [--dry-run]
 
   ${pc.bold('--dry-run')}  Te dice qué traería y no toca nada.
+  ${pc.bold('--json')}     Con --dry-run devuelve un resultado estructurado por stdout.
   ${pc.bold('--help')}     Esta página.
 `;
+}
+
+function printDryRunJson(value: Record<string, unknown>): void {
+    process.stdout.write(`${JSON.stringify(value)}\n`);
 }
 
 /** Reads the SHA the staging checkout currently sits on. */
@@ -108,6 +113,7 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
     }
     const { target, rest } = extractTarget({ argv });
     const dryRun = rest.includes('--dry-run');
+    const json = rest.includes('--json');
     const runner = runnerFor({ target });
 
     const repoRoot = await resolveRepoRoot({ cwd: process.cwd() });
@@ -126,9 +132,26 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
                     `${pc.dim(candidate)}\n` +
                     'Hasta que se mergee a staging, hops corre desde el checkout donde lo instalaste.\n'
             );
+            if (dryRun && json) {
+                printDryRunJson({
+                    dryRun: true,
+                    status: 'unusable-staging-checkout',
+                    checkout: candidate,
+                    touched: false
+                });
+            }
             return dryRun ? 0 : 1;
         }
         if (dryRun) {
+            if (json) {
+                printDryRunJson({
+                    dryRun: true,
+                    status: 'would-create-staging-checkout',
+                    checkout: candidate,
+                    touched: false
+                });
+                return 0;
+            }
             process.stderr.write(
                 `${pc.dim('(--dry-run)')} crearía el checkout de staging en ${candidate}\n`
             );
@@ -164,6 +187,18 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
             cwd: stagingPath
         });
         const wanted = remote.ok ? (remote.stdout.trim().split(/\s+/)[0] ?? null) : null;
+        if (json) {
+            printDryRunJson({
+                dryRun: true,
+                status: before !== null && wanted === before ? 'up-to-date' : 'would-update',
+                checkout: stagingPath,
+                before,
+                wanted,
+                touched: false,
+                remoteOk: remote.ok
+            });
+            return remote.ok ? 0 : 1;
+        }
         if (before !== null && wanted === before) {
             process.stderr.write(
                 `${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`
