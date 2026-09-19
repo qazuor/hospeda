@@ -2579,3 +2579,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   branch, PR ni worktree.
 - Esto confirma que el agente puede consumir un contexto estructurado antes de
   decidir si inicia o cierra un issue.
+
+## Gate 87 · Drift de envs en checkout operativo
+
+- En el worktree de migración, `env --drift --json` reportó archivos ausentes;
+  es esperable porque ese checkout no contiene secretos ni `.env.local`.
+- En `/home/qazuor/projects/WEBS/hospeda-staging`, el mismo comando devolvió
+  `clean: true`: API, Web, Admin y Docker no tienen variables faltantes,
+  obsoletas ni valores requeridos pendientes.
+- Sólo permanece el cross-check opcional de
+  `HOSPEDA_INTERNAL_REQUEST_SECRET` ausente en ambos lados; no se imprimió su
+  valor ni se modificó ningún archivo.

@@ -410,7 +410,7 @@
                             "title": "Probar aislamiento de DBs",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Verificar nombre, conexión, migraciones y protección entre worktrees.",
-                            "notes": "Validado junto con Gate 64: DB descartable creada/reutilizada desde hospeda_template, schema fingerprint vigente, migraciones y usuarios verificados, servidores aislados y cleanup completo desde hospeda-staging. La reconciliación específica de hops update queda pendiente.",
+                            "notes": "Gate87: desde hospeda-staging, `env --drift --json` devolvió clean=true para API/Web/Admin/Docker, sin variables faltantes u obsoletas. El checkout de migración sin secretos reporta ausencias esperables. Cross-check opcional HOSPEDA_INTERNAL_REQUEST_SECRET sigue ausente en ambos lados.",
                             "done": true
                         },
                         {
