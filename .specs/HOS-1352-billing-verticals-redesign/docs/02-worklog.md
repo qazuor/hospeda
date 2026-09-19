@@ -824,3 +824,113 @@ tercera implementación**, y **la spec autónoma de `HOS-1354`**, que faltaba.
 El owner pidió actualizar *«todas las specs, pdr, o cualquier md»*. **El PDR no se tocó**: su
 propia regla dice que no se edita nunca y que toda desviación se registra como decisión en el log
 — que es exactamente lo que se hizo.
+
+---
+
+## 2026-09-19 — FASE 8 completa, y la FASE 9 arranca por su requisito de entrada
+
+### Ocho agentes adversariales, en tres pasadas
+
+`DEC-ARCH-007` implicación 2 pedía que cada épica hiciera su FASE 8 **más una final sobre el
+conjunto**. Se ejecutó así, y cada pasada se partió **por vector de ataque, no por capítulos**,
+con el material completo para todos: A1 acceso cruzado · A2 máquinas y carreras · A3 datos y
+acoplamiento · B1 doble cobro y pérdida de pago · B2 idempotencia y carreras · B3 conciliación y
+migración · C1 la costura · C2 liberación y coexistencia.
+
+La razón de partir por vector y no por racimo de capítulos es medible después: a un agente que
+busca *«el doble cobro»* le sale un doble cobro con su camino o una ausencia argumentada; a uno
+que busca *«romper»* le sale una lista de generalidades, y sólo lo primero lo puede resolver o
+descartar la FASE 9. Partir por capítulos se descartó por la razón opuesta: un agente que ve
+cuatro capítulos no puede ver el acoplamiento entre los otros, que es una de las diez categorías
+del §65.
+
+### 141 hallazgos, 48 críticos, y cuatro convergencias
+
+Recontados con script sobre los ocho informes, que viven en
+[`14-fase-8-adversarial/`](./14-fase-8-adversarial/). **Cuatro defectos los encontraron tres
+agentes ciegos entre sí cada uno** — la señal de severidad más fuerte que produce el método, y
+que una sola pasada por épica no habría dado:
+
+1. **el contrato no transporta `grant` ni `addon`** — tres agentes, **las dos épicas**;
+2. **el `UNIQUE` de suscripción viva hace inejecutable todo upgrade** — tres de billing;
+3. **el trial no puede nacer** — tres de verticales;
+4. **el preapproval huérfano / los terminales sin barrer** — tres de billing.
+
+### La causa raíz, que ningún agente individual podía ver
+
+Las cuatro tienen **la misma forma**: una regla validada contra el caso que la motivó y después
+escrita como **cuantificador universal** sobre un dominio que incluye el caso donde es falsa. Y
+las cuatro son una contradicción **entre dos capítulos, nunca dentro de uno**.
+
+De ahí el quinto defecto, que no está en ningún informe individual: el método cierra huecos **por
+capítulo**, lo que comprueba que un capítulo cubre sus casos y **nunca que una regla cubra los
+suyos**, porque los suyos viven en otros capítulos. **No existe ningún lugar donde una regla se
+verifique contra el dominio completo que cuantifica** — y el único artefacto que podía hacerlo era
+el documento único que el desarme del 18/09 retiró.
+
+### Tres cosas que se verificaron aparte, y una me corrigió a mí
+
+- **`DEC-ARCH-007` tiene un mecanismo que no existe en el repo.** Medido: los 15 workflows
+  declaran `main`, `staging` y `develop`, y **ninguno nombra `epic` ni un patrón `**`**. Un PR de
+  sub-épica al paraguas entra **sin lint, sin typecheck, sin tests y sin los guards**. La regla
+  está escrita cuatro veces en las specs y **cero veces en el repo**, y el único camino con CI
+  completa es el que la decisión prohíbe.
+- **La fila sin id de la matriz no era una novena `UNKNOWN`**: es un duplicado desactualizado de
+  `EX-33`, `VERIFIED` en producción con tarjeta real desde el 16/09. El conteo del script —89
+  filas, 49 `VERIFIED`, **8** `UNKNOWN`— **nunca estuvo mal**.
+- **Los invariantes son 51, no 49**, y acá me equivoqué primero en la dirección contraria: informé
+  49 apoyándome en dos frases del capítulo 04 que resultaron **anteriores a `D13` y `D14`**. Lo
+  corrigió la pasada C. **Cuando varios agentes discrepan sobre un número, dirime la aritmética
+  del documento, no la mayoría**: cuatro informes dijeron 49 y la suma dice 51.
+
+### `DEC-METH-004` — la FASE 9 tiene cuatro salidas
+
+Decisión del owner. El §65 manda actualizar cuatro documentos y el programa ya no vive sólo ahí:
+el 18/09 se publicaron **25 issues de Linear** y unos **27 artifacts** contra un modelo que estos
+hallazgos movieron. La fase cierra **el diseño, el registro, las sub-specs y lo publicado**, en
+ese orden y con la propagación **al final**.
+
+Y define **«resuelto»**: el camino del hallazgo, reejecutado sobre el texto corregido, ya no
+llega — y para un **racimo**, además, la regla corregida se verifica contra **todo el dominio que
+cuantifica**. Se descartó el criterio más barato —*«el capítulo dice qué pasa»*— porque **es el
+que produjo la causa raíz**.
+
+### El requisito de entrada de la FASE 9, ya escrito
+
+[`15-fase-9/00-dominios-de-los-racimos.md`](./15-fase-9/00-dominios-de-los-racimos.md): cada
+racimo con su dominio como **lista finita con fuente por elemento**, no como descripción. El
+número que ordena la fase:
+
+> **327 casos. La FASE 8 miró 63. Quedan 264 sin mirar.**
+
+Y **siete dimensiones no se pueden enumerar desde los documentos**, que es el resultado más
+valioso: son dominios que hoy **no se pueden cerrar**. Dos consecuencias duras: **R4 no tiene
+dominio cerrable** —su eje son los estados del vínculo con el proveedor, y `provider_link` no
+tiene columna de estado ni máquina, así que los valores se derivaron en vez de leerse, que *es* el
+racimo— y **parte de R1 depende del capítulo 13, que no existe**.
+
+### Las seis correcciones de registro, aplicadas
+
+Con autorización del owner. **Tres resultaron ser otra cosa al medirlas**: los guards no son tres
+cuentas en conflicto sino **un catálogo de 11 (`G1`…`G11`, sin huecos) más `G12` y `G13`
+huérfanos**, nacidos en las descomposiciones y ausentes de todo capítulo `20`; y las máquinas no
+son cuatro respuestas sino **ocho que pide el §63 contra nueve que define el capítulo 03**, con la
+§10 que no es una máquina sino la regla de no-retroceso.
+
+Y un criterio que quedó fijado al aplicarlas: **un registro fechado no se reescribe.** El §676 de
+este mismo worklog dice «45 decisiones» y es correcto **en su fecha**; el barrido de
+`04-open-decisions.md` verificó «50» y eso es lo que verificó, así que lleva nota al pie en vez de
+un número nuevo. Sólo se corrigió el `03-handoff.md`, que **declara una regla vigente** y no narra
+un momento.
+
+### Qué se produjo
+
+Nueve documentos nuevos en dos carpetas, el log en **51 decisiones**, la matriz intacta en
+**89/49/8**, y el PDR sin tocar.
+
+### Lo que no se hizo
+
+**Ningún racimo se resolvió.** Está el andamiaje que permite resolverlos y no el trabajo. Y de la
+FASE 8 sobreviven **dos falsos positivos declarados como tales** para que nadie los reabra: la
+lista del cap. 19 §4 no perdió ítems —la unión de las dos mitades es 1–14— y `G7` no falta, está
+en billing por reparto.

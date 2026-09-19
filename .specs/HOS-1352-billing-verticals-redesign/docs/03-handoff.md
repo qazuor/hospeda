@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 ---
 
@@ -36,10 +36,97 @@ status: CURRENT
 11. [`12-contrato-de-cobertura.md`](./12-contrato-de-cobertura.md) — **la frontera entre las dos**
 12. [`nucleo/00-indice.md`](./nucleo/00-indice.md) — el mapa de las tres partes y las reglas de
     escritura.
+13. [`14-fase-8-adversarial/00-hallazgos.md`](./14-fase-8-adversarial/00-hallazgos.md) — **los 141
+    hallazgos de la FASE 8 agrupados en seis racimos**, y la causa raíz. Los ocho informes por
+    vector están en la misma carpeta.
+14. [`15-fase-9/00-dominios-de-los-racimos.md`](./15-fase-9/00-dominios-de-los-racimos.md) — **el
+    dominio de cada racimo**: 327 casos, 63 mirados, **264 sin mirar**. Es el requisito de entrada
+    de la FASE 9 y sin él su criterio de «resuelto» no es ejecutable.
 
 ---
 
-## Última actualización: 2026-09-18, tarde — el programa se partió en dos épicas
+## Última actualización: 2026-09-19 — FASE 8 cerrada, FASE 9 abierta por su requisito de entrada
+
+### Dónde estamos, en una línea
+
+**La FASE 8 encontró 141 hallazgos y 48 críticos, y la FASE 9 tiene escrito su andamiaje y
+ningún racimo resuelto.** El diseño de las dos épicas **se movió**, así que todo lo publicado el
+18/09 —25 issues de Linear y unos 27 artifacts— describe un modelo anterior a estos hallazgos.
+
+### Las fases
+
+`0` ✅ · `1A` ✅ 106 hallazgos · `1B` ✅ 132 · `1C` 🟡 89 filas / 8 `UNKNOWN` ·
+`1C-bis` 🟡 PRUEBA 0 comercial enviada, canal técnico cerrado · `2` 🟡 21 de 22 capítulos, **falta
+el 13 (Pagos)** · `3` y `4` ✅ · `5`, `6`, `7` ⬜ · **`8` ✅** · **`9` 🟡 ← ACÁ** · `10` ⬜
+
+### Qué hay que leer de la FASE 8, y qué dice
+
+[`14-fase-8-adversarial/00-hallazgos.md`](./14-fase-8-adversarial/00-hallazgos.md) — el
+consolidado. Agrupa los 141 en **seis racimos** (una causa cada uno; arreglar la causa los cierra
+todos) y nombra la **causa raíz**, que ningún informe individual podía ver:
+
+> Las cuatro convergencias son **una regla validada contra el caso que la motivó y después
+> escrita como cuantificador universal sobre un dominio que incluye el caso donde es falsa**, y
+> las cuatro son una contradicción **entre dos capítulos, nunca dentro de uno**. El método cierra
+> huecos *por capítulo*, lo que comprueba que un capítulo cubre sus casos y nunca que una regla
+> cubra los suyos. **No existe ningún lugar donde una regla se verifique contra el dominio
+> completo que cuantifica.**
+
+Los ocho informes por vector están en la misma carpeta y **cada hallazgo trae su camino y su cita
+textual**: eso es lo que los vuelve refutables, y lo que permite reejecutarlos sobre el texto
+corregido.
+
+### La FASE 9 tiene CUATRO salidas, no una — `DEC-METH-004`
+
+| # | salida | estado |
+|---|---|---|
+| 1 | **el diseño** — resolver los seis racimos | ⬜ **nada hecho. Es el grueso** |
+| 2 | **el registro** — log, handoff, worklog, correcciones | ✅ |
+| 3 | **las sub-specs** de `HOS-1353` y `HOS-1354` | ⬜ va **al final** |
+| 4 | **lo publicado** — 25 issues de Linear y los artifacts | ⬜ va **al final** |
+
+**3 y 4 van al final a propósito**: propagar mientras se resuelven racimos es propagar dos veces
+sobre 52 objetos, y varios racimos cruzan las dos épicas.
+
+**Y «resuelto» está definido**: el camino del hallazgo, reejecutado sobre el texto corregido, ya
+no llega — y para un **racimo**, además, la regla corregida se verifica contra **todo el dominio
+que cuantifica**. El criterio más barato —*«el capítulo dice qué pasa»*— se descartó porque **es
+el que produjo la causa raíz**.
+
+### El requisito de entrada, ya escrito — y el número que ordena la fase
+
+[`15-fase-9/00-dominios-de-los-racimos.md`](./15-fase-9/00-dominios-de-los-racimos.md): cada
+racimo con su dominio como **lista finita con fuente por elemento**.
+
+> **327 casos. La FASE 8 miró 63. Quedan 264 sin mirar.**
+
+**Dos racimos NO se pueden cerrar hoy, y hay que saberlo antes de intentarlo**: **R4 no tiene
+dominio cerrable** —su eje son los estados del vínculo con el proveedor, y `provider_link` no
+tiene columna de estado ni máquina, así que los valores hubo que derivarlos en vez de leerlos, que
+*es* el racimo— y **parte de R1 depende del capítulo 13, que no existe** (el segundo candado
+cuantifica sobre una columna que nadie definió). Son dos de las **siete dimensiones no
+enumerables** que el documento declara.
+
+### El próximo paso exacto (§66.6)
+
+Resolver los racimos en este orden, y la razón de cada lugar:
+
+1. **R6 primero**, aunque sea el menos grave: es el único cuyos arreglos son **baratos hoy y caros
+   después** —los workflows que no conocen `epic/**`— y **no toca diseño**.
+2. **R2 y R3**: son los que desbloquean la épica de verticales, que es la que puede empezar.
+3. **R1, R4 y R5 al final**, declarando explícitamente hasta dónde se pueden cerrar.
+
+### Dos cosas que NO hay que rehacer
+
+- **`DEC-ARCH-007` tiene un mecanismo que no existe en el repo**, verificado: los 15 workflows
+  declaran `main`, `staging` y `develop` y **ninguno nombra `epic` ni `**`**. Un PR de sub-épica al
+  paraguas entra sin lint, sin typecheck, sin tests y sin guards. Es `F-8C2-003` y es parte de R6.
+- **Dos falsos positivos ya descartados**: la lista del cap. 19 §4 **no** perdió ítems (la unión de
+  las dos mitades es 1–14) y **`G7` no falta** (está en billing por reparto).
+
+---
+
+## Histórico: 2026-09-18, tarde — el programa se partió en dos épicas
 
 ### Lo que cambió
 
