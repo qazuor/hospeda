@@ -68,6 +68,31 @@ Observaciones **fácticas**, sin interpretar:
 - Las dos `comp` tienen fin de período en el **año 2126** y ningún vínculo con el proveedor.
 - **El primer trial vence el 2026-09-26**, once días después de esta medición.
 
+### La cuarta consulta — 2026-09-19, producción, sólo lectura
+
+Autorizada por el owner para cerrar los tres datos que `06-R5-resuelto.md` §1.6 declaró faltantes.
+**No cambió ningún conteo**: 8 filas, 3 `trialing`, 3 `abandoned`, 2 `comp`.
+
+| dato que faltaba | qué dio |
+|---|---|
+| `trial_end` de las tres `abandoned` | **las tres lo tienen**: `2026-09-26`, `2026-09-27` y `2026-09-27` |
+| el plan de las ocho | `owner-premium` ×3 (las 2 `comp` + 1 `trialing`) · `owner-pro` ×2 · `owner-basico` ×2 · `tourist-vip` ×1 |
+| el id de preapproval de las tres vivas | **las tres lo tienen**, y son las únicas de las ocho |
+
+Observaciones **fácticas**, sin interpretar:
+
+- **El vínculo con el proveedor se corresponde exactamente con `trialing`**: 3 de 3 lo tienen, y
+  ninguna de las otras cinco. Confirma medido lo que la tabla de arriba ya decía.
+- **Las tres `abandoned` tienen trial con fecha**, así que el dato para escribir su fila de `trial`
+  existía desde siempre: lo que faltaba era leerlo. La consulta 2 filtraba
+  `status IN ('trialing','comp')`, que es por qué nunca apareció.
+- **Los cuatro planes vivos en la cartera son `owner-basico`, `owner-pro`, `owner-premium` y
+  `tourist-vip`.** Ninguna fila apunta a un plan de gastronomía, experiencia ni partner.
+- **La fila de `tourist` no es una anomalía**: el glosario §2 declara Turista como una de las cinco
+  verticales comerciales, y `tourist` es miembro de `ProductDomainEnum` en el código
+  (`packages/schemas/src/enums/product-domain.enum.ts`). Se registra porque a primera vista parece
+  un valor fuera del enum, y no lo es.
+
 ## Movimiento
 
 | | Filas |
