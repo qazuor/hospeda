@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_37",
-        "number": 37,
+        "id": "ver_claude_opencode_migration_38",
+        "number": 38,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "cerrar suite local de client-tools",
+        "reason": "definir trazabilidad Linear specs y Gentle SDD",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_36"
+        "basedOnVersion": "ver_claude_opencode_migration_37"
     },
     "data": {
         "sections": [
@@ -539,7 +539,7 @@
                             "title": "Definir relación issue ↔ spec",
                             "category": "Decisión de arquitectura",
                             "description": "Conservar HOS-NNN como identificador y mantener trazabilidad en `.specs` o SDD.",
-                            "notes": "Pendiente de decisión humana.",
+                            "notes": "Contrato documentado en spec-linear-traceability.md: Linear/HOS, .specs, SDD, Git y worktree tienen autoridades separadas y validación de divergencias.",
                             "done": false
                         },
                         {
@@ -547,7 +547,7 @@
                             "title": "Diseñar lifecycle híbrido",
                             "category": "Decisión de arquitectura",
                             "description": "Usar Gentle SDD sólo donde aporte exploración/diseño/verificación sin duplicar `.specs`.",
-                            "notes": "Candidato recomendado.",
+                            "notes": "Lifecycle híbrido concretado en spec-linear-traceability.md; implementación pendiente de aprobación.",
                             "done": false
                         },
                         {
@@ -555,7 +555,7 @@
                             "title": "Definir archive/closeout",
                             "category": "Decisión de arquitectura",
                             "description": "Decidir qué queda en Git, qué se archiva y qué alimenta Linear/Engram.",
-                            "notes": "Pendiente de validación integral; Gate 38 corrigió plugins V1 incompatibles y dejó Engram/Context7 MCP conectados.",
+                            "notes": "Archive sólo cierra el change SDD y enlaza closeout; nunca borra .specs. Reglas de divergencia y verify obligatorio documentadas.",
                             "done": false
                         }
                     ]
