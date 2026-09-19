@@ -226,3 +226,82 @@ hallazgo vuelve.
 
 > **`D-01`, `D-04`, `D-05` y `D-06` tocan todas el contrato**, que es la frontera. Por
 > `DEC-ARCH-006` **ninguna épica lo muta sola**: se aplican como un solo cambio, no de a una.
+
+---
+
+## D-07 · El guard de la §6.3 nace en `V4`, no en `B4` — `R2` #4
+
+**Decidido: va a `V4`**, como guard de **destino de producción**. El owner delegó la elección
+—*«lo que te parezca mejor, no es un guard que me importe mucho»*— con el razonamiento de que
+*«vamos a trabajar en un branch especial; mientras no mergeemos nunca va a llegar a prod»*.
+
+**Ese razonamiento es correcto y no cubre el caso que el guard protege.** Mientras el branch no se
+mergee, nada llega a producción — de acuerdo. **El guard es para el momento del merge**, y ese
+momento tiene una propiedad que `DEC-ARCH-007` ya dejó escrita: *«el PR final a `staging` va a ser
+enorme y nadie lo puede revisar de verdad»*.
+
+El escenario: la épica de verticales **se construye con la implementación de arranque adentro**,
+porque es la que le permite avanzar sin billing (`DEC-ARCH-006`). Si el día del merge quedó algo
+enganchado a ella, **ése es el día en que entra sin que nadie lo vea**. El guard convierte eso en un
+build que falla, en vez de un descubrimiento en producción.
+
+**Por qué `V4` y no `B4`**: en `B4` la defensa **no existe durante toda la épica de verticales**,
+que es justo cuando la implementación de arranque está viva y es la única que hay. Y el contrato
+§6 dice que las tres defensas *«ninguna es opcional, y las tres son parte de la decisión»*:
+dejarla sin dueño sería desarmar `DEC-ARCH-006` sin registrarlo.
+
+**Lo que lo hace posible sin molestar**: si falla sobre un **build destinado a producción** y no
+sobre la rama, **no se dispara mientras nada apunte a producción**. Se puede escribir el día uno y
+quedarse callado meses.
+
+**Y ya estaba implícito en `DEC-METH-005`**: los guards necesarios corren desde el día 1 de
+implementación. Ésta es necesaria desde el día 1 de verticales.
+
+- **Costo**: bajo. **Dónde se aplica**: `HOS-1353/descomposicion.md` (`V4`) y el §3.1 de
+  [`02-R2-resuelto.md`](./02-R2-resuelto.md).
+
+---
+
+## D-08 · La herencia de Turista VIP en el trial se DECLARA, no se deriva — `R2` #3
+
+**Decidido: se declara explícitamente** en el plan de trial, igual que ya se declara `vendible`.
+**No se deriva** del plan vendible de `rank` más alto.
+
+**La diferencia, y por qué importa la dirección en la que falla**: los limits y entitlements del
+plan de trial **se derivan** (`DEC-TRIAL-001`). Si `hereda Turista VIP` se derivara igual, y el plan
+premium hereda, entonces **el trial regala beneficios de Turista VIP a alguien que todavía no pagó
+nada** — y `DEC-ENT-003` **además le bloquea la compra de VIP** mientras se los estemos dando
+gratis. No sólo se regala: **se impide vender eso mismo** durante todo el trial.
+
+**El argumento de fondo**: los entitlements del trial se derivan porque **el objetivo es que la
+persona pruebe el producto**. VIP es otra cosa — un beneficio cruzado, de otra vertical, que se
+vende aparte. Derivarlo mete **una decisión comercial adentro de una derivación técnica**, donde
+nadie la ve.
+
+**Lo que esta decisión NO define**: *si* el trial incluye VIP. Define que eso sea **una elección
+explícita** en vez de una consecuencia automática de cómo se deriva el plan. El valor por defecto
+es una decisión aparte.
+
+- **Costo**: una línea en `V/02` §2.1.
+- **Dónde se aplica**: `V/02` §2.1 y `DEC-TRIAL-001`.
+
+---
+
+## D-09 · El trial NO incluye Turista VIP — el valor que `D-08` dejó abierto
+
+**Decidido: no lo incluye.** El plan de trial declara que **no hereda** Turista VIP.
+
+**La razón que decide es `DEC-ENT-003`: mientras alguien tiene VIP, no puede comprarlo.**
+Regalarlo durante el trial **bloquea la venta de VIP justo en los días en que esa persona está más
+interesada en la plataforma** — el peor momento posible para no poder venderle algo.
+
+**Y la segunda**: al terminar el trial habría que sacárselo. Eso no se percibe como *«se terminó la
+prueba»* sino como **que le sacaron algo**, así que la relación de pago arranca con una pérdida en
+vez de con una ganancia.
+
+**El argumento en contra** —mostrar el valor completo levanta la conversión— es real, y se
+contradice con el primero: **no sirve mostrarle el valor de algo que no se le puede cobrar mientras
+se lo mostrás**.
+
+- **Reversible**: es un valor declarado, no una derivación. Cambiarlo es una línea el día que se
+  quiera probar lo contrario.
