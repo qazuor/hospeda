@@ -2849,3 +2849,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Las operaciones de lectura y la ayuda siguen sin confirmación; el wrapper no
   agrega `--hard`, `--apply` ni `--all` por cuenta propia.
 - Pruebas: **298 tests, 0 fallos y 736 assertions**.
+
+## Gate 114 · Restore técnico de Engram en copia temporal
+
+- Se copió el estado actual a `/tmp` sin ejecutar comandos de Engram contra la
+  instalación activa.
+- La copia pasó `integrity_check = ok`, mantuvo journal WAL y reprodujo las 97
+  referencias foráneas huérfanas ya conocidas.
+- DB, WAL y metadatos conservaron sus checksums durante la prueba; el SHM puede
+  cambiar por ser un archivo auxiliar volátil.
+- No se modificó ni se escribió ninguna observación en la instalación activa.

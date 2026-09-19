@@ -201,8 +201,8 @@
                             "title": "Probar restore en copia",
                             "category": "Engram + CLAUDE.md",
                             "description": "Comprobar rollback completo con DB, WAL, SHM y checksums.",
-                            "notes": "Validación completada en copia temporal: SQLite íntegra antes/después, 9.782 observaciones y 11.822 sesiones conservadas. Doctor blocked por 1.067 mismatches y 6.030 payloads sync incompletos; original intacta. Detalle en engram-restore-validation.md.",
-                            "done": false
+                            "notes": "Gate114: restore técnico read-only en copia temporal del estado actual: `integrity_check = ok`, journal WAL, 97 referencias huérfanas conocidas y checksums DB/WAL/metadatos verificados. La instalación activa no se modificó; un restore funcional/import queda fuera hasta la aprobación humana.",
+                            "done": true
                         },
                         {
                             "id": "knowledge-map",
