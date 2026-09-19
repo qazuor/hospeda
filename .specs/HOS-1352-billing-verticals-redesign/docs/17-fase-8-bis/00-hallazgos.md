@@ -69,53 +69,60 @@ sobre la premisa «`Turista Free`, `Guest` y `TRIAL_EXPIRED` no tienen ninguna f
 **Cada uno lleva su decisión, y la toma el owner**: se arregla ahora, o se declara con su causa y
 de qué depende. **El agente no elige por su cuenta.**
 
+> **Las 23 quedaron decididas el 2026-09-19, familia por familia.** El resultado: **22 `ARREGLAR`**,
+> **1 `APLICAR`** (el 21, que no era un defecto de diseño), y **1 que se decide con otro** (el 5,
+> con el 1). **Ninguna se declaró con causa** — el owner eligió arreglar todo.
+>
+> Dos llevan condición: el **16** y el **18** se arreglan **con opciones a discutir antes de
+> escribir**, y el **7** vuelve al owner cuando su decisión de fondo esté planteada.
+
 ### Familia 1 · La cobertura y el paso 5 — 7 defectos
 
 | # | ids | qué se rompe | decisión |
 |---|---|---|---|
-| **1** | `A2-001` ≡ `A3-001` | `PRE_TRIAL` es fuente de clase `TÍTULO`, así que **casi toda la plataforma está `cubierta`** y `PB2` no puede despublicar a nadie que no haya consumido su trial. En Partner no dispara nunca | PENDIENTE |
-| **2** | `A1-001` | `cubierto` se apagó para el addon y **el paso 6 no**: un suspendido conserva lo que su addon otorga. Es el fail-open que el arreglo cerró, un paso más adelante | PENDIENTE |
-| **3** | `A1-003` | el criterio del paso 5 saca a **toda lectura** de la resolución única, y con ella al **paso 4**, el único que pregunta si el recurso es del sujeto | PENDIENTE |
-| **4** | `A3-004` | las **cuatro fuentes nuevas** no están en la lista de invalidación del caché: un recorte no llega nunca | PENDIENTE |
-| **5** | `C1-001` | las **tres defensas del §6** del contrato pierden su sujeto a la vez | PENDIENTE |
-| **6** | `A1-002` | el grant se ancla a **un** plan y su scope son **varias** verticales: la referencia de una alimenta a las otras | PENDIENTE |
-| **7** | `A3-005` | billing tiene que leer **entitlements y limits** de verticales para decidir si un cambio es upgrade o downgrade. Rompe el corte entre las dos épicas | PENDIENTE |
+| **1** | `A2-001` ≡ `A3-001` | `PRE_TRIAL` es fuente de clase `TÍTULO`, así que **casi toda la plataforma está `cubierta`** y `PB2` no puede despublicar a nadie que no haya consumido su trial. En Partner no dispara nunca | **ARREGLAR** · 19/09 |
+| **2** | `A1-001` | `cubierto` se apagó para el addon y **el paso 6 no**: un suspendido conserva lo que su addon otorga. Es el fail-open que el arreglo cerró, un paso más adelante | **ARREGLAR** · 19/09 |
+| **3** | `A1-003` | el criterio del paso 5 saca a **toda lectura** de la resolución única, y con ella al **paso 4**, el único que pregunta si el recurso es del sujeto | **ARREGLAR** · 19/09 |
+| **4** | `A3-004` | las **cuatro fuentes nuevas** no están en la lista de invalidación del caché: un recorte no llega nunca | **ARREGLAR** · 19/09 |
+| **5** | `C1-001` | las **tres defensas del §6** del contrato pierden su sujeto a la vez | **SE DECIDE CON EL 1** · se vuelve a mirar después |
+| **6** | `A1-002` | el grant se ancla a **un** plan y su scope son **varias** verticales: la referencia de una alimenta a las otras | **ARREGLAR** · 19/09 |
+| **7** | `A3-005` | billing tiene que leer **entitlements y limits** de verticales para decidir si un cambio es upgrade o downgrade. Rompe el corte entre las dos épicas | **ARREGLAR** · 19/09 — *«intentemos arreglarlo»*. Arreglarlo **es tomar una decisión nueva**: dónde vive la regla que distingue subir de bajar de plan. Vuelve al owner cuando esté planteada |
 
 ### Familia 2 · El trial — 3 defectos
 
 | # | ids | qué se rompe | decisión |
 |---|---|---|---|
-| **8** | `A2-002` ≡ `A3-002` | quien se suscribe **antes de publicar** queda con un trial colgado en `TRIAL_ACTIVE` **que no vence nunca** | PENDIENTE |
-| **9** | `A2-003` | `PB3` vuelve sólo por tres caminos: **el que recontrata después de cancelar paga y su ficha no se republica nunca** | PENDIENTE |
-| **10** | `A3-003` | `addon_instance` no tiene con qué anclar su versión: **publicar una versión nueva cambia lo que ya se compró** | PENDIENTE |
+| **8** | `A2-002` ≡ `A3-002` | quien se suscribe **antes de publicar** queda con un trial colgado en `TRIAL_ACTIVE` **que no vence nunca** | **ARREGLAR** · 19/09 |
+| **9** | `A2-003` | `PB3` vuelve sólo por tres caminos: **el que recontrata después de cancelar paga y su ficha no se republica nunca** | **ARREGLAR** · 19/09 |
+| **10** | `A3-003` | `addon_instance` no tiene con qué anclar su versión: **publicar una versión nueva cambia lo que ya se compró** | **ARREGLAR** · 19/09 |
 
 ### Familia 3 · El candado y la sucesión — 8 defectos
 
 | # | ids | qué se rompe | decisión |
 |---|---|---|---|
-| **11** | `B1-001` ≡ `B2-002` | **nada limpia `sucede_a`**: terminado un cambio de plan, el candado `A` queda **vacío** (se puede abrir un alta nueva y quedar con **dos autorizaciones cobrando**) y el `B` queda **consumido** (nadie cambia de plan dos veces) | PENDIENTE |
-| **12** | `B2-001` | **ninguna transición cancela a la predecesora** cuando la sucesora queda autorizada: el invariante que lo exige quedó sin ejecutor | PENDIENTE |
-| **13** | `B1-002` | la fecha de primer cobro que se guarda es **la que mandamos**, no la que el proveedor escribió, y el capítulo prohíbe leer esa: el invariante **no subió a verificable** | PENDIENTE |
-| **14** | `B1-003` | *«un día como mínimo»* contra una ventana de **72 h**: toda sucesora autorizada después del primer día **nace con la fecha ya vencida**, y está medido que no se puede mover | PENDIENTE |
-| **15** | `B1-004` | el cobro de la cuota en reintento **reactiva a la predecesora**, y el crédito de la sucesora ya se computó en cero | PENDIENTE |
-| **16** | `B1-006` | el contrato no dice qué emite una suscripción **esperando autorización**: o son 72 h de servicio completo gratis y repetibles, o son dos planes sumados durante toda la sucesión | PENDIENTE |
-| **17** | `B2-004` | la excepción que deja suceder a una baja programada **marcada** se apoya, textualmente, en el hecho que la marca puede estar denunciando | PENDIENTE |
-| **18** | `B2-005` | **seis de los ocho pares** (estado nuestro, estado del proveedor) no tienen transición declarada: la regla de no-retroceso no puede escribir lo que lee | PENDIENTE |
+| **11** | `B1-001` ≡ `B2-002` | **nada limpia `sucede_a`**: terminado un cambio de plan, el candado `A` queda **vacío** (se puede abrir un alta nueva y quedar con **dos autorizaciones cobrando**) y el `B` queda **consumido** (nadie cambia de plan dos veces) | **ARREGLAR** · 19/09 — confirmado por el owner: el candado cuenta **sólo las principales**; las de complemento de un addon quedan afuera por diseño |
+| **12** | `B2-001` | **ninguna transición cancela a la predecesora** cuando la sucesora queda autorizada: el invariante que lo exige quedó sin ejecutor | **ARREGLAR** · 19/09 |
+| **13** | `B1-002` | la fecha de primer cobro que se guarda es **la que mandamos**, no la que el proveedor escribió, y el capítulo prohíbe leer esa: el invariante **no subió a verificable** | **ARREGLAR** · 19/09 |
+| **14** | `B1-003` | *«un día como mínimo»* contra una ventana de **72 h**: toda sucesora autorizada después del primer día **nace con la fecha ya vencida**, y está medido que no se puede mover | **ARREGLAR** · 19/09 |
+| **15** | `B1-004` | el cobro de la cuota en reintento **reactiva a la predecesora**, y el crédito de la sucesora ya se computó en cero | **ARREGLAR** · 19/09 |
+| **16** | `B1-006` | el contrato no dice qué emite una suscripción **esperando autorización**: o son 72 h de servicio completo gratis y repetibles, o son dos planes sumados durante toda la sucesión | **ARREGLAR** · 19/09 — **con opciones a discutir** antes de escribir |
+| **17** | `B2-004` | la excepción que deja suceder a una baja programada **marcada** se apoya, textualmente, en el hecho que la marca puede estar denunciando | **ARREGLAR** · 19/09 |
+| **18** | `B2-005` | **seis de los ocho pares** (estado nuestro, estado del proveedor) no tienen transición declarada: la regla de no-retroceso no puede escribir lo que lee | **ARREGLAR** · 19/09 — **con opciones a discutir** antes de escribir |
 
 ### Familia 4 · La marca de conciliación — 2 defectos
 
 | # | ids | qué se rompe | decisión |
 |---|---|---|---|
-| **19** | `B1-005` ≡ `B3-001` | una fila marcada **cubre, no se barre y no tiene reloj**: apaga el único detector de una divergencia de monto, congela la salida del cliente, y el servicio gratis **no tiene cota** | PENDIENTE |
-| **20** | `B1-007` ≡ `B2-003` | *«ningún pago acreditado antes»* es **histórico y sin ventana**: corta al que nunca pagó y deja afuera a **todo cliente que vuelve** | PENDIENTE |
+| **19** | `B1-005` ≡ `B3-001` | una fila marcada **cubre, no se barre y no tiene reloj**: apaga el único detector de una divergencia de monto, congela la salida del cliente, y el servicio gratis **no tiene cota** | **ARREGLAR** · 19/09 |
+| **20** | `B1-007` ≡ `B2-003` | *«ningún pago acreditado antes»* es **histórico y sin ventana**: corta al que nunca pagó y deja afuera a **todo cliente que vuelve** | **ARREGLAR** · 19/09 |
 
 ### Familia 5 · El corte y la migración — 3 defectos
 
 | # | ids | qué se rompe | decisión |
 |---|---|---|---|
-| **21** | `B3-002` | *«no se migra»* se llevó puesta la regla que hacía **resoluble el id viejo**: un cobro viejo vuelve como huérfano y se imputa a la suscripción nueva. **Es una omisión de aplicación, no un defecto de diseño** | PENDIENTE |
-| **22** | `C2-001` | el día del corte **toda la cartera existente queda en `PRE_TRIAL`**, y el evento que la sacaría de ahí **ya ocurrió** | PENDIENTE |
-| **23** | `C2-002` | la decisión de no migrar **no eliminó el punto de no retorno: lo subió de escala**, y nadie declara el orden entre cancelar y desplegar | PENDIENTE |
+| **21** | `B3-002` | *«no se migra»* se llevó puesta la regla que hacía **resoluble el id viejo**: un cobro viejo vuelve como huérfano y se imputa a la suscripción nueva. **Es una omisión de aplicación, no un defecto de diseño** | **APLICAR** · 19/09 — no se discute: es `R5-G`, ya decidida y no pegada |
+| **22** | `C2-001` | el día del corte **toda la cartera existente queda en `PRE_TRIAL`**, y el evento que la sacaría de ahí **ya ocurrió** | **ARREGLAR** · 19/09 |
+| **23** | `C2-002` | la decisión de no migrar **no eliminó el punto de no retorno: lo subió de escala**, y nadie declara el orden entre cancelar y desplegar | **ARREGLAR** · 19/09 |
 
 ---
 
