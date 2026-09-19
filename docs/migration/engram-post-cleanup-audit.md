@@ -7,7 +7,9 @@ Fecha de inspección: 2026-09-19. No se leyeron cuerpos de observaciones, prompt
 - Ejecutable: Engram 1.20.0.
 - DB: `~/.engram/engram.db`, aproximadamente 73 MiB.
 - SQLite: `integrity_check = ok`, journal WAL.
-- Tablas principales: 9.782 observaciones, 11.822 sesiones, 70 prompts de usuario.
+- Checkpoint read-only del 2026-09-19: 9.786 observaciones y 11.823 sesiones.
+  El esquema activo no expuso una tabla `prompts` consultable con ese nombre,
+  por lo que ese contador queda no verificado.
 - La base contiene tablas FTS y sincronización; no se modificó ninguna.
 - `engram projects list` y `engram stats` intentaron una migración y fallaron con `migration: attempt to write a readonly database (8)`. Esto confirma el bloqueo de filesystem/runtime, no una corrupción.
 
@@ -19,7 +21,7 @@ Fecha de inspección: 2026-09-19. No se leyeron cuerpos de observaciones, prompt
 
 ## Conclusión
 
-La limpieza redujo memoria, pero la DB sigue mezclando proyectos y capturas automáticas. No conviene importar, consolidar, borrar o sincronizar todavía. La integridad SQLite es buena, pero la CLI no puede completar sus migraciones mientras el entorno la vea read-only.
+La limpieza redujo memoria, pero la DB sigue mezclando proyectos y capturas automáticas. El checkpoint actual mantiene 56 proyectos en observaciones, 1.103 observaciones sin proyecto y 97 referencias foráneas huérfanas preexistentes. No conviene importar, consolidar, borrar o sincronizar todavía. La integridad SQLite es buena, pero la CLI no debe completar migraciones sobre la DB activa durante esta etapa.
 
 ## Próximo procedimiento seguro
 

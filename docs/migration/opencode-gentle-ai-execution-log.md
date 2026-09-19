@@ -2829,3 +2829,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `hops-<comando>`.
 - No hay comandos registrados sin wrapper ni wrappers huérfanos fuera del
   registro.
+
+## Gate 112 · Reauditoría read-only de Engram post-limpieza
+
+- Engram activo: versión 1.20.0; SQLite `integrity_check = ok`, journal WAL.
+- Conteo actual agregado: 9.786 observaciones, 11.823 sesiones, 56 proyectos
+  en observaciones y 1.103 observaciones sin proyecto.
+- Tipos principales: 5.650 `passive`, 1.012 `decision`, 938
+  `session_summary`, 775 `discovery` y 587 `bugfix`.
+- Persisten 97 referencias foráneas huérfanas conocidas; no se repararon.
+- La DB activa no se modificó y no se leyeron contenidos, títulos, tokens ni
+  credenciales. La revisión humana por lotes sigue pendiente.
