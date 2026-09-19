@@ -117,7 +117,7 @@ fi
 
 # 0c — seed/merge .env.local files
 echo "-- preparing .env.local files"
-bash "$ROOT/scripts/copy-env-to-worktree.sh" "$ROOT" || {
+HOPS_ENV_RECONCILE=1 bash "$ROOT/scripts/copy-env-to-worktree.sh" "$ROOT" || {
   echo "ERROR: trusted env copy failed" >&2
   exit 1
 }

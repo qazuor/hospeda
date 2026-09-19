@@ -27,9 +27,9 @@
 # Safety:
 # - Refuses to run if the source is not a git repo root with a `.worktreeinclude`.
 # - Refuses if <dest> doesn't exist or isn't a directory.
-# - Refuses if <dest> is the current repo (no self-copies).
-# - Never overwrites: existing files at the destination are reported and left
-#   alone, so you can re-run safely if some files were already copied.
+# - A self-copy is a no-op.
+# - Never overwrites existing values. With HOPS_ENV_RECONCILE=1, existing files
+#   are merged by appending only absent keys from the trusted source.
 
 set -euo pipefail
 
@@ -122,8 +122,20 @@ while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
     fi
 
     if [[ -e "$dest_file" ]]; then
-        echo "  =  $line (already exists at destination, skipped)"
-        skipped_exists=$((skipped_exists + 1))
+        if [[ "${HOPS_ENV_RECONCILE:-0}" != "1" ]]; then
+            echo "  =  $line (already exists at destination, skipped)"
+            skipped_exists=$((skipped_exists + 1))
+            continue
+        fi
+        added=0
+        while IFS= read -r env_line || [[ -n "$env_line" ]]; do
+            [[ "$env_line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
+            env_key="${env_line%%=*}"
+            grep -qE "^${env_key}=" "$dest_file" 2>/dev/null && continue
+            printf '%s\n' "$env_line" >> "$dest_file"
+            added=$((added + 1))
+        done < "$src_file"
+        echo "  ↻  $line (merged $added missing keys)"
         continue
     fi
 

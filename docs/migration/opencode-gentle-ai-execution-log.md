@@ -2714,3 +2714,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   inexistente.
 - Esto confirma que el agente recibe una señal accionable antes de intentar
   cerrar el issue.
+
+## Gate 100 · Reconciliación incremental de envs
+
+- `copy-env-to-worktree.sh` conserva el modo seguro por defecto: no sobrescribe
+  archivos existentes.
+- `wt-up` usa ahora `HOPS_ENV_RECONCILE=1`, que agrega sólo claves ausentes
+  desde `hospeda-staging` y conserva todos los valores locales actuales.
+- En el worktree de migración se agregaron 72 claves API, 5 Web y 12 Admin;
+  el drift bajó a 161 faltantes, 6 obsoletas, 0 sin valor, 0 cruzadas y 1
+  cross-check ausente. Las restantes no existen todavía en la fuente staging.
+- Sintaxis shell y diff pasaron; no se imprimieron valores secretos.
