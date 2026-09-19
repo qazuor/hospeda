@@ -29,8 +29,12 @@ fi
 echo "Creating worktree at: $WTPATH"
 echo "  branch: $BRANCH  (cut from: $BASE)"
 git -C "$ROOT" fetch origin "$BASE" --quiet 2>/dev/null || true
-# Prefer origin/$BASE if it exists, else local $BASE.
-if git -C "$ROOT" show-ref --verify --quiet "refs/remotes/origin/$BASE"; then
+# Prefer the local base branch when it exists: the operational checkout may
+# contain reviewed local commits that are intentionally not pushed yet. Fall
+# back to origin/$BASE only when no local base ref is available.
+if git -C "$ROOT" show-ref --verify --quiet "refs/heads/$BASE"; then
+  START="$BASE"
+elif git -C "$ROOT" show-ref --verify --quiet "refs/remotes/origin/$BASE"; then
   START="origin/$BASE"
 else
   START="$BASE"
