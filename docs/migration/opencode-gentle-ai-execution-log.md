@@ -2817,3 +2817,8 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   finalmente la configuración del worktree escribe únicamente DB/puertos.
 - No se detectaron accesos que impriman valores ni sobrescrituras implícitas de
   asignaciones existentes en el camino por defecto.
+
+## Gate 110 · `update --dry-run` posterior a la actualización
+
+- El dry-run read-only devolvió `status: up-to-date` para `hospeda-staging`.
+- SHA local y remoto coinciden en `60a39dae2`; `remoteOk: true` y `touched: false`.
