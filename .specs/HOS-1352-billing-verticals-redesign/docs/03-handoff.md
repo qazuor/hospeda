@@ -26,7 +26,7 @@ status: CURRENT
 5. [`04-open-decisions.md`](./04-open-decisions.md) — qué falta decidir.
 6. [`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md) — el análisis de dominio.
 7. [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) — qué sabemos de Mercado Pago
-   (**89 filas: 49 `VERIFIED`, 13 parciales, 19 `NOT_SUPPORTED`, 8 `UNKNOWN`**, recontadas con
+   (**90 filas: 49 `VERIFIED`, 13 parciales, 20 `NOT_SUPPORTED`, 8 `UNKNOWN`**, recontadas con
    [`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py), nunca a mano).
 8. [`07-facts-inventory.md`](./07-facts-inventory.md) — cuántos clientes reales hay, medido
 9. [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md) — la evaluación de reemplazo
@@ -55,7 +55,7 @@ ningún racimo resuelto.** El diseño de las dos épicas **se movió**, así que
 
 ### Las fases
 
-`0` ✅ · `1A` ✅ 106 hallazgos · `1B` ✅ 132 · `1C` 🟡 89 filas / 8 `UNKNOWN` ·
+`0` ✅ · `1A` ✅ 106 hallazgos · `1B` ✅ 132 · `1C` 🟡 90 filas / 8 `UNKNOWN` ·
 `1C-bis` 🟡 PRUEBA 0 comercial enviada, canal técnico cerrado · `2` 🟡 21 de 22 capítulos, **falta
 el 13 (Pagos)** · `3` y `4` ✅ · `5`, `6`, `7` ⬜ · **`8` ✅** · **`9` 🟡 ← ACÁ** · `10` ⬜
 
@@ -262,13 +262,13 @@ había diferido justamente por esto. Ocho capítulos no citan ninguna medición 
 | 0 · bootstrap | andamiaje | ✅ |
 | 1A · domain analysis | el dominio sin código | ✅ 25 de 25 preguntas |
 | 1B · discovery | el billing que corre hoy | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
-| 1C · experimentación MP | medir al proveedor | 🟡 **89 filas · 81 cerradas · 8 `UNKNOWN`** — las ocho del camino del cobro fallido |
+| 1C · experimentación MP | medir al proveedor | 🟡 **90 filas · 82 cerradas · 8 `UNKNOWN`** — las ocho del camino del cobro fallido |
 | **1C-bis · evaluación de proveedor** | ¿nos quedamos o nos mudamos? | 🟡 paso 4 de 6 |
 | 2 · Master Spec | 22 capítulos | 🟡 **21 de 22** · falta el 13 |
 | 3 a 10 | épicas → implementación | ⬜ sin empezar |
 
 **Conteos que se recuentan con script, nunca a mano**: la matriz con
-[`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) (**89 filas**, no 98 — el
+[`contar-filas-de-la-matriz.py`](./contar-filas-de-la-matriz.py) (**90 filas**, no 98 — el
 documento 10 arrastraba ese error y se corrigió el 2026-09-18), y las decisiones con
 `rg -c "^### DEC-"` (**47 encabezados = 46 decisiones**, porque la plantilla del formato no
 cuenta).

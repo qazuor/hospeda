@@ -469,3 +469,46 @@ autoriza antes de cancelar porque *un cobro se reembolsa y una cancelación en e
 > sobre la única capacidad que el cap. 06 §10 declara **en riesgo de plataforma** (`RF-6/7/8`).
 
 - **Costo**: bajo. **Dónde se aplica**: `B/12` §5.3, y el catálogo de correos de `NUCLEO/07`.
+
+---
+
+## D-16 · La renovación dentro de la ventana: se MIDIÓ, y no hay corrección — `R1` #8
+
+**Decidido: se tiró la sonda, y el resultado cierra la decisión.** No hay que elegir entre salidas:
+**la salida limpia no existe**, y eso ahora es un hecho medido y no una suposición.
+
+**El caso**: el crédito del cambio de plan se computa **al crear** la sucesora (`DEC-SUB-006`). La
+ventana de autorización dura 72 h, así que **si la predecesora renueva dentro de la ventana, el
+crédito quedó corto por un ciclo entero**. Corregirlo exige mover la fecha de cobro de la sucesora,
+que en ese momento está `pending`.
+
+**Lo que se sabía**: `EX-34` midió que la fecha de una suscripción **viva** es inmutable y que
+**falla en silencio**. Pero eso era sobre una **autorizada**, y había razón para dudar: `EX-33` ya
+había mostrado que una `pending` acepta cosas que una autorizada no.
+
+**Lo que se midió** — sonda 48, sandbox, 2026-09-19, cuenta `TESTUSER1461768820173121923` (MLA),
+registrada como **`EX-39`**:
+
+| | |
+|---|---|
+| `auto_recurring.start_date` suelto | `200`, **`last_modified` congelado**, fecha sin moverse |
+| `next_payment_date` suelto | `200`, ídem |
+| `auto_recurring` completo con la fecha adentro | `200`, ídem |
+| **control**: `PUT` de `transaction_amount` sobre el MISMO sujeto | `200`, **`last_modified` SÍ se movió**, 2000 → 2500 |
+
+**El control es lo que vuelve concluyente la medición**: separa *«la fecha no se puede mover»* de
+*«este objeto no acepta nada»*. Entró el monto, así que **lo bloqueado son las fechas, no el
+objeto** — el mismo método que volvió concluyente a `EX-34`.
+
+> **Y el hallazgo es más fuerte que la pregunta**: la inmutabilidad de las fechas **no depende del
+> estado**. Vale igual sobre una `pending` que sobre una autorizada, así que `start_date` sirve
+> **sólo al crear**, y punto.
+
+**Consecuencia**: `D-16` se resuelve con la **ventana corta** —ofrecer el cambio con ventana
+reducida cuando falten pocos días para la renovación— porque **la corrección no existe**. Queda
+pendiente definir qué es «pocos días»; es un número, no un mecanismo.
+
+- **Costo de la medición**: cero. Sandbox, sin tarjeta, sujeto propio que no toca nada existente.
+- **Un defecto del propio script, corregido**: el aviso *«doscientos que no aplicó»* saltaba
+  también en el control —que no pide mover ninguna fecha y sí aplicó—. Lo que delata un `200` vacío
+  es que **`last_modified` no se haya movido**, no que la fecha siga igual.

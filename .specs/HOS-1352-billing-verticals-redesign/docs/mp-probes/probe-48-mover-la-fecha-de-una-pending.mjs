@@ -46,7 +46,10 @@
 //
 // USO
 // ---
-//   MP_ACCESS_TOKEN=<token de SANDBOX> node probe-48-mover-la-fecha-de-una-pending.mjs
+//   MP_ACCESS_TOKEN=<app_usr de la app de pruebas> \
+//   MP_BUYER_EMAIL=<el comprador de prueba de esa cuenta> \
+//   MP_SONDA_OK=1 \
+//   node probe-48-mover-la-fecha-de-una-pending.mjs
 //
 // Crea su propio sujeto y no toca ninguno existente. No autoriza nada, así que
 // no hay checkout ni tarjeta: un `pending` se crea y se queda ahí.
@@ -59,6 +62,17 @@ const API = 'https://api.mercadopago.com';
 const OUT = process.env.OUT_DIR || '/tmp/mp-probe-48';
 const TOKEN = process.env.MP_ACCESS_TOKEN;
 const CONFIRMADO = process.env.MP_SONDA_OK;
+// El comprador TIENE que ser un usuario de prueba que exista en la cuenta. Un
+// email inventado da `400 User bad request` al crear el preapproval — medido en
+// la primera corrida de esta sonda, 2026-09-19. Es el mismo `MP_BUYER_EMAIL`
+// que usan las sondas 33 y siguientes.
+const COMPRADOR = process.env.MP_BUYER_EMAIL;
+
+if (!COMPRADOR) {
+    console.error('Falta MP_BUYER_EMAIL: el comprador de prueba de la cuenta.');
+    console.error('Un email inventado da 400 "User bad request" al crear el preapproval.');
+    process.exit(1);
+}
 
 if (!TOKEN) {
     console.error('Falta MP_ACCESS_TOKEN (sandbox). No se corre nada.');
@@ -126,7 +140,13 @@ async function intentar(nombre, id, parche) {
     console.log(`    después: ${JSON.stringify(d)}`);
 
     // El veredicto NO es el código de estado. Es D5: releer y comparar.
-    if (put.http < 400 && !fechaCambio) {
+    //
+    // OJO con la condición: el aviso vale para los intentos que piden mover la
+    // FECHA. En la primera corrida (2026-09-19) saltaba también en el control
+    // del monto —que no pide mover ninguna fecha y sí aplicó— o sea que era un
+    // falso positivo del propio script. Lo que delata un `200` vacío es que
+    // `last_modified` no se haya movido, no que la fecha siga igual.
+    if (put.http < 400 && !movio) {
         console.log('    ⚠️  DOSCIENTOS QUE NO APLICÓ — el modo de falla conocido de este proveedor.');
     }
     return { nombre, http: put.http, movio, fechaCambio, antes: a, despues: d };
@@ -145,7 +165,7 @@ async function main() {
     const creado = await llamar('crear', 'POST', '/preapproval', {
         reason: 'HOS-1352 sonda 48 — pending con fecha futura',
         external_reference: `hos1352-p48-${Date.now()}`,
-        payer_email: `test_user_${Date.now()}@testuser.com`,
+        payer_email: COMPRADOR,
         back_url: 'https://www.hospeda.com.ar/',
         auto_recurring: {
             frequency: 1,
