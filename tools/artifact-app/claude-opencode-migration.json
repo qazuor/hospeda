@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_22",
-        "number": 22,
+        "id": "ver_claude_opencode_migration_23",
+        "number": 23,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "auditar wrappers seguros para Gentle-AI 2.9.0",
+        "reason": "diseñar revisión read-only de Dependabot",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_21"
+        "basedOnVersion": "ver_claude_opencode_migration_22"
     },
     "data": {
         "sections": [
@@ -482,7 +482,7 @@
                             "title": "Automatizar la revisión semanal de PRs de Dependabot",
                             "category": "CI, dependencias y mantenimiento",
                             "description": "Analizar cada PR automático, explicar riesgo/beneficio y clasificarlo como cerrar, aplicar con PR pequeño NO-SPEC o convertir en issue HOS para backlog.",
-                            "notes": "Nueva tarea. Evaluar si conviene comando Hops read-only, skill de análisis y/o artifact de reporte. Debe leer checks, changelog, semver, uso real y compatibilidad del monorepo sin aprobar ni mergear automáticamente.",
+                            "notes": "Diseño read-only documentado en dependabot-review-design.md. Analiza PRs, semver, changelogs, uso real, checks y políticas; recomienda cerrar, NO-SPEC, HOS en backlog o bloqueado sin mutar GitHub.",
                             "done": false
                         },
                         {
