@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_29",
-        "number": 29,
+        "id": "ver_claude_opencode_migration_30",
+        "number": 30,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "implementar wrapper read-only gentle-sdd-status",
+        "reason": "reauditar Engram después de la limpieza reciente",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_28"
+        "basedOnVersion": "ver_claude_opencode_migration_29"
     },
     "data": {
         "sections": [
@@ -193,7 +193,7 @@
                             "title": "Revisar memoria una por una",
                             "category": "Engram + CLAUDE.md",
                             "description": "Clasificar vigente, histórica, duplicada, contradictoria, ruidosa o secreta antes de usarla.",
-                            "notes": "Pendiente de aprobación humana por lote. La auditoría read-only separó el aumento reciente: 14 observaciones pasivas provienen de sesiones Claude con tool_name=engram-autosave-SessionEnd; las sesiones OpenCode ses_* no generaron esa captura pasiva. No se leyó contenido ni se hicieron mutaciones manuales.",
+                            "notes": "Reauditado después de la limpieza: DB íntegra y WAL, 9.782 observaciones/11.822 sesiones; mezcla proyectos y autosaves, y CLI bloqueada por readonly migration. Detalle en engram-post-cleanup-audit.md. Revisión humana por lote sigue pendiente.",
                             "done": false
                         },
                         {
