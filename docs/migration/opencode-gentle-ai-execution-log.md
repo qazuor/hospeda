@@ -2334,3 +2334,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   escribible o de un checkout Git independiente. No se ejecutará contra el
   `staging` local adelantado hasta contar con esa condición, para no arriesgar sus
   commits no publicados.
+
+## Gate 66 · Wrapper Hops para Engram
+
+- Se agregó `hops engram` y el alias `hops-engram` al client-tools versionado.
+- El wrapper delega al binario oficial, ofrece ayuda con `tui`, `doctor`,
+  `projects`, `stats`, `search`, `context` y `conflicts`, y exige `--confirm`
+  para operaciones que pueden escribir memoria o configuración.
+- No añade flags destructivos (`--hard`, `--apply`, `--all`) ni copia la DB al
+  repositorio. La autoridad sigue siendo la instalación local de Engram.
+- Se validó typecheck, suite completa de client-tools (412 tests, 0 fallos),
+  ayuda global y rechazo de una mutación sin confirmación. El doctor real no se
+  ejecutó contra la DB porque el filesystem de la sesión la expone read-only.
+- El commit `58e0eed06` quedó integrado en `hospeda-staging` y las funciones Fish
+  globales fueron regeneradas apuntando al checkout operativo.

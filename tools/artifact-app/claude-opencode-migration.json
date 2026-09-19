@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_10",
-        "number": 10,
+        "id": "ver_claude_opencode_migration_11",
+        "number": 11,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "E2E operativo completo de wt-create y wrappers globales",
+        "reason": "wrapper Hops de Engram integrado y validado",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_9"
+        "basedOnVersion": "ver_claude_opencode_migration_10"
     },
     "data": {
         "sections": [
@@ -273,8 +273,8 @@
                             "title": "Crear wrapper Hops para Engram",
                             "category": "Hops y memoria",
                             "description": "Exponer bajo `hops engram` las operaciones frecuentes de Engram: TUI, doctor, projects, stats, search, context, review/conflicts, export/import y sync con dry-run/confirmación según corresponda.",
-                            "notes": "Nueva tarea. El wrapper debe delegar al binario oficial, ocultar valores sensibles, distinguir lecturas de mutaciones y facilitar descubrimiento sin duplicar la lógica de Engram. `engram tui` es la interfaz principal para revisar memorias; export/import/sync requieren backup y alcance explícito.",
-                            "done": false
+                            "notes": "Implementado y versionado como hops engram + hops-engram. Delegación al binario oficial, ayuda con lecturas frecuentes y guard explícito para mutaciones (--confirm); no agrega --hard, --apply ni --all. Integrado en hospeda-staging y wrapper Fish global regenerado. La DB sigue fuera del repo.",
+                            "done": true
                         },
                         {
                             "id": "hops-gentle-wrapper-audit",
