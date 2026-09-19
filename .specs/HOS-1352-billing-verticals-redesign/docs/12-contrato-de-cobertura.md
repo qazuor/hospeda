@@ -82,7 +82,7 @@ que alguien pueda olvidar.**
 |---|---|---|
 | **`cubierto`** | si hay al menos una fuente viva **de clase `TÍTULO`** (§2.4). Es el §36 — *«permanece activo mientras al menos una source exista»* | `PB2`; el §6 del capítulo 15; el reconciliador |
 | **`fuentes`** | **todas** las fuentes vivas, de las tres clases, no la que manda | el paso 5 de la autorización; el aviso de qué se pierde (cap. 15 §6.3) y el reconciliador, que necesita saber si apagar una deja las otras |
-| **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él |
+| **`tipo`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` · `BASE` · `ADDON` | los avisos, que dicen cosas distintas según por qué se perdió; y la clase, que se deriva de él **y del `hasta`** (§2.4) |
 | **`referencia`** | **la referencia, no los valores**: una versión de plan o una versión de addon. **No es anulable** (§2.3) | el paso 6: es cómo verticales sabe qué otorga esa fuente |
 | **`alcance`** | `VERTICAL` · `LISTING` · `USER` · `GLOBAL` (§2.7) | el pliegue en dos tramos del conjunto efectivo |
 | **`objetivo`** | la ficha, si `alcance = LISTING`; nada en los otros tres | ídem |
@@ -131,16 +131,52 @@ lado de la misma frontera. No hay rama A ni rama B: hay una fila que no se puede
 ### 2.4 Las tres clases de fuente, y qué cuenta para `cubierto`
 
 No todas las fuentes hacen lo mismo, y tratarlas igual abre un agujero en cada extremo del ciclo.
-**La clase se deriva del `tipo` y no se transporta**: transportarla sería la segunda fuente de un
-dato que el `tipo` ya determina.
+**La clase se deriva de dos campos que la fuente ya transporta —el `tipo` y el `hasta`— y no se
+transporta ella misma**: hacerlo sería la segunda fuente de un dato que esos dos ya determinan.
 
-| clase | tipos | ¿cuenta para `cubierto`? | qué es |
+| clase | cuándo | ¿cuenta para `cubierto`? | qué es |
 |---|---|---|---|
-| **`TÍTULO`** | `TRIAL` · `SUSCRIPCIÓN` · `CORTESÍA` · `GRANT` | **sí** | la relación comercial que habilita a estar adentro |
-| **`BASE`** | `BASE` | **no** | el piso que tiene todo el mundo por existir (§2.5) |
-| **`COMPLEMENTO`** | `ADDON` | **no** | agrega capacidades sobre un título; nunca cobertura |
+| **`TÍTULO`** | `tipo ∈ {TRIAL, SUSCRIPCIÓN, CORTESÍA, GRANT}` **y `hasta ≠ SIN_EMPEZAR`** | **sí** | la relación comercial que habilita a estar adentro |
+| **`BASE`** | `tipo = BASE`, **o cualquier fuente con `hasta = SIN_EMPEZAR`** | **no** | el piso que tiene todo el mundo por existir (§2.5) |
+| **`COMPLEMENTO`** | `tipo = ADDON` | **no** | agrega capacidades sobre un título; nunca cobertura |
 
 > **`cubierto` se calcula sólo sobre las fuentes de clase `TÍTULO`.**
+
+#### Un reloj que no arrancó no es un título
+
+Es la mitad de la regla que faltaba, y su ausencia costó caro: **la fuente de trial en `PRE_TRIAL`
+es de `tipo: TRIAL`**, así que con la clase derivada sólo del `tipo` quedaba en `TÍTULO` — y como
+`PRE_TRIAL` es *«el estado más poblado del sistema»* (`V/03` §2), **`cubierto` pasaba a ser
+verdadero para casi toda la plataforma**. En Partner era peor y permanente: sin evento de
+activación declarado **nadie sale nunca de `PRE_TRIAL`**, así que `cubierto` no podía volverse
+falso jamás.
+
+> **Una fuente cuyo reloj no arrancó no cubre. Habilita a resolver capacidades, no a estar
+> adentro.**
+
+**Por qué se deriva del `hasta` y no de un `tipo` nuevo**: `PRE_TRIAL` **no es un `tipo` nuevo** —
+la fuente sigue siendo `tipo: TRIAL` y lo único que cambia es a qué versión apunta—, y los avisos
+necesitan ese `tipo` para decir *«tu prueba todavía no empezó»* en vez de *«no tenés nada»*. El
+`hasta` ya transporta el dato exacto (`SIN_EMPEZAR`, §2.6) y **no hace falta ningún campo nuevo**.
+
+**Y no relaja el paso 5**, que es lo que podría parecer: el paso 5 pregunta por `fuentes`, no por
+`cubierto` (`V/17` §1.2, precisión 5). Quien está en `PRE_TRIAL` **sigue pasándolo** y sigue
+resolviendo sus capacidades contra la versión de pre-trial. Lo único que deja de tener es
+**cobertura**, que es lo que nunca debió tener: no contrató, no probó y no publicó nada.
+
+**El dominio que esta regla crea, recorrido** — seis `tipo` × cuatro `hasta`:
+
+| `tipo` | `fecha` | `NO_VENCE` | `SIN_FECHA_CONOCIDA` | `SIN_EMPEZAR` |
+|---|---|---|---|---|
+| `TRIAL` | `TÍTULO` — trial corriendo | — imposible: el trial siempre vence | — | **`BASE`** — `PRE_TRIAL` |
+| `SUSCRIPCIÓN` | `TÍTULO` — `CANCEL_SCHEDULED` | — | `TÍTULO` — `ACTIVE` | — imposible: una suscripción que no arrancó **no emite fuente** (§2.6) |
+| `CORTESÍA` | `TÍTULO` | — | — | — |
+| `GRANT` | — | `TÍTULO` | — | — |
+| `BASE` | — | `BASE` | — | — |
+| `ADDON` | `COMPLEMENTO` | — | `COMPLEMENTO` | — |
+
+**Las tres combinaciones imposibles lo son por una razón escrita, no por omisión**, y es lo que
+impide que la regla se vuelva a romper por un extremo que nadie miró.
 
 **Por qué el addon no cuenta, y no es una sutileza.** `B/16` §4.2 dice que *«la suspensión y la
 pausa no dejan huérfano a nada»* y que el reloj del addon *«no se congela»* (`DEC-ADDON-001`): una
@@ -154,6 +190,26 @@ Y no inventa una regla: escribe una que ya rige en dos capítulos. El §38 exige
 válida compatible»* para adquirir un addon, y `B/16` §2.4 declara su única excepción —*«un grant
 permanente vale como título en lugar de la suscripción `ACTIVE`»*—. **Un addon nunca fue un título:
 era el complemento de uno.**
+
+#### Y el complemento tampoco aporta CAPACIDADES si no hay título
+
+Sacar al addon de `cubierto` cerraba la puerta en un lugar y la dejaba abierta un paso más
+adelante: **el paso 6 pliega todas las fuentes vivas**, así que el suspendido perdía la cobertura y
+**conservaba lo que su addon otorga**. Es el mismo desenlace, en el paso siguiente.
+
+> **El pliegue del conjunto efectivo DESCARTA las fuentes de clase `COMPLEMENTO` cuando no hay
+> ninguna de clase `TÍTULO` viva.** Un complemento agrega sobre un título; sin título no agrega
+> sobre nada.
+
+**No es una regla nueva: es la misma que este § ya enuncia**, dicha donde se ejecuta en vez de sólo
+donde se define. *«Agrega capacidades sobre un título»* era una frase en el contrato y **una frase
+no es un gate**: el capítulo 15 pliega lo que el contrato le da, y le estábamos dando el addon sin
+decirle que dependía de otra cosa.
+
+**El caso que NO cambia, y conviene decirlo**: un `GRANT` permanente **es** de clase `TÍTULO`, así
+que quien tiene *Free Forever* y un addon **conserva los dos**. Es exactamente la excepción que
+`B/16` §2.4 ya declaraba —*«un grant permanente vale como título en lugar de la suscripción
+`ACTIVE`»*— y acá se cumple sin escribirla aparte.
 
 **Lo que esto NO decide**: si el cliente pierde días de addon que pagó mientras su suscripción está
 suspendida. Es una decisión de producto, es legítima, y es otra — congelar el reloj del addon
@@ -209,6 +265,40 @@ puede elegir qué decir:
 `V/15` §4.4 reparte las ventanas exactamente por esa diferencia: *«vencimiento de un addon · fin de
 una cortesía»* tienen ventana; *«revocación de un grant»* no.
 
+#### Qué emite cada estado de la suscripción — los nueve, sin huecos
+
+El `hasta` estaba enumerado por **situación** y no por **estado**, y así quedaban cuatro de los
+nueve estados de la suscripción **sin respuesta declarada**. Uno de ellos es el que la sucesión
+volvió frecuente.
+
+| estado (`B/03` §3.1) | ¿emite fuente? | `hasta` | por qué |
+|---|---|---|---|
+| `PENDING_AUTHORIZATION` | **no** | — | ver abajo |
+| `ABANDONED` | **no** | — | `S3` canceló el preapproval: no hay nada |
+| `ACTIVE` | **sí** | `SIN_FECHA_CONOCIDA` | se renueva sola; el fin no está determinado |
+| `GRACE_PERIOD` | **sí** | `SIN_FECHA_CONOCIDA` | el §20 da **servicio entero** durante el grace |
+| `PAUSED` por `CUSTOMER_REQUEST` | **no** | — | `B/16` §2.2: *«el servicio está detenido»* |
+| `PAUSED` por `COURTESY` | **sí**, como `tipo: CORTESÍA` | la fecha de fin de la cortesía | lo sostenemos nosotros (`DEC-GRANT-003`) |
+| `SUSPENDED` | **no** | — | el §21 lo deja *«sin entitlements comerciales»* |
+| `CANCEL_SCHEDULED` | **sí** | **la fecha** de fin de servicio de `DEC-SUB-009` | es *«un dato nuestro»* y ya está determinado |
+| `CANCELLED` | **no** | — | terminada |
+| `CHARGE_DECLINED` | **no** | — | terminal, y el proveedor ya canceló el preapproval |
+
+> **Una suscripción esperando autorización NO emite fuente de cobertura.**
+
+**Y es la respuesta cara de las dos.** Emitirla significa **hasta 72 horas de servicio completo
+gratis, y repetibles** —se abandona el checkout y se empieza de nuevo—, y durante una sucesión
+significa **los dos planes sumados** hasta que la nueva se autorice. Las dos lecturas cuestan
+plata en la misma dirección.
+
+**Y no deja a nadie en la nada**, que es la objeción obvia: a quien recién contrata **le sigue
+rigiendo el piso** (§2.5), y a quien está cambiando de plan **lo sigue cubriendo su suscripción
+vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede autorizada.
+
+**Consecuencia sobre el dominio del `hasta`**: `SIN_EMPEZAR` **no puede venir de una
+`SUSCRIPCIÓN`**, porque el único estado que lo justificaría no emite fuente. Es la fila
+«imposible» de la tabla del §2.4, y ahora tiene su razón escrita.
+
 **Y dos reglas que hace falta decir aparte, porque las implementaciones obvias violan el §4:**
 
 - **El `hasta` de una suscripción `ACTIVE` es `SIN_FECHA_CONOCIDA`, nunca el fin del período.** El
@@ -255,8 +345,20 @@ Un grant permanente cruza la frontera, la persona queda cubierta, y cuando el pa
 capacidades le da **no había respuesta**: el grant no apuntaba a ningún plan. *Free Forever* era un
 nombre comercial sin contenido definido.
 
-> **El grant se ancla al PLAN, no a una versión, y resuelve la versión vigente —sea vendible o**
-> **no—, con un trinquete: un grant nunca otorga menos de lo que otorgaba el día que se concedió.**
+> **El grant se ancla a un PLAN POR CADA VERTICAL de su scope, no a una versión, y resuelve la**
+> **versión vigente de cada uno —sea vendible o no—, con un trinquete: un grant nunca otorga menos**
+> **de lo que otorgaba el día que se concedió.**
+
+**«Uno por vertical» no es un detalle de implementación: sin él el grant filtra entre verticales.**
+Un plan pertenece a **una** vertical (`V/02` §2.1: `UNIQUE(vertical, slug)`), y el §2.7 dice que un
+grant emite **una fuente por cada vertical de su scope**. Con un solo plan anclado, las dos fuentes
+transportaban **la misma referencia** y la segunda vertical resolvía sus capacidades leyendo el
+plan de la primera — una clave de una vertical alimentada desde otra, que es exactamente lo que el
+§64.10 prohíbe y lo que el scope estructural del capítulo 17 existe para impedir.
+
+Así que **un grant de scope N verticales ancla N planes, uno de cada una**, y cada fuente
+transporta el suyo. Es lo que `R5-D` ya decía para las cortesías heredadas —*«una fila por vertical
+de su scope»*— aplicado al instrumento entero.
 
 **Los tres pedazos, y ninguno inventa un modo nuevo:**
 
@@ -335,15 +437,43 @@ regule, que es exactamente el acoplamiento que el corte en dos épicas venía a 
 ```text
 políticaDePlan(versiónDePlan)  → { díasDeGrace, díasDeTrial, permitePausa, vigente, vendible }
 situaciónDeVertical(vertical)  → { admiteAltas, finDeServicio }
+direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA
 ```
 
 > **El contrato tiene dos direcciones. La inversa transporta política y estado de catálogo, nunca**
 > **capacidades: verticales no le dice a billing qué otorga un plan, le dice cómo se comporta.**
 
+#### La tercera pregunta: subir o bajar lo contesta verticales
+
+**Es la que faltaba, y su ausencia era el acoplamiento más caro de los dos lados.** La regla que
+decide **cuándo se cobra** un cambio de plan está en `B/10` §3.5 y dice, textual, que *«la dirección
+se deriva del delta entre las dos versiones, **no del `rank`**»* — *«si algo baja, un limit, un
+entitlement, una cuota, sigue el camino de downgrade; si nada baja, el de upgrade»*, y **cualquier
+baja manda**.
+
+Comparar eso es **leer `plan_version_entitlement` y `plan_version_limit` de las dos versiones**, y
+las dos tablas son de verticales. O sea: la única regla que decide **qué se le cobra a alguien y qué
+día** exigía que billing leyera exactamente lo que el §4 prohíbe cruzar, dos veces, por escrito.
+
+> **La comparación la hace verticales, que es dueño de las tablas, y billing recibe un VEREDICTO.**
+
+**Un veredicto no es una capacidad**, y por eso esto no debilita la regla de la dirección inversa:
+`SUBE`/`BAJA` es una propiedad de **la relación entre dos versiones**, no un valor de ninguna de
+las dos. Verticales sigue sin decirle a billing **qué otorga** un plan; le dice **cómo se
+comportan dos planes entre sí**, que es la misma clase de dato que `permitePausa`.
+
+**Las dos alternativas, y por qué no**: derivar la dirección del `rank` es barato y **el diseño ya
+lo rechazó por escrito** —un plan más caro puede bajar un límite al rediseñarse, y entonces al
+cliente **se le recorta algo en silencio mientras se le cobra como mejora**; y un plan retirado no
+tiene `rank` comparable, que es el único caso donde la regla hace falta—. Y dejar que billing lea
+las dos tablas es **el acoplamiento exacto que partir el programa en dos épicas venía a impedir**:
+sería la primera excepción declarada al corte, y la regla de vigilancia del §4.2 se dispara con
+ella.
+
 Eso conserva el corte de `DEC-ARCH-005` sin excepción: los entitlements y los limits siguen sin
 cruzar hacia billing, igual que los montos siguen sin cruzar hacia verticales.
 
-**Son seis campos, y el sexto es el que importa declarar.** `vigente`/`vendible` no estaba en la
+**Son siete campos en tres preguntas, y los dos últimos son los que importa declarar.** `vigente`/`vendible` no estaba en la
 cuenta original: salió de recorrer el dominio, y **era la diferencia entre que el acoplamiento se
 cortara o siguiera llegando**. Sin declararlo se pierde de vista, y el día que billing lea una
 columna que verticales cambió nadie se entera hasta que rompe.
@@ -390,9 +520,21 @@ tenga de dónde derivar (cap. 02 §2.1: *«sus limits y entitlements no se guard
 las dos no vendibles que sí guardan lo suyo — la de pre-trial y la de piso. **Eso es un dato, no
 una rama en el código** — y la distinción importa, porque una rama es lo que después queda viva.
 
-Y `cubierto` sigue yendo a falso cuando el trial vence, porque el título `BASE` no es de clase
-`TÍTULO` (§2.4). Si contara, la tabla de arriba tendría una cuarta fila —*«contesta siempre que
-sí»*— y sería ésta.
+**Y `cubierto` sigue yendo a falso, por DOS motivos y no uno.** El primero es el conocido: el
+título `BASE` no es de clase `TÍTULO`. El segundo se agregó porque su ausencia ya había convertido
+a esta implementación en la cuarta fila de la tabla: **la fuente de trial en `PRE_TRIAL` tampoco
+cuenta**, porque su reloj no arrancó (§2.4).
+
+**Sin ese segundo motivo, esta implementación contestaba «sí» a casi todo el mundo** —`PRE_TRIAL`
+es el estado más poblado del sistema— y con eso **caían las tres defensas del §6 a la vez**: el
+default dejaba de negar, el juego de casos compartido no podía distinguir una implementación
+correcta de una constante, y el guard de producción quedaba cuidando una salida por la que el
+defecto ya no pasaba. Toda la épica de verticales se habría construido, probado y revisado contra
+una cobertura que dice que sí.
+
+> **El caso que distingue una implementación correcta de una constante es, concretamente: alguien
+> en `PRE_TRIAL` tiene `cubierto: no` y `fuentes` no vacío.** Si ese caso pasa con las dos
+> implementaciones y con una que contesta siempre que sí, el juego del §6.2 no está probando nada.
 
 ### 5.2 La real la escribe la épica de billing
 
