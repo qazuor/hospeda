@@ -2361,3 +2361,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `github.com`. No se ejecutó reset, reconciliación ni instalación.
 - Pendiente: repetir con conectividad GitHub para validar el resultado completo
   de `--dry-run` y luego una prueba aislada de la reconciliación real.
+
+## Gate 68 · `hops update` completo en checkout aislado
+
+- Se creó un clon temporal con remoto local para no tocar `hospeda-staging`.
+- La primera ejecución creó el checkout hermano de staging, ejecutó fetch,
+  reconciliación de envs y dejó el checkout al día.
+- Para probar el camino de actualización se añadió un commit sintético sólo en
+  ese checkout temporal. `hops update` lo detectó, hizo reset a `origin/staging`,
+  reconcilió los envs, reinstaló dependencias cuando cambió el lockfile y
+  regeneró todos los wrappers Fish.
+- Se verificó que el commit sintético desapareciera y que no quedaran cambios ni
+  procesos. Los clones temporales fueron eliminados.
+- Se regeneraron nuevamente los wrappers desde `hospeda-staging`; vuelven a
+  apuntar al checkout operativo permanente.

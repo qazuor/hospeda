@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_12",
-        "number": 12,
+        "id": "ver_claude_opencode_migration_13",
+        "number": 13,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "hops update dry-run corregido para no mutar Git",
+        "reason": "hops update validado end-to-end en checkout aislado",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_11"
+        "basedOnVersion": "ver_claude_opencode_migration_12"
     },
     "data": {
         "sections": [
@@ -402,8 +402,8 @@
                             "title": "Automatizar reconciliación y drift de entorno",
                             "category": "CLI, worktrees, guards",
                             "description": "Usar hospeda-staging como fuente predeterminada, reconciliar archivos después de hops update y devolver drift estructurado sin valores.",
-                            "notes": "wt-create + env prepare + env --drift validados. Además, hops update --dry-run ahora es realmente read-only (fetch --dry-run + ls-remote), integrado en staging. Falta validar con conectividad GitHub y probar reconciliación real en un checkout aislado.",
-                            "done": false
+                            "notes": "Validado end-to-end en un clon temporal: dry-run sólo consulta ls-remote; update real hizo reset a origin/staging, reconciliación de envs, reinstalación al cambiar lockfile y regeneración de wrappers. Clones eliminados y wrappers restaurados a hospeda-staging.",
+                            "done": true
                         },
                         {
                             "id": "db-isolation",
