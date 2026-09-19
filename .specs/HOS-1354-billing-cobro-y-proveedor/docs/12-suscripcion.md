@@ -257,7 +257,20 @@ de primer cobro de la sucesora cae **hoy**, y `D8` exige que sea **futura** — 
 que no se pueden cumplir a la vez, y quien choca contra las dos es alguien en mora que quiere
 mejorar su plan. La salida:
 
-> **Toda sucesora nace con fecha de primer cobro a un día como mínimo.** Ninguna cobra hoy.
+> **Toda sucesora nace con fecha de primer cobro POSTERIOR AL VENCIMIENTO DE SU VENTANA DE
+> AUTORIZACIÓN.** Ninguna puede cobrar antes de que su propia ventana se cierre.
+
+**«Un día como mínimo» no alcanzaba, y el número no era el problema: era el instante en que se
+comprueba.** La precondición se verifica **cuando la fila nace** y tiene que seguir siendo cierta
+**hasta que el cliente autorice**, que puede ser **71 horas después** (`S3`). Con un día, durante
+el 97 % de esa ventana la fecha ya pasó — y `EX-39` mide que **no se puede mover**: las fechas son
+inmutables también sobre un preapproval `pending`.
+
+**Por qué atado a la ventana y no a un número nuevo.** La ventana es configuración (`B/03` §3.4,
+punto 1) y su valor sale de dos restricciones ya escritas; un segundo número elegido a mano se
+desincroniza del primero el día que alguien toca uno solo. Así la regla se lee igual aunque la
+ventana cambie, y **es verificable sin contexto**: `G-R1-B` compara la fecha guardada contra el
+vencimiento de la ventana de esa misma fila.
 
 **Por qué uniforme y no una precondición distinta según de dónde venga la sucesión.** Declarar que
 *«desde grace la precondición es otra»* es más exacto conceptualmente, **y por eso es peor**: le
@@ -302,6 +315,22 @@ proveedor no*.
 es un reclamo; uno anunciado es un trámite. El correo va al catálogo de `NUCLEO/07`. Y conviene
 saber sobre qué descansa la salida si el cobro entra: el reembolso es **la única capacidad que el
 cap. 06 §10 declara en riesgo de plataforma** (`RF-6/7/8`).
+
+#### Y si entra, NO reactiva a la predecesora
+
+> **`S5` no se aplica sobre una fila que ya declaró sucesión.** El pago entra, se registra, y **se
+> reembolsa**; la predecesora sigue su camino a `CANCELLED` por `S17`.
+
+**Sin esta regla el cobro hacía dos daños, no uno.** El primero es el que el aviso anticipa: el
+cliente paga la deuda que le perdonamos. El segundo no lo anticipaba nadie — **`S5` devuelve la
+predecesora a `ACTIVE`**, así que en plena sucesión la persona queda con **las dos vivas**, y el
+crédito de la sucesora **ya se computó en cero** suponiendo que ese período no se iba a pagar
+nunca. O sea: paga un período entero que **no le compra nada**, y la fórmula que lo ignoró ya no se
+puede corregir.
+
+**Reembolsar es la salida coherente con lo que este mismo § decidió**: el período se declaró
+perdonado —*«no se compensa con el cobro nuevo ni se cobra aparte»*—, así que cobrarlo es un error
+y devolverlo es repararlo. Es el criterio de `PA-5` otra vez: **entre dos males, el reversible**.
 
 ### 5.4 Si la predecesora renueva dentro de la ventana, el crédito queda corto — y no hay corrección
 

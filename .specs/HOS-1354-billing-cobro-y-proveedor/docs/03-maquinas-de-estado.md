@@ -38,9 +38,18 @@ propio.
 | `SUSPENDED` | el grace se agotó sin pago (§20, §21) |
 | `CANCEL_SCHEDULED` | dada de baja en el proveedor, con servicio sostenido hasta el fin del período pagado |
 | `CANCELLED` | terminada |
-| `CHARGE_DECLINED` | autorizó y el **primer** cobro se rechazó, sin ningún pago acreditado antes. **Terminal** |
+| `CHARGE_DECLINED` | autorizó y **el primer cobro de esa autorización** se rechazó. **Terminal**: el proveedor la canceló al rechazarlo |
 
 **`CHARGE_DECLINED` entra y `RECONCILIATION_REQUIRED` sale, así que siguen siendo nueve.**
+
+**Y su condición es POR AUTORIZACIÓN, no por la historia de la persona.** Decía *«ningún pago
+acreditado antes para ese `user + vertical`»*, mirando toda la vida del cliente — pero **el
+proveedor cancela por el primer cobro DE ESE preapproval**, no por la historia. Con la condición
+histórica, al cliente que ya pagó alguna vez, vuelve y le rebota la tarjeta se le daba
+`GRACE_PERIOD` con **diez días de servicio completo sobre una autorización que el proveedor ya
+canceló de forma terminal**: un plazo que **no puede terminar en pago**, y un aviso que le pide
+regularizar algo que no tiene con qué. Leída por autorización, cae donde corresponde y su reintento
+es un alta nueva.
 
 **Por qué entra.** `B/12` §4.4, medido en producción el 2026-09-17, encontró que ante un primer
 cobro rechazado el proveedor **cancela la suscripción en el mismo instante** en que manda la cuota
@@ -78,7 +87,7 @@ Y una nota de registro que sigue valiendo:
 
 | # | desde | evento | hacia | condición | efectos |
 |---|---|---|---|---|---|
-| S1 | *(sin fila)* | la persona elige un plan | `PENDING_AUTHORIZATION` | no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`) | se acuña y **persiste** la clave de idempotencia **antes** de llamar al proveedor (`DEC-CONC-001`); si declara sucesión, **nace con fecha de primer cobro a un día como mínimo** |
+| S1 | *(sin fila)* | la persona elige un plan | `PENDING_AUTHORIZATION` | no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`) | se acuña y **persiste** la clave de idempotencia **antes** de llamar al proveedor (`DEC-CONC-001`); si declara sucesión, **nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización** (`B/12` §5.2) |
 | S2 | `PENDING_AUTHORIZATION` | webhook de autorizada, confirmado por relectura | `ACTIVE` | — | arranca el período; si venía de un trial, T2 |
 | S3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | pasaron **72 h** sin autorizar | se cancela el preapproval en el proveedor; la fila se conserva |
 | S4 | `ACTIVE` | un cobro falla | `GRACE_PERIOD` | — | arranca el reloj del §4; el servicio **sigue entero** (§20) |
@@ -93,7 +102,31 @@ Y una nota de registro que sigue valiendo:
 | S13 | `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED` | `SUPER_ADMIN` otorga *Free Forever* | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); el acceso pasa a darlo el grant |
 | S14 | cualquiera | divergencia que toca plata o estado | **el mismo estado** | — | **se pone la marca `requiere_conciliación`** y se emite el §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas** |
 | S15 | cualquiera **con la marca puesta** | una persona resuelve | **el mismo estado** | intervención humana registrada | **se levanta la marca**; si además corresponde un cambio de estado, se ejecuta **la transición de esta misma tabla que lo permita** |
-| S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **ningún pago acreditado antes** para ese `user + vertical` | el proveedor ya canceló el preapproval de forma **terminal** (`B/12` §4.4); no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva** |
+| S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **es el primer cobro DE ESA autorización**, y el proveedor la canceló al rechazarlo | no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva** |
+| S17 | la **predecesora**, en cualquier estado vivo | webhook de que **su sucesora** quedó autorizada, confirmado por relectura | `CANCELLED` | la fila tiene una sucesora con `sucede_a` apuntándola | **se cancela en el proveedor** (es `D7`), y en el mismo acto **la sucesora limpia su `sucede_a`**: la sucesión terminó y pasa a ser el origen |
+
+**`S17` es la transición que cierra la sucesión, y sin ella el candado se rompía en las dos
+direcciones a la vez.** `D7` declara obligatorio cancelar la vieja al recibir el webhook de que la
+nueva quedó autorizada, y **ninguna fila de esta tabla lo ejecutaba** — así que, por la regla 1 del
+núcleo, el acto normal del mecanismo más caro del sistema terminaba **en un incidente y una fila
+sin cancelar**, con dos preapprovals vivos cobrando.
+
+**Y `sucede_a` no se limpiaba nunca**, que es la otra mitad y produce dos daños opuestos:
+
+| qué quedaba | qué pasaba |
+|---|---|
+| el candado `A` **vacío** —ninguna fila viva con `sucede_a IS NULL`— | todo cliente que alguna vez cambió de plan quedaba **permanentemente fuera del §11**: un alta nueva entraba sin que nada la rechazara, y `EX-6` mide que el proveedor no frena la segunda |
+| el candado `B` **consumido** —la sucesora viva lo ocupa para siempre— | **nadie podía cambiar de plan dos veces** en la vida de la relación |
+
+Los dos se cierran con el mismo acto: **terminada la sucesión, la sucesora vuelve a ser un
+origen**. `A` vuelve a estar ocupado y `B` vuelve a estar libre, que es el estado en el que la
+persona estaba antes de empezar.
+
+**El dominio que esto crea, recorrido**: la sucesora puede tener `sucede_a` **no nulo** (sucesión en
+curso: `A` ocupado por la predecesora, `B` por ella) o **nulo** (sucesión terminada: `A` ocupado por
+ella, `B` libre). **No hay un tercer estado**, y el paso entre los dos es atómico con `S17`. Si la
+cancelación en el proveedor **falla**, `S17` no ocurre: la marca se pone y una persona lo mira, que
+es el camino declarado y no un hueco.
 
 **`S14` y `S15` quedan en la tabla y ya no son transiciones de estado.** Se listan acá porque son
 los dos eventos que el §22.1 gobierna y nadie los debe buscar en otro lado, pero **ninguna de las
@@ -318,6 +351,37 @@ devuelve un subconjunto plausible.
 
 Con esto, dos webhooks que lleguen al revés producen **el mismo resultado**: los dos releen y los
 dos escriben el estado actual. No hay retroceso posible porque el evento nunca es la fuente.
+
+#### Qué se escribe, par por par — espejar es una transición declarada
+
+*«Se escribe lo leído»* y *«lo que la tabla no declara no se escribe, se marca»* (`NUCLEO/03` §1,
+regla 1) **gobiernan el mismo acto y daban resultados opuestos**. Como la tabla del §3.2 sólo
+cubría dos de los mapeos que el proveedor puede devolver, **la defensa central contra el desorden
+de webhooks terminaba emitiendo un incidente en vez de espejar un hecho**, y la fila se quedaba en
+un estado que el proveedor ya había abandonado — **con servicio completo**.
+
+Se resuelve enumerando. El proveedor devuelve **cuatro** estados de preapproval; cruzados con lo
+que tengamos nosotros, éstos son los pares y su veredicto:
+
+| leído en el proveedor | lo nuestro | qué se hace |
+|---|---|---|
+| `pending` | `PENDING_AUTHORIZATION` | nada: coinciden |
+| `pending` | cualquier otro | **divergencia real** — el proveedor no puede retroceder a pendiente. Marca |
+| `authorized` | `PENDING_AUTHORIZATION` | **`S2`**: espejar es la transición que ya existe |
+| `authorized` | `PAUSED` | **`S10`**: el proveedor reanudó. Espejar |
+| `authorized` | `GRACE_PERIOD` · `SUSPENDED` | **divergencia real** — el preapproval está vivo y nuestro reloj dice que no cobró. Marca: es el caso que `B/12` §1.4 manda mirar |
+| `paused` | `ACTIVE` | **`S8`**: el proveedor pausó y nosotros no lo sabíamos. Espejar, con motivo `CUSTOMER_REQUEST` |
+| `cancelled` | `CANCEL_SCHEDULED` | nada: es lo esperado, `S11` ya lo canceló. El servicio sigue hasta la fecha nuestra (`DEC-SUB-009`) |
+| `cancelled` | cualquier estado vivo que no sea `CANCEL_SCHEDULED` | **`S12`** si hay una baja programada; si no, **espejar la baja decidida por el proveedor** (`B/12` §1.4) |
+
+> **Espejar un estado leído por id es una transición declarada de esta tabla, no un acto aparte.**
+> Lo que **no** figura acá es divergencia real, y ahí la marca es la respuesta correcta — deja de
+> ser un falso positivo y pasa a señalar lo que su nombre dice.
+
+**Por qué enumerar y no declarar que espejar es una excepción a la regla 1.** La excepción
+resolvía el choque en una línea y abría un camino que **escribe estado sin transición declarada**,
+que es exactamente lo que la regla 1 existe para impedir. Enumerar cuesta ocho filas y deja
+escrito **por qué cada caso cayó donde cayó**.
 
 ### 10.2 Los hechos puntuales sí necesitan orden, y lo toman del hecho
 

@@ -131,7 +131,7 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D5 | **Toda mutación en el proveedor se verifica releyendo y comparando campo por campo** | `EX-20`, `EX-15` | servicio: el código de estado **nunca** cierra una mutación |
 | D6 | **El buscador del proveedor no es fuente de verdad de nada** | `RC-1`, `DEC-CONC-002` | servicio: el inventario a conciliar sale de nuestra base |
 | D7 | **La suscripción vieja se cancela sólo al recibir el webhook de que la nueva quedó autorizada** | `DEC-SUB-006` | servicio; al revés, el cliente que abandona el checkout se queda sin nada |
-| D8 | **Una fecha de primer cobro futura es la precondición de seguridad de todo cambio de plan o de ciclo.** Toda sucesora nace con fecha de primer cobro **a un día como mínimo** | `DEC-SUB-006` | **base**: la fecha con la que nació la fila se guarda en `subscription`, y un guard la verifica |
+| D8 | **Una fecha de primer cobro futura es la precondición de seguridad de todo cambio de plan o de ciclo.** Toda sucesora nace con fecha de primer cobro **posterior al vencimiento de su ventana de autorización** | `DEC-SUB-006` | **base**: la fecha **que el proveedor confirmó** se guarda en `subscription` (cap. 02 §2.2, épica de billing), y un guard la compara contra esa ventana |
 | D9 | **El `reason` que se manda al proveedor es copy para el cliente, nunca un identificador interno** | `EX-19`, `DEC-MAIL-001` | guard |
 | D10 | **El `init_point` crudo del proveedor no se muestra nunca sin sanear** | `EX-37` | guard |
 | D11 | **Lo que toca plata lo confirma una persona** | `DEC-CONC-001`, `DEC-CONC-002`, `DEC-RF-001` | servicio |
@@ -176,21 +176,34 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 
 | nivel | cuántos del §64 | cuántos de las decisiones |
 |---|---|---|
-| base | 6 | 2 |
-| servicio | 14 | 11 |
-| guard | 5 | 3 |
+| base | 6 | **4** |
+| servicio | 14 | **10** |
+| guard | 5 | **4** |
 | principio o regla de método, **no verificable ejecutando** | 7 | 0 |
 | en un capítulo de subdominio | 5 | 0 |
-| **total** | **37** | **14** |
+| **total** | **37** | **15** |
 
-> Las celdas de la columna derecha suman **16 apoyos** sobre **14 invariantes**, y no es un error
-> de conteo: **`D3` y `D12` se sostienen en dos niveles a la vez**. `D3` necesita que la base
-> restrinja el dominio del motivo **y** que el servicio lo lea en vez de leer al proveedor; `D12`
-> necesita un guard que impida pedirle un trial al proveedor **y** un servicio que lleve el reloj.
-> Un invariante con dos apoyos no está contado de más: está apoyado dos veces.
+> Las celdas de la columna derecha suman **18 apoyos** sobre **15 invariantes**, y no es un error
+> de conteo: **`D3`, `D8` y `D12` se sostienen en dos niveles a la vez**. `D3` necesita que la base
+> restrinja el dominio del motivo **y** que el servicio lo lea en vez de leer al proveedor; `D8`
+> necesita la columna en base **y** el guard que la compara; `D12` necesita un guard que impida
+> pedirle un trial al proveedor **y** un servicio que lleve el reloj. Un invariante con dos apoyos
+> no está contado de más: está apoyado dos veces.
 
-**Cincuenta y un invariantes, y ocho los sostiene la base.** El resto depende de que exista un
+**Cincuenta y dos invariantes, y diez los sostiene la base.** El resto depende de que exista un
 único lugar donde se evalúen — que es, en una línea, de qué se trata el §7.
+
+> **Corregido otra vez el 2026-09-19 — FASE 8-bis**, y la corrección anterior es el ejemplo de
+> cómo NO hacerlo. La FASE 9 hizo **dos** cambios sobre el §3: agregó `D15` (14 → 15 filas) y
+> **mudó `D8` de servicio a base, dándole además un guard**. Corregir sólo lo que un informe
+> señala —base 2 → 4 y total 14 → 15— habría dejado la tabla sumando **18 apoyos sobre 15 con la
+> columna de servicio en 11**, o sea mal de nuevo, porque `D8` **se mudó, no se agregó**.
+>
+> **Los conteos se recorren enteros con un script, o no se tocan.** Éstos salen de recorrer las 15
+> filas del §3 clasificando su columna de apoyo: base `D2 D3 D8 D15`, guard `D8 D9 D10 D12`, y las
+> diez restantes servicio. La columna izquierda no se movió y cierra: 6+14+5+7+5 = 37.
+
+Y la corrección anterior, que queda como registro:
 
 > **Corregido el 2026-09-19 — FASE 8** (`F-8A1-016`, `F-8A3-016`, `F-8C1-012`). Estas dos frases
 > decían **«suma 14 sobre 12»** y **«Cuarenta y nueve»**, y las dos son **anteriores a `D13` y

@@ -90,10 +90,26 @@ Por cada suscripción de nuestro inventario que no esté en un estado terminal:
 divergir hacia nada que nos importe, y barrerlos es gastar llamadas sobre la parte de la cartera
 que más crece.
 
-**Y una fila con la marca `requiere_conciliación` puesta tampoco se barre.** No porque no pueda
-divergir, sino al revés: **ya divergió y hay una persona mirándola**. Volver a compararla no agrega
-información y sí agrega ruido — una alerta por corrida sobre un caso que ya está abierto es cómo se
-deja de mirar las alertas. Vuelve al barrido cuando `S15` levanta la marca.
+**Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
+intuición contraria es fuerte y costaba caro.
+
+Parecía razonable sacarla: ya divergió, hay una persona mirándola, y volver a compararla sólo
+agrega ruido. **Pero lo que se apaga así no es el ruido: es el único detector.** Una suscripción a
+la que el proveedor le cobra un monto distinto del pactado entra en un estado del que **el sistema
+deja de hablar** —se alerta una vez, sale del barrido, y la marca además le bloquea al cliente el
+único acto con el que podría salir—, y **el cobro equivocado sigue saliendo de su tarjeta todos los
+meses**.
+
+> **Lo que se agrega es el AVISO, nunca la comparación.** El barrido sigue corriendo sobre la fila;
+> lo que no vuelve a emitir es una alerta por corrida sobre un caso ya abierto.
+
+**Y no hace falta inventar el mecanismo: es el de `DEC-OBS-001`**, que ya decidió exactamente esto
+para el mismo problema —*«el correo es agregado, con límite de frecuencia, en vez de uno por
+evento»*— y cuyo canal primario es el listado accionable, no el correo.
+
+**La marca lleva reloj.** Si sigue puesta pasado su plazo, **escala**: es una divergencia de plata
+que nadie resolvió, y sin reloj el servicio que la fila sostiene **no tiene cota**. El plazo es
+configuración, como todos los del §42.
 
 ---
 

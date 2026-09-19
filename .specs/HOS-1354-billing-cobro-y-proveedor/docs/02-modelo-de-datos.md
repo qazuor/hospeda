@@ -107,17 +107,42 @@ en vez de aflojarla.
 sucesión** sobre esa fila. Cancelar y recrear con una divergencia de plata sin resolver es
 exactamente el movimiento que `DEC-CONC-002` parte 4 manda que mire una persona.
 
-**La excepción, y es una sola**: una fila marcada **sí puede suceder cuando está en
-`CANCEL_SCHEDULED`**. No es una excepción de criterio sino de mecanismo: en ese estado `S11` ya
-canceló el preapproval, así que **el daño que la marca previene no puede ocurrir ahí**. Sin la
-excepción, alguien que programó su baja, tiene una marca puesta y quiere volver antes del
-vencimiento **se queda afuera sin haberlo elegido**.
+**La excepción, y es una sola, y lleva una verificación que no es opcional**: una fila marcada
+**puede suceder cuando está en `CANCEL_SCHEDULED`, si una relectura del preapproval por su id
+confirma que efectivamente está cancelado**.
 
-**La fecha de primer cobro se guarda, y no se relee del proveedor.** `D8` —*«una fecha de primer
-cobro futura es la precondición de seguridad de todo cambio de plan o de ciclo»*— era un invariante
-**recordable**; con la columna pasa a ser **verificable**, y su incumplimiento es literalmente el
-doble cobro. Releerla del proveedor lo prohíbe `D6` (*«el buscador del proveedor no es fuente de
-verdad de nada»*) y además no serviría: un guard tiene que poder correr sin red.
+**La verificación es lo que la vuelve segura, y sin ella la excepción se apoyaba en lo que la marca
+pone en duda.** El razonamiento era *«en ese estado `S11` ya canceló el preapproval, así que el
+daño que la marca previene no puede ocurrir ahí»* — pero **la divergencia más probable sobre una
+`CANCEL_SCHEDULED` es justamente que esa cancelación no se aplicó**, y es lo que pone la marca. La
+excepción se concedía sobre la premisa que la alarma acababa de cuestionar, y el resultado es una
+sucesora cobrando mientras el preapproval de la predecesora, vivo, cobra también.
+
+Releer no agrega un mecanismo: `D5` ya manda verificar **releyendo y comparando campo por campo**
+toda mutación en el proveedor, y `D6` prohíbe el **buscador**, no la lectura por id — que el mismo
+diseño declara confiable. Y si la relectura dice que el preapproval **sigue vivo**, la marca hace
+lo que tiene que hacer: bloquear.
+
+Sin excepción alguna, en cambio, alguien que programó su baja, tiene una marca puesta y quiere
+volver antes del vencimiento **se queda afuera sin haberlo elegido** — por eso la excepción existe,
+y por eso se verifica en vez de suponerse.
+
+**La fecha de primer cobro que se guarda es LA QUE EL PROVEEDOR CONFIRMÓ, no la que mandamos.**
+`D8` —*«una fecha de primer cobro futura es la precondición de seguridad de todo cambio de plan o
+de ciclo»*— era un invariante **recordable**; con la columna pasa a ser **verificable**, y su
+incumplimiento es literalmente el doble cobro.
+
+**Guardar la que mandamos no verificaba nada: verificaba el único dato que no podía estar mal.** El
+dato que sí puede estarlo es lo que el proveedor efectivamente escribió, y si no lo respeta la
+sucesora cobra en el acto con la predecesora viva — el cliente paga dos veces el mismo período y
+**ningún mecanismo del diseño lo mira**.
+
+**Y leerla no contradice `D6`, que fue la razón por la que se descartó.** `D6` dice que **el
+buscador** del proveedor no es fuente de verdad de nada, y está medido por qué: ignora nuestra
+referencia, devuelve todo, y con un estado inválido devuelve cero con `200` (`RC-1`). **Leer por
+id es otra cosa y es `VERIFIED`** (`RC-2`), y `D5` ya obliga a hacerlo: *«toda mutación en el
+proveedor se verifica releyendo y comparando campo por campo»*. La fecha se escribe en esa misma
+relectura, que ya ocurre. El guard sigue corriendo sin red, porque lee la columna.
 
 ### 2.3 Dinero
 

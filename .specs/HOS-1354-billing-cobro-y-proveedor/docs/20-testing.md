@@ -52,7 +52,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G10 | un `init_point` del proveedor se muestra **sin sanear** | `D10`, `EX-37` |
 | G11 | se le pide un **trial al proveedor** | `D12` |
 | G-R1-A | una fila con `sucede_a` no nulo apunta a una predecesora **fuera de** `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2 |
-| G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro estrictamente futura | `D8`, cap. 12 §5.2 |
+| G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
 
 **Los dos de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
 `G-R1-A` impide declarar una sucesión desde una `SUSPENDED` —autorización de estado
