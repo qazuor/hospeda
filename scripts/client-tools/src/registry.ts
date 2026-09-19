@@ -195,6 +195,12 @@ export const COMMANDS: readonly CommandEntry[] = [
         name: 'gentle-status',
         summary: 'Estado read-only de Gentle-AI, review y telemetría',
         load: async () => (await import('./commands/gentle-status/command.ts')).gentleStatusCommand
+    },
+    {
+        name: 'gentle-sdd-status',
+        summary: 'Estado/routing SDD read-only de Gentle-AI',
+        load: async () =>
+            (await import('./commands/gentle-sdd-status/command.ts')).gentleSddStatusCommand
     }
 ];
 
