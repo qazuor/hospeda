@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_9",
-        "number": 9,
-        "createdAt": "2026-09-16T00:00:00.000Z",
+        "id": "ver_claude_opencode_migration_10",
+        "number": 10,
+        "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "wrappers globales restaurados y validados contra hospeda-staging",
+        "reason": "E2E operativo completo de wt-create y wrappers globales",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_8"
+        "basedOnVersion": "ver_claude_opencode_migration_9"
     },
     "data": {
         "sections": [
@@ -362,8 +362,8 @@
                             "title": "Probar worktrees end-to-end",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Validar pass, DB, puertos, servidores, cleanup y rollback en temporales.",
-                            "notes": "E2E validado en worktree candidato; bloque operativo ya está en hospeda-staging. Falta repetirlo usando los wrappers globales apuntando al checkout operativo.",
-                            "done": false
+                            "notes": "E2E completo desde wrappers globales: wt-create + template vigente + DB descartable + cinco envs desde hospeda-staging + puertos 3101/3100/4421 + build + API health + Admin/Web TCP + context/env drift + servers-down + cleanup. La reconciliación específica de hops update sigue en el item env-drift-automation.",
+                            "done": true
                         },
                         {
                             "id": "handoff",
@@ -442,7 +442,7 @@
                             "title": "Versionar lifecycle seguro del DB template",
                             "category": "CLI, worktrees y bases",
                             "description": "Construir candidatos desde una base vacía, validar journal/manifest/fingerprint y promover sólo con confirmación, conservando rollback.",
-                            "notes": "Implementado en scripts/worktree/template.sh y expuesto por hops db-update-template con status, build-candidate y promote --confirm. La integración en hospeda-staging y el E2E desde wrappers globales siguen pendientes.",
+                            "notes": "Implementado en scripts/worktree/template.sh y expuesto por hops db-update-template con status, build-candidate y promote --confirm. Integrado en hospeda-staging y validado en E2E operativo.",
                             "done": true
                         },
                         {

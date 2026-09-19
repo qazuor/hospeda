@@ -2298,3 +2298,27 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `HOSPEDA_INTERNAL_REQUEST_SECRET`, sin mostrar valores.
 - Se ajustó el resumen de `start-issue` para indicar que el agente es opcional.
 - Pendiente: E2E real de creación de worktree desde el wrapper global.
+
+## Gate 64 · E2E operativo completo desde wrappers globales
+
+- Se creó el worktree temporal `test/migration-e2e-20260919` desde el branch local
+  `staging` del checkout operativo, no desde un `origin/staging` atrasado.
+- `wt-create.sh` reutilizó el template activo y verificó que el esquema estuviera
+  vigente. Copió los cinco archivos `.env.local` desde
+  `/home/qazuor/projects/WEBS/hospeda-staging`; no quedaron variables faltantes ni
+  variables nuevas pendientes de merge.
+- `servers-up` creó/verificó la DB descartable, confirmó migraciones y usuarios,
+  asignó los puertos 3101 (API), 3100 (Admin) y 4421 (Web), ejecutó el build de
+  paquetes y pasó los tres health checks configurados.
+- API `/health` respondió JSON `status: ok`; Admin respondió el cliente Vite y Web
+  respondió el servidor Astro. Las rutas raíz de Admin/Web no se usan como health
+  checks porque su comportamiento depende de redirecciones/render de la aplicación;
+  la disponibilidad TCP quedó verificada por `wt-up`.
+- `hops context --json` informó issue sintético, branch, DB y los tres servidores.
+  `hops env --drift --json` quedó limpio, con sólo el secreto opcional ausente ya
+  conocido y sin mostrar valores.
+- `servers-down` detuvo API, Admin y Web; `wt-remove --force` eliminó únicamente el
+  worktree, branch y DB temporales. No quedan procesos ni puertos de esa prueba.
+- Una ejecución anterior quedó invalidada por procesos residuales que ocupaban los
+  puertos; se limpiaron exclusivamente procesos del worktree temporal y se repitió
+  la prueba desde cero antes de considerar este gate exitoso.
