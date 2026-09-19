@@ -2561,3 +2561,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - No se envió ningún prompt ni se ejecutó ninguna herramienta. La validación
   manual de rueda/Home/End sigue siendo una comprobación interactiva del
   usuario.
+
+## Gate 85 · CI y merge read-only contra GitHub
+
+- `hops ci --json` consultó el branch de migración y devolvió el contrato
+  estable `pullRequest: null`, `verdict: no-pr`, `readOnly: true`.
+- `hops merge --json` devolvió el mismo estado, sin intentar crear, actualizar
+  ni fusionar ningún PR.
+- El exit code no-cero corresponde al veredicto `no-pr`, no a un fallo de
+  parsing o una mutación parcial.

@@ -330,7 +330,7 @@
                             "title": "Validar hops ci",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Cubrir verde, rojo, pending, conflicto, sin checks, sin PR y errores.",
-                            "notes": "Unitario + E2E simulado y consulta real sin PR; ci --json agrega verdict/pullRequest/checks/readOnly para agentes y no combina con --wait. Suite completa actual: 294 tests, 0 fallos y 724 assertions.",
+                            "notes": "Gate85: `ci --json` y `merge --json` consultaron GitHub en el branch de migración y devolvieron `pullRequest:null`, `verdict:no-pr`, `readOnly:true`, sin mutaciones. Suite completa actual: 294 tests, 0 fallos y 724 assertions.",
                             "done": true
                         },
                         {
