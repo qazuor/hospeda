@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_15",
-        "number": 15,
+        "id": "ver_claude_opencode_migration_16",
+        "number": 16,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "separar bootstrap genérico de adaptadores de proyecto",
+        "reason": "separar Hops genérico de adaptadores de proyecto",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_14"
+        "basedOnVersion": "ver_claude_opencode_migration_15"
     },
     "data": {
         "sections": [
@@ -491,6 +491,14 @@
                             "category": "CLI y distribución multiplataforma",
                             "description": "Agregar --agent codex y revisar todos los comandos, wrappers y adapters que hoy aceptan claude u opencode.",
                             "notes": "Nueva tarea. Mantener agente por defecto none; el launcher debe detectar disponibilidad y producir un error claro si codex no está instalado. Los comandos Hops deben seguir siendo neutrales al cliente.",
+                            "done": false
+                        },
+                        {
+                            "id": "generic-hops-adapters",
+                            "title": "Separar Hops genérico de adaptadores de proyecto",
+                            "category": "CLI, distribución y multi-proyecto",
+                            "description": "Extraer un núcleo Hops reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks.",
+                            "notes": "Decisión arquitectónica documentada. Se implementará al final, cuando exista un segundo proyecto real; Hospeda continúa usando el adaptador implícito por ahora.",
                             "done": false
                         }
                     ]

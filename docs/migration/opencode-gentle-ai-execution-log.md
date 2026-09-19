@@ -2404,3 +2404,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   aplica cambios específicos sin selección explícita.
 - El script sigue siendo sólo planificador/verificador. No se implementó todavía
   la etapa `apply`.
+
+## Gate 71 · Hops genérico + adaptadores de proyecto
+
+- Se confirmó que la separación de instaladores también debe reflejarse en Hops.
+- El CLI `hops` será común: tendrá un núcleo reusable y resolverá un adaptador
+  desde la configuración del proyecto.
+- `wt-create` conservará un flujo genérico de worktree, envs, DB, puertos y
+  health checks; Hospeda declarará sus nombres de apps, Linear, template y
+  scripts mediante un manifiesto sin secretos.
+- La implementación se difiere hasta contar con un segundo proyecto real. Hasta
+  entonces Hospeda sigue usando su adaptador implícito actual para evitar una
+  abstracción especulativa.
