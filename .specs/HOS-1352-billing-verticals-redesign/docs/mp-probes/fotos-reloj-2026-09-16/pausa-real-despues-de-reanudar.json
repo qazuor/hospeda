@@ -1,0 +1,287 @@
+{
+  "slug": "pausa-real",
+  "leido": "2026-09-16T12:56:56-03:00",
+  "sub": {
+    "id": "747cc456534d495b8705027b96785387",
+    "payer_id": 3499760966,
+    "payer_email": "",
+    "back_url": "https://www.hospeda.com.ar",
+    "collector_id": 3497260543,
+    "application_id": 2671930029336144,
+    "status": "authorized",
+    "reason": "HOS1352 reloj pausa-real",
+    "external_reference": "HOS-1352-reloj-20260915T152756Z-pausa-real",
+    "date_created": "2026-09-15T11:28:02.000-04:00",
+    "last_modified": "2026-09-16T11:56:15.566-04:00",
+    "init_point": "https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_id=747cc456534d495b8705027b96785387",
+    "auto_recurring": {
+      "frequency": 1,
+      "frequency_type": "days",
+      "transaction_amount": 2000.00,
+      "currency_id": "ARS",
+      "start_date": "2026-09-15T11:28:02.000-04:00",
+      "has_billing_day": false,
+      "free_trial": null
+    },
+    "summarized": {
+      "quotas": null,
+      "charged_quantity": 1,
+      "pending_charge_quantity": null,
+      "charged_amount": 2000.0,
+      "pending_charge_amount": null,
+      "semaphore": "green",
+      "last_charged_date": "2026-09-15T11:28:03.000-04:00",
+      "last_charged_amount": 2000.0
+    },
+    "next_payment_date": "2026-09-17T11:28:03.000-04:00",
+    "payment_method_id": "master",
+    "card_id": "9813074735",
+    "payment_method_id_secondary": null,
+    "first_invoice_offset": null,
+    "subscription_id": "747cc456534d495b8705027b96785387",
+    "owner": null
+  },
+  "pagos": {
+    "results": [
+      {
+        "accounts_info": null,
+        "acquirer_reconciliation": [],
+        "additional_info": {
+          "tracking_id": "platform:v1-blacklabel,so:ALL,type:N/A,security:none"
+        },
+        "authorization_code": "301299",
+        "binary_mode": true,
+        "brand_id": null,
+        "build_version": "3.174.0-rc-4",
+        "call_for_authorize_id": null,
+        "captured": true,
+        "card": {
+          "bin": "50317557",
+          "cardholder": {
+            "identification": {
+              "number": "12345678",
+              "type": "DNI"
+            },
+            "name": "APRO"
+          },
+          "country": "ARG",
+          "date_created": "2026-09-15T11:28:02.000-04:00",
+          "date_last_updated": "2026-09-15T11:28:02.000-04:00",
+          "expiration_month": 11,
+          "expiration_year": 2030,
+          "first_six_digits": "503175",
+          "id": null,
+          "last_four_digits": "0604",
+          "tags": [
+            "credit"
+          ]
+        },
+        "charges_details": [
+          {
+            "accounts": {
+              "from": "collector",
+              "to": "mp"
+            },
+            "amounts": {
+              "original": 82,
+              "refunded": 0
+            },
+            "base_amount": 2000,
+            "client_id": 0,
+            "date_created": "2026-09-15T11:28:02.000-04:00",
+            "external_charge_id": "01M2JTXARNVYPFTPXZBAE5GHR8",
+            "id": "178164117729-001",
+            "last_updated": "2026-09-15T11:28:02.000-04:00",
+            "metadata": {
+              "reason": "",
+              "source": "proc-svc-charges",
+              "source_detail": "processing_fee_charge"
+            },
+            "name": "mercadopago_fee",
+            "rate": 4.1,
+            "refund_charges": [],
+            "reserve_id": null,
+            "type": "fee",
+            "update_charges": []
+          }
+        ],
+        "charges_execution_info": {
+          "internal_execution": {
+            "date": "2026-09-15T11:28:02.849-04:00",
+            "execution_id": "01M2JTXAR0JN5S5TKB0QHYDEJK"
+          }
+        },
+        "collector_id": 3497260543,
+        "corporation_id": null,
+        "counter_currency": null,
+        "coupon_amount": 0,
+        "currency_id": "ARS",
+        "date_approved": "2026-09-15T11:28:03.000-04:00",
+        "date_created": "2026-09-15T11:28:02.000-04:00",
+        "date_last_updated": "2026-09-15T11:28:09.000-04:00",
+        "date_of_expiration": null,
+        "deduction_schema": null,
+        "description": "HOS1352 reloj pausa-real",
+        "differential_pricing_id": null,
+        "external_reference": "HOS-1352-reloj-20260915T152756Z-pausa-real",
+        "fee_details": [
+          {
+            "amount": 82,
+            "fee_payer": "collector",
+            "type": "mercadopago_fee"
+          }
+        ],
+        "financing_group": null,
+        "id": 178164117729,
+        "idempotency_key": "idempotencyKeyPostPay_automatic_payments_747cc456534d495b8705027b96785387-3497260543//@DELIMITERmaster_2671930029336144",
+        "installments": 1,
+        "integrator_id": null,
+        "issuer_id": "3",
+        "live_mode": true,
+        "marketplace_owner": null,
+        "merchant_account_id": null,
+        "merchant_number": null,
+        "metadata": {},
+        "money_release_date": "2026-10-03T11:28:03.000-04:00",
+        "money_release_schema": null,
+        "money_release_status": "pending",
+        "notification_url": null,
+        "operation_type": "regular_payment",
+        "order": {},
+        "payer": {
+          "email": "test_user_1181928108220682274@testuser.com",
+          "entity_type": null,
+          "first_name": null,
+          "id": "3499760966",
+          "identification": {
+            "number": "1111111",
+            "type": "DNI"
+          },
+          "last_name": null,
+          "operator_id": null,
+          "phone": {
+            "number": null,
+            "extension": null,
+            "area_code": null
+          },
+          "type": null
+        },
+        "payment_method": {
+          "data": {
+            "routing_data": {
+              "merchant_account_id": "56"
+            }
+          },
+          "id": "master",
+          "issuer_id": "3",
+          "type": "credit_card"
+        },
+        "payment_method_id": "master",
+        "payment_type_id": "credit_card",
+        "platform_id": null,
+        "point_of_interaction": {
+          "application_data": {
+            "name": null,
+            "operating_system": null,
+            "version": null
+          },
+          "business_info": {
+            "branch": "Merchant Services",
+            "sub_unit": "recurring",
+            "unit": "online_payments"
+          },
+          "location": {
+            "source": "payer",
+            "state_id": "NN"
+          },
+          "references": [
+            {
+              "id": "c3fa1f1052d44dd0856b55b112fc89e1",
+              "type": "AUTOMATIC_PAYMENTS_ATTEMPT"
+            }
+          ],
+          "transaction_data": {
+            "billing_date": "2026-09-15",
+            "first_time_use": true,
+            "invoice_id": "5689ca19f1fc4312965a0775f86c4f16",
+            "invoice_period": {
+              "period": 1,
+              "type": "daily"
+            },
+            "payment_reference": null,
+            "plan_id": null,
+            "processor": null,
+            "subscription_id": "747cc456534d495b8705027b96785387",
+            "subscription_sequence": {
+              "number": 1,
+              "total": null
+            },
+            "user_present": true
+          },
+          "type": "SUBSCRIPTIONS"
+        },
+        "pos_id": null,
+        "processing_mode": "aggregator",
+        "refunds": [],
+        "release_info": null,
+        "shipping_amount": 0,
+        "sponsor_id": null,
+        "statement_descriptor": "Mercadopago*fake",
+        "status": "approved",
+        "status_detail": "accredited",
+        "store_id": null,
+        "tags": null,
+        "taxes_amount": 0,
+        "tenant_context": "mp",
+        "transaction_amount": 2000,
+        "transaction_amount_refunded": 0,
+        "transaction_details": {
+          "acquirer_reference": null,
+          "external_resource_url": null,
+          "financial_institution": null,
+          "installment_amount": 2000,
+          "net_received_amount": 1918,
+          "overpaid_amount": 0,
+          "payable_deferral_period": null,
+          "payment_method_reference_id": null,
+          "total_paid_amount": 2000
+        },
+        "shipping_cost": 0
+      }
+    ],
+    "paging": {
+      "total": 1,
+      "offset": 0,
+      "limit": 0
+    }
+  },
+  "autorizados": {
+    "results": [
+      {
+        "preapproval_id": "747cc456534d495b8705027b96785387",
+        "id": 7031963977,
+        "type": "recurring",
+        "status": "processed",
+        "date_created": "2026-09-15T11:28:02.000-04:00",
+        "last_modified": "2026-09-15T11:28:43.000-04:00",
+        "transaction_amount": 2000.00,
+        "currency_id": "ARS",
+        "reason": "HOS1352 reloj pausa-real",
+        "external_reference": "HOS-1352-reloj-20260915T152756Z-pausa-real",
+        "payment": {
+          "id": 178164117729,
+          "status": "approved",
+          "status_detail": "accredited"
+        },
+        "retry_attempt": 1,
+        "debit_date": "2026-09-15T11:28:02.000-04:00",
+        "payment_method_id": "card"
+      }
+    ],
+    "paging": {
+      "offset": 0,
+      "limit": 12,
+      "total": 1
+    }
+  }
+}

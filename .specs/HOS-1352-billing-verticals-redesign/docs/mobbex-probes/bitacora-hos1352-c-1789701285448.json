@@ -1,0 +1,41 @@
+{
+  "sello": "hos1352-c-1789701285448",
+  "fecha": "2026-09-18T03:14:47.589Z",
+  "bitacora": [
+    {
+      "metodo": "GET",
+      "ruta": "/p/subscriptions/BUKMU1DXUSY2J8CHTC/subscriber/ZWOF5HCVGB12J5BGC0",
+      "status": 200,
+      "ok": true,
+      "texto": "{\"result\":true,\"data\":{\"subscriber\":{\"uid\":\"ZWOF5HCVGB12J5BGC0\",\"reference\":\"hos1352-1789701214886-sub1\",\"customerReference\":\"\",\"total\":0,\"taxes\":[],\"setupFee\":0,\"test\":true,\"startDate\":\"2026-09-18T03:00:00.000Z\",\"timeframe\":5,\"status\":\"active\",\"updated\":\"2026-09-18T03:13:44.071Z\",\"created\":\"2026-09-18T03:13:44.068Z\",\"webhook\":\"\",\"customerData\":{\"email\":\"sonda-hos1352@hospeda.com.ar\",\"name\":\"Sonda HOS1352\",\"identification\":\"12123123\"},\"agenda\":[{\"type\":\"period\",\"day\":18,\"month\":0,\"year\":0,\"perio"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/subscriptions/BUKMU1DXUSY2J8CHTC/subscriber/ZWOF5HCVGB12J5BGC0/execution",
+      "status": 200,
+      "ok": true,
+      "texto": "{\"result\":true,\"data\":{}}"
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/p/subscriptions/BUKMU1DXUSY2J8CHTC/subscriber/ZWOF5HCVGB12J5BGC0/execution",
+      "status": 200,
+      "ok": true,
+      "texto": "{\"result\":true,\"data\":{}}"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/sources/token",
+      "status": 200,
+      "ok": false,
+      "texto": "{\"result\":false,\"code\":\"GENERIC:EFCS\",\"error\":\"Execution failed. Please contact support with the case ID.  ID: 83edcf4a-5388-4a85-8496-29a2c8c102c9\"}"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/p/sources/token",
+      "status": 200,
+      "ok": false,
+      "texto": "{\"result\":false,\"code\":\"GENERIC:EFCS\",\"error\":\"Execution failed. Please contact support with the case ID.  ID: 9100c51b-1d30-4a17-9ebf-50c46feff19a\"}"
+    }
+  ]
+}

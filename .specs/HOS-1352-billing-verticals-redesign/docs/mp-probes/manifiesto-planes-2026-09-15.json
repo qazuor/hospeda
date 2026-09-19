@@ -1,0 +1,58 @@
+{
+  "sonda": "33+34",
+  "entorno": "sandbox",
+  "creado": "2026-09-16T02:27:33.706Z",
+  "stamp": "20260916T022717Z",
+  "ciclo_de_los_planes": "months",
+  "sujetos": [
+    {
+      "slug": "plan-A",
+      "tipo": "preapproval_plan",
+      "id": "3462a37ce7bd46c6a276a569b376a477"
+    },
+    {
+      "slug": "plan-B",
+      "tipo": "preapproval_plan",
+      "id": "b264acc641fb46f39ac3ec471c357d22"
+    },
+    {
+      "slug": "suelto-freetrial",
+      "tipo": "preapproval",
+      "id": "104ba9d31949472693c201592b8b4ca8",
+      "plan": null
+    },
+    {
+      "slug": "suelto-repeticiones",
+      "tipo": "preapproval",
+      "id": "ca31abd27f9045ad8519d364439db61d",
+      "plan": null
+    },
+    {
+      "slug": "sub-movible",
+      "tipo": "preapproval",
+      "id": "2f924a371c3c4c658103e8a2524a4c3e",
+      "plan": "A"
+    },
+    {
+      "slug": "sub-testigo",
+      "tipo": "preapproval",
+      "id": "9d8d21e7575b482dad110636a31e1195",
+      "plan": "A"
+    },
+    {
+      "slug": "c1-plan-diario",
+      "tipo": "preapproval_plan",
+      "id": "e85dfa517e0d46159d96cb4dee5a3562"
+    },
+    {
+      "slug": "c2-suelto-billingday-mensual",
+      "tipo": "preapproval",
+      "id": "2763597cd4e24f0082512ec001f8a57c"
+    },
+    {
+      "slug": "c3-plan-mas-frecuencia-propia",
+      "tipo": "preapproval",
+      "id": "f6cd45e670774c6aba391b3f44c7e79b"
+    }
+  ]
+}

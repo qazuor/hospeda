@@ -1,0 +1,27 @@
+{
+  "sello": "hos1352-1789701214886",
+  "fecha": "2026-09-18T03:13:44.167Z",
+  "cuenta": "CUENTA DEMO (publica)",
+  "creados": [
+    {
+      "tipo": "subscription",
+      "uid": "BUKMU1DXUSY2J8CHTC",
+      "etiqueta": "1a · type=dynamic, interval=1m"
+    },
+    {
+      "tipo": "subscription",
+      "uid": "DAMKFD0ZN6TGI6BE30",
+      "etiqueta": "1b · type=manual (sin interval)"
+    },
+    {
+      "tipo": "subscription",
+      "uid": "DTKD9WT1BQ43DQT6CR",
+      "etiqueta": "2a · reference repetida, primera"
+    },
+    {
+      "tipo": "subscription",
+      "uid": "TVKI9Y97E23HB9Q92Y",
+      "etiqueta": "3 · campo inventado + interval inválido"
+    }
+  ]
+}

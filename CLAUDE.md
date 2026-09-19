@@ -731,6 +731,60 @@ ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch
 
 `main` is the validated baseline; `staging` is the integration line. Never branch features from `main`, never PR features into `main`. The only exception is a production hotfix (branch from `main`, fix, PR to `main`, then back-merge `main` → `staging`).
 
+#### `epic/**` — umbrella integration branches (since 2026-09-19, `DEC-CI-001`)
+
+A **multi-epic program** whose parts must ship together uses an umbrella integration branch named
+`epic/<slug>`. Sub-epics cut from it and merge **into it**, never into `staging` directly; `staging`
+is merged **into** the umbrella periodically; and the review happens in the sub-epic → umbrella PRs,
+because the final PR to `staging` is too large for anyone to review honestly. The first case is
+`epic/HOS-1352-verticales-billing`.
+
+This is a **declared exception** to the 6-step flow above, and it is a **project rule, not a
+one-off**: the next program reuses it without editing workflows again.
+
+**Which workflows run on `epic/**`, and which must not.** The risk is never that an unrelated
+`epic/` branch gets CI — lint and tests there are desirable. The risk is running what is
+**expensive**, and above all what has **effects outside the repo**:
+
+| runs on `epic/**` | does NOT run on `epic/**` |
+|---|---|
+| `ci.yml` (on **both** `push` and `pull_request`) | `lighthouse.yml`, `a11y-sweep.yml` — they measure deployed pages; the umbrella deploys nothing |
+| `e2e-pr.yml` — only the **P0** suite, mocked externals, 25 min cap | `whats-new-gate.yml` — `main` by design |
+| `validate-pr-title.yml` | **`smoke-gate-sync.yml`** — see below |
+| `validate-docs.yml` | |
+| `codeql.yml` | |
+| `docs.yml` (already runs; it filters by path, not by branch) | |
+
+⚠️ **`e2e-pr.yml` is there to protect the billing flow while the program replaces it — not to catch
+per-vertical duplication.** A `x === 'gastronomy' ? A : B` that answers wrong for `accommodation`
+and `partner` **passes every e2e** if no test exercises those two verticals; that is `HOS-1079`,
+eleven sites, none caught at runtime. Duplication is caught by the **static** guards inside
+`ci.yml`. And since today's e2e exercise the billing this program deletes, **a unit that replaces a
+billing flow adapts its e2e in the same PR** — otherwise the suite goes chronically red and stops
+being read.
+
+⚠️ **`smoke-gate-sync.yml` must never run on `epic/**`.** It moves Linear issues on merge. Sub-epic
+PRs carry `[HOS-NNNN]` in the title (because `validate-pr-title` requires it), so running it there
+would **close every unit of the program as done with nothing deployed** — the exact footgun this
+file documents with two real incidents (PR #1982 → `HOS-36`, PR #1983 → `HOS-54`, both reverted by
+hand).
+
+**`ci.yml` needs both halves**: `pull_request` covers the sub-epic PRs; **`push` covers the
+periodic `staging` → umbrella merge**, which is not a PR and which no `pull_request` trigger
+reaches. That merge will be noisy in the two diff-based jobs (`security`'s semgrep
+`--baseline-commit` and the seed dual-write guard) because their base resolves to the umbrella's
+previous HEAD; re-dispatch `ci.yml` with `baseline_ref: staging` to fix the base.
+
+**Deep security scanning covers `epic/**` too.** `codeql-staging.yml` pins `ref: staging`, so an
+umbrella branch would accumulate **months of new code with no deep scan**, covered only by
+semgrep-by-diff — which looks at the change, not the whole, and therefore cannot see what emerges
+from the **combination** of changes that each passed on their own. A branch that lives for months
+needs the defences **more**, not less. This is a project rule: every umbrella branch gets it, not
+just the first one.
+
+> **A guard listed in `pnpm check:guards` does NOT automatically run in CI** — it needs its own
+> step in the `guards` job. This bites whenever a program adds guards of its own.
+
 #### Post-merge: a merged PR is DONE — new work needs a new branch + new PR
 
 When a PR is merged, GitHub closes it. Pushing additional commits to the same branch DOES NOT reopen the PR — those commits become orphans living on a branch with no review surface. This is silent — git accepts the push, you only notice later when the work isn't anywhere.
