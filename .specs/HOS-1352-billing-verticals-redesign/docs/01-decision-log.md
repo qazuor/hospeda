@@ -2587,12 +2587,61 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-008 — «Resuelto» incluye el dominio que el ARREGLO crea, y el ciclo corta con causa declarada
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Extiende `DEC-METH-004`** (la definición de «resuelto») y **enmienda `DEC-METH-006`** (la
+  condición de corte del ciclo 8 ↔ 9).
+- **Problema, y está medido**: la primera vuelta del ciclo —la FASE 8-bis— produjo **112 hallazgos
+  y 28 críticos**, y de los 25 críticos de las pasadas A y B, **25 los atribuyen sus propios
+  informes a un cambio de la FASE 9**. **Ninguno es un defecto preexistente** que la primera pasada
+  hubiera dejado pasar. Con la condición de corte tal como estaba —*«hasta que una pasada no
+  produzca ningún `CRITICA` nuevo»*— el ciclo **no termina**: mide un **stock** de defectos cuando
+  el generador es **el acto de arreglar**. El conteo baja (48 → 28) porque baja el tamaño de la
+  tanda de arreglos, no porque baje la deuda.
+- **La causa, precisa**: `DEC-METH-004` define «resuelto» como *«el camino del hallazgo,
+  reejecutado, ya no llega — y para un racimo, la regla corregida se verifica contra todo el
+  dominio que cuantifica»*. **Ese dominio es el del PROBLEMA, nunca el del ARREGLO.** Caso testigo,
+  medido: al partir el `UNIQUE` del §11 por `sucede_a`, el dominio pasó de **90 a 180 pares** y la
+  resolución de `R1` verificó **los 90 de antes**. La mitad nueva contenía el doble cobro que el
+  arreglo venía a cerrar (`F-8bB1-001`).
+- **Decisión, y son cuatro partes:**
+  1. **Un arreglo se verifica contra el dominio que el arreglo CREA**, enumerado con la misma regla
+     que el del problema: lista finita, con fuente por elemento. Si el arreglo agrega un eje a una
+     clave, a un estado o a una clasificación, **el dominio se multiplica y se re-enumera**.
+  2. **Y contra las premisas de los demás racimos.** La pregunta es explícita y se contesta por
+     escrito: **«¿qué premisa de OTRO racimo estoy volviendo falsa?»**. Tiene su caso testigo: `R2`
+     construyó el título `BASE` sobre *«`Turista Free`, `Guest` y `TRIAL_EXPIRED` no tienen ninguna
+     fuente `TÍTULO`»* y `R3` la volvió falsa para dos de los tres, **sin que ninguno lo notara**.
+  3. **La condición de corte del ciclo pasa a ser la misma que la de salida de la FASE 9**: se
+     repite hasta que **ningún `CRITICA` quede abierto sin causa declarada**, en vez de hasta que
+     una pasada no produzca ninguno. Es el criterio que `DEC-METH-006` ya eligió para la fase,
+     aplicado al ciclo.
+  4. **Quién decide, caso por caso: el owner.** Para cada `CRITICA`, la elección entre **arreglarlo**
+     y **declararlo con su causa** la toma el owner, y **el agente no elige por su cuenta**. Se le
+     presenta qué se rompe, de dónde salió y una recomendación; la decisión es suya.
+- **Por qué las cuatro juntas y no algunas**: la 1 y la 2 **atacan al generador** y solas no acotan
+  el número de vueltas; la 3 **pone la cota** y sola no mejora nada —sólo deja de esperar—, y entre
+  los 28 críticos de esta pasada hay dobles cobros literales. La 4 es la condición que el owner puso
+  al aprobar las otras tres, y no es cosmética: **cuál de los dos caminos toma un crítico es una
+  decisión de producto y de riesgo**, no una de método.
+- **Lo que NO se decidió**: bajar la vara de `CRITICA`. Se revisaron los 28 buscando severidad
+  inflada y no se encontró ninguno.
+- **Resultado de su primera aplicación**, el mismo día: las **23** decisiones se tomaron familia por
+  familia — **22 `ARREGLAR`**, **1 `APLICAR`** (no era un defecto de diseño sino una regla ya escrita
+  y no pegada) y ninguna declarada con causa.
+- **Origen**: la FASE 8-bis, `17-fase-8-bis/00-hallazgos.md` §2, y la conversación con el owner del
+  2026-09-19 —*«vamos con la 3, pero con la condición de que no tomes vos la decisión de si se
+  arregla o se escribe la causa y se patea: cada caso de esos me lo decís y me das a elegir»*.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **60** |
-| De metodología | 7 |
+| Decisiones tomadas | **61** |
+| De metodología | 8 |
 | Funcionales | 53 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
