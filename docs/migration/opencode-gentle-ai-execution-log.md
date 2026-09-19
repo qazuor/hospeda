@@ -2590,3 +2590,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Sólo permanece el cross-check opcional de
   `HOSPEDA_INTERNAL_REQUEST_SECRET` ausente en ambos lados; no se imprimió su
   valor ni se modificó ningún archivo.
+
+## Gate 88 · Wrappers Gentle-AI read-only
+
+- `hops gentle-status --json` respondió con Gentle-AI `2.9.0`, review
+  `clean` y telemetry preview; no ejecutó instalación, sync, upgrade ni
+  escrituras de Engram.
+- `hops gentle-sdd-status --json` respondió `sdd-status@2`, store `openspec` y
+  estado `unresolved` porque no hay cambios activos bajo `openspec/changes`.
+- El estado bloqueado es informativo y esperado en un repositorio sin una
+  feature SDD activa; no se creó ninguna estructura ni artifact.
