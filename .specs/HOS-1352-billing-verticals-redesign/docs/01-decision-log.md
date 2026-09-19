@@ -2137,13 +2137,61 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-MIG-002 — Las altas nuevas siguen tomándose en el sistema actual durante el rediseño
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el capítulo 21 §3.3 dejó abierto qué pasa con quien se suscriba **mientras dura el
+  rediseño**. Es una decisión comercial, no técnica: congelar altas tiene costo de negocio —tres
+  verticales todavía no vendieron nada— y no congelarlas agranda la cohorte que después hay que
+  transcribir a mano, que es precisamente lo que hoy hace barata a la coordinación manual de
+  `DEC-MIG-001`.
+- **Las cifras que la sostienen**, medidas el 2026-09-15 y re-verificadas el 2026-09-17 sin un solo
+  cambio ([`07-facts-inventory.md`](./07-facts-inventory.md)):
+
+  | | |
+  |---|---|
+  | pagos registrados en toda la historia del sistema | **0** |
+  | suscripciones vivas | **8**, todas mensuales |
+  | con compromiso de cobro vivo | **3** |
+  | gastronomías · experiencias · partners | **0 · 0 · 0** |
+
+- **Alternativas**: (1) **seguir tomando altas** en el sistema actual; (2) **congelar altas nuevas**
+  hasta FASE 10; (3) **coexistencia de dos motores**.
+- **Decisión**: **(1)**. Se siguen tomando altas en el sistema actual, y **se transcriben a mano
+  cuando el rediseño esté listo**, con el mismo procedimiento del §2.3 que `DEC-MIG-001` fijó para
+  las cinco relaciones vivas.
+- **Motivo**: el owner declara que **van a ser muy pocas**. Con ese volumen la opción (1) no cuesta
+  nada comercialmente, y el trabajo extra que genera es el mismo que ya está aceptado para las cinco
+  existentes. La (2) cobra un costo de negocio cierto —cerrar la venta de tres verticales que recién
+  arrancan— para ahorrar un trabajo manual que hoy es chico. La (3) es la más cara de construir y
+  **contamina la arquitectura nueva**, que es exactamente lo que el §56 pide no hacer.
+- **Lo que esta decisión NO afirma**: que la transcripción manual escale. Es barata **porque son
+  pocas**, y esa premisa es la que hay que vigilar, no la decisión.
+- **El riesgo, declarado**: **la cohorte a transcribir crece mientras dure el rediseño.** Hoy son 5;
+  cada alta nueva suma una. **Si el ritmo de altas se acelera hay que volver a mirar esto** — no
+  porque la decisión haya sido mala, sino porque habría cambiado la condición que la hacía barata.
+  Queda anotado en [`04-open-decisions.md`](./04-open-decisions.md) § *«Para revisar más adelante»*.
+- **Implicaciones**:
+  1. **El capítulo 21 §3.3 queda cerrado.** Era la única decisión que ese capítulo abría en vez de
+     cerrar, y la que remitía a `04-open-decisions.md` sin estar registrada ahí.
+  2. **No agrega trabajo de código.** La transcripción usa el procedimiento que `DEC-MIG-001` ya
+     definió; lo único que cambia es cuántas filas pasan por él.
+  3. **El 2026-09-26 sigue siendo su propia cosa.** El primer cobro de la historia del sistema
+     ocurre **bajo el sistema actual** (cap. 21 §3.2 b) y no es materia de esta decisión: es una
+     operación que necesita a alguien mirándola el día que pase.
+- **Origen**: conversación con el owner del 2026-09-19 —*«van a ser muy pocas, lo manejamos
+  manualmente cuando el rediseño esté listo»*—, a partir de la auditoría que encontró que el
+  capítulo 21 declaraba esta decisión como registrada y **no lo estaba**.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **49** |
+| Decisiones tomadas | **50** |
 | De metodología | 3 |
-| Funcionales | 46 |
+| Funcionales | 47 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |
