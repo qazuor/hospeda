@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_30",
-        "number": 30,
+        "id": "ver_claude_opencode_migration_31",
+        "number": 31,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "reauditar Engram después de la limpieza reciente",
+        "reason": "validar restore Engram en copia aislada",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_29"
+        "basedOnVersion": "ver_claude_opencode_migration_30"
     },
     "data": {
         "sections": [
@@ -201,7 +201,7 @@
                             "title": "Probar restore en copia",
                             "category": "Engram + CLAUDE.md",
                             "description": "Comprobar rollback completo con DB, WAL, SHM y checksums.",
-                            "notes": "Copia temporal DB/WAL/SHM creada, checksum e integrity_check ok; falta validar doctor/export sin consulta de red y una restauración funcional aislada.",
+                            "notes": "Validación completada en copia temporal: SQLite íntegra antes/después, 9.782 observaciones y 11.822 sesiones conservadas. Doctor blocked por 1.067 mismatches y 6.030 payloads sync incompletos; original intacta. Detalle en engram-restore-validation.md.",
                             "done": false
                         },
                         {
