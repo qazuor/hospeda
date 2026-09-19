@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_2",
-        "number": 2,
+        "id": "ver_claude_opencode_migration_3",
+        "number": 3,
         "createdAt": "2026-09-16T00:00:00.000Z",
         "author": "opencode",
-        "reason": "lifecycle seguro de DB template expuesto por Hops",
+        "reason": "agente explícito y distribución unificada de comandos Hops",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_1"
+        "basedOnVersion": "ver_claude_opencode_migration_2"
     },
     "data": {
         "sections": [
@@ -412,6 +412,22 @@
                             "description": "Construir candidatos desde una base vacía, validar journal/manifest/fingerprint y promover sólo con confirmación, conservando rollback.",
                             "notes": "Implementado en scripts/worktree/template.sh y expuesto por hops db-update-template con status, build-candidate y promote --confirm. La integración en hospeda-staging y el E2E desde wrappers globales siguen pendientes.",
                             "done": true
+                        },
+                        {
+                            "id": "agent-explicit-launch",
+                            "title": "Hacer explícito el agente de start-issue",
+                            "category": "CLI y compatibilidad",
+                            "description": "Crear worktree sin abrir ningún agente por defecto; abrir Claude u OpenCode sólo cuando se indique --agent.",
+                            "notes": "Implementado. --agent claude y --agent opencode son explícitos; --no-claude queda como compatibilidad histórica.",
+                            "done": true
+                        },
+                        {
+                            "id": "unified-command-distribution",
+                            "title": "Distribuir una fuente única de comandos Hops",
+                            "category": "CLI, skills y workflows",
+                            "description": "Mantener una definición canónica de nuestros comandos y generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
+                            "notes": "Nueva tarea. Evaluar archivos copiados, symlinks o generación; el instalador debe detectar clientes, instalar adapters y propagar actualizaciones sin duplicar lógica.",
+                            "done": false
                         }
                     ]
                 }

@@ -21,9 +21,11 @@ export interface StartIssueOptions {
     readonly issueArg: string | null;
     /** Branch type override, or `null` to derive it from the issue's labels. */
     readonly type: BranchType | null;
-    /** Whether to launch Claude once the worktree exists. */
+    /** Whether to launch the selected agent once the worktree exists. */
     readonly launchClaude: boolean;
-    /** Whether to hand Claude the `/startIssue` command instead of an empty prompt. */
+    /** Agent to launch after the worktree exists. */
+    readonly agent: 'claude' | 'opencode' | 'none';
+    /** Whether to hand the selected agent `/hops-start-issue` instead of an empty prompt. */
     readonly withStartIssue: boolean;
     /** Whether to stop after reporting what would be created. */
     readonly dryRun: boolean;
@@ -44,10 +46,18 @@ export function parseStartIssueArgs({
 }): StartIssueOptions {
     const positionals = argv.filter((arg) => !arg.startsWith('-'));
     const typeArg = positionals[1];
+    const agentArg = positionals.includes('--agent')
+        ? null
+        : (() => {
+              const index = argv.indexOf('--agent');
+              return index >= 0 ? argv[index + 1] : null;
+          })();
+    const agent = agentArg === 'opencode' || agentArg === 'claude' ? agentArg : 'none';
     return {
         issueArg: positionals[0] ?? null,
         type: BRANCH_TYPES.includes(typeArg as BranchType) ? (typeArg as BranchType) : null,
-        launchClaude: !argv.includes('--no-claude'),
+        launchClaude: agent !== 'none' && !argv.includes('--no-claude'),
+        agent: argv.includes('--no-claude') ? 'none' : agent,
         withStartIssue: !argv.includes('--bare'),
         dryRun: argv.includes('--dry-run'),
         help: argv.includes('--help') || argv.includes('-h')
@@ -60,20 +70,20 @@ export function renderStartIssueHelp(): string {
 ${pc.bold('hops start-issue')} — arrancar a laburar un issue de Linear
 
   ${pc.dim('Lee el issue en Linear, arma el worktree con su branch cortada de staging,')}
-  ${pc.dim('y abre Claude adentro. El nombre de la branch sale del título del issue,')}
-  ${pc.dim('igual que el comando /startIssue — para que los dos caminos coincidan.')}
+  ${pc.dim('y opcionalmente abre el agente elegido adentro. El nombre de la branch sale del título')}
+  ${pc.dim('del issue, igual que el comando /hops-start-issue — para que todos los clientes coincidan.')}
 
 ${pc.bold('Uso')}
 
-  hops start-issue <issue> [tipo] [--bare] [--no-claude]
+  hops start-issue <issue> [tipo] [--agent claude|opencode] [--bare]
 
   ${pc.bold('<issue>')}       273, hos-273, HOS-273 o #273 — todos valen.
   ${pc.bold('[tipo]')}        ${BRANCH_TYPES.join(' | ')}. Si no lo pasás sale de los labels
                 del issue (bug → fix, improvement → refactor, resto → feat).
-  ${pc.bold('--bare')}        Abre Claude sin prompt inicial. Por default le pasa
-                «/startIssue HOS-N», que flipea el issue a In Progress en
+  ${pc.bold('--bare')}        Abre el agente elegido sin prompt inicial. Por default le pasa
+                «/hops-start-issue HOS-N», que flipea el issue a In Progress en
                 Linear y te resume los criterios de aceptación.
-  ${pc.bold('--no-claude')}   Sólo crea el worktree y te imprime la ruta.
+  ${pc.bold('--agent')}       Agente a abrir: claude u opencode. Si falta, no abre ninguno.
   ${pc.bold('--dry-run')}     Te dice qué branch y qué worktree armaría, y no toca nada.
   ${pc.bold('--help')}        Esta página.
 
@@ -94,7 +104,15 @@ function createWorktree({
     readonly slug: string;
     readonly repoRoot: string;
 }): Promise<{ readonly code: number; readonly output: string }> {
-    const script = join(homedir(), '.claude', 'skills', 'worktree', 'scripts', 'wt-create.sh');
+    const configured = process.env.HOPS_WORKTREE_SCRIPT_DIR;
+    const configuredScript = configured ? join(configured, 'wt-create.sh') : null;
+    const repoScript = join(repoRoot, 'scripts', 'worktree', 'wt-create.sh');
+    const script =
+        configuredScript && existsSync(configuredScript)
+            ? configuredScript
+            : existsSync(repoScript)
+              ? repoScript
+              : join(homedir(), '.claude', 'skills', 'worktree', 'scripts', 'wt-create.sh');
     return new Promise((resolve) => {
         const child = spawn('bash', [script, type, slug], { cwd: repoRoot });
         let output = '';
@@ -113,19 +131,21 @@ function createWorktree({
 }
 
 /** Launches Claude inside the worktree, inheriting the terminal. */
-function launchClaudeIn({
+function launchAgentIn({
     cwd,
-    prompt
+    prompt,
+    agent
 }: {
     readonly cwd: string;
     readonly prompt: string | null;
+    readonly agent: 'claude' | 'opencode';
 }): Promise<number> {
     return new Promise((resolve) => {
         const args = prompt === null ? [] : [prompt];
-        const child = spawn('claude', args, { cwd, stdio: 'inherit' });
+        const child = spawn(agent, args, { cwd, stdio: 'inherit' });
         child.on('error', () => {
             process.stderr.write(
-                `${pc.red('No pude ejecutar `claude`.')} El worktree quedó creado en:\n  ${cwd}\n`
+                `${pc.red(`No pude ejecutar \`${agent}\`.`)} El worktree quedó creado en:\n  ${cwd}\n`
             );
             resolve(1);
         });
@@ -235,16 +255,17 @@ export async function runStartIssue({
 
     process.stderr.write(`\n${pc.green('Worktree listo:')} ${worktreePath}\n`);
 
-    if (!opts.launchClaude) {
+    if (opts.agent === 'none') {
         process.stdout.write(`${worktreePath}\n`);
         process.stderr.write(pc.dim(`Entrá con:  cd ${worktreePath}\n`));
         return 0;
     }
 
-    process.stderr.write(`${pc.dim('Abriendo Claude adentro…')}\n\n`);
-    const code = await launchClaudeIn({
+    process.stderr.write(`${pc.dim(`Abriendo ${opts.agent} adentro…`)}\n\n`);
+    const code = await launchAgentIn({
         cwd: worktreePath,
-        prompt: opts.withStartIssue ? `/startIssue ${issueId}` : null
+        prompt: opts.withStartIssue ? `/hops-start-issue ${issueId}` : null,
+        agent: opts.agent
     });
 
     process.stderr.write(

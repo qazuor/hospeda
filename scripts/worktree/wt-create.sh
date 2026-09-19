@@ -67,7 +67,7 @@ git -C "$ROOT" worktree add "$WTPATH" -b "$BRANCH" "$START" || { echo "git workt
 # setup.envCopyScript/install/build only take effect once merged to baseBranch;
 # reading from $CFG here would silently keep using whatever setup.* the main
 # repo's own branch happens to have, which is how HOS-68's own build-step fix
-# failed to apply on the very next /startIssue run after merging. Falls back to
+# failed to apply on the very next /hops-start-issue run after merging. Falls back to
 # $CFG if the new worktree somehow has no config of its own.
 NEWCFG="$WTPATH/.claude/project.config.json"
 [ -f "$NEWCFG" ] || NEWCFG="$CFG"
@@ -107,4 +107,5 @@ jq -n --arg br "$BRANCH" --arg ts "$ts" \
 
 echo
 echo "DONE → $WTPATH"
-echo "Open a new terminal:  cd $WTPATH && claude"
+echo "Entrá al worktree con:  cd $WTPATH"
+echo "Luego ejecutá el agente que quieras (claude, opencode u otro)."

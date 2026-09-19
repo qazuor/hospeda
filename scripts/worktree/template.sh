@@ -43,7 +43,7 @@ status() {
 }
 
 stamp() {
-  local db="$1" fp="$2" commit="${3:-unknown}" tool="opencode-template-v1"
+  local db="$1" fp="$2" commit="${3:-unknown}" tool="hospeda-template-v1"
   ensure_manifest_table "$db" || { echo "ERROR: cannot create manifest table"; exit 1; }
   local count
   count="$(pgsh "psql -U $DBUSER -d $db -tAc \"SELECT count(*) FROM drizzle.__drizzle_migrations\" 2>/dev/null" 2>/dev/null | tr -d '[:space:]' || echo 0)"
