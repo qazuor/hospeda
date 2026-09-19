@@ -174,11 +174,20 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 | en un capítulo de subdominio | 5 | 0 |
 | **total** | **37** | **14** |
 
-> La columna de la derecha suma 14 sobre 12 invariantes, y no es un error de conteo: **`D3` y
-> `D12` se sostienen en dos niveles a la vez**. `D3` necesita que la base restrinja el dominio
-> del motivo **y** que el servicio lo lea en vez de leer al proveedor; `D12` necesita un guard
-> que impida pedirle un trial al proveedor **y** un servicio que lleve el reloj. Un invariante
-> con dos apoyos no está contado de más: está apoyado dos veces.
+> Las celdas de la columna derecha suman **16 apoyos** sobre **14 invariantes**, y no es un error
+> de conteo: **`D3` y `D12` se sostienen en dos niveles a la vez**. `D3` necesita que la base
+> restrinja el dominio del motivo **y** que el servicio lo lea en vez de leer al proveedor; `D12`
+> necesita un guard que impida pedirle un trial al proveedor **y** un servicio que lleve el reloj.
+> Un invariante con dos apoyos no está contado de más: está apoyado dos veces.
 
-**Cuarenta y nueve invariantes, y ocho los sostiene la base.** El resto depende de que exista un
+**Cincuenta y un invariantes, y ocho los sostiene la base.** El resto depende de que exista un
 único lugar donde se evalúen — que es, en una línea, de qué se trata el §7.
+
+> **Corregido el 2026-09-19 — FASE 8** (`F-8A1-016`, `F-8A3-016`, `F-8C1-012`). Estas dos frases
+> decían **«suma 14 sobre 12»** y **«Cuarenta y nueve»**, y las dos son **anteriores a `D13` y
+> `D14`**, que el §4 de este capítulo declara agregados al cerrar el capítulo 10 §4. Al agregarlos
+> se actualizaron las celdas de la tabla y su total, y no estas dos líneas. La aritmética que
+> dirime: la tabla del §3 tiene **14 filas** (`D1`…`D14`), 37 + 14 = **51**, y el «ocho los
+> sostiene la base» lo corrobora (6 de la izquierda + 2 de la derecha). Cuatro de los ocho
+> informes de FASE 8 dijeron 49 y dos dijeron 51: **dirimió la aritmética del documento, no la
+> mayoría**.

@@ -107,8 +107,14 @@ vence.
 
 ## 2. El glosario de estados · cierra `M-ARCH-01`
 
-El §63 pide ocho máquinas. El capítulo 03 las define; acá se fijan **los nombres** y, sobre
-todo, se separa la colisión que el PDR trae.
+El §63 pide ocho máquinas. El capítulo 03 define **nueve** — las ocho del §63 más la
+**Postulación de Partner**, que el capítulo 18 §5 declara agregada al núcleo. Acá se fijan **los
+nombres** y, sobre todo, se separa la colisión que el PDR trae.
+
+> **Precisado el 2026-09-19 (FASE 8, `F-8C1-011`).** Esta frase decía *«El §63 pide ocho
+> máquinas. El capítulo 03 **las** define»*, que hacía coincidir lo que el PDR pide con lo que el
+> capítulo entrega, y no coinciden. Las nueve son las secciones §2 a §11 del capítulo 03 **menos
+> la §10**, que no es una máquina sino la regla de no-retroceso.
 
 ### 2.1 Los dos `SUSPENDED` del PDR son estados distintos
 
