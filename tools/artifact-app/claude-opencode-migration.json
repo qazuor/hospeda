@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_4",
-        "number": 4,
+        "id": "ver_claude_opencode_migration_5",
+        "number": 5,
         "createdAt": "2026-09-16T00:00:00.000Z",
         "author": "opencode",
-        "reason": "develop, promociones, Dependabot y Codex agregados al backlog",
+        "reason": "distribución unificada ampliada a instrucciones y conocimiento del agente",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_3"
+        "basedOnVersion": "ver_claude_opencode_migration_4"
     },
     "data": {
         "sections": [
@@ -425,8 +425,8 @@
                             "id": "unified-command-distribution",
                             "title": "Distribuir una fuente única de comandos Hops",
                             "category": "CLI, skills y workflows",
-                            "description": "Mantener una definición canónica de nuestros comandos y generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
-                            "notes": "Nueva tarea. Evaluar archivos copiados, symlinks o generación; el instalador debe detectar clientes, instalar adapters y propagar actualizaciones sin duplicar lógica.",
+                            "description": "Mantener una definición canónica de comandos, skills, agentes, workflows e instrucciones de trabajo; generar/adaptar instalaciones para Claude Code, OpenCode y Codex, conservando el prefijo hops-.",
+                            "notes": "Ampliado. Debe incluir AGENTS.md, CLAUDE.md compatible, instrucciones globales/project-locales, perfiles, permisos, guardrails y adapters. Evaluar copias, symlinks o generación; detectar clientes, propagar actualizaciones y validar hashes/derivaciones para que varios agentes trabajen con las mismas reglas sin duplicar lógica.",
                             "done": false
                         },
                         {
