@@ -32,6 +32,9 @@ vertical (catálogo, espejo del enum)
     └──< plan ──< plan_version ──┬──< billing_option
                                  ├──< plan_version_entitlement
                                  └──< plan_version_limit
+
+addon_version ──┬──< addon_version_entitlement
+                └──< addon_version_limit
 ```
 
 | entidad | qué guarda | restricciones |
@@ -41,6 +44,37 @@ vertical (catálogo, espejo del enum)
 | **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
 | **`plan_version_limit`** | qué clave limita y con qué valor | ídem |
+| **`addon_version`** | **qué otorga un addon y con qué valores**: vigencia, tipo de scope. **Inmutable** | una instancia **ancla** su versión, igual que una suscripción ancla la suya |
+| **`addon_version_entitlement`** | qué clave otorga el addon | `UNIQUE(addon_version_id, clave)`; la clave existe en el catálogo |
+| **`addon_version_limit`** | qué clave limita y con qué valor | ídem |
+
+**El catálogo de addons se parte por el mismo corte que el de planes, y por el mismo criterio.**
+El §11.2 del programa ya lo enunció —*«**No es por entidad, es por campo**»*— y `addon_product`
+había quedado entero del lado equivocado. Guardaba *«capability, precio, recurrencia, verticales
+compatibles, duración, tipo de scope»*: **precio y recurrencia son dinero; capability, duración y
+scope son capacidades.**
+
+| mitad | qué guarda | lado |
+|---|---|---|
+| `addon_version` | qué otorga y con qué valores, vigencia, tipo de scope | **VERTICALES** |
+| `addon_product` | precio, recurrencia, verticales compatibles | **BILLING** |
+
+**Sin este corte, el «30» del PDR no tiene dónde vivir.** El ejemplo del §38 es concreto —*«plan 20
+fotos + addon 30 = 50»*— y ningún lugar del modelo guardaba qué otorga un addon; el lado verticales
+tendría que **preguntarle a billing qué otorga un addon**, que es el acoplamiento que el corte en
+dos épicas venía a impedir.
+
+**La versión es inmutable**, por `DEC-ARCH-001` tal cual: *«se versiona lo que tiene efecto»*.
+Cambiar de 30 a 40 fotos tiene efecto sobre lo que el cliente puede hacer, así que crea versión.
+
+**Y los efectos son plurales y con valor, sin inventar una segunda forma de declarar capacidades**:
+`addon_version_entitlement` y `addon_version_limit` son el espejo exacto de las dos tablas del
+plan. El glosario decía *«**efectos**»* en plural y el modelo instanciaba `capability` en singular;
+acá se cierra.
+
+**Consecuencia útil**: partido así, **un addon puede otorgar sin que billing intervenga**, que es
+lo que hace implementable que el addon sea un complemento que agrega capacidades y **nunca**
+cobertura (`12-contrato-de-cobertura.md` §2.4).
 
 **«Vendible» sin «vigente» no alcanza, y las dos restricciones van juntas.** Un plan tiene varias
 versiones y sólo una es la actual; sin marcar cuál, una versión vieja sigue ocupando un `rank` que
@@ -59,6 +93,27 @@ capacidades**.
 vendible**, uno por vertical. Sus limits y entitlements **no se guardan**: se derivan en cada
 resolución, del plan vendible de `rank` más alto y del más bajo, más los overrides declarados
 (`DEC-TRIAL-001`) y el trinquete (`DEC-TRIAL-002`). El §10.3 es explícito en que no se copien.
+
+**Con una excepción, y es la única: `hereda Turista VIP` se DECLARA en el plan de trial, no se
+deriva.** Igual que `vendible`, es un valor escrito en su versión.
+
+**Importa la dirección en la que falla si se derivara.** El plan premium hereda, así que derivar
+esa columna como se derivan las demás **regala beneficios de Turista VIP a alguien que todavía no
+pagó nada** — y `DEC-ENT-003` **además le bloquea la compra de VIP** mientras se los estamos dando
+gratis. No sólo se regala: **se impide vender eso mismo** durante todo el trial. El fondo es que
+los entitlements del trial se derivan porque **el objetivo es que la persona pruebe el producto**,
+y VIP es otra cosa: un beneficio cruzado, de otra vertical, que se vende aparte. Derivarlo mete
+**una decisión comercial adentro de una derivación técnica**, donde nadie la ve.
+
+**Y el valor declarado es que NO lo hereda.** La razón que decide es la misma `DEC-ENT-003`:
+regalarlo durante el trial **bloquea la venta de VIP justo en los días en que esa persona está más
+interesada en la plataforma**, que es el peor momento posible para no poder venderle algo. La
+segunda es que al terminar el trial habría que sacárselo, y eso no se percibe como *«se terminó la
+prueba»* sino como **que le sacaron algo**: la relación de pago arrancaría con una pérdida en vez
+de con una ganancia. El argumento en contra —mostrar el valor completo levanta la conversión— es
+real y se contradice con el primero: **no sirve mostrarle el valor de algo que no se le puede
+cobrar mientras se lo mostrás**. Es un valor declarado, no una derivación, así que cambiarlo el día
+que se quiera probar lo contrario es **una línea**.
 
 **El plan de pre-trial tampoco.** Es un `plan` con su versión, marcado **no vendible**, uno por
 vertical, y es lo que la fuente de trial apunta mientras el trial está en `PRE_TRIAL`. A diferencia

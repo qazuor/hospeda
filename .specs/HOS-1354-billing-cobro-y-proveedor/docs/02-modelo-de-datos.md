@@ -136,12 +136,19 @@ ninguna columna de dinero.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`addon_product`** | capability, precio, recurrencia, verticales compatibles, duración, tipo de scope (§39, §40) | |
+| **`addon_product`** | **precio, recurrencia y verticales compatibles**, más **`version_id`** → `addon_version` (épica de verticales), que es donde viven **qué otorga**, la duración y el tipo de scope | `version_id` **no es anulable**: es la referencia que transporta una fuente `ADDON` |
 | **`addon_instance`** | producto, dueño, **objetivo** (ficha, suscripción de vertical, usuario o global), estado, inicio, fin, su suscripción de complemento si es recurrente | el objetivo corresponde al tipo de scope del producto |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código» |
 | **`courtesy_grant`** | beneficiario, scope, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** |
 | **`permanent_grant`** | beneficiario, scope de verticales, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **el `plan` que otorga** y **el piso del trinquete** | ídem; el plan **no es anulable** |
+
+**`addon_product` se partió por campo, igual que el catálogo de planes.** El corte del §11.2 —*«no
+es por entidad, es por campo»*— dejaba a esta entidad entera del lado de billing con capacidades
+adentro. Ahora **el precio y la recurrencia viven acá y qué otorga vive en `addon_version`** (épica
+de verticales, `V/02` §2.1), que es lo que permite que verticales resuelva lo que un addon otorga
+**sin preguntarle nada a billing**. La instancia **ancla** su versión, igual que una suscripción
+ancla la suya.
 
 **Las concesiones no modifican el plan ni la suscripción: son fuentes independientes.** El §36
 dice que un entitlement sigue activo «mientras al menos una source exista», y eso sólo se puede
