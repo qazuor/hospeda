@@ -2348,3 +2348,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   ejecutó contra la DB porque el filesystem de la sesión la expone read-only.
 - El commit `58e0eed06` quedó integrado en `hospeda-staging` y las funciones Fish
   globales fueron regeneradas apuntando al checkout operativo.
+
+## Gate 67 · `hops update --dry-run` realmente read-only
+
+- Se corrigió `scripts/client-tools/src/commands/update/update.ts`: en modo
+  `--dry-run` usa `git fetch --dry-run` y obtiene el SHA remoto con
+  `git ls-remote`, sin actualizar refs ni escribir `FETCH_HEAD`.
+- Typecheck y suite del worktree de migración pasaron: 294 tests, 0 fallos.
+- El cambio quedó integrado en `hospeda-staging` como `8bfeafb53`.
+- La prueba global posterior ya no falló por filesystem read-only; alcanzó la
+  consulta remota y fue bloqueada únicamente por DNS/red restringida para
+  `github.com`. No se ejecutó reset, reconciliación ni instalación.
+- Pendiente: repetir con conectividad GitHub para validar el resultado completo
+  de `--dry-run` y luego una prueba aislada de la reconciliación real.
