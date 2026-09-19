@@ -2303,12 +2303,63 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-005 — Los guards nuevos salen de lo que la épica pide, y corren desde el día 1
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el repo tiene **45 guards** —scripts que fallan el build a propósito cuando
+  encuentran algo prohibido— y son la defensa real contra el modo de falla que este programa viene
+  a corregir. El caso que lo prueba es `HOS-1079`: **once sitios en `apps/api` decidían una
+  vertical con un ternario binario** (`x === 'gastronomy' ? A : B`) y respondían mal para
+  `accommodation` y `partner`; **ninguno se detectó en runtime**, los cazó un guard estático. Pero
+  el rediseño **borra el sujeto de varios de esos guards**, así que la defensa que más hace falta
+  está programada para morir en medio de la épica (`F-8C2-008`).
+- **Alternativas**: (1) exigir que los `G1`…`G13` del diseño nuevo **cubran lo que cubren los
+  guards condenados**, con mapeo uno a uno; (2) **los viejos quedan como están y se eliminan a
+  medida que se pueda; los nuevos salen de lo que la épica pide, más lo que valga la pena rescatar
+  de los viejos, y corren desde el día 1 de implementación**.
+- **Decisión**: **(2)**.
+- **Motivo de descartar (1)**, y son dos, el segundo medido: **ata el diseño nuevo al vocabulario
+  viejo** —obliga a preguntar cómo se expresa `product_domain` en el modelo nuevo cuando esa
+  pregunta puede no tener sentido—, que es exactamente lo que el **§0 del PDR prohíbe**. Y el
+  inventario de [`15-fase-9/04-inventario-de-guards.md`](./15-fase-9/04-inventario-de-guards.md)
+  mostró que **ni siquiera es cierto que mueran todos**: de los 45, **7 `MUERE`, 6 `REVISAR`, 32
+  `SOBREVIVE`**, y de los diez que vigilan la separación por vertical **mueren cinco**. Un mapeo
+  uno a uno habría obligado a traducir cosas que no desaparecen.
+- **Por qué «desde el día 1» es la parte que importa**: la función de estos guards **no es
+  documentar el diseño, es impedir que una implementación se salga de él**. Un guard que llega
+  después certifica lo que ya se hizo; no protege. Es la misma forma que `DEC-ARCH-004` ya le dio a
+  sus dos condiciones —el guard contra importar el SDK fuera del adaptador, y el adaptador falso
+  «desde el día uno»—, generalizada a todo el programa.
+- **Cómo se vuelve verificable** (el agregado aprobado en la misma conversación): **cada unidad de
+  trabajo declara qué guard entrega, y ese guard es parte de su definición de terminado.** No son
+  una unidad aparte al final. Así «desde el día 1» se comprueba solo: si la unidad está terminada,
+  su guard existe y corre.
+- **Tres datos medidos que hoy lo impiden, y hay que resolver antes**:
+  1. **Los `G1`…`G13` tienen CERO implementados.**
+  2. **`G12` y `G13` no están en ningún capítulo `20`**: nacieron sueltos en las descomposiciones.
+  3. **Estar en `pnpm check:guards` NO hace que un guard corra en CI** — necesita su **paso propio**
+     en el job `guards`. Sin esto se escriben trece guards que no se ejecutan y nadie se entera.
+- **Qué pasa con los viejos**: **no se tocan ahora.** Se eliminan a medida que su sujeto
+  desaparezca, y eso lo deciden las FASES 5 y 6, no esta decisión.
+- **Y el inventario cambia de uso**: deja de ser una lista de borrado y pasa a ser dos cosas — el
+  aviso de **qué se va a poner rojo y por qué no es un bug**, y una **cantera de ideas** para los
+  guards nuevos.
+- **Implicación sobre el alcance**: enumerar los guards que cada unidad entrega es **editar las dos
+  `descomposicion.md`**, o sea la **salida 3 de `DEC-METH-004`**, que va al final de la FASE 9.
+  Queda anotado ahí, no se ejecuta acá.
+- **Origen**: conversación con el owner del 2026-09-19 —*«esos que queden como están, y los vamos
+  eliminando a medida que podamos, y que desde el inicio tengamos los guards nuevos … corran desde
+  el día 1 de implementación de esta épica. eso nos protege que ningún agente le erre en
+  implementación y haga algo por fuera de lo que estamos buscando»*.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **53** |
-| De metodología | 4 |
+| Decisiones tomadas | **54** |
+| De metodología | 5 |
 | Funcionales | 49 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |

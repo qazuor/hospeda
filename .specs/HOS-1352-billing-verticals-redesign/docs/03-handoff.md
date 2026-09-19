@@ -80,7 +80,7 @@ corregido.
 
 | # | salida | estado |
 |---|---|---|
-| 1 | **el diseño** — resolver los seis racimos | ⬜ **nada hecho. Es el grueso** |
+| 1 | **el diseño** — resolver los seis racimos | 🟡 **tres de seis: `R6`, `R2` y `R3`** |
 | 2 | **el registro** — log, handoff, worklog, correcciones | ✅ |
 | 3 | **las sub-specs** de `HOS-1353` y `HOS-1354` | ⬜ va **al final** |
 | 4 | **lo publicado** — 25 issues de Linear y los artifacts | ⬜ va **al final** |
@@ -111,10 +111,19 @@ enumerables** que el documento declara.
 
 Resolver los racimos en este orden, y la razón de cada lugar:
 
-1. **R6 primero**, aunque sea el menos grave: es el único cuyos arreglos son **baratos hoy y caros
-   después** —los workflows que no conocen `epic/**`— y **no toca diseño**.
-2. **R2 y R3**: son los que desbloquean la épica de verticales, que es la que puede empezar.
-3. **R1, R4 y R5 al final**, declarando explícitamente hasta dónde se pueden cerrar.
+~~1. R6 primero · 2. R2 y R3 · 3. R1, R4 y R5~~ — **los tres primeros están hechos** el
+2026-09-19, cada uno con su documento en `15-fase-9/`. Lo que queda:
+
+1. **`R1`** — 84 casos sin mirar, el racimo más grande. Cerrable **salvo su segundo candado**, que
+   cuantifica sobre una columna que define el capítulo 13, inexistente.
+2. **`R5`** — la migración sin dueño, sin orden y sin rollback.
+3. **`R4` al final**, y **declarando que no se puede cerrar**: su dominio son los estados del
+   vínculo con el proveedor, y `provider_link` no tiene ni columna de estado ni máquina.
+
+**Lo que dejaron los tres resueltos, y hay que leer antes de seguir**: `R6` dejó **2 críticos que
+siguen llegando** (`F-8C2-006` depende del gate de FASE 5, `F-8C2-007` es de alcance); `R2` dejó
+**`F-8B3-003` llegando entero** porque depende del capítulo 13; y `R3` **cortó los tres** y de
+paso **encontró dos críticos que la FASE 8 no había visto**, recorriendo los casos sin mirar.
 
 ### Dos cosas que NO hay que rehacer
 
@@ -413,7 +422,7 @@ ssh -p 2222 qazuor@216.238.103.219 "bash -lc \"hops --target=prod exec api -- sh
 —*«NO quiero que la implementación existente condicione el diseño del sistema nuevo»*, *«La
 arquitectura actual NO es la fuente de verdad»*— y el §65 lo repite al abrir la fase.
 
-Las tres fuentes admitidas son el **PDR**, una de las **53 decisiones**, y una **medición fechada**
+Las tres fuentes admitidas son el **PDR**, una de las **54 decisiones**, y una **medición fechada**
 de la matriz o del inventario de hechos. **El registro de 1B (`08`) NO es fuente de diseño**: puede
 aparecer en un capítulo sólo como advertencia de un modo de falla ya observado, marcado como tal.
 
