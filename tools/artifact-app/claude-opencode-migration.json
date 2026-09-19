@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_25",
-        "number": 25,
+        "id": "ver_claude_opencode_migration_26",
+        "number": 26,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "diseñar distribución unificada qz/hops para agentes",
+        "reason": "concretar recomendación híbrida para specs y Gentle SDD",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_24"
+        "basedOnVersion": "ver_claude_opencode_migration_25"
     },
     "data": {
         "sections": [
@@ -523,7 +523,7 @@
                             "title": "Decidir .specs vs Gentle SDD",
                             "category": "Decisión de arquitectura",
                             "description": "Elegir conservar, adaptar, hibridar o usar SDD sólo en features complejas.",
-                            "notes": "Recomendación híbrida pendiente de aprobación.",
+                            "notes": "Recomendación concreta documentada en specs-hybrid-decision.md: Linear + .specs siguen canónicos; Gentle SDD sólo para features complejas, con adapter y sin migración masiva. Requiere aprobación humana antes de implementar.",
                             "done": false
                         },
                         {
