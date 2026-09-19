@@ -156,17 +156,29 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
 
     const fetched = await runner.exec({
         command: 'git',
-        args: ['fetch', 'origin', STAGING_BRANCH],
+        args: dryRun
+            ? ['fetch', '--dry-run', 'origin', STAGING_BRANCH]
+            : ['fetch', 'origin', STAGING_BRANCH],
         cwd: stagingPath
     });
     if (fetched !== 0) return fetched;
 
-    const remote = await run({
-        command: 'git',
-        args: ['rev-parse', `origin/${STAGING_BRANCH}`],
-        cwd: stagingPath
-    });
-    const wanted = remote.ok ? remote.stdout.trim() : null;
+    const remote = dryRun
+        ? await run({
+              command: 'git',
+              args: ['ls-remote', 'origin', `refs/heads/${STAGING_BRANCH}`],
+              cwd: stagingPath
+          })
+        : await run({
+              command: 'git',
+              args: ['rev-parse', `origin/${STAGING_BRANCH}`],
+              cwd: stagingPath
+          });
+    const wanted = remote.ok
+        ? dryRun
+            ? (remote.stdout.trim().split(/\s+/)[0] ?? null)
+            : remote.stdout.trim()
+        : null;
 
     if (before !== null && wanted === before) {
         process.stderr.write(`${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`);
