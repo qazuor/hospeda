@@ -629,7 +629,7 @@
                             "title": "Visor local de artifacts",
                             "category": "Reportes visuales interactivos",
                             "description": "Renderizar bundles declarativos con dark/light/system, galería y versiones.",
-                            "notes": "MVP funcional.",
+                            "notes": "Gate93: `hops artifact list` confirma el slug publicado y `state <slug> --json` lee widgets persistidos sin mutar. El listado se mantiene humano; `--json` no forma parte de ese subcomando.",
                             "done": true
                         },
                         {

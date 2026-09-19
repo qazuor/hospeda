@@ -2638,3 +2638,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   sólo se delegan con `--confirm`; el wrapper no agrega `--hard`, `--apply` ni
   `--all` automáticamente.
 - La ayuda confirma que la DB local sigue fuera del repositorio.
+
+## Gate 93 · Artifact list/state desde Hops
+
+- `hops artifact list` confirmó que `claude-opencode-migration` está publicado
+  en el servidor local con versión 97, junto con los artifacts de catálogo y
+  demo existentes.
+- `hops artifact state claude-opencode-migration --json` leyó los checks
+  persistidos sin mutar widgets ni contenido.
+- `artifact list --json` no es una variante soportada; el CLI respondió con
+  ayuda y no ejecutó ninguna acción. El contrato actual usa `list` humano y
+  `state <slug> --json` para agentes.
