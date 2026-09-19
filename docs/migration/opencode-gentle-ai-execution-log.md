@@ -2272,3 +2272,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El item correspondiente del artifact fue marcado como hecho. Queda pendiente
   integrar este bloque en `hospeda-staging` y repetir el E2E usando los wrappers
   globales.
+
+## Gate 62 · Primer bloque operativo integrado en hospeda-staging
+
+- El commit `5d848e885` fue aplicado limpiamente sobre el checkout operativo
+  como `3c7bbac64`.
+- Se integraron Hops extendido, scripts versionados de worktree, reconciliación
+  de envs, guards, configuración de fingerprint y wrappers de cierre/contexto.
+- La suite de client-tools ejecutada desde `hospeda-staging` terminó con 411
+  tests y 0 fallos; el typecheck también pasó.
+- La prueba de CI se aisló en un repositorio temporal con branch de feature:
+  la protección real de `staging`/`main` no se relajó para satisfacer fixtures.
+- `hospeda-staging` quedó limpio después de la integración.
+- Pendiente: probar los wrappers globales y el E2E real de `wt-create` desde el
+  checkout operativo, incluyendo template, envs, DB, puertos, servers y cleanup.

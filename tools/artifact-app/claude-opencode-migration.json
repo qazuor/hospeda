@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_7",
-        "number": 7,
+        "id": "ver_claude_opencode_migration_8",
+        "number": 8,
         "createdAt": "2026-09-16T00:00:00.000Z",
         "author": "opencode",
-        "reason": "decisión Engram aprobada y wrappers Hops de memoria agregados",
+        "reason": "bloque operativo Hops integrado en hospeda-staging",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_6"
+        "basedOnVersion": "ver_claude_opencode_migration_7"
     },
     "data": {
         "sections": [
@@ -362,7 +362,7 @@
                             "title": "Probar worktrees end-to-end",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Validar pass, DB, puertos, servidores, cleanup y rollback en temporales.",
-                            "notes": "E2E temporal: create, ports, estado, start/stop, protección ante cambios sucios y cleanup. Se corrigió el nombre fijo de Compose y el stack compartido Postgres/Redis quedó saludable. La cadena limpia fue validada: 125 migraciones y 42 extras OK, incluido el 041. Un template candidato con seed permitió levantar HOS-635: API/Admin/Web respondieron 200 en 3101/3100/4421 y servers-down limpió los procesos. Se implementó template.sh con manifest dentro de la DB, fingerprint de schema+migraciones+extras+seeds, lock y promoción con backup; el candidato fue promovido a hospeda_template y el template histórico quedó conservado para rollback. El seed reportó tres planes complex-* ausentes.",
+                            "notes": "E2E validado en worktree candidato; bloque operativo ya está en hospeda-staging. Falta repetirlo usando los wrappers globales apuntando al checkout operativo.",
                             "done": false
                         },
                         {
@@ -402,7 +402,7 @@
                             "title": "Automatizar reconciliación y drift de entorno",
                             "category": "CLI, worktrees, guards",
                             "description": "Usar hospeda-staging como fuente predeterminada, reconciliar archivos después de hops update y devolver drift estructurado sin valores.",
-                            "notes": "Implementado y probado en el worktree de migración: copy-env resuelve staging, reconcile-local-env conserva valores y elimina claves obsoletas, y `hops env --drift --json` devuelve missing/obsolete/needsValue/mismatched. Falta activarlo en el checkout staging al incorporar estos cambios.",
+                            "notes": "Scripts y comando env --drift integrados en hospeda-staging; falta probar reconciliación real durante wt-create/update desde wrappers globales.",
                             "done": false
                         },
                         {
@@ -434,7 +434,7 @@
                             "title": "Restaurar wrappers a staging",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Apuntar wrappers globales a `hospeda-staging` después de integrar cambios.",
-                            "notes": "Recordatorio explícito antes del cierre.",
+                            "notes": "El bloque operativo de Hops ya fue integrado en hospeda-staging (3c7bbac64) y la suite allí pasó 411/411. Falta validar los wrappers globales y el E2E real desde ese checkout.",
                             "done": false
                         },
                         {
