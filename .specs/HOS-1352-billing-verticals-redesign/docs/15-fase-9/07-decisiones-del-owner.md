@@ -689,3 +689,140 @@ asimetría se lee como un descuido; con él, como lo que es — dos planes que r
 distintos.
 
 - **Costo**: una siembra por vertical. **Riesgo**: bajo, y acotado por `G-R3` (`D-19`).
+
+---
+
+## D-23 · El criterio se escribe AHORA; la enumeración se arma durante la implementación — `R3` #6
+
+**Decidido: se parte en dos, y la segunda mitad va con guard.**
+
+1. **Ahora**: escribir **el criterio** — qué hace que una operación de dominio pase por el paso 5.
+2. **Durante la implementación**: la enumeración, que se arma sola a medida que se construyen las
+   superficies.
+3. **Y un guard que lo hace cumplir**: toda operación de dominio **declara** si pasa por el paso 5,
+   y **el build falla si alguna no lo declara**.
+
+**El problema**: el dominio de `R3` se cerró **por vertical y por estado, no por operación**, porque
+**el conjunto de operaciones que pasan por el paso 5 nunca se enumeró**. Lo único enumerado son las
+**12 acciones administrativas**, que son **la excepción, no el conjunto**.
+
+**Y hay una regla en uso que nadie escribió**: para decidir que las lecturas de «Mi Cuenta» no
+pasan por el paso 5, `R3` usó el criterio *«escribe estado y es auditable»* — **inferido** de cómo
+`F-8A2-001` clasifica a `PB1`, y **ausente de todo capítulo**.
+
+**Por qué no enumerar ahora**: enumerar operaciones **contra el diseño en papel produce una lista
+que la implementación va a contradecir**. Las operaciones aparecen al construir las superficies, no
+antes; una lista escrita hoy nace desactualizada.
+
+> ⚠️ **El guard no es un adorno: es lo único que vuelve segura la postergación.** Sin él, alguien
+> agrega una operación dentro de ocho meses, no se pregunta nada, y nadie se entera — la fábrica de
+> exenciones por ruta. Con él, *«nadie puede afirmar que revisó todas»* —que es lo que el documento
+> de dominios advierte textualmente— se convierte en **«el build no pasa si hay una sin
+> clasificar»**, y la enumeración queda **completa por construcción**.
+
+**Es el mismo patrón que `DEC-METH-005`** (los guards corren desde el día 1) **y que `D-19`** (la
+clase se declara, nunca se infiere).
+
+- **Dónde se aplica**: `V/17` §3 (el criterio) y la unidad de superficies de verticales (el guard).
+
+---
+
+## D-24 · Las dos `comp` son del owner: van como el Free Forever normal — `R5` #1
+
+**Decidido: `permanent_grant`, exactamente como funcione el Free Forever del diseño nuevo. Nada
+especial.** Y **se pueden regenerar de cero si conviene**.
+
+**El dato que lo decide lo aportó el owner, y no estaba en ningún documento**: *«las 2 comp
+actuales son mías»*. **No hay un cliente real detrás de ninguna de las dos.**
+
+**Eso desarma la preocupación entera de esta decisión.** El riesgo que `R5` había identificado era
+que alguien las transcribiera literalmente según `V/21` §2.3 y **les escribiera un trial que nunca
+tuvieron**, convirtiendo un acceso permanente en uno que vence en 30 días. Con el dato del owner,
+si eso pasara **el perjudicado sería él mismo y se arregla regenerándolas**.
+
+**Por qué igual se escriben como `permanent_grant`**: es el instrumento del diseño nuevo para *«esta
+persona tiene esto sin pagar, indefinidamente»*, y **converge con `D-05`** —el grant anclado al
+plan, leyendo su versión vigente—. No hace falta inventar nada para cortesías heredadas: **son el
+caso normal**.
+
+> **La consecuencia sobre `R5` es mayor que esta decisión.** El racimo se construyó sobre **ocho
+> filas**. Dos de ellas son del owner y **descartables**, así que **el conjunto con riesgo real son
+> seis** — y de esas seis, **tres son `abandoned`, sin compromiso de cobro vivo**. Los actos
+> irreversibles, el punto de no retorno y el rollback **sólo pesan sobre las tres `trialing`**, que
+> son las únicas con preapproval (medido en `EX` del 2026-09-19: 3 de 3, y ninguna de las otras
+> cinco).
+
+- **Costo**: cero si se regeneran; dos grants firmados si se migran.
+
+---
+
+## D-25 · Las tres `trialing` son clientes, pero contactables — dato del owner
+
+**Dato que no estaba en ningún documento**: *«las 3 son clientes, pero son amigos míos, a los que
+les puedo hablar para que se resuscriban de nuevo si la migración es complicada»*.
+
+Es el dato de mayor apalancamiento de todo `R5`. Las tres `trialing` son las **únicas** de las ocho
+con preapproval vivo, y sobre ellas se apoyaba **todo lo pesado del racimo**: el punto de no
+retorno, el orden forzado, y la ausencia de rollback. Con esto, **las ocho filas son recuperables
+por teléfono**.
+
+---
+
+## D-26 · NO se migra: se cancelan las ocho y quien tenga algo vivo se suscribe de nuevo — `R5` #2, #3
+
+**Decidido: se arranca de cero.** El sistema nuevo **no hereda una sola fila**.
+
+**La opción no existía hasta `D-24` y `D-25`**, porque nadie sabía de quién eran las ocho. `R5`
+resolvió la migración correctamente; lo que cambió es que **la migración dejó de hacer falta**.
+
+**Qué cuesta cada camino**:
+
+| | |
+|---|---|
+| **migrar** | escribir `M1` como unidad de trabajo nueva, el orden forzado, el punto de no retorno **por fila**, y aceptar que el rollback no existe pasado el paso 8 |
+| **no migrar** | **tres llamadas** y dos cuentas propias. Las tres `abandoned` no tienen nada vivo que migrar |
+
+**Qué se pierde exactamente, medido**:
+
+- **Nada de plata.** No hay **un solo pago histórico**: ningún comprobante, ninguna serie que
+  reconstruir.
+- **El «trial ya consumido» de seis personas** —las tres `abandoned` y las tres `trialing`—, que sin
+  migrarlo **podrían repetir trial**. Son seis personas conocidas, y tres ya habían abandonado el
+  checkout igual.
+
+**El argumento de fondo, y no es de pereza**: se estaba construyendo una migración para **ocho
+filas sin un solo pago, todas de gente a la que se puede llamar**. Diseñarla, revisarla, ejecutarla
+y garantizar su rollback es **desproporcionado frente a un mensaje de WhatsApp**. Y el beneficio
+extra es real: **el sistema nuevo arranca sin una sola fila heredada** — sin transcripciones, sin
+estados viejos, sin dudas sobre si algo quedó mal migrado. Es el escenario más limpio posible, y
+**sólo está disponible ahora**, mientras son ocho.
+
+### Qué queda sin objeto
+
+**Cuatro de los cinco críticos de `R5` dejan de existir** — no se resuelven: **se eliminan**.
+
+| hallazgo | qué era |
+|---|---|
+| `F-8A3-004` | la migración dejaba afuera las tres relaciones con trial |
+| `F-8B3-006` | transcribía el trial y dejaba los compromisos sin vínculo |
+| `F-8C2-001` | el punto de no retorno sin lado elegido |
+| `F-8C2-002` | `DEC-MIG-001` y el §2.3 describían dos operaciones distintas |
+| `F-8A3-009` (`ALTA`) | nadie ejecutaba la migración |
+
+**Y `M1` no se crea.** La unidad 23 de `R5` #3 deja de tener sujeto.
+
+**El quinto crítico, `F-8C2-005`, sigue abierto a medias**: desaparece el rollback *de las ocho
+filas*, y **sigue abierto el rollback del PROGRAMA**, que es otra cosa y `R5` ya había dicho que no
+podía escribir.
+
+> ⚠️ **Esta decisión tiene una condición de caducidad, y es la que el owner ya venía siguiendo.**
+> `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**, así que la cartera crece. Con
+> ocho filas *«no migrar»* son tres llamadas; **el umbral que `R5` midió está en unas veinte**, y
+> arriba de eso deja de ser viable. El aviso que el owner ya se comprometió a dar —*«si veo que
+> empiezan a entrar registros nuevos, te aviso»*— **ahora tiene una consecuencia concreta: hay que
+> volver a discutir esta decisión.**
+
+- ⚠️ **`DEC-` propia obligatoria**: **supersede en parte a `DEC-MIG-001`**, que definía qué hacer
+  con las cinco filas.
+- **Dónde se aplica**: los dos `21-migracion.md`, que hoy describen una migración que no va a
+  ocurrir.
