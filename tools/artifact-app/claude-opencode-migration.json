@@ -402,7 +402,7 @@
                             "title": "Automatizar reconciliación y drift de entorno",
                             "category": "CLI, worktrees, guards",
                             "description": "Usar hospeda-staging como fuente predeterminada, reconciliar archivos después de hops update y devolver drift estructurado sin valores.",
-                            "notes": "Scripts y comando env --drift integrados en hospeda-staging; falta probar reconciliación real durante wt-create/update desde wrappers globales.",
+                            "notes": "wt-create + env prepare + env --drift quedaron validados desde wrappers globales en Gate 64. Falta una prueba aislada de hops update que ejercite reconcile-local-env sin resetear el checkout operativo; no se ejecuta sobre staging local porque tiene commits aún no publicados.",
                             "done": false
                         },
                         {
@@ -410,8 +410,8 @@
                             "title": "Probar aislamiento de DBs",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Verificar nombre, conexión, migraciones y protección entre worktrees.",
-                            "notes": "Candidato y clon HOS-635 validados; falta repetir el flujo desde el checkout operativo hospeda-staging luego de integrar los cambios.",
-                            "done": false
+                            "notes": "Validado junto con Gate 64: DB descartable creada/reutilizada desde hospeda_template, schema fingerprint vigente, migraciones y usuarios verificados, servidores aislados y cleanup completo desde hospeda-staging. La reconciliación específica de hops update queda pendiente.",
+                            "done": true
                         },
                         {
                             "id": "cleanup-rollback",
