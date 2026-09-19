@@ -2463,3 +2463,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Hospeda tendrá aliases `hops-promote` y `hops-back-merge` sin duplicar lógica.
 - El diseño quedó en `docs/migration/qz-promotion-backmerge-design.md`.
 - No se creó `develop` ni se modificaron GitHub, CI, ramas o Linear.
+
+## Gate 76 · Codex como agente seleccionable
+
+- `start-issue` ahora acepta `--agent codex` y aliases directos
+  `--claude`, `--opencode` y `--codex`.
+- El comportamiento predeterminado sigue sin abrir ningún agente.
+- Selecciones incompatibles producen un error claro sin crear ni modificar el
+  worktree.
+- Codex detectado localmente como `codex-cli 0.155.1`.
+- Tests de `start-issue`: 28 pasaron.
+- Implementado en el worktree de migración; todavía no aplicado a
+  `hospeda-staging`.

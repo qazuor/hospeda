@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_23",
-        "number": 23,
+        "id": "ver_claude_opencode_migration_24",
+        "number": 24,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "diseñar revisión read-only de Dependabot",
+        "reason": "implementar Codex como agente seleccionable",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_22"
+        "basedOnVersion": "ver_claude_opencode_migration_23"
     },
     "data": {
         "sections": [
@@ -490,8 +490,8 @@
                             "title": "Agregar Codex como agente seleccionable",
                             "category": "CLI y distribución multiplataforma",
                             "description": "Agregar --agent codex y revisar todos los comandos, wrappers y adapters que hoy aceptan claude u opencode.",
-                            "notes": "Nueva tarea. Mantener agente por defecto none; el launcher debe detectar disponibilidad y producir un error claro si codex no está instalado. Los comandos Hops deben seguir siendo neutrales al cliente.",
-                            "done": false
+                            "notes": "Implementado en start-issue del worktree de migración. Acepta --agent codex y aliases --claude/--opencode/--codex, conserva none por defecto y rechaza combinaciones.",
+                            "done": true
                         },
                         {
                             "id": "generic-hops-adapters",
