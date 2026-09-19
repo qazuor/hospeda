@@ -410,7 +410,7 @@
                             "title": "Probar aislamiento de DBs",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Verificar nombre, conexión, migraciones y protección entre worktrees.",
-                            "notes": "Gate87: desde hospeda-staging, `env --drift --json` devolvió clean=true para API/Web/Admin/Docker, sin variables faltantes u obsoletas. El checkout de migración sin secretos reporta ausencias esperables. Cross-check opcional HOSPEDA_INTERNAL_REQUEST_SECRET sigue ausente en ambos lados.",
+                            "notes": "Gate97: hospeda-staging permanece clean=true. En el E2E de migración, la infraestructura pasó (DB aislada, schema heal, build, health y cleanup), pero el registry de la rama declara variables aún ausentes en la fuente staging. El copiador no inventa valores; el drift queda como señal para reconciliación de envs.",
                             "done": true
                         },
                         {

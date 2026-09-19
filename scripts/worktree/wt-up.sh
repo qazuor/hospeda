@@ -117,6 +117,10 @@ fi
 
 # 0c — seed/merge .env.local files
 echo "-- preparing .env.local files"
+bash "$ROOT/scripts/copy-env-to-worktree.sh" "$ROOT" || {
+  echo "ERROR: trusted env copy failed" >&2
+  exit 1
+}
 bash "$HERE/wt-env-prepare.sh" || { echo "ERROR: wt-env-prepare.sh failed"; exit 1; }
 
 # ---------------------------------------------------------------------------

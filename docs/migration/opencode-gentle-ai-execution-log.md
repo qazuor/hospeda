@@ -2678,3 +2678,20 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - No se ejecutaron en esta sesión porque requieren una ventana controlada y
   una base/worktree explícitos. Quedan como el próximo gate E2E, con cleanup y
   rollback verificables.
+
+## Gate 97 · E2E de DB, envs, build, health y cleanup
+
+- `servers-up --wt hospeda-opencode-gentle-ai` creó la DB aislada
+  `worktree_hospeda_opencode_gentle_ai` desde `hospeda_template`, detectó
+  schema stale y aplicó migraciones/extras correctamente.
+- Generó puertos 3101/3100/4421, construyó los 18 paquetes y levantó API,
+  Admin y Web. `GET /health` respondió `status: ok`; TCP de Admin/Web quedó
+  listo.
+- `servers-down` detuvo sólo esos tres procesos y conservó DB/worktree.
+- El drift de envs no quedó limpio porque la rama de migración declara muchas
+  variables nuevas que todavía no existen en la fuente `hospeda-staging`.
+  El copiador no inventa valores: esto queda como evidencia para el guard de
+  reconciliación de variables, no como motivo para copiar placeholders.
+- Se integró `copy-env-to-worktree.sh` en `wt-up`; usa `hospeda-staging` por
+  defecto, omite el self-copy y deja que `wt-env-prepare` complete sólo lo que
+  esté definido en ejemplos.

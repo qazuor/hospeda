@@ -86,8 +86,8 @@ SRC_ABS="$SOURCE_ROOT"
 DEST_ABS="$(cd "$DEST" && pwd -P)"
 
 if [[ "$SRC_ABS" == "$DEST_ABS" ]]; then
-    echo "ERROR: source and destination resolve to the same path: $SRC_ABS" >&2
-    exit 1
+    echo "Source and destination are the same checkout; env copy skipped."
+    exit 0
 fi
 
 # Sanity: the dest should itself be a git worktree (has .git as file or dir).
