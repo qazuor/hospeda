@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -83,9 +83,11 @@ compromisos que todavía no cobraron**, con fecha:
 
 ### 3.2 Y entonces son tres problemas distintos, no uno
 
-**(a) Las cinco relaciones vivas.** No hay nada que parar ni que coexistir: se coordinan a mano
-(`DEC-MIG-001`) y se transcriben según §2.3. Ninguna de las tres opciones que el hueco planteaba
-—coexistencia de dos motores, corte con migración asistida, congelamiento— hace falta para éstas.
+**(a) Las ocho relaciones vivas.** No hay nada que parar ni que coexistir, y **tampoco nada que
+transcribir**: **no se migra ninguna** (§2.4). Las tres `abandoned` no tienen nada vivo, las dos
+`comp` son del owner, y las tres `trialing` son clientes contactables que se resuscriben. Ninguna
+de las tres opciones que el hueco planteaba —coexistencia de dos motores, corte con migración
+asistida, congelamiento— hace falta para éstas.
 
 **(b) El 2026-09-26.** Esa fecha llega **durante FASE 2 o 3**, y la implementación está en FASE 10
 (§65). O sea que **ese primer cobro de la historia del sistema ocurre bajo el sistema ACTUAL, no
@@ -104,7 +106,7 @@ Las tres opciones del hueco, con lo que cuesta cada una **dado el número medido
 
 | # | opción | costo | riesgo |
 |---|---|---|---|
-| 1 | **seguir tomando altas** en el sistema actual | ninguno comercial | la cohorte a transcribir crece: hoy son 5 y la regla de §2.3 sólo es barata mientras sean pocas |
+| 1 | **seguir tomando altas** en el sistema actual | ninguno comercial | la cohorte crece, y con ella se vuelve inviable *«no migrar»*: hoy son 8 y el umbral medido está en unas 20 (§2.4) |
 | 2 | **congelar altas nuevas** hasta FASE 10 | comercial, y no es chico: tres verticales todavía no vendieron nada | cero cohorte nueva |
 | 3 | **coexistencia de dos motores** | el más caro de construir | contamina la arquitectura nueva, que es lo que el §56 pide no hacer |
 
@@ -114,8 +116,37 @@ cerrar.
 
 ---
 
+### 2.4 No se migra: se cancelan las ocho y quien tenga algo vivo se suscribe de nuevo
+
+> **El sistema nuevo no hereda una sola fila.**
+
+La opción no existía hasta que el owner dijo de quién eran las ocho: **dos son suyas** —sin cliente
+real detrás, regenerables de cero— y **las tres `trialing` son clientes contactables**. Las tres
+`abandoned` no tienen nada vivo. La migración estaba bien resuelta; lo que cambió es que **dejó de
+hacer falta**. El detalle del costo de cada camino y de qué se pierde está en el §2 de la mitad de
+verticales.
+
+**Las dos cortesías se escriben como `permanent_grant`, exactamente como el *Free Forever* del
+diseño nuevo**, sin nada especial — y se pueden **regenerar de cero** si conviene. Es el
+instrumento del diseño nuevo para *«esta persona tiene esto sin pagar, indefinidamente»*, y
+converge con el grant anclado al plan del cap. 02 §2.4: **no hace falta inventar nada para
+cortesías heredadas, son el caso normal**.
+
+**Qué deja de existir con esto, y no es que se resuelva: se elimina.** La migración dejaba afuera
+las relaciones con trial, transcribía un trial y dejaba los compromisos sin vínculo, tenía un punto
+de no retorno sin lado elegido, describía dos operaciones distintas en dos lugares, y **nadie la
+ejecutaba**. Los cinco problemas **pierden sujeto**, y la unidad de trabajo que iba a escribirla no
+se crea.
+
+**Lo único que sobrevive es de otro tamaño**: el **rollback del PROGRAMA** —qué se hace si hay que
+volver atrás el reemplazo entero del sistema de cobro— que no es el rollback de ocho filas y no se
+escribe acá.
+
+---
+
 ## 4. Lo que NO se migra, y no es una omisión
 
+- **Todo**: ninguna fila se transcribe (§2.4).
 - **Los pagos**: no hay ninguno.
 - **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.

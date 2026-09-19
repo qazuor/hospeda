@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -26,41 +26,60 @@ se midió, y se re-midió al escribir este capítulo.
 
 ## 2. El trial ya consumido · cierra `M-MIG-01`
 
-### 2.1 El problema, y por qué es más chico de lo que parece
+### 2.1 La pregunta ya no tiene sujeto: NO SE MIGRA
 
-Si alguien consumió un trial bajo reglas distintas —otro alcance, otra duración, otro
-disparador— ¿arrastra el consumo al modelo nuevo, o el contador arranca limpio? El §10.1 fija el
-alcance nuevo en `user + vertical` y el §64.1 no da período de gracia para el pasado.
+`M-MIG-01` preguntaba si alguien que consumió un trial bajo reglas distintas —otro alcance, otra
+duración, otro disparador— arrastra el consumo al modelo nuevo. **La pregunta se disuelve porque
+no se transcribe ninguna fila.**
 
-Y hay evidencia medida de que las reglas viejas **sí** eran distintas: **las duraciones de trial
-no son homogéneas** —una de 30 días y dos de 90— y en dos de las tres el fin de período cae
-**antes** que el fin del trial.
+> **El sistema nuevo no hereda una sola fila. Las ocho suscripciones vivas se cancelan, y quien
+> tenga algo vivo se suscribe de nuevo.**
 
-### 2.2 No hay criterio de corte, porque no hay cohorte
+### 2.2 Qué hizo posible la decisión, y no fue un criterio técnico
 
-**Son cinco relaciones y se transcriben una por una a mano** (`DEC-MIG-001`: cero código de
-migración). Un criterio de corte es una generalización para una cohorte, y acá no hay cohorte:
-hay cinco filas que caben en una pantalla.
+Hasta que el owner aportó el dato, nadie sabía **de quién eran las ocho**. Con eso:
 
-Escribir un criterio que nadie va a reutilizar es exactamente lo que el §56 previene —*«no
-contaminar la arquitectura nueva para salvar unas pocas relaciones legacy»*—.
-
-### 2.3 La regla de transcripción: el estado se transcribe, no se reinterpreta
-
-| situación de la persona | qué se escribe |
+| las ocho | quiénes son |
 |---|---|
-| su trial **sigue corriendo** | una fila de `trial` en `TRIAL_ACTIVE` **con la fecha de fin que ya tenía** |
-| su trial **ya terminó** | una fila de `trial` consumida (`TRIAL_EXPIRED` o `TRIAL_CONVERTED`, según lo que haya pasado) |
+| **2 `comp`** | **del propio owner.** No hay un cliente real detrás de ninguna |
+| **3 `abandoned`** | no tienen **nada vivo** que migrar: abandonaron el checkout |
+| **3 `trialing`** | clientes reales, **y contactables** — el owner puede hablarles para que se resuscriban |
 
-Dos consecuencias, y las dos importan:
+Las tres `trialing` son las **únicas** con preapproval vivo (medido: 3 de 3, y ninguna de las otras
+cinco), y sobre ellas se apoyaba **todo lo pesado** de la migración: el punto de no retorno, el
+orden forzado y la ausencia de rollback. **Con las ocho recuperables por teléfono, esa carga no
+tiene sujeto.**
 
-1. **Nadie pierde el trial que le estaban prestando, y nadie consigue uno nuevo.** Lo que se
-   respeta es la fecha prometida, no la duración: escribir la fecha de fin hace que **la
-   heterogeneidad de 30 y 90 días no haya que representarla en ningún lado**. El modelo nuevo
-   saca los días del plan (`DEC-TRIAL-003`) y estas cinco filas ya tienen su fecha.
-2. **El §64.1 se preserva sin código.** La fila existe, así que su sola existencia niega un trial
-   nuevo (cap. 02 §2.2: `UNIQUE(user_id, vertical)` sin condición de estado). No hace falta una
-   marca de «viene de antes».
+### 2.3 Qué cuesta cada camino, y qué se pierde exactamente
+
+| | |
+|---|---|
+| **migrar** | escribir una unidad de trabajo nueva, el orden forzado, el punto de no retorno **por fila**, y aceptar que el rollback no existe pasado cierto paso |
+| **no migrar** | **tres llamadas** y dos cuentas propias |
+
+**Qué se pierde, medido:**
+
+- **Nada de plata.** No hay **un solo pago histórico**: ningún comprobante, ninguna serie que
+  reconstruir.
+- **El «trial ya consumido» de seis personas** —las tres `abandoned` y las tres `trialing`—, que
+  sin migrarlo **podrían repetir trial**. Son seis personas conocidas, y tres ya habían abandonado
+  el checkout igual.
+
+**El argumento de fondo no es de pereza**: se estaba construyendo una migración para **ocho filas
+sin un solo pago, todas de gente a la que se puede llamar**. Diseñarla, revisarla, ejecutarla y
+garantizar su rollback es desproporcionado frente a un mensaje. Y el beneficio extra es real: **el
+sistema nuevo arranca sin una sola fila heredada** —sin transcripciones, sin estados viejos, sin
+dudas sobre si algo quedó mal migrado—. Es el escenario más limpio posible, y **sólo está
+disponible ahora**, mientras son ocho.
+
+### 2.4 La condición de caducidad, que es lo único que hay que vigilar
+
+> ⚠️ `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**, así que la cartera crece.
+> Con ocho filas *«no migrar»* son tres llamadas; **el umbral medido está en unas veinte**, y
+> arriba de eso deja de ser viable.
+
+El aviso que el owner ya se comprometió a dar —*«si veo que empiezan a entrar registros nuevos, te
+aviso»*— **ahora tiene una consecuencia concreta: hay que volver a discutir esta decisión.**
 
 ---
 
@@ -76,7 +95,7 @@ Dos consecuencias, y las dos importan:
 
 ## Lo que este capítulo NO cierra
 
-- **Cómo se ejecuta la transcripción de las cinco** —quién, cuándo, con qué verificación— es
-  FASE 7: acá está qué se escribe, no el procedimiento.
+- **Cómo se le avisa a las tres personas y cuándo se cancelan sus suscripciones** es FASE 7: acá
+  está que no se migra, no el procedimiento de la conversación.
 - **La clasificación del código legacy** en reusar o reescribir tiene su propio gate
   (`DEC-METH-003`) y es FASE 5. No se anticipa acá ni implícitamente.
