@@ -185,6 +185,11 @@ export const COMMANDS: readonly CommandEntry[] = [
         name: 'update',
         summary: 'Actualiza hops a lo último de staging',
         load: async () => (await import('./commands/update/command.ts')).updateCommand
+    },
+    {
+        name: 'engram',
+        summary: 'Acceso seguro y descubrible a la memoria Engram',
+        load: async () => (await import('./commands/engram/command.ts')).engramCommand
     }
 ];
 
