@@ -2528,3 +2528,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   no deben correr en modo listado.
 - Este es el camino recomendado para que el agente seleccione verificaciones
   por diff antes de lanzar comandos manuales más amplios.
+
+## Gate 82 · Estado read-only del template de DB
+
+- `hops db-update-template status` devolvió el manifest activo sin ejecutar
+  migraciones, seed, refresh ni promoción.
+- El template reportó journal `125`, fingerprint presente y commit fuente
+  `60a39dae`; queda trazabilidad suficiente para comparar drift antes de crear
+  una candidata.
+- La prueba confirma que el subcomando de estado puede usarse en recap/gates sin
+  abrir una mutación de base.

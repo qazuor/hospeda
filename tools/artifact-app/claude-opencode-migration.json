@@ -442,7 +442,7 @@
                             "title": "Versionar lifecycle seguro del DB template",
                             "category": "CLI, worktrees y bases",
                             "description": "Construir candidatos desde una base vacía, validar journal/manifest/fingerprint y promover sólo con confirmación, conservando rollback.",
-                            "notes": "Implementado en scripts/worktree/template.sh y expuesto por hops db-update-template con status, build-candidate y promote --confirm. Integrado en hospeda-staging y validado en E2E operativo.",
+                            "notes": "Gate82: implementado en scripts/worktree/template.sh y expuesto por hops db-update-template con status, build-candidate y promote --confirm. `status` devolvió journal 125, fingerprint y commit fuente sin mutar; integrado en hospeda-staging y validado en E2E operativo.",
                             "done": true
                         },
                         {
