@@ -2649,3 +2649,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `artifact list --json` no es una variante soportada; el CLI respondió con
   ayuda y no ejecutó ninguna acción. El contrato actual usa `list` humano y
   `state <slug> --json` para agentes.
+
+## Gate 94 · Bootstrap de dependencias de client-tools
+
+- Se agregó `scripts/worktree/wt-client-tools-install.sh`.
+- `wt-create` y `wt-up` ahora comprueban `scripts/client-tools/node_modules` y
+  ejecutan `bun install --frozen-lockfile` sólo cuando faltan dependencias.
+- Esto corrige el caso detectado en worktrees históricos donde el monorepo tenía
+  `pnpm` instalado pero Hops no podía cargar `@clack/prompts`.
+- En el worktree actual el helper detectó dependencias presentes y no instaló
+  nada. Sintaxis shell y `git diff --check` pasaron.
+- Suite final: **294 tests pasaron, 0 fallaron, 724 assertions**.

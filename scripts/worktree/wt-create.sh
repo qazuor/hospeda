@@ -103,6 +103,12 @@ BUILD="$(jq -r '.setup.build // empty' "$NEWCFG")"
 [ -n "$INSTALL" ] && { echo "Running: $INSTALL"; ( cd "$WTPATH" && eval "$INSTALL" ) || { echo "install failed"; exit 1; }; }
 [ -n "$BUILD" ]   && { echo "Running: $BUILD";   ( cd "$WTPATH" && eval "$BUILD" )   || { echo "build failed"; exit 1; }; }
 
+# client-tools is outside the pnpm workspace and needs its own Bun install.
+CLIENT_TOOLS_INSTALL="$WTPATH/scripts/worktree/wt-client-tools-install.sh"
+if [ -x "$CLIENT_TOOLS_INSTALL" ]; then
+  bash "$CLIENT_TOOLS_INSTALL" "$WTPATH" || { echo "client-tools install failed"; exit 1; }
+fi
+
 # Init state file.
 mkdir -p "$WTPATH/.claude"
 ts="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"

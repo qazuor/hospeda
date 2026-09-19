@@ -102,6 +102,12 @@ if [ "$need_install" -eq 1 ]; then
   [ -f "$LOCK" ] && wt_state_apply ".lockHash = \"$(sha1sum "$LOCK" | cut -d' ' -f1)\""
 fi
 
+# client-tools is outside the pnpm workspace and needs its own Bun install.
+CLIENT_TOOLS_INSTALL="$ROOT/scripts/worktree/wt-client-tools-install.sh"
+if [ -x "$CLIENT_TOOLS_INSTALL" ]; then
+  bash "$CLIENT_TOOLS_INSTALL" "$ROOT"
+fi
+
 # 0b — regenerate .env.example from the registry (best-effort; needs tsx in node_modules)
 if [ -d "$ROOT/node_modules" ] && jq -e '.scripts["gen:env-examples"]' "$ROOT/package.json" >/dev/null 2>&1; then
   echo "-- regenerating .env.example from registry (gen:env-examples)"
