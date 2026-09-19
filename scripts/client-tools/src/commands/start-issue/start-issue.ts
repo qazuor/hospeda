@@ -24,13 +24,15 @@ export interface StartIssueOptions {
     /** Whether to launch the selected agent once the worktree exists. */
     readonly launchClaude: boolean;
     /** Agent to launch after the worktree exists. */
-    readonly agent: 'claude' | 'opencode' | 'none';
+    readonly agent: 'claude' | 'opencode' | 'codex' | 'none';
     /** Whether to hand the selected agent `/hops-start-issue` instead of an empty prompt. */
     readonly withStartIssue: boolean;
     /** Whether to stop after reporting what would be created. */
     readonly dryRun: boolean;
     /** Whether the user asked for help. */
     readonly help: boolean;
+    /** Invalid mutually-exclusive agent flags, if any. */
+    readonly agentError: string | null;
 }
 
 /**
@@ -46,21 +48,33 @@ export function parseStartIssueArgs({
 }): StartIssueOptions {
     const positionals = argv.filter((arg) => !arg.startsWith('-'));
     const typeArg = positionals[1];
-    const agentArg = positionals.includes('--agent')
-        ? null
-        : (() => {
-              const index = argv.indexOf('--agent');
-              return index >= 0 ? argv[index + 1] : null;
-          })();
-    const agent = agentArg === 'opencode' || agentArg === 'claude' ? agentArg : 'none';
+    const explicitAgentIndex = argv.indexOf('--agent');
+    const explicitAgent = explicitAgentIndex >= 0 ? argv[explicitAgentIndex + 1] : null;
+    const convenienceAgents = (['claude', 'opencode', 'codex'] as const).filter((name) =>
+        argv.includes(`--${name}`)
+    );
+    const selectedAgents = explicitAgent
+        ? [explicitAgent, ...convenienceAgents]
+        : convenienceAgents;
+    const agentValue = selectedAgents[0];
+    const agentError =
+        selectedAgents.length > 1
+            ? 'Elegí un solo agente: --agent <nombre> o un único alias --claude/--opencode/--codex.'
+            : null;
+    const agent =
+        agentValue === 'opencode' || agentValue === 'claude' || agentValue === 'codex'
+            ? agentValue
+            : 'none';
     return {
         issueArg: positionals[0] ?? null,
         type: BRANCH_TYPES.includes(typeArg as BranchType) ? (typeArg as BranchType) : null,
         launchClaude: agent !== 'none' && !argv.includes('--no-claude'),
         agent: argv.includes('--no-claude') ? 'none' : agent,
+
         withStartIssue: !argv.includes('--bare'),
         dryRun: argv.includes('--dry-run'),
-        help: argv.includes('--help') || argv.includes('-h')
+        help: argv.includes('--help') || argv.includes('-h'),
+        agentError
     };
 }
 
@@ -75,7 +89,7 @@ ${pc.bold('hops start-issue')} — arrancar a laburar un issue de Linear
 
 ${pc.bold('Uso')}
 
-  hops start-issue <issue> [tipo] [--agent claude|opencode] [--bare]
+  hops start-issue <issue> [tipo] [--agent claude|opencode|codex] [--claude|--opencode|--codex] [--bare]
 
   ${pc.bold('<issue>')}       273, hos-273, HOS-273 o #273 — todos valen.
   ${pc.bold('[tipo]')}        ${BRANCH_TYPES.join(' | ')}. Si no lo pasás sale de los labels
@@ -83,7 +97,8 @@ ${pc.bold('Uso')}
   ${pc.bold('--bare')}        Abre el agente elegido sin prompt inicial. Por default le pasa
                 «/hops-start-issue HOS-N», que flipea el issue a In Progress en
                 Linear y te resume los criterios de aceptación.
-  ${pc.bold('--agent')}       Agente a abrir: claude u opencode. Si falta, no abre ninguno.
+  ${pc.bold('--agent')}       Agente a abrir: claude, opencode o codex. Si falta, no abre ninguno.
+  ${pc.bold('--claude/--opencode/--codex')}  Alias directos de --agent; no combines más de uno.
   ${pc.bold('--dry-run')}     Te dice qué branch y qué worktree armaría, y no toca nada.
   ${pc.bold('--help')}        Esta página.
 
@@ -138,7 +153,7 @@ function launchAgentIn({
 }: {
     readonly cwd: string;
     readonly prompt: string | null;
-    readonly agent: 'claude' | 'opencode';
+    readonly agent: 'claude' | 'opencode' | 'codex';
 }): Promise<number> {
     return new Promise((resolve) => {
         const args = prompt === null ? [] : [prompt];
@@ -165,6 +180,13 @@ export async function runStartIssue({
     readonly argv: readonly string[];
 }): Promise<number> {
     const opts = parseStartIssueArgs({ argv });
+
+    if (opts.agentError !== null) {
+        process.stderr.write(
+            `${pc.red('Argumentos de agente incompatibles:')} ${opts.agentError}\n`
+        );
+        return 2;
+    }
 
     if (opts.help || opts.issueArg === null) {
         process.stdout.write(renderStartIssueHelp());

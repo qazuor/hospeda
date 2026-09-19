@@ -170,6 +170,8 @@ describe('parseStartIssueArgs', () => {
         expect(parseStartIssueArgs({ argv: ['273', '--agent', 'opencode'] }).agent).toBe(
             'opencode'
         );
+        expect(parseStartIssueArgs({ argv: ['273', '--agent', 'codex'] }).agent).toBe('codex');
+        expect(parseStartIssueArgs({ argv: ['273', '--codex'] }).agent).toBe('codex');
     });
 
     it('should default dryRun to false so a normal run actually creates', () => {
