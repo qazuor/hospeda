@@ -2475,3 +2475,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Tests de `start-issue`: 28 pasaron.
 - Implementado en el worktree de migración; todavía no aplicado a
   `hospeda-staging`.
+
+## Gate 77 · Wrapper read-only de Gentle-AI
+
+- Se agregó `hops gentle-status` al registry de client-tools.
+- Consulta `gentle-ai version`, `review status` y `telemetry preview --json`.
+- Tiene salida humana y `--json`; declara explícitamente que no instala, sync,
+  upgrade, restore ni escribe Engram.
+- Typecheck y ejecución real pasaron; review quedó `clean`.
+- Implementado en el worktree de migración; todavía no aplicado a
+  `hospeda-staging`.
