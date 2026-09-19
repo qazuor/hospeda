@@ -775,6 +775,13 @@ reaches. That merge will be noisy in the two diff-based jobs (`security`'s semgr
 `--baseline-commit` and the seed dual-write guard) because their base resolves to the umbrella's
 previous HEAD; re-dispatch `ci.yml` with `baseline_ref: staging` to fix the base.
 
+**Deep security scanning covers `epic/**` too.** `codeql-staging.yml` pins `ref: staging`, so an
+umbrella branch would accumulate **months of new code with no deep scan**, covered only by
+semgrep-by-diff — which looks at the change, not the whole, and therefore cannot see what emerges
+from the **combination** of changes that each passed on their own. A branch that lives for months
+needs the defences **more**, not less. This is a project rule: every umbrella branch gets it, not
+just the first one.
+
 > **A guard listed in `pnpm check:guards` does NOT automatically run in CI** — it needs its own
 > step in the `guards` job. This bites whenever a program adds guards of its own.
 
