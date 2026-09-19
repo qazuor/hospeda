@@ -393,3 +393,79 @@ ahora por culpa nuestra.
 - **Es el único lugar donde la marca admite una excepción demostrablemente segura.**
 - **Costo**: bajo. **Dónde se aplica**: `B/03` §3.3 y el §2 de
   [`05-R1-resuelto.md`](./05-R1-resuelto.md).
+
+---
+
+## D-13 · La sucesión se declara como apartamiento del §11 — `R1` #1
+
+**Decidido: se declara**, con `DEC-` propia en el decision log, y **redactada así**:
+
+> **El invariante 8 del §64 cuenta COMPROMISOS, no FILAS.**
+
+**Por qué esa formulación y no *«ahora puede haber dos suscripciones»***: porque **conserva la
+política del PDR intacta** y explica por qué dos filas no la violan. Con la sucesión de `R1` el
+máximo de filas vivas pasa a dos durante la ventana del cambio de plan, pero **sigue habiendo un
+solo compromiso de pago**. Lo que deja de ser literal es el enunciado *sobre las filas*.
+
+**Por qué hay que declararlo**: el PDR **no se edita** (regla 1), así que un apartamiento se
+registra como decisión. Hay cuatro precedentes exactos: `DEC-ARCH-003`, `DEC-OBS-001`,
+`DEC-METH-004` y `DEC-METH-005`.
+
+**El riesgo de no declararlo es concreto**: alguien lee el §64, ve *«máximo una»* y **«arregla» el
+candado de vuelta** — deshaciendo `R1` sin saber que lo está haciendo, y con toda la razón desde su
+punto de vista.
+
+- **Costo**: una decisión escrita. **Es la que legitima toda la resolución de `R1`.**
+- ⚠️ **`DEC-` propia obligatoria**, no opcional: es un apartamiento declarado del PDR.
+
+---
+
+## D-14 · Toda sucesora nace con fecha de primer cobro a un día como mínimo — `R1` #6
+
+**Decidido: la salida (a).** Ninguna sucesora cobra hoy; lo mínimo es mañana.
+
+**El choque que resuelve** son **dos reglas correctas que no pueden cumplirse a la vez**: `B/12`
+§5.2 concluye que en `GRACE_PERIOD` **el crédito es cero** —*«el período en curso no se pagó»*—, así
+que la fecha de primer cobro de la sucesora cae **hoy**; y `D8` exige que sea **futura**. Alguien en
+mora que quiere mejorar su plan choca contra las dos.
+
+**Por qué la (a) y no declarar que desde grace la precondición es otra**: la (b) es más exacta
+conceptualmente, **y por eso es peor**. Le mete **una rama a la precondición de seguridad del
+mecanismo más caro del sistema**, y obliga a `G-R1-B` —el guard que vigila `D8`— a **saber de dónde
+viene cada sucesión** para saber qué exigir. Un guard con esa forma es un guard que alguien va a
+leer mal.
+
+**La (a) es uniforme y verificable sin contexto**: vale para toda sucesión, venga de donde venga, y
+deja `D8` como una regla de una sola línea y sin excepciones. El costo es que el cliente espere un
+día para el primer cobro del plan nuevo — **a su favor**.
+
+- **Costo**: bajo. **Dónde se aplica**: `B/12` §5.2, `NUCLEO/04` §3 (`D8`), y `G-R1-B`.
+
+---
+
+## D-15 · La cuota en `recycling` puede entrar, y se avisa ANTES — `R1` #7
+
+**Decidido: la salida (b), con el aviso previo como parte de la decisión.** No se cancela la
+predecesora antes de tiempo; se acepta que el cobro puede entrar **y se le comunica al cliente
+antes de que pase**.
+
+**El caso**: `B/12` §5.3 decide ser generoso —el período impago *«no se compensa con el cobro nuevo
+ni se cobra aparte»*—, pero **mientras la predecesora viva su cuota sigue en `recycling`** (`B/12`
+§1.3, **medido**) y puede entrar. Si entra dentro de las 72 h de la sucesión, **el cliente paga la
+deuda que le perdonamos**.
+
+**Ninguna de las dos salidas es limpia, y se eligió por cuál daño es reversible.** Cancelar la
+predecesora en el acto contradice `D7` —*«la vieja se cancela sólo al recibir el webhook de que la
+nueva quedó autorizada»*—, que existe por una razón medida: **si se cancela antes y el cliente
+abandona el checkout, se queda sin nada**. Ese daño es **silencioso y no se deshace**. El de la (b)
+es **un cobro indebido, visible y reversible**.
+
+**Es el mismo criterio que `R5` ya aplicó sin nombrarlo**: entre dos males, el reversible — ahí se
+autoriza antes de cancelar porque *un cobro se reembolsa y una cancelación en el proveedor no*
+(`PA-5`).
+
+> **El aviso previo no es un adorno: es lo que hace aceptable la decisión.** Un cobro que sorprende
+> es un reclamo; uno anunciado es un trámite. Y el reembolso, que es la salida si entra, descansa
+> sobre la única capacidad que el cap. 06 §10 declara **en riesgo de plataforma** (`RF-6/7/8`).
+
+- **Costo**: bajo. **Dónde se aplica**: `B/12` §5.3, y el catálogo de correos de `NUCLEO/07`.
