@@ -2668,3 +2668,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   SHA, tamaño del repositorio, archivos, casos de test, assertions, skips,
   `TODO` y deuda de tipos.
 - No imprimió valores de entorno ni realizó cambios en Git, Linear o GitHub.
+
+## Gate 96 · Frontera de comandos con efectos externos
+
+- La ayuda confirmó que `db-start`/`db-stop` operan sobre contenedores
+  compartidos de Postgres/Redis.
+- `db-migrate`, `db-seed`, `db-studio`, `servers-up` y `servers-down` actúan
+  sobre la base/servidores del target; no ofrecen `--plan` ni `--dry-run`.
+- No se ejecutaron en esta sesión porque requieren una ventana controlada y
+  una base/worktree explícitos. Quedan como el próximo gate E2E, con cleanup y
+  rollback verificables.
