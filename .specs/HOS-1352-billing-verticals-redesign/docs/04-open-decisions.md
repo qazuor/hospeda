@@ -475,6 +475,18 @@ Y dos que estaban dadas por imposibles y no lo eran:
 cualquier capítulo de las dos épicas **existen todas** en `01-decision-log.md` (comparación de
 conjuntos, no a ojo), y ningún otro capítulo remite a este archivo para declarar algo abierto.
 
+### Dos cosas que apareció el linter al tocar la matriz el 2026-09-19
+
+Para poder commitear la ampliación de `EX-3` hubo que dejar la matriz limpia de markdownlint —
+tenía **16 errores preexistentes** y nunca había pasado por el hook. Arreglarlos era formato, salvo
+en dos puntos, donde **el error era el síntoma de un dato que falta**. Ninguno de los dos se
+inventó; los dos quedan acá:
+
+| qué | por qué importa |
+|---|---|
+| **`RF-6`, `RF-7` y `RF-8` no declaran a qué hueco sirven** | Están en la tabla de ocho columnas con siete celdas: les falta **«Para qué»**. Se les puso `—`, que es fiel —nunca lo declararon— pero **son tres filas medidas en producción que hoy no están atadas a ningún requisito**, así que nadie puede saber qué se rompe si cambian |
+| **Había una fila sin id, sin estado, sin fecha y sin entorno** | Describe cómo medir si **el checkout respeta una `start_date` futura** —la condición de `DEC-SUB-006`— y dice de sí misma *«no está medida»*. Estaba **adentro** de la tabla, con sólo su última celda, así que **`contar-filas-de-la-matriz.py` nunca la contó**: no figura entre las 8 `UNKNOWN` aunque se declara sin medir. Se preservó íntegra como nota al pie de su tabla. **Puede ser una fila `UNKNOWN` que hay que crear de verdad** — y si lo es, las `UNKNOWN` son 9, no 8 |
+
 > ⚠️ **Un conteo que quedó sin verificar**: el índice del núcleo dice **72 huecos técnicos** y dos
 > extracciones distintas dieron 71 y 88 — la primera se pierde los que se nombran en prosa, la
 > segunda cuenta `DEC-SUB-010` como `EC-SUB-010`. **No se corrigió el 72**, porque la diferencia
