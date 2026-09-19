@@ -76,7 +76,21 @@ dejaría el puerto sin ninguna fuente que lo responda de verdad, y ahí la únic
 simulacro que contesta siempre lo mismo — que es justo lo que la decisión descartó, porque **deja
 sin ejercer la mitad interesante: perder la cobertura**.
 
-### 2.3 Por qué el excedente va con publicación y no con entitlements
+### 2.3 V4 sí tiene un guard, y nace del otro lado
+
+Esta tabla dejó a **V4 sin guards**, y la descomposición de billing encontró el que le
+correspondía: **`G13`**, la tercera defensa del
+[contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §6.3 — *«un
+guard impide que la implementación de arranque llegue a producción»*.
+
+**No puede nacer acá.** Mientras la de arranque es la única implementación que existe, un guard que
+prohíba su llegada a producción **falla desde el primer día**, y un guard que falla desde el primer
+día nace con una lista de excepciones — que es exactamente el argumento del §2.1, leído al revés.
+
+Nace en **B4** de la otra épica, que es donde aparece la segunda implementación. Queda anotado acá
+para que nadie lo lea como un olvido.
+
+### 2.4 Por qué el excedente va con publicación y no con entitlements
 
 El reconciliador se define en el `15` §4, pero **lo que hace es despublicar**, y su criterio —cae
 lo más reciente primero— sólo se puede verificar con fichas de verdad. Construirlo en V3 sería
