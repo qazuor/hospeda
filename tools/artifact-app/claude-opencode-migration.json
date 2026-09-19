@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_20",
-        "number": 20,
+        "id": "ver_claude_opencode_migration_21",
+        "number": 21,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "diseñar promoción y back-merge genéricos antes de activar develop",
+        "reason": "plan de activación verificable de develop",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_19"
+        "basedOnVersion": "ver_claude_opencode_migration_20"
     },
     "data": {
         "sections": [
@@ -466,7 +466,7 @@
                             "title": "Agregar develop como rama de integración intermedia",
                             "category": "Git, Linear y promoción",
                             "description": "Introducir develop como destino automático de los cambios terminados; mantener staging como promoción explícita y main como rama protegida de producción.",
-                            "notes": "Auditoría completada en develop-branch-audit.md. Hay referencias embebidas a staging/main en project.config, start-issue, merge/verify, template/update, reportes, CI, Dependabot y back-merge. La implementación debe separar issueBaseBranch, integrationBranch y promotionBranches; no hacer un reemplazo textual.",
+                            "notes": "Auditoría y plan de activación documentados en develop-branch-audit.md y develop-activation-plan.md. La rama aún no se crea; requiere aprobación de política y protección.",
                             "done": false
                         },
                         {
