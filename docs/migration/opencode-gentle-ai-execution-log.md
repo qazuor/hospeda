@@ -2859,3 +2859,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - DB, WAL y metadatos conservaron sus checksums durante la prueba; el SHM puede
   cambiar por ser un archivo auxiliar volátil.
 - No se modificó ni se escribió ninguna observación en la instalación activa.
+
+## Gate 115 · Inventario read-only de secretos
+
+- Se confirmó el inventario de mecanismos y ubicaciones: envs por aplicación,
+  auth de OpenCode, configuraciones de Claude/Gentle/OpenCode, Engram y
+  credenciales externas de GitHub/Linear/Sentry/MCP.
+- Sólo se registraron nombres, rutas y familias de variables; no se leyeron ni
+  mostraron valores, tokens, cookies, claves privadas o passwords.
+- La restauración de auth y secretos sigue requiriendo aprobación humana en la
+  etapa de instalación reproducible.

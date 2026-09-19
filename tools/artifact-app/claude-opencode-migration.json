@@ -55,8 +55,8 @@
                             "title": "Inventariar mecanismos de secretos",
                             "category": "Preparación",
                             "description": "Detectar nombres, ubicaciones y mecanismos sin revelar valores.",
-                            "notes": "Inventario read-only documentado en secret-inventory-readonly.md: rutas, mecanismos y nombres de variables sin leer valores. Falta aprobación de backup/restauración en la etapa de bootstrap.",
-                            "done": false
+                            "notes": "Gate115: inventario read-only completo en secret-inventory-readonly.md: rutas, mecanismos y nombres de variables sin leer valores. La restauración de auth/secretos queda para bootstrap con aprobación humana.",
+                            "done": true
                         },
                         {
                             "id": "claude-deps",
