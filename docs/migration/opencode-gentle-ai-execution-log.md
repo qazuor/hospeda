@@ -2495,3 +2495,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Typecheck y ejecución read-only pasaron.
 - Implementado en el worktree de migración; todavía no aplicado a
   `hospeda-staging`.
+
+## Gate 79 · Suite completa de client-tools
+
+- La primera ejecución detectó drift: faltaban los binarios standalone de los
+  wrappers Gentle nuevos.
+- Se agregaron `hops-gentle-status` y `hops-gentle-sdd-status` y se corrigió el
+  registry/binario.
+- Suite completa: **294 tests pasaron, 0 fallaron, 724 assertions**.
+- La validación externa de OpenCode/providers sigue bloqueada por el filesystem
+  root read-only.

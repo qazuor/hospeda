@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_36",
-        "number": 36,
+        "id": "ver_claude_opencode_migration_37",
+        "number": 37,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "diagnosticar origen del mount root read-only",
+        "reason": "cerrar suite local de client-tools",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_35"
+        "basedOnVersion": "ver_claude_opencode_migration_36"
     },
     "data": {
         "sections": [
@@ -710,7 +710,7 @@
                             "title": "Ejecutar validación integral",
                             "category": "Adopción progresiva",
                             "description": "Probar OpenCode, Gentle, Engram, Linear, hops, worktrees, TUI, guards y artifacts.",
-                            "notes": "Pendiente.",
+                            "notes": "Gate79: suite completa de scripts/client-tools pasa 294/294 tests y 724 assertions, incluyendo wrappers Gentle. Validaciones OpenCode/providers externas siguen bloqueadas por root filesystem read-only.",
                             "done": false
                         },
                         {
