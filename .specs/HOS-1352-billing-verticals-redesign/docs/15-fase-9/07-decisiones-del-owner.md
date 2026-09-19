@@ -922,3 +922,51 @@ volver a decidir esto.
 
 - **Costo**: bajo — una corrida programada o un input, sobre un workflow que ya existe.
 - **Se escribe en los dos lugares donde vive la regla**: `DEC-CI-001` y el `CLAUDE.md` del repo.
+
+---
+
+## D-30 · La condición de salida de la FASE 9, y el CICLO 8 ↔ 9 — `R6` #8
+
+**Decidido, y son dos cosas. La segunda la agregó el owner y cambia el método del programa.**
+
+### 1. Cuándo termina la FASE 9
+
+> **Cuando las cuatro salidas de `DEC-METH-004` están cerradas y ningún `CRITICA` queda abierto
+> **sin causa declarada**.**
+
+**La parte que hace la definición usable es «sin causa declarada»**: permite terminar con cosas
+abiertas —el capítulo 13 no se va a escribir antes— **siempre que cada una diga por qué y de qué
+depende**. La alternativa *«ningún `CRITICA` abierto, punto»* **nunca se cumple**: ata el fin de la
+fase a algo que la fase no controla.
+
+Cierra el paso 4 de `F-8C2-016`, que `DEC-METH-004` había dejado a medias: aquélla definió cuándo
+un **hallazgo** está resuelto, no cuándo la **fase** termina.
+
+### 2. El ciclo: la FASE 8 vuelve a correr sobre lo que la 9 produjo
+
+**Decisión del owner**: *«una vez que 9 decimos ok, listo, volvemos a ejecutar la 8, para
+asegurarnos que con los cambios de la 9 no aparece ningún problema nuevo, y si aparece, otra vez
+la 9»*.
+
+**Y tiene evidencia en esta misma tanda**: **la FASE 9 ya demostró que puede introducir defectos
+nuevos.** `D-01` existe porque el arreglo de `R2` —agregar `ADDON` a las fuentes— **abría un
+fail-open que el diseño original no tenía**; `D-20` porque la resolución de `R3` le daba un segundo
+significado a un campo del contrato. **Los dos se cazaron de casualidad**, mientras se resolvía otra
+cosa. Una pasada 8-bis los habría encontrado sistemáticamente.
+
+**La condición de corte, sin la cual el ciclo no termina**:
+
+> **Se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo.**
+
+**No** *«ningún hallazgo»*: siempre va a aparecer algo menor, y atarlo a cero es la misma trampa
+que la definición de salida descartada. Los `ALTA` y `MEDIA` de la última pasada **se registran y
+se va a FASE 10 con ellos declarados**.
+
+**Cómo corre la 8-bis: ENTERA, no sólo sobre lo que cambió.** Ratificado por el owner. La causa
+raíz del programa es que **las contradicciones viven ENTRE capítulos**, así que atacar sólo los
+textos corregidos la volvería ciega a justamente lo que este ciclo busca. Lo que la abarata no es
+recortar el alcance sino que **arranca con los 327 casos ya enumerados**: recorre dominios en vez
+de descubrirlos.
+
+- ⚠️ **`DEC-` propia obligatoria**: modifica el método del programa, que el PDR §65 define como
+  fases en secuencia. **Es un apartamiento declarado más.**
