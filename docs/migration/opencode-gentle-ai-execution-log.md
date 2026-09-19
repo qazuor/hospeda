@@ -2779,3 +2779,9 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El modo humano conserva salida heredada. No se ejecutó el modo mutante durante
   este gate; sólo se validaron tipos y pruebas.
 - Suite: **295 tests, 0 fallos y 728 assertions**.
+
+## Gate 106 · Pruebas del runner capturado
+
+- Se agregaron pruebas aisladas que verifican separación stdout/stderr y códigos
+  de error sin heredar la salida al terminal.
+- Suite completa: **297 tests, 0 fallos y 732 assertions**.
