@@ -73,10 +73,10 @@ async function toolChanges({
 /** Reconciles ignored local env files after the code checkout moves. */
 async function reconcileLocalEnv({
     stagingPath,
-    runner
+    exec
 }: {
     readonly stagingPath: string;
-    readonly runner: ReturnType<typeof runnerFor>;
+    readonly exec: (job: Parameters<ReturnType<typeof runnerFor>['exec']>[0]) => Promise<number>;
 }): Promise<number> {
     const script = join(stagingPath, 'scripts/reconcile-local-env.sh');
     if (!existsSync(script)) {
@@ -86,7 +86,7 @@ async function reconcileLocalEnv({
         );
         return 0;
     }
-    return await runner.exec({ command: 'bash', args: [script, stagingPath], cwd: stagingPath });
+    return await exec({ command: 'bash', args: [script, stagingPath], cwd: stagingPath });
 }
 
 /** Hashes a lockfile so a dependency change can be detected. */
@@ -115,6 +115,16 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
     const dryRun = rest.includes('--dry-run');
     const json = rest.includes('--json');
     const runner = runnerFor({ target });
+    const steps: Array<{ readonly name: string; readonly code: number }> = [];
+    const execStep = async (
+        name: string,
+        job: Parameters<ReturnType<typeof runnerFor>['exec']>[0]
+    ): Promise<number> => {
+        if (!json) return await runner.exec(job);
+        const result = await runner.execCapture(job);
+        steps.push({ name, code: result.code });
+        return result.code;
+    };
 
     const repoRoot = await resolveRepoRoot({ cwd: process.cwd() });
     const all = await listWorktrees({ repoRoot });
@@ -212,7 +222,7 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
         return remote.ok ? 0 : 1;
     }
 
-    const fetched = await runner.exec({
+    const fetched = await execStep('fetch', {
         command: 'git',
         args: ['fetch', 'origin', STAGING_BRANCH],
         cwd: stagingPath
@@ -229,7 +239,20 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
     if (before !== null && wanted === before) {
         process.stderr.write(`${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`);
         if (dryRun) return 0;
-        return await reconcileLocalEnv({ stagingPath, runner });
+        const reconciled = await reconcileLocalEnv({
+            stagingPath,
+            exec: (job) => execStep('env-reconcile', job)
+        });
+        if (json) {
+            printDryRunJson({
+                dryRun: false,
+                status: reconciled === 0 ? 'up-to-date' : 'failed',
+                checkout: stagingPath,
+                steps,
+                touched: false
+            });
+        }
+        return reconciled;
     }
 
     if (before !== null && wanted !== null) {
@@ -244,19 +267,22 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
     // Hard reset, not pull: nothing is ever authored in this checkout, so there
     // is no work to preserve and a rewritten history upstream must not be able
     // to wedge the tool.
-    const reset = await runner.exec({
+    const reset = await execStep('reset', {
         command: 'git',
         args: ['reset', '--hard', `origin/${STAGING_BRANCH}`],
         cwd: stagingPath
     });
     if (reset !== 0) return reset;
 
-    const reconciled = await reconcileLocalEnv({ stagingPath, runner });
+    const reconciled = await reconcileLocalEnv({
+        stagingPath,
+        exec: (job) => execStep('env-reconcile', job)
+    });
     if (reconciled !== 0) return reconciled;
 
     if (lockfileOf({ toolsPath }) !== lockBefore) {
         process.stderr.write(`${pc.dim('Cambiaron las dependencias, reinstalando…')}\n`);
-        const installed = await runner.exec({
+        const installed = await execStep('install-dependencies', {
             command: 'bun',
             args: ['install'],
             cwd: toolsPath
@@ -266,9 +292,19 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
 
     // Regenerate the shell functions: staging may have added a command, and
     // without this it exists in the menu but has no binary alias.
-    return await runner.exec({
+    const installedWrappers = await execStep('install-wrappers', {
         command: 'bash',
         args: [join(toolsPath, 'install.sh')],
         cwd: toolsPath
     });
+    if (json) {
+        printDryRunJson({
+            dryRun: false,
+            status: installedWrappers === 0 ? 'updated' : 'failed',
+            checkout: stagingPath,
+            steps,
+            touched: true
+        });
+    }
+    return installedWrappers;
 }

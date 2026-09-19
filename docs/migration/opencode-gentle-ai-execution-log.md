@@ -2768,3 +2768,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Resultado: 0 faltantes, 0 obsoletas, 0 sin valor y 0 mismatches. Sólo queda
   `HOSPEDA_INTERNAL_REQUEST_SECRET` ausente en el cross-check opcional de API/Web.
 - La fuente confiable de envs queda validada sin revelar ni comparar valores.
+
+## Gate 105 · Captura controlada para `hops update --json`
+
+- El runner local incorpora captura separada de stdout/stderr para comandos que
+  necesitan devolver JSON sin mezclar logs de subprocesos.
+- El modo normal `hops update --json` registra por stdout sólo pasos y códigos:
+  fetch, reset, reconciliación de envs, instalación de dependencias y wrappers;
+  no incluye el contenido capturado.
+- El modo humano conserva salida heredada. No se ejecutó el modo mutante durante
+  este gate; sólo se validaron tipos y pruebas.
+- Suite: **295 tests, 0 fallos y 728 assertions**.
