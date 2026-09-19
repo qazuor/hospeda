@@ -45,7 +45,73 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-19, noche — la 8-bis corrida, las 23 decisiones tomadas, la 9-bis SIN EMPEZAR
+## Última actualización: 2026-09-19, noche (2) — la 9-bis en curso: 20 de 23 aplicados
+
+### El próximo paso exacto
+
+> **Aplicar los tres arreglos que faltan: `21`, `22` y `23`, la familia del corte y la migración.**
+> Están decididos, y los tres tocan `B/21-migracion.md` y `16-fase-7-del-paraguas.md`.
+
+### Los 23, y dónde está cada uno
+
+| paquete | defectos | estado | commit |
+|---|---|---|---|
+| **el contrato** (frontera, atómico) | 1, 2, 5, 6, 7, 16 | ✅ | `a720519e1` |
+| **verticales** | 3, 4, 8, 9, 10 | ✅ | `2a3f47d60` |
+| **billing** | 11, 12, 13, 14, 15, 17, 18, 19, 20 | ✅ | `7ba3b148d` |
+| **el corte** | **21, 22, 23** | ⬜ **← ACÁ** | — |
+
+### Los tres que faltan, con lo que ya está decidido de cada uno
+
+| # | qué se rompe | qué hay que escribir |
+|---|---|---|
+| **21** | un cobro viejo que llega después del corte **se imputa a la suscripción nueva** de esa persona | **`APLICAR`, no discutir**: es la regla `R5-G`, ya escrita — el compromiso viejo se conserva como una `subscription` en `CANCELLED` **con su `provider_link`**, que es lo que vuelve resoluble el id viejo. Va en `B/21-migracion.md` §2 |
+| **22** | el día del corte **toda la cartera amanece en `PRE_TRIAL`** y el evento que la sacaría de ahí (publicar) **ya ocurrió**: o usan la plataforma gratis para siempre, o se despublican las doce fichas del catálogo | hay que **escribir cuál de las dos**, y no está decidido. **Va al owner antes de escribir** |
+| **23** | una autorización viva cobra **después** del despliegue que borró el código capaz de reconocerla: la plata entra y no queda ni servicio ni asiento | declarar **el orden entre cancelar las ocho y desplegar**, con su verificación. Va en `16-fase-7-del-paraguas.md`, que existe y está vacío |
+
+**El 22 necesita una decisión del owner** — las otras dos son escritura.
+
+### Y falta la mitad de `R5-D`, que es del mismo tipo que el 21
+
+*«Una fila por vertical de su scope»* para las cortesías heredadas. El contrato ya lo generalizó al
+instrumento entero (defecto 6), así que lo que queda es **pegarlo en `B/21-migracion.md`**.
+
+### Qué se hizo en esta tanda, para no releer los tres commits
+
+**El contrato** ganó la regla que faltaba —*«un reloj que no arrancó no es un título»*—, la que
+descarta complementos sin título, el grant con un plan **por vertical**, la pregunta
+`direcciónDeCambio` y **el mapa completo de los nueve estados**.
+
+**Verticales**: el criterio del paso 5 eran **dos preguntas pegadas** (todas las operaciones corren
+la resolución; sólo las que escriben pasan por el 5); las cuatro fuentes nuevas entraron a la
+invalidación del caché; **`T6`** escribe el trial ya consumido para quien publica pagando; y `PB2`
+y `PB3` se disparan por **el cambio de `cubierto`** en vez de por listas congeladas.
+
+**Billing**: **`S17`** cancela la predecesora y **limpia `sucede_a`** — la sucesión por fin
+termina; la fecha guardada es **la que el proveedor confirmó** y nace posterior al vencimiento de
+**su ventana**; `S5` no reactiva a una fila que ya sucedió; la excepción de `CANCEL_SCHEDULED`
+**exige releer**; los **ocho pares** del espejo, enumerados; la fila marcada **sí se barre** (lo
+que se agrega es el aviso) y la marca **lleva reloj**; y `S16` lee **por autorización**, no por la
+historia.
+
+**Tres de esos corrigen cosas que la FASE 9 había escrito mal el mismo día** — la fecha que
+guardábamos, la fila marcada saliendo del barrido, y el *«un día como mínimo»*.
+
+**Y el resumen de invariantes quedó recontado entero con script: 52, 10 de base, 18 apoyos sobre
+15.** Corregir sólo lo señalado lo habría dejado mal otra vez, porque `D8` **se mudó** y no se
+agregó. Quedó escrito ahí como advertencia.
+
+### Cuando los tres estén, lo que sigue
+
+1. **Paso 2 del ciclo otra vez**: decision log, handoff y worklog.
+2. **La 8-bis-2**, entera, con la regla nueva de `DEC-METH-008` («el dominio del arreglo»): cada
+   arreglo se verifica contra **el dominio que él crea**, y se contesta por escrito **qué premisa
+   de otro racimo vuelve falsa**.
+3. El ciclo corta cuando **ningún `CRITICA` quede abierto sin causa declarada**.
+
+---
+
+## Histórico: 2026-09-19, noche — la 8-bis corrida, las 23 decisiones tomadas, la 9-bis SIN EMPEZAR
 
 ### El próximo paso exacto, en una línea
 
