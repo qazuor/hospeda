@@ -1,0 +1,715 @@
+{
+    "schemaVersion": "artifact/v1",
+    "artifact": {
+        "id": "art_claude_opencode_migration",
+        "project": "multi-project",
+        "slug": "claude-opencode-migration",
+        "title": "Migración Claude Code → OpenCode + Gentle-AI",
+        "description": "Checklist vivo de decisiones, implementación, validación y pendientes de la épica de migración.",
+        "audience": "team"
+    },
+    "version": {
+        "id": "ver_claude_opencode_migration_2",
+        "number": 2,
+        "createdAt": "2026-09-16T00:00:00.000Z",
+        "author": "opencode",
+        "reason": "lifecycle seguro de DB template expuesto por Hops",
+        "sourceHash": "sha256:initial-migration-checklist",
+        "rendererVersion": "artifact-app/0.1",
+        "basedOnVersion": "ver_claude_opencode_migration_1"
+    },
+    "data": {
+        "sections": [
+            {
+                "id": "phase-fase-0-relevamiento-y-seguridad",
+                "type": "checklist",
+                "title": "Fase 0 · Relevamiento y seguridad",
+                "data": {
+                    "items": [
+                        {
+                            "id": "inventario",
+                            "title": "Inventario completo Claude/OpenCode/Gentle/Engram",
+                            "category": "Preparación",
+                            "description": "Relevar instalaciones, configuraciones, agentes, comandos, hooks, plugins y dependencias.",
+                            "notes": "Base documental creada; sin secretos expuestos.",
+                            "done": true
+                        },
+                        {
+                            "id": "backups",
+                            "title": "Backup Stage 0",
+                            "category": "Preparación",
+                            "description": "Respaldar configuraciones, bases, snapshots, worktrees y memoria antes de tocar instalaciones.",
+                            "notes": "Backup verificado y clasificado por grupo en backup-classification.md; restore completo de Engram aún queda como gate independiente.",
+                            "done": true
+                        },
+                        {
+                            "id": "clean-policy",
+                            "title": "Manifiesto de instalación limpia",
+                            "category": "Preparación",
+                            "description": "Definir qué se elimina y qué se conserva, con rollback.",
+                            "notes": "No se borran Git, specs, Linear, scripts ni credenciales.",
+                            "done": true
+                        },
+                        {
+                            "id": "secret-inventory",
+                            "title": "Inventariar mecanismos de secretos",
+                            "category": "Preparación",
+                            "description": "Detectar nombres, ubicaciones y mecanismos sin revelar valores.",
+                            "notes": "Pendiente de revisión final antes de instalar plugins.",
+                            "done": false
+                        },
+                        {
+                            "id": "claude-deps",
+                            "title": "Clasificar dependencias Claude",
+                            "category": "Preparación",
+                            "description": "Separar crítico, importante, menor y legacy para evitar retiros prematuros.",
+                            "notes": "Inventario documentado; retiro pendiente.",
+                            "done": true
+                        },
+                        {
+                            "id": "linear-architecture",
+                            "title": "Definir arquitectura Linear",
+                            "category": "Preparación",
+                            "description": "Elegir API/CLI determinista como autoridad y MCP sólo como interfaz opcional.",
+                            "notes": "Mutaciones siempre con plan y read-back.",
+                            "done": true
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "phase-fase-1-instalacion-base",
+                "type": "checklist",
+                "title": "Fase 1 · Instalación base",
+                "data": {
+                    "items": [
+                        {
+                            "id": "opencode-v2",
+                            "title": "Preparar OpenCode V2 como línea futura",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Instalar la versión actual fuera de carpetas especiales y verificar runtime.",
+                            "notes": "V2.0.3 quedó preservado en backup; no es el runtime operativo actual porque Gentle-AI 2.9.0 requiere plugins V1.",
+                            "done": false
+                        },
+                        {
+                            "id": "opencode-v1-rollback",
+                            "title": "Activar OpenCode V1 compatible con Gentle",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Usar OpenCode V1.18.31 como runtime operativo hasta que Gentle-AI publique plugins V2.",
+                            "notes": "Hecho y verificado: binario oficial, seis plugins V1 restaurados, DB V2 preservada, DB V1 creada, models/TUI funcionan. Rollback a V2 disponible desde backups.",
+                            "done": true
+                        },
+                        {
+                            "id": "gentle-full",
+                            "title": "Instalar Gentle-AI completo",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Instalar preset y componentes oficiales compatibles con OpenCode.",
+                            "notes": "Gentle-AI 2.9.0 sigue instalado. El runtime operativo usa OpenCode V1.18.31 para mantener compatibilidad con sus plugins V1; no ejecutar sync sin revisar compatibilidad.",
+                            "done": true
+                        },
+                        {
+                            "id": "engram-binary",
+                            "title": "Actualizar ejecutable Engram",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Instalar Engram actual sin modificar la DB histórica.",
+                            "notes": "Engram 1.20.0 activo; DB original preservada.",
+                            "done": true
+                        },
+                        {
+                            "id": "tui",
+                            "title": "Configurar TUI",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Conservar dark mode, selector, mouse desactivado, Home/End y atención sin sonido.",
+                            "notes": "TUI V1 validada en pseudo-terminal; mouse=false, Home/End, Ctrl+A/E, atención sin sonido y gentle-logo cargan. Se quitó la entrada huérfana opencode-subagent-statusline.",
+                            "done": true
+                        },
+                        {
+                            "id": "providers",
+                            "title": "Configurar providers y modelos",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Usar OpenAI por suscripción para tareas complejas y evaluar GLM/DeepSeek para tareas simples.",
+                            "notes": "OpenCode V1 enumera modelos disponibles; el routing inicial queda en OpenAI y GLM/DeepSeek siguen para un piloto posterior.",
+                            "done": true
+                        },
+                        {
+                            "id": "global-config",
+                            "title": "Auditar configuración global OpenCode",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Revisar permisos, MCP, agentes, plugins, cache, snapshots y auth sin exponer credenciales.",
+                            "notes": "Auditoría hecha. V1 operativo con Engram MCP/Context7, 25 skills duplicadas de OpenCode movidas a cuarentena con hashes; quedan sólo warnings intencionales entre Claude y Gentle.",
+                            "done": true
+                        },
+                        {
+                            "id": "openai-auth",
+                            "title": "Configurar OpenAI por suscripción",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Conectar el provider oficial sólo mediante login autorizado.",
+                            "notes": "OpenAI OAuth validado con opencode providers list; no se expusieron credenciales.",
+                            "done": true
+                        },
+                        {
+                            "id": "fallback-models",
+                            "title": "Evaluar GLM/DeepSeek/Ollama",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Medir costo, latencia, contexto y calidad para tareas simples.",
+                            "notes": "Elegir por evidencia, no por disponibilidad.",
+                            "done": false
+                        },
+                        {
+                            "id": "tui-validation",
+                            "title": "Validar TUI en terminal real",
+                            "category": "OpenCode + Gentle-AI",
+                            "description": "Probar mouse=false, Home/End, Ctrl+A/E, atención y selector de tema.",
+                            "notes": "Validada en V1. mouse=true permite scroll del viewport. Semántica final: Home/End línea actual; Ctrl+Home/Ctrl+End prompt multilinea. Backup previo en ~/.local/state/hospeda-opencode-migration/backups/tui-v1-before-line-buffer-rebind-2026-09-18.json.",
+                            "done": true
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "phase-fase-2-memoria-y-conocimiento",
+                "type": "checklist",
+                "title": "Fase 2 · Memoria y conocimiento",
+                "data": {
+                    "items": [
+                        {
+                            "id": "engram-audit",
+                            "title": "Auditar DB Engram actual",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Verificar integridad, proyectos, duplicados, observaciones huérfanas y ruido.",
+                            "notes": "Integridad SQLite OK en copia del estado activo; checkpoint actual 9.754 observaciones y 97 foreign-key anomalies ya conocidas. Las 149 observaciones eliminadas no se restauran.",
+                            "done": true
+                        },
+                        {
+                            "id": "memory-review",
+                            "title": "Revisar memoria una por una",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Clasificar vigente, histórica, duplicada, contradictoria, ruidosa o secreta antes de usarla.",
+                            "notes": "Pendiente de aprobación humana por lote. La auditoría read-only separó el aumento reciente: 14 observaciones pasivas provienen de sesiones Claude con tool_name=engram-autosave-SessionEnd; las sesiones OpenCode ses_* no generaron esa captura pasiva. No se leyó contenido ni se hicieron mutaciones manuales.",
+                            "done": false
+                        },
+                        {
+                            "id": "memory-restore",
+                            "title": "Probar restore en copia",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Comprobar rollback completo con DB, WAL, SHM y checksums.",
+                            "notes": "Copia temporal DB/WAL/SHM creada, checksum e integrity_check ok; falta validar doctor/export sin consulta de red y una restauración funcional aislada.",
+                            "done": false
+                        },
+                        {
+                            "id": "knowledge-map",
+                            "title": "Separar AGENTS, skills y docs",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Dejar AGENTS.md corto y mover conocimiento especializado a skills bajo demanda.",
+                            "notes": "Mapa y backlog documentados.",
+                            "done": true
+                        },
+                        {
+                            "id": "claude-memory",
+                            "title": "Revisar Memory.md y memorias Claude",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Extraer sólo reglas vigentes y verificadas; no importar masivamente.",
+                            "notes": "Pendiente revisión individual.",
+                            "done": false
+                        },
+                        {
+                            "id": "engram-projects",
+                            "title": "Clasificar proyectos Engram",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Separar Hospeda, worktrees, temporales y otros repos antes de consolidar.",
+                            "notes": "No usar consolidate --all.",
+                            "done": false
+                        },
+                        {
+                            "id": "engram-dedup",
+                            "title": "Revisar duplicados y conflictos",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Comparar topic_key, títulos y contenido en copia, sin borrar por título solamente.",
+                            "notes": "Revisión humana por lote; títulos repetidos y hashes no se eliminan automáticamente y se revisan con proyecto/fecha.",
+                            "done": false
+                        },
+                        {
+                            "id": "engram-mcp",
+                            "title": "Conectar Engram a OpenCode",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Activar MCP sólo después de saneamiento y prueba de rollback.",
+                            "notes": "MCP de Engram conectado y visible en opencode mcp list; la curación de memorias sigue separada.",
+                            "done": true
+                        },
+                        {
+                            "id": "memory-policy",
+                            "title": "Aplicar política de memoria",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Guardar sólo decisiones duraderas, verificadas y deduplicadas; excluir ruido y secretos.",
+                            "notes": "Política documentada.",
+                            "done": true
+                        },
+                        {
+                            "id": "claude-md-extract",
+                            "title": "Extraer CLAUDE.md por dominio",
+                            "category": "Engram + CLAUDE.md",
+                            "description": "Convertir conocimiento especializado en skills project-locales/globales.",
+                            "notes": "No copiar el archivo monolítico completo.",
+                            "done": true
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "phase-fase-3-hops-y-workflow",
+                "type": "checklist",
+                "title": "Fase 3 · Hops y workflow",
+                "data": {
+                    "items": [
+                        {
+                            "id": "hops-contract",
+                            "title": "Definir contrato hops/commands",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Hops hace trabajo determinista; OpenCode agrega narrativa; JSON estable para agentes.",
+                            "notes": "Prefijo canónico hops-*; aliases sin prefijo de artifact/recap retirados tras comprobar cobertura completa.",
+                            "done": true
+                        },
+                        {
+                            "id": "worktree-vendor",
+                            "title": "Versionar scripts de worktree",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Mantener creación, configuración, DB, puertos, servidores y cleanup en scripts versionados dentro del proyecto.",
+                            "notes": "start-issue usa primero scripts/worktree; HOPS_WORKTREE_SCRIPT_DIR permite una copia externa; fallback global queda sólo como compatibilidad temporal.",
+                            "done": true
+                        },
+                        {
+                            "id": "hops-complete",
+                            "title": "Implementar comandos client-tools existentes",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Mantener todos los comandos del registro con binarios, wrappers y tests.",
+                            "notes": "26 comandos registrados; cada uno tiene contraparte `hops-*` en OpenCode (30 wrappers contando artifact-create/list/publish/state).",
+                            "done": true
+                        },
+                        {
+                            "id": "verify-changed",
+                            "title": "Usar verify --changed",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
+                            "notes": "Implementado; `--changed --list` leyó el workflow real y enumeró lint/guards/typecheck/tests sin mutar. El agente debe usarlo antes de verificar manualmente.",
+                            "done": true
+                        },
+                        {
+                            "id": "ci-e2e",
+                            "title": "Validar hops ci",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Cubrir verde, rojo, pending, conflicto, sin checks, sin PR y errores.",
+                            "notes": "Unitario + E2E simulado y consulta real sin PR; ci --json agrega verdict/pullRequest/checks/readOnly para agentes y no combina con --wait. Suite completa: 292 tests, 0 fallos.",
+                            "done": true
+                        },
+                        {
+                            "id": "linear-read",
+                            "title": "Preflight Linear read-only",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Consultar issue, estado, labels, worktree, PR y gates sin mutar.",
+                            "notes": "HOS-1344 validado en texto y JSON read-only; --json devuelve issue/state/labels/url, worktrees, acciones vacías y readOnly=true.",
+                            "done": true
+                        },
+                        {
+                            "id": "start-issue",
+                            "title": "Start issue con OpenCode",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Crear/reutilizar worktree y lanzar OpenCode con branch/DB/puertos correctos.",
+                            "notes": "Validado: Linear real + creación real de worktree HOS-1344 y build de paquetes; launcher OpenCode validado E2E con agente sintético. El refresco preventivo de DB no conectó y continuó de forma no bloqueante; DB/servers se prueban en gates separados.",
+                            "done": true
+                        },
+                        {
+                            "id": "close-issue",
+                            "title": "Close issue completo",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Cerrar issue, verificar PR/CI/smoke, actualizar Linear/Engram y limpiar recursos.",
+                            "notes": "hops close-issue --plan y /hops-close-issue están implementados como preflight read-only. No marcan Done, no comentan, no hacen push, merge ni cleanup.",
+                            "done": true
+                        },
+                        {
+                            "id": "worktrees-e2e",
+                            "title": "Probar worktrees end-to-end",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Validar pass, DB, puertos, servidores, cleanup y rollback en temporales.",
+                            "notes": "E2E temporal: create, ports, estado, start/stop, protección ante cambios sucios y cleanup. Se corrigió el nombre fijo de Compose y el stack compartido Postgres/Redis quedó saludable. La cadena limpia fue validada: 125 migraciones y 42 extras OK, incluido el 041. Un template candidato con seed permitió levantar HOS-635: API/Admin/Web respondieron 200 en 3101/3100/4421 y servers-down limpió los procesos. Se implementó template.sh con manifest dentro de la DB, fingerprint de schema+migraciones+extras+seeds, lock y promoción con backup; el candidato fue promovido a hospeda_template y el template histórico quedó conservado para rollback. El seed reportó tres planes complex-* ausentes.",
+                            "done": false
+                        },
+                        {
+                            "id": "handoff",
+                            "title": "Handoff con contexto y límites visibles",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Generar prompt autocontenido con hallazgos, decisiones, problemas y próximo paso.",
+                            "notes": "Marcadores BEGIN/END implementados.",
+                            "done": true
+                        },
+                        {
+                            "id": "linear-start",
+                            "title": "Validar startIssue con Linear",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Comprobar normalización HOS-NNN, labels, slug, branch y estado sin mutaciones indebidas.",
+                            "notes": "Dry-run validado.",
+                            "done": true
+                        },
+                        {
+                            "id": "ports",
+                            "title": "Probar asignación automática de ports",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Verificar colisiones, persistencia por worktree y liberación al limpiar.",
+                            "notes": "E2E temporal validó puertos distintos, reserva de 3100 por otro worktree y asignación de 3101; la liberación queda cubierta por cleanup temporal.",
+                            "done": true
+                        },
+                        {
+                            "id": "pass-env",
+                            "title": "Probar pass y env por worktree",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Confirmar que cada worktree recibe configuración necesaria sin copiar secretos al repo.",
+                            "done": true,
+                            "notes": "HOS-635 recibió el entorno desde un checkout confiable sin imprimir valores; hops env pasó los seis chequeos en filesystem escribible. La única salida restante es una condición opcional no bloqueante para HOSPEDA_INTERNAL_REQUEST_SECRET ausente en ambos lados; el sandbox EROFS queda documentado como limitación del entorno."
+                        },
+                        {
+                            "id": "env-drift-automation",
+                            "title": "Automatizar reconciliación y drift de entorno",
+                            "category": "CLI, worktrees, guards",
+                            "description": "Usar hospeda-staging como fuente predeterminada, reconciliar archivos después de hops update y devolver drift estructurado sin valores.",
+                            "notes": "Implementado y probado en el worktree de migración: copy-env resuelve staging, reconcile-local-env conserva valores y elimina claves obsoletas, y `hops env --drift --json` devuelve missing/obsolete/needsValue/mismatched. Falta activarlo en el checkout staging al incorporar estos cambios.",
+                            "done": false
+                        },
+                        {
+                            "id": "db-isolation",
+                            "title": "Probar aislamiento de DBs",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Verificar nombre, conexión, migraciones y protección entre worktrees.",
+                            "notes": "Candidato y clon HOS-635 validados; falta repetir el flujo desde el checkout operativo hospeda-staging luego de integrar los cambios.",
+                            "done": false
+                        },
+                        {
+                            "id": "cleanup-rollback",
+                            "title": "Probar cleanup y rollback",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Simular fallo durante cleanup y confirmar que no se pierden worktrees útiles.",
+                            "notes": "E2E temporal: wt-remove sin --force rechaza cambios sucios con exit 1 y conserva ruta, branch y archivo; --force se mantiene como acción explícita.",
+                            "done": true
+                        },
+                        {
+                            "id": "hops-json",
+                            "title": "Estabilizar contratos JSON",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Documentar schemas y códigos de salida para que los agents no parseen texto humano.",
+                            "notes": "Recap/context/handoff/issue-preflight/close-issue/ci/merge ya ofrecen JSON estable; verify --changed sigue usando salida del runner y queda como gap de contrato.",
+                            "done": true
+                        },
+                        {
+                            "id": "hops-wrapper",
+                            "title": "Restaurar wrappers a staging",
+                            "category": "CLI, Linear, issues, worktrees",
+                            "description": "Apuntar wrappers globales a `hospeda-staging` después de integrar cambios.",
+                            "notes": "Recordatorio explícito antes del cierre.",
+                            "done": false
+                        },
+                        {
+                            "id": "template-lifecycle",
+                            "title": "Versionar lifecycle seguro del DB template",
+                            "category": "CLI, worktrees y bases",
+                            "description": "Construir candidatos desde una base vacía, validar journal/manifest/fingerprint y promover sólo con confirmación, conservando rollback.",
+                            "notes": "Implementado en scripts/worktree/template.sh y expuesto por hops db-update-template con status, build-candidate y promote --confirm. La integración en hospeda-staging y el E2E desde wrappers globales siguen pendientes.",
+                            "done": true
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "phase-fase-4-specs-y-sdd",
+                "type": "checklist",
+                "title": "Fase 4 · Specs y SDD",
+                "data": {
+                    "items": [
+                        {
+                            "id": "spec-review",
+                            "title": "Revisar uso real de .specs y Taskmaster",
+                            "category": "Decisión de arquitectura",
+                            "description": "Medir qué se usa y qué metadata aporta antes de migrar.",
+                            "notes": "Uso reciente bajo en agentes.",
+                            "done": true
+                        },
+                        {
+                            "id": "sdd-decision",
+                            "title": "Decidir .specs vs Gentle SDD",
+                            "category": "Decisión de arquitectura",
+                            "description": "Elegir conservar, adaptar, hibridar o usar SDD sólo en features complejas.",
+                            "notes": "Recomendación híbrida pendiente de aprobación.",
+                            "done": false
+                        },
+                        {
+                            "id": "spec-implementation",
+                            "title": "Implementar decisión de specs",
+                            "category": "Decisión de arquitectura",
+                            "description": "Aplicar sólo después de aprobar lifecycle, Linear, trazabilidad y archive.",
+                            "notes": "No iniciado.",
+                            "done": false
+                        },
+                        {
+                            "id": "linear-spec-link",
+                            "title": "Definir relación issue ↔ spec",
+                            "category": "Decisión de arquitectura",
+                            "description": "Conservar HOS-NNN como identificador y mantener trazabilidad en `.specs` o SDD.",
+                            "notes": "Pendiente de decisión humana.",
+                            "done": false
+                        },
+                        {
+                            "id": "sdd-hybrid",
+                            "title": "Diseñar lifecycle híbrido",
+                            "category": "Decisión de arquitectura",
+                            "description": "Usar Gentle SDD sólo donde aporte exploración/diseño/verificación sin duplicar `.specs`.",
+                            "notes": "Candidato recomendado.",
+                            "done": false
+                        },
+                        {
+                            "id": "archive-policy",
+                            "title": "Definir archive/closeout",
+                            "category": "Decisión de arquitectura",
+                            "description": "Decidir qué queda en Git, qué se archiva y qué alimenta Linear/Engram.",
+                            "notes": "Pendiente de validación integral; Gate 38 corrigió plugins V1 incompatibles y dejó Engram/Context7 MCP conectados.",
+                            "done": false
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "phase-fase-5-guards-y-seguridad",
+                "type": "checklist",
+                "title": "Fase 5 · Guards y seguridad",
+                "data": {
+                    "items": [
+                        {
+                            "id": "precommit",
+                            "title": "Endurecer pre-commit",
+                            "category": "Pre-commit, CI, permisos",
+                            "description": "Bloquear secretos staged, drift, patrones inseguros y cambios peligrosos baratos.",
+                            "notes": "Propuesta documentada; implementación final pendiente.",
+                            "done": false
+                        },
+                        {
+                            "id": "permissions",
+                            "title": "Revisar permisos OpenCode",
+                            "category": "Pre-commit, CI, permisos",
+                            "description": "Reducir bash wildcard y mantener bloqueos de secretos, Git destructivo y producción.",
+                            "notes": "Auditoría y matriz allow/ask/deny documentadas; endurecimiento activo pendiente de aprobación y de un runtime con filesystem escribible.",
+                            "done": false
+                        },
+                        {
+                            "id": "guards-ci",
+                            "title": "Alinear guards locales y CI",
+                            "category": "Pre-commit, CI, permisos",
+                            "description": "Evitar verde local engañoso y mantener CI como autoridad final.",
+                            "notes": "verify lee workflow real.",
+                            "done": true
+                        },
+                        {
+                            "id": "staged-secrets",
+                            "title": "Guard de secretos staged",
+                            "category": "Pre-commit, CI, permisos",
+                            "description": "Bloquear tokens, claves, cookies, DSN y `.env` en cambios staged sin mostrar valores.",
+                            "notes": "scripts/guards/staged-secrets.sh integrado a .husky/pre-commit; bloquea nombres/contenido sospechoso y nunca imprime valores. Probado con caso limpio y caso sintético bloqueado.",
+                            "done": true
+                        },
+                        {
+                            "id": "dangerous-ops",
+                            "title": "Política de operaciones peligrosas",
+                            "category": "Pre-commit, CI, permisos",
+                            "description": "Clasificar allow, ask y deny para shell, Git, producción, DB y red.",
+                            "notes": "Matriz operativa preparada en security-guards-assessment.md; aplicar sólo después de aprobar categorías y probar precedencia sin comandos peligrosos.",
+                            "done": false
+                        },
+                        {
+                            "id": "dependency-audit",
+                            "title": "Auditar dependencias y supply chain",
+                            "category": "Pre-commit, CI, permisos",
+                            "description": "Revisar plugins, MCPs y paquetes antes de agregarlos al stack.",
+                            "notes": "Pendiente por plugin seleccionado.",
+                            "done": false
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "phase-fase-6-artifacts",
+                "type": "checklist",
+                "title": "Fase 6 · Artifacts",
+                "data": {
+                    "items": [
+                        {
+                            "id": "artifact-mvp",
+                            "title": "Visor local de artifacts",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Renderizar bundles declarativos con dark/light/system, galería y versiones.",
+                            "notes": "MVP funcional.",
+                            "done": true
+                        },
+                        {
+                            "id": "artifact-persist",
+                            "title": "Persistir interacción",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Guardar checks, text inputs, selects y multiselects como eventos consultables por agentes.",
+                            "notes": "Implementado y probado.",
+                            "done": true
+                        },
+                        {
+                            "id": "artifact-reload",
+                            "title": "Autoreload de versiones",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Detectar snapshots nuevos y recargar visor/galería automáticamente.",
+                            "notes": "Implementado cada 3s/5s.",
+                            "done": true
+                        },
+                        {
+                            "id": "migration-artifact",
+                            "title": "Evaluar artifacts Claude existentes",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Inventariar los ~50 artifacts y migrar sólo los que sigan siendo útiles.",
+                            "notes": "Pospuesto; no migrar ahora.",
+                            "done": false
+                        },
+                        {
+                            "id": "artifact-natural-language",
+                            "title": "Generar artifacts desde lenguaje natural",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Permitir que el agente investigue y produzca un bundle declarativo desde una solicitud.",
+                            "notes": "Renderer hace el trabajo HTML pesado.",
+                            "done": false
+                        },
+                        {
+                            "id": "artifact-schema",
+                            "title": "Definir schema de widgets",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Versionar bloques, campos, capacidades y eventos sin markup ejecutable.",
+                            "notes": "MVP soporta form/checklist.",
+                            "done": true
+                        },
+                        {
+                            "id": "artifact-agent-read",
+                            "title": "Enseñar lectura al agente",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Después de interacción, consultar `hops artifact state` antes de responder o actuar.",
+                            "notes": "Command agregado.",
+                            "done": true
+                        },
+                        {
+                            "id": "artifact-versioning",
+                            "title": "Publicar snapshots versionados",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Separar edición de datos, markup generado y versiones restaurables.",
+                            "notes": "v1/v2/v3 publicados localmente.",
+                            "done": true
+                        },
+                        {
+                            "id": "artifact-gallery",
+                            "title": "Mantener galería local multi-proyecto",
+                            "category": "Reportes visuales interactivos",
+                            "description": "Listar artifacts, versiones y autoreload sin autenticación remota todavía.",
+                            "notes": "MVP local.",
+                            "done": true
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "phase-fase-7-validacion-y-retiro",
+                "type": "checklist",
+                "title": "Fase 7 · Validación y retiro",
+                "data": {
+                    "items": [
+                        {
+                            "id": "integration-gates",
+                            "title": "Ejecutar validación integral",
+                            "category": "Adopción progresiva",
+                            "description": "Probar OpenCode, Gentle, Engram, Linear, hops, worktrees, TUI, guards y artifacts.",
+                            "notes": "Pendiente.",
+                            "done": false
+                        },
+                        {
+                            "id": "bootstrap",
+                            "title": "Crear bootstrap reproducible",
+                            "category": "Adopción progresiva",
+                            "description": "Instalar/configurar en una PC nueva con manifest, backups, dry-run y rollback.",
+                            "notes": "Base versionada creada en scripts/bootstrap/opencode-gentle-bootstrap.sh; --plan y --verify son read-only. Ahora verifica pins operativos OpenCode 1.18.31, Gentle-AI 2.9.0 y Engram 1.20.0; apply/install sigue deliberadamente pendiente.",
+                            "done": false
+                        },
+                        {
+                            "id": "plugins",
+                            "title": "Instalar sólo plugins aprobados",
+                            "category": "Adopción progresiva",
+                            "description": "Evaluar OpenKilo, OpenChamber, PTY y voz contra gaps medidos.",
+                            "notes": "No instalar todavía; matriz revalidada. Worktree/background/Open Trees comunitarios no se combinan con hops; handoff, OpenSession, Portal, Froggy, OpenWork y formatter redundantes o fuera del núcleo; TokenScope, Senses, type-inject, browser y Octto quedan como candidatos aislados; Plannotator y smart-voice como pruebas opcionales. direnv y peers requieren revisión de seguridad.",
+                            "done": false
+                        },
+                        {
+                            "id": "claude-retire",
+                            "title": "Retirar Claude Code",
+                            "category": "Adopción progresiva",
+                            "description": "Sólo después de cerrar gaps, validar rollback y aprobar migración final.",
+                            "notes": "Pendiente.",
+                            "done": false
+                        },
+                        {
+                            "id": "plugin-openkilo",
+                            "title": "Evaluar OpenKilo",
+                            "category": "Adopción progresiva",
+                            "description": "Medir modelos disponibles, costo, privacidad, estabilidad y utilidad real.",
+                            "notes": "OpenKilo: probar aislado por gateway externo y modelos gratuitos; no usar en código sensible.",
+                            "done": false
+                        },
+                        {
+                            "id": "plugin-openchamber",
+                            "title": "Evaluar OpenChamber",
+                            "category": "Adopción progresiva",
+                            "description": "Determinar si aporta UI/gestión que no duplique OpenCode/Gentle.",
+                            "notes": "OpenChamber: probar separado; duplica TUI/sesiones/worktrees y no entra al núcleo inicialmente.",
+                            "done": false
+                        },
+                        {
+                            "id": "plugin-pty-voice",
+                            "title": "Evaluar PTY y voz",
+                            "category": "Adopción progresiva",
+                            "description": "Probar sólo si existe un gap de procesos largos o notificaciones.",
+                            "notes": "PTY no recomendado para el núcleo por solapamiento con hops y permisos asimétricos; voz sólo piloto posterior.",
+                            "done": false
+                        },
+                        {
+                            "id": "plugin-security",
+                            "title": "Evaluar plugins de seguridad",
+                            "category": "Adopción progresiva",
+                            "description": "Comparar con permisos nativos y guards existentes antes de añadir otra capa.",
+                            "notes": "Gate 29: cc-safety-net y opencode-ignore quedan como pruebas aisladas; Sentry opt-in con inputs/outputs apagados; mcp-system-monitor fuera del núcleo. Mantener permisos nativos, guards de Hospeda y hops como base. No instalar por defecto.",
+                            "done": false
+                        },
+                        {
+                            "id": "rollback-drill",
+                            "title": "Ensayar rollback completo",
+                            "category": "Adopción progresiva",
+                            "description": "Restaurar Engram, configs, wrappers y OpenCode desde backups sin perder datos.",
+                            "notes": "Gate obligatorio.",
+                            "done": false
+                        },
+                        {
+                            "id": "acceptance",
+                            "title": "Aprobación humana final",
+                            "category": "Adopción progresiva",
+                            "description": "Revisar memorias, providers, plugins, SDD, permisos y retiro de Claude.",
+                            "notes": "Pendiente.",
+                            "done": false
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "view": {
+        "tabs": ["migration"],
+        "defaultTab": "migration"
+    },
+    "capabilities": ["reviewChecklist.itemToggled", "widget.valueChanged"],
+    "sources": [
+        "docs/migration/opencode-gentle-ai-plan.md",
+        "docs/migration/opencode-gentle-ai-execution-log.md",
+        "docs/migration/hops-command-status.md"
+    ]
+}
