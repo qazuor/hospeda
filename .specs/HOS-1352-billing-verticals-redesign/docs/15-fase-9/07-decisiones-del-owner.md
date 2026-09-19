@@ -970,3 +970,67 @@ de descubrirlos.
 
 - ⚠️ **`DEC-` propia obligatoria**: modifica el método del programa, que el PDR §65 define como
   fases en secuencia. **Es un apartamiento declarado más.**
+
+---
+
+## D-31 · El gate de FASE 5 queda ABIERTO, con criterio de dos filtros — `R6` #1
+
+**Decidido: se abre el gate de `DEC-METH-003`**, cuya única condición —tener el inventario de
+FASE 1B terminado— **está cumplida desde el 2026-09-17**. Y el criterio es **de dos filtros, en
+este orden**, propuesto por el owner:
+
+### Filtro 1 — POR SUJETO. Barato, objetivo, primero
+
+**Sobrevive el código cuyo sujeto sobrevive.** No se juzga la calidad: se pregunta si **la cosa que
+ese código maneja existe en el modelo nuevo**. Si el diseño elimina `product_domain`, todo lo que
+opera sobre `product_domain` se va, **sea bueno o malo**.
+
+**Por qué primero**: elimina la mayor parte **sin auditar nada**. `DEC-ARCH-004` ya condenó todo lo
+que cuelga de qzpay —se absorbe— y el modelo nuevo es **otro modelo**, así que el código que opera
+sobre el viejo no sobrevive al cambio **sea excelente o pésimo**. Juzgar su calidad sería gastar
+tiempo en una pregunta que no decide nada.
+
+**Y esquiva la trampa que `DEC-METH-003` anticipó**: no condena al Eje 2 por definición. Pregunta si
+*esa capacidad de esa vertical* existe en el modelo nuevo, y muchas existen. Un criterio del tipo
+*«lo que no nombra una vertical»* lo habría borrado entero.
+
+**Precedente en la misma sesión**: el inventario de guards aplicó exactamente esta forma
+(`MUERE`/`SOBREVIVE`/`REVISAR`) sobre 45 scripts y dio 7/6/32 **con evidencia por fila y sin
+discusiones**.
+
+### Filtro 2 — POR CONFIANZA DEMOSTRABLE, sobre lo que sobrevivió al 1
+
+Las cinco condiciones del PDR para `KEEP`. **El orden es lo que lo vuelve viable**: el filtro 2 es
+caro, y aplicándolo después del 1 **se paga sólo sobre una fracción**. Al revés se auditaría en
+profundidad código que después se descarta porque su sujeto no existe.
+
+**Cierra el agujero que el filtro 1 solo tenía**: por sujeto, **un código malo cuyo tema sobrevive
+pasaría a `KEEP` sin que nadie lo mire**.
+
+### El umbral, en palabras del owner
+
+> **No hace falta probar que algo está mal. Basta con no poder probar que está bien.**
+
+*«Prefiero pagar un costo alto, pero que las cosas queden realmente bien. Venimos de 3 o 4 refactors
+grandes de esto en los últimos 2 meses y nunca nos termina de quedar bien, así que el mantener
+tiene que ser extremadamente seguro; si no, prefiero reescritura.»*
+
+**Es más fuerte que el §2 del PDR** —*«la carga de prueba debe estar del lado de conservar»*— y
+**abarata el trabajo en vez de encarecerlo**: el filtro 2 no exige investigar cada pieza a fondo,
+exige **poder afirmarlo con evidencia a mano**. Si no se puede demostrar rápido, va a `REWRITE` y se
+sigue. **Lo caro sería el criterio blando**, que obliga a discutir cada caso.
+
+### Una precisión sobre «bien testeado», que es la condición que más miente
+
+De las cinco del PDR, **«bien testeado» es la más fácil de falsear**. Esta misma sesión encontró
+guards en verde que no vigilan nada, y el registro del owner documenta más de una docena de casos
+de tests que no prueban lo que dicen. **Si el filtro 2 pregunta «¿tiene tests?», conserva código
+respaldado por tests vacíos** y el trabajo del filtro 1 se desperdicia.
+
+**Se demuestra, no se declara**: hay que ver que el test **detecta el fallo** — romper la cosa y
+verlo ponerse rojo. Es caro, y **sólo es viable gracias al orden**: se aplica a un conjunto chico.
+
+- **Qué destraba**: `V1`, la única unidad sin dependencias, que lleva `G8` —falla si queda
+  `commerce` en fuentes activas— y hacerlo pasar **es ejecutar el §55 sobre el código real**, o sea
+  FASE 5. Sin esto, **la primera unidad del programa no puede terminar** y las otras 21 esperan.
+- ⚠️ **`DEC-` propia obligatoria**: es el gate de entrada que `DEC-METH-003` dejó declarado.
