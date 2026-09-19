@@ -757,3 +757,79 @@ rg -q 'scripts/check-g8' .github/workflows/ci.yml \
   PR de workflows; eso no dice nada sobre los otros.
 - **No cuenta un caso dos veces.** Las trabas de la última columna de §3.4 son las puertas de §3.5 y
   se cuentan una sola vez, en §3.5.
+
+---
+
+## 7. La decisión del owner, 2026-09-19 — y qué ajusta de la §1
+
+El owner revisó los cambios propuestos y **decidió el reparto workflow por workflow**. Lo que sigue
+es lo aprobado; donde difiere de la §1, **manda esta sección**.
+
+**La forma es una regla del proyecto, no una excepción temporal.** Una excepción en diez archivos
+que nadie va a recordar retirar es deuda garantizada — y es la misma forma del defecto que este
+programa combate: una regla escrita para un caso puntual. Queda como `DEC-CI-001` y vive en el
+`CLAUDE.md` del repo, donde ya viven las reglas de `main` y `staging`.
+
+**Y el criterio que ordena el reparto**: el riesgo no es que corran ramas `epic/` ajenas — que una
+épica futura reciba lint y tests es deseable. El riesgo es que corra **lo caro** y, sobre todo,
+**lo que tiene efectos afuera del repo**.
+
+| workflow | ¿`epic/**`? | motivo |
+|---|---|---|
+| `ci.yml` | **sí** | lint, typecheck, tests y los guards del repo. Es todo el punto. `C-1` **sin cambios** |
+| `validate-pr-title.yml` | **sí** | barato; mantiene la trazabilidad de los PRs de sub-épica. `C-3` **sin cambios** |
+| `validate-docs.yml` | **sí** | barato. **Falta en la §1 y hay que agregarlo** |
+| `codeql.yml` | **sí** | seguridad; una rama que vive meses la necesita más, no menos. **Falta en la §1** |
+| `docs.yml` | ya corre | no tiene filtro de rama, sólo de paths. Nada que hacer |
+| `e2e-pr.yml` | **NO por PR** | ⚠️ **`C-2` queda sin efecto.** Caro y lento en cada PR de sub-épica: va por `workflow_dispatch`, y **obligatorio antes del PR final a `staging`** |
+| `lighthouse.yml` | **no** | mide performance de páginas desplegadas, y en el paraguas no hay deploy que medir |
+| `a11y-sweep.yml` | **no** | mismo caso |
+| `whats-new-gate.yml` | **no** | es de `main` por diseño |
+| **`smoke-gate-sync.yml`** | **NO, y es el punto de riesgo** | ver abajo |
+
+### 7.1 Por qué `smoke-gate-sync.yml` no puede correr en el paraguas
+
+Ese workflow **mueve issues de Linear al mergear un PR**. Si corriera en los PRs de sub-épica →
+paraguas, y esos PRs llevan `[HOS-NNNN]` en el título —que es justo lo que `validate-pr-title`
+exige—, **cerraría las 22 unidades como hechas sin que haya nada desplegado**.
+
+No es un riesgo teórico: es el footgun que el `CLAUDE.md` del repo documenta **con dos incidentes
+reales**, el PR #1982 que cerró `HOS-36` y el #1983 que cerró `HOS-54`, los dos sin trabajo real y
+los dos revertidos a mano. Esto cierra el punto 3 de la §5.
+
+### 7.2 Lo que NO se toca, y cambia de motivo
+
+**`C-6` queda cancelado.** La §1 proponía limpiar el filtro `[main, develop]` de
+`validate-docs.yml` porque `develop` no existe. **El owner decidió no tocarlo, y la razón vuelve
+falso el diagnóstico**: no es un filtro muerto por descuido, es una condición **adelantada** a una
+rama que sí quiere tener —le hizo falta hace semanas, para trabajo que todavía no debía llegar a
+`staging`— y que se va a crear **con su propio trabajo**: tocar workflows, reglas de rama e
+instrucciones de los agentes. Eso lo toma otra persona, en otro momento.
+
+> **Queda anotado para quien lo haga**, no como limpieza pendiente: `develop` está nombrada en
+> `validate-docs.yml` y **no existe en el remoto** (`git ls-remote --heads origin develop` → cero
+> el 2026-09-19).
+
+### 7.3 Qué queda pendiente de aplicar
+
+Los cambios **no están aplicados**: son archivos del repo, y el PDR §65 reserva el código
+productivo para la FASE 10. Lo que queda listo para que alguien lo ejecute:
+
+| | qué | estado |
+|---|---|---|
+| `C-1` | `ci.yml` ← `epic/**` en `push` **y** en `pull_request` | aprobado, sin aplicar |
+| `C-3` | `validate-pr-title.yml` ← `epic/**` | aprobado, sin aplicar |
+| **`C-7`** | `validate-docs.yml` ← `epic/**` (**sin tocar `develop`**) | **nuevo**, sin aplicar |
+| **`C-8`** | `codeql.yml` ← `epic/**` | **nuevo**, sin aplicar |
+| `C-4` | `scripts/check-umbrella-branch-target.sh` + su paso en `ci.yml` | aprobado, sin aplicar |
+| `C-5` | la regla de enchufado en los dos `20-testing.md` | aprobado, sin aplicar |
+| ~~`C-2`~~ | ~~`e2e-pr.yml`~~ | **cancelado** por §7 |
+| ~~`C-6`~~ | ~~`validate-docs.yml`, el filtro `develop`~~ | **cancelado** por §7.2 |
+
+**La ventana sigue abierta**: `git ls-remote --heads origin 'epic/*'` devuelve **cero** al
+2026-09-19. Mientras el paraguas no exista, aplicar esto no obliga a migrar nada.
+
+Y lo que la §1 advierte sobre `C-1` **sigue valiendo entero**: la mitad `push` es la que cubre
+`F-8C2-004`, y el merge periódico de `staging` hacia el paraguas va a ser ruidoso en los dos jobs
+que trabajan por diff, con el instrumento para evitarlo ya existente (`workflow_dispatch` con
+`baseline_ref: staging`).

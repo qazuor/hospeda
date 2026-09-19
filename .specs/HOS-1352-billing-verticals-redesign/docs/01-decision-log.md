@@ -2235,13 +2235,81 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-CI-001 — `epic/**` es un tipo de rama del proyecto, y no todos los workflows corren ahí
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: `DEC-ARCH-007` manda que las sub-épicas corten de `epic/HOS-1352-verticales-billing`
+  y mergeen **a esa rama**, y que la revisión ocurra en esos PRs. Medido el 2026-09-19 sobre el
+  worktree: de los **15** workflows del repo, **ninguno nombra `epic` ni un patrón `**`**, y
+  `ci.yml` corre en `pull_request` sólo hacia `main` y `staging`. Un PR de sub-épica al paraguas
+  entraría **sin lint, sin typecheck, sin tests y sin los guards**, y **el único camino con CI
+  completa es el que la decisión prohíbe** (`F-8C2-003`). La regla estaba escrita cuatro veces en
+  las specs y **cero veces en el repo**.
+- **Alternativas**: (1) una excepción temporal mientras dure el programa; (2) un patrón acotado a
+  `epic/HOS-1352-*`; (3) **`epic/**` como tipo de rama de primera clase del proyecto**, con reparto
+  explícito de qué workflow corre ahí y qué no.
+- **Decisión**: **(3)**.
+- **Motivo de descartar (1) y (2)**: una excepción temporal en diez archivos que nadie va a
+  recordar retirar **es deuda garantizada**; y un patrón atado a esta épica obliga a volver a tocar
+  los mismos archivos en la próxima, que es **la misma forma del defecto que la FASE 8 encontró**
+  —una regla escrita para el caso que la motivó.
+- **El criterio del reparto**: el riesgo no es que corran ramas `epic/` ajenas —que una épica
+  futura reciba lint y tests es deseable— sino que corra **lo caro** y, sobre todo, **lo que tiene
+  efectos afuera del repo**.
+- **El reparto, workflow por workflow**: corren en `epic/**` **`ci.yml`, `validate-pr-title.yml`,
+  `validate-docs.yml` y `codeql.yml`**; `docs.yml` ya corre porque no filtra por rama. **No
+  corren**: `e2e-pr.yml` (caro por PR — va por `workflow_dispatch` y **obligatorio antes del PR
+  final a `staging`**), `lighthouse.yml` y `a11y-sweep.yml` (miden páginas desplegadas y el
+  paraguas no despliega), `whats-new-gate.yml` (es de `main` por diseño) y **`smoke-gate-sync.yml`**.
+- **`smoke-gate-sync.yml` es el punto de riesgo y por eso queda afuera con nombre propio**: mueve
+  issues de Linear al mergear. Corriendo en los PRs de sub-épica —que llevan `[HOS-NNNN]` en el
+  título porque `validate-pr-title` lo exige— **cerraría las 22 unidades del programa como hechas
+  sin nada desplegado**. Es el footgun que el `CLAUDE.md` documenta con **dos incidentes reales**
+  (PR #1982 → `HOS-36`, PR #1983 → `HOS-54`, ambos revertidos a mano).
+- **Las dos mitades de `ci.yml` hacen falta**: `pull_request` cubre `F-8C2-003`; **`push` cubre
+  `F-8C2-004`**, porque el merge periódico de `staging` hacia el paraguas **no es un PR** y ningún
+  disparador de `pull_request` lo alcanza.
+- **Implicaciones**:
+  1. **No está aplicado.** Son archivos del repo y el §65 reserva el código productivo para la
+     FASE 10; la aplicación la decide el owner. El detalle por archivo está en
+     [`15-fase-9/01-R6-resuelto.md`](./15-fase-9/01-R6-resuelto.md) §7.3.
+  2. **La ventana está abierta**: `git ls-remote --heads origin 'epic/*'` devuelve **cero** al
+     2026-09-19. Mientras el paraguas no exista, aplicarlo no obliga a migrar nada.
+  3. **Aplicar esto hace que `G8` falle en el primer PR del programa** en vez de no correr nunca.
+     Es lo deseable, y es lo que vuelve **no independientes** esta decisión y la de abrir el gate
+     de `DEC-METH-003`.
+  4. La regla vive en el `CLAUDE.md` del repo, junto a las de `main` y `staging`, **no sólo acá**.
+- **Origen**: conversación con el owner del 2026-09-19 —*«tampoco quiero que más adelante corran
+  ramas epic que no tienen nada que ver, o lo hacemos temporal o lo definimos bien como regla del
+  proyecto»*—, sobre el recorrido de R6.
+
+---
+
+### DEC-CI-002 — `develop` no se toca: es una condición adelantada, no un filtro muerto
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: midiendo R6 se encontró que `validate-docs.yml` filtra por `[main, develop]` y que
+  **`develop` no existe en el remoto** (`git ls-remote --heads origin develop` → cero, 2026-09-19).
+  Se propuso limpiarlo como filtro muerto.
+- **Decisión**: **no se toca**, y **la razón vuelve falso el diagnóstico**: no es descuido, es una
+  condición **adelantada** a una rama que el owner sí quiere tener. Le hizo falta hace semanas,
+  para trabajo que todavía no debía llegar a `staging`.
+- **Por qué no ahora y no acá**: crearla de verdad obliga a tocar **workflows, reglas de rama e
+  instrucciones de los agentes** — es trabajo propio, no un renglón. Lo toma otra persona, en otro
+  momento.
+- **Implicación**: queda **anotado como pendiente de diseño**, no como limpieza. Quien agregue
+  `epic/**` a `validate-docs.yml` (`C-7`) **no debe aprovechar para sacar `develop`**.
+- **Origen**: conversación con el owner del 2026-09-19.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **51** |
+| Decisiones tomadas | **53** |
 | De metodología | 4 |
-| Funcionales | 47 |
+| Funcionales | 49 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
 | **Preguntas del owner abiertas** | **0 de 25** |

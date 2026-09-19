@@ -413,7 +413,7 @@ ssh -p 2222 qazuor@216.238.103.219 "bash -lc \"hops --target=prod exec api -- sh
 —*«NO quiero que la implementación existente condicione el diseño del sistema nuevo»*, *«La
 arquitectura actual NO es la fuente de verdad»*— y el §65 lo repite al abrir la fase.
 
-Las tres fuentes admitidas son el **PDR**, una de las **51 decisiones**, y una **medición fechada**
+Las tres fuentes admitidas son el **PDR**, una de las **53 decisiones**, y una **medición fechada**
 de la matriz o del inventario de hechos. **El registro de 1B (`08`) NO es fuente de diseño**: puede
 aparecer en un capítulo sólo como advertencia de un modo de falla ya observado, marcado como tal.
 
