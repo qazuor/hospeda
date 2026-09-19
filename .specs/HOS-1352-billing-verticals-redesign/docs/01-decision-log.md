@@ -3,7 +3,7 @@ title: Decision Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-09-19
 status: CURRENT
 ---
 
@@ -392,7 +392,13 @@ Cada entrada lleva, según §3.4:
 
 ### DEC-MIG-001 — Coordinación manual de las cinco relaciones vivas, cero código de migración
 
-- **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+- **Fecha**: 2026-09-15 · **Estado**: **SUPERSEDED EN PARTE por `DEC-MIG-003`** (2026-09-19) ·
+  **Decide**: owner
+- **⚠️ Qué sobrevive y qué no**: sobrevive **cero código de migración**, que era su núcleo, y
+  sobrevive entera la medición que la apoya. **Lo que se cae es el destino**: ya no se transcribe
+  ninguna fila al sistema nuevo. `DEC-MIG-003` lo decidió el 2026-09-19 con un dato que no existía
+  acá —de quién son las ocho filas—, y las *«cinco relaciones»* de este título pasaron a ser ocho
+  por las altas que `DEC-MIG-002` dejó entrar.
 - **Problema**: qué se le promete a quien hoy está en el sistema cuando llegue el motor nuevo.
   §56 prefiere *"coordinación manual y nueva subscription"* si migrar automáticamente agrega
   complejidad o riesgo, pero apoya esa preferencia en un *"hay pocos customers actuales"* que
@@ -2359,19 +2365,242 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-005 — Un grant permanente se ancla al PLAN, lee su versión vigente, y lleva trinquete
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: un grant permanente cruza la frontera, la persona queda «cubierta», y cuando el
+  paso 6 pregunta **qué capacidades le da, no hay respuesta**. El contrato transportaba un solo
+  campo de contenido (`versiónDePlan`) y un grant **no apuntaba a ningún plan**: *Free Forever* era
+  un nombre comercial **sin contenido definido**. Lo encontraron **tres agentes de las dos épicas
+  por separado**, que es lo que lo volvió la causa de su racimo.
+- **Alternativas**: (1) anclar a una **versión fija**; (2) **anclar al plan y leer su versión
+  vigente**; (3) que el grant **declare su propio juego de claves**.
+- **Decisión**: **(2)**, con dos precisiones que la completan: se lee la vigente **sea vendible o
+  no**, y con un **trinquete** — *un grant nunca otorga menos de lo que otorgaba el día que se
+  concedió.*
+- **Por qué no la (1)**: era la recomendación original y el owner la mejoró. Anclado a una versión
+  fija, el beneficiario **no recibe ninguna mejora del plan**, para siempre. Y el modo híbrido no
+  inventa nada: `V/02` §2.1 ya tiene **los dos modos escritos** —*«la pricing lee la versión
+  vigente y sólo si es vendible; una suscripción lee su versión anclada, vigente o no, vendible o
+  no»*—, así que seguir la vigente no agrega un tercer modo.
+- **Por qué «vendible o no» y no como la pricing**: porque **retirar un plan se hace publicando una
+  versión no vendible** (`D13`, cap. 10 §3.2). Leyendo *«sólo si es vendible»*, el día que se
+  retira el plan Premium **todos los `Free Forever` anclados a él se quedan sin nada**.
+- **Por qué el trinquete**: seguir la vigente expone al beneficiario a que el plan **empeore** —una
+  versión que reparte distinto le saca algo a quien tiene un «para siempre», **sin que nadie lo
+  haya decidido para esa persona**—. El instrumento no es nuevo: es el piso de `V/15` §2.5.
+- **Por qué no la (3)**: sería **una segunda forma de declarar entitlements**, que `V/02` §1.2
+  prohíbe, y obligaría a mantener dos catálogos en sincronía para siempre. Es el defecto que este
+  programa entero viene a corregir.
+- **La objeción que había que contestar, y se contesta con reglas que ya existen**: que un grant
+  apunte a una versión de plan choca con `NUCLEO/01` §1.5 —*«se modela como entidad independiente,
+  no como un plan»*—. **Anclar no es ser**: una suscripción ancla una versión y no es un plan. Y el
+  retiro ya estaba resuelto por `D13`.
+- **Implicaciones**: `permanent_grant` gana **`plan_id`** (no anulable) y el **piso del trinquete**,
+  guardado como **referencia a la versión**, nunca como copia de valores. `UNIQUE(plan_id) WHERE
+  vigente` es lo que garantiza que *«la vigente»* sea unívoca y siempre exista.
+- **Beneficio operativo**: regalar algo pasa a ser **elegir un plan concreto**, y queda auditado.
+- **Riesgo declarado**: que alguien lea el anclaje como *«el grant es un plan»*.
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-05`, sobre el racimo `R2`.
+
+---
+
+### DEC-CONC-003 — `RECONCILIATION_REQUIRED` deja de ser un estado y pasa a ser una MARCA
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: el estado quedaba **fuera de los «vivos»** del candado del §11, y esa exclusión
+  estaba escrita **con su razón**, en `B/02` §2.2: *«si una suscripción necesita intervención
+  humana, la persona tiene que poder contratar de nuevo sin esperar a que alguien resuelva un
+  caso»*. **La intención era buena; lo que produjo, no.** Al no verlo el candado se abrieron **dos
+  críticos a la vez**: el preapproval sigue vivo y habilita una segunda suscripción —**dos
+  cobros**, y está medido que el proveedor no frena la segunda— y **un estado del que no se sale**,
+  sin destino legal una vez que el cliente recontrató.
+- **La causa de fondo**: escribir `RECONCILIATION_REQUIRED` **en la columna de estado borra el
+  estado real**. Eso obliga a `S15` a **adivinar a dónde volver** y **convierte una alerta en una
+  decisión destructiva automática** —convertir una `ACTIVE` en `RECONCILIATION_REQUIRED` lo es,
+  textualmente—, que es lo que el §22.1 prohíbe.
+- **Alternativas**: (1) **marca booleana** sobre la fila, que conserva su estado; (2) dejarlo como
+  estado y **meterlo** en los vivos.
+- **Decisión**: **(1)**.
+- **Por qué la marca cumple mejor la intención original que la exclusión que la escribió**: la
+  razón era *«que la persona no espere a que alguien resuelva un caso»*. Con la marca **no espera
+  nada: su suscripción sigue en su estado real y funcionando**. La marca es para el operador, no
+  para el cliente. La (2) cierra el doble cobro pero **le cobra al cliente la espera**, que es
+  exactamente lo que la razón quería evitar.
+- **Implicaciones**: `S14` deja de ser una transición —pone la marca y emite el §22.1— y `S15`
+  también —la levanta, y si además corresponde un cambio de estado se ejecuta **la transición de la
+  tabla que lo permita**—. Una fila marcada **ocupa** el candado en vez de liberarlo, que es la
+  única dirección en que esto **endurece** la restricción. Y una fila marcada **no puede declarar
+  una sucesión**, salvo desde `CANCEL_SCHEDULED` (ver `DEC-SUB-011`).
+- **⚠️ Revisa una razón registrada del owner**, y por eso lleva `DEC-` propia en vez de aplicarse
+  como corrección: la frase de `B/02` §2.2 era deliberada.
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-11` y `D-12`, sobre el racimo `R1`.
+
+---
+
+### DEC-SUB-011 — El invariante 8 del §64 cuenta COMPROMISOS, no FILAS
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **⚠️ Apartamiento declarado del PDR** (§11 y §64.8).
+- **Problema**: el §11 dice *«máximo una suscripción principal por `user + vertical`»* y el candado
+  lo hacía cumplir con **una sola clave** sobre un conjunto de estados. Pero esa clave estaba
+  haciendo cumplir **dos invariantes distintos a la vez** —*«un compromiso comercial por
+  vertical»* y *«una autorización de cobro por vertical»*—, con el conjunto de estados como proxy
+  de los dos. Por eso fallaba **en las dos direcciones**: lo que incluía de más bloqueaba un
+  compromiso que todavía no existe, y lo que excluía de más liberaba una autorización que sigue
+  viva. Y `DEC-SUB-006` implicación 1 **exige** la convivencia: *«la suscripción vieja se cancela al
+  recibir el webhook de autorizada, NUNCA antes»*.
+- **Decisión**, y la redacción es la decisión:
+  > **El invariante 8 del §64 cuenta COMPROMISOS, no FILAS.**
+- **Por qué esa formulación y no *«ahora puede haber dos suscripciones»***: porque **conserva la
+  política del PDR intacta** y explica por qué dos filas no la violan. Con la sucesión, el máximo
+  de filas vivas pasa a dos durante la ventana del cambio de plan, pero **sigue habiendo un solo
+  compromiso de pago**. Lo que deja de ser literal es el enunciado **sobre las filas**.
+- **Implicaciones**: `subscription` gana **`sucede_a`** y el `UNIQUE` se parte en **dos índices
+  parciales** sobre las mismas columnas y el mismo conjunto de estados, uno para el origen y otro
+  para la sucesora. **Dos, exactamente**: un origen y su única sucesora. Al indexar el segundo sobre
+  `(user_id, vertical)` —y no sobre `sucede_a`— **una sucesora no puede ser sucedida** sin ninguna
+  regla extra. Nuevo invariante `D15` en `NUCLEO/04` §3, y dos guards, `G-R1-A` y `G-R1-B`.
+- **Por qué hay que declararlo** en vez de simplemente aplicarlo: el PDR **no se edita** (regla 1),
+  y el riesgo de no declararlo es concreto — **alguien lee el §64, ve *«máximo una»* y «arregla» el
+  candado de vuelta**, deshaciendo todo esto sin saber que lo está haciendo, y con toda la razón
+  desde su punto de vista. Hay cuatro precedentes exactos: `DEC-ARCH-003`, `DEC-OBS-001`,
+  `DEC-METH-004` y `DEC-METH-005`.
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-13`, sobre el racimo `R1`.
+
+---
+
+### DEC-MIG-003 — No se migra: las ocho filas se cancelan y quien tenga algo vivo se suscribe de nuevo
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **⚠️ Supersede en parte a `DEC-MIG-001`**, que definía qué hacer con la cartera existente.
+- **Problema**: se estaba diseñando la migración de la cartera actual —orden forzado, punto de no
+  retorno por fila, y la aceptación de que el rollback no existe pasado cierto paso—, y **nadie
+  sabía de quién eran las ocho filas**.
+- **El dato que lo decide lo aportó el owner y no estaba en ningún documento**: **las 2 `comp` son
+  suyas** —sin ningún cliente real detrás— y **las 3 `trialing` son clientes, pero amigos a los que
+  puede llamar para que se resuscriban**. Las otras 3 son `abandoned`: **no tienen nada vivo**.
+- **Decisión**: **se arranca de cero. El sistema nuevo no hereda una sola fila.** Las dos cortesías
+  se escriben como `permanent_grant` —exactamente como el *Free Forever* del diseño nuevo, sin nada
+  especial— y **se pueden regenerar**.
+- **Qué se pierde, medido**: **nada de plata** —no hay **un solo pago histórico**, ningún
+  comprobante, ninguna serie que reconstruir— y el *«trial ya consumido»* de **seis personas
+  conocidas**, de las cuales tres ya habían abandonado el checkout igual.
+- **El argumento, y no es de pereza**: se estaba construyendo una migración para **ocho filas sin un
+  solo pago, todas de gente a la que se puede llamar**. Diseñarla, revisarla, ejecutarla y
+  garantizar su rollback es **desproporcionado frente a un mensaje**. Y el beneficio extra es real:
+  el sistema nuevo arranca **sin una sola fila heredada** — sin transcripciones, sin estados viejos,
+  sin dudas sobre si algo quedó mal migrado. Es el escenario más limpio posible, y **sólo está
+  disponible ahora**, mientras son ocho.
+- **Qué deja sin objeto**: cuatro de los cinco problemas críticos de la migración **no se resuelven,
+  se eliminan** —dejaba afuera las relaciones con trial, transcribía el trial dejando los
+  compromisos sin vínculo, tenía un punto de no retorno sin lado elegido, y describía dos
+  operaciones distintas en dos lugares—, más el hecho de que **nadie la ejecutaba**. La unidad de
+  trabajo que iba a escribirla **no se crea**.
+- **Lo único que sobrevive**: el **rollback del PROGRAMA**, que es otra cosa y vive en la FASE 7 del
+  paraguas (ver `16-fase-7-del-paraguas.md`).
+- **⚠️ Condición de caducidad**: `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**,
+  así que la cartera crece. Con ocho filas *«no migrar»* son tres llamadas; **el umbral medido está
+  en unas veinte**, y arriba de eso deja de ser viable. El aviso que el owner ya se comprometió a
+  dar —*«si veo que empiezan a entrar registros nuevos, te aviso»*— **ahora tiene una consecuencia
+  concreta: hay que volver a discutir esta decisión.**
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-24`, `D-25` y `D-26`, sobre el racimo `R5`.
+
+---
+
+### DEC-METH-006 — La FASE 8 vuelve a correr sobre lo que la FASE 9 produjo, hasta que no aparezca ningún CRÍTICO nuevo
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **⚠️ Apartamiento declarado del método**, que el PDR §65 define como **fases en secuencia**.
+- **Problema**: `DEC-METH-004` definió cuándo un **hallazgo** está resuelto, no cuándo la **fase**
+  termina, y no preveía que la propia FASE 9 pudiera introducir defectos nuevos.
+- **Decisión**, y son dos cosas:
+  1. **Cuándo termina la FASE 9**: cuando las cuatro salidas de `DEC-METH-004` están cerradas y
+     ningún `CRITICA` queda abierto **sin causa declarada**.
+  2. **El ciclo**: *«una vez que 9 decimos ok, listo, volvemos a ejecutar la 8, para asegurarnos que
+     con los cambios de la 9 no aparece ningún problema nuevo, y si aparece, otra vez la 9»*, y
+     **se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo.**
+- **Por qué *«sin causa declarada»* es lo que hace usable la definición de salida**: permite
+  terminar con cosas abiertas —el capítulo 13 no se va a escribir antes— **siempre que cada una diga
+  por qué y de qué depende**. La alternativa *«ningún `CRITICA` abierto, punto»* **nunca se cumple**:
+  ata el fin de la fase a algo que la fase no controla.
+- **Por qué *«ningún `CRITICA` nuevo»* y no *«ningún hallazgo»***: siempre va a aparecer algo menor,
+  y atarlo a cero es la misma trampa. Los `ALTA` y `MEDIA` de la última pasada **se registran y se
+  va a FASE 10 con ellos declarados**.
+- **La evidencia está en la propia tanda que lo motivó**: la FASE 9 **ya demostró que puede
+  introducir defectos nuevos**. `D-01` existe porque el arreglo de `R2` abría un fail-open que el
+  diseño original no tenía, y `D-20` porque la resolución de `R3` le daba un segundo significado a
+  un campo del contrato. **Los dos se cazaron de casualidad**, mientras se resolvía otra cosa.
+- **Dónde cae la 8-bis dentro del ciclo**, precisado el mismo día: las salidas 3 y 4 son
+  **PROPAGACIÓN** —52 objetos entre issues, fichas y descomposiciones—, así que la 8-bis corre
+  **antes** de ellas. Si corriera después y trajera críticos, la 9-bis los resolvería **y habría que
+  propagar todo de nuevo**. El orden queda: (1) aplicar decisiones · (2) las `DEC-`, log, handoff y
+  worklog · (3) **8-bis entera** · (4) ¿críticos? → 9-bis → volver a (1) · (5) ¿sin críticos? →
+  salidas 3 y 4, **una sola vez** · (6) FASE 10.
+- **Cómo corre la 8-bis: ENTERA, no sólo sobre lo que cambió.** La causa raíz del programa es que
+  **las contradicciones viven ENTRE capítulos**, así que atacar sólo los textos corregidos la
+  volvería ciega a justamente lo que el ciclo busca. Lo que la abarata no es recortar el alcance
+  sino que **arranca con los 327 casos ya enumerados**: recorre dominios en vez de descubrirlos.
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-30`, sobre el racimo `R6`.
+
+---
+
+### DEC-METH-007 — El gate de FASE 5 se abre, con un criterio de dos filtros en orden
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: `DEC-METH-003` dejó la clasificación del código legacy —`KEEP` o `REWRITE`— detrás
+  de un gate cuya única condición era **tener el inventario de FASE 1B terminado**, y esa condición
+  **está cumplida desde el 2026-09-17**. Sin abrirlo, **`V1` —la única unidad sin dependencias— no
+  puede terminar**, porque lleva `G8` (falla si queda `commerce` en fuentes activas) y hacerlo pasar
+  **es ejecutar el §55 sobre el código real**, o sea FASE 5. Las otras 21 unidades esperan detrás.
+- **Decisión**: se abre, con **dos filtros en este orden**, propuestos por el owner.
+- **Filtro 1 — POR SUJETO**: sobrevive el código **cuyo sujeto sobrevive**. No se juzga la calidad:
+  se pregunta si **la cosa que ese código maneja existe en el modelo nuevo**. Si el diseño elimina
+  `product_domain`, todo lo que opera sobre `product_domain` se va, **sea bueno o malo**.
+- **Por qué primero**: elimina la mayor parte **sin auditar nada**. `DEC-ARCH-004` ya condenó todo
+  lo que cuelga de qzpay, y el modelo nuevo es **otro modelo**. Juzgar la calidad de ese código
+  sería gastar tiempo en una pregunta que no decide nada. Y **esquiva la trampa que `DEC-METH-003`
+  anticipó**: no condena al Eje 2 por definición, porque pregunta si *esa capacidad de esa vertical*
+  existe en el modelo nuevo, y muchas existen. Precedente en la misma sesión: el inventario de
+  guards aplicó exactamente esta forma sobre 45 scripts y dio **7 `MUERE` / 6 `REVISAR` / 32
+  `SOBREVIVE`**, con evidencia por fila y sin discusiones.
+- **Filtro 2 — POR CONFIANZA DEMOSTRABLE**, sobre lo que sobrevivió al 1: las cinco condiciones del
+  PDR para `KEEP`. **El orden es lo que lo vuelve viable**: el filtro 2 es caro y aplicándolo después
+  del 1 **se paga sólo sobre una fracción**. Cierra además el agujero que el filtro 1 solo tenía —
+  por sujeto, **un código malo cuyo tema sobrevive pasaría a `KEEP` sin que nadie lo mire**.
+- **El umbral, en palabras del owner**:
+  > **No hace falta probar que algo está mal. Basta con no poder probar que está bien.**
+  >
+  > *«Prefiero pagar un costo alto, pero que las cosas queden realmente bien. Venimos de 3 o 4
+  > refactors grandes de esto en los últimos 2 meses y nunca nos termina de quedar bien, así que el
+  > mantener tiene que ser extremadamente seguro; si no, prefiero reescritura.»*
+- **Es más fuerte que el §2 del PDR** —*«la carga de prueba debe estar del lado de conservar»*— **y
+  abarata el trabajo en vez de encarecerlo**: no exige investigar cada pieza a fondo, exige **poder
+  afirmarlo con evidencia a mano**. Si no se puede demostrar rápido, va a `REWRITE` y se sigue. **Lo
+  caro sería el criterio blando**, que obliga a discutir cada caso.
+- **Una precisión sobre «bien testeado», que es la condición que más miente**: de las cinco del PDR
+  es la más fácil de falsear. Esta misma sesión encontró guards en verde que no vigilan nada. **Si
+  el filtro 2 pregunta «¿tiene tests?», conserva código respaldado por tests vacíos** y el trabajo
+  del filtro 1 se desperdicia. **Se demuestra, no se declara**: hay que ver que el test **detecta el
+  fallo** — romper la cosa y verlo ponerse rojo. Es caro, y **sólo es viable gracias al orden**.
+- **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-31`, sobre el racimo `R6`.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **54** |
-| De metodología | 5 |
-| Funcionales | 49 |
+| Decisiones tomadas | **60** |
+| De metodología | 7 |
+| Funcionales | 53 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
-| `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
+| `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
 | Bloqueantes de FASE 2 que decide el owner | **9 de 9 cerradas** — `BD-MP-04` volvió al owner y la cerró `DEC-ADDON-002` |
 | Bloqueantes de FASE 2 que decide el experimento | **0 abiertas** — `BD-MP-01` (pausa) la cerró `DEC-SUB-010` y `BD-MP-02` (cortesía) la cerró `DEC-GRANT-003`, las dos el 2026-09-16 con el reloj leído; `BD-MP-03` la había cerrado `DEC-MP-001`; `BD-MP-04` tiene sus filas medidas pero **le sobrevivió una elección de diseño** |
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
 | Decisiones de arquitectura del owner | **4**, las cuatro del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera. **`DEC-ARCH-007`**: se desarrollan en paralelo y **se liberan juntas** — ninguna llega a producción sola, y una rama de integración del paraguas lo hace cumplir |
-| Apartamientos declarados del PDR | **5** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), y **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto») |
+| Apartamientos declarados del PDR | **7** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto»), **`DEC-SUB-011`** (§11 y §64.8, el invariante 8 cuenta compromisos y no filas) y **`DEC-METH-006`** (§65, la FASE 8 vuelve a correr sobre lo que la 9 produjo, en vez de fases en secuencia) |
+| Decisiones de la FASE 9 | **6**, las seis del 2026-09-19 — `DEC-GRANT-005` (el grant anclado al plan, con trinquete), `DEC-CONC-003` (la marca, que **revisa una razón escrita del owner**), `DEC-SUB-011` (compromisos, no filas), `DEC-MIG-003` (no se migra), `DEC-METH-006` (el ciclo 8 ↔ 9) y `DEC-METH-007` (el gate de FASE 5, con criterio de dos filtros). Salieron de las 37 preguntas que los cinco racimos resueltos dejaron para el owner |
