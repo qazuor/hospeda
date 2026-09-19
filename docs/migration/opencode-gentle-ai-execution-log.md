@@ -2760,3 +2760,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   el uso humano.
 - `tsc --noEmit` y la suite completa pasaron: **295 tests, 0 fallos y 728
   assertions**.
+
+## Gate 104 · Fuente confiable `hospeda-staging`
+
+- `hops env --drift --wt hospeda-staging --json` quedó limpio en los cuatro
+  archivos operativos: API, Web, Admin y Docker.
+- Resultado: 0 faltantes, 0 obsoletas, 0 sin valor y 0 mismatches. Sólo queda
+  `HOSPEDA_INTERNAL_REQUEST_SECRET` ausente en el cross-check opcional de API/Web.
+- La fuente confiable de envs queda validada sin revelar ni comparar valores.
