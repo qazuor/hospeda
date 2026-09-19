@@ -86,7 +86,7 @@ de qué depende. **El agente no elige por su cuenta.**
 | **4** | `A3-004` | las **cuatro fuentes nuevas** no están en la lista de invalidación del caché: un recorte no llega nunca | **ARREGLAR** · 19/09 |
 | **5** | `C1-001` | las **tres defensas del §6** del contrato pierden su sujeto a la vez | **SE DECIDE CON EL 1** · se vuelve a mirar después |
 | **6** | `A1-002` | el grant se ancla a **un** plan y su scope son **varias** verticales: la referencia de una alimenta a las otras | **ARREGLAR** · 19/09 |
-| **7** | `A3-005` | billing tiene que leer **entitlements y limits** de verticales para decidir si un cambio es upgrade o downgrade. Rompe el corte entre las dos épicas | **ARREGLAR** · 19/09 — *«intentemos arreglarlo»*. Arreglarlo **es tomar una decisión nueva**: dónde vive la regla que distingue subir de bajar de plan. Vuelve al owner cuando esté planteada |
+| **7** | `A3-005` | billing tiene que leer **entitlements y limits** de verticales para decidir si un cambio es upgrade o downgrade. Rompe el corte entre las dos épicas | **ARREGLAR** · 19/09 · **opción A**: la regla se muda a verticales y la dirección inversa gana una pregunta — *«entre estas dos versiones, ¿sube o baja?»*. Billing recibe **un veredicto, nunca valores** |
 
 ### Familia 2 · El trial — 3 defectos
 
@@ -105,9 +105,9 @@ de qué depende. **El agente no elige por su cuenta.**
 | **13** | `B1-002` | la fecha de primer cobro que se guarda es **la que mandamos**, no la que el proveedor escribió, y el capítulo prohíbe leer esa: el invariante **no subió a verificable** | **ARREGLAR** · 19/09 |
 | **14** | `B1-003` | *«un día como mínimo»* contra una ventana de **72 h**: toda sucesora autorizada después del primer día **nace con la fecha ya vencida**, y está medido que no se puede mover | **ARREGLAR** · 19/09 |
 | **15** | `B1-004` | el cobro de la cuota en reintento **reactiva a la predecesora**, y el crédito de la sucesora ya se computó en cero | **ARREGLAR** · 19/09 |
-| **16** | `B1-006` | el contrato no dice qué emite una suscripción **esperando autorización**: o son 72 h de servicio completo gratis y repetibles, o son dos planes sumados durante toda la sucesión | **ARREGLAR** · 19/09 — **con opciones a discutir** antes de escribir |
+| **16** | `B1-006` | el contrato no dice qué emite una suscripción **esperando autorización**: o son 72 h de servicio completo gratis y repetibles, o son dos planes sumados durante toda la sucesión | **ARREGLAR** · 19/09 · **opción A**: se escribe el **mapa completo de los nueve estados**, y **esperar autorización NO cubre** — si no, son 72 h de servicio gratis repetibles, y dos planes sumados durante una sucesión |
 | **17** | `B2-004` | la excepción que deja suceder a una baja programada **marcada** se apoya, textualmente, en el hecho que la marca puede estar denunciando | **ARREGLAR** · 19/09 |
-| **18** | `B2-005` | **seis de los ocho pares** (estado nuestro, estado del proveedor) no tienen transición declarada: la regla de no-retroceso no puede escribir lo que lee | **ARREGLAR** · 19/09 — **con opciones a discutir** antes de escribir |
+| **18** | `B2-005` | **seis de los ocho pares** (estado nuestro, estado del proveedor) no tienen transición declarada: la regla de no-retroceso no puede escribir lo que lee | **ARREGLAR** · 19/09 · **opción C**: se enumeran los **ocho pares**; los que tengan transición legítima la reciben y **los que queden son divergencias reales**, donde la marca es la respuesta correcta |
 
 ### Familia 4 · La marca de conciliación — 2 defectos
 
