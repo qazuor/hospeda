@@ -160,7 +160,7 @@
                             "title": "Validar TUI en terminal real",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Probar mouse=false, Home/End, Ctrl+A/E, atención y selector de tema.",
-                            "notes": "Validada en V1. mouse=true permite scroll del viewport. Semántica final: Home/End línea actual; Ctrl+Home/Ctrl+End prompt multilinea. Backup previo en ~/.local/state/hospeda-opencode-migration/backups/tui-v1-before-line-buffer-rebind-2026-09-18.json.",
+                            "notes": "Gate84: TUI V1 inició en pseudo-terminal durante 8s y renderizó logo, prompt, worktree, versión 1.18.31, modelo OpenAI y MCP sin errores de plugins. Semántica final: Home/End línea actual; Ctrl+Home/Ctrl+End prompt multilinea. La rueda/Home/End aún requieren validación manual. Backup previo en ~/.local/state/hospeda-opencode-migration/backups/tui-v1-before-line-buffer-rebind-2026-09-18.json.",
                             "done": true
                         },
                         {

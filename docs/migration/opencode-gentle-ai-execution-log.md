@@ -2550,3 +2550,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El bloqueo de persistencia documentado en los gates anteriores queda como
   incidente intermitente del host; debe seguirse monitoreando antes de declarar
   la instalación completamente estable.
+
+## Gate 84 · Smoke de TUI V1 en pseudo-terminal
+
+- `opencode` se inició durante 8 segundos en una pseudo-terminal y terminó por
+  timeout controlado.
+- La TUI renderizó logo, prompt, branch/worktree, versión `1.18.31`, modelo
+  OpenAI y contador de MCP; no aparecieron errores de carga de plugins ni
+  bloqueos de operación.
+- No se envió ningún prompt ni se ejecutó ninguna herramienta. La validación
+  manual de rueda/Home/End sigue siendo una comprobación interactiva del
+  usuario.
