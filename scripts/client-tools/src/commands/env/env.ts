@@ -96,7 +96,8 @@ export async function runEnv({ argv }: { readonly argv: readonly string[] }): Pr
         } else {
             for (const file of report.files) {
                 const problems = [
-                    ...file.missing.map((key) => `falta ${key}`),
+                    ...file.requiredMissing.map((key) => `falta obligatoria ${key}`),
+                    ...file.optionalMissing.map((key) => `opcional ausente ${key}`),
                     ...file.obsolete.map((key) => `obsoleta ${key}`),
                     ...file.needsValue.map((key) => `requiere valor ${key}`)
                 ];

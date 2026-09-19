@@ -65,6 +65,14 @@ export async function runCloseIssue({
     const envDrift = {
         clean: envReport.clean,
         missing: envReport.files.reduce((sum, file) => sum + file.missing.length, 0),
+        requiredMissing: envReport.files.reduce(
+            (sum, file) => sum + file.requiredMissing.length,
+            0
+        ),
+        optionalMissing: envReport.files.reduce(
+            (sum, file) => sum + file.optionalMissing.length,
+            0
+        ),
         obsolete: envReport.files.reduce((sum, file) => sum + file.obsolete.length, 0),
         needsValue: envReport.files.reduce((sum, file) => sum + file.needsValue.length, 0),
         mismatched: envReport.mismatched.length,
@@ -136,7 +144,7 @@ export async function runCloseIssue({
     process.stdout.write(`closeout: ${closeout ? 'presente' : 'ausente'}\n`);
     process.stdout.write(`tasks/state: ${taskState ? 'presente' : 'ausente'}\n`);
     process.stdout.write(
-        `env drift: ${envDrift.clean ? 'limpio' : `${envDrift.missing} faltantes · ${envDrift.obsolete} obsoletas · ${envDrift.needsValue} sin valor`}\n`
+        `env drift: ${envDrift.clean ? 'limpio' : `${envDrift.requiredMissing} obligatorias faltantes · ${envDrift.optionalMissing} opcionales ausentes · ${envDrift.obsolete} obsoletas · ${envDrift.needsValue} sin valor`}\n`
     );
     process.stdout.write(
         `Linear: ${state.ok ? `${state.issue.stateName} (${state.issue.identifier})` : state.reason}\n`

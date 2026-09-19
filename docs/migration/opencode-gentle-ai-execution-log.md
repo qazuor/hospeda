@@ -2725,3 +2725,19 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   el drift bajó a 161 faltantes, 6 obsoletas, 0 sin valor, 0 cruzadas y 1
   cross-check ausente. Las restantes no existen todavía en la fuente staging.
 - Sintaxis shell y diff pasaron; no se imprimieron valores secretos.
+
+## Gate 101 · Clasificación segura del drift de envs
+
+- Se compararon sólo nombres de variables de los registros versionados entre la
+  rama de migración y `hospeda-staging`: 279 frente a 281; no hay variables
+  exclusivas de la migración y sólo quedan dos nombres históricos exclusivos de
+  staging.
+- `collectEnvDrift` ahora separa `requiredMissing` de `optionalMissing`. Las
+  variables opcionales ausentes siguen apareciendo en JSON y en la salida humana,
+  pero no bloquean un cierre; obsoletas, obligatorias faltantes, valores vacíos y
+  mismatches sí lo hacen.
+- En el worktree actual el resultado seguro fue: 0 obligatorias faltantes,
+  161 opcionales ausentes, 6 obsoletas, 0 sin valor, 0 mismatches y 1
+  cross-check ausente. No se leyeron ni imprimieron valores.
+- Pruebas: `env-drift.test.ts` 3/3 y suite completa de client-tools 294/294,
+  724 assertions.

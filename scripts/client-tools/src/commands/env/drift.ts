@@ -4,6 +4,8 @@ import { join } from 'node:path';
 export type EnvDriftFile = {
     readonly file: string;
     readonly missing: readonly string[];
+    readonly requiredMissing: readonly string[];
+    readonly optionalMissing: readonly string[];
     readonly obsolete: readonly string[];
     readonly needsValue: readonly string[];
 };
@@ -68,17 +70,23 @@ export function collectEnvDrift({ root }: { readonly root: string }): EnvDriftRe
         const template = readEntries(templatePath(root, file));
         parsed.set(file, local);
         const missing: string[] = [];
+        const requiredMissing: string[] = [];
+        const optionalMissing: string[] = [];
         const obsolete: string[] = [];
         const needsValue: string[] = [];
         for (const [key, expected] of template) {
             const actual = local.get(key);
-            if (!actual) missing.push(key);
-            else if (expected.active && !actual.active) needsValue.push(key);
+            if (!actual) {
+                missing.push(key);
+                (expected.active ? requiredMissing : optionalMissing).push(key);
+            } else if (expected.active && !actual.active) needsValue.push(key);
         }
         for (const key of local.keys()) if (!template.has(key)) obsolete.push(key);
         files.push({
             file,
             missing: missing.sort(),
+            requiredMissing: requiredMissing.sort(),
+            optionalMissing: optionalMissing.sort(),
             obsolete: obsolete.sort(),
             needsValue: needsValue.sort()
         });
@@ -96,7 +104,7 @@ export function collectEnvDrift({ root }: { readonly root: string }): EnvDriftRe
     const clean =
         files.every(
             (file) =>
-                file.missing.length === 0 &&
+                file.requiredMissing.length === 0 &&
                 file.obsolete.length === 0 &&
                 file.needsValue.length === 0
         ) && mismatched.length === 0;

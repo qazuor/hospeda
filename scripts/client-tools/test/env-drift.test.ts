@@ -37,6 +37,8 @@ describe('collectEnvDrift', () => {
         expect(report.files[0]).toEqual({
             file: 'apps/api/.env.local',
             missing: [],
+            requiredMissing: [],
+            optionalMissing: [],
             obsolete: ['OBSOLETE'],
             needsValue: ['REQUIRED']
         });
@@ -55,5 +57,20 @@ describe('collectEnvDrift', () => {
         expect(report.mismatched).toEqual(['HOSPEDA_REVALIDATION_SECRET']);
         expect(JSON.stringify(report)).not.toContain('A"');
         expect(JSON.stringify(report)).not.toContain('B"');
+    });
+
+    it('does not block on an optional key absent from the local file', () => {
+        const root = fixture();
+        writeFileSync(join(root, 'apps/api/.env.example'), 'REQUIRED=placeholder\n# OPTIONAL=\n');
+        writeFileSync(join(root, 'apps/web/.env.example'), '');
+        writeFileSync(join(root, 'apps/admin/.env.example'), '');
+        writeFileSync(join(root, 'docker/.env.example'), '');
+        writeFileSync(join(root, 'apps/api/.env.local'), 'REQUIRED=value\n');
+
+        const report = collectEnvDrift({ root });
+        expect(report.clean).toBe(true);
+        expect(report.files[0]?.missing).toEqual(['OPTIONAL']);
+        expect(report.files[0]?.requiredMissing).toEqual([]);
+        expect(report.files[0]?.optionalMissing).toEqual(['OPTIONAL']);
     });
 });

@@ -395,7 +395,7 @@
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Confirmar que cada worktree recibe configuración necesaria sin copiar secretos al repo.",
                             "done": true,
-                            "notes": "HOS-635 recibió el entorno desde un checkout confiable sin imprimir valores; hops env pasó los seis chequeos en filesystem escribible. La única salida restante es una condición opcional no bloqueante para HOSPEDA_INTERNAL_REQUEST_SECRET ausente en ambos lados; el sandbox EROFS queda documentado como limitación del entorno."
+                            "notes": "HOS-635 recibió el entorno desde un checkout confiable sin imprimir valores. El guard ahora distingue faltantes obligatorias de opcionales; la ausencia de HOSPEDA_INTERNAL_REQUEST_SECRET en ambos lados sigue siendo un cross-check opcional no bloqueante."
                         },
                         {
                             "id": "env-drift-automation",
@@ -410,7 +410,7 @@
                             "title": "Probar aislamiento de DBs",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Verificar nombre, conexión, migraciones y protección entre worktrees.",
-                            "notes": "Gate100: `wt-up` reconcilia claves ausentes desde hospeda-staging sin sobrescribir valores. En el worktree de migración agregó 72 API, 5 Web y 12 Admin; el drift bajó a 161 faltantes y 6 obsoletas. Las restantes aún no existen en staging; no se inventan valores.",
+                            "notes": "Gate101: los registros versionados de variables están alineados entre migración y hospeda-staging (279 vs 281; sólo dos nombres históricos exclusivos de staging). El diagnóstico clasifica el estado real sin valores: 161 ausencias opcionales y 6 obsoletas, 0 obligatorias faltantes, 0 sin valor y 1 cross-check ausente. Las opcionales se informan pero no bloquean el cierre; las obsoletas sí requieren limpieza explícita.",
                             "done": true
                         },
                         {
