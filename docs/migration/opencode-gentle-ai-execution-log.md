@@ -2440,3 +2440,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   branch base, nombres de branch y acciones Linear/GitHub.
 - Hospeda conservará `hops-start-issue` y `hops-close-issue` como aliases de
   compatibilidad que seleccionan el adapter Hospeda.
+
+## Gate 74 · Auditoría previa de `develop`
+
+- Se relevaron las referencias actuales a `staging` y `main` en configuración,
+  Hops, worktrees, CI, Dependabot y workflows de back-merge.
+- `staging` está embebido como base de issues, baseline de verify, destino de
+  merge y fuente del template; `main` está embebido en promociones, What's New,
+  cobertura reforzada y sincronización de seguridad.
+- La introducción de `develop` requiere separar `issueBaseBranch`,
+  `integrationBranch` y `promotionBranches`, no reemplazar texto globalmente.
+- Se documentó la auditoría en `docs/migration/develop-branch-audit.md`.
+- No se modificaron ramas, GitHub, CI ni Git.

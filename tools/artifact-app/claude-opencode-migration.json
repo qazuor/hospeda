@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_18",
-        "number": 18,
+        "id": "ver_claude_opencode_migration_19",
+        "number": 19,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "hacer start-issue y close-issue parte del núcleo qz configurable",
+        "reason": "auditar impacto de develop antes de modificar Git/CI",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_17"
+        "basedOnVersion": "ver_claude_opencode_migration_18"
     },
     "data": {
         "sections": [
@@ -466,7 +466,7 @@
                             "title": "Agregar develop como rama de integración intermedia",
                             "category": "Git, Linear y promoción",
                             "description": "Introducir develop como destino automático de los cambios terminados; mantener staging como promoción explícita y main como rama protegida de producción.",
-                            "notes": "Nueva tarea. Auditar project.config, startIssue/closeIssue, branch naming, workflows CI, PR base branches, documentación, guards y cualquier referencia staging/main. Los PRs directos a staging seguirán permitidos para urgencias; develop no debe bloquear ese escape controlado.",
+                            "notes": "Auditoría completada en develop-branch-audit.md. Hay referencias embebidas a staging/main en project.config, start-issue, merge/verify, template/update, reportes, CI, Dependabot y back-merge. La implementación debe separar issueBaseBranch, integrationBranch y promotionBranches; no hacer un reemplazo textual.",
                             "done": false
                         },
                         {
