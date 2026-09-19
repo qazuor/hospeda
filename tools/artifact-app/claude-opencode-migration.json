@@ -354,7 +354,7 @@
                             "title": "Close issue completo",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Cerrar issue, verificar PR/CI/smoke, actualizar Linear/Engram y limpiar recursos.",
-                            "notes": "Gate98: `close-issue --plan` incorpora resumen seguro de env drift y agrega acción explícita cuando hay faltantes/obsoletas, sin imprimir valores ni mutar envs. El preflight read-only sigue funcionando; close-issue debe migrar luego al núcleo qz configurable.",
+                            "notes": "Gate99: ejecución real con HOS-635 devolvió resumen seguro (250 faltantes, 6 obsoletas, 0 sin valor, 0 cruzadas, 1 ausente) y acción explícita de resolver drift antes del cierre. Sin valores impresos ni mutaciones; close-issue debe migrar luego al núcleo qz configurable.",
                             "done": true
                         },
                         {

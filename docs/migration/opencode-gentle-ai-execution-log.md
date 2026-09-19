@@ -2703,3 +2703,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Si el drift no está limpio, el preflight agrega una acción explícita para
   resolverlo antes del cierre; nunca imprime valores ni modifica envs.
 - La suite completa sigue en **294 tests pasados, 0 fallos y 724 assertions**.
+
+## Gate 99 · Cierre con env drift visible
+
+- `close-issue --plan --issue HOS-635 --json` en el worktree de migración
+  devolvió el resumen sin valores: `250` faltantes, `6` obsoletas, `0` sin
+  valor, `0` cruzadas distintas y `1` cross-check ausente.
+- La acción `resolver drift de variables de entorno antes del cierre` apareció
+  junto con dirty tree, ausencia de spec/closeout, estado Linear Backlog y PR
+  inexistente.
+- Esto confirma que el agente recibe una señal accionable antes de intentar
+  cerrar el issue.
