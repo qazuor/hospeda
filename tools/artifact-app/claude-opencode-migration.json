@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_35",
-        "number": 35,
+        "id": "ver_claude_opencode_migration_36",
+        "number": 36,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "diagnosticar bloqueo filesystem de OpenCode",
+        "reason": "diagnosticar origen del mount root read-only",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_34"
+        "basedOnVersion": "ver_claude_opencode_migration_35"
     },
     "data": {
         "sections": [
@@ -128,7 +128,7 @@
                             "title": "Configurar providers y modelos",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Usar OpenAI por suscripción para tareas complejas y evaluar GLM/DeepSeek para tareas simples.",
-                            "notes": "OpenCode providers list falló por root filesystem montado ro, no por credenciales. Detalle y procedimiento reversible en opencode-filesystem-blocker.md; no se remonta ni cambia permisos aún.",
+                            "notes": "Gate adicional: root ext4 está montado ro y dmesg está restringido; no se puede determinar desde esta sesión si es host/contenedor o recuperación de disco. Detalle en opencode-filesystem-host-diagnosis.md.",
                             "done": true
                         },
                         {
