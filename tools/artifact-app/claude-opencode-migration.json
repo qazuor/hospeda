@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_31",
-        "number": 31,
+        "id": "ver_claude_opencode_migration_32",
+        "number": 32,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "validar restore Engram en copia aislada",
+        "reason": "actualizar lotes de revisión Engram tras limpieza",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_30"
+        "basedOnVersion": "ver_claude_opencode_migration_31"
     },
     "data": {
         "sections": [
@@ -225,7 +225,7 @@
                             "title": "Clasificar proyectos Engram",
                             "category": "Engram + CLAUDE.md",
                             "description": "Separar Hospeda, worktrees, temporales y otros repos antes de consolidar.",
-                            "notes": "No usar consolidate --all.",
+                            "notes": "Lotes v2 actualizados con conteos read-only después de la limpieza en engram-review-batches-v2.md. Prioridad: tmp/autosaves, sin proyecto, Hospeda por checkout, worktrees y externos separados.",
                             "done": false
                         },
                         {
@@ -233,7 +233,7 @@
                             "title": "Revisar duplicados y conflictos",
                             "category": "Engram + CLAUDE.md",
                             "description": "Comparar topic_key, títulos y contenido en copia, sin borrar por título solamente.",
-                            "notes": "Revisión humana por lote; títulos repetidos y hashes no se eliminan automáticamente y se revisan con proyecto/fecha.",
+                            "notes": "Los duplicados siguen requiriendo revisión por proyecto, fecha y contenido; ningún hash/título autoriza borrado automático.",
                             "done": false
                         },
                         {
