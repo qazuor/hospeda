@@ -2798,3 +2798,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   los envs existentes.
 - El guard posterior encontró sólo una clave obsoleta en Docker:
   `COMPOSE_PROJECT_NAME`. No se eliminó automáticamente.
+
+## Gate 108 · Prueba aislada del reconciliador de envs
+
+- `scripts/reconcile-local-env.sh` está versionado en la migración, pero todavía
+  no está disponible en `origin/staging`.
+- Una fixture temporal confirmó que conserva asignaciones existentes, agrega
+  líneas ausentes del template y elimina claves obsoletas.
+- La salida sólo informa `values hidden`; ningún valor de la fixture apareció en
+  stdout.
