@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_32",
-        "number": 32,
+        "id": "ver_claude_opencode_migration_33",
+        "number": 33,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "actualizar lotes de revisión Engram tras limpieza",
+        "reason": "cerrar inventario read-only de secretos",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_31"
+        "basedOnVersion": "ver_claude_opencode_migration_32"
     },
     "data": {
         "sections": [
@@ -55,7 +55,7 @@
                             "title": "Inventariar mecanismos de secretos",
                             "category": "Preparación",
                             "description": "Detectar nombres, ubicaciones y mecanismos sin revelar valores.",
-                            "notes": "Pendiente de revisión final antes de instalar plugins.",
+                            "notes": "Inventario read-only documentado en secret-inventory-readonly.md: rutas, mecanismos y nombres de variables sin leer valores. Falta aprobación de backup/restauración en la etapa de bootstrap.",
                             "done": false
                         },
                         {
