@@ -3,7 +3,7 @@ title: Master Spec 09 — Conciliación
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 9
@@ -68,7 +68,7 @@ ninguna vía de aviso — sólo aparece releyendo.
 Re-vincular una huérfana reescribiendo su `external_reference` **no cambia plata ni estado**:
 sólo dice de quién es. Y está medido que se puede hacer sobre una suscripción viva (`EX-19`).
 
-**Toda divergencia de monto, estado o cobro emite `RECONCILIATION_REQUIRED` y la mira una
+**Toda divergencia de monto, estado o cobro pone la marca `requiere_conciliación` y la mira una
 persona.** Es el criterio del owner aplicado por tercera vez: **la línea no es «automático contra
 manual», es «toca plata o no toca plata»**.
 
@@ -80,14 +80,20 @@ Por cada suscripción de nuestro inventario que no esté en un estado terminal:
 
 | se compara | contra | si difieren |
 |---|---|---|
-| estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, `RECONCILIATION_REQUIRED` |
-| monto vigente | `transaction_amount` | `RECONCILIATION_REQUIRED` — es el caso que no avisa por ningún canal |
+| estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, se pone la **marca** |
+| monto vigente | `transaction_amount` | se pone la **marca** — es el caso que no avisa por ningún canal |
 | fecha del próximo cobro | `next_payment_date` | se registra; **no es por sí sola una divergencia**, porque el proveedor la mueve solo en casos medidos (`PS-6`) |
 | cobros del período | los `authorized_payments` del preapproval | ver §4 |
 | la `version` del recurso | la última que aplicamos | si la del proveedor es mayor, **el recurso cambió sin avisarnos**: se relee entero |
 
-**Los estados terminales no se barren**: `CANCELLED` y `ABANDONED` no pueden divergir hacia nada
-que nos importe, y barrerlos es gastar llamadas sobre la parte de la cartera que más crece.
+**Los estados terminales no se barren**: `CANCELLED`, `ABANDONED` y `CHARGE_DECLINED` no pueden
+divergir hacia nada que nos importe, y barrerlos es gastar llamadas sobre la parte de la cartera
+que más crece.
+
+**Y una fila con la marca `requiere_conciliación` puesta tampoco se barre.** No porque no pueda
+divergir, sino al revés: **ya divergió y hay una persona mirándola**. Volver a compararla no agrega
+información y sí agrega ruido — una alerta por corrida sobre un caso que ya está abierto es cómo se
+deja de mirar las alertas. Vuelve al barrido cuando `S15` levanta la marca.
 
 ---
 

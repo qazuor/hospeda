@@ -44,7 +44,7 @@ a la restricción no obliga a nada.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, período actual, fecha de fin de servicio, clase (principal o de complemento) | **`UNIQUE(user_id, vertical) WHERE clase = principal AND estado ∈ {vivos}`** — es el §11, **impuesto por la base y no por un chequeo** |
+| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, período actual, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** (FK anulable a `subscription`), **`requiere_conciliación`** (booleano) y **la fecha de primer cobro con la que nació la fila** | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
 
@@ -53,11 +53,71 @@ a la restricción no obliga a nada.
 > visible el caso en que el recurso cambió **sin** que el proveedor avisara — mutar el monto lo
 > salta sin emitir ninguna entrega (`EX-15`).
 
-**Los «vivos» de la restricción del §11 son**: `PENDING_AUTHORIZATION`, `ACTIVE`,
-`GRACE_PERIOD`, `PAUSED`, `SUSPENDED` y `CANCEL_SCHEDULED`. Quedan afuera `ABANDONED`,
-`CANCELLED` y `RECONCILIATION_REQUIRED` — el último a propósito: si una suscripción necesita
-intervención humana, la persona tiene que poder contratar de nuevo sin esperar a que alguien
-resuelva un caso.
+**El compromiso y la sucesión son dos cosas, y se escriben como dos claves.** Una sola clave estaba
+haciendo cumplir dos invariantes distintos —*«un compromiso comercial por vertical»* y *«una
+autorización de cobro por vertical»*— con el conjunto de estados como proxy de los dos a la vez, y
+por eso fallaba en las dos direcciones: lo que incluía de más bloqueaba un compromiso que todavía
+no existe, y lo que excluía de más liberaba una autorización que sigue viva.
+
+```text
+-- A · el compromiso: a lo sumo UNA fila principal de origen viva por user + vertical
+UNIQUE (user_id, vertical)
+  WHERE clase = principal
+    AND sucede_a IS NULL
+    AND estado ∈ {vivos}
+
+-- B · la sucesión: a lo sumo UNA fila principal sucesora viva por user + vertical
+UNIQUE (user_id, vertical)
+  WHERE clase = principal
+    AND sucede_a IS NOT NULL
+    AND estado ∈ {vivos}
+```
+
+**El máximo de filas principales vivas pasa de una a dos, y no a un número abierto.** Dos,
+exactamente: un origen y su única sucesora. Es el número que `DEC-SUB-006` pide y ni uno más. Y
+**una sucesión no es una cadena**: al indexar `B` sobre `(user_id, vertical)` —y no sobre
+`sucede_a`— una sucesora no puede ser sucedida mientras viva, sin ninguna regla extra, porque la
+segunda sucesora colisiona con la primera.
+
+Lo que esto NO hace es sacar `PENDING_AUTHORIZATION` de los vivos, que es la salida que parece
+equivalente y no lo es: sin él **nada impide una tercera, una cuarta y una décima creación
+simultánea**, que es lo que `DEC-CONC-001` fue a evitar.
+
+**Los «vivos» siguen siendo los mismos seis**: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`,
+`PAUSED`, `SUSPENDED` y `CANCEL_SCHEDULED`. Quedan afuera `ABANDONED`, `CANCELLED` y
+`CHARGE_DECLINED`, los tres porque **no tienen autorización que pueda cobrar**: `S3` canceló el
+preapproval, la suscripción terminó, o el proveedor lo canceló de forma terminal al rechazar el
+primer cobro (`B/12` §4.4).
+
+**`RECONCILIATION_REQUIRED` ya no figura acá porque dejó de ser un estado** (`B/03` §3.1): es la
+marca `requiere_conciliación` sobre la fila, que conserva el estado que tenía. La exclusión de hoy
+estaba escrita con una razón buena —*«si una suscripción necesita intervención humana, la persona
+tiene que poder contratar de nuevo sin esperar a que alguien resuelva un caso»*— **y su precio era
+un doble cobro**: la fila salía de los vivos con su preapproval `authorized` intacto, porque `S14`
+manda *«cero decisiones destructivas automáticas»*, y `EX-6` mide que el proveedor no frena la
+segunda.
+
+**La marca no contradice esa razón: la cumple mejor.** Con la marca la persona **no espera nada**,
+porque no pierde el servicio que tenía mientras alguien mira el caso — así que no necesita
+contratar de nuevo. La comodidad que la exclusión compraba deja de hacer falta, y la fila **ocupa**
+el candado en vez de liberarlo. Es la única dirección en que este modelado aprieta la restricción
+en vez de aflojarla.
+
+**Y la marca sí bloquea algo, a propósito**: mientras esté puesta **no se puede declarar una
+sucesión** sobre esa fila. Cancelar y recrear con una divergencia de plata sin resolver es
+exactamente el movimiento que `DEC-CONC-002` parte 4 manda que mire una persona.
+
+**La excepción, y es una sola**: una fila marcada **sí puede suceder cuando está en
+`CANCEL_SCHEDULED`**. No es una excepción de criterio sino de mecanismo: en ese estado `S11` ya
+canceló el preapproval, así que **el daño que la marca previene no puede ocurrir ahí**. Sin la
+excepción, alguien que programó su baja, tiene una marca puesta y quiere volver antes del
+vencimiento **se queda afuera sin haberlo elegido**.
+
+**La fecha de primer cobro se guarda, y no se relee del proveedor.** `D8` —*«una fecha de primer
+cobro futura es la precondición de seguridad de todo cambio de plan o de ciclo»*— era un invariante
+**recordable**; con la columna pasa a ser **verificable**, y su incumplimiento es literalmente el
+doble cobro. Releerla del proveedor lo prohíbe `D6` (*«el buscador del proveedor no es fuente de
+verdad de nada»*) y además no serviría: un guard tiene que poder correr sin red.
 
 ### 2.3 Dinero
 
@@ -139,7 +199,7 @@ son los que no dependen de que ningún camino de código se acuerde:
 
 | invariante del §64 | restricción |
 |---|---|
-| 8 · máximo una suscripción principal por vertical | `UNIQUE` parcial sobre los estados vivos |
+| 8 · máximo una suscripción principal por vertical | **dos** `UNIQUE` parciales sobre los estados vivos, partidos por `sucede_a` (§2.2). El invariante cuenta **compromisos, no filas**: durante la ventana del cambio de plan hay dos filas y un solo compromiso de pago |
 | 19 · los webhooks son idempotentes | `UNIQUE(proveedor, id_del_hecho)` en `payment` |
 | 26 · producto ≠ instancia | son dos tablas, y la instancia no repite ningún campo del producto |
 | — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (cap. 03 §1.2) |

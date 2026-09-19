@@ -3,7 +3,7 @@ title: Master Spec 01 — Glosario y modelo conceptual
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 1
@@ -62,7 +62,7 @@ Acá está `A-SUB-01`, y la respuesta ya la determinó una decisión.
 
 | término | qué es |
 |---|---|
-| **Suscripción principal** | El compromiso de pago que da acceso a una vertical. **Máximo una por User + Vertical** (§11). |
+| **Suscripción principal** | El compromiso de pago que da acceso a una vertical. **Máximo uno por User + Vertical** (§11) — un **compromiso**, no una fila: durante la ventana de un cambio de plan conviven un origen y su **única** sucesora, y siguen siendo un solo compromiso de pago (cap. 02 (épica de billing) §2.2). |
 | **Suscripción de complemento** | El compromiso de pago de **un** addon recurrente. `DEC-ADDON-002` decidió que cada addon recurrente es una autorización aparte en el proveedor, con su propio ciclo, su propio cobro y su propia baja. |
 
 **El adjetivo «main» del §11 es correcto y necesario**, y esto lo cierra: sí existen
@@ -158,7 +158,7 @@ Lo que sigue es el diccionario; el capítulo 03 dice qué transiciones existen.
 | máquina | estados |
 |---|---|
 | **Trial** | `PRE_TRIAL` · `TRIAL_ACTIVE` · `TRIAL_CONVERTED` · `TRIAL_EXPIRED` |
-| **Suscripción** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `GRACE_PERIOD` · `PAUSED` · `SUSPENDED` · `CANCEL_SCHEDULED` · `CANCELLED` · `RECONCILIATION_REQUIRED` |
+| **Suscripción** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `GRACE_PERIOD` · `PAUSED` · `SUSPENDED` · `CANCEL_SCHEDULED` · `CANCELLED` · `CHARGE_DECLINED`. **`RECONCILIATION_REQUIRED` no está en la lista porque no es un estado**: es la marca `requiere_conciliación` sobre la fila, que conserva el suyo |
 | **Pago** | `PENDING` · `SUCCEEDED` · `FAILED` · `REFUNDED` · `PARTIALLY_REFUNDED` |
 | **Pago manual** | `AWAITING` · `REGISTERED` · `DECLARED_UNPAID` |
 | **Addon (instancia)** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `EXPIRED` · `CANCELLED` |
@@ -321,7 +321,7 @@ User ──┬── es Turista Free siempre (§14, sin suscripción)
        │
        ├── por cada Vertical:
        │     ├── Trial            (uno de por vida, §10.1)
-       │     ├── Suscripción principal  (máximo una, §11)
+       │     ├── Suscripción principal  (un compromiso, §11 — hasta dos filas durante una sucesión)
        │     │      ├── ancla a → Versión de plan  (DEC-ARCH-001)
        │     │      ├── y a     → Billing option   (§18)
        │     │      └── cubre   → todas las fichas de esa vertical (§12)

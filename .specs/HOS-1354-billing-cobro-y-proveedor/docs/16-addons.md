@@ -3,7 +3,7 @@ title: Master Spec 16 — Addons
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 16
@@ -186,8 +186,23 @@ lo da el scope:
 | scope (§40) | queda huérfano cuando |
 |---|---|
 | `LISTING` | la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna |
-| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical llegó a `CANCELLED` |
+| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical llegó a `CANCELLED` **y no tiene sucesora** |
 | `USER` · `GLOBAL` | la cuenta se borró |
+
+**Una sucesión tampoco deja huérfano a nada, y es la mitad que faltaba.** Un upgrade lleva la
+predecesora a `CANCELLED` **siempre**, así que sin esta condición **todo upgrade cancelaría los
+addons recurrentes del cliente en el mismo acto en que mejora su plan** — le cobramos más y le
+sacamos lo que ya pagó. El addon **se re-apunta a la sucesora**, en el mismo acto del upgrade: no
+se cancela y no se rehace, deja de colgar de la fila vieja y pasa a colgar de la nueva. Es el
+mismo razonamiento que el contador de promos de `B/14` §2.2, y por la misma razón — **el objetivo
+del addon no desapareció, se sucedió**. La suscripción vieja y la nueva son la misma relación
+comercial con la persona, y cancelar un addon ahí es **tratar una sucesión como una baja**.
+
+`DEC-SUB-007` impl. 4 lo había dejado explícitamente abierto —*«hay que decidir si siguen colgando
+del cliente o si hay que re-vincularlos»*—. Lo que **no** se decide acá es colgarlos **del
+cliente** en vez de la suscripción: es más limpio conceptualmente y es un rediseño de este
+capítulo, no una condición. Se discute el día que un addon tenga que sobrevivir a no tener ninguna
+suscripción viva.
 
 **La suspensión y la pausa no dejan huérfano a nada**, y es el punto del §41: el objetivo existe.
 El addon sigue su curso y **su reloj no se congela** (`DEC-ADDON-001`), con la consecuencia ya
@@ -205,7 +220,7 @@ disparan del mismo lugar:
 | efecto | quién lo hace |
 |---|---|
 | las capacidades bajan | el reconciliador de excedentes (cap. 15 (épica de verticales) §4) |
-| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** |
+| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los que se re-apuntan a una sucesora (§4.2), que no quedaron huérfanos |
 
 **Falla hacia cobrar de más, y por eso es el que no puede fallar.** Un excedente sin reconciliar
 es una capacidad regalada; un preapproval huérfano sin cancelar es un débito mensual a alguien

@@ -3,7 +3,7 @@ title: Master Spec 12 — Suscripción
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 12
@@ -181,8 +181,14 @@ el trial tampoco, porque no está usando trial.
 ### 4.3 La regla que lo cierra
 
 > **El grace no es un beneficio de entrada.** Una suscripción cuyo **primer** cobro falla, para un
-> `user + vertical` **sin ningún pago acreditado**, no pasa por `GRACE_PERIOD`: va directo a
-> `SUSPENDED`.
+> `user + vertical` **sin ningún pago acreditado**, no pasa por `GRACE_PERIOD`: va a
+> **`CHARGE_DECLINED`**, que es terminal.
+
+**El destino ya no es `SUSPENDED`, y el §4.4 explica por qué no podía serlo.** Mandarla ahí hacía
+que `SUSPENDED` significara dos muertes distintas —el que pagó y dejó de pagar, y el alta que nunca
+ocurrió— y eso **bloqueaba el reintento que este mismo capítulo exige**, porque el candado del §11
+cuenta a `SUSPENDED` entre los vivos. `CHARGE_DECLINED` es terminal y **no vivo**: el reintento
+entra como alta nueva sin pelear contra ninguna restricción.
 
 El §20 describe una política de **retención**: alguien que venía pagando y tuvo un problema.
 Quien nunca pagó no tiene una relación que retener, y el servicio que recibió se mide en minutos
@@ -211,10 +217,11 @@ Dos consecuencias que el diseño tiene que absorber:
 1. **El reintento del cliente es una suscripción NUEVA, con id nuevo.** No se recupera la anterior
    —no se puede—, así que la superficie tiene que ofrecer empezar de nuevo, no «reintentar el
    pago».
-2. **El capítulo 03 necesita distinguir dos muertes que hoy comparten estado.** `ABANDONED` dice
-   *«nadie autorizó en 72 h»*; esto es *«intentó y lo rechazaron»*. Le decimos cosas distintas al
-   cliente en cada caso, así que no pueden compartir nombre. **Queda anotado como el residuo de
-   este capítulo**, no resuelto acá.
+2. **Las dos muertes ya no comparten estado — el residuo está cerrado.** `ABANDONED` dice *«nadie
+   autorizó en 72 h»*; **`CHARGE_DECLINED`** dice *«intentó y lo rechazaron»*. Le decimos cosas
+   distintas al cliente en cada caso y ahora tienen nombres distintos (cap. 03 §3.1, transición
+   `S16`). No era una cuestión de prolijidad: mientras compartían nombre con `SUSPENDED`, el
+   candado del §11 no podía distinguir una autorización viva de una cancelada de forma terminal.
 
 ### 4.5 Tres precisiones que la regla necesita
 
@@ -245,6 +252,21 @@ compensa sobre alguien que debe?**
 Entonces el crédito es **cero**, y no hace falta ninguna regla nueva: la fórmula ya dice
 *«pagado»*.
 
+**Y ese cero choca con `D8`, así que hay una regla que sí hace falta.** Con crédito cero la fecha
+de primer cobro de la sucesora cae **hoy**, y `D8` exige que sea **futura** — dos reglas correctas
+que no se pueden cumplir a la vez, y quien choca contra las dos es alguien en mora que quiere
+mejorar su plan. La salida:
+
+> **Toda sucesora nace con fecha de primer cobro a un día como mínimo.** Ninguna cobra hoy.
+
+**Por qué uniforme y no una precondición distinta según de dónde venga la sucesión.** Declarar que
+*«desde grace la precondición es otra»* es más exacto conceptualmente, **y por eso es peor**: le
+mete una rama a la precondición de seguridad del mecanismo más caro del sistema, y obliga al guard
+que vigila `D8` a **saber de dónde viene cada sucesión** para saber qué exigir. Un guard con esa
+forma es un guard que alguien va a leer mal. Así vale para toda sucesión, venga de donde venga,
+`D8` queda en una línea sin excepciones, y el costo —que el cliente espere un día para el primer
+cobro del plan nuevo— es **a su favor**.
+
 **La forma verificable, y es la que hay que congelar:**
 
 > **El crédito se computa a partir de los pagos acreditados, nunca a partir de los días
@@ -261,6 +283,57 @@ durante el grace. Es servicio regalado, que es la dirección que ese mismo grace
 **No se compensa con el cobro nuevo ni se cobra aparte.** Perseguirlo exigiría un mecanismo de
 cobranza que no existe en ningún lado del PDR, sobre alguien que **acaba de volver a pagar** — y
 `DEC-SUB-003` eligió que cambiar de plan sea *«una salida del problema en vez de un muro»*.
+
+**Pero perdonarla no la apaga, y eso hay que decirlo antes de que pase.** Mientras la predecesora
+siga viva su cuota sigue en `recycling` (§1.3, medido) y **puede entrar**. Si entra dentro de las
+72 h de la sucesión, el cliente **paga la deuda que le perdonamos**.
+
+> **Se acepta que el cobro pueda entrar, y se le avisa al cliente ANTES de que pase.**
+
+**Ninguna de las dos salidas es limpia, y se eligió por cuál daño es reversible.** Cancelar la
+predecesora en el acto contradice `D7` —*«la vieja se cancela sólo al recibir el webhook de que la
+nueva quedó autorizada»*—, que existe por una razón medida: si se cancela antes y el cliente
+abandona el checkout, **se queda sin nada**. Ese daño es silencioso y no se deshace. El de acá es
+**un cobro indebido, visible y reversible**. Es el mismo criterio que `PA-5` ya aplicó sin
+nombrarlo: entre dos males, el reversible — *un cobro se reembolsa y una cancelación en el
+proveedor no*.
+
+**El aviso previo no es un adorno: es lo que hace aceptable la decisión.** Un cobro que sorprende
+es un reclamo; uno anunciado es un trámite. El correo va al catálogo de `NUCLEO/07`. Y conviene
+saber sobre qué descansa la salida si el cobro entra: el reembolso es **la única capacidad que el
+cap. 06 §10 declara en riesgo de plataforma** (`RF-6/7/8`).
+
+### 5.4 Si la predecesora renueva dentro de la ventana, el crédito queda corto — y no hay corrección
+
+El crédito se computa **al crear** la sucesora (`DEC-SUB-006`), y la ventana de autorización dura
+**72 h**. Si la predecesora renueva dentro de esa ventana, el crédito quedó corto **por un ciclo
+entero**. Corregirlo exigiría mover la fecha de cobro de la sucesora, que en ese momento está
+`pending`.
+
+**Se midió si eso se puede hacer, y no se puede.** Sonda 48, sandbox, 2026-09-19, registrada como
+`EX-39`, sobre un preapproval `pending`:
+
+| intento | resultado |
+|---|---|
+| `auto_recurring.start_date` suelto | `200`, **`last_modified` congelado**, la fecha sin moverse |
+| `next_payment_date` suelto | `200`, ídem |
+| `auto_recurring` completo con la fecha adentro | `200`, ídem |
+| **control**: `PUT` de `transaction_amount` sobre el MISMO sujeto | `200`, **`last_modified` SÍ se movió**, 2000 → 2500 |
+
+**El control es lo que la vuelve concluyente**: separa *«la fecha no se puede mover»* de *«este
+objeto no acepta nada»*. Entró el monto, así que **lo bloqueado son las fechas, no el objeto**.
+
+> **La inmutabilidad de las fechas no depende del estado.** Vale igual sobre una `pending` que
+> sobre una autorizada, así que `start_date` sirve **sólo al crear**, y punto.
+
+**Entonces la salida no es corregir: es no llegar a ese caso.** Cuando falten pocos días para la
+renovación de la predecesora, el cambio de plan se ofrece con **ventana reducida**, de modo que la
+autorización no pueda cruzar la fecha de cobro. Cuántos días es *«pocos»* queda por definir: **es
+un número, no un mecanismo**.
+
+**Una trampa del método, anotada porque cuesta cara**: el aviso *«doscientos que no aplicó»* saltaba
+también en el control —que no pide mover ninguna fecha y sí aplicó—. Lo que delata un `200` vacío
+es que **`last_modified` no se haya movido**, no que la fecha siga igual.
 
 ---
 

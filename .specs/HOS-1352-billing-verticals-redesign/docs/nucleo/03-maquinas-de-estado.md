@@ -3,7 +3,7 @@ title: Master Spec 03 — Las máquinas de estado
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 3
@@ -33,7 +33,11 @@ máquina de estados y una convención.
 
 1. **La tabla de transiciones es exhaustiva.** Lo que no está, no pasa. Un intento de
    transición que la tabla no declara **no se ejecuta**: se registra como evento de dominio y,
-   si tocaba plata o estado, emite `RECONCILIATION_REQUIRED` (§22.1).
+   si tocaba plata o estado, **pone la marca `requiere_conciliación`** y emite el §22.1.
+   **La marca no es un estado**, y ésa es la diferencia que la hace correcta: la fila conserva el
+   estado que tenía, así que quien resuelve el caso no tiene que adivinar a dónde volver, y
+   escribirla no es en sí misma una decisión destructiva automática — que es lo que el §22.1
+   prohíbe.
 2. **El estado vive en una columna con dominio restringido.** El §63 pide máquinas explícitas;
    una columna que acepta cualquier cadena no tiene máquina, tiene una costumbre. El capítulo 02
    fija la restricción.

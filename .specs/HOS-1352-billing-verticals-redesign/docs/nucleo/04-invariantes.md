@@ -3,7 +3,7 @@ title: Master Spec 04 — Invariantes
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 4
@@ -43,7 +43,7 @@ el invariante se puede perder.
 |---|---|---|
 | 1 | trial máximo una vez por `user + vertical` | `UNIQUE(user_id, vertical)` en `trial`, **sin condición de estado** |
 | 2 | borrar ficha no devuelve trial | la fila de `trial` no se borra nunca, ni siquiera en el hard delete del día 180 (cap. 02 §4) |
-| 8 | máximo una suscripción principal por vertical | `UNIQUE` parcial sobre los estados vivos |
+| 8 | máximo una suscripción principal por vertical | **dos** `UNIQUE` parciales sobre los estados vivos, partidos por `sucede_a` (cap. 02 (épica de billing) §2.2). El invariante cuenta **compromisos, no filas** — ver `D15` |
 | 11 | una ficha tiene un único dueño | columna no anulable, no tabla de relación |
 | 19 | los webhooks son idempotentes | `UNIQUE(proveedor, id_del_hecho)` |
 | 26 | producto de addon ≠ instancia de addon | dos tablas, y la instancia no repite ningún campo del producto |
@@ -61,7 +61,7 @@ el invariante se puede perder.
 | 10 | una acción en una vertical no afecta a otra | **el scope de vertical es estructural**, no un chequeo — capítulo 17 |
 | 14 | los servicios validan vertical, acceso, entitlement y limits | la resolución de autorización, capítulo 17 |
 | 20 | existe conciliación | capítulo 09 |
-| 21 | `RECONCILIATION_REQUIRED` notifica a `SUPER_ADMIN` | la transición S14 |
+| 21 | una divergencia que necesita intervención notifica a `SUPER_ADMIN` | `S14`, que **pone la marca `requiere_conciliación`** sin mover el estado |
 | 22 | la cancelación normal conserva el período pagado | S11 + S12, con **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
 | 23 | sólo los planes mensuales pueden pausarse | `puedePausar()`, un solo lugar (cap. 01 §3) |
 | 24 | la pausa puede terminar anticipadamente | S10, el mismo reloj para el fin previsto y el anticipado (`DEC-SUB-010`) |
@@ -131,13 +131,22 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D5 | **Toda mutación en el proveedor se verifica releyendo y comparando campo por campo** | `EX-20`, `EX-15` | servicio: el código de estado **nunca** cierra una mutación |
 | D6 | **El buscador del proveedor no es fuente de verdad de nada** | `RC-1`, `DEC-CONC-002` | servicio: el inventario a conciliar sale de nuestra base |
 | D7 | **La suscripción vieja se cancela sólo al recibir el webhook de que la nueva quedó autorizada** | `DEC-SUB-006` | servicio; al revés, el cliente que abandona el checkout se queda sin nada |
-| D8 | **Una fecha de primer cobro futura es la precondición de seguridad de todo cambio de plan o de ciclo** | `DEC-SUB-006` | servicio; sin ella la nueva cobra mientras la vieja sigue viva |
+| D8 | **Una fecha de primer cobro futura es la precondición de seguridad de todo cambio de plan o de ciclo.** Toda sucesora nace con fecha de primer cobro **a un día como mínimo** | `DEC-SUB-006` | **base**: la fecha con la que nació la fila se guarda en `subscription`, y un guard la verifica |
 | D9 | **El `reason` que se manda al proveedor es copy para el cliente, nunca un identificador interno** | `EX-19`, `DEC-MAIL-001` | guard |
 | D10 | **El `init_point` crudo del proveedor no se muestra nunca sin sanear** | `EX-37` | guard |
 | D11 | **Lo que toca plata lo confirma una persona** | `DEC-CONC-001`, `DEC-CONC-002`, `DEC-RF-001` | servicio |
 | D12 | **El trial no se le pide al proveedor: el reloj del trial es nuestro** | `DEC-TRIAL-002`, cap. 03 §2 | guard + servicio |
 | D13 | **Retirar un plan del catálogo no mueve ninguna suscripción** | cap. 10 §3.2 | servicio: retirar publica una versión no vendible y ninguna lectura de suscripción pasa por la vigente |
 | D14 | **Anunciada la discontinuación de una vertical, no se emite un cobro más en ella** | cap. 10 §4.2 | servicio: el anuncio cancela en el proveedor en el mismo acto, y el servicio se sostiene del lado nuestro |
+| D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida** | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a` |
+
+**`D8` subió de nivel, y el motivo es el que el §1 usa para todo lo demás.** Era un invariante *de
+servicio*, o sea recordable: sin una columna que guardara la fecha con la que nació la fila no había
+forma de comprobar que se cumplió **ni de escribir el guard**, y su incumplimiento **es
+literalmente el doble cobro**. El §1 define el nivel «base» como el que **no admite ningún camino
+que lo esquive**, y ése es el nivel que corresponde a la precondición del mecanismo más caro del
+sistema. Releer la fecha del proveedor no era alternativa: lo prohíbe `D6` y además un guard tiene
+que poder correr sin red.
 
 **D5, D9 y D10 son las tres que más se parecen entre sí y no lo son.** D5 es sobre *verificar*
 después de escribir; D9 y D10 son sobre *qué se manda* y *qué se muestra*. Las tres existen

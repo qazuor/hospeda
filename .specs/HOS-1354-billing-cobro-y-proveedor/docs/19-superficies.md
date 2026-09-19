@@ -3,7 +3,7 @@ title: Master Spec 19 — Superficies: API, Web y Admin
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 19
@@ -87,6 +87,15 @@ ser.**
 | 12 | los **tres avisos de aumento** | precio actual, precio nuevo, **la fecha de ese cliente**, y que puede cancelar | `DEC-MP-002` |
 | 13 | la confirmación de **revocar un grant** | que deja al cliente **sin servicio**, y qué addons corta | cap. 08 §3.1 (núcleo), cap. 16 §3.3 (épica de billing) |
 | 14 | el aviso de **discontinuar una vertical** | la **fecha de fin de servicio**, qué pasa con la ficha y **cómo exportarla** | cap. 10 §4.3 |
+| 15 | el **cambio de plan** con una cuota en reintento | que **el cobro de la cuota impaga puede entrar igual**, antes de confirmar | cap. 12 §5.3 |
+| 16 | el **cambio de plan** con un checkout abierto | que **no se ofrece**: *«terminá o cancelá el checkout que tenés abierto»* | cap. 03 §3.3.1 |
+| 17 | el **cambio de plan** estando pausado | que **no se ofrece**: *«reanudá tu suscripción para cambiar de plan»* | cap. 03 §3.3.1 |
+
+**Los dos últimos son avisos de una operación que NO se ofrece, y por eso están acá.** En los dos
+casos la persona **no queda bloqueada** —puede terminar o abandonar el checkout, puede reanudar—,
+así que lo único que faltaba era **decir el no en voz alta** con su motivo, en vez de que la
+operación falle sin explicación o, peor, que alguien construya un mecanismo para un camino que el
+proveedor no admite (`EX-11`).
 
 ### 4.1 Dos reglas sobre cómo se dicen
 
@@ -123,7 +132,7 @@ de algo que este diseño creó:
 
 | qué | por qué existe |
 |---|---|
-| el **listado accionable** de `RECONCILIATION_REQUIRED` | es el canal primario, y el correo es agregado (`DEC-OBS-001`) |
+| el **listado accionable** de las filas con la marca `requiere_conciliación` | es el canal primario, y el correo es agregado (`DEC-OBS-001`). El listado muestra **el estado real de la fila**, que la marca ya no pisa |
 | las **versiones de plan retiradas** con cuántas suscripciones siguen ancladas | es lo que convierte la cola larga del retiro en algo que alguien puede decidir atacar (cap. 10 §3.4) |
 
 Y una que ya estaba decidida y conviene repetir acá porque es de superficie: **`SUPER_ADMIN` firma

@@ -3,7 +3,7 @@ title: Master Spec 14 — Promos, cortesías y grants
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 14
@@ -80,10 +80,21 @@ De ahí salen tres reglas, en orden:
 El §33 admite descuentos de *«N cobros»* y *«forever»*, y el PDR permite cambiar de plan (§27,
 §28) y de ciclo (§19). **No son el mismo caso**, y el motivo no es de política sino de mecanismo:
 
-- **cambiar de PLAN con el mismo ciclo** muta el monto y **la suscripción sobrevive**
-  (`DEC-SUB-007`, `DEC-SUB-008`);
+- **bajar de plan** (downgrade) **muta el monto ya** y **la fila sobrevive** (`DEC-SUB-008`,
+  `DEC-SUB-007` impl. 2);
+- **subir de plan** (upgrade) **cancela y recrea** (`DEC-SUB-007`, alternativa C): la fila que
+  llevaba la promo **es sucedida por otra**;
 - **cambiar de CICLO cancela y recrea con una re-autorización en el checkout** (`DEC-SUB-006`):
-  **la suscripción que llevaba la promo deja de existir.**
+  ídem.
+
+> **El cambio de plan no tiene un solo mecanismo: tiene uno por dirección.** Decir *«cambiar de
+> plan muta el monto y la suscripción sobrevive»*, sin distinguir, le atribuye al upgrade el
+> mecanismo que `DEC-SUB-007` **descartó por escrito**: la decisión enumera tres alternativas
+> —*«(A) aceptar el upgrade gratis…; (B) cobrar la diferencia prorrateada…; (C) cancelar y
+> recrear»*— y **decide (C)**.
+
+Y *«inmediato»* en `B/10` §3.5 —*«si nada baja, sigue el camino de upgrade: inmediato»*— significa
+**el arranque del checkout**, no la mutación del monto.
 
 ### 2.2 Cambio de plan: la promo sobrevive
 
@@ -92,6 +103,12 @@ El §33 admite descuentos de *«N cobros»* y *«forever»*, y el PDR permite ca
 | **porcentual** | se **recalcula sobre el precio nuevo** — un porcentaje es una relación, no un importe |
 | **monto fijo** | se traslada tal cual, sujeto al piso del §1.3 |
 | el contador de **N cobros** | **sigue donde estaba**: cambiar de plan no consume un cobro |
+
+**El veredicto es el mismo en las dos direcciones y el mecanismo no.** En el downgrade el contador
+sigue donde estaba porque **la fila sobrevive**; en el upgrade, porque **la sucesora lo hereda**.
+Sin esa herencia el upgrade destruiría la promo en silencio — que es exactamente la *«destrucción
+silenciosa de bienes pagados»* que el rediseño del candado vino a cerrar. El objetivo de la promo
+no desapareció: **se sucedió**.
 
 ### 2.3 Cambio de ciclo: sobrevive sólo lo que se puede expresar sin convertir nada
 

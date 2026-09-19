@@ -3,7 +3,7 @@ title: Master Spec 07 — Outbox y notificaciones
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 7
@@ -206,6 +206,13 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |
 | pierde la cortesía al pausar | transaccional | antes de confirmar, y **el cliente elige** | `DEC-GRANT-004` |
 | retención | transaccional | antes del día 90 y antes del día 180 | `DEC-DATA-001` |
+| **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva | cap. 12 §5.3 (épica de billing) |
+
+**El último no es un aviso más: es la condición bajo la cual se aceptó la decisión.** Se decidió
+perdonar el período impago y **no cancelar la predecesora antes de tiempo** —cancelarla
+contradice `D7`, y si el cliente abandona el checkout se queda sin nada—, así que su cuota sigue
+en `recycling` y **puede entrar**. Un cobro que sorprende es un reclamo; uno anunciado es un
+trámite.
 
 **El schedule del grace es relativo al vencimiento y no absoluto**: como la ventana es
 configurable por plan, un schedule con días fijos se cae fuera de la ventana en los planes con

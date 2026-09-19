@@ -3,7 +3,7 @@ title: Master Spec 08 — Auditoría y observabilidad
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 8
@@ -139,7 +139,7 @@ si es destructiva o mueve dinero.**
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
-| resolver un **`RECONCILIATION_REQUIRED`** | §22.1 | según el caso |
+| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
@@ -158,9 +158,9 @@ si es destructiva o mueve dinero.**
 
 ---
 
-## 4. `RECONCILIATION_REQUIRED` sin apagar el canal · cierra `R-OBS-01` y `S-OBS-01`
+## 4. La conciliación pendiente, sin apagar el canal · cierra `R-OBS-01` y `S-OBS-01`
 
-El §22.1 ordena, **siempre** que el sistema llegue a ese estado: registrar evento crítico,
+El §22.1 ordena, **siempre** que el sistema no pueda decidir solo: registrar evento crítico,
 generar información suficiente para investigar, **enviar correo a `SUPER_ADMIN`**, mostrar alerta
 en Admin si corresponde, y evitar decisiones destructivas automáticas.
 
@@ -172,7 +172,7 @@ enuncia el propio §22.1 al cerrar: *«que `SUPER_ADMIN` esté al tanto y pueda 
 
 | | |
 |---|---|
-| **canal primario** | el **listado accionable en Admin**, que el §22.1 ya contempla. Cada entrada trae lo necesario para decidir sin reconstruir el diagnóstico |
+| **canal primario** | el **listado accionable en Admin**, que el §22.1 ya contempla. Cada entrada trae lo necesario para decidir sin reconstruir el diagnóstico — **incluido el estado real de la fila**, que la marca ya no pisa |
 | **el correo** | **agregado**, con límite de frecuencia: un resumen cada N minutos con el conteo por tipo y los sujetos afectados, en vez de uno por evento |
 | **la excepción** | un evento **único y grave** —un doble cobro real detectado, un reembolso que falló sobre una revocación— manda **su propio correo**, sin esperar la ventana |
 | **la agrupación** | por **tipo + sujeto**. Cientos de eventos de un mismo incidente colapsan en una línea con su conteo |

@@ -93,8 +93,8 @@ están en la cadena porque **no la condicionan**: se apoyan en ella.
    comparando **campo por campo cada campo que se mandó**, y ninguna aserción de test se escribe
    sobre un `2xx`. No es criterio: está medido nueve veces que este proveedor **acepta y
    descarta**, y que un `PUT` con varios campos se aplica a medias con un solo `200` (`EX-20`).
-3. **Lo que toca plata no se ejecuta solo.** Toda divergencia de monto, estado o cobro emite
-   `RECONCILIATION_REQUIRED` y la mira una persona. Es el criterio del owner —*«toca plata o no
+3. **Lo que toca plata no se ejecuta solo.** Toda divergencia de monto, estado o cobro **pone la
+   marca `requiere_conciliación`** y la mira una persona. Es el criterio del owner —*«toca plata o no
    toca plata»*— aplicado adentro de la épica que toca plata entera.
 
 ---

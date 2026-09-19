@@ -3,7 +3,7 @@ title: Master Spec 20 — Estrategia de testing
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 20
@@ -51,6 +51,17 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G9 | el `reason` que se manda al proveedor es **un identificador interno** y no copy para el cliente | `D9`, `EX-19` |
 | G10 | un `init_point` del proveedor se muestra **sin sanear** | `D10`, `EX-37` |
 | G11 | se le pide un **trial al proveedor** | `D12` |
+| G-R1-A | una fila con `sucede_a` no nulo apunta a una predecesora **fuera de** `{ACTIVE, GRACE_PERIOD, CANCEL_SCHEDULED}`, o a una que a su vez tenga `sucede_a` no nulo | cap. 02 §2.2 |
+| G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro estrictamente futura | `D8`, cap. 12 §5.2 |
+
+**Los dos de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
+`G-R1-A` impide declarar una sucesión desde una `SUSPENDED` —autorización de estado
+indeterminado— o desde una `PAUSED`, donde `EX-11` mide que **el proveedor rechaza toda
+modificación**; y de paso impide la cadena, que la clave `B` ya rechaza, en el momento de
+escribirla en vez de al insertar. `G-R1-B` es **`D8` hecho verificable en vez de recordable**, y
+por eso **depende de la columna** que guarda la fecha con la que nació la fila (cap. 02 §2.2): sin
+ella el guard no se puede escribir, y el invariante vuelve a ser algo que alguien tiene que
+acordarse de cumplir.
 
 ### 2.1 Un guard se prueba rompiéndolo
 

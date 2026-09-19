@@ -3,7 +3,7 @@ title: Master Spec 05 — Idempotencia y concurrencia
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-17
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 5
@@ -86,7 +86,7 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | | qué se hace |
 |---|---|
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
-| el cobro es **posterior** a la cancelación | no debería existir. `RECONCILIATION_REQUIRED`, y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`) |
+| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación`** (cap. 03 §3.2, `S14`), y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`) |
 
 ### C3 · Se otorga *Free Forever* mientras se ejecuta un cobro
 
@@ -94,8 +94,8 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 acto y **no se devuelve lo pagado**, con su riesgo declarado.
 
 Lo que este cruce agrega es sólo el borde: si un cobro se acredita **después** de que el grant
-canceló la suscripción, no debería poder ocurrir por `GT-1` — y si ocurre igual, es
-`RECONCILIATION_REQUIRED`. La diferencia con C2 es que acá **el cliente no pidió nada**, así que
+canceló la suscripción, no debería poder ocurrir por `GT-1` — y si ocurre igual, **se pone la
+marca `requiere_conciliación`**. La diferencia con C2 es que acá **el cliente no pidió nada**, así que
 un cobro posterior a un regalo es material de reembolso, no de retención.
 
 ### C4 · Se compra un addon mientras se aplica un downgrade que baja su base
@@ -157,18 +157,30 @@ implementación traza la línea en otro lado.
 |---|---|---|
 | 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva |
 | 2 | el monto coincide con el esperado para el período que cubre | un monto distinto puede ser otro cobro, un cambio de precio no propagado, o un error |
-| 3 | **no hay otra suscripción viva** para ese `user + vertical` | si la hay, el pago es de una suscripción superada y reactivar le daría **dos** |
+| 3 | **no hay otra fila principal del mismo `user + vertical` en un estado que dé título** —`ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `CANCEL_SCHEDULED`—, **ni una sucesora de esta fila ya autorizada** | si la hay, el pago es de una suscripción superada y reactivar le daría **dos** |
 | 4 | no hay otro pago acreditado para el mismo período | si lo hay, es un doble cobro |
 
 **Si las cuatro se cumplen**, entra `SUSPENDED → ACTIVE` (S7) y se restituye la publicación.
-**Si falla cualquiera**, es `RECONCILIATION_REQUIRED`, y el evento crítico dice **cuál** falló —
-sin eso, la persona que lo mire tiene que rehacer el diagnóstico entero.
+**Si falla cualquiera**, se pone la marca `requiere_conciliación` (cap. 03 §3.2, `S14`) y el evento
+crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
+entero.
 
 **La condición 3 es la que más se olvida y la más cara.** Alguien que se cansó de esperar y se
 volvió a suscribir tiene dos filas; si el pago viejo reactiva la vieja, queda pagando dos veces
 por la misma vertical, y encima el §11 quedó violado sin que nadie lo pida. Es exactamente lo
 que la restricción de unicidad del capítulo 02 impide **al crear** — acá hay que chequearlo
 porque la reactivación no crea nada.
+
+**Su redacción cambió, y es más precisa, no más laxa.** Decía *«no hay otra suscripción viva»*, y
+*«viva»* leía contra un conjunto que **excluía `RECONCILIATION_REQUIRED`**: un pago tardío se
+consideraba seguro de reactivar aunque hubiera otra `ACTIVE` marcada, que es textualmente el caso
+que la condición existe para detener. Con la marca de `B/02` §2.2 ese agujero desaparece **sin
+tocar la condición**, porque la fila marcada conserva su estado real y entra en la cuenta.
+
+**Y una sucesora en `PENDING_AUTHORIZATION` no bloquea, a propósito.** Todavía no puede cobrar
+—`D8` le exige fecha de primer cobro futura— y el pago tardío que reactiva a la predecesora **es la
+evidencia de que la sucesión ya no hace falta**. Bloquear ahí dejaría a la persona con la vieja sin
+reactivar y la nueva sin autorizar.
 
 ---
 

@@ -3,7 +3,7 @@ title: Master Spec 03 — Las máquinas de estado
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 3
@@ -20,8 +20,10 @@ La mitad de billing del capítulo 03 del programa: Suscripción, Grace, Pausa, P
 
 ## 3. Suscripción
 
-**Alcance**: la principal es máximo una por `user + vertical` (§11). Las de complemento
-—una por addon recurrente, `DEC-ADDON-002`— usan **esta misma máquina**, sin tope propio.
+**Alcance**: la principal es **un compromiso** por `user + vertical` (§11) — hasta **dos filas**
+durante la ventana de una sucesión, un origen y su única sucesora (cap. 02 §2.2). Las de
+complemento —una por addon recurrente, `DEC-ADDON-002`— usan **esta misma máquina**, sin tope
+propio.
 
 ### 3.1 Los nueve estados
 
@@ -36,7 +38,37 @@ La mitad de billing del capítulo 03 del programa: Suscripción, Grace, Pausa, P
 | `SUSPENDED` | el grace se agotó sin pago (§20, §21) |
 | `CANCEL_SCHEDULED` | dada de baja en el proveedor, con servicio sostenido hasta el fin del período pagado |
 | `CANCELLED` | terminada |
-| `RECONCILIATION_REQUIRED` | el sistema no puede decidir solo (§22.1) |
+| `CHARGE_DECLINED` | autorizó y el **primer** cobro se rechazó, sin ningún pago acreditado antes. **Terminal** |
+
+**`CHARGE_DECLINED` entra y `RECONCILIATION_REQUIRED` sale, así que siguen siendo nueve.**
+
+**Por qué entra.** `B/12` §4.4, medido en producción el 2026-09-17, encontró que ante un primer
+cobro rechazado el proveedor **cancela la suscripción en el mismo instante** en que manda la cuota
+a `recycling` —los dos hechos comparten el milisegundo— y que esa cancelación es **terminal**:
+`PUT {status:"authorized"}` devuelve `400 "Invalid transition from cancelled to authorized"`. Ese
+mismo § declaró el residuo y no lo resolvió: *«`ABANDONED` dice "nadie autorizó en 72 h"; esto es
+"intentó y lo rechazaron". Le decimos cosas distintas al cliente en cada caso, así que no pueden
+compartir nombre»*. **Acá se cierra**, y no por prolijidad: es ese residuo el que rompía el
+candado. Mandar el alta que nunca cobró a `SUSPENDED` hacía que `SUSPENDED` significara **dos
+muertes distintas**, y bloqueaba el reintento que `B/12` §4.4 exige.
+
+Con `CHARGE_DECLINED` afuera, **`SUSPENDED` vuelve a significar una sola cosa** —alguien que pagó
+alguna vez y dejó de pagar, que es la política de retención del §20— y ahí bloquear **es lo
+correcto**: su preapproval puede seguir vivo, y una segunda suscripción serían dos cobros. Su
+salida no es el candado: es pagar (`S7`), que el proveedor la dé de baja y la espejemos (`B/12`
+§1.4), o que la cancele una persona.
+
+**Por qué sale `RECONCILIATION_REQUIRED`.** Lo que describe no es una situación de la suscripción:
+es una situación **nuestra** —*«el sistema no puede decidir solo (§22.1)»*—, y escribirla en la
+columna de estado **pisa el estado real de la fila**. Eso producía tres cosas, y las tres eran
+defectos vivos: el estado anterior se perdía y `S15` tenía que adivinarlo; convertir una `ACTIVE`
+en `RECONCILIATION_REQUIRED` es **textualmente una decisión destructiva automática**, que el mismo
+§22.1 prohíbe; y el candado dejaba de ver una autorización que seguía viva.
+
+> **`requiere_conciliación` es una marca booleana sobre la fila, no un estado.** La fila conserva
+> el estado que tenía, y sigue cubriendo a quien estaba cubierto (`B/02` §2.2).
+
+Y una nota de registro que sigue valiendo:
 
 > `ABANDONED` no estaba en el capítulo 01 (núcleo) y se agrega acá: `M-SUB-01` exige nombrar la ventana
 > del preapproval sin autorizar **con su duración máxima y su limpieza**, y sin un estado de
@@ -46,7 +78,7 @@ La mitad de billing del capítulo 03 del programa: Suscripción, Grace, Pausa, P
 
 | # | desde | evento | hacia | condición | efectos |
 |---|---|---|---|---|---|
-| S1 | *(sin fila)* | la persona elige un plan | `PENDING_AUTHORIZATION` | no hay otra viva para ese `user + vertical` | se acuña y **persiste** la clave de idempotencia **antes** de llamar al proveedor (`DEC-CONC-001`) |
+| S1 | *(sin fila)* | la persona elige un plan | `PENDING_AUTHORIZATION` | no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`) | se acuña y **persiste** la clave de idempotencia **antes** de llamar al proveedor (`DEC-CONC-001`); si declara sucesión, **nace con fecha de primer cobro a un día como mínimo** |
 | S2 | `PENDING_AUTHORIZATION` | webhook de autorizada, confirmado por relectura | `ACTIVE` | — | arranca el período; si venía de un trial, T2 |
 | S3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | pasaron **72 h** sin autorizar | se cancela el preapproval en el proveedor; la fila se conserva |
 | S4 | `ACTIVE` | un cobro falla | `GRACE_PERIOD` | — | arranca el reloj del §4; el servicio **sigue entero** (§20) |
@@ -59,8 +91,16 @@ La mitad de billing del capítulo 03 del programa: Suscripción, Grace, Pausa, P
 | S11 | `ACTIVE` | pide la baja | `CANCEL_SCHEDULED` | — | **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
 | S12 | `CANCEL_SCHEDULED` | llega la fecha de fin de servicio | `CANCELLED` | — | se corta el servicio; proceso **idempotente** |
 | S13 | `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED` | `SUPER_ADMIN` otorga *Free Forever* | `CANCELLED` | — | §35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`); el acceso pasa a darlo el grant |
-| S14 | cualquiera | divergencia que toca plata o estado | `RECONCILIATION_REQUIRED` | — | §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas** |
-| S15 | `RECONCILIATION_REQUIRED` | una persona resuelve | el estado que corresponda | intervención humana registrada | — |
+| S14 | cualquiera | divergencia que toca plata o estado | **el mismo estado** | — | **se pone la marca `requiere_conciliación`** y se emite el §22.1: evento crítico, correo a `SUPER_ADMIN`, alerta en Admin, **cero decisiones destructivas automáticas** |
+| S15 | cualquiera **con la marca puesta** | una persona resuelve | **el mismo estado** | intervención humana registrada | **se levanta la marca**; si además corresponde un cambio de estado, se ejecuta **la transición de esta misma tabla que lo permita** |
+| S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **ningún pago acreditado antes** para ese `user + vertical` | el proveedor ya canceló el preapproval de forma **terminal** (`B/12` §4.4); no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva** |
+
+**`S14` y `S15` quedan en la tabla y ya no son transiciones de estado.** Se listan acá porque son
+los dos eventos que el §22.1 gobierna y nadie los debe buscar en otro lado, pero **ninguna de las
+dos mueve la columna de estado**: la primera pone la marca, la segunda la levanta. Si al resolver
+corresponde además un cambio de estado, ése se ejecuta **con la transición de esta misma tabla que
+lo permita** — y eso es justamente lo que se ganó, porque antes `S15` tenía que adivinar a dónde
+volver.
 
 ### 3.3 Las transiciones que NO existen, y por qué
 
@@ -69,12 +109,36 @@ escribir:
 
 | lo que no existe | por qué |
 |---|---|
-| `CANCEL_SCHEDULED` → `ACTIVE` | arrepentirse **no es una transición: es una suscripción nueva**. `DEC-SUB-009` cancela en el proveedor de inmediato y cancelar allá es irreversible (`PA-5`), así que volver exige recrear y volver a autorizar |
+| `CANCEL_SCHEDULED` → `ACTIVE` | arrepentirse **no es una transición: es una sucesión**. `DEC-SUB-009` cancela en el proveedor de inmediato y cancelar allá es irreversible (`PA-5`), así que volver exige recrear y volver a autorizar — y eso entra por el candado `B` igual que un upgrade, **no** por un `INSERT` que el §11 rechace. No hay riesgo de doble cobro: `S11` ya canceló el preapproval de la predecesora *«de inmediato»*, así que la única autorización que puede cobrar es la de la sucesora |
 | `CANCELLED` → cualquier cosa | ídem. Una suscripción terminada no revive |
 | `TRIAL_*` → `SUSPENDED` | el trial vencido es `TRIAL_EXPIRED`, que es otra máquina y otro estado (`DEC-ARCH-003`) |
-| `PAUSED` → cualquier cosa que no sea `ACTIVE` o `CANCELLED` | está medido que **estando pausada el proveedor rechaza toda modificación** (`EX-11`), y que **sí deja cancelar**. Todo cambio pedido durante la pausa **se encola y se aplica al reanudar** |
+| `PAUSED` → cualquier cosa que no sea `ACTIVE` o `CANCELLED` | está medido que **estando pausada el proveedor rechaza toda modificación** (`EX-11`), y que **sí deja cancelar** |
 | `ABANDONED` → `ACTIVE` | la ventana venció y el preapproval se canceló. Volver a intentar crea una fila nueva, con clave de idempotencia nueva |
-| dos vivas para el mismo `user + vertical` | es el §11. La condición está en S1, y el capítulo 05 la hace cumplir con una restricción de unicidad, no con un chequeo |
+| dos vivas para el mismo `user + vertical`, **salvo una sucesión declarada** | es el §11, y su excepción está acotada por la base, no por una convención: **un origen y su única sucesora**, impuesto por los dos índices parciales de `B/02` §2.2. La condición está en `S1` y el capítulo 05 la hace cumplir con restricciones de unicidad, no con un chequeo. El invariante cuenta **compromisos, no filas** |
+
+**Dos cosas que el §11 sigue prohibiendo y conviene no confundir con la excepción**: una sucesora
+**no puede ser sucedida mientras viva** (el candado `B` la rechaza sin ninguna regla extra), y una
+fila **con la marca `requiere_conciliación` puesta no puede declarar una sucesión**, salvo desde
+`CANCEL_SCHEDULED` (`B/02` §2.2).
+
+#### 3.3.1 Dos estados desde los que el cambio de plan NO se ofrece
+
+Los dos salieron de recorrer el dominio completo del candado y **ningún informe de FASE 8 los
+tenía**. En los dos, **la operación no se ofrece, con el motivo explícito en pantalla**:
+
+| estado | qué había escrito | qué se le dice |
+|---|---|---|
+| `PENDING_AUTHORIZATION` | **nada**. Ningún capítulo lo nombra: el §3.4 punto 4 dice qué pasa si reintenta **el mismo** plan —*«no se crea otra, se reusa la vigente»*— y nada de cambiar a otro | *«terminá o cancelá el checkout que tenés abierto»* |
+| `PAUSED` | una regla **cuyo destino no existe**: este mismo § prometía que el cambio *«se encola y se aplica al reanudar»*, y la cola de `B/12` §2.1 **es de entitlements, no de checkouts** | *«reanudá tu suscripción para cambiar de plan»* |
+
+**Por qué no se construye el mecanismo, y no es por costo**: los dos son de **superficie, no de
+modelo**, y en ninguno el cliente queda bloqueado. En el primero tiene un checkout abierto que
+puede terminar o abandonar —y abandonarlo lo deja en `ABANDONED`, desde donde sí puede elegir
+otro—; en el segundo puede reanudar y cambiar. Construir la cola del segundo además exige pelear
+contra `EX-11`, que mide que **el proveedor rechaza toda modificación sobre una pausada**.
+
+**Lo único que faltaba era decir el no en voz alta**, en vez de que alguien lo descubra
+implementando.
 
 ### 3.4 Las tres precisiones que `M-SUB-01` pedía sobre `PENDING_AUTHORIZATION`
 
@@ -95,7 +159,10 @@ cuatro cosas y acá están las cuatro:
 4. **Qué pasa si vuelve a intentar**: **no** se crea otra. Se reusa la vigente si le queda
    ventana. Está medido que el proveedor **no deduplica por ningún mecanismo** (`EX-17`: diez
    intentos, diez ids) y que su buscador **ignora nuestra referencia** (`RC-1`), así que el
-   candado es nuestro o no existe (`DEC-CONC-001`).
+   candado es nuestro o no existe (`DEC-CONC-001`). **Y ya no depende de que el camino se acuerde
+   de reusarla**: el candado `A` de `B/02` §2.2 incluye `PENDING_AUTHORIZATION` entre los vivos, así
+   que el segundo `INSERT` lo rechaza la base. El reuso pasó de ser una regla del servicio a ser
+   una consecuencia de la restricción.
 
 ---
 
