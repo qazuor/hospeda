@@ -2570,3 +2570,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   ni fusionar ningún PR.
 - El exit code no-cero corresponde al veredicto `no-pr`, no a un fallo de
   parsing o una mutación parcial.
+
+## Gate 86 · Preflight Linear read-only con worktree real
+
+- `hops issue-preflight HOS-635 --json` consultó Linear y devolvió título,
+  estado Backlog, labels, URL y el worktree existente.
+- La respuesta incluyó `actions: []` y `readOnly: true`; no cambió el issue,
+  branch, PR ni worktree.
+- Esto confirma que el agente puede consumir un contexto estructurado antes de
+  decidir si inicia o cierra un issue.

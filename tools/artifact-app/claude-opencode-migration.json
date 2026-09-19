@@ -338,7 +338,7 @@
                             "title": "Preflight Linear read-only",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Consultar issue, estado, labels, worktree, PR y gates sin mutar.",
-                            "notes": "HOS-1344 validado en texto y JSON read-only; --json devuelve issue/state/labels/url, worktrees, acciones vacías y readOnly=true.",
+                            "notes": "Gate86: HOS-635 validado en JSON read-only contra Linear; devuelve issue/state/labels/url, worktree existente, acciones vacías y readOnly=true sin mutar Linear ni Git.",
                             "done": true
                         },
                         {
