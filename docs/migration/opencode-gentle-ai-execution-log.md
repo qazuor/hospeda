@@ -2869,3 +2869,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   mostraron valores, tokens, cookies, claves privadas o passwords.
 - La restauración de auth y secretos sigue requiriendo aprobación humana en la
   etapa de instalación reproducible.
+
+## Gate 116 · Revalidación de providers y routing
+
+- Runtime actual: OpenCode V1.18.31.
+- Providers detectados sin mostrar credenciales: OpenAI OAuth y GitHub Copilot
+  por variable de entorno.
+- MCP activos: Context7 y Engram.
+- GLM, DeepSeek, Ollama y OpenKilo siguen sin activarse. La política mantiene
+  OpenAI para tareas complejas y alternativas sólo en perfiles explícitos,
+  acotados y sin datos sensibles.

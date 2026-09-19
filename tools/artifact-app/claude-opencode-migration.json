@@ -152,7 +152,7 @@
                             "title": "Evaluar GLM/DeepSeek/Ollama",
                             "category": "OpenCode + Gentle-AI",
                             "description": "Medir costo, latencia, contexto y calidad para tareas simples.",
-                            "notes": "Gate documentado en model-routing-gate.md. OpenAI sigue exclusivo para tareas críticas; GLM/DeepSeek/OpenKilo no se activan hasta resolver filesystem, medir calidad/costo y definir perfiles sin fallback silencioso.",
+                            "notes": "Gate116: runtime V1.18.31 detecta OpenAI OAuth y GitHub Copilot; Context7 y Engram MCP están conectados. GLM/DeepSeek/Ollama/OpenKilo siguen sin activarse hasta medir calidad/costo y definir perfiles explícitos sin fallback silencioso ni datos sensibles.",
                             "done": false
                         },
                         {

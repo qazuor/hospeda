@@ -1,10 +1,15 @@
 # Gate de routing de modelos
 
-## Estado verificable
+## Estado verificable — checkpoint 2026-09-19
 
+- OpenCode operativo: **1.18.31**.
+- `opencode providers list` muestra una credencial OAuth de OpenAI y la
+  variable de entorno de GitHub Copilot; no se imprimieron credenciales ni
+  identidades.
 - No se activó GLM, DeepSeek, Ollama ni OpenKilo.
-- OpenCode no pudo listar providers en esta ejecución porque el filesystem de su log quedó read-only; no se interpretó como ausencia de credenciales.
-- Gentle mantiene aliases abstractos (`opus`, `sonnet`, `haiku`), que no deben mapearse automáticamente a un proveedor alternativo.
+- Context7 y Engram MCP están conectados.
+- Gentle mantiene aliases abstractos (`opus`, `sonnet`, `haiku`), que no deben
+  mapearse automáticamente a un proveedor alternativo.
 
 ## Política provisional
 
