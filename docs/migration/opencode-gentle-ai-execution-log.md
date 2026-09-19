@@ -2785,3 +2785,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Se agregaron pruebas aisladas que verifican separación stdout/stderr y códigos
   de error sin heredar la salida al terminal.
 - Suite completa: **297 tests, 0 fallos y 732 assertions**.
+
+## Gate 107 · E2E de `hops update --json`
+
+- Se ejecutó la actualización real sobre el checkout dedicado
+  `hospeda-staging`, previamente limpio.
+- `fetch`, `reset` a `origin/staging` e instalación de wrappers terminaron con
+  código 0; la salida JSON informó `status: updated` y `touched: true`.
+- El checkout quedó limpio en `60a39dae2`.
+- `origin/staging` todavía no contiene `scripts/reconcile-local-env.sh`, por lo
+  que la reconciliación automática quedó explícitamente omitida y se conservaron
+  los envs existentes.
+- El guard posterior encontró sólo una clave obsoleta en Docker:
+  `COMPOSE_PROJECT_NAME`. No se eliminó automáticamente.
