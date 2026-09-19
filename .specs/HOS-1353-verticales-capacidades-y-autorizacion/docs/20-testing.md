@@ -3,7 +3,7 @@ title: Master Spec 20 — Estrategia de testing
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 20
@@ -54,6 +54,17 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G5 | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes | cap. 15 §4.2 (épica de verticales) |
 | G6 | una autorización **decide sólo por rol** | invariantes §64.12 y §64.13 |
 | G8 | aparece `commerce` en fuentes activas | invariante §64.32, §55 |
+| G-R3 | una de las **dos versiones no vendibles** de una vertical —la de pre-trial o la de piso— otorga una clave de la clase comercial o un entitlement medido; o la capacidad de activación no cumple el «si y sólo si» | cap. 02 §2.1 |
+| G-R3-B | una transición **disparada por el reloj** otorga algo, en vez de quitar | cap. 17 §3.4 |
+| G-R3-C | una **operación de dominio no declara** si pasa por el paso 5 | cap. 17 §3.5 |
+
+**`G-R3` es el que más carga lleva, y conviene decir por qué.** El arreglo del trial concentra todo
+en un solo dato: **si alguien siembra una de esas dos versiones con una clave comercial, toda la
+plataforma la recibe gratis, para siempre, sin consumir ningún trial**. Es un punto único de falla
+que antes no existía, y la comparación honesta no es *«¿esto abre algo?»* sino *«¿abre más o menos
+que la alternativa?»*: la exención por ruta abre un agujero **por cada ruta que alguien marque**, y
+ninguna herramienta lo cuenta; ésta abre uno solo, en una tabla, que un guard puede contar en cada
+PR.
 
 **G1 y G2 son la pinza** y ya se explicó en el capítulo 17 §2.3 (épica de verticales): uno acota
 **quién puede** nombrar una vertical, el otro obliga a que las operaciones **lo hagan**. Por

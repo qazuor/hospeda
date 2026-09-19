@@ -186,6 +186,11 @@ o `COURTESY`— y **el reloj que reanuda lee el motivo, nunca el estado del prov
 vertical y todavía no publicó, con borradores ilimitados, sin capacidades comerciales y sin
 consumir trial (`DEC-TRIAL-007`).
 
+**Real no quiere decir con fila.** Una fila en `PRE_TRIAL` no llevaría **ni un dato** que su
+ausencia no lleve: el hash del correo normalizado, el piso del trinquete, la referencia al plan y
+las dos fechas se escriben **todos** en `T1` (cap. 02 §2.2, épica de verticales). Lo que hace real
+a `PRE_TRIAL` son sus reglas y su transición de salida, y las dos existen sin fila.
+
 **`CANCEL_SCHEDULED` existe aunque el proveedor ya esté cancelado.** `DEC-SUB-009` decidió
 cancelar en el proveedor de inmediato y sostener el servicio de nuestro lado hasta el fin del
 período pagado: durante esa ventana la suscripción no está ni `ACTIVE` ni `CANCELLED`, y la

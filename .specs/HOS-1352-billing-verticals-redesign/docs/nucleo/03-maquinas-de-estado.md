@@ -38,9 +38,13 @@ máquina de estados y una convención.
    estado que tenía, así que quien resuelve el caso no tiene que adivinar a dónde volver, y
    escribirla no es en sí misma una decisión destructiva automática — que es lo que el §22.1
    prohíbe.
-2. **El estado vive en una columna con dominio restringido.** El §63 pide máquinas explícitas;
-   una columna que acepta cualquier cadena no tiene máquina, tiene una costumbre. El capítulo 02
-   fija la restricción.
+2. **El estado vive en una columna con dominio restringido** —el §63 pide máquinas explícitas; una
+   columna que acepta cualquier cadena no tiene máquina, tiene una costumbre, y el capítulo 02 fija
+   la restricción— **y el estado inicial de una máquina cuya fila nace en su primera transición
+   vive afuera de la columna.** Que viva afuera no lo vuelve la ausencia de un estado: **es un
+   estado porque tiene reglas declaradas y una salida declarada, no porque tenga fila.** Es lo que
+   la máquina de suscripción ya hace con su renglón `(sin fila)`, y lo que la de trial hace con
+   `PRE_TRIAL`.
 3. **Una transición es atómica junto con sus efectos locales.** Los efectos remotos —el
    proveedor, el correo— nunca están dentro de esa transacción: el §43 lo ordena para el correo
    (*«Si falla mail: acción de dominio permanece»*) y el capítulo 05 (épica de billing) lo desarrolla para el

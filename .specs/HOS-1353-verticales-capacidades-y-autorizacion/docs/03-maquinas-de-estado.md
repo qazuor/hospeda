@@ -3,7 +3,7 @@ title: Master Spec 03 — Las máquinas de estado
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 fase: 2
 capitulo: 3
@@ -36,13 +36,37 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
 
 | # | desde | evento | hacia | condición | efectos |
 |---|---|---|---|---|---|
-| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan tiene días de trial > 0 **y** no hay trial previo para ese `user + vertical` | se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
+| T1 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_ACTIVE` | la vertical declara evento **y** su plan de trial tiene días de trial > 0 | **crea la fila de `trial`**; se asigna el plan de trial; arranca el reloj; se agenda la campaña previa del §10.7 |
 | T2 | `TRIAL_ACTIVE` | se autoriza una suscripción | `TRIAL_CONVERTED` | — | se cancela la campaña previa; el acceso pasa a depender de la suscripción |
 | T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | no hay suscripción autorizada | publicación → `UNPUBLISHED_BY_BILLING`; arranca la campaña de recuperación y el reloj de retención |
 | T4 | `TRIAL_ACTIVE` | promo de extensión o cortesía | `TRIAL_ACTIVE` | sólo durante `TRIAL_ACTIVE` (§32) | corre la fecha de fin; **re-agenda** la campaña previa |
 | T5 | `TRIAL_EXPIRED` | se autoriza una suscripción | `TRIAL_CONVERTED` | — | corta la campaña de recuperación; se restituye la publicación |
 
-**Cuatro cosas que la tabla fija y conviene leer explícitas:**
+**Qué contesta el contrato de cobertura en cada estado.** El trial es **fuente viva en
+`PRE_TRIAL` y en `TRIAL_ACTIVE`, y en ningún otro estado**; lo que cambia entre los dos no es *si
+hay título* sino **a qué versión de plan apunta**:
+
+| estado | ¿fuente viva? | `referencia` | `hasta` |
+|---|---|---|---|
+| `PRE_TRIAL` | **sí** | la versión de **pre-trial** de la vertical | `SIN_EMPEZAR` |
+| `TRIAL_ACTIVE` | **sí** | la versión del **plan de trial** | la fecha de fin |
+| `TRIAL_CONVERTED` | no | — (el título pasó a ser la suscripción) | — |
+| `TRIAL_EXPIRED` | no | — | — |
+
+**Las dos filas de abajo son lo que sostiene `PB2`**: si `TRIAL_EXPIRED` siguiera cubriendo, `PB2`
+no dispararía nunca y el criterio que `12-contrato-de-cobertura.md` §5.1 le pone a la
+implementación de arranque —*«los dos caminos se ejercen completos, porque un trial vence de
+verdad»*— quedaría sin objeto.
+
+**Y la fila de arriba no abre la puerta inversa, porque no hay puerta**: nadie entra a
+`PRE_TRIAL`, se empieza ahí, y ninguna transición vuelve. Una cobertura que sólo existe en el
+estado inicial **no puede recuperarse** por esta vía, así que no desarma ningún disparador de
+pérdida. Quien ya gastó su trial tiene su respuesta al paso 5 por otro lado —el título `BASE`
+(`12-contrato…` §2.5)—, que no cubre y sólo le deja volver a contratar.
+
+**Y `PRE_TRIAL` no es un `tipo` nuevo del contrato**: la fuente sigue siendo `tipo: TRIAL`.
+
+**Cinco cosas que la tabla fija y conviene leer explícitas:**
 
 - **`PRE_TRIAL` es el estado más poblado del sistema** y es un estado real, no la ausencia de
   uno: es donde vive quien entró a la vertical y todavía no publicó, con borradores ilimitados,
@@ -53,6 +77,12 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
   ficha y sin trial (`E-TRIAL-04`, capítulo 11 (épica de verticales)).
 - **La extensión sólo entra por T4**, o sea sólo durante `TRIAL_ACTIVE`. El §32 es terminal:
   *«Solo válido durante `TRIAL_ACTIVE`. Nunca después. Backend debe rechazar.»*
+- **`T1` crea la fila, y por eso `PRE_TRIAL` no la tiene.** La condición vieja —*«no hay trial
+  previo para ese `user + vertical`»*— decía lo mismo que su estado de origen **y lo negaba**: con
+  fila en `PRE_TRIAL`, *«no hay trial previo»* es falso siempre, y `T1` **no dispara nunca**. Se
+  cae por **redundante**, no por permisiva. Lo que impide un segundo trial son dos cosas que
+  siguen intactas: **ninguna transición vuelve a `PRE_TRIAL`** y la fila que `T1` crea es única de
+  por vida (cap. 02 §2.2), ahora por `user` **y** por hash de correo.
 - **T4 re-agenda la campaña previa**, no la deja como estaba. Si el trial se extiende 10 días y
   el aviso de «faltan 2 días» ya salió, el cliente tiene que recibirlo de nuevo contra la fecha
   nueva. El cruce inverso —la campaña de recuperación ya disparada y el trial extendido después—

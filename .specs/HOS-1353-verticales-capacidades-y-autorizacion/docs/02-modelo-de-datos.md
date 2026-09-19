@@ -36,7 +36,7 @@ vertical (catálogo, espejo del enum)
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`vertical`** | el espejo en base del enum de código, **si admite altas** y **su fecha de fin de servicio** | el guard de §1.2 verifica las dos direcciones |
+| **`vertical`** | el espejo en base del enum de código, **su evento de activación**, **si admite altas** y **su fecha de fin de servicio** | el guard de §1.2 verifica las dos direcciones |
 | **`plan`** | identidad y cosmética: vertical, slug, nombre, descripción, orden en la pricing. **Muta libremente** (`DEC-ARCH-001`) | `UNIQUE(vertical, slug)` |
 | **`plan_version`** | lo que tiene efecto y por eso **es inmutable**: `rank`, si es vendible, días de grace, días de trial, si permite pausa, si hereda Turista VIP | **`UNIQUE(plan_id) WHERE vigente`** — cada plan tiene exactamente una versión vigente · **`UNIQUE(vertical, rank) WHERE vendible AND vigente`** — dos vendibles con el mismo rank es un estado inválido, no un empate a desempatar (`DEC-ARCH-002`) |
 | **`plan_version_entitlement`** | qué clave otorga, y para las medidas **dos cuotas**: la del plan y la del trial (`DEC-ENT-001`) | `UNIQUE(plan_version_id, clave)`; la clave existe en el catálogo |
@@ -60,7 +60,45 @@ vendible**, uno por vertical. Sus limits y entitlements **no se guardan**: se de
 resolución, del plan vendible de `rank` más alto y del más bajo, más los overrides declarados
 (`DEC-TRIAL-001`) y el trinquete (`DEC-TRIAL-002`). El §10.3 es explícito en que no se copien.
 
-**El plan de piso tampoco, y tiene el mismo tratamiento con una diferencia.** Es un `plan` con su
+**El plan de pre-trial tampoco.** Es un `plan` con su versión, marcado **no vendible**, uno por
+vertical, y es lo que la fuente de trial apunta mientras el trial está en `PRE_TRIAL`. A diferencia
+del de trial, **sus entitlements y limits sí se guardan**: no hay de dónde derivarlos —no son los
+del premium ni los del más bajo— y el §10.3 sólo prohíbe copiar **los del trial**. Otorga
+exactamente tres cosas: lo que `DEC-TRIAL-007` ya prometió —borradores ilimitados, **sin ninguna
+capacidad comercial**—, **la capacidad de activación de la vertical**, y la de contratar una
+suscripción.
+
+> **La capacidad de activación está en la versión de pre-trial de una vertical si y sólo si esa
+> vertical declara evento de activación y su plan de trial tiene días > 0.**
+
+Es la condición de `T1` expresada **como dato en vez de como rama**, y un guard la verifica en las
+dos direcciones — el mismo mecanismo con que el §1.2 verifica el espejo del enum de verticales.
+Partner, que hoy tiene el trial en cero (`DEC-TRIAL-003`) y **ningún evento declarado**
+(`DEC-TRIAL-006`), no la lleva.
+
+**Y esa condición necesita una columna que no existía**: `vertical.evento_de_activacion`. Sin
+ella el lado izquierdo del «si y sólo si» no se puede leer, y el guard **no verifica nada** — se
+aplicaría la defensa y no defendería, sin que nada lo avise. Va en `vertical` y no en una tabla de
+configuración porque `vertical` es exactamente donde el diseño ya pone el espejo del enum, y hoy
+**hay una sola cosa que configurar**; si mañana aparece la segunda, pasar de columna a tabla es
+trivial.
+
+**La asimetría entre los dos planes no vendibles es deliberada, y conviene que quede el porqué.**
+
+| plan | sus limits y entitlements |
+|---|---|
+| **de trial** | **no se guardan: se derivan** |
+| **de pre-trial** | **se guardan** |
+
+El de trial **tiene de dónde derivarse** —el vendible de `rank` más alto y el más bajo, dos
+extremos concretos—. El de pre-trial **no es ninguno de los dos**: es un conjunto mínimo propio,
+lo justo para que alguien exista y llegue a publicar, y **no hay fórmula que lo produzca**. Queda
+escrito porque es el tipo de diferencia que alguien unifica después sin entender para qué estaba:
+dentro de seis meses alguien ve dos planes no vendibles de la misma vertical, uno que deriva y otro
+que no, **lo toma por una inconsistencia** y los unifica — y al hacerlo, o el pre-trial pasa a
+otorgar lo del premium, o el trial deja de derivarse.
+
+**El plan de piso tampoco, y tiene el mismo tratamiento que el de pre-trial.** Es un `plan` con su
 versión, marcado **no vendible**, **uno por vertical**, y es lo que la fuente `BASE` del contrato
 apunta (`12-contrato-de-cobertura.md` §2.5) para toda persona en toda vertical. A diferencia del de
 trial, **sus entitlements y limits sí se guardan**: no hay de dónde derivarlos —no son los del
@@ -71,12 +109,16 @@ Otorga exactamente lo mínimo para que alguien exista en la plataforma y pueda v
 paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`, sin los cuales **la
 *«recuperación posible»* del §21 no tiene por dónde ocurrir**.
 
-> ⚠️ **La versión de piso es un punto único de falla, y por eso lleva guard.** Si alguien le siembra
-> una clave comercial, **toda la plataforma la recibe gratis, para siempre, sin consumir ningún
-> trial**. Es la misma exposición que la versión de pre-trial, así que la vigila el **mismo guard**:
-> `G-R3` se comprueba sobre **las dos** versiones no vendibles de cada vertical, en CI, en las dos
-> direcciones. Es una verificación automática y no una revisión, porque es el único lugar donde un
-> error de siembra no lo ve nadie.
+> ⚠️ **Las dos versiones no vendibles son un punto único de falla, y por eso llevan guard.** Si
+> alguien le siembra una clave comercial a la de piso o a la de pre-trial, **toda la plataforma la
+> recibe gratis, para siempre, sin consumir ningún trial**. Las vigila el mismo guard:
+>
+> **`G-R3` — ninguna de las dos versiones no vendibles de una vertical otorga una clave de la clase
+> comercial ni ningún entitlement medido**, y la capacidad de activación está en la de pre-trial
+> **si y sólo si** la vertical declara evento y su plan de trial tiene días > 0.
+>
+> Se comprueba sobre el catálogo, en CI, en las dos direcciones. Es una verificación automática y
+> no una revisión, porque es el único lugar donde un error de siembra no lo ve nadie.
 
 ### 2.2 Compromiso y ciclo de vida
 
@@ -86,6 +128,22 @@ paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`, sin los cuales 
 
 **El piso del trinquete se guarda como referencia a versiones, nunca como copia de valores.** El
 §10.3 prohíbe copiar a mano y una copia además queda desactualizada (`DEC-TRIAL-002`).
+
+**Y el hash del correo normalizado lleva su propia restricción de unicidad**, aparte de la de
+`(user_id, vertical)`:
+
+> **`UNIQUE(hash_del_correo_normalizado, vertical)`**, sin condición de estado.
+
+**Sin ella el §10.2 queda incumplido por la puerta exacta que `DEC-TRIAL-004` y el hash
+construyeron para tapar.** Alguien se registra de nuevo con el mismo correo, obtiene un `user_id`
+nuevo, entra en `PRE_TRIAL` y **publica**: trial gratis, las veces que quiera. La restricción de
+`(user_id, vertical)` no lo ve, porque el `user_id` es otro.
+
+**Es una condición de aplicación, no una tarea suelta.** Hasta ahora el segundo trial por
+re-registro era teórico porque **nadie podía disparar `T1`**; en el momento en que `T1` dispara,
+deja de serlo. Aplicar el arreglo del trial primero y la restricción después abre una ventana —de
+días o semanas— en la que la puerta está abierta, y no hace falta mala fe para encontrarla: se
+descubre sola.
 
 ### 2.5 Publicación
 

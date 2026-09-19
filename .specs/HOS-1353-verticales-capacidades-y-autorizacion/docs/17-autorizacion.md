@@ -218,6 +218,56 @@ doce mueven dinero o conceden servicio, y eso es el invariante `D11`: lo que toc
 confirma una persona. Un job que pudiera otorgar una cortesía convierte ese invariante en una
 sugerencia.
 
+### 3.4 Cuando el actor es el reloj, los pasos 5 a 7 se evalúan sobre el ACTOR
+
+El §3.3 declara al sistema como actor y no decía **cómo se evalúan los pasos 5, 6 y 7 cuando el
+actor es uno**. Es un hueco con caso concreto: `T3` —el vencimiento del trial— **la dispara el
+reloj**, y esos tres pasos preguntan por el título, las capacidades y el cupo **de alguien que no
+existe**.
+
+> **Las transiciones disparadas por el reloj son una segunda clase de operación, evaluada por
+> analogía con las doce acciones administrativas: los pasos 5, 6 y 7 se resuelven sobre la
+> capacidad del ACTOR, no sobre la del sujeto.**
+
+**La clase se declara transición por transición**, nunca se infiere — es la regla que este mismo
+capítulo ya enuncia en el §3.2, regla 3: *«a qué clase pertenece una operación se declara, nunca
+se infiere»*. Dejarla inferida sería incumplir la regla con la que se la resuelve.
+
+**Y lleva guard, que no es opcional**, porque es lo único que sostiene la propiedad que la vuelve
+segura:
+
+> **Una transición de esta clase nunca otorga. `T3` quita.**
+
+Sin verificarlo, la clase es **una puerta abierta con un cartel que dice no pasar**: su riesgo es
+bajo mientras la propiedad se compruebe y medio si nadie la comprueba. La alternativa descartada
+—que cada transición del reloj resuelva por su cuenta— es exactamente cómo se generan las
+exenciones por ruta: cada job inventando su propia respuesta al paso 5.
+
+### 3.5 Qué operación pasa por el paso 5 — el criterio ahora, la lista después
+
+El conjunto de operaciones de dominio **nunca se enumeró**. Lo único enumerado son las **12
+acciones administrativas**, que son **la excepción, no el conjunto**. Y hay una regla en uso que
+nadie había escrito: para decidir que las lecturas de «Mi Cuenta» no pasan por el paso 5 se usó el
+criterio *«escribe estado y es auditable»*, inferido de cómo se clasifica a `PB1` y ausente de
+todo capítulo.
+
+**Se escribe el criterio ahora y la enumeración se arma durante la implementación**, en tres
+partes:
+
+1. **El criterio**: una operación es de dominio —y por lo tanto recorre los nueve pasos— si
+   **escribe estado del negocio y es auditable**. Una lectura que no muta nada no lo es.
+2. **La enumeración** se arma sola a medida que se construyen las superficies. Enumerar operaciones
+   **contra el diseño en papel produce una lista que la implementación va a contradecir**: las
+   operaciones aparecen al construir las superficies, no antes, así que una lista escrita hoy nace
+   desactualizada.
+3. **Un guard que lo hace cumplir**: toda operación de dominio **declara** si pasa por el paso 5, y
+   **el build falla si alguna no lo declara**.
+
+> ⚠️ **El guard no es un adorno: es lo único que vuelve segura la postergación.** Sin él, alguien
+> agrega una operación dentro de ocho meses, no se pregunta nada, y nadie se entera — la fábrica de
+> exenciones por ruta. Con él, *«nadie puede afirmar que revisó todas»* se convierte en **«el build
+> no pasa si hay una sin clasificar»**, y la enumeración queda **completa por construcción**.
+
 ---
 
 ## 4. El rol no se toca al perder el acceso · cierra `A-AUTH-01`
