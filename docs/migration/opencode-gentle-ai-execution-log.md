@@ -2416,3 +2416,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La implementación se difiere hasta contar con un segundo proyecto real. Hasta
   entonces Hospeda sigue usando su adaptador implícito actual para evitar una
   abstracción especulativa.
+
+## Gate 72 · Prefijo `qz` para el núcleo común
+
+- Se corrigió la nomenclatura: el conjunto reusable no se llamará `hops`, porque
+  ese nombre pertenece a Hospeda.
+- El núcleo multi-proyecto tendrá identidad `qz` (`qz wt-create`, `qz env`,
+  `qz verify`, etc.). Hospeda conserva `hops-*` como capa/adaptador específico.
+- La configuración futura del núcleo se documenta bajo `.qz/project.json`;
+  Hospeda declarará allí su adapter, mientras mantiene compatibilidad con sus
+  scripts actuales durante la transición.
+- La extracción real de `qz` se difiere hasta disponer de un segundo proyecto.

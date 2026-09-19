@@ -50,20 +50,21 @@ no deben volver a agregarse.
 - tests del script, no sólo del prompt;
 - ninguna dependencia de Claude Code.
 
-## Contrato de Hops común y adaptadores de proyecto
+## Contrato de `qz` común y adaptadores de proyecto
 
 ## Decisión
 
-`hops` será un CLI común para varios proyectos. La implementación no debe
+`qz` será el CLI común para varios proyectos. `hops` queda reservado para
+Hospeda y sus adaptadores. La implementación común no debe
 preguntar si el proyecto es Hospeda para decidir su comportamiento. En cambio,
 resuelve un adaptador desde la raíz del repositorio y ejecuta capacidades
 genéricas con configuración declarativa.
 
 ## Capas
 
-- **Núcleo genérico:** worktrees, puertos, lifecycle de servidores, estado,
+- **Núcleo `qz`:** worktrees, puertos, lifecycle de servidores, estado,
   env drift, cleanup, verify, handoff, recap, update y guards comunes.
-- **Adaptador de proyecto:** Linear/team, branch base, nombres de DB, fuente de
+- **Adaptador Hospeda (`hops-*`):** Linear/team, branch base, nombres de DB, fuente de
   envs, roles de servidores, comandos de build/health, seed, scripts especiales
   y políticas del proyecto.
 - **Integración de cliente:** wrappers/adapters para OpenCode, Claude Code,
@@ -72,20 +73,20 @@ genéricas con configuración declarativa.
 
 ## Configuración propuesta
 
-Cada proyecto podrá versionar un manifiesto como `.hops/project.json` (nombre
+Cada proyecto podrá versionar un manifiesto como `.qz/project.json` (nombre
 pendiente), sin secretos. Debe declarar un `schemaVersion`, `projectId`,
 `adapter`, branch bases, worktree strategy, env sources, database strategy,
 server roles, health checks y comandos permitidos. Las partes sensibles se
 resuelven por referencias al entorno local, nunca desde el manifiesto.
 
-Por ejemplo, `wt-create` debe conservar el flujo común de crear worktree,
+Por ejemplo, `qz wt-create` debe conservar el flujo común de crear worktree,
 copiar/reconciliar envs, preparar DB, asignar puertos y verificar servicios,
 mientras que Hospeda sólo declara cómo se llaman sus tres apps y cómo se
 prepara su template PostgreSQL.
 
 ## Compatibilidad
 
-Durante la transición, Hospeda puede seguir usando `scripts/worktree` y su
+Durante la transición, Hospeda puede seguir usando `hops-*`, `scripts/worktree` y su
 configuración actual como adaptador implícito. Antes de incorporar un segundo
 proyecto se extraerá el contrato explícito y se validará que ningún comando
-genérico dependa de nombres `hospeda-*`, `HOSPEDA_*` o rutas específicas.
+`qz` genérico dependa de nombres `hospeda-*`, `HOSPEDA_*` o rutas específicas.

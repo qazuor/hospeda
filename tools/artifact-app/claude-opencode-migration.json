@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_16",
-        "number": 16,
+        "id": "ver_claude_opencode_migration_17",
+        "number": 17,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "separar Hops genérico de adaptadores de proyecto",
+        "reason": "reservar hops para Hospeda y qz para el núcleo común",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_15"
+        "basedOnVersion": "ver_claude_opencode_migration_16"
     },
     "data": {
         "sections": [
@@ -495,10 +495,10 @@
                         },
                         {
                             "id": "generic-hops-adapters",
-                            "title": "Separar Hops genérico de adaptadores de proyecto",
+                            "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
-                            "description": "Extraer un núcleo Hops reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks.",
-                            "notes": "Decisión arquitectónica documentada. Se implementará al final, cuando exista un segundo proyecto real; Hospeda continúa usando el adaptador implícito por ahora.",
+                            "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
+                            "notes": "Decisión arquitectónica documentada: qz será el CLI genérico y hops el adaptador/capa Hospeda. Se implementará al final, cuando exista un segundo proyecto real.",
                             "done": false
                         }
                     ]
