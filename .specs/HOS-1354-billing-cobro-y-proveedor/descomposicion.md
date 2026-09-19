@@ -13,8 +13,27 @@ status: CURRENT
 > el orden que sale de las dependencias del propio diseño. El atomizado de cada unidad se hace
 > cuando esa unidad arranca, no ahora.
 >
-> **Y se hace entera, con la pasarela sin decidir.** Doce de los trece capítulos están escritos;
-> una sola unidad queda bloqueada, y está marcada como tal.
+> **Y se hace entera, con la pasarela sin decidir.** Doce de los trece capítulos están escritos, así
+> que el reparto no espera a nada. **Lo que sí espera es la construcción**: ver §2.3.
+>
+> ---
+>
+> ### ⛔ Antes de empezar a construir: falta decidir la pasarela
+>
+> **De las trece unidades, nueve llaman a la pasarela**, y ninguna de esas nueve se puede terminar
+> sin saber cuál es. La única que se puede hacer **entera** hoy es **B2 (el precio)**; de **B1** se
+> puede escribir la interfaz y su guard, no el adaptador real.
+>
+> No es una demora administrativa: `DEC-ARCH-004` puso el ciclo de vida de nuestro lado, y **cuál
+> pasarela sea decide la forma de casi todo el sistema de billing** — si el reloj de cobro es
+> nuestro o suyo, si la pausa es nativa, si un addon es una autorización aparte o una línea, si la
+> conciliación puede listar o tiene que leer de a una.
+>
+> Lo que **sí** se puede hacer hoy, y conviene hacer: **atomizar y especificar** las doce unidades
+> cuyo diseño está escrito. Su política no cambia con la respuesta.
+>
+> **Qué la destraba**: los dos textos de la PRUEBA 0 y el mail de habilitación de Mobbex — los dos
+> están en manos del owner ([`spec.md`](./spec.md) §7).
 
 ## 1. El criterio de corte
 
@@ -41,7 +60,9 @@ un compromiso de cobro vivo, con la ventana en que todavía no lo es»* sobreviv
 respuestas, y lo que cambia adentro es qué se hace en esa ventana.
 
 Las trece unidades de abajo están enunciadas así a propósito. Si el 13 contesta lo contrario de lo
-que hoy hace Mercado Pago, **el reparto no se redibuja**: se revisa el interior de tres de ellas.
+que hoy hace Mercado Pago, **el reparto no se redibuja** — se revisa el interior de las que hablan
+con la pasarela, que son nueve. **Que el corte aguante no quiere decir que la construcción pueda
+empezar**: son dos cosas distintas, y el §2.3 las separa.
 
 ### 1.2 La cadena que ordena
 
@@ -80,21 +101,27 @@ están en la cadena porque **no la condicionan**: se apoyan en ella.
 
 ## 2. Las trece unidades
 
-| # | unidad | qué deja funcionando | capítulos | guards |
-|---|---|---|---|---|
-| **B1** | **El adaptador y el proveedor que miente** | las ocho capacidades como interfaz definida por lo que el dominio necesita, el adaptador falso que reproduce las mentiras medidas, y la regla de releer toda mutación | `06` entero · `20` §2–§3, §6 | `G9` `G10` `G11` `G12` |
-| **B2** | **El precio** | `billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan y no del plan | `02` §2.1 · `06` §5 | `G7` |
-| **B3** | **El alta y su ventana** | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 | — |
-| **B4** | **El contrato de cobertura, de verdad** | `cobertura()` responde con una fuente de billing viva, y el aviso de que cambió sale | [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §5.2, §6 | `G13` |
-| **B5** | **El registro del dinero** | qué se cobró, qué se reembolsó y qué se registró a mano, sin que un hecho se aplique dos veces ni un período admita dos pagos | `02` §2.3 · `03` §6, §7, §10.2 · `05` C5 | — |
-| **B6** | **Ejecutar el cobro y el reembolso** 🔒 | **BLOQUEADA** — es el capítulo 13, el único sin escribir | `13` *(sin escribir)* | — |
-| **B7** | **La mora** | un cobro que no entra abre un reloj que se cierra, y el que nunca pagó no recibe diez días gratis | `03` §4, S4–S7 · `12` §1, §4, §5 · `05` §3 | — |
-| **B8** | **Los cambios del compromiso** | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse | `03` §5, S8–S12 · `12` §2, §3, §6, §7 · `05` C2, C4 | — |
-| **B9** | **Las concesiones** | promos, cortesías y grants componen de forma determinista y se enchufan como fuentes | `14` entero · `03` S9, S13 · `02` §2.4 · `05` C3 | — |
-| **B10** | **Addons** | los dos ejes, qué es una suscripción válida, el addon a costo cero y el huérfano que sigue cobrando | `16` entero · `03` §8 · `02` §2.4 | — |
-| **B11** | **Conciliación** | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece | `09` entero | — |
-| **B12** | **El catálogo que se retira** | retirar un plan no mueve a nadie, y discontinuar una vertical deja de cobrar antes de dejar de prestar | `10` entero | — |
-| **B13** | **Superficies y la baja** | la pricing, Mi Suscripción, la baja self-service, y la lista de lo que hay que decir | `19` entero · `22` §1 | — |
+La columna **⛔** marca las que **llaman a la pasarela**: no se pueden terminar sin saber cuál es.
+
+| # | unidad | ⛔ | qué deja funcionando | capítulos | guards |
+|---|---|---|---|---|---|
+| **B1** | **El adaptador y el proveedor que miente** | ⛔ | las ocho capacidades como interfaz definida por lo que el dominio necesita, el adaptador falso que reproduce las mentiras medidas, y la regla de releer toda mutación | `06` entero · `20` §2–§3, §6 | `G9` `G10` `G11` `G12` |
+| **B2** | **El precio** | ✅ | `billing_option`: el ciclo y su monto, en entero, colgando de la versión de plan y no del plan | `02` §2.1 · `06` §5 | `G7` |
+| **B3** | **El alta y su ventana** | ⛔ | hay un compromiso de cobro vivo, y la ventana en que todavía no lo es vence, limpia y no se duplica | `03` §3.1–§3.4, §10 · `05` §1, C6 · `02` §2.2 | — |
+| **B4** | **El contrato de cobertura, de verdad** | — | `cobertura()` responde con una fuente de billing viva, y el aviso de que cambió sale | [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §5.2, §6 | `G13` |
+| **B5** | **El registro del dinero** | — | qué se cobró, qué se reembolsó y qué se registró a mano, sin que un hecho se aplique dos veces ni un período admita dos pagos | `02` §2.3 · `03` §6, §7, §10.2 · `05` C5 | — |
+| **B6** | **Ejecutar el cobro y el reembolso** 🔒 | ⛔ | **BLOQUEADA, y es la única sin diseño** — es el capítulo 13, el único de los 22 sin escribir | `13` *(sin escribir)* | — |
+| **B7** | **La mora** | ⛔ | un cobro que no entra abre un reloj que se cierra, y el que nunca pagó no recibe diez días gratis | `03` §4, S4–S7 · `12` §1, §4, §5 · `05` §3 | — |
+| **B8** | **Los cambios del compromiso** | ⛔ | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse | `03` §5, S8–S12 · `12` §2, §3, §6, §7 · `05` C2, C4 | — |
+| **B9** | **Las concesiones** | ⛔ | promos, cortesías y grants componen de forma determinista y se enchufan como fuentes | `14` entero · `03` S9, S13 · `02` §2.4 · `05` C3 | — |
+| **B10** | **Addons** | ⛔ | los dos ejes, qué es una suscripción válida, el addon a costo cero y el huérfano que sigue cobrando | `16` entero · `03` §8 · `02` §2.4 | — |
+| **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece | `09` entero | — |
+| **B12** | **El catálogo que se retira** | ⛔ | retirar un plan no mueve a nadie, y discontinuar una vertical deja de cobrar antes de dejar de prestar | `10` entero | — |
+| **B13** | **Superficies y la baja** | — | la pricing, Mi Suscripción, la baja self-service, y la lista de lo que hay que decir | `19` entero · `22` §1 | — |
+
+**⛔ nueve · — tres · ✅ una.** Las tres del guion —B4, B5 y B13— no llaman a la pasarela, pero
+**dependen de una que sí**, así que tampoco arrancan antes. La única sin ninguna atadura con la
+pasarela, ni propia ni heredada, es **B2**: su gate es `V2`, de la otra épica.
 
 ### 2.1 Los dos guards que el capítulo 20 no nombra
 
@@ -120,20 +147,72 @@ se puede escribir sin filtrar conceptos de Mercado Pago, la interfaz está mal d
 más tarde se escribe contra código que ya asumió un proveedor que se porta bien, y ese código
 —medido— no es el que tenemos.
 
-### 2.3 Por qué hay UNA unidad bloqueada y no cuatro
+### 2.3 Qué se puede hacer ya, y qué espera a la pasarela
 
-Porque lo que el 13 decide es **quién tiene el reloj**, y eso es la política de una sola unidad: la
-que ejecuta el cobro. En las demás decide la **forma**, que `DEC-ARCH-004` ya declaró revisable.
+Se venían diciendo como una sola cosa **dos que no lo son**, y conviene separarlas porque llevan a
+decisiones opuestas:
 
-| | política, que sobrevive a las dos respuestas | forma, que se revisa cuando el 13 conteste |
+| | cuántas | qué significa |
 |---|---|---|
-| **B3** | hay una ventana entre *«empezamos»* y *«hay compromiso»*, tiene duración máxima, se limpia y el candado es nuestro y va antes | qué vive adentro de esa ventana: un checkout para autorizar un `preapproval`, o la captura de una tarjeta |
-| **B7** | el reloj del grace arranca cuando **se agotan** los reintentos, y eso se observa releyendo, nunca contando días | de quién son esos reintentos |
-| **B8** | cambiar de ciclo re-autoriza; la pausa es en meses enteros y el reloj que reanuda es nuestro | si hace falta cancelar y recrear — `DEC-ARCH-004` impl. 3 lo dice: *«si se puede mutar el ciclo de una suscripción viva, `DEC-SUB-006` deja de necesitar el cancelar-y-recrear»* |
+| **sin diseño** | **1** — B6 | su capítulo no está escrito y **su política no está decidida**. No se puede ni especificar |
+| **con diseño, esperando la pasarela** | **11** | su política está escrita y no cambia. **Se pueden atomizar y especificar hoy**; no se pueden terminar |
+| **se puede hacer entera hoy** | **1** — B2 | no llama a la pasarela ni depende de ninguna que llame |
 
-**B6 no entra en esa tabla porque no tiene esa columna izquierda todavía**: dos relojes sobre la
+**Doce de trece tienen el diseño escrito. Doce de trece no se pueden construir todavía.** Las dos
+frases son ciertas a la vez, y confundirlas es lo que hace que alguien lea *«una sola bloqueada»*
+como *«se puede arrancar»*.
+
+#### Por qué el alcance es tan ancho
+
+Porque `DEC-ARCH-004` trajo el ciclo de vida de nuestro lado, y eso **no reduce** la dependencia de
+la pasarela: la concentra. **Cuál sea decide la forma de casi todo el sistema**, y cada línea de
+abajo es una decisión ya tomada que se escribió sobre una medición de Mercado Pago:
+
+| lo que la pasarela decide | hoy, con Mercado Pago | unidades |
+|---|---|---|
+| **quién tiene el reloj de cobro** | suyo — el mandato cobra solo | B6, B7 |
+| **si la pausa es nativa** | sí, y el reloj que reanuda es nuestro porque no hay auto-reanudación | B8, B9 |
+| **si un addon es una autorización aparte o una línea** | aparte: el array de ítems da `400` y se descarta en silencio | B10 |
+| **si se puede mutar el ciclo de una suscripción viva** | no — hay que cancelar y recrear | B8 |
+| **si el inventario se puede listar** | no: el buscador devuelve un subconjunto plausible, 15 de 69 | B11 |
+| **qué miente el falso** | las **quince** filas del `20` §3.2, todas suyas | B1 |
+| **el piso y la moneda** | ARS 15 a 2.000.000, y sólo ARS | B2, B9 |
+
+`DEC-ARCH-004` ya lo dijo, y es la parte que no conviene leer como consuelo: **«las pasarelas no
+son intercambiables»**, y para cada capacidad hay que declarar qué pasa cuando el proveedor no la
+tiene. Eso no se puede declarar contra un proveedor que no está elegido.
+
+#### Política y forma, unidad por unidad
+
+Lo que **no** cambia con la respuesta —y por eso la especificación se puede escribir hoy:
+
+| | política, que sobrevive a las dos respuestas | forma, que espera |
+|---|---|---|
+| **B3** | hay una ventana entre *«empezamos»* y *«hay compromiso»*, tiene duración máxima, se limpia y el candado es nuestro y va antes | qué vive adentro: un checkout para autorizar un mandato, o la captura de una tarjeta |
+| **B7** | el reloj del grace arranca cuando **se agotan** los reintentos, y eso se observa releyendo, nunca contando días | de quién son esos reintentos — y si son nuestros, **son terreno regulado** |
+| **B8** | cambiar de ciclo re-autoriza; la pausa es en meses enteros y el reloj que reanuda es nuestro | si hace falta cancelar y recrear — `DEC-ARCH-004` impl. 3: *«si se puede mutar el ciclo de una suscripción viva, `DEC-SUB-006` deja de necesitar el cancelar-y-recrear»* |
+| **B9** | el orden de aplicación, el piso, y que un 100 % es una cortesía | si la cortesía se implementa pausando o simplemente no cobrando el ciclo |
+| **B10** | los dos ejes, qué es una suscripción válida, el huérfano | si el huérfano recurrente **existe** — con un cargo puntual no hay autorización suelta que siga cobrando |
+| **B11** | el inventario es nuestro y lo que toca plata lo mira una persona | si hace falta leer de a una por id |
+| **B12** | se deja de cobrar antes de dejar de prestar | cómo se corta el cobro el día 0 |
+
+**B6 no entra en esa tabla porque no tiene la columna izquierda todavía**: dos relojes sobre la
 misma autorización **son** el doble cobro que `DEC-ARCH-004` declara como riesgo nuestro, y eso no
 se esconde detrás de una interfaz.
+
+#### Lo que sí conviene hacer mientras tanto
+
+1. **Atomizar las once que tienen diseño** (todas menos B6 y B2). Su política no cambia, así que el
+   atomizado no se tira.
+2. **Construir B2 entera** — `billing_option`, el dinero en entero y `G7`. Su único gate es `V2`.
+3. **Escribir la interfaz del adaptador y `G12`.** `DEC-ARCH-004` define esa API **por lo que
+   Hospeda necesita, no por lo que una pasarela ofrece**, así que se puede escribir sin saber cuál
+   es. Lo que no se puede escribir es el adaptador real ni las mentiras del falso.
+
+**Y lo que no conviene**: escribir el adaptador contra Mercado Pago «para ir avanzando». Es
+exactamente el error que `DEC-ARCH-004` fue a corregir — la alternativa (3) que descartó, *«acoplarse
+a la pasarela elegida y aceptar que cambiarla sea una reescritura»*, es la que **nos trajo hasta
+acá**.
 
 ### 2.4 Por qué registrar el dinero y ejecutarlo son dos unidades
 
@@ -147,8 +226,9 @@ así que todo eso se escribe hoy.
 **Ejecutar** es cómo se mueve: el cargo, el reembolso y cómo se constata un pago manual. Eso es el
 13, y arrastra `RF-3` en `UNKNOWN` — el §61 prohíbe implementar sobre una fila abierta.
 
-Sin esta división, B7 heredaría el bloqueo por transitividad y la épica quedaría con cuatro
-unidades detenidas en vez de una.
+Sin esta división, **B7 heredaría la falta de diseño** y serían cuatro los capítulos que hay que
+escribir en vez de uno. Ojo con lo que esto **no** compra: B5 y B7 siguen esperando a la pasarela
+como el resto (§2.3). Lo que la división separa es **poder especificar** de **poder construir**.
 
 ### 2.5 Por qué el contrato de cobertura no va al final
 
@@ -165,7 +245,7 @@ enchufan en B9 **sin tocar** lo que B4 dejó, y ésa es su prueba.
 prohíba su llegada a producción falla desde el primer día. Es la misma razón por la que `G1` y `G3`
 van primeros en la otra épica, leída al revés.
 
-### 2.6 La única dependencia con la otra épica, y es temprana
+### 2.6 Las dos dependencias con la otra épica, y las dos son tempranas
 
 **B2 no puede existir sin `plan_version`**, que es `V2` de verticales: `billing_option` cuelga de
 ella con `UNIQUE(plan_version_id, ciclo)`. Es el corte de `DEC-ARCH-005` visto desde abajo — el
@@ -198,20 +278,20 @@ una capability crítica con su fila abierta, y la única que lo está es B6.
 ## 3. El orden, y qué se puede hacer en paralelo
 
 ```text
-B1 ──┐
+B1 ──┐   ⛔ de acá para abajo, todo espera a que se decida la pasarela
      ├──► B3 ──┬──► B4
-B2 ──┘         │
+B2 ──┘   ✅    │
                └──► B5 ──┬──► B7 ──► B8 ──► B9 ──► B10 ──► B13 ──► B12
                          ├──► B11
-                         └──► B6  ····  🔒 BLOQUEADA
+                         └──► B6  ····  🔒 sin diseño: es el capítulo 13
 ```
 
 | | |
 |---|---|
 | **camino crítico** | `B1 → B3 → B5 → B7 → B8 → B9 → B10 → B13 → B12` |
 | **en paralelo** | **B2** con B1 (su gate es `V2`, no B1) · **B4** una vez que estén B3 y `V4` · **B11** una vez que esté B5 |
-| **bloqueada** | **B6**, y no detiene a ninguna otra |
-| **nada arranca antes que B1** | salvo B2, que no le debe nada |
+| **sin diseño** | **B6**, y no detiene a ninguna otra |
+| **lo único que arranca hoy** | **B2**, y la interfaz de B1. **El resto del grafo espera a la pasarela** (§2.3) |
 
 **B5 es la bisagra**: hasta ahí se construye el compromiso, y de ahí en adelante todo lee el
 registro del dinero — el grace mira pagos acreditados, la compensación de días mira pagos
@@ -283,8 +363,9 @@ listas: una unidad lo está cuando todas sus dependencias están hechas.
 
 ## 6. Lo que esta descomposición NO decide
 
-- **Cuál es la pasarela.** Está en el paso 4 de 6 de la evaluación, esperando la PRUEBA 0 y el KYC
-  de Mobbex.
+- **Cuál es la pasarela**, que es lo que traba la construcción entera. Está en el paso 4 de 6 de la
+  evaluación, esperando la PRUEBA 0 y el KYC de Mobbex — **las dos en manos del owner**. Esta
+  descomposición dice qué se puede hacer mientras tanto (§2.3); no acelera la decisión.
 - **El modelo canónico de cobro.** Es la pregunta de B6, y está planteada en la spec §5.1 con sus
   opciones y una recomendación. Esta descomposición la aísla; no la contesta.
 - **Las tareas atómicas de cada unidad.** Se atomiza cuando la unidad arranca, con el estado del
