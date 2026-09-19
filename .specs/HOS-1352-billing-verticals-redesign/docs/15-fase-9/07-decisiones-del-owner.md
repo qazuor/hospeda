@@ -512,3 +512,70 @@ pendiente definir qué es «pocos días»; es un número, no un mecanismo.
 - **Un defecto del propio script, corregido**: el aviso *«doscientos que no aplicó»* saltaba
   también en el control —que no pide mover ninguna fecha y sí aplicó—. Lo que delata un `200` vacío
   es que **`last_modified` no se haya movido**, no que la fecha siga igual.
+
+---
+
+## D-17 · Los dos huecos del barrido: la operación NO se ofrece — `R1` #10
+
+**Decidido: en los dos estados la operación no se ofrece, con el motivo explícito en pantalla.**
+
+**Los dos salieron de recorrer los 84 casos sin mirar** y **ningún informe de FASE 8 los tenía**:
+
+| hueco | estado | qué había |
+|---|---|---|
+| **A** | cambiar de plan **antes de terminar de autorizar** (`PENDING_AUTHORIZATION` × `C2`/`C3`) | **nada**: ningún capítulo lo nombra. El diseño dice qué pasa si reintenta **el mismo** plan —`B/03` §3.4.4, *«no se crea otra, se reusa la vigente»*— y nada de cambiar a otro |
+| **B** | cambiar de plan **estando pausado** (`PAUSED` × `C2`/`C3`) | una regla escrita **cuyo destino no existe**: `B/03` §3.3 dice que *«se encola»*, y la cola de `B/12` §2.1 **es de entitlements, no de checkouts**. Y `EX-11` mide que el proveedor **rechaza toda modificación sobre una pausada** |
+
+**Por qué no construir el mecanismo**: **los dos son de superficie, no de modelo, y en ninguno el
+cliente queda bloqueado**. En el A tiene un checkout abierto que puede terminar o abandonar —y
+abandonarlo lo deja en `ABANDONED`, desde donde sí puede elegir otro—; en el B puede reanudar y
+cambiar. Construir la cola del B además exige pelear contra `EX-11`.
+
+**Lo único que faltaba era decir el no en voz alta** en vez de que alguien lo descubra
+implementando — que es exactamente cómo se generaron los 141 hallazgos.
+
+- **Mensajes**: A → *«terminá o cancelá el checkout que tenés abierto»*; B → *«reanudá tu
+  suscripción para cambiar de plan»*.
+- **Dónde se aplica**: `B/19` (superficies) y `B/03` §3.3, que hoy promete una cola inexistente.
+
+---
+
+## No decidible hoy · `F-8B3-002` y el capítulo 13 — `R1` #9
+
+**No es una decisión pendiente del owner: es un bloqueo.** El segundo candado
+—`UNIQUE(subscription_id, período)`— cuantifica sobre una columna **que no existe y no se puede
+derivar**, y quien la define es **el capítulo 13, el único de los 22 sin escribir**. Se destraba
+cuando se decida la pasarela y se escriba ese capítulo.
+
+**Lo que `R1` sí dejó hecho**, y es lo que corresponde: que el candado **figure como inexistente**
+en vez de aparecer en un capítulo como si existiera, que **su forma quede nombrada** para que el
+capítulo 13 la escriba y no la invente, y que **quede dicho qué lo sostiene mientras tanto — y es
+una persona**: `D11`, *«lo que toca plata lo confirma una persona»*.
+
+> **Con `D-17` quedan cerradas las diez decisiones de `R1`**, salvo ésta, que no depende del owner.
+
+---
+
+## D-18 · La unicidad del hash del correo es CONDICIÓN DE APLICACIÓN de `R3` — `R3` #3
+
+**Decidido: la restricción entra en el mismo cambio que `R3`.** No es una tarea suelta: es una
+**dependencia**, y queda anotada como tal.
+
+**El caso**: hoy **nadie puede disparar `T1`** —ése era el racimo— así que el segundo trial por
+re-registro es **teórico**. `R3` lo vuelve real: apenas se aplique, alguien se registra de nuevo
+con el mismo correo, obtiene un `user_id` nuevo, entra en `PRE_TRIAL` y **publica**. Trial gratis,
+las veces que quiera.
+
+Es `F-8A2-010`, y **ya tiene su arreglo escrito**: una restricción de unicidad propia sobre el
+**hash del correo normalizado**. No hay nada que diseñar; hay que **no olvidarlo**.
+
+**Por qué el orden importa**: aplicar `R3` primero y la restricción después abre una ventana —de
+días o semanas— en la que **el §10.2 queda incumplido por la puerta exacta que `DEC-TRIAL-004` y el
+hash construyeron para tapar**. Y no hace falta mala fe para encontrarla: se descubre sola.
+
+> **Es el tercer caso del mismo patrón en esta tanda**: *arreglar un bloqueo total vuelve
+> alcanzables los bugs que vivían detrás*. Mientras el candado bloqueaba el upgrade, los addons
+> cancelados eran teóricos (`D-02`); mientras `T1` no se podía disparar, el segundo trial también.
+> **Conviene preguntárselo en cada racimo que se aplique.**
+
+- **Costo**: una restricción de base. **Dónde se aplica**: `V/02`, junto con el cambio de `R3`.
