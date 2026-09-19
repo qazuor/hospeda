@@ -232,12 +232,20 @@ una está verificada.
 
 ## 8. Qué necesita la FASE 9 para arrancar
 
+**`DEC-METH-004` (2026-09-19) cerró los dos primeros puntos de esta lista**, que en la versión
+original de este documento estaban abiertos: la FASE 9 tiene **cuatro salidas** —el diseño, el
+registro, las sub-specs y lo publicado (25 issues de Linear y los artifacts)— y **«resuelto»
+quedó definido**. Lo que sigue es lo que hace falta para ejecutarla.
+
 1. **Resolver los racimos, no los 141.** R1 a R6 cubren 31 de los 48 críticos, y cada uno tiene
    **una** causa.
-2. **Decidir qué significa «resuelto»** para un hallazgo de FASE 8. Hoy el programa no lo declara
-   (`F-8C2-016`), y sin eso la fase no tiene criterio de cierre.
-3. **Propagar al trabajo ya publicado.** 22 issues de Linear y 27 fichas salieron el 2026-09-18;
-   estos 141 hallazgos son del 2026-09-19, y la FASE 9 sólo manda actualizar decision log, spec,
-   handoff y worklog (`F-8C2-011`). Nadie es dueño de propagar el cambio a Linear.
+2. **Cada racimo tiene que declarar su dominio, por escrito.** `DEC-METH-004` define «resuelto»
+   como: el camino del hallazgo, reejecutado sobre el texto corregido, ya no llega — y para un
+   racimo, **además**, la regla corregida se verificó contra **todo el dominio que cuantifica**.
+   Ese dominio hoy no está escrito en ningún lado, y sin él el criterio no es ejecutable. Son
+   **seis** verificaciones de dominio, no 141.
+3. **La propagación va al final**, con el diseño firme. Propagar mientras la fase todavía resuelve
+   racimos es propagar dos veces sobre 52 objetos, y varios cruzan las dos épicas.
 4. **Los arreglos de R6 son baratos hoy y caros después.** Los workflows que no conocen `epic/**`
    se arreglan en un PR; descubrirlo con meses de código adentro, no.
+5. **Las seis correcciones de la §7 siguen sin aplicar.** Están verificadas, no ejecutadas.

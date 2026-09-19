@@ -141,6 +141,56 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-004 — La FASE 9 tiene cuatro salidas, y «resuelto» exige verificar la regla contra todo su dominio
+
+- **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: son dos, y se descubrieron juntos al cerrar la FASE 8 con **141 hallazgos, 48 de
+  ellos `CRITICA`**.
+  1. **El §65 manda actualizar cuatro documentos** —decision log, spec, handoff y worklog— y el
+     programa ya no vive sólo ahí. El 2026-09-18 el desarme publicó **25 issues de Linear** (el
+     paraguas, las dos épicas, las nueve unidades de verticales y las trece de billing) y **unos
+     27 artifacts**, todos escritos contra un modelo que estos hallazgos acaban de mover. Nadie
+     era dueño de propagarles el cambio (`F-8C2-011`).
+  2. **El programa no declara qué significa «resuelto»** para un hallazgo de FASE 8
+     (`F-8C2-016`). Sin eso la fase no tiene criterio de cierre — y ahora tampoco de propagación,
+     porque no se sabe qué dispara una actualización hacia lo publicado.
+- **Alternativas para «resuelto»**: (1) el capítulo dice qué pasa en todos los casos del hallazgo
+  —el criterio que el programa ya usa para los huecos—; (2) lo anterior **y** el camino del
+  hallazgo, reejecutado sobre el texto corregido, ya no llega; (3) el (2) para los hallazgos
+  sueltos, y para cada racimo **además** verificar la regla corregida contra **todo el dominio que
+  cuantifica**.
+- **Decisión**: **(3)**, y la FASE 9 cierra **cuatro** salidas, no una.
+- **Las cuatro salidas**:
+  1. **el diseño** — resolver los seis racimos en los capítulos de las dos épicas y del núcleo;
+  2. **el registro** — decision log, handoff, worklog, más las seis correcciones de registro de la
+     §7 de [`14-fase-8-adversarial/00-hallazgos.md`](./14-fase-8-adversarial/00-hallazgos.md);
+  3. **las sub-specs** — `spec.md` y `descomposicion.md` de `HOS-1353` y `HOS-1354`;
+  4. **lo publicado** — los 25 issues de Linear y los artifacts.
+- **El orden no es libre: 3 y 4 van al final**, con el diseño ya firme. Propagar mientras la fase
+  todavía resuelve racimos significa propagar dos veces sobre 52 objetos, y varios racimos cruzan
+  las dos épicas — `R2` toca unidades de las dos, `R1` toca cuatro unidades de billing y sus
+  fichas. No hay forma de propagar bien antes de saber cómo quedó cada racimo.
+- **Motivo de elegir (3) y no (1) ni (2)**: **(1) es el criterio que produjo la causa raíz.** La
+  FASE 8 encontró que las cuatro convergencias son contradicciones **entre dos capítulos, nunca
+  dentro de uno**, y que el método cierra huecos *por capítulo* — lo que comprueba que un capítulo
+  cubre sus casos, nunca que una regla cubra los suyos, porque los suyos viven en otros capítulos.
+  Cerrar con (1) deja viva exactamente la máquina que produjo los 141. **(2) arregla el caso que
+  el agente encontró y no el resto del dominio de la regla.** (3) cuesta **seis** verificaciones
+  de dominio, no 141, porque se aplica al racimo y no al hallazgo.
+- **Implicaciones**:
+  1. **Cada racimo tiene que declarar cuál es su dominio**, por escrito. Hoy no está en ningún
+     lado, y sin eso el criterio (3) no es ejecutable.
+  2. **Un hallazgo no se cierra marcándolo**: se cierra reejecutando su camino sobre el texto
+     nuevo. El camino está escrito en cada uno de los 141, que es lo que lo vuelve verificable.
+  3. **Esto es un apartamiento declarado del §65**, no una corrección del PDR. El PDR no se edita
+     (regla 1): la ampliación vive acá.
+  4. Las seis correcciones de registro **siguen sin aplicar** hasta que la FASE 9 las tome. Están
+     inventariadas y verificadas, no ejecutadas.
+- **Origen**: conversación con el owner del 2026-09-19 al cerrar la FASE 8 — *«la fase 9 debería
+  también actualizar las issues y las sub spec y los artifacts»*—, más `F-8C2-011` y `F-8C2-016`.
+
+---
+
 ## Decisiones funcionales
 
 ### DEC-ARCH-001 — Planes híbridos: se versiona lo que tiene efecto
@@ -2189,8 +2239,8 @@ Cada entrada lleva, según §3.4:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **50** |
-| De metodología | 3 |
+| Decisiones tomadas | **51** |
+| De metodología | 4 |
 | Funcionales | 47 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **2** — `DEC-SUB-001` por `DEC-SUB-005`, y `DEC-SUB-005` por `DEC-SUB-006` |
@@ -2200,4 +2250,4 @@ Cada entrada lleva, según §3.4:
 | Decisiones condicionadas a FASE 1C | **1** — `DEC-SUB-010`, a la segunda lectura del reloj (¿la fecha corre +1 ciclo por vencimiento **indefinidamente**, o sólo la primera vez?) |
 | | `DEC-SUB-006` y `DEC-SUB-007` **se destrabaron el 2026-09-16**: `EX-33` quedó `VERIFIED` en **producción con tarjeta real**, medido tres veces sobre el mismo pagador. El checkout respeta la fecha de primer cobro futura, así que el cliente que cambia de ciclo no paga dos veces. ⚠️ Pero la medición trajo `EX-38` de arriba: el proveedor **convierte esa fecha en un free trial** y se lo anuncia al cliente como «Tu prueba gratis comenzó». El mecanismo funciona; **lo que hay que resolver es qué le decimos nosotros a alguien a quien el proveedor acaba de anunciarle una prueba gratis sobre días que ya pagó** |
 | Decisiones de arquitectura del owner | **4**, las cuatro del 2026-09-18 — **`DEC-ARCH-004`**: el billing se implementa de nuestro lado, con la pasarela detrás de un adaptador. Es la **primera decisión del programa que no sale de una medición sino de un criterio del owner**. **`DEC-ARCH-005`**: el programa se parte en dos épicas **autónomas**, `HOS-1353` (verticales, arranca) y `HOS-1354` (billing, espera). **`DEC-ARCH-006`**: la frontera entre las dos es un contrato único con dos implementaciones desde el día uno — la condición B de `DEC-ARCH-004` aplicada a esta frontera. **`DEC-ARCH-007`**: se desarrollan en paralelo y **se liberan juntas** — ninguna llega a producción sola, y una rama de integración del paraguas lo hace cumplir |
-| Apartamientos declarados del PDR | **4** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), y **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento) |
+| Apartamientos declarados del PDR | **5** — `DEC-ENT-001` (§10.3), `DEC-GRANT-002` (§34) y **`DEC-ARCH-003`** (§10.6, el `SUSPENDED` doble, que ya estaba anticipado acá y el 2026-09-17 tomó ID propio), **`DEC-OBS-001`** (§22.1, el aviso agregado en vez de uno por evento), y **`DEC-METH-004`** (§65, la FASE 9 con cuatro salidas en vez de los cuatro documentos, y el criterio de «resuelto») |
