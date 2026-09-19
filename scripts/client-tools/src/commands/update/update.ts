@@ -154,31 +154,42 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
     const before = await headSha({ cwd: stagingPath });
     const lockBefore = lockfileOf({ toolsPath });
 
+    if (dryRun) {
+        // `git fetch --dry-run` still advertises FETCH_HEAD and can touch Git
+        // metadata on some versions. ls-remote is enough to compare SHAs and
+        // is the only network operation allowed in a genuinely read-only plan.
+        const remote = await run({
+            command: 'git',
+            args: ['ls-remote', 'origin', `refs/heads/${STAGING_BRANCH}`],
+            cwd: stagingPath
+        });
+        const wanted = remote.ok ? (remote.stdout.trim().split(/\s+/)[0] ?? null) : null;
+        if (before !== null && wanted === before) {
+            process.stderr.write(
+                `${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`
+            );
+            return 0;
+        }
+        process.stderr.write(
+            `${pc.dim('(--dry-run) no se tocó nada.')} ` +
+                `${before?.slice(0, 9) ?? '?'} → ${wanted?.slice(0, 9) ?? '?'}\n`
+        );
+        return remote.ok ? 0 : 1;
+    }
+
     const fetched = await runner.exec({
         command: 'git',
-        args: dryRun
-            ? ['fetch', '--dry-run', 'origin', STAGING_BRANCH]
-            : ['fetch', 'origin', STAGING_BRANCH],
+        args: ['fetch', 'origin', STAGING_BRANCH],
         cwd: stagingPath
     });
     if (fetched !== 0) return fetched;
 
-    const remote = dryRun
-        ? await run({
-              command: 'git',
-              args: ['ls-remote', 'origin', `refs/heads/${STAGING_BRANCH}`],
-              cwd: stagingPath
-          })
-        : await run({
-              command: 'git',
-              args: ['rev-parse', `origin/${STAGING_BRANCH}`],
-              cwd: stagingPath
-          });
-    const wanted = remote.ok
-        ? dryRun
-            ? (remote.stdout.trim().split(/\s+/)[0] ?? null)
-            : remote.stdout.trim()
-        : null;
+    const remote = await run({
+        command: 'git',
+        args: ['rev-parse', `origin/${STAGING_BRANCH}`],
+        cwd: stagingPath
+    });
+    const wanted = remote.ok ? remote.stdout.trim() : null;
 
     if (before !== null && wanted === before) {
         process.stderr.write(`${pc.green('Ya estabas al día.')} ${pc.dim(before.slice(0, 9))}\n`);
@@ -193,14 +204,6 @@ export async function runUpdate({ argv }: { readonly argv: readonly string[] }):
             for (const line of changes) process.stderr.write(`  ${line}\n`);
             process.stderr.write('\n');
         }
-    }
-
-    if (dryRun) {
-        process.stderr.write(
-            `${pc.dim('(--dry-run) no se tocó nada.')} ` +
-                `${before?.slice(0, 9) ?? '?'} → ${wanted?.slice(0, 9) ?? '?'}\n`
-        );
-        return 0;
     }
 
     // Hard reset, not pull: nothing is ever authored in this checkout, so there
