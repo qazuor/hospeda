@@ -2620,3 +2620,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   cero gates requeridos y `readOnly: true`; no ejecutó smoke ni cambió Linear.
 - La llamada sin issue fue rechazada con ayuda clara, por lo que el contrato
   exige explícitamente `HOS-NNN` para evitar inferencias ambiguas.
+
+## Gate 91 · `hops update --dry-run`
+
+- Ejecutado desde `/home/qazuor/projects/WEBS/hospeda-staging`.
+- Comparó el checkout local `cf08bb7e3` con la referencia operativa
+  `60a39dae2` y mostró el plan sin hacer fetch, reset, instalación ni cambios
+  de archivos.
+- La salida confirmó explícitamente `(--dry-run) no se tocó nada`.

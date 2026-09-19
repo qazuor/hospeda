@@ -402,7 +402,7 @@
                             "title": "Automatizar reconciliación y drift de entorno",
                             "category": "CLI, worktrees, guards",
                             "description": "Usar hospeda-staging como fuente predeterminada, reconciliar archivos después de hops update y devolver drift estructurado sin valores.",
-                            "notes": "Validado end-to-end en un clon temporal: dry-run sólo consulta ls-remote; update real hizo reset a origin/staging, reconciliación de envs, reinstalación al cambiar lockfile y regeneración de wrappers. Clones eliminados y wrappers restaurados a hospeda-staging.",
+                            "notes": "Gate91: dry-run desde hospeda-staging comparó cf08bb7e3 con 60a39dae2 y confirmó que no toca nada. Gate previo end-to-end también validó reconciliación de envs, lockfile y wrappers; update real queda reservado para una ejecución autorizada.",
                             "done": true
                         },
                         {
