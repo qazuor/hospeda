@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_5",
-        "number": 5,
+        "id": "ver_claude_opencode_migration_6",
+        "number": 6,
         "createdAt": "2026-09-16T00:00:00.000Z",
         "author": "opencode",
-        "reason": "distribución unificada ampliada a instrucciones y conocimiento del agente",
+        "reason": "bootstrap reproducible y portabilidad de Engram agregados al backlog",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_4"
+        "basedOnVersion": "ver_claude_opencode_migration_5"
     },
     "data": {
         "sections": [
@@ -162,6 +162,14 @@
                             "description": "Probar mouse=false, Home/End, Ctrl+A/E, atención y selector de tema.",
                             "notes": "Validada en V1. mouse=true permite scroll del viewport. Semántica final: Home/End línea actual; Ctrl+Home/Ctrl+End prompt multilinea. Backup previo en ~/.local/state/hospeda-opencode-migration/backups/tui-v1-before-line-buffer-rebind-2026-09-18.json.",
                             "done": true
+                        },
+                        {
+                            "id": "bootstrap-work-environment",
+                            "title": "Instalador deja el entorno listo para trabajar",
+                            "category": "Instalación y reproducibilidad",
+                            "description": "Detectar/crear hospeda-staging, actualizarlo desde origin/staging, reconciliar envs, generar los primeros .env.local seguros, preparar Postgres/Redis, construir/promover el primer template válido y verificar wrappers, puertos y health checks.",
+                            "notes": "Nueva tarea. Debe ser idempotente, tener dry-run, no imprimir secretos, conservar backups y detenerse ante drift o datos faltantes. Debe permitir reinstalar una PC y empezar a usar Hops sin pasos manuales ocultos.",
+                            "done": false
                         }
                     ]
                 }
@@ -251,6 +259,14 @@
                             "description": "Convertir conocimiento especializado en skills project-locales/globales.",
                             "notes": "No copiar el archivo monolítico completo.",
                             "done": true
+                        },
+                        {
+                            "id": "engram-portability-architecture",
+                            "title": "Definir portabilidad y backup de Engram entre PCs",
+                            "category": "Engram + memoria",
+                            "description": "Elegir una arquitectura que preserve la memoria al reinstalar equipos, con SQLite local autoritativa, backups verificables y sincronización opcional.",
+                            "notes": "Nueva tarea de decisión. Documentación oficial actual describe Git Sync por chunks y Engram Cloud opt-in por proyecto; cloud replica, no reemplaza la SQLite local. Recomendación preliminar: no versionar la DB SQLite en el repo; usar backup cifrado/export controlado y evaluar cloud propio o administrado más backup offline. Requiere revisar privacidad, costo, token, compatibilidad de versiones y restauración antes de activarlo.",
+                            "done": false
                         }
                     ]
                 }
