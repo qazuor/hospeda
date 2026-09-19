@@ -63,7 +63,8 @@ genéricas con configuración declarativa.
 ## Capas
 
 - **Núcleo `qz`:** worktrees, puertos, lifecycle de servidores, estado,
-  env drift, cleanup, verify, handoff, recap, update y guards comunes.
+  env drift, cleanup, verify, handoff, recap, update, `start-issue`,
+  `close-issue` y guards comunes.
 - **Adaptador Hospeda (`hops-*`):** Linear/team, branch base, nombres de DB, fuente de
   envs, roles de servidores, comandos de build/health, seed, scripts especiales
   y políticas del proyecto.
@@ -83,6 +84,13 @@ Por ejemplo, `qz wt-create` debe conservar el flujo común de crear worktree,
 copiar/reconciliar envs, preparar DB, asignar puertos y verificar servicios,
 mientras que Hospeda sólo declara cómo se llaman sus tres apps y cómo se
 prepara su template PostgreSQL.
+
+`qz start-issue` y `qz close-issue` siguen la misma regla. El núcleo resuelve la
+orquestación de issue, branch, worktree, contexto, agente opcional, preflight,
+closeout y cleanup. El adaptador declara el proveedor de issues, formato de
+identificadores, estados, labels, branch base, reglas de nombres y acciones de
+Linear/GitHub. En Hospeda, `hops-start-issue` y `hops-close-issue` podrán quedar
+como aliases compatibles que seleccionan el adaptador Hospeda.
 
 ## Compatibilidad
 

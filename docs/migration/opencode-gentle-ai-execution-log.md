@@ -2427,3 +2427,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   Hospeda declarará allí su adapter, mientras mantiene compatibilidad con sus
   scripts actuales durante la transición.
 - La extracción real de `qz` se difiere hasta disponer de un segundo proyecto.
+
+## Gate 73 · `start-issue` y `close-issue` genéricos
+
+- Se confirmó que iniciar y cerrar issues también pertenece al núcleo `qz`, no a
+  Hospeda.
+- `qz start-issue` deberá orquestar issue, branch, worktree, env/DB, contexto y
+  agente opcional usando un adapter declarativo.
+- `qz close-issue` deberá orquestar preflight, closeout, estados, cleanup y
+  acciones remotas mediante el mismo adapter.
+- El adapter declara proveedor de issues, identificadores, estados, labels,
+  branch base, nombres de branch y acciones Linear/GitHub.
+- Hospeda conservará `hops-start-issue` y `hops-close-issue` como aliases de
+  compatibilidad que seleccionan el adapter Hospeda.

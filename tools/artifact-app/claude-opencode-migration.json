@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_17",
-        "number": 17,
+        "id": "ver_claude_opencode_migration_18",
+        "number": 18,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "reservar hops para Hospeda y qz para el núcleo común",
+        "reason": "hacer start-issue y close-issue parte del núcleo qz configurable",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_16"
+        "basedOnVersion": "ver_claude_opencode_migration_17"
     },
     "data": {
         "sections": [
@@ -346,7 +346,7 @@
                             "title": "Start issue con OpenCode",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Crear/reutilizar worktree y lanzar OpenCode con branch/DB/puertos correctos.",
-                            "notes": "Validado: Linear real + creación real de worktree HOS-1344 y build de paquetes; launcher OpenCode validado E2E con agente sintético. El refresco preventivo de DB no conectó y continuó de forma no bloqueante; DB/servers se prueban en gates separados.",
+                            "notes": "La implementación actual funciona para Hospeda. Decisión nueva: la orquestación debe migrar al núcleo qz configurable (issue provider, IDs, estados, labels, branch base, worktree, env/DB y agente). hops-start-issue quedará como alias/adaptador Hospeda.",
                             "done": true
                         },
                         {
@@ -354,7 +354,7 @@
                             "title": "Close issue completo",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Cerrar issue, verificar PR/CI/smoke, actualizar Linear/Engram y limpiar recursos.",
-                            "notes": "hops close-issue --plan y /hops-close-issue están implementados como preflight read-only. No marcan Done, no comentan, no hacen push, merge ni cleanup.",
+                            "notes": "La implementación actual es preflight read-only para Hospeda. Decisión nueva: close-issue debe ser parte del núcleo qz configurable (provider, estados, closeout, cleanup y acciones remotas); hops-close-issue queda como alias/adaptador Hospeda.",
                             "done": true
                         },
                         {
