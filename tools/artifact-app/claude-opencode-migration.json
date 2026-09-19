@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_8",
-        "number": 8,
+        "id": "ver_claude_opencode_migration_9",
+        "number": 9,
         "createdAt": "2026-09-16T00:00:00.000Z",
         "author": "opencode",
-        "reason": "bloque operativo Hops integrado en hospeda-staging",
+        "reason": "wrappers globales restaurados y validados contra hospeda-staging",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_7"
+        "basedOnVersion": "ver_claude_opencode_migration_8"
     },
     "data": {
         "sections": [
@@ -434,8 +434,8 @@
                             "title": "Restaurar wrappers a staging",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Apuntar wrappers globales a `hospeda-staging` después de integrar cambios.",
-                            "notes": "El bloque operativo de Hops ya fue integrado en hospeda-staging (3c7bbac64) y la suite allí pasó 411/411. Falta validar los wrappers globales y el E2E real desde ese checkout.",
-                            "done": false
+                            "notes": "Integrado en hospeda-staging (3c7bbac64), suite 411/411 y wrappers Fish restaurados al checkout operativo. context --json y env --drift --json pasaron; el E2E de wt-create sigue pendiente.",
+                            "done": true
                         },
                         {
                             "id": "template-lifecycle",

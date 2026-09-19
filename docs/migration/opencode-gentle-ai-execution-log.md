@@ -2286,3 +2286,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `hospeda-staging` quedó limpio después de la integración.
 - Pendiente: probar los wrappers globales y el E2E real de `wt-create` desde el
   checkout operativo, incluyendo template, envs, DB, puertos, servers y cleanup.
+
+## Gate 63 · Wrappers globales restaurados al checkout operativo
+
+- Los wrappers Fish `hops*` dejaron de apuntar al worktree de migración y vuelven
+  a resolver `/home/qazuor/projects/WEBS/hospeda-staging`.
+- Desde una shell Fish se validó `hops context --json`: branch `staging`, repo
+  limpio y status estructurado correcto.
+- Desde la misma shell se validó `hops env --drift --json`: las cuatro fuentes
+  locales están limpias; sólo queda reportada la variable opcional ausente
+  `HOSPEDA_INTERNAL_REQUEST_SECRET`, sin mostrar valores.
+- Se ajustó el resumen de `start-issue` para indicar que el agente es opcional.
+- Pendiente: E2E real de creación de worktree desde el wrapper global.
