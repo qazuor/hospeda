@@ -263,8 +263,8 @@ Acordado con el owner el 2026-09-17:
 | 1 | buscar todas las opciones posibles | ✅ §3 |
 | 2 | escribir este documento | ✅ |
 | 3 | limpiar la ventana de contexto | ✅ 2026-09-17 |
-| **0** | **PRUEBA 0 — preguntarle a MP por `automatic_payments`** (§5.0). **Va primera**, por decisión del owner el 2026-09-17 | 🟡 **los dos textos redactados y los dos canales identificados. Falta que el owner los envíe**: el formulario comercial pide un dato suyo (facturación esperada) y el ticket técnico exige su sesión |
-| 4 | **investigación exhaustiva por candidato**: costos y comisiones, documentación, qué soporta y qué no, problemas reportados, comunidad | ⬜ |
+| **0** | **PRUEBA 0 — preguntarle a MP por `automatic_payments`** (§5.0). **Va primera**, por decisión del owner el 2026-09-17 | 🟡 **el formulario comercial ESTÁ ENVIADO** (owner, 2026-09-19), esperando respuesta. **El canal técnico se cerró**: no da acceso a una persona, sólo a un bot (§5.0.1) |
+| 4 | **investigación exhaustiva por candidato**: costos y comisiones, documentación, qué soporta y qué no, problemas reportados, comunidad | 🟡 **primera pasada hecha el 2026-09-17** (§7), más Mobbex en profundidad (§8). Falta cerrarla sobre los candidatos que quedaron vivos (§7.4) |
 | 5 | decidir el **orden de prueba** con el resultado del 4 | ⬜ |
 | 6 | **empezar las pruebas** | ⬜ |
 
@@ -324,7 +324,39 @@ Tres cosas se siguen de ahí, y ninguna estaba escrita antes:
 | fecha y sonda | 2026-09-16, [sonda 40](./mp-probes/probe-40-que-dispara-el-403-de-pagos-automaticos.mjs) |
 | contexto del negocio | plataforma de suscripciones mensuales, ARS, ticket bajo, en crecimiento |
 
-#### Por dónde se manda — dos canales públicos, y ninguno es opcional
+### 5.0.1 Lo que pasó al ejecutarla — 2026-09-19
+
+**El plan de dos canales se ejecutó a medias, y no por falta de ganas: uno de los dos no existe.**
+
+| canal | qué pasó |
+|---|---|
+| **formulario comercial** | ✅ **enviado por el owner el 2026-09-19.** Esperando respuesta |
+| **centro de soporte técnico** | ❌ **no se puede.** Reportado por el owner: el centro **no da acceso a una persona** — deriva a un bot de IA que, con los problemas concretos puestos delante, **no aporta nada** |
+
+**Tres consecuencias, y la tercera no es obvia:**
+
+1. **La PRUEBA 0 ahora depende de un solo canal.** Lo que contestaba el técnico —el **criterio** de
+   elegibilidad, y `R-MP-01`, que es la discontinuación de la API de Payments— **no tiene por dónde
+   entrar**. Si Comercial contesta sólo *«sí»* o *«no»* sin decir el criterio, eso es todo lo que
+   vamos a saber.
+2. **`R-MP-01` se queda sin vía.** Las tres preguntas sobre el futuro de `/v1/payments` —si alcanza
+   a las lecturas, cuándo, y cómo se reembolsa un cobro originado por un mandato— **no se pueden
+   medir**, porque son sobre su futuro, y ahora tampoco se pueden preguntar. Quedan como riesgo
+   declarado y sin fecha.
+3. **Y esto es, por sí mismo, un dato sobre el proveedor.** No cambia ninguna fila de la matriz
+   —no es una medición técnica— pero sí entra en la comparación del §4: **un proveedor al que no se
+   le puede preguntar nada técnico fuera de la documentación** es un proveedor con el que cada
+   `UNKNOWN` se queda `UNKNOWN`. Las ocho que tenemos abiertas no tienen adónde ir.
+
+> **Lo que NO se sigue de acá**: que haya que descartar a Mercado Pago. La respuesta de Comercial
+> sigue pendiente y es la que decide `F4`. Lo que sí se sigue es que **la decisión se va a tomar con
+> menos información de la que el plan preveía**, y conviene saberlo antes de tomarla.
+
+#### Por dónde se manda — el plan de dos canales, tal como se escribió
+
+> ⚠️ **Escrito el 2026-09-17, y el §5.0.1 lo corrige**: el segundo canal resultó inaccesible. Se
+> conserva entero porque el **texto 2** sigue siendo el inventario de todo lo que hay que preguntarle
+> a un proveedor, y **se reusa tal cual con el candidato que siga**.
 
 El owner confirmó el 2026-09-17 que **no hay representante comercial asignado**, así que se entra
 por la vía pública. Son dos canales distintos y **cada uno contesta una cosa que el otro no**:
