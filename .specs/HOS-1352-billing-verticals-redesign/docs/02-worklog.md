@@ -3,7 +3,7 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-18
+updated: 2026-09-19
 status: CURRENT
 ---
 
@@ -934,3 +934,87 @@ Nueve documentos nuevos en dos carpetas, el log en **51 decisiones**, la matriz 
 FASE 8 sobreviven **dos falsos positivos declarados como tales** para que nadie los reabra: la
 lista del cap. 19 §4 no perdió ítems —la unión de las dos mitades es 1–14— y `G7` no falta, está
 en billing por reparto.
+
+---
+
+## 2026-09-19, tarde — las 33 decisiones, aplicadas a los capítulos
+
+### Qué pasó
+
+Los cinco racimos resueltos dejaron **37 decisiones del owner**, contestadas en la tanda de la
+mañana. Esta entrada registra el **PASO 1** —aplicarlas a los capítulos— y el **PASO 2** —las seis
+`DEC-` que faltaban y el registro—, que son los dos primeros del orden que `DEC-METH-006` fija y
+que no se reordena.
+
+**Siete commits**, de `4f34afa1a` a `8bf004a6d`, sobre `spec/HOS-1352-billing-verticals-redesign`
+(PR #3360). Seis paquetes, y el primero es atómico por obligación: `D-01`, `D-04`, `D-05`, `D-06`
+y `D-20` tocan todas el **contrato de cobertura**, que es la frontera, y `DEC-ARCH-006` dice que
+**ninguna épica lo muta sola**.
+
+### Una contradicción entre dos decisiones de la misma tanda, encontrada al aplicarlas
+
+**`D-01` enumera `cubierto` sobre CUATRO tipos y `D-04` agrega un quinto TÍTULO.** No es una
+discusión de nombres: `cubierto` tiene **tres consumidores declarados** —el paso 5 de la
+autorización, `PB2` y el §6 del capítulo 15—, y si el piso contara, el campo quedaría en `true`
+**para siempre y para todos**, cambiando el significado de los tres sin que ninguna decisión lo
+hubiera dicho.
+
+Es **la causa raíz del programa otra vez**: una regla validada contra el caso que la motivó y
+escrita como cuantificador universal. Se le llevó al owner como una pregunta con dos opciones, y
+**eligió la 2**: el piso es una clase aparte, `cubierto` conserva su significado comercial, y **el
+paso 5 deja de ser `cubierto`**.
+
+**La consecuencia se escribió en voz alta en vez de esconderse**: con un piso siempre presente,
+**el paso 5 ya no rechaza a nadie** y toda la defensa se apoya en el paso 6. Eso obligó a reescribir
+el argumento con que `V/17` §2.2 cierra `S-AUTH-01`, que se apoyaba textualmente en que *«ahí el
+paso 5 no encuentra título»*, y a ampliar `G-R3` para que cubra **las dos** versiones no vendibles
+de cada vertical.
+
+### Y una promesa que una decisión hace y no cumple
+
+**`D-04` afirma ser *«la única salida que además cierra `F-8A1-005`»*, y lo cierra a medias.** El
+hallazgo tiene dos sujetos: el `Turista Free` se caía en el paso 5 y el título `BASE` lo destraba;
+el `Guest` **se cae en el paso 1** —*«no autenticado»*— y nunca llega al 5.
+
+No se resolvió en el paso 1 por dos razones independientes: admitir al `Guest` en el paso 1 deja
+**dos** de los nueve pasos incapaces de rechazar a nadie, que es una decisión de arquitectura y no
+la aplicación de una decisión tomada; y arrastra `A-ENT-02`, que el capítulo 17 declara
+explícitamente que **no cierra**.
+
+**Decisión del owner: queda para la 8-bis**, y se creó
+[`15-fase-9/08-residuos-del-paso-1.md`](./15-fase-9/08-residuos-del-paso-1.md) para que la 8-bis
+lo **recorra** en vez de redescubrirlo. Es el archivo donde viven los residuos del paso 1: lo que
+una decisión promete y su aplicación no alcanza a cumplir.
+
+### Qué cambió de forma, no sólo de texto
+
+- **El contrato tiene tres clases de fuente y seis tipos.** `cubierto` cuenta sólo `TÍTULO`;
+  `BASE` y `ADDON` no. `hasta` pasó de dos valores a cuatro. La referencia **no es anulable**, y
+  eso obligó a que `courtesy_grant` y `permanent_grant` ganaran su columna.
+- **El candado del §11 son dos claves**, partidas por `sucede_a`, y `RECONCILIATION_REQUIRED`
+  **dejó de ser un estado**: pasó a ser una marca que no pisa el estado real. Entró
+  `CHARGE_DECLINED` y **siguen siendo nueve**.
+- **`T1` puede disparar.** Su condición vieja —*«no hay trial previo»*— decía lo mismo que su
+  estado de origen **y lo negaba**: se cae por redundante, no por permisiva.
+- **Los dos `21-migracion.md` describen que no se migra.** Cuatro de los cinco problemas críticos
+  de la migración **pierden sujeto** y la unidad de trabajo que iba a escribirla no se crea.
+- **Cuatro guards nuevos** y tres columnas de `vertical` que no existían.
+
+### Qué se produjo
+
+El decision log pasa de **54 a 60** decisiones y de **5 a 7** apartamientos declarados del PDR —
+recontado con `rg -c "^### DEC-"` menos la plantilla, no a mano. Un documento nuevo del paraguas
+(`16-fase-7-del-paraguas.md`) y uno nuevo de la fase (`15-fase-9/08-residuos-del-paso-1.md`). La
+matriz **intacta**, y el PDR sin tocar.
+
+### Lo que no se hizo, y por qué
+
+**Las fichas de las dos `descomposicion.md` no se tocaron.** `D-07` nombra a `V4` y `D-10` a una
+unidad de cada épica, pero eso es la **salida 3** de `DEC-METH-004`, y `DEC-METH-006` §3 la manda
+hacer **una sola vez, después de la 8-bis** — porque si la 8-bis trae críticos, la 9-bis los
+resuelve y habría que propagar 52 objetos de nuevo. La única excepción fue reemplazar
+`RECONCILIATION_REQUIRED` en `HOS-1354/descomposicion.md`, que quedaba nombrando algo que dejó de
+existir.
+
+**Tampoco se tocaron el `CLAUDE.md` del repo ni los workflows** (`D-29`): son archivos del repo y
+su aplicación **la decide el owner**, como ya declaraba `DEC-CI-001` implicación 1.
