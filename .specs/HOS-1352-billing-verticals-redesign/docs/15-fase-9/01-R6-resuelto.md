@@ -781,7 +781,7 @@ programa combate: una regla escrita para un caso puntual. Queda como `DEC-CI-001
 | `validate-docs.yml` | **sí** | barato. **Falta en la §1 y hay que agregarlo** |
 | `codeql.yml` | **sí** | seguridad; una rama que vive meses la necesita más, no menos. **Falta en la §1** |
 | `docs.yml` | ya corre | no tiene filtro de rama, sólo de paths. Nada que hacer |
-| `e2e-pr.yml` | **NO por PR** | ⚠️ **`C-2` queda sin efecto.** Caro y lento en cada PR de sub-épica: va por `workflow_dispatch`, y **obligatorio antes del PR final a `staging`** |
+| `e2e-pr.yml` | **sí** | ⚠️ **revisado el mismo día — ver §7.4.** `C-2` **vuelve a estar vigente**. Medido: corre **sólo P0, con los externos mockeados y techo de 25 min**, así que el costo por PR es asumible |
 | `lighthouse.yml` | **no** | mide performance de páginas desplegadas, y en el paraguas no hay deploy que medir |
 | `a11y-sweep.yml` | **no** | mismo caso |
 | `whats-new-gate.yml` | **no** | es de `main` por diseño |
@@ -823,7 +823,7 @@ productivo para la FASE 10. Lo que queda listo para que alguien lo ejecute:
 | **`C-8`** | `codeql.yml` ← `epic/**` | **nuevo**, sin aplicar |
 | `C-4` | `scripts/check-umbrella-branch-target.sh` + su paso en `ci.yml` | aprobado, sin aplicar |
 | `C-5` | la regla de enchufado en los dos `20-testing.md` | aprobado, sin aplicar |
-| ~~`C-2`~~ | ~~`e2e-pr.yml`~~ | **cancelado** por §7 |
+| `C-2` | `e2e-pr.yml` ← `epic/**` | **revivido** por §7.4, sin aplicar |
 | ~~`C-6`~~ | ~~`validate-docs.yml`, el filtro `develop`~~ | **cancelado** por §7.2 |
 
 **La ventana sigue abierta**: `git ls-remote --heads origin 'epic/*'` devuelve **cero** al
@@ -833,3 +833,28 @@ Y lo que la §1 advierte sobre `C-1` **sigue valiendo entero**: la mitad `push` 
 `F-8C2-004`, y el merge periódico de `staging` hacia el paraguas va a ser ruidoso en los dos jobs
 que trabajan por diff, con el instrumento para evitarlo ya existente (`workflow_dispatch` con
 `baseline_ref: staging`).
+
+### 7.4 `e2e-pr.yml` vuelve a entrar — revisado el mismo día
+
+La §7 lo había dejado afuera por caro. **Se midió y el motivo era falso**: `e2e-pr.yml` corre **sólo
+la suite P0, con los externos mockeados y `timeout-minutes: 25`**. No es la suite completa. El costo
+por PR de sub-épica es asumible, así que **`C-2` vuelve a estar vigente**.
+
+**Pero la razón por la que entra no es la que se propuso.** Se planteó que e2e sería lo que proteja
+de que la separación y duplicación de código por vertical vuelva a pasar, y **eso no lo hace un
+e2e**: un `x === 'gastronomy' ? A : B` que responde mal para `accommodation` y `partner` **pasa
+todos los e2e** si ninguno ejerce esas dos verticales. No es hipotético — es `HOS-1079`, once sitios
+en `apps/api` con esa forma exacta, ninguno detectado en runtime y todos cazados después por un
+guard estático. **Esa defensa es estática y ya existe**: diez scripts en `scripts/`, empezando por
+`check-no-binary-vertical-ternary`, y corren dentro de `ci.yml`, que sí alcanza `epic/**` por §7.
+
+**Lo que e2e sí aporta en el paraguas** es lo otro: que el flujo de cobro siga funcionando mientras
+la épica lo reemplaza.
+
+> ⚠️ **Y trae una consecuencia que se declara ahora para que no muerda después.** Los e2e actuales
+> prueban el billing **viejo**, que este programa borra. En algún punto de la épica el código nuevo
+> los va a hacer fallar **por razones que no son bugs**. El modo de falla conocido es rojo crónico →
+> se lo ignora → el día que falla de verdad nadie mira.
+>
+> **La regla que lo evita**: una unidad que reemplaza un flujo de billing **adapta sus e2e en el
+> mismo PR**. No después, no en un issue aparte.
