@@ -2538,3 +2538,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   una candidata.
 - La prueba confirma que el subcomando de estado puede usarse en recap/gates sin
   abrir una mutación de base.
+
+## Gate 83 · Runtime OpenCode V1 con filesystem escribible
+
+- El host volvió a reportar root filesystem `rw`; no se remountó ni se cambió
+  ningún permiso desde esta sesión.
+- `opencode --version` respondió `1.18.31`.
+- `opencode providers list` respondió correctamente: OpenAI OAuth y la
+  variable de entorno de GitHub Copilot fueron detectados sin mostrar valores.
+- `opencode mcp list` respondió correctamente: Context7 y Engram conectados.
+- El bloqueo de persistencia documentado en los gates anteriores queda como
+  incidente intermitente del host; debe seguirse monitoreando antes de declarar
+  la instalación completamente estable.

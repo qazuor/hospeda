@@ -710,7 +710,7 @@
                             "title": "Ejecutar validación integral",
                             "category": "Adopción progresiva",
                             "description": "Probar OpenCode, Gentle, Engram, Linear, hops, worktrees, TUI, guards y artifacts.",
-                            "notes": "Gate80: suite completa de scripts/client-tools pasa 294/294 tests y 724 assertions, incluyendo los binarios standalone de los wrappers Gentle. El runtime operativo sigue siendo OpenCode V1.18.31; V2 queda respaldado para una migración futura. Validaciones OpenCode/providers externas siguen bloqueadas por root filesystem read-only.",
+                            "notes": "Gate83: suite completa de scripts/client-tools pasa 294/294 tests y 724 assertions. OpenCode V1.18.31 volvió a responder correctamente con filesystem rw: OpenAI OAuth, Context7 y Engram MCP conectados. V2 queda respaldado para una migración futura; el EROFS se conserva como incidente intermitente a monitorear.",
                             "done": false
                         },
                         {
