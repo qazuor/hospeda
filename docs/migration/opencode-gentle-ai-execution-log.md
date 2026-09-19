@@ -2485,3 +2485,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Typecheck y ejecución real pasaron; review quedó `clean`.
 - Implementado en el worktree de migración; todavía no aplicado a
   `hospeda-staging`.
+
+## Gate 78 · Wrapper read-only de Gentle SDD
+
+- Se agregó `hops gentle-sdd-status` con modo status y `--continue` para
+  consultar routing.
+- Tiene salida humana y `--json`.
+- No ejecuta acquire/settle, apply, verify, archive ni cambios de artifacts.
+- Typecheck y ejecución read-only pasaron.
+- Implementado en el worktree de migración; todavía no aplicado a
+  `hospeda-staging`.

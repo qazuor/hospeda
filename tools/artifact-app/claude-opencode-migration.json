@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_28",
-        "number": 28,
+        "id": "ver_claude_opencode_migration_29",
+        "number": 29,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "implementar wrapper read-only gentle-status",
+        "reason": "implementar wrapper read-only gentle-sdd-status",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_27"
+        "basedOnVersion": "ver_claude_opencode_migration_28"
     },
     "data": {
         "sections": [
@@ -281,7 +281,7 @@
                             "title": "Evaluar wrappers Hops para Gentle-AI",
                             "category": "Hops y mantenimiento",
                             "description": "Auditar los comandos actuales de Gentle-AI y exponer sólo diagnósticos o acciones que realmente aporten valor a través de Hops.",
-                            "notes": "Gate77: implementado hops gentle-status en el worktree de migración. Ejecuta sólo version, review status y telemetry preview; salida humana/JSON; sin mutaciones. Otros wrappers siguen pendientes de decisión.",
+                            "notes": "Gate78: implementado hops gentle-sdd-status en el worktree de migración. Consulta status/routing con salida humana/JSON; no ejecuta acquire, apply, verify ni archive.",
                             "done": false
                         }
                     ]
