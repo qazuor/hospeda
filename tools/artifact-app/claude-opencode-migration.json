@@ -370,7 +370,7 @@
                             "title": "Handoff con contexto y límites visibles",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Generar prompt autocontenido con hallazgos, decisiones, problemas y próximo paso.",
-                            "notes": "Marcadores BEGIN/END implementados.",
+                            "notes": "Gate90: `handoff --plan --json` devuelve branch, cambios, commits, tests pendientes y próximo paso con `readOnly:true`; conserva marcadores BEGIN/END para el prompt final.",
                             "done": true
                         },
                         {

@@ -2611,3 +2611,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Esto no es una mutación ni un fallo del preflight; es un gap de bootstrap que
   el instalador/worktree debe resolver antes de abrir un agente en un checkout
   nuevo. No se instaló nada durante esta prueba.
+
+## Gate 90 · Handoff y smoke-plan read-only
+
+- `hops handoff --plan --json` desde `hospeda-staging` devolvió branch, cambios,
+  commits recientes, tests pendientes y próximo paso, con `readOnly: true`.
+- `hops smoke-plan HOS-635 --json` consultó Linear y devolvió estado Backlog,
+  cero gates requeridos y `readOnly: true`; no ejecutó smoke ni cambió Linear.
+- La llamada sin issue fue rechazada con ayuda clara, por lo que el contrato
+  exige explícitamente `HOS-NNN` para evitar inferencias ambiguas.
