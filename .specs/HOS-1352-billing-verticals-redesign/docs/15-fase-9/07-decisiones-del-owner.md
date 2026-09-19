@@ -305,3 +305,91 @@ se lo mostrás**.
 
 - **Reversible**: es un valor declarado, no una derivación. Cambiarlo es una línea el día que se
   quiera probar lo contrario.
+
+---
+
+## D-10 · `addon_product` se parte por campo, como ya se partió el plan — `R2` #2
+
+**Decidido: se parte.** **Qué otorga** el addon va a verticales, con versión inmutable; **cuánto
+sale** va a billing.
+
+**El problema que cierra**: el PDR define la agregación con un ejemplo concreto —*«plan 20 fotos +
+addon 30 = 50»*— y **el 30 no tiene dónde vivir**: ningún lugar del modelo guarda qué otorga un
+addon. Es `F-8A3-002`, uno de los críticos de `R2`, y seguía intacto.
+
+**Por qué el riesgo es bajo: el criterio no es nuevo.** Es **exactamente el mismo corte que
+`11-particion` §2.1 ya hizo** con `plan_version` y `billing_option` — el precio vive en una tabla
+hoja y todo lo que está encima es configuración de capacidades. Esta decisión **aplica a la entidad
+que había quedado sin partir** un criterio que el programa ya tomó.
+
+**Qué pasaba si no**: además de dejar `F-8A3-002` intacto, el lado verticales tendría que
+**preguntarle a billing qué otorga un addon** — el acoplamiento que el corte en dos épicas venía a
+impedir.
+
+**Consecuencia útil**: partido el addon, **puede otorgar sin que billing intervenga**, que es lo que
+hace falta para que `D-01` —el addon como complemento que agrega capacidades y nunca cobertura— sea
+implementable.
+
+- **Costo**: medio — tres entidades nuevas del lado de verticales y una referencia del lado de
+  billing.
+- **Dónde se aplica**: `V/02` §2.1, `B/02` §2.4, y la ficha de una unidad de cada épica.
+
+> **Con `D-10` quedan cerradas las seis decisiones de `R2`**: `D-01`, `D-05`, `D-06`, `D-07`,
+> `D-08`+`D-09` y `D-10`.
+
+---
+
+## D-11 · `RECONCILIATION_REQUIRED` deja de ser un estado y pasa a ser una MARCA — `R1` #2
+
+**Decidido: marca.** La fila **conserva su estado real** y se le agrega una marca de «necesita
+intervención».
+
+**Se ratificó expresamente porque contradice una razón que el owner había escrito**, en `B/02`
+§2.2: *«si una suscripción necesita intervención humana, la persona tiene que poder contratar de
+nuevo sin esperar a que alguien resuelva un caso»*. Por eso el estado había quedado **fuera de los
+vivos a propósito**.
+
+**La intención era buena; lo que produjo, no.** Al no verlo el candado, se abrieron **dos críticos
+a la vez**: `F-8B1-002` —el preapproval sigue vivo y habilita una segunda suscripción, **dos
+cobros**— y `F-8B2-002` —**un estado del que no se sale**, sin destino legal una vez que el cliente
+recontrató—.
+
+**Y `R1` encontró la causa de fondo**: escribir `RECONCILIATION_REQUIRED` **en la columna de
+estado borra el estado real**. Eso obliga a `S15` a adivinar a dónde volver y **convierte una
+alerta en una decisión destructiva automática**, que es lo que el §22.1 prohíbe.
+
+**Por qué la marca no contradice la intención original sino que la cumple mejor**: la razón era
+*«que la persona no espere a que alguien resuelva un caso»*. Con la marca **no espera nada: su
+suscripción sigue en su estado real y funcionando**. La marca es para el operador, no para el
+cliente. La alternativa —dejarlo estado y **meterlo** en los vivos— cierra el doble cobro pero **le
+cobra al cliente la espera**, que es exactamente lo que la razón quería evitar.
+
+- **Costo**: medio — es el cambio que más texto toca de todo `R1`.
+- **Dónde se aplica**: `B/02` §2.2, `B/03` §3.1 y §3.2, `B/09` §3, `NUCLEO/03`.
+- ⚠️ **Candidata a `DEC-` propia**: revisa una razón registrada del owner.
+
+---
+
+## D-12 · La marca NO congela la sucesión desde `CANCEL_SCHEDULED` — `R1` #3
+
+**Decidido: la salida (a).** Una fila marcada **sí puede suceder** cuando está en
+`CANCEL_SCHEDULED`.
+
+**El caso**: alguien programó su baja —sigue con servicio hasta que termine el período que pagó—,
+tiene una **marca** puesta (`D-11`), y quiere volver antes del vencimiento. Con la marca frenando
+la sucesión **no puede**, y se queda afuera sin haberlo elegido. Es el par abierto
+`CANCEL_SCHEDULED` × `C9` del dominio de `R1`.
+
+**Por qué la excepción es segura, y es por medición y no por criterio**: en `CANCEL_SCHEDULED` **el
+preapproval ya está cancelado**, así que **no puede haber doble cobro**. El peligro que la marca
+existe para prevenir **no está presente en ese estado**. No es *«hagamos una excepción porque el
+caso es molesto»*: es que **el mecanismo del daño no existe ahí**.
+
+**Por qué no la (b)** —congelar igual y avisar a `SUPER_ADMIN` con plazo—: convierte un problema
+técnico en uno operativo y suma a una persona mirando avisos **para evitar algo que en ese estado
+no puede pasar**. Y si nadie mira el aviso a tiempo, el cliente pierde el servicio igual, sólo que
+ahora por culpa nuestra.
+
+- **Es el único lugar donde la marca admite una excepción demostrablemente segura.**
+- **Costo**: bajo. **Dónde se aplica**: `B/03` §3.3 y el §2 de
+  [`05-R1-resuelto.md`](./05-R1-resuelto.md).
