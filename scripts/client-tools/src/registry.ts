@@ -190,6 +190,11 @@ export const COMMANDS: readonly CommandEntry[] = [
         name: 'engram',
         summary: 'Acceso seguro y descubrible a la memoria Engram',
         load: async () => (await import('./commands/engram/command.ts')).engramCommand
+    },
+    {
+        name: 'gentle-status',
+        summary: 'Estado read-only de Gentle-AI, review y telemetría',
+        load: async () => (await import('./commands/gentle-status/command.ts')).gentleStatusCommand
     }
 ];
 
