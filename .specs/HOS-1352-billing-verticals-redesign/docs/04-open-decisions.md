@@ -460,13 +460,37 @@ Y dos que estaban dadas por imposibles y no lo eran:
 
 ---
 
+## La que el capítulo 21 declaró abierta y nunca llegó acá — cerrada el 2026-09-19
+
+> **Esta fila se agrega tarde, y el motivo importa.** El capítulo 21 §3.3 decía que la decisión
+> *«queda declarada como decisión del owner en `04-open-decisions.md`»* — **y nunca se escribió
+> acá**. La encontró una auditoría del 2026-09-19 que barrió todos los capítulos buscando
+> declaraciones de este tipo y verificó cada una contra este archivo. **Fue la única.**
+
+| ID | Pregunta | Estado |
+|---|---|---|
+| `OD-MIG-01` | ¿Qué pasa con quien se suscriba **mientras dura el rediseño**? | ✅ **CERRADA por `DEC-MIG-002`** (2026-09-19): se siguen tomando altas en el sistema actual y se transcriben a mano al terminar, como las cinco de `DEC-MIG-001`. El owner declara que van a ser muy pocas |
+
+**Lo que el barrido verificó, para que no haya que repetirlo**: las **50** decisiones citadas en
+cualquier capítulo de las dos épicas **existen todas** en `01-decision-log.md` (comparación de
+conjuntos, no a ojo), y ningún otro capítulo remite a este archivo para declarar algo abierto.
+
+> ⚠️ **Un conteo que quedó sin verificar**: el índice del núcleo dice **72 huecos técnicos** y dos
+> extracciones distintas dieron 71 y 88 — la primera se pierde los que se nombran en prosa, la
+> segunda cuenta `DEC-SUB-010` como `EC-SUB-010`. **No se corrigió el 72**, porque la diferencia
+> está dentro del ruido del método y este programa ya se comió once falsos positivos por
+> «verificar» con una regex frágil. Queda anotado como no verificado, no como error.
+
+---
+
 ## Lo que le queda al owner
 
 | Qué | Para qué |
 |---|---|
 | ⚠️ **Un error VIVO en producción, encontrado de paso** — ahora con destino: `DEC-CONC-002` lo convierte en **el detector de huérfanas**, así que al arreglarlo **no debe silenciarse** sino convertirse en el disparador de la re-vinculación | Los webhooks `subscription_authorized_payment` / `invoice.updated` de al menos dos preapprovals (`74eea70d…` y `7a9e6a99…`) fallan con `SubscriptionNotResolvedError` (HOS-276), la API responde **`500`** y los encola para reintentar hasta 5 veces. **Alcanza a suscripciones reales, no sólo a las de prueba**, y es **anterior a esta sesión** (aparece disparado por el cron `webhook-retry`). Además, `invoice.updated` cae en `DEAD-LETTER: unrecognized MercadoPago event type`. **Queda registrado y NO se tocó**: el §4 prohíbe tocar código productivo, y es justo lo que el rediseño tiene que resolver de raíz |
 | 📬 **`EX-3`: mirá tu casilla** | El 2026-09-15 22:38 se creó en producción un preapproval `pending` con **tu** dirección como pagador, y se canceló 45 s después. Si Mercado Pago te mandó algún correo por eso —por la suscripción pendiente o por su cancelación—, **ése es el dato que `EX-3` necesita** y es la única vía que quedó viva: en sandbox la casilla del comprador de prueba no existe |
-| Autorizar (o no) lo que **sigue** necesitando una tarjeta real | `EX-4` (cambiar el ciclo), `EX-12` (reusar un token), `UP-*`, `DW-*`, `PS-*`: exigen una suscripción **autorizada**, y autorizar en producción exige una tarjeta real y un cobro real. Hoy están medidas sólo en sandbox |
+| ~~Autorizar (o no) lo que **sigue** necesitando una tarjeta real~~ ✅ **AUTORIZADO el 2026-09-19** | `EX-4` (cambiar el ciclo), `EX-12` (reusar un token), `UP-*`, `DW-*`, `PS-*`: exigen una suscripción **autorizada**, y autorizar en producción exige una tarjeta real y un cobro real. Hoy están medidas sólo en sandbox. **El owner autorizó medir con tarjeta real.** ⚠️ Pendiente de decidir **cuándo**: son cobros reales sobre Mercado Pago, y si la PRUEBA 0 vuelve negativa el proveedor probablemente sale y esas mediciones se tiran |
+| **La PRUEBA 0 quedó con un solo canal** | El formulario comercial **se envió el 2026-09-19**. El centro de soporte técnico **no da acceso a una persona** —deriva a un bot— así que el **criterio** de elegibilidad y `R-MP-01` se quedaron sin vía. Registrado en [`10-evaluacion-de-proveedor.md`](./10-evaluacion-de-proveedor.md) §5.0.1 |
 
 ---
 
@@ -484,7 +508,8 @@ owner con su costo anotado.
 | `DEC-TRIAL-003` — Partner con el trial en cero | Si alguna vez se pone en distinto de cero: hay que declarar su evento de activación (§10.4) |
 | `DEC-PROMO-002` — scope "futuras" sin restricción | **Al crear cada vertical nueva.** Hay que listar qué concesiones la alcanzan automáticamente, con su costo estimado |
 | `DEC-GRANT-002` — cortesía sólo por `SUPER_ADMIN` | Si aparece que se comparte la cuenta de `SUPER_ADMIN` para compensar clientes. Ese síntoma pide un permiso acotado, no una cuenta compartida |
-| `DEC-LEGAL-001` — comprobante no fiscal | **Sin disparador agendado, por decisión explícita.** El riesgo impositivo crece con cada cobro y nada va a avisar: depende de que alguien lo recuerde |
+| `DEC-LEGAL-001` — comprobante no fiscal | **Sin disparador agendado, por decisión explícita.** El riesgo impositivo crece con cada cobro y nada va a avisar: depende de que alguien lo recuerde. **Agregada como séptima pregunta del pliego legal** ([`13-pliego-consulta-legal.md`](./13-pliego-consulta-legal.md) §4) justamente por eso |
+| `DEC-MIG-002` — seguir tomando altas durante el rediseño | **Si el ritmo de altas se acelera.** Es barata porque son pocas —hoy la cohorte a transcribir son 5— y cada alta nueva suma una. La premisa a vigilar no es la decisión: es el volumen |
 
 ---
 
