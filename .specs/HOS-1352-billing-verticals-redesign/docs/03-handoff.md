@@ -45,7 +45,106 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-19 — FASE 8 cerrada, FASE 9 abierta por su requisito de entrada
+## Última actualización: 2026-09-19, tarde — las decisiones aplicadas, el registro cerrado
+
+### Dónde estamos, en una línea
+
+**Los seis racimos están resueltos o declarados incerrables, las 37 decisiones del owner están
+contestadas, y las 33 que tocaban el diseño están APLICADAS a los capítulos.** Lo que sigue es la
+**FASE 8-bis, entera**, sobre el diseño ya corregido.
+
+### Las fases
+
+`0` ✅ · `1A` ✅ 106 hallazgos · `1B` ✅ 132 · `1C` 🟡 90 filas / 8 `UNKNOWN` ·
+`1C-bis` 🟡 PRUEBA 0 comercial enviada, canal técnico cerrado · `2` 🟡 21 de 22 capítulos, **falta
+el 13 (Pagos)** · `3` y `4` ✅ · `5` 🟡 **gate ABIERTO** (`DEC-METH-007`) · `6`, `7` ⬜ ·
+**`8` ✅** · **`9` 🟡 ← ACÁ, pasos 1 y 2 hechos** · `10` ⬜
+
+### El orden del ciclo, que es lo que gobierna todo lo que sigue
+
+`DEC-METH-006` (`D-30` §3) fija seis pasos y **no se reordenan**:
+
+| # | paso | estado |
+|---|---|---|
+| 1 | **aplicar las decisiones a los capítulos** | ✅ 2026-09-19 |
+| 2 | las seis `DEC-` + decision log, handoff, worklog | ✅ 2026-09-19 |
+| 3 | **FASE 8-bis, ENTERA**, sobre el diseño ya corregido | ⬜ **← EL PRÓXIMO PASO** |
+| 4 | ¿críticos nuevos? → 9-bis → **volver al paso 1** | — |
+| 5 | ¿sin críticos? → salidas 3 y 4, **una sola vez** | ⬜ |
+| 6 | FASE 10 | ⬜ |
+
+**El ciclo corta cuando una pasada NO produce ningún `CRITICA` nuevo.** No *«ningún hallazgo»*.
+
+**La 8-bis corre ENTERA, no sólo sobre lo que cambió**: la causa raíz es que las contradicciones
+viven **entre capítulos**, así que atacar sólo los textos corregidos la volvería ciega a lo que el
+ciclo busca. Lo que la abarata es que **arranca con los 327 casos ya enumerados**
+([`15-fase-9/00-dominios-de-los-racimos.md`](./15-fase-9/00-dominios-de-los-racimos.md)): recorre
+dominios en vez de descubrirlos.
+
+### Qué quedó aplicado, y en qué commits
+
+Siete commits sobre `spec/HOS-1352-billing-verticals-redesign` (PR #3360), de `4f34afa1a` a
+`8bf004a6d`:
+
+| paquete | decisiones | dónde |
+|---|---|---|
+| **A · el contrato**, atómico por `DEC-ARCH-006` | `D-01` `D-04` `D-05` `D-06` `D-07` `D-20` | `12-contrato…`, `V/17`, `V/15`, `B/02` |
+| **B · `R1`** | `D-02` `D-03` `D-11` `D-12` `D-14` `D-15` `D-16` `D-17` | 15 archivos |
+| **C · `R3`** | `D-18` `D-19` `D-21` `D-22` `D-23` | `V/02`, `V/03`, `V/17`, `V/20`, núcleo |
+| **D · `R2` resto** | `D-08` `D-09` `D-10` | `V/02`, `B/02` |
+| **E · `R5`** | `D-24` `D-25` `D-26` | los dos `21-migracion.md` |
+| **F · `R6`** | `D-32` `D-33` | `16-fase-7-del-paraguas.md`, nuevo |
+
+**Los cambios de forma, no sólo de texto** — es lo que la 8-bis tiene que volver a atacar:
+
+- el contrato tiene **tres clases de fuente y seis tipos**; `cubierto` cuenta sólo `TÍTULO`;
+  `hasta` pasó de dos valores a cuatro;
+- el candado del §11 son **dos claves** partidas por `sucede_a`, y `RECONCILIATION_REQUIRED`
+  **dejó de ser un estado**; entró `CHARGE_DECLINED` y siguen siendo nueve;
+- **`T1` puede disparar**: su condición vieja decía lo mismo que su estado de origen y lo negaba;
+- los dos `21-migracion.md` describen que **no se migra**;
+- **cuatro guards nuevos** (`G-R1-A`, `G-R1-B`, `G-R3-B`, `G-R3-C`) y `G-R3` ampliado a las dos
+  versiones no vendibles de cada vertical.
+
+### Las seis `DEC-` del paso 2
+
+`DEC-GRANT-005` (el grant anclado al plan, con trinquete) · `DEC-CONC-003` (la marca — **revisa una
+razón escrita del owner**) · `DEC-SUB-011` (el invariante 8 cuenta **compromisos, no filas** —
+apartamiento del PDR) · `DEC-MIG-003` (no se migra — **supersede en parte a `DEC-MIG-001`**) ·
+`DEC-METH-006` (el ciclo 8 ↔ 9 — apartamiento del método) · `DEC-METH-007` (el gate de FASE 5).
+
+El log pasa de **54 a 60** decisiones y de **5 a 7** apartamientos declarados del PDR. Recontado
+con `rg -c "^### DEC-"` menos la plantilla, no a mano.
+
+### Lo que NO se aplicó, con su causa
+
+| qué | por qué |
+|---|---|
+| las fichas de las dos `descomposicion.md` (`D-07` → `V4`, `D-10` → una unidad por épica) | es la **salida 3**, o sea el paso 5: se propaga **una sola vez**, después de la 8-bis |
+| el `CLAUDE.md` del repo y los workflows (`D-29`, `DEC-CI-001`) | son archivos del repo, y su aplicación **la decide el owner** (`DEC-CI-001` impl. 1) |
+| `D-27` (la automatización de Linear) y `D-28` (el arranque sin la pasarela) | no tocan el repo |
+
+### El residuo, que es lo único que el paso 1 dejó abierto
+
+[`15-fase-9/08-residuos-del-paso-1.md`](./15-fase-9/08-residuos-del-paso-1.md), **`RES-01`**:
+`D-04` afirma cerrar `F-8A1-005` y cierra **la mitad `Turista Free`, no la mitad `Guest`** — que se
+cae en el **paso 1** de `V/17` §1.2 y nunca llega al 5. Resolverlo deja **dos** de los nueve pasos
+incapaces de rechazar a nadie y arrastra `A-ENT-02`, que es del capítulo 15. **Decidido el
+2026-09-19: queda para la 8-bis.**
+
+### Pendientes del owner, que el agente no puede hacer
+
+1. **Las 12 etiquetas `status-blocked` de Linear**: `DEC-CI-001` y `D-28` cambiaron qué significa
+   *«bloqueada»* — ya no es *«no se puede empezar»* sino *«su adaptador real espera»*.
+2. **La automatización de Linear «On PR merge → Done»**: va con el trabajo de dev experience que
+   el owner tiene en Codex. Mientras tanto **hay que revertir a mano** (`D-27`).
+3. **La respuesta de Mercado Pago a la PRUEBA 0 / el KYC de Mobbex.** `D-28`: **si el 2026-09-23 no
+   hay respuesta, se arranca a desarrollar contra el proveedor falso igual.**
+4. **`develop`** no existe y va a crearse, pero **no en este trabajo** (`DEC-CI-002`).
+
+---
+
+## Histórico: 2026-09-19, mañana — FASE 8 cerrada, FASE 9 abierta por su requisito de entrada
 
 ### Dónde estamos, en una línea
 
