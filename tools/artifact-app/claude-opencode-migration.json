@@ -9,14 +9,14 @@
         "audience": "team"
     },
     "version": {
-        "id": "ver_claude_opencode_migration_14",
-        "number": 14,
+        "id": "ver_claude_opencode_migration_15",
+        "number": 15,
         "createdAt": "2026-09-19T00:00:00.000Z",
         "author": "opencode",
-        "reason": "bootstrap read-only endurecido y versionado",
+        "reason": "separar bootstrap genérico de adaptadores de proyecto",
         "sourceHash": "sha256:initial-migration-checklist",
         "rendererVersion": "artifact-app/0.1",
-        "basedOnVersion": "ver_claude_opencode_migration_13"
+        "basedOnVersion": "ver_claude_opencode_migration_14"
     },
     "data": {
         "sections": [
@@ -710,7 +710,7 @@
                             "title": "Crear bootstrap reproducible",
                             "category": "Adopción progresiva",
                             "description": "Instalar/configurar en una PC nueva con manifest, backups, dry-run y rollback.",
-                            "notes": "Bootstrap read-only versionado en scripts/bootstrap/opencode-gentle-bootstrap.sh e integrado en staging (20c4c1034). Acepta --plan/--dry-run/--verify/--backup-dir y rechaza --restore hasta implementar la etapa apply/restore. No instala, no borra, no restaura Engram ni lee valores secretos.",
+                            "notes": "La base ahora se llama scripts/bootstrap/ai-dev-workstation-bootstrap.sh porque no es exclusiva de OpenCode/Gentle-AI. La arquitectura acordada separa un instalador genérico de workstation (agentes CLI, Engram, configuración global, skills, permisos, guardrails, backups y manifests) de adaptadores por proyecto. Hospeda tendrá su propio adaptador para Hops, checkout, envs, DB/template y verificaciones. La etapa apply/restore sigue pendiente.",
                             "done": false
                         },
                         {

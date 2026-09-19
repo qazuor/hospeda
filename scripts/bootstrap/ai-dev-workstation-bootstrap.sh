@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Safe bootstrap planner/verifier for OpenCode + Gentle-AI + Engram.
+# Safe bootstrap planner/verifier for an AI-assisted development workstation.
 # This script is read-only. It never logs in, copies secrets, removes
 # installations, restores Engram, mutates Git/Linear, or installs packages.
 set -euo pipefail
 
 usage() {
   cat <<'HELP'
-Usage: opencode-gentle-bootstrap.sh [--plan|--dry-run|--verify] [options]
+Usage: ai-dev-workstation-bootstrap.sh [--plan|--dry-run|--verify] [options]
 
   --plan    print the reproducible installation plan (default)
   --dry-run alias for --plan; never writes or installs anything
@@ -55,7 +55,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 if [ "$mode" = plan ]; then
   cat <<PLAN
-Hospeda OpenCode + Gentle-AI bootstrap (read-only plan)
+AI development workstation bootstrap (read-only plan)
 
 1. Back up OpenCode, Gentle-AI, Engram, Claude, CodeGraph and worktrees.
 2. Verify Ubuntu/architecture and required base tools.
@@ -66,7 +66,7 @@ Hospeda OpenCode + Gentle-AI bootstrap (read-only plan)
 7. Restore Engram only after backup and compatibility approval.
 8. Print manual login/plugin/memory decisions; never automate them.
 
-Repository adapter: $repo_root
+Current repository adapter candidate: $repo_root
 Future backup destination: ${backup_dir:-'(not specified; no directory created)'}
 Apply/install mode: intentionally unavailable
 PLAN

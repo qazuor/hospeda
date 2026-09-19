@@ -2389,3 +2389,18 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   herramientas/pines actuales.
 - El item de bootstrap sigue pendiente hasta implementar y probar la etapa de
   aplicación idempotente en un entorno descartable.
+
+## Gate 70 · Separación del bootstrap genérico y adaptadores de proyecto
+
+- El nombre dejó de ser específico de OpenCode/Gentle-AI: el script base ahora se
+  llama `scripts/bootstrap/ai-dev-workstation-bootstrap.sh`.
+- La arquitectura acordada separa un instalador genérico de workstation (runtimes,
+  agentes CLI, Engram, configuración global, skills, permisos, guardrails,
+  backups y manifests) de adaptadores por proyecto.
+- Hospeda tendrá un adaptador propio para checkout operativo, Hops, envs,
+  PostgreSQL/Redis, template DB, skills locales y verificaciones del monorepo.
+- El descubrimiento se basará en un registro local de proyectos y/o un manifiesto
+  versionado dentro del repositorio. La detección sólo propone o verifica; no
+  aplica cambios específicos sin selección explícita.
+- El script sigue siendo sólo planificador/verificador. No se implementó todavía
+  la etapa `apply`.
