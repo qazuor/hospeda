@@ -254,8 +254,22 @@ todo capítulo.
 **Se escribe el criterio ahora y la enumeración se arma durante la implementación**, en tres
 partes:
 
-1. **El criterio**: una operación es de dominio —y por lo tanto recorre los nueve pasos— si
-   **escribe estado del negocio y es auditable**. Una lectura que no muta nada no lo es.
+1. **El criterio**, y son **dos preguntas distintas** que antes venían pegadas:
+   - **¿corre la resolución?** **Toda operación la corre**, escriba o no. No hay operación exenta.
+   - **¿pasa por el paso 5?** Sólo si **escribe estado del negocio y es auditable**. Una lectura
+     que no muta nada **no pasa por el 5** — y **sí por los otros ocho**.
+
+   > ⚠️ **Los nueve pasos no vienen en bloque, y decir que una lectura «no es de dominio» la
+   > sacaba de los nueve.** Con eso **ninguna lectura tenía autorización**: ni el paso 4
+   > —existencia, estado y **dueño**—, ni el 3, ni el 2. Leer el borrador de otra persona, su «Mi
+   > Cuenta» o los datos que el §48 le muestra al admin **no atravesaba ningún control declarado**.
+   > Es la exención por superficie que el §5 descarta por escrito, entrando **con forma de
+   > criterio** — que es peor, porque no se ve.
+
+   **Por qué una lectura no pasa por el paso 5, y sí por el 4**: el 5 pregunta si hay de dónde
+   resolver capacidades **comerciales**, y leer no consume ninguna. El 4 pregunta **si el recurso
+   es del sujeto**, que es exactamente lo que una lectura tiene que responder. Son preguntas
+   distintas y sacarlas juntas fue el error.
 2. **La enumeración** se arma sola a medida que se construyen las superficies. Enumerar operaciones
    **contra el diseño en papel produce una lista que la implementación va a contradecir**: las
    operaciones aparecen al construir las superficies, no antes, así que una lista escrita hoy nace

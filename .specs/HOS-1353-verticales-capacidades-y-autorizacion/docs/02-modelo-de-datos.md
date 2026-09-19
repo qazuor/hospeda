@@ -67,6 +67,15 @@ dos épicas venía a impedir.
 **La versión es inmutable**, por `DEC-ARCH-001` tal cual: *«se versiona lo que tiene efecto»*.
 Cambiar de 30 a 40 fotos tiene efecto sobre lo que el cliente puede hacer, así que crea versión.
 
+**Y la instancia la ancla de verdad, que hasta ahora no podía.** *«La instancia ancla su versión»*
+estaba escrito en las dos épicas y **ninguna tabla lo permitía**: el único camino a `addon_version`
+era `addon_product.version_id`, que es del **producto**. Re-apuntarlo —que es cómo se publica una
+versión nueva— **movía todas las instancias vivas a la vez**, así que quien compró *«+30 fotos»*
+pasaba a tener lo que dijera la versión nueva, **sin comprar nada y sin que nadie se lo avisara**.
+El anclaje vive en `addon_instance` (`B/02` §2.4), igual que la suscripción ancla la suya, y **la
+referencia que el contrato transporta para una fuente `ADDON` es la de la INSTANCIA, nunca la del
+producto**.
+
 **Y los efectos son plurales y con valor, sin inventar una segunda forma de declarar capacidades**:
 `addon_version_entitlement` y `addon_version_limit` son el espejo exacto de las dos tablas del
 plan. El glosario decía *«**efectos**»* en plural y el modelo instanciaba `capability` en singular;
@@ -239,6 +248,20 @@ Invalidan la entrada de un `user + vertical`:
 | se activa o vence un addon | ídem |
 | se publica una versión nueva de un plan al que hay suscripciones ancladas | cambia lo que esa versión otorga |
 | cambia un override del plan de trial | la derivación deja de dar lo mismo |
+| **se publica una versión nueva de la de PISO o de la de PRE-TRIAL** | las otorga **todo el mundo**, y no cuelgan de ninguna suscripción: ninguna fila de arriba las alcanza |
+| **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción |
+| **se publica una versión nueva de un `addon_version`** | es lo que otorga el addon, y desde el corte por campo ya no vive en billing |
+
+**Las cuatro últimas son de la FASE 9 y ninguna entraba por las siete de arriba.** La lista se
+escribió cuando toda fuente colgaba de una suscripción o de un trial, y **las cuatro nuevas no
+cuelgan de ninguno**. El caso más caro está medido contra el propio capítulo, que declara que un
+error acá *«es de seguridad y no de rendimiento»*: **si a la versión de piso se le sembró una clave
+comercial —el escenario exacto que `G-R3` dice vigilar—, retirarla no invalidaba nada** y toda la
+plataforma la seguía recibiendo desde el caché.
+
+**La regla detrás, para que no vuelva a faltar una**: si una fuente puede cambiar **lo que otorga**
+sin que cambie **ninguna fila del `user + vertical`**, necesita su propia entrada. Las siete
+originales cubrían el caso contrario.
 
 **Dos reglas sobre la invalidación:**
 

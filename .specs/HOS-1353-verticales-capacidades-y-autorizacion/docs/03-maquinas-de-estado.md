@@ -41,6 +41,7 @@ identidad detectable (§10.2, `DEC-TRIAL-004`).
 | T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | no hay suscripción autorizada | publicación → `UNPUBLISHED_BY_BILLING`; arranca la campaña de recuperación y el reloj de retención |
 | T4 | `TRIAL_ACTIVE` | promo de extensión o cortesía | `TRIAL_ACTIVE` | sólo durante `TRIAL_ACTIVE` (§32) | corre la fecha de fin; **re-agenda** la campaña previa |
 | T5 | `TRIAL_EXPIRED` | se autoriza una suscripción | `TRIAL_CONVERTED` | — | corta la campaña de recuperación; se restituye la publicación |
+| T6 | `PRE_TRIAL` | el evento de activación declarado por la vertical | `TRIAL_CONVERTED` | **ya hay una suscripción viva** para ese `user + vertical` | **crea la fila de `trial`, consumida**, sin reloj y sin campaña |
 
 **Qué contesta el contrato de cobertura en cada estado.** El trial es **fuente viva en
 `PRE_TRIAL` y en `TRIAL_ACTIVE`, y en ningún otro estado**; lo que cambia entre los dos no es *si
@@ -77,6 +78,21 @@ pérdida. Quien ya gastó su trial tiene su respuesta al paso 5 por otro lado �
   ficha y sin trial (`E-TRIAL-04`, capítulo 11 (épica de verticales)).
 - **La extensión sólo entra por T4**, o sea sólo durante `TRIAL_ACTIVE`. El §32 es terminal:
   *«Solo válido durante `TRIAL_ACTIVE`. Nunca después. Backend debe rechazar.»*
+- **`T6` es `T1` para quien ya paga, y sin él el trial queda colgado.** Alguien puede contratar
+  **antes** de publicar: el día que publica, `T1` dispararía sobre alguien que ya tiene
+  suscripción y lo dejaría en `TRIAL_ACTIVE` **sin salida alcanzable** — `T3` no puede vencerlo
+  porque exige que no haya suscripción autorizada, y `T2` espera **un evento que ya ocurrió**.
+  `T6` cierra el caso escribiendo la fila **ya consumida**: el título es la suscripción, que es
+  exactamente lo que `TRIAL_CONVERTED` significa.
+
+  **Y consumirlo es lo correcto, no un castigo**: la fila es única de por vida, así que sin
+  escribirla esa persona **se guardaría un trial para el día que cancele** — un trial gratis para
+  quien ya fue cliente, que es la puerta que el §10.2 existe para cerrar. Lo que no pierde es
+  nada: no necesita probar lo que ya está pagando.
+
+  **La otra mitad de este caso la cerró el contrato**: quien contrata y **no** publica conserva su
+  fuente de `PRE_TRIAL` mientras paga, y antes eso lo seguía cubriendo el día que cancelaba. Desde
+  que **un reloj que no arrancó no es un título** (`12-contrato…` §2.4), esa fuente ya no cubre.
 - **`T1` crea la fila, y por eso `PRE_TRIAL` no la tiene.** La condición vieja —*«no hay trial
   previo para ese `user + vertical`»*— decía lo mismo que su estado de origen **y lo negaba**: con
   fila en `PRE_TRIAL`, *«no hay trial previo»* es falso siempre, y `T1` **no dispara nunca**. Se
@@ -100,11 +116,26 @@ billing mueve varias publicaciones a la vez.
 | # | desde | evento | hacia | nota |
 |---|---|---|---|---|
 | PB1 | `DRAFT` | el dueño publica | `PUBLISHED` | **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha |
-| PB2 | `PUBLISHED` | se pierde la cobertura | `UNPUBLISHED_BY_BILLING` | trial vencido (T3), suspensión (S6) (épica de billing), cancelación consumada (S12) (épica de billing), o excedente tras un downgrade (épica de billing) |
-| PB3 | `UNPUBLISHED_BY_BILLING` | se recupera la cobertura | `PUBLISHED` | S5, S7, T5 |
+| PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo |
+| PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero** | `PUBLISHED` | y el cupo alcanza |
 | PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de inactividad | `ARCHIVED` | sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) |
 | PB5 | `DRAFT` | N meses sin actividad | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración |
 | PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2) |
+
+**`PB2` y `PB3` se disparan por el CAMBIO de `cubierto`, no por una lista de transiciones**, y ése
+es el arreglo: las dos listas estaban **congeladas** y se quedaron cortas apenas el diseño se
+movió. `PB2` enumeraba cuatro causas y **no conocía `S16`** —el alta cuyo primer cobro se
+rechaza—; `PB3` enumeraba tres y **no conocía `S2`**, así que **el que recontrataba después de
+cancelar pagaba y su ficha no volvía nunca** — y tampoco podía sacarla a mano, porque `PB1` sale
+sólo de `DRAFT`.
+
+**El contrato ya emite el hecho** —*«la cobertura de (user, vertical) cambió»* (`12-contrato…`
+§3)— así que atarse a él **no agrega un mecanismo: usa el que estaba**. Una lista de transiciones
+en una épica, mantenida a mano contra los cambios de la otra, es el punto de falla favorito de un
+arreglo hecho por racimos.
+
+**Y el excedente queda como la única causa enumerada**, porque es la que **no** cambia `cubierto`:
+la persona sigue cubierta y lo que no le alcanza es el cupo. Por eso `PB3` pide las dos cosas.
 
 **`UNPUBLISHED_BY_BILLING` es un estado distinto de `DRAFT` a propósito.** Si billing bajara la
 ficha a `DRAFT`, al recuperar la cobertura no habría forma de saber cuáles republicar sin
