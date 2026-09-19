@@ -748,11 +748,20 @@ one-off**: the next program reuses it without editing workflows again.
 
 | runs on `epic/**` | does NOT run on `epic/**` |
 |---|---|
-| `ci.yml` (on **both** `push` and `pull_request`) | `e2e-pr.yml` — too slow per PR; use `workflow_dispatch`, and it is **mandatory before the final PR to `staging`** |
-| `validate-pr-title.yml` | `lighthouse.yml`, `a11y-sweep.yml` — they measure deployed pages; the umbrella deploys nothing |
-| `validate-docs.yml` | `whats-new-gate.yml` — `main` by design |
-| `codeql.yml` | **`smoke-gate-sync.yml`** — see below |
+| `ci.yml` (on **both** `push` and `pull_request`) | `lighthouse.yml`, `a11y-sweep.yml` — they measure deployed pages; the umbrella deploys nothing |
+| `e2e-pr.yml` — only the **P0** suite, mocked externals, 25 min cap | `whats-new-gate.yml` — `main` by design |
+| `validate-pr-title.yml` | **`smoke-gate-sync.yml`** — see below |
+| `validate-docs.yml` | |
+| `codeql.yml` | |
 | `docs.yml` (already runs; it filters by path, not by branch) | |
+
+⚠️ **`e2e-pr.yml` is there to protect the billing flow while the program replaces it — not to catch
+per-vertical duplication.** A `x === 'gastronomy' ? A : B` that answers wrong for `accommodation`
+and `partner` **passes every e2e** if no test exercises those two verticals; that is `HOS-1079`,
+eleven sites, none caught at runtime. Duplication is caught by the **static** guards inside
+`ci.yml`. And since today's e2e exercise the billing this program deletes, **a unit that replaces a
+billing flow adapts its e2e in the same PR** — otherwise the suite goes chronically red and stops
+being read.
 
 ⚠️ **`smoke-gate-sync.yml` must never run on `epic/**`.** It moves Linear issues on merge. Sub-epic
 PRs carry `[HOS-NNNN]` in the title (because `validate-pr-title` requires it), so running it there
