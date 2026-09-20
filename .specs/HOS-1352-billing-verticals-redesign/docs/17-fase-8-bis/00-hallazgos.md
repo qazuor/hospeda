@@ -75,6 +75,11 @@ de qué depende. **El agente no elige por su cuenta.**
 >
 > Dos llevan condición: el **16** y el **18** se arreglan **con opciones a discutir antes de
 > escribir**, y el **7** vuelve al owner cuando su decisión de fondo esté planteada.
+>
+> **Y los 23 quedaron APLICADOS el 2026-09-20**, en seis commits (`a720519e1` → `e6f4ff3a7`):
+> el contrato, verticales, billing y el corte. Dos decisiones cambiaron al escribirlas y están
+> registradas donde corresponde: el **22** se resolvió **sin siembra** (se despublica y se llama), y
+> el **7** tomó `DEC-ARCH-008`.
 
 ### Familia 1 · La cobertura y el paso 5 — 7 defectos
 

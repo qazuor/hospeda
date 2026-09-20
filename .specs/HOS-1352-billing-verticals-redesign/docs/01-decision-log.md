@@ -3,7 +3,7 @@ title: Decision Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 ---
 
@@ -2499,6 +2499,23 @@ Cada entrada lleva, según §3.4:
   trabajo que iba a escribirla **no se crea**.
 - **Lo único que sobrevive**: el **rollback del PROGRAMA**, que es otra cosa y vive en la FASE 7 del
   paraguas (ver `16-fase-7-del-paraguas.md`).
+- **⚠️ Precisado el 2026-09-20, tras la FASE 8-bis.** La frase *«el sistema nuevo no hereda una sola
+  fila»* quedó **literalmente falsa en un punto**, y conviene la precisión exacta:
+  > **Ninguna fila VIVA del sistema viejo pasa al nuevo.** La única que se escribe es una lápida:
+  > el compromiso cancelado, en `CANCELLED` y con su vínculo al proveedor (`B/21` §2.5).
+  **Sin ella, un cobro viejo que llega después del corte entra como un preapproval desconocido**, y
+  el único camino automático para un desconocido es re-vincularlo — con la suscripción nueva de esa
+  misma persona como candidato más plausible. **Pagaba dos veces y el sistema registraba una.** La
+  regla estaba escrita desde `R5` y **se la llevó puesta esta misma decisión**, aunque no migra
+  nada: sólo conserva el rastro de lo que se cancela.
+- **Y cómo amanece la población existente, que esta decisión no había contestado.** Sin filas, todo
+  el mundo queda en `PRE_TRIAL`; como un reloj que no arrancó no da cobertura, **las fichas
+  publicadas de Alojamiento se despublican la mañana del corte**. **Se acepta**: se avisa antes, se
+  los llama, contratan, y la ficha vuelve sola. **No se les siembra nada** — hay que llamarlos
+  igual, así que una siembra no ahorra ninguna conversación y sí agrega filas.
+- **El orden del corte queda declarado** en `16-fase-7-del-paraguas.md` §4: cancelar en el
+  proveedor, **verificar releyendo por id**, desplegar, y recién entonces escribir las lápidas. El
+  segundo paso es el gate: si alguno no se pudo cancelar, el corte no avanza.
 - **⚠️ Condición de caducidad**: `DEC-MIG-002` decidió **seguir tomando altas durante el rediseño**,
   así que la cartera crece. Con ocho filas *«no migrar»* son tres llamadas; **el umbral medido está
   en unas veinte**, y arriba de eso deja de ser viable. El aviso que el owner ya se comprometió a
@@ -2587,6 +2604,37 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ARCH-008 — La dirección de un cambio de plan la decide VERTICALES, y billing recibe un veredicto
+
+- **Fecha**: 2026-09-20 · **Estado**: ACCEPTED · **Decide**: owner
+- **Problema**: la única regla que decide **cuándo se cobra** un cambio de plan —si el monto se muta
+  hoy o al fin del ciclo— está escrita como *«la dirección se deriva del delta entre las dos
+  versiones, **no del `rank`**; si algo baja, es bajada; **cualquier baja manda**»* (`B/10` §3.5).
+  Comparar eso es **leer las dos tablas de capacidades**, que son de verticales. O sea: la regla que
+  decide **qué se le cobra a alguien y qué día** exigía que billing leyera exactamente lo que el
+  contrato prohíbe cruzar, **dos veces y por escrito**. Y la dirección inversa, declarada en la
+  FASE 9, **no incluía ese consumidor** — así que el contrato afirmaba haber enumerado un
+  acoplamiento que no enumeró.
+- **Alternativas**: (1) **la comparación la hace verticales y billing recibe un veredicto**; (2)
+  derivar la dirección del **`rank`**; (3) **billing lee las dos tablas**, con la excepción
+  declarada.
+- **Decisión**: **(1)**. La dirección inversa del contrato gana una tercera pregunta —
+  `direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA` — y **billing nunca ve valores**.
+- **Por qué no debilita la regla de la dirección inversa**, que es la objeción obvia: esa regla dice
+  que la inversa transporta *«política y estado de catálogo, nunca capacidades»*, y **un veredicto no
+  es una capacidad**. `SUBE`/`BAJA` es una propiedad de **la relación entre dos versiones**, no un
+  valor de ninguna: la misma clase de dato que `permitePausa`.
+- **Motivo de descartar (2)**: es la más barata y **el diseño ya la había rechazado por escrito**.
+  Un plan más caro puede **bajar un límite** al rediseñarse, y con el `rank` mandando **al cliente
+  se le recorta algo en silencio mientras se le cobra como mejora**. Y un plan retirado **no tiene
+  `rank` comparable**, que es justamente el único caso donde la regla hace falta.
+- **Motivo de descartar (3)**: es **el acoplamiento exacto que partir el programa en dos épicas
+  venía a impedir**, sería la primera excepción declarada al corte, y **la regla de vigilancia que
+  el propio contrato monta se dispara con ella**.
+- **Origen**: `F-8bA3-005`, y la conversación con el owner del 2026-09-20.
+
+---
+
 ### DEC-METH-008 — «Resuelto» incluye el dominio que el ARREGLO crea, y el ciclo corta con causa declarada
 
 - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
@@ -2640,9 +2688,9 @@ Cada entrada lleva, según §3.4:
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **61** |
+| Decisiones tomadas | **62** |
 | De metodología | 8 |
-| Funcionales | 53 |
+| Funcionales | 54 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |

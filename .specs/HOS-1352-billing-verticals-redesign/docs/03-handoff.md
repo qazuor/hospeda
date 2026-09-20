@@ -3,7 +3,7 @@ title: Handoff vivo
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 ---
 
@@ -45,7 +45,90 @@ status: CURRENT
 
 ---
 
-## Última actualización: 2026-09-19, noche (2) — la 9-bis en curso: 20 de 23 aplicados
+## Última actualización: 2026-09-20 — la 9-bis CERRADA, los 23 aplicados
+
+### El próximo paso exacto
+
+> **La FASE 8-bis-2, entera**, sobre el diseño que la 9-bis produjo. Es la segunda vuelta del ciclo,
+> y corre con la regla nueva de `DEC-METH-008` («el dominio del arreglo»).
+
+No hay nada pendiente del owner para arrancarla.
+
+### Dónde estamos
+
+| paso del ciclo (`DEC-METH-006`, «el ciclo 8 ↔ 9») | estado |
+|---|---|
+| 1 · aplicar las decisiones a los capítulos | ✅ 19/09 |
+| 2 · las `DEC-` + log, handoff, worklog | ✅ 19/09 |
+| 3 · **FASE 8-bis** | ✅ 19/09 — 112 hallazgos · 28 críticos · **23 defectos** |
+| 4 · **9-bis** | ✅ **20/09 — los 23 aplicados** |
+| 5 · **8-bis-2** | ⬜ **← ACÁ** |
+| 6 · ¿críticos nuevos? → 9-bis-2 · ¿sin críticos? → propagar → FASE 10 | ⬜ |
+
+### Cómo corre la 8-bis-2
+
+**Igual que la primera**: ocho vectores, tres pasadas, el núcleo a la pasada C, cada agente escribe
+un solo archivo y devuelve **sólo el índice**. Las instrucciones están en
+[`17-fase-8-bis/00-instrucciones.md`](./17-fase-8-bis/00-instrucciones.md) y **hay que actualizar
+dos cosas** antes de lanzarla:
+
+1. **La tabla de «qué cambió»** — hoy lista los 23 cambios de la FASE 9; tiene que listar **los 23
+   arreglos de la 9-bis**, que están en [`17-fase-8-bis/00-hallazgos.md`](./17-fase-8-bis/00-hallazgos.md) §3.
+2. **La regla de `DEC-METH-008`**, que la primera pasada no tenía: cada arreglo se verifica contra
+   **el dominio que él crea**, y se contesta por escrito **«¿qué premisa de OTRO arreglo estoy
+   volviendo falsa?»**. Los informes tienen que traer esas dos cosas.
+
+**Y el punto de comparación que decide si el ciclo corta**: la 8-bis dio **28 críticos**, de los
+cuales **25 de 25 en A y B los había producido la tanda anterior**. Si la 8-bis-2 vuelve a dar esa
+proporción, la regla nueva no funcionó; si baja, sí.
+
+### Lo que la 9-bis dejó escrito, por si hay que retomar sin releer los commits
+
+| paquete | defectos | commit |
+|---|---|---|
+| **el contrato** (frontera, atómico) | 1, 2, 5, 6, 7, 16 | `a720519e1` |
+| **verticales** | 3, 4, 8, 9, 10 | `2a3f47d60` |
+| **billing** | 11 a 15, 17 a 20 | `7ba3b148d` |
+| **el corte** | 21, 23 | `7c53c88ad`, `27665b53e` |
+| **el 22**, con su corrección y su cambio de rumbo | 22 | `45d8720f7`, `ec8157f8b`, `e6f4ff3a7` |
+
+**Los cambios de forma**, que es lo que la 8-bis-2 tiene que volver a atacar:
+
+- **el contrato**: *«un reloj que no arrancó no es un título»* (la clase se deriva del `tipo` **y**
+  del `hasta`); el pliegue **descarta complementos** sin título; el grant ancla **un plan por
+  vertical**; la dirección inversa gana `direcciónDeCambio`; y **el mapa completo de los nueve
+  estados** — esperar autorización **no emite fuente**.
+- **verticales**: el criterio del paso 5 eran **dos preguntas pegadas**; las cuatro fuentes nuevas
+  entran a la invalidación del caché; **`T6`** escribe el trial consumido para quien publica
+  pagando; y `PB2`/`PB3` se disparan por **el cambio de `cubierto`**, no por listas congeladas.
+- **billing**: **`S17`** cancela la predecesora y **limpia `sucede_a`** — la sucesión por fin
+  termina; la fecha guardada es **la que el proveedor confirmó** y nace posterior al vencimiento de
+  **su ventana**; `S5` no reactiva a una fila que ya sucedió; la excepción de `CANCEL_SCHEDULED`
+  **exige releer**; los **ocho pares** del espejo, enumerados; la fila marcada **sí se barre** y la
+  marca **lleva reloj**; y `S16` lee **por autorización**, no por la historia.
+- **el corte**: la **lápida** del compromiso cancelado; el **orden** —cancelar, verificar,
+  desplegar, escribir— con el paso 2 de gate; y la población existente **se despublica y se la
+  llama**, sin siembra.
+
+### Dos correcciones de registro que la 9-bis produjo
+
+1. **`DEC-MIG-003` («no se migra») quedó precisada**: *«ninguna fila VIVA pasa al nuevo»*. La única
+   que se escribe es la lápida, y su razón es que **ninguna llamada puede evitar un cobro viejo**.
+2. **«Las doce fichas del catálogo» era una inferencia, no una medición.** Lo medido son **12 filas
+   de alojamiento y 22 usuarios**; cuántas están publicadas **nunca se contó**. Se mide **el día del
+   corte**, que es cuando el número importa y el único momento en que no está vencido.
+
+### Pendientes del owner, sin cambios
+
+1. Las **12 etiquetas `status-blocked`** de Linear.
+2. La automatización de Linear **«On PR merge → Done»**.
+3. **La respuesta de Mercado Pago** — si el **2026-09-23** no hay, se arranca contra el proveedor
+   falso igual.
+4. `DEC-CI-001` y el `CLAUDE.md` del repo: **su aplicación la decide el owner**.
+
+---
+
+## Histórico: 2026-09-19, noche (2) — la 9-bis en curso: 20 de 23 aplicados
 
 ### El próximo paso exacto
 
