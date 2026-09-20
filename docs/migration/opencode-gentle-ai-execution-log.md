@@ -2914,3 +2914,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Distribución agregada actual: `tmp` 5.259 observaciones; `hospeda` 2.986; sin proyecto 1.103; `hospeda3` 108; `Asistia` 55; `new-asistia` 27; los restantes proyectos tienen 23 o menos cada uno.
 - Interpretación operativa: `tmp` y sin proyecto son lotes prioritarios de ruido/atribución; `hospeda` es el lote principal que requiere separación por checkout; `hospeda3`, worktrees y proyectos externos deben conservarse como lotes independientes hasta revisión semántica.
 - No se ejecutó consolidación, exportación mutante, borrado, importación ni sincronización. La clasificación por contenido y cualquier limpieza siguen pendientes de aprobación humana por lote.
+
+## Gate 121 · Contrato qz común y adapter Hospeda
+
+- Se revalidó que `qz` será el núcleo multi-proyecto y `hops` el adapter/capa
+  compatible de Hospeda; no se copiarán comandos completos por cliente.
+- El manifiesto futuro `.qz/project.json` declarará provider de issues, ramas,
+  worktrees, envs, DB, servidores, health checks y políticas sin secretos.
+- `qz start-issue`, `qz close-issue`, `qz promote` y `qz back-merge` leerán el
+  adapter; `hops-*` quedará como alias Hospeda durante la transición.
+- La extracción no se implementa aún: falta un segundo proyecto para validar
+  que el núcleo no arrastre nombres `HOSPEDA_*`, rutas ni supuestos de Hospeda.
+- El diseño queda documentado en `command-layer-contract.md`,
+  `command-distribution-architecture.md` y `qz-promotion-backmerge-design.md`.
