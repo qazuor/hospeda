@@ -109,7 +109,7 @@ no cambia nada: **un cobro que entra sin asiento no es un problema de escala.**
 | 1 | **cancelar los tres preapprovals en el proveedor** | el sistema **viejo**, que todavía corre | es el único que sabe hacerlo; después del despliegue ese código no existe |
 | 2 | **verificar releyendo cada uno por su id** y confirmar que quedó `cancelled` | ídem | `D5` ya lo exige para toda mutación, y `RC-2` mide que leer por id es confiable — **buscar no** (`RC-1`) |
 | 3 | **desplegar** | — | recién acá, y sólo si el paso 2 cerró |
-| 4 | **sembrar las lápidas** (`B/21` §2.5) **y los trials de la población existente** (`V/21` §2.4) | el sistema **nuevo** | las dos filas son del esquema nuevo: no pueden existir antes del paso 3 |
+| 4 | **sembrar las lápidas** (`B/21` §2.5) con los ids cancelados | el sistema **nuevo** | la fila es del esquema nuevo: no puede existir antes del paso 3 |
 
 **El paso 2 es el gate, y es lo único que vuelve segura la secuencia**: si alguno de los tres **no
 se pudo cancelar**, el corte **no avanza**. Es la misma forma que el programa ya usa en todas
@@ -126,10 +126,14 @@ esos preapprovals **se va con el despliegue**. Cancelarlos después exige hacerl
 API del proveedor, sin idempotencia, sin registro y sin nadie que verifique — y es el caso que este
 § existe para evitar.
 
-**El paso 4 tiene dos siembras y ninguna es opcional.** Las lápidas hacen **reconocible** un cobro
-viejo que llegue tarde; los trials evitan que **las fichas publicadas de Alojamiento se despubliquen
-la mañana del corte**, que es lo que pasa si nadie hace nada (`V/21` §2.4 — cuántas son **se mide
-ese día**, y las dos siembras son **a mano**, sobre una lista conocida). Las dos escriben filas del
+**El paso 4 es la única escritura del corte, y es a mano.** Las lápidas hacen **reconocible** un
+cobro viejo que llegue tarde, que es lo único que ninguna llamada puede evitar. Se escriben sobre
+una lista conocida, en la misma tanda en la que se habla con la gente.
+
+**Y hay un quinto acto que no es del sistema: las llamadas.** Las fichas publicadas de Alojamiento
+**se despublican la mañana del corte** —es una consecuencia, no una falla (`V/21` §2.4)— y vuelven
+solas cuando cada dueño contrata. **El aviso va ANTES del paso 1**, no después: es lo único que
+acota cuánto tiempo queda abajo cada ficha. Las dos escriben filas del
 esquema nuevo, así que **las dos van después de desplegar** — y por eso el paso 3 no es el final
 del corte, aunque lo parezca.
 

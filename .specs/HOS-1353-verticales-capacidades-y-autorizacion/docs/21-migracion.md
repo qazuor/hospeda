@@ -72,69 +72,42 @@ sistema nuevo arranca sin una sola fila heredada** —sin transcripciones, sin e
 dudas sobre si algo quedó mal migrado—. Es el escenario más limpio posible, y **sólo está
 disponible ahora**, mientras son ocho.
 
-### 2.4 Cómo amanece la población existente: se le siembra el trial
+### 2.4 Cómo amanece la población existente: se despublica, y se la llama
 
-**El programa nunca preguntó esto, y la respuesta por omisión era mala.** Sin fila de `trial`, el
-estado es `PRE_TRIAL` por construcción —*«`T1` crea la fila, y por eso `PRE_TRIAL` no la tiene»*
-(`V/03` §2)—, así que **el 100 % de los usuarios de producción amanece ahí**. Y el evento que los
-sacaría **ya ocurrió**: `T1` dispara con *«la ficha queda publicada»*, que es la **transición** de
-publicar, y **sus fichas ya están publicadas**.
+**El programa nunca preguntó esto.** Sin fila de `trial`, el estado es `PRE_TRIAL` por
+construcción —*«`T1` crea la fila, y por eso `PRE_TRIAL` no la tiene»* (`V/03` §2)—, así que **el
+100 % de los usuarios de producción amanece ahí**. Y el evento que los sacaría **ya ocurrió**: `T1`
+dispara con *«la ficha queda publicada»*, que es la **transición** de publicar, y sus fichas ya
+están publicadas.
 
-**Qué pasa sin hacer nada, y ahora está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no
-arrancó no es un título (`12-contrato…` §2.4)— y `PB2` se dispara **por el cambio de `cubierto`**
-(`V/03` §9), así que **las fichas publicadas de Alojamiento se despublican la mañana del corte**. No
-es una ambigüedad entre dos ramas: es una consecuencia.
+**Qué pasa entonces, y está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no arrancó no es
+un título (`12-contrato…` §2.4)— y `PB2` se dispara **por el cambio de `cubierto`** (`V/03` §9), así
+que **las fichas publicadas de Alojamiento se despublican la mañana del corte**. No es una
+ambigüedad entre dos ramas: es una consecuencia.
 
-> ⚠️ **Cuántas son NO está medido, y conviene no repetir el número que circuló.** Lo medido en
-> producción es **12 filas de alojamiento** y **22 usuarios**
-> ([`07-facts-inventory.md`](../../HOS-1352-billing-verticals-redesign/docs/07-facts-inventory.md),
-> 2026-09-15, re-verificado el 17). **Cuántas de esas 12 están publicadas nunca se contó** — puede
-> haber borradores, archivadas y borradas lógicamente. La cifra *«las doce fichas del catálogo»*
-> apareció en un informe de la FASE 8-bis convirtiendo filas en publicadas, y es una inferencia, no
-> una medición.
->
-> **No cambia la regla**, que cuantifica sobre *«cada dueño con ficha publicada»* y vale sean doce,
-> siete o una. **Se mide el día del corte**, que es cuando el número importa y el único momento en
-> que no está vencido: la cartera se mueve, porque `DEC-MIG-002` decidió seguir tomando altas.
+> **Y eso es lo que se hace: se despublican. No se siembra nada.** Se les avisa **antes** del corte,
+> se los llama, contratan, y la ficha vuelve sola por `PB3` cuando la cobertura vuelve.
 
-La regla, entonces:
+**Por qué no sembrarles un trial, que era la alternativa.** Habría dejado las fichas arriba mientras
+contratan, y **no cuesta menos: cuesta lo mismo más una siembra.** A esta gente **hay que llamarla
+igual** —es lo que decide todo este capítulo: son pocos, la mayoría **no pagó nunca**, y el owner
+**los conoce a todos**—, así que la siembra no ahorra una sola conversación. Agregar filas para
+evitar un efecto que la llamada ya resuelve es el mecanismo que el §56 pide no construir: *«no
+contaminar la arquitectura nueva para salvar unas pocas relaciones legacy»*.
 
-> **A cada dueño con ficha publicada se le siembra una fila de `trial` en `TRIAL_ACTIVE`, con los
-> días que declare el plan de trial de su vertical.**
+**Qué se pierde, dicho sin adornos**: la ficha de cada uno está abajo **desde el corte hasta que esa
+persona contrata**. Si alguno tarda una semana, estuvo una semana afuera. Lo que lo acota es que el
+aviso va **antes** del corte, no después.
 
-**Por qué el trial y no otro instrumento.** Es exactamente para lo que existe: **probar antes de
-pagar**, que es la situación real de esa gente. La cortesía temporal no sirve —presupone una
-suscripción, es una pausa sobre algo que se está cobrando, y ellos no tienen ninguna— y el *Free
-Forever* es permanente, que no es lo que se quiere. Inventar un tercer instrumento para doce fichas
-sería el tipo de mecanismo que el §56 pide no construir.
+**Y qué se gana, que no es sólo ahorrarse la siembra**: el camino de vuelta —perder la cobertura,
+recuperarla, y que la ficha se republique sola— **se ejercita el primer día**, sobre un puñado de
+casos conocidos y con el owner al teléfono. Es exactamente cuando conviene descubrir que falla, si
+falla.
 
-**Y no regala nada, y eso está medido**: **no hay un solo pago en la historia del sistema**. Nadie
-estuvo pagando, así que esto no les devuelve un trial que ya hubieran consumido — **es el
-onboarding normal, aplicado a gente que ya estaba**.
-
-**Los días salen del plan, no de un número nuevo.** `DEC-TRIAL-003` ya fija que los días de trial
-son configuración del plan por vertical; elegir un valor aparte para esta cohorte crearía un
-segundo número que se desincroniza del primero.
-
-**Lo que esto ejercita, y es la mitad del valor**: al vencer, `T3` dispara y el sistema hace lo que
-tiene que hacer — o contratan, o se despublican. **El primer mes del sistema nuevo recorre el ciclo
-completo** en vez de saltearlo, que es cuando más conviene descubrir si algo de ese camino falla.
-
-**Y no contradice *«no se hereda ninguna fila»*, por la misma razón que la lápida del `B/21` §2.5**:
-no transcribe estado viejo —no copia duraciones, ni fechas, ni lo que la persona tenía—, **crea
-estado nuevo** para que el sistema arranque coherente. La regla que sigue en pie es la que importa:
-**ninguna fila viva del sistema viejo pasa al nuevo**.
-
-**Se hace a mano, y eso es parte de la decisión.** Es el mismo criterio que sostiene todo este
-capítulo: son pocos, la mayoría no pagó nunca, y **el owner los conoce a todos y puede hablarles**.
-No se construye un mecanismo de siembra — se escriben las filas que hagan falta sobre una lista
-conocida, en la misma tanda de llamadas en la que se les pide que se resuscriban. Construir
-automatización para esto sería exactamente lo que el §56 previene: *«no contaminar la arquitectura
-nueva para salvar unas pocas relaciones legacy»*.
-
-**Dónde se ejecuta**: es el paso 4 del orden del corte
-([`16-fase-7-del-paraguas.md`](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md)
-§4.2), junto con las lápidas, y por el mismo motivo — la fila es del esquema nuevo.
+**Consecuencia sobre la regla del capítulo, y es limpia**: del lado de verticales **no se escribe
+ninguna fila**, así que *«el sistema nuevo no hereda una sola fila»* sigue siendo literal acá. La
+única excepción del programa es la lápida del `B/21` §2.5, y tiene su razón propia — hace
+reconocible un cobro viejo, que ninguna llamada puede evitar.
 
 ### 2.5 La condición de caducidad, que es lo único que hay que vigilar
 
