@@ -2907,3 +2907,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La migración queda pendiente de revisión semántica por lote: no se copiarán
   automáticamente `MEMORY.md`, backups ni memorias de otros proyectos a
   Engram, skills o `AGENTS.md`.
+
+## Gate 120 · Clasificación agregada de proyectos Engram
+
+- Consulta estrictamente read-only sobre `~/.engram/engram.db`, con `PRAGMA query_only=ON`; no se leyeron contenidos de observaciones, títulos, tokens ni credenciales.
+- Distribución agregada actual: `tmp` 5.259 observaciones; `hospeda` 2.986; sin proyecto 1.103; `hospeda3` 108; `Asistia` 55; `new-asistia` 27; los restantes proyectos tienen 23 o menos cada uno.
+- Interpretación operativa: `tmp` y sin proyecto son lotes prioritarios de ruido/atribución; `hospeda` es el lote principal que requiere separación por checkout; `hospeda3`, worktrees y proyectos externos deben conservarse como lotes independientes hasta revisión semántica.
+- No se ejecutó consolidación, exportación mutante, borrado, importación ni sincronización. La clasificación por contenido y cualquier limpieza siguen pendientes de aprobación humana por lote.

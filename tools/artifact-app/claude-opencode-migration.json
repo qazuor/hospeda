@@ -225,7 +225,7 @@
                             "title": "Clasificar proyectos Engram",
                             "category": "Engram + CLAUDE.md",
                             "description": "Separar Hospeda, worktrees, temporales y otros repos antes de consolidar.",
-                            "notes": "Lotes v2 actualizados con conteos read-only después de la limpieza en engram-review-batches-v2.md. Prioridad: tmp/autosaves, sin proyecto, Hospeda por checkout, worktrees y externos separados.",
+                            "notes": "Gate120: clasificación agregada read-only: tmp 5.259; hospeda 2.986; sin proyecto 1.103; hospeda3 108; Asistia 55; new-asistia 27; restantes <=23 cada uno. Prioridad de revisión: tmp/sin proyecto, luego Hospeda por checkout y worktrees; externos separados. No se leyeron contenidos ni se ejecutaron mutaciones; revisión semántica y aprobación humana por lote siguen pendientes.",
                             "done": false
                         },
                         {
