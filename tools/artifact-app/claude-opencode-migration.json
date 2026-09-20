@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate124: implementado y corregido para pasar `BASE_SHA` al runner local. El test web aislado pasa 13/13 con jsdom, pero la misma superficie falla vía Turbo con `document is not defined`; queda pendiente reproducir la invocación incremental y conservar la configuración Vitest por paquete. El agente debe usarlo antes de verificar manualmente.",
+                            "notes": "Gate125: `BASE_SHA` local corregido. Turbo aislado con `--filter=hospeda-web` usa jsdom y no reproduce el fallo; el error sólo aparece con el filtro incremental amplio `[origin/staging]`. Queda pendiente capturar el plan exacto de paquetes y reproducir esa ruta sin relajar Vitest. El agente debe usarlo antes de verificar manualmente.",
                             "done": true
                         },
                         {
