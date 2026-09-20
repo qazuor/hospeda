@@ -24,3 +24,15 @@ Esta revisión usa sólo conteos y metadata agregada. No incluye cuerpos de obse
 ## Regla
 
 Los conteos sólo priorizan. Cada mutación futura necesita ficha, evidencia y aprobación humana por lote. No usar `consolidate --all`, `delete` masivo, `sync` ni reparación sobre la DB original.
+
+## Checkpoint 2026-09-20 (Gate 120)
+
+La consulta agregada read-only más reciente observó: `tmp` 5.259,
+`hospeda` 2.986, sin proyecto 1.103, `hospeda3` 108, `Asistia` 55 y
+`new-asistia` 27. Los demás proyectos observados tuvieron 23 o menos cada
+uno. Estos números sirven para ordenar lotes, no prueban que una observación
+sea vigente ni autorizan consolidar o borrar.
+
+La categoría Hospeda queda separada por nombre de proyecto/checkout hasta que
+se revise su metadata y contenido por lotes. No se leyó el contenido en este
+checkpoint y no se ejecutaron mutaciones sobre la DB activa.
