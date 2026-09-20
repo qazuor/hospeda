@@ -498,7 +498,7 @@
                             "title": "Separar núcleo qz de adaptadores de proyecto",
                             "category": "CLI, distribución y multi-proyecto",
                             "description": "Extraer un núcleo qz reusable y hacer que cada proyecto declare su adapter/config para worktrees, envs, DBs, servers, Linear y health checks; hops queda reservado para Hospeda.",
-                            "notes": "Decisión arquitectónica documentada: qz será el CLI genérico y hops el adaptador/capa Hospeda. Se implementará al final, cuando exista un segundo proyecto real.",
+                            "notes": "Gate121: frontera qz/hops y distribuci\u00f3n por capas documentada. qz ser\u00e1 el n\u00facleo multi-proyecto; hops, el adapter Hospeda. La extracci\u00f3n real queda diferida hasta validar con un segundo proyecto; no se duplicar\u00e1 l\u00f3gica ni se copiar\u00e1n secretos.",
                             "done": false
                         }
                     ]
