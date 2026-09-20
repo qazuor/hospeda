@@ -50,3 +50,11 @@ El comando sólo consulta GitHub y el checkout local. Cualquier acción mutante 
 - No imprime tokens, envs ni contenido sensible.
 
 No se implementa el comando en este paso.
+
+## Verificación en vivo (2026-09-20)
+
+La consulta read-only equivalente a `gh pr list --author dependabot[bot]`
+respondió `401 Bad credentials`. Esto no permite inferir que no haya PRs
+abiertos. El futuro comando debe conservar esta diferencia como estado
+`auth_unavailable` y terminar con diagnóstico accionable, nunca con una lista
+vacía ni con recomendaciones de cierre.
