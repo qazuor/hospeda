@@ -31,3 +31,29 @@ Los comandos futuros `qz start-issue`, `qz close-issue`, `qz promote` y
 mantener `staging` como base durante la transición hasta que la rama exista.
 
 No se modifica Git ni CI en esta etapa.
+
+## Matriz de transición propuesta
+
+| Superficie | Hoy | Objetivo | Regla de compatibilidad |
+|---|---|---|---|
+| Base de `start-issue`/`wt-create` | `staging` | `develop` | Mientras `develop` no exista, resolver `issueBaseBranch` a `staging`. |
+| Cierre de issue | PR hacia `staging` | PR hacia `develop` | `--base` explícito permite urgencias directas a `staging`. |
+| Promoción | manual `staging → main` | `develop → staging → main` | Cada salto exige CI, mergeability y working tree limpio. |
+| Back-merge | `main → staging` | `main → staging` y `staging → develop` | Nunca hacer back-merge implícito durante un cierre de issue. |
+| Verificación | baseline `origin/staging` | baseline configurable | El comando debe imprimir la base efectiva en JSON y texto. |
+| `wt-clean`/stats | asumen `origin/staging` | reciben base resuelta | No borrar worktrees si la base efectiva no pudo resolverse. |
+
+### Contrato de configuración
+
+El adapter del proyecto debe exponer, sin duplicarlo en cada comando:
+
+- `issueBaseBranch`: rama desde la que se crean issues nuevas;
+- `integrationBranch`: rama objetivo del cierre normal;
+- `promotionChain`: lista ordenada de promociones;
+- `urgentBases`: bases permitidas para escapes explícitos;
+- `backMergeChain`: pares de ramas que deben mantenerse sincronizados.
+
+La implementación debe rechazar una configuración donde una rama de la cadena
+no exista local/remotamente, salvo el modo explícito de transición. No se debe
+crear `develop`, cambiar protección de GitHub ni modificar CI como parte de este
+análisis.
