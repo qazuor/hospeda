@@ -3,7 +3,7 @@ title: Worklog / Progress Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 ---
 
@@ -1018,3 +1018,94 @@ existir.
 
 **Tampoco se tocaron el `CLAUDE.md` del repo ni los workflows** (`D-29`): son archivos del repo y
 su aplicación **la decide el owner**, como ya declaraba `DEC-CI-001` implicación 1.
+
+---
+
+## 2026-09-19/20 — el ciclo dio su primera vuelta entera
+
+### Qué pasó
+
+La FASE 8 volvió a correr sobre el diseño que la FASE 9 había corregido, y la FASE 9 volvió a
+correr sobre lo que ésa encontró. **Es la primera vuelta completa del ciclo que `DEC-METH-006`
+creó**, y lo que dejó no es sólo una lista de arreglos: es la medición de si el ciclo, tal como
+estaba escrito, terminaba.
+
+**No terminaba**, y eso es el resultado principal de la vuelta.
+
+### La FASE 8-bis
+
+Ocho vectores, tres pasadas, ciegos entre sí. **112 hallazgos, 28 críticos, 6.916 líneas** en
+[`17-fase-8-bis/`](./17-fase-8-bis/). Los conteos salen de un script sobre los ocho archivos, no de
+los índices que los agentes devolvieron — uno de ellos se contradijo a sí mismo en el suyo.
+
+**Los 28 críticos son 23 defectos distintos**: cinco pares eran el mismo defecto visto por dos
+agentes que no se leyeron. Deduplicar no es prolijidad — sin eso se le pregunta dos veces al owner
+por la misma cosa.
+
+### El resultado que cambió el método
+
+> **De los 25 críticos de las pasadas A y B, 25 los produjo la tanda de arreglos anterior. Ninguno
+> era un defecto preexistente.**
+
+La condición de corte —*«hasta que una pasada no traiga ningún crítico nuevo»*— **medía un stock**
+cuando el generador es **el acto de arreglar**. El conteo baja (48 → 28) porque baja el tamaño de
+la tanda, no porque baje la deuda.
+
+**La causa, con caso testigo medido**: la definición de «resuelto» exigía recorrer *«todo su
+dominio»*, y ése es **el dominio del PROBLEMA, nunca el del ARREGLO**. Al partir el `UNIQUE` del
+§11 por `sucede_a`, el dominio pasó de **90 a 180 pares** y se verificaron los 90 viejos. **La
+mitad nueva contenía el doble cobro que el arreglo venía a cerrar.**
+
+Y su complemento, que ningún informe individual podía ver: **`R2` construyó el título `BASE` sobre
+una premisa que `R3` volvió falsa**, sin que ninguno lo notara.
+
+`DEC-METH-008` lo corrige en cuatro partes, y el owner agregó la cuarta: **la elección entre
+arreglar un crítico y declararlo con causa la toma él, caso por caso.**
+
+### La 9-bis
+
+Las 23 decisiones se tomaron **familia por familia**: 22 arreglar, 1 aplicar, ninguna declarada con
+causa. Tres llevaron discusión de opciones. Y los 23 se aplicaron **por artefacto, no por familia**
+—contrato, verticales, billing, el corte—, precisamente porque aplicar por familia es el error que
+produjo la tanda anterior.
+
+### Lo que hay que registrar aunque incomode
+
+**Tres de los arreglos de la 9-bis corrigen cosas que la FASE 9 escribió mal el día anterior**, y
+dos las había escrito yo al aplicar:
+
+| qué se había escrito | por qué estaba mal |
+|---|---|
+| la fecha de primer cobro se guarda | se guardaba **la que mandamos**: verificaba el único dato que no podía estar mal |
+| una fila marcada **no se barre** | apagaba **el único detector** de una divergencia de monto, y el cobro equivocado seguía saliendo todos los meses |
+| *«un día como mínimo»* | fallaba por **cuándo se comprueba**, no por el número: se verificaba al nacer y tenía que durar 71 horas |
+
+**Y una cuarta, de otro tipo**: al aplicar *«no se migra»* se eliminó la regla que conserva el
+rastro del compromiso cancelado — **aunque esa regla no migra nada**. Es el modo de falla que
+conviene recordar: **una decisión que vuelve innecesario un trabajo puede llevarse algo que seguía
+haciendo falta.**
+
+**Y una quinta, de método**: *«las doce fichas del catálogo»* circuló como dato y era **una
+inferencia de un agente**, que convirtió *«12 filas de alojamiento»* en *«12 publicadas»*. Lo
+repetí en un capítulo sin verificarlo. Se corrigió: **cuántas están publicadas se mide el día del
+corte**, que es cuando importa y el único momento en que no está vencido.
+
+### Una decisión que cambió al escribirla
+
+El defecto 22 se había resuelto **sembrando un trial** a la población existente. Al escribirlo, el
+owner recordó el criterio que gobierna todo el capítulo —*son pocos, la mayoría no pagó nunca, los
+conozco a todos y les hablo*— y la siembra **dejó de tener sentido**: no ahorraba ninguna
+conversación y sí agregaba filas. **Se sacó.** Quedó *«se despublican, se avisa antes, se los
+llama»*, y de paso *«no se hereda ninguna fila»* volvió a ser literal del lado de verticales.
+
+### Qué se produjo
+
+Nueve documentos nuevos en `17-fase-8-bis/`, el log en **62 decisiones** —con `DEC-METH-008` y
+`DEC-ARCH-008`—, el resumen de invariantes **recontado entero con script** (52, 10 de base, 18
+apoyos sobre 15), la matriz intacta y el PDR sin tocar.
+
+### Lo que no se hizo
+
+**La propagación**, que es la salida 3 y 4: las fichas de las dos descomposiciones, los 22 issues y
+los artifacts **siguen describiendo el diseño de antes**. Va al final del ciclo, una sola vez,
+sobre un diseño que ya no se mueva — que es exactamente lo que `DEC-METH-006` §3 decidió.
