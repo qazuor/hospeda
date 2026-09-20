@@ -3,7 +3,7 @@ title: Master Spec 21 — Migración
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 21
@@ -132,6 +132,41 @@ instrumento del diseño nuevo para *«esta persona tiene esto sin pagar, indefin
 converge con el grant anclado al plan del cap. 02 §2.4: **no hace falta inventar nada para
 cortesías heredadas, son el caso normal**.
 
+**Con una precisión que no es de forma: una fila por cada vertical de su scope.** Un grant ancla
+**un plan por vertical** (`12-contrato…` §2.8), porque un plan pertenece a una sola. Escribir una
+fila con un plan para un scope de dos verticales es el defecto que el contrato acaba de cerrar:
+**la segunda vertical resolvería sus capacidades leyendo el plan de la primera**.
+
+### 2.5 Cancelar no es olvidar: el compromiso viejo se conserva
+
+**Ésta es la única fila que el sistema nuevo sí escribe**, y no contradice *«no se hereda ninguna
+fila»*: no se hereda **nada vivo**. Lo que se escribe es una lápida.
+
+> **El compromiso viejo se conserva como una `subscription` en `CANCELLED` con su `provider_link`,
+> escrita DESPUÉS de cancelarlo en el proveedor.**
+
+**Qué pasa sin ella, y es el caso que la justifica.** Las tres con preapproval vivo se cancelan en
+el proveedor y no queda rastro. Si alguna emite un cobro después del corte —porque la cancelación
+se aceptó y no se aplicó, o porque el cobro ya estaba en vuelo— **ese webhook llega como un
+preapproval desconocido**, y el sistema nuevo tiene **un solo camino automático** para un
+desconocido: re-vincularlo. El candidato más plausible del emparejamiento es **la suscripción nueva
+de esa misma persona**, que acaba de contratar. **El cobro viejo se imputa como pago del ciclo
+nuevo: pagó dos veces y el sistema registra una.**
+
+Con la lápida, el barrido del cap. 09 **encuentra el id** y resuelve *«cancelado durante el
+corte»* en vez de *«huérfana»*. Y **no compite por el candado del §11**, porque `CANCELLED` no está
+entre los estados vivos (cap. 02 §2.2).
+
+**El orden importa y es parte de la regla**: primero se cancela en el proveedor, después se
+escribe. Al revés quedaría una lápida sobre un preapproval que sigue vivo, que es peor que no
+tenerla — afirmaría que está cerrado algo que cobra.
+
+> ⚠️ **Esta regla ya estaba escrita y no se aplicó.** Se decidió junto con el resto de la
+> migración, y **al decidir que no se migra se la llevó puesta el mismo movimiento** — aunque no
+> migra nada: sólo conserva el rastro de lo que se cancela. Es el modo de falla que conviene
+> recordar: **una decisión que vuelve innecesario un trabajo puede llevarse algo que seguía
+> haciendo falta.**
+
 **Qué deja de existir con esto, y no es que se resuelva: se elimina.** La migración dejaba afuera
 las relaciones con trial, transcribía un trial y dejaba los compromisos sin vínculo, tenía un punto
 de no retorno sin lado elegido, describía dos operaciones distintas en dos lugares, y **nadie la
@@ -146,7 +181,8 @@ escribe acá.
 
 ## 4. Lo que NO se migra, y no es una omisión
 
-- **Todo**: ninguna fila se transcribe (§2.4).
+- **Todo lo vivo**: ninguna fila se transcribe (§2.4). Lo único que se escribe es la lápida del
+  §2.5, que no es una transcripción: es el rastro del id que se canceló.
 - **Los pagos**: no hay ninguno.
 - **`commerce`**: el §55 ordena eliminarlo de fuentes activas, con la excepción histórica del
   §55.1 —auditoría, historia de migraciones, entender datos legacy— **marcada inequívocamente**.
