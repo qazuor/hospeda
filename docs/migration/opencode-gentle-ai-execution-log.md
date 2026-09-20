@@ -2968,3 +2968,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Antes de declarar `verify --changed` verde hay que reproducir el comando
   exacto de Turbo, conservar la configuración jsdom por paquete y evitar que un
   cache o un runner raíz sustituya `apps/web/vitest.config.ts`.
+
+## Gate 125 · Turbo aislado de `hospeda-web`
+
+- `VITEST_MAX_THREADS=2 VITEST_MIN_THREADS=1 pnpm exec turbo run test
+  --concurrency=1 --filter=hospeda-web` inició correctamente el paquete web
+  con `apps/web/vitest.config.ts` y `jsdom`; no reprodujo `document is not
+  defined` en los tests observados.
+- El filtro incremental amplio de `verify --changed` sigue siendo la única ruta
+  que reprodujo ese error. La corrida aislada fue detenida antes de completar
+  toda la suite para no mantener procesos largos; no se modificaron archivos.
+- Próximo diagnóstico: capturar el plan exacto de paquetes que devuelve
+  `[origin/staging]` y ejecutar el paquete web con el mismo entorno, sin
+  cambiar la configuración de producción de tests a ciegas.
