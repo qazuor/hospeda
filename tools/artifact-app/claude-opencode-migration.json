@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate123: implementado y corregido para pasar `BASE_SHA` al runner local. La ejecución completa atravesó guards y llegó a tests web, donde encontró `document is not defined`; queda pendiente corregir el entorno DOM de Vitest. El agente debe usarlo antes de verificar manualmente.",
+                            "notes": "Gate124: implementado y corregido para pasar `BASE_SHA` al runner local. El test web aislado pasa 13/13 con jsdom, pero la misma superficie falla vía Turbo con `document is not defined`; queda pendiente reproducir la invocación incremental y conservar la configuración Vitest por paquete. El agente debe usarlo antes de verificar manualmente.",
                             "done": true
                         },
                         {
