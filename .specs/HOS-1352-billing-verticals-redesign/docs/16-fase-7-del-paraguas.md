@@ -109,7 +109,7 @@ no cambia nada: **un cobro que entra sin asiento no es un problema de escala.**
 | 1 | **cancelar los tres preapprovals en el proveedor** | el sistema **viejo**, que todavía corre | es el único que sabe hacerlo; después del despliegue ese código no existe |
 | 2 | **verificar releyendo cada uno por su id** y confirmar que quedó `cancelled` | ídem | `D5` ya lo exige para toda mutación, y `RC-2` mide que leer por id es confiable — **buscar no** (`RC-1`) |
 | 3 | **desplegar** | — | recién acá, y sólo si el paso 2 cerró |
-| 4 | **sembrar las lápidas** del cap. 21 §2.5 con los ids cancelados | el sistema **nuevo** | la fila es del esquema nuevo: no puede existir antes del paso 3 |
+| 4 | **sembrar las lápidas** (`B/21` §2.5) **y los trials de la población existente** (`V/21` §2.4) | el sistema **nuevo** | las dos filas son del esquema nuevo: no pueden existir antes del paso 3 |
 
 **El paso 2 es el gate, y es lo único que vuelve segura la secuencia**: si alguno de los tres **no
 se pudo cancelar**, el corte **no avanza**. Es la misma forma que el programa ya usa en todas
@@ -125,6 +125,12 @@ Al revés, con el despliegue primero, ese mismo cobro cae en el vacío.
 esos preapprovals **se va con el despliegue**. Cancelarlos después exige hacerlo a mano contra la
 API del proveedor, sin idempotencia, sin registro y sin nadie que verifique — y es el caso que este
 § existe para evitar.
+
+**El paso 4 tiene dos siembras y ninguna es opcional.** Las lápidas hacen **reconocible** un cobro
+viejo que llegue tarde; los trials evitan que **las doce fichas del catálogo se despubliquen la
+mañana del corte**, que es lo que pasa si nadie hace nada (`V/21` §2.4). Las dos escriben filas del
+esquema nuevo, así que **las dos van después de desplegar** — y por eso el paso 3 no es el final
+del corte, aunque lo parezca.
 
 ### 4.3 Lo que este orden NO resuelve
 
