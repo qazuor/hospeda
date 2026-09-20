@@ -2955,3 +2955,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Esto queda como deuda del entorno de tests/configuración de Vitest, no como
   un motivo para relajar `verify`. El fix de `BASE_SHA` sí queda validado por
   el avance del pipeline.
+
+## Gate 124 · Diferencia entre test web directo y Turbo
+
+- El test aislado `apps/web/test/components/ExternalReviews.test.tsx` ejecutado
+  desde `hospeda-web` pasó **13/13** usando `apps/web/vitest.config.ts` con
+  `environment: jsdom`.
+- La misma superficie falló durante `turbo run test --filter='[origin/staging]'`
+  con `document is not defined`, por lo que el problema está en la forma en
+  que el pipeline incremental invoca o agrupa el paquete, no en el componente
+  aislado.
+- Antes de declarar `verify --changed` verde hay que reproducir el comando
+  exacto de Turbo, conservar la configuración jsdom por paquete y evitar que un
+  cache o un runner raíz sustituya `apps/web/vitest.config.ts`.
