@@ -82,8 +82,22 @@ publicar, y **sus fichas ya están publicadas**.
 
 **Qué pasa sin hacer nada, y ahora está determinado.** `PRE_TRIAL` **no cubre** —un reloj que no
 arrancó no es un título (`12-contrato…` §2.4)— y `PB2` se dispara **por el cambio de `cubierto`**
-(`V/03` §9), así que **las doce fichas del catálogo se despublican la mañana del corte**. No es una
-ambigüedad entre dos ramas: es una consecuencia.
+(`V/03` §9), así que **las fichas publicadas de Alojamiento se despublican la mañana del corte**. No
+es una ambigüedad entre dos ramas: es una consecuencia.
+
+> ⚠️ **Cuántas son NO está medido, y conviene no repetir el número que circuló.** Lo medido en
+> producción es **12 filas de alojamiento** y **22 usuarios**
+> ([`07-facts-inventory.md`](../../HOS-1352-billing-verticals-redesign/docs/07-facts-inventory.md),
+> 2026-09-15, re-verificado el 17). **Cuántas de esas 12 están publicadas nunca se contó** — puede
+> haber borradores, archivadas y borradas lógicamente. La cifra *«las doce fichas del catálogo»*
+> apareció en un informe de la FASE 8-bis convirtiendo filas en publicadas, y es una inferencia, no
+> una medición.
+>
+> **No cambia la regla**, que cuantifica sobre *«cada dueño con ficha publicada»* y vale sean doce,
+> siete o una. **Se mide el día del corte**, que es cuando el número importa y el único momento en
+> que no está vencido: la cartera se mueve, porque `DEC-MIG-002` decidió seguir tomando altas.
+
+La regla, entonces:
 
 > **A cada dueño con ficha publicada se le siembra una fila de `trial` en `TRIAL_ACTIVE`, con los
 > días que declare el plan de trial de su vertical.**
@@ -110,6 +124,13 @@ completo** en vez de saltearlo, que es cuando más conviene descubrir si algo de
 no transcribe estado viejo —no copia duraciones, ni fechas, ni lo que la persona tenía—, **crea
 estado nuevo** para que el sistema arranque coherente. La regla que sigue en pie es la que importa:
 **ninguna fila viva del sistema viejo pasa al nuevo**.
+
+**Se hace a mano, y eso es parte de la decisión.** Es el mismo criterio que sostiene todo este
+capítulo: son pocos, la mayoría no pagó nunca, y **el owner los conoce a todos y puede hablarles**.
+No se construye un mecanismo de siembra — se escriben las filas que hagan falta sobre una lista
+conocida, en la misma tanda de llamadas en la que se les pide que se resuscriban. Construir
+automatización para esto sería exactamente lo que el §56 previene: *«no contaminar la arquitectura
+nueva para salvar unas pocas relaciones legacy»*.
 
 **Dónde se ejecuta**: es el paso 4 del orden del corte
 ([`16-fase-7-del-paraguas.md`](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md)

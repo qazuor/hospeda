@@ -127,8 +127,9 @@ API del proveedor, sin idempotencia, sin registro y sin nadie que verifique — 
 § existe para evitar.
 
 **El paso 4 tiene dos siembras y ninguna es opcional.** Las lápidas hacen **reconocible** un cobro
-viejo que llegue tarde; los trials evitan que **las doce fichas del catálogo se despubliquen la
-mañana del corte**, que es lo que pasa si nadie hace nada (`V/21` §2.4). Las dos escriben filas del
+viejo que llegue tarde; los trials evitan que **las fichas publicadas de Alojamiento se despubliquen
+la mañana del corte**, que es lo que pasa si nadie hace nada (`V/21` §2.4 — cuántas son **se mide
+ese día**, y las dos siembras son **a mano**, sobre una lista conocida). Las dos escriben filas del
 esquema nuevo, así que **las dos van después de desplegar** — y por eso el paso 3 no es el final
 del corte, aunque lo parezca.
 
