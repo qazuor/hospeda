@@ -220,7 +220,12 @@ export async function runVerify({ argv }: { readonly argv: readonly string[] }):
         const code = await runner.exec({
             command: 'bash',
             args: ['-c', step.run],
-            cwd
+            cwd,
+            // CI injects BASE_SHA for guards that inspect the diff. Local
+            // verify has the same contract: use the configured local base so
+            // those guards do not fail closed merely because they are outside
+            // GitHub Actions.
+            env: { BASE_SHA: process.env.BASE_SHA ?? BASE }
         });
         if (code !== 0) {
             process.stderr.write(

@@ -2940,3 +2940,18 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   salida/progreso que no obligue al agente a esperar sin diagnóstico.
 - El incidente no demuestra un fallo de los checks; demuestra que la validación
   aún no tiene un límite/contrato de finalización operativo para este monorepo.
+
+## Gate 123 · `verify --changed` baseline y fallo real de tests web
+
+- `verify` ahora pasa `BASE_SHA` al runner local, usando el baseline configurado
+  (`origin/staging`) cuando el entorno no lo provee; así los guards de diff no
+  fallan por falta de contexto local.
+- La ejecución completa volvió a pasar los guards de migraciones, seeds,
+  i18n, schema y seguridad hasta llegar a tests afectados.
+- Falló en tests React de `apps/web` (`ExternalReviews` y otros) con
+  `ReferenceError: document is not defined`; el runner no tiene entorno DOM
+  para esos tests. La ejecución se detuvo en el paso 37/39 tras casi seis
+  minutos y se interrumpió de forma controlada.
+- Esto queda como deuda del entorno de tests/configuración de Vitest, no como
+  un motivo para relajar `verify`. El fix de `BASE_SHA` sí queda validado por
+  el avance del pipeline.
