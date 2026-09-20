@@ -2927,3 +2927,16 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   que el núcleo no arrastre nombres `HOSPEDA_*`, rutas ni supuestos de Hospeda.
 - El diseño queda documentado en `command-layer-contract.md`,
   `command-distribution-architecture.md` y `qz-promotion-backmerge-design.md`.
+
+## Gate 122 · Prueba de `verify --changed` con límite operativo
+
+- Se invocó `bun run src/index.ts verify --changed --json` en el worktree de
+  migración, sin cambios de archivos ni servicios externos.
+- El comando leyó 39 pasos del workflow y comenzó `turbo run lint`, pero no
+  produjo el JSON final dentro de la ventana de ejecución de la herramienta;
+  quedó ejecutando builds/lint del monorepo y fue detenido junto con sus hijos.
+- No se declara la prueba E2E como exitosa: falta medir el tiempo normal,
+  decidir si el modo incremental debe aceptar ejecución larga y agregar una
+  salida/progreso que no obligue al agente a esperar sin diagnóstico.
+- El incidente no demuestra un fallo de los checks; demuestra que la validación
+  aún no tiene un límite/contrato de finalización operativo para este monorepo.
