@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate81: implementado; `--changed --list` leyó el workflow real y enumeró 2 lint, 36 guards y typecheck sin mutar, separando baseline/instalaciones. El agente debe usarlo antes de verificar manualmente.",
+                            "notes": "Gate123: implementado y corregido para pasar `BASE_SHA` al runner local. La ejecución completa atravesó guards y llegó a tests web, donde encontró `document is not defined`; queda pendiente corregir el entorno DOM de Vitest. El agente debe usarlo antes de verificar manualmente.",
                             "done": true
                         },
                         {
@@ -710,7 +710,7 @@
                             "title": "Ejecutar validación integral",
                             "category": "Adopción progresiva",
                             "description": "Probar OpenCode, Gentle, Engram, Linear, hops, worktrees, TUI, guards y artifacts.",
-                            "notes": "Gate96: suite completa de scripts/client-tools pasa 294/294 tests y 724 assertions. OpenCode V1.18.31 responde con filesystem rw y MCP conectados. Quedan como próximo gate E2E los comandos que levantan DB/servidores o mutan bases, porque no ofrecen --plan/--dry-run; requieren ventana controlada y cleanup verificable.",
+                            "notes": "Gate123: suite client-tools 298/298 y `verify --changed` ya entrega BASE_SHA local correctamente. La integración llegó a tests web y encontró `document is not defined`; faltan corregir Vitest/DOM y completar el gate E2E de DB/servidores, Linear/GitHub y memoria.",
                             "done": false
                         },
                         {
