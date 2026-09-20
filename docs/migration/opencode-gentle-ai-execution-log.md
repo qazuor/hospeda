@@ -2889,3 +2889,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   privadas permanecen en `deny`.
 - No se modificaron permisos ni se ejecutaron comandos mutantes para probar la
   precedencia.
+
+## Gate 118 · Prueba sintética de guards pre-commit
+
+- El guard staged-secrets aceptó un índice limpio y bloqueó un patrón sintético
+  de token sin imprimir el valor.
+- El hook actual mantiene secretos, lint-staged e `ilike()` inseguro como checks
+  rápidos; los guards de dominio costosos siguen correctamente en CI/hops verify.
+- No se modificaron `.husky`, `package.json` ni la política de permisos.

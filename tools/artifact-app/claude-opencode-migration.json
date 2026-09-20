@@ -572,7 +572,7 @@
                             "title": "Endurecer pre-commit",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Bloquear secretos staged, drift, patrones inseguros y cambios peligrosos baratos.",
-                            "notes": "Capas concretas consolidadas en security-policy-v1.md: guards rápidos siempre, guards por rutas y checks costosos fuera del hook. Implementación pendiente.",
+                            "notes": "Gate118: guard staged-secrets probado con caso limpio y token sintético bloqueado sin filtrar valor. La arquitectura por capas está documentada; faltan decidir/implementar guards adicionales de drift y operaciones peligrosas.",
                             "done": false
                         },
                         {
