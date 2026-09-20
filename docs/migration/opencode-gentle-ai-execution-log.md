@@ -2897,3 +2897,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El hook actual mantiene secretos, lint-staged e `ilike()` inseguro como checks
   rápidos; los guards de dominio costosos siguen correctamente en CI/hops verify.
 - No se modificaron `.husky`, `package.json` ni la política de permisos.
+
+## Gate 119 · Inventario de memorias Claude post-limpieza
+
+- Se detectaron memorias de proyecto para `hospeda`, `hospeda2`, `hospeda3`,
+  `jqn-protfolio` y `tmp`, además de un `CLAUDE.md` global y un backup histórico.
+- También existen documentos auxiliares del plugin `remember`; sólo se
+  registraron rutas y tamaños, no contenidos.
+- La migración queda pendiente de revisión semántica por lote: no se copiarán
+  automáticamente `MEMORY.md`, backups ni memorias de otros proyectos a
+  Engram, skills o `AGENTS.md`.

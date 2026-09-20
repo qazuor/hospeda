@@ -217,7 +217,7 @@
                             "title": "Revisar Memory.md y memorias Claude",
                             "category": "Engram + CLAUDE.md",
                             "description": "Extraer sólo reglas vigentes y verificadas; no importar masivamente.",
-                            "notes": "Pendiente revisión individual.",
+                            "notes": "Gate119: inventariadas rutas de MEMORY.md globales y por proyecto, backups históricos y documentos del plugin remember sin leer contenidos. La extracción semántica y aprobación por lote siguen pendientes.",
                             "done": false
                         },
                         {
