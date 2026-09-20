@@ -580,7 +580,7 @@
                             "title": "Revisar permisos OpenCode",
                             "category": "Pre-commit, CI, permisos",
                             "description": "Reducir bash wildcard y mantener bloqueos de secretos, Git destructivo y producción.",
-                            "notes": "La política está documentada, pero la validación de runtime escribible queda bloqueada hasta resolver el root filesystem ro.",
+                            "notes": "Gate117: runtime V1 revalidado en filesystem escribible; opencode.json conserva 15 reglas bash y 14 read. Ask para Git/publicación/SSH/rsync y deny para envs, credenciales, secretos, .ssh y claves. Falta decidir si se reduce el wildcard bash antes de marcar la política final.",
                             "done": false
                         },
                         {

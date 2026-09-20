@@ -2879,3 +2879,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - GLM, DeepSeek, Ollama y OpenKilo siguen sin activarse. La política mantiene
   OpenAI para tareas complejas y alternativas sólo en perfiles explícitos,
   acotados y sin datos sensibles.
+
+## Gate 117 · Revalidación read-only de permisos OpenCode
+
+- `~/.config/opencode/opencode.json` conserva 15 reglas `bash` y 14 reglas
+  `read`.
+- Git destructivo/externo, SSH/SCP/SFTP/rsync y operaciones de publicación
+  requieren `ask`; rutas de secretos, envs, credenciales, `.ssh` y claves
+  privadas permanecen en `deny`.
+- No se modificaron permisos ni se ejecutaron comandos mutantes para probar la
+  precedencia.
