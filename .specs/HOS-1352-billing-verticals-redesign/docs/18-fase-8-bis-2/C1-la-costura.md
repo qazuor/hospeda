@@ -751,12 +751,23 @@ núcleo se entera si alguien se acuerda.
 
 ## 2. Deduplicación de los críticos — el encargo
 
+> **Corregido el 2026-09-20, después de leer `C2`.** La primera versión de este § contaba los 24
+> IDs de A y B más el mío y daba **15** defectos distintos. **`C1` y `C2` corrieron en paralelo**,
+> así que el informe de `C2` no existía cuando se escribió el conteo y **sus dos `CRITICA`
+> quedaron afuera**. Los recorrí contra el texto de `16-fase-7…` §4, de `B/21` y del decision log:
+> **ninguno de los dos colapsa** con los quince, así que el número sube a **17**. Lo dejo dicho en
+> vez de reescribirlo en silencio, porque el conteo de críticos es lo que decide si el ciclo sigue
+> y tiene que poder auditarse. **Y es la falla de método que el conteo mismo expone**: una
+> deduplicación corrida antes de que existan todos los informes deduplica lo que alcanzó a leer.
+
 **Los 24 IDs `CRITICA` de A y B son 15 defectos distintos. Uno de los 15 baja a `ALTA` por el
-criterio escrito de esta fase, así que quedan 14; con el `CRITICA` de esta pasada, el conteo de
-esta vuelta es 15 defectos críticos distintos.**
+criterio escrito de esta fase, así que quedan 14. Sumando el `CRITICA` de `C1` y los dos de `C2`
+—tres defectos nuevos, ninguno colapsa—, el conteo de la pasada es de 27 IDs `CRITICA` sobre
+**17 defectos críticos distintos**, 26 de ellos vigentes en ese nivel tras la reclasificación del
+§3.3.**
 
 El punto de partida es el recuento del orquestador, que verifiqué: A1 3, A2 3, A3 6, B1 5, B2 4,
-B3 3 = **24**.
+B3 3 = **24**. Más `F-8cC1-001`, `F-8cC2-001` y `F-8cC2-002` = **27**.
 
 ### 2.1 El mapa: qué ID colapsa en cuál
 
@@ -777,7 +788,28 @@ B3 3 = **24**.
 | **13** | **El reembolso del arreglo 15 supone que la sucesión siempre termina**: si el cliente abandona, se le devolvió el pago que lo salvaba | `F-8cB2-003` | — | 15 |
 | **14** | **Un addon cuyo título cae en `CHARGE_DECLINED` no queda huérfano nunca**: cobra todos los meses con su capacidad apagada | `F-8cB2-004` | — | 2 × 20 × (el racimo de `CHARGE_DECLINED`) |
 | **15** | **La lápida no existe entre el paso 3 y el paso 4 del corte** | `F-8cB3-003` | — | 21 × 23 |
+| **16** | **El paso 1 del corte cancela «los tres» y el conjunto de preapprovals vivos crece**: cada alta nueva cruza el despliegue con su autorización viva, sin cancelar y sin lápida | `F-8cC2-001` | — | 23 × `DEC-MIG-002` |
+| **17** | **El corte no tiene ningún paso para un período ya pagado**, y la premisa *«cero pagos»* que autoriza no migrar **caduca el 2026-09-26** | `F-8cC2-002` | — | 23 |
 | — | ~~**El espejo de los «ocho pares»**~~ → **baja a `ALTA`**, ver §3.3 | `F-8cB1-003` | `F-8cA1-009`, `F-8cA2-004`, `F-8cB2-005`, `F-8cB3-004` (los cuatro ya `ALTA`) | 18 |
+
+**Los dos de `C2`, verificados contra el texto y contra los quince: ninguno colapsa.**
+
+- **#16 no es #15 ni `F-8cB3-016`.** Los tres hablan de preapprovals que cobran después del corte y
+  los tres tienen sujetos distintos: **#15** es uno de **los tres conocidos**, cuyo cobro en vuelo
+  cae en la ventana `paso 3 → paso 4` **antes de que su lápida exista**; **`F-8cB3-016`** (`MEDIA`)
+  son **las otras cinco relaciones**, con `EX-1` en `UNKNOWN`; **#16** son filas **que todavía no
+  existen** y que una decisión del owner garantiza que van a existir. Lo verifiqué contra el texto:
+  `16-fase-7…` §4.1 fija el sujeto en *«**tres**… **las únicas** con preapproval vivo»* y `V/21`
+  §2.2 lo apoya en la medición del 2026-09-15, mientras `DEC-MIG-002` declara —el 2026-09-19— que
+  *«la cohorte a transcribir **crece** mientras dure el rediseño»*. **Los tres arreglos posibles son
+  distintos**: #15 pide adelantar la lápida, `F-8cB3-016` pide medir `EX-1`, y #16 pide que el paso
+  1 tome su lista **el día del corte** en vez de copiar un número. `C2` lo declara y coincido.
+- **#17 no es #15 ni `F-8cB1-007` ni `F-8cB3-013`.** Los tres últimos son sobre **qué campos lleva
+  la lápida** y **cuándo se escribe**; #17 es sobre un hecho que la lápida **no pretende cubrir**:
+  un período **ya cobrado** antes del corte, sin `payment`, sin `receipt` y sin crédito. El propio
+  `B/21` §2.5 acota la lápida a hacer *«**reconocible** un cobro viejo»*, y reconocer no es asentar.
+  Y el mecanismo de caducidad es propio: `B/21` §1.3 se titula **«Y caduca»** y dice *«este hecho
+  cambia solo — el **2026-09-26**»*. Ninguno de los quince depende de una fecha.
 
 **Las cuatro fusiones que el orquestador anticipó, verificadas:** el espejo del §10.1 lo levantaron
 **los seis** (uno como `CRITICA`, cinco como `ALTA`); `S17` limpiando `sucede_a` lo levantaron A2,
@@ -803,34 +835,44 @@ mañana del corte lo levantaron A1, A2, A3 y B3 (#1). Y `T1`/`T6` lo levantaron 
 
 | | 8-bis | 8-bis-2 |
 |---|---|---|
-| `CRITICA`, contados por ID | 28 | **24** (A y B) **+ 1** (`C1`) |
-| `CRITICA`, **defectos distintos** | no se midió | **15** |
-| **atribuidos a la tanda de arreglos anterior** | **25 de 25** en A y B | **15 de 15** |
+| `CRITICA`, contados por ID | 28 | **24** (A y B) **+ 1** (`C1`) **+ 2** (`C2`) = **27** |
+| `CRITICA`, **defectos distintos** | no se midió | **17** |
+| **atribuidos a la tanda de arreglos anterior** | **25 de 25** en A y B | **17 de 17** |
 
-**Los quince son atribuibles a un arreglo de la 9-bis.** Ninguno es un defecto preexistente que
-haya llegado entero. Recorrí los quince y el único caso limítrofe es el #7 (`listing`), que A3
-clasifica bien: el hueco es anterior y **lo destapó** el arreglo 22 al hacer por primera vez la
-pregunta *«cómo amanece la población existente»*; sin ese arreglo el hueco no era alcanzable como
-afirmación. Lo mismo vale para mi `F-8cC1-001`: el callejón de `ARCHIVED` es de la FASE 8 y **la
-entrada nueva la construyó el arreglo 16**.
+**Los diecisiete son atribuibles a un arreglo de la 9-bis.** Ninguno es un defecto preexistente
+que haya llegado entero. Recorrí los diecisiete y el único caso limítrofe es el #7 (`listing`),
+que A3 clasifica bien: el hueco es anterior y **lo destapó** el arreglo 22 al hacer por primera vez
+la pregunta *«cómo amanece la población existente»*; sin ese arreglo el hueco no era alcanzable
+como afirmación. Lo mismo vale para mi `F-8cC1-001`: el callejón de `ARCHIVED` es de la FASE 8 y
+**la entrada nueva la construyó el arreglo 16**. Los dos de `C2` los atribuye al **23** y lo
+verifiqué: los dos se apoyan en la tabla de cuatro pasos, que no existía antes de ese arreglo.
 
 **Y el modo cambió, que es el dato que la 8-bis no podía dar.** En la 8-bis los 25 eran arreglos
-que **no habían recorrido su propio dominio**. Acá, clasificando los 15 por modo de falla:
+que **no habían recorrido su propio dominio**. Acá, clasificando los 17 por modo de falla:
 
 | modo | cuántos | cuáles |
 |---|---|---|
 | el arreglo se escribió **en un solo lado de una frontera de dos** | **6** | #4, #5, #6, #9, #11, #14 |
-| el arreglo **volvió falsa la premisa de otro arreglo** | **5** | #1, #3, #13, #15, y mi `F-8cC1-001` |
+| el arreglo **volvió falsa la premisa de otro arreglo** | **6** | #1, #3, #13, #15, **#16**, y mi `F-8cC1-001` |
 | el arreglo **declaró su dominio recorrido y lo recorrió a medias** | **3** | #8, #10, #2 |
 | el arreglo **abrió una pregunta y contestó una mitad** | **2** | #7, #12 |
+| el arreglo **se apoyó en una medición que caduca sola** | **1** | **#17** |
+
+**El modo nuevo lo aporta `C2` y es el único que ninguna de las dos obligaciones de
+`DEC-METH-008` detecta.** Las dos preguntan por el **dominio** y por la **premisa de otro
+arreglo**; #17 es un arreglo apoyado en una premisa **propia y verdadera** que **envejece**, y el
+programa ya tiene la regla que lo cubre —`S-METH-01`, *«una medición caduca si el hecho que mide
+puede haber cambiado»*— con su fecha escrita en el capítulo, en un § **titulado «Y caduca»**. No
+hace falta una regla nueva: hace falta que un checklist irreversible tenga un paso 0 que re-mida.
 
 **La obligación 1 de `DEC-METH-008` funcionó y la 2 no se ejecutó.** Los tres arreglos que traen su
 dominio escrito —la tabla de 6 × 4, los nueve estados, los dos valores de `sucede_a`— dejaron su
 propio dominio en orden y **los tres se rompen contra el dominio del arreglo de al lado**. Ninguno
-de los 15 se habría evitado con más recorrido interno; **once de los 15 se detectan con una
+de los 17 se habría evitado con más recorrido interno; **doce de los 17 se detectan con una
 búsqueda de texto por el término que el arreglo redefine, sobre los capítulos que el commit no
 toca** — es la mecánica que `B1` propone al cerrar su informe, y la confirmo contando: `sucede_a`,
-«sucesora», «viva», «barrido», «cubierto», `plan_id`, `version_id`, «pago tardío».
+«sucesora», «viva», «barrido», «cubierto», `plan_id`, `version_id`, «pago tardío», y **«los
+tres»**, que es el que habría dado #16.
 
 ---
 
@@ -983,6 +1025,46 @@ guarda.
    entrada en la lista de `V/02` §3.2 o el barrido que `F-8A2-005` viene pidiendo desde la FASE 8, y
    **el mismo barrido cierra `F-8cA3-006`** —las fichas que amanecen en el estado equivocado— y la
    mitad de `F-8cC1-004`.
+
+### 3.7 `C2` contra `B1`, `B3` y este informe: la cota de «cero pagos» tiene fecha de vencimiento escrita, y los tres la citamos sin la fecha
+
+> Agregada el 2026-09-20 al leer `C2`, que corrió en paralelo con `C1`.
+
+**La contradicción.** Tres hallazgos del racimo de la lápida acotan su severidad con la misma
+medición, y `F-8cC2-002` demuestra que esa medición **caduca sola dentro de seis días**:
+
+- `F-8cB1-006` baja el defecto a `ALTA` con este argumento textual: *«su alcance está medido y es
+  chico: «tres compromisos que todavía no cobraron» y «**0** pagos registrados en toda la
+  historia» (`B/21` §1.2, medición del 2026-09-15 re-verificada el 2026-09-17)»*.
+- `F-8cB3-003` acota su camino al mismo conjunto de tres, y **este informe** apoyó el defecto #15
+  del §2.1 en esa misma frontera.
+- `F-8cC2-002` mide la otra mitad: `B/21` §3.1 fecha el primer cobro el **2026-09-26**.
+
+**Verificado contra el texto, y el texto es más terminante que los tres informes.** No hay que
+deducir la caducidad: `B/21` la declara en el párrafo **inmediatamente siguiente** al que `B1`
+cita, y el § se titula, literal, **«1.3 Y caduca»** — *«`S-METH-01`: esta medición vale mientras
+el hecho no cambie, y **este hecho cambia solo** — el 2026-09-26 (§3). Se re-verifica **antes de
+implementar nada de FASE 10**»*. `B1` citó el §1.2 y no el §1.3.
+
+**Veredicto, en tres partes.**
+
+1. **`F-8cB1-006` sigue siendo `ALTA` para lo que describe**, y no lo re-clasifico: su defecto es
+   que la lápida se apoya en un barrido que no la mira, y eso no cambia con la fecha.
+2. **Pero la cota que usa para no subirlo no es una propiedad del sistema: es una foto con
+   vencimiento**, y el vencimiento está **antes** del acto que la cota protege. El corte se
+   ejecuta al final de la FASE 10 (`DEC-ARCH-007`, `11-particion…` §6) y la re-verificación que
+   `B/21` §1.3 agenda es *«antes de implementar nada de FASE 10»*, o sea **meses antes del
+   corte**. `C2` tiene razón en que la medición está del lado equivocado del acto.
+3. **Y eso es lo que vuelve a `F-8cC2-002` el hallazgo portante del racimo**: los demás son sobre
+   **cómo** se escribe la lápida; el suyo es sobre **qué deja de valer el día que alguien cobra**,
+   que es lo único de los cinco que el paso de tiempo empeora solo. Lo cuento como defecto
+   distinto **#17** y no como una re-severización de los otros.
+
+**Y lo mismo vale para mí.** Esta corrección la hago sobre mi propio texto: el §2.1 escribía el
+defecto #15 dando por buena la frontera de *«tres compromisos conocidos»* sin citar el § que la
+fecha. Es exactamente la forma que este informe reporta dos veces en otros —una razón caduca bajo
+una conclusión correcta (`F-8cC1-006`), y un conteo congelado en la prosa de quien no es dueño de
+la lista (`F-8cC1-016`)— aplicada a mí.
 
 ---
 
