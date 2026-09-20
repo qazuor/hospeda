@@ -3,7 +3,7 @@ title: "FASE 7 del paraguas — la estrategia de despliegue que ninguna épica t
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-19
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 7
 ---
@@ -14,9 +14,9 @@ fase: 7
 > [`12-contrato-de-cobertura.md`](./12-contrato-de-cobertura.md). Y por la misma razón: lo que
 > describe **no le pertenece a ninguna de las dos**.
 
-**Su contenido todavía no está escrito.** Lo que está escrito acá es **qué tiene que contestar,
-quién lo escribe y para cuándo** — que es lo que faltaba, y lo que hacía que seis de los diez
-ítems del §65 no fueran de nadie.
+**Está escrito qué tiene que contestar, quién lo escribe y para cuándo** — que es lo que faltaba, y
+lo que hacía que seis de los diez ítems del §65 no fueran de nadie. **De su contenido hay un ítem
+resuelto**, el orden del corte (§4); los otros cinco siguen pendientes.
 
 ---
 
@@ -36,7 +36,7 @@ quedaron huérfanos**:
 | observability | `NUCLEO/08` |
 | **rollout** | — |
 | **coexistence** | — |
-| **staging** | — |
+| **staging** | **el §4**, en lo que hace al orden del corte |
 | **feature flags** | — |
 | **rollback** | — |
 | **acceptance gates** | — |
@@ -83,10 +83,62 @@ el del **programa**, y es de otro tamaño.
 
 ---
 
-## 4. Lo que este documento todavía no contesta
+## 4. El primer ítem escrito: el orden del corte
 
-Los seis ítems huérfanos, uno por uno. Ésa es la FASE 7 del paraguas y es trabajo pendiente, con
-fecha límite dada por el §2: **antes de que nazca la rama**.
+De los seis huérfanos, éste se escribe ahora porque **su ausencia tiene un costo concreto y
+fechado**, no porque sea el más fácil.
+
+### 4.1 El punto de no retorno no desapareció: subió de escala
+
+Decidir que **no se migra** eliminó el punto de no retorno **por fila** —ya no hay ocho
+transcripciones que puedan quedar a medias— y **dejó intacto el del programa**, que es el que
+importa:
+
+> **Una autorización viva cobra DESPUÉS del despliegue que borró el código capaz de reconocerla.**
+> La persona paga, el dinero entra, y del lado de Hospeda **no queda ni servicio ni asiento
+> contable**: el sistema que sabía qué era ese identificador ya no existe, y el nuevo nunca lo
+> conoció.
+
+Son **tres** las que pueden hacerlo —las únicas con preapproval vivo—, y el hecho de que sean pocas
+no cambia nada: **un cobro que entra sin asiento no es un problema de escala.**
+
+### 4.2 El orden, y no es una preferencia
+
+| # | paso | quién lo hace | por qué en ese lugar |
+|---|---|---|---|
+| 1 | **cancelar los tres preapprovals en el proveedor** | el sistema **viejo**, que todavía corre | es el único que sabe hacerlo; después del despliegue ese código no existe |
+| 2 | **verificar releyendo cada uno por su id** y confirmar que quedó `cancelled` | ídem | `D5` ya lo exige para toda mutación, y `RC-2` mide que leer por id es confiable — **buscar no** (`RC-1`) |
+| 3 | **desplegar** | — | recién acá, y sólo si el paso 2 cerró |
+| 4 | **sembrar las lápidas** del cap. 21 §2.5 con los ids cancelados | el sistema **nuevo** | la fila es del esquema nuevo: no puede existir antes del paso 3 |
+
+**El paso 2 es el gate, y es lo único que vuelve segura la secuencia**: si alguno de los tres **no
+se pudo cancelar**, el corte **no avanza**. Es la misma forma que el programa ya usa en todas
+partes —verificar releyendo en vez de creerle al código de estado— aplicada al único momento donde
+no hay vuelta atrás.
+
+**La ventana entre el paso 1 y el paso 3 es la parte incómoda, y se declara**: durante ese rato el
+sistema viejo sigue corriendo con tres suscripciones canceladas. Si entra un cobro en vuelo, **lo
+registra el viejo**, que es exactamente lo que queremos — sigue existiendo el lugar donde anotarlo.
+Al revés, con el despliegue primero, ese mismo cobro cae en el vacío.
+
+**Por qué no cancelar después de desplegar**, que es el orden intuitivo: el código que sabe cancelar
+esos preapprovals **se va con el despliegue**. Cancelarlos después exige hacerlo a mano contra la
+API del proveedor, sin idempotencia, sin registro y sin nadie que verifique — y es el caso que este
+§ existe para evitar.
+
+### 4.3 Lo que este orden NO resuelve
+
+**Qué pasa si el corte hay que revertirlo después del paso 3.** Eso es el rollback del programa,
+es el §3, y sigue sin escribirse. Lo que este § agrega es que **el punto de no retorno ahora tiene
+una ubicación declarada: está entre el paso 2 y el paso 3.**
+
+---
+
+## 5. Lo que este documento todavía no contesta
+
+**Cinco de los seis ítems huérfanos**, uno por uno — el sexto, `staging`, quedó escrito en el §4 en
+lo que hace al orden del corte. Ésa es la FASE 7 del paraguas y es trabajo pendiente, con fecha
+límite dada por el §2: **antes de que nazca la rama**.
 
 **Una restricción que ya está fijada y lo acota**: `DEC-ARCH-007` decidió que **las dos épicas
 llegan juntas**, así que la estrategia no tiene que resolver *«cómo sale una sola»* — no existe
