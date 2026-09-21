@@ -55,7 +55,7 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R1-B | una fila con `sucede_a` no nulo **no** nace con fecha de primer cobro posterior al vencimiento de su ventana de autorización, **o esa fecha no es la que el proveedor confirmó** | `D8`, cap. 12 §5.2, cap. 02 §2.2 |
 | G-R1-C | un camino escribe **`sucedida_por` sin limpiar `sucede_a`**, o limpia **`sucede_a` sin escribir `sucedida_por`**, o **cierra una sucesión dejando algo colgando de la predecesora**: un complemento, la **redención de promo** o la **cortesía vigente** sin re-apuntar, o un **pago pendiente por `S19` sin la marca `requiere_conciliación`** | `D15`, cap. 03 §3.2 (`S18`), cap. 02 §2.2 y §2.6, `DEC-RF-002` |
 | G-R1-D | un camino **reactiva** una fila —`S5`, `S7` o el efecto de `MP1`— que en ese instante es la **predecesora de una sucesión en curso** (tiene una sucesora **viva** con `sucede_a` apuntándola), o **reembolsa** el pago que quedó pendiente por `S19` **antes** de que la sucesión se resuelva | cap. 12 §5.3, cap. 03 §3.2 (`S5`, `S7`, `S19`), cap. 05 §3 condición 3 |
-| G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo del término *«fila viva»* **no figura** en el inventario de `NUCLEO/01` §2.4 | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`) |
+| G-R1-E | un **predicado sobre `sucede_a`** —en la columna *condición* de una transición, en el enunciado de un invariante o en otro guard— pregunta si **hay una fila apuntando** sin exigir que esa fila **esté viva**; o un consumidor nuevo del término *«fila viva»* **no figura** en el inventario de `NUCLEO/01` §2.4; **o enumera el conjunto del sujeto equivocado** —los seis de la suscripción sobre una instancia de addon, o los dos de la instancia sobre una suscripción— | `NUCLEO/01` §2.4 reglas 2 y 3, cap. 02 §2.2, cap. 03 §3.2 (`S17`, `S19`) y §8 (`A5`) |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** | cap. 03 §1 regla 7 (núcleo). **Referencia cruzada**: lo define `V/20` §2 y cubre las **seis** tablas de esta épica. El catálogo de guards es una sola numeración partida en dos capítulos, así que un guard del núcleo tiene que figurar en los dos o la mitad de su dominio queda sin vigilar en el papel |
 
 **Los cinco de `R1` son la contracara de las dos claves, y conviene decir qué impide cada uno.**
@@ -121,6 +121,13 @@ abandono le devuelve al cliente el pago que lo salvaba y lo manda a `SUSPENDED`.
 porque la regla se ejecuta en tres lugares y no en uno**: `S5`, `S7` y el efecto de `MP1`, y el
 camino que la olvide en cualquiera de los tres produce el daño entero. Se rompe a propósito
 sacándole la condición a una sola de las tres.
+
+**Y el tercer lugar sólo es real porque `S19` admite las dos puertas del pago.** Este guard
+asume que el efecto de `MP1` **llega** a `S19`; mientras el evento de `S19` nombró sólo *«la
+cuota que sigue en `recycling`»*, el pago manual no matcheaba ninguna fila, el intento caía en la
+regla 1 y el guard vigilaba un camino que la tabla no dejaba recorrer — con el reloj del grace
+corriendo igual sobre alguien que había pagado (cap. 03 §3.2). Un guard cuyo dominio la tabla no
+puede satisfacer no está en rojo: está mirando a otro lado.
 
 ### 2.1 Un guard se prueba rompiéndolo
 

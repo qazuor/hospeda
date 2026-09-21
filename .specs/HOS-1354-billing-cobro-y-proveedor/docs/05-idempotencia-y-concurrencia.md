@@ -195,7 +195,8 @@ que la condición existe para detener. Con la marca de `B/02` §2.2 ese agujero 
 tocar la condición**, porque la fila marcada conserva su estado real y entra en la cuenta.
 
 **Y es la segunda vez que la palabra *«viva»* rompe algo leyendo el conjunto equivocado**, así que
-conviene decir cuál lee ésta: la **fila viva** de `NUCLEO/01` §2.4 —los seis de `B/02` §2.2—, que
+conviene decir cuál lee ésta: la **fila viva** de `NUCLEO/01` §2.4 **con sujeto suscripción**
+—los seis de `B/02` §2.2, no los dos de la instancia de addon (`B/03` §8)—, que
 es la lectura correcta acá porque lo que se está evitando es **un segundo cobro**, no una decisión
 de cobertura. Esta condición es de billing y sobre filas de billing; no cruza la frontera.
 
@@ -247,6 +248,15 @@ La versión anterior la eximía *«a propósito»*, con dos razones, y las dos s
 de que la sucesión ya no hace falta»*: ese pago **no es un acto del cliente**, es una cuota en
 `recycling` que el proveedor reintenta solo (`B/12` §1.3, medido). El cliente que abrió el checkout
 sigue pudiendo autorizarlo, y si lo hace, `S17` cancela la fila que el pago acaba de reactivar.
+
+**Y por la otra puerta, donde sí es un acto del cliente, la conclusión no cambia.** El pago del
+período impago tiene dos puertas y la segunda es el **pago manual** del `B/03` §7, que la persona
+hace a propósito: ahí el argumento de arriba no aplica. Y aun así **tampoco es evidencia de que
+la sucesión no haga falta** —quien transfiere la cuota vieja no está cancelando su checkout, y
+las dos ramas del `B/12` §5.3 siguen siendo posibles en ese instante—, así que el destino del
+pago lo decide **el cierre** de la sucesión y no su llegada. La razón escrita arriba vale para
+una puerta; la regla que sostiene vale para las dos, y por eso `S19` retiene el pago entre por la
+que entre.
 
 **Lo que la nota temía —*«dejar a la persona con la vieja sin reactivar y la nueva sin
 autorizar»*— no ocurre, y hay que decir por qué.** Mientras la sucesión está en curso la

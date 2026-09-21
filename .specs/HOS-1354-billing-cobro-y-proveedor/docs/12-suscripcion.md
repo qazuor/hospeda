@@ -343,6 +343,12 @@ cobranza que no existe en ningún lado del PDR, sobre alguien que **acaba de vol
 siga viva su cuota sigue en `recycling` (§1.3, medido) y **puede entrar**. Si entra dentro de las
 72 h de la sucesión, el cliente **paga la deuda que le perdonamos**.
 
+**Y son DOS las puertas por las que puede entrar, no sólo el reciclado.** La otra es el **pago
+manual** del §30: el cliente transfiere la cuota vieja y el admin la registra con `MP1`
+(`B/03` §7). El desenlace es idéntico por la razón que `MP1` escribe —*«el daño no depende de por
+qué puerta entró el pago»*—, y por eso el evento de `S19` nombra las dos (`B/03` §3.2). Todo lo
+que sigue en este § vale igual para las dos, incluido el aviso previo.
+
 > **Se acepta que el cobro pueda entrar, y se le avisa al cliente ANTES de que pase.**
 
 **Ninguna de las dos salidas es limpia, y se eligió por cuál daño es reversible.** Cancelar la
@@ -364,6 +370,11 @@ en sus manos: si lo termina, el cobro se le devuelve; si lo abandona, **el cobro
 paga el período que está usando. Anunciar sólo *«el cobro puede entrar»* —que es lo que decía—
 describe el hecho y esconde la única decisión que el cliente puede tomar al respecto. Alcanza a
 `NUCLEO/07` §6, fila *«cambio de plan con una cuota en reintento»*, y a `B/19` §4, fila 15.
+
+**Y el aviso le toca también al que paga a mano**, porque su puerta es la que el cliente abre a
+propósito: el que transfiere la cuota vieja mientras cambia de plan hace, con un acto suyo,
+exactamente lo que al otro le hace el reciclado del proveedor. Alcanza a las mismas dos filas
+—`NUCLEO/07` §6 y `B/19` §4 fila 15—, y ninguna de las dos lo decía.
 
 **Y tiene que decir que la devolución no es instantánea**, porque `DEC-RF-002` la puso en manos de
 una persona: el reembolso de la primera rama **se confirma, no se dispara solo**. Es el precio
@@ -444,6 +455,14 @@ sobre sus filas numeradas**, que es la corrección que trajo la quinta:
 | **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso |
 | **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada — **`S13` apaga la bandera en el mismo acto** | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3. La bandera se apaga porque un *«pendiente»* eterno sobre una fila cerrada no es un registro fiel: es un conteo inflado |
 | **el proveedor da de baja a la PREDECESORA** por impagos acumulados (§1.4), y el espejo del `B/03` §10.1 la lleva a `CANCELLED` con la sucesora todavía esperando autorización | **se reembolsa, y lo confirma una persona** — igual que la rama 1: **`S18` cierra la sucesión sin `S17`** (la predecesora ya no es fila viva) y le pone a **ella** la marca con motivo *«reembolso por confirmar»* | el período que el pago cubría lo cortó la baja del proveedor, no nosotros, pero el resultado para el cliente es el mismo de la rama 1: pagó un período que no le compró nada. Y el cierre **tiene** que correr igual —si no, el candado `A` queda vacío y un alta nueva entra (`B/03` §3.2)—, así que el acto que lo dispara ya está ahí |
+
+**Las cinco ramas valen para las dos puertas, y las dos que devuelven plata ya tienen dónde
+asentarla.** *«El pago»* de la rama 1 y de la rama 5 es el que `S19` retuvo, que puede ser un
+`payment` o un `manual_payment` (`B/03` §3.2, §7). El acto es el mismo en los dos casos —`S18`
+pone la marca y **una persona confirma**, `DEC-RF-002`— y el asiento también: un `refund` sobre
+el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos entidades, la rama
+que mueve dinero prometía una devolución que para la mitad de su población **no se podía
+registrar**.
 
 **Las cinco ramas tienen ahora un ACTO que las dispara, y hay que decirlo porque durante una
 tanda entera no lo tuvieron.** La rama 1 decía *«al cerrar la sucesión se pone la marca»* sin

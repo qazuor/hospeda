@@ -206,7 +206,7 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |
 | pierde la cortesía al pausar | transaccional | antes de confirmar, y **el cliente elige** | `DEC-GRANT-004` |
 | retención | transaccional | antes del día 90 y antes del día 180 | `DEC-DATA-001` |
-| **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva | cap. 12 §5.3 (épica de billing) |
+| **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva. **Vale igual si la cuota se paga a mano** —transferencia registrada por `MP1`, cap. 03 §7 (épica de billing)—: es la segunda puerta del mismo pago | cap. 12 §5.3 (épica de billing) |
 
 **El último no es un aviso más: es la condición bajo la cual se aceptó la decisión.** Se decidió
 perdonar el período impago y **no cancelar la predecesora antes de tiempo** —cancelarla
@@ -231,6 +231,14 @@ automáticas sobre dinero, cap. 08 §3 (núcleo)— y este correo es donde ese p
 cliente que sabe que la devolución lleva unas horas espera; uno que la esperaba en el acto
 reclama. Sin la frase el correo promete algo que la decisión no da, y es un camino **normal**, no
 excepcional: `DEC-RF-002` lo declara así en voz alta.
+
+**Y el aviso alcanza a las dos puertas del mismo pago, no sólo al reciclado.** El cap. 12 §5.3
+(épica de billing) declara que el pago del período impago puede entrar por el reciclado del
+proveedor **o** por un pago manual que el admin registra, y que el desenlace es el mismo. La
+puerta manual es además la única que el cliente abre **a propósito**: transferir la cuota vieja
+mientras cambia de plan es un acto suyo, así que avisarle antes es todavía más de lo que este
+correo existe para hacer. El nombre de la fila quedó como estaba —*«una cuota en reintento»*, que
+es el caso mayoritario— y lo que se amplió es su alcance.
 
 **El schedule del grace es relativo al vencimiento y no absoluto**: como la ventana es
 configurable por plan, un schedule con días fijos se cae fuera de la ventana en los planes con

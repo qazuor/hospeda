@@ -216,12 +216,20 @@ tiene un nombre propio que ya no se puede confundir con el otro.
 
 | término | qué es | dónde se enumera | para qué existe |
 |---|---|---|---|
-| **fila viva** | una fila —de suscripción o de instancia de addon— que **todavía tiene una autorización de cobro que puede cobrar** | los **seis** de la suscripción: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED`, `CANCEL_SCHEDULED` (cap. 02 (épica de billing) §2.2) | el candado del §11: impedir un segundo `INSERT` sobre una autorización que sigue pudiendo cobrar |
+| **fila viva** | una fila —de suscripción o de instancia de addon— que **todavía tiene una autorización de cobro que puede cobrar** | **son dos enumeraciones, una por sujeto.** De la **suscripción**, los **seis**: `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED`, `SUSPENDED`, `CANCEL_SCHEDULED` (cap. 02 (épica de billing) §2.2). De la **instancia de addon**, los **dos**: `PENDING_AUTHORIZATION` y `ACTIVE` (cap. 03 (billing) §8) | el candado del §11: impedir un segundo `INSERT` sobre una autorización que sigue pudiendo cobrar |
 | **fuente viva** | una fuente que el contrato de cobertura **devuelve hoy** en `fuentes` | la lista de esa respuesta, resuelta en el momento ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2) | resolver la cobertura y las capacidades: los pasos 5 y 6 de la autorización |
 
 **Los tres que quedan afuera de la primera lo están por la razón que le da su nombre**:
 `ABANDONED`, `CANCELLED` y `CHARGE_DECLINED` **no tienen autorización que pueda cobrar** — `S3`
 canceló el preapproval, la suscripción terminó, o el proveedor la canceló de forma terminal.
+
+**Y en la instancia de addon quedan afuera otros tres, por lo mismo**: `ABANDONED`, `EXPIRED` y
+`CANCELLED`. **La segunda enumeración se escribió cuando un consumidor la necesitó**, y la
+necesitó caro: el `desde` de `A5` decía `ACTIVE` y nada más, así que una instancia que autorizaba
+**después** de que su título murió nacía con su preapproval cobrando y ninguna transición la
+alcanzaba (cap. 03 (billing) §8). La definición de arriba **ya nombraba los dos sujetos** y sólo
+enumeraba uno; el que faltaba es el que se coló. **Las dos enumeraciones no se mezclan**: cuál
+aplica lo decide el sujeto del predicado, y todos los del inventario de abajo lo nombran.
 
 #### El inventario de consumidores de «fila viva»
 
@@ -246,6 +254,7 @@ detecta comparando contra los seis.
 | 5 | la **primera mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«la suscripción de esa vertical dejó de ser fila viva»* |
 | 6 | la **condición 3 del pago tardío** | cap. 05 (billing) §3 | *«no hay otra fila viva principal del mismo `user + vertical`»* — las seis, `PENDING_AUTHORIZATION` incluido |
 | 17 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«un beneficiario con un ancla viva en la vertical V no debería tener una fila viva **principal** en V»* — el detector de la ejecución parcial de `S13` |
+| 18 | el **`desde` de `A5`** | cap. 03 (billing) §8 | *«toda instancia con una autorización que puede cobrar»* — es el **único consumidor cuyo sujeto es una instancia de addon**, así que su enumeración es la de **dos**, no la de seis. Decía `ACTIVE` y nada más, y la mitad que faltaba —`PENDING_AUTHORIZATION`— es la ventana de 72 h por la que un complemento nacía cobrando sobre un título ya muerto |
 
 **B · Preguntan «¿hay OTRA fila viva apuntándola?».** El error posible es **omitir el adjetivo**,
 y es el que ya ocurrió: sin él el predicado **no tiene forma de dejar de cumplirse**, porque nada
@@ -279,7 +288,7 @@ que `PENDING_AUTHORIZATION` dejó de emitir fuente, y desde entonces la diferenc
 justamente el estado por el que se colaba un doble cobro.
 
 **Y los dos conjuntos no coinciden, con la distancia contada contra la tabla de diez filas del
-`12-contrato…` §2.6.** De las **seis** filas vivas, **tres no emiten ninguna fuente**:
+`12-contrato…` §2.6.** De las **seis** filas vivas **de la suscripción**, **tres no emiten ninguna fuente**:
 `PENDING_AUTHORIZATION`, `SUSPENDED` y `PAUSED` cuando el motivo es `CUSTOMER_REQUEST`. Y la
 cuarta discrepancia es de otra forma: `PAUSED` por `COURTESY` **sí** emite, pero con `tipo:
 CORTESÍA` y no como suscripción — o sea que `PAUSED` es el único de los seis cuya respuesta **no

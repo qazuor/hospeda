@@ -161,8 +161,10 @@ simultánea**, que es lo que `DEC-CONC-001` fue a evitar.
 preapproval, la suscripción terminó, o el proveedor lo canceló de forma terminal al rechazar el
 primer cobro (`B/12` §4.4).
 
-> **Éste es el conjunto que `NUCLEO/01` §2.4 llama «fila viva», y es de esta épica.** El programa
-> usa la palabra *«vivo»* para dos cosas distintas y sólo esta sección enumera la primera. La otra
+> **Éste es el conjunto que `NUCLEO/01` §2.4 llama «fila viva» PARA UNA SUSCRIPCIÓN, y es de esta
+> épica.** El término tiene dos sujetos y **el otro se enumera en el cap. 03 §8**: una instancia
+> de addon es fila viva en `PENDING_AUTHORIZATION` y en `ACTIVE`, que son **dos** y no seis. El
+> programa usa además la palabra *«vivo»* para dos cosas distintas. La otra
 > —**«fuente viva»**— es la del contrato de cobertura, y **no coinciden**: cuatro de estos seis
 > **no emiten ninguna fuente** (`12-contrato…` §2.6). Una condición de la épica de verticales que
 > se escriba sobre las filas vivas de acá **no se puede evaluar** del otro lado de la frontera, y
@@ -228,13 +230,26 @@ relectura, que ya ocurre. El guard sigue corriendo sin red, porque lee la column
 | entidad | qué guarda | restricciones |
 |---|---|---|
 | **`payment`** | suscripción, monto, moneda, estado del cap. 03 §6, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2 |
-| **`refund`** | pago, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
+| **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
 | **`manual_payment`** | suscripción, estado del cap. 03 §7, quién lo registró, cuándo, comprobante | |
 | **`receipt`** | pago, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`) | `UNIQUE(numero)`, sin huecos |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
 **El monto es entero**, en la unidad mínima de la moneda. No hay decimales de punto flotante en
 ninguna columna de dinero.
+
+**El `refund` cuelga del pago que se devuelve, y ese pago puede no ser un `payment`.** La
+versión anterior decía sólo *«pago»* y la única entidad con ese nombre es `payment`, que es *«el
+registro de un hecho en el proveedor»* (`B/16` §3.1) — así que un pago manual, que por
+definición no tiene hecho en el proveedor, **quedaba sin ningún lugar donde asentar su
+devolución**. Y hay una rama que la ordena: `S19` retiene el pago del período impago **entre por
+la puerta que entre** (cap. 03 §3.2), y las ramas 1 y 5 de `B/12` §5.3 mandan devolverlo. Sin
+esta columna el período quedaba cobrado y sin asiento de reversa, que es lo que el §4.1 conserva
+íntegro. **No hace falta un estado nuevo en la máquina del pago manual** (cap. 03 §7): el
+`manual_payment` sigue `REGISTERED` porque el pago existió, igual que un `payment` reembolsado
+conserva su hecho, y lo que registra la devolución es la fila de `refund` con **quién la
+confirmó** — que es lo que `DEC-RF-002` exige y lo único que distingue este camino del
+automático que esa decisión rechazó.
 
 ### 2.4 Capacidades y concesiones
 
@@ -375,7 +390,7 @@ vez**, en vez de descubrirse entidad por entidad:
 | **complementos** (addons recurrentes y de única vez) | `addon_instance.objetivo` con scope `VERTICAL_SUBSCRIPTION` | **se re-apuntan a la sucesora** | el objetivo no desapareció, se sucedió (`B/16` §4.2). Sin esto, todo upgrade cancela de forma irreversible los addons que el cliente pagó |
 | **la redención de promo** | `promo_redemption.subscription_id` | **se re-apunta a la sucesora**, y el descuento se vuelve a aplicar sobre el monto de ella con la regla de `B/14` §2.2 —porcentual se recalcula, fijo se traslada—, **con el contador de N cobros donde estaba** | `B/14` §2.2 ya declaraba el resultado (*«la sucesora lo hereda»*) y ningún acto lo ejecutaba. El descuento vive **mutado en el monto del proveedor** (`DEC-MP-001`) y ese monto muere con el preapproval que `S17` cancela, así que sin el re-apunte el cliente pasa a pagar precio de lista **y nada lo detecta**: el barrido compara contra el monto vigente, y el monto vigente de la sucesora **es** el de lista |
 | **la cortesía vigente** | `courtesy_grant.subscription_id` (no anulable) | **se re-apunta a la sucesora**, y la sucesora **queda pausada con motivo `COURTESY` por los días que quedaban** | una cortesía *«cubre la suscripción que pausa, y nada más»* (`DEC-GRANT-006`): re-apuntarla sin pausar deja una fuente que no sostiene nada, porque el mecanismo de la cortesía **es** la pausa (`DEC-GRANT-003`). Y no re-apuntarla deja la columna no anulable señalando una `CANCELLED`, que no emite fuente (`12-contrato…` §2.6): el beneficio que firmó `SUPER_ADMIN` desaparece en silencio |
-| **el pago pendiente por `S19`** | `payment.subscription_id` | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le pone a **esa** fila la marca `requiere_conciliación` y el reembolso lo confirma una persona (`DEC-RF-002`) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** |
+| **el pago pendiente por `S19`** | `payment.subscription_id` **o `manual_payment.subscription_id`** — `S19` retiene el pago del período impago **entre por la puerta que entre** (cap. 03 §3.2) | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le pone a **esa** fila la marca `requiere_conciliación` y el reembolso lo confirma una persona (`DEC-RF-002`), asentado en un `refund` sobre el pago que se devuelve (§2.3) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** |
 | **pagos y pagos manuales ya resueltos, comprobantes, pausas cerradas, el `provider_link`** | varias | **no se re-apuntan** | son el histórico de esa fila y de su preapproval. Cada suscripción tiene el suyo |
 
 **Las tres primeras son el acto, la cuarta es el aviso, y la quinta es historia.** Es la

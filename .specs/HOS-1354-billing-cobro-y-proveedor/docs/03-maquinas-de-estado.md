@@ -113,7 +113,7 @@ Y una nota de registro que sigue valiendo:
 | S16 | `ACTIVE` | el **primer** cobro se rechaza | `CHARGE_DECLINED` | **es el primer cobro DE ESA autorización**, y el proveedor la canceló al rechazarlo | no hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva** — **salvo que la fila fuera la predecesora de una sucesión**, y ahí el reintento es **terminar el checkout que ya está abierto**: `S18` cierra la sucesión en el acto y la sucesora ocupa el candado `A` (§3.3.1) |
 | S17 | la **predecesora**, si **sigue siendo fila viva** — las cinco alcanzables: `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED`, `PAUSED`, `SUSPENDED` | su sucesora quedó **autorizada**, confirmado por relectura | `CANCELLED` | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **se cancela en el proveedor si su preapproval sigue vivo** (es `D7`); si la relectura dice que ya está `cancelled`, `D7` **ya está cumplido y no se manda nada** |
 | S18 | la **sucesora viva**: en `ACTIVE`, **o en `PENDING_AUTHORIZATION` cuando la predecesora se murió sola** | la misma autorización que disparó `S2`; **o la predecesora dejó de ser fila viva sin `S17` — por `S12`, por `S16` o por el espejo de la baja decidida por el proveedor (§10.1)**; o una resolución de `S15` sobre la sucesión trabada | **el mismo estado** | la predecesora **ya no es fila viva** | **cierra la sucesión, y es el único acto que lo hace.** Son **cuatro** escrituras y la tercera alcanza **tres** entidades: se escribe **`sucedida_por`** en la predecesora; se **limpia `sucede_a`** en la sucesora; **todo lo que colgaba de la predecesora se re-apunta a la SUCESORA** —los **complementos** (`B/16` §4.2), la **redención de promo** (`B/14` §2.2) y la **cortesía vigente** (`B/14` §4.4), con el inventario completo en `B/02` §2.6—; y **si la predecesora retiene un pago pendiente por `S19`, se le pone a ELLA la marca `requiere_conciliación`** con motivo *«reembolso por confirmar»* (rama 1 de `B/12` §5.3, `DEC-RF-002`). La sucesora pasa a ser el origen |
-| S19 | la **predecesora** de una sucesión en curso, en `GRACE_PERIOD` o `SUSPENDED` | entra el pago de la cuota que sigue en `recycling` | **el mismo estado** | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **el pago se registra y queda pendiente de resolución**: no reactiva, no se reembolsa todavía y **no pone la marca todavía** — es un caso diseñado y no una divergencia, así que `S14` no aplica; **la marca la pone `S18` al cerrar, y sólo en las ramas 1 y 5**. Su destino lo decide **cómo termina la sucesión**, con las cinco ramas de `B/12` §5.3. Mientras esté pendiente, `S6` no corre |
+| S19 | la **predecesora** de una sucesión en curso, en `GRACE_PERIOD` o `SUSPENDED` | **entra el pago del período impago, por cualquiera de sus DOS puertas**: la cuota que el proveedor sigue reciclando, **o** el pago que el admin registra a mano (`MP1`, §7) | **el mismo estado** | la fila tiene una **sucesora viva** con `sucede_a` apuntándola | **el pago se registra y queda pendiente de resolución** —sea un `payment` o un `manual_payment` (`B/02` §2.3)—: no reactiva, no se reembolsa todavía y **no pone la marca todavía** — es un caso diseñado y no una divergencia, así que `S14` no aplica; **la marca la pone `S18` al cerrar, y sólo en las ramas 1 y 5**. Su destino lo decide **cómo termina la sucesión**, con las cinco ramas de `B/12` §5.3. Mientras esté pendiente, `S6` no corre |
 
 **La muerte de la predecesora y el cierre de la sucesión son DOS actos, y por eso son dos
 filas.** `S17` mata a la predecesora; `S18` cierra la sucesión. Escribirlos como uno solo es lo
@@ -300,10 +300,38 @@ una: la condición en `S5` y en `S7` —que es la que **no reactiva**— y `S19`
 **qué sí pasa**. Sin `S19`, el pago entrante sería una transición no declarada y la regla 1 lo
 mandaría a la marca, convirtiendo el camino normal del cambio de plan desde grace en un incidente.
 
+**El evento son DOS puertas y no una, y escribirlo con una sola suspendía a quien había
+pagado.** La versión anterior decía *«entra el pago de la cuota que sigue en `recycling`»*, y
+`recycling` es un estado **del proveedor** (`B/12` §1.3, medido). Pero el pago del período impago
+tiene una segunda puerta declarada en este mismo capítulo: **`MP1` (§7), el pago manual**, que
+*«queda pendiente por `S19`, si es la predecesora de una sucesión en curso»* y cuyo principio
+escrito es que **el daño no depende de por qué puerta entró el pago**. Con el evento atado al
+reciclado, el pago manual **no matcheaba ninguna fila**: por la regla 1 del núcleo el intento no
+se ejecutaba y se iba a la marca —el desenlace que este § existe para impedir—, y peor,
+**`S6` seguía corriendo**. Su condición no pregunta si entró plata: pregunta si hay *«un pago
+acreditado del período pendiente de resolución **por `S19`**»*, y si `S19` no corrió no hay nada
+pendiente por `S19`, así que el reloj vencía y mandaba a `SUSPENDED` —que no emite fuente
+(`12-contrato…` §2.6)— a alguien que había transferido la plata y tenía comprobante. **El evento
+se enuncia sobre el hecho —entró el pago del período impago— y no sobre el mecanismo que lo
+trajo.**
+
+**Y no hay una tercera puerta que el evento deje afuera.** Las formas de que entre plata del
+período impago son exactamente dos, y las dos están declaradas: el reciclado del proveedor
+(`B/12` §1.3) y `MP1` (§7). Un pago manual sobre una fila **`SUSPENDED`** no es una tercera:
+`MP1` sale de `AWAITING`, y la única forma de que la suscripción de un pagador manual llegue a
+`SUSPENDED` es `MP2` o `MP3`, que sacan al `manual_payment` de `AWAITING` en el mismo acto — así
+que por esta puerta `S7` es inalcanzable, y no es un hueco sino aritmética de los dos estados.
+**Lo que sí queda nombrado y NO se resuelve acá** es qué pasa con un pago manual que llega
+**después** de `DECLARED_UNPAID`: el §7 no tiene salida de ese estado, el caso es idéntico dentro
+y fuera de una sucesión, y decidir si un admin puede reabrirlo es una decisión de producto que no
+es de `S19`.
+
 **`S19` y `S5` comparten `(GRACE_PERIOD, entra el pago)`, y `S19` y `S7` comparten el par sobre
 `SUSPENDED`: las guardas son disjuntas por construcción**, porque una pregunta si la fila es la
 predecesora de una sucesión en curso y la otra si no lo es. Es la regla 7 del núcleo, y lo vigila
-`G-R4`.
+`G-R4`. **Abrir la segunda puerta no agrega un par**: `MP1` no es un evento de esta tabla sino un
+efecto que entra por el evento *«entra el pago»* que `S5` y `S19` ya compartían, así que los pares
+con dos filas siguen siendo los **tres** que `NUCLEO/03` §1 regla 7 enumera.
 
 **Y `S6` lleva su condición por el mismo motivo**: con el pago acreditado y pendiente, el reloj del
 grace mandaría a `SUSPENDED` —que no emite fuente (`12-contrato…` §2.6)— a alguien que pagó el
@@ -447,7 +475,7 @@ alcance: *«la fila está `ACTIVE`, el proveedor dice `authorized`, y para el ba
 verdadera** para la vertical que la corrida no alcanzó. Por eso el detector va aparte y es la
 **tercera comprobación de cero llamadas** de `B/09` §3: *«un beneficiario con un ancla viva en la
 vertical V no debería tener una fila viva principal en V»*. Las dos filas están en nuestra base,
-igual que las de las otras dos comprobaciones.
+igual que las de las otras tres comprobaciones.
 
 **`S14` y `S15` quedan en la tabla y ya no son transiciones de estado.** Se listan acá porque son
 los dos eventos que el §22.1 gobierna y nadie los debe buscar en otro lado, pero **ninguna de las
@@ -639,7 +667,7 @@ manuales**. Lo único propio es cómo se constata el pago.
 
 | # | desde | evento | hacia | efectos |
 |---|---|---|---|---|
-| MP1 | `AWAITING` | el admin registra el pago | `REGISTERED` | la suscripción sale de `GRACE_PERIOD` por `S5` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: el efecto de `MP1` es el de `S5` y hereda su condición, porque el daño no depende de por qué puerta entró el pago |
+| MP1 | `AWAITING` | el admin registra el pago | `REGISTERED` | la suscripción sale de `GRACE_PERIOD` por `S5` — **o queda pendiente por `S19`, si es la predecesora de una sucesión en curso**: el efecto de `MP1` es el de `S5` y hereda su condición, porque el daño no depende de por qué puerta entró el pago. **`S19` lo admite por su propio evento**, que nombra las dos puertas (§3.2): sin eso la derivación apuntaba a una fila que no podía recibirlo |
 | MP2 | `AWAITING` | el admin confirma que no se pagó | `DECLARED_UNPAID` | la suscripción va a `SUSPENDED` por `S6`, sin esperar el reloj |
 | MP3 | `AWAITING` | se agota el grace sin que el admin haga nada | `DECLARED_UNPAID` | `S6` |
 
@@ -652,6 +680,17 @@ efecto colateral, porque sin ella nadie va a registrar nada.
 paga por el proveedor es **doble cobro con dinero real** (`E-CONC-01`). Lo resuelve el capítulo
 05; acá queda dicho que la transición MP1 **no** es incondicional.
 
+**Esta máquina no tiene transición de reversa, y no la necesita: la devolución se asienta en un
+`refund` sobre el pago manual.** El §6 da `P3` y `P4` sobre la máquina de `payment`, y de acá
+salía la lectura de que un pago manual **no se puede devolver** — que es falso y era caro,
+porque las ramas 1 y 5 de `B/12` §5.3 mandan devolver el pago que `S19` retuvo **sin distinguir
+por qué puerta entró**. Lo que se devuelve es *«el pago»*, y desde `B/02` §2.3 un `refund` cuelga
+del pago que se devuelve, sea `payment` o `manual_payment`. El estado del `manual_payment` **no
+se mueve**: quedó `REGISTERED` porque el pago existió, y la devolución es un hecho posterior con
+su propia fila — exactamente la relación que `payment` y `refund` ya tienen. Y la devolución no
+es automática en ninguno de los dos casos: la confirma una persona (`DEC-RF-002`), sobre la marca
+que `S18` puso.
+
 ---
 
 ## 8. Addon (instancia)
@@ -662,12 +701,55 @@ paga por el proveedor es **doble cobro con dinero real** (`E-CONC-01`). Lo resue
 | A2 | `PENDING_AUTHORIZATION` | se autoriza | `ACTIVE` | recurrente: su propio preapproval (`DEC-ADDON-002`). De única vez: su propio cobro |
 | A3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | mismas 72 h que S3 |
 | A4 | `ACTIVE` | llega su fecha de fin | `EXPIRED` | **el reloj no se congela** aunque la ficha esté despublicada (`DEC-ADDON-001`) |
-| A5 | `ACTIVE` | se da de baja, o queda huérfano | `CANCELLED` | §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical. *«Huérfano»* es la condición de `B/16` §4.2 —el objetivo dejó de ser fila viva, **ninguna sucesión lo releva** y **ningún grant permanente lo releva**—, **nunca un estado de llegada concreto**: la pueden cumplir las **seis** transiciones que sacan a la principal de las filas vivas —`S3`, `S12`, `S13`, `S16`, `S17` y el espejo del §10.1—, y `S16` (`CHARGE_DECLINED`) es una de ellas. **Y se evalúa sobre los complementos de la fila que la transición sacó de las filas vivas y, si esa fila era una sucesora, también sobre los de su predecesora** (`B/16` §4.3) |
+| A5 | **toda instancia con una autorización que puede cobrar: `PENDING_AUTHORIZATION` y `ACTIVE`** (ver abajo, *«la instancia que autoriza después»*) | se da de baja, o queda huérfano | `CANCELLED` | §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical. *«Huérfano»* es la condición de `B/16` §4.2 —el objetivo dejó de ser fila viva, **ninguna sucesión lo releva** y **ningún grant permanente lo releva**—, **nunca un estado de llegada concreto**: la pueden cumplir las **seis** transiciones que sacan a la principal de las filas vivas —`S3`, `S12`, `S13`, `S16`, `S17` y el espejo del §10.1—, y `S16` (`CHARGE_DECLINED`) es una de ellas. **Y se evalúa sobre los complementos de la fila que la transición sacó de las filas vivas y, si esa fila era una sucesora, también sobre los de su predecesora** (`B/16` §4.3) |
 | A6 | `ACTIVE` | se borra la ficha destino | `CANCELLED` | **se consume**: no se libera ni se reasigna (`DEC-ADDON-001`), y el borrado **tiene que advertir qué addons se pierden y por cuánto** |
 
 **Cancelar el plan no cancela los addons**: como cada addon recurrente es una suscripción aparte,
 esa orquestación es nuestra (`DEC-ADDON-002`), y es justamente lo que el §41 pide poder hacer al
 revés.
+
+#### La instancia que autoriza después de que su título murió: por qué `A5` no sale sólo de `ACTIVE`
+
+**El `desde` de `A5` decía `ACTIVE` y nada más, y eso dejaba entera la ventana de 72 h del
+checkout del addon.** El camino, con todos sus pasos declarados: alguien `ACTIVE` —el único
+estado desde el que se puede comprar (`B/16` §2.2)— contrata un addon recurrente, `A1` lo lleva a
+`PENDING_AUTHORIZATION` con las mismas 72 h que `S3`, y **dentro de esa ventana su suscripción
+principal deja de ser fila viva**. Cualquiera de las seis transiciones del `B/16` §4.3 sirve, y
+dos no necesitan que nadie toque un botón: `S12` es un reloj y `S16` llega con el cobro real, que
+`PA-3` mide **entre 26 y 44 minutos** después de autorizar. El disparador de la orfandad se
+disparaba ahí y **no encontraba a quién aplicarle**: la instancia estaba en
+`PENDING_AUTHORIZATION` y `A5` no salía de ahí. Después la persona completaba el checkout, `A2` la
+llevaba a `ACTIVE` **con su propio preapproval** (`DEC-ADDON-002`) y ninguna condición de `A2`
+mira el título — la validez se evalúa al comprar (`B/16` §2.2). Quedaba **cobrando todos los
+meses sin otorgar nada**, porque sin ninguna fuente de clase `TÍTULO` el pliegue **descarta** las
+de clase `COMPLEMENTO` (`12-contrato…` §2.4). Es, con esas palabras, *«el que no puede fallar»*
+del `B/16` §4.3: **un preapproval huérfano sin cancelar es un débito mensual a alguien que ya no
+es cliente**.
+
+**Es el mismo argumento que metió `PENDING_AUTHORIZATION` en el alcance de `S13`, aplicado a la
+otra máquina.** Una instancia esperando autorización **es una obligación de pago**: su preapproval
+está creado y la persona puede completar el checkout en cualquier momento, sin tener por qué
+saber que su título murió. Por eso el `desde` de `A5` son **los dos estados de la instancia en
+los que existe una autorización que puede cobrar** —`PENDING_AUTHORIZATION` y `ACTIVE`—, su
+efecto cancela el preapproval **esté autorizado o esperando autorización**, con la misma regla de
+relectura de `S17` (si ya está `cancelled`, no se manda nada), y la pantalla de *«esperando que
+completes el pago»* **deja de ofrecer el enlace en el mismo acto**, igual que en `S13` (§3.4
+punto 3).
+
+**`A5` desde `PENDING_AUTHORIZATION` no colisiona con `A3`**: el par es
+`(PENDING_AUTHORIZATION, queda huérfano)` y `A3` es `(PENDING_AUTHORIZATION, vence la ventana)`.
+Son dos eventos distintos, así que **no hay un cuarto par con dos filas** y la tabla de la regla 7
+del núcleo sigue teniendo **tres** entradas. Los estados de llegada difieren —`CANCELLED` y
+`ABANDONED`— y los dos son terminales de la instancia, así que **los dos caen bajo la salvedad 1
+de `B/09` §3**, que devuelve al barrido la suscripción de complemento hasta que la relectura vea
+el preapproval `cancelled`.
+
+**Y el orden inverso también tiene evento declarado, que era la otra mitad del hueco.** Si por lo
+que sea `A5` no corrió cuando el título murió —la condición del `B/16` §4.2 no se cumplía en ese
+instante porque una sucesión lo relevaba, y se cumplió después—, la condición **se vuelve a
+evaluar cuando la instancia llega a `ACTIVE` por `A2`**: es uno de los momentos que `B/16` §4.3
+enumera, y sin esa enumeración *«se re-evalúa»* era una promesa sin transición, que es lo que la
+regla 1 de este capítulo no admite.
 
 ---
 

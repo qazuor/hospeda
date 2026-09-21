@@ -302,6 +302,17 @@ cliente** en vez de la suscripción: es más limpio conceptualmente y es un redi
 capítulo, no una condición. Se discute el día que un addon tenga que sobrevivir a no tener ninguna
 suscripción viva.
 
+**Y la condición se evalúa sobre toda instancia con una autorización que puede cobrar, no sólo
+sobre las `ACTIVE`.** Son **dos** estados de la instancia: `PENDING_AUTHORIZATION` y `ACTIVE`
+(`B/03` §8). Dejar afuera la primera abría la ventana entera del checkout del addon —72 h, las
+mismas que `S3`—: el título moría mientras la instancia esperaba autorización, el disparador del
+§4.3 no encontraba a quién aplicarle porque `A5` salía sólo de `ACTIVE`, y después `A2` la llevaba
+a `ACTIVE` **con su preapproval cobrando** sobre un objetivo que ya no estaba. Es el argumento con
+el que `PENDING_AUTHORIZATION` entró en el alcance de `S13` (`B/03` §3.2), aplicado acá: **una
+instancia esperando autorización es una obligación de pago**, y la persona puede completar el
+checkout sin tener por qué saber que su título murió. El razonamiento está entero en `B/03` §8,
+*«la instancia que autoriza después de que su título murió»*.
+
 **La suspensión y la pausa no dejan huérfano a nada**, y es el punto del §41: el objetivo existe.
 Ya no hace falta declararlo aparte —`PAUSED` y `SUSPENDED` son **filas vivas**, así que la
 condición de arriba no se cumple—, y se deja escrito porque es la lectura que más se equivoca.
@@ -334,6 +345,27 @@ entra una séptima, el predicado ya la cubre. **Y se re-evalúa**, porque es una
 estados: el caso que lo obliga es una sucesora que autoriza tarde o abandona después de que su
 predecesora ya murió (§4.2).
 
+> **«Se re-evalúa» necesita decir CUÁNDO, porque una re-evaluación sin evento no la ejecuta
+> nadie** — es la regla 1 del núcleo: lo que la tabla no declara, no pasa. Son **tres** momentos,
+> y los tres son eventos ya declarados en otra tabla:
+>
+> | momento | de dónde sale | por qué hace falta |
+> |---|---|---|
+> | **una de las seis transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
+> | **muere la sucesora que relevaba** — `S3` la abandona, o `S13` la mata | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
+> | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
+>
+> **La lista no agrega una séptima transición al disparador de arriba**: las seis son las que
+> sacan a **la principal** de las filas vivas, y estos tres son los instantes en que la
+> **condición del §4.2** se vuelve a leer. Un momento de re-evaluación no es una puerta a la
+> orfandad: es cuándo se pregunta.
+>
+> **Y el backstop de los tres es la cuarta comprobación de cero llamadas de `B/09` §3** —una
+> instancia viva cuyo objetivo ya cumple la condición de este §—, que es lo que cubre la corrida
+> en que ninguno de los tres se ejecutó. Hace falta porque ese estado es **indetectable por
+> comparación**: la instancia dice `ACTIVE`, el proveedor dice `authorized`, y para el barrido
+> eso coincide.
+>
 > **Y hay que decir sobre QUÉ filas se evalúa, porque en el caso que obliga a re-evaluar no son
 > las de la transición.** El disparador ocurre sobre una fila; los complementos que hay que mirar
 > son:
@@ -362,6 +394,13 @@ que ya no es cliente — y como mutar o cancelar no emite webhook, nadie se ente
 Lo que lo hace detectable es el barrido del capítulo 09, que compara contra **nuestro** inventario
 (`DEC-CONC-002`): un addon en estado terminal con su preapproval vivo es una discrepancia que el
 barrido ve.
+
+**Ese detector cubre una mitad y la otra no se ve por comparación.** Busca la instancia
+**terminal** con el preapproval **vivo**, o sea el caso en que `A5` corrió y la llamada no se
+aplicó. El caso en que `A5` **no corrió** —instancia viva, objetivo muerto— tiene los dos lados
+diciendo lo mismo, `ACTIVE` contra `authorized`, así que ninguna de las cinco comparaciones lo
+ve. Ésa es la **cuarta comprobación de cero llamadas** de `B/09` §3, que delega en la condición
+del §4.2 en vez de reescribirla.
 
 **Y eso obligó a acotar la exención de los terminales del capítulo 09 §3**, porque tal como
 estaba escrita apagaba este detector en el mismo acto que lo encendía: `A5` lleva al addon

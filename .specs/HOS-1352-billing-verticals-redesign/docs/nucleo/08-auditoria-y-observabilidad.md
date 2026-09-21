@@ -165,7 +165,7 @@ que no son éste:
 
 | qué | quién lo hace | dónde |
 |---|---|---|
-| **poner** la marca sobre la predecesora que retiene el pago | **`S18`**, como cuarto efecto del cierre de la sucesión | `B/03` §3.2, `B/12` §5.3 rama 1 |
+| **poner** la marca sobre la predecesora que retiene el pago —un `payment` **o un `manual_payment`**, porque `S19` lo retiene entre por la puerta que entre | **`S18`**, como cuarto efecto del cierre de la sucesión | `B/03` §3.2, `B/12` §5.3 **ramas 1 y 5** |
 | **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
 
 Las dos son actos **de sistema**, no de admin, y por eso no suman filas. La primera **no es
@@ -233,13 +233,17 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
 
 - **cuál de las cuatro condiciones del cap. 05 §3 falló**, cuando el caso es un pago tardío — sin
   eso, quien lo mire tiene que rehacer el diagnóstico entero;
-- **el monto a devolver y el pago que lo origina**, cuando el caso es el **reembolso por
-  confirmar** de la rama 1 del cap. 12 §5.3 (épica de billing). Esta entrada es de otra forma que
-  las demás y conviene decirlo: **no hay nada que diagnosticar** —el desenlace lo decidió el
-  diseño y `DEC-RF-002` sólo puso la confirmación humana en el medio—, así que lo que la persona
-  necesita no es el conflicto entre dos estados sino **qué devolver, a quién y de qué cobro**. La
-  lista de arriba contemplaba el pago tardío que **falla**; éste es el que **sale bien** y deja
-  plata por devolver;
+- **el monto a devolver, el pago que lo origina y POR QUÉ PUERTA entró ese pago**, cuando el caso
+  es el **reembolso por confirmar** de las ramas 1 y 5 del cap. 12 §5.3 (épica de billing). Esta
+  entrada es de otra forma que las demás y conviene decirlo: **no hay nada que diagnosticar** —el
+  desenlace lo decidió el diseño y `DEC-RF-002` sólo puso la confirmación humana en el medio—, así
+  que lo que la persona necesita no es el conflicto entre dos estados sino **qué devolver, a quién
+  y de qué cobro**. **La puerta es parte de eso y no es un dato de color**: `S19` retiene el pago
+  del período impago entre por la puerta que entre, y un `payment` se devuelve **por la API del
+  proveedor** mientras que un `manual_payment` se devuelve **a mano, por donde entró** (cap. 03
+  §3.2 y §7, épica de billing). Quien confirma no puede elegir el camino si la entrada no se lo
+  dice. La lista de arriba contemplaba el pago tardío que **falla**; éste es el que **sale bien**
+  y deja plata por devolver;
 - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
 - **la correlación**, para poder seguir la cadena hacia atrás;
 - **qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas
