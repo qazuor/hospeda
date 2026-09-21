@@ -102,7 +102,7 @@ razón, escrita como criterio y no como lista, es una sola:
 
 **Escrita como enumeración de transiciones, la garantía era falsa, y hay que decir dónde.** La
 versión anterior nombraba tres —`S3`, `S12`/`S17` y `CHARGE_DECLINED`— sobre un conjunto de
-**nueve** puertas a un estado terminal, y de las tres que nombraba una era al revés:
+**once** puertas a un estado terminal, y de las tres que nombraba una era al revés:
 
 | puerta a un estado terminal | ¿quién dejó el preapproval sin poder cobrar? | ¿exenta? |
 |---|---|---|
@@ -114,6 +114,8 @@ versión anterior nombraba tres —`S3`, `S12`/`S17` y `CHARGE_DECLINED`— sobr
 | `S13` → `CANCELLED` | **nuestra llamada**, y `S13` no tiene rama de fallo declarada: su destino es `CANCELLED` pase lo que pase con la llamada | **no** |
 | `S20` → `CANCELLED` — la **suscripción de complemento** que el grant convierte a costo $0 (`B/03` §3.2, `B/16` §3.4) | **nuestra llamada**, y como `S13` no tiene rama de fallo declarada: el addon pasa a $0 pase lo que pase con la llamada, porque el §35.2 lo declara gratis desde el acto | **no** |
 | `S21` → `CANCELLED` — la **suscripción de complemento** cuya instancia se apagó por `A5` o por `A6` (`B/03` §3.2 y §8, `B/16` §4.4) | **nuestra llamada**, la que `A5`/`A6` mandan sobre **este mismo** preapproval —hay uno solo—, y `S21` no tiene rama de fallo: la fila llega a `CANCELLED` pase lo que pase con la llamada, porque la instancia ya está apagada | **no** |
+| `S22` → `CANCELLED` — la **baja pedida estando pausado** (`B/03` §3.2) | **nuestra llamada**, *«de inmediato»* como la de `S11`, y sin rama de fallo: la persona pidió irse y la fila llega a `CANCELLED` pase lo que pase con la llamada | **no** |
+| `S23` → `CANCELLED` — la **baja pedida estando suspendido** (`B/03` §3.2) | **nuestra llamada** si el preapproval seguía vivo, con la misma forma que `S22` | **no** — **salvo sobre un pagador manual, que sí está exenta**: ahí no hubo llamada porque no hay débito que detener (`B/06` §7), así que no queda ninguna autorización que pueda cobrar ni ninguna relectura que confirmar |
 | la **lápida** del corte → `CANCELLED` | **una persona a mano** contra la API del proveedor, *«sin idempotencia, sin registro y sin nadie que verifique»* (`B/21` §2.5 y `16-fase-7-del-paraguas.md` §4.2) | **no** |
 
 **Las cuatro salvedades que devuelven una terminal al barrido, y por qué cada una.** La exención
@@ -124,7 +126,7 @@ vale por el criterio de arriba, así que se cae exactamente donde ese criterio n
 | 1 | **la suscripción de complemento de una instancia de addon en estado terminal** — seleccionada **por el estado terminal de la instancia** y, desde `S21`, también **por el suyo propio** cuando llegó a `CANCELLED` junto con ella (`B/16` §4.4) | hasta que la relectura la vea `cancelled` | su preapproval lo cancelamos **nosotros**, con una llamada que puede fallar — ver abajo |
 | 2 | **una suscripción terminal con la marca `requiere_conciliación` puesta** | hasta que una persona la levante (`S15`) | la exención es sobre *«no puede divergir hacia nada que nos importe»*, y una fila marcada **ya divergió**: lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la marca**, que es lo único que hace que el caso no quede abierto para siempre |
 | 3 | **una suscripción terminal con un pago acreditado pendiente de resolución** por `S19` — un `payment` **o un `manual_payment`**, porque `S19` retiene el pago del período impago entre por la puerta que entre (`B/03` §3.2) | hasta que la bandera se apague | es plata del cliente en nuestra cuenta. La rama 1 de `B/12` §5.3 deja la predecesora en `CANCELLED` **con un reembolso por confirmar**, así que sin esta salvedad el desenlace que mueve dinero es el único que ningún proceso vuelve a mirar |
-| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — **cinco** de las **seis** filas *«no»* de la tabla de arriba: `S12`, `S3`, `S13`, **`S20`** y la lápida. **La sexta, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras cuatro son principales**, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila | hasta que la relectura lo vea `cancelled` | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron |
+| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — **siete** de las **ocho** filas *«no»* de la tabla de arriba: `S12`, `S3`, `S13`, **`S20`**, **`S22`**, **`S23`** y la lápida. **La octava, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras seis son principales**, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y `S23` entra sólo cuando hubo llamada**: sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron |
 
 > **La 4 es la que cierra el caso de `S13`, y por eso `S13` no necesita una rama de fallo propia
 > como la de `S17`.** `S17` puede no ocurrir porque su cierre depende de la cancelación; `S13`
@@ -250,7 +252,7 @@ por un camino que `G-R1-C` no alcanzó a impedir.
 sucesión ya terminó.** Si una fila tiene un pago acreditado **pendiente de resolución**
 (`B/03` §3.2, `S19`) y ya **no** es la predecesora de una sucesión en curso —la sucesora murió, o
 la sucesión se cerró—, su destino estaba determinado y nadie lo ejecutó: se resuelve por la rama
-que le corresponda de las cinco de `B/12` §5.3, y si la rama no es determinable, se pone la
+que le corresponda de las seis de `B/12` §5.3, y si la rama no es determinable, se pone la
 **marca**. Cuesta cero llamadas y cubre el único estado que el arreglo de `S19` puede dejar
 colgado: **un pago retenido para siempre**, que del lado del cliente se lee como un cobro sin
 servicio y sin devolución. Hace falta porque el reloj del grace **no corre** mientras ese pago
@@ -352,8 +354,15 @@ su único dueño.
 **Y una quinta, que tampoco le pregunta nada al proveedor: la pausa vencida que no reanudó.** Si
 hay una `subscription_pause` **sin `fin_real`** cuyo **`fin_previsto` ya pasó** (`B/02` §2.2) y su
 suscripción sigue en `PAUSED`, `S10` no corrió: se pone la **marca**. Cuesta cero llamadas —la
-pausa y la suscripción están las dos en nuestra base— y cubre el único estado que la única salida
-de `PAUSED` puede dejar colgado.
+pausa y la suscripción están las dos en nuestra base— y cubre el único estado que **la salida que
+devuelve el servicio** puede dejar colgado.
+
+**Las otras dos salidas de `PAUSED` no producen ese estado, y por eso la comprobación no las
+nombra.** `S22` —la baja— y `S13` —el grant— mandan la fila a `CANCELLED`, así que la tercera
+condición de arriba (*«su suscripción sigue en `PAUSED`»*) **deja de cumplirse** y el caso sale
+del detector por donde corresponde. `S22` además escribe el `fin_real` de la pausa, que es la
+primera condición. Una pausa cerrada por cualquiera de las dos **no queda colgada y no produce un
+falso positivo**.
 
 > **Hace falta porque este estado es indetectable por comparación, y acá los dos lados dicen lo
 > mismo de verdad.** `PS-4` mide que el proveedor **no tiene auto-reanudación**, así que su

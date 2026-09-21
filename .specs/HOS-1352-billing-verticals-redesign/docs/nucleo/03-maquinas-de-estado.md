@@ -83,7 +83,7 @@ máquina de estados y una convención.
    afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
    depende de que alguien vuelva a recorrer las nueve tablas a mano.
 
-   **Compartir el `desde` no es compartir el par, y hay cinco casos vivos que lo piden dicho.**
+   **Compartir el `desde` no es compartir el par, y hay siete casos vivos que lo piden dicho.**
    `T7` (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de
    trial de la vertical** —un cambio de catálogo— y no el evento de activación de la persona. Su
    par, `(PRE_TRIAL, encendido)`, tiene **una sola** fila. `S18` (`B/03` §3.2) sale desde la
@@ -109,7 +109,13 @@ máquina de estados y una convención.
    `desde` escrito con las mismas palabras: sus eventos son **otorgar o anclar un grant** y **que
    su instancia llegue a `CANCELLED`**, distintos entre sí y de todo lo demás, y además **no se
    pueden satisfacer a la vez** —`S20` declara que la instancia **no** cambia de estado—, así que
-   cada uno de esos dos pares tiene **una sola** fila. En los cinco casos no hay guardas que
+   cada uno de esos dos pares tiene **una sola** fila. **Y las dos filas de la baja que la
+   FASE 9-bis-4 agregó (`B/03` §3.2) son los casos sexto y séptimo**: `S22` sale de `PAUSED`, que
+   comparte `desde` con `S10` y con `S13`, y `S23` sale de `SUSPENDED`, que lo comparte con `S7`,
+   con `S19` y con `S13`. **Su evento es el de la baja** —*«pide la baja»*, el mismo de `S11`—, que
+   ninguna de esas filas declara: el de `S10` es *«llega el fin, o la persona vuelve antes»*, el de
+   `S7` y `S19` es *«entra el pago»* y el de `S13` es el otorgamiento de un grant. Así que cada uno
+   de esos dos pares tiene **una sola** fila. En los siete casos no hay guardas que
    dirimir y la tabla de arriba **sigue teniendo tres entradas**. Lo que este guard cuenta son
    **pares**, no estados de origen.
 

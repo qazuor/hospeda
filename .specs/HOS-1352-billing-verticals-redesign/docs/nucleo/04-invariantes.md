@@ -62,7 +62,7 @@ el invariante se puede perder.
 | 14 | los servicios validan vertical, acceso, entitlement y limits | la resolución de autorización, capítulo 17 |
 | 20 | existe conciliación | capítulo 09 |
 | 21 | una divergencia que necesita intervención notifica a `SUPER_ADMIN` | `S14`, que **pone la marca `requiere_conciliación`** sin mover el estado |
-| 22 | la cancelación normal conserva el período pagado | S11 + S12, con **nuestra** fecha de fin de servicio (`DEC-SUB-009`) |
+| 22 | la cancelación normal conserva el período pagado | S11 + S12, con **nuestra** fecha de fin de servicio (`DEC-SUB-009`). **El adjetivo *«normal»* nombra la baja desde `ACTIVE`, que es la única de las tres con un período pagado que conservar**: las otras dos —`S22` desde `PAUSED` y `S23` desde `SUSPENDED`— van directo a `CANCELLED` con la fecha de fin en el día de la cancelación, porque al pausar los días se perdieron (`DEC-SUB-010`) y estando suspendido el servicio ya estaba cortado (§21). El invariante **no las alcanza y no es una excepción**: no hay período que conservar |
 | 23 | sólo los planes mensuales pueden pausarse | `puedePausar()`, un solo lugar (cap. 01 §3) |
 | 24 | la pausa puede terminar anticipadamente | S10, el mismo reloj para el fin previsto y el anticipado (`DEC-SUB-010`) |
 | 30 | sólo `SUPER_ADMIN` otorga *Free Forever* | la autorización de esa operación, y **también la cortesía temporal** (`DEC-GRANT-002`). **La misma autorización cubre las otras dos escrituras sobre el instrumento** —anclarle una vertical nueva y revocarlo—, que son la misma fila del cap. 08 §3: si «otorgar» fuera la única autorizada, extender un grant a una vertical más quedaría sin gate y `SUPER_ADMIN` dejaría de ser exclusivo por la puerta de al lado |
@@ -160,20 +160,24 @@ exactamente el modo que el invariante vino a cerrar, con el sujeto cambiado.
 
 **`D15` afirmaba más de lo que el diseño cumple, y se corrigió hacia abajo.** Decía *«toda
 sucesión que termina deja escrito que ocurrió: la predecesora queda con `sucedida_por` puesta»*, y
-la única escritura de esa columna es `S18`. De las **cinco** formas de terminar que `B/12` §5.3
-enumera, `S18` corre en **tres** —la sucesora autoriza; la sucesión trabada que una persona
-resuelve por `S15`; y la baja que **decide el proveedor** sobre la predecesora, que desde la
-FASE 9-bis-3 es la rama 5 y entra por el espejo de `B/03` §10.1—; en las otras dos **no corre**:
+la única escritura de esa columna es `S18`. De las **seis** formas de terminar que `B/12` §5.3
+enumera, `S18` corre en **cuatro** —la sucesora autoriza; la sucesión trabada que una persona
+resuelve por `S15`; la baja que **decide el proveedor** sobre la predecesora, que desde la
+FASE 9-bis-3 es la rama 5 y entra por el espejo de `B/03` §10.1; y la baja que **pide la propia
+predecesora estando suspendida**, que desde la FASE 9-bis-4 es la rama 6 y entra por `S23`—; en
+las otras dos **no corre**:
 si la sucesora vence su ventana (`S3`) o si le cae un grant (`S13`), no queda sucesora viva a la
 que pasarle el origen y `sucedida_por` **no se escribe nunca**. Un invariante sobre-enunciado es
 peor que uno ausente,
 porque quien lo lee **deja de buscar el caso** — y el caso que dejaba de buscarse es *«la sucesora
 se murió y el puntero quedó puesto»*, que costó dos `CRITICA` en la misma pasada. (`S18` corre
 además cuando la predecesora se muere sola por `S12` o por `S16`, desde la FASE 9-bis-3, y esos
-dos caminos **no están entre las cinco** porque las cinco de `B/12` §5.3 enumeran el destino de un
+dos caminos **no están entre las seis** —y `S22` tampoco, que es el tercero de la misma clase—
+porque las seis de `B/12` §5.3 enumeran el destino de un
 **pago pendiente por `S19`**, que sólo existe sobre una predecesora en `GRACE_PERIOD` o
-`SUSPENDED` — y `S12` sale de `CANCEL_SCHEDULED` y `S16` de `ACTIVE`. Escriben la columna igual.)
-El enunciado de hoy cubre las cinco ramas porque **nombra los dos rastros**, y los dos son
+`SUSPENDED` — y `S12` sale de `CANCEL_SCHEDULED`, `S16` de `ACTIVE` y `S22` de `PAUSED`. Escriben
+la columna igual.)
+El enunciado de hoy cubre las seis ramas porque **nombra los dos rastros**, y los dos son
 legibles después:
 `sucedida_por` no se borra nunca, y el `sucede_a` de una fila no viva tampoco lo limpia nadie —es
 el cuarto estado de la relación de `B/03` §3.2, y `S13` lo llama *«el registro fiel de lo que

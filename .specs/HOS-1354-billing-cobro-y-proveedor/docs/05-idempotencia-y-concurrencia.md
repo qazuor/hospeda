@@ -88,6 +88,22 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
 | el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación`** (cap. 03 §3.2, `S14`), y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`) |
 
+**Las dos filas presuponen que la baja dejó una fecha de fin de servicio que se pueda extender, y
+eso vale para `S11` y no para las otras dos.** Desde `PAUSED` (`S22`) y desde `SUSPENDED` (`S23`)
+la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de la cancelación
+(cap. 03 §3.2), así que **no hay nada que extender** y la primera fila no tiene dónde aplicarse:
+
+- **Desde `PAUSED` la población es casi vacía y lo que quede ya está resuelto**: mientras está
+  pausada el proveedor **no cobra** —`PS-6` mide que el ciclo que vence estando pausada avanza la
+  fecha sin cobrar—, y un cobro anterior a la pausa pagó el ciclo cuyos días no usados
+  `DEC-SUB-010` ya se llevó **al pausar**, no al cancelar. No hay período que devolver ni que
+  sostener.
+- **Desde `SUSPENDED` el cobro que entra es el que `S7` o `S19` esperaban, y llega tarde.** La
+  condición 1 del §3 rechaza `CANCELLED`, que es exactamente el tope que el cap. 03 §7.1 eligió:
+  *«a partir de ahí el pago que llegue no reabre nada»*. Así que la plata está en nuestra cuenta
+  sin período que darle: **se pone la marca** y la devolución **la confirma una persona**
+  (`DEC-RF-002`) — la segunda fila de arriba, por la misma razón y no por analogía.
+
 ### C3 · Se otorga *Free Forever* mientras se ejecuta un cobro
 
 **El grant no espera.** `DEC-GRANT-001` ya decidió el caso de fondo: se corta el cobro en el

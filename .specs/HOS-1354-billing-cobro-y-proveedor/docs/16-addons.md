@@ -502,12 +502,14 @@ distintos** y los tres se disparan del mismo lugar:
 **El disparador es que la fila salga de las filas vivas, y no un estado de llegada.** Decía
 *«cuando un título muere»*, que es la palabra suelta que `NUCLEO/01` §2.4 regla 2 prohíbe en un
 predicado, y era lo que dejaba la regla escrita para `CANCELLED` y muda para los otros dos
-—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son **las seis** que en
-`B/03` §3.2 sacan a una fila principal de las filas vivas: `S3`, `S12`, `S13`, `S16`, `S17` y **el
+—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son **las ocho** que en
+`B/03` §3.2 sacan a una fila principal de las filas vivas: `S3`, `S12`, `S13`, `S16`, `S17`, **el
 espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila numerada y es
-transición de la misma tabla), y lo que se evalúa en cada una es **la condición del §4.2**, no el
-nombre del estado al que llegó. La lista es para poder auditar que ninguna se olvidó; si mañana
-entra una séptima, el predicado ya la cubre. **Y se re-evalúa**, porque es una condición sobre
+transición de la misma tabla) y, desde la FASE 9-bis-4, **`S22` y `S23`** —la baja pedida estando
+pausado o suspendido—, y lo que se evalúa en cada una es **la condición del §4.2**, no el
+nombre del estado al que llegó. La lista es para poder auditar que ninguna se olvidó; **y que haya
+entrado una séptima y una octava sin que el predicado cambiara es la prueba de que se enuncia
+sobre la condición y no sobre la lista**: lo que hay que actualizar es el conteo, no la regla. **Y se re-evalúa**, porque es una condición sobre
 estados: el caso que lo obliga es una sucesora que autoriza tarde o abandona después de que su
 predecesora ya murió (§4.2).
 
@@ -518,12 +520,12 @@ predecesora ya murió (§4.2).
 >
 > | momento | de dónde sale | por qué hace falta |
 > |---|---|---|
-> | **una de las seis transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
+> | **una de las ocho transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
 > | **muere la sucesora que relevaba** — `S3` la abandona, o `S13` la mata | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
 > | **se revoca el grant** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando. **Y es uno solo, no dos**: la redacción anterior decía *«o se retira el ancla de esa vertical»* y ese acto **no está declarado** (`12-contrato…` §2.8, `B/02` §2.4), así que nombrarlo agregaba un momento que nadie podía producir. Revocar retira **todas** las anclas del instrumento, que es la población entera que esta mitad necesita |
 >
-> **La lista no agrega una séptima transición al disparador de arriba**: las seis son las que
+> **La lista no agrega una novena transición al disparador de arriba**: las ocho son las que
 > sacan a **la principal** de las filas vivas, el cuarto momento no es una transición de esa
 > tabla, y los cuatro son los instantes en que la **condición del §4.2** se vuelve a leer. Un
 > momento de re-evaluación no es una puerta a la orfandad: es cuándo se pregunta.

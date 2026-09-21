@@ -127,7 +127,7 @@ proveedor no tiene ninguna.
 |---|---|---|
 | 1 | **otro downgrade** | **lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |
 | 2 | **un upgrade** | **muere con la suscripción vieja.** `DEC-SUB-007` ejecuta el upgrade cancelando y recreando, y la nueva nace sin cola |
-| 3 | **una cancelación** (§24) | **lo absorbe.** Las dos cosas caen en el mismo instante —el fin del período pagado— y ahí no hay capacidades que bajar: no queda servicio |
+| 3 | **una cancelación** (§24) | **lo absorbe, y en los tres casos.** Desde `ACTIVE` (`S11`) las dos cosas caen en el mismo instante —el fin del período pagado— y ahí no hay capacidades que bajar: no queda servicio. Desde `PAUSED` (`S22`) y desde `SUSPENDED` (`S23`) la baja cae **hoy** (cap. 03 §3.2), así que el descenso no llega a ejecutarse nunca — que es la regla general de abajo: *«si no va a tenerlo nunca más, se descarta»* |
 | 4 | **una pausa** (§26) | **espera a la reanudación.** Durante la pausa no hay publicación ni servicio (§26.1), así que hacer cumplir un excedente sobre fichas ya bajadas no hace nada y habría que reevaluarlo igual al volver |
 
 **La regla general detrás de las cuatro**: el descenso se aplica **al fin del primer ciclo en que
@@ -437,7 +437,7 @@ a volver a intentarlo: no hay segundo cobro que la rescate.
 > **El pago acreditado no se reembolsa al entrar: queda pendiente, y se resuelve cuando la sucesión
 > se resuelve.** Mientras tanto no reactiva, no se devuelve y **no se pierde**.
 
-**El dominio es el de las formas en que una sucesión en curso puede terminar, y son cinco.** Se
+**El dominio es el de las formas en que una sucesión en curso puede terminar, y son seis.** Se
 enumeran recorriendo las salidas de la predecesora (en `GRACE_PERIOD` o `SUSPENDED`) y las de la
 sucesora (en `PENDING_AUTHORIZATION`) — **sobre la tabla de transiciones del cap. 03 entera, no
 sobre sus filas numeradas**, que es la corrección que trajo la quinta:
@@ -457,8 +457,9 @@ sobre sus filas numeradas**, que es la corrección que trajo la quinta:
 | **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso |
 | **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada — **`S13` apaga la bandera en el mismo acto** | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3. La bandera se apaga porque un *«pendiente»* eterno sobre una fila cerrada no es un registro fiel: es un conteo inflado |
 | **el proveedor da de baja a la PREDECESORA** por impagos acumulados (§1.4), y el espejo del `B/03` §10.1 la lleva a `CANCELLED` con la sucesora todavía esperando autorización | **se reembolsa, y lo confirma una persona** — igual que la rama 1: **`S18` cierra la sucesión sin `S17`** (la predecesora ya no es fila viva) y le pone a **ella** la marca con motivo *«reembolso por confirmar»* | el período que el pago cubría lo cortó la baja del proveedor, no nosotros, pero el resultado para el cliente es el mismo de la rama 1: pagó un período que no le compró nada. Y el cierre **tiene** que correr igual —si no, el candado `A` queda vacío y un alta nueva entra (`B/03` §3.2)—, así que el acto que lo dispara ya está ahí |
+| **la propia PREDECESORA, en `SUSPENDED`, pide la baja** (`S23`, `B/03` §3.2) y llega a `CANCELLED` con la sucesora todavía esperando autorización | **lo decide una persona**: `S18` cierra la sucesión sin `S17` y le pone a **ella** la misma marca de las ramas 1 y 5, con el mismo motivo | es la única de las seis en que **el acto lo hace el cliente sobre su propia fila**, así que ninguno de los dos automatismos vecinos encaja: no hubo un período que nosotros cortáramos (rama 1) ni una baja que decidiera el proveedor (rama 5), y devolver o no devolver **es exactamente el tipo de caso que `DEC-RF-002` puso en manos de una persona**. Lo que no puede pasar es que la bandera quede puesta sobre una `CANCELLED` que ningún barrido mira: la salvedad 3 del `B/09` §3 la devuelve al barrido hasta que se apague |
 
-**Las cinco ramas valen para las dos puertas, y las dos que devuelven plata ya tienen dónde
+**Las seis ramas valen para las dos puertas, y las dos que devuelven plata ya tienen dónde
 asentarla.** *«El pago»* de la rama 1 y de la rama 5 es el que `S19` retuvo, que puede ser un
 `payment` o un `manual_payment` (`B/03` §3.2, §7). El acto es el mismo en los dos casos —`S18`
 pone la marca y **una persona confirma**, `DEC-RF-002`— y el asiento también: un `refund` sobre
@@ -466,7 +467,7 @@ el pago que se devuelve (`B/02` §2.3). Hasta que esa columna admitió las dos e
 que mueve dinero prometía una devolución que para la mitad de su población **no se podía
 registrar**.
 
-**Las cinco ramas tienen ahora un ACTO que las dispara, y hay que decirlo porque durante una
+**Las seis ramas tienen ahora un ACTO que las dispara, y hay que decirlo porque durante una
 tanda entera no lo tuvieron.** La rama 1 decía *«al cerrar la sucesión se pone la marca»* sin
 nombrar transición ni fila, y por la regla 1 del núcleo —*«lo que la tabla no declara, no
 pasa»*— el reembolso de la única rama que mueve dinero **no lo ejecutaba nadie**, sobre un camino
@@ -479,6 +480,7 @@ que `DEC-RF-002` declara normal:
 | 3 · la sucesión trabada | `S14`, que ya puso la marca | la predecesora |
 | 4 · cae un grant | **`S13`** (efecto) | las dos |
 | 5 · el proveedor da de baja a la predecesora | **`S18`** (efecto 4), disparado por el espejo del `B/03` §10.1 | **la predecesora**, `CANCELLED` |
+| 6 · la predecesora pide la baja estando suspendida | **`S18`** (efecto 4), disparado por `S23` (`B/03` §3.2) | **la predecesora**, `CANCELLED` |
 
 > **La 5 y la 1 comparten acto y no son la misma rama.** Difieren en qué mata a la predecesora
 > —`S17`, nuestro, contra el proveedor, ajeno— y eso cambia dos cosas que el cliente ve: en la 1
@@ -512,7 +514,7 @@ significa *«lo confirma una persona si se acuerda»*. **El reloj es la mitad op
 
 **Las dos primeras son la razón de la regla y son opuestas**, y por eso el disparador no puede ser
 la llegada del pago: en el momento en que entra **todavía no se sabe cuál de las dos va a pasar**.
-Lo que sí se sabe es que no hay que reactivar —eso vale en las cinco ramas mientras la sucesión
+Lo que sí se sabe es que no hay que reactivar —eso vale en las seis ramas mientras la sucesión
 esté en curso—, y eso es lo que `S19` ejecuta.
 
 **Reembolsar en la primera rama es la salida coherente con lo que este mismo § decidió**: el
@@ -612,14 +614,36 @@ pausada **avanza la fecha sin cobrar**), y eso no es servicio adeudado.
 
 ### 7.2 Cancelar estando pausado termina el servicio en el acto
 
-Y no es una decisión dura, es la única coherente: **durante la pausa no hay servicio** — el §26.1
-detiene publicación, edición y servicio. `DEC-SUB-009` sostiene el servicio hasta el fin del
-período pagado, y acá **no queda servicio que sostener**.
+Y no es una decisión dura, es la única coherente: **lo que `DEC-SUB-009` sostiene es el período
+que la persona ya pagó, y al pausar ese período se perdió**. `DEC-SUB-010` fijó que *«los días no
+usados del ciclo en curso se pierden»* (§7.1), así que **no queda período pagado que sostener**.
 
 La fecha de fin de servicio **es un dato nuestro** (`DEC-SUB-009`, implicación 3), así que la
 fijamos: es el día de la cancelación.
 
+**El argumento va por el período pagado y no por *«durante la pausa no hay servicio»*, que es
+verdad de una sola de las dos pausas.** Una `PAUSED` por `CUSTOMER_REQUEST` efectivamente no tiene
+servicio —el §26.1 detiene publicación, edición y servicio, y esa fila **no emite fuente**
+(`12-contrato…` §2.6)—; una `PAUSED` por `COURTESY` **sí emite**, como `tipo: CORTESÍA`, porque el
+servicio *«lo sostenemos nosotros»* (`DEC-GRANT-003`). Con la razón vieja el § decidía sólo la
+mitad de su sujeto; con ésta decide las dos, porque **en las dos el ciclo pagado ya se perdió al
+pausar**. Lo que la baja desde una cortesía sí corta son los días de cortesía que quedaban, y eso
+se dice **antes de confirmar** (`B/19` §4, fila 8), con la misma forma que `DEC-GRANT-004` ya usa
+para el cruce vecino.
+
+**Quién lo ejecuta: `S22`** (`B/03` §3.2), que manda la fila directo a `CANCELLED` sin pasar por
+`CANCEL_SCHEDULED`. Hasta esa fila **esta decisión no tenía ninguna transición que la cumpliera**,
+y por la regla 1 del núcleo el intento se iba a la marca mientras el reloj de la pausa vencía,
+`S10` devolvía la fila a `ACTIVE` y se le cobraba el ciclo siguiente.
+
 ### 7.3 El orden inverso no existe
+
+**Y no es el §7.2 al revés, aunque lo parezca.** Ahí faltaba la fila de una decisión ya tomada y
+la fila se escribió (`S22`); acá **la decisión es que no haya fila**, y el motivo es una condición
+del §26 —exige `ACTIVE`— más `EX-11`, que mide que el proveedor rechaza toda modificación sobre
+una pausada. Leer la exhaustividad como argumento **a favor** de que algo no pasa sólo vale
+cuando alguien decidió que no pase: si un capítulo decidió que sí y la tabla no lo tiene, lo que
+falta es la fila.
 
 Pausar estando en `CANCEL_SCHEDULED` **no es una transición de la máquina**: el §26 exige
 `ACTIVE`, y la tabla del capítulo 03 §1 es exhaustiva —*lo que no está, no pasa*—. No hace falta
