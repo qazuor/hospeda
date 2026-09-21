@@ -2,6 +2,7 @@
  * Response Middleware Tests
  * Tests the response formatting functionality
  */
+import { DbError } from '@repo/db/utils';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -1099,5 +1100,103 @@ describe('Response Middleware', () => {
             expect(data.error.code).toBe('FORBIDDEN');
             expect('reason' in data.error).toBe(false);
         });
+    });
+});
+
+/**
+ * HOS-1174 / error-contract R4: `createErrorHandler` and `handleRouteError` are
+ * twin formatters — the same error must produce the same body whichever one
+ * sees it. `createErrorHandler` had no DbError branch, so a `DbError` carrying
+ * SQLSTATE 23505 reaching `app.onError` (a hand-rolled route, a middleware
+ * write — anything not going through one of the 13 route factories) fell
+ * through its priority chain to the 500 INTERNAL_ERROR default, while the same
+ * error answered 409 on the route-factory path. That drift has already cost
+ * two incidents (HOS-283, H-105).
+ */
+describe('createErrorHandler maps a Postgres constraint violation (HOS-1174)', () => {
+    let app: Hono;
+
+    /** The exact wrapping `BaseModelImpl` produces for a driver failure. */
+    const buildDbErrorWithDriverCause = (
+        code: string,
+        constraint: string,
+        table: string
+    ): DbError => {
+        const driverError = Object.assign(new Error('duplicate key value'), {
+            code,
+            constraint,
+            table,
+            detail: 'Key (slug)=(taken) already exists.'
+        });
+        const drizzleError = Object.assign(
+            new Error('Failed query: insert into "partners" ...\nparams: taken'),
+            { cause: driverError }
+        );
+        return new DbError('partner', 'create', {}, drizzleError.message, drizzleError);
+    };
+
+    beforeEach(() => {
+        app = new Hono();
+        app.use(responseFormattingMiddleware);
+        app.onError(createErrorHandler());
+        vi.clearAllMocks();
+    });
+
+    it('answers 409 ALREADY_EXISTS for a 23505, not the 500 default', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('23505', 'partners_slug_unique', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(409);
+        const data = await res.json();
+        expect(data.error.code).toBe('ALREADY_EXISTS');
+        expect(data.error.message).toBe('A partner with this slug already exists');
+    });
+
+    it('answers 400 VALIDATION_ERROR for a 23503', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('23503', 'partners_owner_id_fkey', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('never leaks the driver `detail` into the body', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('23505', 'partners_slug_unique', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert — 409 proves the branch ran; the absence is the property.
+        expect(res.status).toBe(409);
+        expect(JSON.stringify(await res.json())).not.toContain('already exists.');
+    });
+
+    it('leaves a DB failure that is not a constraint violation as a 500', async () => {
+        // Arrange
+        app.get('/boom', () => {
+            throw buildDbErrorWithDriverCause('08006', 'n/a', 'partners');
+        });
+
+        // Act
+        const res = await app.request('/boom');
+
+        // Assert
+        expect(res.status).toBe(500);
     });
 });
