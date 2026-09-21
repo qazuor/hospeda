@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -161,12 +161,13 @@ ninguna columna de dinero.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`addon_product`** | **precio, recurrencia y verticales compatibles**, más **`version_id`** → `addon_version` (épica de verticales), que es donde viven **qué otorga**, la duración y el tipo de scope | `version_id` **no es anulable**: es la referencia que transporta una fuente `ADDON` |
+| **`addon_product`** | **precio, recurrencia y verticales compatibles**, más **`version_id`** → `addon_version` (épica de verticales), que es **la versión que se vende hoy**: la que una compra nueva ancla | `version_id` **no es anulable**: sin ella el producto no se puede comprar. **NO es la referencia que transporta una fuente `ADDON`** — ésa la aporta la instancia |
 | **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** (ficha, suscripción de vertical, usuario o global), estado, inicio, fin, su suscripción de complemento si es recurrente | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código» |
 | **`courtesy_grant`** | beneficiario, scope, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** |
-| **`permanent_grant`** | beneficiario, scope de verticales, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **el `plan` que otorga** y **el piso del trinquete** | ídem; el plan **no es anulable** |
+| **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4). **El scope de verticales NO es una columna: son sus anclas** | ídem; **al menos un ancla**, o el grant no otorga nada |
+| **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable |
 
 **`addon_product` se partió por campo, igual que el catálogo de planes.** El corte del §11.2 —*«no
 es por entidad, es por campo»*— dejaba a esta entidad entera del lado de billing con capacidades
@@ -174,6 +175,26 @@ adentro. Ahora **el precio y la recurrencia viven acá y qué otorga vive en `ad
 de verticales, `V/02` §2.1), que es lo que permite que verticales resuelva lo que un addon otorga
 **sin preguntarle nada a billing**. La instancia **ancla** su versión, igual que una suscripción
 ancla la suya.
+
+**Las dos columnas apuntan a `addon_version` y NO contestan la misma pregunta.** Confundirlas es
+exactamente el defecto que el anclaje vino a cerrar, y hasta acá la tabla lo declaraba al revés en
+la fila del producto:
+
+| columna | qué contesta | qué pasa al publicar una versión nueva |
+|---|---|---|
+| **`addon_product.version_id`** | **qué se vende hoy**: la versión que una compra nueva ancla | se re-apunta, y eso cambia **lo que se va a comprar** |
+| **`addon_instance.addon_version_id`** | **qué se compró**: es la **única** referencia que el contrato transporta para una fuente `ADDON` | **no se mueve**: lo ya comprado no cambia |
+
+> **La referencia de una fuente `ADDON` sale SIEMPRE de la instancia, nunca del producto**
+> (`V/02` §2.1, `12-contrato-de-cobertura.md` §2.1 y §2.7).
+
+**Y no es una regla propia de los addons: es la del catálogo, con las mismas palabras.** `V/10` §2
+la enuncia para los planes —*«el catálogo es lo que se puede comprar hoy; la suscripción es lo que
+se compró»*—. Leer `addon_product.version_id` para resolver una fuente viva es mezclar las dos
+lecturas, y el desenlace está medido: quien compró *«+30 fotos»* pasaría a tener lo que diga la
+versión nueva, **sin comprar nada y sin que nadie se lo avise** (`V/02` §2.1). Por eso
+`addon_product` **no necesita declararse inmutable**: re-apuntarlo es cómo se publica una versión,
+y con la referencia viviendo en la instancia esa mutación ya no alcanza a nadie que haya comprado.
 
 **Las concesiones no modifican el plan ni la suscripción: son fuentes independientes.** El §36
 dice que un entitlement sigue activo «mientras al menos una source exista», y eso sólo se puede
@@ -193,18 +214,51 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
   aporta es la distinción que sí importa: una `PAUSED` por `CUSTOMER_REQUEST` **no cubre** (`B/16`
   §2.2, *«el servicio está detenido»*) y una `PAUSED` por `COURTESY` **sí**, porque lo sostenemos
   nosotros.
-- **`permanent_grant.plan_id`, y NO una versión.** El grant resuelve **la versión vigente de ese
-  plan, vendible o no**, y `UNIQUE(plan_id) WHERE vigente` garantiza que esa versión es unívoca y
+- ⚠️ **`courtesy_grant.scope` NO significa lo mismo que el scope del grant, y hoy no hace nada.
+  Queda abierto, a propósito.** Una suscripción es de **una** vertical (§2.2) y la cortesía
+  transporta la versión anclada de **la** suscripción que pausa, así que emite **una** fuente, en
+  esa vertical (`12-contrato…` §2.7, fila de `cortesía`). Un `scope` de dos verticales es entonces
+  **una columna que se puede escribir y no hace nada** — el modo de falla que `B/16` §2.4 nombra
+  para rechazarlo— y hacérselo hacer no es una redacción sino **una decisión de producto**: el §34
+  pide scope plural *«de forma equivalente al sistema de Free Forever»*, pero una cortesía plural
+  tendría que **pausar N suscripciones** y no hay respuesta escrita para la vertical donde el
+  beneficiario **no tiene ninguna** (§34.1 la resuelve extendiendo el trial, §34.2 sosteniendo el
+  servicio, y no son el mismo mecanismo). **No se decide acá.** Lo que sí queda fijado es que la
+  lectura vigente es la de una sola fuente: **nadie puede emitir la cortesía en una segunda
+  vertical transportando la versión anclada de la suscripción de la primera**, que sería el defecto
+  del grant con otro `tipo`.
+- **El ancla es POR VERTICAL, y por eso es una tabla y no dos columnas.** Un plan pertenece a **una**
+  vertical (`V/02` §2.1, `UNIQUE(vertical, slug)`) y un grant emite **una fuente por cada vertical de
+  su scope** (`12-contrato…` §2.7). Con un solo `plan_id` las dos fuentes transportaban **la misma
+  referencia**, y la segunda vertical resolvía sus capacidades leyendo el plan de la primera: una
+  clave de una vertical alimentada desde otra, que es lo que el §64.10 prohíbe. **`UNIQUE(permanent_grant_id, vertical)`
+  más «el plan pertenece a esa vertical» es lo que hace que la fila mala no se pueda escribir** — y
+  la base es el único lugar donde eso se puede impedir de verdad: la regla escrita en el contrato no
+  alcanzó, y esta tabla es la mitad que faltaba.
+- **Y sigue siendo UN grant, con N anclas.** No son N grants de una vertical cada uno: la firma, el
+  motivo, el `includesAddons` y **la revocación** son del instrumento (`NUCLEO/01` §1.5), y partirlo
+  convertiría *«la acción administrativa más grave»* (`NUCLEO/08` §3) en N actos que hay que acordarse
+  de hacer juntos. El `scope de verticales` del §35.4 se audita leyendo las anclas, que es la única
+  forma de que no pueda contradecirlas.
+- **Cada ancla apunta a un `plan_id`, y NO a una versión.** El grant resuelve **la versión vigente de
+  ese plan, vendible o no**, y `UNIQUE(plan_id) WHERE vigente` garantiza que esa versión es unívoca y
   siempre existe. Anclar a una versión fija lo dejaría congelado; leer *«la vigente y sólo si es
   vendible»*, como la pricing, lo dejaría **sin nada** el día que se retira el plan, porque retirar
-  un plan se hace publicando una versión no vendible (`D13`, cap. 10 §3.2).
-- **`permanent_grant.piso_del_trinquete`** — **la referencia a la versión que estaba vigente el día
-  que se firmó**, nunca una copia de sus valores, por la misma razón que el piso del trial (`V/02`
-  §2.2: el §10.3 prohíbe copiar a mano, y una copia además queda desactualizada). Seguir la versión
-  vigente expone al beneficiario a que el plan **empeore**: una versión que reparte distinto
-  le saca algo a quien tiene un «para siempre», sin que nadie lo haya decidido para esa persona.
-  **Un grant nunca otorga menos de lo que otorgaba el día que se concedió**, y el instrumento no es
-  nuevo: es el piso de `V/15` §2.5 aplicado acá.
+  un plan se hace publicando una versión no vendible (`D13`, cap. 10 §3.2). La regla de lectura, con
+  las seis lecturas del catálogo ordenadas, está en `V/10` §2.
+- **`permanent_grant_vertical.piso_del_trinquete`** — **la referencia a la versión de ESE plan que
+  estaba vigente el día que se firmó**, nunca una copia de sus valores, por la misma razón que el
+  piso del trial (`V/02` §2.2: el §10.3 prohíbe copiar a mano, y una copia además queda
+  desactualizada). Seguir la versión vigente expone al beneficiario a que el plan **empeore**: una
+  versión que reparte distinto le saca algo a quien tiene un «para siempre», sin que nadie lo haya
+  decidido para esa persona. **Un grant nunca otorga menos de lo que otorgaba el día que se
+  concedió**, y el instrumento no es nuevo: es el piso de `V/15` §2.5 aplicado acá. **Hay un piso por
+  ancla y se compara contra el plan de su propia vertical**: uno solo para N verticales compararía las
+  claves de una contra lo que otorgaba el plan de otra.
+- **Una vertical sin ancla no recibe nada, y es la respuesta al scope *«todas actuales y futuras»* del
+  §35.1.** Una fuente sin referencia resoluble **no se puede expresar** (`12-contrato…` §2.3), así que
+  el grant no emite fuente donde no ancló; extenderlo a una vertical nueva es anclarle un plan, un acto
+  de `SUPER_ADMIN` que queda auditado.
 
 **Anclar no es ser.** Una suscripción ancla una versión de plan y no es un plan: el grant sigue
 siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya estaba resuelto —
@@ -232,6 +286,7 @@ son los que no dependen de que ningún camino de código se acuerde:
 | invariante del §64 | restricción |
 |---|---|
 | 8 · máximo una suscripción principal por vertical | **dos** `UNIQUE` parciales sobre los estados vivos, partidos por `sucede_a` (§2.2). El invariante cuenta **compromisos, no filas**: durante la ventana del cambio de plan hay dos filas y un solo compromiso de pago |
+| 10 · una acción en una vertical no afecta a otra | **`UNIQUE(permanent_grant_id, vertical)` en `permanent_grant_vertical`, más «el plan del ancla pertenece a esa vertical»** (§2.4). Es la mitad del §64.10 que el scope estructural del cap. 17 **no** alcanza: ahí la resolución pide la vertical, pero el cruce venía **adentro** de la fuente |
 | 19 · los webhooks son idempotentes | `UNIQUE(proveedor, id_del_hecho)` en `payment` |
 | 26 · producto ≠ instancia | son dos tablas, y la instancia no repite ningún campo del producto |
 | — · toda columna de estado tiene dominio cerrado | restricción de dominio por columna (cap. 03 §1.2) |

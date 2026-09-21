@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -249,7 +249,7 @@ Invalidan la entrada de un `user + vertical`:
 | se publica una versión nueva de un plan al que hay suscripciones ancladas | cambia lo que esa versión otorga |
 | cambia un override del plan de trial | la derivación deja de dar lo mismo |
 | **se publica una versión nueva de la de PISO o de la de PRE-TRIAL** | las otorga **todo el mundo**, y no cuelgan de ninguna suscripción: ninguna fila de arriba las alcanza |
-| **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción |
+| **se publica una versión nueva de un plan al que hay GRANTS anclados** | un grant lee **la versión vigente** (`12-contrato…` §2.8), así que una versión nueva lo cambia sin tocar ninguna suscripción. **El ancla es por vertical**: invalida la entrada de **esa** vertical del beneficiario, no la de las otras verticales de su scope |
 | **se publica una versión nueva de un `addon_version`** | es lo que otorga el addon, y desde el corte por campo ya no vive en billing |
 
 **Las cuatro últimas son de la FASE 9 y ninguna entraba por las siete de arriba.** La lista se

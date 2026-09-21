@@ -3,7 +3,7 @@ title: Master Spec 10 — Verticales, planes y billing options
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-18
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 10
@@ -93,9 +93,12 @@ va a usar sin repetirla:
 | **una suscripción viva** | **su versión anclada**, sea vigente o no, sea vendible o no (`DEC-ARCH-001`) |
 | **la derivación del plan de trial** (§10.3) | las versiones **vigentes y vendibles**, la de `rank` más alto y la más baja (`DEC-ARCH-002`) |
 | **la comparación de tiers** (§27, §28) | los `rank` de las versiones **vigentes y vendibles** |
+| **un grant permanente** (§35) | la **versión vigente** del plan que ancló **en esa vertical**, **sea vendible o no** (`12-contrato-de-cobertura.md` §2.8) |
+| **una fuente `BASE`, y una fuente de trial en `PRE_TRIAL`** | la versión vigente de la de **piso** y la de **pre-trial** de la vertical, **no vendibles por construcción** (cap. 02 §2.1) |
 
-Las cuatro filas dicen lo mismo de cuatro formas: **el catálogo es lo que se puede comprar hoy;
-la suscripción es lo que se compró.** Son dos preguntas distintas y ninguna lectura las mezcla.
+Las cuatro primeras filas dicen lo mismo de cuatro formas: **el catálogo es lo que se puede comprar
+hoy; la suscripción es lo que se compró.** Son dos preguntas distintas y ninguna de las cuatro las
+mezcla.
 
 De acá sale la corrección que este capítulo le pide al núcleo, y que va aplicada en el capítulo
 02 en el mismo commit: **«vendible» sin «vigente» no alcanza.** Un plan tiene varias versiones y
@@ -103,6 +106,33 @@ la restricción `UNIQUE(vertical, rank) WHERE vendible` del capítulo 02 §2.1 d
 vieja siga ocupando un `rank` que el plan ya no usa. La restricción aplicable es
 `UNIQUE(vertical, rank) WHERE vendible AND vigente`, y cada plan tiene **exactamente una** versión
 vigente.
+
+### 2.1 Las dos últimas filas son de la FASE 9, y una mezcla a propósito
+
+El enunciado de arriba se escribió sobre cuatro lectores y **con seis deja de ser cierto**, así que
+hay que decir cuál es el enunciado que sí los cubre — y no es un ablande: la mezcla del grant está
+**medida**, y la rama «pura» es la que rompe.
+
+**El grant lee *«la vigente»* como la pricing y *«vendible o no»* como una suscripción.** Leerlo
+como la pricing —exigiéndole `vendible`— es el defecto, no la ortodoxia: retirar un plan se hace
+publicando una versión **no vendible** (`D13`, `B/10` §3.2), así que el día que se retira Premium **todos los
+*Free Forever* anclados a él se quedarían sin nada** (`12-contrato…` §2.8). Y las dos versiones no
+vendibles de cada vertical —la de piso y la de pre-trial— son el caso extremo del mismo problema:
+si la resolución les exigiera `vendible`, **nadie tendría nada**, nunca.
+
+> **Una lectura que resuelve lo que ALGUIEN TIENE nunca exige `vendible`; una que resuelve lo que
+> SE PUEDE COMPRAR siempre lo exige.** *«Vigente»* y *«vendible»* son dos preguntas y se piden por
+> separado.
+
+Con ese enunciado las **seis** filas quedan del lado correcto sin excepción: la pricing, la
+derivación del plan de trial y la comparación de tiers **venden**, y piden las dos; la suscripción
+viva, el grant y las dos versiones no vendibles **resuelven lo que alguien tiene**, y ninguna pide
+`vendible`. Lo que cambia entre esas tres últimas es sólo **cuál versión** toman: la suscripción, la
+que ancló; el grant y las no vendibles, la vigente.
+
+**Y la mitad que sigue rigiendo igual**: ninguna lectura de catálogo resuelve **lo que se compró**.
+La referencia de una fuente `ADDON` sale de la **instancia** y no del producto (`B/02` §2.4) por
+exactamente esta regla, del otro lado del corte.
 
 ---
 

@@ -3,7 +3,7 @@ title: El contrato de cobertura — la única frontera entre las dos épicas
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-18
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 ---
 
@@ -117,6 +117,13 @@ regla, y por eso una fuente que no fuera una suscripción no tenía cómo contes
 > no la única: un addon transporta su `versiónDeAddon`, y las dos son punteros a tablas de
 > verticales.
 
+**Y de dónde sale cada puntero se nombra acá, porque no nombrarlo dejó una fuente con dos
+candidatos.** Una fuente `ADDON` transporta **la versión que ancló la INSTANCIA al comprarse**
+(`addon_instance`, `B/02` §2.4) y **nunca** la que el producto vende hoy
+(`addon_product.version_id`): son dos preguntas distintas —qué se compró y qué se vende— y
+confundirlas mueve a todas las instancias vivas cada vez que se publica una versión. Es la misma
+separación que `V/10` §2 hace para los planes.
+
 **La referencia no es anulable, y eso es lo que cierra el caso del grant.** Una fuente sin
 referencia resoluble admite dos ramas y las dos son malas: fallar cerrado la deja decorativa
 —cubre y no otorga nada—, fallar abierto la vuelve *«toda clave de la vertical»*. Las dos ramas
@@ -205,6 +212,12 @@ adelante: **el paso 6 pliega todas las fuentes vivas**, así que el suspendido p
 donde se define. *«Agrega capacidades sobre un título»* era una frase en el contrato y **una frase
 no es un gate**: el capítulo 15 pliega lo que el contrato le da, y le estábamos dando el addon sin
 decirle que dependía de otra cosa.
+
+> ⚠️ **Y decirlo acá tampoco alcanza: el gate vive en `V/15` §2.6**, que es el § que define el
+> conjunto plegable y al que responden las cuatro estrategias de agregación. Este renglón es la
+> definición; aquél es la ejecución, y lleva su guard (`G-R2`, `V/20` §2). La primera versión de
+> este arreglo se escribió sólo acá, y el capítulo que pliega siguió diciendo *«suma todas las
+> fuentes vivas»* durante toda una vuelta del ciclo.
 
 **El caso que NO cambia, y conviene decirlo**: un `GRANT` permanente **es** de clase `TÍTULO`, así
 que quien tiene *Free Forever* y un addon **conserva los dos**. Es exactamente la excepción que
@@ -336,10 +349,10 @@ los dos que ya conviven, los cuatro scopes del §40 y el *«scope de verticales�
 | fuente | scope nativo | `alcance` en el contrato |
 |---|---|---|
 | suscripción, cortesía, trial, `BASE` | — (cubren su vertical) | `VERTICAL` |
-| grant | *«scope de verticales»* (§35.1) | una fuente `VERTICAL` **por cada vertical de su scope** |
+| grant | *«scope de verticales»* (§35.1) | una fuente `VERTICAL` **por cada vertical de su scope**, y cada una transporta **el ancla de esa vertical** (§2.8) — nunca la de otra |
 | addon | los cuatro del §40 | `LISTING` · `VERTICAL` · `USER` · `GLOBAL` |
 
-### 2.8 Qué referencia transporta un `GRANT`: el plan, su versión vigente, y con trinquete
+### 2.8 Qué referencia transporta un `GRANT`: un plan POR VERTICAL, su versión vigente, y con trinquete
 
 Un grant permanente cruza la frontera, la persona queda cubierta, y cuando el paso 6 pregunta qué
 capacidades le da **no había respuesta**: el grant no apuntaba a ningún plan. *Free Forever* era un
@@ -357,23 +370,55 @@ plan de la primera — una clave de una vertical alimentada desde otra, que es e
 §64.10 prohíbe y lo que el scope estructural del capítulo 17 existe para impedir.
 
 Así que **un grant de scope N verticales ancla N planes, uno de cada una**, y cada fuente
-transporta el suyo. Es lo que `R5-D` ya decía para las cortesías heredadas —*«una fila por vertical
-de su scope»*— aplicado al instrumento entero.
+transporta el suyo.
+
+#### N anclas no son N grants, y la diferencia se paga al revocar
+
+Es la mitad que la primera versión de esta regla no escribió, y por eso la entidad quedó con un
+`plan` singular y tres capítulos diciendo tres cosas distintas.
+
+> **Un grant es UN instrumento —una firma, un motivo, un `includesAddons`, una revocación
+> (`NUCLEO/01` §1.5, §35.4)— con UN ANCLA POR CADA VERTICAL de su scope.** Lo que se multiplica es
+> el ancla, nunca la concesión. El ancla lleva **el plan de esa vertical** y **el piso del
+> trinquete de esa vertical**, y **el scope ES el conjunto de anclas**: no es una columna aparte
+> que pueda contradecirlas. `B/02` §2.4 lo escribe como tabla.
+
+Las dos formas que esto descarta, y qué rompe cada una:
+
+| forma | qué rompe |
+|---|---|
+| **una concesión con UN plan** y un scope plural | es el defecto de arriba: la segunda vertical resuelve leyendo el plan de la primera |
+| **N concesiones**, de una vertical cada una | revocar deja de ser un acto: hay que acordarse de las otras N−1, sobre lo que `NUCLEO/08` §3 llama *«la acción administrativa más grave»*. Y el *«scope de verticales»* del §35.1 pasaría a valer siempre uno, sin que nada lo diga |
+
+**El scope *«todas actuales y futuras»* del §35.1 tiene una consecuencia que hay que declarar.** Una
+vertical que todavía no existe **no tiene plan que anclar**, y el §2.3 es terminante: *«una fuente
+sin referencia resoluble no se puede expresar»*. Entonces **un grant no emite fuente en una
+vertical donde no tiene ancla**; extenderlo a una vertical nueva es **anclarle un plan**, que es un
+acto de `SUPER_ADMIN` y queda auditado como cualquier otro. No hay rama que decida sola qué plan
+regalar en una vertical que nadie miró — y la alternativa, elegirlo automáticamente, es
+precisamente lo que *«regalar algo pasa a ser elegir un plan concreto»* vino a impedir.
 
 **Los tres pedazos, y ninguno inventa un modo nuevo:**
 
-1. **Se ancla al plan.** `UNIQUE(plan_id) WHERE vigente` garantiza que *«la vigente»* es unívoca y
-   siempre existe, así que la referencia nunca queda sin resolver (§2.3).
+1. **Cada ancla apunta a un plan, no a una versión.** `UNIQUE(plan_id) WHERE vigente` garantiza que
+   *«la vigente»* es unívoca y siempre existe, así que la referencia nunca queda sin resolver
+   (§2.3). Y el plan **pertenece a la vertical del ancla**, que es la restricción que la base tiene
+   que hacer cumplir: sin ella la fila mala se sigue pudiendo escribir.
 2. **Lee la vigente, vendible o no.** `V/02` §2.1 ya tiene los dos modos escritos —*«la pricing lee
    la versión vigente y sólo si es vendible; una suscripción lee su versión anclada, vigente o no,
    vendible o no»*—. El grant es un híbrido: toma *«la vigente»* de la pricing y el *«vendible o
    no»* de la suscripción. **Leerlo como la pricing sería el defecto**: retirar un plan se hace
    publicando una versión no vendible (`D13`, cap. 10 §3.2), así que el día que se retira Premium
-   **todos los `Free Forever` anclados a él se quedarían sin nada**.
-3. **El trinquete.** Seguir la vigente expone al beneficiario a que el plan **empeore**: una versión
-   que reparte distinto le saca algo a quien tiene un «para siempre», sin que nadie lo haya decidido
-   para esa persona. El trinquete es un instrumento que el diseño **ya tiene** —el piso de `V/15`
-   §2.5—, aplicado acá: **sigue las mejoras y no sufre los recortes.**
+   **todos los `Free Forever` anclados a él se quedarían sin nada**. `V/10` §2 —el capítulo que se
+   declara dueño de la regla de lectura— lleva esta lectura en su tabla y el enunciado que la
+   admite sin excepción.
+3. **El trinquete, y también es por vertical.** Seguir la vigente expone al beneficiario a que el
+   plan **empeore**: una versión que reparte distinto le saca algo a quien tiene un «para siempre»,
+   sin que nadie lo haya decidido para esa persona. El trinquete es un instrumento que el diseño
+   **ya tiene** —el piso de `V/15` §2.5—, aplicado acá: **sigue las mejoras y no sufre los
+   recortes.** Cada ancla guarda **su** piso, y se compara contra el plan **de esa misma vertical**:
+   un piso único para N verticales compararía las claves de Gastronomía contra lo que otorgaba un
+   plan de Alojamiento, que es el mismo cruce por otra puerta.
 
 **Anclar no es ser.** Una suscripción ancla una versión de plan y no es un plan; el grant sigue
 siendo la entidad independiente que `NUCLEO/01` §1.5 describe, con su scope, su `includesAddons` y

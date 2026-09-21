@@ -3,7 +3,7 @@ title: Master Spec 20 — Estrategia de testing
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 20
@@ -54,6 +54,8 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G5 | una fuente de entitlements **se apaga sin pasar** por el reconciliador de excedentes | cap. 15 §4.2 (épica de verticales) |
 | G6 | una autorización **decide sólo por rol** | invariantes §64.12 y §64.13 |
 | G8 | aparece `commerce` en fuentes activas | invariante §64.32, §55 |
+| G-R2 | el pliegue del conjunto efectivo **recibe una fuente de clase `COMPLEMENTO`** cuando el conjunto no tiene ninguna de clase `TÍTULO` viva — en cualquiera de sus dos tramos | cap. 15 §2.6 |
+| G-R2-B | una fuente `GRANT` transporta **un plan de otra vertical** que la de la fuente | cap. 15 §2.5, `12-contrato…` §2.8 |
 | G-R3 | una de las **dos versiones no vendibles** de una vertical —la de pre-trial o la de piso— otorga una clave de la clase comercial o un entitlement medido; o la capacidad de activación no cumple el «si y sólo si» | cap. 02 §2.1 |
 | G-R3-B | una transición **disparada por el reloj** otorga algo, en vez de quitar | cap. 17 §3.4 |
 | G-R3-C | una **operación de dominio no declara** si pasa por el paso 5 | cap. 17 §3.5 |

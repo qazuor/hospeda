@@ -3,7 +3,7 @@ title: Master Spec 16 — Addons
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 16
@@ -104,6 +104,13 @@ opuestas daría el mismo resultado, y por eso la regla no es el estado: es qué 
 concesión: es obligatorio, porque el §35.3 ordena *«cancelar toda obligación de pago cubierta»* —
 el beneficiario de *Free Forever* **no tiene suscripción** — y el §35.2 contempla explícitamente
 que use addons.
+
+**Y vale en la vertical donde el grant ANCLÓ, no en todas.** Un grant emite una fuente por cada
+vertical de su scope y cada una transporta el plan **de esa vertical**
+(`12-contrato-de-cobertura.md` §2.8, `B/02` §2.4): es título en Gastronomía porque ancló un plan de
+Gastronomía, no por el solo hecho de que el beneficiario tenga un grant. En una vertical donde no
+ancló nada **no emite fuente**, así que ahí no hay título que reemplace a la suscripción y el addon
+se adquiere como cualquier otro.
 
 Sin esta excepción, `includesAddons: true` sería una configuración **inalcanzable**: una opción
 que existe en la base, se puede encender, y no hace nada. Un control por exclusión que se olvida

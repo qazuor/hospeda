@@ -3,7 +3,7 @@ title: Master Spec 15 — Entitlements y limits
 linear: HOS-1353
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 15
@@ -57,10 +57,14 @@ número que no significa nada.
 
 | familia | estrategia | cómo resuelve | ejemplo |
 |---|---|---|---|
-| **acumula** | `SUMA` | suma todas las fuentes vivas | fotos, fichas, destaques |
+| **acumula** | `SUMA` | suma todas las fuentes del **conjunto plegable** (§2.6) | fotos, fichas, destaques |
 | **no acumula** | `MÁXIMO` | gana el número más alto | días de retención, tamaño de archivo |
 | | `MÍNIMO` | gana el número más bajo | un compromiso de tiempo de respuesta |
 | | `MEJOR_DECLARADO` | la clave declara un orden sobre sus valores posibles y gana el mejor | nivel de soporte: `correo` → `prioritario` → `dedicado` |
+
+> **Las cuatro estrategias pliegan el MISMO conjunto de fuentes, y ese conjunto no es el que el
+> contrato devuelve.** Es el que queda **después** del descarte del §2.6. Decirlo una vez acá evita
+> tener que repetir la condición en cada fila.
 
 **Las tres de «no acumula» son la misma regla dicha tres veces: gana la fuente más favorable.**
 Lo que cambia es cómo se define *favorable* —más alto, más bajo, o un orden declarado— y eso es
@@ -95,9 +99,10 @@ los crearon:
    las versiones vigentes al arrancar el trial, y sólo puede subir el resultado.
 
 **El trinquete tiene un segundo sujeto, y es el mismo mecanismo.** Un `permanent_grant` se ancla a
-un **plan** y resuelve su **versión vigente** (`B/02` §2.4), así que sigue las mejoras del plan —y
+**un plan por cada vertical de su scope** y resuelve, en cada una, la **versión vigente** de su
+plan (`12-contrato-de-cobertura.md` §2.8, `B/02` §2.4), así que sigue las mejoras del plan —y
 quedaría expuesto a sus recortes—. Su piso es **lo que ese plan otorgaba el día que se firmó el
-grant**, guardado en la fila:
+grant**, guardado en el ancla:
 
 > **Un grant nunca otorga menos de lo que otorgaba el día que se concedió.**
 
@@ -106,6 +111,67 @@ de fondo: una versión nueva que reparte distinto **le sacaría algo a quien tie
 siempre», sin que nadie lo haya decidido para esa persona**. La diferencia con el del trial es sólo
 contra qué se compara: el del trial, contra las versiones vigentes al arrancar; el del grant,
 contra las vigentes al firmarlo.
+
+**Y se compara POR VERTICAL, que es la parte que la resolución no puede deducir sola.** La
+resolución de un `user + vertical` toma **la fuente `GRANT` de esa vertical** —con el plan de esa
+vertical y el piso de esa vertical— y **ninguna otra**. Un piso único para un grant de scope plural
+compararía las claves de Gastronomía contra lo que otorgaba un plan de Alojamiento, que es el mismo
+cruce que el ancla por vertical vino a cerrar, entrando por el trinquete en vez de por la
+referencia. Lo vigila `G-R2-B` (`V/20` §2).
+
+### 2.6 El conjunto plegable: sin título, los complementos se descartan
+
+`cobertura(user, vertical)` devuelve **todas** las fuentes vivas, de las **tres clases** que el
+contrato define —`TÍTULO`, `BASE` y `COMPLEMENTO`— y lo hace a propósito
+(`12-contrato-de-cobertura.md` §2.1 y §2.4): el aviso de qué se pierde (§6.3) y el reconciliador
+(§4) necesitan verlas todas, incluso las que no van a otorgar nada. **Lo que este capítulo pliega
+no es esa lista.**
+
+> **El conjunto plegable de un `user + vertical` son sus fuentes de clase `TÍTULO` y `BASE`, más
+> las de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva. Sin título, los
+> complementos se descartan y no entran en ninguna de las cuatro estrategias del §2.2.**
+
+Es la regla del contrato §2.4 —*«un complemento agrega sobre un título; sin título no agrega sobre
+nada»*— escrita **donde se ejecuta**. El pliegue lo hace este capítulo; una regla de pliegue que
+viva sólo en el contrato es una frase, y **una frase no es un gate**.
+
+**Qué pasa sin ella, y está medido en el contrato §2.4**: el reloj de un addon *«no se congela»*
+con la suspensión (`B/16` §4.2, `DEC-ADDON-001`), así que una instancia **viva** convive con una
+suscripción `SUSPENDED` a la que el §21 deja *«sin entitlements comerciales»*. Con las estrategias
+sumando *«todas las fuentes vivas»*, ese suspendido pierde la cobertura y **conserva lo que su
+addon otorga**: dejó de pagar y sigue adentro. El descarte de `cubierto` cerraba la puerta un paso
+antes; ésta es la del paso 6.
+
+**Tres casos que NO cambian, y conviene decirlos porque se parecen:**
+
+1. **Un `GRANT` permanente es de clase `TÍTULO`.** Quien tiene *Free Forever* y un addon
+   **conserva los dos** — es la excepción que `B/16` §2.4 ya declaraba (*«un grant permanente vale
+   como título en lugar de la suscripción `ACTIVE`»*), y acá se cumple sin escribirla aparte.
+2. **El piso no rescata a nadie.** La fuente `BASE` que toda persona tiene en toda vertical
+   (`12-contrato…` §2.5) **no es un título**: si contara, el gate no descartaría nunca nada y
+   volvería a ser decorativo.
+3. **El descarte es del pliegue, no del contrato.** `cubierto` ya se calculaba sólo sobre los
+   `TÍTULO`; esto es el paso siguiente y opera sobre **capacidades**. Los dos son necesarios y
+   ninguno reemplaza al otro.
+
+**Y es la misma condición en los dos tramos del pliegue.** El conjunto efectivo se pliega en el
+tramo cacheado por `user + vertical` y un delta por ficha (`12-contrato…` §2.7); un addon de
+alcance `LISTING` entra en ese delta **sólo si el `user + vertical` tiene título vivo**. El corte
+en dos tramos es por dónde puede cortar el caché, no una segunda regla de admisión: si el descarte
+sólo rigiera en el primero, el suspendido conservaría sus addons de ficha.
+
+**Y el descarte NO necesita un disparador nuevo para el reconciliador de excedentes**, que es lo
+primero que parece faltar: cuando muere el último título, **el conjunto efectivo baja sin que
+ninguna fuente se haya apagado** —el addon sigue vivo—, y el §4.2 se dispara por el recálculo, no
+por el apagado. El recálculo ya ocurre: *«toda transición de la máquina de suscripción»* está en
+la lista de invalidación (cap. 02 §3.2) y la suspensión es una. Lo que baja lo reconcilia el §4.3
+como cualquier otra baja.
+
+**El guard** — `G-R2`, en la lista de `V/20` §2: **ninguna de las cuatro estrategias recibe una
+fuente de clase `COMPLEMENTO` cuando el conjunto no tiene ninguna de clase `TÍTULO` viva.** Se
+comprueba sobre la resolución y no sobre cada call site, porque `V/17` §1.3 ya obliga a que los
+pasos se resuelvan **en un solo lugar**; ese lugar es el sujeto del guard. Sin guard la regla queda
+donde estaba: escrita y nunca ejercida.
 
 ---
 

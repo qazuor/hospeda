@@ -132,10 +132,14 @@ instrumento del diseño nuevo para *«esta persona tiene esto sin pagar, indefin
 converge con el grant anclado al plan del cap. 02 §2.4: **no hace falta inventar nada para
 cortesías heredadas, son el caso normal**.
 
-**Con una precisión que no es de forma: una fila por cada vertical de su scope.** Un grant ancla
-**un plan por vertical** (`12-contrato…` §2.8), porque un plan pertenece a una sola. Escribir una
-fila con un plan para un scope de dos verticales es el defecto que el contrato acaba de cerrar:
-**la segunda vertical resolvería sus capacidades leyendo el plan de la primera**.
+**Con una precisión que no es de forma: un ANCLA por cada vertical de su scope, sobre UNA sola fila
+de grant.** Un grant ancla **un plan por vertical** (`12-contrato…` §2.8, `B/02` §2.4), porque un
+plan pertenece a una sola. Las dos formas equivocadas quedaron descartadas por escrito y conviene
+nombrar las dos: escribir **un grant con un plan** para un scope de dos verticales es el defecto
+que el contrato cerró —*«la segunda vertical resolvería sus capacidades leyendo el plan de la
+primera»*—; y escribir **dos grants** de una vertical cada uno es el otro extremo, porque revocar
+pasaría a ser dos actos en vez de uno. Lo que se multiplica es la fila de
+`permanent_grant_vertical`, **nunca la concesión**.
 
 ### 2.5 Cancelar no es olvidar: el compromiso viejo se conserva
 

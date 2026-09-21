@@ -3,7 +3,7 @@ title: Master Spec 04 — Invariantes
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-20
 status: CURRENT
 fase: 2
 capitulo: 4
@@ -58,7 +58,7 @@ el invariante se puede perder.
 | 6 | máximo una ficha en trial | el primer override de esa misma lista (`DEC-TRIAL-001`) |
 | 7 | no se compran addons en trial | la condición de A1 (cap. 03 §8) |
 | 9 | verticales simultáneas en estados distintos | es una consecuencia del modelo: todo cuelga de `user + vertical` |
-| 10 | una acción en una vertical no afecta a otra | **el scope de vertical es estructural**, no un chequeo — capítulo 17 |
+| 10 | una acción en una vertical no afecta a otra | **el scope de vertical es estructural**, no un chequeo — capítulo 17. **Y una mitad la sostiene la base**: el ancla de un grant es **por vertical** y su plan pertenece a esa vertical (`B/02` §2.4 y §5). Ahí el cruce venía **adentro de la fuente**, así que la resolución —que sí pide la vertical— no lo podía ver |
 | 14 | los servicios validan vertical, acceso, entitlement y limits | la resolución de autorización, capítulo 17 |
 | 20 | existe conciliación | capítulo 09 |
 | 21 | una divergencia que necesita intervención notifica a `SUPER_ADMIN` | `S14`, que **pone la marca `requiere_conciliación`** sin mover el estado |
