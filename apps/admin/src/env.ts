@@ -70,6 +70,27 @@ const safeEnv = {
 };
 
 /**
+ * Reads a SERVER-ONLY environment variable (no `VITE_` prefix, never inlined
+ * by Vite) without ever touching `process` in a browser context (HOS-1153).
+ *
+ * Vite does not polyfill `process` in the client bundle, so a bare
+ * `process.env.X` there is a `ReferenceError`. The neighbouring
+ * `import.meta.env.X ?? process.env.X` reads get away with it only because the
+ * `hospeda-env-mapping` plugin `define`s those keys to string literals, which
+ * makes the right-hand side dead code. The vars read through here deliberately
+ * have NO `define` — inlining them would bake the shared rate-limit bypass
+ * secret into the shipped JS — so the guard has to be real.
+ *
+ * @param key - The `process.env` key to read.
+ * @returns The value, or `undefined` in the browser and when unset.
+ */
+const readServerOnlyEnv = (key: string): string | undefined => {
+    if (typeof process === 'undefined' || !process.env) return undefined;
+    const value = process.env[key];
+    return value === '' ? undefined : value;
+};
+
+/**
  * Validate all required environment variables for the Admin App
  * Should be called at application startup
  */
@@ -81,12 +102,24 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
             VITE_ADMIN_URL: import.meta.env.VITE_ADMIN_URL,
             HOSPEDA_API_URL: import.meta.env.HOSPEDA_API_URL ?? process.env.HOSPEDA_API_URL,
-            // HOS-1153. Same server-only shape as HOSPEDA_API_URL above: no
-            // VITE_ prefix, so Vite does not inline it and the value exists
-            // only where `process.env` does.
-            HOSPEDA_INTERNAL_REQUEST_SECRET:
-                import.meta.env.HOSPEDA_INTERNAL_REQUEST_SECRET ??
-                process.env.HOSPEDA_INTERNAL_REQUEST_SECRET,
+            // HOS-1153. Read through `readServerOnlyEnv`, NOT through the
+            // `import.meta.env.X ?? process.env.X` shape used just above.
+            //
+            // Two reasons, and the second is the load-bearing one:
+            //
+            // 1. `process` does not exist in the browser, and unlike
+            //    `HOSPEDA_API_URL` — which `hospeda-env-mapping` `define`s to a
+            //    string literal, so its right-hand side is dead code — these two
+            //    have no `define`. The expression would reach `process.env` in
+            //    the client bundle and only survive because Rolldown happens to
+            //    substitute `{}`. `readServerOnlyEnv` makes that explicit
+            //    instead of depending on the bundler.
+            // 2. These must NOT be `define`d. A `define` inlines the value into
+            //    the client bundle, and one of them is the shared rate-limit
+            //    bypass secret. Reading it at runtime on the server is what
+            //    keeps it out of the shipped JS.
+            HOSPEDA_INTERNAL_API_URL: readServerOnlyEnv('HOSPEDA_INTERNAL_API_URL'),
+            HOSPEDA_INTERNAL_REQUEST_SECRET: readServerOnlyEnv('HOSPEDA_INTERNAL_REQUEST_SECRET'),
             VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',
             VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',

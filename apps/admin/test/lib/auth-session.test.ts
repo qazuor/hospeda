@@ -31,7 +31,9 @@ vi.mock('@tanstack/react-start/server', () => ({
     getRequest: getRequestMock
 }));
 
-const { fetchAuthSession, resolveAuthSession } = await import('@/lib/auth-session');
+const { fetchAuthSession, resolveAuthSession, resolveInternalRequestTarget } = await import(
+    '@/lib/auth-session'
+);
 
 const API = 'http://api.test';
 const SESSION_URL = `${API}/api/auth/get-session`;
@@ -264,11 +266,18 @@ describe('fetchAuthSession (HOS-33 T-004 — getWebRequest() -> getRequest() ren
         expect(result.userId).toBeNull();
     });
 
-    it('forwards HOSPEDA_INTERNAL_REQUEST_SECRET from process.env onto both reads (HOS-1153)', async () => {
-        // Arrange
+    it('does NOT send the secret over the public URL when no internal URL is set (HOS-1153)', async () => {
+        // Arrange: the shape `hospeda-admin-prod` is actually in today —
+        // HOSPEDA_API_URL is the public Cloudflare hostname and there is no
+        // HOSPEDA_INTERNAL_API_URL. Cloudflare terminates TLS, so putting the
+        // shared secret on this hop would expose it in edge logs; and a leaked
+        // secret disables rate limiting for the WHOLE API, not just the admin.
         const SECRET = 'an-admin-internal-request-secret-32ch';
-        const previous = process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
+        const previousSecret = process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
+        const previousInternal = process.env.HOSPEDA_INTERNAL_API_URL;
         process.env.HOSPEDA_INTERNAL_REQUEST_SECRET = SECRET;
+        // biome-ignore lint/performance/noDelete: the var must be ABSENT, not empty — that is the case under test
+        delete process.env.HOSPEDA_INTERNAL_API_URL;
         getRequestMock.mockReturnValue(
             new Request('http://localhost/', { headers: { cookie: 'session=valid' } })
         );
@@ -288,16 +297,102 @@ describe('fetchAuthSession (HOS-33 T-004 — getWebRequest() -> getRequest() ren
         try {
             await fetchAuthSession();
         } finally {
-            if (previous === undefined) {
+            if (previousSecret === undefined) {
+                // biome-ignore lint/performance/noDelete: restore absence, not emptiness
                 delete process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
             } else {
-                process.env.HOSPEDA_INTERNAL_REQUEST_SECRET = previous;
+                process.env.HOSPEDA_INTERNAL_REQUEST_SECRET = previousSecret;
+            }
+            if (previousInternal !== undefined) {
+                process.env.HOSPEDA_INTERNAL_API_URL = previousInternal;
             }
         }
 
-        // Assert: BOTH upstream calls carry it, not just the first one.
-        expect(seen.session).toBe(SECRET);
-        expect(seen.me).toBe(SECRET);
+        // Assert: the calls still went out (auth keeps working) but carried no
+        // credential.
+        expect(
+            seen.session,
+            'The shared secret was sent over the PUBLIC API URL, which is fronted by Cloudflare (HOS-1153).'
+        ).toBeNull();
+        expect(seen.me).toBeNull();
+    });
+});
+
+/**
+ * HOS-1153 — the gate that keeps the shared secret on the internal network.
+ * `apps/web` has had this since HOS-103 (`client.ts`: `import.meta.env.SSR &&
+ * getInternalApiUrl()`); the admin must not be looser.
+ */
+describe('resolveInternalRequestTarget (HOS-1153 internal-URL gate)', () => {
+    const PUBLIC_URL = 'https://api.hospeda.com.ar';
+    const INTERNAL_URL = 'http://hospeda-api-prod:3001';
+    const SECRET = 'a-shared-internal-request-secret-32ch';
+
+    it('sends the secret and uses the internal URL when both are configured', () => {
+        // Act
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: INTERNAL_URL,
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(result).toEqual({ apiUrl: INTERNAL_URL, internalRequestSecret: SECRET });
+    });
+
+    it('withholds the secret and keeps the public URL when no internal URL is set', () => {
+        // Arrange / Act: the measured state of hospeda-admin-prod.
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: undefined,
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(
+            result.internalRequestSecret,
+            'A configured secret must NOT travel over the public URL just because it exists.'
+        ).toBeUndefined();
+        expect(result.apiUrl).toBe(PUBLIC_URL);
+    });
+
+    it('withholds the secret when the internal URL is an empty string', () => {
+        // Arrange: Coolify writes empty strings for cleared vars, so "unset"
+        // and "empty" must behave identically. Reading this as truthy would put
+        // the credential on the public hop.
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: '',
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(result).toEqual({ apiUrl: PUBLIC_URL, internalRequestSecret: undefined });
+    });
+
+    it('uses the internal URL but sends no header when the secret is missing', () => {
+        // Arrange: the inverse half-configuration. Routing internally is still
+        // correct; there is simply nothing to authenticate with.
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: INTERNAL_URL,
+            internalRequestSecret: undefined
+        });
+
+        // Assert
+        expect(result).toEqual({ apiUrl: INTERNAL_URL, internalRequestSecret: undefined });
+    });
+
+    it('treats an empty secret as absent rather than sending a blank header', () => {
+        // Act
+        const result = resolveInternalRequestTarget({
+            publicApiUrl: PUBLIC_URL,
+            internalApiUrl: INTERNAL_URL,
+            internalRequestSecret: ''
+        });
+
+        // Assert
+        expect(result.internalRequestSecret).toBeUndefined();
     });
 });
 
