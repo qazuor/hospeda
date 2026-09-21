@@ -51,7 +51,7 @@ ninguna de sus secciones sobrevive sin la pasarela.
 | `10` | [retiro de plan y vertical discontinuada](./docs/10-verticales-planes-billing-options.md) | retirar no mueve a nadie; discontinuar **deja de cobrar antes de dejar de prestar** |
 | `12` | [suscripción](./docs/12-suscripcion.md) | el grace, la cola de cambios programados, el precio que cambia entre programar y ejecutar |
 | `14` | [promos, cortesías y grants](./docs/14-promos-cortesias-y-grants.md) | el orden de aplicación y el piso, y cómo se combinan entre sí |
-| `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano |
+| `16` | [addons](./docs/16-addons.md) | dos ejes, qué es una suscripción «válida», el addon a costo cero, el huérfano **y el estado en que queda su cobro** |
 | `19` | [superficies](./docs/19-superficies.md) | la pricing, Mi Suscripción y la baja |
 | `20` | [testing](./docs/20-testing.md) | `G7` y `G9`–`G11`, el proveedor falso que **tiene que mentir**, y la suite de sandbox |
 | `21` | [migración](./docs/21-migracion.md) | la premisa del §56 medida, y el cobro durante el rediseño |

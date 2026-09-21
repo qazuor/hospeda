@@ -3,7 +3,7 @@ title: Master Spec 01 — Glosario y modelo conceptual
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-21
 status: CURRENT
 fase: 2
 capitulo: 1
@@ -284,6 +284,7 @@ detecta comparando contra los seis.
 | 17 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«un beneficiario con un ancla viva en la vertical V no debería tener una fila viva **principal** en V, **ni una fila viva DE COMPLEMENTO de un addon compatible con V** si el grant lleva `includesAddons: true`»* — el detector de la ejecución parcial de `S13` **y de `S20`**, que corren en el mismo acto. Las dos mitades enumeran **los seis**: las dos filas son suscripciones |
 | 18 | el **`desde` de `A5`** | cap. 03 (billing) §8 | *«toda instancia con una autorización que puede cobrar»* — es el **único consumidor cuyo sujeto es SÓLO una instancia de addon** —el 19 la nombra también, pero junto con una suscripción—, así que su enumeración es la de **dos**, no la de seis. Decía `ACTIVE` y nada más, y la mitad que faltaba —`PENDING_AUTHORIZATION`— es la ventana de 72 h por la que un complemento nacía cobrando sobre un título ya muerto |
 | 19 | el **alcance de `S20`** | cap. 03 (billing) §3.2 | *«toda fila viva **DE COMPLEMENTO** del beneficiario … cuya instancia esté en uno de sus dos estados vivos»* — es el **único consumidor con dos sujetos a la vez**: enumera **los seis** para la suscripción de complemento y **los dos** para la instancia, y ninguna de las dos enumeraciones sirve para la otra. Es el reverso exacto del 1: `S13` dice *«principal»* para dejar los complementos afuera, `S20` dice *«de complemento»* para que sean los únicos adentro |
+| 20 | el **`desde` de `S21`** | cap. 03 (billing) §3.2 | *«toda fila viva **DE COMPLEMENTO** de la que cuelga una instancia de addon»* — enumera **los seis**, los de la suscripción, y **no enumera** el conjunto de la instancia: la nombra por un **estado terminal concreto**, `CANCELLED`, que es su condición. Por eso el 19 sigue siendo *«el único consumidor con dos sujetos a la vez»*: acá el segundo sujeto no aporta una enumeración de *«fila viva»*, aporta su opuesto. **Y no necesita el adjetivo que el 1 sí necesita**: de una fila principal no cuelga ninguna instancia, así que el conjunto queda partido por el sujeto y no por una acotación |
 
 **B · Preguntan «¿hay OTRA fila viva apuntándola?».** El error posible es **omitir el adjetivo**,
 y es el que ya ocurrió: sin él el predicado **no tiene forma de dejar de cumplirse**, porque nada

@@ -3,7 +3,7 @@ title: Master Spec 03 — Las máquinas de estado
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-19
+updated: 2026-09-21
 status: CURRENT
 fase: 2
 capitulo: 3
@@ -83,7 +83,7 @@ máquina de estados y una convención.
    afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
    depende de que alguien vuelva a recorrer las nueve tablas a mano.
 
-   **Compartir el `desde` no es compartir el par, y hay cuatro casos vivos que lo piden dicho.**
+   **Compartir el `desde` no es compartir el par, y hay cinco casos vivos que lo piden dicho.**
    `T7` (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de
    trial de la vertical** —un cambio de catálogo— y no el evento de activación de la persona. Su
    par, `(PRE_TRIAL, encendido)`, tiene **una sola** fila. `S18` (`B/03` §3.2) sale desde la
@@ -91,13 +91,20 @@ máquina de estados y una convención.
    evento es **que la predecesora dejó de ser fila viva sin `S17`**, y ninguna otra fila lo
    declara, así que sus dos pares tienen **una sola** fila cada uno. **Y `A5` (`B/03` §8) sale
    desde la misma pasada también de `PENDING_AUTHORIZATION`**, que en la máquina de addon comparte
-   `desde` con `A2` y con `A3`: su evento es **quedar huérfano**, que ninguna otra fila declara,
-   así que sus dos pares también tienen **una sola** fila cada uno. **Y `PB7` y `PB8` (`V/03` §9)
+   `desde` con `A2` y con `A3`: sus eventos son **los tres** que declara desde `DEC-ADDON-003`
+   —darse de baja, **quedar huérfano** y **que se retire el ancla que era su título**—, y ninguna
+   otra fila de esa tabla declara ninguno de los tres, así que **cada uno de sus pares tiene una
+   sola fila**. **Y `PB7` y `PB8` (`V/03` §9)
    salen las dos de `ARCHIVED`**, que desde la FASE 9-bis-3 dejó de ser un estado sin salida: sus
    eventos son **el cambio de `cubierto`** y **el acto del dueño de reactivarla**, distintos entre
-   sí y de todo lo demás, así que cada uno de esos dos pares tiene **una sola** fila. En los
-   cuatro casos no hay guardas que dirimir y la tabla de arriba **sigue teniendo tres entradas**.
-   Lo que este guard cuenta son **pares**, no estados de origen.
+   sí y de todo lo demás, así que cada uno de esos dos pares tiene **una sola** fila. **Y `S20` y
+   `S21` (`B/03` §3.2) salen las dos de *«toda fila viva de complemento»***, que es el mismo
+   `desde` escrito con las mismas palabras: sus eventos son **otorgar o anclar un grant** y **que
+   su instancia llegue a `CANCELLED`**, distintos entre sí y de todo lo demás, y además **no se
+   pueden satisfacer a la vez** —`S20` declara que la instancia **no** cambia de estado—, así que
+   cada uno de esos dos pares tiene **una sola** fila. En los cinco casos no hay guardas que
+   dirimir y la tabla de arriba **sigue teniendo tres entradas**. Lo que este guard cuenta son
+   **pares**, no estados de origen.
 
 ---
 

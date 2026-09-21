@@ -3133,13 +3133,63 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ADDON-004 — El complemento que se queda sin instancia muere en el acto: `CANCELLED`, sin período de gracia
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hueco**: un addon recurrente tiene **dos cosas separadas** — la **instancia** (la capacidad
+  encendida) y la **suscripción de complemento** (el débito, con preapproval propio,
+  `DEC-ADDON-002`). Cuando el addon queda huérfano, el diseño decía qué pasa con la instancia —`A5`
+  la apaga— y **no decía en qué estado queda la suscripción**: ninguna transición la llevaba a un
+  terminal por esa causa. Agravante medido: **el barrido la seleccionaba por el estado terminal de
+  su INSTANCIA**, así que el proceso que la vigila la encontraba por un lado y ella misma no tenía
+  estado declarado por el otro.
+- **Decisión**: **`CANCELLED` en el acto**, junto con la instancia. **Sin período de gracia y sin
+  sostener servicio.**
+- **Por qué NO se aplica el patrón de `DEC-SUB-009`** (cancelar en el proveedor de inmediato y
+  sostener el servicio hasta el fin del período pagado), que era la alternativa. Tres razones:
+  1. **la capacidad ya la apagó `A5`**: no hay servicio que sostener, sólo la fila de un cobro;
+  2. el contrato **ya descarta los `COMPLEMENTO` sin `TÍTULO` vivo** (`V/15` §2.6), así que
+     sostenerlo no devolvería nada al pliegue;
+  3. el costo sería un `CANCEL_SCHEDULED` **con reloj y fecha de fin de servicio sobre un estado
+     vacío** — una fila que el barrido tiene que seguir mirando a cambio de nada.
+
+  Dicho corto: **el addon complementa algo que ya no está.** Sostener días de un destaque sobre una
+  ficha despublicada no le da nada a nadie.
+- **El período pagado no se reembolsa automáticamente**, y va escrito, no implícito
+  (`NUCLEO/08` §3, `B/09` §2.4, `S14`). Si corresponde devolver, va por **`DEC-RF-002`** — con su
+  confirmación humana. La máquina no sostiene un estado vacío para compensar plata.
+- **Es una fila propia, `S21`, y no un efecto de `A5`.** La escritura es sobre la columna de estado
+  de una **suscripción**, y una de complemento usa **esa misma máquina**: un efecto de la tabla de
+  addon que moviera esa columna es exactamente lo que la **regla 1 de `NUCLEO/03`** no admite.
+  Precedente del mismo día: `S20` también lo dispara un acto de otra entidad y también es fila
+  propia.
+- **El evento se ata al estado de llegada de la instancia, no a un predicado**, y eso es lo que lo
+  hace cubrir las dos puertas de la orfandad: las **tres cláusulas de `A5`** confluyen en la
+  instancia llegando a `CANCELLED`. **Y alcanza también a `A6`** (la ficha borrada), porque
+  excluirlo recreaba el mismo hueco por otra puerta y la razón del owner aplica idéntica.
+- **La llamada al proveedor es UNA**: el preapproval de la instancia **es** el de la suscripción de
+  complemento (`DEC-ADDON-002`). `S21` **no manda nada** al proveedor — escribe el estado local que
+  faltaba. Ni duplicada ni omitida.
+- **En el barrido**: las puertas a un terminal pasan de **ocho a nueve**, con `S21` **no exenta**
+  (la dejó sin cobrar una llamada nuestra y no tiene rama de fallo). Entra por la **salvedad 1**,
+  que ahora **puede nombrar su sujeto directamente** — y la selección por el estado de la instancia
+  **no sobra**: es la única que ve la corrida que ejecutó `A5` y no llegó a `S21`.
+- **Una tensión previa que este arreglo NO resuelve y queda a la vista**: `12-contrato…` §2.8 dice
+  que *«desanclar no está declarado»* y `B/16` §4.3 enumera como cuarto momento de re-evaluación
+  *«se revoca el grant, o **se retira el ancla de esa vertical**»*. Es anterior a esta decisión.
+- **Origen**: el hueco que la familia de `S13` de la 9-bis-3 dejó nombrado en `B/09` §3 y que la de
+  `includesAddons` confirmó abierto, y la elección del owner del 2026-09-21 entre las dos opciones
+  que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **71** |
+| Decisiones tomadas | **72** |
 | De metodología | 10 |
-| Funcionales | 61 |
+| Funcionales | 62 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |

@@ -3,7 +3,7 @@ title: Master Spec 02 — Modelo de datos
 linear: HOS-1354
 statusSource: linear
 created: 2026-09-17
-updated: 2026-09-20
+updated: 2026-09-21
 status: CURRENT
 fase: 2
 capitulo: 2
@@ -311,6 +311,15 @@ el grant … un campo que el modelo ya necesita, no uno nuevo»*—. Es `F-8dA3-
   cuando **ese** ancla se retira. Sin la columna, esa cláusula no tiene sujeto y *«al revocar el
   grant el addon se corta»* (`B/16` §3.3) vuelve a ser una frase sin transición para los scopes
   `LISTING`, `USER` y `GLOBAL`.
+
+**Y el vínculo con la suscripción de complemento se lee ahora en las dos direcciones.** Hasta acá
+sólo se leía hacia adelante —la instancia dice cuál es su cobro—, y la vuelta no tenía consumidor:
+cuando la instancia se apagaba, **la fila de complemento se quedaba sin estado declarado** y el
+único proceso que la miraba la seleccionaba por el estado terminal de la instancia (`B/09` §3,
+salvedad 1). Su consumidor es **`S21`** (`B/03` §3.2), que la lleva a `CANCELLED` en el mismo acto
+—**sin gracia, sin fecha de fin de servicio y sin reembolso automático** (`B/16` §4.4)—. **Sigue
+siendo un preapproval y no dos**: el del addon recurrente es el de esta fila, así que la
+cancelación que `A5` y `A6` declaran es la misma que `S21` registra localmente.
 
 **Las concesiones no modifican el plan ni la suscripción: son fuentes independientes.** El §36
 dice que un entitlement sigue activo «mientras al menos una source exista», y eso sólo se puede
