@@ -1,30 +1,38 @@
 /**
  * Second-line validation for request bodies whose schema carries a refinement.
  *
- * ## Why this exists
+ * ## Why this existed — and what changed (HOS-425)
  *
  * `createCRUDRoute` rebuilds the declared `requestBody` through
  * `createOpenAPISchema()` so the schema can be rendered as OpenAPI, and that
- * rebuild DROPS `.refine()` / `.superRefine()` checks. The factory tries to
- * skip the rebuild for refined schemas by testing
+ * rebuild USED TO DROP `.refine()` / `.superRefine()` checks. The factory tried
+ * to skip the rebuild for refined schemas by testing
  * `_def.typeName === 'ZodEffects'` — a Zod 3 marker that is never true under
- * Zod 4 (measured: 0 of 12 refined schemas match). What actually preserves a
- * schema is the second escape hatch, `hasHttpCoercionFields()`: a schema with
- * any `z.coerce.*` field passes through whole. So whether a cross-field rule
- * survives depends on whether the schema happens to coerce something — not on
- * the rule itself (H-54).
+ * Zod 4 (measured: 0 of 12 refined schemas matched). Whether a cross-field rule
+ * survived therefore depended on the unrelated second escape hatch,
+ * `hasHttpCoercionFields()`: a schema with any `z.coerce.*` field passes
+ * through whole (H-54).
  *
- * Of the 10 schemas the factory discards, 8 already re-apply their rule
- * downstream (their service re-parses with the same schema). This helper is the
- * same defence for the two that did not.
+ * That root cause is FIXED. `createOpenAPISchema` now carries a schema's
+ * object-level checks across the rebuild, so a declared refinement reaches the
+ * request on every tier — see
+ * `test/static-guards/refined-request-body-reaches-the-request.guard.test.ts`.
  *
- * ## Why not fix the factory instead
+ * ## Why the two remaining call sites keep it
  *
- * Because the repo's Schema Compatibility Policy forbids hardening an existing
- * schema, and repairing the factory would do exactly that to two live routes at
- * once. Applying the rule where the route already runs keeps the fix behind the
- * same contract those endpoints have today. The dead `ZodEffects` guard stays
- * in the factory, harmless, until it is removed on its own terms.
+ * Not because the rule would otherwise go unenforced — it would not. They are
+ * left as they are because each has a reason of its own:
+ *
+ * - `billing/admin/plans.ts` sits in an area an epic in flight (HOS-1352 /
+ *   HOS-1354) is rewriting, so it got the transversal factory fix and nothing
+ *   else.
+ * - `ai/social/drafts.ts` runs its parse deliberately AFTER the operator-PIN
+ *   check, so validation messages cannot be used to probe the schema.
+ *
+ * A third call site, `host-trade/protected/mine-usages.ts`, was removed with
+ * its cause.
+ *
+ * New routes do not need this helper.
  *
  * ## Same rejection, same shape (HOS-607)
  *
