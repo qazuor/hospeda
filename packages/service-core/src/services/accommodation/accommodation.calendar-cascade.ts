@@ -36,10 +36,20 @@
  *
  * Deactivating stops US from using the token. It does not close the grant — the
  * credential remains valid at the provider until it is revoked there. So every
- * connection this cascade deactivates is handed to
+ * connection of the accommodation is handed to
  * {@link CalendarConnectionRevocationPort}, which lives in `apps/api` (it needs
  * the OAuth vault and the provider HTTP clients, neither of which belongs in
  * this package) and is registered at API startup.
+ *
+ * **Every connection, not every connection this call deactivated.** Those are
+ * different sets, and the difference is a hole big enough to lose the point of
+ * the issue through. `is_active = false` means "we stopped using it", never
+ * "the provider closed it": the host-initiated disconnect route flips the flag
+ * and revokes nothing. So a host who disconnects their Google calendar and
+ * deletes the listing a week later would, if revocation followed the flipped
+ * set, keep a live refresh token at Google indefinitely — and with no active
+ * row left to make it visible, more quietly than the bug that was reported.
+ * That is why the revocation loop reads `findAllByAccommodation`.
  *
  * A revocation that fails silently is worse than no revocation, because it
  * leaves everyone believing the access was closed. So a failure — including
@@ -57,7 +67,7 @@
  */
 
 import { accommodationCalendarSyncModel, type DrizzleClient } from '@repo/db';
-import { CalendarSyncStatusEnum, type OccupancySourceEnum } from '@repo/schemas';
+import type { OccupancySourceEnum } from '@repo/schemas';
 import type { ServiceLogger } from '../../utils/service-logger';
 
 /**
@@ -144,11 +154,15 @@ export interface CascadeCalendarConnectionsInput {
 export interface CascadeCalendarConnectionsResult {
     /** How many connections this call flipped from active to inactive. */
     readonly deactivated: number;
-    /** Of those, how many the provider confirmed as revoked. */
+    /**
+     * How many grants the provider confirmed as closed. Counted over EVERY
+     * connection of the accommodation, not only the ones {@link deactivated}
+     * counts — an already-inactive row still holds an unrevoked credential.
+     */
     readonly revoked: number;
     /**
-     * Of those, how many could NOT be revoked. Every one of them is recorded on
-     * its row with {@link REVOCATION_FAILURE_PREFIX}.
+     * How many could NOT be revoked. Every one of them is recorded on its row
+     * with {@link REVOCATION_FAILURE_PREFIX}.
      */
     readonly revocationFailures: number;
 }
@@ -182,47 +196,79 @@ export async function cascadeCalendarConnectionsOnAccommodationDelete(
         revocationFailures: 0
     };
 
-    let deactivatedConnections: Awaited<
-        ReturnType<typeof accommodationCalendarSyncModel.deactivateAllByAccommodation>
+    // ---- 1. The write. Joins the caller's transaction when there is one. ----
+    let deactivated = 0;
+    try {
+        const flipped = await accommodationCalendarSyncModel.deactivateAllByAccommodation(
+            { accommodationId },
+            tx
+        );
+        deactivated = flipped.length;
+    } catch (error) {
+        logger.error(
+            { error, accommodationId },
+            '[calendar-cascade] Failed to deactivate calendar connections for a soft-deleted accommodation; the cron-side deleted_at filter remains the active defence'
+        );
+        // Deliberately falls through rather than returning: the deactivation
+        // failing is exactly when the grants most need closing.
+    }
+
+    // ---- 2. The set to revoke is WIDER than the set just deactivated. ----
+    //
+    // `deactivateAllByAccommodation` returns only the rows it flipped, and an
+    // already-inactive row is NOT an already-revoked one: the host-initiated
+    // disconnect route flips `is_active` and revokes nothing. Revoking only the
+    // flipped set means a host who disconnects first and deletes a week later
+    // keeps a live refresh token at Google forever — with no active row to make
+    // it visible, which is worse than the bug this cascade was written for.
+    let connections: Awaited<
+        ReturnType<typeof accommodationCalendarSyncModel.findAllByAccommodation>
     >;
     try {
-        deactivatedConnections = await accommodationCalendarSyncModel.deactivateAllByAccommodation(
+        connections = await accommodationCalendarSyncModel.findAllByAccommodation(
             { accommodationId },
             tx
         );
     } catch (error) {
         logger.error(
             { error, accommodationId },
-            '[calendar-cascade] Failed to deactivate calendar connections for a soft-deleted accommodation; the cron-side deleted_at filter remains the active defence'
+            '[calendar-cascade] Could not read the connection rows to revoke; their grants may still be live at the provider'
         );
-        return empty;
+        return { ...empty, deactivated };
     }
 
-    if (deactivatedConnections.length === 0) {
-        return empty;
+    if (connections.length === 0) {
+        return { ...empty, deactivated };
     }
 
+    // ---- 3. Revocation. OUTSIDE the caller's transaction, in parallel. ----
+    //
+    // No `tx` is forwarded past this point, and that is a rule rather than an
+    // omission: these calls do outbound HTTP, and this repo's own "no HTTP in a
+    // transaction" rule (see `destination-weather-fetch.job.ts`, and the note
+    // in both calendar sync crons) exists because holding a Postgres
+    // transaction open across a third-party round trip pins a connection for as
+    // long as that third party feels like taking. Forwarding `tx` here reads
+    // like participation and behaves like a pin. The failure stamps skip the
+    // transaction for the same reason, and because a stamp that rolls back
+    // takes the only record of an irreversible revocation with it.
+    //
+    // Parallel rather than serial: each revocation is independently bounded by
+    // its own timeout, so N connections cost one timeout, not N. This is on the
+    // synchronous path of the user's DELETE.
     const port = getCalendarConnectionRevocationPort();
+
+    const outcomes = await Promise.all(
+        connections.map(async ({ provider }) => {
+            const outcome = await askPortToRevoke({ port, accommodationId, provider });
+            return { provider, outcome };
+        })
+    );
+
     let revoked = 0;
     let revocationFailures = 0;
 
-    for (const connection of deactivatedConnections) {
-        const { provider } = connection;
-        let outcome: CalendarConnectionRevocationResult;
-
-        if (port === undefined) {
-            outcome = { revoked: false, reason: 'no revocation adapter registered' };
-        } else {
-            try {
-                outcome = await port.revoke({ accommodationId, provider });
-            } catch (error) {
-                outcome = {
-                    revoked: false,
-                    reason: `adapter threw: ${error instanceof Error ? error.message : String(error)}`
-                };
-            }
-        }
-
+    for (const { provider, outcome } of outcomes) {
         if (outcome.revoked) {
             revoked += 1;
             logger.info(
@@ -241,16 +287,11 @@ export async function cascadeCalendarConnectionsOnAccommodationDelete(
         // Persist it. A failure that lives only in a log line is a failure
         // nobody will find when they need the list of still-live grants.
         try {
-            await accommodationCalendarSyncModel.updateSyncState(
-                {
-                    accommodationId,
-                    provider,
-                    lastSyncAt: new Date(),
-                    lastSyncStatus: CalendarSyncStatusEnum.ERROR,
-                    lastErrorMessage: `${REVOCATION_FAILURE_PREFIX}: ${outcome.reason}`
-                },
-                tx
-            );
+            await accommodationCalendarSyncModel.markRevocationFailed({
+                accommodationId,
+                provider,
+                errorMessage: `${REVOCATION_FAILURE_PREFIX}: ${outcome.reason}`
+            });
         } catch (error) {
             logger.error(
                 { error, accommodationId, provider },
@@ -259,5 +300,59 @@ export async function cascadeCalendarConnectionsOnAccommodationDelete(
         }
     }
 
-    return { deactivated: deactivatedConnections.length, revoked, revocationFailures };
+    return { deactivated, revoked, revocationFailures };
+}
+
+/**
+ * Calls the port for one connection and normalises every way it can go wrong
+ * into a {@link CalendarConnectionRevocationResult}.
+ *
+ * The shape check is not paranoia about our own adapter: the port is a
+ * registration hole any caller can fill, and reading `.revoked` off whatever
+ * comes back would turn a malformed adapter into an uncaught `TypeError`
+ * thrown out of `_afterSoftDelete` — a 500 on a DELETE whose row is already
+ * gone. Anything that is not literally `{ revoked: true }` or a well-formed
+ * failure is treated as a failure, so it gets recorded rather than crashing.
+ *
+ * @param input.port - The registered adapter, or `undefined` when none is.
+ * @param input.accommodationId - The accommodation being closed out.
+ * @param input.provider - The connection's provider.
+ * @returns A well-formed outcome, always.
+ */
+async function askPortToRevoke(input: {
+    readonly port: CalendarConnectionRevocationPort | undefined;
+    readonly accommodationId: string;
+    readonly provider: OccupancySourceEnum;
+}): Promise<CalendarConnectionRevocationResult> {
+    const { port, accommodationId, provider } = input;
+
+    if (port === undefined) {
+        return { revoked: false, reason: 'no revocation adapter registered' };
+    }
+
+    let raw: unknown;
+    try {
+        raw = await port.revoke({ accommodationId, provider });
+    } catch (error) {
+        return {
+            revoked: false,
+            reason: `adapter threw: ${error instanceof Error ? error.message : String(error)}`
+        };
+    }
+
+    if (typeof raw !== 'object' || raw === null) {
+        return { revoked: false, reason: 'adapter returned a malformed result' };
+    }
+
+    const result = raw as Partial<{ revoked: unknown; reason: unknown }>;
+    if (result.revoked === true) {
+        return { revoked: true };
+    }
+    if (result.revoked === false) {
+        return {
+            revoked: false,
+            reason: typeof result.reason === 'string' ? result.reason : 'adapter gave no reason'
+        };
+    }
+    return { revoked: false, reason: 'adapter returned a malformed result' };
 }

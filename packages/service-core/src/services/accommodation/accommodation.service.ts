@@ -2464,7 +2464,8 @@ export class AccommodationService extends BaseCrudService<
         // delete routes call `softDelete(actor, id)` with no context, so a
         // tx-gated cascade never runs from the application at all. The
         // deactivation is a single UPDATE, atomic on its own, and joins the
-        // caller's transaction when there is one.
+        // caller's transaction when there is one — the provider round trips
+        // inside the cascade deliberately do not (see its module doc).
         if (deletedId && result.count > 0) {
             await cascadeCalendarConnectionsOnAccommodationDelete({
                 accommodationId: deletedId,
@@ -2529,6 +2530,30 @@ export class AccommodationService extends BaseCrudService<
             };
             ctx.hookState.deletedEntityId = id;
         }
+
+        // HOS-663: the calendar cascade runs BEFORE the hard delete, not after,
+        // and that ordering is the whole point.
+        //
+        // `accommodation_calendar_sync.accommodation_id` declares
+        // `onDelete: 'cascade'`, so the physical delete takes the connection
+        // rows with it. That removes OUR copy of the token; it does nothing to
+        // the grant, which stays live at Google. And once the ciphertext is
+        // gone there is no token left to revoke — not by this code, not by a
+        // later manual cleanup, not by anyone. Erasing a credential is the one
+        // operation that makes the grant permanently unclosable, which would
+        // leave the hard path worse off than the soft one it is supposed to
+        // supersede.
+        //
+        // Running it here trades a small risk for that: if the delete itself
+        // then fails, the connections are left deactivated and revoked. That is
+        // a degraded state the host can recover by reconnecting, and it is
+        // recorded — the reverse mistake is not recoverable by anybody.
+        await cascadeCalendarConnectionsOnAccommodationDelete({
+            accommodationId: id,
+            tx: ctx?.tx,
+            logger: this.logger
+        });
+
         return id;
     }
 
