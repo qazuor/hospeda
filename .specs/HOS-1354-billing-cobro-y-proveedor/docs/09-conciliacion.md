@@ -163,7 +163,7 @@ que la fila marcada era terminal.
 **Una instancia de addon en estado terminal SÍ se barre, hasta que la relectura la vea
 `cancelled`.** Ahí la garantía no existe: su preapproval es propio (`DEC-ADDON-002`), el
 proveedor no lo tocó y **lo cancelamos nosotros** cuando `A3`, `A5` —la que lo declara
-huérfano, o la que retira el ancla que era su título— o `A6` la llevan a un estado terminal
+huérfano, o la que revoca el grant del que colgaba su ancla-título— o `A6` la llevan a un estado terminal
 (`B/03` §8) — una llamada que puede fallar,
 y **mutar o cancelar no emite webhook**
 (`EX-15`), así que no hay ninguna otra vía de aviso. Es exactamente el detector que `B/16` §4.3
@@ -313,18 +313,22 @@ complemento vivo es lo correcto, no una divergencia.
 **Y una cuarta, que tampoco le pregunta nada al proveedor: la instancia de addon viva cuyo
 objetivo ya murió.** Si una instancia está en uno de sus **dos** estados con autorización que
 puede cobrar —`PENDING_AUTHORIZATION` o `ACTIVE` (`B/03` §8)— y su objetivo **ya cumple la
-condición de orfandad del `B/16` §4.2**, **o el ancla que era su título ya no existe**, `A5` no
+condición de orfandad del `B/16` §4.2**, **o el ancla que era su título ya no es la de un grant
+vivo**, `A5` no
 corrió: se pone la **marca**. Cuesta cero llamadas —la instancia, su objetivo y el ancla del
 grant están todos en nuestra base— y **no reescribe el predicado: lo delega** en el §4.2, que es
 su único dueño.
 
 > **La segunda mitad no es un adorno del enunciado: sin ella la comprobación es ciega a tres de
 > los cuatro scopes.** El evento de `A5` tiene **tres** cláusulas desde `B/03` §8, y la tercera
-> —*«se retira el ancla que era su título»*— es la única que corta un addon de scope `LISTING`,
+> —*«se revoca el grant del que cuelga el ancla que era su título»*— es la única que corta un
+> addon de scope `LISTING`,
 > `USER` o `GLOBAL` cuyo título era un grant: su objetivo es una ficha o una cuenta que **siguen
 > existiendo**, así que la condición de orfandad **no se cumple nunca** y una comprobación
 > escrita sólo sobre el objetivo no encuentra a nadie. Es la misma delegación: el predicado de la
-> tercera cláusula vive en `B/03` §8, no acá.
+> tercera cláusula vive en `B/03` §8, no acá. **Y se lee igual de barata con el enunciado nuevo**:
+> que el grant del ancla siga vivo es un dato de nuestra base, así que la comprobación sigue
+> costando **cero llamadas**.
 >
 > **Es el reverso exacto de la salvedad 1, y hacen falta las dos.** La salvedad 1 mira una
 > instancia **terminal** con el preapproval **vivo** —`A5` corrió y la llamada al proveedor no se

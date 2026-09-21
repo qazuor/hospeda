@@ -92,9 +92,12 @@ máquina de estados y una convención.
    declara, así que sus dos pares tienen **una sola** fila cada uno. **Y `A5` (`B/03` §8) sale
    desde la misma pasada también de `PENDING_AUTHORIZATION`**, que en la máquina de addon comparte
    `desde` con `A2` y con `A3`: sus eventos son **los tres** que declara desde `DEC-ADDON-003`
-   —darse de baja, **quedar huérfano** y **que se retire el ancla que era su título**—, y ninguna
+   —darse de baja, **quedar huérfano** y **que se revoque el grant del que cuelga el ancla que era
+   su título**—, y ninguna
    otra fila de esa tabla declara ninguno de los tres, así que **cada uno de sus pares tiene una
-   sola fila**. **Y `PB7` y `PB8` (`V/03` §9)
+   sola fila**. **Que el tercero y el segundo se cumplan a la vez —lo que pasa al revocar, en el
+   scope `VERTICAL_SUBSCRIPTION`— no es lo que esta regla prohíbe**: son dos eventos de la misma
+   fila y con el mismo destino, no dos filas sobre un par. **Y `PB7` y `PB8` (`V/03` §9)
    salen las dos de `ARCHIVED`**, que desde la FASE 9-bis-3 dejó de ser un estado sin salida: sus
    eventos son **el cambio de `cubierto`** y **el acto del dueño de reactivarla**, distintos entre
    sí y de todo lo demás, así que cada uno de esos dos pares tiene **una sola** fila. **Y `S20` y

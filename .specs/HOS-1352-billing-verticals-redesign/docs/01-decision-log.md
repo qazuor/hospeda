@@ -3174,9 +3174,11 @@ Cada entrada lleva, según §3.4:
   (la dejó sin cobrar una llamada nuestra y no tiene rama de fallo). Entra por la **salvedad 1**,
   que ahora **puede nombrar su sujeto directamente** — y la selección por el estado de la instancia
   **no sobra**: es la única que ve la corrida que ejecutó `A5` y no llegó a `S21`.
-- **Una tensión previa que este arreglo NO resuelve y queda a la vista**: `12-contrato…` §2.8 dice
-  que *«desanclar no está declarado»* y `B/16` §4.3 enumera como cuarto momento de re-evaluación
-  *«se revoca el grant, o **se retira el ancla de esa vertical**»*. Es anterior a esta decisión.
+- ~~**Una tensión previa que este arreglo NO resuelve y queda a la vista**: `12-contrato…` §2.8
+  dice que *«desanclar no está declarado»* y `B/16` §4.3 enumera como cuarto momento de
+  re-evaluación *«se revoca el grant, o **se retira el ancla de esa vertical**»*.~~ **RESUELTA el
+  mismo día por `DEC-ADDON-006`**: el enunciado pasa a nombrar la revocación, que es un acto
+  declarado. Se deja tachada y no borrada porque la nota es lo que motivó esa decisión.
 - **Origen**: el hueco que la familia de `S13` de la 9-bis-3 dejó nombrado en `B/09` §3 y que la de
   `includesAddons` confirmó abierto, y la elección del owner del 2026-09-21 entre las dos opciones
   que se le presentaron — eligió la 1, que era la recomendada.
@@ -3240,13 +3242,114 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-ADDON-005 — La fuga del addon `USER`/`GLOBAL` SE DEJA, y está decidido: no es un pendiente
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El caso**: un addon de scope `USER` o `GLOBAL` compatible con **dos** verticales, en alguien
+  cuyo grant ancla **una**, se convierte a $0 por `S20` —porque *es* un addon compatible— y **queda
+  gratis también en la vertical que el grant no ancló**.
+- **Decisión: se deja así.** `B/16` §3.4 pasa de *«es una decisión de producto y no se toma acá»* a
+  una decisión cerrada, con su causa. **No queda como abierto de `DEC-METH-006`, porque no depende
+  de nada**: está elegida.
+- **Las tres razones:**
+  1. **Es la lectura literal del §35.2.** *«Compatible»* es lo que el **producto** declara (§39);
+     acotarlo pediría una **tercera noción** de compatibilidad que ningún § escribe.
+  2. **La población pide cuatro condiciones simultáneas**: que el addon sea de scope `USER` o
+     `GLOBAL`, que su producto declare dos o más verticales, que el beneficiario lo tenga
+     comprado, y que su grant ancle sólo una de ellas.
+  3. **Acotarla cuesta más que la fuga**: ataría el acto de otorgar al catálogo de addons del
+     beneficiario y obligaría a `S20` a releer el producto — que es justo lo que *«convertir a $0
+     no es volver a comprar»* prohíbe.
+- **Y no es indefinida**: **se apaga con el grant**, por la tercera cláusula de `A5`
+  (`DEC-ADDON-006`).
+- **Origen**: declarada por la familia de `includesAddons` en `B/16` §3.4, y la elección del owner
+  del 2026-09-21.
+
+---
+
+### DEC-ADDON-006 — La tercera cláusula de `A5` nombra la REVOCACIÓN, porque desanclar no existe
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El defecto**: el evento de `A5` decía *«se retira el ancla que era su título»*, y **retirar un
+  ancla no existe en ningún catálogo**: `NUCLEO/08` §3 declara para el grant exactamente **tres**
+  escrituras —otorgar, anclarle una vertical nueva, revocar— y la palabra *«desanclar»* **no
+  aparece en todo el corpus**. Era una transición esperando un acto que nadie puede producir.
+- **Decisión**: la cláusula **se conserva y cambia de enunciado** — pasa a decir **«se revoca el
+  grant del que cuelga el ancla que era su título»**. Se descartó declarar el acto de desanclar,
+  que era la otra opción y arrastra un acto administrativo nuevo con todo lo que eso implica.
+- **Por qué la cláusula NO se borra, que es lo que parecía más simple y es lo peligroso**: es **lo
+  único que apaga el addon cuando se revoca el grant, para 3 de los 4 scopes**. En `LISTING`,
+  `USER` y `GLOBAL` el objetivo del addon **nunca muere** —la ficha sigue ahí, la cuenta sigue
+  ahí—, así que la condición de huérfano **no se cumple jamás**. Sin ella, revocar dejaba al addon
+  convertido **funcionando gratis para siempre** y sin suscripción, porque `S20` se la canceló al
+  convertirlo.
+- **Por qué el enunciado nuevo cubre lo mismo, verificado**: revocar es *«UNA revocación»* sobre
+  *«UN instrumento con UN ANCLA POR CADA VERTICAL»* (`12-contrato…` §2.8), o sea **retira todas
+  las anclas a la vez**. Y **no hay otro acto que retire un ancla**: otorgar crea y anclar
+  **agrega**.
+- **Una premisa que esto vuelve falsa, y se retiró**: `B/02` §2.4 justificaba apuntar la columna al
+  ancla y no al grant con dos razones, y **la segunda** —*«retirar una vertical cortaría los addons
+  de las otras»*— **describía el acto inexistente**. Se retira; la primera alcanza sola (saber **en
+  qué vertical** el addon es gratis). **La columna sigue apuntando al ancla: el modelo no cambia.**
+- **Origen**: la tensión que `DEC-ADDON-004` dejó nombrada, verificada contra el texto por el
+  orquestador —que había propuesto mal la opción de borrar la cláusula—, y la elección del owner
+  del 2026-09-21 entre las dos opciones corregidas.
+
+---
+
+### DEC-SUB-013 — La cuota del pagador manual la abre un reloj, y no se abre mientras está suspendido
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El hueco**, que es `F-8B2-018` y es anterior a esta semana: la máquina del pago manual tenía
+  **cuatro salidas** —`MP1` a `MP4`— y **ninguna entrada**. **Nadie había declarado quién crea la
+  fila `AWAITING` ni cuándo.**
+- **Decisión, las dos mitades:**
+  1. **La abre un reloj**, al inicio de cada período — el mismo instante en que el proveedor habría
+     cobrado. **No la abre un admin a mano**: una cuota que nadie crea es **servicio gratis
+     silencioso**, y no falla ruidosamente.
+  2. **No se abre mientras la suscripción está `SUSPENDED`.** El que vuelve paga **el período que
+     arranca**, no los que pasó suspendido.
+- **Por qué la mitad (2), y no es una concesión suelta**: es lo que el diseño ya decidió dos veces
+  — `B/12` §5.3 (*«la deuda vieja no se persigue por separado»*) y `DEC-SUB-012` (el que paga tarde
+  paga **esa** cuota, no un remanente)— y es coherente con `DEC-SUB-003`: que volver sea *«una
+  salida del problema en vez de un muro»*.
+- **`MP5`**, la fila nueva: *(sin fila)* → `AWAITING`, evento *«un reloj abre el período»*. La
+  máquina **sigue teniendo tres estados**, porque *(sin fila)* vive afuera de la columna, igual que
+  en la de suscripción.
+- **Corre SÓLO sobre `ACTIVE`**, y los otros cinco vivos tienen su razón escrita:
+  `PENDING_AUTHORIZATION` porque el período lo arranca `S2`; `GRACE_PERIOD` porque el período no
+  avanza hasta que entra el pago y **la cuota ya existe**; `CANCEL_SCHEDULED` porque ningún período
+  nuevo empieza antes de `S12`; `SUSPENDED` por la decisión; y `PAUSED` por el punto siguiente.
+- **La pausa no contradice a `B/06` §7** (*«un pago manual mensual no tiene nada que pausar»*), y
+  por dos razones distintas: `CUSTOMER_REQUEST` tiene **población vacía** —`S8` exige
+  `puedePausar()`, que da `false`—, y `COURTESY` sí existe, y ahí **no abrir cuota es lo que la
+  cortesía significa**: sobre un pagador manual la mitad *«pausar en el proveedor»* de
+  `DEC-GRANT-003` no tiene sujeto, así que lo único que queda es no pedirle la plata.
+- **Al reabrir por `MP4`, el período se RE-ANCLA al instante de la reactivación.** No es una
+  elección: con el ancla vieja el reloj crearía de golpe todo el atraso que la mitad (2) mandó no
+  crear. Es específico de esa puerta y **no se escribe en `S7`**, porque el pagador con tarjeta no
+  re-ancla (`EX-39`).
+- **Sin aviso nuevo**: el catálogo de `NUCLEO/07` §6 no gana fila. El aviso del §30 al admin no
+  cambia de momento — lo que `MP5` le aporta es **el sujeto que no tenía**.
+- **Y de paso cierra la otra mitad de `F-8B2-018`**: cómo entra el grace de un pagador manual. No
+  hace falta fila nueva, lo carga `S4` con el evento leído **sobre la cuota** y no sobre el
+  proveedor, que es lo que el §30 ya ordenaba y lo que `MP1`/`MP2` ya presuponían.
+- **Modelo**: `manual_payment` gana **el período** —que el `UNIQUE` de `B/05` §C5 ya presuponía— y
+  sus tres campos de registro pasan a anulables. **Sin estado nuevo y sin columna de monto**, que
+  se resuelve de la versión anclada.
+- **Origen**: `F-8B2-018`, declarado abierto por la familia del pago manual de la 9-bis-3 y
+  reafirmado por `DEC-SUB-012`, y la elección del owner del 2026-09-21 entre las tres opciones que
+  se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **73** |
+| Decisiones tomadas | **76** |
 | De metodología | 10 |
-| Funcionales | 63 |
+| Funcionales | 66 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |

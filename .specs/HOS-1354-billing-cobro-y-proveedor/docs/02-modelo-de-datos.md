@@ -231,7 +231,7 @@ relectura, que ya ocurre. El guard sigue corriendo sin red, porque lee la column
 |---|---|---|
 | **`payment`** | suscripción, monto, moneda, estado del cap. 03 §6, **id del hecho en el proveedor**, fecha del hecho, monto reembolsado acumulado | **`UNIQUE(proveedor, id_del_hecho)`** — es la deduplicación del cap. 03 §10.2 |
 | **`refund`** | **el pago que se devuelve —un `payment` o un `manual_payment`—**, monto, motivo, estado, quién lo confirmó | el acumulado nunca supera el monto del pago |
-| **`manual_payment`** | suscripción, estado del cap. 03 §7, quién lo registró, cuándo, comprobante | |
+| **`manual_payment`** | suscripción, **el período que cubre**, estado del cap. 03 §7, y —**sólo una vez registrado**— quién lo registró, cuándo, comprobante | **el período no es anulable**; los **tres del registro sí lo son**, y son nulos mientras la fila está `AWAITING`. **El monto no se guarda**: es el esperado para ese período, que se resuelve de la versión de plan anclada (`B/05` §3, condición 2) — copiarlo sería la copia a mano que el §10.3 prohíbe |
 | **`receipt`** | pago, número, PDF. **Comprobante no fiscal** (§54, `DEC-LEGAL-001`) | `UNIQUE(numero)`, sin huecos |
 | **`idempotency_key`** | la clave, a qué operación corresponde, su resultado | **`UNIQUE(clave)`**, y se persiste **antes** de la primera llamada al proveedor (`DEC-CONC-001`) |
 
@@ -250,6 +250,17 @@ esta columna el período quedaba cobrado y sin asiento de reversa, que es lo que
 conserva su hecho, y lo que registra la devolución es la fila de `refund` con **quién la
 confirmó** — que es lo que `DEC-RF-002` exige y lo único que distingue este camino del
 automático que esa decisión rechazó.
+
+**Y la fila de `manual_payment` nace VACÍA de registro, porque desde `MP5` la crea un reloj y no
+una persona.** La cuota se abre al inicio del período —*«el mismo instante en que el proveedor
+habría cobrado»*, `B/03` §7.2— y recién `MP1` o `MP4` escriben quién la registró, cuándo y con
+qué comprobante: esos tres eran *«lo que guarda»* la fila y **no se pueden escribir al crearla**,
+así que son anulables y nulos mientras esté `AWAITING`. **El período sí se escribe al crearla, y
+no es una columna nueva de acá**: el `UNIQUE(subscription_id, período)` de `B/05` §C5 ya la
+presuponía, y sin ella ni ese candado ni la condición 2 del `B/05` §3 —*«el monto esperado para
+el período que cubre»*— tienen contra qué evaluarse. Es lo único que este arreglo le agrega a la
+entidad: **no hay estado nuevo** (arriba) y **no hay columna de monto** (la resuelve la versión
+anclada).
 
 ### 2.4 Capacidades y concesiones
 
@@ -300,17 +311,23 @@ el grant … un campo que el modelo ya necesita, no uno nuevo»*—. Es `F-8dA3-
 
 - **Apunta al ANCLA, no al grant.** Un grant es *«UN instrumento con UN ANCLA POR CADA VERTICAL»*
   (§2.4 más abajo, `12-contrato…` §2.8) y el título **es por vertical** (`B/16` §2.4): con *«el
-  grant»* no se podría saber cuál ancla lo sostiene, así que retirar una vertical cortaría los
-  addons de las otras o no cortaría ninguno. Las dos ramas están medidas en `F-8dA3-007`.
+  grant»* no se sabría **en qué vertical** ese addon es gratis, que es justo lo que el pliegue
+  pregunta al resolver la fuente. **La segunda razón que se daba acá caducó y se retira**: decía
+  que *«retirar una vertical cortaría los addons de las otras o no cortaría ninguno»*, y retirar
+  una vertical **no es un acto declarado** —*«desanclar no está declarado»*, más abajo en este
+  mismo §—, así que describía un camino inexistente. La de arriba alcanza sola.
 - **Es anulable, y eso no contradice el `12-contrato…` §2.3.** Lo que esa regla prohíbe sin
   excepción es que **la fuente** quede sin referencia resoluble, y la referencia de una fuente
   `ADDON` es la versión anclada por la instancia, que **no** es anulable. Esta columna es otra
   cosa: **el vínculo con el título**, y para el addon comprado sobre una suscripción no hay nada
   que guardar —la validez se evalúa al comprar (`B/16` §2.2)— así que nula es su valor correcto.
 - **Su consumidor es la tercera cláusula del evento de `A5`** (`B/03` §8), que corta el addon
-  cuando **ese** ancla se retira. Sin la columna, esa cláusula no tiene sujeto y *«al revocar el
-  grant el addon se corta»* (`B/16` §3.3) vuelve a ser una frase sin transición para los scopes
-  `LISTING`, `USER` y `GLOBAL`.
+  **cuando se revoca el grant del que cuelga ese ancla**. Sin la columna, esa cláusula no tiene
+  sujeto y *«al revocar el grant el addon se corta»* (`B/16` §3.3) vuelve a ser una frase sin
+  transición para los scopes `LISTING`, `USER` y `GLOBAL`. **La cláusula nombra la revocación y
+  no el retiro del ancla**, justamente porque desanclar no está declarado; la columna sigue
+  apuntando al ancla porque lo que hay que saber es **en qué vertical** era gratis, no cuál se
+  retira.
 
 **Y el vínculo con la suscripción de complemento se lee ahora en las dos direcciones.** Hasta acá
 sólo se leía hacia adelante —la instancia dice cuál es su cobro—, y la vuelta no tenía consumidor:

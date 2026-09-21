@@ -184,14 +184,27 @@ legítima, y la persona **estuvo cubierta de verdad** todo lo que duró el grant
 nuevo, vuelve a suscribirse.**
 
 **Qué transición lo ejecuta, porque son dos caminos y sólo uno estaba escrito.** Para un addon de
-scope `VERTICAL_SUBSCRIPTION` lo ejecuta la condición de huérfano: al irse el ancla deja de
+scope `VERTICAL_SUBSCRIPTION` lo ejecuta la condición de huérfano: al caerse el grant deja de
 relevarlo la **tercera mitad** del §4.2, el objetivo vuelve a estar muerto y `A5` lo cancela. Para
 los otros tres scopes **el objetivo nunca murió** —`LISTING` es una ficha que sigue ahí,
 `USER`/`GLOBAL` es la cuenta— así que la condición de huérfano **no se cumple nunca** y, tal como
 estaba, *«se corta»* era una frase sin transición que la regla 1 del núcleo no admite. Por eso el
-evento de `A5` tiene **una tercera cláusula** —*«se retira el ancla que era su título»*
-(`B/03` §8)— y **cierra los dos casos con una sola regla**: el convertido y el que el §3.2 dejó
-elegir gratis desde el principio, que tenía el mismo agujero y nadie lo había nombrado.
+evento de `A5` tiene **una tercera cláusula** —*«se revoca el grant del que cuelga el ancla que
+era su título»* (`B/03` §8)— y **cierra los dos casos con una sola regla**: el convertido y el que
+el §3.2 dejó elegir gratis desde el principio, que tenía el mismo agujero y nadie lo había
+nombrado.
+
+> **Esa cláusula nombra la REVOCACIÓN, y no *«el retiro del ancla»*, por decisión del owner del
+> 2026-09-21.** Su primera redacción esperaba un acto —*«retirar un ancla»*— que **no existe en
+> ningún catálogo**: el `NUCLEO/08` §3 declara para el grant exactamente **tres** escrituras
+> —otorgar, anclarle una vertical nueva, revocar— y tanto el `12-contrato…` §2.8 como el
+> `B/02` §2.4 dicen que *«desanclar no está declarado»*. Se eligió **reescribir la cláusula**, no
+> declarar un acto nuevo. **La cobertura no se achica**: revocar *«es UNA revocación»* sobre *«UN
+> instrumento con UN ANCLA POR CADA VERTICAL»* (`12-contrato…` §2.8), o sea **retira todas las
+> anclas de una vez**, así que corta la instancia cualquiera sea el ancla de la que cuelgue y en
+> los cuatro scopes. Las otras dos escrituras del catálogo no retiran ninguna: otorgar crea y
+> anclar **agrega**. El razonamiento entero está en `B/03` §8, *«el addon cuyo título era el
+> ancla»*.
 
 ### 3.4 El addon que la persona YA venía pagando: se convierte a costo $0 en el acto
 
@@ -228,12 +241,35 @@ ancló** (§2.4), así que en una vertical que no ancló no hay título suyo que
 addon conserva el que ya tenía —una suscripción que el beneficiario sigue pagando y que `S13`
 tampoco tocó—. Convertirlo sería regalar el complemento de una vertical que nadie regaló.
 
-> **Costo declarado, y se declara en vez de resolverse**: un addon de scope `USER` o `GLOBAL`
-> compatible con **dos** verticales, en alguien cuyo grant ancla **una**, se convierte igual —es
-> un addon compatible— y de paso queda gratis también en la vertical que el grant no ancló. Es la
-> lectura literal del §35.2 y la población es fina, pero **es una fuga real** y queda nombrada.
-> Acotarla —exigir que el grant ancle **todas** las verticales que el producto declara— es una
-> decisión de producto y **no se toma acá**.
+> **La fuga del addon `USER`/`GLOBAL` SE DEJA, y está decidido — no es un pendiente.** Un addon
+> de scope `USER` o `GLOBAL` compatible con **dos** verticales, en alguien cuyo grant ancla
+> **una**, se convierte igual —es un addon compatible— y de paso **queda gratis también en la
+> vertical que el grant no ancló**. Es una fuga real, se nombra entera y **se acepta**, por tres
+> razones escritas y no por omisión:
+>
+> 1. **Es la lectura literal del §35.2.** Ese § dice *«los addons compatibles»*, y *«compatible»*
+>    es lo que el **producto** declara (§39, `addon_product` en `B/02` §2.4), no *«compatible y
+>    además anclado»*. Convertir sólo la mitad del addon pediría una **tercera** noción de
+>    compatibilidad —por vertical y por instancia— que ningún § del PDR escribe y que este
+>    capítulo acaba de decir que **no se reinterpreta acá**.
+> 2. **La población es fina.** Pide las cuatro cosas a la vez: un addon de uno de los **dos**
+>    scopes sin vertical propia, un producto que declare **dos o más** verticales compatibles, un
+>    grant con `includesAddons: true`, y que ese grant ancle **menos** verticales de las que el
+>    producto declara.
+> 3. **Acotarla cuesta más de lo que tapa.** La única acotación disponible —exigir que el grant
+>    ancle **todas** las verticales que el producto declara— le mete al acto de otorgar una
+>    condición que depende del catálogo de addons **del beneficiario**, y la vuelve inestable: un
+>    producto que mañana suma una vertical compatible volvería incorrecto un grant ya firmado, y
+>    `S20` pasaría a releer el producto para decidir — que es exactamente lo que *«convertir a $0
+>    no es volver a comprar»* prohíbe más abajo (*«qué transporta la fuente después de
+>    convertirse»*).
+>
+> **Y no queda como un abierto de `DEC-METH-006`**: ese método admite cerrar con cosas abiertas
+> siempre que cada una diga **de qué depende**, y ésta no depende de nada — está elegida. Lo que
+> deja es un costo conocido y acotado, del mismo tipo que *«el período ya pagado no se devuelve»*
+> de acá abajo: alguien recibe de más, mientras el grant dure. **Y se apaga con el grant, sin
+> mecanismo aparte**: al revocarlo, `A5` corta la instancia por su tercera cláusula (§3.3) —en
+> las dos verticales a la vez, porque la instancia es una sola—.
 
 #### El período ya pagado no se devuelve
 
@@ -271,7 +307,7 @@ de acá.
 
 | la instancia está | qué le pasa | por qué |
 |---|---|---|
-| **`ACTIVE`** | **no cambia de estado**: sigue `ACTIVE`, ahora a costo $0, colgando del ancla. **En el acto de la conversión no corre ninguna de `A1`–`A6`** | es un addon comprado que sigue andando; lo único que se apagó es su cobro. En particular **`A5` no corre**, y eso ya estaba resuelto: el grant **releva** al objetivo (§4.2, tercera mitad). La que sí correrá algún día es `A5` **por su tercera cláusula**, cuando el ancla se retire (§3.3) |
+| **`ACTIVE`** | **no cambia de estado**: sigue `ACTIVE`, ahora a costo $0, colgando del ancla. **En el acto de la conversión no corre ninguna de `A1`–`A6`** | es un addon comprado que sigue andando; lo único que se apagó es su cobro. En particular **`A5` no corre**, y eso ya estaba resuelto: el grant **releva** al objetivo (§4.2, tercera mitad). La que sí correrá algún día es `A5` **por su tercera cláusula**, cuando se revoque el grant (§3.3) |
 | **`PENDING_AUTHORIZATION`** | **no se convierte** —no hay nada comprado todavía— pero **su cobro se cancela igual**, y la instancia muere por `A3` al vencer su ventana. La persona puede elegir el addon gratis en el acto (§3.2) | *«una instancia esperando autorización es una obligación de pago»*: su preapproval está creado y puede completar el checkout sin tener por qué saber que el grant llegó. Es el mismo argumento con el que `PENDING_AUTHORIZATION` entró en el alcance de `S13` y en el `desde` de `A5`. La pantalla de *«esperando que completes el pago»* **deja de ofrecer el enlace en el mismo acto** |
 
 **Y la condición de huérfano del §4.2 no se toca.** Sus **tres** mitades siguen siendo las mismas
@@ -389,12 +425,14 @@ a huérfano y se corta — que es lo que §3.3 ya decidía por el otro camino.
 
 > **Eso vale para `VERTICAL_SUBSCRIPTION` y para ningún otro scope, y conviene decirlo porque se
 > lee como si valiera para los cuatro.** Acá el objetivo **sí** había muerto y lo único que lo
-> rescataba era el grant, así que retirar el ancla devuelve la condición a *«huérfano»*. En
+> rescataba era el grant, así que revocarlo devuelve la condición a *«huérfano»*. En
 > `LISTING`, `USER` y `GLOBAL` el objetivo **nunca murió** —la ficha y la cuenta siguen ahí—, así
 > que un addon de esos scopes cuyo título era el ancla **no queda huérfano al revocar** y esta
 > condición no lo alcanza nunca. Lo corta la **tercera cláusula del evento de `A5`**
-> —*«se retira el ancla que era su título»*, `B/03` §8—, que es una puerta distinta y hace falta
-> igual. **La orfandad mira el OBJETIVO; el corte del §3.3 mira el TÍTULO**, y confundirlos es lo
+> —*«se revoca el grant del que cuelga el ancla que era su título»*, `B/03` §8—, que es una puerta
+> distinta y hace falta igual. **En `VERTICAL_SUBSCRIPTION` las dos se cumplen en el mismo acto y
+> eso no duplica nada**: llegan al mismo `CANCELLED` y la segunda encuentra la instancia ya fuera
+> del `desde` de `A5`. **La orfandad mira el OBJETIVO; el corte del §3.3 mira el TÍTULO**, y confundirlos es lo
 > que dejaba *«se corta»* sin transición para tres de los cuatro scopes.
 
 **La fila viva es parte del predicado, no un adorno.** En `S13` la sucesora también queda
@@ -483,7 +521,7 @@ predecesora ya murió (§4.2).
 > | **una de las seis transiciones saca al título de las filas vivas** | `B/03` §3.2 | es el disparador directo, el de la tabla de arriba |
 > | **muere la sucesora que relevaba** — `S3` la abandona, o `S13` la mata | `B/03` §3.2 | la condición del §4.2 pasa de *«la releva una sucesión»* a *«no hay sucesión que la releve»* sin que ninguna transición toque al addon. Es el caso que este § ya nombraba, y el que obliga a mirar **los complementos de la predecesora** (el recuadro de abajo) |
 > | **la instancia llega a `ACTIVE` por `A2`** | `B/03` §8 | el orden inverso: el título ya estaba muerto cuando el addon autorizó. `A2` no mira el título —la validez se evalúa al comprar (§2.2)—, así que si `A5` no alcanzó a la instancia mientras esperaba, éste es el instante en que la condición vuelve a ser evaluable |
-> | **se revoca el grant, o se retira el ancla de esa vertical** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando |
+> | **se revoca el grant** | `NUCLEO/08` §3, fila del grant permanente | es el único acto que apaga la **tercera mitad** del §4.2, y sin él *«se vuelve a evaluar»* era una promesa sin momento: el addon del beneficiario quedaba relevado por un grant que ya no existe, y su preapproval —si el §3.4 no lo había convertido— seguía cobrando. **Y es uno solo, no dos**: la redacción anterior decía *«o se retira el ancla de esa vertical»* y ese acto **no está declarado** (`12-contrato…` §2.8, `B/02` §2.4), así que nombrarlo agregaba un momento que nadie podía producir. Revocar retira **todas** las anclas del instrumento, que es la población entera que esta mitad necesita |
 >
 > **La lista no agrega una séptima transición al disparador de arriba**: las seis son las que
 > sacan a **la principal** de las filas vivas, el cuarto momento no es una transición de esa
@@ -589,8 +627,8 @@ vacío**. El razonamiento completo, con las tres razones separadas, está en `B/
 
 **Cubre las dos puertas, no una.** El evento de `S21` se ata al estado de llegada de la instancia
 —`CANCELLED`—, que es donde confluyen **las tres cláusulas del evento de `A5`**: se da de baja,
-**queda huérfana** (la condición del §4.2, con sus **tres** mitades) o **se retira el ancla que era
-su título** (§3.3). La orfandad mira el **objetivo** y el retiro del ancla mira el **título**, y
+**queda huérfana** (la condición del §4.2, con sus **tres** mitades) o **se revoca el grant del que
+cuelga el ancla que era su título** (§3.3). La orfandad mira el **objetivo** y la revocación mira el **título**, y
 atarse a una sola habría dejado el cobro vivo en los tres scopes —`LISTING`, `USER` y `GLOBAL`—
 donde el objetivo nunca muere. **`A6` entra por la misma puerta y con la misma razón**: la ficha se
 borró, el addon *«se consume»* (`DEC-ADDON-001`) y su cobro no tiene a qué complementar. **`A3` no
