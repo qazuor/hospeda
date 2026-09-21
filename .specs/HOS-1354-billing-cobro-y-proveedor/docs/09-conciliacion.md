@@ -76,7 +76,9 @@ manual», es «toca plata o no toca plata»**.
 
 ## 3. Qué compara el barrido, campo por campo
 
-Por cada suscripción de nuestro inventario que no esté en un estado terminal:
+Por cada fila de nuestro inventario —suscripción principal o suscripción de complemento
+(`DEC-ADDON-002`)— que no esté en un estado terminal, **más las terminales que la salvedad del
+complemento devuelve al barrido**:
 
 | se compara | contra | si difieren |
 |---|---|---|
@@ -86,9 +88,28 @@ Por cada suscripción de nuestro inventario que no esté en un estado terminal:
 | cobros del período | los `authorized_payments` del preapproval | ver §4 |
 | la `version` del recurso | la última que aplicamos | si la del proveedor es mayor, **el recurso cambió sin avisarnos**: se relee entero |
 
-**Los estados terminales no se barren**: `CANCELLED`, `ABANDONED` y `CHARGE_DECLINED` no pueden
-divergir hacia nada que nos importe, y barrerlos es gastar llamadas sobre la parte de la cartera
-que más crece.
+**Los estados terminales de una SUSCRIPCIÓN no se barren**: `CANCELLED`, `ABANDONED` y
+`CHARGE_DECLINED` no pueden divergir hacia nada que nos importe, y barrerlos es gastar llamadas
+sobre la parte de la cartera que más crece.
+
+**Y la exención vale por la razón que hace terminal a cada uno, no por la palabra «terminal».**
+En los tres, la autorización quedó imposibilitada de cobrar por algo que ya ocurrió y que no
+depende de que una llamada nuestra haya salido bien: `S3` canceló el preapproval al vencer la
+ventana, `S12` y `S17` lo cancelan sobre una fila cuyo preapproval `S11` ya canceló *«de
+inmediato»* o cuya relectura lo confirma (`B/03` §3.2), y en `CHARGE_DECLINED` **lo canceló el
+proveedor** en el mismo milisegundo del rechazo (`B/12` §4.4, medido el 2026-09-17).
+
+**Una instancia de addon en estado terminal SÍ se barre, hasta que la relectura la vea
+`cancelled`.** Ahí la garantía no existe: su preapproval es propio (`DEC-ADDON-002`), el
+proveedor no lo tocó y **lo cancelamos nosotros** cuando `A3`, `A4`, `A5` —la que declara al
+addon huérfano— o `A6` la llevan a un estado terminal (`B/03` §8) — una llamada que puede fallar,
+y **mutar o cancelar no emite webhook**
+(`EX-15`), así que no hay ninguna otra vía de aviso. Es exactamente el detector que `B/16` §4.3
+declara —*«un addon en estado terminal con su preapproval vivo es una discrepancia que el barrido
+ve»*—, y sin esta salvedad el addon salía del barrido **en el mismo acto** en que pasaba a ser
+detectable: la exención de arriba lo apagaba. El costo está acotado por su propia condición de
+corte —deja de barrerse apenas la relectura confirma la cancelación—, así que no es la cartera
+terminal entera sino la cola de las que todavía no confirmaron.
 
 **Y hay una comprobación que no le pregunta nada al proveedor: la sucesión abierta sobre una fila
 muerta.** Si una fila que el barrido alcanza tiene `sucede_a` **no nulo** y la predecesora a la

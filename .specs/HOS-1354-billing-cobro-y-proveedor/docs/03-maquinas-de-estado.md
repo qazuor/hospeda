@@ -443,7 +443,7 @@ paga por el proveedor es **doble cobro con dinero real** (`E-CONC-01`). Lo resue
 | A2 | `PENDING_AUTHORIZATION` | se autoriza | `ACTIVE` | recurrente: su propio preapproval (`DEC-ADDON-002`). De única vez: su propio cobro |
 | A3 | `PENDING_AUTHORIZATION` | vence la ventana | `ABANDONED` | mismas 72 h que S3 |
 | A4 | `ACTIVE` | llega su fecha de fin | `EXPIRED` | **el reloj no se congela** aunque la ficha esté despublicada (`DEC-ADDON-001`) |
-| A5 | `ACTIVE` | se da de baja, o queda huérfano | `CANCELLED` | §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical |
+| A5 | `ACTIVE` | se da de baja, o queda huérfano | `CANCELLED` | §41: **sólo** cuando queda efectivamente huérfano, no por cancelar la vertical. *«Huérfano»* es la condición de `B/16` §4.2 —el objetivo dejó de ser fila viva y **ninguna sucesión lo releva**—, **nunca un estado de llegada concreto**: la pueden cumplir las cinco transiciones que sacan a la principal de las filas vivas —`S3`, `S12`, `S13`, `S16` y `S17`—, y `S16` (`CHARGE_DECLINED`) es una de ellas |
 | A6 | `ACTIVE` | se borra la ficha destino | `CANCELLED` | **se consume**: no se libera ni se reasigna (`DEC-ADDON-001`), y el borrado **tiene que advertir qué addons se pierden y por cuánto** |
 
 **Cancelar el plan no cancela los addons**: como cada addon recurrente es una suscripción aparte,

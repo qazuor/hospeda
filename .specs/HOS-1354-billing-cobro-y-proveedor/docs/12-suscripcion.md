@@ -180,9 +180,18 @@ el trial tampoco, porque no está usando trial.
 
 ### 4.3 La regla que lo cierra
 
-> **El grace no es un beneficio de entrada.** Una suscripción cuyo **primer** cobro falla, para un
-> `user + vertical` **sin ningún pago acreditado**, no pasa por `GRACE_PERIOD`: va a
-> **`CHARGE_DECLINED`**, que es terminal.
+> **El grace no es un beneficio de entrada.** Una suscripción cuyo **primer cobro de esa
+> autorización** se rechaza no pasa por `GRACE_PERIOD`: va a **`CHARGE_DECLINED`**, que es
+> terminal.
+
+**La condición se lee POR AUTORIZACIÓN, y su dueño es `B/03` §3.1**, que la escribió entera con su
+fundamento. Acá decía *«para un `user + vertical` sin ningún pago acreditado»* —la historia de la
+persona—, y el cambio la corrigió en la tabla de transiciones sin volver a este §: el proveedor
+cancela por **el primer cobro de ese preapproval**, no por la historia. Con la lectura histórica,
+al cliente que ya pagó alguna vez, vuelve y le rebota la tarjeta se le daban diez días de servicio
+completo **sobre una autorización que el proveedor ya canceló de forma terminal** — un plazo que no
+puede terminar en pago. Leída por autorización cae donde corresponde, y su reintento es un alta
+nueva igual que el del que nunca pagó.
 
 **El destino ya no es `SUSPENDED`, y el §4.4 explica por qué no podía serlo.** Mandarla ahí hacía
 que `SUSPENDED` significara dos muertes distintas —el que pagó y dejó de pagar, y el alta que nunca
@@ -225,13 +234,18 @@ Dos consecuencias que el diseño tiene que absorber:
 
 ### 4.5 Tres precisiones que la regla necesita
 
-1. **«Ningún pago acreditado» se cuenta por `user + vertical`, no por suscripción.** Por
-   suscripción, cancelar y volver a suscribirse resetea el contador y la regla no limita nada — es
-   el mismo razonamiento con que `DEC-SUB-004` contó la cuota de pausa.
+1. **«Primer cobro» se cuenta por autorización, y el abuso que la versión histórica temía lo
+   frena otra cosa.** Contarlo por `user + vertical` era defenderse de que cancelar y volver a
+   suscribirse reseteara el contador; lo que cierra ese ciclo no es el contador sino el destino:
+   cada reintento muere en `CHARGE_DECLINED` sin pasar por `GRACE_PERIOD`, así que **no hay diez
+   días que cosechar** por más veces que se repita, y el servicio recibido se mide en los minutos
+   de `PA-3`. El contador histórico, en cambio, le cobraba el abuso al cliente legítimo que vuelve
+   (§4.3).
 2. **Se cuenta sobre pagos acreditados, nunca sobre fechas.** Un período transcurrido no es un
    período pagado, y confundirlos es lo que abre el agujero de §5.
-3. **El aviso es distinto.** A quien nunca pagó no se le dice *«tenés diez días para
-   regularizar»*: se le dice que el cobro no entró y cómo volver a intentarlo. Prometer una
+3. **El aviso es distinto.** A quien esta autorización nunca le cobró —haya sido cliente antes o
+   no— no se le dice *«tenés diez días para regularizar»*: se le dice que el cobro no entró y cómo
+   volver a intentarlo. Prometer una
    ventana que no tiene es peor que no prometerla (cap. 15 (épica de verticales) §4.4).
 
 ---

@@ -87,7 +87,7 @@ consumidores que la necesitan **después**, cuando ya se borró:
 
 | quién pregunta | qué pregunta | dónde |
 |---|---|---|
-| los complementos | *«la suscripción murió, ¿tenía sucesora a la que re-apuntarme?»* | `B/16` §4.2 |
+| los complementos | *«la suscripción de la que cuelgo dejó de ser fila viva, ¿la releva una sucesión —cerrada por `sucedida_por`, o en curso por una fila viva con `sucede_a` apuntándola— o quedé huérfano?»*. Lee **las dos columnas** porque su pregunta abarca la línea de tiempo entera, y `sucedida_por` recién existe cuando `S18` cierra | `B/16` §4.2 |
 | el pago tardío | *«¿esta fila ya fue superada por una sucesora autorizada?»* — y, del lado de `sucede_a`, *«¿la está por superar una que todavía no autorizó?»*, que es la mitad que decide entre reactivar y dejar el pago pendiente (`B/03` §3.2, `S19`) | `B/05` §3, condición 3 |
 
 **`sucedida_por` es esa evidencia, y es durable.** Se escribe **en la predecesora**, en el mismo
