@@ -3221,3 +3221,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `wt-create` debe bloquear ese estado, por lo que el E2E de DB/servidores no
   puede continuar hasta construir y validar una candidata aislada.
 - No se crearon worktrees, bases, servidores ni cambios en Linear/GitHub.
+
+## Gate 154 · Candidata de template detenida por cleanup externo
+
+- Se creó la base aislada `hospeda_template_candidate_20260921` y se aplicaron
+  las 41 migraciones y los extras PostgreSQL correctamente.
+- El comando de seed con `--reset` activa limpieza de assets externos. Se
+  interrumpió inmediatamente al detectar ese comportamiento; no se promovió
+  la candidata y el template activo permaneció intacto.
+- Aunque el script dejó journal y manifest en la candidata, su seed quedó
+  incompleto. No se considera una candidata validada y debe repetirse con una
+  opción que no limpie servicios externos antes de probar servidores o
+  promoción.
