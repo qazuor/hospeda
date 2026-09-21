@@ -193,7 +193,7 @@
                             "title": "Revisar memoria una por una",
                             "category": "Engram + CLAUDE.md",
                             "description": "Clasificar vigente, histórica, duplicada, contradictoria, ruidosa o secreta antes de usarla.",
-                            "notes": "Gate112/113: auditoría inicial read-only y wrapper `hops engram` verificados. Gate172: revisión humana y automática en copia aislada; se conservaron 15 memorias potencialmente duraderas y se marcaron 402 observaciones como ruidosas/históricas para soft-delete en la copia. La DB activa sigue intacta; todavía falta decidir la aplicación final sobre la instalación activa.",
+                            "notes": "Gate112/113: auditoría inicial read-only y wrapper `hops engram` verificados. Gate172: revisión humana y automática en copia aislada; se conservaron 15 memorias potencialmente duraderas y se marcaron 402 observaciones como ruidosas/históricas para soft-delete en la copia. Gate173: se creó una copia fresca de la DB activa, se reaplicó la curación, se eliminaron 5.259 capturas `tmp/passive` y 1 marcador temporal, además de 517 observaciones huérfanas de discovery/bugfix/session_summary y otros restos históricos. La copia queda con 3.509 observaciones activas, 6.343 soft-deleted e integridad OK; la DB activa sigue intacta.",
                             "done": false
                         },
                         {
@@ -249,7 +249,7 @@
                             "title": "Aplicar política de memoria",
                             "category": "Engram + CLAUDE.md",
                             "description": "Guardar sólo decisiones duraderas, verificadas y deduplicadas; excluir ruido y secretos.",
-                            "notes": "Política documentada y aplicada en la copia: sólo decisiones duraderas, reglas verificadas y conocimiento operativo reutilizable; entradas históricas cuyo source of truth es Git/Linear/specs se eliminan, sin archivo histórico intermedio. Se conservaron 15 memorias vigentes con aprobación humana; la DB activa aún no se modifica.",
+                            "notes": "Política documentada y aplicada en la copia: sólo decisiones duraderas, reglas verificadas y conocimiento operativo reutilizable; entradas históricas cuyo source of truth es Git/Linear/specs se eliminan, sin archivo histórico intermedio. Se conservaron 15 memorias vigentes con aprobación humana. La DB activa aún no se modifica; quedan 25 memorias no decisionales para revisión final.",
                             "done": true
                         },
                         {
