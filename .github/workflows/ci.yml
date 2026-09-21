@@ -170,7 +170,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
-        run: bash scripts/run-dependency-audit.sh
+        # TEMP (HOS-1136 verification, reverted before review): forces this
+        # step to fail like the 2026-09-03 npm-advisories outage did, to
+        # prove the sast job still runs. Do not merge with this line present.
+        run: exit 1
 
   # ------------------------------------------------------------------
   # Static analysis (SAST). Split from dependency audit (above) by
