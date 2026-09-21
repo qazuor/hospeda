@@ -258,6 +258,22 @@ export const ApiEnvBaseSchema = z.object({
     API_RATE_LIMIT_AUTH_MESSAGE: z
         .string()
         .default('Too many authentication requests, please try again later.'),
+    /*
+     * HOS-1153: session READS (`GET /api/auth/get-session`,
+     * `GET /api/v1/public/auth/me`, `GET /api/v1/public/auth/status`) have their
+     * own tier. They accept no credential, so the anti-brute-force ceiling above
+     * bought nothing on them while costing a signed-in operator a 429 within a
+     * handful of admin navigations. 600 / 5 min = 120 req/min per IP — a coarse
+     * anti-abuse ceiling of the same order as the `protected` tier, not a
+     * governor. Keep these defaults in sync with env-config-helpers.ts, or the
+     * effective ceiling silently depends on whether the vars happen to be set.
+     */
+    API_RATE_LIMIT_AUTH_SESSION_READ_ENABLED: boolEnv(true),
+    API_RATE_LIMIT_AUTH_SESSION_READ_WINDOW_MS: z.coerce.number().default(300000),
+    API_RATE_LIMIT_AUTH_SESSION_READ_MAX_REQUESTS: z.coerce.number().default(600),
+    API_RATE_LIMIT_AUTH_SESSION_READ_MESSAGE: z
+        .string()
+        .default('Too many session checks, please try again later.'),
     API_RATE_LIMIT_PUBLIC_ENABLED: boolEnv(true),
     API_RATE_LIMIT_PUBLIC_WINDOW_MS: z.coerce.number().default(3600000),
     API_RATE_LIMIT_PUBLIC_MAX_REQUESTS: z.coerce.number().default(1000),
