@@ -3133,3 +3133,13 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   de TypeScript porque `node_modules` ya contenía una entrada incompatible.
 - No hubo cambios versionados en `hospeda-staging`; resolver ese residuo de
   `node_modules` queda para una limpieza explícita y separada.
+
+## Gate 143 · Diagnóstico del `EEXIST` de Bun
+
+- En ambos checkouts, `node_modules/typescript` es un directorio válido y
+  `.bin/tsc`/`.bin/tsserver` son enlaces coherentes hacia él.
+- El lockfile declara TypeScript 5.9.3 y los archivos instalados corresponden a
+  esa estructura; el error aparece al intentar enlazar sobre una instalación
+  preexistente, no por un cambio versionado del proyecto.
+- No se borró ni reparó `node_modules`. La remediación debe ser una operación
+  explícita de limpieza/reinstalación en una etapa futura.
