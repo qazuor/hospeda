@@ -3173,3 +3173,8 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   al hook; permanecen en la propuesta de guards para no introducir falsos
   positivos ni bloquear trabajo legítimo sin aprobación de la política.
 - No se modificó `.husky/pre-commit` en este gate.
+
+## Gate 148 · Check del instalador en modo desarrollo
+
+- `install.sh --check --here` validó el checkout de migración como fuente.
+- Terminó sin instalar dependencias ni escribir funciones de Fish.
