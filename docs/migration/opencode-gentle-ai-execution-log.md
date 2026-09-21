@@ -3164,3 +3164,12 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `bun install --frozen-lockfile`.
 - El barrido de scripts no encontró instalaciones mutantes sin lockfile en el
   flujo de bootstrap, worktrees o tooling.
+
+## Gate 147 · Auditoría del pre-commit actual
+
+- `.husky/pre-commit` ejecuta escaneo de secretos staged, `lint-staged`, guard
+  de `safeIlike()` y validación tolerante de documentación/TODOs.
+- El drift de envs y el bloqueo de ramas protegidas todavía no están conectados
+  al hook; permanecen en la propuesta de guards para no introducir falsos
+  positivos ni bloquear trabajo legítimo sin aprobación de la política.
+- No se modificó `.husky/pre-commit` en este gate.
