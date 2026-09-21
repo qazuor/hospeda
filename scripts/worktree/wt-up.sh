@@ -98,7 +98,7 @@ elif [ -f "$LOCK" ] && [ "$(sha1sum "$LOCK" | cut -d' ' -f1)" != "$(wt_state_get
 fi
 if [ "$need_install" -eq 1 ]; then
   echo "-- installing dependencies (node_modules missing or lockfile changed)"
-  ( cd "$ROOT" && pnpm install ) || { echo "ERROR: pnpm install failed"; exit 1; }
+  ( cd "$ROOT" && pnpm install --frozen-lockfile ) || { echo "ERROR: pnpm install failed"; exit 1; }
   [ -f "$LOCK" ] && wt_state_apply ".lockHash = \"$(sha1sum "$LOCK" | cut -d' ' -f1)\""
 fi
 

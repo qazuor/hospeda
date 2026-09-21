@@ -47,7 +47,7 @@ ok "bun $(bun --version)"
 # ---------------------------------------------------------------------------
 
 info "Installing dependencies..."
-bun install --silent
+bun install --frozen-lockfile --silent
 ok "Dependencies installed"
 
 # ---------------------------------------------------------------------------

@@ -3150,3 +3150,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   `/home/qazuor/projects/WEBS/hospeda-staging/scripts/client-tools`.
 - El modo check terminó sin instalar dependencias ni escribir funciones de
   Fish, y ShellCheck siguió sin warnings.
+
+## Gate 145 · Lockfiles estrictos en bootstrap de worktrees
+
+- `scripts/worktree/wt-up.sh` ahora usa `pnpm install --frozen-lockfile`.
+- `scripts/server-tools/install.sh` ahora usa `bun install --frozen-lockfile`.
+- ShellCheck pasó en ambos scripts; no se ejecutaron instalaciones reales ni se
+  modificaron checkouts operativos.

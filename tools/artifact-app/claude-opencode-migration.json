@@ -168,7 +168,7 @@
                             "title": "Instalador deja el entorno listo para trabajar",
                             "category": "Instalación y reproducibilidad",
                             "description": "Detectar/crear hospeda-staging, actualizarlo desde origin/staging, reconciliar envs, generar los primeros .env.local seguros, preparar Postgres/Redis, construir/promover el primer template válido y verificar wrappers, puertos y health checks.",
-                            "notes": "Contrato documentado en docs/migration/bootstrap-contract.md (Gate129). Gate130: la base read-only acepta `--plan`, `--dry-run`, `--check` y `--verify`, valida pins y rutas sin leer valores secretos. Incluye hospeda-staging, envs, Postgres/Redis, primer template válido, wrappers, health checks y backup/restore inicial de Engram; debe ser idempotente, tener --plan/--check/--apply/--restore, rollback y no imprimir secretos. La fase apply/restore sigue pendiente.",
+                            "notes": "Contrato documentado en docs/migration/bootstrap-contract.md (Gate129). Gate130: la base read-only acepta `--plan`, `--dry-run`, `--check` y `--verify`, valida pins y rutas sin leer valores secretos. Gate145: wt-up y server-tools/install usan lockfiles estrictos para evitar drift de dependencias. Incluye hospeda-staging, envs, Postgres/Redis, primer template válido, wrappers, health checks y backup/restore inicial de Engram; debe ser idempotente, tener --plan/--check/--apply/--restore, rollback y no imprimir secretos. La fase apply/restore sigue pendiente.",
                             "done": false
                         }
                     ]
