@@ -188,6 +188,13 @@ dos filas describen un trámite que nadie empieza.
    (`EX-3`)—; revocar corta el servicio. Quien ancla una vertical tiene que leer, antes de
    firmar, **qué cobro deja de ocurrir**, porque ése es el acto que hoy nadie ve: el grant ya
    existía y la pantalla parece decir que sólo se agrega algo.
+
+   **Y la frase de revocar dice además que el trial ya está consumido y no vuelve**
+   (`DEC-TRIAL-009`). Recibir el grant consume el trial de esa vertical —`T2` o `T6`, según
+   estuviera corriendo o no— y **la revocación no lo devuelve**: el beneficiario queda sin grant,
+   sin suscripción y sin trial, así que si quiere seguir paga desde el primer día. Es el dato que
+   convierte *«le corto el servicio»* en *«le corto el servicio y además no tiene prueba
+   gratuita»*, y sin él quien firma cree que está haciendo algo menos grave de lo que hace.
 2. **`SUPER_ADMIN` firma toda concesión gratuita**, temporal o permanente (`DEC-GRANT-002`), y
    eso tiene un costo operativo declarado: compensar unos días a alguien pasa a requerirlo. **El
    riesgo concreto es que se termine compartiendo la cuenta**, que es peor que el riesgo que se

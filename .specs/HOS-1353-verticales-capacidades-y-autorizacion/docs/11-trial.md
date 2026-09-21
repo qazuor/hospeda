@@ -102,6 +102,31 @@ cobrar y eso es el invariante `D11` del capítulo 04: lo que toca plata lo confi
 Y las dos quedan en `domain_event` como lo que son —la corrección de un acto nuestro—, no como
 una excepción al §10.2, que sigue sin tener ninguna.
 
+### 2.4 Y revocar un grant NO entra acá, aunque se le parezca
+
+**Es el caso que más se parece a éste y se resuelve al revés** (`DEC-TRIAL-009`, owner,
+2026-09-21), así que la diferencia va escrita o las dos reglas se leen como una contradicción.
+
+Recibir un *Free Forever* consume el trial de esa vertical —`T2` si estaba corriendo, `T6` si
+todavía no—, y **revocarlo no lo devuelve**. El beneficiario queda sin grant, sin suscripción y
+sin trial. Suena a la columna derecha de la tabla de §2.2 —*«la pérdida la causamos nosotros»*—
+y **no lo es**, por dos razones que hay que leer juntas:
+
+| | la moderación equivocada | la revocación de un grant |
+|---|---|---|
+| **qué fue el acto** | **un error**: la moderación se equivocó | **una decisión legítima y deliberada**: se termina una concesión que nunca se debió |
+| **qué recibió la persona** | **nada** — le bajamos la ficha y el trial se consumió publicando algo que sí correspondía | **cobertura completa del plan anclado, todo el tiempo que duró el grant**, que es estrictamente más de lo que un trial da |
+
+**El trial no se perdió: se gastó, y se gastó recibiendo algo mejor.** Ésa es la lectura literal
+de por qué `T6` existe —quien está cubierto no necesita una prueba— y acá la persona **estuvo
+cubierta de verdad**. Reparar sería devolver una prueba a alguien que ya tuvo el producto entero.
+
+**Lo que sí corresponde, y es lo único**: que la confirmación de revocar lo diga
+(`NUCLEO/08` §3.1). Se declara, no se repara.
+
+**Lo que esto NO autoriza**: leerlo al revés para el caso de la moderación. Ahí la persona no
+recibió nada y el acto fue un error, así que la reparación del §2.3 sigue intacta.
+
 ---
 
 ## 3. El techo de días de trial · cierra `OD-TRIAL-01`

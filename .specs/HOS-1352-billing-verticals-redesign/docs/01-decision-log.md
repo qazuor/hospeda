@@ -2970,13 +2970,58 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-TRIAL-009 — Revocar un grant NO devuelve el trial: se declara en la confirmación y no se repara
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra** el defecto crítico #1 de la FASE 8-bis-3 (`F-8dA1-001`), que la 9-bis-3 dejó sin
+  arreglar a propósito por ser una decisión de producto.
+- **El caso**: recibir un *Free Forever* **consume el trial** de esa vertical —`T2` si estaba
+  corriendo, `T6` si todavía no—, porque las dos transiciones se disparan ante cualquier fuente
+  viva de clase `TÍTULO` y un `GRANT` lo es. **Revocar el grant no lo devuelve**: no hay
+  transición de vuelta y el §10.2 no admite excepciones. El beneficiario queda **sin grant, sin
+  suscripción y sin trial**, así que si quiere seguir paga desde el primer día — y el acto que lo
+  dejó así **lo firmamos nosotros**.
+- **Decisión**: **no se repara. Se declara.** La confirmación de revocar dice, además de que corta
+  el servicio, que **el trial ya está consumido y no vuelve** (`NUCLEO/08` §3.1).
+- **Las dos alternativas, y por qué se descartan:**
+  - **Que el grant no queme el trial** (`T2`/`T6` excluyen las fuentes `GRANT`): reabre por otra
+    puerta el defecto que la 9-bis-2 acababa de cerrar — conviven dos fuentes `TÍTULO` y el trial
+    deriva del plan vendible de `rank` más alto, que puede otorgar **más** que el plan anclado. Y
+    en `T2` el reloj sigue corriendo igual, así que el trial se pierde solo salvo que además se
+    pause, cosa que el §26 prohíbe.
+  - **Reparar con una cortesía** por los días no usados sobre la primera suscripción que tome: es
+    lo que el agente recomendó, aplicando el patrón del `V/11` §2.3. El owner eligió no hacerlo.
+- **La razón por la que esto NO contradice al `V/11` §2.3, y va escrita porque es el caso que más
+  se le parece.** Ahí el diseño repara *«porque el daño lo hicimos nosotros»*, y acá también lo
+  hicimos nosotros. La diferencia son **dos cosas que hay que leer juntas**:
+
+  | | la moderación equivocada (§2.3) | la revocación de un grant |
+  |---|---|---|
+  | qué fue el acto | **un error** | **una decisión legítima y deliberada**: se termina una concesión que nunca se debió |
+  | qué recibió la persona | **nada** | **la cobertura completa del plan anclado**, todo lo que duró el grant — estrictamente más de lo que un trial da |
+
+  **El trial no se perdió: se gastó, y se gastó recibiendo algo mejor.** Es la lectura literal de
+  por qué `T6` existe —quien está cubierto no necesita una prueba— y acá la persona **estuvo
+  cubierta de verdad**. Reparar sería devolverle una prueba a alguien que ya tuvo el producto
+  entero.
+- **Lo que esto NO autoriza**: leerlo al revés sobre la moderación equivocada. Ahí la persona **no
+  recibió nada** y el acto **fue un error**, así que la reparación del §2.3 —extensión por `T4` si
+  el trial vive, cortesía si venció— **sigue intacta**.
+- **El costo aceptado, dicho en voz alta**: la confirmación le avisa **al que revoca**, no al que
+  pierde. Quien recibe la revocación se entera cuando intenta seguir usando la plataforma.
+- **Origen**: la FASE 8-bis-3, hallazgo `F-8dA1-001`; la familia del trial y el grant de la
+  9-bis-3, que lo declaró abierto en vez de elegir; y la elección del owner del 2026-09-21 entre
+  las tres opciones que se le presentaron — eligió la 3 por encima de la 2, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **68** |
+| Decisiones tomadas | **69** |
 | De metodología | 10 |
-| Funcionales | 58 |
+| Funcionales | 59 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
