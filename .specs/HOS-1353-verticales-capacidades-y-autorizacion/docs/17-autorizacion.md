@@ -83,6 +83,17 @@ falla.
    rol. Sin esta línea, *«archivado responde no existe»* se lee como que lo responde
    **también al dueño**, y entonces la promesa no la puede cumplir nadie y `PB8` es
    inalcanzable.
+
+   **Y el paso 4 es sólo el primero de los dos que `PB8` tiene que pasar: el otro es el 6.**
+   `PB8` escribe estado y es auditable, así que pasa por los nueve (§3.5), y su población
+   declarada —*«el que quiere su ficha de vuelta sin pagar todavía»* (cap. 03 §9)— **no tiene
+   ninguna fuente de clase `TÍTULO`**: su conjunto efectivo es la **versión de piso**. Por la
+   precisión 5 de más abajo, el 5 la deja pasar y **el 6 es el único que decide**, así que
+   habilitarla en el 4 y no en el 6 dejaba la promesa exactamente igual de inalcanzable, una
+   puerta más adentro. La versión de piso la otorga hoy: es la **tercera** cosa de su lista
+   cerrada, *«recuperar lo suyo»* (cap. 02 §2.1). Y es lo mismo para **exportar**, que `V/02`
+   §4.2 regla 3 usa para justificar el borrado: es una lectura, no pasa por el 5 y **sí por los
+   otros ocho** (§3.5).
 2. **El estado de la persona va ANTES del permiso.** Al revés, una cuenta inhabilitada puede
    averiguar qué permisos tiene probando operaciones: las que contestan *«sin cobertura»* las
    tiene, las que contestan *«sin permiso»* no.
@@ -146,6 +157,13 @@ no otorga ninguna capacidad comercial. La regla del §64.10 —*«una acción en
 afectar otra accidentalmente»*— se sigue cumpliendo con el mismo rigor, y por la misma razón de
 fondo: **la resolución es por `user + vertical`**, así que declarar Alojamiento es resolver contra
 Alojamiento. Lo único que se movió es en qué paso se materializa el rechazo.
+
+> **Y la tercera cosa que la versión de piso otorga —*«recuperar lo suyo»*, cap. 02 §2.1— no abre
+> este cruce por otra puerta**, por dos razones independientes: es **por vertical**, porque hay una
+> versión de piso por vertical y la resolución es por `user + vertical`; y su objeto es **una ficha
+> propia**, que el **paso 4** ya exige antes de llegar al 6. El de Gastronomía sigue sin poder
+> tocar nada de Alojamiento, y el que sí tiene una ficha archivada en Alojamiento puede traerla a
+> borrador — que es distinto de publicarla, y publicar es `PB1`.
 
 ### 2.3 El guard, y su gemelo
 

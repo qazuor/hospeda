@@ -176,10 +176,35 @@ apunta (`12-contrato-de-cobertura.md` §2.5) para toda persona en toda vertical.
 trial, **sus entitlements y limits sí se guardan**: no hay de dónde derivarlos —no son los del
 premium ni los del más bajo— y el §10.3 sólo prohíbe copiar **los del trial**.
 
-Otorga exactamente lo mínimo para que alguien exista en la plataforma y pueda volver a contratar:
-**ninguna capacidad comercial**, y la de contratar una suscripción. Es lo que le da respuesta al
-paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`, sin los cuales **la
-*«recuperación posible»* del §21 no tiene por dónde ocurrir**.
+Otorga exactamente lo mínimo para que alguien exista en la plataforma, **pueda recuperar lo suyo**
+y pueda volver a contratar. Son **tres** cosas y la lista es cerrada:
+
+| # | qué otorga | para qué |
+|---|---|---|
+| 1 | **ninguna capacidad comercial** | es la mitad en negativo, y la vigila `G-R3` |
+| 2 | **contratar una suscripción** | sin esto la *«recuperación posible»* del §21 no tiene por dónde ocurrir |
+| 3 | **recuperar lo suyo**: sobre una ficha **propia**, verla, exportarla y **reactivarla a borrador** (`PB8`, cap. 03 §9) | sin esto la mitad de la defensa del hard delete del día 180 es inejecutable — §4.2, regla 3 |
+
+Es lo que le da respuesta al paso 5 a un `TRIAL_EXPIRED`, a un `Turista Free` y a un `Guest`.
+
+**La tercera se agrega porque `PB8` la necesita y nadie más se la puede dar, y hay que decir de
+dónde sale el agujero.** `PB8` es una operación de dominio: escribe estado del negocio y es
+auditable, así que pasa por **los nueve pasos** (cap. 17 §3.5). El capítulo 17 se ocupó de su
+**paso 4** —*«una ficha `ARCHIVED` acepta de su dueño verla, exportarla y reactivarla»*, §1.2
+precisión 1— y **no del 6**, sobre un diseño que declara dos veces que *«el paso 5 ya no rechaza a
+nadie y toda la defensa se apoya en el paso 6»* (cap. 17 §1.2 precisión 5, `12-contrato…` §2.5).
+Y su población declarada es **la que no tiene ninguna fuente de clase `TÍTULO`**: *«el que quiere
+su ficha de vuelta sin pagar todavía»* (cap. 03 §9). Su conjunto efectivo **es** esta versión, así
+que si acá no está, el paso 6 la rechaza — y como el hecho 1 del reloj de inactividad es *«un acto
+del dueño … reactivarla»* (cap. 01 §1.2, núcleo), esa persona no puede ejecutar **ninguno** de los
+cuatro reinicios y el día 180 le borra el contenido. **Es exactamente el sujeto del borrado.**
+
+**Y no toca `G-R3`, que es lo que hay que verificar antes de agregar nada acá.** El guard falla si
+esta versión otorga *«una clave de la clase comercial o un entitlement medido»* (cap. 20 §2).
+**Recuperar lo suyo no es ninguna de las dos**: no publica nada —`PB8` va a `DRAFT`, y publicar
+sigue siendo `PB1`, que sí es comercial—, no cuenta contra ningún limit, y su objeto es **una ficha
+que la persona ya tenía**, nunca una nueva. Es del mismo tipo que *«contratar una suscripción»*:
+una capacidad de **recuperación**, que es literalmente para lo que esta versión existe.
 
 > ⚠️ **Las dos versiones no vendibles son un punto único de falla, y por eso llevan guard.** Si
 > alguien le siembra una clave comercial a la de piso o a la de pre-trial, **toda la plataforma la
@@ -351,19 +376,29 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
    del correo normalizado**; lo personal se anonimiza con el resto. El hash **no** se anonimiza —
    es lo que hace que sobrevivir sirva de algo.
 3. **El día 90 no borra nada.** La ficha sale del sitio público, **el dueño la sigue viendo** y
-   puede exportarla o reactivarla suscribiéndose (`DEC-DATA-001`). Poder exportar antes es lo que
-   hace defendible el hard delete del día 180, y los avisos son correos transaccionales no
-   suprimibles: **tres**, uno antes del día 90, uno **al archivar** y uno antes del día 180
-   (cap. 07 §6, núcleo).
+   puede **exportarla o reactivarla a borrador sin pagar nada** (`DEC-DATA-001`, `PB8`). Poder
+   exportar antes es lo que hace defendible el hard delete del día 180, y los avisos son correos
+   transaccionales no suprimibles: **tres**, uno antes del día 90, uno **al archivar** y uno antes
+   del día 180 (cap. 07 §6, núcleo).
+
+   **La salida NO es «suscribiéndose», y decirlo así describía una salida más angosta que la que
+   el diseño tiene.** Ésa era la redacción de `DEC-DATA-001`, escrita cuando la única vuelta
+   imaginable era volver a contratar; la población declarada de `PB8` es literalmente la contraria
+   —*«el que quiere su ficha de vuelta sin pagar todavía»* (cap. 03 §9)—. Quien leyera la versión
+   vieja entendía que para recuperar la ficha hay que pagar, que es justo lo que `PB8` vino a
+   desmentir.
 
    **Y las dos salidas que esta regla ofrece son ejecutables, que antes de la 9-bis-3 valía
-   sólo para una.** *«Reactivarla suscribiéndose»* estaba prometido acá y en la nota de `PB4` y
-   **no lo ejecutaba ninguna tabla**: `ARCHIVED` no aparecía en la columna `desde` de ninguna
-   máquina del programa, así que por la regla 1 del cap. 03 §1 (núcleo) reactivar era un
-   incidente y no una operación. Hoy lo ejecutan **`PB7`** —sola, cuando la cobertura vuelve— y
-   **`PB8`** —a pedido del dueño, hacia `DRAFT`— (cap. 03 §9). La frase importa entera: **el hard
-   delete del día 180 se defiende con las dos salidas, y la mitad que faltaba era justamente la
-   que el suscripto necesita.**
+   sólo para una y hasta la 9-bis-4 valía sólo a medias para la otra.** Reactivar estaba prometido
+   acá y en la nota de `PB4` y **no lo ejecutaba ninguna tabla**: `ARCHIVED` no aparecía en la
+   columna `desde` de ninguna máquina del programa, así que por la regla 1 del cap. 03 §1 (núcleo)
+   reactivar era un incidente y no una operación. Hoy lo ejecutan **`PB7`** —sola, cuando la
+   cobertura vuelve **o cuando el cupo vuelve a alcanzar**— y **`PB8`** —a pedido del dueño, hacia
+   `DRAFT`— (cap. 03 §9). **Y desde esta pasada el dueño tiene con qué ejecutar `PB8`**: la
+   versión de piso otorga *«recuperar lo suyo»* (§2.1), sin lo cual el paso 6 de la autorización
+   rechazaba a la única población para la que esta salida existe. La frase importa entera: **el
+   hard delete del día 180 se defiende con las dos salidas, y para el sujeto del borrado las dos
+   tienen que ser alcanzables, no sólo estar escritas.**
 4. **La vuelta reinicia el reloj, y el reinicio cuelga del hecho, no de la transición.** Lo que
    reinicia la inactividad es **`cubierto` pasando a verdadero** (cap. 01 §1.2, hecho 2), aunque
    `PB7` no llegue a disparar porque el cupo no alcanza. Sin esta regla, el que reanuda con un

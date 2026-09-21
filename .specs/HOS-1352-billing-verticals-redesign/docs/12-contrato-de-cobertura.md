@@ -261,10 +261,13 @@ no tuviera respuesta para el caso más común del sistema era el mismo defecto q
 1. **No otorga cobertura.** Es de clase `BASE` (§2.4), así que `cubierto` sigue siendo falso para
    un `TRIAL_EXPIRED`, `PB2` sigue disparando cuando el trial vence, y el criterio que el §5.1 le
    pone a la implementación de arranque —*«un trial vence de verdad»*— sigue en pie.
-2. **No otorga ninguna clave comercial.** La versión de piso otorga lo mínimo para existir y para
-   volver a contratar. Es el mismo punto único de falla que la versión de pre-trial, y lo vigila el
+2. **No otorga ninguna clave comercial.** La versión de piso otorga lo mínimo para existir,
+   **recuperar lo suyo** y volver a contratar — las **tres** cosas de su lista cerrada
+   (`V/02` §2.1). Es el mismo punto único de falla que la versión de pre-trial, y lo vigila el
    **mismo guard**: `G-R3` se comprueba sobre las dos versiones no vendibles de cada vertical, no
-   sobre una.
+   sobre una. **La tercera no lo toca**: traer a borrador una ficha propia archivada (`PB8`) no
+   publica, no cuenta contra ningún limit y no alcanza una ficha ajena, así que no es ni una clave
+   comercial ni un entitlement medido.
 3. **No es un `tipo` que billing resuelva.** El piso lo resuelve verticales, que es de quien son
    las dos tablas de la versión. Billing no conoce `BASE`.
 

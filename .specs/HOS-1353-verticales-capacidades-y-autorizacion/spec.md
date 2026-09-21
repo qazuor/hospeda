@@ -151,7 +151,9 @@ Tres precisiones que el orden hace cumplir:
 - **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
   inexistente son indistinguibles desde afuera; decir *«no es tuyo»* confirma que el id existe.
   **Para su dueño no**: una ficha `ARCHIVED` le acepta verla, exportarla y reactivarla (`PB8`),
-  que es lo que `DEC-DATA-001` promete (cap. 17 §1.2, precisión 1).
+  que es lo que `DEC-DATA-001` promete (cap. 17 §1.2, precisión 1). **Y le alcanza el paso 6
+  aunque no pague nada**, porque la versión de piso otorga *«recuperar lo suyo»* (cap. 02 §2.1):
+  sin eso la promesa era inejecutable justo para la población a la que se le borra el contenido.
 - **El estado de la persona va antes del permiso**, porque al revés una cuenta inhabilitada puede
   averiguar qué permisos tiene probando operaciones.
 - **Los limits van últimos** porque son los únicos que necesitan contar.
@@ -251,6 +253,11 @@ ninguna fuente en el paso 5 y el paso le niega **la operación de suscribirse**,
 forma de volver a tener un título: queda afuera para siempre (contrato §2.5). Y el piso **no
 devuelve `cubierto` a verdadero** —es de clase `BASE`, no `TÍTULO`—, así que `PB2` sigue disparando
 cuando el trial vence.
+
+**Y otorga TRES cosas, no dos** (cap. 02 §2.1): ninguna capacidad comercial, contratar una
+suscripción, y **recuperar lo suyo** —ver, exportar y traer a borrador una ficha propia archivada
+(`PB8`)—. La tercera es la que vuelve ejecutable la defensa del hard delete del día 180 para quien
+no vuelve a pagar, que es exactamente su sujeto.
 
 Con eso se construye y se prueba **entero**: la autorización recorre sus nueve pasos, la máquina de
 publicación tiene vivo su `PB2` alimentado por `T3`, el reconciliador de excedentes corre disparado
