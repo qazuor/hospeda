@@ -13,7 +13,7 @@ Esto incluye los comandos existentes y los candidatos aceptados del backlog:
 Los P0 `hops recap` e `hops issue-preflight`, y los P1 `hops context`,
 `hops smoke-plan` y `hops verify --changed`, más `hops handoff --plan`, están
 implementados y validados en el worktree. `/hops-recap` queda como capa
-analítica sobre `hops recap`. La suite completa actual es 294/294 tests y 724
+analítica sobre `hops recap`. La suite completa actual es 299/299 tests y 737
 assertions; faltan únicamente gates E2E que requieren servicios reales y las
 mutaciones explícitas de cierre.
 

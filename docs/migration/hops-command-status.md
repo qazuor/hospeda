@@ -8,8 +8,8 @@ Linear, GitHub, Docker/Postgres, servidores y worktrees reales.
 
 ## Comandos implementados
 
-La suite completa de `scripts/client-tools` quedó en **294 tests pasados, 0
-fallos y 724 assertions** después de agregar los binarios standalone de los
+La suite completa de `scripts/client-tools` quedó en **299 tests pasados, 0
+fallos y 737 assertions** después de agregar los binarios standalone de los
 wrappers `gentle-status` y `gentle-sdd-status`. Esto valida contratos y
 parsing locales; no reemplaza los gates E2E que requieren Docker, worktrees,
 servidores o GitHub real.
@@ -42,7 +42,7 @@ servidores o GitHub real.
 
 | Candidato | Qué resolvería | Decisión preliminar |
 |---|---|---|
-| `verify --changed` | ejecutar sólo guards/tests afectados por rutas modificadas | implementado; falta validación con diffs reales |
+| `verify --changed` | ejecutar sólo guards/tests afectados por rutas modificadas | validado: baseline, filtros explícitos y working-directory; suite tooling 299/299 |
 | `guard` | agrupar guards estáticos rápidos con exit code uniforme | implementar después de medir duplicación con `verify` |
 | `quality-check` | composición de formato, guards, typecheck y tests | probablemente alias/composición, no otro motor |
 | `docs-check` | validar frontmatter, enlaces y convenciones documentales | implementar sólo reglas deterministas claras |
