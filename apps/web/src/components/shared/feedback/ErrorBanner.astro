@@ -7,6 +7,7 @@
  */
 
 import { RefreshIcon, ChatIcon } from '@repo/icons';
+import { markResponseDegraded } from '@/lib/cache/response-cache';
 import { isDevelopment } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
@@ -28,6 +29,22 @@ interface Props {
 }
 
 const { locale, message, error, entityName, class: className } = Astro.props;
+
+/*
+ * This response is showing a failure state, so it must not be stored by a
+ * shared cache (HOS-1154). Middleware Step 11a strips the public
+ * `Cache-Control` the page declared in its frontmatter — before the fetch it
+ * depends on had resolved, and therefore before anyone could know this banner
+ * would be reached.
+ *
+ * The call belongs HERE, not in the 18 pages that render this component. Astro
+ * runs a component's frontmatter if and only if the component is actually
+ * rendered, so "the page shows an error" and "the response is marked degraded"
+ * are one event rather than two things someone has to keep in sync. A page that
+ * forgot would have to forget the banner itself.
+ */
+markResponseDegraded({ locals: Astro.locals });
+
 const t = createT(locale);
 
 let resolvedMessage: string;

@@ -138,6 +138,34 @@ declare namespace App {
          */
         cacheTags: Set<string>;
 
+        /**
+         * Whether this render produced a DEGRADED page — one showing a failure
+         * state (an error banner) instead of the content it was asked for
+         * (HOS-1154).
+         *
+         * The counterpart to {@link cacheTags}, and collected the same way and
+         * for the same reason: a listing decides its cacheability in the FIRST
+         * lines of its frontmatter, long before the fetch it depends on has
+         * resolved. Nothing the page could write at that point knows whether
+         * the render is about to fail, so the answer has to arrive later, from
+         * whatever part of the render discovers it — and middleware applies it
+         * after `next()`, when it is finally known.
+         *
+         * Degraded SSR answers **200 OK** (the page rendered; its data did
+         * not), so status alone cannot carry this. Without the flag Cloudflare
+         * stored "No pudimos cargar…" under the catalog's full TTL and kept
+         * serving it for up to 2h after the API recovered — tag purges fire on
+         * entity WRITES, and fixing an API is not a write.
+         *
+         * Do NOT set this from a page. It is raised by the components that draw
+         * the failure state (`markResponseDegraded` in
+         * `src/lib/cache/response-cache.ts`), which is what makes it impossible
+         * for a page to render an error and forget to degrade: the mark lives
+         * inside the thing being rendered, not in a step someone has to
+         * remember.
+         */
+        responseDegraded: boolean;
+
         // NOTE (HOS-369 WB0-1): there is deliberately no `cspNonce` here
         // anymore. Inline scripts/styles are allowed by the sha256 of their own
         // content, computed per response in middleware — a nonce that reaches
