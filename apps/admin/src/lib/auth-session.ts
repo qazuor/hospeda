@@ -112,25 +112,45 @@ function extractLanguageWeb(rawSettings: unknown): string | null {
  * yields roles/permissions. A failing `/auth/me` is non-fatal (empty roles,
  * empty permissions).
  *
- * @param params - RO: `{ apiUrl, cookieHeader }`.
+ * **HOS-1153 — why the internal-request secret belongs here.** This function
+ * runs SERVER-side (it is the body of a `createServerFn`), so every admin user
+ * reaches the API from the same container. The API sees the container's private
+ * address on the socket and no `cf-connecting-ip`/`x-forwarded-for`, so it keys
+ * the rate-limit bucket as `proxy:<admin-container-ip>` — ONE bucket for the
+ * whole panel rather than one per operator. Sending the shared
+ * `X-Internal-Request` secret is exactly the fix HOS-103 shipped for `apps/web`:
+ * the API recognises the traffic as trusted server-to-server and exempts it.
+ * Fails safe — no secret configured means no header and therefore no exemption,
+ * never an open bypass.
+ *
+ * @param params - RO: `{ apiUrl, cookieHeader, internalRequestSecret? }`. The
+ *   secret is optional: when absent (local dev, or an environment that has not
+ *   configured it) the calls go out unchanged and are rate-limited normally.
  * @returns The resolved {@link AuthState}; `UNAUTHENTICATED_STATE` on any failure.
  */
 export async function resolveAuthSession({
     apiUrl,
-    cookieHeader
+    cookieHeader,
+    internalRequestSecret
 }: {
     readonly apiUrl: string;
     readonly cookieHeader: string;
+    readonly internalRequestSecret?: string | undefined;
 }): Promise<AuthState> {
     try {
+        const headers: Record<string, string> = { cookie: cookieHeader };
+        if (internalRequestSecret) {
+            headers['X-Internal-Request'] = internalRequestSecret;
+        }
+
         const [sessionResponse, meResponse] = await Promise.all([
             fetch(`${apiUrl}/api/auth/get-session`, {
-                headers: { cookie: cookieHeader }
+                headers
             }),
             // Non-fatal: a failing /auth/me must neither reject the pair nor
             // fail auth — fall back to `null` and empty permissions.
             fetch(`${apiUrl}/api/v1/public/auth/me`, {
-                headers: { cookie: cookieHeader }
+                headers
             }).catch(() => null)
         ]);
 
@@ -212,7 +232,12 @@ export const fetchAuthSession = createServerFn({ method: 'GET' }).handler(
             throw new Error('HOSPEDA_API_URL environment variable is required');
         }
         const cookieHeader = request.headers.get('cookie') || '';
+        // HOS-1153: read straight off `process.env`, like `HOSPEDA_API_URL`
+        // above. This handler only ever runs on the server, and the var carries
+        // no `VITE_` prefix, so the value never reaches the browser bundle.
+        // Optional by design — unset means no header and normal rate limiting.
+        const internalRequestSecret = process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
 
-        return resolveAuthSession({ apiUrl, cookieHeader });
+        return resolveAuthSession({ apiUrl, cookieHeader, internalRequestSecret });
     }
 );

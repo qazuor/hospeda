@@ -94,6 +94,21 @@ export const AdminEnvSchema = z.object({
         'API base URL for server-side requests (server functions)'
     ),
 
+    // HOS-1153: shared secret sent as `X-Internal-Request` on the two session
+    // reads `resolveAuthSession` makes server-side, so the API exempts them
+    // from its per-IP rate limit instead of collapsing every admin operator
+    // into one `proxy:<container-ip>` bucket (the HOS-103 fix, extended here).
+    // Server-only and deliberately un-prefixed, so Vite never inlines it into
+    // the browser bundle. Optional: unset means no header and therefore no
+    // exemption — it fails safe, never open.
+    HOSPEDA_INTERNAL_REQUEST_SECRET: z
+        .string()
+        .min(32)
+        .optional()
+        .describe(
+            'Shared secret exempting the admin server functions from the API rate limit; must equal the API and web values'
+        ),
+
     // Authentication
     VITE_BETTER_AUTH_URL: z.string().min(1).describe('Better Auth URL for authentication'),
 

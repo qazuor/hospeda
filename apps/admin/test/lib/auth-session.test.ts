@@ -263,4 +263,151 @@ describe('fetchAuthSession (HOS-33 T-004 — getWebRequest() -> getRequest() ren
         expect(result.isAuthenticated).toBe(false);
         expect(result.userId).toBeNull();
     });
+
+    it('forwards HOSPEDA_INTERNAL_REQUEST_SECRET from process.env onto both reads (HOS-1153)', async () => {
+        // Arrange
+        const SECRET = 'an-admin-internal-request-secret-32ch';
+        const previous = process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
+        process.env.HOSPEDA_INTERNAL_REQUEST_SECRET = SECRET;
+        getRequestMock.mockReturnValue(
+            new Request('http://localhost/', { headers: { cookie: 'session=valid' } })
+        );
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(ADMIN_SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u11', emailVerified: true } });
+            }),
+            http.get(ADMIN_ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        try {
+            await fetchAuthSession();
+        } finally {
+            if (previous === undefined) {
+                delete process.env.HOSPEDA_INTERNAL_REQUEST_SECRET;
+            } else {
+                process.env.HOSPEDA_INTERNAL_REQUEST_SECRET = previous;
+            }
+        }
+
+        // Assert: BOTH upstream calls carry it, not just the first one.
+        expect(seen.session).toBe(SECRET);
+        expect(seen.me).toBe(SECRET);
+    });
+});
+
+/**
+ * HOS-1153 — the admin's session reads run server-side, so without this header
+ * every operator shares one `proxy:<admin-container-ip>` rate-limit bucket on
+ * the API. These pin the header's presence, its absence when unconfigured, and
+ * that it never displaces the cookie.
+ */
+describe('resolveAuthSession internal-request header (HOS-1153)', () => {
+    const SECRET = 'a-shared-internal-request-secret-32ch';
+
+    it('attaches X-Internal-Request to get-session AND /auth/me when given a secret', async () => {
+        // Arrange
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u12' } });
+            }),
+            http.get(ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        await resolveAuthSession({
+            apiUrl: API,
+            cookieHeader: 'session=valid',
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(seen.session).toBe(SECRET);
+        expect(seen.me).toBe(SECRET);
+    });
+
+    it('omits the header entirely when no secret is configured (fails safe)', async () => {
+        // Arrange
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u13' } });
+            }),
+            http.get(ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        // Assert
+        expect(seen.session).toBeNull();
+        expect(seen.me).toBeNull();
+    });
+
+    it('omits the header when the secret is an empty string', async () => {
+        // Arrange: an empty value is a misconfiguration, not a credential, and
+        // the API's comparison would reject it on every single request.
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.session = request.headers.get('x-internal-request');
+                return HttpResponse.json({ user: { id: 'u14' } });
+            }),
+            http.get(ME_URL, ({ request }) => {
+                seen.me = request.headers.get('x-internal-request');
+                return HttpResponse.json({ success: true, data: { actor: { permissions: [] } } });
+            })
+        );
+
+        // Act
+        await resolveAuthSession({
+            apiUrl: API,
+            cookieHeader: 'session=valid',
+            internalRequestSecret: ''
+        });
+
+        // Assert
+        expect(seen.session).toBeNull();
+        expect(seen.me).toBeNull();
+    });
+
+    it('still forwards the cookie alongside the internal-request header', async () => {
+        // Arrange: the secret must ADD a header, never replace the cookie —
+        // dropping it would resolve every session read as a guest.
+        const seen: Record<string, string | null> = {};
+        server.use(
+            http.get(SESSION_URL, ({ request }) => {
+                seen.cookie = request.headers.get('cookie');
+                return HttpResponse.json({ user: { id: 'u15' } });
+            }),
+            http.get(ME_URL, () =>
+                HttpResponse.json({ success: true, data: { actor: { permissions: [] } } })
+            )
+        );
+
+        // Act
+        const result = await resolveAuthSession({
+            apiUrl: API,
+            cookieHeader: 'session=valid',
+            internalRequestSecret: SECRET
+        });
+
+        // Assert
+        expect(seen.cookie).toContain('session=valid');
+        expect(result.isAuthenticated).toBe(true);
+    });
 });

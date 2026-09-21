@@ -81,6 +81,12 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
             VITE_ADMIN_URL: import.meta.env.VITE_ADMIN_URL,
             HOSPEDA_API_URL: import.meta.env.HOSPEDA_API_URL ?? process.env.HOSPEDA_API_URL,
+            // HOS-1153. Same server-only shape as HOSPEDA_API_URL above: no
+            // VITE_ prefix, so Vite does not inline it and the value exists
+            // only where `process.env` does.
+            HOSPEDA_INTERNAL_REQUEST_SECRET:
+                import.meta.env.HOSPEDA_INTERNAL_REQUEST_SECRET ??
+                process.env.HOSPEDA_INTERNAL_REQUEST_SECRET,
             VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',
             VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
