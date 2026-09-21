@@ -314,7 +314,7 @@
                             "title": "Implementar comandos client-tools existentes",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Mantener todos los comandos del registro con binarios, wrappers y tests.",
-                            "notes": "26 comandos registrados; cada uno tiene contraparte `hops-*` en OpenCode (30 wrappers contando artifact-create/list/publish/state). Gate95: stats --json también validado desde hospeda-staging sin mutaciones.",
+                            "notes": "Gate136: el registro expone 29 comandos con 29 wrappers standalone `hops-*` y el binario base `hops` (30 entradas `bin`); package.json y archivos quedaron alineados, sin faltantes ni extras. Gate95: stats --json también validado desde hospeda-staging sin mutaciones.",
                             "done": true
                         },
                         {
@@ -322,7 +322,7 @@
                             "title": "Usar verify --changed",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Ejecutar verificaciones y tests sólo de paquetes afectados.",
-                            "notes": "Gate128: `BASE_SHA`, filtros explícitos y working-directory corregidos. `verify --changed` completo termina sin tests de apps/packages no afectados; client-tools y server-tools quedan en 299 tests, 0 fallos, 737 assertions. Hubo un timeout aislado bajo ejecución encadenada, pero la repetición completa pasó. El agente debe usar verify antes de verificar manualmente.",
+                            "notes": "Gate128: `BASE_SHA`, filtros explícitos y working-directory corregidos. `verify --changed` completo termina sin tests de apps/packages no afectados; client-tools pasó 299 tests/737 assertions y server-tools 334 tests/501 assertions, todos sin fallos. Hubo un timeout aislado bajo ejecución encadenada, pero las repeticiones completas pasaron. El agente debe usar verify antes de verificar manualmente.",
                             "done": true
                         },
                         {
@@ -434,8 +434,8 @@
                             "title": "Restaurar wrappers a staging",
                             "category": "CLI, Linear, issues, worktrees",
                             "description": "Apuntar wrappers globales a `hospeda-staging` después de integrar cambios.",
-                            "notes": "Integrado en hospeda-staging (3c7bbac64), suite 411/411 y wrappers Fish restaurados al checkout operativo. context --json y env --drift --json pasaron; el E2E de wt-create sigue pendiente.",
-                            "done": true
+                            "notes": "Gate132: no se puede marcar como integrado. El `hospeda-staging` actual aún no contiene los scripts/wrappers nuevos; el alcance y orden están en docs/migration/staging-promotion-manifest.md. Debe promoverse el paquete operativo y repetirse `hops update`, `context`, `env --drift` y el E2E de wt-create.",
+                            "done": false
                         },
                         {
                             "id": "template-lifecycle",
