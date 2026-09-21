@@ -3278,3 +3278,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `wt-up` admite `HOPS_ENV_COPY_SCRIPT` para usar el reconciliador versionado
   mientras staging incorpora el nuevo copy-env. El runner cerró los procesos al
   terminar la sesión; una prueba de persistencia 24/7 queda pendiente.
+
+## Gate 158 · Cleanup del E2E sintético
+
+- `wt-remove --force` detuvo los tres procesos, eliminó la base
+  `worktree_hospeda_e2e_template_20260921`, quitó el worktree y borró su rama
+  local de prueba.
+- No quedaron servidores ni recursos de ese E2E; los worktrees reales y los
+  backups de templates permanecen intactos.
