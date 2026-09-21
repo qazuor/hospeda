@@ -3055,3 +3055,15 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El checkout operativo sigue limpio y alineado con `origin/staging`, pero la
   prueba de template debe repetirse cuando el metadata Git sea escribible. No
   se forzó el fetch ni se modificó la base.
+
+## Gate 132 · Dependencia de promoción a staging
+
+- La comparación read-only mostró que `hospeda-staging` está en el commit
+  `60a39dae2` y todavía no contiene `scripts/worktree/template.sh`, aunque sí
+  contiene el wrapper antiguo `scripts/client-tools/src/commands/db/update-template.ts`.
+- Por eso el checkout operativo no puede ejecutar el lifecycle nuevo de
+  candidata/manifest/fingerprint. No es una falla de Postgres ni se debe
+  corregir copiando archivos manualmente en `hospeda-staging`.
+- Dependencia explícita: promover primero los cambios versionados del
+  worktree de migración a `staging`; después repetir `hops update`, el status
+  del template y el E2E completo desde el checkout operativo.
