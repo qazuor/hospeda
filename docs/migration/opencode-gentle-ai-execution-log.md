@@ -3200,3 +3200,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - El aumento respecto del conteo anterior corresponde al test de regresión que
   comprueba que el `bin` publicado, el registry y los wrappers físicos estén
   alineados.
+
+## Gate 152 · Repetición post-publicación
+
+- La repetición completa posterior a la publicación mantuvo `client-tools` en
+  **300 tests, 0 fallos y 738 assertions**.
+- `server-tools` mantuvo **334 tests, 0 fallos y 501 assertions**.
+- `bunx tsc --noEmit` pasó en ambos paquetes.
+- No se ejecutaron instalaciones, mutaciones externas ni cambios de branches.
