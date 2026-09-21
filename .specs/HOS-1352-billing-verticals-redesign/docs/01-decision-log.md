@@ -3673,13 +3673,42 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-GRANT-009 — «A lo sumo un grant vivo por beneficiario» lo garantiza la base, no los nueve consumidores
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El contexto**: con `revocado_en` (`DEC-GRANT-008`), un beneficiario puede acumular **N filas
+  revocadas** y ninguna clave lo impide. *«Grant vivo»* se resuelve hoy mirando
+  `revocado_en IS NULL`, así que las revocadas no molestan **mientras ese filtro esté en todos
+  lados** — y el inventario dice que hoy son **nueve consumidores**.
+- **Decisión**: **un `UNIQUE` parcial sobre beneficiario, restringido a las filas vivas.** La base
+  rechaza un segundo grant vivo para el mismo beneficiario.
+- **El motivo**: convierte *«hay a lo sumo uno vivo»* en algo que **la base garantiza** en vez de
+  algo que nueve lugares tienen que recordar. **Si un consumidor olvida el filtro, encuentra a lo
+  sumo una fila viva y no dos**, que es la diferencia entre un resultado incompleto y uno falso.
+  Y el precedente es de esta misma vuelta: **`F-8eB3-002` existió porque *«el grant sigue vivo»* se
+  daba por sabido sin que nada lo garantizara**, y el programa tiene medido que los inventarios se
+  olvidan —la única lista que existía antes **quedó corta en el mismo commit que creó su sexto
+  miembro**—.
+- **Por qué no rompe ningún caso contemplado**: el programa ya decidió que el grant es **un
+  instrumento con un ancla POR VERTICAL**, así que la multiplicidad vive en
+  `permanent_grant_vertical` y no en el grant. **Un segundo grant vivo para la misma persona no
+  tiene significado escrito en ningún lado.**
+- **El costo aceptado**: si algún día apareciera un caso legítimo de dos grants vivos simultáneos,
+  la restricción es **difícil de revertir** sobre datos ya escritos. Se acepta porque hoy ese caso
+  no existe en ningún capítulo.
+- **Origen**: la FASE 9-bis-4, familia del grant y el addon, pregunta 2 de su rastro
+  (`21-fase-9-bis-4/rastro-ce52dce5f.md`), y la elección del owner del 2026-09-21 entre las tres
+  opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **83** |
+| Decisiones tomadas | **84** |
 | De metodología | 11 |
-| Funcionales | 72 |
+| Funcionales | 73 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
