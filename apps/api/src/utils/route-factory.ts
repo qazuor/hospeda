@@ -153,7 +153,7 @@ const hasCoercion = (fieldSchema: z.ZodTypeAny): boolean => {
  * These schemas should NOT be processed by createOpenAPISchema as they need
  * their coercion logic preserved for runtime validation
  */
-const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
+export const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
     if (!(schema instanceof z.ZodObject)) {
         return false;
     }
