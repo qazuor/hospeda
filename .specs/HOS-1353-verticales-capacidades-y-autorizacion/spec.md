@@ -196,11 +196,17 @@ si ya venció, la reparación es un instrumento de la otra épica.
 ### 3.10 El excedente
 
 **No se dispara por evento: se dispara por condición** — cuando el conjunto efectivo de un
-`user + vertical` se recalcula y algo bajó. Enumerar puntos de invocación es cómo se olvida el
-séptimo.
+`user + vertical` se recalcula y **dejó de coincidir con el límite, en cualquiera de las dos
+direcciones**. Enumerar puntos de invocación es cómo se olvida el séptimo.
 
 **Nunca borra**: archiva, despublica o deshabilita. **Cae lo más reciente primero**, y el criterio
 va escrito en el aviso.
+
+**Y vuelve primero lo que cayó al final**, hasta llenar el cupo, con el criterio escrito en el
+aviso también. Es el mismo criterio recorrido al revés, no un segundo criterio: con él **lo que
+queda arriba depende sólo del límite y no del camino**. Sin esa mitad, el que vuelve a subir de
+plan paga el grande y recibe el chico, porque su cobertura nunca se interrumpió y no hay cambio
+que disparar (`DEC-DATA-003`).
 
 **La ventana para elegir existe sólo cuando la fecha se sabía.** Prometer una ventana que a veces
 no existe es peor que no prometerla: cuando no la hay, el aviso dice **qué se hizo** y cómo

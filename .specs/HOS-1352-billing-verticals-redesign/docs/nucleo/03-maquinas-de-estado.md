@@ -98,9 +98,13 @@ máquina de estados y una convención.
    sola fila**. **Que el tercero y el segundo se cumplan a la vez —lo que pasa al revocar, en el
    scope `VERTICAL_SUBSCRIPTION`— no es lo que esta regla prohíbe**: son dos eventos de la misma
    fila y con el mismo destino, no dos filas sobre un par. **Y `PB7` y `PB8` (`V/03` §9)
-   salen las dos de `ARCHIVED`**, que desde la FASE 9-bis-3 dejó de ser un estado sin salida: sus
-   eventos son **el cambio de `cubierto`** y **el acto del dueño de reactivarla**, distintos entre
-   sí y de todo lo demás, así que cada uno de esos dos pares tiene **una sola** fila. **Y `S20` y
+   salen las dos de `ARCHIVED`**, que desde la FASE 9-bis-3 dejó de ser un estado sin salida: los
+   eventos de `PB7` son **dos** desde `DEC-DATA-003` —**el cambio de `cubierto`** y **que el cupo
+   vuelva a alcanzar sin que `cubierto` cambie**— y el de `PB8` es **el acto del dueño de
+   reactivarla**; los **tres** son distintos entre sí y de todo lo demás, así que cada uno de esos
+   **tres** pares tiene **una sola** fila. **Las dos ramas de `PB7` tampoco compiten entre ellas**:
+   son dos eventos de la misma fila con el mismo destino, igual que las dos de `PB2` y las dos de
+   `PB3`. **Y `S20` y
    `S21` (`B/03` §3.2) salen las dos de *«toda fila viva de complemento»***, que es el mismo
    `desde` escrito con las mismas palabras: sus eventos son **otorgar o anclar un grant** y **que
    su instancia llegue a `CANCELLED`**, distintos entre sí y de todo lo demás, y además **no se

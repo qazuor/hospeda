@@ -291,16 +291,16 @@ billing mueve varias publicaciones a la vez.
 |---|---|---|---|---|
 | PB1 | `DRAFT` | el dueño publica | `PUBLISHED` | **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha |
 | PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo |
-| PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero** | `PUBLISHED` | y el cupo alcanza |
+| PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza. **Es una disyunción de dos, simétrica a la de `PB2`** (`DEC-DATA-003`) |
 | PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | **relee la cobertura antes de archivar** (ver abajo). Sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) — y las dos cosas son ejecutables desde que existen `PB7` y `PB8` |
 | PB5 | `DRAFT` | N meses de **inactividad**, contado sobre `listing.inactiva_desde` (cap. 01 §1.2, núcleo; cap. 02 §2.5) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración. **Relee la cobertura antes de archivar**, igual que `PB4` |
 | PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2) |
-| **PB7** | `ARCHIVED` | **`cubierto` pasa a verdadero** | `PUBLISHED` | y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás |
+| **PB7** | `ARCHIVED` | **`cubierto` pasa a verdadero**, **o el cupo vuelve a alcanzar sin que `cubierto` cambie** | `PUBLISHED` | y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás, **con la misma disyunción y por la misma razón** (ver abajo) |
 | **PB8** | `ARCHIVED` | **el dueño la reactiva** | `DRAFT` | desde cualquier origen, incluido el de `PB5`. Es la mitad de `DEC-DATA-001` que se prometía en una nota y no ejecutaba ninguna tabla. **La autoriza la versión de piso**, que otorga *«recuperar lo suyo»* (cap. 02 §2.1): sin eso el paso 6 rechazaba a su única población, la que no paga |
 
-**`PB2` y `PB3` se disparan por el CAMBIO de `cubierto`, no por una lista de transiciones**, y ése
-es el arreglo: las dos listas estaban **congeladas** y se quedaron cortas apenas el diseño se
-movió. `PB2` enumeraba cuatro causas y **no conocía `S16`** —el alta cuyo primer cobro se
+**`PB2` y `PB3` se disparan por el CAMBIO de `cubierto` —o por el del cupo—, no por una lista de
+transiciones**, y ése es el arreglo: las dos listas estaban **congeladas** y se quedaron cortas
+apenas el diseño se movió. `PB2` enumeraba cuatro causas y **no conocía `S16`** —el alta cuyo primer cobro se
 rechaza—; `PB3` enumeraba tres y **no conocía `S2`**, así que **el que recontrataba después de
 cancelar pagaba y su ficha no volvía nunca** — y tampoco podía sacarla a mano, porque `PB1` sale
 sólo de `DRAFT`.
@@ -322,7 +322,32 @@ estos avisos se pierden lo declara el propio diseño en el otro consumidor de la
 (cap. 02 §3.2, regla 2).
 
 **Y el excedente queda como la única causa enumerada**, porque es la que **no** cambia `cubierto`:
-la persona sigue cubierta y lo que no le alcanza es el cupo. Por eso `PB3` pide las dos cosas.
+la persona sigue cubierta y lo que no le alcanza es el cupo.
+
+**Y por eso `PB3` y `PB7` tienen la misma disyunción, que es lo que faltaba: sin la segunda rama,
+el excedente entraba y no salía nunca.** El recorrido, porque es corto y termina en un borrado:
+un anfitrión con cinco fichas baja de Premium a Básico, el reconciliador le despublica tres por la
+segunda rama de `PB2`, y tres meses después **vuelve a Premium y paga el precio entero**. Su
+`cubierto` fue verdadero de punta a punta —un upgrade es una sucesión, y la predecesora emite
+hasta que `S17` la mata (`12-contrato…` §2.6)—, así que **no hay ningún cambio de `cubierto` que
+disparar**. Con `PB3` pidiendo sólo ese cambio, las tres se quedaban en
+`UNPUBLISHED_BY_BILLING`, desde donde no salía ninguna otra fila —`PB1` sale sólo de `DRAFT`—, el
+día 90 `PB4` las archivaba y el día 180 el hard delete les borraba el contenido. **Paga el plan
+más caro y recibe el más chico, indefinidamente y sin que nada lo señale** (`DEC-DATA-003`).
+
+**`PB7` la lleva también, y no es una extensión de la decisión sino su condición.** La mitad
+`UNPUBLISHED_BY_BILLING` del `desde` de `PB4` es exactamente la población del excedente: si `PB7`
+se quedara con el evento único, la ficha del excedente archivada el día 90 **tampoco** volvería, y
+el borrado del día 180 seguiría vivo un estado más adentro — que es lo que `DEC-DATA-002` declaró
+cerrado con *«vuelve sola por `PB7` y nunca se borra»*. La frase es verdadera para el que perdió
+cobertura y era falsa para el del excedente; con las dos disyunciones es verdadera para los dos.
+
+**Qué NO cambia, y conviene contarlo para que nadie lo recuente.** La rama nueva **no toca
+`cubierto`** —lo lee, no lo mueve—, así que no consume ni devuelve ningún trial (`T2`, `T5` y `T6`
+siguen colgando de las fuentes de clase `TÍTULO`, §2) y **no es el evento de activación**:
+restituir no es publicar, igual que en la rama vieja. Tampoco agrega pares a `G-R4`: son **dos
+eventos en la misma fila con el mismo destino**, no dos filas sobre un par — la misma forma que
+`PB2` ya tenía (cap. 03 §1 regla 7, núcleo).
 
 **`UNPUBLISHED_BY_BILLING` es un estado distinto de `DRAFT` a propósito.** Si billing bajara la
 ficha a `DRAFT`, al recuperar la cobertura no habría forma de saber cuáles republicar sin
@@ -332,6 +357,42 @@ publicar también las que el dueño había bajado él. La distinción es lo que 
 publicadas más recientemente**, hasta entrar en el límite, y **el criterio va escrito en el
 aviso** — si el cliente no puede leerlo, deja de ser predecible y se pierde el motivo por el que
 se eligió (`DEC-SUB-008`).
+
+### Cuáles vuelven, cuando el cupo no alcanza para todas
+
+**`PB3` y `PB7` compiten por el mismo cupo**, se disparan con el mismo hecho y en el mismo
+instante, y con cinco fichas abajo y lugar para tres **cuáles tres suben es una decisión de
+visibilidad pública**. Dejarla en el orden en que una implementación recorra dos tablas es, con las
+palabras del núcleo, *«exactamente la diferencia entre una máquina de estados y una convención»*.
+
+> **El criterio es el inverso exacto del de bajada: vuelve primero la que cayó al final.** Como
+> *«cae lo más reciente primero»* (`DEC-SUB-008`), eso es **la publicada menos recientemente entre
+> las que están abajo**, y se sigue subiendo hacia las más recientes hasta llenar el cupo.
+
+**Se elige el inverso y no un criterio propio por una razón que se puede verificar**: con él, el
+conjunto que queda publicado **depende sólo del cupo y no del camino**. Quien bajó de cinco a dos y
+volvió a cuatro termina con **exactamente** las cuatro que tendría si hubiera contratado cuatro de
+entrada. Cualquier otro orden hace que el resultado dependa de por cuántos planes pasó, que es lo
+contrario de predecible — y `V/15` §4.3 ya declaró por qué no se inventa un segundo criterio:
+*«dos criterios distintos para la misma clase de problema es cómo se vuelve impredecible»*.
+
+**El origen NO desempata, y es deliberado.** Una candidata en `ARCHIVED` y una en
+`UNPUBLISHED_BY_BILLING` entran en **la misma cola ordenada**, sin prioridad por el estado del que
+vienen. Lo único que las separa es **cuánto tardó nuestro reloj en archivar una y no la otra**, que
+es contabilidad nuestra y no algo que el dueño haya elegido; usarlo como criterio le haría depender
+la visibilidad de un detalle que no puede ver ni predecir. `PB7` **sí** mira su origen, pero para
+otra cosa: para no publicar el borrador de `PB5`, que nunca fue candidato.
+
+**El dato con el que se ordena ya existe y no pide columna nueva**: cuándo se publicó cada ficha,
+que es el mismo que la bajada necesita para decidir *«la más reciente»*. Sale del registro
+append-only de eventos de dominio (cap. 08 §1.2 y §1.3, núcleo), igual que el origen que `PB7`
+consulta.
+
+**Y va escrito en el aviso, por la misma razón que el de bajada.** `DEC-SUB-008` lo dice y `V/19`
+fila 8 lo obliga para el excedente: *«si el cliente no puede leerlo, deja de ser predecible y se
+pierde el motivo por el que se eligió»*. El espejo es la **fila 19** de `V/19` §4 y su correo está
+en el catálogo del cap. 07 §6 (núcleo). Las que no entran **no se borran** —su reloj se reinicia
+igual, §4.2 regla 4 del cap. 02—, pero quedan abajo, y el dueño tiene que poder saber por qué.
 
 ### `ARCHIVED` tiene salida, y son dos porque hay dos maneras de volver
 

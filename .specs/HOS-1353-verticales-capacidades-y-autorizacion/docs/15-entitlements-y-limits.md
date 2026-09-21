@@ -229,18 +229,32 @@ versión de plan nueva (`DEC-ARCH-001`).
 ### 4.2 No se dispara por evento: se dispara por condición
 
 Enumerar seis puntos de invocación es cómo se olvida el séptimo. **El reconciliador de excedentes
-se dispara cuando el conjunto efectivo de un `user + vertical` se recalcula, y actúa sólo si
-algo bajó.**
+se dispara cuando el conjunto efectivo de un `user + vertical` se recalcula, y actúa cuando el
+conjunto y el límite dejaron de coincidir — en las DOS direcciones.**
 
 Y no hace falta una lista nueva: **es la misma lista que invalida el caché** (cap. 02 §3.2), con
 sus siete entradas. Una lista, dos consumidores. Que a veces se dispare sin nada que hacer es
 gratis; que falte un disparo es una capacidad regalada o un límite incumplido.
 
+**Que actuara *«sólo si algo bajó»* era la mitad del trabajo, y la que faltaba costaba caro.** El
+que baja de plan recibe el enforcement en el acto; el que **vuelve a subir y paga el plan entero**
+no recibía nada: su `cubierto` nunca cambió —un upgrade es una sucesión y la cobertura no se
+interrumpe (`12-contrato…` §2.6)—, así que ninguna transición de publicación disparaba y sus
+fichas del excedente **se quedaban abajo para siempre**, hasta que el reloj de retención las
+archivaba y las borraba. **Paga el plan grande y recibe el chico** (`DEC-DATA-003`,
+`F-8eA2-001`). La dirección que faltaba es la que ejecuta la segunda rama de `PB3` y de `PB7`
+(cap. 03 §9).
+
+**Y no cambia el nombre ni el guard.** Sigue siendo *«el reconciliador de excedentes»* —lo nombran
+así `G5` (cap. 20 §2), el `12-contrato…` §3 y el cap. 02 §3.2— y `G5` sigue verificando lo mismo:
+*«ninguna fuente se apaga sin pasar por el reconciliador»*. Restituir **no es apagar una fuente**,
+así que la dirección nueva no le agrega ninguna obligación al guard ni cambia lo que cuenta.
+
 **El guard**: ninguna fuente se apaga sin pasar por el reconciliador. Se comprueba sobre los
 efectos declarados de las transiciones del capítulo 03, igual que el guard de roles del capítulo
 17 §4.4.
 
-### 4.3 Qué hace cuando algo bajó
+### 4.3 Qué hace cuando algo bajó, y qué hace cuando vuelve a alcanzar
 
 **Nunca borra.** Archiva, despublica o deshabilita — el §28.1 es explícito y el borrado definitivo
 le corresponde al reloj de retención del §25, no al enforcement.
@@ -249,6 +263,25 @@ le corresponde al reloj de retención del §25, no al enforcement.
 reciente primero, hasta entrar en el límite, y el criterio va escrito en el aviso.** Se
 generaliza a todo limit contable en vez de inventar un segundo criterio, porque dos criterios
 distintos para la misma clase de problema es cómo se vuelve impredecible.
+
+**Y para la dirección contraria no se inventa un segundo criterio tampoco: se recorre el mismo al
+revés.**
+
+> **Vuelve primero lo que cayó al final.** Como cae lo más reciente primero, sube **lo menos
+> reciente de lo que está abajo**, y se sigue subiendo hacia lo más reciente hasta llenar el cupo.
+> **El criterio va escrito en el aviso**, igual que el de bajada.
+
+**Es el mismo criterio y no uno nuevo, y eso se puede verificar en el resultado**: con el recorrido
+inverso, **lo que queda arriba depende sólo del límite y no del camino**. Quien bajó de cinco a dos
+y volvió a cuatro termina con exactamente las cuatro que tendría si hubiera contratado cuatro de
+entrada; con cualquier otro orden el resultado depende de por cuántos planes pasó, que es
+literalmente lo que `DEC-SUB-008` compró al escribir un criterio. **Y vale para todo limit
+contable**, no sólo para las fichas, por la misma generalización del párrafo de arriba.
+
+**El caso de las fichas tiene además dos orígenes y una sola cola.** `PB3` y `PB7` (cap. 03 §9)
+compiten por el mismo cupo: las candidatas de los dos estados entran **en la misma cola ordenada**,
+sin que el origen desempate. El desarrollo, con la razón, está en el cap. 03 §9, *«cuáles vuelven,
+cuando el cupo no alcanza para todas»*.
 
 ### 4.4 La ventana para elegir existe sólo cuando la fecha se sabía
 
@@ -263,6 +296,14 @@ se puede cuando no:
 **Prometer una ventana que a veces no existe es peor que no prometerla**: el cliente que no la
 recibe supone que hubo un error. Por eso la fila de abajo no intenta simular una — dice lo que
 pasó.
+
+**La restitución del §4.3 no entra en esta tabla, y no por omisión**: el §28.1 pide *«informar
+antes»* y *«dejar elegir»* sobre lo que se **quita**, y restituir no quita nada. Su aviso sale
+**después** y dice qué volvió y con qué criterio (`V/19` §4, fila 19). El único caso en que el
+dueño podría no querer lo que le devolvimos —una ficha que prefería no tener pública— lo resuelve
+él en un acto con **`PB6`**, *«el dueño despublica»* (cap. 03 §9), y el riesgo está aceptado por
+escrito en `DEC-DATA-003`. (Esa decisión nombra `PB1` para ese acto; `PB1` es la que **publica**,
+y la que despublica es `PB6`. Acá va la fila que ejecuta lo que la decisión describe.)
 
 ---
 
