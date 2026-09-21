@@ -525,8 +525,11 @@ y los tres preguntan lo mismo.
 > La diferida **no cubre a nadie hoy** —su suscripción está `CANCELLED` y una `CANCELLED` no emite
 > ninguna fuente ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.6)—, y la
 > vigente sí. Es la misma distinción que el §2.4 hace entre *«fila viva»* y *«fuente viva»*: el
-> instrumento existe y no está emitiendo. **Y la fila sigue apuntando a la predecesora**, que es
-> lo que la mantiene resoluble: la sucesora se alcanza por `sucedida_por`.
+> instrumento existe y no está emitiendo. **Y la fila sigue apuntando a la suscripción que
+> pausaba**, que es lo que la mantiene resoluble, con **dos** saltos posibles desde ahí: la
+> **sucesora** se alcanza por `sucedida_por` (`DEC-GRANT-007`), y el **alta nueva** de quien perdió
+> su plan se alcanza por **el beneficiario y la vertical** de esa misma fila, porque ahí no hubo
+> sucesión que declarar (`DEC-GRANT-010`, cap. 02 (billing) §2.4).
 
 #### El inventario de consumidores de «cortesía diferida»
 
