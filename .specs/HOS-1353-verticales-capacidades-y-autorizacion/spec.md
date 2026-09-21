@@ -58,7 +58,7 @@ y ninguno de ellos necesita leer uno de la épica de billing para estar completo
 | `17` | [autorización](./docs/17-autorizacion.md) | los nueve pasos, el scope estructural, actor ≠ sujeto, el rol que no se revoca |
 | `18` | [Partner](./docs/18-partner.md) | la presencia y la postulación |
 | `19` | [superficies](./docs/19-superficies.md) | Mi Cuenta, los mensajes de trial y de excedente, las postulaciones |
-| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **siete guards** |
+| `20` | [testing](./docs/20-testing.md) | las cuatro capas y **quince guards** |
 | `21` | [migración](./docs/21-migracion.md) | el trial ya consumido, y por qué no hay deuda de datos |
 | `22` | [lo legal](./docs/22-lo-legal.md) | las señales de identidad y el hash irreversible del correo |
 
@@ -150,6 +150,8 @@ Tres precisiones que el orden hace cumplir:
 
 - **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
   inexistente son indistinguibles desde afuera; decir *«no es tuyo»* confirma que el id existe.
+  **Para su dueño no**: una ficha `ARCHIVED` le acepta verla, exportarla y reactivarla (`PB8`),
+  que es lo que `DEC-DATA-001` promete (cap. 17 §1.2, precisión 1).
 - **El estado de la persona va antes del permiso**, porque al revés una cuenta inhabilitada puede
   averiguar qué permisos tiene probando operaciones.
 - **Los limits van últimos** porque son los únicos que necesitan contar.

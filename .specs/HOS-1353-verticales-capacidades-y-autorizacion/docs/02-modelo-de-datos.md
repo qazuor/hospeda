@@ -300,6 +300,11 @@ decorativa. Por eso `domain_event` guarda **referencias y campos que cambiaron, 
 
 ### 4.1 La lista
 
+**Los dos días se cuentan sobre la misma inactividad**, que es un término del núcleo y no una
+frase de esta tabla: cap. 01 §1.2 la define y enumera **los cuatro hechos que la reinician**. El
+que más importa acá es el segundo —**`cubierto` pasando a verdadero**—, porque es el que impide
+que el día 180 alcance a alguien que volvió.
+
 | | qué | por qué |
 |---|---|---|
 | **Se borra** al día 180 | el contenido publicable de la ficha (textos, fotos, FAQ, horarios), los borradores, las preferencias de la cuenta y las señales de identidad no bloqueantes (`DEC-TRIAL-004`) | es lo que el §25 llama operativo: sirve para prestar el servicio y el servicio terminó |
@@ -313,7 +318,7 @@ exactamente el desenlace que conservarla venía a evitar. Un hash sirve para lo 
 falta —«¿este correo ya consumió?», nunca «¿cuál era?»— y no hay nada que anonimizar en él. El
 capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
 
-### 4.2 Tres reglas que la lista necesita
+### 4.2 Cuatro reglas que la lista necesita
 
 1. **Anonimizar no es borrar la fila.** El evento conserva su tipo, su fecha, su entidad y su
    causa; lo que se reemplaza es el dato personal.
@@ -323,8 +328,31 @@ capítulo 22 §3 lo encontró y deja la pregunta legal formulada.
    es lo que hace que sobrevivir sirva de algo.
 3. **El día 90 no borra nada.** La ficha sale del sitio público, **el dueño la sigue viendo** y
    puede exportarla o reactivarla suscribiéndose (`DEC-DATA-001`). Poder exportar antes es lo que
-   hace defendible el hard delete del día 180, y los dos avisos previos son correos
-   transaccionales no suprimibles.
+   hace defendible el hard delete del día 180, y los avisos son correos transaccionales no
+   suprimibles: **tres**, uno antes del día 90, uno **al archivar** y uno antes del día 180
+   (cap. 07 §6, núcleo).
+
+   **Y las dos salidas que esta regla ofrece son ejecutables, que antes de la 9-bis-3 valía
+   sólo para una.** *«Reactivarla suscribiéndose»* estaba prometido acá y en la nota de `PB4` y
+   **no lo ejecutaba ninguna tabla**: `ARCHIVED` no aparecía en la columna `desde` de ninguna
+   máquina del programa, así que por la regla 1 del cap. 03 §1 (núcleo) reactivar era un
+   incidente y no una operación. Hoy lo ejecutan **`PB7`** —sola, cuando la cobertura vuelve— y
+   **`PB8`** —a pedido del dueño, hacia `DRAFT`— (cap. 03 §9). La frase importa entera: **el hard
+   delete del día 180 se defiende con las dos salidas, y la mitad que faltaba era justamente la
+   que el suscripto necesita.**
+4. **La vuelta reinicia el reloj, y el reinicio cuelga del hecho, no de la transición.** Lo que
+   reinicia la inactividad es **`cubierto` pasando a verdadero** (cap. 01 §1.2, hecho 2), aunque
+   `PB7` no llegue a disparar porque el cupo no alcanza. Sin esta regla, el que reanuda con un
+   plan más chico se queda con la ficha archivada **y con el reloj del día 180 corriendo**, que es
+   el mismo desenlace que la regla 3 viene a evitar.
+
+   **Su caso testigo es la pausa, y es la razón por la que estas dos reglas se escribieron
+   juntas.** Alguien pausa hasta 4 pausas-mes —unos 120 días, `B/03` §5—, `PB2` le baja la ficha
+   el primer día y `PB4` se la archiva el 90. El reloj **no se detiene** durante la pausa
+   —verticales no sabe que hay una pausa detrás, y `DEC-TRIAL-008` con el §4 del contrato deciden
+   que no lo sepa—, así que lo único que separa a ese cliente del borrado es que **120 < 180** y
+   que reanudar reinicie. Las dos cifras son configuración: la desigualdad es el invariante `D16`
+   (cap. 04 §3, núcleo) y la vigila un guard.
 
 ---
 

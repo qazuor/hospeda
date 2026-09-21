@@ -117,13 +117,15 @@ tope diario. Y falta la distinción que ordena todo lo demás.
 
 | clase | cuáles | se suprimen |
 |---|---|---|
-| **Transaccional, no suprimible** | aviso de aumento (§29), fallo de cobro y avisos del grace (§20, §42.3), vencimiento de trial (§10.7 pre), los dos avisos previos al borrado (`DEC-DATA-001`), confirmación de una operación que el cliente pidió, y el aviso que **precede** a una cancelación (`DEC-MAIL-001`) | **no**, salvo por §4.2 |
+| **Transaccional, no suprimible** | aviso de aumento (§29), fallo de cobro y avisos del grace (§20, §42.3), vencimiento de trial (§10.7 pre), los **tres** de la retención —los dos previos de `DEC-DATA-001` y el del archivado, §6—, confirmación de una operación que el cliente pidió, y el aviso que **precede** a una cancelación (`DEC-MAIL-001`) | **no**, salvo por §4.2 |
 | **Comercial, suprimible** | la campaña de recuperación post-trial del §10.7 (+1, +5, +15, +30, +60) | **sí** |
 
 **Mezclarlas es a la vez un problema legal y de reputación del dominio de envío**, y si se
-suprimen las dos juntas se dejan de mandar avisos obligatorios. Los dos avisos de
-`DEC-DATA-001` son el ejemplo exacto: si cayeran bajo el opt-out comercial, se dejaría de avisar
-justo a quien está por perder su contenido.
+suprimen las dos juntas se dejan de mandar avisos obligatorios. Los avisos de retención son el
+ejemplo exacto: si cayeran bajo el opt-out comercial, se dejaría de avisar justo a quien está
+por perder su contenido. **Y el del archivado es el que menos se puede suprimir de los tres**,
+porque su destinatario puede ser alguien que está **al día y pausado** (§6) y que no tiene
+ninguna otra forma de enterarse de que su ficha cambió de estado.
 
 ### 4.2 La jerarquía de supresión, en orden
 
@@ -205,8 +207,16 @@ Todos los schedules salen de la base (§42). Los valores de abajo son **defaults
 | reanudación tras pausa | transaccional | al reanudar. **Dice una sola cosa: qué día se le cobra** | `DEC-SUB-010` |
 | pausa por cortesía | transaccional | al otorgarla y al vencer; desambigua el correo del proveedor | `DEC-GRANT-003` |
 | pierde la cortesía al pausar | transaccional | antes de confirmar, y **el cliente elige** | `DEC-GRANT-004` |
-| retención | transaccional | antes del día 90 y antes del día 180 | `DEC-DATA-001` |
+| retención | transaccional | antes del día 90, **al archivar** y antes del día 180 | `DEC-DATA-001`; el del medio, `F-8cC1-001` |
 | **cambio de plan con una cuota en reintento** | transaccional | **antes de confirmar el cambio**, mientras la predecesora siga viva. **Vale igual si la cuota se paga a mano** —transferencia registrada por `MP1`, cap. 03 §7 (épica de billing)—: es la segunda puerta del mismo pago | cap. 12 §5.3 (épica de billing) |
+
+**Los avisos de retención son tres y no dos, y el del medio es el que faltaba.** Los dos de
+`DEC-DATA-001` se escribieron para alguien que se fue: uno le avisa que la ficha va a salir del
+sitio y el otro que el contenido se va a borrar. **El día 90 no avisaba nada**, y desde que una
+pausa del catálogo puede cruzarlo (`V/03` §9) el que se archiva puede ser un cliente al día que
+no canceló nada. El aviso al archivar dice las tres cosas que ese cliente necesita y ninguna
+estaba: **que no se borró nada**, **que vuelve sola cuando recupere la cobertura** (`PB7`) o a
+mano cuando quiera (`PB8`), y **desde cuándo se cuentan los 180**.
 
 **El último no es un aviso más: es la condición bajo la cual se aceptó la decisión.** Se decidió
 perdonar el período impago y **no cancelar la predecesora antes de tiempo** —cancelarla

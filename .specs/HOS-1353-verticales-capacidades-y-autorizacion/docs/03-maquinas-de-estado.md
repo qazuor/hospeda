@@ -292,9 +292,11 @@ billing mueve varias publicaciones a la vez.
 | PB1 | `DRAFT` | el dueño publica | `PUBLISHED` | **inmediato, sin revisión previa** (`DEC-TRIAL-005`): publicar es quedar visible, y es el evento que consume el trial en las verticales con ficha |
 | PB2 | `PUBLISHED` | **`cubierto` pasa a falso** | `UNPUBLISHED_BY_BILLING` | o el excedente tras un downgrade, que no cambia `cubierto` y sí el cupo |
 | PB3 | `UNPUBLISHED_BY_BILLING` | **`cubierto` pasa a verdadero** | `PUBLISHED` | y el cupo alcanza |
-| PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de inactividad | `ARCHIVED` | sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) |
-| PB5 | `DRAFT` | N meses sin actividad | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración |
+| PB4 | `PUBLISHED` o `UNPUBLISHED_BY_BILLING` | día 90 de **inactividad** (cap. 01 §1.2, núcleo) | `ARCHIVED` | sale del sitio público, **el dueño la sigue viendo** y puede exportarla o reactivarla (`DEC-DATA-001`) — y las dos cosas son ejecutables desde que existen `PB7` y `PB8` |
+| PB5 | `DRAFT` | N meses de **inactividad** (cap. 01 §1.2, núcleo) | `ARCHIVED` | `DEC-TRIAL-007`; `N` es configuración |
 | PB6 | `PUBLISHED` | el dueño despublica | `DRAFT` | y **no devuelve el trial** (§10.2) |
+| **PB7** | `ARCHIVED` | **`cubierto` pasa a verdadero** | `PUBLISHED` | y el cupo alcanza, **y el evento que la archivó dice que venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING`**. Es `PB3` un estado más atrás |
+| **PB8** | `ARCHIVED` | **el dueño la reactiva** | `DRAFT` | desde cualquier origen, incluido el de `PB5`. Es la mitad de `DEC-DATA-001` que se prometía en una nota y no ejecutaba ninguna tabla |
 
 **`PB2` y `PB3` se disparan por el CAMBIO de `cubierto`, no por una lista de transiciones**, y ése
 es el arreglo: las dos listas estaban **congeladas** y se quedaron cortas apenas el diseño se
@@ -319,6 +321,76 @@ publicar también las que el dueño había bajado él. La distinción es lo que 
 publicadas más recientemente**, hasta entrar en el límite, y **el criterio va escrito en el
 aviso** — si el cliente no puede leerlo, deja de ser predecible y se pierde el motivo por el que
 se eligió (`DEC-SUB-008`).
+
+### `ARCHIVED` tiene salida, y son dos porque hay dos maneras de volver
+
+**El caso que las obliga es una pausa del catálogo.** Alguien toma la pausa más larga que le
+vendemos —**4 pausas-mes**, unos 120 días (`B/03` §5)—. La pausa por `CUSTOMER_REQUEST` **no
+emite fuente** (`12-contrato…` §2.6), así que `cubierto` pasa a falso, `PB2` baja la ficha, el
+día 90 llega antes que el fin de la pausa y `PB4` la archiva. Antes de la 9-bis-3 **ninguna
+fila de ninguna tabla del programa tenía `ARCHIVED` en su columna `desde`**, así que por la
+regla 1 del cap. 03 §1 (núcleo) volver de ahí no era una operación: era un incidente. Y el reloj
+seguía hasta el hard delete del día 180 (cap. 02 §4.1). El sujeto no era una ficha abandonada:
+era la de un cliente que no canceló nada.
+
+**Son dos filas y no una porque los dos caminos de vuelta no se pueden mezclar:**
+
+| | `PB7` | `PB8` |
+|---|---|---|
+| quién la dispara | el hecho que el contrato empuja | el dueño |
+| hacia dónde | `PUBLISHED` | `DRAFT` |
+| desde qué origen | sólo si venía de `PUBLISHED` o de `UNPUBLISHED_BY_BILLING` | cualquiera |
+| para quién existe | el que pausó, el que recontrata, el que regularizó | el que quiere su ficha de vuelta sin pagar todavía, y el borrador que archivó `PB5` |
+
+**`PB7` no puede ignorar el origen, y ésa es toda la razón por la que lo mira.** A `ARCHIVED` se
+entra por dos puertas: `PB4`, desde una ficha que estaba a la vista, y `PB5`, desde un
+**borrador** que su dueño nunca publicó. Una vuelta automática que no las distinguiera
+**publicaría el borrador de alguien que nunca pidió publicarlo** el día que recupera cobertura.
+Es exactamente la razón por la que `UNPUBLISHED_BY_BILLING` es un estado distinto de `DRAFT`,
+una puerta más adentro.
+
+**Y el origen no necesita ninguna columna nueva: ya está escrito.** El evento de dominio de
+`PB4` y el de `PB5` guardan *«los campos que cambiaron, con su valor anterior y el nuevo»*
+(cap. 08 §1.2, núcleo) sobre un registro **append-only** (§1.3). Preguntarle al registro de
+verticales por un hecho de verticales es el mismo mecanismo que `T7` usa para *«ya ejerció el
+evento de activación»* (§2), y por el mismo motivo: el dato existe, es duradero y no hay que
+pedírselo a nadie. Una columna denormalizada es libertad de implementación, nunca una segunda
+fuente.
+
+**Las dos reinician el reloj, y `PB7` ni siquiera hace falta que dispare para que se reinicie.**
+El hecho que reinicia la inactividad es **`cubierto` pasando a verdadero** (cap. 01 §1.2, núcleo,
+hecho 2), no la transición: si el cupo no alcanza y la ficha se queda abajo, el reloj se reinicia
+igual. Atarlo a `PB7` habría dejado el borrado vivo justo para el que vuelve con un plan más
+chico.
+
+**Qué queda del caso de la pausa, medido y no estimado.** El reloj **no se detiene** durante la
+pausa —verticales no sabe que hay una pausa, y el §4 del contrato con `DEC-TRIAL-008` deciden que
+no lo sepa—, así que la ficha **sí** se archiva el día 90. Lo que ya no pasa es lo caro: al
+reanudar, `cubierto` vuelve a verdadero, el reloj se reinicia y `PB7` la republica sola. Entre el
+primer día de la pausa y ese reinicio hay **120 días** contra los **180** del borrado, y las
+pausas encadenadas no acumulan porque cada reanudación reinicia. Que las dos cifras sigan en ese
+orden es `D16` (cap. 04 §3, núcleo), no una cuenta que alguien tenga que rehacer.
+
+**Tres cosas que estas dos filas NO son, y conviene decirlas porque cada una toca un arreglo de
+esta misma tanda:**
+
+1. **`PB7` no es el evento de activación, y no consume ningún trial.** El evento que `T1` y `T7`
+   miran es *«el dueño publica»*, que es `PB1` — un acto suyo. `PB3` ya republicaba sin ser `PB1`
+   y `PB7` hace lo mismo un estado más atrás: **restituir no es publicar**. Leerlo al revés le
+   quemaría el trial a quien reanuda una pausa.
+2. **Ninguna de las dos comparte par con otra fila.** Salen las dos de `ARCHIVED`, pero sus
+   eventos son distintos —el cambio de `cubierto` y el acto del dueño—, así que cada par tiene
+   **una sola** fila y `G-R4` sigue contando **tres** pares con dos destinos. Es el mismo caso que
+   `T7`, y está anotado en la regla 7 del cap. 03 §1 (núcleo).
+3. **`PB7` no es una transición de la clase del reloj**, así que no la alcanza la propiedad
+   *«nunca otorga»* del cap. 17 §3.4. Las de esa clase en esta máquina son `PB4` y `PB5`, y las
+   dos **quitan**; a `PB7` la dispara un cambio de cobertura, igual que a `PB3`.
+
+**Y la mitad `PUBLISHED` del `desde` de `PB4` deja de ser letra muerta con el término definido.**
+Una ficha publicada y cubierta no acumula inactividad, así que esa mitad sólo alcanza a una ficha
+que quedó **publicada sin cobertura** — el caso que `DEC-MIG-004` mide como defecto 1, *«`PB2` no
+dispara la mañana del corte y la cartera queda publicada sin cobertura»*. Es la red, y por eso se
+queda.
 
 ---
 

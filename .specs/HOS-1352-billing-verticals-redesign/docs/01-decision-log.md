@@ -3015,13 +3015,76 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-DATA-002 — La pausa no borra la ficha: `ARCHIVED` tiene vuelta, el reloj se reinicia, y la garantía es un invariante y no una desigualdad suelta
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Cierra** `F-8cC1-001`, `CRITICA` abierto desde la FASE 8-bis-2. **Extiende `DEC-DATA-001`**,
+  que queda con dos precisiones: sus *«dos avisos»* ahora son **tres**, y su promesa de que el
+  cliente *«puede reactivarla»* **por fin tiene las dos filas que la ejecutan**.
+- **El defecto**: un cliente pausa —hasta **4 pausas-mes**, función del catálogo—, su ficha se
+  baja, al **día 90** `PB4` la archiva, **`ARCHIVED` no tenía ninguna transición que lo tuviera en
+  `desde`**, y al **día 180** el hard delete le borraba el contenido. A alguien que **no canceló
+  nada y usó algo que le vendimos**. Dos agravantes medidos: *«inactividad»* aparecía **una sola
+  vez en todo el corpus**, sin definición; y dos documentos prometían en una nota que se *«puede
+  reactivar»*, promesa que ninguna tabla ejecutaba y sobre la que `V/02` §4.2 apoyaba su defensa
+  del borrado.
+- **El criterio del owner, textual**: *«si el cliente pausó, el reloj de inactividad no corre; la
+  pausa fue deliberada, así que no le podemos borrar la ficha por algo que le dijimos que podía
+  hacer»*.
+- **Decisión, y son cuatro piezas:**
+  1. **`PB7`** (`ARCHIVED` → `PUBLISHED`, al volver `cubierto` y haber cupo) y **`PB8`**
+     (`ARCHIVED` → `DRAFT`, el dueño la reactiva). Son **dos** porque a `ARCHIVED` se entra por dos
+     puertas y una vuelta automática ciega publicaría el borrador de `PB5`. El origen sale del
+     evento de dominio, **sin columna nueva**.
+  2. **«Inactividad» queda definida**, con **cuatro hechos de reinicio** y lista cerrada: un acto
+     del dueño, **`cubierto` pasando a verdadero**, volver a `PUBLISHED`, y el fin de servicio de
+     una vertical discontinuada. Lo que se retira no es una palabra: es **que el reloj fuera
+     monótono**.
+  3. **El reinicio cuelga del HECHO, no de la transición**: si el cliente vuelve con un plan más
+     chico y el cupo no alcanza, el reloj se reinicia igual. Atarlo a `PB7` dejaba el borrado vivo
+     justo para el que vuelve peor.
+  4. **Tercer aviso, «al archivar»**, en el catálogo de correos, más la superficie que dice al
+     pausar qué le pasa a la ficha.
+- **Cómo se satisface el criterio del owner SIN mover la frontera, que es lo que esta decisión
+  tiene de no obvio.** Tomado al pie de la letra, *«el reloj no corre durante la pausa»* exige que
+  verticales **vea** la pausa — y una `PAUSED` por `CUSTOMER_REQUEST` **no emite ninguna fuente**,
+  así que sería el segundo hecho cruzando la frontera que **`DEC-TRIAL-008` rechazó dos días
+  antes**. Se buscó la vía del `T7` (leer el registro de eventos de la propia vertical) y **no
+  existe**: cuando arranca una pausa la única fuente que desaparece es `tipo: SUSCRIPCIÓN`,
+  exactamente igual que en una baja o una suspensión, y el §3 del contrato empuja *«qué fuente
+  cambió y en qué dirección»*, que no separa las tres.
+
+  **Lo que se implementó es equivalente en el resultado, y conviene decir que no es idéntico: el
+  reloj SÍ corre durante la pausa, y se reinicia al reanudar.** El daño residual es **cero**, y por
+  una razón aritmética: el tope de una pausa son **4 pausas-mes ≈ 120 días** contra los **180** del
+  hard delete, y cada reanudación reinicia — así que las pausas encadenadas tampoco acumulan. La
+  ficha se archiva, sí, pero **vuelve sola por `PB7`** y **nunca se borra**.
+- **`D16`, y es la pieza que evita que todo esto sea una premisa que envejece sola**: *«el tope de
+  una pausa, en días, es menor que el día del hard delete»*, con guard `G-R5` que compara las dos
+  cifras y falla si la primera alcanza a la segunda. **Las dos son configuración**, así que el
+  invariante es **la relación** y nunca los números. Sin `D16`, todo el arreglo descansa en una
+  desigualdad entre dos valores que nadie vuelve a mirar — que es exactamente el quinto modo de
+  falla que `DEC-METH-010` declara **no cubierto** por ninguna búsqueda.
+- **Lo que NO se hizo, y por qué**: enmendar `DEC-TRIAL-008`. La mitad (a) tomada literalmente
+  cuesta la frontera y **no compra nada que la vuelta de `ARCHIVED` no dé**. `DEC-TRIAL-008` sale
+  **reforzada**.
+- **Tres descartes escritos**: definir inactividad sobre la actividad del dueño a secas (archivaría
+  la ficha publicada de un cliente que paga y no la edita); usar `UNPUBLISHED_BY_BILLING` como
+  causa (no distingue pausa de baja, y sacarlo del `desde` de `PB4` mata la retención para el que
+  sí se fue); y que la pausa emita una fuente no-cubriente (es literalmente el bit de
+  `DEC-TRIAL-008`, y además le rompe el trial).
+- **Origen**: `F-8cC1-001` (FASE 8-bis-2, `C1-la-costura.md` §1), y la decisión del owner del
+  2026-09-21 sobre sus dos mitades.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **69** |
+| Decisiones tomadas | **70** |
 | De metodología | 10 |
-| Funcionales | 59 |
+| Funcionales | 60 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |

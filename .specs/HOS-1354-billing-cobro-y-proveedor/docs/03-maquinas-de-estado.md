@@ -618,6 +618,19 @@ por S10.
 | **qué pasa al volver** | se cobra normal en el ciclo siguiente; reanudar cambia **sólo el estado** y no dispara cobro de recuperación ni deja deuda (`PS-5`) |
 | **límites** | los del §26.3, reexpresados en meses: **4 pausas-mes** por pausa y **8** acumulados en 12 meses; máximo 3 pausas por ventana. Se cuentan por `user + vertical` y **sobreviven a cancelar y volver a suscribirse** (`DEC-SUB-004`) |
 
+**Qué le pasa a la ficha mientras dura la pausa, porque esto no se puede escribir de un solo
+lado.** Una `PAUSED` por `CUSTOMER_REQUEST` **no emite fuente** (`12-contrato…` §2.6), así que
+`cubierto` pasa a falso y `PB2` baja la ficha el primer día (`V/03` §9). **Y el reloj de
+inactividad de verticales no se detiene**: si la pausa cruza el día 90, `PB4` la archiva.
+Verticales no sabe que detrás de esa pérdida de cobertura hay una pausa, y `DEC-TRIAL-008`
+decidió que no lo sepa, así que lo que protege al cliente no es una excepción sino dos cosas:
+**`PB7` republica la ficha sola** cuando la cobertura vuelve al reanudar, y **el tope de una
+pausa es menor que el día del hard delete** —4 pausas-mes, unos 120 días, contra 180 (`V/02`
+§4.1)—. Esa desigualdad es el invariante `D16` y la vigila **`G-R5`, sobre el número que declara
+la fila de arriba**: subir el tope de pausa acá sin mirar el otro lado es lo que le borraría el
+contenido a un cliente que está al día. El aviso que se lo dice antes de confirmar es `B/19` §4,
+fila 5-bis.
+
 **El motivo no es un adorno, y ésta es la razón exacta**: en el proveedor una cortesía y una
 pausa pedida por el cliente **se ven idénticas** —el mismo `paused`, sin ningún campo que las
 distinga—, así que un reloj que leyera el estado del proveedor reanudaría la cortesía de quien

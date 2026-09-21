@@ -45,6 +45,31 @@ el §1 describe —*«implementaciones divergentes»*, *«conceptos obsoletos»*
 | **Vertical con ficha** | Alojamiento, Gastronomía, Experiencia (§6). |
 | **Ficha** | Recurso publicable con **exactamente un** User dueño (§6). No hay multi-dueño. Un User puede tener varias. |
 | **Presencia de Partner** | La página propia de Partner Gold (§17.1). El §17.1 ordena **no** forzarla al modelo `Ficha` pese al parecido, así que es una entidad distinta con su propio ciclo de publicación. |
+| **Inactividad** (de una ficha) | El tiempo que lleva **sin estar a la vez publicada y cubierta**, contado desde **el más reciente** de los cuatro hechos que la reinician. Es el reloj del §25 —*«desde que queda efectivamente inactiva»*— el que disparan `PB4` (día 90) y `PB5`, y sobre el que se cuenta el día 180 (cap. 02 §4, épica de verticales). |
+
+**Los cuatro hechos que reinician la inactividad, y la lista es cerrada:**
+
+| # | hecho | de dónde se lee | por qué reinicia |
+|---|---|---|---|
+| 1 | un **acto del dueño** sobre la ficha: crearla, editarla, publicarla, despublicarla, exportarla, reactivarla | el registro append-only de eventos de dominio (cap. 08 §1.3), que ya los guarda todos por el criterio 2 del §1.1 | alguien la está usando, que es lo contrario de estar inactiva |
+| 2 | **`cubierto` pasa a verdadero** | el aviso del contrato ([`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §3) | volver a estar cubierto **es** dejar de estar inactivo. Reinicia **por sí solo**, aunque la ficha no vuelva a publicarse —si el cupo no alcanza, por ejemplo— porque lo que terminó es la ausencia, no el cupo |
+| 3 | la ficha **vuelve a `PUBLISHED`** — `PB1`, `PB3` o `PB7` (cap. 03 §9, épica de verticales) | la propia máquina | una ficha publicada no acumula inactividad; su reloj arranca recién cuando deja de estarlo |
+| 4 | el **fin de servicio** de una vertical discontinuada | cap. 10 §4 (épica de billing) | ahí el dueño **no puede** actuar, así que contar su ausencia lo castigaría por una decisión nuestra. `B/10` §4 ya dice que el reloj arranca ahí; acá queda dicho que arranca **ahí y no antes** |
+
+**Lo que se retira es que el reloj fuera monótono.** La palabra aparecía **una sola vez en todo
+el corpus** —la celda de `PB4`— y sin definición, así que la lectura que una implementación iba a
+tomar era la literal: *el tiempo desde que la ficha dejó de estar publicada*, sin nada que lo
+reinicie. Con esa lectura, la ficha de alguien que **pausa** su suscripción baja por `PB2` el
+primer día de la pausa, cruza el día 90 —el tope de una pausa es de **4 pausas-mes**, unos 120
+días (cap. 03 §5, épica de billing)—, y sigue corriendo hasta el hard delete del día 180. Se le
+borra el contenido a un cliente que no canceló nada y que usó una función que le vendimos.
+
+**Y la pausa no aparece en la lista de arriba, que es lo que vuelve implementable el arreglo.**
+Verticales no sabe —ni puede saber: el §4 del contrato y `DEC-TRIAL-008`— que detrás de la
+pérdida de cobertura hay una pausa y no una baja. No le hace falta: el reloj **no se detiene**
+durante la pausa, **se reinicia al salir de ella** por el hecho 2, y entre el primer día de la
+pausa y ese reinicio hay 120 días como máximo contra los 180 del borrado. Que esa desigualdad
+siga siendo cierta **es un invariante, no una coincidencia aritmética**: es `D16` (cap. 04 §3).
 
 ### 1.3 Catálogo comercial
 
@@ -149,7 +174,10 @@ programa, y ya estaba anticipado en el resumen de ese log antes de tener ID prop
 
 **Y el reloj de retención del §25 arranca igual en los dos.** El §25 dice *«desde que queda
 efectivamente inactiva»*, y las dos lo son: día 90 sale del sitio público conservando acceso
-del dueño, día 180 hard delete de lo eliminable, con dos avisos previos (`DEC-DATA-001`).
+del dueño, día 180 hard delete de lo eliminable, con dos avisos previos (`DEC-DATA-001`) y un
+tercero el día que se archiva (cap. 07 §6). *«Efectivamente inactiva»* es el término del §1.2:
+el reloj corre en los dos **y los dos lo reinician si la cobertura vuelve**, que es lo que
+separa a quien se fue de quien volvió.
 
 ### 2.2 Los nombres de estado, completos
 
@@ -358,6 +386,14 @@ Cuatro precisiones, cada una con su fundamento:
 2. **La cuota se cuenta por `user + vertical`**, sobrevive a cancelar y volver a suscribirse
    (`DEC-SUB-004`), y se expresa en **meses**: los 120 días del §26.3 son 4 pausas-mes y los
    240 son 8 (`DEC-SUB-010`).
+
+   **Y el tope de UNA pausa no es un número libre.** Tiene que quedar por debajo del día del
+   hard delete de la retención —180, cap. 02 §4.1 (épica de verticales)— porque **el reloj de
+   inactividad no se detiene durante la pausa**: la ficha baja por `PB2` el primer día y `PB4`
+   la archiva el 90. Lo que la salva es que la cobertura vuelva antes del 180, y eso es
+   verdadero sólo mientras 120 < 180. Es el invariante `D16` (cap. 04 §3) y lo vigila `G-R5`.
+   Los 8 acumulados **no** entran en la cuenta: son hasta tres pausas con una reanudación en el
+   medio, y cada reanudación reinicia el reloj (§1.2, hecho 2).
 3. **El último término no bloquea, avisa.** `DEC-GRANT-004` permite pausar estando en cortesía
    **avisando que la pierde**, y deja que el cliente elija. O sea: la función responde que sí,
    y la superficie está obligada a mostrar la advertencia antes de confirmar.

@@ -74,6 +74,15 @@ falla.
 1. **El paso 4 responde «no existe» a las tres cosas.** Un recurso ajeno, uno archivado y uno
    inexistente son indistinguibles desde afuera. Contestar *«no es tuyo»* confirma que el
    identificador existe, y eso es información que el que pregunta no tenía.
+
+   **«Desde afuera» es la mitad que hay que decir, porque `ARCHIVED` dejó de ser un estado
+   sin salida.** El paso 4 pregunta tres cosas y una es *«¿está en un estado que acepta
+   esto?»*: una ficha `ARCHIVED` **acepta de su dueño verla, exportarla y reactivarla**
+   —`PB8`, cap. 03 §9— y rechaza todo lo demás. Es lo que `DEC-DATA-001` promete con *«el
+   dueño la sigue viendo»* y lo que el §4.1 de este capítulo ya sostiene al no revocarle el
+   rol. Sin esta línea, *«archivado responde no existe»* se lee como que lo responde
+   **también al dueño**, y entonces la promesa no la puede cumplir nadie y `PB8` es
+   inalcanzable.
 2. **El estado de la persona va ANTES del permiso.** Al revés, una cuenta inhabilitada puede
    averiguar qué permisos tiene probando operaciones: las que contestan *«sin cobertura»* las
    tiene, las que contestan *«sin permiso»* no.

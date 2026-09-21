@@ -120,6 +120,13 @@ ambigüedad entre dos ramas: es una consecuencia.
 > **Y eso es lo que se hace: se despublican. No se siembra nada.** Se les avisa **antes** del corte,
 > se los llama, contratan, y la ficha vuelve sola por `PB3` cuando la cobertura vuelve.
 
+**Y vuelve sola aunque la llamada tarde.** El procedimiento depende de que alguien llame, así que
+puede pasarse del día 90: ahí `PB4` archiva la ficha y la que la devuelve ya no es `PB3` sino
+**`PB7`**, con el mismo disparador y el mismo desenlace (`V/03` §9). No cambia el resultado, sino
+**de qué fila depende** — y conviene decirlo porque antes de la 9-bis-3 `PB7` no existía, así
+que una demora de tres meses en la agenda de llamados convertía *«vuelve sola»* en un incidente
+por cada cuenta.
+
 **Por qué no sembrarles un trial, que era la alternativa.** Habría dejado las fichas arriba mientras
 contratan, y **no cuesta menos: cuesta lo mismo más una siembra.** A esta gente **hay que llamarla
 igual** —es lo que decide todo este capítulo: son pocos, la mayoría **no pagó nunca**, y el owner

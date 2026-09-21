@@ -61,6 +61,16 @@ es lo que permite preguntar *«¿están todos?»* una vez en vez de siete.
 | G-R3-C | una **operación de dominio no declara** si pasa por el paso 5 | cap. 17 §3.5 |
 | G-R4 | una tabla de transiciones tiene **dos filas con el mismo `(desde, evento)`** cuyas guardas **no son disjuntas** — sobre las nueve máquinas, en las dos épicas | cap. 03 §1 regla 7 (núcleo) |
 | G-R4-B | una condición o un evento de una máquina de **la épica de verticales** nombra un **estado de la suscripción** o de la instancia de addon | `12-contrato…` §4 |
+| G-R5 | el **tope de una pausa** que declara el catálogo, pasado a días, **alcanza el día del hard delete** de la retención | `D16` (cap. 04 §3, núcleo), cap. 03 §5 (épica de billing), cap. 02 §4.1 |
+
+**`G-R5` vigila una desigualdad entre dos números de configuración, y por eso existe.** El
+arreglo de `F-8cC1-001` deja al cliente que pausa a salvo del borrado **porque 120 es menor que
+180**, no porque el reloj se detenga: no se detiene, se reinicia al reanudar (cap. 01 §1.2,
+núcleo). Es una premisa verdadera el día que se escribe y que **nadie vuelve a mirar** el día que
+alguien suba el tope de pausa —el quinto modo que `DEC-METH-010` declara no cubierto por ninguna
+búsqueda de texto—. Un guard es lo único que la vuelve a mirar sola. **Es cruzado**: el tope vive
+en el catálogo de billing y el día 180 en el capítulo 02 de esta épica, así que `B/20` §2 lo
+repite como referencia cruzada, igual que `G-R4`.
 
 **`G-R4` y `G-R4-B` son el mismo defecto visto en dos planos, y hacen falta los dos.** El primero
 mira **la forma** de una tabla: dos guardas que se pueden satisfacer a la vez dejan el desenlace

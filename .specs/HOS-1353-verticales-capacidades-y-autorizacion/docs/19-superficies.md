@@ -61,6 +61,7 @@ ser.**
 | 4 | Mi Suscripción y el panel | el **total acumulado de días de trial** y su origen | cap. 11 §3.5 (épica de verticales) |
 | 8 | el aviso de **excedente** | **el criterio**: cae lo más reciente primero | `DEC-SUB-008`, cap. 03 §9 |
 | 9 | cuando el excedente **no tiene ventana** | **qué se hizo**, no una ventana simulada | cap. 15 §4.4 (épica de verticales) |
+| 18 | el aviso de **ficha archivada** (`PB4`, día 90) | **que no se borró nada**; que la sigue viendo y puede exportarla; que **vuelve sola cuando recupere la cobertura** (`PB7`) y que puede traerla a borrador cuando quiera (`PB8`); y **la fecha** a partir de la cual el contenido sí se borra | cap. 03 §9, cap. 02 §4.2 regla 3, `DEC-DATA-001`, cap. 07 §6 (núcleo) |
 
 ---
 

@@ -80,6 +80,7 @@ ser.**
 |---|---|---|---|
 | 3 | al **borrar** una ficha | **qué addons se pierden y por cuánto** | `DEC-ADDON-001`, impl. 1 |
 | 5 | al **pausar estando en cortesía** | que **la pierde**, y dejarlo elegir | `DEC-GRANT-004`, cap. 01 §3 (núcleo) |
+| 5-bis | al **pausar**, antes de confirmar | **qué le pasa a la ficha mientras dure la pausa**: sale del sitio público el mismo día, **vuelve sola al reanudar**, y si la pausa cruza los 90 días queda **archivada** — sin que se borre nada y sin que la vuelta deje de ser automática. Es el acto que **parece que sólo suspende el cobro**, y el cliente no tiene otra forma de enterarse | cap. 03 §5, `12-contrato…` §2.6, `V/03` §9 (`PB2`, `PB4`, `PB7`), `V/02` §4.2 |
 | 6 | al **reanudar** una pausa | **una sola cosa: qué día se le va a cobrar** — nada de días perdidos ni compensaciones | `DEC-SUB-010`, impl. 1 |
 | 7 | al **cambiar de ciclo** teniendo una promo | que **el importe nuevo ya no lleva el descuento** | cap. 14 §2.3 (épica de billing) |
 | 10 | el aviso de **suspensión** | lo que pierde **como turista**, no sólo como anfitrión — y los **días de addon** que se le van a ir | cap. 15 §6.3 (épica de verticales), `DEC-ADDON-001` impl. 2 |

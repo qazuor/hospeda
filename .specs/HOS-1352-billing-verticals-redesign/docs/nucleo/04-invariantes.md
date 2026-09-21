@@ -139,6 +139,14 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D13 | **Retirar un plan del catálogo no mueve ninguna suscripción** | cap. 10 §3.2 | servicio: retirar publica una versión no vendible y ninguna lectura de suscripción pasa por la vigente |
 | D14 | **Anunciada la discontinuación de una vertical, no se emite un cobro más en ella** | cap. 10 §4.2 | servicio: el anuncio cancela en el proveedor en el mismo acto, y el servicio se sostiene del lado nuestro |
 | D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida.** Y **ninguna sucesión termina sin dejar rastro, con un rastro por forma de terminar**: la que se **cierra** deja `sucedida_por` puesta en la predecesora; la que **muere sin cerrarse** deja la sucesora no viva **con su `sucede_a` escrito**. **Nunca las dos columnas en la misma fila** | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a`, más las dos columnas anulables que no pueden estar puestas a la vez. **Guard**: `G-R1-C` (cap. 20 (épica de billing) §2) exige que las escrituras del cierre vayan juntas y completas |
+| D16 | **El tope de una pausa, en días, es menor que el día del hard delete.** Hoy son **4 pausas-mes** —unos 120 días, cap. 03 §5 (épica de billing)— contra **180** (cap. 02 §4.1, épica de verticales). Es lo único que impide que una pausa del catálogo llegue a borrar contenido, porque el reloj de inactividad **no se detiene** durante la pausa: se reinicia recién al reanudar (cap. 01 §1.2, hecho 2). **Las dos cifras son configuración**, así que el invariante es la relación entre ellas y nunca los números | `F-8cC1-001`, la decisión del owner del 2026-09-21 | **guard**: compara el tope de pausa del catálogo contra el día del hard delete y falla si el primero lo alcanza |
+
+**`D16` existe porque la alternativa era una premisa que envejece sola.** El arreglo de
+`F-8cC1-001` se apoya en una desigualdad entre dos números —120 y 180— que hoy es verdadera y que
+**nadie vuelve a mirar el día que alguien suba el tope de pausa a siete meses**. Es el quinto modo
+que `DEC-METH-010` declara no cubierto por ninguna búsqueda de texto: el texto es correcto el día
+que se escribe. La única forma de que no caduque en silencio es que la desigualdad la verifique
+algo en cada PR, y por eso el apoyo es un guard y no una nota.
 
 **`D15` afirmaba más de lo que el diseño cumple, y se corrigió hacia abajo.** Decía *«toda
 sucesión que termina deja escrito que ocurrió: la predecesora queda con `sucedida_por` puesta»*, y
@@ -206,19 +214,20 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 |---|---|---|
 | base | 6 | **4** |
 | servicio | 14 | **10** |
-| guard | 5 | **4** |
+| guard | 5 | **6** |
 | principio o regla de método, **no verificable ejecutando** | 7 | 0 |
 | en un capítulo de subdominio | 5 | 0 |
-| **total** | **37** | **15** |
+| **total** | **37** | **16** |
 
-> Las celdas de la columna derecha suman **18 apoyos** sobre **15 invariantes**, y no es un error
-> de conteo: **`D3`, `D8` y `D12` se sostienen en dos niveles a la vez**. `D3` necesita que la base
-> restrinja el dominio del motivo **y** que el servicio lo lea en vez de leer al proveedor; `D8`
-> necesita la columna en base **y** el guard que la compara; `D12` necesita un guard que impida
-> pedirle un trial al proveedor **y** un servicio que lleve el reloj. Un invariante con dos apoyos
-> no está contado de más: está apoyado dos veces.
+> Las celdas de la columna derecha suman **20 apoyos** sobre **16 invariantes**, y no es un error
+> de conteo: **`D3`, `D8`, `D12` y `D15` se sostienen en dos niveles a la vez**. `D3` necesita que
+> la base restrinja el dominio del motivo **y** que el servicio lo lea en vez de leer al
+> proveedor; `D8` necesita la columna en base **y** el guard que la compara; `D12` necesita un
+> guard que impida pedirle un trial al proveedor **y** un servicio que lleve el reloj; `D15`
+> necesita los dos índices parciales **y** el guard que exige que las escrituras del cierre vayan
+> juntas. Un invariante con dos apoyos no está contado de más: está apoyado dos veces.
 
-**Cincuenta y dos invariantes, y diez los sostiene la base.** El resto depende de que exista un
+**Cincuenta y tres invariantes, y diez los sostiene la base.** El resto depende de que exista un
 único lugar donde se evalúen — que es, en una línea, de qué se trata el §7.
 
 > **Corregido otra vez el 2026-09-19 — FASE 8-bis**, y la corrección anterior es el ejemplo de
@@ -245,6 +254,19 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 > apoyos, las cuatro de base, las cinco de guard y las diez de servicio quedan igual. Se recorrió
 > igual, porque un enunciado que se corrige es exactamente el caso en que alguien asume que el
 > conteo se movió y lo «arregla» sin recorrer.
+>
+> **Recorrido otra vez el 2026-09-21 — FASE 9-bis-3, al agregar `D16`**, y el recorrido encontró
+> algo que las dos notas de arriba no vieron: **las dos correcciones anteriores se escribieron en
+> la nota y no en la tabla.** Las dos declaran **19 apoyos** y **cinco guards** desde que `D15`
+> ganó `G-R1-C`, y la fila de la tabla seguía en **cuatro** y el párrafo de abajo en *«18 apoyos
+> sobre 15»* con **tres** invariantes de doble apoyo. Es el modo que este mismo capítulo
+> documenta: corregir donde se mira y no donde se lee. Se arregla en el mismo acto. Recorridas
+> las **16** filas del §3 clasificando su columna de apoyo: base `D2 D3 D8 D15` (4), guard
+> `D8 D9 D10 D12 D15 D16` (6), y las **diez** restantes servicio
+> `D1 D3 D4 D5 D6 D7 D11 D12 D13 D14`. Suman **20 apoyos** sobre 16, con **cuatro** filas de doble
+> apoyo —`D3 D8 D12 D15`—. El total de la derecha pasa de 15 a 16 y *«cincuenta y dos»* a
+> **cincuenta y tres**; *«diez los sostiene la base»* **no cambia**, porque `D16` es guard. La
+> columna izquierda no se movió y cierra: 6+14+5+7+5 = 37.
 
 Y la corrección anterior, que queda como registro:
 
