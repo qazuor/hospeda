@@ -320,13 +320,14 @@ rigiendo el piso** (§2.5), y a quien está cambiando de plan **lo sigue cubrien
 vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede autorizada.
 
 **Con una salvedad que conviene decir en vez de suponerla, porque la predecesora se puede morir
-sola.** `D7` la mantiene viva contra **nuestras** cancelaciones, no contra los relojes: de las
-seis transiciones que la mueven durante la ventana, **tres la sacan de las filas vivas sin que
-nadie declare nada** —`S12`, `S13` y `S16` (`B/03` §3.2)—. En esas tres la predecesora deja de
+sola.** `D7` la mantiene viva contra **nuestras** cancelaciones, no contra los relojes ni contra
+el proveedor: de las **siete** transiciones que la mueven durante la ventana, **cuatro la sacan de
+las filas vivas sin que nadie declare nada** —`S12`, `S13`, `S16` y **el espejo de la baja que
+decide el proveedor** (`B/03` §3.2 y §10.1)—. En esas cuatro la predecesora deja de
 emitir y la sucesora todavía no emite, así que **el cliente cae al piso (§2.5) por lo que le quede
 de ventana**, hasta que autorice o abandone. No es un hueco nuevo, ni una consecuencia de que el
 cierre de la sucesión pase a correr antes de la autorización —`PENDING_AUTHORIZATION` no emite ni
-antes ni después—: es lo que ya pasaba sin estar escrito. **Y se acepta**, porque las tres tienen
+antes ni después—: es lo que ya pasaba sin estar escrito. **Y se acepta**, porque las cuatro tienen
 la misma causa —el compromiso que sostenía la cobertura **terminó**— y la alternativa es la
 respuesta cara del párrafo de arriba. Lo que sí se exige es que la superficie lo diga: `B/19` §4,
 filas 16 y 16-bis.
@@ -349,9 +350,10 @@ resolver la cancelación —no elegir qué fuente vale—. Lo que no puede pasar
 sin nombrar, porque entonces el techo de lo que alguien puede tener depende de si una llamada al
 proveedor salió bien.
 
-**Y no es alcanzable por ningún otro camino.** Las seis transiciones que mueven a la predecesora
-durante la ventana de 72 h —las conté sobre la tabla de `B/03` §3.2: `S8`, `S9`, `S6`, `S12`,
-`S13` y `S16`— la dejan en un estado que **no emite** en cinco de los seis casos; la excepción es
+**Y no es alcanzable por ningún otro camino.** Las **siete** transiciones que mueven a la
+predecesora durante la ventana de 72 h —`S8`, `S9`, `S6`, `S12`, `S13`, `S16` y el espejo del
+`B/03` §10.1, que es la que la tabla numerada del §3.2 no lista— la dejan en un estado que **no
+emite** en seis de los siete casos; la excepción es
 `S9`, que la deja emitiendo pero con `tipo: CORTESÍA`, que no es una segunda `SUSCRIPCIÓN`. Y en
 todas, si
 la sucesora autoriza, la predecesora deja de emitir: o ya no emitía, o `S17` la lleva a
@@ -459,10 +461,12 @@ dispara `S13`.** Las dos mitades son necesarias y ninguna se infiere de *«queda
    vertical la capacidad que se le está por conceder, y el acto sería inejecutable. Y es lo que
    hace que **un actor de sistema no lo pueda ejecutar** (`V/17` §3.3).
 2. **Dispara `S13` sobre la vertical que se ancla** (`B/03` §3.2): el beneficiario queda cubierto
-   ahí desde el instante del anclaje, así que **toda fila viva suya en esa vertical se cancela**,
-   igual que en el otorgamiento. Sin esto el §35.3 —*«cancelar toda obligación de pago
+   ahí desde el instante del anclaje, así que **toda fila viva PRINCIPAL suya en esa vertical se
+   cancela**, igual que en el otorgamiento. Sin esto el §35.3 —*«cancelar toda obligación de pago
    cubierta»*— queda incumplido **exactamente en la vertical que se acaba de regalar**, y el
-   beneficiario la sigue pagando todos los meses.
+   beneficiario la sigue pagando todos los meses. **Sus complementos no**: los addons que ya
+   compró los conserva —es el *«conserva los dos»* del §2.4—, y el alcance de `S13` dice
+   *«principal»* por esa razón (`B/03` §3.2).
 
 **Desanclar no está declarado, y esto no lo declara.** Reducir el scope de un grant sin revocarlo
 entero no es una operación de este diseño; si alguna vez se necesita, entra por el catálogo del

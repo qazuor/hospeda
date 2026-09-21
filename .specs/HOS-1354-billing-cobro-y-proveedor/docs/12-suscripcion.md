@@ -83,6 +83,15 @@ de `DEC-SUB-006`.
 vínculo no lo decidimos nosotros**. Nuestro grace puede ser más largo que la paciencia del
 proveedor, y si lo es, la baja llega antes que nuestra suspensión.
 
+**Y hay que decir la otra consecuencia, porque cae sobre la población exacta de la sucesión.** El
+que llega a esta baja llega **desde `GRACE_PERIOD`**, que es de donde también llega la
+predecesora de un cambio de plan en mora — o sea la población de `S19`. Espejar esa baja es una
+**transición declarada** de la tabla del cap. 03 (§10.1), y por eso aparece en cuatro lugares que
+la enumeraban sin ella: es la séptima del dominio que el §3.2 recorre por el lado de la
+predecesora, un tercer camino por el que la predecesora **se muere sola** y `S18` cierra la
+sucesión sin `S17`, la sexta que dispara la re-evaluación del addon huérfano (`B/16` §4.3), y la
+**rama 5** del §5.3 de este capítulo.
+
 ### 1.5 Lo que falta medir, y qué lo dispara
 
 `GR-3` —la política de reintentos del proveedor— **sigue `UNKNOWN`**. Hay documentación del
@@ -388,7 +397,7 @@ enuncia sobre la columna: **la sucesora tiene `sucede_a`; a la predecesora la ap
 
 **Y son las dos transiciones, no una.** La predecesora arranca la sucesión en `GRACE_PERIOD`, pero
 la ventana dura hasta 72 h y el reloj del grace la puede pasar a `SUSPENDED` por `S6` antes de que
-el cobro reciclado entre —es la fila 3 de las seis que `B/03` §3.2 recorre—. Sobre una `SUSPENDED`
+el cobro reciclado entre —es la fila 3 de las siete que `B/03` §3.2 recorre—. Sobre una `SUSPENDED`
 la reactivación posible ya no es `S5` sino `S7`, con el mismo daño exacto. Nombrar sólo `S5`
 dejaba abierta la mitad del caso. **Una vez que el pago entró el orden ya no se repite**, porque
 `S6` no corre sobre un pago pendiente (ver abajo): las dos transiciones se bloquean, no una.
@@ -415,9 +424,18 @@ a volver a intentarlo: no hay segundo cobro que la rescate.
 > **El pago acreditado no se reembolsa al entrar: queda pendiente, y se resuelve cuando la sucesión
 > se resuelve.** Mientras tanto no reactiva, no se devuelve y **no se pierde**.
 
-**El dominio es el de las formas en que una sucesión en curso puede terminar, y son cuatro.** Las
-enumeré sobre `B/03` §3.2, recorriendo las salidas de la predecesora (en `GRACE_PERIOD` o
-`SUSPENDED`) y las de la sucesora (en `PENDING_AUTHORIZATION`):
+**El dominio es el de las formas en que una sucesión en curso puede terminar, y son cinco.** Se
+enumeran recorriendo las salidas de la predecesora (en `GRACE_PERIOD` o `SUSPENDED`) y las de la
+sucesora (en `PENDING_AUTHORIZATION`) — **sobre la tabla de transiciones del cap. 03 entera, no
+sobre sus filas numeradas**, que es la corrección que trajo la quinta:
+
+> **La enumeración anterior decía «cuatro» y declaraba su método: *«las enumeré sobre `B/03`
+> §3.2»*.** El método es el que fallaba. El §10.1 del mismo capítulo declara que **espejar un
+> estado leído por id es una transición declarada de esa tabla**, y el espejo de la baja que
+> decide el proveedor **no tiene fila numerada** — así que recorrer las filas numeradas deja
+> afuera una salida real de la predecesora, y justamente la del camino de mora, que es de donde
+> viene toda la población de `S19`. La rama que faltaba no era un borde: era **la salida esperada
+> de esa población** (§1.4).
 
 | cómo termina la sucesión | qué pasa con el pago pendiente | por qué |
 |---|---|---|
@@ -425,8 +443,9 @@ enumeré sobre `B/03` §3.2, recorriendo las salidas de la predecesora (en `GRAC
 | **la sucesora vence su ventana** (`S3` → `ABANDONED`) | **no se reembolsa: reactiva** — y lo dispara **`S3`**, que reevalúa el pago pendiente en el acto | ya no hay sucesión, el pago cubre el período que la persona está usando, y el §3 del cap. 05 lo evalúa de nuevo con su condición 3 ahora cumplida. `S5` o `S7`, según el estado |
 | **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso |
 | **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada — **`S13` apaga la bandera en el mismo acto** | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3. La bandera se apaga porque un *«pendiente»* eterno sobre una fila cerrada no es un registro fiel: es un conteo inflado |
+| **el proveedor da de baja a la PREDECESORA** por impagos acumulados (§1.4), y el espejo del `B/03` §10.1 la lleva a `CANCELLED` con la sucesora todavía esperando autorización | **se reembolsa, y lo confirma una persona** — igual que la rama 1: **`S18` cierra la sucesión sin `S17`** (la predecesora ya no es fila viva) y le pone a **ella** la marca con motivo *«reembolso por confirmar»* | el período que el pago cubría lo cortó la baja del proveedor, no nosotros, pero el resultado para el cliente es el mismo de la rama 1: pagó un período que no le compró nada. Y el cierre **tiene** que correr igual —si no, el candado `A` queda vacío y un alta nueva entra (`B/03` §3.2)—, así que el acto que lo dispara ya está ahí |
 
-**Las cuatro ramas tienen ahora un ACTO que las dispara, y hay que decirlo porque durante una
+**Las cinco ramas tienen ahora un ACTO que las dispara, y hay que decirlo porque durante una
 tanda entera no lo tuvieron.** La rama 1 decía *«al cerrar la sucesión se pone la marca»* sin
 nombrar transición ni fila, y por la regla 1 del núcleo —*«lo que la tabla no declara, no
 pasa»*— el reembolso de la única rama que mueve dinero **no lo ejecutaba nadie**, sobre un camino
@@ -438,6 +457,23 @@ que `DEC-RF-002` declara normal:
 | 2 · la sucesora vence su ventana | **`S3`** (efecto) | la predecesora, viva |
 | 3 · la sucesión trabada | `S14`, que ya puso la marca | la predecesora |
 | 4 · cae un grant | **`S13`** (efecto) | las dos |
+| 5 · el proveedor da de baja a la predecesora | **`S18`** (efecto 4), disparado por el espejo del `B/03` §10.1 | **la predecesora**, `CANCELLED` |
+
+> **La 5 y la 1 comparten acto y no son la misma rama.** Difieren en qué mata a la predecesora
+> —`S17`, nuestro, contra el proveedor, ajeno— y eso cambia dos cosas que el cliente ve: en la 1
+> la sucesora ya autorizó y **hay cobertura nueva desde el instante del cierre**; en la 5 la
+> sucesora todavía está en `PENDING_AUTHORIZATION`, que **no emite fuente**
+> ([`12-contrato…`](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
+> §2.6), así que el cliente **cae al piso por lo que le quede de ventana** — el mismo desenlace
+> que ese § ya declara y acepta para `S12`, `S13` y `S16`, y por la misma razón: el compromiso que
+> sostenía la cobertura terminó. El tope sigue siendo la ventana de 72 h.
+>
+> **Y si la sucesora después abandona, no cae en la rama 2.** La 2 *«reactiva»*, y sobre una
+> predecesora `CANCELLED` eso es imposible por la condición 1 de `B/05` §3. No hay conflicto
+> porque la 5 **ya resolvió el pago** en el cierre: cuando la sucesora abandona no queda nada
+> pendiente que reevaluar. Lo que antes mandaba ese caso a *«si la rama no es determinable, se
+> pone la marca»* del backstop de `B/09` §3 —o sea a una persona, sin que ningún texto lo
+> anticipara— era justamente que esta rama no existía.
 
 **La marca va sobre la PREDECESORA y no sobre la sucesora, y la elección tiene consecuencia.** El
 pago cuelga de la predecesora (`B/02` §2.3), así que es la fila que hay que mirar para resolverlo.
@@ -455,7 +491,7 @@ significa *«lo confirma una persona si se acuerda»*. **El reloj es la mitad op
 
 **Las dos primeras son la razón de la regla y son opuestas**, y por eso el disparador no puede ser
 la llegada del pago: en el momento en que entra **todavía no se sabe cuál de las dos va a pasar**.
-Lo que sí se sabe es que no hay que reactivar —eso vale en las cuatro ramas mientras la sucesión
+Lo que sí se sabe es que no hay que reactivar —eso vale en las cinco ramas mientras la sucesión
 esté en curso—, y eso es lo que `S19` ejecuta.
 
 **Reembolsar en la primera rama es la salida coherente con lo que este mismo § decidió**: el

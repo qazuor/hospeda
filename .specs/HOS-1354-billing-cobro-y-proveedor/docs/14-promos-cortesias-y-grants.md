@@ -132,7 +132,8 @@ mientras `S18` enumeraba **tres** efectos y ninguno era la promo. Cómo se ejecu
    detector del diseño mira eso.
 
 **Y vale igual cuando `S18` corre con la sucesora todavía en `PENDING_AUTHORIZATION`** —el
-segundo camino del cierre, cuando la predecesora se murió sola por `S12` o `S16` (`B/03` §3.2)—.
+segundo camino del cierre, cuando la predecesora se murió sola por `S12`, por `S16` o por el
+espejo de la baja decidida por el proveedor (`B/03` §3.2 y §10.1)—.
 Mutar el monto **sí funciona sobre un preapproval `pending`**: es el control de `EX-39`, que lo
 midió al probar lo contrario para las fechas —`transaction_amount` 2000 → 2500, con
 `last_modified` movido—. **Lo que no se puede mover son las fechas**, y el descuento no las toca.

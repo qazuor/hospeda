@@ -211,7 +211,8 @@ deja de estar escrito dos veces con dos contenidos.
 
 **Y la segunda mitad de la 3 se lee sobre DOS columnas, porque la que la respondía se borra.**
 `sucede_a` sólo existe mientras la sucesión está en curso: cuando la sucesora autoriza —o antes,
-si la predecesora se murió sola por `S12` o `S16`—, `S18` la limpia (`B/03` §3.2) y el vínculo
+si la predecesora se murió sola por `S12`, por `S16` o por el espejo del `B/03` §10.1—, `S18` la
+limpia (`B/03` §3.2) y el vínculo
 pasa a vivir en `sucedida_por`, del lado de la predecesora.
 Preguntar sólo por `sucede_a` daba *«no fue superada»* justo en el caso en que sí lo fue, que es
 el más caro de los dos. Con `sucedida_por` la condición se puede evaluar **después** del cierre,

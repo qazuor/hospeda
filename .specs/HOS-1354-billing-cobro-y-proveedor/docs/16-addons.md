@@ -193,15 +193,16 @@ lo da el scope:
 | scope (§40) | queda huérfano cuando |
 |---|---|
 | `LISTING` | la ficha **se borró** — y `DEC-ADDON-001` ya decidió que eso lo **consume**: no se libera ni se reasigna |
-| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical **dejó de ser fila viva** (`NUCLEO/01` §2.4) **y ninguna sucesión la releva**: su `sucedida_por` es nulo (`B/02` §2.2) **y no hay una fila viva con `sucede_a` apuntándola** |
+| `VERTICAL_SUBSCRIPTION` | la suscripción de esa vertical **dejó de ser fila viva** (`NUCLEO/01` §2.4), **ninguna sucesión la releva** —su `sucedida_por` es nulo (`B/02` §2.2) **y no hay una fila viva con `sucede_a` apuntándola**— **y ningún grant permanente la releva**: no hay en esa vertical un grant vivo que valga como título (§2.4) |
 | `USER` · `GLOBAL` | la cuenta se borró |
 
 > **«Huérfano» acá es el addon cuyo objetivo murió.** No confundirlo con la *«huérfana»* del
 > capítulo 09 §2.2, que es un recurso **del proveedor sin fila nuestra**. Son dos palabras iguales
 > con dos sujetos opuestos, y ningún mecanismo de uno sirve para el otro.
 
-**Las dos mitades de la condición se escribieron de nuevo, y cada una arreglaba lo contrario de
-la otra.**
+**La condición se escribió de nuevo parte por parte, y cada una arregla lo contrario de la
+anterior.** Son **tres**: qué significa que el objetivo murió, qué lo releva por sucesión y qué lo
+releva por grant.
 
 **Uno: *«dejó de ser fila viva»*, no *«llegó a `CANCELLED`»*.** `CANCELLED` es **uno** de los tres
 estados en que una suscripción deja de tener autorización que pueda cobrar; los otros dos son
@@ -225,18 +226,19 @@ tarde: el barrido, una revisión manual o un reconciliador leen lo mismo que el 
 **Y esa segunda mitad se lee sobre las DOS columnas, porque `sucedida_por` todavía no existe
 mientras la sucesión está en curso.** Leerla sólo sobre `sucedida_por` deja pasar el caso
 contrario al que arregla: **hasta la FASE 9-bis-3, `S18` sólo la escribía con la sucesora
-`ACTIVE`**, y la tabla de seis transiciones de `B/03` §3.2 enumera **tres** por las que la
+`ACTIVE`**, y la tabla de siete transiciones de `B/03` §3.2 enumera **cuatro** por las que la
 predecesora deja de ser fila viva **antes** de eso y sola — `S12` (le llegó la fecha de fin de
-servicio), `S13` (*Free Forever*) y `S16` (el primer cobro de su autorización se rechaza, y
+servicio), `S13` (*Free Forever*), `S16` (el primer cobro de su autorización se rechaza, y
 `PA-3` mide que ese cobro llega **entre 26 y 44 minutos** después de autorizar, o sea dentro de la
-ventana en que un cambio de plan es legal). En las de `S12` y `S16` la sucesora sigue viva
+ventana en que un cambio de plan es legal) y **el espejo de la baja decidida por el proveedor**
+(`B/03` §10.1). En las de `S12`, `S16` y el espejo la sucesora sigue viva
 esperando autorizar: con una sola columna, el addon de alguien que está **en pleno upgrade** queda
 huérfano y se le cancela el preapproval, que es irreversible (`PA-5`) — el mismo daño que la mitad
 anterior evita, por una puerta más angosta.
 
-> **Desde que `S18` también sale de `PENDING_AUTHORIZATION` en esos dos casos** —el arreglo del
-> candado `A` vacío, `B/03` §3.2— la ventana de `S12` y `S16` se cierra en el acto y `sucedida_por`
-> ya está escrita cuando el addon pregunta. **La lectura de dos columnas no sobra por eso**: `S13`
+> **Desde que `S18` también sale de `PENDING_AUTHORIZATION` en esos casos** —el arreglo del
+> candado `A` vacío, `B/03` §3.2— la ventana de `S12`, `S16` y el espejo se cierra en el acto y
+> `sucedida_por` ya está escrita cuando el addon pregunta. **La lectura de dos columnas no sobra por eso**: `S13`
 > sigue matando a la sucesora sin que `S18` corra, y la sucesión en curso **normal** —predecesora
 > viva, sucesora esperando— es la mayoría de los casos y sólo la contesta `sucede_a`.
 
@@ -244,12 +246,29 @@ Con las dos columnas la línea de tiempo queda cubierta entera, y el predicado p
 estados de la relación que `B/03` §3.2 enumera en **dos grupos**: **la releva una sucesión** —en
 curso, o sea una fila **viva** con `sucede_a` apuntándola; o terminada, o sea `sucedida_por` no
 nulo— contra **no hay sucesión que la releve**, que junta *«nunca la hubo»* con *«la que hubo se
-murió sin cerrarse»* y es el único grupo en que el addon queda huérfano. **Los dos casos de ese
+murió sin cerrarse»* y es el único grupo en que el addon **puede** quedar huérfano — le falta
+todavía pasar la tercera mitad, la del grant. **Los dos casos de ese
 último grupo no se distinguen acá a propósito**: para el addon dan el mismo resultado, y por eso
 este § cuenta **grupos** donde `B/03` §3.2 cuenta **estados**. Es la misma lectura de dos columnas
 que la condición 3 del pago tardío (`B/05` §3) hace por la misma razón, y **no revive lo que la
 mitad anterior descartó**: lo que fallaba era `sucede_a` **solo**, porque después del cierre da
 *«huérfano»* siempre; acá ese instante lo contesta `sucedida_por`.
+
+**Tres: un grant permanente también releva, y sin esta mitad la mata `S13` por la otra puerta.**
+`S13` saca de las filas vivas a la suscripción principal de cada vertical que el grant ancla
+(`B/03` §3.2), y un grant **no es una sucesión**: sin esta tercera mitad la condición se cumple
+entera en el mismo acto del otorgamiento, `A5` declara huérfano al addon y su preapproval se
+cancela *«de inmediato»* — de forma irreversible (`PA-5`) y sin reembolso (`DEC-GRANT-001`). El
+beneficiario de *Free Forever* perdería el *«Boost 30 días»* que compró ayer, que es
+**exactamente** lo que el contrato dice que no pasa: *«quien tiene *Free Forever* y un addon
+**conserva los dos**»*
+([`12-contrato-de-cobertura.md`](../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md)
+§2.4). Y no es una excepción nueva: el §2.4 de este capítulo ya declara que **un grant permanente
+vale como título en lugar de la suscripción `ACTIVE`**, y *«el objetivo del addon no desapareció»*
+es verdadero por la misma razón por la que lo es en una sucesión. **Vale sólo donde el grant
+ancló** (§2.4): en una vertical sin ancla no emite fuente, no hay título, y la mitad no aplica.
+**Y se vuelve a evaluar como las otras dos**, así que el día que el grant se revoca el addon pasa
+a huérfano y se corta — que es lo que §3.3 ya decidía por el otro camino.
 
 **La fila viva es parte del predicado, no un adorno.** En `S13` la sucesora también queda
 `CANCELLED` **con su `sucede_a` escrito** (`B/03` §3.2), así que un `sucede_a` apuntándola sin
@@ -301,18 +320,41 @@ distintos** y los dos se disparan del mismo lugar:
 | efecto | quién lo hace |
 |---|---|
 | las capacidades bajan | el reconciliador de excedentes (cap. 15 (épica de verticales) §4) |
-| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los que una sucesión releva (§4.2), que se re-apuntan a la sucesora y nunca quedaron huérfanos |
+| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los que una sucesión releva (§4.2), que se re-apuntan a la sucesora y nunca quedaron huérfanos, y los que **releva un grant permanente** en esa vertical (§4.2, tercera mitad), que siguen su curso sin cambiar de objetivo |
 
 **El disparador es que la fila salga de las filas vivas, y no un estado de llegada.** Decía
 *«cuando un título muere»*, que es la palabra suelta que `NUCLEO/01` §2.4 regla 2 prohíbe en un
 predicado, y era lo que dejaba la regla escrita para `CANCELLED` y muda para los otros dos
-—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son **las cinco** que en
-`B/03` §3.2 sacan a una fila principal de las filas vivas: `S3`, `S12`, `S13`, `S16` y `S17`, y
-lo que se evalúa en cada una es **la condición del §4.2**, no el nombre del estado al que llegó.
-La lista de transiciones es para poder auditar que ninguna se olvidó; si mañana entra una sexta,
-el predicado ya la cubre. **Y se re-evalúa**, porque es una condición sobre estados: el caso que
-lo obliga es una sucesora que autoriza tarde o abandona después de que su predecesora ya murió
-(§4.2).
+—`ABANDONED` y **`CHARGE_DECLINED`**—. Las transiciones que la cumplen son **las seis** que en
+`B/03` §3.2 sacan a una fila principal de las filas vivas: `S3`, `S12`, `S13`, `S16`, `S17` y **el
+espejo de la baja decidida por el proveedor** (`B/03` §10.1, que no tiene fila numerada y es
+transición de la misma tabla), y lo que se evalúa en cada una es **la condición del §4.2**, no el
+nombre del estado al que llegó. La lista es para poder auditar que ninguna se olvidó; si mañana
+entra una séptima, el predicado ya la cubre. **Y se re-evalúa**, porque es una condición sobre
+estados: el caso que lo obliga es una sucesora que autoriza tarde o abandona después de que su
+predecesora ya murió (§4.2).
+
+> **Y hay que decir sobre QUÉ filas se evalúa, porque en el caso que obliga a re-evaluar no son
+> las de la transición.** El disparador ocurre sobre una fila; los complementos que hay que mirar
+> son:
+>
+> 1. **los que cuelgan de esa fila** — el caso directo;
+> 2. **y, si esa fila era una sucesora, los que cuelgan de su predecesora** — la que su `sucede_a`
+>    apunta.
+>
+> **El 2 no es un borde: es el único camino por el que el caso del §4.2 se cumple.** Los
+> complementos cuelgan de la **predecesora** hasta que `S18` los re-apunta, y `S18` no corrió
+> —murió primero la predecesora por `S12`, `S13`, `S16` o el espejo, con la sucesora todavía
+> esperando autorización—. Cuando después **la sucesora abandona** (`S3` → `ABANDONED`) la
+> condición del §4.2 se cumple **sobre la predecesora**, pero la transición ocurrió sobre la
+> sucesora, **que no tiene ningún complemento colgando**: evaluar sólo sus huérfanos no devuelve
+> nada, y los de la predecesora se quedan cobrando todos los meses sin que nadie los mire. Es
+> justamente el *«el addon pasa a huérfano sin que nadie declare nada»* del §4.2 — la frase que
+> promete la re-evaluación y no decía sobre qué.
+>
+> El **backstop** de esto es la primera comprobación de cero llamadas de `B/09` §3, que ve la
+> sucesión abierta sobre una fila muerta y pone la marca; pero la marca es una persona, no una
+> cancelación, y lo que acá no puede fallar es el preapproval que sigue cobrando.
 
 **Falla hacia cobrar de más, y por eso es el que no puede fallar.** Un excedente sin reconciliar
 es una capacidad regalada; un preapproval huérfano sin cancelar es un débito mensual a alguien
@@ -325,9 +367,13 @@ barrido ve.
 estaba escrita apagaba este detector en el mismo acto que lo encendía: `A5` lleva al addon
 huérfano a `CANCELLED` (`B/03` §8), o sea a un estado terminal, y *«los estados terminales no se
 barren»* lo sacaba del barrido justo cuando pasaba a ser observable. La salvedad está allá y la
-razón es la asimetría de quién canceló: los tres terminales de una **suscripción** están exentos
-porque algo ya garantiza que su autorización no puede cobrar, y el preapproval de un
-**complemento** lo cancelamos nosotros, con una llamada que puede fallar sin emitir nada.
+razón es **quién canceló el preapproval**: lo que exime a una fila terminal no es la palabra
+*«terminal»* sino que su autorización haya quedado imposibilitada de cobrar **sin depender de una
+llamada nuestra**, y el preapproval de un **complemento** lo cancelamos siempre nosotros, con una
+llamada que puede fallar sin emitir nada. **Esa asimetría no parte suscripciones contra
+complementos**, y creerlo fue el error de la versión anterior de esta frase: hay terminales de
+suscripción que también dependen de una llamada nuestra —`S13`, `S3` y la lápida del corte—, y
+`B/09` §3 las devuelve al barrido por la misma puerta y con la misma condición de corte.
 
 ---
 

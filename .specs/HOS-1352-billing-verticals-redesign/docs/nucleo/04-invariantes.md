@@ -142,16 +142,21 @@ peso, porque romperlos rompe algo que ya se decidió:
 
 **`D15` afirmaba más de lo que el diseño cumple, y se corrigió hacia abajo.** Decía *«toda
 sucesión que termina deja escrito que ocurrió: la predecesora queda con `sucedida_por` puesta»*, y
-la única escritura de esa columna es `S18`. De las **cuatro** formas de terminar que `B/12` §5.3
-enumera, `S18` corre en **dos** —la sucesora autoriza, y la sucesión trabada que una persona
-resuelve por `S15`—; en las otras dos **no corre**: si la sucesora vence su ventana (`S3`) o si le
-cae un grant (`S13`), no queda sucesora viva a la que pasarle el origen y `sucedida_por` **no se
-escribe nunca**. Un invariante sobre-enunciado es peor que uno ausente,
+la única escritura de esa columna es `S18`. De las **cinco** formas de terminar que `B/12` §5.3
+enumera, `S18` corre en **tres** —la sucesora autoriza; la sucesión trabada que una persona
+resuelve por `S15`; y la baja que **decide el proveedor** sobre la predecesora, que desde la
+FASE 9-bis-3 es la rama 5 y entra por el espejo de `B/03` §10.1—; en las otras dos **no corre**:
+si la sucesora vence su ventana (`S3`) o si le cae un grant (`S13`), no queda sucesora viva a la
+que pasarle el origen y `sucedida_por` **no se escribe nunca**. Un invariante sobre-enunciado es
+peor que uno ausente,
 porque quien lo lee **deja de buscar el caso** — y el caso que dejaba de buscarse es *«la sucesora
-se murió y el puntero quedó puesto»*, que costó dos `CRITICA` en la misma pasada. (Y `S18` corre
-además por un camino que esas cuatro ramas **no** enumeran —la predecesora que se muere sola por
-`S12` o `S16`, desde la FASE 9-bis-3—, que también escribe la columna.) El enunciado de
-hoy cubre las cuatro ramas porque **nombra los dos rastros**, y los dos son legibles después:
+se murió y el puntero quedó puesto»*, que costó dos `CRITICA` en la misma pasada. (`S18` corre
+además cuando la predecesora se muere sola por `S12` o por `S16`, desde la FASE 9-bis-3, y esos
+dos caminos **no están entre las cinco** porque las cinco de `B/12` §5.3 enumeran el destino de un
+**pago pendiente por `S19`**, que sólo existe sobre una predecesora en `GRACE_PERIOD` o
+`SUSPENDED` — y `S12` sale de `CANCEL_SCHEDULED` y `S16` de `ACTIVE`. Escriben la columna igual.)
+El enunciado de hoy cubre las cinco ramas porque **nombra los dos rastros**, y los dos son
+legibles después:
 `sucedida_por` no se borra nunca, y el `sucede_a` de una fila no viva tampoco lo limpia nadie —es
 el cuarto estado de la relación de `B/03` §3.2, y `S13` lo llama *«el registro fiel de lo que
 pasó»*.

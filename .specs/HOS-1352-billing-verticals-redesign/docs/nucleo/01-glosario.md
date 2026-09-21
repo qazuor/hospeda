@@ -239,12 +239,13 @@ detecta comparando contra los seis.
 
 | # | quién | dónde | qué pregunta |
 |---|---|---|---|
-| 1 | el **alcance de `S13`** | cap. 03 (billing) §3.2 | *«toda fila viva del beneficiario en cada vertical que el acto ancla»* |
+| 1 | el **alcance de `S13`** | cap. 03 (billing) §3.2 | *«toda fila viva **principal** del beneficiario en cada vertical que el acto ancla»* — el adjetivo *«principal»* es parte del predicado: sin él entraban también las **suscripciones de complemento**, que son filas vivas del beneficiario en esa vertical, y el grant cancelaba los addons pagados |
 | 2 | el **`desde` de `S17`** | cap. 03 (billing) §3.2 | *«la predecesora, si sigue siendo fila viva»* — las cinco alcanzables |
 | 3 | la **condición de cierre de `S18`** | cap. 03 (billing) §3.2 | *«la predecesora ya no es fila viva»* |
 | 4 | el **`desde` de `S18`** | cap. 03 (billing) §3.2 | la **sucesora viva**: `ACTIVE`, o `PENDING_AUTHORIZATION` si la predecesora murió sola |
 | 5 | la **primera mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«la suscripción de esa vertical dejó de ser fila viva»* |
 | 6 | la **condición 3 del pago tardío** | cap. 05 (billing) §3 | *«no hay otra fila viva principal del mismo `user + vertical`»* — las seis, `PENDING_AUTHORIZATION` incluido |
+| 17 | la **tercera comprobación del barrido** | cap. 09 (billing) §3 | *«un beneficiario con un ancla viva en la vertical V no debería tener una fila viva **principal** en V»* — el detector de la ejecución parcial de `S13` |
 
 **B · Preguntan «¿hay OTRA fila viva apuntándola?».** El error posible es **omitir el adjetivo**,
 y es el que ya ocurrió: sin él el predicado **no tiene forma de dejar de cumplirse**, porque nada

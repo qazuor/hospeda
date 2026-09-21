@@ -168,6 +168,22 @@ Con la lápida, el barrido del cap. 09 **encuentra el id** y resuelve *«cancela
 corte»* en vez de *«huérfana»*. Y **no compite por el candado del §11**, porque `CANCELLED` no está
 entre los estados vivos (cap. 02 §2.2).
 
+> **Y el barrido la recorre de verdad, que es lo que hacía falta decir.** La lápida es una
+> `CANCELLED`, o sea un estado terminal, y *«los estados terminales de una suscripción no se
+> barren»* la sacaba del barrido **en el mismo acto de escribirla**: el capítulo le atribuía a un
+> mecanismo un trabajo que ese mecanismo tenía escrito que no hacía. La cubre la **salvedad 4**
+> del cap. 09 §3, porque su preapproval lo canceló una llamada **nuestra, hecha a mano y sin
+> nadie que verifique** ([`16-fase-7-del-paraguas.md`](../../HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md)
+> §4.2), así que vuelve al barrido **hasta que la relectura la vea `cancelled`**. Es exactamente
+> el caso que el párrafo de arriba describe —*«la cancelación se aceptó y no se aplicó»*—, y sin
+> la salvedad el único aviso llegaba **después del cobro**, por la vía del webhook del §2.2.
+>
+> **La lápida es la única fila `CANCELLED` de todo el sistema que ninguna transición produce**, y
+> eso no es exclusivo del corte: cualquier escritura manual futura hereda el mismo agujero. Por
+> eso la exención del cap. 09 §3 quedó escrita como **criterio** —quién dejó al preapproval sin
+> poder cobrar— y no como enumeración de transiciones: una fila que no nace de ninguna transición
+> no aparece en ninguna enumeración de transiciones.
+
 **El orden importa y es parte de la regla**: primero se cancela en el proveedor, después se
 escribe. Al revés quedaría una lápida sobre un preapproval que sigue vivo, que es peor que no
 tenerla — afirmaría que está cerrado algo que cobra.

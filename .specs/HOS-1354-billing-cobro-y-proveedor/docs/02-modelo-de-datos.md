@@ -81,8 +81,8 @@ segunda sucesora colisiona con la primera.
 
 **El candado `A` no puede quedar vacío mientras haya una fila viva, y por eso el cierre no espera
 la autorización.** Los dos índices reparten a las filas vivas por su **propia** columna, y ninguno
-de los dos puede mirar el estado de la otra fila: si la predecesora se muere sola —`S12` o `S16`,
-dos de las seis transiciones que `B/03` §3.2 recorre— la sucesora sigue con `sucede_a` no nulo, o
+de los dos puede mirar el estado de la otra fila: si la predecesora se muere sola —`S12`, `S16` o el espejo del §10.1,
+tres de las siete transiciones que `B/03` §3.2 recorre— la sucesora sigue con `sucede_a` no nulo, o
 sea en `B`, y **`A` queda libre para un alta nueva**. Ahí hay dos preapprovals que pueden cobrar
 sobre el mismo `user + vertical`, y `EX-6` mide que el proveedor no frena la segunda. La base no
 lo puede impedir sola, así que lo impide **el acto**: `S18` cierra la sucesión en cuanto la
@@ -98,7 +98,7 @@ consumidores que la necesitan **después**, cuando ya se borró:
 
 | quién pregunta | qué pregunta | dónde |
 |---|---|---|
-| los complementos | *«la suscripción de la que cuelgo dejó de ser fila viva, ¿la releva una sucesión —cerrada por `sucedida_por`, o en curso por una fila viva con `sucede_a` apuntándola— o quedé huérfano?»*. Lee **las dos columnas** porque su pregunta abarca la línea de tiempo entera, y `sucedida_por` recién existe cuando `S18` cierra | `B/16` §4.2 |
+| los complementos | *«la suscripción de la que cuelgo dejó de ser fila viva, ¿la releva una sucesión —cerrada por `sucedida_por`, o en curso por una fila viva con `sucede_a` apuntándola—, la releva un grant permanente, o quedé huérfano?»*. Lee **las dos columnas** porque su pregunta abarca la línea de tiempo entera, y `sucedida_por` recién existe cuando `S18` cierra. La tercera mitad —el grant— no se lee sobre estas columnas sino sobre las anclas del §2.4 | `B/16` §4.2 |
 | el pago tardío | del lado de `sucede_a`, *«¿la está por superar una sucesora **viva** que todavía no autorizó?»*, que es la mitad que decide entre reactivar y dejar el pago pendiente (`B/03` §3.2, `S19`). Del lado de `sucedida_por` pregunta *«¿ya fue superada?»*, y esa mitad **es redundante con su condición 1** —una fila con `sucedida_por` está `CANCELLED` y la 1 ya la rechaza—: se conserva para que el evento crítico diga cuál de las dos cosas pasó, **no porque la columna le haga falta** | `B/05` §3, condición 3 |
 
 **`sucedida_por` es esa evidencia, y es durable.** Se escribe **en la predecesora**, en el mismo
@@ -387,6 +387,16 @@ no un cierre.
 ninguna cambia un estado que el barrido compare, y las tres le sacan al cliente algo que ya tenía
 —capacidad comprada, descuento pactado, cortesía firmada— en el acto con el que decidió gastar
 más. Por eso el inventario va acá y no repartido en tres capítulos.
+
+> **Y un grant NO es una sucesión: no re-apunta nada, y tampoco se lleva nada puesto.** `S13`
+> alcanza *«toda fila viva **principal**»* (`B/03` §3.2), así que **no toca la suscripción de
+> complemento** —que es una fila de esta misma tabla, con su `clase`—; y el addon tampoco queda
+> huérfano, porque el grant **releva** a la principal en esa vertical (`B/16` §4.2, tercera
+> mitad de la condición). De las cinco filas de arriba la única que un grant mueve es la cuarta
+> —el pago pendiente por `S19`—, y la mueve **apagando la bandera**, no re-apuntándola (rama 4 de
+> `B/12` §5.3). Lo que queda **abierto y no lo decide ningún capítulo** es si un grant con
+> `includesAddons: true` tiene que convertir a costo $0 un complemento que el beneficiario ya
+> venía pagando: hoy se sigue cobrando, porque ningún acto declarado lo apaga.
 
 ---
 
