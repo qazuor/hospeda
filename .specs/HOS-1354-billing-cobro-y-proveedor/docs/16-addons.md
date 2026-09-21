@@ -224,21 +224,31 @@ tarde: el barrido, una revisión manual o un reconciliador leen lo mismo que el 
 
 **Y esa segunda mitad se lee sobre las DOS columnas, porque `sucedida_por` todavía no existe
 mientras la sucesión está en curso.** Leerla sólo sobre `sucedida_por` deja pasar el caso
-contrario al que arregla: `S18` la escribe recién cuando la sucesora está `ACTIVE`, y la tabla
-de seis transiciones de `B/03` §3.2 enumera **tres** por las que la predecesora deja de ser fila
-viva **antes** de eso y sola — `S12` (le llegó la fecha de fin de servicio), `S13` (*Free
-Forever*) y `S16` (el primer cobro de su autorización se rechaza, y `PA-3` mide que ese cobro
-llega **entre 26 y 44 minutos** después de autorizar, o sea dentro de la ventana en que un cambio
-de plan es legal). En las de `S12` y `S16` la sucesora sigue viva esperando autorizar: con una
-sola columna, el addon de alguien que está **en pleno upgrade** queda huérfano y se le cancela el
-preapproval, que es irreversible (`PA-5`) — el mismo daño que la mitad anterior evita, por una
-puerta más angosta. Con las dos columnas la línea de tiempo queda cubierta entera y son los
-**tres** estados de la relación que `B/03` §3.2 recorre: sucesión **en curso** (una fila viva con
-`sucede_a` apuntándola), sucesión **terminada** (`sucedida_por` no nulo) y **no hay sucesión que
-la releve** —nunca la hubo, o la que hubo se murió sin cerrarse—, que es el único de los tres en
-que el addon queda huérfano. Es la misma lectura de dos columnas que la
-condición 3 del pago tardío (`B/05` §3) hace por la misma razón, y **no revive lo que la mitad
-anterior descartó**: lo que fallaba era `sucede_a` **solo**, porque después del cierre da
+contrario al que arregla: **hasta la FASE 9-bis-3, `S18` sólo la escribía con la sucesora
+`ACTIVE`**, y la tabla de seis transiciones de `B/03` §3.2 enumera **tres** por las que la
+predecesora deja de ser fila viva **antes** de eso y sola — `S12` (le llegó la fecha de fin de
+servicio), `S13` (*Free Forever*) y `S16` (el primer cobro de su autorización se rechaza, y
+`PA-3` mide que ese cobro llega **entre 26 y 44 minutos** después de autorizar, o sea dentro de la
+ventana en que un cambio de plan es legal). En las de `S12` y `S16` la sucesora sigue viva
+esperando autorizar: con una sola columna, el addon de alguien que está **en pleno upgrade** queda
+huérfano y se le cancela el preapproval, que es irreversible (`PA-5`) — el mismo daño que la mitad
+anterior evita, por una puerta más angosta.
+
+> **Desde que `S18` también sale de `PENDING_AUTHORIZATION` en esos dos casos** —el arreglo del
+> candado `A` vacío, `B/03` §3.2— la ventana de `S12` y `S16` se cierra en el acto y `sucedida_por`
+> ya está escrita cuando el addon pregunta. **La lectura de dos columnas no sobra por eso**: `S13`
+> sigue matando a la sucesora sin que `S18` corra, y la sucesión en curso **normal** —predecesora
+> viva, sucesora esperando— es la mayoría de los casos y sólo la contesta `sucede_a`.
+
+Con las dos columnas la línea de tiempo queda cubierta entera, y el predicado parte los **cuatro**
+estados de la relación que `B/03` §3.2 enumera en **dos grupos**: **la releva una sucesión** —en
+curso, o sea una fila **viva** con `sucede_a` apuntándola; o terminada, o sea `sucedida_por` no
+nulo— contra **no hay sucesión que la releve**, que junta *«nunca la hubo»* con *«la que hubo se
+murió sin cerrarse»* y es el único grupo en que el addon queda huérfano. **Los dos casos de ese
+último grupo no se distinguen acá a propósito**: para el addon dan el mismo resultado, y por eso
+este § cuenta **grupos** donde `B/03` §3.2 cuenta **estados**. Es la misma lectura de dos columnas
+que la condición 3 del pago tardío (`B/05` §3) hace por la misma razón, y **no revive lo que la
+mitad anterior descartó**: lo que fallaba era `sucede_a` **solo**, porque después del cierre da
 *«huérfano»* siempre; acá ese instante lo contesta `sucedida_por`.
 
 **La fila viva es parte del predicado, no un adorno.** En `S13` la sucesora también queda
@@ -259,6 +269,13 @@ Es el mismo razonamiento que el contador de promos de `B/14` §2.2, y por la mis
 objetivo del addon no desapareció, se sucedió**. La suscripción vieja y la nueva son la misma
 relación comercial con la persona, y cancelar un addon ahí es **tratar una sucesión como una
 baja**.
+
+**Y el complemento es UNA de las tres cosas que `S18` re-apunta, no la única.** De una suscripción
+cuelgan además la **redención de promo** y la **cortesía vigente**, con el mismo modo de falla
+—silencioso, sin webhook y sin detector—, y durante una tanda entera la enumeración de efectos de
+`S18` nombró sólo a los complementos. El inventario completo, con qué se re-apunta y qué no, está
+en `B/02` §2.6; acá queda dicho para que la promoción del addon **a efecto declarado** no se lea
+como que las otras dos ya estaban resueltas.
 
 `DEC-SUB-007` impl. 4 lo había dejado explícitamente abierto —*«hay que decidir si siguen colgando
 del cliente o si hay que re-vincularlos»*—. Lo que **no** se decide acá es colgarlos **del

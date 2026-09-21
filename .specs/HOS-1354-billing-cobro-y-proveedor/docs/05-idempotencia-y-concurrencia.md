@@ -157,7 +157,7 @@ implementación traza la línea en otro lado.
 |---|---|---|
 | 1 | la suscripción existe y está en `GRACE_PERIOD` o `SUSPENDED` | si está `CANCELLED`, `ABANDONED` o ya `ACTIVE`, el pago no la reactiva |
 | 2 | el monto coincide con el esperado para el período que cubre | un monto distinto puede ser otro cobro, un cambio de precio no propagado, o un error |
-| 3 | **no hay otra fila viva principal del mismo `user + vertical`** —las **seis** de `B/02` §2.2, `PENDING_AUTHORIZATION` **incluido**—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una sucesora con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada —o de una que está por superarla— y reactivar le daría **dos** |
+| 3 | **no hay otra fila viva principal del mismo `user + vertical`** —las **seis** de `B/02` §2.2, `PENDING_AUTHORIZATION` **incluido**—, **ni esta fila fue superada por una sucesora que ya autorizó** — o sea `sucedida_por` **no** nulo (la sucesión se cerró), o una **sucesora viva** con `sucede_a` apuntándola que **ya autorizó** por `S2` (la sucesión quedó trabada con la marca puesta) | si la hay, el pago es de una suscripción superada —o de una que está por superarla— y reactivar le daría **dos** |
 | 4 | no hay otro pago acreditado para el mismo período | si lo hay, es un doble cobro |
 
 **Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
@@ -210,11 +210,24 @@ la definición de *«fila viva»* — así que la enumeración pasa a ser la de 
 deja de estar escrito dos veces con dos contenidos.
 
 **Y la segunda mitad de la 3 se lee sobre DOS columnas, porque la que la respondía se borra.**
-`sucede_a` sólo existe mientras la sucesión está en curso: cuando la sucesora autoriza, `S18` la
-limpia (`B/03` §3.2) y el vínculo pasa a vivir en `sucedida_por`, del lado de la predecesora.
+`sucede_a` sólo existe mientras la sucesión está en curso: cuando la sucesora autoriza —o antes,
+si la predecesora se murió sola por `S12` o `S16`—, `S18` la limpia (`B/03` §3.2) y el vínculo
+pasa a vivir en `sucedida_por`, del lado de la predecesora.
 Preguntar sólo por `sucede_a` daba *«no fue superada»* justo en el caso en que sí lo fue, que es
 el más caro de los dos. Con `sucedida_por` la condición se puede evaluar **después** del cierre,
 que es cuando llega un pago tardío.
+
+> **La mitad `sucedida_por` es redundante con la condición 1, y se declara así en vez de
+> presentarse como el caso que salva.** Una fila con `sucedida_por` puesta es una predecesora que
+> `S17` llevó a `CANCELLED`, y la condición 1 ya rechaza `CANCELLED` sin leer la 3: **ninguna fila
+> puede cumplir la 1 y tener `sucedida_por` a la vez**, porque de los tres estados no vivos no se
+> vuelve (`B/03` §3.3). Se conserva igual, y por dos razones que no son la del párrafo de arriba:
+> las dos condiciones **fallan en la misma dirección**, así que la redundancia es gratis; y el
+> evento crítico dice **cuál** falló, así que tener la 3 escrita distingue *«llegó un pago sobre
+> una fila que se dio de baja»* de *«llegó un pago sobre una fila a la que otra la sucedió»*, que
+> es lo primero que necesita quien lo mire. **Lo que no hay que hacer es contar este § entre los
+> consumidores que `sucedida_por` necesita para existir**: el que la necesita de verdad es el
+> addon de `B/16` §4.2, que sí evalúa después del cierre.
 
 **Y una sucesora en `PENDING_AUTHORIZATION` BLOQUEA, que es lo contrario de lo que este § decía.**
 La versión anterior la eximía *«a propósito»*, con dos razones, y las dos se cayeron:

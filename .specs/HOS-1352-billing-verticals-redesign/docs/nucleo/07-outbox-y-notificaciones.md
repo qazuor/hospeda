@@ -222,6 +222,16 @@ usando. Un aviso que nombra el cobro y calla el destino de esa plata anuncia el 
 decisión, que es lo contrario de por qué este correo existe. El alcance espejo está en cap. 19
 §4, fila 15 (épica de billing).
 
+**Y tiene que decir que la devolución NO es instantánea**, que es la tercera cosa y la que
+faltaba acá y en su espejo. `DEC-RF-002` puso el reembolso en manos de una persona —al cerrar la
+sucesión el sistema **pone la marca** y **no ejecuta el reembolso solo**—, así que entre el cierre
+del cambio de plan y la plata de vuelta hay una espera que depende de que alguien mire. **Es el
+precio aceptado de no abrir el único dominio que el diseño tiene vacío a propósito** —operaciones
+automáticas sobre dinero, cap. 08 §3 (núcleo)— y este correo es donde ese precio se acota: un
+cliente que sabe que la devolución lleva unas horas espera; uno que la esperaba en el acto
+reclama. Sin la frase el correo promete algo que la decisión no da, y es un camino **normal**, no
+excepcional: `DEC-RF-002` lo declara así en voz alta.
+
 **El schedule del grace es relativo al vencimiento y no absoluto**: como la ventana es
 configurable por plan, un schedule con días fijos se cae fuera de la ventana en los planes con
 grace más corto (`DEC-SUB-002`).

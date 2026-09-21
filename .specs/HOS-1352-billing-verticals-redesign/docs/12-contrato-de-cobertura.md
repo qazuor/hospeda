@@ -319,6 +319,18 @@ plata en la misma dirección.
 rigiendo el piso** (§2.5), y a quien está cambiando de plan **lo sigue cubriendo su suscripción
 vieja**, que es justamente lo que `D7` mantiene viva hasta que la nueva quede autorizada.
 
+**Con una salvedad que conviene decir en vez de suponerla, porque la predecesora se puede morir
+sola.** `D7` la mantiene viva contra **nuestras** cancelaciones, no contra los relojes: de las
+seis transiciones que la mueven durante la ventana, **tres la sacan de las filas vivas sin que
+nadie declare nada** —`S12`, `S13` y `S16` (`B/03` §3.2)—. En esas tres la predecesora deja de
+emitir y la sucesora todavía no emite, así que **el cliente cae al piso (§2.5) por lo que le quede
+de ventana**, hasta que autorice o abandone. No es un hueco nuevo, ni una consecuencia de que el
+cierre de la sucesión pase a correr antes de la autorización —`PENDING_AUTHORIZATION` no emite ni
+antes ni después—: es lo que ya pasaba sin estar escrito. **Y se acepta**, porque las tres tienen
+la misma causa —el compromiso que sostenía la cobertura **terminó**— y la alternativa es la
+respuesta cara del párrafo de arriba. Lo que sí se exige es que la superficie lo diga: `B/19` §4,
+filas 16 y 16-bis.
+
 **Y la garantía termina donde termina la sucesión, así que hay que decir qué pasa después.** La
 frase de arriba —*«hasta que la nueva se autorice»*— cierra la ventana **anterior** a la
 autorización, y hay una ventana **posterior**: cuando la sucesora ya autorizó pero la

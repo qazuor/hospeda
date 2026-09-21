@@ -111,8 +111,8 @@ La columna **⛔** marca las que **llaman a la pasarela**: no se pueden terminar
 | **B4** | **El contrato de cobertura, de verdad** | — | `cobertura()` responde con una fuente de billing viva, y el aviso de que cambió sale | [contrato](../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md) §5.2, §6 | `G13` |
 | **B5** | **El registro del dinero** | — | qué se cobró, qué se reembolsó y qué se registró a mano, sin que un hecho se aplique dos veces ni un período admita dos pagos | `02` §2.3 · `03` §6, §7, §10.2 · `05` C5 | — |
 | **B6** | **Ejecutar el cobro y el reembolso** 🔒 | ⛔ | **BLOQUEADA, y es la única sin diseño** — es el capítulo 13, el único de los 22 sin escribir | `13` *(sin escribir)* | — |
-| **B7** | **La mora** | ⛔ | un cobro que no entra abre un reloj que se cierra, y el que nunca pagó no recibe diez días gratis | `03` §4, S4–S7 · `12` §1, §4, §5 · `05` §3 | — |
-| **B8** | **Los cambios del compromiso** | ⛔ | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse | `03` §5, S8–S12 · `12` §2, §3, §6, §7 · `05` C2, C4 | — |
+| **B7** | **La mora** | ⛔ | un cobro que no entra abre un reloj que se cierra, el que nunca pagó no recibe diez días gratis, y **el pago que entra en plena sucesión no reactiva, no se pierde y tiene quién lo resuelva** | `03` §4, S4–S7, **S19** · `12` §1, §4, §5 · `05` §3 | — |
+| **B8** | **Los cambios del compromiso** | ⛔ | cambiar de plan, de ciclo, pausar y darse de baja, cada uno por su camino y sin pisarse — **incluido el CIERRE de la sucesión con sus cuatro escrituras** | `03` §5, S8–S12, **S17–S18** · `12` §2, §3, §6, §7 · `02` §2.6 · `05` C2, C4 | — |
 | **B9** | **Las concesiones** | ⛔ | promos, cortesías y grants componen de forma determinista y se enchufan como fuentes | `14` entero · `03` S9, S13 · `02` §2.4 · `05` C3 | — |
 | **B10** | **Addons** | ⛔ | los dos ejes, qué es una suscripción válida, el addon a costo cero y el huérfano que sigue cobrando | `16` entero · `03` §8 · `02` §2.4 | — |
 | **B11** | **Conciliación** | ⛔ | lo que creemos coincide con lo que hay, y lo que diverge en silencio aparece | `09` entero | — |
@@ -290,7 +290,7 @@ B2 ──┘   ✅    │
 |---|---|
 | **camino crítico** | `B1 → B3 → B5 → B7 → B8 → B9 → B10 → B13 → B12` |
 | **en paralelo** | **B2** con B1 (su gate es `V2`, no B1) · **B4** una vez que estén B3 y `V4` · **B11** una vez que esté B5 |
-| **sin diseño** | **B6**, y no detiene a ninguna otra |
+| **sin diseño** | **B6**, y **desde la FASE 9-bis-3 detiene la EJECUCIÓN de un desenlace de B7** — ver §3.1 |
 | **lo único que arranca hoy** | **B2**, y la interfaz de B1. **El resto del grafo espera a la pasarela** (§2.3) |
 
 **B5 es la bisagra**: hasta ahí se construye el compromiso, y de ahí en adelante todo lee el
@@ -300,6 +300,37 @@ pagos acreditados, nunca sobre fechas»* pasa a tener un lugar donde vivir: una 
 que mire fechas rompe **el agujero del grace y la compensación de días a la vez**.
 
 **B4 es el hito de integración**, no el final: es donde la frontera deja de ser una definición.
+
+### 3.1 B6 dejó de ser una hoja suelta: la rama 1 del cierre de la sucesión aterriza ahí
+
+**Hasta la FASE 9-bis-2, `B6` podía quedarse sola sin detener nada** porque el reembolso era un
+camino excepcional del capítulo 13. Dejó de serlo: `B/12` §5.3 movió el disparador al **cierre de
+la sucesión**, `S19` creó el pago retenido, y `DEC-RF-002` declaró el camino **normal** —*«va a
+pasar seguido sobre el camino de recuperación que `DEC-SUB-003` diseñó para que no fuera un
+muro»*—. Esa rama vive en **B7**, que está en el camino crítico, y su desenlace es un reembolso,
+que es **B6**.
+
+**El bloqueo alcanza a la ejecución, no al disparador, y la línea es exacta:**
+
+| qué | de qué unidad es | ¿se puede construir hoy? |
+|---|---|---|
+| poner la marca al cerrar la sucesión (`S18`, efecto 4) | **B7** | **sí** — es una escritura nuestra, no toca la pasarela |
+| que la marca escale si nadie la mira (`B/09` §3, salvedades 2 y 3) | **B11** | **sí** |
+| que el caso aparezca en el listado accionable con qué devolver (`NUCLEO/08` §4.3) | B13 y el núcleo | sí |
+| **mover la plata de vuelta** | **B6** 🔒 | **no**: el capítulo 13 no está escrito y arrastra `RF-3` en `UNKNOWN` |
+
+O sea: **B7 puede quedar entera y correcta con B6 sin empezar**, y lo que queda pendiente es que
+la persona que confirma el reembolso tenga con qué ejecutarlo. Lo que **no** se puede es liberar
+el cambio de plan desde grace sin B6 y llamarlo completo: habría casos acumulándose en el canal de
+conciliación sin herramienta que los cierre.
+
+**Y el criterio de terminación de B7 quedó describiendo el comportamiento que la tanda
+reemplazó.** Su §4 dice *«un pago tardío que llega habiendo otra suscripción viva no reactiva nada
+y el evento dice cuál de las cuatro condiciones falló»*. Desde `S19` ese pago **no sólo no
+reactiva**: se registra, **queda pendiente**, **sin marca y sin evento crítico** (`B/05` §3, la
+excepción), y su destino lo decide el cierre. Una implementación que descarte el pago —o que ponga
+la marca al llegar, que es lo que el criterio sugiere— **satisface el criterio al pie de la letra y
+pierde la plata**. El §4 queda corregido abajo.
 
 **Y cada unidad trae la pantalla mínima que su propio flujo necesita** —el alta necesita un
 checkout—. B13 es la unidad de las superficies que **leen el estado compuesto** y de la lista de lo
@@ -320,11 +351,11 @@ unidad se declara terminada.
 | **B4** | el juego de casos corre contra las dos implementaciones y **hay al menos uno que la de arranque no pasa** — si pasan los dos con las dos, no está probando nada; y la de arranque **no puede llegar a producción** |
 | **B5** | un reembolso que emite **tres notificaciones en dos formatos** produce **una** fila; un período con un pago acreditado **rechaza el segundo desde la base**, no desde un chequeo; y un hecho más viejo que el último aplicado **se registra y no se aplica** |
 | **B6** | 🔒 **no se puede redactar todavía**: qué hay que demostrar depende de quién tenga el reloj. Lo que sí vale en las dos respuestas: **ningún cobro sale sin su clave de idempotencia persistida antes**, y **nunca hay dos relojes sobre la misma autorización** |
-| **B7** | un **primer** cobro rechazado **no da grace**; un cobro que el proveedor está reintentando deja el pago `PENDING` y la suscripción `ACTIVE`; y un pago tardío que llega habiendo **otra suscripción viva** para ese `user + vertical` **no reactiva nada** y el evento dice **cuál** de las cuatro condiciones falló |
-| **B8** | un downgrade encima de otro **vuelve a preguntar** qué conservar; un aumento cuya fecha cae sobre una pausada se aplica en el **primer cobro posterior a la reanudación** y nunca recortando los 60 días; y cancelar estando pausado corta el servicio **ese día** |
+| **B7** | un **primer** cobro rechazado **no da grace**; un cobro que el proveedor está reintentando deja el pago `PENDING` y la suscripción `ACTIVE`; un pago tardío que llega habiendo **otra suscripción viva** para ese `user + vertical` **no reactiva nada** y el evento dice **cuál** de las cuatro condiciones falló — **salvo que esa otra fila sea su propia sucesora viva**, y ahí el pago **se registra y queda pendiente**, **sin marca y sin evento crítico** (`S19`, `05` §3), con su destino decidido por **cómo termina la sucesión** y no por su llegada; y **las cuatro ramas de `12` §5.3 tienen cada una un acto que apaga la bandera** —`S18` con la marca, `S3` reevaluando, `S13` apagándola— de modo que **ninguna corrida deja un pago «pendiente» para siempre** |
+| **B8** | un downgrade encima de otro **vuelve a preguntar** qué conservar; un aumento cuya fecha cae sobre una pausada se aplica en el **primer cobro posterior a la reanudación** y nunca recortando los 60 días; cancelar estando pausado corta el servicio **ese día**; **una predecesora que se muere sola con la sucesora todavía esperando autorización cierra la sucesión en el acto, y un alta nueva sobre ese `user + vertical` la rechaza la base**; y **un upgrade no le saca nada al cliente**: los complementos, la redención de promo y la cortesía vigente terminan colgando de la sucesora, con el descuento vuelto a aplicar sobre el monto nuevo y verificado releyendo (`02` §2.6) |
 | **B9** | un 20 % y ARS 100 sobre ARS 1.000 dan **700 y nunca 720**; un descuento que deja el monto bajo ARS 15 **pausa en vez de mutar**; y agregar cortesía y grant como fuentes **no toca una línea** de lo que dejó B4 |
 | **B10** | cancelar el plan **deja vivo** el preapproval de cada addon recurrente, y el barrido **lo ve**; borrar una ficha **dice qué addons se pierden y por cuánto** antes de borrarla; y `PERIÓDICO + DÍAS_FIJOS` **no se puede configurar** |
-| **B11** | un barrido que liste desde el buscador del proveedor **no existe**; una suscripción que cobró y cuyo endpoint de cobros devuelve cero **no se reporta como divergencia**; y un monto que el proveedor aceptó y no aplicó **aparece**, sin que haya llegado ningún webhook |
+| **B11** | un barrido que liste desde el buscador del proveedor **no existe**; una suscripción que cobró y cuyo endpoint de cobros devuelve cero **no se reporta como divergencia**; un monto que el proveedor aceptó y no aplicó **aparece**, sin que haya llegado ningún webhook; y **una suscripción TERMINAL con la marca puesta o con un pago pendiente sigue en el barrido**, porque es lo único que hace que el reloj de la marca escale sobre el reembolso que `DEC-RF-002` volvió manual |
 | **B12** | retirar un plan **no mueve a nadie** —ni un monto, ni una fecha, ni un entitlement—; y anunciar una discontinuación **corta el cobro el día 0** dejando el servicio prestándose hasta la fecha, nunca al revés |
 | **B13** | cancelar cuesta **los mismos pasos o menos** que suscribirse; **nuestro** correo sale antes que el del proveedor; y ninguna pantalla esconde algo que la autorización **no** rechazaría |
 

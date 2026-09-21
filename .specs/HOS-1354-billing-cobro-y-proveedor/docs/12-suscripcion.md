@@ -199,6 +199,12 @@ ocurrió— y eso **bloqueaba el reintento que este mismo capítulo exige**, por
 cuenta a `SUSPENDED` entre los vivos. `CHARGE_DECLINED` es terminal y **no vivo**: el reintento
 entra como alta nueva sin pelear contra ninguna restricción.
 
+**Con una salvedad, y es la que impide el doble cobro**: si esa persona tenía **un cambio de plan
+en curso**, su sucesora sigue viva en `PENDING_AUTHORIZATION` con su propio preapproval. Ahí no
+hay alta nueva que dar — `S18` cierra la sucesión en el acto y la sucesora pasa a ocupar el
+candado `A` (cap. 03 §3.2), así que el `INSERT` lo rechaza la base. Lo que corresponde es terminar
+o abandonar ese checkout, y el §4.4 lo dice.
+
 El §20 describe una política de **retención**: alguien que venía pagando y tuvo un problema.
 Quien nunca pagó no tiene una relación que retener, y el servicio que recibió se mide en minutos
 —el cobro real llega **entre 26 y 44 minutos** después de autorizar (`PA-3`, re-medido el
@@ -226,6 +232,19 @@ Dos consecuencias que el diseño tiene que absorber:
 1. **El reintento del cliente es una suscripción NUEVA, con id nuevo.** No se recupera la anterior
    —no se puede—, así que la superficie tiene que ofrecer empezar de nuevo, no «reintentar el
    pago».
+
+   **Salvo que ya tenga un checkout abierto, y ahí ofrecer empezar de nuevo es ofrecer el doble
+   cobro.** El rechazo llega *«entre 26 y 44 minutos»* después de autorizar (`PA-3`), que es
+   exactamente la ventana en la que un cambio de plan es legal (cap. 03 §3.2), así que la
+   población no es un borde: es la de quien cambió de plan el mismo día que se suscribió. Su
+   sucesora sigue viva en `PENDING_AUTHORIZATION` y **puede autorizar**; si además dejamos entrar
+   un alta nueva quedan **dos preapprovals autorizados cobrando** sobre el mismo
+   `user + vertical`, y `EX-6` mide que el proveedor no frena la segunda. Desde que `S18` cierra
+   la sucesión en cuanto la predecesora deja de ser fila viva, esa sucesora ocupa el candado `A` y
+   la base rechaza el alta. **Lo que la superficie ofrece ahí es terminar o abandonar el checkout
+   abierto**, con su enlace y su fecha de vencimiento (cap. 03 §3.3.1 y §3.4 punto 3, `B/19` §4
+   fila 16). Abandonar lo deja en `ABANDONED`, que no es vivo, y recién ahí *«empezar de nuevo»*
+   es la oferta correcta.
 2. **Las dos muertes ya no comparten estado — el residuo está cerrado.** `ABANDONED` dice *«nadie
    autorizó en 72 h»*; **`CHARGE_DECLINED`** dice *«intentó y lo rechazaron»*. Le decimos cosas
    distintas al cliente en cada caso y ahora tienen nombres distintos (cap. 03 §3.1, transición
@@ -347,8 +366,15 @@ correo promete algo que la decisión no da.
 #### Y si entra, NO reactiva a la predecesora
 
 > **Ni `S5` ni `S7` se aplican sobre la PREDECESORA de una sucesión en curso** — o sea la fila que
-> **tiene** una sucesora con `sucede_a` apuntándola (`B/02` §2.2). El pago entra, **se registra, y
-> queda pendiente de resolución**: `S19`.
+> **tiene una sucesora VIVA** con `sucede_a` apuntándola (`B/02` §2.2). El pago entra, **se
+> registra, y queda pendiente de resolución**: `S19`.
+
+**El adjetivo *«viva»* es la mitad que decide cuándo la regla DEJA de aplicar.** Nada limpia
+`sucede_a` cuando la sucesora se muere —`S3` a las 72 h, o `S13`—, así que leída sin él la regla
+no vence nunca: la fila queda para siempre sin poder reactivar (`S5`, `S7`), sin poder suspender
+(`S6` no corre sobre un pago pendiente) y con la plata retenida. Con él, la muerte de la sucesora
+**es** el fin de la sucesión y el pago se resuelve por la rama 2, que es lo que la tabla de abajo
+ya decía. El inventario de los predicados que leen este puntero está en `NUCLEO/01` §2.4.
 
 **El sujeto es la predecesora, y hay que decirlo con esas palabras porque la versión anterior decía
 *«una fila que ya declaró sucesión»* y eso nombra a la OTRA.** *«Declarar una sucesión»* es el
@@ -395,10 +421,37 @@ enumeré sobre `B/03` §3.2, recorriendo las salidas de la predecesora (en `GRAC
 
 | cómo termina la sucesión | qué pasa con el pago pendiente | por qué |
 |---|---|---|
-| **la sucesora autoriza** (`S2`) → `S17` mata a la predecesora y `S18` cierra | **se reembolsa, y lo confirma una persona** (`DEC-RF-002`): al cerrar la sucesión se pone la **marca** y el caso entra al canal de conciliación; el sistema **no ejecuta el reembolso solo** | el período que cubría se lo comió `S17`: no le compró nada, y el crédito de la sucesora se computó en cero. Es lo que este § ya decidió, con su disparador corregido |
-| **la sucesora vence su ventana** (`S3` → `ABANDONED`) | **no se reembolsa: reactiva** | ya no hay sucesión, el pago cubre el período que la persona está usando, y el §3 del cap. 05 lo evalúa de nuevo con su condición 3 ahora cumplida. `S5` o `S7`, según el estado |
+| **la sucesora autoriza** (`S2`) → `S17` mata a la predecesora y `S18` cierra | **se reembolsa, y lo confirma una persona** (`DEC-RF-002`): **`S18`, en el mismo acto del cierre, le pone la marca `requiere_conciliación` a la PREDECESORA** —la dueña del pago— con motivo *«reembolso por confirmar»*, y el caso entra al canal de conciliación; el sistema **no ejecuta el reembolso solo** | el período que cubría se lo comió `S17`: no le compró nada, y el crédito de la sucesora se computó en cero. Es lo que este § ya decidió, con su disparador corregido |
+| **la sucesora vence su ventana** (`S3` → `ABANDONED`) | **no se reembolsa: reactiva** — y lo dispara **`S3`**, que reevalúa el pago pendiente en el acto | ya no hay sucesión, el pago cubre el período que la persona está usando, y el §3 del cap. 05 lo evalúa de nuevo con su condición 3 ahora cumplida. `S5` o `S7`, según el estado |
 | **la sucesión queda trabada** — la cancelación en el proveedor falla sobre un preapproval vivo (`B/03` §3.2) | **lo resuelve la misma persona**, junto con la marca | es la única rama en que hay de verdad dos autorizaciones que pueden cobrar; ya hay un humano mirándola y el pago es parte del mismo caso |
-| **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3 |
+| **cae un grant *Free Forever*** (`S13` sobre las dos filas) | **no se reembolsa**, y es una excepción declarada — **`S13` apaga la bandera en el mismo acto** | `DEC-GRANT-001`: *«se corta el cobro en el acto y no se devuelve lo pagado»*, con su riesgo ya declarado. El cobro es **anterior** al regalo, así que no es el caso del `B/05` §C3. La bandera se apaga porque un *«pendiente»* eterno sobre una fila cerrada no es un registro fiel: es un conteo inflado |
+
+**Las cuatro ramas tienen ahora un ACTO que las dispara, y hay que decirlo porque durante una
+tanda entera no lo tuvieron.** La rama 1 decía *«al cerrar la sucesión se pone la marca»* sin
+nombrar transición ni fila, y por la regla 1 del núcleo —*«lo que la tabla no declara, no
+pasa»*— el reembolso de la única rama que mueve dinero **no lo ejecutaba nadie**, sobre un camino
+que `DEC-RF-002` declara normal:
+
+| rama | qué acto lo dispara | sobre qué fila |
+|---|---|---|
+| 1 · la sucesora autoriza | **`S18`** (efecto 4) | **la predecesora**, `CANCELLED` |
+| 2 · la sucesora vence su ventana | **`S3`** (efecto) | la predecesora, viva |
+| 3 · la sucesión trabada | `S14`, que ya puso la marca | la predecesora |
+| 4 · cae un grant | **`S13`** (efecto) | las dos |
+
+**La marca va sobre la PREDECESORA y no sobre la sucesora, y la elección tiene consecuencia.** El
+pago cuelga de la predecesora (`B/02` §2.3), así que es la fila que hay que mirar para resolverlo.
+Y ponerla sobre la sucesora tenía un costo que la otra no tiene: *«mientras la marca esté puesta
+sobre una fila, ningún `sucede_a` puede apuntarla»* (`B/02` §2.2), o sea que el cliente que
+**acaba** de cambiar de plan no podría volver a cambiarlo hasta que una persona resuelva un caso
+que es de su plata y no de su plan. Sobre la predecesora esa regla es vacua: está `CANCELLED`, y
+`G-R1-A` ya sólo deja declarar una sucesión desde `ACTIVE`, `GRACE_PERIOD` o `CANCEL_SCHEDULED`.
+
+**Y la predecesora es terminal, así que el reloj de la marca la tiene que alcanzar.** Por eso
+`B/09` §3 devuelve al barrido las suscripciones terminales con la marca puesta o con un pago
+pendiente (salvedades 2 y 3): sin eso la marca no escala nunca y *«lo confirma una persona»*
+significa *«lo confirma una persona si se acuerda»*. **El reloj es la mitad operativa de
+`DEC-RF-002`**, no un detalle del capítulo 09.
 
 **Las dos primeras son la razón de la regla y son opuestas**, y por eso el disparador no puede ser
 la llegada del pago: en el momento en que entra **todavía no se sabe cuál de las dos va a pasar**.

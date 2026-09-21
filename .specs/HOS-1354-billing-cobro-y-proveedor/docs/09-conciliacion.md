@@ -77,8 +77,8 @@ manual», es «toca plata o no toca plata»**.
 ## 3. Qué compara el barrido, campo por campo
 
 Por cada fila de nuestro inventario —suscripción principal o suscripción de complemento
-(`DEC-ADDON-002`)— que no esté en un estado terminal, **más las terminales que la salvedad del
-complemento devuelve al barrido**:
+(`DEC-ADDON-002`)— que no esté en un estado terminal, **más las terminales que las tres salvedades
+de abajo devuelven al barrido**:
 
 | se compara | contra | si difieren |
 |---|---|---|
@@ -98,6 +98,25 @@ depende de que una llamada nuestra haya salido bien: `S3` canceló el preapprova
 ventana, `S12` y `S17` lo cancelan sobre una fila cuyo preapproval `S11` ya canceló *«de
 inmediato»* o cuya relectura lo confirma (`B/03` §3.2), y en `CHARGE_DECLINED` **lo canceló el
 proveedor** en el mismo milisegundo del rechazo (`B/12` §4.4, medido el 2026-09-17).
+
+**Las tres salvedades que devuelven una terminal al barrido, y por qué cada una.** La exención de
+arriba vale *«por la razón que hace terminal a cada uno»*, así que se cae exactamente donde esa
+razón no alcanza. Son tres y no una:
+
+| # | qué vuelve al barrido | hasta cuándo | por qué la exención no la cubre |
+|---|---|---|---|
+| 1 | **una instancia de addon** en estado terminal | hasta que la relectura la vea `cancelled` | su preapproval lo cancelamos **nosotros**, con una llamada que puede fallar — ver abajo |
+| 2 | **una suscripción terminal con la marca `requiere_conciliación` puesta** | hasta que una persona la levante (`S15`) | la exención es sobre *«no puede divergir hacia nada que nos importe»*, y una fila marcada **ya divergió**: lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la marca**, que es lo único que hace que el caso no quede abierto para siempre |
+| 3 | **una suscripción terminal con un pago acreditado pendiente de resolución** por `S19` | hasta que la bandera se apague | es plata del cliente en nuestra cuenta. La rama 1 de `B/12` §5.3 deja la predecesora en `CANCELLED` **con un reembolso por confirmar**, así que sin esta salvedad el único desenlace de las cuatro que mueve dinero es el único que ningún proceso vuelve a mirar |
+
+**La 2 y la 3 se solapan a propósito, y no es redundancia**: la 2 cubre la fila que ya tiene la
+marca, la 3 cubre la que **debería** tenerla y no la tiene porque `S18` no llegó a ponerla — que
+es el caso que la segunda comprobación de más abajo detecta. Sin la 3, esa comprobación nombra una
+rama que su propio alcance excluye.
+
+**Y esto es lo que vuelve consistente la frase de más abajo** —*«una fila con la marca
+`requiere_conciliación` SÍ se barre»*—, que hasta acá contradecía al encabezado de este § cada vez
+que la fila marcada era terminal.
 
 **Una instancia de addon en estado terminal SÍ se barre, hasta que la relectura la vea
 `cancelled`.** Ahí la garantía no existe: su preapproval es propio (`DEC-ADDON-002`), el
@@ -121,19 +140,28 @@ ese estado —la cancelación de `S17` que falló sobre un preapproval vivo— *
 puesta**, así que esto no la duplica: lo que encuentra es la que llegó ahí **sin** marca, o sea
 por un camino que `G-R1-C` no alcanzó a impedir.
 
-> **Con una excepción, y sin ella la comprobación da falso positivo en un camino normal.** `S18`
-> exige la sucesora **`ACTIVE`**, y la tabla de `B/03` §3.2 enumera **tres** transiciones por las
-> que la predecesora deja de ser fila viva **antes** de que eso pase —`S12`, `S13` y `S16`—, con la
-> sucesora todavía en `PENDING_AUTHORIZATION` y dentro de su ventana. Ahí `S18` **no es que no
-> corrió: todavía no puede correr**, y marcar es acusar de incidente al cliente que está por
-> terminar su checkout. **La comprobación no alcanza a la sucesora que sigue siendo fila viva en
-> `PENDING_AUTHORIZATION` con su ventana abierta**; cuando la ventana vence, `S3` la mata y la fila
-> sale del barrido por su propio estado terminal.
+> **Y la comprobación NO lleva excepción para la sucesora en `PENDING_AUTHORIZATION`: llevaba
+> una, y era el agujero.** El argumento decía que `S18` exige la sucesora **`ACTIVE`**, que las
+> tres transiciones por las que la predecesora se muere sola —`S12`, `S13` y `S16`— dejan a la
+> sucesora esperando autorización, y que ahí `S18` *«no es que no corrió: todavía no puede
+> correr»*. La premisa se cayó: **desde `B/03` §3.2, `S18` también sale de
+> `PENDING_AUTHORIZATION`** cuando la predecesora murió por `S12` o `S16`, justamente para que la
+> sucesora ocupe el candado `A`. En esos dos casos `S18` **sí puede correr**, así que una sucesión
+> abierta sobre una predecesora muerta es un incidente y se marca, sin esperar nada.
 >
-> Esto **no** abre el agujero que la comprobación vigila: mientras la sucesora no autorizó no hay
-> dos autorizaciones que puedan cobrar, que es la condición del candado `A`. Lo escribió la
-> **FASE 9-bis-2**, y el defecto lo introdujo su propia familia de la sucesión al hacer de `S18`
-> una transición aparte.
+> **Y la razón que daba la excepción miraba el lado equivocado del candado.** Decía que *«mientras
+> la sucesora no autorizó no hay dos autorizaciones que puedan cobrar, que es la condición del
+> candado `A`»*. La condición del candado `A` **no es** que haya dos autorizaciones cobrando: es
+> que haya **una fila viva con `sucede_a` nulo** que lo ocupe. Mientras no la hay, el `INSERT` de
+> un tercero **no se rechaza** — y `B/12` §4.4 le pide al cliente al que le rechazaron el primer
+> cobro que haga exactamente eso. Las dos autorizaciones aparecían **después**, y para entonces la
+> sucesión ya no se podía cerrar: `S18` tendría que limpiar `sucede_a` y la base rechazaría la
+> escritura por colisión en `A`.
+>
+> **Lo único que queda sin marcar es `S13`**, y no por excepción sino por su propio estado: `S13`
+> alcanza también a la sucesora, que queda `CANCELLED` y sale del barrido por terminal. Ahí no hay
+> candado vacío que aprovechar porque **no queda ninguna autorización viva**: `S13` cancela el
+> preapproval de cada fila que alcanza.
 
 **Y una segunda que tampoco le pregunta nada al proveedor: el pago pendiente por `S19` cuya
 sucesión ya terminó.** Si una fila tiene un pago acreditado **pendiente de resolución**
@@ -144,6 +172,17 @@ que le corresponda de las cuatro de `B/12` §5.3, y si la rama no es determinabl
 colgado: **un pago retenido para siempre**, que del lado del cliente se lee como un cobro sin
 servicio y sin devolución. Hace falta porque el reloj del grace **no corre** mientras ese pago
 esté pendiente (`S6`): sin esta comprobación no hay nada que lo destrabe solo.
+
+> **Los dos casos que enumera son alcanzables, y uno de ellos sólo lo es por la salvedad 3.**
+> *«La sucesora murió»* deja la predecesora en `GRACE_PERIOD` o `SUSPENDED`, que el barrido
+> recorre por su estado. *«La sucesión se cerró»* la deja en `CANCELLED` por `S17` — **terminal**,
+> y sin la salvedad 3 esta mitad de la comprobación era inalcanzable por construcción: nombraba
+> justo la rama que su propio alcance excluía. Es la rama que mueve dinero, y la única de las
+> cuatro que lo hace.
+>
+> **Y es un backstop, no el disparador.** En el curso normal los tres actos de `B/03` §3.2 ya
+> resolvieron el pago antes de que el barrido llegue: `S18` pone la marca, `S3` lo reevalúa, `S13`
+> apaga la bandera. Esta comprobación existe para la corrida en que alguno no se ejecutó.
 
 **Una fila con la marca `requiere_conciliación` SÍ se barre**, y conviene decir por qué, porque la
 intuición contraria es fuerte y costaba caro.

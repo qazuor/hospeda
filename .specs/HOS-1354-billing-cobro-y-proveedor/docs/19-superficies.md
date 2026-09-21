@@ -88,12 +88,13 @@ ser.**
 | 13 | la confirmación de **revocar un grant** | que deja al cliente **sin servicio**, y qué addons corta | cap. 08 §3.1 (núcleo), cap. 16 §3.3 (épica de billing) |
 | 13-bis | la confirmación de **anclarle una vertical nueva a un grant** | **qué cobro deja de ocurrir**: se cancela la suscripción que el beneficiario paga en esa vertical (`S13`) y termina la cortesía que tuviera vigente ahí. Es el acto que **parece que sólo agrega**, y por eso necesita la frase más que los otros | cap. 08 §3.1 (núcleo), `12-contrato…` §2.8, cap. 14 §4.3 |
 | 14 | el aviso de **discontinuar una vertical** | la **fecha de fin de servicio**, qué pasa con la ficha y **cómo exportarla** | cap. 10 §4.3 |
-| 15 | el **cambio de plan** con una cuota en reintento | que **el cobro de la cuota impaga puede entrar igual**, antes de confirmar — **y qué pasa con esa plata según lo que el cliente haga**: si termina el checkout **se le devuelve**, si lo abandona **le queda** y le paga el período que está usando. Nunca reactiva la suscripción vieja mientras el cambio esté en curso | cap. 12 §5.3 |
+| 15 | el **cambio de plan** con una cuota en reintento | que **el cobro de la cuota impaga puede entrar igual**, antes de confirmar — **y qué pasa con esa plata según lo que el cliente haga**: si termina el checkout **se le devuelve**, si lo abandona **le queda** y le paga el período que está usando. Nunca reactiva la suscripción vieja mientras el cambio esté en curso. **Y que la devolución no es instantánea**: la confirma una persona (`DEC-RF-002`), así que lleva unas horas | cap. 12 §5.3, `NUCLEO/07` §6 |
 | 16 | el **cambio de plan** con un checkout abierto | que **no se ofrece**: *«terminá o cancelá el checkout que tenés abierto»* | cap. 03 §3.3.1 |
+| 16-bis | el **alta nueva** tras un primer cobro rechazado, **teniendo un cambio de plan en curso** | lo mismo que la 16, y por una razón distinta: la sucesora sigue viva y **puede autorizar**, así que un alta nueva serían **dos preapprovals cobrando**. Ofrecer *«empezar de nuevo»* acá —que es lo que el cap. 12 §4.4 pide en el caso general— es ofrecer el doble cobro | cap. 03 §3.2 y §3.3.1, cap. 12 §4.4 |
 | 17 | el **cambio de plan** estando pausado | que **no se ofrece**: *«reanudá tu suscripción para cambiar de plan»* | cap. 03 §3.3.1 |
 
-**Los dos últimos son avisos de una operación que NO se ofrece, y por eso están acá.** En los dos
-casos la persona **no queda bloqueada** —puede terminar o abandonar el checkout, puede reanudar—,
+**Los tres últimos son avisos de una operación que NO se ofrece, y por eso están acá.** En los
+tres la persona **no queda bloqueada** —puede terminar o abandonar el checkout, puede reanudar—,
 así que lo único que faltaba era **decir el no en voz alta** con su motivo, en vez de que la
 operación falle sin explicación o, peor, que alguien construya un mecanismo para un camino que el
 proveedor no admite (`EX-11`).

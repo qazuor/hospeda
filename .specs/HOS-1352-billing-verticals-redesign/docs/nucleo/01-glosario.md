@@ -223,15 +223,55 @@ tiene un nombre propio que ya no se puede confundir con el otro.
 `ABANDONED`, `CANCELLED` y `CHARGE_DECLINED` **no tienen autorización que pueda cobrar** — `S3`
 canceló el preapproval, la suscripción terminó, o el proveedor la canceló de forma terminal.
 
-**Y «fila viva» es el término que nombran, ya sin la palabra suelta, los cinco predicados de
-billing que la necesitan**: el alcance de `S13`, el de `S17` y la condición de cierre de `S18`
-—los tres en cap. 03 (épica de billing) §3.2—, la definición de addon huérfano de
-cap. 16 (épica de billing) §4.2, y la **condición 3 del pago tardío** de cap. 05 (épica de
-billing) §3. Los cinco están del lado de billing y sobre filas de billing, que es la regla 1 de
-abajo.
+#### El inventario de consumidores de «fila viva»
 
-**El quinto entró después, y por la razón exacta que este § existe para nombrar.** Su enumeración
-decía *«un estado que dé título»* y listaba **cuatro** —el conjunto de
+**Esta lista es el control, no un registro.** Es lo único del corpus que convierte *«fila viva»*
+de un término en algo verificable, y **quedó corta en el mismo commit que creó su sexto miembro**
+—`S19`, que escribió el predicado **sin el adjetivo** y con eso congeló para siempre la fila de
+todo cliente que alguna vez abandonó un cambio de plan—. Por eso se mantiene entera y **la
+verifica un guard** (`G-R1-E`, `B/20` §2), no la memoria del que escribe.
+
+Todos están del lado de billing y sobre filas de billing, que es la regla 1 de abajo. Se parten en
+dos grupos porque **fallan distinto**:
+
+**A · Preguntan «¿ESTA fila es viva?».** El error posible es enumerar mal el conjunto, y se
+detecta comparando contra los seis.
+
+| # | quién | dónde | qué pregunta |
+|---|---|---|---|
+| 1 | el **alcance de `S13`** | cap. 03 (billing) §3.2 | *«toda fila viva del beneficiario en cada vertical que el acto ancla»* |
+| 2 | el **`desde` de `S17`** | cap. 03 (billing) §3.2 | *«la predecesora, si sigue siendo fila viva»* — las cinco alcanzables |
+| 3 | la **condición de cierre de `S18`** | cap. 03 (billing) §3.2 | *«la predecesora ya no es fila viva»* |
+| 4 | el **`desde` de `S18`** | cap. 03 (billing) §3.2 | la **sucesora viva**: `ACTIVE`, o `PENDING_AUTHORIZATION` si la predecesora murió sola |
+| 5 | la **primera mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«la suscripción de esa vertical dejó de ser fila viva»* |
+| 6 | la **condición 3 del pago tardío** | cap. 05 (billing) §3 | *«no hay otra fila viva principal del mismo `user + vertical`»* — las seis, `PENDING_AUTHORIZATION` incluido |
+
+**B · Preguntan «¿hay OTRA fila viva apuntándola?».** El error posible es **omitir el adjetivo**,
+y es el que ya ocurrió: sin él el predicado **no tiene forma de dejar de cumplirse**, porque nada
+limpia `sucede_a` cuando la sucesora se muere (`B/02` §2.2, cuarto estado de la relación).
+
+| # | quién | dónde | qué pregunta |
+|---|---|---|---|
+| 7 | la **condición de `S17`** | cap. 03 (billing) §3.2 | *«tiene una sucesora **viva** con `sucede_a` apuntándola»* |
+| 8 | la **condición de `S19`** | cap. 03 (billing) §3.2 | ídem — y es el que entró sin el adjetivo |
+| 9 | la **tabla de los cuatro estados de la relación** | cap. 03 (billing) §3.2 | qué candado ocupa cada uno |
+| 10 | la **salvedad de la fila `authorized × GRACE_PERIOD·SUSPENDED`** | cap. 03 (billing) §10.1 | si marcar es un falso positivo |
+| 11 | la **segunda mitad del addon huérfano** | cap. 16 (billing) §4.2 | *«y no hay una fila viva con `sucede_a` apuntándola»* — el único que lo escribió bien desde el principio |
+| 12 | la **segunda mitad de la condición 3** | cap. 05 (billing) §3 | *«una sucesora viva que ya autorizó»* |
+| 13 | el **sujeto de la regla de `B/12` §5.3** | cap. 12 (billing) §5.3 | *«la predecesora de una sucesión en curso»* |
+| 14 | **`G-R1-D`** | cap. 20 (billing) §2 | el mismo predicado, como guard |
+| 15 | la **primera comprobación del barrido** | cap. 09 (billing) §3 | *«la predecesora a la que apunta ya no es fila viva»* |
+| 16 | la **partición en cuatro por columna** | cap. 02 (billing) §2.2 | la definición operativa de *«sucesión en curso»* |
+
+**El grupo B es el que hay que mirar dos veces, y hay una razón medida.** Un predicado del grupo A
+que se equivoque enumera un conjunto y se compara contra seis nombres; uno del grupo B que se
+equivoque **parafrasea** —*«tiene una sucesora con `sucede_a` apuntándola»* dice lo mismo que
+*«hay una fila viva con `sucede_a` apuntándola»* menos el adjetivo—, y ninguna búsqueda por el
+término lo devuelve, porque el término no está. Lo único que lo encuentra es que este inventario
+tenga una fila menos que los consumidores, que es la mitad que `G-R1-E` cuenta.
+
+**El 6 entró después que los primeros, y por la razón exacta que este § existe para nombrar.** Su
+enumeración decía *«un estado que dé título»* y listaba **cuatro** —el conjunto de
 [`12-contrato-de-cobertura.md`](../12-contrato-de-cobertura.md) §2.6—, cuando el peligro que
 vigila es **una autorización que puede cobrar**, que es éste. Los dos conjuntos coincidían hasta
 que `PENDING_AUTHORIZATION` dejó de emitir fuente, y desde entonces la diferencia entre ellos era
@@ -252,7 +292,7 @@ fallan**, así que no hay ninguna lectura en la que una sea el proxy de la otra.
 ninguna de las dos cuenta para `cubierto` (`12-contrato…` §2.4): estar en la lista y contar para
 la cobertura son dos preguntas, y la segunda se escribe **nombrando la clase**.
 
-**Dos reglas de uso, porque la ambigüedad ya costó dos críticos distintos:**
+**Tres reglas de uso, porque la ambigüedad ya costó tres críticos distintos:**
 
 1. **Ninguna regla de la épica de verticales se condiciona sobre una fila viva.** No es una
    preferencia: **no puede**, porque *«el estado exacto de la suscripción no cruza»* (`12-contrato…`
@@ -263,6 +303,13 @@ la cobertura son dos preguntas, y la segunda se escribe **nombrando la clase**.
    la columna *condición* de una tabla de transiciones, en el enunciado de un invariante o en el
    de un guard va **«fila viva»** o **«fuente viva de clase `TÍTULO`»**, nunca la palabra sola.
    Lo vigila `G-R4-B` (`V/20` §2) para el primer caso, que es el que cruza la frontera.
+3. **Y tampoco se usa una PARÁFRASIS que lo omita, que es el caso que la regla 2 no contemplaba.**
+   `S19` no violó la regla 2 —no usó la palabra suelta—: escribió *«tiene una sucesora con
+   `sucede_a` apuntándola»*, que dice lo mismo que el predicado correcto **menos el adjetivo**, y
+   con eso se saltó el único control que existía. Así que un predicado que mencione `sucede_a`
+   **dice además en qué estado está la fila que lo escribió**, y **quien escribe un consumidor
+   nuevo agrega su fila al inventario de arriba en el mismo acto**, antes de declarar el cambio
+   aplicado. Lo vigila `G-R1-E` (`B/20` §2), en sus dos mitades.
 
 **El caso testigo, y son dos en direcciones opuestas.** `T6` se escribió con *«ya hay una
 suscripción viva»* leyendo las seis filas vivas, y sobre las tres que no emiten fuente eso

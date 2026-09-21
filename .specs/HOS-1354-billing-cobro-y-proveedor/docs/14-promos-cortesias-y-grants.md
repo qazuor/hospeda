@@ -110,6 +110,33 @@ Sin esa herencia el upgrade destruiría la promo en silencio — que es exactame
 silenciosa de bienes pagados»* que el rediseño del candado vino a cerrar. El objetivo de la promo
 no desapareció: **se sucedió**.
 
+**Y *«hereda»* nombra un resultado; el acto que lo produce es `S18`.** Hay que decirlo con esas
+palabras porque la regla 1 del núcleo es terminante —*«lo que la tabla de transiciones no declara,
+no pasa»*— y durante una tanda entera la herencia vivió sólo acá, en la prosa de este capítulo,
+mientras `S18` enumeraba **tres** efectos y ninguno era la promo. Cómo se ejecuta:
+
+1. **`S18` re-apunta `promo_redemption.subscription_id` a la sucesora**, en el mismo acto en que
+   escribe `sucedida_por` y re-apunta los complementos (`B/03` §3.2, `B/02` §2.6). La redención
+   sigue siendo **una** —`UNIQUE(promo_code_id, user_id)` no se toca— y el contador de N cobros no
+   se consume, porque no hubo cobro.
+2. **El descuento se vuelve a aplicar sobre el monto de la sucesora**, con la regla de este mismo
+   §: porcentual se **recalcula** sobre el precio nuevo, fijo se **traslada** sujeto al piso del
+   §1.3. No es opcional: `DEC-MP-001` aplica el descuento **mutando el monto en el proveedor**, y
+   ese monto vive en el preapproval de la predecesora, que `S17` acaba de cancelar. La sucesora
+   nace con el precio de lista.
+3. **Y la mutación se verifica releyendo**, como toda mutación (`D5`, cap. 06). Es la única
+   defensa que hay: mutar el monto **no emite webhook** (`EX-15`), el aviso del §29 no corre
+   porque no hubo aumento de precio, y **el barrido no lo ve** — compara *«monto vigente contra
+   `transaction_amount`»* (`B/09` §3) y los dos coinciden, porque el monto vigente de la sucesora
+   **es** el de lista. La divergencia es contra lo pactado, no contra el proveedor, y ningún
+   detector del diseño mira eso.
+
+**Y vale igual cuando `S18` corre con la sucesora todavía en `PENDING_AUTHORIZATION`** —el
+segundo camino del cierre, cuando la predecesora se murió sola por `S12` o `S16` (`B/03` §3.2)—.
+Mutar el monto **sí funciona sobre un preapproval `pending`**: es el control de `EX-39`, que lo
+midió al probar lo contrario para las fechas —`transaction_amount` 2000 → 2500, con
+`last_modified` movido—. **Lo que no se puede mover son las fechas**, y el descuento no las toca.
+
 ### 2.3 Cambio de ciclo: sobrevive sólo lo que se puede expresar sin convertir nada
 
 **Una promo sobrevive a un cambio de ciclo si y sólo si sus términos se pueden expresar en el
@@ -210,7 +237,43 @@ toca nadie**: el acto alcanza una vertical, no la cartera. Se dice acá porque *
 se lee como el único momento en que un grant empieza a cubrir, y desde que el scope es el conjunto
 de anclas **son dos**.
 
-### 4.4 Extensión de trial + cortesía durante el trial
+### 4.4 Cortesía temporal + cambio de plan
+
+**Una cortesía vigente sobrevive al cambio de plan, por el mismo acto y la misma razón que la
+promo**: `S18` re-apunta `courtesy_grant.subscription_id` a la sucesora al cerrar la sucesión
+(`B/03` §3.2, `B/02` §2.6). El instrumento no desapareció — **la suscripción que pausaba se
+sucedió**.
+
+**Y acá re-apuntar no alcanza, porque el mecanismo de la cortesía es la pausa.** `DEC-GRANT-003`
+la implementa *«pausando en el proveedor y sosteniendo el servicio de nuestro lado»*, así que la
+sucesora **queda pausada con motivo `COURTESY` por los días que le quedaban**, contados desde el
+cierre. Una cortesía re-apuntada sobre una fila `ACTIVE` que sigue cobrando no es una cortesía: es
+una fila de base que no hace nada, que es el modo de falla que `B/16` §2.4 nombra para rechazar
+una columna.
+
+**Por qué no puede simplemente morirse con la predecesora**, que es lo que pasaba:
+`courtesy_grant.subscription_id` **no es anulable** y desde `DEC-GRANT-006` es **la única
+referencia que la cortesía tiene** —se le retiró el `scope`—, así que una predecesora `CANCELLED`
+deja la fila apuntando a algo que no emite fuente (`12-contrato…` §2.6). El beneficio que firmó
+`SUPER_ADMIN` desaparece **en silencio**: el barrido no compara grants, la fila no queda marcada,
+y el cliente se entera cuando le cobran. Y sin `scope` tampoco hay salida alternativa: reemitirla
+exige un acto administrativo nuevo, que es *«la acción más grave del catálogo»* de la que alguien
+se puede olvidar (`NUCLEO/08` §3).
+
+**Y acá `S18` siempre corre sobre una sucesora ya `ACTIVE`, aunque su fila admita también
+`PENDING_AUTHORIZATION`.** El segundo camino de `S18` —la predecesora que se muere sola— sale de
+`S12` (`desde: CANCEL_SCHEDULED`) o de `S16` (`desde: ACTIVE`), y **una predecesora con cortesía
+vigente está `PAUSED`**, así que ninguna de las dos la alcanza (`B/03` §3.2). No hay caso en que
+haya que pausar un preapproval que todavía no autorizó. La pausa entra entonces sobre una fila
+autorizada: no choca con `EX-11`, que mide que el proveedor rechaza modificaciones **estando ya
+pausada**, ni con la condición de `S9` (*«no hay pausa vigente»*), porque la sucesora nació sin
+ninguna.
+
+**Y no contradice `§4.3`**: allá la cortesía **termina** porque el grant cancela la suscripción y
+*«no queda nada que no cobrar»*. Acá sí queda: la sucesora cobra, y es exactamente lo que la
+cortesía existe para evitar por los días que le quedan.
+
+### 4.5 Extensión de trial + cortesía durante el trial
 
 **Ya está resuelto en el capítulo 11 (épica de verticales) §3**: las dos extienden, **acumulan contra un único techo**
 configurable por `user + vertical`, la que no entra se rechaza entera sin consumir el promo, y el

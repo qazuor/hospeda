@@ -138,7 +138,30 @@ peso, porque romperlos rompe algo que ya se decidió:
 | D12 | **El trial no se le pide al proveedor: el reloj del trial es nuestro** | `DEC-TRIAL-002`, cap. 03 §2 | guard + servicio |
 | D13 | **Retirar un plan del catálogo no mueve ninguna suscripción** | cap. 10 §3.2 | servicio: retirar publica una versión no vendible y ninguna lectura de suscripción pasa por la vigente |
 | D14 | **Anunciada la discontinuación de una vertical, no se emite un cobro más en ella** | cap. 10 §4.2 | servicio: el anuncio cancela en el proveedor en el mismo acto, y el servicio se sostiene del lado nuestro |
-| D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida.** Y **toda sucesión que termina deja escrito que ocurrió**: la predecesora queda con `sucedida_por` puesta | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a`, más la columna `sucedida_por`, que conserva el vínculo después de que el cierre limpia `sucede_a`. **Guard**: `G-R1-C` (cap. 20 (épica de billing) §2) exige que las dos escrituras del cierre vayan juntas |
+| D15 | **Una sucesión es un compromiso, no dos: a lo sumo una sucesora viva por `user + vertical`, y una sucesora no puede ser sucedida.** Y **ninguna sucesión termina sin dejar rastro, con un rastro por forma de terminar**: la que se **cierra** deja `sucedida_por` puesta en la predecesora; la que **muere sin cerrarse** deja la sucesora no viva **con su `sucede_a` escrito**. **Nunca las dos columnas en la misma fila** | cap. 02 (épica de billing) §2.2 | **base**: los dos índices parciales, partidos por `sucede_a`, más las dos columnas anulables que no pueden estar puestas a la vez. **Guard**: `G-R1-C` (cap. 20 (épica de billing) §2) exige que las escrituras del cierre vayan juntas y completas |
+
+**`D15` afirmaba más de lo que el diseño cumple, y se corrigió hacia abajo.** Decía *«toda
+sucesión que termina deja escrito que ocurrió: la predecesora queda con `sucedida_por` puesta»*, y
+la única escritura de esa columna es `S18`. De las **cuatro** formas de terminar que `B/12` §5.3
+enumera, `S18` corre en **dos** —la sucesora autoriza, y la sucesión trabada que una persona
+resuelve por `S15`—; en las otras dos **no corre**: si la sucesora vence su ventana (`S3`) o si le
+cae un grant (`S13`), no queda sucesora viva a la que pasarle el origen y `sucedida_por` **no se
+escribe nunca**. Un invariante sobre-enunciado es peor que uno ausente,
+porque quien lo lee **deja de buscar el caso** — y el caso que dejaba de buscarse es *«la sucesora
+se murió y el puntero quedó puesto»*, que costó dos `CRITICA` en la misma pasada. (Y `S18` corre
+además por un camino que esas cuatro ramas **no** enumeran —la predecesora que se muere sola por
+`S12` o `S16`, desde la FASE 9-bis-3—, que también escribe la columna.) El enunciado de
+hoy cubre las cuatro ramas porque **nombra los dos rastros**, y los dos son legibles después:
+`sucedida_por` no se borra nunca, y el `sucede_a` de una fila no viva tampoco lo limpia nadie —es
+el cuarto estado de la relación de `B/03` §3.2, y `S13` lo llama *«el registro fiel de lo que
+pasó»*.
+
+**Y el apoyo dice ahora lo que la base hace de verdad.** Los dos índices parciales hacen cumplir
+*«a lo sumo una sucesora viva»* y la restricción de las dos columnas hace cumplir que no convivan;
+**ninguna restricción puede obligar a que una columna se escriba**, así que la mitad del rastro es
+del guard y no de la base. Decirlo importa porque `G-R1-C` **se cumple de forma vacua cuando no
+ocurre ninguna de las dos escrituras**, y con el enunciado viejo eso era exactamente el estado que
+`D15` declaraba imposible.
 
 **`D8` subió de nivel, y el motivo es el que el §1 usa para todo lo demás.** Era un invariante *de
 servicio*, o sea recordable: sin una columna que guardara la fecha con la que nació la fila no había
@@ -211,6 +234,12 @@ Tres cosas que el §64 no nombra, que ninguna decisión resolvió, y que **no se
 > estaba—, y por eso *«diez los sostiene la base»* y *«cincuenta y dos invariantes»* **no cambian**.
 > Los apoyos totales pasan de 18 a 19 sobre las mismas 15 filas, y la columna de servicio sigue en
 > diez: `D1 D3 D4 D5 D6 D7 D11 D12 D13 D14`.
+>
+> **Recorrido otra vez el 2026-09-21 — FASE 9-bis-3, y NINGÚN conteo se mueve.** Lo que cambió en
+> `D15` es **el enunciado**, no su apoyo: sigue en base + guard, así que las 15 filas, los 19
+> apoyos, las cuatro de base, las cinco de guard y las diez de servicio quedan igual. Se recorrió
+> igual, porque un enunciado que se corrige es exactamente el caso en que alguien asume que el
+> conteo se movió y lo «arregla» sin recorrer.
 
 Y la corrección anterior, que queda como registro:
 

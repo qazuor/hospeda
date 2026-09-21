@@ -154,7 +154,7 @@ necesitan igual y no se puede partir sin duplicarlo).
 |---|---|---|
 | 00 | índice y reglas de escritura | **COMPARTIDO** |
 | 01 | glosario y modelo conceptual | **PARTIDO** — identidad, vertical y capacidades a verticales; catálogo comercial, compromiso de pago y concesiones a billing |
-| 02 | modelo de datos | **PARTIDO** — §2.1 menos `billing_option`, §2.5 y §3 a verticales; §2.2, §2.3 y §2.4 a billing |
+| 02 | modelo de datos | **PARTIDO** — §2.1 menos `billing_option`, §2.5 y §3 a verticales; §2.2, §2.3, §2.4 y **§2.6** a billing. El **§2.6** —qué cuelga de una suscripción y qué le pasa cuando otra la sucede— es nuevo de la FASE 9-bis-3 y toma un número que ninguna de las dos mitades usaba, porque el §2.5 ya es de verticales |
 | 03 | las máquinas de estado | **PARTIDO** — trial, publicación y postulación de Partner a verticales; suscripción, grace, pausa, pago, pago manual, addon y el no-retroceso a billing |
 | 04 | invariantes | **PARTIDO** — los de acceso, trial y roles a verticales; los de dinero y proveedor a billing; los de método, compartidos |
 | 05 | idempotencia y concurrencia | **BILLING** |

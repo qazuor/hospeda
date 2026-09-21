@@ -156,6 +156,25 @@ del actor —así que sus pasos 5-7 caen sobre el sujeto y la vuelven inejecutab
 prohibida a un actor de sistema**, que son las tres cosas que esta tabla reparte. Por eso anclar
 una vertical a un grant entra **acá** y no sólo en la prosa del contrato que lo declaró.
 
+**Y lo que le pone un caso ADELANTE a esa persona no es una fila de esta tabla: es un efecto de
+transición, así que siguen siendo doce.** La distinción hay que decirla porque `DEC-RF-002`
+convirtió el reembolso del pago pendiente en **el desenlace de un camino que el sistema alcanza
+solo** —antes era un acto que alguien pedía—, y una acción con permiso, auditoría y confirmación
+declarados **no sirve de nada si nadie enruta el caso**. El enrutado existe y está en dos lugares
+que no son éste:
+
+| qué | quién lo hace | dónde |
+|---|---|---|
+| **poner** la marca sobre la predecesora que retiene el pago | **`S18`**, como cuarto efecto del cierre de la sucesión | `B/03` §3.2, `B/12` §5.3 rama 1 |
+| **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
+
+Las dos son actos **de sistema**, no de admin, y por eso no suman filas. La primera **no es
+`S14`** —su evento es *«divergencia que toca plata o estado»*, y `S19` declara por escrito que
+este caso **no** es una divergencia sino uno diseñado—; la segunda es un job. Lo que sí es de esta
+tabla son los dos actos con que una persona **cierra** el caso: **reembolsar** y **levantar la
+marca**, cada uno con su fila, su permiso y su confirmación. Sin las dos mitades de arriba, esas
+dos filas describen un trámite que nadie empieza.
+
 ### 3.1 Dos reglas sobre la confirmación
 
 1. **La confirmación dice qué va a pasar, no pregunta si está seguro.** `DEC-GRANT-001` lo pide
@@ -214,6 +233,13 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
 
 - **cuál de las cuatro condiciones del cap. 05 §3 falló**, cuando el caso es un pago tardío — sin
   eso, quien lo mire tiene que rehacer el diagnóstico entero;
+- **el monto a devolver y el pago que lo origina**, cuando el caso es el **reembolso por
+  confirmar** de la rama 1 del cap. 12 §5.3 (épica de billing). Esta entrada es de otra forma que
+  las demás y conviene decirlo: **no hay nada que diagnosticar** —el desenlace lo decidió el
+  diseño y `DEC-RF-002` sólo puso la confirmación humana en el medio—, así que lo que la persona
+  necesita no es el conflicto entre dos estados sino **qué devolver, a quién y de qué cobro**. La
+  lista de arriba contemplaba el pago tardío que **falla**; éste es el que **sale bien** y deja
+  plata por devolver;
 - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
 - **la correlación**, para poder seguir la cadena hacia atrás;
 - **qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas

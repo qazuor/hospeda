@@ -79,8 +79,19 @@ exactamente: un origen y su única sucesora. Es el número que `DEC-SUB-006` pid
 `sucede_a`— una sucesora no puede ser sucedida mientras viva, sin ninguna regla extra, porque la
 segunda sucesora colisiona con la primera.
 
+**El candado `A` no puede quedar vacío mientras haya una fila viva, y por eso el cierre no espera
+la autorización.** Los dos índices reparten a las filas vivas por su **propia** columna, y ninguno
+de los dos puede mirar el estado de la otra fila: si la predecesora se muere sola —`S12` o `S16`,
+dos de las seis transiciones que `B/03` §3.2 recorre— la sucesora sigue con `sucede_a` no nulo, o
+sea en `B`, y **`A` queda libre para un alta nueva**. Ahí hay dos preapprovals que pueden cobrar
+sobre el mismo `user + vertical`, y `EX-6` mide que el proveedor no frena la segunda. La base no
+lo puede impedir sola, así que lo impide **el acto**: `S18` cierra la sucesión en cuanto la
+predecesora deja de ser fila viva, aunque la sucesora siga en `PENDING_AUTHORIZATION`, y con eso
+la sucesora pasa a `A` y el segundo `INSERT` lo rechaza la base (`B/03` §3.2 y §3.4 punto 4).
+
 **Y hace falta una segunda columna, porque los candados leen una columna que se borra.**
-`sucede_a` es **operativa**: mientras está puesta la sucesión está en curso, y `S18` la limpia al
+`sucede_a` es **operativa**: mientras está puesta **sobre una fila viva** la sucesión está en
+curso, y `S18` la limpia al
 cerrarla para que la sucesora vuelva a ocupar el candado `A`. Eso es correcto para los candados y
 destruye la única evidencia de que esa cancelación **fue una sucesión y no una baja** — y hay
 consumidores que la necesitan **después**, cuando ya se borró:
@@ -88,16 +99,28 @@ consumidores que la necesitan **después**, cuando ya se borró:
 | quién pregunta | qué pregunta | dónde |
 |---|---|---|
 | los complementos | *«la suscripción de la que cuelgo dejó de ser fila viva, ¿la releva una sucesión —cerrada por `sucedida_por`, o en curso por una fila viva con `sucede_a` apuntándola— o quedé huérfano?»*. Lee **las dos columnas** porque su pregunta abarca la línea de tiempo entera, y `sucedida_por` recién existe cuando `S18` cierra | `B/16` §4.2 |
-| el pago tardío | *«¿esta fila ya fue superada por una sucesora autorizada?»* — y, del lado de `sucede_a`, *«¿la está por superar una que todavía no autorizó?»*, que es la mitad que decide entre reactivar y dejar el pago pendiente (`B/03` §3.2, `S19`) | `B/05` §3, condición 3 |
+| el pago tardío | del lado de `sucede_a`, *«¿la está por superar una sucesora **viva** que todavía no autorizó?»*, que es la mitad que decide entre reactivar y dejar el pago pendiente (`B/03` §3.2, `S19`). Del lado de `sucedida_por` pregunta *«¿ya fue superada?»*, y esa mitad **es redundante con su condición 1** —una fila con `sucedida_por` está `CANCELLED` y la 1 ya la rechaza—: se conserva para que el evento crítico diga cuál de las dos cosas pasó, **no porque la columna le haga falta** | `B/05` §3, condición 3 |
 
 **`sucedida_por` es esa evidencia, y es durable.** Se escribe **en la predecesora**, en el mismo
 acto en que `S18` limpia `sucede_a` en la sucesora, y **no se borra nunca**. Las dos columnas
-parten la vida de la relación en tres, sin superponerse:
+parten la vida de la relación en cuatro, sin superponerse:
 
-- `sucede_a` no nulo → **sucesión en curso**. La escribe `S1`, la limpia `S18`.
+- `sucede_a` no nulo **en una fila viva** → **sucesión en curso**. La escribe `S1`, la limpia `S18`.
+- `sucede_a` no nulo **en una fila que ya no es viva** → **sucesión muerta sin cerrarse**: la
+  sucesora venció su ventana (`S3`) o la mató `S13`, y **nadie limpia el puntero**. Es deliberado —
+  `S13` lo llama *«el registro fiel de lo que pasó»* (`B/03` §3.2)— y es la razón por la que **el
+  adjetivo «viva» es parte del predicado y no un adorno**: sin él, la predecesora de una sucesión
+  que murió sigue siendo *«la predecesora de una sucesión en curso»* para siempre, con `S5`, `S6` y
+  `S7` apagados y un pago retenido de por vida.
 - `sucedida_por` no nulo → **sucesión terminada**. La escribe `S18`, no la limpia nadie.
 - las dos nulas → **no hubo sucesión**, que es el caso de casi toda fila.
 
+> **El puntero no tiene limpiador y no lo va a tener.** Limpiarlo borraría el único registro de que
+> hubo un intento de cambio de plan, que es lo mismo que `sucedida_por` existe para evitar del otro
+> lado. Lo que se acota es **la lectura**: todo predicado que pregunte por `sucede_a` pregunta
+> además por el estado de quien lo escribió, y la condición **se vuelve a evaluar** porque es sobre
+> un estado. El inventario de los que lo hacen está en `NUCLEO/01` §2.4.
+>
 > **Una regla sobre una sucesión se escribe nombrando la COLUMNA, nunca el verbo «declarar».**
 
 **No es prolijidad: el verbo ya se usa con los dos sujetos y eso costó un doble cobro.** *«La fila
@@ -113,6 +136,13 @@ eximía a la sucesora —donde era vacua— dejando intacto el caso que venía a
 corpus usa: la **sucesora** es la fila **con `sucede_a`**; la **predecesora** es la fila **a la
 que un `sucede_a` apunta** mientras la sucesión está en curso, y la que **tiene `sucedida_por`**
 una vez cerrada.
+
+**Y «predecesora de una sucesión en curso» exige que la sucesora esté VIVA**, en toda aparición
+del predicado y sin excepción. `B/16` §4.2 ya lo escribía así desde que existe y dejó escrito por
+qué: *«la fila viva es parte del predicado, no un adorno»*. Sin el adjetivo el predicado **no
+tiene forma de dejar de cumplirse**, porque nada limpia el puntero. **El inventario de quién lo
+lee vive en un solo lugar y es `NUCLEO/01` §2.4** — quien escriba un predicado nuevo sobre
+`sucede_a` agrega ahí su fila en el mismo acto.
 
 Apunta de la predecesora a la sucesora, y no al revés, porque el consumidor que más la necesita
 —el addon— parte de la fila muerta y necesita **cuál** es la sucesora, no sólo que existe.
@@ -213,8 +243,8 @@ ninguna columna de dinero.
 | **`addon_product`** | **precio, recurrencia y verticales compatibles**, más **`version_id`** → `addon_version` (épica de verticales), que es **la versión que se vende hoy**: la que una compra nueva ancla | `version_id` **no es anulable**: sin ella el producto no se puede comprar. **NO es la referencia que transporta una fuente `ADDON`** — ésa la aporta la instancia |
 | **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** (ficha, suscripción de vertical, usuario o global), estado, inicio, fin, su suscripción de complemento si es recurrente | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
-| **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código» |
-| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable**; **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
+| **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». **La suscripción se re-apunta en `S18`** (§2.6) |
+| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **se re-apunta en `S18`** (§2.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
 | **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4). **El scope de verticales NO es una columna: son sus anclas** | ídem; **al menos un ancla**, o el grant no otorga nada |
 | **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable |
 
@@ -331,6 +361,32 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 `D13`: *«retirar un plan del catálogo no mueve ninguna suscripción»*. La alternativa, que el grant
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
+
+### 2.6 Qué cuelga de una suscripción, y qué le pasa cuando otra la sucede
+
+**Un upgrade cancela y recrea** (`DEC-SUB-007` alternativa C), así que la fila que llevaba todo se
+va a `CANCELLED` y **cada cosa que le colgaba tiene que tener un destino declarado**. El §2.4
+nombraba las entidades y ninguna decía qué le pasa en una sucesión; `S18` enumeraba sus efectos y
+nombraba una sola de las tres. **Enumerar acá es lo que vuelve la pregunta contestable de una
+vez**, en vez de descubrirse entidad por entidad:
+
+| qué cuelga | columna | qué pasa cuando `S18` cierra la sucesión | por qué |
+|---|---|---|---|
+| **complementos** (addons recurrentes y de única vez) | `addon_instance.objetivo` con scope `VERTICAL_SUBSCRIPTION` | **se re-apuntan a la sucesora** | el objetivo no desapareció, se sucedió (`B/16` §4.2). Sin esto, todo upgrade cancela de forma irreversible los addons que el cliente pagó |
+| **la redención de promo** | `promo_redemption.subscription_id` | **se re-apunta a la sucesora**, y el descuento se vuelve a aplicar sobre el monto de ella con la regla de `B/14` §2.2 —porcentual se recalcula, fijo se traslada—, **con el contador de N cobros donde estaba** | `B/14` §2.2 ya declaraba el resultado (*«la sucesora lo hereda»*) y ningún acto lo ejecutaba. El descuento vive **mutado en el monto del proveedor** (`DEC-MP-001`) y ese monto muere con el preapproval que `S17` cancela, así que sin el re-apunte el cliente pasa a pagar precio de lista **y nada lo detecta**: el barrido compara contra el monto vigente, y el monto vigente de la sucesora **es** el de lista |
+| **la cortesía vigente** | `courtesy_grant.subscription_id` (no anulable) | **se re-apunta a la sucesora**, y la sucesora **queda pausada con motivo `COURTESY` por los días que quedaban** | una cortesía *«cubre la suscripción que pausa, y nada más»* (`DEC-GRANT-006`): re-apuntarla sin pausar deja una fuente que no sostiene nada, porque el mecanismo de la cortesía **es** la pausa (`DEC-GRANT-003`). Y no re-apuntarla deja la columna no anulable señalando una `CANCELLED`, que no emite fuente (`12-contrato…` §2.6): el beneficio que firmó `SUPER_ADMIN` desaparece en silencio |
+| **el pago pendiente por `S19`** | `payment.subscription_id` | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le pone a **esa** fila la marca `requiere_conciliación` y el reembolso lo confirma una persona (`DEC-RF-002`) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** |
+| **pagos y pagos manuales ya resueltos, comprobantes, pausas cerradas, el `provider_link`** | varias | **no se re-apuntan** | son el histórico de esa fila y de su preapproval. Cada suscripción tiene el suyo |
+
+**Las tres primeras son el acto, la cuarta es el aviso, y la quinta es historia.** Es la
+distinción que `S18` tiene que ejecutar y la que `G-R1-C` vigila: un cierre que escribe las dos
+columnas y deja alguna de las tres primeras apuntando a la predecesora es un cierre incompleto,
+no un cierre.
+
+**Y las tres primeras tienen el mismo modo de falla: son silenciosas.** Ninguna emite webhook,
+ninguna cambia un estado que el barrido compare, y las tres le sacan al cliente algo que ya tenía
+—capacidad comprada, descuento pactado, cortesía firmada— en el acto con el que decidió gastar
+más. Por eso el inventario va acá y no repartido en tres capítulos.
 
 ---
 
