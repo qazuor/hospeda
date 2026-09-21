@@ -3044,3 +3044,14 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - La ejecución terminó con `secret-values=not-read` y `mutations=none`.
   `--apply` y `--restore` siguen deliberadamente sin implementar hasta cerrar
   el diseño de backups y el adapter de Hospeda.
+
+## Gate 131 · Revalidación del checkout operativo
+
+- Desde el worktree de migración, `hops context --json` identificó la DB
+  aislada `worktree_hospeda_opencode_gentle_ai` y no mostró valores sensibles.
+- Desde `hospeda-staging`, `db-update-template --dry-run` no llegó a evaluar el
+  template: el checkout intentó abrir `.git/worktrees/hospeda-staging/FETCH_HEAD`
+  y el filesystem lo rechazó como `read-only`.
+- El checkout operativo sigue limpio y alineado con `origin/staging`, pero la
+  prueba de template debe repetirse cuando el metadata Git sea escribible. No
+  se forzó el fetch ni se modificó la base.
