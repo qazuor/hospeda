@@ -1,4 +1,6 @@
+import { DbError } from '@repo/db/utils';
 import { ServiceErrorCode } from '@repo/schemas';
+import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel, ServiceError } from '@repo/service-core';
 /**
  * Response formatting middleware
@@ -13,6 +15,7 @@ import type {
     ApiSuccessResponse,
     PaginationData
 } from '../schemas/response-schemas';
+import { buildConstraintViolationResponse } from '../utils/constraint-violation';
 import { readEntitlementCause } from '../utils/entitlement-cause';
 import { env, getResponseConfig } from '../utils/env';
 import { resolveErrorCodeForStatus } from '../utils/http-error-codes';
@@ -313,27 +316,44 @@ function isDbPoolExhausted(error: Error): boolean {
  * Error handling priority:
  * 1. ServiceError (from @repo/service-core) - uses code property for HTTP status
  * 2. HTTPException (from Hono) - uses status property
- * 3. SyntaxError (JSON parsing) - returns 400
- * 4. DB pool exhaustion - returns 503
- * 5. All other errors - returns 500
+ * 3. PostgreSQL constraint violation - returns 409 / 400
+ * 4. SyntaxError (JSON parsing) - returns 400
+ * 5. DB pool exhaustion - returns 503
+ * 6. All other errors - returns 500
  */
 export const createErrorHandler = () => {
     return (error: Error, c: Context) => {
         // Get response configuration
         const responseConfig = getResponseConfig();
 
+        // HOS-1174: resolved up front because it feeds BOTH the log level and
+        // the status chain below. Without this branch a `DbError` carrying
+        // SQLSTATE 23505 that reaches `app.onError` — from a hand-rolled route
+        // or a middleware write, i.e. anything not going through one of the 13
+        // route factories — fell through to the default 500 INTERNAL_ERROR,
+        // while the identical error answered 409 on the `handleRouteError`
+        // path. That asymmetry is what the R4 twin-formatter rule in
+        // `apps/api/docs/error-contract.md` forbids, and it has already drifted
+        // twice (HOS-283, H-105).
+        const constraintViolation = buildConstraintViolationResponse(
+            error,
+            error instanceof DbError ? error.entity : 'record'
+        );
+
         // Log the error for debugging. EXPECTED outcomes (401/403/404) are not
         // application faults: emit them at a reduced level without a stack trace
         // so they don't flood the error stream (HOS-109 / OQ-1). Real faults keep
         // `error` + the full stack. `HTTPException` (e.g. the auth guard's raw
         // 401/403, which never carries a ServiceErrorCode) is leveled separately
-        // via its HTTP status.
-        const logLevel =
-            error instanceof ServiceError
-                ? resolveErrorLogLevel(error.code)
-                : error instanceof HTTPException
-                  ? resolveHttpStatusLogLevel(error.status)
-                  : resolveErrorLogLevel(undefined);
+        // via its HTTP status. A constraint violation is an EXPECTED outcome
+        // too — see the matching note in `handleRouteError` (HOS-1174).
+        const logLevel: ErrorLogLevel = constraintViolation
+            ? 'warn'
+            : error instanceof ServiceError
+              ? resolveErrorLogLevel(error.code)
+              : error instanceof HTTPException
+                ? resolveHttpStatusLogLevel(error.status)
+                : resolveErrorLogLevel(undefined);
         apiLogger[logLevel](
             `Caught error in ${c.req.method} ${c.req.path}: [${error.name}] ${error.message}`
         );
@@ -419,7 +439,17 @@ export const createErrorHandler = () => {
                 errorDetails = cause.details;
             }
         }
-        // Priority 3: JSON parsing errors
+        // Priority 3: a PostgreSQL constraint violation reported by the driver
+        // (HOS-1174). Placed after the two typed branches so an explicit
+        // ServiceError/HTTPException still wins, and before the generic ones so
+        // a 23505 can never reach the 500 default.
+        else if (constraintViolation) {
+            errorCode = constraintViolation.payload.code as ServiceErrorCode;
+            errorMessage = constraintViolation.payload.message;
+            statusCode = constraintViolation.status;
+            errorDetails = constraintViolation.payload.details;
+        }
+        // Priority 4: JSON parsing errors
         else if (
             error instanceof SyntaxError &&
             (error.message.includes('JSON') || error.message.includes('Unexpected'))
@@ -428,7 +458,7 @@ export const createErrorHandler = () => {
             errorMessage = 'Invalid JSON format in request body';
             statusCode = 400;
         }
-        // Priority 4: Legacy error.name based detection (for backwards compatibility)
+        // Priority 4b: Legacy error.name based detection (for backwards compatibility)
         else if (error.name === 'ValidationError') {
             errorCode = ServiceErrorCode.VALIDATION_ERROR;
             errorMessage = error.message;
