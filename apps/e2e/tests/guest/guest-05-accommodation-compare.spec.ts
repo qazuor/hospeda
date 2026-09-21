@@ -237,20 +237,15 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
         await page.waitForURL(/\/es\/alojamientos\/comparar\/?/, { timeout: 15_000 });
 
         // ── Assert: the side-by-side matrix renders with the two columns ────
-        // KNOWN GAP: the matrix renders its empty state here even though the
-        // selection arrived intact. Verified on this page after the navigation:
-        // localStorage carries hospeda:compare:v1 (2 ids), :meta:v1 (both names),
-        // :mode:v1 and :savedAt:v1, the header shows the signed-in user, and the URL
-        // is /es/alojamientos/comparar/ — yet no <table> is ever mounted.
-        // ComparisonMatrix is client:only="react", so nothing is server-rendered and
-        // the failure is entirely client-side. What is NOT determined: whether the
-        // island throws while mounting, or reads the selection through a path that
-        // resolves empty despite the storage being present. Everything up to and
-        // including the CTA is exercised above and does pass.
-        test.fixme(
-            true,
-            'Comparison matrix renders empty with a valid 2-item selection — client-side only, needs its own investigation'
-        );
+        // HOS-1267: these three lines were unreachable behind a
+        // `test.fixme(true, 'Comparison matrix renders empty ... needs its own
+        // investigation')`, placed right here — after the navigation, before
+        // every assertion the test is named for. The static guard added by that
+        // issue found it; the audit's hand-list of four had missed it.
+        //
+        // Re-measured 2026-09-21 against the e2e stack: the matrix mounts and
+        // renders both columns. Whatever the client-side failure was, it is gone,
+        // so the fixme was outliving its subject as well as hiding the assertions.
         const matrix = page.getByRole('table');
         await expect(matrix).toBeVisible({ timeout: 15_000 });
         // Header row: one corner cell + one column per selected accommodation.
