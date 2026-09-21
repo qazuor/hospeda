@@ -88,6 +88,18 @@ export class SocialSettingService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * Settings are searched by `key` and `description`.
+     *
+     * The table has no `name` column — a setting is identified by its key —
+     * so the inherited `['name']` default matched nothing and `?search=`
+     * returned every setting (HOS-1117). `value` is deliberately left out: it
+     * holds serialized configuration, not something an operator searches by.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['key', 'description'];
+    }
+
     constructor(
         ctx: ServiceConfig,
         model?: SocialSettingModel,
