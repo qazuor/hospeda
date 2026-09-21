@@ -404,21 +404,78 @@ describe('static guard: every catch-site in base.model.ts passes a cause (HOS-11
         throw new Error('Unbalanced parentheses while parsing a DbError call');
     };
 
-    const parseDbErrorCalls = (): ReadonlyArray<{ argCount: number; args: string[] }> => {
-        const source = stripComments(
-            readFileSync(join(__dirname, '../../src/base/base.model.ts'), 'utf8')
-        );
+    /**
+     * Blanks out string CONTENTS while preserving offsets, producing the view
+     * the marker search runs against. Without it the scan matches a marker
+     * inside a string literal — a documentation string mentioning
+     * `new DbError(entity, method, params, message)` would be counted as a real
+     * causeless call site and fail the guard falsely. Offsets are preserved so
+     * the argument parsing can still run against the source that KEEPS the
+     * strings, which the pre-flight message assertions read.
+     */
+    const maskStringContents = (source: string): string => {
+        let out = '';
+        let index = 0;
+        let quote: string | null = null;
+        while (index < source.length) {
+            const ch = source[index] as string;
+            if (quote) {
+                if (ch === '\\') {
+                    out += '  ';
+                    index += 2;
+                    continue;
+                }
+                if (ch === quote) {
+                    quote = null;
+                    out += ch;
+                    index++;
+                    continue;
+                }
+                out += ch === '\n' ? '\n' : ' ';
+                index++;
+                continue;
+            }
+            if (ch === "'" || ch === '"' || ch === '`') {
+                quote = ch;
+                out += ch;
+                index++;
+                continue;
+            }
+            out += ch;
+            index++;
+        }
+        return out;
+    };
+
+    /**
+     * The scan itself. Takes the source as an argument rather than reading the
+     * file, so the trap cases below can run the REAL predicate over synthetic
+     * sources. A guard whose ability to fail is only ever demonstrated by hand,
+     * in a terminal, is a guard nothing re-checks after the next refactor.
+     */
+    const scanDbErrorCalls = (
+        rawSource: string
+    ): ReadonlyArray<{ argCount: number; args: string[] }> => {
+        const source = stripComments(rawSource);
+        const searchView = maskStringContents(source);
         const calls: Array<{ argCount: number; args: string[] }> = [];
         for (const marker of CALL_MARKERS) {
-            let index = source.indexOf(marker);
+            let index = searchView.indexOf(marker);
             while (index !== -1) {
                 const args = splitTopLevelArgs(source, index + marker.length - 1);
                 calls.push({ argCount: args.length, args: args.map((a) => a.trim()) });
-                index = source.indexOf(marker, index + marker.length);
+                index = searchView.indexOf(marker, index + marker.length);
             }
         }
         return calls;
     };
+
+    const parseDbErrorCalls = (): ReadonlyArray<{ argCount: number; args: string[] }> =>
+        scanDbErrorCalls(readFileSync(join(__dirname, '../../src/base/base.model.ts'), 'utf8'));
+
+    /** How many call sites the scan reports as missing a cause. */
+    const countCauseless = (rawSource: string): number =>
+        scanDbErrorCalls(rawSource).filter((call) => call.argCount < 5).length;
 
     it('finds every DbError call site in the file', () => {
         expect(parseDbErrorCalls().length).toBeGreaterThan(10);
@@ -456,15 +513,65 @@ describe('static guard: every catch-site in base.model.ts passes a cause (HOS-11
         }
     });
 
-    it('would catch a causeless call routed through the `throwDbError` helper', () => {
-        // Arrange — the helper's signature ends in the same optional `cause`,
-        // so a partial refactor to it is the cheapest way to drop the cause
-        // without touching a `new DbError(` line. This pins that the scan reads
-        // both markers rather than only the constructor.
-        expect(CALL_MARKERS).toContain('throwDbError(');
+    it('catches a causeless call routed through the `throwDbError` helper', () => {
+        // Arrange — the helper's signature ends in the same optional `cause`, so
+        // deriving a site to it is the cheapest way to drop the cause without
+        // touching a `new DbError(` line. Run the REAL scan over both sources.
+        const withCause = "throwDbError(this.entityName, 'x', ctx, err.message, err);";
+        const withoutCause = "throwDbError(this.entityName, 'x', ctx, err.message);";
 
-        // Act — `throwDbError` is exported from the module the file imports
-        // from, so a future call site is reachable without a new import.
+        // Act + Assert
+        expect(countCauseless(withCause)).toBe(0);
+        expect(countCauseless(withoutCause)).toBe(1);
+    });
+
+    it('catches a causeless `new DbError(` regardless of line wrapping', () => {
+        // Arrange
+        const inline = "throw new DbError(this.entityName, 'x', ctx, err.message);";
+        const wrapped = [
+            'throw new DbError(',
+            '    this.entityName,',
+            "    'x',",
+            '    { where: safeWhere, data: safeData },',
+            '    err.message',
+            ');'
+        ].join('\n');
+
+        // Act + Assert
+        expect(countCauseless(inline)).toBe(1);
+        expect(countCauseless(wrapped)).toBe(1);
+    });
+
+    it('does NOT count an example written inside a comment', () => {
+        // Arrange — the reason the scan strips comments first: a JSDoc example
+        // would otherwise fail the guard falsely.
+        const jsdoc = [
+            '/**',
+            " * @example new DbError('e', 'm', {}, 'boom')",
+            ' */',
+            "throw new DbError(this.entityName, 'x', ctx, err.message, err);"
+        ].join('\n');
+        const lineComment = [
+            "// throw new DbError(this.entityName, 'x', ctx, err.message);",
+            "throw new DbError(this.entityName, 'x', ctx, err.message, err);"
+        ].join('\n');
+
+        // Act + Assert
+        expect(countCauseless(jsdoc)).toBe(0);
+        expect(countCauseless(lineComment)).toBe(0);
+    });
+
+    it('does not mistake a string literal containing the marker for a call site', () => {
+        // Arrange
+        const source = "const hint = 'use new DbError(entity, method, params, message, cause)';";
+
+        // Act + Assert
+        expect(scanDbErrorCalls(source)).toHaveLength(0);
+    });
+
+    it('`throwDbError` really is exported from the module this file imports from', () => {
+        // Arrange + Act — the escape hatch is only reachable because the helper
+        // lives in the same module, so no new import is needed to use it.
         const errorModule = readFileSync(join(__dirname, '../../src/utils/error.ts'), 'utf8');
 
         // Assert
