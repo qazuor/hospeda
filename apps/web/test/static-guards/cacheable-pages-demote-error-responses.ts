@@ -11,22 +11,32 @@
  *
  * A file that can produce a shared-cacheable response, and that can also render
  * a user-visible failure state, must REACH `markResponseDegraded` — itself, or
- * through something it imports. Reaching it is what makes middleware strip the
- * public `Cache-Control` before the response leaves the origin.
+ * through a component it RENDERS. Reaching it is what makes middleware strip
+ * the public `Cache-Control` before the response leaves the origin.
  *
- * "Reach" rather than "call" is the load-bearing word. None of the 16 listing
- * pages calls the marker; every one of them renders `ErrorBanner.astro`, which
- * does. Demanding the call at the page would re-introduce the 16-places-to-
- * remember problem this fix exists to remove, and would fail every page that is
- * already correct. So the check follows local imports transitively and asks
- * whether the marker is anywhere in the page's own module graph.
+ * "Renders", not "imports", and that word is the whole correctness of this
+ * file — see {@link reachesDegradationMarker} for the measurement that forced
+ * it. An earlier version walked imports and certified any page that merely
+ * imported `ErrorBanner`, whatever its template actually drew.
  *
- * That also gives the guard a useful failure mode on a rename: delete the call
- * from `ErrorBanner.astro`, or rename `markResponseDegraded` at its call sites,
- * and all 16 pages become violations at once, loudly, instead of the guard
- * going quietly blind. (Measured, both ways.) Renaming ONLY the declaration is
- * not caught here and is not meant to be — that source does not compile, so it
- * is typecheck's failure to report, not this guard's.
+ * "Reach" rather than "call" is the other load-bearing word. None of the 16
+ * listing pages calls the marker; every one of them renders `ErrorBanner.astro`,
+ * which does. Demanding the call at the page would re-introduce the
+ * 16-places-to-remember problem this fix exists to remove, and would fail every
+ * page that is already correct.
+ *
+ * Only a marker call that runs on EVERY render of a component lets that
+ * component certify its callers — see
+ * {@link marksDegradedResponseUnconditionally}, which is positional rather than
+ * textual for reasons review measured too.
+ *
+ * That gives the guard a useful failure mode on a rename: delete the call from
+ * `ErrorBanner.astro`, put it behind a condition, or rename
+ * `markResponseDegraded` at its call sites, and all 16 pages become violations
+ * at once, loudly, instead of the guard going quietly blind. (Measured, all
+ * three ways.) Renaming ONLY the declaration is not caught here and is not
+ * meant to be — that source does not compile, so it is typecheck's failure to
+ * report, not this guard's.
  *
  * `16`, not the `18` HOS-1154 states: the two accommodation-facet pages in that
  * count mention `applyCacheHeaders` only inside a JSDoc saying they deliberately
@@ -418,11 +428,29 @@ function isAlwaysReached({
 const IMPORT_BINDING = /\bimport\s+([^;]*?)\s+from\s*['"]([^'"]+)['"]/g;
 
 /**
+ * A type-only import. Excluded from the binding map because it contributes no
+ * runtime edge: `import type { X } from './x'` cannot render anything, so
+ * treating it as a graph edge would let a file "reach" a marker it never runs.
+ */
+const TYPE_ONLY_IMPORT = /^\s*type\s/;
+
+/**
  * Component names this source actually RENDERS.
  *
  * Only capitalised tags, which is how Astro and JSX distinguish a component
  * from an HTML element. For a namespaced tag (`<Feedback.Error />`) the base
  * binding is what the import introduced, so that is what is returned.
+ *
+ * The `<` must NOT be preceded by an identifier character. Without that, a TYPE
+ * ARGUMENT reads as a render — `Array<AccommodationCardData>`,
+ * `Promise<Foo>`, `Record<K, V>` — and every one of those is an
+ * over-approximation that fails OPEN: it would let a file be certified by a
+ * component it names in a type position and never draws.
+ *
+ * Known remaining over-approximation, small and deliberate: a component name
+ * inside a template literal still counts as a render. Narrowing that needs a
+ * real parser, and erring here costs a certification that is probably correct
+ * anyway rather than a missed violation.
  *
  * @param params.source - Raw file contents.
  * @returns The distinct component binding names appearing as elements.
@@ -434,8 +462,10 @@ export function renderedComponentNames({
 }): ReadonlySet<string> {
     const code = stripComments({ source });
     const names = new Set<string>();
-    for (const match of code.matchAll(/<\s*([A-Z][A-Za-z0-9_$]*)(?:\.[A-Za-z0-9_$]+)*[\s/>]/g)) {
-        const name = match[1];
+    for (const match of code.matchAll(
+        /(^|[^A-Za-z0-9_$])<\s*([A-Z][A-Za-z0-9_$]*)(?:\.[A-Za-z0-9_$]+)*[\s/>]/g
+    )) {
+        const name = match[2];
         if (name !== undefined) names.add(name);
     }
     return names;
@@ -470,6 +500,10 @@ export function localImportBindings({
     while (match !== null) {
         const clause = match[1] ?? '';
         const specifier = match[2] ?? '';
+        if (TYPE_ONLY_IMPORT.test(clause)) {
+            match = IMPORT_BINDING.exec(code);
+            continue;
+        }
         const resolved = resolveLocalImport({ specifier, fromFile, srcRoot, fileExists });
         if (resolved !== null) {
             // Default binding: everything before the first `{` or `,`.

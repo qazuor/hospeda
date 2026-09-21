@@ -50,11 +50,13 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     isPolicedFile,
+    localImportBindings,
     marksDegradedResponse,
     marksDegradedResponseUnconditionally,
     matchedErrorSurfaces,
     mayBeEdgeCacheable,
     reachesDegradationMarker,
+    renderedComponentNames,
     rendersErrorSurface,
     resolveLocalImport,
     sliceCallArguments
@@ -569,6 +571,52 @@ describe('detector: which marker calls certify a component', () => {
         // cannot vouch for a caller.
         expect(marksDegradedResponse({ source: generic })).toBe(true);
         expect(marksDegradedResponseUnconditionally({ source: generic })).toBe(false);
+    });
+});
+
+describe('detector: over-approximations that would fail OPEN', () => {
+    it('a TYPE ARGUMENT is not a render', () => {
+        // `Array<AccommodationCardData>` used to match the render regex. Any
+        // such over-approximation certifies a file by a component it only
+        // NAMES, which is the same fail-open as counting an import.
+        for (const source of [
+            'const cards: Array<ErrorBanner> = [];',
+            'let r: Promise<ErrorBanner>;',
+            'type M = Record<string, ErrorBanner>;'
+        ]) {
+            expect(renderedComponentNames({ source }).has('ErrorBanner'), source).toBe(false);
+        }
+    });
+
+    it('but a real element still is, in every shape the app writes', () => {
+        for (const source of [
+            '<ErrorBanner locale={locale} />',
+            '{hasError && <ErrorBanner />}',
+            '(<ErrorBanner/>)',
+            '<Feedback.Error />'
+        ]) {
+            expect(renderedComponentNames({ source }).size, source).toBeGreaterThan(0);
+        }
+    });
+
+    it('an `import type` is not a runtime edge', () => {
+        const bindings = localImportBindings({
+            source: `import type { SupportedLocale } from '@/lib/i18n';`,
+            fromFile: path.join(WEB_SRC, 'pages/x.astro'),
+            srcRoot: WEB_SRC
+        });
+
+        expect(bindings.has('SupportedLocale')).toBe(false);
+    });
+
+    it('a value import from the same module still is', () => {
+        const bindings = localImportBindings({
+            source: `import { createT } from '@/lib/i18n';`,
+            fromFile: path.join(WEB_SRC, 'pages/x.astro'),
+            srcRoot: WEB_SRC
+        });
+
+        expect(bindings.has('createT')).toBe(true);
     });
 });
 

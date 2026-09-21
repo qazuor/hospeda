@@ -50,11 +50,11 @@ try {
   if (result.ok) {
     eventItems = result.data.items.map((raw) => toEventCardProps({ item: raw as Record<string, unknown>, locale }));
   } else {
-      // The response is now a homepage section that silently renders nothing.
-      // Fail-soft is right — a dead endpoint must not 500 the home — but the page
-      // declared itself cacheable before this fetch was issued, so without this the
-      // edge would store the hollow copy for the full `home` TTL (HOS-1154).
-      markResponseDegraded({ locals: Astro.locals });
+    // The response is now a homepage section that silently renders nothing.
+    // Fail-soft is right — a dead endpoint must not 500 the home — but the page
+    // declared itself cacheable before this fetch was issued, so without this the
+    // edge would store the hollow copy for the full `home` TTL (HOS-1154).
+    markResponseDegraded({ locals: Astro.locals });
   }
 } catch (err) {
   webLogger.error('API fetch failed', { endpoint: 'events', error: err instanceof Error ? err.message : err });
