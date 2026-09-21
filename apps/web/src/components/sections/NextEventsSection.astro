@@ -25,6 +25,7 @@ import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.a
 import EventCardFeatured from '@/components/shared/cards/EventCardFeatured.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { markResponseDegraded } from '@/lib/cache/response-cache';
 import { webLogger } from '@/lib/logger';
 import { revealStagger } from '@/lib/reveal-stagger';
 
@@ -48,9 +49,16 @@ try {
   const result = await eventsApi.getUpcoming({ pageSize: 6, daysAhead: 60 });
   if (result.ok) {
     eventItems = result.data.items.map((raw) => toEventCardProps({ item: raw as Record<string, unknown>, locale }));
+  } else {
+      // The response is now a homepage section that silently renders nothing.
+      // Fail-soft is right — a dead endpoint must not 500 the home — but the page
+      // declared itself cacheable before this fetch was issued, so without this the
+      // edge would store the hollow copy for the full `home` TTL (HOS-1154).
+      markResponseDegraded({ locals: Astro.locals });
   }
 } catch (err) {
   webLogger.error('API fetch failed', { endpoint: 'events', error: err instanceof Error ? err.message : err });
+  markResponseDegraded({ locals: Astro.locals });
 }
 
 const resolvedEventItems: EventCardData[] = eventItems;
