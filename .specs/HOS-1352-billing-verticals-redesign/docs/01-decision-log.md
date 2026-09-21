@@ -3,7 +3,7 @@ title: Decision Log
 linear: HOS-1352
 statusSource: linear
 created: 2026-09-15
-updated: 2026-09-20
+updated: 2026-09-21
 status: CURRENT
 ---
 
@@ -3343,12 +3343,74 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-METH-011 — La obligación alcanza a las DECISIONES, no sólo a los arreglos, y el rastro por aparición es un ARCHIVO
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Extiende `DEC-METH-010`**, que **no la deroga**: la enmienda se midió y **funciona donde se
+  ejecuta**. Lo que esta decisión corrige son las dos puertas por las que se dejó de ejecutar.
+- **Problema, medido en la FASE 8-bis-4**: **83 hallazgos, 13 IDs `CRITICA`, 12 defectos críticos
+  distintos**, y **12 de 12** los introdujo la tanda anterior. La serie completa:
+
+  | | 8-bis | 8-bis-2 | 8-bis-3 | 8-bis-4 |
+  |---|---|---|---|---|
+  | críticos distintos | — | 17 | 14 | **12** |
+  | atribuidos a la tanda anterior | 25/25 | 17/17 | 13/14 | **12 de 12** |
+
+- **El diagnóstico, y es el primero de las cuatro vueltas que trae evidencia POSITIVA**:
+  1. **Los dos únicos commits que ejecutaron la obligación 2 con cifras produjeron CERO de los
+     doce críticos.** Uno de ellos, `1e3c3fc9e` —*«72 apariciones no corregidas quedaron
+     justificadas una por una»*—, tocó **16 archivos**: exposición comparable a `621332e7c`, que
+     tocó **18** y produjo **cinco**. **No es que la enmienda no sirva: no se ejecutó en 9 de los
+     11 commits de la tanda.**
+  2. **Nueve de los doce críticos salieron de los SEIS commits de decisiones**, que no reportan
+     ninguna cifra de apariciones **aunque los seis editan capítulos y los seis editan el núcleo**.
+     El generador se mudó: de los commits de arreglo a los de decisión.
+  3. **El rastro por aparición no existe como artefacto.** Los once commits de la tanda **no
+     agregan ningún archivo**, el worklog no lo contiene, y
+     `rg -i "por aparici|declaradas correctas|apariciones recorridas"` sobre `.specs/` —excluidos
+     los informes de fase— devuelve **sólo este log**, que es donde la regla se enuncia. Así que
+     *«72 justificadas una por una»* es hoy **tan falsable como el «101 declaradas correctas»** que
+     motivó `DEC-METH-010`.
+  4. **5 de los 9 críticos que se escapan nacen en prosa que el commit escribió o editó** — que es
+     exactamente lo que la versión acotada de la obligación 2 saca de su rastro.
+- **Decisión, y son dos partes que van juntas:**
+  1. **La obligación alcanza a TODO commit que edite el corpus, no sólo a los de arreglo.** Una
+     decisión del owner que toca capítulos es un arreglo a los efectos de `DEC-METH-010`: redefine
+     términos, crea transiciones y vuelve falsas premisas ajenas igual que cualquier otro. **Las
+     tres obligaciones de `DEC-METH-010` corren idénticas sobre ella.**
+  2. **El rastro por aparición se escribe como ARCHIVO, no en el mensaje del commit.** Vive en
+     `<carpeta-de-la-fase>/rastro-<commit-corto>.md` y lleva, por cada aparición **no corregida**:
+     archivo, §, la cita, y **por qué sigue siendo correcta**. Un agregado en el cuerpo del commit
+     **ya no cumple la obligación 2**.
+- **Por qué el archivo y no el mensaje, dicho en voz alta**: un mensaje de commit **no se puede
+  verificar contra nada** —es texto libre que nadie vuelve a leer— y **un mensaje de commit no es
+  evidencia de lo que se hizo**, que es una regla que el programa ya aplicaba a los informes y no
+  se aplicaba a sí mismo. Un archivo, en cambio, **se grepea, se cuenta y se puede contradecir**:
+  la vuelta que viene puede tomar una línea del rastro y mostrar que la resolución era falsa. Eso
+  es lo único que convierte *«la miré»* en algo distinto de *«la resolví bien»*, que es el modo que
+  `DEC-METH-010` no llegó a cerrar.
+- **El costo aceptado, y es el caro de las tres opciones que se presentaron**: escribir el rastro
+  de una decisión **cuesta más que la decisión**. `1e3c3fc9e` justificó 72 apariciones y
+  `c29b318c7` recorrió 90. Con la extensión a los seis commits de decisiones el volumen crece, y el
+  owner lo eligió igual **por encima de la opción barata** —sólo exigir el archivo, sin extender—,
+  porque ésa dejaba intacto el modo que produjo **9 de los 12**.
+- **Lo que esto NO cierra, declarado como lo declara `DEC-METH-010`**: sigue afuera **«el capítulo
+  que nunca nombró el término»**, que ninguna búsqueda devuelve en ningún alcance y sólo encuentra
+  recorrer el dominio por el eje del tiempo. Y sigue afuera **la prosa que el propio commit
+  escribe**: la obligación 2 acotada excluye los párrafos que el commit tocó, y ahí nacen **5 de
+  los 9** que se escapan. Esta decisión **no levanta esa exclusión** — la deja medida para la
+  vuelta que viene.
+- **Origen**: la FASE 8-bis-4, `20-fase-8-bis-4/C1-la-costura.md` §4, y la elección del owner del
+  2026-09-21 entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **76** |
-| De metodología | 10 |
+| Decisiones tomadas | **77** |
+| De metodología | 11 |
 | Funcionales | 66 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
