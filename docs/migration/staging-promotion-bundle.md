@@ -5,7 +5,7 @@ Los cambios que habilitan la reconciliación automática todavía viven en la ra
 de migración y por eso `hops update` los detecta, pero no puede ejecutarlos en
 el checkout operativo.
 
-## Cambios que deben llegar juntos
+## Cambios operativos que deben llegar juntos
 
 - `scripts/reconcile-local-env.sh`: reconciliación segura contra los templates.
 - `scripts/copy-env-to-worktree.sh`: fuente predeterminada `hospeda-staging` y
@@ -15,11 +15,24 @@ el checkout operativo.
 - `scripts/client-tools/src/commands/update/update.ts` y
   `scripts/client-tools/src/lib/runner.ts`: `--dry-run --json` y captura segura
   para el modo JSON.
+- `scripts/worktree/template.sh`, `scripts/worktree/wt-config.sh` y los
+  helpers de DB/servers: lifecycle de template con candidata aislada,
+  fingerprint, manifest y rollback.
+- `scripts/client-tools/src/commands/db/update-template.ts`: interfaz Hops
+  para `status`, `build-candidate` y `promote --confirm`.
+
+Los documentos de migración, el bootstrap genérico y el artifact deben viajar
+en una promoción separada o en el mismo PR sólo si la revisión acepta el
+paquete completo. No se deben mezclar automáticamente todos los commits de la
+rama: el diff actual contiene aproximadamente 110 archivos y combina código
+operativo, guards, comandos nuevos y documentación histórica.
 
 ## Evidencia
 
-- La rama de migración tiene estos cambios en commits separados; el diff
-  operativo contra `staging` es de seis archivos y 681 líneas netas.
+- La rama de migración tiene cambios en commits separados; el diff completo
+  contra `staging` incluye aproximadamente 110 archivos y 9.500 líneas. El
+  paquete mínimo de env/worktree/template debe seleccionarse por archivos o
+  commits revisados, no mediante un merge ciego de toda la rama.
 - La prueba E2E real de `hops update --json` funcionó sobre `hospeda-staging`
   para fetch, reset e instalación de wrappers.
 - La reconciliación no se ejecutó porque `origin/staging` aún no contiene el
@@ -30,6 +43,8 @@ el checkout operativo.
 
 ## Criterio de cierre
 
-Después de integrar el paquete, ejecutar `hops update --json` y comprobar que
-incluya el paso `env-reconcile`, luego verificar `hops env --drift --wt
-hospeda-staging --json`. No borrar claves obsoletas a mano antes de esa prueba.
+Después de integrar el paquete mínimo, ejecutar `hops update --json` y
+comprobar que incluya el paso `env-reconcile`; luego verificar
+`hops env --drift --wt hospeda-staging --json`, `hops db-update-template
+status` y el E2E de worktree/servers. No borrar claves obsoletas a mano antes
+de esas pruebas.
