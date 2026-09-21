@@ -3702,13 +3702,49 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-TEST-001 — Va UN guard nuevo, el de la columna que nadie escribe; el del orden de escrituras NO
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **El contexto**: la FASE 9-bis-4 produjo dos clases de defecto que ningún guard vigila, y cada
+  una salió de un crítico real. Se evaluó agregar uno por cada una.
+- **Decisión: va el primero y no va el segundo.**
+  1. **SÍ — *«una condición que lee una columna que ninguna transición escribe»*.** Es
+     `F-8eB1-002` exacto: `MP5` disparaba sobre *«el período actual arrancó»* y **ninguna escritura
+     del corpus avanzaba esa columna**, así que el pagador manual pagaba **una vez en la vida** y
+     seguía cubierto para siempre. El guard recorre cada condición de transición, extrae las
+     columnas que lee y exige que **al menos una transición las escriba**.
+  2. **NO — *«toda fila con `desde` de conjunto declara cuántas escrituras tiene y en qué
+     orden»*.** Es `F-8eB2-002`: `S20` copió de `S13` el *«idempotente y reanudable fila por fila»*
+     teniendo **dos** escrituras, y el argumento de `S13` supone una.
+- **Por qué el primero sí**: vigila una clase que ya costó **un crítico de dinero**, y **se
+  verifica mecánicamente** — cruzar las columnas leídas contra las escritas es una comprobación
+  estructural, no un juicio.
+- **Por qué el segundo no, y es la parte que importa**: vigila una **convención de redacción**
+  —*«declará tus escrituras»*— que un guard estático **sólo puede comprobar en su forma, no en su
+  verdad**. Puede exigir que la fila **diga** cuántas escrituras tiene; no puede verificar que
+  **sean ésas**. Sería **un guard que afirma más de lo que prueba**, y el programa tiene la regla
+  escrita de que el mensaje de un guard no puede afirmar más que su predicado. Un guard así es
+  **peor que no tenerlo**, porque declara cubierta una clase que no cubre.
+- **El costo aceptado, con su cifra**: los guards de este programa **no corren todavía** —son
+  declaraciones en `B/20` §2 y `V/20` §2 hasta la FASE 10— y `C2` midió que **12 de 26 no tienen
+  unidad que los construya**. Agregar uno empeora esa proporción a 13 de 27, y **se acepta** porque
+  la alternativa —no escribirlo— garantiza que no llegue a la FASE 10.
+- **Lo que queda sin vigilancia, declarado**: la clase del segundo guard. `S20` demostró que el
+  error se comete **copiando de una fila que parece análoga**, y contra eso no hay comprobación
+  estructural: lo único que lo detecta es que alguien lea las dos filas juntas.
+- **Origen**: la FASE 9-bis-4, preguntas de los rastros del pagador manual
+  (`rastro-8f9f31ac0.md`) y del grant (`rastro-ce52dce5f.md`), presentadas juntas al owner el
+  2026-09-21 — eligió la 2, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **84** |
+| Decisiones tomadas | **85** |
 | De metodología | 11 |
-| Funcionales | 73 |
+| Funcionales | 74 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
