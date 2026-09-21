@@ -167,7 +167,7 @@ que no son éste:
 |---|---|---|
 | **abrir** la marca —con motivo **`REEMBOLSO_POR_CONFIRMAR`** y **la referencia al pago**— sobre la predecesora que lo retiene, un `payment` **o un `manual_payment`**, porque `S19` lo retiene entre por la puerta que entre | **`S18`**, como **quinto** efecto del cierre de la sucesión | `B/03` §3.2, `B/02` §2.5, `B/12` §5.3 **ramas 1, 5 y 6** |
 | **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
-| **re-emitir una cortesía DIFERIDA** sobre la sucesora que acaba de autorizar | **`S9`**, por su segundo disparador — la firma sigue siendo la de `SUPER_ADMIN` que la otorgó, así que **no es una concesión nueva** y no suma fila | `B/03` §3.2, `B/02` §2.4 y §2.6, `B/14` §4.4, `DEC-GRANT-007` |
+| **re-emitir una cortesía DIFERIDA** sobre la fila que acaba de autorizar — **la sucesora** de un cambio de plan, o **el alta nueva** de quien perdió su plan porque se discontinuó su vertical | **`S9`**, por su segundo disparador y por el **tercero** — la firma sigue siendo la de `SUPER_ADMIN` que la otorgó, así que **no es una concesión nueva** y no suma fila, **por ninguno de los dos caminos** | `B/03` §3.2, `B/02` §2.4 y §2.6, `B/14` §4.4 y §4.6, `DEC-GRANT-007`, `DEC-GRANT-010` |
 
 Las dos son actos **de sistema**, no de admin, y por eso no suman filas. La primera **no es
 `S14`** —su evento es *«divergencia que toca plata o estado»*, y `S19` declara por escrito que

@@ -358,6 +358,59 @@ techo ata al canje pero no a `SUPER_ADMIN`.
 Se nombra acá porque el hueco lo listaba como tercera combinación, y para dejar escrito que **no
 tiene regla propia**: es el mismo techo.
 
+### 4.6 Cortesía temporal + la vertical que se discontinúa
+
+**`SUPER_ADMIN` le firmó N días, la cortesía se implementa pausando (`DEC-GRANT-003`), y el plan
+sobre el que se la firmó deja de prestarse debajo.** Es el borde que `DEC-SUB-015` declaró abierto
+y que `DEC-GRANT-010` cierra: **la cortesía se difiere y se re-emite**, con **el mismo mecanismo
+del §4.4** y no con uno nuevo.
+
+| qué pasa | quién lo hace |
+|---|---|
+| la pausa termina y no se puede reanudar — el plan ya no se presta | **`S25`** (`B/03` §3.2) |
+| la cortesía **no se pierde**: se le escribe el `saldo_días` que le quedaba y queda **diferida** | **`S25`**, que es su **segundo escritor** (`NUCLEO/01` §2.6) |
+| la persona elige de nuevo y su fila nueva llega a `ACTIVE` | `S1` + `S2` |
+| la cortesía se **re-emite** sobre esa fila: `subscription_id` a la nueva, `inicio` hoy, `fin` hoy + `saldo_días`, saldo a nulo, y la fila queda `PAUSED · COURTESY` | **`S9`**, por su **tercer** disparador |
+
+**Es literalmente el mismo mecanismo, y eso es la decisión y no una comodidad.** `DEC-GRANT-010`
+eligió *«el mismo mecanismo que `DEC-GRANT-007`»* con todas las letras: la misma columna, el
+mismo re-emisor, el mismo detector. Inventar un camino propio para este caso habría duplicado un
+mecanismo que **acaba de costar un crítico reportado por tres IDs**, y con eso la obligación de
+mantener los dos sincronizados.
+
+**Lo único que cambia es cómo se llega a la fila nueva, y hay que decirlo porque es la diferencia
+que un lector va a buscar.** En el §4.4 la sucesora se alcanza por `predecesora.sucedida_por`, que
+`S18` escribe en el mismo acto. **Acá no hay sucesión**: `G-R1-A` sólo deja declarar una desde
+`ACTIVE`, `GRACE_PERIOD` o `CANCEL_SCHEDULED`, y ésta estaba `PAUSED`. La fila nueva es **un alta
+nueva** (`S1`), y se la alcanza por **el beneficiario y la vertical** de la suscripción muerta
+—que la cortesía sigue apuntando, porque `subscription_id` no es anulable y la fila `CANCELLED`
+**no se borra**—.
+
+**El motivo, y es el criterio del owner sobre un caso donde la pérdida la causaríamos nosotros.**
+Retirar el servicio es **acto nuestro**, y la persona **todavía no recibió nada** del regalo: es
+`DEC-TRIAL-009` invertido —allá el beneficiario ya había recibido la cobertura completa y por eso
+el trial gastado no se repara; acá el regalo no empezó a entregarse—. Las dos alternativas las
+descarta `DEC-GRANT-010`: que la cortesía **corra hasta agotarse** mantiene vivo un plan retirado
+hasta que termine el regalo, que es justo la garantía que `DEC-SUB-015` conservó; que **se pierda
+avisando** contradice el criterio.
+
+**El costo aceptado**: el plan que elija puede ser **más caro**, así que los N días valen más de
+lo que valían el día que se firmaron. Es un sobrecosto nuestro, acotado, y consecuencia de una
+decisión nuestra.
+
+> **Y hay un desenlace en el que esta re-emisión NO llega, que va declarado y no resuelto.** El
+> único acto del corpus que produce este caso es **la discontinuación de una vertical** (`B/10`
+> §4.3), y una vertical discontinuada **queda cerrada a altas para siempre** (`B/10` §4.5, borde
+> 4): su fila *«no se borra nunca»* y queda con la fecha de fin de servicio cumplida. O sea que
+> **en esa vertical no va a haber nunca una fila nueva que llegue a `ACTIVE`**, y el saldo se
+> queda diferido indefinidamente. No se pierde —la fila sigue ahí, con su firma y sus días— pero
+> **no emite nada**, porque una cortesía diferida no emite fuente (`NUCLEO/01` §2.6). Re-emitirla
+> en **otra** vertical no es una salida disponible: la cortesía transporta *«la versión anclada de
+> la suscripción que pausa»*, y hacerlo sería el defecto que `DEC-GRANT-006` rechazó por escrito
+> —*«nadie puede emitir la cortesía en una segunda vertical transportando la versión anclada de
+> la suscripción de la primera»*—. **Queda como pregunta al owner**, junto con la que `B/09` §3
+> ya dejó abierta para el saldo de una sucesora que abandona: son el mismo hueco por dos puertas.
+
 ---
 
 ## Lo que este capítulo NO cierra

@@ -449,12 +449,27 @@ rama de fallo de `S10` no escribe ninguna de las dos. Si `S25` corriera sin escr
 
 **Y una sexta, que tampoco le pregunta nada al proveedor: la cortesía diferida que nadie
 re-emitió.** Si hay un `courtesy_grant` con **`saldo_días` no nulo** —o sea **diferido**, `B/02`
-§2.4 y `NUCLEO/01` §2.6— y la suscripción a la que apunta tiene **`sucedida_por` no nulo** y esa
-sucesora ya está en **`ACTIVE`**, `S9` no corrió por su segundo disparador: se abre la **marca**
-con motivo **`CORTESÍA_SIN_RE_EMITIR`** (`B/02` §2.5). Cuesta cero llamadas —la cortesía, la
-predecesora y la sucesora están las tres en nuestra base— y cubre el único estado que
-`DEC-GRANT-007` puede dejar colgado: **la sucesora cobra el precio entero por días que
+§2.4 y `NUCLEO/01` §2.6— y **ya existe la fila que tenía que recibirlo, en `ACTIVE`**, `S9` no
+corrió: se abre la **marca**
+con motivo **`CORTESÍA_SIN_RE_EMITIR`** (`B/02` §2.5). Cuesta cero llamadas —la cortesía y las dos
+suscripciones están todas en nuestra base— y cubre el único estado que
+`DEC-GRANT-007` puede dejar colgado: **la fila nueva cobra el precio entero por días que
 `SUPER_ADMIN` había regalado**.
+
+**Y *«la fila que tenía que recibirlo»* son DOS preguntas, una por cada disparador de `S9`**
+(`B/03` §3.2), porque los dos difieren justamente en cómo se llega a esa fila:
+
+| de dónde viene el saldo | cómo se busca la fila que debía recibirlo |
+|---|---|
+| `S18` cerró una sucesión (`DEC-GRANT-007`) | la suscripción a la que la cortesía apunta tiene **`sucedida_por` no nulo**, y esa sucesora está en `ACTIVE` |
+| `S25` terminó una pausa sobre un plan que ya no se presta (`DEC-GRANT-010`) | la suscripción a la que apunta está `CANCELLED` **sin `sucedida_por`**, y el beneficiario tiene **otra fila en `ACTIVE` en la misma vertical** |
+
+**La segunda no se dispara cuando esa fila nueva no existe, y eso es deliberado.** Una vertical
+discontinuada **queda cerrada a altas** (`B/10` §4.5, borde 4), así que ahí no va a haber nunca
+una fila que reciba el saldo: marcar ese caso sería abrirle a una persona, **todos los días y para
+siempre**, un caso que no tiene ninguna acción posible — que es lo contrario de para qué existe el
+listado accionable. **El saldo queda diferido y declarado**, con su pregunta al owner en `B/14`
+§4.6.
 
 > **Hace falta porque este estado es indetectable por comparación, con las mismas palabras que el
 > de `S13` y el de `S10`.** La sucesora dice `ACTIVE`, el proveedor dice `authorized`, y para las

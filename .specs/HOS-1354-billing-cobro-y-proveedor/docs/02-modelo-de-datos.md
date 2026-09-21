@@ -306,7 +306,7 @@ de períodos que arrancaron antes.
 | **`addon_instance`** | producto, **la `addon_version` que ANCLÓ al comprarse**, dueño, **objetivo** —su scope es uno de los cuatro del §40 y se escribe **con la grafía del §40, no con una prosa equivalente**: `LISTING`, `VERTICAL_SUBSCRIPTION`, `USER` o `GLOBAL`—, estado, inicio, fin, su suscripción de complemento si es recurrente, **y el ancla del grant que sea su título, si lo es** | el objetivo corresponde al tipo de scope del producto; **la versión anclada no es anulable**. **El ancla del título apunta a `permanent_grant_vertical` y sí es anulable**: nula cuando el título es el ordinario de esa vertical, no nula cuando el addon vive de un grant. El contrato transporta ese scope como `alcance` y **colapsa `VERTICAL_SUBSCRIPTION` en `VERTICAL`** (`12-contrato…` §2.7): aquélla es la etiqueta de transporte, **ésta es la canónica** |
 | **`promo_code`** | código, tipo, valor, scope de verticales, **cupo total**, ventana de validez, stackable, usable con otra activa (§31, `DEC-PROMO-001`) | `UNIQUE(codigo)` |
 | **`promo_redemption`** | código, user, cuándo, sobre qué suscripción | **`UNIQUE(promo_code_id, user_id)`** — es el §31, «Cada user: máximo un uso de cada código». **La suscripción se re-apunta en `S18`** (§2.6) |
-| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** y **`saldo_días`** (anulable) | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **NO se re-apunta en `S18`** — `S18` cierra la cortesía sobre la predecesora y le escribe el `saldo_días`, y `S9` la re-emite sobre la sucesora cuando ésta autoriza (`DEC-GRANT-007`, §2.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
+| **`courtesy_grant`** | beneficiario, días o meses, inicio, fin, quién lo firmó, motivo, **la suscripción que pausa** y **`saldo_días`** (anulable) | el que firma es `SUPER_ADMIN` (`DEC-GRANT-002`); la suscripción **no es anulable** y **NO se re-apunta en `S18`** — `S18` cierra la cortesía sobre la predecesora y le escribe el `saldo_días`, y `S9` la re-emite sobre la sucesora cuando ésta autoriza (`DEC-GRANT-007`, §2.6). **`S25` es su segundo escritor**, con la misma columna y la misma forma: la pausa que no puede reanudar sobre un plan retirado difiere la cortesía en vez de perderla, y `S9` la re-emite sobre el alta nueva (`DEC-GRANT-010`, `B/14` §4.6); **sin `scope`** — la cortesía es por suscripción (`DEC-GRANT-006`) |
 | **`permanent_grant`** | beneficiario, `includesAddons`, quién lo firmó, motivo, suscripciones afectadas (§35.4), **y la revocación: `revocado_en` y quién la firmó** | ídem; **al menos un ancla**, o el grant no otorga nada. **`revocado_en` es anulable y es lo único que contesta si el grant sigue vivo** (`NUCLEO/01` §2.4): **nulo es un *grant vivo***, escrito es uno revocado. **Revocar NO borra ninguna fila** — ni ésta ni sus anclas. **El scope de verticales NO es una columna: son sus anclas** |
 | **`permanent_grant_vertical`** | **el ancla, una por vertical del scope**: el grant, la vertical, **el `plan` que otorga en esa vertical** y **el piso del trinquete de esa vertical** | **`UNIQUE(permanent_grant_id, vertical)`**; el plan **no es anulable** y **pertenece a esa vertical**; el piso tampoco es anulable. **El ancla no tiene estado propio**: es ***ancla viva*** si y sólo si su grant lo es (`NUCLEO/01` §2.4), y **la fila sobrevive a la revocación** |
 
@@ -406,6 +406,11 @@ se puede expresar**, así que ninguna de las dos columnas admite nulo.
     suscripción pausó, y **la sucesora se alcanza por `predecesora.sucedida_por`** (§2.2), que es
     la primera escritura que `S18` hace en el mismo acto. Anular la columna habría perdido el
     único puntero que lleva a la sucesora.
+  - **Y por `S25` la columna sirve para lo mismo por otro camino, que es la razón de que no haya
+    hecho falta una columna nueva.** Ahí **no hay sucesión** —`G-R1-A` no deja declarar una desde
+    `PAUSED`—, así que `sucedida_por` es nulo y la fila nueva se alcanza por **el beneficiario y
+    la vertical** de la suscripción muerta, que esta misma columna sigue apuntando. Las dos
+    resoluciones salen del mismo puntero; lo que cambia es el salto que se da desde él.
   - **Y una cortesía diferida no emite ninguna fuente, sin que haga falta escribirlo en el
     contrato.** Lo que emite `tipo: CORTESÍA` es **el estado de la suscripción** —`PAUSED` por
     `COURTESY`—, y la predecesora está `CANCELLED`, que no emite nada (`12-contrato…` §2.6). Es la
@@ -632,6 +637,13 @@ re-apuntaban y la cortesía era la que no se podía ejecutar. Es la distinción 
 ejecutar y la que `G-R1-C` vigila: un cierre que escribe las dos
 columnas y deja **un complemento o la redención** apuntando a la predecesora, **o una cortesía
 vigente sin cerrar y sin saldo**, es un cierre incompleto, no un cierre.
+
+> **Y la tercera tiene desde `DEC-GRANT-010` un segundo escritor que NO es este cierre.** `S25`
+> (`B/03` §3.2) difiere la cortesía **con la misma columna** cuando una pausa no se puede reanudar
+> porque su plan dejó de prestarse, y ahí **no hay sucesión ninguna**: no hay `sucedida_por` que
+> escribir, no hay complementos ni redención que re-apuntar, y lo único que esa fila comparte con
+> `S18` es **el diferimiento**. Va dicho acá porque este inventario es el que `G-R1-C` verifica, y
+> un inventario que sólo nombre al cierre deja el segundo escritor sin vigilar (`B/14` §4.6).
 
 **Y las tres primeras tienen el mismo modo de falla: son silenciosas.** Ninguna emite webhook,
 ninguna cambia un estado que el barrido compare, y las tres le sacan al cliente algo que ya tenía

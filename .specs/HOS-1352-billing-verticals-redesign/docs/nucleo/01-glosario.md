@@ -505,7 +505,7 @@ y los tres preguntan lo mismo.
 
 | término | qué es | dónde se enumera | para qué existe |
 |---|---|---|---|
-| **cortesía diferida** | un `courtesy_grant` con **`saldo_días` no nulo** | **no se enumera con estados: es una columna anulable** (cap. 02 (billing) §2.4). Diferida o corriente, no hay más valores | sostener los días que `SUPER_ADMIN` firmó **entre que la suscripción que pausaban muere y la sucesora autoriza** |
+| **cortesía diferida** | un `courtesy_grant` con **`saldo_días` no nulo** | **no se enumera con estados: es una columna anulable** (cap. 02 (billing) §2.4). Diferida o corriente, no hay más valores | sostener los días que `SUPER_ADMIN` firmó **entre que la suscripción que pausaban muere y la siguiente autoriza** — sea la **sucesora** de un cambio de plan (`DEC-GRANT-007`) o el **alta nueva** de quien perdió su plan porque se discontinuó su vertical (`DEC-GRANT-010`) |
 | **cortesía vigente** | un `courtesy_grant` **no diferido** cuyo `fin` todavía no pasó | el `fin` de la fila, contra hoy | el predicado de siempre: *«¿este beneficiario está en cortesía hoy?»* |
 
 > **Una cortesía diferida NO es una cortesía vigente, y los dos términos conviven a propósito.**
@@ -522,12 +522,14 @@ no son conjuntos *«vivos»*—: quien escribe un consumidor nuevo agrega su fil
 
 | # | quién | dónde | qué hace con el término |
 |---|---|---|---|
-| 1 | la **cuarta escritura de `S18`** | cap. 03 (billing) §3.2 | **es el ESCRITOR**: cierra la cortesía sobre la predecesora y le escribe `saldo_días` |
+| 1 | la **cuarta escritura de `S18`** | cap. 03 (billing) §3.2 | **es el PRIMER ESCRITOR**: cierra la cortesía sobre la predecesora y le escribe `saldo_días` |
 | 2 | el **segundo disparador de `S9`** | cap. 03 (billing) §3.2 | *«una sucesora recién autorizada tiene una cortesía diferida esperándola»* — y es el que **borra** el saldo al re-emitir |
 | 3 | la **fila de la cortesía** en el inventario del cierre | cap. 02 (billing) §2.6 | declara que **no se re-apunta**: se difiere |
-| 4 | la **sexta comprobación del barrido** | cap. 09 (billing) §3 | *«una cortesía diferida cuya sucesora ya está `ACTIVE`»* — `S9` no corrió |
-| 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un cierre que deja una cortesía vigente sin cerrar y sin `saldo_días`»* |
+| 4 | la **sexta comprobación del barrido** | cap. 09 (billing) §3 | *«una cortesía diferida cuya sucesora, o cuyo alta nueva, ya está `ACTIVE`»* — `S9` no corrió, por el segundo disparador o por el tercero |
+| 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un cierre —o una `S25`— que deja una cortesía vigente sin cerrar y sin `saldo_días`»* |
 | 6 | el **cruce cortesía × cambio de plan** | cap. 14 (billing) §4.4 | es el § que lo explica entero, con su población y su riesgo aceptado |
+| 7 | el **efecto de `S25`** | cap. 03 (billing) §3.2 | **es el SEGUNDO ESCRITOR**: la pausa que no se puede reanudar sobre un plan que ya no se presta difiere la cortesía en vez de perderla (`DEC-GRANT-010`, cap. 14 (billing) §4.6) |
+| 8 | el **tercer disparador de `S9`** | cap. 03 (billing) §3.2 | *«un alta nueva del mismo beneficiario y la misma vertical tiene una cortesía diferida esperándola»* — mismo acto que el 2, distinta forma de llegar a la fila: por beneficiario + vertical, porque ahí no hubo sucesión |
 
 ---
 
