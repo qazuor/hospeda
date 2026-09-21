@@ -3616,13 +3616,49 @@ Cada entrada lleva, según §3.4:
 
 ---
 
+### DEC-RF-003 — La rama 6 entra al listado con el default en DEVOLVER
+
+- **Fecha**: 2026-09-21 · **Estado**: ACCEPTED · **Decide**: owner
+- **Extiende `DEC-RF-002`**, que no se toca: **ningún reembolso se dispara solo**, y éste tampoco.
+  Lo que esta entrada agrega es **qué encuentra escrito la persona que abre el caso**.
+- **El hueco**: al escribir `S23`, la FASE 9-bis-4 llevó `B/12` §5.3 de cinco ramas a **seis**. La
+  nueva es **una baja desde `SUSPENDED` sobre una predecesora que retiene un pago** por `S19`:
+  alguien pagó un período, quedó atrapado en una sucesión que nunca cerró, y **se da de baja él
+  mismo**. Las otras cinco ramas traen su desenlace escrito; **ésta dejaba el caso en manos de una
+  persona sin decirle qué debería hacer.**
+- **Decisión**: **el default es DEVOLVER.** La marca entra al listado accionable con motivo
+  *«reembolso por confirmar»*, y la persona **confirma salvo que haya razón para no hacerlo**. La
+  confirmación sigue siendo humana y sigue pudiendo decir que no.
+- **El motivo**: el pago quedó retenido **porque nuestra sucesión no cerró**, no porque el cliente
+  hiciera nada raro. Es el criterio del owner aplicado literal —*puso plata, se le da salida*—, el
+  mismo de `DEC-SUB-012` y `DEC-GRANT-007`.
+- **Las dos alternativas, y por qué se descartan:**
+  - **Sin default, la persona decide caso por caso**: es el estado actual y **es el que ya falló**.
+    El crítico `F-8eB3-003` existe precisamente porque una marca sin motivo se volvía
+    indistinguible de las otras y **el pago se quedaba**. Un default vacío reproduce ese desenlace
+    con más pasos.
+  - **El default depende de si el período se consumió** —entero si la baja llega antes de que
+    empiece, nada si ya corrió—: es **más justo** y se descarta por una razón de método, no de
+    fondo. Pide **una fecha que hay que verificar que exista**, y toda esta familia de críticos
+    nació de columnas que nadie escribía; prometer un default apoyado en un dato sin confirmar es
+    crear el defecto que la tanda acaba de arreglar cinco veces. **Queda anotada como mejora** para
+    cuando se verifique que esa fecha está guardada.
+- **El costo aceptado**: si el cliente usó el servicio durante el período, se devuelve un período
+  consumido. Se acepta porque la persona que confirma puede verlo y negarse, y porque el caso llega
+  ahí por una falla nuestra.
+- **Origen**: la FASE 9-bis-4, familia de la baja, pregunta 3 de su rastro
+  (`21-fase-9-bis-4/rastro-032f761e0.md` §5), y la elección del owner del 2026-09-21 entre las tres
+  opciones que se le presentaron — eligió la 1, que era la recomendada.
+
+---
+
 ## Resumen
 
 | | Cantidad |
 |---|---|
-| Decisiones tomadas | **81** |
+| Decisiones tomadas | **82** |
 | De metodología | 11 |
-| Funcionales | 70 |
+| Funcionales | 71 |
 | | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |
 | `SUPERSEDED` | **3** — `DEC-SUB-001` por `DEC-SUB-005`, `DEC-SUB-005` por `DEC-SUB-006`, y **`DEC-MIG-001` EN PARTE** por `DEC-MIG-003` (sobrevive *«cero código de migración»*, se cae el destino) |
 | **Preguntas del owner abiertas** | **0 de 25** |
