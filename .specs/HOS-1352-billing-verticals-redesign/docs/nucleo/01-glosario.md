@@ -216,7 +216,7 @@ Lo que sigue es el diccionario; el capítulo 03 dice qué transiciones existen.
 | máquina | estados |
 |---|---|
 | **Trial** | `PRE_TRIAL` · `TRIAL_ACTIVE` · `TRIAL_CONVERTED` · `TRIAL_EXPIRED` |
-| **Suscripción** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `GRACE_PERIOD` · `PAUSED` · `SUSPENDED` · `CANCEL_SCHEDULED` · `CANCELLED` · `CHARGE_DECLINED`. **`RECONCILIATION_REQUIRED` no está en la lista porque no es un estado**: es la marca `requiere_conciliación` sobre la fila, que conserva el suyo |
+| **Suscripción** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `GRACE_PERIOD` · `PAUSED` · `SUSPENDED` · `CANCEL_SCHEDULED` · `CANCELLED` · `CHARGE_DECLINED`. **`RECONCILIATION_REQUIRED` no está en la lista porque no es un estado**: es la marca `requiere_conciliación` sobre la fila, que conserva el suyo — y **tampoco es un booleano**, es una fila con motivo y reloj (§2.5) |
 | **Pago** | `PENDING` · `SUCCEEDED` · `FAILED` · `REFUNDED` · `PARTIALLY_REFUNDED` |
 | **Pago manual** | `AWAITING` · `REGISTERED` · `DECLARED_UNPAID` |
 | **Addon (instancia)** | `PENDING_AUTHORIZATION` · `ABANDONED` · `ACTIVE` · `EXPIRED` · `CANCELLED` |
@@ -431,7 +431,9 @@ mitad de `G-R1-E` (`B/20` §2).
    **dice además en qué estado está la fila que lo escribió**, y **quien escribe un consumidor
    nuevo agrega su fila al inventario que le corresponda —el de *«fila viva»* o el de
    *«grant vivo»* / *«ancla viva»*— en el mismo acto**, antes de declarar el cambio aplicado. Lo
-   vigila `G-R1-E` (`B/20` §2), en sus dos mitades.
+   vigila `G-R1-E` (`B/20` §2), en sus dos mitades. **Y desde la FASE 9-bis-4 hay un tercer
+   inventario en este capítulo** —el de *«marca abierta»*, §2.5—, que **no es de `G-R1-E`**: su
+   sujeto no es un conjunto *«vivo»* sino un caso abierto, y lo vigila `G-R1-F`.
 
 **El caso testigo, y son dos en direcciones opuestas.** `T6` se escribió con *«ya hay una
 suscripción viva»* leyendo las seis filas vivas, y sobre las tres que no emiten fuente eso
@@ -439,6 +441,57 @@ significaba **quemarle a alguien su trial único de por vida sin darle nada a ca
 `cubierto` —el único conjunto que verticales puede observar— dejaba a `T1` disparando sobre esas
 mismas tres, con el desenlace opuesto. **El mismo término, dos consumidores, dos daños
 opuestos**, y ninguna de las dos lecturas era arreglable sin nombrar la otra.
+
+### 2.5 «Marca abierta»: el otro término que estaba en uso y no estaba definido
+
+**`requiere_conciliación` dejó de ser una columna y pasó a ser un PREDICADO**, así que entra acá
+por la misma razón que los cuatro conjuntos del §2.4: el corpus lo usa en la condición de una
+transición, en el enunciado de un invariante y en el de un guard, y **este capítulo no lo
+definía**.
+
+| término | qué es | dónde se enumera | para qué existe |
+|---|---|---|---|
+| **marca abierta** | una fila de `reconciliation_mark` **sin `levantada_en`** | **no se enumera con estados: es una columna anulable.** Abierta o levantada, no hay más valores (cap. 02 (billing) §2.2) | contestar *«¿hay un caso que una persona todavía no resolvió sobre esta fila?»* — y **cuál**, porque la marca lleva su `motivo` |
+| **`requiere_conciliación`** | el **predicado derivado** *«esta suscripción tiene **al menos una** marca abierta»* | se evalúa sobre las marcas de la fila; **no hay ninguna columna con ese nombre** | conservar verbatim las frases del corpus que ya decían *«la marca `requiere_conciliación`»*, que siguen siendo exactas |
+
+> **El plural es el punto, y por eso el término es *«abierta»* y no *«puesta»*.** El corpus escribe
+> **once** motivos distintos sobre el mismo sujeto (cap. 02 (billing) §2.5) y **tres de ellos
+> significan *«hay plata del cliente que devolver»***. Con un booleano, dos casos simultáneos eran
+> uno solo y `S15` los apagaba juntos; el que se perdía era el del dinero, porque es el que ninguna
+> superficie nombraba. *«Puesta»* describe una casilla; *«abierta»* describe **un caso**, que es lo
+> que una persona levanta de a uno.
+
+#### El inventario de consumidores de «marca abierta»
+
+**Misma regla que los dos inventarios del §2.4, y acá la vigila `G-R1-F`** (`B/20` §2) —no
+`G-R1-E`, cuyo sujeto son los conjuntos *«vivos»*—: quien escribe un consumidor nuevo agrega su
+fila acá **en el mismo acto**. Se parten por lo que preguntan.
+
+**A · Preguntan «¿hay alguna marca abierta sobre esta fila?» — el predicado `requiere_conciliación`.**
+
+| # | quién | dónde | qué pregunta |
+|---|---|---|---|
+| 1 | el **`desde` de `S15`** | cap. 03 (billing) §3.2 | *«cualquiera **con una marca abierta**»* |
+| 2 | la **prohibición de ser sucedida** | cap. 03 (billing) §3.3 y cap. 02 (billing) §2.2 | *«una fila con una marca abierta no puede ser sucedida»*, cualquiera sea el motivo |
+| 3 | la **salvedad 2 del barrido** | cap. 09 (billing) §3 | *«una suscripción terminal con al menos una marca abierta»*, hasta que **las levanten todas** |
+| 4 | la **condición 3 del pago tardío**, segunda mitad | cap. 05 (billing) §3 | *«la sucesión quedó trabada **con la marca puesta**»* |
+
+**B · Preguntan por UN motivo concreto.**
+
+| # | quién | dónde | qué pregunta |
+|---|---|---|---|
+| 5 | **`G-R1-C`** | cap. 20 (billing) §2 | *«un pago pendiente por `S19` sin una marca abierta con motivo `REEMBOLSO_POR_CONFIRMAR`»* — **es el consumidor que el booleano volvía vacuo**: la marca sin motivo pasaba el guard |
+| 6 | el **listado accionable** | cap. 19 (billing) §4 | ordena por motivo y pone adelante los **tres** que devuelven plata |
+| 7 | el **escalamiento por reloj** | cap. 09 (billing) §3 | *«si sigue abierta pasado su plazo, escala»* — lee `puesta_en`, **por marca**, así que el plazo puede depender del motivo |
+| 8 | la **entrada del §22.1 para el reembolso por confirmar** | cap. 08 (núcleo) §4.3 | *«el monto a devolver, el pago que lo origina y por qué puerta entró»* — es el mismo dato que la marca ahora **guarda**, en vez de vivir sólo en un evento que pasa |
+| 9 | **`G-R1-F`** | cap. 20 (billing) §2 | que todo escritor nombre un motivo de la tabla, y que ningún levantado sea *«la fila»* |
+
+**Y una regla de uso, que es la regla 2 del §2.4 sobre este sujeto**: en la columna *condición* de
+una transición, en un invariante o en un guard **no se escribe *«marcada»* ni *«con la marca
+puesta»* a secas** cuando lo que importa es **cuál**. Va *«con una marca abierta»* para el
+predicado y **el motivo con su nombre** para el caso. La diferencia ya costó un crítico: `S18`
+escribía un motivo que la columna no admitía y **las tres ramas que mueven dinero se apoyaban en
+él**.
 
 ---
 

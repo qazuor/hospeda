@@ -44,7 +44,8 @@ a la restricción no obliga a nada.
 
 | entidad | qué guarda | restricciones |
 |---|---|---|
-| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, **la fecha del próximo cobro**, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**), **`requiere_conciliación`** (booleano) y **la fecha de primer cobro con la que nació la fila** | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
+| **`subscription`** | `user`, vertical, versión de plan anclada, billing option, estado, **la fecha del próximo cobro**, fecha de fin de servicio, clase (principal o de complemento), **`sucede_a`** y **`sucedida_por`** (dos FK anulables a `subscription`, y **nunca las dos puestas en la misma fila**) y **la fecha de primer cobro con la que nació la fila**. **No lleva ninguna columna de conciliación**: la marca es una fila aparte —`reconciliation_mark`, abajo— y **`requiere_conciliación` pasa a ser un PREDICADO derivado**, *«esta fila tiene al menos una marca abierta»* (§2.5) | **dos** índices parciales, no uno — ver abajo. Es el §11, **impuesto por la base y no por un chequeo** |
+| **`reconciliation_mark`** | la suscripción, el **motivo** (enumeración cerrada, §2.5), **`puesta_en`**, **`levantada_en`** y **quién la levantó** (las dos anulables), y **el pago que hay que devolver** cuando el motivo lo pide — FK anulable a `payment` **o** a `manual_payment`, por la misma razón por la que `refund` admite las dos puertas (§2.3) | **`UNIQUE(subscription_id, motivo) WHERE levantada_en IS NULL`**: una fila puede tener **varias marcas abiertas a la vez, una por motivo**, y el mismo motivo no se duplica sobre la misma fila. **`S15` levanta UNA marca, no la fila** |
 | **`subscription_pause`** | suscripción, **motivo** (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción |
 | **`provider_link`** | el id del proveedor de una suscripción, cuál es el proveedor, y **la última `version` del recurso que aplicamos** | **`UNIQUE(proveedor, id_del_proveedor)`**. Es la condición de que la conciliación exista: `DEC-CONC-002` la apoya en **nuestro** inventario, y una suscripción cuyo id se pierde **es invisible para el barrido** |
 
@@ -269,7 +270,7 @@ versión anterior decía sólo *«pago»* y la única entidad con ese nombre es 
 registro de un hecho en el proveedor»* (`B/16` §3.1) — así que un pago manual, que por
 definición no tiene hecho en el proveedor, **quedaba sin ningún lugar donde asentar su
 devolución**. Y hay una rama que la ordena: `S19` retiene el pago del período impago **entre por
-la puerta que entre** (cap. 03 §3.2), y las ramas 1 y 5 de `B/12` §5.3 mandan devolverlo. Sin
+la puerta que entre** (cap. 03 §3.2), y las ramas 1, 5 y 6 de `B/12` §5.3 mandan devolverlo. Sin
 esta columna el período quedaba cobrado y sin asiento de reversa, que es lo que el §4.1 conserva
 íntegro. **No hace falta un estado nuevo en la máquina del pago manual** (cap. 03 §7): el
 `manual_payment` sigue `REGISTERED` porque el pago existió, igual que un `payment` reembolsado
@@ -526,6 +527,66 @@ siendo la entidad independiente que `NUCLEO/01` §1.5 describe. Y el retiro ya e
 declarara su propio juego de claves, es la que sí rompe algo: crea **una segunda forma de declarar
 entitlements**, que `V/02` §1.2 impide.
 
+### 2.5 La marca de conciliación: once motivos sobre la misma casilla, y tres de ellos devuelven plata
+
+**`requiere_conciliación` era un booleano y el diseño ya le escribía un MOTIVO.** `S18` pone la
+marca *«con motivo **«reembolso por confirmar»**»* (cap. 03 §3.2) y las ramas 1, 5 y 6 de `B/12`
+§5.3 —las que mandan devolver el pago que `S19` retuvo— **se apoyan en ese motivo y no en la
+marca**. Un booleano no lo transporta: lo que le llegaba a la persona era una fila `CANCELLED`
+marcada, **indistinguible de las otras diez marcas**, sin nada que dijera que hay plata del
+cliente en nuestra cuenta. El pago se quedaba.
+
+**Y el precedente de la forma está una tabla más arriba, decidido por el owner.** `DEC-GRANT-004`
+implicación 1: *«el estado «pausada» de nuestra base **necesita un motivo, no sólo un booleano**»*,
+porque en el proveedor una cortesía se ve idéntica a una pausa pedida por el cliente. `subscription_pause`
+lleva su `motivo` por esa razón exacta y `S8` y `S9` lo escriben distinto. **La marca tiene la
+misma forma y le faltaba la misma columna.**
+
+#### El catálogo, contado sobre los escritores que hay hoy
+
+**`S14` es el ACTO, no el motivo.** Su evento es *«divergencia que toca plata o estado»* y cubre
+seis de los once casos de abajo; el motivo lo trae **el caso que lo disparó**, igual que el de la
+pausa lo trae `S8` o `S9`. Los otros cinco los abren actos que **no son `S14`** — `S18` y las cinco
+comprobaciones de cero llamadas del `B/09` §3 —, y el propio `S19` declara por escrito que su caso
+**no es una divergencia**.
+
+| # | `motivo` | quién abre la marca | qué tiene que hacer la persona | ¿hay plata del cliente que devolver? |
+|---|---|---|---|---|
+| 1 | `REEMBOLSO_POR_CONFIRMAR` | **`S18`** al cerrar la sucesión, ramas 1, 5 y 6 de `B/12` §5.3 | confirmar el reembolso del pago que `S19` retuvo, por la puerta por la que entró (§2.3) | **SÍ**, y el monto está determinado |
+| 2 | `COBRO_POSTERIOR_A_LA_BAJA` | `S14`, desde `C2` del `B/05` §2 | confirmar el reembolso de un cobro que llegó después de cancelar | **SÍ** |
+| 3 | `COBRO_POSTERIOR_AL_GRANT` | `S14`, desde `C3` del `B/05` §2 | ídem, sobre un cobro posterior a un *Free Forever* | **SÍ** |
+| 4 | `PAGO_PENDIENTE_SIN_RAMA` | la **segunda** comprobación del `B/09` §3, cuando la rama no es determinable | decidir el destino de un pago retenido por `S19` que ninguna de las seis ramas alcanzó | **puede**, y es la persona quien lo decide |
+| 5 | `DIVERGENCIA_DE_MONTO` | `S14`, desde la comparación de monto del `B/09` §3 | decidir qué monto vale y mutarlo o aceptarlo | no, **y el cobro equivocado sigue saliendo todos los meses** |
+| 6 | `TRANSICIÓN_NO_DECLARADA` | `S14`, desde la comparación de estado del `B/09` §3 **y desde la regla 1 del `NUCLEO/03` §1** | decidir qué estado vale y ejecutar la transición de la tabla que lo permita (`S15`) | no |
+| 7 | `PAGO_TARDÍO_RECHAZADO` | `S14`, desde el `B/05` §3 | leer **cuál de las cuatro condiciones falló** y resolver | no |
+| 8 | `REANUDACIÓN_NO_APLICADA` | `S14`, desde la rama de fallo de `S10`; **y la quinta comprobación** del `B/09` §3 | reanudar a mano o reclamarle al proveedor — el cliente está **sin servicio y sin cobro** | no |
+| 9 | `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA` | la **primera** comprobación del `B/09` §3 | cerrar la sucesión que `S18` no cerró, antes de que el candado `A` vacío deje entrar un alta nueva | no |
+| 10 | `FAN_OUT_DE_GRANT_INCOMPLETO` | la **tercera** comprobación del `B/09` §3 | reanudar `S13` / `S20` — el beneficiario **paga todos los meses algo declarado gratis** | no, pero **hay un cobro que cortar** |
+| 11 | `ADDON_SIN_APAGAR` | la **cuarta** comprobación del `B/09` §3 | correr `A5` sobre una instancia viva cuyo título ya murió | no, pero **hay un cobro que cortar** |
+
+**La enumeración es cerrada y el conteo se recalcula, no se incrementa**: un escritor nuevo agrega
+su fila acá **en el mismo acto** en que se escribe, y `G-R1-F` (`B/20` §2) falla si alguna
+transición o comprobación del corpus pone la marca sin nombrar un motivo de esta tabla.
+
+#### Qué cambia con el motivo, además de que se pueda leer
+
+1. **El listado accionable deja de ser homogéneo.** `B/19` §4 muestra el motivo y ordena primero
+   las tres primeras filas, que son las únicas donde **esperar le cuesta plata al cliente**.
+2. **`S15` levanta UNA marca, no la fila.** Con un booleano, resolver una divergencia de monto
+   apagaba en el mismo gesto un *«reembolso por confirmar»* que nadie había mirado. El `UNIQUE`
+   parcial del §2.2 es lo que deja convivir las dos, y es el caso que la rama 3 de `B/12` §5.3
+   —la sucesión trabada— ya declaraba: *«lo resuelve la misma persona, junto con la marca»*, que
+   **sólo es verdad si las dos se ven**.
+3. **La marca tiene reloj.** `puesta_en` es lo que vuelve evaluable la salvedad 2 del `B/09` §3
+   —*«lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la
+   marca**»*— y su escalamiento *«si sigue puesta pasado su plazo»*. Con un booleano no había
+   *«desde cuándo»* y esa salvedad nombraba como su razón de existir un dato que no existía. Es
+   `F-8cB3-005`, abierta desde la FASE 8-bis-2, cerrada acá.
+4. **`requiere_conciliación` sigue siendo el nombre del predicado**, así que cada frase del corpus
+   que dice *«se pone la marca `requiere_conciliación`»* sigue diciendo lo mismo; lo que gana es
+   **con qué motivo**. El predicado se define en `NUCLEO/01` §2.5 y su inventario de consumidores
+   está ahí.
+
 ### 2.6 Qué cuelga de una suscripción, y qué le pasa cuando otra la sucede
 
 **Un upgrade cancela y recrea** (`DEC-SUB-007` alternativa C), así que la fila que llevaba todo se
@@ -539,7 +600,7 @@ vez**, en vez de descubrirse entidad por entidad:
 | **complementos** (addons recurrentes y de única vez) | `addon_instance.objetivo` con scope `VERTICAL_SUBSCRIPTION` | **se re-apuntan a la sucesora** | el objetivo no desapareció, se sucedió (`B/16` §4.2). Sin esto, todo upgrade cancela de forma irreversible los addons que el cliente pagó |
 | **la redención de promo** | `promo_redemption.subscription_id` | **se re-apunta a la sucesora**, y el descuento se vuelve a aplicar sobre el monto de ella con la regla de `B/14` §2.2 —porcentual se recalcula, fijo se traslada—, **con el contador de N cobros donde estaba** | `B/14` §2.2 ya declaraba el resultado (*«la sucesora lo hereda»*) y ningún acto lo ejecutaba. El descuento vive **mutado en el monto del proveedor** (`DEC-MP-001`) y ese monto muere con el preapproval que `S17` cancela, así que sin el re-apunte el cliente pasa a pagar precio de lista **y nada lo detecta**: el barrido compara contra el monto vigente, y el monto vigente de la sucesora **es** el de lista |
 | **la cortesía vigente** | `courtesy_grant.subscription_id` (no anulable) | **se re-apunta a la sucesora**, y la sucesora **queda pausada con motivo `COURTESY` por los días que quedaban** | una cortesía *«cubre la suscripción que pausa, y nada más»* (`DEC-GRANT-006`): re-apuntarla sin pausar deja una fuente que no sostiene nada, porque el mecanismo de la cortesía **es** la pausa (`DEC-GRANT-003`). Y no re-apuntarla deja la columna no anulable señalando una `CANCELLED`, que no emite fuente (`12-contrato…` §2.6): el beneficio que firmó `SUPER_ADMIN` desaparece en silencio |
-| **el pago pendiente por `S19`** | `payment.subscription_id` **o `manual_payment.subscription_id`** — `S19` retiene el pago del período impago **entre por la puerta que entre** (cap. 03 §3.2) | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le pone a **esa** fila la marca `requiere_conciliación` y el reembolso lo confirma una persona (`DEC-RF-002`), asentado en un `refund` sobre el pago que se devuelve (§2.3) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** |
+| **el pago pendiente por `S19`** | `payment.subscription_id` **o `manual_payment.subscription_id`** — `S19` retiene el pago del período impago **entre por la puerta que entre** (cap. 03 §3.2) | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le abre a **esa** fila una marca con motivo **`REEMBOLSO_POR_CONFIRMAR`** (§2.5), que además **lleva la referencia al pago** que hay que devolver, y el reembolso lo confirma una persona (`DEC-RF-002`), asentado en un `refund` sobre ese mismo pago (§2.3) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** — y sin el motivo esa fila llegaba al listado indistinguible de las otras diez marcas |
 | **pagos y pagos manuales ya resueltos, comprobantes, pausas cerradas, el `provider_link`** | varias | **no se re-apuntan** | son el histórico de esa fila y de su preapproval. Cada suscripción tiene el suyo |
 
 **Las tres primeras son el acto, la cuarta es el aviso, y la quinta es historia.** Es la

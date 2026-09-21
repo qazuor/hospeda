@@ -86,7 +86,7 @@ minutos en una renovación de sandbox, ~26 en producción, ~100 segundos en un a
 | | qué se hace |
 |---|---|
 | el cobro es **anterior** a la cancelación | es legítimo: el cobro es **por adelantado**, así que pagó el período que va a usar. **Se extiende la fecha de fin de servicio** hasta cubrirlo — `DEC-SUB-009` sostiene el servicio de nuestro lado hasta el fin del período pagado, y esto es exactamente eso |
-| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación`** (cap. 03 §3.2, `S14`), y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`) |
+| el cobro es **posterior** a la cancelación | no debería existir. **Se pone la marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (cap. 03 §3.2, `S14`; `B/02` §2.5), **con la referencia al cobro que hay que devolver**, y el reembolso lo confirma una persona (`DEC-RF-001`, `DEC-CONC-001`). Es uno de los **tres** motivos que significan *«hay plata del cliente que devolver»*, así que el listado accionable lo muestra adelante (`B/19` §4) |
 
 **Las dos filas presuponen que la baja dejó una fecha de fin de servicio que se pueda extender, y
 eso vale para `S11` y no para las otras dos.** Desde `PAUSED` (`S22`) y desde `SUSPENDED` (`S23`)
@@ -101,8 +101,10 @@ la fila va **directo a `CANCELLED`** y su fecha de fin de servicio es el día de
 - **Desde `SUSPENDED` el cobro que entra es el que `S7` o `S19` esperaban, y llega tarde.** La
   condición 1 del §3 rechaza `CANCELLED`, que es exactamente el tope que el cap. 03 §7.1 eligió:
   *«a partir de ahí el pago que llegue no reabre nada»*. Así que la plata está en nuestra cuenta
-  sin período que darle: **se pone la marca** y la devolución **la confirma una persona**
-  (`DEC-RF-002`) — la segunda fila de arriba, por la misma razón y no por analogía.
+  sin período que darle: **se pone la marca con motivo `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5)
+  y la devolución **la confirma una persona**
+  (`DEC-RF-002`) — la segunda fila de arriba, por la misma razón y no por analogía, **y por eso el
+  motivo es el mismo**.
 
 ### C3 · Se otorga *Free Forever* mientras se ejecuta un cobro
 
@@ -111,7 +113,8 @@ acto y **no se devuelve lo pagado**, con su riesgo declarado.
 
 Lo que este cruce agrega es sólo el borde: si un cobro se acredita **después** de que el grant
 canceló la suscripción, no debería poder ocurrir por `GT-1` — y si ocurre igual, **se pone la
-marca `requiere_conciliación`**. La diferencia con C2 es que acá **el cliente no pidió nada**, así que
+marca `requiere_conciliación` con motivo `COBRO_POSTERIOR_AL_GRANT`** (`B/02` §2.5), también con
+la referencia al cobro. La diferencia con C2 es que acá **el cliente no pidió nada**, así que
 un cobro posterior a un regalo es material de reembolso, no de retención.
 
 ### C4 · Se compra un addon mientras se aplica un downgrade que baja su base
@@ -178,9 +181,12 @@ implementación traza la línea en otro lado.
 
 **Si las cuatro se cumplen**, entra `GRACE_PERIOD → ACTIVE` (`S5`) o `SUSPENDED → ACTIVE` (`S7`),
 según en cuál de los dos estados de la condición 1 esté la fila, y se restituye la publicación.
-**Si falla cualquiera**, se pone la marca `requiere_conciliación` (cap. 03 §3.2, `S14`) y el evento
+**Si falla cualquiera**, se pone la marca `requiere_conciliación` con motivo `PAGO_TARDÍO_RECHAZADO`
+(cap. 03 §3.2, `S14`; `B/02` §2.5) y el evento
 crítico dice **cuál** falló — sin eso, la persona que lo mire tiene que rehacer el diagnóstico
-entero.
+entero. **Cuál de las cuatro condiciones falló va en el evento y no en el motivo**: el motivo es lo
+que separa este caso de los otros diez en el listado, y el diagnóstico fino ya tiene su lugar
+declarado en `NUCLEO/08` §4.3.
 
 > **La condición 1 tiene desde `MP4` un segundo consumidor, y conviene decirlo porque nadie lo
 > vería.** Además de decidir si un pago tardío reactiva, **es el tope de la reapertura de un pago

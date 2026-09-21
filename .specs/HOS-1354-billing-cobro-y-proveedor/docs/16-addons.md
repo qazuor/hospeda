@@ -587,7 +587,8 @@ predecesora ya murió (§4.2).
 > promete la re-evaluación y no decía sobre qué.
 >
 > El **backstop** de esto es la primera comprobación de cero llamadas de `B/09` §3, que ve la
-> sucesión abierta sobre una fila muerta y pone la marca; pero la marca es una persona, no una
+> sucesión abierta sobre una fila muerta y abre la marca con motivo
+> `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA` (`B/02` §2.5); pero la marca es una persona, no una
 > cancelación, y lo que acá no puede fallar es el preapproval que sigue cobrando.
 
 **Falla hacia cobrar de más, y por eso es el que no puede fallar.** Un excedente sin reconciliar

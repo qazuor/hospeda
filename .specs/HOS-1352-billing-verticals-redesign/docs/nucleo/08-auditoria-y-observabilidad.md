@@ -139,7 +139,7 @@ si es destructiva o mueve dinero.**
 | confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj |
 | aprobar o rechazar una **postulación de Partner** | §17.3 | no |
 | configurar el **plan y el método de pago** de un Partner | §17.3 | sí |
-| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso |
+| **levantar la marca `requiere_conciliación`** | §22.1 | según el caso — **y el caso lo dice el `motivo` de la marca**, que desde la FASE 9-bis-4 es una columna (cap. 02 (billing) §2.5). Se levanta **una marca, no la fila**: son once motivos y **tres** tienen una confirmación de reembolso encima |
 | **cancelar** una suscripción | §24 | **sí**, e irreversible en el proveedor (`PA-5`) |
 | **pausar o reanudar** | §26 | sí |
 | **cambiar de plan** a un cliente | §27, §28 | sí |
@@ -165,7 +165,7 @@ que no son éste:
 
 | qué | quién lo hace | dónde |
 |---|---|---|
-| **poner** la marca sobre la predecesora que retiene el pago —un `payment` **o un `manual_payment`**, porque `S19` lo retiene entre por la puerta que entre | **`S18`**, como cuarto efecto del cierre de la sucesión | `B/03` §3.2, `B/12` §5.3 **ramas 1 y 5** |
+| **abrir** la marca —con motivo **`REEMBOLSO_POR_CONFIRMAR`** y **la referencia al pago**— sobre la predecesora que lo retiene, un `payment` **o un `manual_payment`**, porque `S19` lo retiene entre por la puerta que entre | **`S18`**, como cuarto efecto del cierre de la sucesión | `B/03` §3.2, `B/02` §2.5, `B/12` §5.3 **ramas 1, 5 y 6** |
 | **hacer que esa marca escale** si nadie la resuelve | el **barrido diario**, que devuelve al recorrido las suscripciones terminales con la marca puesta o con un pago pendiente | `B/09` §3, salvedades 2 y 3 |
 
 Las dos son actos **de sistema**, no de admin, y por eso no suman filas. La primera **no es
@@ -264,7 +264,7 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
 - **cuál de las cuatro condiciones del cap. 05 §3 falló**, cuando el caso es un pago tardío — sin
   eso, quien lo mire tiene que rehacer el diagnóstico entero;
 - **el monto a devolver, el pago que lo origina y POR QUÉ PUERTA entró ese pago**, cuando el caso
-  es el **reembolso por confirmar** de las ramas 1 y 5 del cap. 12 §5.3 (épica de billing). Esta
+  es el **reembolso por confirmar** de las ramas 1, 5 y 6 del cap. 12 §5.3 (épica de billing). Esta
   entrada es de otra forma que las demás y conviene decirlo: **no hay nada que diagnosticar** —el
   desenlace lo decidió el diseño y `DEC-RF-002` sólo puso la confirmación humana en el medio—, así
   que lo que la persona necesita no es el conflicto entre dos estados sino **qué devolver, a quién
@@ -273,7 +273,12 @@ El §22.1 pide *«generar información suficiente para investigar»*. Cada entra
   proveedor** mientras que un `manual_payment` se devuelve **a mano, por donde entró** (cap. 03
   §3.2 y §7, épica de billing). Quien confirma no puede elegir el camino si la entrada no se lo
   dice. La lista de arriba contemplaba el pago tardío que **falla**; éste es el que **sale bien**
-  y deja plata por devolver;
+  y deja plata por devolver.
+  **Y desde la FASE 9-bis-4 esos tres datos no viven sólo acá**: la marca los **guarda** —el
+  motivo `REEMBOLSO_POR_CONFIRMAR` y la referencia al pago, cap. 02 (billing) §2.5—, que es lo que
+  los pone también en el **listado accionable**, el canal primario de `DEC-OBS-001`. Mientras
+  fueron sólo campos de un evento, el canal que la persona mira de verdad recibía **una fila
+  `CANCELLED` marcada e indistinguible de las otras diez marcas**;
 - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
 - **la correlación**, para poder seguir la cadena hacia atrás;
 - **qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas

@@ -72,6 +72,11 @@ sólo dice de quién es. Y está medido que se puede hacer sobre una suscripció
 persona.** Es el criterio del owner aplicado por tercera vez: **la línea no es «automático contra
 manual», es «toca plata o no toca plata»**.
 
+> **Y la marca dice CUÁL de las once cosas pasó** (`B/02` §2.5). El criterio de arriba manda que
+> todas terminen en la misma bandeja; **lo que no se sigue de él es que lleguen ahí
+> indistinguibles**. Tres de los once motivos significan *«hay plata del cliente que devolver»*, y
+> ésos son los que la demora le cobra al cliente.
+
 ---
 
 ## 3. Qué compara el barrido, campo por campo
@@ -82,8 +87,8 @@ salvedades de abajo devuelven al barrido**:
 
 | se compara | contra | si difieren |
 |---|---|---|
-| estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, se pone la **marca** |
-| monto vigente | `transaction_amount` | se pone la **marca** — es el caso que no avisa por ningún canal |
+| estado | el del proveedor, leído por id | **no se escribe el del proveedor**: se evalúa la transición contra la tabla del cap. 03. Si no existe, se abre la **marca** con motivo **`TRANSICIÓN_NO_DECLARADA`** (`B/02` §2.5) |
+| monto vigente | `transaction_amount` | se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** — es el caso que no avisa por ningún canal |
 | fecha del próximo cobro | `next_payment_date` | se registra; **no es por sí sola una divergencia**, porque el proveedor la mueve solo en casos medidos (`PS-6`) |
 | cobros del período | los `authorized_payments` del preapproval | ver §4 |
 | la `version` del recurso | la última que aplicamos | si la del proveedor es mayor, **el recurso cambió sin avisarnos**: se relee entero |
@@ -124,8 +129,8 @@ vale por el criterio de arriba, así que se cae exactamente donde ese criterio n
 | # | qué vuelve al barrido | hasta cuándo | por qué la exención no la cubre |
 |---|---|---|---|
 | 1 | **la suscripción de complemento de una instancia de addon en estado terminal** — seleccionada **por el estado terminal de la instancia** y, desde `S21`, también **por el suyo propio** cuando llegó a `CANCELLED` junto con ella (`B/16` §4.4) | hasta que la relectura la vea `cancelled` | su preapproval lo cancelamos **nosotros**, con una llamada que puede fallar — ver abajo |
-| 2 | **una suscripción terminal con la marca `requiere_conciliación` puesta** | hasta que una persona la levante (`S15`) | la exención es sobre *«no puede divergir hacia nada que nos importe»*, y una fila marcada **ya divergió**: lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la marca**, que es lo único que hace que el caso no quede abierto para siempre |
-| 3 | **una suscripción terminal con un pago acreditado pendiente de resolución** por `S19` — un `payment` **o un `manual_payment`**, porque `S19` retiene el pago del período impago entre por la puerta que entre (`B/03` §3.2) | hasta que la bandera se apague | es plata del cliente en nuestra cuenta. La rama 1 de `B/12` §5.3 deja la predecesora en `CANCELLED` **con un reembolso por confirmar**, así que sin esta salvedad el desenlace que mueve dinero es el único que ningún proceso vuelve a mirar |
+| 2 | **una suscripción terminal con al menos una marca `requiere_conciliación` abierta** | hasta que una persona **las levante todas** (`S15`, que levanta **una por vez**) | la exención es sobre *«no puede divergir hacia nada que nos importe»*, y una fila marcada **ya divergió**: lo que el barrido le aporta no es la comparación con el proveedor sino **el reloj de la marca**, que es lo único que hace que el caso no quede abierto para siempre. **Y el reloj existe desde la FASE 9-bis-4**: es `puesta_en`, por marca (`B/02` §2.2 y §2.5). Mientras la marca era un booleano no había *«desde cuándo»*, así que esta salvedad declaraba como su razón de existir un dato que la base no tenía y el escalamiento de más abajo **no se podía evaluar** |
+| 3 | **una suscripción terminal con un pago acreditado pendiente de resolución** por `S19` — un `payment` **o un `manual_payment`**, porque `S19` retiene el pago del período impago entre por la puerta que entre (`B/03` §3.2) | hasta que la bandera se apague | es plata del cliente en nuestra cuenta. Las ramas **1, 5 y 6** de `B/12` §5.3 dejan la predecesora en `CANCELLED` **con una marca `REEMBOLSO_POR_CONFIRMAR`** (`B/02` §2.5), así que sin esta salvedad los desenlaces que mueven dinero son los únicos que ningún proceso vuelve a mirar |
 | 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — **siete** de las **ocho** filas *«no»* de la tabla de arriba: `S12`, `S3`, `S13`, **`S20`**, **`S22`**, **`S23`** y la lápida. **La octava, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras seis son principales**, y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y `S23` entra sólo cuando hubo llamada**: sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: cancelar **no emite webhook** (`EX-15`), así que si la llamada no se aplicó **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron |
 
 > **La 4 es la que cierra el caso de `S13`, y por eso `S13` no necesita una rama de fallo propia
@@ -214,7 +219,8 @@ terminal entera sino la cola de las que todavía no confirmaron.
 **Y hay una comprobación que no le pregunta nada al proveedor: la sucesión abierta sobre una fila
 muerta.** Si una fila que el barrido alcanza tiene `sucede_a` **no nulo** y la predecesora a la
 que apunta **ya no es fila viva** (`NUCLEO/01` §2.4), la sucesión debería estar cerrada y no lo
-está: `S18` no corrió. Se pone la **marca**. Cuesta cero llamadas —las dos filas están en nuestra
+está: `S18` no corrió. Se abre la **marca** con motivo **`SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA`**
+(`B/02` §2.5). Cuesta cero llamadas —las dos filas están en nuestra
 base— y vigila el único estado que deja el candado `A` **vacío**, que es el que permite que un
 alta nueva entre sin que nada la rechace y queden dos preapprovals cobrando. La rama legítima de
 ese estado —la cancelación de `S17` que falló sobre un preapproval vivo— **ya trae la marca
@@ -252,8 +258,10 @@ por un camino que `G-R1-C` no alcanzó a impedir.
 sucesión ya terminó.** Si una fila tiene un pago acreditado **pendiente de resolución**
 (`B/03` §3.2, `S19`) y ya **no** es la predecesora de una sucesión en curso —la sucesora murió, o
 la sucesión se cerró—, su destino estaba determinado y nadie lo ejecutó: se resuelve por la rama
-que le corresponda de las seis de `B/12` §5.3, y si la rama no es determinable, se pone la
-**marca**. Cuesta cero llamadas y cubre el único estado que el arreglo de `S19` puede dejar
+que le corresponda de las seis de `B/12` §5.3, y si la rama no es determinable, se abre la
+**marca** con motivo **`PAGO_PENDIENTE_SIN_RAMA`** (`B/02` §2.5), **con la referencia al pago**:
+es uno de los motivos sobre los que la persona puede terminar devolviendo plata, así que el
+listado no lo muestra como una divergencia más. Cuesta cero llamadas y cubre el único estado que el arreglo de `S19` puede dejar
 colgado: **un pago retenido para siempre**, que del lado del cliente se lee como un cobro sin
 servicio y sin devolución. Hace falta porque el reloj del grace **no corre** mientras ese pago
 esté pendiente (`S6`): sin esta comprobación no hay nada que lo destrabe solo.
@@ -266,15 +274,18 @@ esté pendiente (`S6`): sin esta comprobación no hay nada que lo destrabe solo.
 > cuatro que lo hace.
 >
 > **Y es un backstop, no el disparador.** En el curso normal los cuatro actos de `B/03` §3.2 ya
-> resolvieron el pago antes de que el barrido llegue: `S18` pone la marca —por la rama 1 y por la
-> rama 5—, `S3` lo reevalúa, `S13` apaga la bandera. Esta comprobación existe para la corrida en
-> que alguno no se ejecutó.
+> resolvieron el pago antes de que el barrido llegue: `S18` abre la marca
+> `REEMBOLSO_POR_CONFIRMAR` —por la rama 1, por la 5 **y por la 6**—, `S3` lo reevalúa, `S13` apaga
+> la bandera. Esta comprobación existe para la corrida en
+> que alguno no se ejecutó. **Y el motivo con que la abre no es el de esta comprobación**: `S18`
+> sabe cuál es la rama y por eso puede decir *«devolvé»*; ésta llega cuando la rama **no** es
+> determinable, y ahí lo que la persona tiene que hacer es decidirla (`B/02` §2.5, motivos 1 y 4).
 
 **Y una tercera, que tampoco le pregunta nada al proveedor: la vertical que `S13` —o `S20`— no
 alcanzó a cerrar.** Si un beneficiario tiene un **ancla viva** en la vertical V —una fila de
 `permanent_grant_vertical` cuyo grant tiene **`revocado_en` nulo** (`B/02` §2.4, `NUCLEO/01`
-§2.4)— y además **una de estas dos cosas**, el fan-out no terminó de correr y se pone la
-**marca**:
+§2.4)— y además **una de estas dos cosas**, el fan-out no terminó de correr y se abre la
+**marca** con motivo **`FAN_OUT_DE_GRANT_INCOMPLETO`** (`B/02` §2.5):
 
 | qué no debería existir | qué acto quedó a medias | qué le está pasando al beneficiario |
 |---|---|---|
@@ -340,7 +351,7 @@ puede cobrar —`PENDING_AUTHORIZATION` o `ACTIVE` (`B/03` §8)— y su objetivo
 condición de orfandad del `B/16` §4.2**, **o el ancla que era su título ya no es la de un grant
 vivo** —el `permanent_grant` de esa ancla tiene **`revocado_en` escrito** (`B/02` §2.4,
 `NUCLEO/01` §2.4)—, `A5` no
-corrió: se pone la **marca**. Cuesta cero llamadas —la instancia, su objetivo y el ancla del
+corrió: se abre la **marca** con motivo **`ADDON_SIN_APAGAR`** (`B/02` §2.5). Cuesta cero llamadas —la instancia, su objetivo y el ancla del
 grant están todos en nuestra base— y **no reescribe el predicado: lo delega** en el §4.2, que es
 su único dueño.
 
@@ -389,7 +400,9 @@ su único dueño.
 
 **Y una quinta, que tampoco le pregunta nada al proveedor: la pausa vencida que no reanudó.** Si
 hay una `subscription_pause` **sin `fin_real`** cuyo **`fin_previsto` ya pasó** (`B/02` §2.2) y su
-suscripción sigue en `PAUSED`, `S10` no corrió: se pone la **marca**. Cuesta cero llamadas —la
+suscripción sigue en `PAUSED`, `S10` no corrió: se abre la **marca** con motivo
+**`REANUDACIÓN_NO_APLICADA`** —el mismo que escribe la rama de fallo de `S10`, porque es el mismo
+caso visto por el otro lado (`B/02` §2.5)—. Cuesta cero llamadas —la
 pausa y la suscripción están las dos en nuestra base— y cubre el único estado que **la salida que
 devuelve el servicio** puede dejar colgado.
 
@@ -441,9 +454,17 @@ meses**.
 para el mismo problema —*«el correo es agregado, con límite de frecuencia, en vez de uno por
 evento»*— y cuyo canal primario es el listado accionable, no el correo.
 
-**La marca lleva reloj.** Si sigue puesta pasado su plazo, **escala**: es una divergencia de plata
+**La marca lleva reloj, y desde la FASE 9-bis-4 lleva la columna que lo sostiene.** Si sigue
+abierta pasado su plazo, **escala**: es una divergencia de plata
 que nadie resolvió, y sin reloj el servicio que la fila sostiene **no tiene cota**. El plazo es
 configuración, como todos los del §42.
+
+> **Esta frase se escribió antes que la columna, y hasta la FASE 9-bis-4 no se podía evaluar.**
+> `requiere_conciliación` era un booleano: decía *«hay un caso»* y no *«desde cuándo»*, así que
+> *«pasado su plazo»* no tenía contra qué medirse. Hoy es `puesta_en`, **por marca y no por fila**
+> (`B/02` §2.2 y §2.5), que es lo que hace que el plazo pueda ser distinto según el motivo — un
+> `REEMBOLSO_POR_CONFIRMAR` tiene plata del cliente parada y un `PAGO_TARDÍO_RECHAZADO` no.
+> Lo que cambió no es el enunciado sino contra qué se lee.
 
 ---
 

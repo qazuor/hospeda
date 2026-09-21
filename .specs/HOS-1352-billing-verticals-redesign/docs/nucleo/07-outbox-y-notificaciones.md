@@ -250,7 +250,8 @@ decisión, que es lo contrario de por qué este correo existe. El alcance espejo
 
 **Y tiene que decir que la devolución NO es instantánea**, que es la tercera cosa y la que
 faltaba acá y en su espejo. `DEC-RF-002` puso el reembolso en manos de una persona —al cerrar la
-sucesión el sistema **pone la marca** y **no ejecuta el reembolso solo**—, así que entre el cierre
+sucesión el sistema **abre la marca con motivo `REEMBOLSO_POR_CONFIRMAR`** (cap. 02 (billing) §2.5)
+y **no ejecuta el reembolso solo**—, así que entre el cierre
 del cambio de plan y la plata de vuelta hay una espera que depende de que alguien mire. **Es el
 precio aceptado de no abrir el único dominio que el diseño tiene vacío a propósito** —operaciones
 automáticas sobre dinero, cap. 08 §3 (núcleo)— y este correo es donde ese precio se acota: un
