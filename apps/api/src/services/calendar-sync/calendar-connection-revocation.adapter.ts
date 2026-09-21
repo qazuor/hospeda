@@ -26,6 +26,21 @@
  *   feed for real requires asking the host to regenerate their export link, and
  *   whether (and how) to ask them is a product decision, not this adapter's.
  *
+ * ## Unknown providers fail CLOSED
+ *
+ * `MANUAL` is an explicit case answering `{ revoked: true }` — hand-blocked
+ * dates have no connection row and no credential. Everything the switch does
+ * NOT recognise answers `{ revoked: false }` instead.
+ *
+ * The asymmetry is the design. `default` used to be the `revoked: true` branch,
+ * which made this a gate by exclusion: it enumerated what to handle and waved
+ * the rest through. Add `VRBO` or `EXPEDIA` to `OccupancySourceEnum` — real
+ * OAuth providers with real grants — and it would have reported a closed grant
+ * without calling anybody, the cascade would have counted it in `revoked`,
+ * nothing would have been stamped, and the log line would have read "Revoked
+ * calendar credential". An unrecognised provider is an unclosed grant until
+ * somebody teaches this switch otherwise.
+ *
  * @module services/calendar-sync/calendar-connection-revocation.adapter
  */
 
