@@ -116,7 +116,7 @@
         "@playwright/test": "^1.62.0",
         "@repo/config": "workspace:*",
         "@types/node": "^26.2.0",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^5.0.0",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
         "cloudinary": "^2.10.0",
