@@ -3100,3 +3100,10 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - `bunx tsc --noEmit` pasó en `scripts/client-tools`.
 - `bunx tsc --noEmit` pasó en `scripts/server-tools`.
 - No se generaron artefactos persistentes ni se ejecutaron operaciones externas.
+
+## Gate 139 · Cadena completa de distribución de comandos
+
+- `hops --commands`, las entradas standalone de `package.json` y los archivos
+  `bin/hops-*` coincidieron exactamente: **29/29/29**.
+- Es el listado que consume `scripts/client-tools/install.sh` para generar las
+  funciones de Fish; no se detectaron comandos huérfanos ni extras.
