@@ -146,6 +146,16 @@ Instala dependencias y escribe cuatro funciones de fish en
 `~/.config/fish/functions/`. Se autocargan: no hace falta reiniciar la terminal.
 `./uninstall.sh` las borra.
 
+Para una instalación automatizada que no permita caer a otra rama si
+`hospeda-staging` todavía no tiene el tooling actualizado:
+
+```bash
+./install.sh --strict-staging
+```
+
+`--here` sigue disponible para desarrollar el propio CLI desde el checkout
+actual.
+
 ## Correr con bun, no con Node
 
 Como `server-tools`, este paquete corre con **bun** y vive fuera del workspace de

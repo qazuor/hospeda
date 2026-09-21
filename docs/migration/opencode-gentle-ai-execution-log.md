@@ -3116,3 +3116,11 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
   evitar ambigüedad sintáctica y no heredar credenciales al comando `gh`.
 - Los warnings restantes pertenecen a scripts existentes fuera del tooling de
   migración (`scripts/dev.sh` y `scripts/server-tools/weekly-restart.sh`).
+
+## Gate 141 · Instalación estricta desde staging
+
+- `scripts/client-tools/install.sh` acepta `--strict-staging`.
+- En ese modo, si `hospeda-staging` no contiene `scripts/client-tools`, el
+  instalador termina con error y no cae silenciosamente al checkout actual.
+- El fallback anterior queda disponible para desarrollo explícito; el README
+  documenta ambos modos.

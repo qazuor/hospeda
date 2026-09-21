@@ -12,12 +12,26 @@
 #
 #   --here   Point the functions at THIS checkout instead. For hacking on hops
 #            itself, where running the staging copy defeats the purpose.
+#   --strict-staging  Refuse the temporary fallback when staging has no
+#            client-tools yet. Intended for automated/bootstrap installs.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FISH_FUNCTIONS="$HOME/.config/fish/functions"
 USE_HERE=0
-[ "${1:-}" = "--here" ] && USE_HERE=1
+STRICT_STAGING=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --here) USE_HERE=1 ;;
+    --strict-staging) STRICT_STAGING=1 ;;
+    --help|-h)
+      sed -n '2,14p' "$0"
+      exit 0
+      ;;
+    *) echo "ERROR: opción desconocida: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
 
 command -v bun >/dev/null 2>&1 || {
   echo "ERROR: bun no está en el PATH. Instalalo desde https://bun.sh"
@@ -40,6 +54,10 @@ else
   fi
   TOOLS="$STAGING_CLONE/scripts/client-tools"
   if [ ! -f "$TOOLS/package.json" ]; then
+    if [ "$STRICT_STAGING" -eq 1 ]; then
+      echo "ERROR: staging todavía no tiene scripts/client-tools; no uso un checkout alternativo." >&2
+      exit 3
+    fi
     echo "AVISO: staging todavía no tiene scripts/client-tools."
     echo "       Las funciones van a apuntar a este checkout hasta que se mergee."
     TOOLS="$HERE"
