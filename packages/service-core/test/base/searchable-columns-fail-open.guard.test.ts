@@ -57,6 +57,9 @@
  * built because it instantiates the real services.
  */
 
+import { buildSearchCondition } from '@repo/db';
+import type { Table } from 'drizzle-orm';
+import { pgTable, text, uuid } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import { BaseCrudService } from '../../src/base/base.crud.service';
 
@@ -124,7 +127,16 @@ type Inspection = {
     readonly columns: readonly string[];
     readonly usableColumns: readonly string[];
     readonly declaresHook: boolean;
+    /** `true` when the real `buildSearchCondition` produced no condition at all. */
+    readonly failsOpen: boolean;
 };
+
+/**
+ * The term fed to `buildSearchCondition`. Its value is irrelevant — only
+ * whether a condition comes back at all is — but it must be non-blank, because
+ * the helper short-circuits on an empty term for an unrelated reason.
+ */
+const PROBE_TERM = 'hos-1117-probe';
 
 /**
  * True when `value` is a class whose prototype chain reaches `BaseCrudService`.
@@ -162,7 +174,15 @@ const declaresHook = (instance: object): boolean => {
 };
 
 /**
- * Reads one service instance the way `buildSearchCondition` will.
+ * Reads one service instance and asks the REAL `buildSearchCondition` what it
+ * would do with it.
+ *
+ * Calling the production helper — rather than re-deriving its
+ * `Object.hasOwn(table, column)` rule here — is deliberate: a guard that
+ * reimplements the predicate it polices stops agreeing with it the moment
+ * either side moves, and would keep reporting green while `adminList` started
+ * dropping conditions for some new reason. `usableColumns` is kept alongside,
+ * but only to make the failure message say WHICH columns were dropped.
  *
  * @throws when the instance has no usable model, or no hook under {@link HOOK} —
  *   both are "this guard cannot see what it is meant to police", which must be
@@ -182,13 +202,16 @@ const inspectInstance = (service: string, instance: object): Inspection => {
             `${service}: has no ${HOOK}(). If the hook was renamed, this guard must be renamed with it — deleting it would leave admin search failing open unobserved.`
         );
     }
-    const table = getTable.call(inspectable.model) as Record<string, unknown>;
+    const tableValue = getTable.call(inspectable.model);
+    const table = tableValue as Table;
+    const tableRecord = tableValue as Record<string, unknown>;
     const columns = hook.call(instance);
     return {
         service,
         columns,
-        usableColumns: columns.filter((column) => Object.hasOwn(table, column)),
-        declaresHook: declaresHook(instance)
+        usableColumns: columns.filter((column) => Object.hasOwn(tableRecord, column)),
+        declaresHook: declaresHook(instance),
+        failsOpen: buildSearchCondition(PROBE_TERM, columns, table) === undefined
     };
 };
 
@@ -211,7 +234,7 @@ const evaluate = (
     const findings: Finding[] = [];
 
     for (const inspection of inspections) {
-        const failsOpen = inspection.usableColumns.length === 0;
+        const failsOpen = inspection.failsOpen;
         const isExcepted = excepted.has(inspection.service);
 
         if (failsOpen && !isExcepted) {
@@ -327,7 +350,14 @@ describe('HOS-1117: admin search never resolves to zero columns', () => {
     });
 
     describe('trap cases: the predicate can fail', () => {
-        const tableWithoutName = { id: {}, label: {}, slug: {} };
+        // A REAL Drizzle table, so `buildSearchCondition` runs against the same
+        // kind of object it sees in production rather than a stand-in that
+        // could agree with the guard while disagreeing with the helper.
+        const tableWithoutName = pgTable('hos_1117_trap', {
+            id: uuid('id').primaryKey(),
+            label: text('label').notNull(),
+            slug: text('slug').notNull()
+        });
         const makeInstance = (proto: object): object => {
             const instance = Object.create(proto) as Record<string, unknown>;
             instance.model = { getTable: () => tableWithoutName };
