@@ -2981,3 +2981,17 @@ No se leyó contenido, no se alteró Engram y no se modificó la política de ca
 - Próximo diagnóstico: capturar el plan exacto de paquetes que devuelve
   `[origin/staging]` y ejecutar el paquete web con el mismo entorno, sin
   cambiar la configuración de producción de tests a ciegas.
+
+## Gate 126 · Filtro incremental explícito por paquete
+
+- El dry-run de Turbo confirmó que `--filter='[origin/staging]'` seleccionaba
+  los 31 paquetes del monorepo, aunque el cambio real estuviera fuera de
+  `apps/` y `packages/`.
+- `verify --changed` ahora transforma cada ruta afectada en un filtro explícito
+  (`--filter=./apps/web`, `--filter=./packages/schemas`, etc.). Así se evita
+  expandir tests de todo el workspace por la semántica del selector de rango.
+- Los guards y typecheck siguen corriendo según el workflow; sólo el bloque de
+  tests usa el conjunto de paquetes afectados.
+- Suite client-tools posterior al cambio: **298 tests, 0 fallos y 736
+  assertions**. `verify --changed --list` confirma que no agrega tests cuando
+  no hay cambios bajo `apps/` o `packages/`.

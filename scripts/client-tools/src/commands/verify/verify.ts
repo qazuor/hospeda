@@ -72,7 +72,7 @@ function readWorkflow({ repoRoot }: { readonly repoRoot: string }): string | nul
 }
 
 /**
- * Lists the workspace packages touched since the base branch.
+ * Lists workspace package paths touched since the base branch.
  *
  * @param input.cwd - Directory to run git from.
  * @returns Package directory names, empty when nothing or on failure.
@@ -92,7 +92,9 @@ export async function changedPackages({
     const dirs = new Set<string>();
     for (const file of diff.stdout.split('\n')) {
         const match = /^(apps|packages)\/([^/]+)\//.exec(file.trim());
-        if (match?.[2] !== undefined) dirs.add(match[2]);
+        if (match?.[1] !== undefined && match[2] !== undefined) {
+            dirs.add(`${match[1]}/${match[2]}`);
+        }
     }
     return [...dirs].sort();
 }
@@ -132,11 +134,14 @@ function testStep({
         };
     }
     if (changed.length === 0) return null;
-    // `[ref]` without the leading dots: only what changed, never its dependents.
+    // Explicit path filters avoid Turbo's `[ref]` range selector, which can
+    // expand to every workspace when the branch diverges or global files
+    // changed. Build dependencies are still handled by the task graph.
+    const filters = changed.map((path) => `--filter=./${path}`).join(' ');
     return {
         job: 'tests',
         name: `Tests de lo que tocaste (${changed.join(', ')})`,
-        run: `${TEST_LIMITS} pnpm exec turbo run test --concurrency=1 --filter='[${BASE}]'`
+        run: `${TEST_LIMITS} pnpm exec turbo run test --concurrency=1 ${filters}`
     };
 }
 
